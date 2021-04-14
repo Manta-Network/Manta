@@ -45,6 +45,11 @@ xcm = { git = "https://github.com/paritytech/polkadot", default-features = false
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
 
+# orml dependencies
+orml-currencies = { path = "../../../orml/currencies", default-features = false }
+orml-tokens = { path = "../../../orml/tokens", default-features = false }
+orml-traits = { path = "../../../orml/traits", default-features = false }
+
 [build-dependencies]
 substrate-wasm-builder = "3.0.0"
 
@@ -81,4 +86,6 @@ std = [
 	"xcm/std",
 	"xcm-builder/std",
 	"xcm-executor/std",
+	"orml-currencies/std",
+	"orml-tokens/std",
 ]

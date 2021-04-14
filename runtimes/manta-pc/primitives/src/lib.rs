@@ -17,11 +17,16 @@
 //! Primitives used by the Parachains Tick, Trick and Track.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+ 
+use codec::{Encode, Decode};
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 use sp_runtime::{
 	generic,
 	traits::{BlakeTwo256, IdentifyAccount, Verify},
 	MultiSignature,
+	RuntimeDebug,
 };
 
 pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
@@ -57,3 +62,14 @@ pub type Hash = sp_core::H256;
 
 /// Digest item type.
 pub type DigestItem = generic::DigestItem<Hash>;
+
+#[derive(Encode, Decode, Eq, PartialEq, Copy, Clone, RuntimeDebug, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum CurrencyId {
+	Native,
+	DOT,
+	KSM,
+	BTC,
+}
+
+pub type Amount = i128;
