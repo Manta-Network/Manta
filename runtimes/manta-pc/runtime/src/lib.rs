@@ -356,7 +356,7 @@ construct_runtime! {
 		Spambot: cumulus_spambot::{Pallet, Call, Storage, Event<T>} = 99,
 
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
-		Tokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>},
+		Tokens: orml_tokens::{Pallet, Call, Storage, Event<T>, Config<T>},
 	}
 }
 
