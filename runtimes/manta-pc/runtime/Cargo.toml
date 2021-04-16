@@ -46,9 +46,9 @@ xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "rococo-v1" }
 
 # orml dependencies
-orml-currencies = { path = "../../../orml/currencies", default-features = false }
-orml-tokens = { path = "../../../orml/tokens", default-features = false }
-orml-traits = { path = "../../../orml/traits", default-features = false }
+orml-tokens = { package = "orml-tokens", git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
+orml-currencies = { package = "orml-currencies", git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
+orml-traits = { package = "orml-traits", git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
 
 [build-dependencies]
 substrate-wasm-builder = "3.0.0"

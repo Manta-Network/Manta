@@ -72,7 +72,7 @@ polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 
 # orml dependencies
-orml-tokens = { path = "../../orml/tokens", default-features = false }
+orml-tokens = { package = "orml-tokens", git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
