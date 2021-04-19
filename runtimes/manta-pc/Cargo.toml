@@ -6,7 +6,7 @@ build = "build.rs"
 edition = "2018"
 
 [[bin]]
-name = "manta"
+name = "manta-pc"
 path = "src/main.rs"
 
 [dependencies]
