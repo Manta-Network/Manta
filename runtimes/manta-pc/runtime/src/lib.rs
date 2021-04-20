@@ -76,10 +76,10 @@ impl_opaque_keys! {
 
 /// This runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("cumulus-test-parachain"),
-	impl_name: create_runtime_str!("cumulus-test-parachain"),
+	spec_name: create_runtime_str!("manta"),
+	impl_name: create_runtime_str!("manta"),
 	authoring_version: 1,
-	spec_version: 17,
+	spec_version: 1,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
