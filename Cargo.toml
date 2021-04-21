@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "runtimes/manta-pc",
     "runtimes/manta",
 ]
 
