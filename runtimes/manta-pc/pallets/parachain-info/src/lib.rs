@@ -18,9 +18,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{decl_module, decl_storage, traits::Get};
-
 use cumulus_primitives_core::ParaId;
+use frame_support::{decl_module, decl_storage, inherent::Vec, traits::Get};
 
 /// Configuration trait of this pallet.
 pub trait Config: frame_system::Config {}
@@ -34,6 +33,8 @@ impl<T: Config> Get<ParaId> for Module<T> {
 decl_storage! {
 	trait Store for Module<T: Config> as ParachainInfo {
 		ParachainId get(fn parachain_id) config(): ParaId = 100.into();
+		Version get(fn version_number) config(): u64 = 1;
+		Description get(fn description) config(): Vec<u8> = b"Manta Parachain".to_vec();
 	}
 }
 

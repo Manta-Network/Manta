@@ -27,7 +27,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{BlakeTwo256, Block as BlockT, IdentityLookup, Zero, AccountIdConversion},
+	traits::{AccountIdConversion, BlakeTwo256, Block as BlockT, IdentityLookup, Zero},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, ModuleId,
 };
@@ -48,7 +48,10 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
-use frame_system::{EnsureRoot, limits::{BlockLength, BlockWeights}};
+use frame_system::{
+	limits::{BlockLength, BlockWeights},
+	EnsureRoot,
+};
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
@@ -304,7 +307,7 @@ impl cumulus_spambot::Config for Runtime {
 }
 
 parameter_types! {
-    pub DustAccount: AccountId = ModuleId(*b"orml/dst").into_account();
+	pub DustAccount: AccountId = ModuleId(*b"orml/dst").into_account();
 }
 
 orml_traits::parameter_type_with_key! {
@@ -335,7 +338,6 @@ impl orml_currencies::Config for Runtime {
 	type GetNativeCurrencyId = GetNativeCurrencyId;
 	type WeightInfo = ();
 }
-
 
 construct_runtime! {
 	pub enum Runtime where

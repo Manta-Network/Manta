@@ -16,13 +16,13 @@
 
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use rococo_parachain_primitives::{AccountId, Signature, CurrencyId};
+use rococo_parachain_primitives::{AccountId, CurrencyId, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
+use serde_json::map::Map;
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use serde_json::map::Map;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<parachain_runtime::GenesisConfig, Extensions>;
@@ -146,17 +146,21 @@ fn testnet_genesis(
 				.collect(),
 		},
 		pallet_sudo: parachain_runtime::SudoConfig { key: root_key },
-		parachain_info: parachain_runtime::ParachainInfoConfig { parachain_id: id },
+		parachain_info: parachain_runtime::ParachainInfoConfig {
+			parachain_id: id,
+			description: b"manta-parachain".to_vec(),
+			version_number: 1,
+		},
 		orml_tokens: orml_tokens::module::GenesisConfig {
 			endowed_accounts: endowed_accounts
-			.iter()
-			.flat_map(|x| {
-				vec![
-					(x.clone(), CurrencyId::DOT, 10u128.pow(16)),
-					(x.clone(), CurrencyId::BTC, 10u128.pow(16)),
-				]
-			})
-			.collect(),
+				.iter()
+				.flat_map(|x| {
+					vec![
+						(x.clone(), CurrencyId::DOT, 10u128.pow(16)),
+						(x.clone(), CurrencyId::BTC, 10u128.pow(16)),
+					]
+				})
+				.collect(),
 		},
 	}
 }

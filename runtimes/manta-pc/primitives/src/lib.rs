@@ -17,16 +17,15 @@
 //! Primitives used by the Parachains Tick, Trick and Track.
 
 #![cfg_attr(not(feature = "std"), no_std)]
- 
-use codec::{Encode, Decode};
+
+use codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
 use sp_runtime::{
 	generic,
 	traits::{BlakeTwo256, IdentifyAccount, Verify},
-	MultiSignature,
-	RuntimeDebug,
+	MultiSignature, RuntimeDebug,
 };
 
 pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
