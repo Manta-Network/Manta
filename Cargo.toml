@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "runtimes/manta-pc",
+    "runtimes/manta",
 ]
 
 [profile.release]
