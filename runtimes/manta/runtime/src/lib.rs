@@ -6,6 +6,11 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+
+mod weights;
+pub mod constants;
+
+
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
@@ -23,6 +28,7 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+use constants::currency::*;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
@@ -264,6 +270,37 @@ impl pallet_sudo::Config for Runtime {
     type Call = Call;
 }
 
+
+parameter_types! {
+	pub const AssetDeposit: Balance = 100; // 100 DOT deposit to create asset
+    pub const AssetDepositPerZombie: Balance = 1; // 1 DOT deposit to hold an account
+	// pub const ApprovalDeposit: Balance = EXISTENTIAL_DEPOSIT;
+	pub const StringLimit: u32 = 50;
+	/// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
+	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
+	pub const MetadataDepositBase: Balance = deposit(1, 68);
+	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
+}
+
+impl pallet_assets::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type AssetId = u32;
+	type Currency = Balances;
+	// TODO: Change to proportion at least 60% (3/5) of Relay Chain Council.
+	// https://github.com/paritytech/statemint/issues/4
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type AssetDepositBase = AssetDeposit;
+    type AssetDepositPerZombie = ();
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	// type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = StringLimit;
+	// type Freezer = ();
+	// type Extra = ();
+	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -275,6 +312,7 @@ construct_runtime!(
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
         Aura: pallet_aura::{Module, Config<T>},
+        Assets: pallet_assets::{Module, Call, Storage, Event<T>},
         Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event},
         Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Module, Storage},
