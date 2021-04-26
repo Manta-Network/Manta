@@ -448,7 +448,7 @@ impl pallet_sudo::Config for Runtime {
     type Call = Call;
 }
 
-/// Assets
+// Assets
 parameter_types! {
 	pub const AssetDeposit: Balance = 100; // 100 DOT deposit to create asset
     pub const AssetDepositPerZombie: Balance = 1; // 1 DOT deposit to hold an account
