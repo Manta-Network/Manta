@@ -28,6 +28,7 @@ pub mod currency {
 }
 
 /// Fee-related.
+/// ZZ: Not used at the moment.
 pub mod fee {
 	use crate::Balance;
 	pub use sp_runtime::Perbill;

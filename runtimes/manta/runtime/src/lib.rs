@@ -526,12 +526,11 @@ construct_runtime!(
         // Core Component
         System: frame_system::{Module, Call, Config, Storage, Event<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
-
-        Assets: pallet_assets::{Module, Call, Storage, Event<T>},
         Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},       
         Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 
         // Token & Fees
+        Assets: pallet_assets::{Module, Call, Storage, Event<T>},
         Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Module, Storage},
 
