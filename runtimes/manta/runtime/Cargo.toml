@@ -53,8 +53,17 @@ pallet-timestamp = { default-features = false, version = '3.0.0' }
 pallet-transaction-payment = { default-features = false, version = '3.0.0' }
 pallet-transaction-payment-rpc-runtime-api = { default-features = false, version = '3.0.0' }
 
+
+# Manta Pay
+pallet-manta-pay = { branch = 'calamari', git = 'https://github.com/Manta-Network/pallet-manta-pay', default = false, default-features = false }
+
+
 [features]
 default = ['std']
+manta-lab = [
+    'pallet-manta-pay/std',
+    'std'
+]
 runtime-benchmarks = [
     'frame-benchmarking',
     'frame-support/runtime-benchmarks',
