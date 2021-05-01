@@ -55,7 +55,7 @@ pallet-transaction-payment-rpc-runtime-api = { default-features = false, version
 
 
 # Manta Pay
-pallet-manta-pay = { branch = 'calamari', git = 'https://github.com/Manta-Network/pallet-manta-pay', default = false, default-features = false }
+pallet-manta-pay = { branch = 'dependencies->crates.io', git = 'https://github.com/Manta-Network/pallet-manta-pay', optional = true, default-features = false }
 
 
 [features]
