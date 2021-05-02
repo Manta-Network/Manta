@@ -17,16 +17,19 @@ use sp_core::{
     OpaqueMetadata,
 };
 use sp_runtime::traits::{
-    AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, Verify,
-    OpaqueKeys,
+    AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, OpaqueKeys,
 };
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     transaction_validity::{TransactionSource, TransactionValidity, TransactionPriority, },
-    ApplyExtrinsicResult, MultiSignature, curve::PiecewiseLinear,
+    ApplyExtrinsicResult, curve::PiecewiseLinear,
 };
 use sp_std::prelude::*;
-use manta_primitives:*;
+use manta_primitives::{
+    BlockNumber, EPOCH_DURATION_IN_BLOCKS, Balance, Index, AccountId, Signature, Moment,
+    MILLISECS_PER_BLOCK, SLOT_DURATION, DAYS, EPOCH_DURATION_IN_SLOTS, Hash, 
+    PRIMARY_PROBABILITY,
+};
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;

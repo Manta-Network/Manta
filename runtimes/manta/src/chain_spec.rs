@@ -1,8 +1,9 @@
 use manta_runtime::{
-    AccountId, BabeConfig, Balance, BalancesConfig, GenesisConfig, GrandpaConfig, 
-    Signature, StakerStatus, SessionConfig, SudoConfig, SystemConfig, 
+    BabeConfig, BalancesConfig, GenesisConfig, GrandpaConfig, 
+     StakerStatus, SessionConfig, SudoConfig, SystemConfig, 
     StakingConfig, CouncilConfig, wasm_binary_unwrap, 
 };
+use manta_primitives::{AccountId, Balance, Signature,};
 use sc_service::ChainType;
 use sp_consensus_babe::{AuthorityId as BabeId};
 use sp_core::{sr25519, Pair, crypto::UncheckedInto, Public};
@@ -183,7 +184,7 @@ pub fn testnet_genesis(
 		}
 	);
 
-	const ENDOWMENT: Balance = 10_000_000 * manta_runtime::currency::DOLLARS;
+	const ENDOWMENT: Balance = 10_000_000 * manta_primitives::currency::DOLLARS;
 	const STASH: Balance = ENDOWMENT / 1000;
 
 	GenesisConfig {

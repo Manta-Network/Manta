@@ -3265,6 +3265,7 @@ dependencies = [
  "futures 0.3.14",
  "hex-literal",
  "jsonrpc-core",
+ "manta-primitives",
  "manta-runtime",
  "nix",
  "pallet-contracts-rpc",
@@ -3317,7 +3318,6 @@ version = "3.0.0"
 dependencies = [
  "sp-core",
  "sp-runtime",
- "substrate-wasm-builder",
 ]
 
 [[package]]

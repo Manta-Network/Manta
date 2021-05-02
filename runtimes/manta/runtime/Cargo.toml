@@ -54,7 +54,7 @@ pallet-transaction-payment = { default-features = false, version = '3.0.0' }
 pallet-transaction-payment-rpc-runtime-api = { default-features = false, version = '3.0.0' }
 
 # manta 
-manta-primitives = {path="../primitives", version = "3.0.0"}
+manta-primitives = {path="../primitives", default-features = false }
 
 [features]
 default = ['std']
