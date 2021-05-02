@@ -2,20 +2,17 @@
 
 //! Service implementation. Specialized wrapper over substrate service.
 
-use std::sync::Arc;
-use sc_consensus_babe;
-use manta_runtime::{RuntimeApi, opaque::Block};
-use sc_service::{
-	config::{Configuration}, error::{Error as ServiceError},
-	RpcHandlers, TaskManager,
-};
-use sp_inherents::InherentDataProviders;
-use sc_network::NetworkService;
-use sp_runtime::traits::Block as BlockT;
+use manta_runtime::{opaque::Block, RuntimeApi};
 use sc_client_api::{ExecutorProvider, RemoteBackend};
-use sc_telemetry::TelemetryConnectionNotifier;
-pub use sc_executor::NativeExecutor;
+use sc_consensus_babe;
 use sc_executor::native_executor_instance;
+pub use sc_executor::NativeExecutor;
+use sc_network::NetworkService;
+use sc_service::{config::Configuration, error::Error as ServiceError, RpcHandlers, TaskManager};
+use sc_telemetry::TelemetryConnectionNotifier;
+use sp_inherents::InherentDataProviders;
+use sp_runtime::traits::Block as BlockT;
+use std::sync::Arc;
 
 // Our native executor instance.
 native_executor_instance!(
@@ -32,23 +29,27 @@ type FullGrandpaBlockImport =
 	sc_finality_grandpa::GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>;
 type LightClient = sc_service::TLightClient<Block, RuntimeApi, Executor>;
 
-pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponents<
-	FullClient, FullBackend, FullSelectChain,
-	sp_consensus::DefaultImportQueue<Block, FullClient>,
-	sc_transaction_pool::FullPool<Block, FullClient>,
-	(
-		impl Fn(
-			crate::rpc::DenyUnsafe,
-			sc_rpc::SubscriptionTaskExecutor,
-		) -> crate::rpc::IoHandler,
+pub fn new_partial(
+	config: &Configuration,
+) -> Result<
+	sc_service::PartialComponents<
+		FullClient,
+		FullBackend,
+		FullSelectChain,
+		sp_consensus::DefaultImportQueue<Block, FullClient>,
+		sc_transaction_pool::FullPool<Block, FullClient>,
 		(
-			sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
-			sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
-			sc_consensus_babe::BabeLink<Block>,
+			impl Fn(crate::rpc::DenyUnsafe, sc_rpc::SubscriptionTaskExecutor) -> crate::rpc::IoHandler,
+			(
+				sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
+				sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
+				sc_consensus_babe::BabeLink<Block>,
+			),
+			sc_finality_grandpa::SharedVoterState,
 		),
-		sc_finality_grandpa::SharedVoterState,
-	)
->, ServiceError> {
+	>,
+	ServiceError,
+> {
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, Executor>(&config)?;
 	let client = Arc::new(client);
@@ -64,7 +65,9 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 	);
 
 	let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
-		client.clone(), &(client.clone() as Arc<_>), select_chain.clone(),
+		client.clone(),
+		&(client.clone() as Arc<_>),
+		select_chain.clone(),
 	)?;
 	let justification_import = grandpa_block_import.clone();
 
@@ -117,7 +120,7 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 				client: client.clone(),
 				pool: pool.clone(),
 				select_chain: select_chain.clone(),
-                chain_spec: chain_spec.cloned_box(),
+				chain_spec: chain_spec.cloned_box(),
 				deny_unsafe,
 				babe: crate::rpc::BabeDeps {
 					babe_config: babe_config.clone(),
@@ -133,7 +136,7 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 				},
 			};
 
-		    crate::rpc::create_full(deps)
+			crate::rpc::create_full(deps)
 		};
 
 		(rpc_extensions_builder, rpc_setup)
@@ -167,7 +170,7 @@ pub fn new_full_base(
 	with_startup_data: impl FnOnce(
 		&sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
 		&sc_consensus_babe::BabeLink<Block>,
-	)
+	),
 ) -> Result<NewFullBase, ServiceError> {
 	let sc_service::PartialComponents {
 		client,
@@ -183,12 +186,19 @@ pub fn new_full_base(
 
 	let shared_voter_state = rpc_setup;
 
-	config.network.extra_sets.push(sc_finality_grandpa::grandpa_peers_set_config());
+	config
+		.network
+		.extra_sets
+		.push(sc_finality_grandpa::grandpa_peers_set_config());
 
 	#[cfg(feature = "cli")]
-	config.network.request_response_protocols.push(sc_finality_grandpa_warp_sync::request_response_config_for_chain(
-		&config, task_manager.spawn_handle(), backend.clone(),
-	));
+	config.network.request_response_protocols.push(
+		sc_finality_grandpa_warp_sync::request_response_config_for_chain(
+			&config,
+			task_manager.spawn_handle(),
+			backend.clone(),
+		),
+	);
 
 	let (network, network_status_sinks, system_rpc_tx, network_starter) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
@@ -203,7 +213,11 @@ pub fn new_full_base(
 
 	if config.offchain_worker.enabled {
 		sc_service::build_offchain_workers(
-			&config, backend.clone(), task_manager.spawn_handle(), client.clone(), network.clone(),
+			&config,
+			backend.clone(),
+			task_manager.spawn_handle(),
+			client.clone(),
+			network.clone(),
 		);
 	}
 
@@ -215,8 +229,8 @@ pub fn new_full_base(
 	let enable_grandpa = !config.disable_grandpa;
 	let prometheus_registry = config.prometheus_registry().cloned();
 
-	let (_rpc_handlers, telemetry_connection_notifier) = sc_service::spawn_tasks(
-		sc_service::SpawnTasksParams {
+	let (_rpc_handlers, telemetry_connection_notifier) =
+		sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 			config,
 			backend: backend.clone(),
 			client: client.clone(),
@@ -229,8 +243,7 @@ pub fn new_full_base(
 			remote_blockchain: None,
 			network_status_sinks: network_status_sinks.clone(),
 			system_rpc_tx,
-		},
-	)?;
+		})?;
 
 	let (block_import, grandpa_link, babe_link) = import_setup;
 
@@ -262,7 +275,9 @@ pub fn new_full_base(
 		};
 
 		let babe = sc_consensus_babe::start_babe(babe_config)?;
-		task_manager.spawn_essential_handle().spawn_blocking("babe-proposer", babe);
+		task_manager
+			.spawn_essential_handle()
+			.spawn_blocking("babe-proposer", babe);
 	}
 
 	// if the node isn't actively participating in consensus then it doesn't
@@ -304,7 +319,7 @@ pub fn new_full_base(
 		// if it fails we take down the service with it.
 		task_manager.spawn_essential_handle().spawn_blocking(
 			"grandpa-voter",
-			sc_finality_grandpa::run_grandpa_voter(grandpa_config)?
+			sc_finality_grandpa::run_grandpa_voter(grandpa_config)?,
 		);
 	}
 
@@ -320,22 +335,32 @@ pub fn new_full_base(
 }
 
 /// Builds a new service for a full client.
-pub fn new_full(config: Configuration)
--> Result<TaskManager, ServiceError> {
-	new_full_base(config, |_, _| ()).map(|NewFullBase { task_manager, .. }| {
-		task_manager
-	})
+pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
+	new_full_base(config, |_, _| ()).map(|NewFullBase { task_manager, .. }| task_manager)
 }
 
-pub fn new_light_base(mut config: Configuration) -> Result<(
-	TaskManager, RpcHandlers, Option<TelemetryConnectionNotifier>, Arc<LightClient>,
-	Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
-	Arc<sc_transaction_pool::LightPool<Block, LightClient, sc_network::config::OnDemand<Block>>>
-), ServiceError> {
+pub fn new_light_base(
+	mut config: Configuration,
+) -> Result<
+	(
+		TaskManager,
+		RpcHandlers,
+		Option<TelemetryConnectionNotifier>,
+		Arc<LightClient>,
+		Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+		Arc<
+			sc_transaction_pool::LightPool<Block, LightClient, sc_network::config::OnDemand<Block>>,
+		>,
+	),
+	ServiceError,
+> {
 	let (client, backend, keystore_container, mut task_manager, on_demand) =
 		sc_service::new_light_parts::<Block, RuntimeApi, Executor>(&config)?;
 
-	config.network.extra_sets.push(sc_finality_grandpa::grandpa_peers_set_config());
+	config
+		.network
+		.extra_sets
+		.push(sc_finality_grandpa::grandpa_peers_set_config());
 
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
@@ -388,7 +413,11 @@ pub fn new_light_base(mut config: Configuration) -> Result<(
 
 	if config.offchain_worker.enabled {
 		sc_service::build_offchain_workers(
-			&config, backend.clone(), task_manager.spawn_handle(), client.clone(), network.clone(),
+			&config,
+			backend.clone(),
+			task_manager.spawn_handle(),
+			client.clone(),
+			network.clone(),
 		);
 	}
 
@@ -409,7 +438,10 @@ pub fn new_light_base(mut config: Configuration) -> Result<(
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
 			keystore: keystore_container.sync_keystore(),
-			config, backend, network_status_sinks, system_rpc_tx,
+			config,
+			backend,
+			network_status_sinks,
+			system_rpc_tx,
 			network: network.clone(),
 			task_manager: &mut task_manager,
 		})?;
@@ -426,9 +458,7 @@ pub fn new_light_base(mut config: Configuration) -> Result<(
 
 /// Builds a new service for a light client.
 pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
-	new_light_base(config).map(|(task_manager, _, _, _, _, _)| {
-		task_manager
-	})
+	new_light_base(config).map(|(task_manager, _, _, _, _, _)| task_manager)
 }
 
 /* #[cfg(test)]

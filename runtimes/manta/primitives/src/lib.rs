@@ -2,8 +2,11 @@
 #![allow(clippy::unnecessary_cast)]
 #![allow(clippy::upper_case_acronyms)]
 
-use sp_runtime::{generic, MultiSignature};
-use sp_runtime::traits::{Verify, IdentifyAccount};
+use sp_runtime::{
+	generic,
+	traits::{IdentifyAccount, Verify},
+	MultiSignature,
+};
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -33,14 +36,14 @@ pub type DigestItem = generic::DigestItem<Hash>;
 
 // Money matters.
 pub mod currency {
-    pub type Balance = u128;
-    pub const MILLICENTS: Balance = 1_000_000_000;
-    pub const CENTS: Balance = 1_000 * MILLICENTS;    // assume this is worth about a cent.
-    pub const DOLLARS: Balance = 100 * CENTS;
+	pub type Balance = u128;
+	pub const MILLICENTS: Balance = 1_000_000_000;
+	pub const CENTS: Balance = 1_000 * MILLICENTS; // assume this is worth about a cent.
+	pub const DOLLARS: Balance = 100 * CENTS;
 
-    pub const fn deposit(items: u32, bytes: u32) -> Balance {
-        items as Balance * 15 * CENTS + (bytes as Balance) * 6 * CENTS
-    }
+	pub const fn deposit(items: u32, bytes: u32) -> Balance {
+		items as Balance * 15 * CENTS + (bytes as Balance) * 6 * CENTS
+	}
 }
 
 /// This determines the average expected block time that we are targeting.
@@ -64,9 +67,9 @@ pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
 //       Attempting to do so will brick block production.
 pub const EPOCH_DURATION_IN_BLOCKS: BlockNumber = 10 * MINUTES;
 pub const EPOCH_DURATION_IN_SLOTS: u64 = {
-    const SLOT_FILL_RATE: f64 = MILLISECS_PER_BLOCK as f64 / SLOT_DURATION as f64;
+	const SLOT_FILL_RATE: f64 = MILLISECS_PER_BLOCK as f64 / SLOT_DURATION as f64;
 
-    (EPOCH_DURATION_IN_BLOCKS as f64 * SLOT_FILL_RATE) as u64
+	(EPOCH_DURATION_IN_BLOCKS as f64 * SLOT_FILL_RATE) as u64
 };
 
 // Time is measured by number of blocks.
