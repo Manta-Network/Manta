@@ -1,0 +1,21 @@
+[package]
+name = "manta-primitives"
+version = "3.0.0"
+edition = "2018"
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[build-dependencies]
+substrate-wasm-builder = '4.0.0'
+
+[dependencies]
+sp-core = { default-features = false, version = '3.0.0' }
+sp-runtime = { default-features = false, version = '3.0.0'}
+
+[features]
+default = ['std']
+std = [
+    'sp-core/std',
+    'sp-runtime/std',
+]
