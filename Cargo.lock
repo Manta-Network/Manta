@@ -3566,6 +3566,7 @@ dependencies = [
  "futures 0.3.14",
  "hex-literal",
  "jsonrpc-core",
+ "manta-primitives",
  "manta-runtime",
  "nix",
  "pallet-contracts-rpc",
@@ -3613,6 +3614,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "manta-primitives"
+version = "3.0.0"
+dependencies = [
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
 name = "manta-runtime"
 version = "3.0.0"
 dependencies = [
@@ -3623,6 +3632,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "hex-literal",
+ "manta-primitives",
  "pallet-authorship",
  "pallet-babe",
  "pallet-balances",
@@ -8330,7 +8340,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.7.3",
+ "rand 0.3.23",
  "static_assertions",
 ]
 
