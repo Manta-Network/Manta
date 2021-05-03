@@ -1,6 +1,6 @@
 # Manta
 
-Manta is a privacy preserving DeFi stack on Polkadot/Substrate.
+Manta is a privacy preserving DeFi stack on Polkadot/Substrate. The code currently hasn't been properly security audited (work in progress), use it at your own risk. 
 
 ## Manta Developement
 Currently, there are two developing branches:
@@ -9,6 +9,7 @@ Currently, there are two developing branches:
 
 ## Using DOCKER
 You can run manta nodes by docker.
+
 * Pull latest image.
 ```
 docker pull mantanetwork/manta:latest
