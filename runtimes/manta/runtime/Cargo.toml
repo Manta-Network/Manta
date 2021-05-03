@@ -53,16 +53,14 @@ pallet-timestamp = { default-features = false, version = '3.0.0' }
 pallet-transaction-payment = { default-features = false, version = '3.0.0' }
 pallet-transaction-payment-rpc-runtime-api = { default-features = false, version = '3.0.0' }
 
-
 # Manta Pay
 pallet-manta-pay = { branch = 'dependencies->crates.io', git = 'https://github.com/Manta-Network/pallet-manta-pay', optional = true, default-features = false }
 
-
 [features]
 default = ['std']
-manta-lab = [
-    'pallet-manta-pay/std',
-    'std'
+lab = [
+    'std',
+    'pallet-manta-pay/std'
 ]
 runtime-benchmarks = [
     'frame-benchmarking',
