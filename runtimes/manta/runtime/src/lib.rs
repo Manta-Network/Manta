@@ -478,6 +478,11 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
+
+impl pallet_manta_pay::Config for Runtime {
+	type Event = Event;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -509,6 +514,9 @@ construct_runtime!(
         // We have to have a council now since it requires one to setup the canceling of slashing
         Council: pallet_collective::<Instance1>::{Module, Call, Storage, Origin<T>, Event<T>, Config<T>},
         Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
+
+        // Manta pay
+        MantaPay: pallet_manta_pay::{Module, Call, Storage, Event<T>},
     }
 );
 
