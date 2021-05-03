@@ -1,0 +1,15 @@
+[package]
+name = "manta-primitives"
+version = "3.0.0"
+edition = "2018"
+
+[dependencies]
+sp-core = { default-features = false, version = '3.0.0' }
+sp-runtime = { default-features = false, version = '3.0.0'}
+
+[features]
+default = ['std']
+std = [
+    'sp-core/std',
+    'sp-runtime/std',
+]
