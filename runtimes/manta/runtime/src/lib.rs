@@ -293,13 +293,13 @@ pallet_staking_reward_curve::build! {
 }
 
 parameter_types! {
-	pub const SessionsPerEra: sp_staking::SessionIndex = 6; // 6 hours
-	pub const BondingDuration: pallet_staking::EraIndex = 24 * 28; // 28 day
-	pub const SlashDeferDuration: pallet_staking::EraIndex = 24 * 7; // 1/4 the bonding duration.
+	pub const SessionsPerEra: sp_staking::SessionIndex = 1; // previous value: 6, 6 hours
+	pub const BondingDuration: pallet_staking::EraIndex = 4;  // 24 * 28; // 28 day
+	pub const SlashDeferDuration: pallet_staking::EraIndex = 1; // 24 * 7; // 1/4 the bonding duration.
 	pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
 	pub const MaxNominatorRewardedPerValidator: u32 = 256; // only top N nominators get paid for each validator
     pub const ElectionLookahead: BlockNumber = EPOCH_DURATION_IN_BLOCKS / 4; // from Reef
-	pub const MaxIterations: u32 = 5; // from Reef
+	pub const MaxIterations: u32 = 10; 
     // 0.05%. The higher the value, the more strict solution acceptance becomes.
 	pub MinSolutionScoreBump: Perbill = Perbill::from_rational_approximation(5 as u32, 10_000);
 	// offchain tx signing
@@ -488,23 +488,27 @@ construct_runtime!(
         // Core Component
         System: frame_system::{Module, Call, Config, Storage, Event<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
+        
+        // Must be before session
+        Babe: pallet_babe::{Module, Call, Storage, Config, ValidateUnsigned},
+        
         Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},       
-        Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 
         // Token & Fees
         Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Module, Storage},
 
-        // Consensus
+        // Consensus support
         Authorship: pallet_authorship::{Module, Call, Storage, Inherent},
         Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event},
         Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
         Staking: pallet_staking::{Module, Call, Config<T>, Storage, Event<T>},
-        Babe: pallet_babe::{Module, Call, Storage, Config, ValidateUnsigned},
         Historical: pallet_session_historical::{Module},
         
         // Governance
+        // We have to have a council now since it requires one to setup the canceling of slashing
         Council: pallet_collective::<Instance1>::{Module, Call, Storage, Origin<T>, Event<T>, Config<T>},
+        Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
     }
 );
 
