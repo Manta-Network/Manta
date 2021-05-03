@@ -38,4 +38,3 @@ pub type DigestItem = generic::DigestItem<Hash>;
 
 // Moment
 pub type Moment = u64;
-

@@ -1,5 +1,5 @@
 use hex_literal::hex;
-use manta_primitives::{AccountId, Balance, Signature, constants::currency::DOLLARS};
+use manta_primitives::{constants::currency::MA, AccountId, Balance, Signature};
 use manta_runtime::{
 	wasm_binary_unwrap, BabeConfig, BalancesConfig, CouncilConfig, GenesisConfig, GrandpaConfig,
 	SessionConfig, StakerStatus, StakingConfig, SudoConfig, SystemConfig,
@@ -185,7 +185,7 @@ pub fn testnet_genesis(
 		}
 	});
 
-	const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
+	const ENDOWMENT: Balance = 10_000_000 * MA;
 	const STASH: Balance = ENDOWMENT / 1000;
 
 	GenesisConfig {
