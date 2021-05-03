@@ -4312,7 +4312,7 @@ dependencies = [
 [[package]]
 name = "pallet-manta-pay"
 version = "3.0.0"
-source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=dependencies->crates.io#f089927ad110f4168075b5b3224505a702d90511"
+source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#8174efbfbb437d25b5d3291bbed83d6b63aed80a"
 dependencies = [
  "aes 0.7.0",
  "ark-bls12-381",
