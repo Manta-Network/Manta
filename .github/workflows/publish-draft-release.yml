@@ -1,0 +1,73 @@
+name: publish draft release
+
+on:
+  push:
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+-draft
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+
+  get-rust-versions:
+    runs-on: ubuntu-latest
+    container:
+      image: paritytech/ci-linux:production
+    outputs:
+      rustc-stable: ${{ steps.get-rust-versions.outputs.stable }}
+      rustc-nightly: ${{ steps.get-rust-versions.outputs.nightly }}
+    steps:
+      - id: get-rust-versions
+        run: |
+          echo "::set-output name=stable::$(rustc +stable --version)"
+          echo "::set-output name=nightly::$(rustc +nightly --version)"
+
+  build-runtimes:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runtime:
+          - rococo
+          - kusama
+    container:
+      image: paritytech/srtool:nightly-2021-03-15
+      volumes:
+        - ${{ github.workspace }}:/build
+      env:
+        PACKAGE: ${{ matrix.runtime }}-runtime
+        RUSTC_VERSION: nightly-2020-10-27
+    steps:
+      - uses: actions/checkout@v2
+      - name: cache target dir
+        uses: actions/cache@v2
+        with:
+          path: '${{ github.workspace }}/target'
+          key: srtool-target-${{ matrix.runtime }}-${{ github.sha }}
+          restore-keys: |
+            srtool-target-${{ matrix.runtime }}-
+            srtool-target-
+      - name: build ${{ matrix.runtime }} runtime
+        id: build-runtime
+        shell: bash
+        env:
+          srtool_output_filename: ${{ matrix.runtime }}_srtool_output.json
+        run: |
+          cd /build
+          pwd
+          ls -la
+          build --json | tee $srtool_output_filename
+          cat $srtool_output_filename
+          while IFS= read -r line; do
+            echo "::set-output name=$line::$(jq -r ".$line" < $srtool_output_filename)"
+          done <<< "$(jq -r 'keys[]' < $srtool_output_filename)"
+      - name: upload ${{ matrix.runtime }} srtool json
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.runtime }}-srtool-json
+          path: ${{ matrix.runtime }}_srtool_output.json
+      - name: upload ${{ matrix.runtime }} runtime
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.runtime }}-runtime
+          path: "${{ steps.build-runtime.outputs.wasm }}"
