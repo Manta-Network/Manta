@@ -54,13 +54,12 @@ pallet-transaction-payment = { default-features = false, version = '3.0.0' }
 pallet-transaction-payment-rpc-runtime-api = { default-features = false, version = '3.0.0' }
 
 # Manta Pay
-pallet-manta-pay = { branch = 'dependencies->crates.io', git = 'https://github.com/Manta-Network/pallet-manta-pay', optional = true, default-features = false }
+# todo: update the branch dependency to calamari once this branch is merged
+pallet-manta-pay = { branch = 'dependencies->crates.io', git = 'https://github.com/Manta-Network/pallet-manta-pay', default-features = false }
 
 [features]
-default = ['std']
-lab = [
-    'std',
-    'pallet-manta-pay/std'
+default = [
+    'std', 
 ]
 runtime-benchmarks = [
     'frame-benchmarking',
@@ -83,6 +82,7 @@ std = [
     'pallet-balances/std',
     'pallet-collective/std',
     'pallet-grandpa/std',
+    'pallet-manta-pay/std',
     'pallet-randomness-collective-flip/std',
     "pallet-session/std",
     'pallet-staking/std',
