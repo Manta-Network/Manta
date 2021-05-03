@@ -7,6 +7,47 @@ Currently, there are two developing branches:
 * `manta`: Manta Network's testnet/mainnet node
 * `manta-pc`: Manta Network's parachain node
 
+## Using DOCKER
+You can run manta nodes by docker.
+* Pull latest image.
+```
+docker pull mantanetwork/manta:latest
+```
+
+* Run one dev node locally.
+```
+docker run -it -p 9944:9944 mantanetwork/manta:latest --dev --unsafe-ws-external
+```
+
+* Run two nodes locally.
+```
+# Alice node
+docker run \
+-p 9944:9944 \
+-p 30333:30333 \
+--name=alice mantanetwork/manta:latest \
+--unsafe-ws-external \
+--tmp \
+--alice \
+--node-key 0000000000000000000000000000000000000000000000000000000000000001 \
+--validator
+
+# Bob node
+docker run \
+-p 9945:9944 \
+--name=bob mantanetwork/manta:latest \
+--bootnodes /ip4/127.0.0.1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp \
+--unsafe-ws-external \
+--bob \
+--validator
+```
+Normally, both nodes will produce and finalize blocks.
+
+* Connect to manta testnet.
+```
+docker run mantanetwork/manta:latest --chain manta --name "ILoveManta"
+```
+
 ## Contributing
 * use `[Manta]` as the prefix to submit a PR to `manta` branch, use `[Manta-PC]` as the prefix to submit a PR to `manta-pc` branch.
 * please submit your code through PR.
