@@ -12,9 +12,9 @@ use pallet_grandpa::{
 use pallet_session::historical as pallet_session_historical;
 
 use manta_primitives::{
-	AccountId, Balance, BlockNumber, Hash, Index, Moment, Signature, DAYS,
-	EPOCH_DURATION_IN_BLOCKS, EPOCH_DURATION_IN_SLOTS, MILLISECS_PER_BLOCK, PRIMARY_PROBABILITY,
-	SLOT_DURATION,
+	AccountId, Balance, BlockNumber, Hash, Index, Moment, Signature, 
+    constants::time::{DAYS, EPOCH_DURATION_IN_BLOCKS, EPOCH_DURATION_IN_SLOTS, 
+        MILLISECS_PER_BLOCK, PRIMARY_PROBABILITY, SLOT_DURATION},
 };
 use sp_api::impl_runtime_apis;
 use sp_core::{
