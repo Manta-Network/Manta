@@ -66,6 +66,7 @@ substrate-frame-rpc-system = '3.0.0'
 
 # local dependencies
 manta-runtime = { path = './runtime', version = '3.0.0' }
+manta-primitives = { path = './primitives', default-features = false }
 
 [features]
 default = []
