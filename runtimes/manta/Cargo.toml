@@ -20,7 +20,7 @@ substrate-build-script-utils = '3.0.0'
 [dependencies]
 jsonrpc-core = '15.1.0'
 structopt = '0.3.8'
-rand = "0.7.2"
+rand = "0.8.3"
 hex-literal = '0.3.1'
 serde = { version = "1.0.102", features = ["derive"] }
 
@@ -65,6 +65,7 @@ substrate-frame-rpc-system = '3.0.0'
 
 # local dependencies
 manta-runtime = { path = './runtime', version = '3.0.0' }
+manta-primitives = { path = './primitives', default-features = false }
 
 [features]
 default = []
