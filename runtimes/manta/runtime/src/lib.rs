@@ -414,38 +414,46 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
+
+impl pallet_manta_pay::Config for Runtime {
+	type Event = Event;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
-	pub enum Runtime where
-		Block = Block,
-		NodeBlock = opaque::Block,
-		UncheckedExtrinsic = UncheckedExtrinsic
-	{
-		// Core Component
-		System: frame_system::{Module, Call, Config, Storage, Event<T>},
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
+    pub enum Runtime where
+        Block = Block,
+        NodeBlock = opaque::Block,
+        UncheckedExtrinsic = UncheckedExtrinsic
+    {
+        // Core Component
+        System: frame_system::{Module, Call, Config, Storage, Event<T>},
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
+        
+        // Must be before session
+        Babe: pallet_babe::{Module, Call, Storage, Config, ValidateUnsigned},
+        
+        Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},       
 
-		// Must be before session
-		Babe: pallet_babe::{Module, Call, Storage, Config, ValidateUnsigned},
+        // Token & Fees
+        Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
+        TransactionPayment: pallet_transaction_payment::{Module, Storage},
 
-		Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
+        // Consensus support
+        Authorship: pallet_authorship::{Module, Call, Storage, Inherent},
+        Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event},
+        Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
+        Staking: pallet_staking::{Module, Call, Config<T>, Storage, Event<T>},
+        Historical: pallet_session_historical::{Module},
+        
+        // Governance
+        // We have to have a council now since it requires one to setup the canceling of slashing
+        Council: pallet_collective::<Instance1>::{Module, Call, Storage, Origin<T>, Event<T>, Config<T>},
+        Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 
-		// Token & Fees
-		Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
-		TransactionPayment: pallet_transaction_payment::{Module, Storage},
-
-		// Consensus support
-		Authorship: pallet_authorship::{Module, Call, Storage, Inherent},
-		Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event},
-		Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
-		Staking: pallet_staking::{Module, Call, Config<T>, Storage, Event<T>},
-		Historical: pallet_session_historical::{Module},
-
-		// Governance
-		// We have to have a council now since it requires one to setup the canceling of slashing
-		Council: pallet_collective::<Instance1>::{Module, Call, Storage, Origin<T>, Event<T>, Config<T>},
-		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
-	}
+        // Manta pay
+        MantaPay: pallet_manta_pay::{Module, Call, Storage, Event<T>},
+    }
 );
 
 /// The address format for describing accounts.
