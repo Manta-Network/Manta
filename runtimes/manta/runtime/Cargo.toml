@@ -45,6 +45,7 @@ pallet-balances = { default-features = false, version = '3.0.0' }
 pallet-collective = { default-features = false, version = '3.0.0' }
 pallet-grandpa = { default-features = false, version = '3.0.0' }
 pallet-randomness-collective-flip = { default-features = false, version = '3.0.0' }
+pallet-scheduler = { version = "3.0.0", default-features = false }
 pallet-session = { version = "3.0.0", features = ["historical"], default-features = false }
 pallet-staking = { default-features = false, version = "3.0.0" }
 pallet-staking-reward-curve = { default-features = false, version = "3.0.0" }
@@ -86,6 +87,7 @@ std = [
     'pallet-grandpa/std',
     'pallet-manta-pay/std',
     'pallet-randomness-collective-flip/std',
+    "pallet-scheduler/std",
     "pallet-session/std",
     'pallet-staking/std',
     'pallet-sudo/std',
