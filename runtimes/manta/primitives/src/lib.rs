@@ -1,12 +1,17 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::unnecessary_cast)]
 #![allow(clippy::upper_case_acronyms)]
-
+use codec::{Encode, Decode};
 use sp_runtime::{
 	generic,
 	traits::{IdentifyAccount, Verify},
-	MultiSignature,
+	MultiSignature, RuntimeDebug
 };
+
+use sp_std::convert::Into; // TODO: add TryFrom and TryInto
+
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 pub mod constants;
 
@@ -39,3 +44,9 @@ pub type DigestItem = generic::DigestItem<Hash>;
 // Moment
 pub type Moment = u64;
 
+// now we only have MA
+#[derive(Encode, Decode, Eq, PartialEq, Copy, Clone, RuntimeDebug, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum TokenSymbol {
+	MA = 0,
+}

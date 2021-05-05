@@ -3617,8 +3617,11 @@ dependencies = [
 name = "manta-primitives"
 version = "3.0.0"
 dependencies = [
+ "parity-scale-codec",
+ "serde",
  "sp-core",
  "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]

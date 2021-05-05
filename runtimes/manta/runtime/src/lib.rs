@@ -12,9 +12,11 @@ use pallet_grandpa::{
 use pallet_session::historical as pallet_session_historical;
 
 use manta_primitives::{
-	AccountId, Balance, BlockNumber, Hash, Index, Moment, Signature, 
-    constants::time::{DAYS, EPOCH_DURATION_IN_BLOCKS, EPOCH_DURATION_IN_SLOTS, 
-        MILLISECS_PER_BLOCK, PRIMARY_PROBABILITY, SLOT_DURATION},
+	constants::time::{
+		DAYS, EPOCH_DURATION_IN_BLOCKS, EPOCH_DURATION_IN_SLOTS, MILLISECS_PER_BLOCK,
+		PRIMARY_PROBABILITY, SLOT_DURATION,
+	},
+	AccountId, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
 use sp_api::impl_runtime_apis;
 use sp_core::{
@@ -93,7 +95,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 100,
+	spec_version: 1,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
