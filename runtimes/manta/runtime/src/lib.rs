@@ -12,9 +12,11 @@ use pallet_grandpa::{
 use pallet_session::historical as pallet_session_historical;
 
 use manta_primitives::{
-	AccountId, Balance, BlockNumber, Hash, Index, Moment, Signature, 
-    constants::time::{DAYS, EPOCH_DURATION_IN_BLOCKS, EPOCH_DURATION_IN_SLOTS, 
-        MILLISECS_PER_BLOCK, PRIMARY_PROBABILITY, SLOT_DURATION},
+	constants::time::{
+		DAYS, EPOCH_DURATION_IN_BLOCKS, EPOCH_DURATION_IN_SLOTS, MILLISECS_PER_BLOCK,
+		PRIMARY_PROBABILITY, SLOT_DURATION,
+	},
+	AccountId, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
 use sp_api::impl_runtime_apis;
 use sp_core::{
@@ -93,7 +95,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 100,
+	spec_version: 1,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -377,9 +379,29 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
+parameter_types! {
+	// The maximum weight that may be scheduled per block for any 
+	// dispatchables of less priority than schedule::HARD_DEADLINE.
+	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+        BlockWeights::get().max_block;
+	// The maximum number of scheduled calls in the queue for a single block. 
+	// Not strictly enforced, but used for weight estimation.
+	pub const MaxScheduledPerBlock: u32 = 50;
+}
+
+impl pallet_scheduler::Config for Runtime {
+	type Event = Event;
+	type Origin = Origin;
+	type PalletsOrigin = OriginCaller;
+	type Call = Call;
+	type MaximumWeight = MaximumSchedulerWeight;
+	type ScheduleOrigin = EnsureRoot<AccountId>;
+	type MaxScheduledPerBlock = MaxScheduledPerBlock;
+	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
+}
+
 impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
-where
-	Call: From<C>,
+	where Call: From<C>,
 {
 	type Extrinsic = UncheckedExtrinsic;
 	type OverarchingCall = Call;
@@ -438,6 +460,7 @@ construct_runtime!(
         // Token & Fees
         Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Module, Storage},
+        Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
 
         // Consensus support
         Authorship: pallet_authorship::{Module, Call, Storage, Inherent},

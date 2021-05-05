@@ -1,10 +1,10 @@
 use hex_literal::hex;
-use manta_primitives::{AccountId, Balance, Signature, constants::currency::DOLLARS};
+use manta_primitives::{constants::currency::MA, AccountId, Balance, Signature};
 use manta_runtime::{
 	wasm_binary_unwrap, BabeConfig, BalancesConfig, CouncilConfig, GenesisConfig, GrandpaConfig,
 	SessionConfig, StakerStatus, StakingConfig, SudoConfig, SystemConfig,
 };
-use sc_service::ChainType;
+use sc_service::{ChainType, Properties};
 use sc_telemetry::TelemetryEndpoints;
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
@@ -156,6 +156,15 @@ pub fn authority_keys_from_seed(seed: &str) -> (AccountId, AccountId, GrandpaId,
 	)
 }
 
+/// Token
+pub fn manta_properties() -> Properties {
+	let mut p = Properties::new();
+	p.insert("ss58format".into(), 77.into());
+	p.insert("tokenDecimals".into(), 12.into());
+	p.insert("tokenSymbol".into(), "MA".into());
+	p
+}
+
 /// Helper function to create GenesisConfig for testing
 pub fn testnet_genesis(
 	initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)>,
@@ -170,13 +179,11 @@ pub fn testnet_genesis(
 			get_account_id_from_seed::<sr25519::Public>("Charlie"),
 			get_account_id_from_seed::<sr25519::Public>("Dave"),
 			get_account_id_from_seed::<sr25519::Public>("Eve"),
-			get_account_id_from_seed::<sr25519::Public>("Ferdie"),
 			get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 			get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 			get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
 			get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
 			get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-			get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 		]
 	});
 	initial_authorities.iter().for_each(|x| {
@@ -185,7 +192,7 @@ pub fn testnet_genesis(
 		}
 	});
 
-	const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
+	const ENDOWMENT: Balance = 100_000_000 * MA; // 10 endowment so that total supply is 1B
 	const STASH: Balance = ENDOWMENT / 1000;
 
 	GenesisConfig {
@@ -253,7 +260,7 @@ pub fn development_config() -> ChainSpec {
 		vec![],
 		None,
 		None,
-		None,
+		Some(manta_properties()),
 		Default::default(),
 	)
 }
@@ -280,7 +287,7 @@ pub fn local_testnet_config() -> ChainSpec {
 		vec![],
 		None,
 		None,
-		None,
+		Some(manta_properties()),
 		Default::default(),
 	)
 }
