@@ -316,6 +316,68 @@ pub fn manta_testnet_config() -> ChainSpec {
 	)
 }
 
+/// Helper function to create GenesisConfig for manta testnets
+pub fn manta_testnet_config_genesis(
+	initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)>,
+	root_key: AccountId,
+	mut endowed_accounts: Vec<AccountId>,
+	_enable_println: bool,
+) -> GenesisConfig {
+	initial_authorities.iter().for_each(|x| {
+		if !endowed_accounts.contains(&x.0) {
+			endowed_accounts.push(x.0.clone())
+		}
+	});
+
+	const ENDOWMENT: Balance = 100_000_000 * MA; // 10 endowment so that total supply is 1B
+	const STASH: Balance = ENDOWMENT / 1000;
+
+	GenesisConfig {
+		frame_system: Some(SystemConfig {
+			code: wasm_binary_unwrap().to_vec(),
+			changes_trie_config: Default::default(),
+		}),
+		pallet_balances: Some(BalancesConfig {
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|x| (x, ENDOWMENT))
+				.collect(),
+		}),
+		pallet_session: Some(SessionConfig {
+			keys: initial_authorities
+				.iter()
+				.map(|x| {
+					(
+						x.0.clone(),
+						x.0.clone(),
+						session_keys(x.2.clone(), x.3.clone()),
+					)
+				})
+				.collect::<Vec<_>>(),
+		}),
+		pallet_staking: Some(StakingConfig {
+			validator_count: initial_authorities.len() as u32 * 2,
+			minimum_validator_count: initial_authorities.len() as u32,
+			stakers: initial_authorities
+				.iter()
+				.map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
+				.collect(),
+			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
+			slash_reward_fraction: Perbill::from_percent(10),
+			..Default::default()
+		}),
+		pallet_collective_Instance1: Some(CouncilConfig::default()),
+		pallet_sudo: Some(SudoConfig { key: root_key }),
+		pallet_babe: Some(BabeConfig {
+			authorities: vec![],
+		}),
+		pallet_grandpa: Some(GrandpaConfig {
+			authorities: vec![],
+		}),
+	}
+}
+
 /// Manta runtime genesis
 pub fn manta_testnet_genesis() -> GenesisConfig {
 	let initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)> = vec![(
@@ -372,10 +434,10 @@ pub fn manta_testnet_genesis() -> GenesisConfig {
 
 	let endowed_accounts: Vec<AccountId> = vec![root_key.clone()];
 
-	testnet_genesis(
+	manta_testnet_config_genesis(
 		initial_authorities,
 		root_key,
-		Some(endowed_accounts),
+		endowed_accounts,
 		false,
 	)
 }
