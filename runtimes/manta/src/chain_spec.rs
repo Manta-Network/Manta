@@ -294,23 +294,6 @@ pub fn local_testnet_config() -> ChainSpec {
 
 /// Manta testnet config
 pub fn manta_testnet_config() -> ChainSpec {
-	let properties = {
-		let mut props = serde_json::Map::new();
-
-		props.insert(
-			"ss58Format".to_owned(),
-			serde_json::value::to_value(77u8).expect("The ss58Format cannot be convert to json value.")
-		);
-		props.insert(
-			"tokenDecimals".to_owned(),
-			serde_json::value::to_value(12u8).expect("The tokenDecimals cannot be convert to json value.")
-		);
-		props.insert(
-			"tokenSymbol".to_owned(),
-			serde_json::value::to_value("MA".to_owned()).expect("The tokenSymbol cannot be convert to json value.")
-		);
-		Some(props)
-	};
 	let protocol_id = Some("manta");
 
 	ChainSpec::from_genesis(
@@ -319,16 +302,16 @@ pub fn manta_testnet_config() -> ChainSpec {
 		ChainType::Custom("Manta Testnet".into()),
 		manta_testnet_genesis,
 		vec![
-			"/dns/n1.testnet.manta.network/tcp/30333/p2p/12D3KooWAHnqW3nBWTZRv6QmgkUjtRtj9H73VnLusbQNb56P34my".parse().expect("failed to parse multiaddress."),
-			"/dns/n2.testnet.manta.network/tcp/30333/p2p/12D3KooWAHnqW3nBWTZRv6QmgkUjtRtj9H73VnLusbQNb56P34my".parse().expect("failed to parse multiaddress."),
-			"/dns/n3.testnet.manta.network/tcp/30333/p2p/12D3KooWAHnqW3nBWTZRv6QmgkUjtRtj9H73VnLusbQNb56P34my".parse().expect("failed to parse multiaddress."),
-			"/dns/n4.testnet.manta.network/tcp/30333/p2p/12D3KooWAHnqW3nBWTZRv6QmgkUjtRtj9H73VnLusbQNb56P34my".parse().expect("failed to parse multiaddress."),
-			"/dns/n5.testnet.manta.network/tcp/30333/p2p/12D3KooWAHnqW3nBWTZRv6QmgkUjtRtj9H73VnLusbQNb56P34my".parse().expect("failed to parse multiaddress."),
+			"/dns/n1.testnet.manta.network/tcp/30333/p2p/12D3KooWFRNPGJAp79cB2gnXw7siWuJ9jhtsNinshpAZdWSynaxG".parse().expect("failed to parse multiaddress."),
+			"/dns/n2.testnet.manta.network/tcp/30333/p2p/12D3KooWGYNqfygPoFLpKbv7791ve9H4Jhc4tCgvfB1p8GBdGtpt".parse().expect("failed to parse multiaddress."),
+			"/dns/n3.testnet.manta.network/tcp/30333/p2p/12D3KooWLKHG1MJPBXhvqfPwZEQAxxePJhDebFtmsN38YcbZnv1N".parse().expect("failed to parse multiaddress."),
+			"/dns/n4.testnet.manta.network/tcp/30333/p2p/12D3KooWE3Cw79A67CBSyqs7QCm3sonUkBjLgPdYgTXkXxQ5qoJ6".parse().expect("failed to parse multiaddress."),
+			"/dns/n5.testnet.manta.network/tcp/30333/p2p/12D3KooWJMa6dwoaAnV7dK9jNKAF6bBGGzN8t6ZHwdWbLGAK13VD".parse().expect("failed to parse multiaddress."),
 		],
 		Some(TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
 			.expect("Manta testnet telemetry url is valid; qed")),
 		protocol_id,
-		properties,
+		Some(manta_properties()),
 		Default::default(),
 	)
 }
@@ -336,50 +319,50 @@ pub fn manta_testnet_config() -> ChainSpec {
 /// Manta runtime genesis
 pub fn manta_testnet_genesis() -> GenesisConfig {
 	let initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)> = vec![(
-		// 5Fbsd6WXDGiLTxunqeK5BATNiocfCqu9bS1yArVjCgeBLkVy
-		hex!["9c7a2ee14e565db0c69f78c7b4cd839fbf52b607d867e9e9c5a79042898a0d12"].into(),
-		// 5EnCiV7wSHeNhjW3FSUwiJNkcc2SBkPLn5Nj93FmbLtBjQUq
-		hex!["781ead1e2fa9ccb74b44c19d29cb2a7a4b5be3972927ae98cd3877523976a276"].into(),
-		// 5Fb9ayurnxnaXj56CjmyQLBiadfRCqUbL2VWNbbe1nZU6wiC
-		hex!["9becad03e6dcac03cee07edebca5475314861492cdfc96a2144a67bbe9699332"].unchecked_into(),
-		// 5EZaeQ8djPcq9pheJUhgerXQZt9YaHnMJpiHMRhwQeinqUW8
-		hex!["6e7e4eb42cbd2e0ab4cae8708ce5509580b8c04d11f6758dbf686d50fe9f9106"].unchecked_into(),
+		// 5CLaV11XQy59GPZB21UE6zb1tKhTBawCoAz8s3L3CQyzHCSW
+		hex!["0c1b1ad2c897337fbcb8261f2766e385c149a0fad5a9303ea27f406bdda2cf72"].into(),
+		// 5FhRySXhSrcd6w7uZ2ryz4hHmuHr5nXVqD4crtG9o17EvNUi
+		hex!["a0b7500507098b22cf9b261d69e5605ba9d6e2e4e10c85aaf50f34fa7798a251"].into(),
+		// 5H5njqSv5aBm5TCbAc1VYwbGw6q8Mohaf3tZ5h3ApuRdRyGD
+		hex!["de00d8fca87bd66ff4566874b5f0bd232fe6ff6276dd7e14fdac23005f664647"].unchecked_into(),
+		// 5FTnNtYxBYzjXMS9oqNcPD1ScAGrXwvuSKpphD5Q7vpb56XX
+		hex!["964e9059b2677f757a6976f0d4e15585b8bf2c2f769ac72de20e930737f4ed65"].unchecked_into(),
 	),(
-		// 5ERawXCzCWkjVq3xz1W5KGNtVx2VdefvZ62Bw1FEuZW4Vny2
-		hex!["68655684472b743e456907b398d3a44c113f189e56d1bbfd55e889e295dfde78"].into(),
-		// 5Gc4vr42hH1uDZc93Nayk5G7i687bAQdHHc9unLuyeawHipF
-		hex!["c8dc79e36b29395413399edaec3e20fcca7205fb19776ed8ddb25d6f427ec40e"].into(),
-		// 5EockCXN6YkiNCDjpqqnbcqd4ad35nU4RmA1ikM4YeRN4WcE
-		hex!["7932cff431e748892fa48e10c63c17d30f80ca42e4de3921e641249cd7fa3c2f"].unchecked_into(),
-		// 5DhLtiaQd1L1LU9jaNeeu9HJkP6eyg3BwXA7iNMzKm7qqruQ
-		hex!["482dbd7297a39fa145c570552249c2ca9dd47e281f0c500c971b59c9dcdcd82e"].unchecked_into(),
+		// 5ECdWXoajbBzXnNNJUsWbd87asfd91DXvyr8h3yTckqkkrQe
+		hex!["5e83cbd41580114906bbd48a490583600b0602ee1282bbc0566168e783cf1e5b"].into(),
+		// 5HMdkZ2KafZoUPvTNT8AKtFSYmvhm1PWqJpPjdn6Lx5Uk2Bg
+		hex!["ea1684dbca873d09ddfe3a8f8214d9cbcd4cb94e8cd374d87e0a4d593c63ab73"].into(),
+		// 5CTEg9Q6B6jj83gNCmZvHRRdeJnPjmCrnrPES5biCLS3WhiU
+		hex!["112f24b86854efef1d1b92875cc267a401951a16b51792a69aab4f9ecbd339f8"].unchecked_into(),
+		// 5EjTnDdktF8ZgbqAuTGFVgtAQyjxgFN4BTqp4geZxXr9d6Wu
+		hex!["7607a6b48581d2282d81d635e4674dcafc53236c1bd6fc5ff39251ae8d365e32"].unchecked_into(),
 	),(
-		// 5DyVtKWPidondEu8iHZgi6Ffv9yrJJ1NDNLom3X9cTDi98qp
-		hex!["547ff0ab649283a7ae01dbc2eb73932eba2fb09075e9485ff369082a2ff38d65"].into(),
-		// 5FeD54vGVNpFX3PndHPXJ2MDakc462vBCD5mgtWRnWYCpZU9
-		hex!["9e42241d7cd91d001773b0b616d523dd80e13c6c2cab860b1234ef1b9ffc1526"].into(),
-		// 5E1jLYfLdUQKrFrtqoKgFrRvxM3oQPMbf6DfcsrugZZ5Bn8d
-		hex!["5633b70b80a6c8bb16270f82cca6d56b27ed7b76c8fd5af2986a25a4788ce440"].unchecked_into(),
-		// 5DhKqkHRkndJu8vq7pi2Q5S3DfftWJHGxbEUNH43b46qNspH
-		hex!["482a3389a6cf42d8ed83888cfd920fec738ea30f97e44699ada7323f08c3380a"].unchecked_into(),
+		// 5HNNQDebQfujeHZpXpLGBodFmJQxPeS1juawk5f9LoJugeKs
+		hex!["eaa616f6a5066ab2235461cab26f6cfec2346700faf4d68015d42ba56d78b243"].into(),
+		// 5DZiYEs5p329TwvTEawrEaxsFHEkqoYXx7chVwoaHNsnKMWV
+		hex!["425ca59967074f1dd40304886415b299190c10e502af269728f21b8322aa4c75"].into(),
+		// 5GJDKqEEtJ2Gmz6gpFq886Rsbye8zT4T7fa2Xeykp84pZgfo
+		hex!["bb3e52c626af37a5e38be4d32f4676e1b6a7dc72dd2ebf4c00311b0ab3271f9b"].unchecked_into(),
+		// 5Fj81Pkrru5pWkJ3HkzXUNSnksaxgJSTsTGVPX9RugHHwMq7
+		hex!["a20152c307ee8da59ca8fb9131d4b88ac4728feeec5287fa1fe4c6a181db3e71"].unchecked_into(),
 	),(
-		// 5HYZnKWe5FVZQ33ZRJK1rG3WaLMztxWrrNDb1JRwaHHVWyP9
-		hex!["f26cdb14b5aec7b2789fd5ca80f979cef3761897ae1f37ffb3e154cbcc1c2663"].into(),
-		// 5EPQdAQ39WQNLCRjWsCk5jErsCitHiY5ZmjfWzzbXDoAoYbn
-		hex!["66bc1e5d275da50b72b15de072a2468a5ad414919ca9054d2695767cf650012f"].into(),
-		// 5DMa31Hd5u1dwoRKgC4uvqyrdK45RHv3CpwvpUC1EzuwDit4
-		hex!["3919132b851ef0fd2dae42a7e734fe547af5a6b809006100f48944d7fae8e8ef"].unchecked_into(),
-		// 5C4vDQxA8LTck2xJEy4Yg1hM9qjDt4LvTQaMo4Y8ne43aU6x
-		hex!["00299981a2b92f878baaf5dbeba5c18d4e70f2a1fcd9c61b32ea18daf38f4378"].unchecked_into(),
+		// 5Dy9z6uGTZQQVYWcCdjYQFLEs1izmjxGFnTrzXZ33na5opyS
+		hex!["543cf321fe75b21fd5967e827946079c52f9a2b0d04226c1b96d90f5e19e9841"].into(),
+		// 5HHJX7ioDULhnmJaegWf7ERgRSxwNFGpGHjjWMcgGS9BRzAZ
+		hex!["e6c8cc3e40ca52b9ea0167262bf6c5d7e969f57f34bd891cac44d5945b9d0e49"].into(),
+		// 5HWgsk5xBmHY9P9fjygUR1e2zNxToBFWaiHbSzbmKzceXtS5
+		hex!["f0fe3e6e006d135d685eda4c057eb92d8a91988d39c89527b5c0cd4afcf6d74b"].unchecked_into(),
+		// 5HfufPNnqWdLACVcE67Gtwn3Uouq2z8asg1jjKU9c54XkgZ3
+		hex!["f8067f48ed0c7bbcc958d513d102ebfbcc912c6d4015f4862f4e5489f199165c"].unchecked_into(),
 	),(
-		// 5HYZnKWe5FVZQ33ZRJK1rG3WaLMztxWrrNDb1JRwaHHVWyP9
-		hex!["f26cdb14b5aec7b2789fd5ca80f979cef3761897ae1f37ffb3e154cbcc1c2663"].into(),
-		// 5EPQdAQ39WQNLCRjWsCk5jErsCitHiY5ZmjfWzzbXDoAoYbn
-		hex!["66bc1e5d275da50b72b15de072a2468a5ad414919ca9054d2695767cf650012f"].into(),
-		// 5DMa31Hd5u1dwoRKgC4uvqyrdK45RHv3CpwvpUC1EzuwDit4
-		hex!["3919132b851ef0fd2dae42a7e734fe547af5a6b809006100f48944d7fae8e8ef"].unchecked_into(),
-		// 5C4vDQxA8LTck2xJEy4Yg1hM9qjDt4LvTQaMo4Y8ne43aU6x
-		hex!["00299981a2b92f878baaf5dbeba5c18d4e70f2a1fcd9c61b32ea18daf38f4378"].unchecked_into(),
+		// 5GbWYCd1FRTb1Kf2JHT6FLckMHk3LupCHqHUo6jeLFupyaiv
+		hex!["c86f70b095cf79a4421f39fbfc2bf2fbb2426251e9e85f213a25167e5d293204"].into(),
+		// 5EqigdSSGCkNBhnfPScxojXG5WW3pSCqb3aqfrvYmm1r4yfH
+		hex!["7acd4b30160642857d992061f2fece44436f1b502375ecc167076e190cb6e312"].into(),
+		// 5HU6aV9vMb1tPNZQAT4tZ6NGAjaFDX9NxbjScM4XciHsJp8E
+		hex!["ef044c17d6f2b488e7961ee569264135efea541cdd58874336b7ef8765fd2dbd"].unchecked_into(),
+		// 5FYpyKTRarL97ddx3XqbidxQitxXJ56HfyR1B4Na8HoLbvA7
+		hex!["9a2785921b775c07926f687137cc4a451b49d0b4b275f4d4d5530134f70e853c"].unchecked_into(),
 	)];
 
 	let root_key: AccountId = hex![
