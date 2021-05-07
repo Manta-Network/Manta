@@ -53,6 +53,7 @@ pallet-sudo = { default-features = false, version = '3.0.0' }
 pallet-timestamp = { default-features = false, version = '3.0.0' }
 pallet-transaction-payment = { default-features = false, version = '3.0.0' }
 pallet-transaction-payment-rpc-runtime-api = { default-features = false, version = '3.0.0' }
+pallet-utility = { default-features = false, version = '3.0.0' }
 
 
 # Manta
@@ -94,6 +95,7 @@ std = [
     'pallet-timestamp/std',
     'pallet-transaction-payment-rpc-runtime-api/std',
     'pallet-transaction-payment/std',
+    'pallet-utility/std',
     'serde',
     'sp-api/std',
     'sp-block-builder/std',
