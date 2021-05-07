@@ -1,11 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::unnecessary_cast)]
 #![allow(clippy::upper_case_acronyms)]
-use codec::{Encode, Decode};
+use codec::{Decode, Encode};
 use sp_runtime::{
 	generic,
 	traits::{IdentifyAccount, Verify},
-	MultiSignature, RuntimeDebug
+	MultiSignature, RuntimeDebug,
 };
 
 use sp_std::convert::Into; // TODO: add TryFrom and TryInto
