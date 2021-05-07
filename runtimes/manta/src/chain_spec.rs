@@ -329,8 +329,14 @@ pub fn manta_testnet_config_genesis(
 		}
 	});
 
-	const ENDOWMENT: Balance = 100_000_000 * MA; // 10 endowment so that total supply is 1B
-	const STASH: Balance = ENDOWMENT / 1000;
+	const ENDOWMENT: Balance = 100_000_000 * MA; // 5 initial validators
+	const STASH: Balance = ENDOWMENT / 2;        // every initial validator use half of their tokens to stake
+
+	let mut initial_balances: Vec<(AccountId, Balance)> = initial_authorities
+		.iter().cloned()
+		.map(|x| (x.0, ENDOWMENT))
+		.collect();
+	initial_balances.push((root_key.clone(), 500_000_000 * MA)); // root_key get half of the stake
 
 	GenesisConfig {
 		frame_system: Some(SystemConfig {
@@ -338,11 +344,7 @@ pub fn manta_testnet_config_genesis(
 			changes_trie_config: Default::default(),
 		}),
 		pallet_balances: Some(BalancesConfig {
-			balances: endowed_accounts
-				.iter()
-				.cloned()
-				.map(|x| (x, ENDOWMENT))
-				.collect(),
+			balances: initial_balances,
 		}),
 		pallet_session: Some(SessionConfig {
 			keys: initial_authorities
@@ -368,7 +370,7 @@ pub fn manta_testnet_config_genesis(
 			..Default::default()
 		}),
 		pallet_collective_Instance1: Some(CouncilConfig::default()),
-		pallet_sudo: Some(SudoConfig { key: root_key }),
+		pallet_sudo: Some(SudoConfig { key: root_key.clone() }),     // we do sudo right now, this will be removed after full decentralization
 		pallet_babe: Some(BabeConfig {
 			authorities: vec![],
 		}),
