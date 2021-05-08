@@ -99,7 +99,7 @@ fn staging_testnet_config_genesis() -> GenesisConfig {
 		),
 	];
 
-	// generated with secret: subkey inspect "$secret"/fir
+	// generated with secret: subkey inspect "$secret"
 	let root_key: AccountId = hex![
 		// 5Ff3iXP75ruzroPWRP2FYBHWnmGGBSb63857BgnzCoXNxfPo
 		"9ee5e5bdc0ec239eb164f865ecc345ce4c88e76ee002e0f7e318097347471809"
@@ -319,25 +319,12 @@ pub fn manta_testnet_config() -> ChainSpec {
 /// Helper function to create GenesisConfig for manta testnets
 pub fn manta_testnet_config_genesis(
 	initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)>,
+	initial_balances: Vec<(AccountId, Balance)>,
 	root_key: AccountId,
-	mut endowed_accounts: Vec<AccountId>,
+	stash: Balance,
 	_enable_println: bool,
 ) -> GenesisConfig {
-	initial_authorities.iter().for_each(|x| {
-		if !endowed_accounts.contains(&x.0) {
-			endowed_accounts.push(x.0.clone())
-		}
-	});
-
-	const ENDOWMENT: Balance = 100_000_000 * MA; // 5 initial validators
-	const STASH: Balance = ENDOWMENT / 2;        // every initial validator use half of their tokens to stake
-
-	let mut initial_balances: Vec<(AccountId, Balance)> = initial_authorities
-		.iter().cloned()
-		.map(|x| (x.0, ENDOWMENT))
-		.collect();
-	initial_balances.push((root_key.clone(), 500_000_000 * MA)); // root_key get half of the stake
-
+	
 	GenesisConfig {
 		frame_system: Some(SystemConfig {
 			code: wasm_binary_unwrap().to_vec(),
@@ -363,7 +350,7 @@ pub fn manta_testnet_config_genesis(
 			minimum_validator_count: initial_authorities.len() as u32,
 			stakers: initial_authorities
 				.iter()
-				.map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
+				.map(|x| (x.0.clone(), x.1.clone(), stash, StakerStatus::Validator))
 				.collect(),
 			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
 			slash_reward_fraction: Perbill::from_percent(10),
@@ -371,16 +358,12 @@ pub fn manta_testnet_config_genesis(
 		}),
 		pallet_collective_Instance1: Some(CouncilConfig::default()),
 		pallet_sudo: Some(SudoConfig { key: root_key.clone() }),     // we do sudo right now, this will be removed after full decentralization
-		pallet_babe: Some(BabeConfig {
-			authorities: vec![],
-		}),
-		pallet_grandpa: Some(GrandpaConfig {
-			authorities: vec![],
-		}),
+		pallet_babe: Some(BabeConfig { authorities: vec![]}),
+		pallet_grandpa: Some(GrandpaConfig {authorities: vec![]}),
 	}
 }
 
-/// Manta runtime genesis
+/// Manta testnet genesis
 pub fn manta_testnet_genesis() -> GenesisConfig {
 	let initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)> = vec![(
 		// 5CLaV11XQy59GPZB21UE6zb1tKhTBawCoAz8s3L3CQyzHCSW
@@ -434,13 +417,77 @@ pub fn manta_testnet_genesis() -> GenesisConfig {
 		"9ee5e5bdc0ec239eb164f865ecc345ce4c88e76ee002e0f7e318097347471809"
 	].into();
 
-	let endowed_accounts: Vec<AccountId> = vec![root_key.clone()];
+	let mut endowed_accounts: Vec<AccountId> = vec![root_key.clone()];
+
+	initial_authorities.iter().for_each(|x| {
+		if !endowed_accounts.contains(&x.0) {
+			endowed_accounts.push(x.0.clone())
+		}
+	});
+
+	const ENDOWMENT: Balance = 100_000_000 * MA; // 5 initial validators
+	const STASH: Balance = ENDOWMENT / 2;        // every initial validator use half of their tokens to stake
+
+	let mut initial_balances: Vec<(AccountId, Balance)> = initial_authorities
+		.iter().cloned()
+		.map(|x| (x.0, ENDOWMENT))
+		.collect();
+	
+	initial_balances.push((root_key.clone(), 500_000_000 * MA)); // root_key get half of the stake
 
 	manta_testnet_config_genesis(
 		initial_authorities,
+		initial_balances,
 		root_key,
-		endowed_accounts,
+		STASH,
 		false,
+	)
+}
+
+/// a single node dev testnet genesis
+pub fn manta_local_dev_genesis() -> GenesisConfig {
+	let initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)> = vec![(
+		// stash account: 5EcVwmgGB8GTduy53PpsGBpsEEZAGEWYBeLuwSz76kxUzJid
+		hex!["70b8386b105ab594513031ed15cb9226e7db0ac285cccbcee59e55eae1e4922c"].into(),
+		// account: 5DrGMpT3dYm8cWPp6ZDbdkKVfYzAdWBGZjkrtcE5GTqS9EC1
+		hex!["4efbb0ab7942a237b3ce5b2540a0faad8cda8eeef44da6e4a614b3d8c08c0823"].into(),
+		// Grandpa ID: 5DCj1vKWeHWdni8LwtKVaCuh8vq4HvBUDKAJja5S7BW6M3ho
+		hex!["325a1995421793437bffa10eef55b028e61a02354e6ec66ab58b075349f6e9ca"].unchecked_into(),
+		// Babe ID: 5DAA4avV1euhv9gkNfa4bGsjZRaYTHXVa8t6F6yunAmauR7v
+		hex!["3064ad09d3fb2dd412aeaadf150bd6646ff2ed889e9bcea4068be8f9c2b65657"].unchecked_into(),
+	)];
+
+	let root_key: AccountId = hex![
+		// root account: 5DrGMpT3dYm8cWPp6ZDbdkKVfYzAdWBGZjkrtcE5GTqS9EC1
+		"4efbb0ab7942a237b3ce5b2540a0faad8cda8eeef44da6e4a614b3d8c08c0823"
+	].into();
+
+	let initial_balance = vec![(root_key.clone(), 1000_000_000 * MA)];
+
+	manta_testnet_config_genesis(
+		initial_authorities,
+		initial_balance,
+		root_key,
+		200_000_000 * MA,
+		false,
+	)
+}
+
+
+/// Manta testnet dev config
+pub fn manta_dev_testnet_config() -> ChainSpec {
+
+	ChainSpec::from_genesis(
+		"Manta local dev",
+		"manta_local_dev",
+		ChainType::Custom("Manta Local Dev".into()),
+		manta_local_dev_genesis,
+		vec![],
+		Some(TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
+			.expect("Manta testnet telemetry url is valid; qed")),
+		Some("manta_local_dev"),
+		Some(manta_properties()),
+		Default::default(),
 	)
 }
 
