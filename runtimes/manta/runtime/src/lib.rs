@@ -12,11 +12,13 @@ use pallet_grandpa::{
 use pallet_session::historical as pallet_session_historical;
 
 use manta_primitives::{
-	constants::time::{
-		DAYS, EPOCH_DURATION_IN_BLOCKS, EPOCH_DURATION_IN_SLOTS, MILLISECS_PER_BLOCK,
-		PRIMARY_PROBABILITY, SLOT_DURATION,
+	constants::{
+		currency::MA,
+		time::{
+			DAYS, EPOCH_DURATION_IN_BLOCKS, EPOCH_DURATION_IN_SLOTS, MILLISECS_PER_BLOCK,
+			PRIMARY_PROBABILITY, SLOT_DURATION,
+		},
 	},
-	constants::currency::MA,
 	AccountId, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
 use sp_api::impl_runtime_apis;
@@ -358,7 +360,7 @@ impl pallet_balances::Config for Runtime {
 	type Balance = Balance;
 	/// The ubiquitous event type.
 	type Event = Event;
-	type DustRemoval = ();  // burn for now
+	type DustRemoval = (); // burn for now
 	type ExistentialDeposit = NativeTokenExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
@@ -381,11 +383,11 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-	// The maximum weight that may be scheduled per block for any 
+	// The maximum weight that may be scheduled per block for any
 	// dispatchables of less priority than schedule::HARD_DEADLINE.
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
-        BlockWeights::get().max_block;
-	// The maximum number of scheduled calls in the queue for a single block. 
+		BlockWeights::get().max_block;
+	// The maximum number of scheduled calls in the queue for a single block.
 	// Not strictly enforced, but used for weight estimation.
 	pub const MaxScheduledPerBlock: u32 = 50;
 }
@@ -402,7 +404,8 @@ impl pallet_scheduler::Config for Runtime {
 }
 
 impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
-	where Call: From<C>,
+where
+	Call: From<C>,
 {
 	type Extrinsic = UncheckedExtrinsic;
 	type OverarchingCall = Call;
@@ -437,47 +440,46 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
-
 impl pallet_manta_pay::Config for Runtime {
 	type Event = Event;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = opaque::Block,
-        UncheckedExtrinsic = UncheckedExtrinsic
-    {
-        // Core Component
-        System: frame_system::{Module, Call, Config, Storage, Event<T>},
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
-        
-        // Must be before session
-        Babe: pallet_babe::{Module, Call, Storage, Config, ValidateUnsigned},
-        
-        Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},       
+	pub enum Runtime where
+		Block = Block,
+		NodeBlock = opaque::Block,
+		UncheckedExtrinsic = UncheckedExtrinsic
+	{
+		// Core Component
+		System: frame_system::{Module, Call, Config, Storage, Event<T>},
+		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 
-        // Token & Fees
-        Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
-        TransactionPayment: pallet_transaction_payment::{Module, Storage},
-        Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
+		// Must be before session
+		Babe: pallet_babe::{Module, Call, Storage, Config, ValidateUnsigned},
 
-        // Consensus support
-        Authorship: pallet_authorship::{Module, Call, Storage, Inherent},
-        Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event},
-        Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
-        Staking: pallet_staking::{Module, Call, Config<T>, Storage, Event<T>},
-        Historical: pallet_session_historical::{Module},
-        
-        // Governance
-        // We have to have a council now since it requires one to setup the canceling of slashing
-        Council: pallet_collective::<Instance1>::{Module, Call, Storage, Origin<T>, Event<T>, Config<T>},
-        Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
+		Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
 
-        // Manta pay
-        MantaPay: pallet_manta_pay::{Module, Call, Storage, Event<T>},
-    }
+		// Token & Fees
+		Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
+		TransactionPayment: pallet_transaction_payment::{Module, Storage},
+		Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
+
+		// Consensus support
+		Authorship: pallet_authorship::{Module, Call, Storage, Inherent},
+		Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event},
+		Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
+		Staking: pallet_staking::{Module, Call, Config<T>, Storage, Event<T>},
+		Historical: pallet_session_historical::{Module},
+
+		// Governance
+		// We have to have a council now since it requires one to setup the canceling of slashing
+		Council: pallet_collective::<Instance1>::{Module, Call, Storage, Origin<T>, Event<T>, Config<T>},
+		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
+
+		// Manta pay
+		MantaPay: pallet_manta_pay::{Module, Call, Storage, Event<T>},
+	}
 );
 
 /// The address format for describing accounts.

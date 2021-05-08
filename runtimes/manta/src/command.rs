@@ -25,9 +25,9 @@ use sc_cli::{ChainSpec, Role, RuntimeVersion, SubstrateCli};
 use sc_service::PartialComponents;
 
 impl SubstrateCli for Cli {
-    fn impl_name() -> String {
-        "Manta Node".into()
-    }
+	fn impl_name() -> String {
+		"Manta Node".into()
+	}
 
 	fn impl_version() -> String {
 		env!("SUBSTRATE_CLI_IMPL_VERSION").into()
@@ -41,26 +41,31 @@ impl SubstrateCli for Cli {
 		env!("CARGO_PKG_AUTHORS").into()
 	}
 
-    fn support_url() -> String {
-        "https://manta.network".into()
-    }
+	fn support_url() -> String {
+		"https://manta.network".into()
+	}
 
-    fn copyright_start_year() -> i32 {
-        2020
-    }
+	fn copyright_start_year() -> i32 {
+		2020
+	}
 
-    fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
-        Ok(match id {
-            "" => return Err("Please specify which chain you want to run, e.g. --dev or --chain=local".into()),
-            "dev" => Box::new(chain_spec::development_config()),
-            "local" => Box::new(chain_spec::local_testnet_config()),
-            "manta-testnet" => Box::new(chain_spec::manta_testnet_config()),
+	fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
+		Ok(match id {
+			"" => {
+				return Err(
+					"Please specify which chain you want to run, e.g. --dev or --chain=local"
+						.into(),
+				)
+			}
+			"dev" => Box::new(chain_spec::development_config()),
+			"local" => Box::new(chain_spec::local_testnet_config()),
+			"manta-testnet" => Box::new(chain_spec::manta_testnet_config()),
 			"manta-local-dev" => Box::new(chain_spec::manta_local_dev_config()),
-            path => Box::new(chain_spec::ChainSpec::from_json_file(
-                std::path::PathBuf::from(path),
-            )?),
-        })
-    }
+			path => Box::new(chain_spec::ChainSpec::from_json_file(
+				std::path::PathBuf::from(path),
+			)?),
+		})
+	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
 		&manta_runtime::VERSION
