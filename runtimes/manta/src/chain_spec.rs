@@ -417,14 +417,6 @@ pub fn manta_testnet_genesis() -> GenesisConfig {
 		"9ee5e5bdc0ec239eb164f865ecc345ce4c88e76ee002e0f7e318097347471809"
 	].into();
 
-	let mut endowed_accounts: Vec<AccountId> = vec![root_key.clone()];
-
-	initial_authorities.iter().for_each(|x| {
-		if !endowed_accounts.contains(&x.0) {
-			endowed_accounts.push(x.0.clone())
-		}
-	});
-
 	const ENDOWMENT: Balance = 100_000_000 * MA; // 5 initial validators
 	const STASH: Balance = ENDOWMENT / 2;        // every initial validator use half of their tokens to stake
 
@@ -446,29 +438,36 @@ pub fn manta_testnet_genesis() -> GenesisConfig {
 
 /// a single node dev testnet genesis
 pub fn manta_local_dev_genesis() -> GenesisConfig {
+	let stash_account: AccountId = hex![
+		// 5EcVwmgGB8GTduy53PpsGBpsEEZAGEWYBeLuwSz76kxUzJid
+		"70b8386b105ab594513031ed15cb9226e7db0ac285cccbcee59e55eae1e4922c"].into();
+	let controller_account: AccountId = hex![
+		// 5HGdhHoyvPXkmXwNYg2vcNTU9584AfN7EsFM8DySKS53Ehxg
+		"e6461a44f71ac6c43bc6c9df20310211fb3d600ad0f3a51a66e7959caa599e6f"].into();
+	let root_key: AccountId = hex![
+		//root account: 5DrGMpT3dYm8cWPp6ZDbdkKVfYzAdWBGZjkrtcE5GTqS9EC1
+		"4efbb0ab7942a237b3ce5b2540a0faad8cda8eeef44da6e4a614b3d8c08c0823"].into();
+
+
 	let initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)> = vec![(
-		// stash account: 5EcVwmgGB8GTduy53PpsGBpsEEZAGEWYBeLuwSz76kxUzJid
-		hex!["70b8386b105ab594513031ed15cb9226e7db0ac285cccbcee59e55eae1e4922c"].into(),
-		// account: 5DrGMpT3dYm8cWPp6ZDbdkKVfYzAdWBGZjkrtcE5GTqS9EC1
-		hex!["4efbb0ab7942a237b3ce5b2540a0faad8cda8eeef44da6e4a614b3d8c08c0823"].into(),
+		stash_account.clone(),
+		controller_account.clone(),  
 		// Grandpa ID: 5DCj1vKWeHWdni8LwtKVaCuh8vq4HvBUDKAJja5S7BW6M3ho
 		hex!["325a1995421793437bffa10eef55b028e61a02354e6ec66ab58b075349f6e9ca"].unchecked_into(),
 		// Babe ID: 5DAA4avV1euhv9gkNfa4bGsjZRaYTHXVa8t6F6yunAmauR7v
 		hex!["3064ad09d3fb2dd412aeaadf150bd6646ff2ed889e9bcea4068be8f9c2b65657"].unchecked_into(),
 	)];
 
-	let root_key: AccountId = hex![
-		// root account: 5DrGMpT3dYm8cWPp6ZDbdkKVfYzAdWBGZjkrtcE5GTqS9EC1
-		"4efbb0ab7942a237b3ce5b2540a0faad8cda8eeef44da6e4a614b3d8c08c0823"
-	].into();
-
-	let initial_balance = vec![(root_key.clone(), 1000_000_000 * MA)];
+	let initial_balances = vec![
+		(root_key.clone(), 1000 * MA),
+		(stash_account, 1000_000_000 * MA),
+		(controller_account, 20_000_000 * MA)];
 
 	manta_testnet_config_genesis(
 		initial_authorities,
-		initial_balance,
+		initial_balances,
 		root_key,
-		200_000_000 * MA,
+		100_000_000 * MA,
 		false,
 	)
 }
