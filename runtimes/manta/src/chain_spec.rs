@@ -474,7 +474,7 @@ pub fn manta_local_dev_genesis() -> GenesisConfig {
 
 
 /// Manta testnet dev config
-pub fn manta_dev_testnet_config() -> ChainSpec {
+pub fn manta_local_dev_config() -> ChainSpec {
 
 	ChainSpec::from_genesis(
 		"Manta local dev",

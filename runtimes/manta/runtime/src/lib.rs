@@ -16,6 +16,7 @@ use manta_primitives::{
 		DAYS, EPOCH_DURATION_IN_BLOCKS, EPOCH_DURATION_IN_SLOTS, MILLISECS_PER_BLOCK,
 		PRIMARY_PROBABILITY, SLOT_DURATION,
 	},
+	constants::currency::MA,
 	AccountId, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
 use sp_api::impl_runtime_apis;
@@ -347,7 +348,7 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: u128 = 500;
+	pub const NativeTokenExistentialDeposit: u128 = 1 * MA;
 	pub const MaxLocks: u32 = 50;
 }
 
@@ -357,8 +358,8 @@ impl pallet_balances::Config for Runtime {
 	type Balance = Balance;
 	/// The ubiquitous event type.
 	type Event = Event;
-	type DustRemoval = ();
-	type ExistentialDeposit = ExistentialDeposit;
+	type DustRemoval = ();  // burn for now
+	type ExistentialDeposit = NativeTokenExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
