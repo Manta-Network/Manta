@@ -40,3 +40,4 @@ jobs:
         run: >
           pushd node &&
           cargo check
+#test
