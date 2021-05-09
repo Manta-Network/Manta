@@ -26,7 +26,7 @@ use sc_service::PartialComponents;
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"Substrate Node".into()
+		"Manta Node".into()
 	}
 
 	fn impl_version() -> String {
@@ -42,11 +42,11 @@ impl SubstrateCli for Cli {
 	}
 
 	fn support_url() -> String {
-		"support.anonymous.an".into()
+		"https://manta.network".into()
 	}
 
 	fn copyright_start_year() -> i32 {
-		2017
+		2020
 	}
 
 	fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
@@ -59,6 +59,8 @@ impl SubstrateCli for Cli {
 			}
 			"dev" => Box::new(chain_spec::development_config()),
 			"local" => Box::new(chain_spec::local_testnet_config()),
+			"manta-testnet" => Box::new(chain_spec::manta_testnet_config()),
+			"manta-local-dev" => Box::new(chain_spec::manta_local_dev_config()),
 			path => Box::new(chain_spec::ChainSpec::from_json_file(
 				std::path::PathBuf::from(path),
 			)?),

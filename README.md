@@ -1,6 +1,13 @@
 # Manta
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 Manta is a privacy preserving DeFi stack on Polkadot/Substrate. The code currently hasn't been properly security audited (work in progress), use it at your own risk. 
+
+## Compile Manta
+```
+./scripts/init.sh
+cargo build --release -p manta
+```
 
 ## Compile Manta
 ```
@@ -13,8 +20,8 @@ Currently, there are two developing branches:
 * `manta`: Manta Network's testnet/mainnet node
 * `manta-pc`: Manta Network's parachain node
 
-## Using DOCKER
-You can run manta nodes by docker.
+## Using Docker
+You can run manta nodes using docker.
 
 * Pull latest image.
 ```
@@ -52,7 +59,7 @@ Normally, both nodes will produce and finalize blocks.
 
 * Connect to manta testnet.
 ```
-docker run mantanetwork/manta:latest --chain manta --name "ILoveManta"
+docker run mantanetwork/manta:latest --chain manta-testnet --name "ILoveManta"
 ```
 
 ## Contributing

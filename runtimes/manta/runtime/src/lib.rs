@@ -12,9 +12,12 @@ use pallet_grandpa::{
 use pallet_session::historical as pallet_session_historical;
 
 use manta_primitives::{
-	constants::time::{
-		DAYS, EPOCH_DURATION_IN_BLOCKS, EPOCH_DURATION_IN_SLOTS, MILLISECS_PER_BLOCK,
-		PRIMARY_PROBABILITY, SLOT_DURATION,
+	constants::{
+		currency::MA,
+		time::{
+			DAYS, EPOCH_DURATION_IN_BLOCKS, EPOCH_DURATION_IN_SLOTS, MILLISECS_PER_BLOCK,
+			PRIMARY_PROBABILITY, SLOT_DURATION,
+		},
 	},
 	AccountId, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
@@ -347,7 +350,7 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: u128 = 500;
+	pub const NativeTokenExistentialDeposit: u128 = 1 * MA;
 	pub const MaxLocks: u32 = 50;
 }
 
@@ -357,8 +360,8 @@ impl pallet_balances::Config for Runtime {
 	type Balance = Balance;
 	/// The ubiquitous event type.
 	type Event = Event;
-	type DustRemoval = ();
-	type ExistentialDeposit = ExistentialDeposit;
+	type DustRemoval = (); // burn for now
+	type ExistentialDeposit = NativeTokenExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
@@ -467,6 +470,8 @@ construct_runtime!(
 		Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 		Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
+
+		// Good to have
 		Utility: pallet_utility::{Module, Call, Event},
 
 		// Consensus support
