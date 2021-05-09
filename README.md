@@ -7,6 +7,7 @@ Manta is a privacy preserving DeFi stack on Polkadot/Substrate. The code current
 ```
 ./scripts/init.sh
 cargo build --release -p manta
+```
 
 ## Manta Developement
 Currently, there are two developing branches:
