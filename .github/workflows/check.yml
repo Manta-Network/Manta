@@ -5,6 +5,8 @@ on:
   # Triggers the workflow on push or pull request events but only for the manta (default) branch
   pull_request:
     branches: [ ci-cd-testing ]
+  push:
+    branches: [ ci-cd-testing ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -33,7 +35,7 @@ jobs:
           rustup target add wasm32-unknown-unknown --toolchain nightly
       - name: Check Build
         run: |
-          cargo check --release
+          SKIP_WASM_BUILD=1 cargo check --release
       - name: Check Formatting 
         run: |
           rustup component add rustfmt
