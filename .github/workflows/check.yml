@@ -2,9 +2,7 @@ name: Check Set-Up & Build
 
 # Controls when the action will run.
 on:
-  ## Triggers the workflow on push or pull request events but only for the master branch
-  #push:
-  #  branches: [ master ]
+  # Triggers the workflow on push or pull request events but only for the manta (default) branch
   pull_request:
     branches: [ ci-cd-testing ]
 
@@ -35,8 +33,8 @@ jobs:
           rustup target add wasm32-unknown-unknown --toolchain nightly
       - name: Check Build
         run: |
-          SKIP_WASM_BUILD=1 cargo check --release
-      #- name: Check Build for Benchmarking
-      #  run: >
-      #    pushd node &&
-      #    cargo check
+          cargo check --release
+      - name: Check Formatting 
+        run: |
+          rustup component add rustfmt
+          cargo fmt --all -- --check
