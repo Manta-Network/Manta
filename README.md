@@ -20,8 +20,8 @@ Currently, there are two developing branches:
 * `manta`: Manta Network's testnet/mainnet node
 * `manta-pc`: Manta Network's parachain node
 
-## Using DOCKER
-You can run manta nodes by docker.
+## Using Docker
+You can run manta nodes using docker.
 
 * Pull latest image.
 ```
@@ -59,7 +59,7 @@ Normally, both nodes will produce and finalize blocks.
 
 * Connect to manta testnet.
 ```
-docker run mantanetwork/manta:latest --chain manta --name "ILoveManta"
+docker run mantanetwork/manta:latest --chain manta-testnet --name "ILoveManta"
 ```
 
 ## Contributing
