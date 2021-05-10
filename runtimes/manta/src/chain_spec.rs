@@ -37,7 +37,7 @@ const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
 
 fn session_keys(grandpa: GrandpaId, babe: BabeId) -> manta_runtime::opaque::SessionKeys {
-	manta_runtime::opaque::SessionKeys { grandpa, babe }
+	manta_runtime::opaque::SessionKeys { babe, grandpa }
 }
 
 #[allow(dead_code)]
@@ -356,9 +356,7 @@ pub fn manta_testnet_config_genesis(
 			..Default::default()
 		}),
 		pallet_collective_Instance1: Some(CouncilConfig::default()),
-		pallet_sudo: Some(SudoConfig {
-			key: root_key.clone(),
-		}), // we do sudo right now, this will be removed after full decentralization
+		pallet_sudo: Some(SudoConfig { key: root_key }), // we do sudo right now, this will be removed after full decentralization
 		pallet_babe: Some(BabeConfig {
 			authorities: vec![],
 		}),
@@ -466,7 +464,7 @@ pub fn manta_local_dev_genesis() -> GenesisConfig {
 
 	let initial_balances = vec![
 		(root_key.clone(), 1000 * MA),
-		(stash_account, 1000_000_000 * MA),
+		(stash_account, 1_000_000_000 * MA),
 		(controller_account, 20_000_000 * MA),
 	];
 

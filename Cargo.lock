@@ -4341,7 +4341,7 @@ dependencies = [
 [[package]]
 name = "pallet-manta-pay"
 version = "3.0.0"
-source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#8174efbfbb437d25b5d3291bbed83d6b63aed80a"
+source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#c81983367941d0297fe307ba453b81ac395b1db2"
 dependencies = [
  "aes 0.7.0",
  "ark-bls12-381",
@@ -8391,7 +8391,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.7.3",
+ "rand 0.3.23",
  "static_assertions",
 ]
 
