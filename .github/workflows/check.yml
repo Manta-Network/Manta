@@ -50,9 +50,9 @@ jobs:
       - name: Check Formatting
         run: |
           cargo +nightly fmt --all -- --check
-      # - name: Check Clippy
-      #   run: |
-      #     cargo clippy --release
+       - name: Check Clippy
+         run: |
+           cargo +nightly clippy --release
       - name: Check Build
         run: |
           SKIP_WASM_BUILD=1 cargo check --release
