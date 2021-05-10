@@ -52,3 +52,11 @@ jobs:
         run: |
           rustup component add rustfmt
           cargo +nightly fmt --all -- --check
+      - name: Check Clippy
+        run: |
+          rustup component add clippy
+          cargo clippy --release
+      - name: Run Tests
+        run: |
+          cargo test --release
+
