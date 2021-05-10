@@ -45,17 +45,17 @@ jobs:
           rustup update nightly
           rustup update stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
-      - name: Check Build
-        run: |
-          SKIP_WASM_BUILD=1 cargo check --release
+          rustup component add clippy
+          rustup component add rustfmt
       - name: Check Formatting
         run: |
-          rustup component add rustfmt
           cargo +nightly fmt --all -- --check
       - name: Check Clippy
         run: |
-          rustup component add clippy
           cargo clippy --release
+      - name: Check Build
+        run: |
+          SKIP_WASM_BUILD=1 cargo check --release
       - name: Run Tests
         run: |
           cargo test --release
