@@ -1,32 +1,40 @@
+---
+
 name: Check Set-Up & Build
 
 # Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the manta (default) branch.
+  # Triggers the workflow on push or pull request events
+  # but only for the manta (default) branch.
   pull_request:
-    branches: [ manta ]
-  #push:
-  #  branches: [ manta ]
+    branches: [manta]
+  # push:
+  #  branches: [manta]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+# A workflow run is made up of one or more jobs 
+# that can run sequentially or in parallel
 jobs:
   check:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    # Steps represent a sequence of tasks 
+    # that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      # Checks-out your repository under $GITHUB_WORKSPACE, 
+      # so your job can access it
       - uses: actions/checkout@v2
 
       - name: Run yamllint
         uses: actionshub/yamllint@main
 
       - name: Set-Up
-        run: sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
+        run: sudo apt install -y cmake pkg-config libssl-dev
+             sudo apt install -y git build-essential clang 
+             sudo apt install -y libclang-dev curl
 
       - name: Install Rustup
         run: |
@@ -39,7 +47,7 @@ jobs:
       - name: Check Build
         run: |
           SKIP_WASM_BUILD=1 cargo check --release
-      - name: Check Formatting 
+      - name: Check Formatting
         run: |
           rustup component add rustfmt
           cargo +nightly fmt --all -- --check
