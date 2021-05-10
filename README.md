@@ -24,7 +24,7 @@ docker pull mantanetwork/manta:latest
 
 * Run one dev node locally.
 ```
-docker run -it -p 9944:9944 mantanetwork/manta:latest --dev --unsafe-ws-external
+docker run -it -p 9944:9944 mantanetwork/manta:latest --dev --tmp --alice
 ```
 
 * Run two nodes locally.
@@ -34,18 +34,18 @@ docker run \
 -p 9944:9944 \
 -p 30333:30333 \
 --name=alice mantanetwork/manta:latest \
---unsafe-ws-external \
+--chain=local \
 --tmp \
 --alice \
 --node-key 0000000000000000000000000000000000000000000000000000000000000001 \
 --validator
 
-# Bob node
 docker run \
 -p 9945:9944 \
+-p 30334:30333 \
 --name=bob mantanetwork/manta:latest \
 --bootnodes /ip4/127.0.0.1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp \
---unsafe-ws-external \
+--chain=local \
 --bob \
 --validator
 ```
