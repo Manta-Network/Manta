@@ -1,8 +1,10 @@
+---
+
 name: publish-release
 
 on:
   push:
-    branches: [ manta ]
+    branches: [manta]
     tags:
       - v[0-9]+.[0-9]+.[0-9]+-draft
 
@@ -13,19 +15,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: init
-      run: ./scripts/init.sh
-    - name: build
-      run: |
-        cargo build --verbose --release -p manta
-        strip target/release/manta
-        mv target/release/manta target/release/manta_amd64
-    - name: release
-      uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        files: |
-          target/release/manta_amd64
+      - uses: actions/checkout@v2
+      - name: init
+        run: ./scripts/init.sh
+      - name: build
+        run: |
+          cargo build --verbose --release -p manta
+          strip target/release/manta
+          mv target/release/manta target/release/manta_amd64
+      - name: release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: |
+            target/release/manta_amd64
