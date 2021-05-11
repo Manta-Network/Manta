@@ -1,14 +1,12 @@
 {
     "CurrencyId": {
         "_enum": [
-            "Native",
-            "DOT",
-            "KSM",
-            "BTC"
+            "MA"
         ]
     },
     "CurrencyIdOf": "CurrencyId",
     "Amount": "i128",
-    "AmountOf": "Amount"
+    "AmountOf": "Amount",
+    "AccountInfo": "AccountInfoWithDualRefCount"
 }
 
