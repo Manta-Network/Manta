@@ -28,7 +28,6 @@ type FullGrandpaBlockImport =
 	sc_finality_grandpa::GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>;
 type LightClient = sc_service::TLightClient<Block, RuntimeApi, Executor>;
 
-
 // FIXME: the output types are to complex (clippy)
 pub fn new_partial(
 	config: &Configuration,
@@ -339,7 +338,6 @@ pub fn new_full_base(
 pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
 	new_full_base(config, |_, _| ()).map(|NewFullBase { task_manager, .. }| task_manager)
 }
-
 
 // FIXME: the output types are to complex (clippy)
 pub fn new_light_base(
