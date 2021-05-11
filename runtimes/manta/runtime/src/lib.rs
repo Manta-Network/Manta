@@ -1,6 +1,7 @@
 // suppressing linter on impl From
 // linter will trigger a complain on `frame-support-3.0.0` which we cannot fix
 #![allow(clippy::from_over_into)]
+#![allow(clippy::identity_op)]
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
@@ -353,7 +354,7 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-	pub const NativeTokenExistentialDeposit: u128 = MA;
+	pub const NativeTokenExistentialDeposit: u128 = 1 * MA;
 	pub const MaxLocks: u32 = 50;
 }
 
