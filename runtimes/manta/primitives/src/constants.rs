@@ -4,11 +4,12 @@
 pub mod currency {
 	pub type Balance = u128;
 	pub const MA: Balance = 1_000_000_000_000; // 12 decimal
+	pub const cMA: Balance = MA / 100; // 10 decimal, cent-MA
 	pub const mMA: Balance = MA / 1_000; // 9 decimal, milli-MA
 	pub const uMA: Balance = MA / 1_000_000; // 6 decimal, micro-MA
 
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
-		items as Balance * 15 * mMA + (bytes as Balance) * 6 * mMA // TODO: revisit the storage cost here
+		items as Balance * 15 * cMA + (bytes as Balance) * 6 * cMA // TODO: revisit the storage cost here
 	}
 }
 

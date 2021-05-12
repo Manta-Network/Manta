@@ -60,6 +60,10 @@ pallet-utility = { default-features = false, version = '3.0.0' }
 pallet-manta-pay = { branch = 'calamari', git = 'https://github.com/Manta-Network/pallet-manta-pay', default-features = false }
 manta-primitives = {path="../primitives", default-features = false }
 
+[dev-dependencies]
+hex-literal = '0.3.1'
+manta = { path = '../../manta' }
+sp-io = '3.0.0'
 
 [features]
 default = [
