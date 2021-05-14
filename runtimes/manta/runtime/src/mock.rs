@@ -1,4 +1,7 @@
-use frame_support::{assert_ok, traits::{OnFinalize, OnInitialize}};
+use frame_support::{
+	assert_ok,
+	traits::{OnFinalize, OnInitialize},
+};
 use hex_literal::hex;
 use manta_primitives::constants::currency::*;
 use sp_core::crypto::UncheckedInto;

@@ -155,15 +155,12 @@ mod multiplier_tests {
 	fn min_change_per_day() {
 		run_with_system_weight(max_normal(), || {
 			let mut fm = Multiplier::one();
-			println!("init fm: {:?}", fm);
 			// See the example in the doc of `TargetedFeeAdjustment`. are at least 0.234, hence
 			// `fm > 1.234`.
 			for _ in 0..DAYS {
 				let next = runtime_multiplier_update(fm);
 				fm = next;
 			}
-			println!("final fm: {:?}", fm);
-			println!("Multiplier: {:?}", Multiplier::saturating_from_rational(1234, 1000));
 			assert!(fm > Multiplier::saturating_from_rational(1234, 1000));
 		})
 	}
