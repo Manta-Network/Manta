@@ -17,7 +17,7 @@ use pallet_session::historical as pallet_session_historical;
 
 use manta_primitives::{
 	constants::{
-		currency::{MA, mMA},
+		currency::{mMA, MA},
 		time::{
 			DAYS, EPOCH_DURATION_IN_BLOCKS, EPOCH_DURATION_IN_SLOTS, MILLISECS_PER_BLOCK,
 			PRIMARY_PROBABILITY, SLOT_DURATION,
@@ -37,7 +37,7 @@ use sp_runtime::{
 	generic, impl_opaque_keys,
 	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor, OpaqueKeys},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, Perquintill, FixedPointNumber
+	ApplyExtrinsicResult, FixedPointNumber, Perquintill,
 };
 use sp_std::prelude::*;
 
@@ -67,9 +67,9 @@ pub use sp_runtime::{Perbill, Permill};
 pub use pallet_staking::StakerStatus;
 
 #[cfg(test)]
-mod mock;
-#[cfg(test)]
 mod impls;
+#[cfg(test)]
+mod mock;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
