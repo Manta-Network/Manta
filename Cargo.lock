@@ -4342,6 +4342,7 @@ dependencies = [
 [[package]]
 name = "pallet-manta-pay"
 version = "3.0.0"
+source = "git+https://github.com/manta-network/pallet-manta-pay#37ed15e8a1cf748ce17818ba49d19ace5238c75d"
 dependencies = [
  "aes 0.7.0",
  "ark-bls12-381",
@@ -4363,7 +4364,6 @@ dependencies = [
  "hkdf",
  "parity-scale-codec",
  "rand_chacha 0.2.2",
- "serde",
  "sha2 0.9.4",
  "sp-runtime",
  "sp-std",
