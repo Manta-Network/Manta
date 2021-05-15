@@ -55,6 +55,9 @@ jobs:
       - name: Check Build
         run: |
           cargo check --release
+      - name: Check Benchmark
+        run: |
+          cargo check --features runtime-benchmarks
       - name: Run Tests
         run: |
           cargo test --release
