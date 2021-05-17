@@ -1,3 +1,5 @@
+//! Tests for the Manta Runtime Configuration
+
 use frame_support::{
 	assert_ok,
 	traits::{OnFinalize, OnInitialize},
@@ -38,7 +40,7 @@ impl ExtBuilder {
 		]
 	}
 
-	// Create test utility
+	// Create test utility, runtime mock
 	pub fn build(self) -> sp_io::TestExternalities {
 		let initial_authorities = vec![(
 			ALICE,
@@ -80,20 +82,52 @@ fn balances_should_work() {
 	});
 }
 
+// Follow kusama runtime configuration tests
+// https://github.com/paritytech/polkadot/blob/master/runtime/kusama/src/tests.rs
 #[test]
-#[ignore = "Under implementation"]
-fn set_code_should_work() {
-	todo!()
+#[ignore]
+fn remove_keys_weight_is_sensible() {
+	todo!("follow kusama runtime test");
 }
 
 #[test]
-#[ignore = "Under implementation"]
-fn genesis_tests() {
-	todo!()
+#[ignore]
+fn sample_size_is_sensible() {
+	todo!("follow kusama runtime test");
 }
 
 #[test]
-#[ignore = "Under implementation"]
-fn manta_pay_should_work() {
-	todo!();
+#[ignore]
+fn payout_weight_portion() {
+	todo!("follow kusama runtime test");
+}
+
+#[test]
+#[ignore]
+fn block_cost() {
+	todo!("follow kusama runtime test");
+}
+
+#[test]
+#[ignore]
+fn transfer_cost_min_multiplier() {
+	todo!("follow kusama runtime test");
+}
+
+#[test]
+#[ignore]
+fn nominator_limit() {
+	todo!("follow kusama runtime test");
+}
+
+#[test]
+#[ignore]
+fn compute_inflation_should_give_sensible_results() {
+	todo!("follow kusama runtime test");
+}
+
+#[test]
+#[ignore]
+fn era_payout_should_give_sensible_results() {
+	todo!("follow kusama runtime test");
 }

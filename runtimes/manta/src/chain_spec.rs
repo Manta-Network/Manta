@@ -562,16 +562,21 @@ pub(crate) mod tests {
 
 	#[test]
 	fn test_create_development_chain_spec() {
-		development_config().build_storage().unwrap();
+		assert!(development_config().build_storage().is_ok());
 	}
 
 	#[test]
 	fn test_create_local_testnet_chain_spec() {
-		local_testnet_config().build_storage().unwrap();
+		assert!(local_testnet_config().build_storage().is_ok());
 	}
 
 	#[test]
 	fn test_staging_test_net_chain_spec() {
-		staging_testnet_config().build_storage().unwrap();
+		assert!(staging_testnet_config().build_storage().is_ok());
+	}
+
+	#[test]
+	fn test_manta_testnet_chain_spec() {
+		assert!(manta_testnet_config().build_storage().is_ok());
 	}
 }

@@ -3630,6 +3630,8 @@ dependencies = [
 name = "manta-primitives"
 version = "3.0.0"
 dependencies = [
+ "frame-support",
+ "manta-runtime",
  "parity-scale-codec",
  "serde",
  "sp-core",

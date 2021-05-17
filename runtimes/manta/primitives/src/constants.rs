@@ -43,3 +43,32 @@ pub mod time {
 	pub const HOURS: BlockNumber = MINUTES * 60;
 	pub const DAYS: BlockNumber = HOURS * 24;
 }
+
+#[cfg(test)]
+mod tests {
+	use frame_support::weights::WeightToFeePolynomial;
+	use manta_runtime::{MAXIMUM_BLOCK_WEIGHT, ExtrinsicBaseWeight, IdentityFee};
+	use super::currency::{cMA, mMA};
+
+	#[test]
+	#[ignore = "Figuring out why 1_600 cents"]
+	// This function tests that the fee for `MAXIMUM_BLOCK_WEIGHT` of weight is correct
+	fn full_block_fee_is_correct() {
+		// A full block should cost 1,600 CENTS
+		println!("Base: {}", ExtrinsicBaseWeight::get());
+		let x: u128 = IdentityFee::calc(&MAXIMUM_BLOCK_WEIGHT);
+		let y = 16 * 100 * cMA;
+		println!("strip: {}", x.max(y) - x.min(y));
+		assert!(x.max(y) - x.min(y) < mMA);
+	}
+
+	#[test]
+	// This function tests that the fee for `ExtrinsicBaseWeight` of weight is correct
+	fn extrinsic_base_fee_is_correct() {
+		// `ExtrinsicBaseWeight` should cost 1/10 of a CENT
+		println!("Base: {}", ExtrinsicBaseWeight::get());
+		let x: u128 = IdentityFee::calc(&ExtrinsicBaseWeight::get());
+		let y = cMA / 10;
+		assert!(x.max(y) - x.min(y) < mMA);
+	}
+}
