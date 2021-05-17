@@ -53,7 +53,7 @@ pub use frame_support::{
 	traits::{KeyOwnerProofSystem, Randomness, U128CurrencyToVote},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-		IdentityFee, Weight, DispatchClass
+		DispatchClass, IdentityFee, Weight,
 	},
 	StorageValue,
 };

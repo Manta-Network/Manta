@@ -46,9 +46,9 @@ pub mod time {
 
 #[cfg(test)]
 mod tests {
-	use frame_support::weights::WeightToFeePolynomial;
-	use manta_runtime::{MAXIMUM_BLOCK_WEIGHT, ExtrinsicBaseWeight, IdentityFee};
 	use super::currency::{cMA, mMA};
+	use frame_support::weights::WeightToFeePolynomial;
+	use manta_runtime::{ExtrinsicBaseWeight, IdentityFee, MAXIMUM_BLOCK_WEIGHT};
 
 	#[test]
 	#[ignore = "Figuring out why 1_600 cents"]
