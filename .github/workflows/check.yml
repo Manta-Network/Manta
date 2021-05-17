@@ -3,6 +3,7 @@
 name: Check Set-Up & Build
 
 # Controls when the action will run.
+# yamllint disable-line rule:truthy
 on:
   # Triggers the workflow on push or pull request events
   # but only for the manta (default) branch.
