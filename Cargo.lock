@@ -4261,6 +4261,7 @@ version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fe826f3bfb984b3dd8d6675d7d156ba4c0877ee562bf59d86a4e805b7737dcb1"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -4341,7 +4342,7 @@ dependencies = [
 [[package]]
 name = "pallet-manta-pay"
 version = "3.0.0"
-source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#c81983367941d0297fe307ba453b81ac395b1db2"
+source = "git+https://github.com/manta-network/pallet-manta-pay?branch=calamari#a7fc95ed6a507ece26f99c9c7b76d2638d939225"
 dependencies = [
  "aes 0.7.0",
  "ark-bls12-381",
@@ -4356,16 +4357,16 @@ dependencies = [
  "ark-std",
  "blake2",
  "data-encoding",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "generic-array 0.14.4",
  "hkdf",
  "parity-scale-codec",
- "rand 0.8.3",
  "rand_chacha 0.2.2",
  "sha2 0.9.4",
  "sp-runtime",
- "substrate-wasm-builder",
+ "sp-std",
  "x25519-dalek",
 ]
 
@@ -4540,6 +4541,7 @@ version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fcd63d1b336800d155ab60ee918afd111f7449e44cec936f460d555e850fa93b"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",

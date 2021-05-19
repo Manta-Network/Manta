@@ -3,6 +3,7 @@
 name: Check Set-Up & Build
 
 # Controls when the action will run.
+# yamllint disable-line rule:truthy
 on:
   # Triggers the workflow on push or pull request events
   # but only for the manta (default) branch.
@@ -55,6 +56,9 @@ jobs:
       - name: Check Build
         run: |
           cargo check --release
+      - name: Check Benchmark
+        run: |
+          cargo check --features runtime-benchmarks
       - name: Run Tests
         run: |
           cargo test --release
