@@ -51,7 +51,7 @@ jobs:
           cargo +nightly fmt --all -- --check
       - name: Check Clippy
         run: |
-          cargo clippy --release
+          cargo +nightly clippy --release
       - name: Check Build
         run: |
           cargo check --release
