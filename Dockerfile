@@ -1,53 +1,30 @@
 FROM ubuntu:20.04 as builder
-LABEL description="The first stage for building a release manta binary."
-
-ARG PROFILE=release
-WORKDIR /src
+LABEL description="run manta binary distribution in docker"
+ARG BINARY="https://github.com/Manta-Network/Manta/releases/download/v3.0.0-alpha.2/manta"
 
 ENV DEBIAN_FRONTEND noninteractive
 
-COPY . /src
+WORKDIR /manta-bin
 
-RUN apt update && \
-    apt install -y git clang curl libssl-dev
-
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
-	export PATH="$PATH:$HOME/.cargo/bin" && \
-	rustup toolchain install nightly && \
-	rustup target add wasm32-unknown-unknown --toolchain nightly && \
-	rustup default nightly && \
-	rustup default stable && \
-	cargo build "--$PROFILE"
-
-# ===== SECOND STAGE ======
-
-FROM ubuntu:20.04
-LABEL description="The second stage for configuring the image."
-ARG PROFILE=release
+ADD "$BINARY" /manta-bin/manta 
 
 RUN apt-get update && \
 	apt install -y openssl libssl-dev
 
-RUN rm -rf /usr/share/* && \
-	useradd -m -u 1000 -U -s /bin/sh -d /manta manta && \
-	mkdir -p /manta/.local && \
-	chown -R manta:manta /manta/.local
+# shrink size
+RUN rm -rf /usr/share/*
 
-COPY --from=builder /src/target/$PROFILE/manta /usr/local/bin
+# make executable and check	
+RUN cp ./manta /usr/local/bin/manta && \
+    chmod 777 /usr/local/bin/manta && \
+    ldd /usr/local/bin/manta && \
+    /usr/local/bin/manta --version
 
-# checks
-RUN ldd /usr/local/bin/manta && \
-	/usr/local/bin/manta --version
-
-# Shrinking
-RUN rm -rf /usr/lib/python* && \
-	rm -rf /src
-
-USER manta
-EXPOSE 30333 9933 9944
+EXPOSE 30333 9933 9944 9615
 VOLUME ["/manta"]
 
 ENTRYPOINT ["/usr/local/bin/manta"]
 CMD ["/usr/local/bin/manta"]
 
 ENV DEBIAN_FRONTEND teletype
+
