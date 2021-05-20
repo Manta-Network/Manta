@@ -51,13 +51,10 @@ jobs:
           cargo +nightly fmt --all -- --check
       - name: Check Clippy
         run: |
-          cargo +nightly clippy --release
+          cargo +nightly clippy
       - name: Check Build
         run: |
-          cargo check --release
-      - name: Check Benchmark
-        run: |
-          cargo check --features runtime-benchmarks
+          cargo check --all-features
       - name: Run Tests
         run: |
           cargo test --release --all-features
