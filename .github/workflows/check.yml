@@ -54,7 +54,7 @@ jobs:
           cargo +nightly clippy --release
       - name: Check Build
         run: |
-          cargo check --release --all-features
+          cargo check --all-features
       - name: Run Tests
         run: |
           cargo test --release --all-features
