@@ -452,6 +452,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 
 impl pallet_manta_pay::Config for Runtime {
 	type Event = Event;
+	type WeightInfo = pallet_manta_pay::weights::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

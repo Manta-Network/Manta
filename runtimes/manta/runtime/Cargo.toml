@@ -57,7 +57,7 @@ pallet-utility = { default-features = false, version = '3.0.0' }
 
 
 # Manta
-pallet-manta-pay = { branch="calamari", git = 'https://github.com/Manta-Network/pallet-manta-pay', default-features = false }
+pallet-manta-pay = {git='https://github.com/Manta-Network/pallet-manta-pay', branch='calamari', default-features = false }
 manta-primitives = {path="../primitives", default-features = false }
 
 

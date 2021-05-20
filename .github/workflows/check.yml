@@ -42,17 +42,16 @@ jobs:
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source ~/.cargo/env
-          rustup default nightly
           rustup update nightly
           rustup target add wasm32-unknown-unknown --toolchain nightly
           rustup component add clippy
           rustup component add rustfmt
       - name: Check Formatting
         run: |
-          cargo fmt --all -- --check
+          cargo +nightly fmt --all -- --check
       - name: Check Clippy
         run: |
-          cargo clippy --release
+          cargo +nightly clippy --release
       - name: Check Build
         run: |
           cargo check --release
@@ -61,4 +60,4 @@ jobs:
           cargo check --features runtime-benchmarks
       - name: Run Tests
         run: |
-          cargo test --release
+          cargo test --release --all-features
