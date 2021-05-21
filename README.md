@@ -3,6 +3,7 @@
 
 <img align="left" width="400" src="https://github.com/w3f/General-Grants-Program/raw/master/src/badge_black.svg">
 
+## About Manta
 Manta is a privacy preserving DeFi stack on Polkadot/Substrate. The code currently hasn't been properly security audited (work in progress), use it at your own risk. 
 
 ## Compile Manta
