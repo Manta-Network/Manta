@@ -65,10 +65,7 @@ mod multiplier_tests {
 	where
 		F: Fn() -> (),
 	{
-		let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
-			.build_storage::<Runtime>()
-			.unwrap()
-			.into();
+		let mut t = crate::tests::ExtBuilder::default().build();
 		t.execute_with(|| {
 			System::set_block_consumed_resources(w, 0);
 			assertions()
@@ -124,16 +121,16 @@ mod multiplier_tests {
 
 	#[test]
 	fn time_to_reach_zero() {
-		// blocks per 24h in substrate-node: 28,800 (k)
-		// s* = 0.1875
+		// blocks per 24h in manta-node: 14_400 (k)
+		// s* = 0.25
 		// The bound from the research in an empty chain is:
 		// v <~ (p / k(0 - s*))
-		// p > v * k * -0.1875
+		// p > v * k * -0.25
 		// to get p == -1 we'd need
-		// -1 > 0.00001 * k * -0.1875
-		// 1 < 0.00001 * k * 0.1875
-		// 10^9 / 1875 < k
-		// k > 533_333 ~ 18,5 days.
+		// -1 > 0.00001 * k * -0.25
+		// 1 < 0.00001 * k * 0.25
+		// 10^9 / 2500 < k
+		// k >= 400_000 ~ 18,5 days.
 		run_with_system_weight(0, || {
 			// start from 1, the default.
 			let mut fm = Multiplier::one();
@@ -146,22 +143,24 @@ mod multiplier_tests {
 				}
 				iterations += 1;
 			}
-			assert!(iterations > 533_333);
+			assert!(iterations >= 400_000);
 		})
 	}
 
 	#[test]
-	#[ignore = "Need to figure out this doc: https://substrate.dev/rustdocs/v3.0.0/pallet_transaction_payment/struct.TargetedFeeAdjustment.html"]
 	fn min_change_per_day() {
 		run_with_system_weight(max_normal(), || {
 			let mut fm = Multiplier::one();
-			// See the example in the doc of `TargetedFeeAdjustment`. are at least 0.234, hence
-			// `fm > 1.234`.
+			// related doc: https://substrate.dev/rustdocs/v3.0.0/pallet_transaction_payment/struct.TargetedFeeAdjustment.html
+			// https://w3f-research.readthedocs.io/en/latest/polkadot/overview/2-token-economics.html#-1.-fast-adjusting-mechanism
+			// See the example in the doc of `TargetedFeeAdjustment`.
+			// are at least p >= 0.00001 * 14400 * (1 - 0.25), p >= 0.108, 14400 = 24 * 3600 / 6
+			// hence `fm > 1.108`.
 			for _ in 0..DAYS {
 				let next = runtime_multiplier_update(fm);
 				fm = next;
 			}
-			assert!(fm > Multiplier::saturating_from_rational(1234, 1000));
+			assert!(fm > Multiplier::saturating_from_rational(1108, 1000));
 		})
 	}
 

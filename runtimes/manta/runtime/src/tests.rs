@@ -1,13 +1,18 @@
 //! Tests for the Manta Runtime Configuration
 
+use codec::Encode;
 use frame_support::{
 	assert_ok,
+	storage::StorageValue,
 	traits::{OnFinalize, OnInitialize},
+	weights::{GetDispatchInfo, WeightToFeePolynomial},
 };
 use hex_literal::hex;
 use manta_primitives::constants::currency::*;
+use pallet_transaction_payment::Multiplier;
+use separator::Separatable;
 use sp_core::crypto::UncheckedInto;
-use sp_runtime::{AccountId32, BuildStorage, MultiAddress};
+use sp_runtime::{AccountId32, BuildStorage, FixedPointNumber, MultiAddress};
 
 pub type AccountId = AccountId32;
 pub const ALICE: AccountId = AccountId32::new([0u8; 32]);
@@ -87,47 +92,93 @@ fn balances_should_work() {
 #[test]
 #[ignore]
 fn remove_keys_weight_is_sensible() {
-	todo!("follow kusama runtime test");
+	todo!("https://github.com/paritytech/polkadot/blob/v0.9.2/runtime/kusama/src/tests.rs#L29");
 }
 
 #[test]
 #[ignore]
 fn sample_size_is_sensible() {
-	todo!("follow kusama runtime test");
+	todo!("https://github.com/paritytech/polkadot/blob/v0.9.2/runtime/kusama/src/tests.rs#L37");
 }
 
 #[test]
-#[ignore]
 fn payout_weight_portion() {
-	todo!("follow kusama runtime test");
+	use pallet_staking::WeightInfo;
+	let payout_weight =
+		<crate::Runtime as pallet_staking::Config>::WeightInfo::payout_stakers_alive_staked(
+			crate::MaxNominatorRewardedPerValidator::get(),
+		) as f64;
+	let block_weight = crate::BlockWeights::get().max_block as f64;
+
+	println!(
+		"a full payout takes {:.2} of the block weight [{} / {}]",
+		payout_weight / block_weight,
+		payout_weight,
+		block_weight
+	);
+	assert!(payout_weight * 2f64 < block_weight);
 }
 
 #[test]
-#[ignore]
 fn block_cost() {
-	todo!("follow kusama runtime test");
+	let max_block_weight = crate::BlockWeights::get().max_block;
+	let raw_fee: u128 = crate::IdentityFee::calc(&max_block_weight);
+
+	println!(
+		"Full Block weight == {} // WeightToFee(full_block) == {} plank",
+		max_block_weight,
+		raw_fee.separated_string(),
+	);
 }
 
 #[test]
-#[ignore]
+// #[ignore]
 fn transfer_cost_min_multiplier() {
-	todo!("follow kusama runtime test");
+	let min_multiplier = crate::MinimumMultiplier::get();
+	let call = <pallet_balances::Call<crate::Runtime>>::transfer_keep_alive(
+		Default::default(),
+		Default::default(),
+	);
+	let info = call.get_dispatch_info();
+	// convert to outer call.
+	let call = crate::Call::Balances(call);
+	let len = call.using_encoded(|e| e.len()) as u32;
+
+	let mut ext = ExtBuilder::default().build();
+	let mut test_with_multiplier = |m| {
+		ext.execute_with(|| {
+			pallet_transaction_payment::NextFeeMultiplier::put(m);
+			let fee = crate::TransactionPayment::compute_fee(len, &info, 0);
+			println!(
+				"weight = {:?} // multiplier = {:?} // full transfer fee = {:?}",
+				info.weight.separated_string(),
+				pallet_transaction_payment::NextFeeMultiplier::get(),
+				fee.separated_string(),
+			);
+		});
+	};
+
+	test_with_multiplier(min_multiplier);
+	test_with_multiplier(Multiplier::saturating_from_rational(1, 1u128));
+	test_with_multiplier(Multiplier::saturating_from_rational(1, 1_000u128));
+	test_with_multiplier(Multiplier::saturating_from_rational(1, 1_000_000u128));
+	test_with_multiplier(Multiplier::saturating_from_rational(1, 1_000_000_000u128));
 }
 
 #[test]
-#[ignore]
+#[ignore = "we don't support election right now."]
 fn nominator_limit() {
-	todo!("follow kusama runtime test");
+	todo!("https://github.com/paritytech/polkadot/blob/v0.9.2/runtime/kusama/src/tests.rs#L110");
 }
 
 #[test]
-#[ignore]
+#[ignore = "substrate 3.0 doesn't have pallet_staking_reward_fn"]
 fn compute_inflation_should_give_sensible_results() {
-	todo!("follow kusama runtime test");
+	todo!("https://github.com/paritytech/polkadot/blob/v0.9.2/runtime/kusama/src/tests.rs#L136")
 }
 
 #[test]
-#[ignore]
+#[ignore = "we might need to impl era_payout"]
 fn era_payout_should_give_sensible_results() {
-	todo!("follow kusama runtime test");
+	todo!("https://github.com/paritytech/polkadot/blob/v0.9.2/runtime/kusama/src/tests.rs#L155");
 }

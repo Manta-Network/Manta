@@ -9,7 +9,7 @@ pub mod currency {
 	pub const uMA: Balance = MA / 1_000_000; // 6 decimal, micro-MA
 
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
-		items as Balance * 15 * cMA + (bytes as Balance) * 6 * cMA // TODO: revisit the storage cost here
+		items as Balance * 15 * mMA + (bytes as Balance) * 6 * mMA // TODO: revisit the storage cost here
 	}
 }
 
@@ -56,9 +56,10 @@ mod tests {
 	fn full_block_fee_is_correct() {
 		// A full block should cost 1,600 CENTS
 		println!("Base: {}", ExtrinsicBaseWeight::get());
+		// The default polynormial is: x.
+		// checkout the code: https://github.com/paritytech/substrate/blob/v3.0.0/frame/support/src/weights.rs#L725
 		let x: u128 = IdentityFee::calc(&MAXIMUM_BLOCK_WEIGHT);
 		let y = 16 * 100 * cMA;
-		println!("strip: {}", x.max(y) - x.min(y));
 		assert!(x.max(y) - x.min(y) < mMA);
 	}
 
