@@ -3646,7 +3646,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "3.0.0"
-source = "git+https://github.com/Manta-Network/manta-crypto?branch=master#a23182964290aa30cb7e28b1b8958538b6d3c992"
+source = "git+https://github.com/Manta-Network/manta-crypto?branch=master#63e52df4ef1c3f9b8c6db87d8d20287036877105"
 dependencies = [
  "aes 0.7.0",
  "ark-bls12-381",
@@ -4376,7 +4376,7 @@ dependencies = [
 [[package]]
 name = "pallet-manta-pay"
 version = "3.0.0"
-source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#83041b8dd39d79e947d714bfcaeb99a44247b698"
+source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#551210d5bb27f29f49971b90769295ec6d8b3590"
 dependencies = [
  "ark-bls12-381",
  "ark-crypto-primitives",
@@ -8424,7 +8424,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.7.3",
+ "rand 0.3.23",
  "static_assertions",
 ]
 
