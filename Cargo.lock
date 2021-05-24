@@ -3628,6 +3628,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "manta-asset"
+version = "3.0.0"
+source = "git+https://github.com/Manta-Network/manta-asset?branch=master#49ab31edd9453616b3e5ca1e5268278b497f07fe"
+dependencies = [
+ "ark-crypto-primitives",
+ "ark-ed-on-bls12-381",
+ "ark-ff",
+ "ark-serialize",
+ "ark-std",
+ "blake2",
+ "frame-support",
+ "manta-crypto",
+ "parity-scale-codec",
+]
+
+[[package]]
+name = "manta-crypto"
+version = "3.0.0"
+source = "git+https://github.com/Manta-Network/manta-crypto?branch=master#63e52df4ef1c3f9b8c6db87d8d20287036877105"
+dependencies = [
+ "aes 0.7.0",
+ "ark-bls12-381",
+ "ark-crypto-primitives",
+ "ark-ed-on-bls12-381",
+ "ark-groth16",
+ "ark-r1cs-std",
+ "ark-serialize",
+ "ark-std",
+ "blake2",
+ "generic-array 0.14.4",
+ "x25519-dalek",
+]
+
+[[package]]
 name = "manta-primitives"
 version = "3.0.0"
 dependencies = [
@@ -4342,12 +4376,10 @@ dependencies = [
 [[package]]
 name = "pallet-manta-pay"
 version = "3.0.0"
-source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#d31a981b59ebcb3b491714a850d2c40c63cc513c"
+source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#551210d5bb27f29f49971b90769295ec6d8b3590"
 dependencies = [
- "aes 0.7.0",
  "ark-bls12-381",
  "ark-crypto-primitives",
- "ark-ec",
  "ark-ed-on-bls12-381",
  "ark-ff",
  "ark-groth16",
@@ -4355,19 +4387,18 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "blake2",
  "data-encoding",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "generic-array 0.14.4",
  "hkdf",
+ "manta-asset",
+ "manta-crypto",
  "parity-scale-codec",
  "rand_chacha 0.2.2",
  "sha2 0.9.4",
  "sp-runtime",
  "sp-std",
- "x25519-dalek",
 ]
 
 [[package]]
