@@ -27,7 +27,7 @@ docker pull mantanetwork/manta:latest
 
 * Run one dev node locally.
 ```
-docker run -it -p 9944:9944 mantanetwork/manta:latest --dev --tmp --alice
+docker run -it -p 9944:9944 mantanetwork/manta:latest --dev --tmp --alice --unsafe-ws-external
 ```
 
 * Run two nodes locally.
@@ -41,6 +41,7 @@ docker run \
 --tmp \
 --alice \
 --node-key 0000000000000000000000000000000000000000000000000000000000000001 \
+--unsafe-ws-external \
 --validator
 
 docker run \
@@ -50,6 +51,7 @@ docker run \
 --bootnodes /ip4/127.0.0.1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp \
 --chain=local \
 --bob \
+--unsafe-ws-external \
 --validator
 ```
 Normally, both nodes will produce and finalize blocks.
