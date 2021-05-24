@@ -27,7 +27,7 @@ docker pull mantanetwork/manta:latest
 
 * Run one dev node locally.
 ```
-docker run -it -p 9944:9944 mantanetwork/manta:latest --dev --tmp --alice
+docker run -it -p 9944:9944 mantanetwork/manta:latest --dev --tmp --alice --unsafe-ws-external
 ```
 
 * Run two nodes locally.
