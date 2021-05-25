@@ -7,6 +7,8 @@
     "CurrencyIdOf": "CurrencyId",
     "Amount": "i128",
     "AmountOf": "Amount",
-    "AccountInfo": "AccountInfoWithDualRefCount"
+    "AccountInfo": "AccountInfoWithDualRefCount",
+    "PrivateTransferPayload": "[u8;608]",
+    "ReclaimPayload": "[u8;512]"
 }
 
