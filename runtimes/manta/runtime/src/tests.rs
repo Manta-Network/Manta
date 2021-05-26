@@ -87,18 +87,36 @@ fn balances_should_work() {
 	});
 }
 
+#[test]
+fn authoring_blocks_in_mock_runtime_should_work() {
+	ExtBuilder::default().build().execute_with(|| {
+		run_to_block(20);
+		assert_eq!(crate::System::block_number(), 20);
+	});
+}
+
 // Follow kusama runtime configuration tests
 // https://github.com/paritytech/polkadot/blob/master/runtime/kusama/src/tests.rs
 #[test]
-#[ignore]
 fn remove_keys_weight_is_sensible() {
-	todo!("https://github.com/paritytech/polkadot/blob/v0.9.2/runtime/kusama/src/tests.rs#L29");
+	use pallet_manta_pay::WeightInfo;
+	// mint_private_asset has the max weights in manta-pay.
+	let max_weight = <crate::Runtime as pallet_manta_pay::Config>::WeightInfo::mint_private_asset();
+	// Max remove keys limit should be no more than half the total block weight.
+	assert!(max_weight * 2 < crate::BlockWeights::get().max_block);
 }
 
 #[test]
-#[ignore]
 fn sample_size_is_sensible() {
-	todo!("https://github.com/paritytech/polkadot/blob/v0.9.2/runtime/kusama/src/tests.rs#L37");
+	use frame_support::weights::{constants::RocksDbWeight, Weight};
+	use pallet_manta_pay::WeightInfo;
+	let max_weight: Weight = RocksDbWeight::get().reads_writes(8, 5);
+	// Max sample cleanup should be no more than half the total block weight.
+	assert!(max_weight * 2 < crate::BlockWeights::get().max_block);
+	assert!(
+		<crate::Runtime as pallet_manta_pay::Config>::WeightInfo::reclaim() * 2
+			< crate::BlockWeights::get().max_block
+	);
 }
 
 #[test]
@@ -132,7 +150,6 @@ fn block_cost() {
 }
 
 #[test]
-// #[ignore]
 fn transfer_cost_min_multiplier() {
 	let min_multiplier = crate::MinimumMultiplier::get();
 	let call = <pallet_balances::Call<crate::Runtime>>::transfer_keep_alive(

@@ -46,21 +46,22 @@ pub mod time {
 
 #[cfg(test)]
 mod tests {
-	use super::currency::{cMA, mMA};
+	use super::currency::{cMA, mMA, MA};
 	use frame_support::weights::WeightToFeePolynomial;
 	use manta_runtime::{ExtrinsicBaseWeight, IdentityFee, MAXIMUM_BLOCK_WEIGHT};
 
 	#[test]
-	#[ignore = "Figuring out why 1_600 cents"]
 	// This function tests that the fee for `MAXIMUM_BLOCK_WEIGHT` of weight is correct
 	fn full_block_fee_is_correct() {
-		// A full block should cost 1,600 CENTS
+		// A full block should cost 200 CENTS
 		println!("Base: {}", ExtrinsicBaseWeight::get());
-		// The default polynormial is: x.
+		// The polynormial is: f(x) = (coeff_integer + coeff_frac) * (negative * 1) * x^degree
+		// But the polynormial for calculating is: f(x) = x.
 		// checkout the code: https://github.com/paritytech/substrate/blob/v3.0.0/frame/support/src/weights.rs#L725
+		// Follow this method to calculate fee: https://github.com/paritytech/substrate/blob/v3.0.0/frame/support/src/weights.rs#L695
+		// so x = MAXIMUM_BLOCK_WEIGHT.
 		let x: u128 = IdentityFee::calc(&MAXIMUM_BLOCK_WEIGHT);
-		let y = 16 * 100 * cMA;
-		assert!(x.max(y) - x.min(y) < mMA);
+		assert_eq!(x, 2 * MA);
 	}
 
 	#[test]

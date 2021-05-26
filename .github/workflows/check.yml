@@ -3,6 +3,7 @@
 name: Check Set-Up & Build
 
 # Controls when the action will run.
+# yamllint disable-line rule:truthy
 on:
   # Triggers the workflow on push or pull request events
   # but only for the manta (default) branch.
@@ -19,7 +20,7 @@ on:
 jobs:
   check:
     # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     # Steps represent a sequence of tasks
     # that will be executed as part of the job
@@ -41,20 +42,19 @@ jobs:
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source ~/.cargo/env
-          rustup default nightly
           rustup update nightly
           rustup target add wasm32-unknown-unknown --toolchain nightly
           rustup component add clippy
           rustup component add rustfmt
       - name: Check Formatting
         run: |
-          cargo fmt --all -- --check
+          cargo +nightly fmt --all -- --check
       - name: Check Clippy
         run: |
-          cargo clippy --release
+          cargo +nightly clippy
       - name: Check Build
         run: |
-          cargo check --release
+          cargo check --all-features
       - name: Run Tests
         run: |
-          cargo test --release
+          cargo test --release --all-features

@@ -1,4 +1,7 @@
-# Manta
+<a href="https://manta.network">
+<img width="650" alt="github-banner" src="https://user-images.githubusercontent.com/720571/119246129-f6f39800-bb4c-11eb-8d9f-d68e9fe482e9.png">
+</a>
+
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 Manta is a privacy preserving DeFi stack on Polkadot/Substrate. The code currently hasn't been properly security audited (work in progress), use it at your own risk. 
@@ -24,7 +27,7 @@ docker pull mantanetwork/manta:latest
 
 * Run one dev node locally.
 ```
-docker run -it -p 9944:9944 mantanetwork/manta:latest --dev --tmp --alice
+docker run -it -p 9944:9944 mantanetwork/manta:latest --dev --tmp --alice --unsafe-ws-external
 ```
 
 * Run two nodes locally.
@@ -38,6 +41,7 @@ docker run \
 --tmp \
 --alice \
 --node-key 0000000000000000000000000000000000000000000000000000000000000001 \
+--unsafe-ws-external \
 --validator
 
 docker run \
@@ -47,6 +51,7 @@ docker run \
 --bootnodes /ip4/127.0.0.1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp \
 --chain=local \
 --bob \
+--unsafe-ws-external \
 --validator
 ```
 Normally, both nodes will produce and finalize blocks.

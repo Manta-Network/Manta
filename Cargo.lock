@@ -3627,6 +3627,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "manta-asset"
+version = "3.0.0"
+source = "git+https://github.com/Manta-Network/manta-asset?branch=master#49ab31edd9453616b3e5ca1e5268278b497f07fe"
+dependencies = [
+ "ark-crypto-primitives",
+ "ark-ed-on-bls12-381",
+ "ark-ff",
+ "ark-serialize",
+ "ark-std",
+ "blake2",
+ "frame-support",
+ "manta-crypto",
+ "parity-scale-codec",
+]
+
+[[package]]
+name = "manta-crypto"
+version = "3.0.0"
+source = "git+https://github.com/Manta-Network/manta-crypto?branch=master#63e52df4ef1c3f9b8c6db87d8d20287036877105"
+dependencies = [
+ "aes 0.7.0",
+ "ark-bls12-381",
+ "ark-crypto-primitives",
+ "ark-ed-on-bls12-381",
+ "ark-groth16",
+ "ark-r1cs-std",
+ "ark-serialize",
+ "ark-std",
+ "blake2",
+ "generic-array 0.14.4",
+ "x25519-dalek",
+]
+
+[[package]]
 name = "manta-primitives"
 version = "3.0.0"
 dependencies = [
@@ -4265,6 +4299,7 @@ version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fe826f3bfb984b3dd8d6675d7d156ba4c0877ee562bf59d86a4e805b7737dcb1"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -4300,12 +4335,10 @@ dependencies = [
 [[package]]
 name = "pallet-manta-pay"
 version = "3.0.0"
-source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#c81983367941d0297fe307ba453b81ac395b1db2"
+source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#b9e1cd2606f428c36c69630b32354734346d3205"
 dependencies = [
- "aes 0.7.0",
  "ark-bls12-381",
  "ark-crypto-primitives",
- "ark-ec",
  "ark-ed-on-bls12-381",
  "ark-ff",
  "ark-groth16",
@@ -4313,19 +4346,18 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "blake2",
  "data-encoding",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
- "generic-array 0.14.4",
  "hkdf",
+ "manta-asset",
+ "manta-crypto",
  "parity-scale-codec",
- "rand 0.8.3",
  "rand_chacha 0.2.2",
  "sha2 0.9.4",
  "sp-runtime",
- "substrate-wasm-builder",
- "x25519-dalek",
+ "sp-std",
 ]
 
 [[package]]
@@ -4499,6 +4531,7 @@ version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fcd63d1b336800d155ab60ee918afd111f7449e44cec936f460d555e850fa93b"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
