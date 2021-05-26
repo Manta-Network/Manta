@@ -27,22 +27,22 @@ pub(crate) fn run_to_block(n: u32) {
 	}
 }
 
-pub struct ExtBuilder;
+pub struct ExtBuilder {
+	pub init_balances: Vec<(AccountId, Balance)>,
+}
 
 impl Default for ExtBuilder {
 	fn default() -> Self {
-		Self {}
+		Self {
+			init_balances: vec![],
+		}
 	}
 }
 
 impl ExtBuilder {
-	pub fn one_thousand_for_alice_n_bob() -> Vec<(AccountId, Balance)> {
-		vec![
-			// Alice
-			(ALICE, 1000 * MA),
-			// Bob
-			(BOB, 1000 * MA),
-		]
+	pub fn one_thousand_for_alice_n_bob(mut self) -> Self {
+		self.init_balances = vec![(ALICE, 1000 * MA), (BOB, 1000 * MA)];
+		self
 	}
 
 	// Create test utility, runtime mock
@@ -60,7 +60,7 @@ impl ExtBuilder {
 
 		let manta_genesis_config = manta::chain_spec::manta_testnet_config_genesis(
 			initial_authorities,
-			Self::one_thousand_for_alice_n_bob(),
+			self.init_balances,
 			root_key,
 			stash,
 			false,
@@ -74,17 +74,47 @@ impl ExtBuilder {
 
 #[test]
 fn balances_should_work() {
-	ExtBuilder::default().build().execute_with(|| {
-		// transfer
-		assert_ok!(crate::Balances::transfer(
-			crate::Origin::signed(ALICE),
-			MultiAddress::Id(BOB),
-			20 * MA
-		));
-		// check balance after transfer
-		assert_eq!(crate::System::account(ALICE).data.free, 1000 * MA - 20 * MA);
-		assert_eq!(crate::System::account(BOB).data.free, 1000 * MA + 20 * MA);
-	});
+	ExtBuilder::default()
+		.one_thousand_for_alice_n_bob()
+		.build()
+		.execute_with(|| {
+			// transfer
+			assert_ok!(crate::Balances::transfer(
+				crate::Origin::signed(ALICE),
+				MultiAddress::Id(BOB),
+				20 * MA
+			));
+			// check balance after transfer
+			assert_eq!(crate::System::account(ALICE).data.free, 1000 * MA - 20 * MA);
+			assert_eq!(crate::System::account(BOB).data.free, 1000 * MA + 20 * MA);
+		});
+}
+
+#[test]
+#[ignore = "It looks no way to remove panic while building manta_genesis_config."]
+// https://github.com/paritytech/substrate/blob/v3.0.0/frame/balances/src/lib.rs#L481
+fn check_existential_deposit() {
+	let initial_authorities = vec![(
+		ALICE,
+		ALICE,
+		hex!["9becad03e6dcac03cee07edebca5475314861492cdfc96a2144a67bbe9699332"].unchecked_into(),
+		hex!["6e7e4eb42cbd2e0ab4cae8708ce5509580b8c04d11f6758dbf686d50fe9f9106"].unchecked_into(),
+	)];
+	let root_key = ALICE;
+	let stash = 9 * cMA;
+
+	let init_balances: Vec<(AccountId, Balance)> = vec![(ALICE, 99 * cMA), (BOB, 99 * cMA)];
+
+	let manta_genesis_config = manta::chain_spec::manta_testnet_config_genesis(
+		initial_authorities,
+		init_balances,
+		root_key,
+		stash,
+		false,
+	)
+	.build_storage();
+
+	assert!(manta_genesis_config.is_err());
 }
 
 #[test]
