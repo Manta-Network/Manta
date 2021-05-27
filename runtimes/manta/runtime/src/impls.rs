@@ -65,7 +65,9 @@ mod multiplier_tests {
 	where
 		F: Fn() -> (),
 	{
-		let mut t = crate::tests::ExtBuilder::default().build();
+		let mut t = crate::tests::ExtBuilder::default()
+			.one_thousand_for_alice_n_bob()
+			.build();
 		t.execute_with(|| {
 			System::set_block_consumed_resources(w, 0);
 			assertions()

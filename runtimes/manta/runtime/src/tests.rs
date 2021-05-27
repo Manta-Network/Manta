@@ -119,10 +119,13 @@ fn check_existential_deposit() {
 
 #[test]
 fn authoring_blocks_in_mock_runtime_should_work() {
-	ExtBuilder::default().build().execute_with(|| {
-		run_to_block(20);
-		assert_eq!(crate::System::block_number(), 20);
-	});
+	ExtBuilder::default()
+		.one_thousand_for_alice_n_bob()
+		.build()
+		.execute_with(|| {
+			run_to_block(20);
+			assert_eq!(crate::System::block_number(), 20);
+		});
 }
 
 // Follow kusama runtime configuration tests
@@ -191,7 +194,7 @@ fn transfer_cost_min_multiplier() {
 	let call = crate::Call::Balances(call);
 	let len = call.using_encoded(|e| e.len()) as u32;
 
-	let mut ext = ExtBuilder::default().build();
+	let mut ext = ExtBuilder::default().one_thousand_for_alice_n_bob().build();
 	let mut test_with_multiplier = |m| {
 		ext.execute_with(|| {
 			pallet_transaction_payment::NextFeeMultiplier::put(m);
