@@ -50,3 +50,15 @@ pub type Moment = u64;
 pub enum TokenSymbol {
 	MA = 0,
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn token_symbol_should_work() {
+		let native_token = TokenSymbol::MA;
+
+		assert_eq!(native_token as u8, 0);
+	}
+}

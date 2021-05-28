@@ -4,6 +4,7 @@
 pub mod currency {
 	pub type Balance = u128;
 	pub const MA: Balance = 1_000_000_000_000; // 12 decimal
+	pub const cMA: Balance = MA / 100; // 10 decimal, cent-MA
 	pub const mMA: Balance = MA / 1_000; // 9 decimal, milli-MA
 	pub const uMA: Balance = MA / 1_000_000; // 6 decimal, micro-MA
 
@@ -41,4 +42,35 @@ pub mod time {
 	pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 	pub const HOURS: BlockNumber = MINUTES * 60;
 	pub const DAYS: BlockNumber = HOURS * 24;
+}
+
+#[cfg(test)]
+mod tests {
+	use super::currency::{cMA, mMA, MA};
+	use frame_support::weights::WeightToFeePolynomial;
+	use manta_runtime::{ExtrinsicBaseWeight, IdentityFee, MAXIMUM_BLOCK_WEIGHT};
+
+	#[test]
+	// This function tests that the fee for `MAXIMUM_BLOCK_WEIGHT` of weight is correct
+	fn full_block_fee_is_correct() {
+		// A full block should cost 200 CENTS
+		println!("Base: {}", ExtrinsicBaseWeight::get());
+		// The polynormial is: f(x) = (coeff_integer + coeff_frac) * (negative * 1) * x^degree
+		// But the polynormial for calculating is: f(x) = x.
+		// checkout the code: https://github.com/paritytech/substrate/blob/v3.0.0/frame/support/src/weights.rs#L725
+		// Follow this method to calculate fee: https://github.com/paritytech/substrate/blob/v3.0.0/frame/support/src/weights.rs#L695
+		// so x = MAXIMUM_BLOCK_WEIGHT.
+		let x: u128 = IdentityFee::calc(&MAXIMUM_BLOCK_WEIGHT);
+		assert_eq!(x, 2 * MA);
+	}
+
+	#[test]
+	// This function tests that the fee for `ExtrinsicBaseWeight` of weight is correct
+	fn extrinsic_base_fee_is_correct() {
+		// `ExtrinsicBaseWeight` should cost 1/10 of a CENT
+		println!("Base: {}", ExtrinsicBaseWeight::get());
+		let x: u128 = IdentityFee::calc(&ExtrinsicBaseWeight::get());
+		let y = cMA / 10;
+		assert!(x.max(y) - x.min(y) < mMA);
+	}
 }

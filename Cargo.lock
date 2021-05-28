@@ -3583,7 +3583,6 @@ dependencies = [
  "manta-primitives",
  "manta-runtime",
  "nix",
- "pallet-contracts-rpc",
  "pallet-transaction-payment-rpc",
  "platforms",
  "rand 0.7.3",
@@ -3665,6 +3664,8 @@ dependencies = [
 name = "manta-primitives"
 version = "3.0.0"
 dependencies = [
+ "frame-support",
+ "manta-runtime",
  "parity-scale-codec",
  "serde",
  "sp-core",
@@ -3683,6 +3684,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "hex-literal",
+ "manta",
  "manta-primitives",
  "pallet-authorship",
  "pallet-babe",
@@ -3701,12 +3703,14 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
  "parity-scale-codec",
+ "separator",
  "serde",
  "sp-api",
  "sp-block-builder",
  "sp-consensus-babe",
  "sp-core",
  "sp-inherents",
+ "sp-io",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -4302,51 +4306,6 @@ dependencies = [
  "serde",
  "sp-core",
  "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-contracts-primitives"
-version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "621d75148763349f72e76e79f62365d28adb51e3f2e0285e4e8b8600ae600978"
-dependencies = [
- "bitflags",
- "parity-scale-codec",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-contracts-rpc"
-version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22491e3c304819f96c83d02e43bd99128e4e42a57da4d6a9d4b5193778da915b"
-dependencies = [
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
- "pallet-contracts-primitives",
- "pallet-contracts-rpc-runtime-api",
- "parity-scale-codec",
- "serde",
- "sp-api",
- "sp-blockchain",
- "sp-core",
- "sp-rpc",
- "sp-runtime",
-]
-
-[[package]]
-name = "pallet-contracts-rpc-runtime-api"
-version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb4b410cb148e68256e3827854a67ec34b16157f448e78173219dcd6a8ec7343"
-dependencies = [
- "pallet-contracts-primitives",
- "parity-scale-codec",
- "sp-api",
  "sp-runtime",
  "sp-std",
 ]
@@ -6786,6 +6745,12 @@ checksum = "00b0bef5b7f9e0df16536d3961cfb6e84331c065b4066afb39768d0e319411f7"
 dependencies = [
  "pest",
 ]
+
+[[package]]
+name = "separator"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f97841a747eef040fcd2e7b3b9a220a7205926e60488e673d9e4926d27772ce5"
 
 [[package]]
 name = "serde"

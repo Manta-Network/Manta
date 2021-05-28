@@ -498,9 +498,9 @@ pub fn manta_local_dev_config() -> ChainSpec {
 #[cfg(test)]
 pub(crate) mod tests {
 	use super::*;
-	use crate::service::{new_full_base, new_light_base, NewFullBase};
 	use sp_runtime::BuildStorage;
 
+	#[allow(dead_code)]
 	fn local_testnet_genesis_instant_single() -> GenesisConfig {
 		testnet_genesis(
 			vec![authority_keys_from_seed("Alice")],
@@ -511,6 +511,7 @@ pub(crate) mod tests {
 	}
 
 	/// Local testnet config (single validator - Alice)
+	#[allow(dead_code)]
 	pub fn integration_test_config_with_single_authority() -> ChainSpec {
 		ChainSpec::from_genesis(
 			"Integration Test",
@@ -526,6 +527,7 @@ pub(crate) mod tests {
 	}
 
 	/// Local testnet config (multivalidator Alice + Bob)
+	#[allow(dead_code)]
 	pub fn integration_test_config_with_two_authorities() -> ChainSpec {
 		ChainSpec::from_genesis(
 			"Integration Test",
@@ -560,16 +562,21 @@ pub(crate) mod tests {
 
 	#[test]
 	fn test_create_development_chain_spec() {
-		development_config().build_storage().unwrap();
+		assert!(development_config().build_storage().is_ok());
 	}
 
 	#[test]
 	fn test_create_local_testnet_chain_spec() {
-		local_testnet_config().build_storage().unwrap();
+		assert!(local_testnet_config().build_storage().is_ok());
 	}
 
 	#[test]
 	fn test_staging_test_net_chain_spec() {
-		staging_testnet_config().build_storage().unwrap();
+		assert!(staging_testnet_config().build_storage().is_ok());
+	}
+
+	#[test]
+	fn test_manta_testnet_chain_spec() {
+		assert!(manta_testnet_config().build_storage().is_ok());
 	}
 }
