@@ -105,7 +105,7 @@ fn check_existential_deposit() {
 
 	let init_balances: Vec<(AccountId, Balance)> = vec![
 		(ALICE, crate::NativeTokenExistentialDeposit::get() - 1 * cMA),
-		(BOB, crate::NativeTokenExistentialDeposit::get() - 1 * cMA)
+		(BOB, crate::NativeTokenExistentialDeposit::get() - 1 * cMA),
 	];
 
 	let manta_genesis_config = manta::chain_spec::manta_testnet_config_genesis(
