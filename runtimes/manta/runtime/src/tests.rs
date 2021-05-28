@@ -101,9 +101,12 @@ fn check_existential_deposit() {
 		hex!["6e7e4eb42cbd2e0ab4cae8708ce5509580b8c04d11f6758dbf686d50fe9f9106"].unchecked_into(),
 	)];
 	let root_key = ALICE;
-	let stash = 9 * cMA;
+	let stash = crate::NativeTokenExistentialDeposit::get() - 1 * cMA;
 
-	let init_balances: Vec<(AccountId, Balance)> = vec![(ALICE, 99 * cMA), (BOB, 99 * cMA)];
+	let init_balances: Vec<(AccountId, Balance)> = vec![
+		(ALICE, crate::NativeTokenExistentialDeposit::get() - 1 * cMA),
+		(BOB, crate::NativeTokenExistentialDeposit::get() - 1 * cMA)
+	];
 
 	let manta_genesis_config = manta::chain_spec::manta_testnet_config_genesis(
 		initial_authorities,
