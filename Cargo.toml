@@ -1,6 +1,8 @@
 [workspace]
 members = [
-    "runtimes/manta-pc",
+	'node',
+    'pallets/collator-selection',
+	'runtime/manta-pc',
 ]
 
 [profile.release]
