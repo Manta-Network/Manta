@@ -84,7 +84,7 @@ polkadot-service = { git = 'https://github.com/paritytech/polkadot.git', branch 
 
 # Self dependencies
 manta-pc-runtime = { path = '../runtime/manta-pc' }
-runtime-common = { path = '../runtime/common' }
+manta-primitives = { path = '../runtime/primitives' }
 
 [build-dependencies]
 substrate-build-script-utils = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.3" }

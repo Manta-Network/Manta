@@ -14,7 +14,6 @@ hex-literal = { version = '0.3.1', optional = true }
 serde = { version = '1.0.119', features = ['derive'], optional = true }
 
 # Substrate primitives
-node-primitives = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.3" }
 sp-api = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.3" }
 sp-block-builder = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.3" }
 sp-consensus-aura = { version = '0.9.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.3" }
@@ -70,8 +69,7 @@ xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-fea
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.3" }
 
 # Self dependencies
-runtime-common = { path = '../common', default-features = false }
-pallet-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
+manta-primitives = { path = '../primitives', default-features = false }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -96,7 +94,6 @@ runtime-benchmarks = [
 	'pallet-utility/runtime-benchmarks',
 	'pallet-timestamp/runtime-benchmarks',
 	'pallet-xcm/runtime-benchmarks',
-	'pallet-collator-selection/runtime-benchmarks',
 ]
 std = [
 	'codec/std',
@@ -130,8 +127,7 @@ std = [
 	'pallet-session/std',
 	'pallet-xcm/std',
 	'pallet-transaction-payment/std',
-	'pallet-collator-selection/std',
-	'node-primitives/std',
+	'manta-primitives/std',
 	'parachain-info/std',
 	"cumulus-pallet-aura-ext/std",
 	'cumulus-pallet-parachain-system/std',
@@ -144,6 +140,5 @@ std = [
 	'xcm-builder/std',
 	'xcm-executor/std',
 	'polkadot-runtime-common/std',
-	'runtime-common/std',
 	'polkadot-primitives/std',
 ]

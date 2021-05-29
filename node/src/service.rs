@@ -13,7 +13,7 @@ use cumulus_client_consensus_common::{
 };
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use polkadot_primitives::v0::CollatorPair;
-use runtime_common::Header;
+use manta_primitives::Header;
 
 use sc_client_api::ExecutorProvider;
 use sc_executor::native_executor_instance;
@@ -37,7 +37,7 @@ pub use sc_executor::NativeExecutor;
 
 pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
-// Native Statemint executor instance.
+// Native Manta Parachain executor instance.
 native_executor_instance!(
 	pub MantaPCRuntimeExecutor,
 	manta_pc_runtime::api::dispatch,
@@ -259,7 +259,7 @@ where
 		aura_verifier: BuildOnAccess::Uninitialized(Some(Box::new(aura_verifier))),
 	};
 
-	let registry = config.prometheus_registry().clone();
+	let registry = config.prometheus_registry();
 	let spawner = task_manager.spawn_essential_handle();
 
 	let import_queue = BasicQueue::new(

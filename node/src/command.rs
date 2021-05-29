@@ -16,7 +16,7 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use sp_runtime::{generic, OpaqueExtrinsic};
 use std::{io::Write, net::SocketAddr};
-use runtime_common::Header;
+use manta_primitives::Header;
 
 pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
@@ -27,12 +27,10 @@ fn load_spec(
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
-		"manta-pc-dev" => Box::new(chain_spec::statemint_development_config(para_id)),
-		"manta-pc-local" => Box::new(chain_spec::statemint_local_config(para_id)),
+		"manta-pc-dev" => Box::new(chain_spec::manta_pc_development_config(para_id)),
+		"manta-pc-local" => Box::new(chain_spec::manta_pc_local_config(para_id)),
 		path => {
-			let chain_spec = chain_spec::ChainSpec::from_json_file(
-				path.into(),
-			)?;
+			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into(),)?;
 			Box::new(chain_spec)
 		},
 	})
@@ -108,7 +106,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name().to_string()].iter())
+		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter())
 			.load_spec(id)
 	}
 
@@ -127,7 +125,7 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 }
 
 fn use_manta_pc_runtime(chain_spec: &dyn ChainSpec) -> bool {
-	chain_spec.id().starts_with("statemine")
+	chain_spec.id().starts_with("manta_pc")
 }
 
 use crate::service::{new_partial, MantaPCRuntimeExecutor};
@@ -190,7 +188,7 @@ pub fn run() -> Result<()> {
 			runner.sync_run(|config| {
 				let polkadot_cli = RelayChainCli::new(
 					&config,
-					[RelayChainCli::executable_name().to_string()]
+					[RelayChainCli::executable_name()]
 						.iter()
 						.chain(cli.relaychain_args.iter()),
 				);
@@ -264,7 +262,6 @@ pub fn run() -> Result<()> {
 		},
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
-			let use_statemine = use_manta_pc_runtime(&*runner.config().chain_spec);
 
 			runner.run_node_until_exit(|config| async move {
 				let key = sp_core::Pair::generate().0;
@@ -274,7 +271,7 @@ pub fn run() -> Result<()> {
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,
-					[RelayChainCli::executable_name().to_string()]
+					[RelayChainCli::executable_name()]
 						.iter()
 						.chain(cli.relaychain_args.iter()),
 				);
@@ -301,29 +298,16 @@ pub fn run() -> Result<()> {
 				info!("Parachain genesis state: {}", genesis_state);
 				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
-				if use_statemine {
-					crate::service::start_node::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor, _>(
-						config,
-						key,
-						polkadot_config,
-						id,
-						|_| Default::default(),
-					)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
-				} else {
-					crate::service::start_node::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor, _>(
-						config,
-						key,
-						polkadot_config,
-						id,
-						|_| Default::default(),
-					)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
-				}
+				crate::service::start_node::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor, _>(
+					config,
+					key,
+					polkadot_config,
+					id,
+					|_| Default::default(),
+				)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
 			})
 		}
 	}

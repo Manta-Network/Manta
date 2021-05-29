@@ -1,23 +1,41 @@
+
+pub const MANTAPCSS58Prefix: u8 = 77;
+
+// Money matters.
 pub mod currency {
-	use node_primitives::Balance;
+    use crate::Balance;
 
-	/// The existential deposit. Set to 1/10 of its parent Relay Chain (v9010).
-	pub const EXISTENTIAL_DEPOSIT: Balance = 1 * MA;
-
-	pub const MA: Balance = 1000_000_000_000;
-	pub const DOLLARS: Balance = MA;
-	pub const CENTS: Balance = MA / 100;        // 100_000_000
-	pub const MILLICENTS: Balance = CENTS / 1_000; // 100_000
+	pub const MA: Balance = 1_000_000_000_000; // 12 decimal
+	pub const cMA: Balance = MA / 100; // 10 decimal, cent-MA
+	pub const mMA: Balance = MA / 1_000; // 9 decimal, milli-MA
+	pub const uMA: Balance = MA / 1_000_000; // 6 decimal, micro-MA
 
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
-		// 1/10 of Polkadot v9010
-		(items as Balance * 20 * DOLLARS + (bytes as Balance) * 100 * MILLICENTS) / 10
+		items as Balance * 15 * mMA + (bytes as Balance) * 6 * mMA // TODO: revisit the storage cost here
 	}
+}
+
+/// Manta parachain time-related
+pub mod time {
+	use crate::{BlockNumber, Moment};
+	/// This determines the average expected block time that we are targeting. Blocks will be
+	/// produced at a minimum duration defined by `SLOT_DURATION`. `SLOT_DURATION` is picked up by
+	/// `pallet_timestamp` which is in turn picked up by `pallet_aura` to implement `fn
+	/// slot_duration()`.
+	///
+	/// Change this to adjust the block time.
+	pub const MILLISECS_PER_BLOCK: Moment = 6_000;
+	pub const SLOT_DURATION: Moment = MILLISECS_PER_BLOCK;
+
+	// Time is measured by number of blocks.
+	pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
+	pub const HOURS: BlockNumber = MINUTES * 60;
+	pub const DAYS: BlockNumber = HOURS * 24;
 }
 
 /// Fee-related.
 pub mod fee {
-	use node_primitives::Balance;
+	use crate::Balance;
 	pub use sp_runtime::Perbill;
 	use frame_support::weights::{
 		constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -43,8 +61,9 @@ pub mod fee {
 		type Balance = Balance;
 		fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
 			// in Polkadot, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 CENT:
-			// in Statemint, we map to 1/10 of that, or 1/100 CENT
-			let p = super::currency::CENTS;
+			// in Manta Parachain, we map to 1/10 of that, or 1/100 CENT
+            // revisit here to figure out why use this polynomial
+			let p = super::currency::cMA;
 			let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
 			smallvec![WeightToFeeCoefficient {
 				degree: 1,

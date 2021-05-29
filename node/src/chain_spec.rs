@@ -1,15 +1,15 @@
 use cumulus_primitives_core::ParaId;
+use manta_primitives::{AccountId, Signature, AuraId, Balance};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, Properties};
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use runtime_common::{AccountId, Signature, AuraId, Balance};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<manta_pc_runtime::GenesisConfig, Extensions>;
 
-const MANTAPC_ED: Balance = manta_pc_runtime::constants::currency::EXISTENTIAL_DEPOSIT;
+const MANTAPC_ED: Balance = manta_pc_runtime::NativeTokenExistentialDeposit::get();
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -23,13 +23,6 @@ pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair
 /// This function's return type must always match the session keys of the chain in tuple format.
 pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
 	get_pair_from_seed::<AuraId>(seed)
-}
-
-/// Generate the session keys from individual elements.
-///
-/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn manta_session_keys(keys: AuraId) -> manta_pc_runtime::opaque::SessionKeys {
-	manta_pc_runtime::opaque::SessionKeys { aura: keys }
 }
 
 /// The extensions for the [`ChainSpec`].
@@ -58,7 +51,7 @@ where
 	AccountPublic::from(get_pair_from_seed::<TPublic>(seed)).into_account()
 }
 
-pub fn statemint_development_config(id: ParaId) -> ChainSpec {
+pub fn manta_pc_development_config(id: ParaId) -> ChainSpec {
 	let mut properties = Properties::new();
 	properties.insert("tokenSymbol".into(), "MA".into());
 	properties.insert("tokenDecimals".into(), 12.into());
@@ -98,7 +91,7 @@ pub fn statemint_development_config(id: ParaId) -> ChainSpec {
 	)
 }
 
-pub fn statemint_local_config(id: ParaId) -> ChainSpec {
+pub fn manta_pc_local_config(id: ParaId) -> ChainSpec {
 	let mut properties = Properties::new();
 	properties.insert("tokenSymbol".into(), "MA".into());
 	properties.insert("tokenDecimals".into(), 12.into());
@@ -169,21 +162,11 @@ fn manta_pc_genesis(
 				.collect(),
 		},
 		parachain_info: manta_pc_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_collator_selection: manta_pc_runtime::CollatorSelectionConfig {
-			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: MANTAPC_ED * 16,
-			..Default::default()
-		},
-		pallet_session: manta_pc_runtime::SessionConfig {
-			keys: invulnerables.iter().cloned().map(|(acc, aura)| (
-				acc.clone(), // account id
-				acc.clone(), // validator id
-				manta_session_keys(aura), // session keys
-			)).collect()
-		},
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
-		pallet_aura: Default::default(),
+		pallet_aura: manta_pc_runtime::AuraConfig {
+			authorities: invulnerables.iter().map(|v| v.1.clone()).collect(),
+		},
 		cumulus_pallet_aura_ext: Default::default(),
 	}
 }

@@ -1,7 +1,6 @@
 [workspace]
 members = [
 	'node',
-    'pallets/collator-selection',
 	'runtime/manta-pc',
 ]
 

@@ -1,5 +1,4 @@
 use crate::chain_spec;
-use sc_cli;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
