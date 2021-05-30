@@ -131,7 +131,7 @@ parameter_types! {
 		})
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
-	pub const SS58Prefix: u8 = manta_primitives::constants::MANTAPCSS58Prefix;
+	pub const SS58Prefix: u8 = manta_primitives::constants::MANTAPC_SS58PREFIX;
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -262,6 +262,11 @@ impl pallet_utility::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
 	type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_sudo::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
 }
 
 parameter_types! {
@@ -580,6 +585,7 @@ construct_runtime!(
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 42,
+		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 43,
 
 		// The main stage. To include pallet-assets-freezer and pallet-uniques.
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,

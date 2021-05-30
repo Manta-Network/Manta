@@ -1,5 +1,7 @@
 
-pub const MANTAPCSS58Prefix: u8 = 77;
+pub const MANTAPC_SS58PREFIX: u8 = 77;
+pub const MANTA_DECIMAL: u8 = 12;
+pub const MANTA_TOKEN_SYMBOL: &'static str = "MA";
 
 // Money matters.
 pub mod currency {
@@ -28,7 +30,7 @@ pub mod time {
 	pub const SLOT_DURATION: Moment = MILLISECS_PER_BLOCK;
 
 	// Time is measured by number of blocks.
-	pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
+	pub const MINUTES: BlockNumber = 6_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 	pub const HOURS: BlockNumber = MINUTES * 60;
 	pub const DAYS: BlockNumber = HOURS * 24;
 }
@@ -62,7 +64,7 @@ pub mod fee {
 		fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
 			// in Polkadot, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 CENT:
 			// in Manta Parachain, we map to 1/10 of that, or 1/100 CENT
-            // revisit here to figure out why use this polynomial
+			// TODO, revisit here to figure out why use this polynomial
 			let p = super::currency::cMA;
 			let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
 			smallvec![WeightToFeeCoefficient {

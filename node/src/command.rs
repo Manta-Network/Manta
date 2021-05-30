@@ -29,6 +29,7 @@ fn load_spec(
 	Ok(match id {
 		"manta-pc-dev" => Box::new(chain_spec::manta_pc_development_config(para_id)),
 		"manta-pc-local" => Box::new(chain_spec::manta_pc_local_config(para_id)),
+		"manta-pc-testnet" => Box::new(chain_spec::manta_pc_testnet_config(para_id)),
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into(),)?;
 			Box::new(chain_spec)
