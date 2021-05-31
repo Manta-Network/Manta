@@ -6,6 +6,7 @@ use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::info;
+use manta_primitives::Header;
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
@@ -13,10 +14,8 @@ use sc_cli::{
 };
 use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::traits::Block as BlockT;
-use sp_runtime::{generic, OpaqueExtrinsic};
+use sp_runtime::{generic, traits::Block as BlockT, OpaqueExtrinsic};
 use std::{io::Write, net::SocketAddr};
-use manta_primitives::Header;
 
 pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
@@ -31,9 +30,9 @@ fn load_spec(
 		"manta-pc-local" => Box::new(chain_spec::manta_pc_local_config(para_id)),
 		"manta-pc-testnet" => Box::new(chain_spec::manta_pc_testnet_config(para_id)),
 		path => {
-			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into(),)?;
+			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
 			Box::new(chain_spec)
-		},
+		}
 	})
 }
 
@@ -107,8 +106,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter())
-			.load_spec(id)
+		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -251,16 +249,17 @@ pub fn run() -> Result<()> {
 			}
 
 			Ok(())
-		},
+		}
 		Some(Subcommand::Benchmark(cmd)) => {
 			if cfg!(feature = "runtime-benchmarks") {
 				let runner = cli.create_runner(cmd)?;
 				runner.sync_run(|config| cmd.run::<Block, MantaPCRuntimeExecutor>(config))
 			} else {
 				Err("Benchmarking wasn't enabled when building the node. \
-				You can enable it with `--features runtime-benchmarks`.".into())
+				You can enable it with `--features runtime-benchmarks`."
+					.into())
 			}
-		},
+		}
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 
@@ -287,17 +286,21 @@ pub fn run() -> Result<()> {
 				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
 				let task_executor = config.task_executor.clone();
-				let polkadot_config = SubstrateCli::create_configuration(
-					&polkadot_cli,
-					&polkadot_cli,
-					task_executor,
-				)
-				.map_err(|err| format!("Relay chain argument error: {}", err))?;
+				let polkadot_config =
+					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, task_executor)
+						.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
 				info!("Parachain id: {:?}", id);
 				info!("Parachain Account: {}", parachain_account);
 				info!("Parachain genesis state: {}", genesis_state);
-				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
+				info!(
+					"Is collating: {}",
+					if config.role.is_authority() {
+						"yes"
+					} else {
+						"no"
+					}
+				);
 
 				crate::service::start_node::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor, _>(
 					config,

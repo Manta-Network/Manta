@@ -6,7 +6,7 @@
 pub mod constants;
 pub use constants::{currency, fee, time};
 
-use sp_runtime::traits::{Verify, IdentifyAccount, BlakeTwo256};
+use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
 
 /// An index to a block.
 pub type BlockNumber = u32;

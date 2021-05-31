@@ -1,11 +1,10 @@
-
 pub const MANTAPC_SS58PREFIX: u8 = 77;
 pub const MANTA_DECIMAL: u8 = 12;
-pub const MANTA_TOKEN_SYMBOL: &'static str = "MA";
+pub const MANTA_TOKEN_SYMBOL: &str = "MA";
 
 // Money matters.
 pub mod currency {
-    use crate::Balance;
+	use crate::Balance;
 
 	pub const MA: Balance = 1_000_000_000_000; // 12 decimal
 	pub const cMA: Balance = MA / 100; // 10 decimal, cent-MA
@@ -38,12 +37,12 @@ pub mod time {
 /// Fee-related.
 pub mod fee {
 	use crate::Balance;
-	pub use sp_runtime::Perbill;
 	use frame_support::weights::{
 		constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
 		WeightToFeePolynomial,
 	};
 	use smallvec::smallvec;
+	pub use sp_runtime::Perbill;
 
 	/// The block saturation level. Fees will be updates based on this value.
 	pub const TARGET_BLOCK_FULLNESS: Perbill = Perbill::from_percent(25);
