@@ -48,15 +48,19 @@ jobs:
           rustup target add wasm32-unknown-unknown --toolchain nightly
           rustup component add clippy
           rustup component add rustfmt
+
       - name: Check Formatting
         run: |
           cargo +nightly fmt --all -- --check
+
       - name: Check Clippy
         run: |
           cargo +nightly clippy
+
       - name: Check Build
         run: |
           cargo check --all-features
+
       - name: Run Tests
         run: |
           cargo test --all-features
