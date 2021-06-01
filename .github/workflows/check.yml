@@ -71,6 +71,14 @@ jobs:
           sudo apt-get remove -y libpython3.8-dev
           sudo apt-get remove -y iso-codes
           sudo apt-get remove -y moby-runc
+          sudo apt-get remove -y netstandard-targeting-pack-2.1
+          sudo apt-get remove -y humanity-icon-theme
+          sudo apt-get remove -y monodoc-manual
+          sudo apt-get remove -y libz3-4
+          sudo apt-get remove -y ruby2.7-doc
+          sudo apt-get remove -y linux-azure-tools-5.4.0-1047
+          sudo apt-get remove -y dotnet-targeting-pack-3.1
+          sudo apt-get remove -y liblapack-dev
           sudo apt-get autoremove -y
           sudo apt-get clean
           df -h
@@ -93,4 +101,5 @@ jobs:
 
       - name: Run Tests
         run: |
+          cd /dev/root
           cargo test --all-features
