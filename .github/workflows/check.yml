@@ -101,5 +101,5 @@ jobs:
 
       - name: Run Tests
         run: |
-          cd /dev/root
+          cd /
           cargo test --all-features
