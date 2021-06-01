@@ -49,17 +49,17 @@ jobs:
           rustup component add clippy
           rustup component add rustfmt
 
-      - name: Check Formatting
-        run: |
-          cargo +nightly fmt --all -- --check
+      # - name: Check Formatting
+      #   run: |
+      #     cargo +nightly fmt --all -- --check
 
-      - name: Check Clippy
-        run: |
-          cargo +nightly clippy
+      # - name: Check Clippy
+      #   run: |
+      #     cargo +nightly clippy
 
-      - name: Check Build
-        run: |
-          cargo check --all-features
+      # - name: Check Build
+      #   run: |
+      #     cargo check --all-features
 
       - name: Run Tests
         run: |
