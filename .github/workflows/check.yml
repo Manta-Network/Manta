@@ -46,8 +46,10 @@ jobs:
           source ~/.cargo/env
           rustup update nightly
           rustup target add wasm32-unknown-unknown --toolchain nightly
-          rustup component add clippy
-          rustup component add rustfmt
+# rustup component add clippy
+# rustup component add rustfmt
+      - name: Delete Files
+        run: |
           echo "=====================================================
           echo "Freeing up disk space on CI system"
           echo "=====================================================
@@ -61,6 +63,14 @@ jobs:
           sudo apt-get remove -y '^llvm-.*'
           sudo apt-get remove -y 'php.*'
           sudo apt-get remove -y azure-cli google-cloud-sdk hhvm google-chrome-stable firefox powershell mono-devel
+          sudo apt-get remove -y perl-modules-5.30
+          sudo apt-get remove -y libwxgtk3.0-gtk3-0v5
+          sudo apt-get remove -y aspnetcore-runtime-3.1
+          sudo apt-get remove -y aspnetcore-runtime-5.0
+          sudo apt-get remove -y sphinxsearch
+          sudo apt-get remove -y libpython3.8-dev
+          sudo apt-get remove -y iso-codes
+          sudo apt-get remove -y moby-runc
           sudo apt-get autoremove -y
           sudo apt-get clean
           df -h
