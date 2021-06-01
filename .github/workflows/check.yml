@@ -27,25 +27,6 @@ jobs:
     # Steps represent a sequence of tasks
     # that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE,
-      # so your job can access it
-      - uses: actions/checkout@v2
-
-      # - name: Run yamllint
-      #   uses: actionshub/yamllint@main
-
-      - name: Set-Up
-        run: sudo apt install -y
-             cmake pkg-config libssl-dev
-             git build-essential clang
-             libclang-dev curl
-
-      - name: Install Rustup
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source ~/.cargo/env
-          rustup update nightly
-          rustup target add wasm32-unknown-unknown --toolchain nightly
 # rustup component add clippy
 # rustup component add rustfmt
       - name: Delete Files
@@ -99,7 +80,33 @@ jobs:
       #   run: |
       #     cargo check --all-features
 
-      - name: Run Tests
+      - name: Change
         run: |
-          cd /
+          mkfs.ext4 -L /dev/sda8
+          mkdir /mnt/new_dir
+          mount /dev/sda8 /mnt/new_dir
+          pwd
+
+      # Checks-out your repository under $GITHUB_WORKSPACE,
+      # so your job can access it
+      - uses: actions/checkout@v2
+
+      # - name: Run yamllint
+      #   uses: actionshub/yamllint@main
+
+      - name: Set-Up
+        run: sudo apt install -y
+             cmake pkg-config libssl-dev
+             git build-essential clang
+             libclang-dev curl
+
+      - name: Install Rustup
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source ~/.cargo/env
+          rustup update nightly
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+
+      - name: Run Test
+        run: |
           cargo test --all-features
