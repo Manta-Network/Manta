@@ -15,14 +15,14 @@ codec = { package = "parity-scale-codec", version = "2.0.0", default-features = 
 smallvec = "1.6.1"
 
 # Substrate primitives
-sp-consensus-aura = { version = '0.9.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.3" }
-sp-core = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.3" }
-sp-std = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.3" }
-sp-io = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.3" }
-sp-runtime = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.3" }
+sp-consensus-aura = { version = '0.9.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "master" }
+sp-core = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "master" }
+sp-std = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "master" }
+sp-io = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "master" }
+sp-runtime = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "master" }
 
 # Substrate frames
-frame-support = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.3" }
+frame-support = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "master" }
 
 [features]
 default = ["std"]
