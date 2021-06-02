@@ -5,17 +5,18 @@
 ```shell
 git clone https://github.com/paritytech/polkadot.git
 cd polkadot
+git checkout release-v0.9.3
 cargo build --release
 ```
 
-2. Generate relachain chain spec.
+2. Generate relaychain chain spec.
 ```shell
 ./target/release/polkadot build-spec --chain rococo-local --disable-default-bootnode --raw > rococo.json
 ```
 
 3. Start two nodes.
 - Alice node
-```
+```shell
 ./target/release/polkadot \
 --chain rococo-local \
 --alice \
