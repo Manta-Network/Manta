@@ -109,4 +109,5 @@ jobs:
 
       - name: Run Test
         run: |
+          pwd
           cargo test --all-features
