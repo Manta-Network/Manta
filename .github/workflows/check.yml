@@ -80,12 +80,12 @@ jobs:
       #   run: |
       #     cargo check --all-features
 
-      - name: Change
-        run: |
-          mkfs.ext4 -L /dev/root
-          mkdir /mnt/new_dir
-          mount /dev/root /mnt/new_dir
-          pwd
+      # - name: Change
+      #   run: |
+      #     mkfs.ext4 -L /dev/root
+      #     mkdir /mnt/new_dir
+      #     mount /dev/root /mnt/new_dir
+      #     pwd
 
       # Checks-out your repository under $GITHUB_WORKSPACE,
       # so your job can access it
