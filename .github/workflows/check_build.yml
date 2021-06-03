@@ -49,7 +49,7 @@ jobs:
 
       - name: Check Clippy
         run: |
-          cargo clippy --all
+          cargo +nightly clippy
 
       - name: Check Build
         run: |
