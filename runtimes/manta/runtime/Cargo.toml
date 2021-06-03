@@ -57,7 +57,7 @@ pallet-utility = { default-features = false, version = '3.0.0' }
 
 
 # Manta
-pallet-manta-pay = {git='https://github.com/Manta-Network/pallet-manta-pay', branch='calamari', default-features = false }
+pallet-manta-swap = { path = "../../../../pallet-manta-swap", default-features = false }
 manta-primitives = {path="../primitives", default-features = false }
 
 
@@ -73,7 +73,7 @@ runtime-benchmarks = [
     'hex-literal',
     'pallet-balances/runtime-benchmarks',
     'pallet-timestamp/runtime-benchmarks',
-    'pallet-manta-pay/runtime-benchmarks',
+    'pallet-manta-swap/runtime-benchmarks',
     "pallet-collective/runtime-benchmarks",
     "pallet-utility/runtime-benchmarks",
     'sp-runtime/runtime-benchmarks',
@@ -89,7 +89,7 @@ std = [
     'pallet-balances/std',
     'pallet-collective/std',
     'pallet-grandpa/std',
-    'pallet-manta-pay/std',
+    'pallet-manta-swap/std',
     'pallet-randomness-collective-flip/std',
     "pallet-scheduler/std",
     "pallet-session/std",

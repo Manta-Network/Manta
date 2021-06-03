@@ -443,9 +443,9 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_manta_pay::Config for Runtime {
+impl pallet_manta_swap::Config for Runtime {
 	type Event = Event;
-	type WeightInfo = pallet_manta_pay::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_manta_swap::weights::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -485,7 +485,7 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 
 		// Manta pay
-		MantaPay: pallet_manta_pay::{Module, Call, Storage, Event<T>},
+		MantaSwap: pallet_manta_swap::{Module, Call, Storage, Event<T>},
 	}
 );
 
@@ -725,7 +725,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			add_benchmark!(params, batches, pallet_manta_pay, MantaPay);
+			add_benchmark!(params, batches, pallet_manta_swap, MantaSwap);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
