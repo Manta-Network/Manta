@@ -109,4 +109,4 @@ jobs:
       - name: Run Test
         run: |
           pwd
-          cargo test -j 4
+          cargo test -j 1
