@@ -31,6 +31,14 @@ jobs:
 # rustup component add rustfmt
       - name: Delete Files
         run: |
+#          sudo swapoff -a
+#          sudo dd if=/dev/zero of=/swapfile bs=1G count=8
+#          sudo chmod 0600 /swapfile
+
+#          sudo mkswap /swapfile
+#          sudo swapon /swapfile
+#          grep Swap /proc/meminfo
+
           echo "=====================================================
           echo "Freeing up disk space on CI system"
           echo "=====================================================
@@ -41,7 +49,7 @@ jobs:
           echo "Removing large packages"
           sudo apt-get remove -y '^ghc-8.*'
           sudo apt-get remove -y '^dotnet-.*'
-          sudo apt-get remove -y '^llvm-.*'
+#          sudo apt-get remove -y '^llvm-.*'
           sudo apt-get remove -y 'php.*'
           sudo apt-get remove -y azure-cli google-cloud-sdk hhvm google-chrome-stable firefox powershell mono-devel
           sudo apt-get remove -y perl-modules-5.30
