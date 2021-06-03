@@ -1,16 +1,16 @@
 ---
 
-name: Check Set-Up & Build
+name: Free Space & Run Tests
 
 # Controls when the action will run.
 # yamllint disable-line rule:truthy
 on:
   # Triggers the workflow on push or pull request events
-  # but only for the manta (default) branch.
+  # but only for the calamari (default) branch.
   pull_request:
-    branches: [manta-pc]
-  push:
-    branches: [manta-pc]
+    branches: [calamari]
+  # push:
+  #  branches: [calamari]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -20,15 +20,12 @@ on:
 jobs:
   check:
     # The type of runner that the job will run on
-    runs-on: ubuntu-20.04
-    env:
-      SCCACHE_CACHE_SIZE: "50G"
+    runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks
-    # that will be executed as part of the job
     steps:
-# rustup component add clippy
-# rustup component add rustfmt
+      - name: Run yamllint
+        uses: actionshub/yamllint@main
+
       - name: Delete Files
         run: |
           echo "=====================================================
@@ -36,13 +33,16 @@ jobs:
           echo "=====================================================
 
           echo "Listing 100 largest packages"
-          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 100
+          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n \
+          | tail -n 100
           df -h
           echo "Removing large packages"
           sudo apt-get remove -y '^ghc-8.*'
           sudo apt-get remove -y '^dotnet-.*'
           sudo apt-get remove -y 'php.*'
-          sudo apt-get remove -y azure-cli google-cloud-sdk hhvm google-chrome-stable firefox powershell mono-devel
+          sudo apt-get remove -y azure-cli\
+           google-cloud-sdk hhvm google-chrome-stable\
+           firefox powershell mono-devel
           sudo apt-get remove -y perl-modules-5.30
           sudo apt-get remove -y libwxgtk3.0-gtk3-0v5
           sudo apt-get remove -y aspnetcore-runtime-3.1
@@ -67,31 +67,7 @@ jobs:
           rm -rf /usr/share/dotnet/
           df -h
 
-      # - name: Check Formatting
-      #   run: |
-      #     cargo +nightly fmt --all -- --check
-
-      # - name: Check Clippy
-      #   run: |
-      #     cargo +nightly clippy
-
-      # - name: Check Build
-      #   run: |
-      #     cargo check --all-features
-
-      # - name: Change
-      #   run: |
-      #     mkfs.ext4 -L /dev/root
-      #     mkdir /mnt/new_dir
-      #     mount /dev/root /mnt/new_dir
-      #     pwd
-
-      # Checks-out your repository under $GITHUB_WORKSPACE,
-      # so your job can access it
       - uses: actions/checkout@v2
-
-      # - name: Run yamllint
-      #   uses: actionshub/yamllint@main
 
       - name: Set-Up
         run: sudo apt install -y
@@ -103,10 +79,10 @@ jobs:
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source ~/.cargo/env
+          rustup update stable
           rustup update nightly
           rustup target add wasm32-unknown-unknown --toolchain nightly
 
-      - name: Run Test
+      - name: Run Tests
         run: |
-          pwd
           cargo test -j 1
