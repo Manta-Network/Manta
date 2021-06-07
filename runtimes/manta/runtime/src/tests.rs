@@ -13,6 +13,7 @@ use pallet_transaction_payment::Multiplier;
 use separator::Separatable;
 use sp_core::crypto::UncheckedInto;
 use sp_runtime::{AccountId32, BuildStorage, FixedPointNumber, MultiAddress};
+use frame_support::weights::constants::*;
 
 pub type AccountId = AccountId32;
 pub const ALICE: AccountId = AccountId32::new([0u8; 32]);
@@ -234,4 +235,21 @@ fn compute_inflation_should_give_sensible_results() {
 #[ignore = "we might need to impl era_payout"]
 fn era_payout_should_give_sensible_results() {
 	todo!("https://github.com/paritytech/polkadot/blob/v0.9.2/runtime/kusama/src/tests.rs#L155");
+}
+
+//! Tests to make sure that Manta's weights and fees match what we
+//! expect from Substrate or ORML.
+//!
+//! These test are not meant to be exhaustive, as it is inevitable that
+//! weights in Substrate will change. Instead they are supposed to provide
+//! some sort of indicator that calls we consider important (e.g
+//! Balances::transfer) have not suddenly changed from under us.
+#[test]
+fn sanity_check_weight_per_time_constants_are_as_expected() {
+	// These values comes from Substrate, we want to make sure that if it
+	// ever changes we don't accidently break Polkadot
+	assert_eq!(WEIGHT_PER_SECOND, 1_000_000_000_000);
+	assert_eq!(WEIGHT_PER_MILLIS, WEIGHT_PER_SECOND / 1000);
+	assert_eq!(WEIGHT_PER_MICROS, WEIGHT_PER_MILLIS / 1000);
+	assert_eq!(WEIGHT_PER_NANOS, WEIGHT_PER_MICROS / 1000);
 }

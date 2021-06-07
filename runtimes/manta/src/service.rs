@@ -28,7 +28,6 @@ type FullGrandpaBlockImport =
 	sc_finality_grandpa::GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>;
 type LightClient = sc_service::TLightClient<Block, RuntimeApi, Executor>;
 
-// FIXME: the output types are to complex (clippy)
 pub fn new_partial(
 	config: &Configuration,
 ) -> Result<
