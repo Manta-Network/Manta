@@ -201,7 +201,7 @@ fn testnet_genesis(
 				.map(|(acc, aura)| {
 					(
 						acc.clone(),                 // account id
-						acc.clone(),                 // validator id
+						acc,                         // validator id
 						manta_pc_session_keys(aura), // session keys
 					)
 				})
@@ -310,7 +310,7 @@ fn manta_pc_testnet_genesis(
 				.map(|(acc, aura)| {
 					(
 						acc.clone(),                 // account id
-						acc.clone(),                 // validator id
+						acc,                         // validator id
 						manta_pc_session_keys(aura), // session keys
 					)
 				})
