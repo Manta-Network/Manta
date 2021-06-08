@@ -595,6 +595,25 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub const MantaXassetsPalletId: PalletId = PalletId(*b"/ma_xast");
+
+	pub const AnyNetwork: NetworkId = NetworkId::Any;
+	pub FriendChains: Vec<(MultiLocation, u128)> = vec![
+		// Acala local and live, 0.01 ACA
+		(MultiLocation::X1(Junction::Parachain(7777)), 10_000_000_000),
+	];
+}
+
+impl manta_xassets::Config for Runtime {
+	type Event = Event;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
+	// type FriendChains: Get<Vec<(MultiLocation, u128)>>;
+	type Conversion = LocationToAccountId;
+	type Currency = Balances;
+	type SelfParaId = ParachainInfo;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -634,6 +653,9 @@ construct_runtime!(
 
 		// The main stage. To include pallet-assets-freezer and pallet-uniques.
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
+
+		// Manta pallets
+		MantaXassets: manta_xassets::{Pallet, Call, Event<T>} = 100,
 	}
 );
 

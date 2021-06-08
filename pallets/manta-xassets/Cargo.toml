@@ -1,0 +1,41 @@
+[package]
+name = "manta-xassets"
+authors = ['Manta Network']
+edition = '2018'
+homepage = 'https://manta.network'
+license = 'Apache-2.0'
+repository = 'https://github.com/Manta-Network/Manta/'
+version = '3.0.0'
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+log = { version = "0.4.14", default-features = false }
+
+# Cumulus dependencies
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "master" }
+
+# Polkadot dependencies for xcmp
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
+
+# Substrate dependencies
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+    "codec/std",
+    "log/std",
+    "frame-support/std",
+    "frame-system/std",
+    "sp-core/std",
+    "sp-runtime/std",
+    "sp-std/std",
+    "xcm/std",
+    "xcm-executor/std",
+    "cumulus-primitives-core/std"
+]

@@ -72,6 +72,7 @@ pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-featu
 
 # Self dependencies
 manta-primitives = { path = '../primitives', default-features = false }
+manta-xassets = { path = '../../pallets/manta-xassets', default-features = false }
 pallet-collator-selection = { git = 'https://github.com/paritytech/statemint.git', default-features = false, branch = "master" }
 
 [package.metadata.docs.rs]
