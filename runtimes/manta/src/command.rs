@@ -167,3 +167,16 @@ pub fn run() -> sc_cli::Result<()> {
 		}
 	}
 }
+
+
+#[test]
+fn test_load_spec() {
+	let cli = Cli::from_args();
+
+	assert!(cli.load_spec("").is_err());
+	assert!(cli.load_spec("wrong-string").is_err());
+	assert!(cli.load_spec("dev").is_ok());
+	assert!(cli.load_spec("local").is_ok());
+	assert!(cli.load_spec("manta-testnet").is_ok());
+	assert!(cli.load_spec("manta-local-dev").is_ok());
+}
