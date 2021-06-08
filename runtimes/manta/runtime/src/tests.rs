@@ -5,7 +5,7 @@ use frame_support::{
 	assert_ok,
 	storage::StorageValue,
 	traits::{OnFinalize, OnInitialize},
-	weights::{GetDispatchInfo, WeightToFeePolynomial},
+	weights::{constants::*, GetDispatchInfo, WeightToFeePolynomial},
 };
 use hex_literal::hex;
 use manta_primitives::constants::currency::*;
@@ -13,7 +13,6 @@ use pallet_transaction_payment::Multiplier;
 use separator::Separatable;
 use sp_core::crypto::UncheckedInto;
 use sp_runtime::{AccountId32, BuildStorage, FixedPointNumber, MultiAddress};
-use frame_support::weights::constants::*;
 
 pub type AccountId = AccountId32;
 pub const ALICE: AccountId = AccountId32::new([0u8; 32]);

@@ -592,11 +592,15 @@ pub(crate) mod tests {
 
 	#[test]
 	fn test_integration_config_with_single_authority() {
-		assert!(integration_test_config_with_single_authority().build_storage().is_ok());
+		assert!(integration_test_config_with_single_authority()
+			.build_storage()
+			.is_ok());
 	}
 
 	#[test]
 	fn test_integration_config_with_two_authorities() {
-		assert!(integration_test_config_with_two_authorities().build_storage().is_ok());
+		assert!(integration_test_config_with_two_authorities()
+			.build_storage()
+			.is_ok());
 	}
 }
