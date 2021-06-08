@@ -32,6 +32,13 @@ pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
 	get_pair_from_seed::<AuraId>(seed)
 }
 
+/// Generate the session keys from individual elements.
+///
+/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
+pub fn manta_pc_session_keys(keys: AuraId) -> manta_pc_runtime::opaque::SessionKeys {
+	manta_pc_runtime::opaque::SessionKeys { aura: keys }
+}
+
 /// The extensions for the [`ChainSpec`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
 #[serde(deny_unknown_fields)]
@@ -179,11 +186,27 @@ fn testnet_genesis(
 		},
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
-		pallet_aura: manta_pc_runtime::AuraConfig {
-			authorities: invulnerables.iter().map(|v| v.1.clone()).collect(),
-		},
+		pallet_aura: Default::default(),
 		pallet_sudo: manta_pc_runtime::SudoConfig { key: root_key },
 		parachain_info: manta_pc_runtime::ParachainInfoConfig { parachain_id: id },
+		pallet_collator_selection: manta_pc_runtime::CollatorSelectionConfig {
+			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
+			candidacy_bond: MA * 16,
+			..Default::default()
+		},
+		pallet_session: manta_pc_runtime::SessionConfig {
+			keys: invulnerables
+				.iter()
+				.cloned()
+				.map(|(acc, aura)| {
+					(
+						acc.clone(),                 // account id
+						acc,                         // validator id
+						manta_pc_session_keys(aura), // session keys
+					)
+				})
+				.collect(),
+		},
 		cumulus_pallet_aura_ext: Default::default(),
 	}
 }
@@ -268,11 +291,31 @@ fn manta_pc_testnet_genesis(
 		},
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
-		pallet_aura: manta_pc_runtime::AuraConfig {
-			authorities: initial_authorities.iter().map(|v| v.1.clone()).collect(),
-		},
+		pallet_aura: Default::default(),
 		pallet_sudo: manta_pc_runtime::SudoConfig { key: root_key },
 		parachain_info: manta_pc_runtime::ParachainInfoConfig { parachain_id: id },
+		pallet_collator_selection: manta_pc_runtime::CollatorSelectionConfig {
+			invulnerables: initial_authorities
+				.iter()
+				.cloned()
+				.map(|(acc, _)| acc)
+				.collect(),
+			candidacy_bond: MA * 16,
+			..Default::default()
+		},
+		pallet_session: manta_pc_runtime::SessionConfig {
+			keys: initial_authorities
+				.iter()
+				.cloned()
+				.map(|(acc, aura)| {
+					(
+						acc.clone(),                 // account id
+						acc,                         // validator id
+						manta_pc_session_keys(aura), // session keys
+					)
+				})
+				.collect(),
+		},
 		cumulus_pallet_aura_ext: Default::default(),
 	}
 }

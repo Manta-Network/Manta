@@ -24,7 +24,7 @@ use sp_version::RuntimeVersion;
 use codec::{Decode, Encode};
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{All, InstanceFilter},
+	traits::{All, InstanceFilter, MaxEncodedLen},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -176,6 +176,13 @@ parameter_types! {
 	pub const UncleGenerations: u32 = 0;
 }
 
+impl pallet_authorship::Config for Runtime {
+	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
+	type UncleGenerations = UncleGenerations;
+	type FilterUncle = ();
+	type EventHandler = (CollatorSelection,);
+}
+
 parameter_types! {
 	pub const NativeTokenExistentialDeposit: u128 = MA;
 	pub const MaxLocks: u32 = 50;
@@ -281,7 +288,9 @@ parameter_types! {
 }
 
 /// The type used to represent the kinds of proxying allowed.
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug)]
+#[derive(
+	Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug, MaxEncodedLen,
+)]
 pub enum ProxyType {
 	/// Fully permissioned proxy. Can execute any call on behalf of _proxied_.
 	Any,
@@ -344,7 +353,10 @@ impl InstanceFilter<Call> for ProxyType {
 					| Call::Assets(pallet_assets::Call::thaw_asset(..))
 					| Call::Utility(..) | Call::Multisig(..)
 			),
-			ProxyType::Collator => matches!(c, Call::Utility(..) | Call::Multisig(..)),
+			ProxyType::Collator => matches!(
+				c,
+				Call::CollatorSelection(..) | Call::Utility(..) | Call::Multisig(..)
+			),
 		}
 	}
 	fn is_superset(&self, o: &Self) -> bool {
@@ -537,6 +549,22 @@ parameter_types! {
 	pub const Offset: u32 = 0;
 }
 
+impl pallet_session::Config for Runtime {
+	type Event = Event;
+	type ValidatorId = <Self as frame_system::Config>::AccountId;
+	// we don't have stash and controller, thus we don't need the convert as well.
+	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
+	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
+	type SessionManager = CollatorSelection;
+	// Essentially just Aura, but lets be pedantic.
+	type SessionHandler =
+		<opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
+	type Keys = opaque::SessionKeys;
+	type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
+	type WeightInfo = ();
+}
+
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 }
@@ -546,6 +574,25 @@ parameter_types! {
 	pub const MaxCandidates: u32 = 1000;
 	pub const SessionLength: BlockNumber = 6 * HOURS;
 	pub const MaxInvulnerables: u32 = 100;
+}
+
+// We allow root and the Relay Chain council to execute privileged collator selection operations.
+pub type CollatorSelectionUpdateOrigin = EnsureOneOf<
+	AccountId,
+	EnsureRoot<AccountId>,
+	EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>,
+>;
+
+impl pallet_collator_selection::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type UpdateOrigin = CollatorSelectionUpdateOrigin;
+	type PotId = PotId;
+	type MaxCandidates = MaxCandidates;
+	type MaxInvulnerables = MaxInvulnerables;
+	// should be a multiple of session or things will get inconsistent
+	type KickThreshold = Period;
+	type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -567,6 +614,9 @@ construct_runtime!(
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
 
 		// Collator support. the order of these 4 are important and shall not change.
+		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
+		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
+		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
 
@@ -757,6 +807,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_proxy, Proxy);
 			add_benchmark!(params, batches, pallet_utility, Utility);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
+			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

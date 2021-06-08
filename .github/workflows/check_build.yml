@@ -45,11 +45,11 @@ jobs:
 
       - name: Check Formatting
         run: |
-          cargo +nightly fmt --all -- --check
+          cargo +nightly fmt -- --check
 
       - name: Check Clippy
         run: |
-          cargo +nightly clippy
+          SKIP_WASM_BUILD= cargo clippy
 
       - name: Check Build
         run: |
