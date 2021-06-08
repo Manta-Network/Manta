@@ -1,20 +1,3 @@
-// This file is part of Substrate.
-
-// Copyright (C) 2017-2021 Parity Technologies (UK) Ltd.
-// SPDX-License-Identifier: Apache-2.0
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// 	http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 use crate::{
 	chain_spec,
 	cli::{Cli, Subcommand},
@@ -168,7 +151,6 @@ pub fn run() -> sc_cli::Result<()> {
 	}
 }
 
-
 #[test]
 fn test_load_spec() {
 	let cli = Cli::from_args();
@@ -179,4 +161,14 @@ fn test_load_spec() {
 	assert!(cli.load_spec("local").is_ok());
 	assert!(cli.load_spec("manta-testnet").is_ok());
 	assert!(cli.load_spec("manta-local-dev").is_ok());
+}
+
+#[test]
+fn test_cli_constants() {
+	assert_eq!(Cli::impl_name(), "Manta Node");
+	assert_eq!(Cli::impl_version(), "3.0.0-bbece72-x86_64-linux-gnu");
+	assert_eq!(Cli::description(), "A Manta Network node.");
+	assert_eq!(Cli::author(), "Manta Network");
+	assert_eq!(Cli::support_url(), "https://manta.network");
+	assert_eq!(Cli::copyright_start_year(), 2020);
 }
