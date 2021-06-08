@@ -1,0 +1,85 @@
+---
+
+name: Free Space & Run Tests
+
+# Controls when the action will run.
+# yamllint disable-line rule:truthy
+on:
+  # Triggers the workflow on push or pull request events
+  # but only for the calamari (default) branch.
+  pull_request:
+    branches: [manta-pc]
+  push:
+    branches: [manta-pc]
+
+# A workflow run is made up of one or more jobs
+# that can run sequentially or in parallel
+jobs:
+  check:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run yamllint
+        uses: actionshub/yamllint@main
+
+      - name: Delete Files
+        run: |
+          echo "=====================================================
+          echo "Freeing up disk space on CI system"
+          echo "=====================================================
+
+          echo "Listing 100 largest packages"
+          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n \
+          | tail -n 100
+          df -h
+          echo "Removing large packages"
+          sudo apt-get remove -y '^ghc-8.*'
+          sudo apt-get remove -y '^dotnet-.*'
+          sudo apt-get remove -y 'php.*'
+          sudo apt-get remove -y azure-cli\
+           google-cloud-sdk hhvm google-chrome-stable\
+           firefox powershell mono-devel
+          sudo apt-get remove -y perl-modules-5.30
+          sudo apt-get remove -y libwxgtk3.0-gtk3-0v5
+          sudo apt-get remove -y aspnetcore-runtime-3.1
+          sudo apt-get remove -y aspnetcore-runtime-5.0
+          sudo apt-get remove -y sphinxsearch
+          sudo apt-get remove -y libpython3.8-dev
+          sudo apt-get remove -y iso-codes
+          sudo apt-get remove -y moby-runc
+          sudo apt-get remove -y netstandard-targeting-pack-2.1
+          sudo apt-get remove -y humanity-icon-theme
+          sudo apt-get remove -y monodoc-manual
+          sudo apt-get remove -y libz3-4
+          sudo apt-get remove -y ruby2.7-doc
+          sudo apt-get remove -y linux-azure-tools-5.4.0-1047
+          sudo apt-get remove -y dotnet-targeting-pack-3.1
+          sudo apt-get remove -y liblapack-dev
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          df -h
+          echo "Removing large directories"
+
+          rm -rf /usr/share/dotnet/
+          df -h
+
+      - name: Set-Up
+        run: sudo apt install -y
+             cmake pkg-config libssl-dev
+             git build-essential clang
+             libclang-dev curl
+
+      - name: Install Rustup
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source ~/.cargo/env
+          rustup update stable
+          rustup update nightly
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+
+      - name: Run Tests
+        run: |
+          cargo test -j 1
