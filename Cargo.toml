@@ -1,7 +1,7 @@
 [workspace]
 members = [
 	'node',
-    'pallets/manta-xassets',
+	'pallets/manta-xassets',
 	'runtime/manta-pc',
 ]
 

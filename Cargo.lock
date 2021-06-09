@@ -4302,6 +4302,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "hex-literal 0.3.1",
+ "log",
  "manta-primitives",
  "manta-xassets",
  "max-encoded-len",

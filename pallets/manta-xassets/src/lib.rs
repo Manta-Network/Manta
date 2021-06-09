@@ -42,7 +42,7 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type XcmExecutor: ExecuteXcm<Self::Call>;
-		// type FriendChains: Get<Vec<(MultiLocation, u128)>>;
+		type FriendChains: Get<Vec<(MultiLocation, u128)>>;
 		type Conversion: Convert<MultiLocation, Self::AccountId>;
 		type Currency: ReservableCurrency<Self::AccountId>;
 		type SelfParaId: Get<ParaId>;
@@ -96,9 +96,17 @@ pub mod pallet {
 					id: asset_location.clone(),
 					amount,
 				}],
-				effects: vec![Order::DepositAsset {
+				effects: vec![Order::InitiateReserveWithdraw {
 					assets: vec![MultiAsset::All],
-					dest: asset_location,
+					reserve: asset_location.clone(),
+					effects: vec![Order::DepositReserveAsset {
+						assets: vec![MultiAsset::All],
+						dest: asset_location.clone(),
+						effects: vec![Order::DepositAsset {
+							assets: vec![MultiAsset::All],
+							dest: asset_location,
+						}],
+					}],
 				}],
 			};
 

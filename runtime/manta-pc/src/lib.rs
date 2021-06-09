@@ -482,12 +482,77 @@ pub type Barrier = (
 	// ^^^ Parent and its exec plurality get free execution
 );
 
+pub mod manta_transactor {
+	use super::*;
+	use core::{convert::TryFrom, marker::PhantomData};
+	use frame_support::traits::{Currency, ExistenceRequirement, WithdrawReasons};
+	use xcm::v0::{Error as XcmError, MultiAsset, MultiLocation, Result as XcmResult};
+	use xcm_executor::traits::{Convert, TransactAsset};
+
+	pub struct MantaTransactorAdaptor<NativeCurrency, AccountIdConverter, AccountId>(
+		PhantomData<(NativeCurrency, AccountIdConverter, AccountId)>,
+	);
+
+	impl<
+			NativeCurrency: Currency<AccountId>,
+			AccountIdConverter: Convert<MultiLocation, AccountId>,
+			AccountId: sp_std::fmt::Debug + Clone,
+		> TransactAsset for MantaTransactorAdaptor<NativeCurrency, AccountIdConverter, AccountId>
+	{
+		fn deposit_asset(asset: &MultiAsset, who: &MultiLocation) -> XcmResult {
+			log::info!(target: "manta-xassets", "deposit_asset: asset = {:?}, who = {:?}", asset, who);
+
+			let who = AccountIdConverter::convert_ref(who).expect("failed to convert account id");
+
+			match asset {
+				MultiAsset::ConcreteFungible { id: _id, amount } => {
+					let amount = NativeCurrency::Balance::try_from(*amount)
+						.map_err(|_| XcmError::Overflow)?;
+					NativeCurrency::deposit_creating(&who, amount);
+
+					Ok(())
+				}
+				_ => Err(XcmError::NotWithdrawable),
+			}
+		}
+
+		fn withdraw_asset(
+			asset: &MultiAsset,
+			who: &MultiLocation,
+		) -> Result<xcm_executor::Assets, XcmError> {
+			log::info!(target: "manta-xassets", "withdraw_asset: asset = {:?}, who = {:?}", asset, who);
+
+			let who = AccountIdConverter::convert_ref(who).expect("failed to convert account id");
+
+			match asset {
+				MultiAsset::ConcreteFungible { id: _id, amount } => {
+					let amount = NativeCurrency::Balance::try_from(*amount)
+						.map_err(|_| XcmError::Overflow)?;
+					NativeCurrency::withdraw(
+						&who,
+						amount,
+						WithdrawReasons::TRANSFER,
+						ExistenceRequirement::KeepAlive,
+					)
+					.map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
+
+					Ok(asset.clone().into())
+				}
+				_ => Err(XcmError::NotWithdrawable),
+			}
+		}
+	}
+}
+
 pub struct XcmConfig;
 impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
-	type AssetTransactor = LocalAssetTransactor;
+	type AssetTransactor = (
+		manta_transactor::MantaTransactorAdaptor<Balances, LocationToAccountId, AccountId>,
+		LocalAssetTransactor,
+	);
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = NativeAsset;
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of DOT
@@ -605,11 +670,18 @@ parameter_types! {
 	];
 }
 
+pub type MantaPCLocationToAccountId = (
+	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
+	SiblingParachainConvertsVia<Sibling, AccountId>,
+	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
+	AccountId32Aliases<AnyNetwork, AccountId>,
+);
+
 impl manta_xassets::Config for Runtime {
 	type Event = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
-	// type FriendChains: Get<Vec<(MultiLocation, u128)>>;
-	type Conversion = LocationToAccountId;
+	type FriendChains = FriendChains;
+	type Conversion = MantaPCLocationToAccountId;
 	type Currency = Balances;
 	type SelfParaId = ParachainInfo;
 }
