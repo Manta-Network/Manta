@@ -58,7 +58,7 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T> {}
-	
+
 	#[pallet::error]
 	pub enum Error<T> {
 		BalanceLow,
@@ -116,13 +116,15 @@ pub mod pallet {
 								assets: vec![MultiAsset::All],
 								dest: asset_location,
 							}],
-						}],
+						},
+					],
 				}],
 			};
 
 			log::info! {target: MANTA_XASSETS, "friend_xcm = {:?}", friend_xcm};
 
-			let weight = T::Weigher::weight(&mut friend_xcm).map_err(|()| Error::<T>::UnweighableMessage)?;
+			let weight =
+				T::Weigher::weight(&mut friend_xcm).map_err(|()| Error::<T>::UnweighableMessage)?;
 
 			// The last param is the weight we buy on target chain.
 			let xcm_outcome = T::XcmExecutor::execute_xcm_in_credit(
