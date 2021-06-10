@@ -465,7 +465,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 
 parameter_types! {
 	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: Weight = 1_000_000;
+	pub UnitWeightCost: Weight = 1_000_000_000;
 }
 
 match_type! {
@@ -684,6 +684,7 @@ impl manta_xassets::Config for Runtime {
 	type Conversion = MantaPCLocationToAccountId;
 	type Currency = Balances;
 	type SelfParaId = ParachainInfo;
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

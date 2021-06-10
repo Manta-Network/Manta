@@ -24,7 +24,7 @@ use xcm::v0::{
 	Result as XcmResult, Xcm,
 };
 use xcm_executor::{
-	traits::{Convert, FilterAssetLocation, TransactAsset},
+	traits::{Convert, FilterAssetLocation, TransactAsset, WeightBounds},
 	Assets,
 };
 
@@ -46,22 +46,24 @@ pub mod pallet {
 		type Conversion: Convert<MultiLocation, Self::AccountId>;
 		type Currency: ReservableCurrency<Self::AccountId>;
 		type SelfParaId: Get<ParaId>;
+		/// Means of measuring the weight consumed by an XCM message locally.
+		type Weigher: WeightBounds<Self::Call>;
 	}
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
-	pub struct Pallet<T>(PhantomData<T>);
+	// pub struct Pallet<T>(PhantomData<T>);
+	pub struct Pallet<T>(_);
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event<T> {
-		// PhantomData<T>,
-	}
-
+	pub enum Event<T> {}
+	
 	#[pallet::error]
 	pub enum Error<T> {
 		BalanceLow,
 		SelfChain,
+		UnweighableMessage,
 	}
 
 	#[pallet::call]
@@ -91,7 +93,7 @@ pub mod pallet {
 			let amount = amount.saturated_into::<u128>();
 
 			// create friend parachain xcm
-			let friend_xcm = Xcm::<T>::WithdrawAsset {
+			let mut friend_xcm = Xcm::WithdrawAsset {
 				assets: vec![MultiAsset::ConcreteFungible {
 					id: asset_location.clone(),
 					amount,
@@ -99,26 +101,35 @@ pub mod pallet {
 				effects: vec![Order::InitiateReserveWithdraw {
 					assets: vec![MultiAsset::All],
 					reserve: asset_location.clone(),
-					effects: vec![Order::DepositReserveAsset {
-						assets: vec![MultiAsset::All],
-						dest: asset_location.clone(),
-						effects: vec![Order::DepositAsset {
+					effects: vec![
+						Order::BuyExecution {
+							fees: MultiAsset::All,
+							weight: 0,
+							debt: 300_000_000_000,
+							halt_on_error: false,
+							xcm: vec![],
+						},
+						Order::DepositReserveAsset {
 							assets: vec![MultiAsset::All],
-							dest: asset_location,
+							dest: asset_location.clone(),
+							effects: vec![Order::DepositAsset {
+								assets: vec![MultiAsset::All],
+								dest: asset_location,
+							}],
 						}],
-					}],
 				}],
 			};
 
 			log::info! {target: MANTA_XASSETS, "friend_xcm = {:?}", friend_xcm};
 
-			// let xcm_outcome = T::XcmExecutor::execute_xcm(friend_chain_target, friend_xcm.into(), 300_0000);
+			let weight = T::Weigher::weight(&mut friend_xcm).map_err(|()| Error::<T>::UnweighableMessage)?;
+
 			// The last param is the weight we buy on target chain.
 			let xcm_outcome = T::XcmExecutor::execute_xcm_in_credit(
 				friend_chain_target,
 				friend_xcm.into(),
-				300_0000,
-				300_0000,
+				weight,
+				weight,
 			);
 			log::info! {target: MANTA_XASSETS, "xcm_outcome = {:?}", xcm_outcome};
 
