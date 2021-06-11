@@ -523,18 +523,24 @@ pub mod manta_transactor {
 			log::info!(target: "manta-xassets", "withdraw_asset: asset = {:?}, who = {:?}", asset, who);
 
 			let who = AccountIdConverter::convert_ref(who).expect("failed to convert account id");
+			let free_balance = NativeCurrency::free_balance(&who);
+			log::info!(target: "manta-xassets", "withdraw_asset: free_balance = {:?}, from = {:?}", who, free_balance);
 
 			match asset {
 				MultiAsset::ConcreteFungible { id: _id, amount } => {
+					log::info!(target: "manta-xassets", "withdraw_asset: id = {:?}, amount = {:?}", _id, amount);
 					let amount = NativeCurrency::Balance::try_from(*amount)
 						.map_err(|_| XcmError::Overflow)?;
 					NativeCurrency::withdraw(
 						&who,
 						amount,
 						WithdrawReasons::TRANSFER,
-						ExistenceRequirement::KeepAlive,
+						ExistenceRequirement::AllowDeath,
 					)
-					.map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
+					.map_err(|e| {
+						log::debug!(target: "manta-xassets", "withdraw_asset: error = {:?}", e);
+						XcmError::FailedToTransactAsset(e.into())
+					})?;
 
 					Ok(asset.clone().into())
 				}
@@ -549,10 +555,8 @@ impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
-	type AssetTransactor = (
-		manta_transactor::MantaTransactorAdaptor<Balances, LocationToAccountId, AccountId>,
-		LocalAssetTransactor,
-	);
+	type AssetTransactor =
+		manta_transactor::MantaTransactorAdaptor<Balances, LocationToAccountId, AccountId>;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = NativeAsset;
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of DOT
