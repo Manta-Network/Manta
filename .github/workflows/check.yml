@@ -48,7 +48,7 @@ jobs:
           cargo +nightly fmt -- --check
       - name: Check Clippy
         run: |
-          cargo +nightly clippy
+          SKIP_WASM_BUILD=1 cargo clippy
       - name: Check Build
         run: |
           cargo check --all-features
