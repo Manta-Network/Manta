@@ -56,6 +56,10 @@ pallet-transaction-payment-rpc-runtime-api = { default-features = false, version
 pallet-utility = { default-features = false, version = '3.0.0' }
 
 # Manta
+
+# Attention! Our integration test scripts modify these dependencies with "sed" command.
+# If you need to change any of the below lines, make sure to reflect the changes in whichever script is supposed to modify them.
+# Search for "Check Manta-Node" in Manta-Network repositories to find the relevant scripts.
 pallet-manta-pay = { git='https://github.com/Manta-Network/pallet-manta-pay', branch='calamari', default-features = false }
 manta-primitives = { path="../primitives", default-features = false }
 

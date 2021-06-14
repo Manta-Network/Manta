@@ -12,15 +12,12 @@ on:
   push:
     branches: [manta]
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
 # A workflow run is made up of one or more jobs
 # that can run sequentially or in parallel
 jobs:
   check:
     # The type of runner that the job will run on
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks
     # that will be executed as part of the job
@@ -48,12 +45,13 @@ jobs:
           rustup component add rustfmt
       - name: Check Formatting
         run: |
-          cargo +nightly fmt --all -- --check
+          cargo +nightly fmt -- --check
       - name: Check Clippy
         run: |
-          cargo +nightly clippy
+          SKIP_WASM_BUILD=1 cargo clippy
       - name: Check Build
         run: |
+          cargo check
           cargo check --all-features
       - name: Run Tests
         run: |
