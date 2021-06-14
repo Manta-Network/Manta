@@ -55,4 +55,4 @@ jobs:
           cargo check --all-features
       - name: Run Tests
         run: |
-          cargo test --release --all-features
+          cargo test --all-features
