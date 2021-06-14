@@ -1552,6 +1552,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "displaydoc"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3274a6bc8a6a4521291b53b9dcb8345e963fe931c3fc462a7d3ead71d7ccd30d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "dns-parser"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3627,25 +3638,47 @@ dependencies = [
 ]
 
 [[package]]
+name = "manta-api"
+version = "0.1.0"
+source = "git+https://github.com/Manta-Network/manta-api?branch=manta#5ff518dbb2ebf5079d6b0c718510dae605034cbd"
+dependencies = [
+ "ark-bls12-381",
+ "ark-crypto-primitives",
+ "ark-ed-on-bls12-381",
+ "ark-ff",
+ "ark-groth16",
+ "ark-r1cs-std",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
+ "hkdf",
+ "manta-asset",
+ "manta-crypto",
+ "manta-data",
+ "manta-error",
+ "rand_chacha 0.2.2",
+ "sha2 0.9.4",
+]
+
+[[package]]
 name = "manta-asset"
-version = "3.0.0"
-source = "git+https://github.com/Manta-Network/manta-asset?branch=master#49ab31edd9453616b3e5ca1e5268278b497f07fe"
+version = "0.1.0"
+source = "git+https://github.com/Manta-Network/manta-types?branch=manta#3349da1275b78ee75984332d16cc44e3a5e241d1"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ed-on-bls12-381",
  "ark-ff",
  "ark-serialize",
  "ark-std",
- "blake2",
- "frame-support",
  "manta-crypto",
+ "manta-error",
  "parity-scale-codec",
 ]
 
 [[package]]
 name = "manta-crypto"
-version = "3.0.0"
-source = "git+https://github.com/Manta-Network/manta-crypto?branch=master#63e52df4ef1c3f9b8c6db87d8d20287036877105"
+version = "0.1.0"
+source = "git+https://github.com/Manta-Network/manta-crypto?branch=manta#878f163a8659e032887719a82b02556409716071"
 dependencies = [
  "aes 0.7.0",
  "ark-bls12-381",
@@ -3653,11 +3686,51 @@ dependencies = [
  "ark-ed-on-bls12-381",
  "ark-groth16",
  "ark-r1cs-std",
+ "ark-relations",
  "ark-serialize",
  "ark-std",
  "blake2",
  "generic-array 0.14.4",
+ "manta-error",
  "x25519-dalek",
+]
+
+[[package]]
+name = "manta-data"
+version = "0.1.0"
+source = "git+https://github.com/Manta-Network/manta-types?branch=manta#3349da1275b78ee75984332d16cc44e3a5e241d1"
+dependencies = [
+ "ark-ed-on-bls12-381",
+ "ark-groth16",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
+ "manta-asset",
+ "manta-crypto",
+ "manta-error",
+]
+
+[[package]]
+name = "manta-error"
+version = "0.1.0"
+source = "git+https://github.com/Manta-Network/manta-error?branch=manta#13fe1ace32ee4b4a3b037640c2d4689bbbdb6759"
+dependencies = [
+ "ark-crypto-primitives",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
+ "displaydoc",
+]
+
+[[package]]
+name = "manta-ledger"
+version = "0.1.0"
+source = "git+https://github.com/Manta-Network/manta-types?branch=manta#3349da1275b78ee75984332d16cc44e3a5e241d1"
+dependencies = [
+ "manta-crypto",
+ "manta-error",
+ "parity-scale-codec",
+ "sp-std",
 ]
 
 [[package]]
@@ -4335,27 +4408,21 @@ dependencies = [
 [[package]]
 name = "pallet-manta-pay"
 version = "3.0.0"
-source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#b9e1cd2606f428c36c69630b32354734346d3205"
+source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#fb53902d095849196f02e1337db4c88844398fd2"
 dependencies = [
- "ark-bls12-381",
- "ark-crypto-primitives",
- "ark-ed-on-bls12-381",
- "ark-ff",
- "ark-groth16",
- "ark-r1cs-std",
- "ark-relations",
- "ark-serialize",
  "ark-std",
  "data-encoding",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "hkdf",
+ "log",
+ "manta-api",
  "manta-asset",
  "manta-crypto",
+ "manta-data",
+ "manta-error",
+ "manta-ledger",
  "parity-scale-codec",
- "rand_chacha 0.2.2",
- "sha2 0.9.4",
  "sp-runtime",
  "sp-std",
 ]
