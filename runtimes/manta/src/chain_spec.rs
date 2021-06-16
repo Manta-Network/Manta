@@ -579,4 +579,28 @@ pub(crate) mod tests {
 	fn test_manta_testnet_chain_spec() {
 		assert!(manta_testnet_config().build_storage().is_ok());
 	}
+
+	#[test]
+	fn test_manta_local_dev_genesis() {
+		assert!(manta_local_dev_genesis().build_storage().is_ok());
+	}
+
+	#[test]
+	fn test_manta_local_dev_config() {
+		assert!(manta_local_dev_config().build_storage().is_ok());
+	}
+
+	#[test]
+	fn test_integration_config_with_single_authority() {
+		assert!(integration_test_config_with_single_authority()
+			.build_storage()
+			.is_ok());
+	}
+
+	#[test]
+	fn test_integration_config_with_two_authorities() {
+		assert!(integration_test_config_with_two_authorities()
+			.build_storage()
+			.is_ok());
+	}
 }

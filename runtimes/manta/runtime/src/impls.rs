@@ -121,6 +121,7 @@ mod multiplier_tests {
 		})
 	}
 
+	#[ignore]
 	#[test]
 	fn time_to_reach_zero() {
 		// blocks per 24h in manta-node: 14_400 (k)
