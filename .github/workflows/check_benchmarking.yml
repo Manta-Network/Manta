@@ -34,7 +34,6 @@ jobs:
              cmake pkg-config libssl-dev
              git build-essential clang
              libclang-dev curl
-
       - name: Install Rustup
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
