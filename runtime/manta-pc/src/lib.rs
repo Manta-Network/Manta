@@ -480,19 +480,20 @@ pub type Barrier = (
 	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
 	AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
 	// ^^^ Parent and its exec plurality get free execution
+	manta_transactor::MantaXcmTransactFilter<TrustedChains>,
 );
 
 pub mod manta_transactor {
 	use super::*;
 	use core::{convert::TryFrom, marker::PhantomData};
-	use frame_support::traits::{Currency, ExistenceRequirement, WithdrawReasons};
+	use frame_support::traits::{Currency, ExistenceRequirement, Get, WithdrawReasons};
 	use xcm::v0::{Error as XcmError, MultiAsset, MultiLocation, Result as XcmResult};
-	use xcm_executor::traits::{Convert, TransactAsset};
+	use xcm_executor::traits::{Convert, FilterAssetLocation, ShouldExecute, TransactAsset};
 
+	/// Todo, more docs here.
 	pub struct MantaTransactorAdaptor<NativeCurrency, AccountIdConverter, AccountId>(
 		PhantomData<(NativeCurrency, AccountIdConverter, AccountId)>,
 	);
-
 	impl<
 			NativeCurrency: Currency<AccountId>,
 			AccountIdConverter: Convert<MultiLocation, AccountId>,
@@ -502,7 +503,11 @@ pub mod manta_transactor {
 		fn deposit_asset(asset: &MultiAsset, who: &MultiLocation) -> XcmResult {
 			log::info!(target: "manta-xassets", "deposit_asset: asset = {:?}, who = {:?}", asset, who);
 
-			let who = AccountIdConverter::convert_ref(who).expect("failed to convert account id");
+			let who = AccountIdConverter::convert_ref(who).map_err(|_| {
+				XcmError::FailedToTransactAsset(
+					"Failed to convert multilocation to account id",
+				)
+			})?;
 
 			match asset {
 				MultiAsset::ConcreteFungible { id: _id, amount } => {
@@ -522,13 +527,14 @@ pub mod manta_transactor {
 		) -> Result<xcm_executor::Assets, XcmError> {
 			log::info!(target: "manta-xassets", "withdraw_asset: asset = {:?}, who = {:?}", asset, who);
 
-			let who = AccountIdConverter::convert_ref(who).expect("failed to convert account id");
-			let free_balance = NativeCurrency::free_balance(&who);
-			log::info!(target: "manta-xassets", "withdraw_asset: free_balance = {:?}, from = {:?}", who, free_balance);
+			let who = AccountIdConverter::convert_ref(who).map_err(|_| {
+				XcmError::FailedToTransactAsset(
+					"Failed to convert multilocation to account id",
+				)
+			})?;
 
 			match asset {
 				MultiAsset::ConcreteFungible { id: _id, amount } => {
-					log::info!(target: "manta-xassets", "withdraw_asset: id = {:?}, amount = {:?}", _id, amount);
 					let amount = NativeCurrency::Balance::try_from(*amount)
 						.map_err(|_| XcmError::Overflow)?;
 					NativeCurrency::withdraw(
@@ -546,6 +552,54 @@ pub mod manta_transactor {
 				}
 				_ => Err(XcmError::NotWithdrawable),
 			}
+		}
+	}
+
+	/// Manta-pc Xcm Transact Filter
+	pub struct MantaXcmTransactFilter<T>(PhantomData<T>);
+	impl<T: Get<Vec<(MultiLocation, u128)>>> ShouldExecute for MantaXcmTransactFilter<T> {
+		fn should_execute<Call>(
+			origin: &MultiLocation,
+			_top_level: bool,
+			message: &Xcm<Call>,
+			_shallow_weight: Weight,
+			_weight_credit: &mut Weight,
+		) -> Result<(), ()> {
+			log::info!(target: "manta-xassets", "should_execute: origin = {:?}, message = {:?}", origin, message);
+			match origin {
+				MultiLocation::X1(Junction::AccountId32 { network, .. })
+					if *network == NetworkId::Any =>
+				{
+					Ok(())
+				}
+				MultiLocation::X2(Junction::Parent, Junction::Parachain(id)) => {
+					log::info!(target: "manta-xassets", "should_execute: parachain id = {:?}, all trusted = {:?}", id, TrustedChains::get());
+					
+					let a = TrustedChains::get()
+						.iter()
+						.map(|(location, _)| location)
+						.any(|location| *location == *origin)
+						.then(|| ())
+						.ok_or(());
+					log::info!(target: "manta-xassets", "should_execute: filter = {:?}", a);
+
+					Ok(())
+				}
+				_ => Err(()),
+			}
+		}
+	}
+
+	/// Todo, more docs here.
+	pub struct TrustedParachains<Chains>(PhantomData<Chains>);
+	impl<Chains: Get<Vec<(MultiLocation, u128)>>> FilterAssetLocation for TrustedParachains<Chains> {
+		fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
+			log::info!(target: "manta-xassets", "filter_asset_location: origin = {:?}, asset = {:?}", origin, asset);
+
+			Chains::get()
+				.iter()
+				.map(|(location, _)| location)
+				.any(|location| *location == *origin)
 		}
 	}
 }
@@ -668,8 +722,9 @@ parameter_types! {
 	pub const MantaXassetsPalletId: PalletId = PalletId(*b"/ma_xast");
 
 	pub const AnyNetwork: NetworkId = NetworkId::Any;
-	pub FriendChains: Vec<(MultiLocation, u128)> = vec![
+	pub TrustedChains: Vec<(MultiLocation, u128)> = vec![
 		// Acala local and live, 0.01 ACA
+		(MultiLocation::X1(Junction::Parachain(6666)), 10_000_000_000),
 		(MultiLocation::X1(Junction::Parachain(7777)), 10_000_000_000),
 	];
 }
@@ -684,8 +739,9 @@ pub type MantaPCLocationToAccountId = (
 impl manta_xassets::Config for Runtime {
 	type Event = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type FriendChains = FriendChains;
+	type TrustedChains = TrustedChains;
 	type Conversion = MantaPCLocationToAccountId;
+	type PalletId = MantaXassetsPalletId;
 	type Currency = Balances;
 	type SelfParaId = ParachainInfo;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
