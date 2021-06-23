@@ -504,9 +504,7 @@ pub mod manta_transactor {
 			log::info!(target: "manta-xassets", "deposit_asset: asset = {:?}, who = {:?}", asset, who);
 
 			let who = AccountIdConverter::convert_ref(who).map_err(|_| {
-				XcmError::FailedToTransactAsset(
-					"Failed to convert multilocation to account id",
-				)
+				XcmError::FailedToTransactAsset("Failed to convert multilocation to account id")
 			})?;
 
 			match asset {
@@ -528,9 +526,7 @@ pub mod manta_transactor {
 			log::info!(target: "manta-xassets", "withdraw_asset: asset = {:?}, who = {:?}", asset, who);
 
 			let who = AccountIdConverter::convert_ref(who).map_err(|_| {
-				XcmError::FailedToTransactAsset(
-					"Failed to convert multilocation to account id",
-				)
+				XcmError::FailedToTransactAsset("Failed to convert multilocation to account id")
 			})?;
 
 			match asset {
@@ -574,7 +570,7 @@ pub mod manta_transactor {
 				}
 				MultiLocation::X2(Junction::Parent, Junction::Parachain(id)) => {
 					log::info!(target: "manta-xassets", "should_execute: parachain id = {:?}, all trusted = {:?}", id, TrustedChains::get());
-					
+
 					let a = TrustedChains::get()
 						.iter()
 						.map(|(location, _)| location)
