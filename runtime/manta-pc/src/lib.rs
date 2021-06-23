@@ -216,7 +216,7 @@ parameter_types! {
 	// The maximum weight that may be scheduled per block for any
 	// dispatchables of less priority than schedule::HARD_DEADLINE.
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
-	    RuntimeBlockWeights::get().max_block;
+		RuntimeBlockWeights::get().max_block;
 	// The maximum number of scheduled calls in the queue for a single block.
 	// Not strictly enforced, but used for weight estimation.
 	pub const MaxScheduledPerBlock: u32 = 50;
@@ -232,9 +232,6 @@ impl pallet_scheduler::Config for Runtime {
 	type MaxScheduledPerBlock = MaxScheduledPerBlock;
 	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
 }
-
-
-
 
 parameter_types! {
 	pub const AssetDeposit: Balance = 100 * MA; // 100 DOLLARS deposit to create asset
@@ -633,7 +630,7 @@ construct_runtime!(
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 4,
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 5,
-		
+
 
 
 		// Monetary stuff.
