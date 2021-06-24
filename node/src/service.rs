@@ -14,7 +14,6 @@ use cumulus_primitives_core::{
 	ParaId,
 };
 use manta_primitives::Header;
-use polkadot_primitives::v0::CollatorPair;
 
 use futures::lock::Mutex;
 use sc_client_api::ExecutorProvider;
@@ -217,11 +216,12 @@ where
 		telemetry
 	});
 
+	let registry = config.prometheus_registry();
 	let transaction_pool = sc_transaction_pool::BasicPool::new_full(
 		config.transaction_pool.clone(),
 		config.role.is_authority().into(),
-		config.prometheus_registry(),
-		task_manager.spawn_handle(),
+		registry,
+		task_manager.spawn_essential_handle(),
 		client.clone(),
 	);
 
@@ -297,7 +297,6 @@ where
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
 pub async fn start_node<RuntimeApi, Executor, RB>(
 	parachain_config: Configuration,
-	collator_key: CollatorPair,
 	polkadot_config: Configuration,
 	id: ParaId,
 	rpc_ext_builder: RB,
@@ -334,15 +333,12 @@ where
 	let params = new_partial::<RuntimeApi, Executor>(&parachain_config)?;
 	let (mut telemetry, telemetry_worker_handle) = params.other;
 
-	let relay_chain_full_node = cumulus_client_service::build_polkadot_full_node(
-		polkadot_config,
-		collator_key.clone(),
-		telemetry_worker_handle,
-	)
-	.map_err(|e| match e {
-		polkadot_service::Error::Sub(x) => x,
-		s => format!("{}", s).into(),
-	})?;
+	let relay_chain_full_node =
+		cumulus_client_service::build_polkadot_full_node(polkadot_config, telemetry_worker_handle)
+			.map_err(|e| match e {
+				polkadot_service::Error::Sub(x) => x,
+				s => format!("{}", s).into(),
+			})?;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -486,7 +482,6 @@ where
 			announce_block,
 			client: client.clone(),
 			task_manager: &mut task_manager,
-			collator_key,
 			relay_chain_full_node,
 			spawner,
 			parachain_consensus,

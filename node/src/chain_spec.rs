@@ -167,13 +167,13 @@ fn testnet_genesis(
 	id: ParaId,
 ) -> manta_pc_runtime::GenesisConfig {
 	manta_pc_runtime::GenesisConfig {
-		frame_system: manta_pc_runtime::SystemConfig {
+		system: manta_pc_runtime::SystemConfig {
 			code: manta_pc_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		pallet_balances: manta_pc_runtime::BalancesConfig {
+		balances: manta_pc_runtime::BalancesConfig {
 			balances: endowed_accounts[..endowed_accounts.len() / 2]
 				.iter()
 				.map(|k| {
@@ -186,15 +186,15 @@ fn testnet_genesis(
 		},
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
-		pallet_aura: Default::default(),
-		pallet_sudo: manta_pc_runtime::SudoConfig { key: root_key },
+		aura: Default::default(),
+		sudo: manta_pc_runtime::SudoConfig { key: root_key },
 		parachain_info: manta_pc_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_collator_selection: manta_pc_runtime::CollatorSelectionConfig {
+		collator_selection: manta_pc_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: MA * 16,
 			..Default::default()
 		},
-		pallet_session: manta_pc_runtime::SessionConfig {
+		session: manta_pc_runtime::SessionConfig {
 			keys: invulnerables
 				.iter()
 				.cloned()
@@ -207,7 +207,7 @@ fn testnet_genesis(
 				})
 				.collect(),
 		},
-		cumulus_pallet_aura_ext: Default::default(),
+		aura_ext: Default::default(),
 	}
 }
 
@@ -280,21 +280,21 @@ fn manta_pc_testnet_genesis(
 	initial_balances.push((root_key.clone(), 500_000_000 * MA));
 
 	manta_pc_runtime::GenesisConfig {
-		frame_system: manta_pc_runtime::SystemConfig {
+		system: manta_pc_runtime::SystemConfig {
 			code: manta_pc_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		pallet_balances: manta_pc_runtime::BalancesConfig {
+		balances: manta_pc_runtime::BalancesConfig {
 			balances: initial_balances,
 		},
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
-		pallet_aura: Default::default(),
-		pallet_sudo: manta_pc_runtime::SudoConfig { key: root_key },
+		aura: Default::default(),
+		sudo: manta_pc_runtime::SudoConfig { key: root_key },
 		parachain_info: manta_pc_runtime::ParachainInfoConfig { parachain_id: id },
-		pallet_collator_selection: manta_pc_runtime::CollatorSelectionConfig {
+		collator_selection: manta_pc_runtime::CollatorSelectionConfig {
 			invulnerables: initial_authorities
 				.iter()
 				.cloned()
@@ -303,7 +303,7 @@ fn manta_pc_testnet_genesis(
 			candidacy_bond: MA * 16,
 			..Default::default()
 		},
-		pallet_session: manta_pc_runtime::SessionConfig {
+		session: manta_pc_runtime::SessionConfig {
 			keys: initial_authorities
 				.iter()
 				.cloned()
@@ -316,6 +316,6 @@ fn manta_pc_testnet_genesis(
 				})
 				.collect(),
 		},
-		cumulus_pallet_aura_ext: Default::default(),
+		aura_ext: Default::default(),
 	}
 }

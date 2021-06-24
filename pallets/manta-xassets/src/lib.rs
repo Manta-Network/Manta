@@ -82,7 +82,7 @@ pub mod pallet {
 		/// - `amount`: How many tokens will be transferred.
 		/// - `weight`: Specify the weight of xcm.
 		#[pallet::weight(10000)]
-		fn transfer_to_parachain(
+		pub fn transfer_to_parachain(
 			origin: OriginFor<T>,
 			para_id: ParaId,
 			dest: T::AccountId,
@@ -158,7 +158,7 @@ pub mod pallet {
 		/// - `amount`: How many tokens will be transferred.
 		/// - `weight`: Specify the weight of um.
 		#[pallet::weight(10000)]
-		fn transfer_to_relaychain(
+		pub fn transfer_to_relaychain(
 			origin: OriginFor<T>,
 			dest: T::AccountId,
 			#[pallet::compact] amount: BalanceOf<T>,

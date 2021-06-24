@@ -264,8 +264,6 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 
 			runner.run_node_until_exit(|config| async move {
-				let key = sp_core::Pair::generate().0;
-
 				let para_id =
 					chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
 
@@ -304,7 +302,6 @@ pub fn run() -> Result<()> {
 
 				crate::service::start_node::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor, _>(
 					config,
-					key,
 					polkadot_config,
 					id,
 					|_| Default::default(),
