@@ -81,5 +81,6 @@ jobs:
           rustup target add wasm32-unknown-unknown --toolchain nightly
 
       - name: Run Tests
+        # 1 thread to reduce chance of OOM errors.
         run: |
           cargo test -j 1
