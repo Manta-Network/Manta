@@ -53,4 +53,6 @@ jobs:
 
       - name: Check Build
         run: |
+          cargo check
+          cargo check --no-default-features
           cargo check --all-features
