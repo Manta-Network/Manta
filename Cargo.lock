@@ -3640,7 +3640,7 @@ dependencies = [
 [[package]]
 name = "manta-api"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-api?branch=manta#3caf57cda748be54e4d56f4022680ddcc5163362"
+source = "git+https://github.com/Manta-Network/manta-api?branch=manta#8918a116c70d0f63fcb101511c29a7bd6c5d810a"
 dependencies = [
  "ark-bls12-381",
  "ark-crypto-primitives",
@@ -3663,7 +3663,7 @@ dependencies = [
 [[package]]
 name = "manta-asset"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-types?branch=manta#69bcc7780bcc41997c1c367a7336fcf6f8bed327"
+source = "git+https://github.com/Manta-Network/manta-types?branch=manta#da475da957553280be5dbe9e2a7477dc574a2491"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ed-on-bls12-381",
@@ -3673,12 +3673,13 @@ dependencies = [
  "manta-crypto",
  "manta-error",
  "parity-scale-codec",
+ "rand_chacha 0.2.2",
 ]
 
 [[package]]
 name = "manta-crypto"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-crypto?branch=manta#2c3ec801289029e2108c6e98e8b7f857ac2ea9ea"
+source = "git+https://github.com/Manta-Network/manta-crypto?branch=manta#26b04a6bce835508ce94d5158e469a017dd529d7"
 dependencies = [
  "aes 0.7.0",
  "ark-bls12-381",
@@ -3698,7 +3699,7 @@ dependencies = [
 [[package]]
 name = "manta-data"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-types?branch=manta#69bcc7780bcc41997c1c367a7336fcf6f8bed327"
+source = "git+https://github.com/Manta-Network/manta-types?branch=manta#da475da957553280be5dbe9e2a7477dc574a2491"
 dependencies = [
  "ark-ed-on-bls12-381",
  "ark-groth16",
@@ -3725,7 +3726,7 @@ dependencies = [
 [[package]]
 name = "manta-ledger"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-types?branch=manta#69bcc7780bcc41997c1c367a7336fcf6f8bed327"
+source = "git+https://github.com/Manta-Network/manta-types?branch=manta#da475da957553280be5dbe9e2a7477dc574a2491"
 dependencies = [
  "manta-crypto",
  "manta-error",
@@ -8456,7 +8457,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.3.23",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
