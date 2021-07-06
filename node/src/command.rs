@@ -26,12 +26,21 @@ fn load_spec(
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
+		// manta-pc chainspec
 		"manta-pc-dev" => Box::new(chain_spec::manta_pc_development_config(para_id)),
 		"manta-pc-local" => Box::new(chain_spec::manta_pc_local_config(para_id)),
 		"manta-pc-testnet" => Box::new(chain_spec::manta_pc_testnet_config(para_id)),
+		// calamari chainspec
+		"calamari-dev" => Box::new(chain_spec::calamari_development_config(para_id)),
+		"calamari-local" => Box::new(chain_spec::calamari_local_config(para_id)),
+		"calamari-testnet" => Box::new(chain_spec::calamari_testnet_config(para_id)),
 		path => {
-			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
-			Box::new(chain_spec)
+			let chain_spec = chain_spec::MantaPCChainSpec::from_json_file(path.into())?;
+			if use_manta_pc_runtime(&chain_spec) {
+				Box::new(chain_spec::MantaPCChainSpec::from_json_file(path.into())?)
+			} else {
+				Box::new(chain_spec::CalamariChainSpec::from_json_file(path.into())?)
+			}
 		}
 	})
 }
@@ -71,8 +80,12 @@ impl SubstrateCli for Cli {
 		load_spec(id, self.run.parachain_id.unwrap_or(PARACHAIN_ID).into())
 	}
 
-	fn native_runtime_version(_chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&manta_pc_runtime::VERSION
+	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+		if use_manta_pc_runtime(&**chain_spec) {
+			&manta_pc_runtime::VERSION
+		} else {
+			&calamari_runtime::VERSION
+		}
 	}
 }
 
@@ -127,7 +140,12 @@ fn use_manta_pc_runtime(chain_spec: &dyn ChainSpec) -> bool {
 	chain_spec.id().starts_with("manta_pc")
 }
 
-use crate::service::{new_partial, MantaPCRuntimeExecutor};
+#[allow(dead_code)]
+fn use_calamari_runtime(chain_spec: &dyn ChainSpec) -> bool {
+	chain_spec.id().starts_with("calamari")
+}
+
+use crate::service::{new_partial, CalamariRuntimeExecutor, MantaPCRuntimeExecutor};
 
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
@@ -142,7 +160,7 @@ macro_rules! construct_async_run {
 			})
 		} else {
 			runner.async_run(|$config| {
-				let $components = new_partial::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor>(
+				let $components = new_partial::<manta_pc_runtime::RuntimeApi, CalamariRuntimeExecutor>(
 					&$config,
 				)?;
 				let task_manager = $components.task_manager;
@@ -253,7 +271,11 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::Benchmark(cmd)) => {
 			if cfg!(feature = "runtime-benchmarks") {
 				let runner = cli.create_runner(cmd)?;
-				runner.sync_run(|config| cmd.run::<Block, MantaPCRuntimeExecutor>(config))
+				if use_manta_pc_runtime(&*runner.config().chain_spec) {
+					runner.sync_run(|config| cmd.run::<Block, MantaPCRuntimeExecutor>(config))
+				} else {
+					runner.sync_run(|config| cmd.run::<Block, CalamariRuntimeExecutor>(config))
+				}
 			} else {
 				Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
@@ -262,10 +284,9 @@ pub fn run() -> Result<()> {
 		}
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
+			let use_manta_pc_runtime = use_manta_pc_runtime(&*runner.config().chain_spec);
 
 			runner.run_node_until_exit(|config| async move {
-				let key = sp_core::Pair::generate().0;
-
 				let para_id =
 					chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
 
@@ -302,16 +323,37 @@ pub fn run() -> Result<()> {
 					}
 				);
 
-				crate::service::start_node::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor, _>(
-					config,
-					key,
-					polkadot_config,
-					id,
-					|_| Default::default(),
-				)
+				if use_manta_pc_runtime {
+					crate::service::start_node::<
+						manta_pc_runtime::RuntimeApi,
+						MantaPCRuntimeExecutor,
+						_,
+					>(
+						config,
+						// key,
+						polkadot_config,
+						id,
+						|_| Default::default(),
+					)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
+				} else {
+					crate::service::start_node::<
+						calamari_runtime::RuntimeApi,
+						CalamariRuntimeExecutor,
+						_,
+					>(
+						config,
+						// key,
+						polkadot_config,
+						id,
+						|_| Default::default(),
+					)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
+				}
 			})
 		}
 	}

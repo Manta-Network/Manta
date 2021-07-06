@@ -24,7 +24,7 @@ use sp_version::RuntimeVersion;
 use codec::{Decode, Encode};
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{All, InstanceFilter, MaxEncodedLen},
+	traits::{All, Filter, InstanceFilter, MaxEncodedLen},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -80,8 +80,8 @@ pub mod opaque {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("manta-pc"),
-	impl_name: create_runtime_str!("manta-pc"),
+	spec_name: create_runtime_str!("calamari"),
+	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
 	spec_version: 1,
 	impl_version: 1,
@@ -131,6 +131,27 @@ parameter_types! {
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
 	pub const SS58Prefix: u8 = manta_primitives::constants::MANTAPC_SS58PREFIX;
+}
+
+// Don't allow permission-less asset creation.
+pub struct BaseFilter;
+impl Filter<Call> for BaseFilter {
+	fn filter(c: &Call) -> bool {
+		!matches!(
+			c,
+			// Monetary
+			Call::Assets(pallet_assets::Call::create(..)) | Call::Balances(_) |
+			// Core
+			Call::System(_) | Call::Timestamp(_) | Call::ParachainSystem(_) |
+			// Utility
+			Call::Scheduler(_) | Call::Utility(_) | Call::Multisig(_) |
+			Call::Proxy(_) | Call::Sudo(_) | Call::Authorship(_) |
+			// Collator
+			Call::Session(_) | Call::CollatorSelection(_) |
+			// XCM
+			Call::XcmpQueue(_) | Call::PolkadotXcm(_) | Call::DmpQueue(_)
+		)
+	}
 }
 
 // Configure FRAME pallets to include in runtime.

@@ -3,15 +3,16 @@ authors = ['Manta Network']
 edition = '2018'
 homepage = 'https://manta.network'
 license = 'Apache-2.0'
-name = 'manta-pc-runtime'
+name = 'calamari-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
 version = '3.0.0'
 
 [dependencies]
-smallvec = "1.6.1"
-codec = { package = "parity-scale-codec", version = "2.1.0", default-features = false }
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+log = { version = "0.4.14", default-features = false }
 hex-literal = { version = '0.3.1', optional = true }
 serde = { version = '1.0.119', features = ['derive'], optional = true }
+smallvec = "1.6.1"
 
 # Substrate primitives
 max-encoded-len = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.7" }
