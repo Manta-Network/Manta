@@ -500,6 +500,11 @@ pub mod manta_transactor {
 			AccountId: sp_std::fmt::Debug + Clone,
 		> TransactAsset for MantaTransactorAdaptor<NativeCurrency, AccountIdConverter, AccountId>
 	{
+		fn can_check_in(_origin: &MultiLocation, _what: &MultiAsset) -> XcmResult {
+			log::info!(target: "manta-xassets", "this is can_check_in()");
+			Ok(())
+		}
+
 		fn deposit_asset(asset: &MultiAsset, who: &MultiLocation) -> XcmResult {
 			log::info!(target: "manta-xassets", "deposit_asset: asset = {:?}, who = {:?}", asset, who);
 
