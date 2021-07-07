@@ -4,7 +4,7 @@ name = "manta-primitives"
 version = "3.0.0"
 edition = "2018"
 homepage = 'https://manta.network'
-license = 'Apache-2.0'
+license = 'GPL-3.0'
 repository = 'https://github.com/Manta-Network/Manta/'
 
 [package.metadata.docs.rs]

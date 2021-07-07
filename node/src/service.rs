@@ -38,6 +38,7 @@ pub use sc_executor::NativeExecutor;
 pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
 // Native Manta Parachain executor instance.
+#[cfg(feature = "manta-pc")]
 native_executor_instance!(
 	pub MantaPCRuntimeExecutor,
 	manta_pc_runtime::api::dispatch,
@@ -46,6 +47,7 @@ native_executor_instance!(
 );
 
 // Native Calamari Parachain executor instance.
+#[cfg(feature = "calamari")]
 native_executor_instance!(
 	pub CalamariRuntimeExecutor,
 	calamari_runtime::api::dispatch,

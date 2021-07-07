@@ -1,5 +1,7 @@
+pub const CALAMARI_SS58PREFIX: u8 = 78;
 pub const MANTAPC_SS58PREFIX: u8 = 77;
 pub const MANTA_DECIMAL: u8 = 12;
+pub const CALAMARI_TOKEN_SYMBOL: &str = "KMA";
 pub const MANTA_TOKEN_SYMBOL: &str = "MA";
 
 // Money matters.

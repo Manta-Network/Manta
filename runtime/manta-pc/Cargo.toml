@@ -2,7 +2,7 @@
 authors = ['Manta Network']
 edition = '2018'
 homepage = 'https://manta.network'
-license = 'Apache-2.0'
+license = 'GPL-3.0'
 name = 'manta-pc-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
 version = '3.0.0'

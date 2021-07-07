@@ -1,10 +1,6 @@
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use manta_primitives::{
-	constants::{MANTAPC_SS58PREFIX, MANTA_DECIMAL, MANTA_TOKEN_SYMBOL},
-	currency::MA,
-	AccountId, AuraId, Balance, Signature,
-};
+use manta_primitives::{constants, currency::MA, AccountId, AuraId, Balance, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, Properties};
 use serde::{Deserialize, Serialize};
@@ -12,13 +8,17 @@ use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
+#[cfg(feature = "calamari")]
 pub type CalamariChainSpec =
 	sc_service::GenericChainSpec<calamari_runtime::GenesisConfig, Extensions>;
+#[cfg(feature = "manta-pc")]
 pub type MantaPCChainSpec =
 	sc_service::GenericChainSpec<manta_pc_runtime::GenesisConfig, Extensions>;
 
 const ENDOWMENT: Balance = 100_000_000 * MA; // 10 endowment so that total supply is 1B
+#[cfg(feature = "calamari")]
 const CALAMARI_PROTOCOL_ID: &str = "calamari"; // for p2p network configuration
+#[cfg(feature = "manta-pc")]
 const MANTAPC_PROTOCOL_ID: &str = "manta-pc"; // for p2p network configuration
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
@@ -39,6 +39,7 @@ pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
 /// Generate the manta-pc session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
+#[cfg(feature = "manta-pc")]
 pub fn manta_pc_session_keys(keys: AuraId) -> manta_pc_runtime::opaque::SessionKeys {
 	manta_pc_runtime::opaque::SessionKeys { aura: keys }
 }
@@ -46,6 +47,7 @@ pub fn manta_pc_session_keys(keys: AuraId) -> manta_pc_runtime::opaque::SessionK
 /// Generate the calamari session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
+#[cfg(feature = "calamari")]
 pub fn calamari_session_keys(keys: AuraId) -> calamari_runtime::opaque::SessionKeys {
 	calamari_runtime::opaque::SessionKeys { aura: keys }
 }
@@ -77,16 +79,17 @@ where
 }
 
 /// Token
+#[cfg(feature = "manta-pc")]
 pub fn manta_properties() -> Properties {
 	let mut p = Properties::new();
-	p.insert("ss58format".into(), MANTAPC_SS58PREFIX.into());
-	p.insert("tokenDecimals".into(), MANTA_DECIMAL.into());
-	p.insert("tokenSymbol".into(), MANTA_TOKEN_SYMBOL.into());
+	p.insert("ss58format".into(), constants::MANTAPC_SS58PREFIX.into());
+	p.insert("tokenDecimals".into(), constants::MANTA_DECIMAL.into());
+	p.insert("tokenSymbol".into(), constants::MANTA_TOKEN_SYMBOL.into());
 	p
 }
 
 // manta-pc chain spec
-
+#[cfg(feature = "manta-pc")]
 pub fn manta_pc_development_config(id: ParaId) -> MantaPCChainSpec {
 	let properties = manta_properties();
 
@@ -124,6 +127,7 @@ pub fn manta_pc_development_config(id: ParaId) -> MantaPCChainSpec {
 	)
 }
 
+#[cfg(feature = "manta-pc")]
 pub fn manta_pc_local_config(id: ParaId) -> MantaPCChainSpec {
 	let properties = manta_properties();
 
@@ -173,6 +177,7 @@ pub fn manta_pc_local_config(id: ParaId) -> MantaPCChainSpec {
 	)
 }
 
+#[cfg(feature = "manta-pc")]
 fn manta_pc_dev_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	root_key: AccountId,
@@ -224,6 +229,7 @@ fn manta_pc_dev_genesis(
 	}
 }
 
+#[cfg(feature = "manta-pc")]
 pub fn manta_pc_testnet_config(id: ParaId) -> MantaPCChainSpec {
 	let properties = manta_properties();
 
@@ -280,6 +286,7 @@ pub fn manta_pc_testnet_config(id: ParaId) -> MantaPCChainSpec {
 	)
 }
 
+#[cfg(feature = "manta-pc")]
 fn manta_pc_testnet_genesis(
 	initial_authorities: Vec<(AccountId, AuraId)>,
 	root_key: AccountId,
@@ -334,9 +341,21 @@ fn manta_pc_testnet_genesis(
 }
 
 // calamari chain specs
+#[cfg(feature = "calamari")]
+pub fn calamari_properties() -> Properties {
+	let mut p = Properties::new();
+	p.insert("ss58format".into(), constants::CALAMARI_SS58PREFIX.into());
+	p.insert("tokenDecimals".into(), constants::MANTA_DECIMAL.into());
+	p.insert(
+		"tokenSymbol".into(),
+		constants::CALAMARI_TOKEN_SYMBOL.into(),
+	);
+	p
+}
 
+#[cfg(feature = "calamari")]
 pub fn calamari_development_config(id: ParaId) -> CalamariChainSpec {
-	let properties = manta_properties();
+	let properties = calamari_properties();
 
 	CalamariChainSpec::from_genesis(
 		// Name
@@ -372,8 +391,9 @@ pub fn calamari_development_config(id: ParaId) -> CalamariChainSpec {
 	)
 }
 
+#[cfg(feature = "calamari")]
 pub fn calamari_local_config(id: ParaId) -> CalamariChainSpec {
-	let properties = manta_properties();
+	let properties = calamari_properties();
 
 	CalamariChainSpec::from_genesis(
 		// Name
@@ -421,6 +441,7 @@ pub fn calamari_local_config(id: ParaId) -> CalamariChainSpec {
 	)
 }
 
+#[cfg(feature = "calamari")]
 fn calamari_dev_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	root_key: AccountId,
@@ -472,8 +493,9 @@ fn calamari_dev_genesis(
 	}
 }
 
+#[cfg(feature = "calamari")]
 pub fn calamari_testnet_config(id: ParaId) -> CalamariChainSpec {
-	let properties = manta_properties();
+	let properties = calamari_properties();
 
 	// (controller_account, aura_id)
 	let initial_authorities: Vec<(AccountId, AuraId)> = vec![
@@ -528,6 +550,7 @@ pub fn calamari_testnet_config(id: ParaId) -> CalamariChainSpec {
 	)
 }
 
+#[cfg(feature = "calamari")]
 fn calamari_testnet_genesis(
 	initial_authorities: Vec<(AccountId, AuraId)>,
 	root_key: AccountId,
