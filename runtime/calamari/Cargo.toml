@@ -62,7 +62,8 @@ cumulus-primitives-utility = { git = 'https://github.com/paritytech/cumulus.git'
 cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.7" }
 cumulus-pallet-xcmp-queue = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.7" }
 cumulus-pallet-xcm = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.7" }
-parachain-info = { version = '0.1.0', git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.7" }
+pallet-collator-selection = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.7" }
+parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.7" }
 
 # Polkadot dependencies
 polkadot-primitives = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.7" }
@@ -75,7 +76,6 @@ pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-featu
 
 # Self dependencies
 manta-primitives = { path = '../primitives', default-features = false }
-pallet-collator-selection = { git = 'https://github.com/paritytech/statemint.git', default-features = false, branch = "master" }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
