@@ -47,12 +47,19 @@ jobs:
         run: |
           cargo +nightly fmt -- --check
 
-      - name: Check Clippy
+      - name: Check Manta-PC Clippy
         run: |
-          SKIP_WASM_BUILD= cargo clippy
+          SKIP_WASM_BUILD= cargo clippy --features manta-pc
 
-      - name: Check Build
+      - name: Check Calamari Clippy
         run: |
-          cargo check
-          cargo check --no-default-features
+          SKIP_WASM_BUILD= cargo clippy --features calamari
+
+      - name: Check Manta-PC Build
+        run: |
+          cargo check --features manta-pc
+
+      - name: Check Calamari Build
+        run: |
+          cargo check --features calamari
           cargo check --all-features
