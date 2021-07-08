@@ -83,4 +83,4 @@ jobs:
       - name: Run Tests
         # 1 thread to reduce chance of OOM errors.
         run: |
-          cargo test -j 1
+          cargo test --all-features -j 1
