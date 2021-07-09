@@ -958,7 +958,6 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-multisig",
  "pallet-proxy",
- "pallet-randomness-collective-flip",
  "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",

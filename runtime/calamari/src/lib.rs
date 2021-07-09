@@ -140,16 +140,15 @@ impl Filter<Call> for BaseFilter {
 		!matches!(
 			c,
 			// Monetary
-			Call::Assets(pallet_assets::Call::create(..)) | Call::Balances(_) |
+			Call::Assets(pallet_assets::Call::create(..)) |
+			Call::Balances(_) | Call::Vesting(_) |
 			// Core
 			Call::System(_) | Call::Timestamp(_) | Call::ParachainSystem(_) |
 			// Utility
 			Call::Scheduler(_) | Call::Utility(_) | Call::Multisig(_) |
 			Call::Proxy(_) | Call::Sudo(_) | Call::Authorship(_) |
 			// Collator
-			Call::Session(_) | Call::CollatorSelection(_) |
-			// XCM
-			Call::XcmpQueue(_) | Call::PolkadotXcm(_) | Call::DmpQueue(_)
+			Call::Session(_) | Call::CollatorSelection(_)
 		)
 	}
 }
@@ -429,8 +428,6 @@ impl pallet_proxy::Config for Runtime {
 	type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
-impl pallet_randomness_collective_flip::Config for Runtime {}
-
 parameter_types! {
 	pub const MinVestedTransfer: Balance = 10 * MA;
 }
@@ -662,10 +659,9 @@ construct_runtime!(
 		// System support stuff.
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
 		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>} = 1,
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage} = 2,
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 3,
-		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 4,
-		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 5,
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
+		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
+		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 4,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
