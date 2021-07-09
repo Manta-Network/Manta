@@ -21,6 +21,8 @@ const CALAMARI_PROTOCOL_ID: &str = "calamari"; // for p2p network configuration
 #[cfg(feature = "manta-pc")]
 const MANTAPC_PROTOCOL_ID: &str = "manta-pc"; // for p2p network configuration
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
+const RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";
+const RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -121,7 +123,7 @@ pub fn manta_pc_development_config(id: ParaId) -> MantaPCChainSpec {
 		Some(MANTAPC_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: "polkadot-dev".into(),
+			relay_chain: RELAYCHAIN_DEV_NET.into(),
 			para_id: id.into(),
 		},
 	)
@@ -171,7 +173,7 @@ pub fn manta_pc_local_config(id: ParaId) -> MantaPCChainSpec {
 		Some(MANTAPC_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: "polkadot-local".into(),
+			relay_chain: RELAYCHAIN_LOCAL_NET.into(),
 			para_id: id.into(),
 		},
 	)
@@ -280,7 +282,7 @@ pub fn manta_pc_testnet_config(id: ParaId) -> MantaPCChainSpec {
 		Some(MANTAPC_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: "polkadot-dev".into(),
+			relay_chain: RELAYCHAIN_DEV_NET.into(),
 			para_id: id.into(),
 		},
 	)
@@ -385,7 +387,7 @@ pub fn calamari_development_config(id: ParaId) -> CalamariChainSpec {
 		Some(CALAMARI_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: "polkadot-dev".into(),
+			relay_chain: RELAYCHAIN_DEV_NET.into(),
 			para_id: id.into(),
 		},
 	)
@@ -435,7 +437,7 @@ pub fn calamari_local_config(id: ParaId) -> CalamariChainSpec {
 		Some(CALAMARI_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: "polkadot-local".into(),
+			relay_chain: RELAYCHAIN_LOCAL_NET.into(),
 			para_id: id.into(),
 		},
 	)
@@ -544,7 +546,7 @@ pub fn calamari_testnet_config(id: ParaId) -> CalamariChainSpec {
 		Some(CALAMARI_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: "polkadot-dev".into(),
+			relay_chain: RELAYCHAIN_DEV_NET.into(),
 			para_id: id.into(),
 		},
 	)
