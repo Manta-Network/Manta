@@ -492,6 +492,7 @@ fn calamari_dev_genesis(
 				.collect(),
 		},
 		aura_ext: Default::default(),
+		vesting: calamari_runtime::VestingConfig { vesting: vec![] },
 	}
 }
 
@@ -603,5 +604,6 @@ fn calamari_testnet_genesis(
 				.collect(),
 		},
 		aura_ext: Default::default(),
+		vesting: calamari_runtime::VestingConfig { vesting: vec![] },
 	}
 }

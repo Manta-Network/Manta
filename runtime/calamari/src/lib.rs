@@ -11,7 +11,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -432,6 +432,18 @@ impl pallet_proxy::Config for Runtime {
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
+	pub const MinVestedTransfer: Balance = 10 * MA;
+}
+
+impl pallet_vesting::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type BlockNumberToBalance = ConvertInto;
+	type MinVestedTransfer = MinVestedTransfer;
+	type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
 	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
 	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
 }
@@ -658,6 +670,7 @@ construct_runtime!(
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+		Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 12,
 
 		// Collator support. the order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -853,6 +866,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_proxy, Proxy);
 			add_benchmark!(params, batches, pallet_utility, Utility);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
+			add_benchmark!(params, batches, pallet_vesting, Vesting);
 			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
