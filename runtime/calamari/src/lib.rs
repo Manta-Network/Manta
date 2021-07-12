@@ -1,4 +1,4 @@
-//! Manta Parachain runtime.
+//! Calamari Parachain runtime.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]
@@ -11,7 +11,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
@@ -21,15 +21,14 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use codec::{Decode, Encode};
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{All, Filter, InstanceFilter, MaxEncodedLen},
+	traits::{All, Filter},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
 	},
-	PalletId, RuntimeDebug,
+	PalletId,
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -140,13 +139,12 @@ impl Filter<Call> for BaseFilter {
 		!matches!(
 			c,
 			// Monetary
-			Call::Assets(pallet_assets::Call::create(..)) |
-			Call::Balances(_) | Call::Vesting(_) |
+			Call::Assets(pallet_assets::Call::create(..)) | Call::Balances(_) |
 			// Core
 			Call::System(_) | Call::Timestamp(_) | Call::ParachainSystem(_) |
 			// Utility
-			Call::Scheduler(_) | Call::Utility(_) | Call::Multisig(_) |
-			Call::Proxy(_) | Call::Sudo(_) | Call::Authorship(_) |
+			Call::Utility(_) | Call::Multisig(_) |
+			Call::Sudo(_) | Call::Authorship(_) |
 			// Collator
 			Call::Session(_) | Call::CollatorSelection(_)
 		)
@@ -234,27 +232,6 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-	// The maximum weight that may be scheduled per block for any
-	// dispatchables of less priority than schedule::HARD_DEADLINE.
-	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
-		RuntimeBlockWeights::get().max_block;
-	// The maximum number of scheduled calls in the queue for a single block.
-	// Not strictly enforced, but used for weight estimation.
-	pub const MaxScheduledPerBlock: u32 = 50;
-}
-
-impl pallet_scheduler::Config for Runtime {
-	type Event = Event;
-	type Origin = Origin;
-	type PalletsOrigin = OriginCaller;
-	type Call = Call;
-	type MaximumWeight = MaximumSchedulerWeight;
-	type ScheduleOrigin = EnsureRoot<AccountId>;
-	type MaxScheduledPerBlock = MaxScheduledPerBlock;
-	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
-}
-
-parameter_types! {
 	pub const AssetDeposit: Balance = 100 * MA; // 100 DOLLARS deposit to create asset
 	pub const ApprovalDeposit: Balance = NativeTokenExistentialDeposit::get();
 	pub const StringLimit: u32 = 50;
@@ -315,129 +292,6 @@ impl pallet_utility::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
-}
-
-parameter_types! {
-	// One storage item; key size 32, value size 8; .
-	pub const ProxyDepositBase: Balance = deposit(1, 40);
-	// Additional storage item size of 33 bytes.
-	pub const ProxyDepositFactor: Balance = deposit(0, 33);
-	pub const MaxProxies: u16 = 32;
-	// One storage item; key size 32, value size 16
-	pub const AnnouncementDepositBase: Balance = deposit(1, 48);
-	pub const AnnouncementDepositFactor: Balance = deposit(0, 66);
-	pub const MaxPending: u16 = 32;
-}
-
-/// The type used to represent the kinds of proxying allowed.
-#[derive(
-	Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug, MaxEncodedLen,
-)]
-pub enum ProxyType {
-	/// Fully permissioned proxy. Can execute any call on behalf of _proxied_.
-	Any,
-	/// Can execute any call that does not transfer funds or assets.
-	NonTransfer,
-	/// Proxy with the ability to reject time-delay proxy announcements.
-	CancelProxy,
-	/// Assets proxy. Can execute any call from `assets`, **including asset transfers**.
-	Assets,
-	/// Owner proxy. Can execute calls related to asset ownership.
-	AssetOwner,
-	/// Asset manager. Can execute calls related to asset management.
-	AssetManager,
-	// Collator selection proxy. Can execute calls related to collator selection mechanism.
-	Collator,
-}
-impl Default for ProxyType {
-	fn default() -> Self {
-		Self::Any
-	}
-}
-impl InstanceFilter<Call> for ProxyType {
-	fn filter(&self, c: &Call) -> bool {
-		match self {
-			ProxyType::Any => true,
-			ProxyType::NonTransfer => !matches!(
-				c,
-				Call::Balances(..)
-					| Call::Assets(pallet_assets::Call::transfer(..))
-					| Call::Assets(pallet_assets::Call::transfer_keep_alive(..))
-					| Call::Assets(pallet_assets::Call::force_transfer(..))
-					| Call::Assets(pallet_assets::Call::approve_transfer(..))
-					| Call::Assets(pallet_assets::Call::transfer_approved(..))
-			),
-			ProxyType::CancelProxy => matches!(
-				c,
-				Call::Proxy(pallet_proxy::Call::reject_announcement(..))
-					| Call::Utility(..) | Call::Multisig(..)
-			),
-			ProxyType::Assets => {
-				matches!(c, Call::Assets(..) | Call::Utility(..) | Call::Multisig(..))
-			}
-			ProxyType::AssetOwner => matches!(
-				c,
-				Call::Assets(pallet_assets::Call::create(..))
-					| Call::Assets(pallet_assets::Call::destroy(..))
-					| Call::Assets(pallet_assets::Call::transfer_ownership(..))
-					| Call::Assets(pallet_assets::Call::set_team(..))
-					| Call::Assets(pallet_assets::Call::set_metadata(..))
-					| Call::Assets(pallet_assets::Call::clear_metadata(..))
-					| Call::Utility(..) | Call::Multisig(..)
-			),
-			ProxyType::AssetManager => matches!(
-				c,
-				Call::Assets(pallet_assets::Call::mint(..))
-					| Call::Assets(pallet_assets::Call::burn(..))
-					| Call::Assets(pallet_assets::Call::freeze(..))
-					| Call::Assets(pallet_assets::Call::thaw(..))
-					| Call::Assets(pallet_assets::Call::freeze_asset(..))
-					| Call::Assets(pallet_assets::Call::thaw_asset(..))
-					| Call::Utility(..) | Call::Multisig(..)
-			),
-			ProxyType::Collator => matches!(
-				c,
-				Call::CollatorSelection(..) | Call::Utility(..) | Call::Multisig(..)
-			),
-		}
-	}
-	fn is_superset(&self, o: &Self) -> bool {
-		match (self, o) {
-			(x, y) if x == y => true,
-			(ProxyType::Any, _) => true,
-			(_, ProxyType::Any) => false,
-			(ProxyType::Assets, ProxyType::AssetOwner) => true,
-			(ProxyType::Assets, ProxyType::AssetManager) => true,
-			_ => false,
-		}
-	}
-}
-
-impl pallet_proxy::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
-	type Currency = Balances;
-	type ProxyType = ProxyType;
-	type ProxyDepositBase = ProxyDepositBase;
-	type ProxyDepositFactor = ProxyDepositFactor;
-	type MaxProxies = MaxProxies;
-	type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
-	type MaxPending = MaxPending;
-	type CallHasher = BlakeTwo256;
-	type AnnouncementDepositBase = AnnouncementDepositBase;
-	type AnnouncementDepositFactor = AnnouncementDepositFactor;
-}
-
-parameter_types! {
-	pub const MinVestedTransfer: Balance = 10 * MA;
-}
-
-impl pallet_vesting::Config for Runtime {
-	type Event = Event;
-	type Currency = Balances;
-	type BlockNumberToBalance = ConvertInto;
-	type MinVestedTransfer = MinVestedTransfer;
-	type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -624,11 +478,13 @@ impl pallet_aura::Config for Runtime {
 }
 
 parameter_types! {
+	// Pallet account for record rewards and give rewards to collator.
 	pub const PotId: PalletId = PalletId(*b"PotStake");
-	pub const MaxCandidates: u32 = 1000;
-	pub const MinCandidates: u32 = 5;
-	pub const SessionLength: BlockNumber = 6 * HOURS;
-	pub const MaxInvulnerables: u32 = 100;
+	// How many collator candidates is allowed.
+	pub const MaxCandidates: u32 = 10;
+	pub const MinCandidates: u32 = 3;
+	// How many collators who cannot be slashed.
+	pub const MaxInvulnerables: u32 = 10;
 }
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
@@ -666,12 +522,10 @@ construct_runtime!(
 		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>} = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
-		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 4,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
-		Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 12,
 
 		// Collator support. the order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -689,8 +543,7 @@ construct_runtime!(
 		// Handy utilities.
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
-		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 42,
-		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 43,
+		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
 
 		// The main stage. To include pallet-assets-freezer and pallet-uniques.
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
@@ -865,10 +718,8 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_assets, Assets);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_multisig, Multisig);
-			add_benchmark!(params, batches, pallet_proxy, Proxy);
 			add_benchmark!(params, batches, pallet_utility, Utility);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			add_benchmark!(params, batches, pallet_vesting, Vesting);
 			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }

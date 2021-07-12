@@ -211,7 +211,7 @@ fn manta_pc_dev_genesis(
 		parachain_info: manta_pc_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: manta_pc_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: MA * 16,
+			candidacy_bond: MA * 1000, // How many tokens will be reserved as collator
 			..Default::default()
 		},
 		session: manta_pc_runtime::SessionConfig {
@@ -322,7 +322,7 @@ fn manta_pc_testnet_genesis(
 				.cloned()
 				.map(|(acc, _)| acc)
 				.collect(),
-			candidacy_bond: MA * 16,
+			candidacy_bond: MA * 1000, // How many tokens will be reserved as collator
 			..Default::default()
 		},
 		session: manta_pc_runtime::SessionConfig {
@@ -475,7 +475,7 @@ fn calamari_dev_genesis(
 		parachain_info: calamari_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: calamari_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: MA * 16,
+			candidacy_bond: MA * 1000, // How many tokens will be reserved as collator
 			..Default::default()
 		},
 		session: calamari_runtime::SessionConfig {
@@ -492,7 +492,6 @@ fn calamari_dev_genesis(
 				.collect(),
 		},
 		aura_ext: Default::default(),
-		vesting: calamari_runtime::VestingConfig { vesting: vec![] },
 	}
 }
 
@@ -587,7 +586,7 @@ fn calamari_testnet_genesis(
 				.cloned()
 				.map(|(acc, _)| acc)
 				.collect(),
-			candidacy_bond: MA * 16,
+			candidacy_bond: MA * 1000, // How many tokens will be reserved as collator
 			..Default::default()
 		},
 		session: calamari_runtime::SessionConfig {
@@ -604,6 +603,5 @@ fn calamari_testnet_genesis(
 				.collect(),
 		},
 		aura_ext: Default::default(),
-		vesting: calamari_runtime::VestingConfig { vesting: vec![] },
 	}
 }

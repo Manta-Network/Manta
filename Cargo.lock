@@ -960,15 +960,12 @@ dependencies = [
  "pallet-balances",
  "pallet-collator-selection",
  "pallet-multisig",
- "pallet-proxy",
- "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
- "pallet-vesting",
  "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
@@ -4406,7 +4403,6 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-multisig",
  "pallet-proxy",
- "pallet-randomness-collective-flip",
  "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
@@ -5455,19 +5451,6 @@ dependencies = [
  "parity-scale-codec",
  "sp-core",
  "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-randomness-collective-flip"
-version = "3.0.0"
-source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.8#1b758b2a8d151d97d2242260c465b6df9cb8a7a4"
-dependencies = [
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "safe-mix",
  "sp-runtime",
  "sp-std",
 ]
@@ -7901,15 +7884,6 @@ name = "ryu"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "71d301d4193d031abdd79ff7e3dd721168a9572ef3fe51a1517aba235bd8f86e"
-
-[[package]]
-name = "safe-mix"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d3d055a2582e6b00ed7a31c1524040aa391092bf636328350813f3a0605215c"
-dependencies = [
- "rustc_version 0.2.3",
-]
 
 [[package]]
 name = "salsa20"

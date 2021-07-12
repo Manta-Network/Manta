@@ -478,6 +478,7 @@ where
 						slot_duration,
 						// We got around 500ms for proposing
 						block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
+						// Refer to: https://github.com/paritytech/cumulus/blob/polkadot-v0.9.8/polkadot-parachains/src/service.rs#L487
 						// And a maximum of 750ms if slots are skipped
 						max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
 						telemetry: telemetry.map(|t| t.handle()),
