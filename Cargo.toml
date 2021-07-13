@@ -2,6 +2,7 @@
 members = [
 	'node',
 	'runtime/manta-pc',
+	'runtime/calamari',
 ]
 
 [profile.release]
