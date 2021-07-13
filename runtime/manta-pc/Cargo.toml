@@ -31,10 +31,12 @@ sp-version = { version = '3.0.0', git = 'https://github.com/paritytech/substrate
 # Substrate frames
 frame-benchmarking = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, optional = true, branch = "polkadot-v0.9.8" }
 frame-system-benchmarking = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, optional = true, branch = "polkadot-v0.9.8" }
+frame-try-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.8" }
 frame-executive = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
 frame-support = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
 frame-system = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
 frame-system-rpc-runtime-api = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
+#try-runtime-cli = { version = '0.9.0', git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", optional = true }
 
 # Substrate pallets
 pallet-assets = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
@@ -83,6 +85,16 @@ substrate-wasm-builder = { version = '4.0.0', git = 'https://github.com/parityte
 
 [features]
 default = ['std']
+try-runtime = [
+	"frame-executive/try-runtime",
+	"frame-try-runtime",
+	#"try-runtime-cli",
+]
+
+cli = [
+	#"try-runtime-cli",
+]
+
 runtime-benchmarks = [
 	'hex-literal',
 	'sp-runtime/runtime-benchmarks',
@@ -113,6 +125,7 @@ std = [
 	'sp-version/std',
 	'sp-offchain/std',
 	'sp-session/std',
+	"frame-try-runtime/std",
 	'sp-block-builder/std',
 	'sp-transaction-pool/std',
 	'sp-inherents/std',
