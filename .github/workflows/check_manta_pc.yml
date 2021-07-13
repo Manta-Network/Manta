@@ -54,7 +54,4 @@ jobs:
       - name: Check Manta-PC Build
         run: |
           cargo check --features manta-pc
-
-                - name: Check Manta-PC Build
-        run: |
-          cargo check --features manta-pc
+          cargo check --all-features
