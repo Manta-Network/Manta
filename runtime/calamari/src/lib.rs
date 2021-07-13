@@ -453,7 +453,8 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 
 parameter_types! {
 	pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(33);
-	pub const Period: u32 = 6 * HOURS;
+	// Rotate collator's spot each 3 hours.
+	pub const Period: u32 = 3 * HOURS;
 	pub const Offset: u32 = 0;
 }
 
