@@ -85,8 +85,8 @@ substrate-wasm-builder = { version = '4.0.0', git = 'https://github.com/parityte
 [features]
 default = ['std']
 try-runtime = [
-	"frame-executive/try-runtime",
-	"frame-try-runtime",
+	'frame-executive/try-runtime',
+	'frame-try-runtime',
 ]
 
 runtime-benchmarks = [
