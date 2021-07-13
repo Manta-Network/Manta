@@ -105,7 +105,8 @@ cli = [
 	"try-runtime-cli",
 ]
 try-runtime = [ 
-	#"manta-pc-runtime/try-runtime",
+	"manta-pc-runtime/try-runtime",
+	"calamari-runtime/try-runtime",
 ]
 
 runtime-benchmarks = [

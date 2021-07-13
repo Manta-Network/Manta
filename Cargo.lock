@@ -951,6 +951,7 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
+ "frame-try-runtime",
  "hex-literal 0.3.2",
  "log",
  "manta-primitives",
