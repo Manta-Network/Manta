@@ -46,6 +46,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "aead"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e3e798aa0c8239776f54415bc06f3d74b1850f3f830b45c35cfc80556973f70"
+dependencies = [
+ "generic-array 0.14.4",
+]
+
+[[package]]
 name = "aes"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -58,9 +67,9 @@ dependencies = [
 
 [[package]]
 name = "aes"
-version = "0.7.0"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99446914425f48a667458b33c7fb920e24cf9e7c149a072a9fc420731b353835"
+checksum = "495ee669413bfbe9e8cace80f4d3d78e6d8c8d99579f97fb93bde351b185f2d4"
 dependencies = [
  "cfg-if 1.0.0",
  "cipher 0.3.0",
@@ -74,10 +83,24 @@ version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0301c9e9c443494d970a07885e8cf3e587bae8356a1d5abd0999068413f7205f"
 dependencies = [
- "aead",
+ "aead 0.3.2",
  "aes 0.5.0",
  "block-cipher",
- "ghash",
+ "ghash 0.3.1",
+ "subtle 2.4.0",
+]
+
+[[package]]
+name = "aes-gcm"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc3be92e19a7ef47457b8e6f90707e12b6ac5d20c6f3866584fa3be0787d839f"
+dependencies = [
+ "aead 0.4.2",
+ "aes 0.7.4",
+ "cipher 0.3.0",
+ "ctr",
+ "ghash 0.4.2",
  "subtle 2.4.0",
 ]
 
@@ -1003,7 +1026,7 @@ version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9bf18d374d66df0c05cdddd528a7db98f78c28e2519b120855c4f84c5027b1f5"
 dependencies = [
- "aead",
+ "aead 0.3.2",
  "chacha20",
  "poly1305",
  "stream-cipher",
@@ -1097,6 +1120,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "console_error_panic_hook"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b8d976903543e0c48546a91908f21588a680a8c8f984df9a5d69feccb2b2a211"
+dependencies = [
+ "cfg-if 0.1.10",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "constant_time_eq"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1136,9 +1169,9 @@ dependencies = [
 
 [[package]]
 name = "cpufeatures"
-version = "0.1.1"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dec1028182c380cc45a2e2c5ec841134f2dfd0f8f5f0a5bcd68004f81b5efdf4"
+checksum = "66c99696f6c9dd7f35d486b9d04d7e6e202aa3e8c40d553f2fdf5e7e0c6a71ef"
 dependencies = [
  "libc",
 ]
@@ -1398,6 +1431,15 @@ checksum = "5e98e2ad1a782e33928b96fc3948e7c355e5af34ba4de7670fe8bac2a3b2006d"
 dependencies = [
  "quote",
  "syn",
+]
+
+[[package]]
+name = "ctr"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a232f92a03f37dd7d7dd2adc67166c77e9cd88de5b019b9a9eecfaeaf7bfd481"
+dependencies = [
+ "cipher 0.3.0",
 ]
 
 [[package]]
@@ -2264,8 +2306,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8fc3cb4d91f53b50155bdcfd23f6a4c39ae1969c2ae85982b135750cccaf5fce"
 dependencies = [
  "cfg-if 1.0.0",
+ "js-sys",
  "libc",
  "wasi 0.9.0+wasi-snapshot-preview1",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -2275,8 +2319,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c9495705279e7140bf035dde1f6e750c162df8b625267cd52cc44e0b156732c8"
 dependencies = [
  "cfg-if 1.0.0",
+ "js-sys",
  "libc",
  "wasi 0.10.0+wasi-snapshot-preview1",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -2286,7 +2332,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97304e4cd182c3846f7575ced3890c53012ce534ad9114046b0a9e00bb30a375"
 dependencies = [
  "opaque-debug 0.3.0",
- "polyval",
+ "polyval 0.4.5",
+]
+
+[[package]]
+name = "ghash"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7bbd60caa311237d508927dbba7594b483db3ef05faa55172fcf89b1bcda7853"
+dependencies = [
+ "opaque-debug 0.3.0",
+ "polyval 0.5.1",
 ]
 
 [[package]]
@@ -3034,9 +3090,9 @@ checksum = "3576a87f2ba00f6f106fdfcd16db1d698d648a26ad8e0573cad8537c3c362d2a"
 
 [[package]]
 name = "libc"
-version = "0.2.94"
+version = "0.2.98"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18794a8ad5b29321f790b55d93dfba91e125cb1a9edbd4f8e3150acc771c1a5e"
+checksum = "320cfe77175da3a483efed4bc0adc1968ca050b098ce4f2f1c13a56626128790"
 
 [[package]]
 name = "libloading"
@@ -3640,7 +3696,7 @@ dependencies = [
 [[package]]
 name = "manta-api"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-api?branch=manta#a161ae4346f2421abc6bdf777fe4af23281f1530"
+source = "git+https://github.com/Manta-Network/manta-api?branch=manta#de5bfdc4daa2e4f916d23c0b1c4a335e11dc85a3"
 dependencies = [
  "ark-bls12-381",
  "ark-crypto-primitives",
@@ -3651,19 +3707,26 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
+ "blake2",
+ "console_error_panic_hook",
+ "getrandom 0.2.2",
  "hkdf",
  "manta-asset",
  "manta-crypto",
  "manta-data",
  "manta-error",
+ "rand 0.7.3",
  "rand_chacha 0.2.2",
  "sha2 0.9.4",
+ "wasm-bindgen",
+ "web-sys",
+ "zeroize",
 ]
 
 [[package]]
 name = "manta-asset"
 version = "0.1.1"
-source = "git+https://github.com/Manta-Network/manta-types?branch=manta#be51504741e91c4a38a70c2289a1cbcbfe3c75e3"
+source = "git+https://github.com/Manta-Network/manta-types?branch=manta#7f1482e948851c2a4071a50fef19169d680f1ad4"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ed-on-bls12-381",
@@ -3679,9 +3742,9 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-crypto?branch=manta#45b49f1be4d0c756e471aa4b26b2fc5f581fa72f"
+source = "git+https://github.com/Manta-Network/manta-crypto?branch=manta#2646f2dfb4712f27bcba6cfdbccb1a991ffe9993"
 dependencies = [
- "aes 0.7.0",
+ "aes-gcm 0.9.2",
  "ark-bls12-381",
  "ark-crypto-primitives",
  "ark-ed-on-bls12-381",
@@ -3693,13 +3756,14 @@ dependencies = [
  "blake2",
  "generic-array 0.14.4",
  "manta-error",
+ "parity-scale-codec",
  "x25519-dalek",
 ]
 
 [[package]]
 name = "manta-data"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-types?branch=manta#be51504741e91c4a38a70c2289a1cbcbfe3c75e3"
+source = "git+https://github.com/Manta-Network/manta-types?branch=manta#7f1482e948851c2a4071a50fef19169d680f1ad4"
 dependencies = [
  "ark-ed-on-bls12-381",
  "ark-groth16",
@@ -3714,7 +3778,7 @@ dependencies = [
 [[package]]
 name = "manta-error"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-error?branch=manta#17b9a995564bacd4557b98581d7bb1cf02819847"
+source = "git+https://github.com/Manta-Network/manta-error?branch=manta#201b4e70577fa282474ceee2008e4e24ba790e21"
 dependencies = [
  "ark-crypto-primitives",
  "ark-relations",
@@ -3726,7 +3790,7 @@ dependencies = [
 [[package]]
 name = "manta-ledger"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-types?branch=manta#be51504741e91c4a38a70c2289a1cbcbfe3c75e3"
+source = "git+https://github.com/Manta-Network/manta-types?branch=manta#7f1482e948851c2a4071a50fef19169d680f1ad4"
 dependencies = [
  "manta-crypto",
  "manta-error",
@@ -4409,7 +4473,7 @@ dependencies = [
 [[package]]
 name = "pallet-manta-pay"
 version = "3.0.1"
-source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#2ca6b77c056fd2debf42c35c634103a7c63b1fff"
+source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#d43a9fbc964820c4732b1a8437165f73e2f55b72"
 dependencies = [
  "ark-std",
  "data-encoding",
@@ -5038,6 +5102,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eebcc4aa140b9abd2bc40d9c3f7ccec842679cd79045ac3a7ac698c1a064b7cd"
 dependencies = [
  "cpuid-bool",
+ "opaque-debug 0.3.0",
+ "universal-hash",
+]
+
+[[package]]
+name = "polyval"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e597450cbf209787f0e6de80bf3795c6b2356a380ee87837b545aded8dbc1823"
+dependencies = [
+ "cfg-if 1.0.0",
+ "cpufeatures",
  "opaque-debug 0.3.0",
  "universal-hash",
 ]
@@ -6992,7 +7068,7 @@ version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "795dd7aeeee24468e5a32661f6d27f7b5cbed802031b2d7640c7b10f8fb2dd50"
 dependencies = [
- "aes-gcm",
+ "aes-gcm 0.7.0",
  "blake2",
  "chacha20poly1305",
  "rand 0.7.3",
@@ -8457,7 +8533,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.3.23",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
