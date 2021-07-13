@@ -142,7 +142,7 @@ impl Filter<Call> for BaseFilter {
 			Call::Assets(pallet_assets::Call::create(..)) | Call::Balances(_) |
 			// Filter these calls to prevent users from creating assets or making transfers.
 			// Core
-			Call::System(_) | 
+			Call::System(_) |
 			// Filter these calls to prevent users from runtime upgrade without sudo privilege.
 			// pallet-timestamp(_) and parachainSystem(_) could not be filtered because they are used in commuication between releychain and parachain.
 			// Utility
@@ -154,8 +154,7 @@ impl Filter<Call> for BaseFilter {
 			Call::Session(_) | Call::CollatorSelection(_) |
 			// Filter these calls to prevent users from setting keys and selecting collator for parachain (couldn't use now).
 			//XCM
-			Call::DmpQueue(_) | Call::PolkadotXcm(_) 
-			// Filter XCM pallet
+			Call::DmpQueue(_) | Call::PolkadotXcm(_) // Filter XCM pallet.
 		)
 	}
 }
