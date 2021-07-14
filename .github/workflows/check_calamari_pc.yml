@@ -1,0 +1,53 @@
+---
+
+name: Check Calamari-PC
+
+# Controls when the action will run.
+# yamllint disable-line rule:truthy
+on:
+  # Triggers the workflow on push or pull request events
+  # but only for the calamari (default) branch.
+  pull_request:
+    branches: [manta-pc]
+  push:
+    branches: [manta-pc]
+
+# A workflow run is made up of one or more jobs
+# that can run sequentially or in parallel
+jobs:
+  check:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks
+    # that will be executed as part of the job
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run yamllint
+        uses: actionshub/yamllint@main
+
+      - name: Set-Up
+        run: sudo apt install -y
+             cmake pkg-config libssl-dev
+             git build-essential clang
+             libclang-dev curl
+
+      - name: Install Rustup
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source ~/.cargo/env
+          rustup update stable
+          rustup update nightly
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          rustup component add clippy
+          rustup component add rustfmt
+
+      - name: Check Calamari Clippy
+        run: |
+          SKIP_WASM_BUILD= cargo clippy --features calamari
+
+      - name: Check Calamari Build
+        run: |
+          cargo check --features calamari
+          cargo check --all-features

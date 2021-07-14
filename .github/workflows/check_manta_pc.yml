@@ -1,6 +1,6 @@
 ---
 
-name: Check Set-Up & Build
+name: Check Manta-PC
 
 # Controls when the action will run.
 # yamllint disable-line rule:truthy
@@ -51,15 +51,7 @@ jobs:
         run: |
           SKIP_WASM_BUILD= cargo clippy --features manta-pc
 
-      - name: Check Calamari Clippy
-        run: |
-          SKIP_WASM_BUILD= cargo clippy --features calamari
-
       - name: Check Manta-PC Build
         run: |
           cargo check --features manta-pc
-
-      - name: Check Calamari Build
-        run: |
-          cargo check --features calamari
           cargo check --all-features

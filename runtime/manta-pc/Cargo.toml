@@ -35,6 +35,7 @@ frame-executive = { version = '3.0.0', git = 'https://github.com/paritytech/subs
 frame-support = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
 frame-system = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
 frame-system-rpc-runtime-api = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
+frame-try-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.8" }
 
 # Substrate pallets
 pallet-assets = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
@@ -83,6 +84,11 @@ substrate-wasm-builder = { version = '4.0.0', git = 'https://github.com/parityte
 
 [features]
 default = ['std']
+try-runtime = [
+	'frame-executive/try-runtime',
+	'frame-try-runtime',
+]
+
 runtime-benchmarks = [
 	'hex-literal',
 	'sp-runtime/runtime-benchmarks',
@@ -120,6 +126,7 @@ std = [
 	'frame-executive/std',
 	'frame-system/std',
 	'frame-system-rpc-runtime-api/std',
+	'frame-try-runtime/std',
 	'pallet-assets/std',
 	'pallet-authorship/std',
 	'pallet-balances/std',

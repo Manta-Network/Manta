@@ -23,7 +23,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{All, Filter},
+	traits::{All, Filter, OnRuntimeUpgrade},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -689,6 +689,14 @@ impl_runtime_apis! {
 		}
 	}
 
+	#[cfg(feature = "try-runtime")]
+	impl frame_try_runtime::TryRuntime<Block> for Runtime {
+		fn on_runtime_upgrade() -> Result<(Weight, Weight), sp_runtime::RuntimeString> {
+			let weight = Executive::try_runtime_upgrade()?;
+			Ok((weight, RuntimeBlockWeights::get().max_block))
+		}
+	}
+
 	#[cfg(feature = "runtime-benchmarks")]
 	impl frame_benchmarking::Benchmark<Block> for Runtime {
 		fn dispatch_benchmark(
@@ -726,6 +734,28 @@ impl_runtime_apis! {
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
 		}
+	}
+}
+
+// Example custom try-runtime hooks
+pub struct Custom;
+impl OnRuntimeUpgrade for Custom {
+	#[cfg(feature = "try-runtime")]
+	fn pre_upgrade() -> Result<(), &'static str> {
+		// Do something. You have access to temporary storage with:
+		// Self::set_temp_storage(key, value);
+		unimplemented!()
+	}
+
+	fn on_runtime_upgrade() -> Weight {
+		unimplemented!()
+	}
+
+	#[cfg(feature = "try-runtime")]
+	fn post_upgrade() -> Result<(), &'static str> {
+		// Do something. You can access the temporary storage with:
+		// Self::get_temp_storage(key, value);
+		unimplemented!()
 	}
 }
 
