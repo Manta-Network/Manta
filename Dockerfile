@@ -1,6 +1,6 @@
 FROM ubuntu:20.04 as builder
 LABEL description="run manta binary distribution in docker"
-ARG BINARY="https://github.com/Manta-Network/Manta/releases/download/v3.0.0-alpha.8/manta"
+ARG BINARY="https://github.com/Manta-Network/Manta/releases/download/v3.0.0-alpha.9/manta"
 
 ENV DEBIAN_FRONTEND noninteractive
 
