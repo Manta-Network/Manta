@@ -3676,7 +3676,7 @@ dependencies = [
 [[package]]
 name = "manta-api"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-api?branch=manta#de5bfdc4daa2e4f916d23c0b1c4a335e11dc85a3"
+source = "git+https://github.com/Manta-Network/manta-api?branch=manta#1db0a888fe31e5ff3dd922e04465f676715e4013"
 dependencies = [
  "ark-bls12-381",
  "ark-crypto-primitives",
@@ -3706,7 +3706,7 @@ dependencies = [
 [[package]]
 name = "manta-asset"
 version = "0.1.1"
-source = "git+https://github.com/Manta-Network/manta-types?branch=manta#7f1482e948851c2a4071a50fef19169d680f1ad4"
+source = "git+https://github.com/Manta-Network/manta-types?branch=manta#0e20d7e46a8179c53930b60c2ac90d7495ce9ba0"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ed-on-bls12-381",
@@ -3722,7 +3722,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-crypto?branch=manta#2646f2dfb4712f27bcba6cfdbccb1a991ffe9993"
+source = "git+https://github.com/Manta-Network/manta-crypto?branch=manta#20ed34f0f36556e4e83d7e6640d481eef9006f75"
 dependencies = [
  "aes-gcm 0.9.2",
  "ark-bls12-381",
@@ -3743,7 +3743,7 @@ dependencies = [
 [[package]]
 name = "manta-data"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-types?branch=manta#7f1482e948851c2a4071a50fef19169d680f1ad4"
+source = "git+https://github.com/Manta-Network/manta-types?branch=manta#0e20d7e46a8179c53930b60c2ac90d7495ce9ba0"
 dependencies = [
  "ark-ed-on-bls12-381",
  "ark-groth16",
@@ -3770,7 +3770,7 @@ dependencies = [
 [[package]]
 name = "manta-ledger"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-types?branch=manta#7f1482e948851c2a4071a50fef19169d680f1ad4"
+source = "git+https://github.com/Manta-Network/manta-types?branch=manta#0e20d7e46a8179c53930b60c2ac90d7495ce9ba0"
 dependencies = [
  "manta-crypto",
  "manta-error",
@@ -4431,7 +4431,7 @@ dependencies = [
 [[package]]
 name = "pallet-manta-pay"
 version = "3.0.1"
-source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#d43a9fbc964820c4732b1a8437165f73e2f55b72"
+source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#823bb79841f430b83c0b1ce7d0d7e7c1c1cf9176"
 dependencies = [
  "ark-std",
  "data-encoding",
@@ -8506,7 +8506,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.3.23",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
