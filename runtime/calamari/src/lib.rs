@@ -161,7 +161,7 @@ impl Filter<Call> for BaseFilter {
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
-	type BaseCallFilter = BaseFilter; // Let filter useable.
+	type BaseCallFilter = BaseFilter; // Let filter activate.
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;
 	type AccountId = AccountId;
