@@ -97,7 +97,7 @@ pub fn manta_pc_development_config(id: ParaId) -> MantaPCChainSpec {
 
 	MantaPCChainSpec::from_genesis(
 		// Name
-		"Manta-Parachain Development",
+		"Manta Parachain Development",
 		// ID
 		"manta_pc_dev",
 		ChainType::Local,
@@ -135,7 +135,7 @@ pub fn manta_pc_local_config(id: ParaId) -> MantaPCChainSpec {
 
 	MantaPCChainSpec::from_genesis(
 		// Name
-		"Manta-Parachain Local",
+		"Manta Parachain Local",
 		// ID
 		"manta_pc_local",
 		ChainType::Local,
@@ -361,7 +361,7 @@ pub fn calamari_development_config(id: ParaId) -> CalamariChainSpec {
 
 	CalamariChainSpec::from_genesis(
 		// Name
-		"Calamari-Parachain Development",
+		"Calamari Parachain Development",
 		// ID
 		"calamari_dev",
 		ChainType::Local,
@@ -399,7 +399,7 @@ pub fn calamari_local_config(id: ParaId) -> CalamariChainSpec {
 
 	CalamariChainSpec::from_genesis(
 		// Name
-		"Calamari-Parachain Local",
+		"Calamari Parachain Local",
 		// ID
 		"calamari_local",
 		ChainType::Local,
@@ -463,7 +463,7 @@ fn calamari_dev_genesis(
 				.map(|k| {
 					(
 						k.clone(),
-						10 * ENDOWMENT / ((endowed_accounts.len() / 2) as Balance),
+						100 * ENDOWMENT / ((endowed_accounts.len() / 2) as Balance),
 					)
 				})
 				.collect(),
@@ -563,7 +563,7 @@ fn calamari_testnet_genesis(
 		.cloned()
 		.map(|x| (x.0, ENDOWMENT))
 		.collect();
-	initial_balances.push((root_key.clone(), 500_000_000 * MA));
+	initial_balances.push((root_key.clone(), 5000_000_000 * MA));
 
 	calamari_runtime::GenesisConfig {
 		system: calamari_runtime::SystemConfig {

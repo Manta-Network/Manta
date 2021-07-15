@@ -19,7 +19,7 @@ use std::{io::Write, net::SocketAddr};
 
 pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
-pub const PARACHAIN_ID: u32 = 6666;
+pub const PARACHAIN_ID: u32 = 2084;
 
 fn load_spec(
 	id: &str,
