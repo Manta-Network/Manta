@@ -136,26 +136,21 @@ parameter_types! {
 pub struct BaseFilter;
 impl Filter<Call> for BaseFilter {
 	fn filter(c: &Call) -> bool {
-		!matches!(
-			c,
-			// Monetary
-			Call::Assets(pallet_assets::Call::create(..)) | Call::Balances(_) |
-			// Filter these calls to prevent users from creating assets or making transfers.
-			// Core
-			Call::System(_) |
-			// Filter these calls to prevent users from runtime upgrade without sudo privilege.
-			// pallet-timestamp(_) and parachainSystem(_) could not be filtered because they are used in commuication between releychain and parachain.
-			// Utility
-			Call::Utility(_) | Call::Multisig(_) |
-			// Filter these calls to prevent users from utility operation.
-			Call::Authorship(_) |
+		match c {
+			Call::Timestamp(_) => true,
+			Call::ParachainSystem(_) => true,
+			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
+			Call::Authorship(_) => true,
+			// pallet-authorship use for orml
+			Call::Sudo(_) => true,
 			// Sudo also cannot be filtered because it is used in runtime upgrade.
-			// Collator
-			Call::Session(_) | Call::CollatorSelection(_) |
-			// Filter these calls to prevent users from setting keys and selecting collator for parachain (couldn't use now).
-			//XCM
-			Call::DmpQueue(_) | Call::PolkadotXcm(_) // Filter XCM pallet.
-		)
+			_ => false,
+			// Filter System to prevent users from runtime upgrade without sudo privilege.
+			// Filter Assets and Balances to prevent users from creating assets or making transfers.
+			// Filter Utility and Multisig to prevent users from setting keys and selecting collator for parachain (couldn't use now).
+			// Filter Session and CollatorSelection to prevent users from utility operation.
+			// Filter XCM pallet.
+		}
 	}
 }
 
