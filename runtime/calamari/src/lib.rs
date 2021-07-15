@@ -137,12 +137,11 @@ pub struct BaseFilter;
 impl Filter<Call> for BaseFilter {
 	fn filter(c: &Call) -> bool {
 		match c {
-			Call::Timestamp(_) => true,
-			Call::ParachainSystem(_) => true,
+			Call::Timestamp(_) | Call::ParachainSystem(_) | Call::Authorship(_) | Call::Sudo(_) => {
+				true
+			}
 			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
-			Call::Authorship(_) => true,
 			// pallet-authorship use for orml
-			Call::Sudo(_) => true,
 			// Sudo also cannot be filtered because it is used in runtime upgrade.
 			_ => false,
 			// Filter System to prevent users from runtime upgrade without sudo privilege.
