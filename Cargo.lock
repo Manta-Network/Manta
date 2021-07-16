@@ -47,9 +47,9 @@ dependencies = [
 
 [[package]]
 name = "aead"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "922b33332f54fc0ad13fa3e514601e8d30fb54e1f3eadc36643f6526db645621"
+checksum = "6e3e798aa0c8239776f54415bc06f3d74b1850f3f830b45c35cfc80556973f70"
 dependencies = [
  "generic-array 0.14.4",
 ]
@@ -96,7 +96,7 @@ version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc3be92e19a7ef47457b8e6f90707e12b6ac5d20c6f3866584fa3be0787d839f"
 dependencies = [
- "aead 0.4.1",
+ "aead 0.4.2",
  "aes 0.7.4",
  "cipher 0.3.0",
  "ctr",

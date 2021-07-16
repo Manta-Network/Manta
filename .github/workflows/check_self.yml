@@ -1,6 +1,6 @@
 ---
 
-name: Check Set-Up & Build
+name: Check Self
 
 # Controls when the action will run.
 # yamllint disable-line rule:truthy
