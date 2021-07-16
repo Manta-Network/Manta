@@ -136,24 +136,26 @@ parameter_types! {
 pub struct BaseFilter;
 impl Filter<Call> for BaseFilter {
 	fn filter(c: &Call) -> bool {
-		!matches!(
-			c,
-			// Monetary
-			Call::Assets(pallet_assets::Call::create(..)) | Call::Balances(_) |
-			// Core
-			Call::System(_) | Call::Timestamp(_) | Call::ParachainSystem(_) |
-			// Utility
-			Call::Utility(_) | Call::Multisig(_) |
-			Call::Sudo(_) | Call::Authorship(_) |
-			// Collator
-			Call::Session(_) | Call::CollatorSelection(_)
-		)
+		match c {
+			Call::Timestamp(_) | Call::ParachainSystem(_) | Call::Authorship(_) | Call::Sudo(_) => {
+				true
+			}
+			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
+			// pallet-authorship use for orml
+			// Sudo also cannot be filtered because it is used in runtime upgrade.
+			_ => false,
+			// Filter System to prevent users from runtime upgrade without sudo privilege.
+			// Filter Assets and Balances to prevent users from creating assets or making transfers.
+			// Filter Utility and Multisig to prevent users from setting keys and selecting collator for parachain (couldn't use now).
+			// Filter Session and CollatorSelection to prevent users from utility operation.
+			// Filter XCM pallet.
+		}
 	}
 }
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
-	type BaseCallFilter = ();
+	type BaseCallFilter = BaseFilter; // Let filter activate.
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;
 	type AccountId = AccountId;
