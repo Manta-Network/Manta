@@ -605,3 +605,132 @@ fn calamari_testnet_genesis(
 		aura_ext: Default::default(),
 	}
 }
+
+#[cfg(feature = "calamari")]
+fn calamari_genesis(
+	initial_authorities: Vec<(AccountId, AuraId)>,
+	root_key: AccountId,
+	id: ParaId,
+) -> calamari_runtime::GenesisConfig {
+	// collator stake 
+	let collator_stake = 20_000 * MA;
+
+	let mut initial_balances: Vec<(AccountId, Balance)> = initial_authorities
+		.iter()
+		.cloned()
+		.map(|x| (x.0, collator_stake))
+		.collect();
+
+	initial_balances.push((
+		root_key.clone(),
+		10_000_000_000 * MA - collator_stake * (initial_authorities.len() as u128),
+	));
+
+	calamari_runtime::GenesisConfig {
+		system: calamari_runtime::SystemConfig {
+			code: calamari_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+			changes_trie_config: Default::default(),
+		},
+		balances: calamari_runtime::BalancesConfig {
+			balances: initial_balances,
+		},
+		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
+		// of this.
+		aura: Default::default(),
+		sudo: calamari_runtime::SudoConfig { key: root_key },
+		parachain_info: calamari_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: calamari_runtime::CollatorSelectionConfig {
+			invulnerables: initial_authorities
+				.iter()
+				.cloned()
+				.map(|(acc, _)| acc)
+				.collect(),
+			candidacy_bond: MA * 10_000, // How many tokens will be reserved as collator
+			..Default::default()
+		},
+		session: calamari_runtime::SessionConfig {
+			keys: initial_authorities
+				.iter()
+				.cloned()
+				.map(|(acc, aura)| {
+					(
+						acc.clone(),                 // account id
+						acc,                         // validator id
+						calamari_session_keys(aura), // session keys
+					)
+				})
+				.collect(),
+		},
+		aura_ext: Default::default(),
+	}
+}
+
+#[cfg(feature = "calamari")]
+pub fn calamari_config(id: ParaId) -> CalamariChainSpec {
+	let properties = calamari_properties();
+
+	// (controller_account, aura_id)
+	let initial_authorities: Vec<(AccountId, AuraId)> = vec![
+		(
+			// collator 1
+			// Account ID: dfYnVgmDBAxKHTbfyh5hp9KcgakbmVrEXiKVHSpadnT1nX9Dz
+			hex!["16b77c266c577ad605bec26cd2421a9b405d102bd54663c5f242454e0de81376"].into(),
+			hex!["7a40f6773ffa7d13147daa0f8cf7e5ea5b54a14fb515ccded35ea7df7ce2c26a"]
+				.unchecked_into(),
+		),
+		(	
+			// collator 2
+			// Account ID: dfXCjpGq1i5nYhSjZjJjhnj2A4Gu7qEKAJR1E4bUc2CB4ZGoY
+			hex!["c233dbba1667da231e1091fdd99e1ead60270c836ee809521b40a5c89cde497c"].into(),
+			hex!["0e66f3b49250bced29cff1d717b944f4f57e5ced096e4b6aeeb7d5206d7b1d0e"]
+				.unchecked_into(),
+		),
+		(	
+			// collator 3
+			// Account ID: dfaTH8uLtHfutMB9BZncUPCmFGSD9EyJ1FvVbmokMrxcHUhLi
+			hex!["088eb36dcb104076d56705d27c7fe94db3f32a399d48a21ac4b1470a231c0a54"].into(),
+			hex!["f08346ce33e5c8c29d0fcb7aa70db75964d763f0537777ef9d5f0091fe3d371c"]
+				.unchecked_into(),
+		),
+		(	
+			// collator 4
+			// Account ID: dfYLPkn1Jfr98eVgCHawAXSe7FvNdr3cL6LCRqedz3BFiGDyM
+			hex!["ccc16c960eed8939a66043b7a26d97f7363ac862b50bf50a8ecceff4a6f1d44a"].into(),
+			hex!["4e4277d721cfed60407222cb7e47701a60597d7b598cda5d0ac38fc29dab8d72"]
+				.unchecked_into(),
+		),
+		(	// collator 5
+			// Account ID: dfawvvFbGj3i6YGGwuN3GVua53suVxTsqBLrjv1BiFeoHLWMN
+			hex!["fe66a8f15b1c29b69fdb246a7368316192db12b98fca934a6f1e4c5863a2885c"].into(),
+			hex!["a272940a6d11b48f691225841e168d0f16c8101cc034f115298c4aa53c2a5d6f"]
+				.unchecked_into(),
+		),
+	];
+
+	let root_key: AccountId =
+		// sudo account: 
+		// Account ID: 
+		hex!["7200ed745a32b3843eed5889b48185dca0519412b673d1650a0986ac361ffd32"].into();
+
+	CalamariChainSpec::from_genesis(
+		// Name
+		"Calamari Parachain",
+		// ID
+		"calamari",
+		ChainType::Live,
+		move || calamari_genesis(initial_authorities.clone(), root_key.clone(), id),
+		vec![],
+		Some(
+			sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
+				.expect("Calamari testnet telemetry url is valid; qed"),
+		),
+		Some(CALAMARI_PROTOCOL_ID),
+		Some(properties),
+		Extensions {
+			relay_chain: RELAYCHAIN_DEV_NET.into(),
+			para_id: id.into(),
+		},
+	)
+}
