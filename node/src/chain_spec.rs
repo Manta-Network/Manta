@@ -612,7 +612,7 @@ fn calamari_genesis(
 	root_key: AccountId,
 	id: ParaId,
 ) -> calamari_runtime::GenesisConfig {
-	// collator stake 
+	// collator stake
 	let collator_stake = 20_000 * MA;
 
 	let mut initial_balances: Vec<(AccountId, Balance)> = initial_authorities
@@ -680,28 +680,29 @@ pub fn calamari_config(id: ParaId) -> CalamariChainSpec {
 			hex!["7a40f6773ffa7d13147daa0f8cf7e5ea5b54a14fb515ccded35ea7df7ce2c26a"]
 				.unchecked_into(),
 		),
-		(	
+		(
 			// collator 2
 			// Account ID: dfXCjpGq1i5nYhSjZjJjhnj2A4Gu7qEKAJR1E4bUc2CB4ZGoY
 			hex!["c233dbba1667da231e1091fdd99e1ead60270c836ee809521b40a5c89cde497c"].into(),
 			hex!["0e66f3b49250bced29cff1d717b944f4f57e5ced096e4b6aeeb7d5206d7b1d0e"]
 				.unchecked_into(),
 		),
-		(	
+		(
 			// collator 3
 			// Account ID: dfaTH8uLtHfutMB9BZncUPCmFGSD9EyJ1FvVbmokMrxcHUhLi
 			hex!["088eb36dcb104076d56705d27c7fe94db3f32a399d48a21ac4b1470a231c0a54"].into(),
 			hex!["f08346ce33e5c8c29d0fcb7aa70db75964d763f0537777ef9d5f0091fe3d371c"]
 				.unchecked_into(),
 		),
-		(	
+		(
 			// collator 4
 			// Account ID: dfYLPkn1Jfr98eVgCHawAXSe7FvNdr3cL6LCRqedz3BFiGDyM
 			hex!["ccc16c960eed8939a66043b7a26d97f7363ac862b50bf50a8ecceff4a6f1d44a"].into(),
 			hex!["4e4277d721cfed60407222cb7e47701a60597d7b598cda5d0ac38fc29dab8d72"]
 				.unchecked_into(),
 		),
-		(	// collator 5
+		(
+			// collator 5
 			// Account ID: dfawvvFbGj3i6YGGwuN3GVua53suVxTsqBLrjv1BiFeoHLWMN
 			hex!["fe66a8f15b1c29b69fdb246a7368316192db12b98fca934a6f1e4c5863a2885c"].into(),
 			hex!["a272940a6d11b48f691225841e168d0f16c8101cc034f115298c4aa53c2a5d6f"]
