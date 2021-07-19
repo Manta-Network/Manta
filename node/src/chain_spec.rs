@@ -711,8 +711,8 @@ pub fn calamari_config(id: ParaId) -> CalamariChainSpec {
 
 	let root_key: AccountId =
 		// sudo account: 
-		// Account ID: 
-		hex!["7200ed745a32b3843eed5889b48185dca0519412b673d1650a0986ac361ffd32"].into();
+		// Account ID: dfcJVMbnGf3TzMJNVoAdZi4MWkFHdsM5cqmUxaRp8mTEgXPvJ
+		hex!["fe556a2b64e55a218e6d6cb4989fd764d768aacb79022aa2ee19db5450157b1e"].into();
 
 	CalamariChainSpec::from_genesis(
 		// Name
