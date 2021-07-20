@@ -40,6 +40,8 @@ fn load_spec(
 		"calamari-local" => Box::new(chain_spec::calamari_local_config(para_id)),
 		#[cfg(feature = "calamari")]
 		"calamari-testnet" => Box::new(chain_spec::calamari_testnet_config(para_id)),
+		#[cfg(feature = "calamari")]
+		"calamari" => Box::new(chain_spec::calamari_config(para_id)),
 		path => {
 			let path = std::path::PathBuf::from(path);
 

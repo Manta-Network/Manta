@@ -20,7 +20,7 @@ const ENDOWMENT: Balance = 100_000_000 * MA; // 10 endowment so that total suppl
 const CALAMARI_PROTOCOL_ID: &str = "calamari"; // for p2p network configuration
 #[cfg(feature = "manta-pc")]
 const MANTAPC_PROTOCOL_ID: &str = "manta-pc"; // for p2p network configuration
-const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
+const STAGING_TELEMETRY_URL: &str = "wss://api.telemetry.manta.systems/submit/";
 const RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";
 const RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
 
@@ -238,34 +238,40 @@ pub fn manta_pc_testnet_config(id: ParaId) -> MantaPCChainSpec {
 	// (controller_account, aura_id)
 	let initial_authorities: Vec<(AccountId, AuraId)> = vec![
 		(
-			hex!["16b77c266c577ad605bec26cd2421a9b405d102bd54663c5f242454e0de81376"].into(),
-			hex!["7a40f6773ffa7d13147daa0f8cf7e5ea5b54a14fb515ccded35ea7df7ce2c26a"]
+			// account id: dfcAcdrGMvrhhuVnqsXsCi53rGp9JWzyczHdRxn9THe8TiNNt
+			hex!["f853f56e9bdec8841c71251dc7c0e4d5160919df9c309907a1d7ab61b35bf530"].into(),
+			hex!["56bea77a6396efe47022814f7e34d5e8bae80dc89ba28fca9e413e14709b6002"]
 				.unchecked_into(),
 		),
 		(
-			hex!["c233dbba1667da231e1091fdd99e1ead60270c836ee809521b40a5c89cde497c"].into(),
-			hex!["0e66f3b49250bced29cff1d717b944f4f57e5ced096e4b6aeeb7d5206d7b1d0e"]
+			// account id: dfY7Mi9craRmPdMaW8dNYp7Hj9fc8eP1Ti4hvF5ELsdLk36oN
+			hex!["44e70b3104b2a6d8140fe0044e1432be8442206e7190a7edd10fa92d365ceb30"].into(),
+			hex!["fe5329b7da9f11ce5d0ad8a449b197b4f5ca587ebf5a36841d4ca6dfbd2cf951"]
 				.unchecked_into(),
 		),
 		(
-			hex!["088eb36dcb104076d56705d27c7fe94db3f32a399d48a21ac4b1470a231c0a54"].into(),
-			hex!["f08346ce33e5c8c29d0fcb7aa70db75964d763f0537777ef9d5f0091fe3d371c"]
+			// account id: dfXk5vAbd5JyqB7XL5HvooReGxA4QdXZiuS4rPhmSs2NBL4z9
+			hex!["34adba14c165d5a968dc9e19ec7268c46df418e00a6e4b730a55aa1d58dcce4a"].into(),
+			hex!["c06f516066d3c99edbffdc55841107d3518830e0080c979f454f06b53c359645"]
 				.unchecked_into(),
 		),
 		(
-			hex!["ccc16c960eed8939a66043b7a26d97f7363ac862b50bf50a8ecceff4a6f1d44a"].into(),
-			hex!["4e4277d721cfed60407222cb7e47701a60597d7b598cda5d0ac38fc29dab8d72"]
+			// account id: dfZY9gDWqu3eunq3feCetwXppVUapUk6tJbPmrQBgUfB2JTzr
+			hex!["840be78d2675c54f026fd807d2d0da145cf2577689b21cdcfe1a6680c83f9710"].into(),
+			hex!["d86fc37d2bcfbcbae99eceb6255a5e063f49e9a90d0ea385343dd8805e5bc533"]
 				.unchecked_into(),
 		),
 		(
-			hex!["fe66a8f15b1c29b69fdb246a7368316192db12b98fca934a6f1e4c5863a2885c"].into(),
-			hex!["a272940a6d11b48f691225841e168d0f16c8101cc034f115298c4aa53c2a5d6f"]
+			// account id: dfWnpKTX74uCZrWxPbNUWprLsDTJkdr69kwH3Kan8PFEEV4Go
+			hex!["0a86b87ebd460a526e5d15f80586f9e0f07310ce6d364bcfe8befba3e742e822"].into(),
+			hex!["b08921fb75be024361b8fe8291a5f4368b0db136e08b932fa5c769ff5e704912"]
 				.unchecked_into(),
 		),
 	];
 
+	// root accout: dfYKP4VdPHmSfNU3gCwb1FXqEZrnkw2fKGfQkh6JT4b2z8X4N
 	let root_key: AccountId =
-		hex!["7200ed745a32b3843eed5889b48185dca0519412b673d1650a0986ac361ffd32"].into();
+		hex!["4e128922a811d874f91c219aaa597ee3bd73bcb22910b3b1c57d297b9175336e"].into();
 
 	MantaPCChainSpec::from_genesis(
 		// Name
@@ -502,34 +508,40 @@ pub fn calamari_testnet_config(id: ParaId) -> CalamariChainSpec {
 	// (controller_account, aura_id)
 	let initial_authorities: Vec<(AccountId, AuraId)> = vec![
 		(
-			hex!["16b77c266c577ad605bec26cd2421a9b405d102bd54663c5f242454e0de81376"].into(),
-			hex!["7a40f6773ffa7d13147daa0f8cf7e5ea5b54a14fb515ccded35ea7df7ce2c26a"]
+			// account id: dmvSXhJWeJEKTZT8CCUieJDaNjNFC4ZFqfUm4Lx1z7J7oFzBf
+			hex!["4294b2a716cea91dd008d694d264feeaf9f0baf9c0b8cbe3e107515947ed440d"].into(),
+			hex!["10814b2b41bf39155ef7b38bb2431056894ba71acc35cf0101c999fd69f9c357"]
 				.unchecked_into(),
 		),
 		(
-			hex!["c233dbba1667da231e1091fdd99e1ead60270c836ee809521b40a5c89cde497c"].into(),
-			hex!["0e66f3b49250bced29cff1d717b944f4f57e5ced096e4b6aeeb7d5206d7b1d0e"]
+			// account id: dmxvZaMQir24EPxvFiCzkhDZaiScPB7ZWpHXUv5x8uct2A3du
+			hex!["b06e5d852078f64ab74af9b31add10e36d0438b847bc925fbacbf1e14963e379"].into(),
+			hex!["f2ac4141fee9f9ba42e830f39f00f316e45d280db1464a9148702ab7c4fcde52"]
 				.unchecked_into(),
 		),
 		(
-			hex!["088eb36dcb104076d56705d27c7fe94db3f32a399d48a21ac4b1470a231c0a54"].into(),
-			hex!["f08346ce33e5c8c29d0fcb7aa70db75964d763f0537777ef9d5f0091fe3d371c"]
+			// account id: dmud2BmjLyMtbAX2FaVTUtvmutoCKvR3GbARLc4crzGvVMCwu
+			hex!["1e58d3c3900c7ce6c6d82152becb45bf7bd3453fb2d267e5f72ca51285bca173"].into(),
+			hex!["f6284f9446db8f895c6cf02d0d6de6e67885a1e55c880ccac640ff4bc076df68"]
 				.unchecked_into(),
 		),
 		(
-			hex!["ccc16c960eed8939a66043b7a26d97f7363ac862b50bf50a8ecceff4a6f1d44a"].into(),
-			hex!["4e4277d721cfed60407222cb7e47701a60597d7b598cda5d0ac38fc29dab8d72"]
+			// account id: dmx4vuA3PnQmraqJqeJaKRydUjP1AW4wMVTPLQWgZSpDyQUrp
+			hex!["8a93e0f756448030dcb3018d25d75c7bf97a2e2ff15d02fd1f55bf3f2104fb5b"].into(),
+			hex!["741101a186479f4f28aa40fc78f02d7307ed3574e829aed76fdede5876e46a43"]
 				.unchecked_into(),
 		),
 		(
-			hex!["fe66a8f15b1c29b69fdb246a7368316192db12b98fca934a6f1e4c5863a2885c"].into(),
-			hex!["a272940a6d11b48f691225841e168d0f16c8101cc034f115298c4aa53c2a5d6f"]
+			// account id: dmtwRyEeNyRW3KApnTxjHahWCjN5b9gDjdvxpizHt6E9zYkXj
+			hex!["0027131c176c0d19a2a5cc475ecc657f936085912b846839319249e700f37e79"].into(),
+			hex!["8ebf03bda1702d719f428bc0a4c7cfca010c44a48ef79752490818c901548d20"]
 				.unchecked_into(),
 		),
 	];
 
+	// root account: dmyBqgFxMPZs1wKz8vFjv7nD4RBu4HeYhZTsGxSDU1wXQV15R
 	let root_key: AccountId =
-		hex!["7200ed745a32b3843eed5889b48185dca0519412b673d1650a0986ac361ffd32"].into();
+		hex!["bc153ffd4c96de7496df009c6f4ecde6f95bf67b60e0c1025a7552d0b6926e04"].into();
 
 	CalamariChainSpec::from_genesis(
 		// Name
@@ -604,4 +616,134 @@ fn calamari_testnet_genesis(
 		},
 		aura_ext: Default::default(),
 	}
+}
+
+#[cfg(feature = "calamari")]
+fn calamari_genesis(
+	initial_authorities: Vec<(AccountId, AuraId)>,
+	root_key: AccountId,
+	id: ParaId,
+) -> calamari_runtime::GenesisConfig {
+	// collator stake
+	let collator_stake = 20_000 * MA;
+
+	let mut initial_balances: Vec<(AccountId, Balance)> = initial_authorities
+		.iter()
+		.cloned()
+		.map(|x| (x.0, collator_stake))
+		.collect();
+
+	initial_balances.push((
+		root_key.clone(),
+		10_000_000_000 * MA - collator_stake * (initial_authorities.len() as u128),
+	));
+
+	calamari_runtime::GenesisConfig {
+		system: calamari_runtime::SystemConfig {
+			code: calamari_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+			changes_trie_config: Default::default(),
+		},
+		balances: calamari_runtime::BalancesConfig {
+			balances: initial_balances,
+		},
+		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
+		// of this.
+		aura: Default::default(),
+		sudo: calamari_runtime::SudoConfig { key: root_key },
+		parachain_info: calamari_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: calamari_runtime::CollatorSelectionConfig {
+			invulnerables: initial_authorities
+				.iter()
+				.cloned()
+				.map(|(acc, _)| acc)
+				.collect(),
+			candidacy_bond: MA * 10_000, // How many tokens will be reserved as collator
+			..Default::default()
+		},
+		session: calamari_runtime::SessionConfig {
+			keys: initial_authorities
+				.iter()
+				.cloned()
+				.map(|(acc, aura)| {
+					(
+						acc.clone(),                 // account id
+						acc,                         // validator id
+						calamari_session_keys(aura), // session keys
+					)
+				})
+				.collect(),
+		},
+		aura_ext: Default::default(),
+	}
+}
+
+#[cfg(feature = "calamari")]
+pub fn calamari_config(id: ParaId) -> CalamariChainSpec {
+	let properties = calamari_properties();
+
+	// (controller_account, aura_id)
+	let initial_authorities: Vec<(AccountId, AuraId)> = vec![
+		(
+			// collator 1
+			// Account ID: dmxjZSec4Xj3xz3nBEwSHjQSnRGhvcoB4eRabkiw7pSDuv8fW
+			hex!["a80a38004dcea90dd0b91c5194ad577fb7b19517ea97e2ad263fcc5df7f57e06"].into(),
+			hex!["7c4e5ea112f816c85f2bc77383cca50b73af038e327d39dca94252a4553b897e"]
+				.unchecked_into(),
+		),
+		(
+			// collator 2
+			// Account ID: dmu63DLez715hRyhzdigz6akxS2c9W6RQvrToUWuQ1hntcBwF
+			hex!["06b7ad4ce692a1653f7e2943b05c466c76c083238837af9a69ccba80185d2e6a"].into(),
+			hex!["e6cd4aa48cfb4638c90b2b4965e28f6f0eabdc261c545a31917243ad7c45d633"]
+				.unchecked_into(),
+		),
+		(
+			// collator 3
+			// Account ID: dmxvivs72h11DBNyKbeF8KQvcksoZsK9uejLpaWygFHZ2fU9z
+			hex!["b08dda3edc4405b4283e0e3ee7a4eddf850ccb01cda1b5716a21e033f47e7912"].into(),
+			hex!["ba3ca0dcf9e7515da2ad6ad37aba358ac8dfc727d791f6607d5779f934323859"]
+				.unchecked_into(),
+		),
+		(
+			// collator 4
+			// Account ID: dmyhGnuox8ny9R1efVsWKxNU2FevMxcPZaB66uEJqJhgC4a1W
+			hex!["d287e909d2ac9ad80917aa96c49130890b0cbe025c8613aceb414c9d78836a22"].into(),
+			hex!["ae06f5c31189ad71a94c3dee0e462619694db71821467dbe3d49ab06319add18"]
+				.unchecked_into(),
+		),
+		(
+			// collator 5
+			// Account ID: dmzbLejekGYZmfo5FoSznv5bBik7vGowuLxvzqFs2gZo2kANh
+			hex!["fa3da97c21b48c74aec68124ea2102691fe44ef9aed1dd206a06fe21925c2024"].into(),
+			hex!["6efd8d34a7139069ff8eb2cfe94af804a74f3084db80b6d052c0b5e300e78602"]
+				.unchecked_into(),
+		),
+	];
+
+	let root_key: AccountId =
+		// sudo account: 
+		// Account ID: dmv5qjXCqUwesFY56U9AyVsa2We7D55vYnkd5kBTdkiMyAWaF
+		hex!["32cd443cce01db659930f0391edde50dac2e511b12301bd40736c68b8a241717"].into();
+
+	CalamariChainSpec::from_genesis(
+		// Name
+		"Calamari Parachain",
+		// ID
+		"calamari",
+		ChainType::Live,
+		move || calamari_genesis(initial_authorities.clone(), root_key.clone(), id),
+		vec![],
+		Some(
+			sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
+				.expect("Calamari testnet telemetry url is valid; qed"),
+		),
+		Some(CALAMARI_PROTOCOL_ID),
+		Some(properties),
+		Extensions {
+			relay_chain: RELAYCHAIN_DEV_NET.into(),
+			para_id: id.into(),
+		},
+	)
 }
