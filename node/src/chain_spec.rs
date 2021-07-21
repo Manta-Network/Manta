@@ -21,8 +21,20 @@ const CALAMARI_PROTOCOL_ID: &str = "calamari"; // for p2p network configuration
 #[cfg(feature = "manta-pc")]
 const MANTAPC_PROTOCOL_ID: &str = "manta-pc"; // for p2p network configuration
 const STAGING_TELEMETRY_URL: &str = "wss://api.telemetry.manta.systems/submit/";
-const RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";
-const RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
+
+#[cfg(feature = "manta-pc")]
+const POLKADOT_RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";
+#[cfg(feature = "manta-pc")]
+const POLKADOT_RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
+#[cfg(feature = "manta-pc")]
+const POLKADOT_RELAYCHAIN_MAIN_NET: &str = "polkadot";
+
+#[cfg(feature = "calamari")]
+const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
+#[cfg(feature = "calamari")]
+const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
+#[cfg(feature = "calamari")]
+const KUSAMA_RELAYCHAIN_MAIN_NET: &str = "kusama";
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -123,7 +135,7 @@ pub fn manta_pc_development_config(id: ParaId) -> MantaPCChainSpec {
 		Some(MANTAPC_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: RELAYCHAIN_DEV_NET.into(),
+			relay_chain: POLKADOT_RELAYCHAIN_DEV_NET.into(),
 			para_id: id.into(),
 		},
 	)
@@ -173,7 +185,7 @@ pub fn manta_pc_local_config(id: ParaId) -> MantaPCChainSpec {
 		Some(MANTAPC_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: RELAYCHAIN_LOCAL_NET.into(),
+			relay_chain: POLKADOT_RELAYCHAIN_LOCAL_NET.into(),
 			para_id: id.into(),
 		},
 	)
@@ -288,7 +300,7 @@ pub fn manta_pc_testnet_config(id: ParaId) -> MantaPCChainSpec {
 		Some(MANTAPC_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: RELAYCHAIN_DEV_NET.into(),
+			relay_chain: POLKADOT_RELAYCHAIN_DEV_NET.into(),
 			para_id: id.into(),
 		},
 	)
@@ -393,7 +405,7 @@ pub fn calamari_development_config(id: ParaId) -> CalamariChainSpec {
 		Some(CALAMARI_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: RELAYCHAIN_DEV_NET.into(),
+			relay_chain: KUSAMA_RELAYCHAIN_DEV_NET.into(),
 			para_id: id.into(),
 		},
 	)
@@ -443,7 +455,7 @@ pub fn calamari_local_config(id: ParaId) -> CalamariChainSpec {
 		Some(CALAMARI_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: RELAYCHAIN_LOCAL_NET.into(),
+			relay_chain: KUSAMA_RELAYCHAIN_LOCAL_NET.into(),
 			para_id: id.into(),
 		},
 	)
@@ -558,7 +570,7 @@ pub fn calamari_testnet_config(id: ParaId) -> CalamariChainSpec {
 		Some(CALAMARI_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: RELAYCHAIN_DEV_NET.into(),
+			relay_chain: KUSAMA_RELAYCHAIN_DEV_NET.into(),
 			para_id: id.into(),
 		},
 	)
@@ -575,7 +587,7 @@ fn calamari_testnet_genesis(
 		.cloned()
 		.map(|x| (x.0, ENDOWMENT))
 		.collect();
-	initial_balances.push((root_key.clone(), 5000_000_000 * MA));
+	initial_balances.push((root_key.clone(), 5_000_000_000 * MA));
 
 	calamari_runtime::GenesisConfig {
 		system: calamari_runtime::SystemConfig {
@@ -742,7 +754,7 @@ pub fn calamari_config(id: ParaId) -> CalamariChainSpec {
 		Some(CALAMARI_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: RELAYCHAIN_DEV_NET.into(),
+			relay_chain: KUSAMA_RELAYCHAIN_MAIN_NET.into(),
 			para_id: id.into(),
 		},
 	)
