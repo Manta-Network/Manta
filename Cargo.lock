@@ -4431,7 +4431,7 @@ dependencies = [
 [[package]]
 name = "pallet-manta-pay"
 version = "3.0.1"
-source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=consistent-naming#8e631c52cd405227d445a9f15c6c533395098061"
+source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#455f128af719fb8c73d74d80856cf296e251b52c"
 dependencies = [
  "ark-std",
  "data-encoding",
