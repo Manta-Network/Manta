@@ -956,7 +956,6 @@ dependencies = [
  "log",
  "manta-primitives",
  "max-encoded-len",
- "pallet-assets",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
