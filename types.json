@@ -8,7 +8,9 @@
     "Amount": "i128",
     "AmountOf": "Amount",
     "AccountInfo": "AccountInfoWithDualRefCount",
-    "PrivateTransferPayload": "[u8;608]",
-    "ReclaimPayload": "[u8;512]"
+    "AssetId": "u32",
+    "AssetBalance": "u128",
+    "PrivateTransferPayload": "[u8;648]",
+    "ReclaimPayload": "[u8;536]"
 }
 
