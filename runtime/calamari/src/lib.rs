@@ -424,8 +424,8 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 
 parameter_types! {
 	pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(33);
-	// Rotate collator's spot each 3 hours.
-	pub const Period: u32 = 3 * HOURS;
+	// Rotate collator's spot each 6 hours.
+	pub const Period: u32 = 6 * HOURS;
 	pub const Offset: u32 = 0;
 }
 
@@ -456,7 +456,7 @@ parameter_types! {
 	pub const MaxCandidates: u32 = 50;
 	pub const MinCandidates: u32 = 3;
 	// How many collators who cannot be slashed.
-	pub const MaxInvulnerables: u32 = 10;
+	pub const MaxInvulnerables: u32 = 5;
 }
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
