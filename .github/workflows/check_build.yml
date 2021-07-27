@@ -8,7 +8,7 @@ on:
   # Triggers the workflow on push or pull request events
   # but only for the calamari (default) branch.
   pull_request:
-    branches: [manta-pc]
+    branches: [manta-pc, manta-pc-xcm]
   push:
     branches: [manta-pc]
 

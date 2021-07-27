@@ -74,6 +74,82 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Teleport manta tokens to sibling parachain.
+		///
+		/// - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+		/// - `para_id`: Sibling parachain id.
+		/// - `dest`: Who will receive foreign tokens on sibling parachain.
+		/// - `amount`: How many tokens will be transferred.
+		#[pallet::weight(10000)]
+		pub fn teleport_to_parachain(
+			origin: OriginFor<T>,
+			para_id: ParaId,
+			dest: T::AccountId,
+			#[pallet::compact] amount: BalanceOf<T>,
+		) -> DispatchResult {
+			let from = ensure_signed(origin)?;
+
+			ensure!(T::SelfParaId::get() != para_id, Error::<T>::SelfChain);
+			ensure!(
+				T::Currency::free_balance(&from) >= amount,
+				Error::<T>::BalanceLow
+			);
+			let xcm_origin = T::Conversion::reverse(from)
+				.map_err(|_| Error::<T>::BadAccountIdToMultiLocation)?;
+
+			// create sibling parachain target
+			let xcm_target = T::Conversion::reverse(dest)
+				.map_err(|_| Error::<T>::BadAccountIdToMultiLocation)?;
+
+			// target chain location
+			let receiver_chain =
+				MultiLocation::X2(Junction::Parent, Junction::Parachain(para_id.into()));
+
+			let amount = amount.saturated_into::<u128>();
+
+			// create friend parachain xcm
+			let xcm = Xcm::WithdrawAsset {
+				assets: vec![MultiAsset::ConcreteFungible {
+					id: MultiLocation::X2(
+						Junction::Parent,
+						Junction::Parachain(T::SelfParaId::get().into()),
+					),
+					amount,
+				}],
+				effects: vec![Order::InitiateTeleport {
+					assets: vec![MultiAsset::All],
+					dest: receiver_chain,
+					effects: vec![
+						// Todo, just disable this order, it doesn't work for now.
+						// Order::BuyExecution {
+						// 	fees: MultiAsset::All,
+						// 	weight: 0,
+						// 	debt: 3000_000_000,
+						// 	halt_on_error: false,
+						// 	xcm: vec![],
+						// },
+						Order::DepositAsset {
+							assets: vec![MultiAsset::All],
+							dest: xcm_target,
+						},
+					],
+				}],
+			};
+
+			// Todo, just disable this line, it doesn't work for now.
+			// let weight =
+			// 	T::Weigher::weight(&mut friend_xcm).map_err(|()| Error::<T>::UnweighableMessage)?;
+
+			// The last param is the weight we buy on target chain.
+			let outcome =
+				T::XcmExecutor::execute_xcm_in_credit(xcm_origin, xcm, 3000000000, 3000000000);
+			log::info!(target: MANTA_XASSETS, "xcm_outcome = {:?}", outcome);
+
+			Self::deposit_event(Event::Attempted(outcome));
+
+			Ok(())
+		}
+
 		/// Transfer manta tokens to sibling parachain.
 		///
 		/// - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
@@ -82,7 +158,7 @@ pub mod pallet {
 		/// - `amount`: How many tokens will be transferred.
 		/// - `weight`: Specify the weight of xcm.
 		#[pallet::weight(10000)]
-		fn transfer_to_parachain(
+		pub fn transfer_to_parachain(
 			origin: OriginFor<T>,
 			para_id: ParaId,
 			dest: T::AccountId,
@@ -104,7 +180,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::BadAccountIdToMultiLocation)?;
 
 			// target chain location
-			let asset_location =
+			let receiver_chain =
 				MultiLocation::X2(Junction::Parent, Junction::Parachain(para_id.into()));
 
 			let amount = amount.saturated_into::<u128>();
@@ -120,7 +196,7 @@ pub mod pallet {
 				}],
 				effects: vec![Order::DepositReserveAsset {
 					assets: vec![MultiAsset::All],
-					dest: asset_location,
+					dest: receiver_chain,
 					effects: vec![
 						// Todo, just disable this order, it doesn't work for now.
 						// Order::BuyExecution {
