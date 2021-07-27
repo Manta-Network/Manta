@@ -99,10 +99,10 @@ pub fn native_version() -> NativeVersion {
 
 /// We assume that ~5% of the block weight is consumed by `on_initialize` handlers. This is
 /// used to limit the maximal weight of a single extrinsic.
-pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(5);
+pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used by
 /// Operational  extrinsics.
-pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(70);
 
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
 pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
@@ -145,7 +145,6 @@ impl Filter<Call> for BaseFilter {
 			// Sudo also cannot be filtered because it is used in runtime upgrade.
 			_ => false,
 			// Filter System to prevent users from runtime upgrade without sudo privilege.
-			// Filter Assets and Balances to prevent users from creating assets or making transfers.
 			// Filter Utility and Multisig to prevent users from setting keys and selecting collator for parachain (couldn't use now).
 			// Filter Session and CollatorSelection to prevent users from utility operation.
 			// Filter XCM pallet.
@@ -204,7 +203,7 @@ impl pallet_authorship::Config for Runtime {
 }
 
 parameter_types! {
-	pub const NativeTokenExistentialDeposit: u128 = MA;
+	pub const NativeTokenExistentialDeposit: u128 = 10 * cMA; // 0.1 KMA
 	pub const MaxLocks: u32 = 50;
 	pub const MaxReserves: u32 = 50;
 }
@@ -234,37 +233,7 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const AssetDeposit: Balance = 100 * MA; // 100 DOLLARS deposit to create asset
-	pub const ApprovalDeposit: Balance = NativeTokenExistentialDeposit::get();
-	pub const StringLimit: u32 = 50;
-	/// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
-	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
-	pub const MetadataDepositBase: Balance = deposit(1, 68);
-	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
 	pub const ExecutiveBody: BodyId = BodyId::Executive;
-}
-
-/// We allow root and the Relay Chain council to execute privileged asset operations.
-pub type AssetsForceOrigin = EnsureOneOf<
-	AccountId,
-	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>,
->;
-
-impl pallet_assets::Config for Runtime {
-	type Event = Event;
-	type Balance = Balance;
-	type AssetId = u32;
-	type Currency = Balances;
-	type ForceOrigin = AssetsForceOrigin;
-	type AssetDeposit = AssetDeposit;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ApprovalDeposit = ApprovalDeposit;
-	type StringLimit = StringLimit;
-	type Freezer = ();
-	type Extra = ();
-	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -374,8 +343,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 parameter_types! {
-	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: Weight = 1_000_000;
+	// One XCM operation is 200_000_000 weight - almost certainly a conservative estimate.
+	pub UnitWeightCost: Weight = 200_000_000;
 }
 
 match_type! {
@@ -455,8 +424,8 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 
 parameter_types! {
 	pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(33);
-	// Rotate collator's spot each 3 hours.
-	pub const Period: u32 = 3 * HOURS;
+	// Rotate collator's spot each 6 hours.
+	pub const Period: u32 = 6 * HOURS;
 	pub const Offset: u32 = 0;
 }
 
@@ -484,10 +453,10 @@ parameter_types! {
 	// Pallet account for record rewards and give rewards to collator.
 	pub const PotId: PalletId = PalletId(*b"PotStake");
 	// How many collator candidates is allowed.
-	pub const MaxCandidates: u32 = 10;
+	pub const MaxCandidates: u32 = 50;
 	pub const MinCandidates: u32 = 3;
 	// How many collators who cannot be slashed.
-	pub const MaxInvulnerables: u32 = 10;
+	pub const MaxInvulnerables: u32 = 5;
 }
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
@@ -547,9 +516,6 @@ construct_runtime!(
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
-
-		// The main stage. To include pallet-assets-freezer and pallet-uniques.
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
 	}
 );
 
@@ -726,7 +692,6 @@ impl_runtime_apis! {
 			let params = (&config, &whitelist);
 
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
-			add_benchmark!(params, batches, pallet_assets, Assets);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_multisig, Multisig);
 			add_benchmark!(params, batches, pallet_utility, Utility);
