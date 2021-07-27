@@ -501,7 +501,6 @@ pub mod manta_transactor {
 		> TransactAsset for MantaTransactorAdaptor<NativeCurrency, AccountIdConverter, AccountId>
 	{
 		fn can_check_in(_origin: &MultiLocation, _what: &MultiAsset) -> XcmResult {
-			log::info!(target: "manta-xassets", "this is can_check_in()");
 			Ok(())
 		}
 
