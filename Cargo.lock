@@ -3676,7 +3676,6 @@ dependencies = [
 [[package]]
 name = "manta-api"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-api?branch=manta#1db0a888fe31e5ff3dd922e04465f676715e4013"
 dependencies = [
  "ark-bls12-381",
  "ark-crypto-primitives",
@@ -3706,7 +3705,6 @@ dependencies = [
 [[package]]
 name = "manta-asset"
 version = "0.1.1"
-source = "git+https://github.com/Manta-Network/manta-types?branch=manta#0e20d7e46a8179c53930b60c2ac90d7495ce9ba0"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ed-on-bls12-381",
@@ -3722,7 +3720,6 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-crypto?branch=manta#20ed34f0f36556e4e83d7e6640d481eef9006f75"
 dependencies = [
  "aes-gcm 0.9.2",
  "ark-bls12-381",
@@ -3743,7 +3740,6 @@ dependencies = [
 [[package]]
 name = "manta-data"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-types?branch=manta#0e20d7e46a8179c53930b60c2ac90d7495ce9ba0"
 dependencies = [
  "ark-ed-on-bls12-381",
  "ark-groth16",
@@ -3753,24 +3749,24 @@ dependencies = [
  "manta-asset",
  "manta-crypto",
  "manta-error",
+ "parity-scale-codec",
 ]
 
 [[package]]
 name = "manta-error"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-error?branch=manta#201b4e70577fa282474ceee2008e4e24ba790e21"
 dependencies = [
  "ark-crypto-primitives",
  "ark-relations",
  "ark-serialize",
  "ark-std",
  "displaydoc",
+ "parity-scale-codec",
 ]
 
 [[package]]
 name = "manta-ledger"
 version = "0.1.0"
-source = "git+https://github.com/Manta-Network/manta-types?branch=manta#0e20d7e46a8179c53930b60c2ac90d7495ce9ba0"
 dependencies = [
  "manta-crypto",
  "manta-error",
@@ -4431,7 +4427,6 @@ dependencies = [
 [[package]]
 name = "pallet-manta-pay"
 version = "3.0.1"
-source = "git+https://github.com/Manta-Network/pallet-manta-pay?branch=calamari#455f128af719fb8c73d74d80856cf296e251b52c"
 dependencies = [
  "ark-std",
  "data-encoding",
