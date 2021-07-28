@@ -179,7 +179,6 @@ jobs:
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
         with:
           # yamllint disable rule:line-length
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
