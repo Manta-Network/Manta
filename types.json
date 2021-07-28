@@ -1,8 +1,8 @@
 {
     "CurrencyId": {
-        "_enum": [
-            "MA"
-        ]
+      "_enum": [
+        "MA"
+      ]
     },
     "CurrencyIdOf": "CurrencyId",
     "Amount": "i128",
@@ -10,7 +10,42 @@
     "AccountInfo": "AccountInfoWithDualRefCount",
     "AssetId": "u32",
     "AssetBalance": "u128",
-    "PrivateTransferPayload": "[u8;648]",
-    "ReclaimPayload": "[u8;536]"
-}
-
+    "MantaRandomValue": "[u8;32]",
+    "MantaEciesCiphertext": {
+      "EncryptedMsg": "[u8; 36]",
+      "EphermalPk": "[u8; 32]"
+    },
+    "MintData": {
+      "AssetId": "AssetId",
+      "Amount": "AssetBalance",
+      "Cm": "MantaRandomValue",
+      "K": "MantaRandomValue",
+      "S": "MantaRandomValue",
+      "EncryptedNote": "MantaEciesCiphertext"
+    },
+    "SenderData": {
+      "K": "MantaRandomValue",
+      "VoidNumber": "MantaRandomValue",
+      "Root": "MantaRandomValue"
+    },
+    "ReceiverData": {
+      "K": "MantaRandomValue",
+      "Cm": "MantaRandomValue",
+      "EncryptedNote": "MantaEciesCiphertext"
+    },
+    "PrivateTransferData": {
+      "Sender1": "SenderData",
+      "Sender2": "SenderData",
+      "Receiver1": "ReceiverData",
+      "Receiver2": "ReceiverData",
+      "Proof": "[u8;192]"
+    },
+    "ReclaimData": {
+      "AssetId": "AssetId",
+      "ReclaimAmount": "AssetBalance",
+      "Sender1": "SenderData",
+      "Sender2": "SenderData",
+      "Receiver": "ReceiverData",
+      "Proof": "[u8; 192]"
+    }
+  }
