@@ -3,8 +3,8 @@ name: publish draft releases
 
 on:
   push:
-    branches:
-      - manta-pc
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+*
 
 env:
   CARGO_TERM_COLOR: always
@@ -33,8 +33,10 @@ jobs:
           - calamari
           - manta-pc
     steps:
-      - uses: actions/checkout@v2
-      - name: cache target dir
+      -
+        uses: actions/checkout@v2
+      -
+        name: cache target dir
         uses: actions/cache@v2
         with:
           path: "${{ github.workspace }}/runtime/${{ matrix.runtime }}/target"
@@ -42,22 +44,26 @@ jobs:
           restore-keys: |
             srtool-target-${{ matrix.runtime }}-
             srtool-target-
-      - name: build ${{ matrix.runtime }} runtime
+      -
+        name: build ${{ matrix.runtime }} runtime
         id: srtool_build
         uses: chevdor/srtool-actions@v0.3.0
         with:
           image: paritytech/srtool
           chain: ${{ matrix.runtime }}
-      - name: persist srtool digest
+      -
+        name: persist srtool digest
         run: >
           echo '${{ steps.srtool_build.outputs.json }}' |
           jq > ${{ matrix.runtime }}_srtool_output.json
-      - name: upload ${{ matrix.runtime }} srtool json
+      -
+        name: upload ${{ matrix.runtime }} srtool json
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.runtime }}-srtool-json
           path: ${{ matrix.runtime }}_srtool_output.json
-      - name: upload ${{ matrix.runtime }} runtime
+      -
+        name: upload ${{ matrix.runtime }} runtime
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.runtime }}-runtime
@@ -69,32 +75,108 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - get-rust-versions
-    outputs:
-      release_url: ${{ steps.create-release.outputs.html_url }}
-      asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
-      - uses: actions/checkout@v2
+      -
+        uses: actions/checkout@v2
         with:
           fetch-depth: 0
           path: Manta
-      - name: ruby setup
+      -
+        name: ruby setup
         uses: actions/setup-ruby@v1
         with:
           ruby-version: 2.7
-      - name: changelog gems
+      -
+        name: changelog gems
         run: |
           gem install changelogerator git toml
-      - name: generate changelog
+      -
+        name: generate changelog
         env:
           RUSTC_STABLE: ${{ needs.get-rust-versions.outputs.rustc-stable }}
           RUSTC_NIGHTLY: ${{ needs.get-rust-versions.outputs.rustc-nightly }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: >
-          ruby $GITHUB_WORKSPACE/Manta/scripts/github/generate-changelog.rb |
+          ruby $GITHUB_WORKSPACE/Manta/scripts/github/generate-changelog.rb ||
+          cat $GITHUB_WORKSPACE/Manta/scripts/github/fallback-changelog.md |
           tee changelog.md
-      - name: upload changelog
+      -
+        name: upload changelog
         uses: actions/upload-artifact@v2
         with:
           name: changelog
-          path: |
-            changelog.md
+          path: changelog.md
+
+  create-draft-release:
+    runs-on: ubuntu-latest
+    needs:
+      - build-changelog
+      - build-runtimes
+    outputs:
+      release_url: ${{ steps.create-release.outputs.html_url }}
+      asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
+    steps:
+      -
+        uses: actions/download-artifact@v2
+        with:
+          name: changelog
+          path: ./
+      -
+        name: create draft release
+        id: create-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Manta ${{ github.ref }}
+          body_path: changelog.md
+          draft: true
+
+  publish-runtimes:
+    runs-on: ubuntu-latest
+    needs:
+      - create-draft-release
+    strategy:
+      matrix:
+        runtime:
+          - calamari
+          # - manta-pc
+    steps:
+      -
+        uses: actions/checkout@v2
+      -
+        uses: actions/download-artifact@v2
+      -
+        name: ruby setup
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+      -
+        name: get runtime version
+        id: get-runtime-version
+        run: |
+          ls
+          ls "${{ matrix.runtime }}-runtime"
+          runtime_ver="$(ruby -e 'require "./scripts/github/lib.rb"; puts get_runtime("${{ matrix.runtime }}")')"
+          echo "::set-output name=runtime_ver::$runtime_ver"
+      -
+        name: upload compact ${{ matrix.runtime }} wasm
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+          asset_path: "${{ matrix.runtime }}-runtime/${{ matrix.runtime }}_runtime.compact.wasm"
+          asset_name: ${{ matrix.runtime }}_runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.wasm
+          asset_content_type: application/wasm
+      -
+        name: upload compressed ${{ matrix.runtime }} wasm
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+          asset_path: "${{ matrix.runtime }}-runtime/${{ matrix.runtime }}_runtime.compact.compressed.wasm"
+          asset_name: ${{ matrix.runtime }}_runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.compressed.wasm
+          asset_content_type: application/wasm
