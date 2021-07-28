@@ -49,8 +49,9 @@ jobs:
           image: paritytech/srtool
           chain: ${{ matrix.runtime }}
       - name: persist srtool digest
-        run: |
-          echo '${{ steps.srtool_build.outputs.json }}' | jq > ${{ matrix.runtime }}_srtool_output.json
+        run: >
+          echo '${{ steps.srtool_build.outputs.json }}' |
+          jq > ${{ matrix.runtime }}_srtool_output.json
       - name: upload ${{ matrix.runtime }} srtool json
         uses: actions/upload-artifact@v2
         with:
@@ -63,3 +64,37 @@ jobs:
           path: |
             ${{ steps.srtool_build.outputs.wasm }}
             ${{ steps.srtool_build.outputs.wasm_compressed }}
+
+  build-changelog:
+    runs-on: ubuntu-latest
+    needs:
+      - get-rust-versions
+    outputs:
+      release_url: ${{ steps.create-release.outputs.html_url }}
+      asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          path: Manta
+      - name: ruby setup
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+      - name: changelog gems
+        run: |
+          gem install changelogerator git toml
+      - name: generate changelog
+        env:
+          RUSTC_STABLE: ${{ needs.get-rust-versions.outputs.rustc-stable }}
+          RUSTC_NIGHTLY: ${{ needs.get-rust-versions.outputs.rustc-nightly }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          ruby $GITHUB_WORKSPACE/Manta/scripts/github/generate-changelog.rb |
+          tee changelog.md
+      - name: upload changelog
+        uses: actions/upload-artifact@v2
+        with:
+          name: changelog
+          path: |
+            changelog.md

@@ -1,0 +1,39 @@
+<%= print release_priority[:text] %> <%= puts " due to changes: *#{Changelog.changes_with_label(all_changes, release_priority[:label]).map(&:pretty_title).join(", ")}*" if release_priority[:priority] > 1 %>
+
+Native runtimes:
+
+- Manta: **<%= manta_pc_runtime %>**
+- Calamari: **<%= calamari_runtime %>**
+
+This release was tested against the following versions of `rustc`. Other versions may work.
+
+- <%= rustc_stable %>
+- <%= rustc_nightly %>
+
+WASM runtimes built with [srtool](https://github.com/paritytech/srtool) using `<%= manta_pc_json['rustc'] %>`.
+
+Proposal hashes:
+* `manta_pc_runtime-v<%= manta_pc_runtime %>.compact.wasm - <%= manta_pc_json['prop'] %>`
+* `calamari_runtime-v<%= calamari_runtime %>.compact.wasm - <%= calamari_json['prop'] %>`
+
+<% unless misc_changes.empty? %>
+## Changes
+
+<% misc_changes.each do |c| %>
+* <%= c[:pretty_title] %>
+<% end %>
+<% end %>
+<% unless client_changes.empty? %>
+## Client
+
+<% client_changes.each do |c| %>
+* <%= c[:pretty_title] %>
+<% end %>
+<% end %>
+<% unless runtime_changes.empty? %>
+## Runtime
+
+<% runtime_changes.each do |c| %>
+* <%= c[:pretty_title] %>
+<% end %>
+<% end %>
