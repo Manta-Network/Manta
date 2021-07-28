@@ -3795,7 +3795,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "3.0.0"
+version = "3.0.1"
 dependencies = [
  "frame-benchmarking",
  "frame-executive",
