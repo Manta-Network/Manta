@@ -155,28 +155,35 @@ jobs:
       -
         name: get runtime version
         id: get-runtime-version
+        # yamllint disable rule:line-length
         run: |
           ls
           ls "${{ matrix.runtime }}-runtime"
           runtime_ver="$(ruby -e 'require "./scripts/github/lib.rb"; puts get_runtime("${{ matrix.runtime }}")')"
           echo "::set-output name=runtime_ver::$runtime_ver"
+        # yamllint enable rule:line-length
       -
         name: upload compact ${{ matrix.runtime }} wasm
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          # yamllint disable rule:line-length
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
           asset_path: "${{ matrix.runtime }}-runtime/${{ matrix.runtime }}_runtime.compact.wasm"
           asset_name: ${{ matrix.runtime }}_runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.wasm
           asset_content_type: application/wasm
+          # yamllint enable rule:line-length
       -
         name: upload compressed ${{ matrix.runtime }} wasm
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
         with:
+          # yamllint disable rule:line-length
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
           asset_path: "${{ matrix.runtime }}-runtime/${{ matrix.runtime }}_runtime.compact.compressed.wasm"
           asset_name: ${{ matrix.runtime }}_runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.compressed.wasm
           asset_content_type: application/wasm
+          # yamllint enable rule:line-length
