@@ -46,15 +46,18 @@ jobs:
             srtool-target-
       -
         name: build ${{ matrix.runtime }} runtime
-        id: srtool_build
+        id: srtool-build
         uses: chevdor/srtool-actions@v0.3.0
         with:
           image: paritytech/srtool
           chain: ${{ matrix.runtime }}
       -
         name: persist srtool digest
+        env:
+          matrix_runtime: ${{ matrix.runtime }}
         run: >
-          echo '${{ steps.srtool_build.outputs.json }}' |
+          echo '${{ steps.srtool-build.outputs.json }}' |
+          sed "s/${matrix_runtime//-/_}/${matrix_runtime}/g" |
           jq > ${{ matrix.runtime }}_srtool_output.json
       -
         name: upload ${{ matrix.runtime }} srtool json
@@ -68,8 +71,8 @@ jobs:
         with:
           name: ${{ matrix.runtime }}-runtime
           path: |
-            ${{ steps.srtool_build.outputs.wasm }}
-            ${{ steps.srtool_build.outputs.wasm_compressed }}
+            ${{ steps.srtool-build.outputs.wasm }}
+            ${{ steps.srtool-build.outputs.wasm_compressed }}
 
   build-changelog:
     runs-on: ubuntu-latest
@@ -129,7 +132,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: Manta ${{ github.ref }}
+          release_name: runtime ${{ github.ref }}
           body_path: changelog.md
           draft: true
 
@@ -141,27 +144,51 @@ jobs:
       matrix:
         runtime:
           - calamari
-          # - manta-pc
+          - manta-pc
     steps:
       -
         uses: actions/checkout@v2
       -
         uses: actions/download-artifact@v2
+        with:
+          name: ${{ matrix.runtime }}-runtime
+      -
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ matrix.runtime }}-srtool-json
       -
         name: ruby setup
         uses: actions/setup-ruby@v1
         with:
           ruby-version: 2.7
       -
-        name: get runtime version
-        id: get-runtime-version
-        # yamllint disable rule:line-length
+        name: list artifacts
         run: |
           ls
-          ls "${{ matrix.runtime }}-runtime"
-          runtime_ver="$(ruby -e 'require "./scripts/github/lib.rb"; puts get_runtime("${{ matrix.runtime }}")')"
-          echo "::set-output name=runtime_ver::$runtime_ver"
+      -
+        if: contains(matrix.runtime, '-')
+        name: rename underscored artifacts
+        env:
+          matrix_runtime: ${{ matrix.runtime }}
+        # yamllint disable rule:line-length
+        run: |
+          mv \
+            ${matrix_runtime//-/_}_runtime.compact.compressed.wasm \
+            ${{ matrix.runtime }}_runtime.compact.compressed.wasm
+          mv \
+            ${matrix_runtime//-/_}_runtime.compact.wasm \
+            ${{ matrix.runtime }}_runtime.compact.wasm
+          ls
         # yamllint enable rule:line-length
+      -
+        name: get runtime version
+        id: get-runtime-version
+        run: |
+          runtime_ver="$(ruby -e '
+            require "./scripts/github/lib.rb";
+            puts get_runtime("${{ matrix.runtime }}")
+          ')"
+          echo "::set-output name=runtime_ver::$runtime_ver"
       -
         name: upload compact ${{ matrix.runtime }} wasm
         uses: actions/upload-release-asset@v1
@@ -170,7 +197,7 @@ jobs:
         with:
           # yamllint disable rule:line-length
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-          asset_path: "${{ matrix.runtime }}-runtime/${{ matrix.runtime }}_runtime.compact.wasm"
+          asset_path: ${{ matrix.runtime }}_runtime.compact.wasm
           asset_name: ${{ matrix.runtime }}_runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.wasm
           asset_content_type: application/wasm
           # yamllint enable rule:line-length
@@ -182,7 +209,31 @@ jobs:
         with:
           # yamllint disable rule:line-length
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-          asset_path: "${{ matrix.runtime }}-runtime/${{ matrix.runtime }}_runtime.compact.compressed.wasm"
+          asset_path: ${{ matrix.runtime }}_runtime.compact.compressed.wasm
           asset_name: ${{ matrix.runtime }}_runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.compressed.wasm
           asset_content_type: application/wasm
+          # yamllint enable rule:line-length
+      -
+        name: upload ${{ matrix.runtime }} types json
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # yamllint disable rule:line-length
+          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+          asset_path: types.json
+          asset_name: ${{ matrix.runtime }}-types-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
+          asset_content_type: application/json
+          # yamllint enable rule:line-length
+      -
+        name: upload ${{ matrix.runtime }} srtool output json
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # yamllint disable rule:line-length
+          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+          asset_path: ${{ matrix.runtime }}_srtool_output.json
+          asset_name: ${{ matrix.runtime }}-srtool-output-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
+          asset_content_type: application/json
           # yamllint enable rule:line-length
