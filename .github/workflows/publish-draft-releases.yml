@@ -74,6 +74,81 @@ jobs:
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
 
+  build-node:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        uses: actions/checkout@v2
+      -
+        name: install sccache
+
+        # yamllint disable rule:line-length
+        env:
+          SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
+          SCCACHE_VERSION: v0.2.15
+        run: |
+          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
+          mkdir -p $HOME/.local/bin
+          curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
+          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
+          chmod +x $HOME/.local/bin/sccache
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+        # yamllint enable rule:line-length
+      -
+        name: cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-
+      -
+        name: cache sccache
+        uses: actions/cache@v2
+        continue-on-error: false
+        with:
+          path: /home/runner/.cache/sccache
+          key: sccache-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            sccache-
+      -
+        name: start sccache server
+        run: sccache --start-server
+      -
+        name: init
+        # yamllint disable rule:line-length
+        run: |
+          rustup update nightly
+          rustup update stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
+        # yamllint enable rule:line-length
+      -
+        name: build
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          #RUSTV: ${{ matrix.rust }}
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+        run: |
+          cargo build --verbose --release --features calamari
+      -
+        name: stop sccache server
+        run: sccache --stop-server || true
+      -
+        name: strip
+        run: |
+          strip target/release/calamari-pc
+      -
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: calamari-pc
+          path: target/release/calamari-pc
+
   build-changelog:
     runs-on: ubuntu-latest
     needs:
@@ -140,7 +215,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: runtime ${{ github.ref }}
+          release_name: manta ${{ github.ref }}
           body_path: changelog.md
           draft: true
 
@@ -245,3 +320,42 @@ jobs:
           asset_name: ${{ matrix.runtime }}-srtool-output-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
           asset_content_type: application/json
           # yamllint enable rule:line-length
+
+  publish-node:
+    runs-on: ubuntu-latest
+    needs:
+      - build-node
+      - create-draft-release
+    steps:
+      -
+        uses: actions/download-artifact@v2
+        with:
+          name: calamari-pc
+      -
+        name: upload calamari-pc
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # yamllint disable rule:line-length
+          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+          asset_path: calamari-pc
+          asset_name: calamari-pc
+          asset_content_type: application/octet-stream
+          # yamllint enable rule:line-length
+
+  brag:
+    runs-on: ubuntu-latest
+    needs: create-draft-release
+    steps:
+      -
+        # yamllint disable rule:line-length
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_USERNAME: raybot
+          DISCORD_AVATAR: https://gist.githubusercontent.com/grenade/66a46007b37778d81ee064394263b16c/raw/raybot.png
+          # DISCORD_EMBEDS: "{\"embeds\":[{\"title\":\"runtime ${{ github.ref }}\",\"url\":\"${{ needs.create-draft-release.outputs.release_url }}\"}]}"
+        uses: Ilshidur/action-discord@0.3.2
+        with:
+          args: 'draft runtime release ${{ github.ref }} created at ${{ needs.create-draft-release.outputs.release_url }}'
+        # yamllint enable rule:line-length

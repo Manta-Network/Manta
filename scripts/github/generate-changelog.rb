@@ -28,8 +28,6 @@ current_repository_changelog = Changelog.new(
   ENV['GITHUB_REPOSITORY'], latest_release_ref, current_repository_ref, token: token
 )
 
-=begin
-# gets the substrate commit hash used for a given ref
 def get_substrate_commit(client, ref)
   cargo = TOML::Parser.new(
     Base64.decode64(
@@ -53,11 +51,6 @@ substrate_repository_changelog = Changelog.new(
 )
 
 all_changes = (current_repository_changelog.changes + substrate_repository_changelog.changes).reject do |c|
-  c[:title] =~ /[Cc]ompanion/
-end
-=end
-
-all_changes = current_repository_changelog.changes.reject do |c|
   c[:title] =~ /[Cc]ompanion/
 end
 
