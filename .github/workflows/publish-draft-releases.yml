@@ -130,7 +130,7 @@ jobs:
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
-          #RUSTV: ${{ matrix.rust }}
+          # RUSTV: ${{ matrix.rust }}
           SCCACHE_CACHE_SIZE: 2G
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
@@ -349,13 +349,12 @@ jobs:
     needs: create-draft-release
     steps:
       -
-        # yamllint disable rule:line-length
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           DISCORD_USERNAME: raybot
+          # yamllint disable-line rule:line-length
           DISCORD_AVATAR: https://gist.githubusercontent.com/grenade/66a46007b37778d81ee064394263b16c/raw/raybot.png
-          # DISCORD_EMBEDS: "{\"embeds\":[{\"title\":\"runtime ${{ github.ref }}\",\"url\":\"${{ needs.create-draft-release.outputs.release_url }}\"}]}"
         uses: Ilshidur/action-discord@0.3.2
         with:
+          # yamllint disable-line rule:line-length
           args: 'draft runtime release ${{ github.ref }} created at ${{ needs.create-draft-release.outputs.release_url }}'
-        # yamllint enable rule:line-length
