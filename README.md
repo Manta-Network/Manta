@@ -73,7 +73,7 @@ the [publish draft releases](https://github.com/Manta-Network/Manta/blob/manta-p
 * **calamari-pc** the calamari parachain executable (a substrate node)
 * wasm runtimes:
   * **manta-pc** the manta parachain wasm runtime
-  * ""calamari** the calamari parachain wasm runtime
+  * **calamari** the calamari parachain wasm runtime
 
 the workflow is triggered whenever a tag containing a semver is pushed to the github repo. if you have a branch derived from the [manta-pc](https://github.com/Manta-Network/Manta/tree/manta-pc) branch, you may trigger a ci-build and create a draft release (only available to Manta-Network org members) with commands similar to the following:
 
