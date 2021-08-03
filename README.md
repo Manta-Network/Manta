@@ -65,3 +65,34 @@ docker run mantanetwork/manta:latest --chain manta-testnet --name "ILoveManta"
 * use `[Manta]` as the prefix to submit a PR to `manta` branch, use `[Manta-PC]` as the prefix to submit a PR to `manta-pc` branch.
 * please submit your code through PR.
 * please run `cargo +nightly fmt` before pushing your code.
+
+## ci build
+
+the [publish draft releases](https://github.com/Manta-Network/Manta/blob/manta-pc/.github/workflows/publish-draft-releases.yml) workflow builds:
+
+* **calamari-pc** the calamari parachain executable (a substrate node)
+* wasm runtimes:
+  * **manta-pc** the manta parachain wasm runtime
+  * ""calamari** the calamari parachain wasm runtime
+
+the workflow is triggered whenever a tag containing a semver is pushed to the github repo. if you have a branch derived from the [manta-pc](https://github.com/Manta-Network/Manta/tree/manta-pc) branch, you may trigger a ci-build and create a draft release (only available to Manta-Network org members) with commands similar to the following:
+
+```bash
+# clone the repo and checkout the `manta-pc` branch
+git clone --branch manta-pc git@github.com:Manta-Network/Manta.git
+
+# create a new branch called `my-awesome-feature`, derived from branch `manta-pc` which contains the ci build workflow
+git checkout -b my-awesome-feature manta-pc
+
+# ... add my awesome feature ...
+git add .
+git commit -m "added my awesome feature"
+
+# create a tag pointing to the last commit that is also named with the semver and latest commit sha `v3.0.0-<short-git-sha>` (eg: `v3.0.0-abcd123`)
+git tag -a v3.0.0-$(git rev-parse --short HEAD) -m "manta-pc and my awesome feature"
+
+# push my awesome feature branch **and** my new tag to origin (github)
+git push origin my-awesome-feature --tags
+```
+
+now you can watch the ci build your awesome feature and publish your draft release on the [actions tab](https://github.com/Manta-Network/Manta/actions/workflows/publish-draft-releases.yml). note that draft [releases](https://github.com/Manta-Network/Manta/releases) become available relatively quickly, but wasm and binary artifacts are only added to the draft release when their ci build completes, which may be an hour or more after your git push.
