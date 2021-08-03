@@ -468,6 +468,8 @@ fn calamari_dev_genesis(
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> calamari_runtime::GenesisConfig {
+	let num_endowed_accounts = endowed_accounts.len();
+
 	calamari_runtime::GenesisConfig {
 		system: calamari_runtime::SystemConfig {
 			code: calamari_runtime::WASM_BINARY
@@ -508,6 +510,34 @@ fn calamari_dev_genesis(
 					)
 				})
 				.collect(),
+		},
+		democracy: calamari_runtime::DemocracyConfig::default(),
+		// elections: ElectionsConfig {
+		// 	members: endowed_accounts
+		// 		.iter()
+		// 		.take((num_endowed_accounts + 1) / 2)
+		// 		.cloned()
+		// 		.map(|member| (member, STASH))
+		// 		.collect(),
+		// },
+		//council: calamari_runtime::CouncilConfig::default(),
+		council: calamari_runtime::CouncilConfig {
+			members: vec![
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				get_account_id_from_seed::<sr25519::Public>("Bob"),
+				get_account_id_from_seed::<sr25519::Public>("Charlie"),
+				get_account_id_from_seed::<sr25519::Public>("Dave"),
+				get_account_id_from_seed::<sr25519::Public>("Eve"),
+			],
+			phantom: Default::default(),
+		},
+		technical_committee: calamari_runtime::TechnicalCommitteeConfig {
+			members: endowed_accounts
+				.iter()
+				.take((num_endowed_accounts + 1) / 2)
+				.cloned()
+				.collect(),
+			phantom: Default::default(),
 		},
 		aura_ext: Default::default(),
 	}
@@ -582,6 +612,20 @@ fn calamari_testnet_genesis(
 	root_key: AccountId,
 	id: ParaId,
 ) -> calamari_runtime::GenesisConfig {
+	let endowed_accounts = vec![
+		get_account_id_from_seed::<sr25519::Public>("Alice"),
+		get_account_id_from_seed::<sr25519::Public>("Bob"),
+		get_account_id_from_seed::<sr25519::Public>("Charlie"),
+		get_account_id_from_seed::<sr25519::Public>("Dave"),
+		get_account_id_from_seed::<sr25519::Public>("Eve"),
+		get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+	];
+	let num_endowed_accounts = endowed_accounts.len();
+
 	let mut initial_balances: Vec<(AccountId, Balance)> = initial_authorities
 		.iter()
 		.cloned()
@@ -626,6 +670,34 @@ fn calamari_testnet_genesis(
 				})
 				.collect(),
 		},
+		democracy: calamari_runtime::DemocracyConfig::default(),
+		// elections: ElectionsConfig {
+		// 	members: endowed_accounts
+		// 		.iter()
+		// 		.take((num_endowed_accounts + 1) / 2)
+		// 		.cloned()
+		// 		.map(|member| (member, STASH))
+		// 		.collect(),
+		// },
+		//council: calamari_runtime::CouncilConfig::default(),
+		council: calamari_runtime::CouncilConfig {
+			members: vec![
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				get_account_id_from_seed::<sr25519::Public>("Bob"),
+				get_account_id_from_seed::<sr25519::Public>("Charlie"),
+				get_account_id_from_seed::<sr25519::Public>("Dave"),
+				get_account_id_from_seed::<sr25519::Public>("Eve"),
+			],
+			phantom: Default::default(),
+		},
+		technical_committee: calamari_runtime::TechnicalCommitteeConfig {
+			members: endowed_accounts
+				.iter()
+				.take((num_endowed_accounts + 1) / 2)
+				.cloned()
+				.collect(),
+			phantom: Default::default(),
+		},
 		aura_ext: Default::default(),
 	}
 }
@@ -636,6 +708,20 @@ fn calamari_genesis(
 	root_key: AccountId,
 	id: ParaId,
 ) -> calamari_runtime::GenesisConfig {
+	let endowed_accounts = vec![
+		get_account_id_from_seed::<sr25519::Public>("Alice"),
+		get_account_id_from_seed::<sr25519::Public>("Bob"),
+		get_account_id_from_seed::<sr25519::Public>("Charlie"),
+		get_account_id_from_seed::<sr25519::Public>("Dave"),
+		get_account_id_from_seed::<sr25519::Public>("Eve"),
+		get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+	];
+	let num_endowed_accounts = endowed_accounts.len();
+
 	// collator stake
 	let collator_stake = 20_000 * MA;
 
@@ -686,6 +772,34 @@ fn calamari_genesis(
 					)
 				})
 				.collect(),
+		},
+		democracy: calamari_runtime::DemocracyConfig::default(),
+		// elections: ElectionsConfig {
+		// 	members: endowed_accounts
+		// 		.iter()
+		// 		.take((num_endowed_accounts + 1) / 2)
+		// 		.cloned()
+		// 		.map(|member| (member, STASH))
+		// 		.collect(),
+		// },
+		//council: calamari_runtime::CouncilConfig::default(),
+		council: calamari_runtime::CouncilConfig {
+			members: vec![
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				get_account_id_from_seed::<sr25519::Public>("Bob"),
+				get_account_id_from_seed::<sr25519::Public>("Charlie"),
+				get_account_id_from_seed::<sr25519::Public>("Dave"),
+				get_account_id_from_seed::<sr25519::Public>("Eve"),
+			],
+			phantom: Default::default(),
+		},
+		technical_committee: calamari_runtime::TechnicalCommitteeConfig {
+			members: endowed_accounts
+				.iter()
+				.take((num_endowed_accounts + 1) / 2)
+				.cloned()
+				.collect(),
+			phantom: Default::default(),
 		},
 		aura_ext: Default::default(),
 	}
