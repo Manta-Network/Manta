@@ -1,5 +1,7 @@
+pub const CALAMARI_SS58PREFIX: u8 = 78;
 pub const MANTAPC_SS58PREFIX: u8 = 77;
 pub const MANTA_DECIMAL: u8 = 12;
+pub const CALAMARI_TOKEN_SYMBOL: &str = "KMA";
 pub const MANTA_TOKEN_SYMBOL: &str = "MA";
 
 // Money matters.
@@ -25,11 +27,11 @@ pub mod time {
 	/// slot_duration()`.
 	///
 	/// Change this to adjust the block time.
-	pub const MILLISECS_PER_BLOCK: Moment = 6_000;
+	pub const MILLISECS_PER_BLOCK: Moment = 12_000; // 12s
 	pub const SLOT_DURATION: Moment = MILLISECS_PER_BLOCK;
 
 	// Time is measured by number of blocks.
-	pub const MINUTES: BlockNumber = 6_000 / (MILLISECS_PER_BLOCK as BlockNumber);
+	pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 	pub const HOURS: BlockNumber = MINUTES * 60;
 	pub const DAYS: BlockNumber = HOURS * 24;
 }

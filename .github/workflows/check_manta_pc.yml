@@ -1,6 +1,6 @@
 ---
 
-name: Check Set-Up & Build
+name: Check Manta-PC
 
 # Controls when the action will run.
 # yamllint disable-line rule:truthy
@@ -47,10 +47,11 @@ jobs:
         run: |
           cargo +nightly fmt -- --check
 
-      - name: Check Clippy
+      - name: Check Manta-PC Clippy
         run: |
-          SKIP_WASM_BUILD= cargo clippy
+          SKIP_WASM_BUILD= cargo clippy --features manta-pc
 
-      - name: Check Build
+      - name: Check Manta-PC Build
         run: |
+          cargo check --features manta-pc
           cargo check --all-features

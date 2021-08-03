@@ -14,7 +14,6 @@ use cumulus_primitives_core::{
 	ParaId,
 };
 use manta_primitives::Header;
-use polkadot_primitives::v0::CollatorPair;
 
 use futures::lock::Mutex;
 use sc_client_api::ExecutorProvider;
@@ -39,10 +38,20 @@ pub use sc_executor::NativeExecutor;
 pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
 // Native Manta Parachain executor instance.
+#[cfg(feature = "manta-pc")]
 native_executor_instance!(
 	pub MantaPCRuntimeExecutor,
 	manta_pc_runtime::api::dispatch,
 	manta_pc_runtime::native_version,
+	frame_benchmarking::benchmarking::HostFunctions,
+);
+
+// Native Calamari Parachain executor instance.
+#[cfg(feature = "calamari")]
+native_executor_instance!(
+	pub CalamariRuntimeExecutor,
+	calamari_runtime::api::dispatch,
+	calamari_runtime::native_version,
 	frame_benchmarking::benchmarking::HostFunctions,
 );
 
@@ -217,11 +226,12 @@ where
 		telemetry
 	});
 
+	let registry = config.prometheus_registry();
 	let transaction_pool = sc_transaction_pool::BasicPool::new_full(
 		config.transaction_pool.clone(),
 		config.role.is_authority().into(),
-		config.prometheus_registry(),
-		task_manager.spawn_handle(),
+		registry,
+		task_manager.spawn_essential_handle(),
 		client.clone(),
 	);
 
@@ -297,10 +307,9 @@ where
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
 pub async fn start_node<RuntimeApi, Executor, RB>(
 	parachain_config: Configuration,
-	collator_key: CollatorPair,
 	polkadot_config: Configuration,
 	id: ParaId,
-	rpc_ext_builder: RB,
+	_rpc_ext_builder: RB,
 ) -> sc_service::error::Result<(TaskManager, Arc<TFullClient<Block, RuntimeApi, Executor>>)>
 where
 	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, Executor>>
@@ -316,7 +325,10 @@ where
 		> + sp_offchain::OffchainWorkerApi<Block>
 		+ sp_block_builder::BlockBuilder<Block>
 		+ cumulus_primitives_core::CollectCollationInfo<Block>
-		+ sp_consensus_aura::AuraApi<Block, sp_consensus_aura::sr25519::AuthorityId>,
+		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<
+			Block,
+			manta_primitives::Balance,
+		> + sp_consensus_aura::AuraApi<Block, sp_consensus_aura::sr25519::AuthorityId>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 	RB: Fn(
@@ -334,15 +346,12 @@ where
 	let params = new_partial::<RuntimeApi, Executor>(&parachain_config)?;
 	let (mut telemetry, telemetry_worker_handle) = params.other;
 
-	let relay_chain_full_node = cumulus_client_service::build_polkadot_full_node(
-		polkadot_config,
-		collator_key.clone(),
-		telemetry_worker_handle,
-	)
-	.map_err(|e| match e {
-		polkadot_service::Error::Sub(x) => x,
-		s => format!("{}", s).into(),
-	})?;
+	let relay_chain_full_node =
+		cumulus_client_service::build_polkadot_full_node(polkadot_config, telemetry_worker_handle)
+			.map_err(|e| match e {
+				polkadot_service::Error::Sub(x) => x,
+				s => format!("{}", s).into(),
+			})?;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -371,7 +380,15 @@ where
 		})?;
 
 	let rpc_client = client.clone();
-	let rpc_extensions_builder = Box::new(move |_, _| rpc_ext_builder(rpc_client.clone()));
+	let rpc_extensions_builder = Box::new(move |_, _| {
+		use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
+
+		let mut io = jsonrpc_core::IoHandler::default();
+		io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(
+			rpc_client.clone(),
+		)));
+		io
+	});
 
 	sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		on_demand: None,
@@ -472,6 +489,9 @@ where
 						slot_duration,
 						// We got around 500ms for proposing
 						block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
+						// Refer to: https://github.com/paritytech/cumulus/blob/polkadot-v0.9.8/polkadot-parachains/src/service.rs#L487
+						// And a maximum of 750ms if slots are skipped
+						max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
 						telemetry: telemetry.map(|t| t.handle()),
 					})
 				},
@@ -486,7 +506,6 @@ where
 			announce_block,
 			client: client.clone(),
 			task_manager: &mut task_manager,
-			collator_key,
 			relay_chain_full_node,
 			spawner,
 			parachain_consensus,

@@ -1,4 +1,4 @@
-//! Manta Parachain runtime.
+//! Calamari Parachain runtime.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]
@@ -21,15 +21,14 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use codec::{Decode, Encode};
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{All, InstanceFilter, MaxEncodedLen, OnRuntimeUpgrade},
+	traits::{All, Filter, OnRuntimeUpgrade},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
 	},
-	PalletId, RuntimeDebug,
+	PalletId,
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -80,8 +79,8 @@ pub mod opaque {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("manta-pc"),
-	impl_name: create_runtime_str!("manta-pc"),
+	spec_name: create_runtime_str!("calamari"),
+	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
 	spec_version: 1,
 	impl_version: 1,
@@ -100,10 +99,10 @@ pub fn native_version() -> NativeVersion {
 
 /// We assume that ~5% of the block weight is consumed by `on_initialize` handlers. This is
 /// used to limit the maximal weight of a single extrinsic.
-pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(5);
+pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used by
 /// Operational  extrinsics.
-pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(70);
 
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
 pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
@@ -130,12 +129,32 @@ parameter_types! {
 		})
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
-	pub const SS58Prefix: u8 = manta_primitives::constants::MANTAPC_SS58PREFIX;
+	pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
+}
+
+// Don't allow permission-less asset creation.
+pub struct BaseFilter;
+impl Filter<Call> for BaseFilter {
+	fn filter(c: &Call) -> bool {
+		match c {
+			Call::Timestamp(_) | Call::ParachainSystem(_) | Call::Authorship(_) | Call::Sudo(_) => {
+				true
+			}
+			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
+			// pallet-authorship use for orml
+			// Sudo also cannot be filtered because it is used in runtime upgrade.
+			_ => false,
+			// Filter System to prevent users from runtime upgrade without sudo privilege.
+			// Filter Utility and Multisig to prevent users from setting keys and selecting collator for parachain (couldn't use now).
+			// Filter Session and CollatorSelection to prevent users from utility operation.
+			// Filter XCM pallet.
+		}
+	}
 }
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
-	type BaseCallFilter = ();
+	type BaseCallFilter = BaseFilter; // Let filter activate.
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;
 	type AccountId = AccountId;
@@ -184,7 +203,7 @@ impl pallet_authorship::Config for Runtime {
 }
 
 parameter_types! {
-	pub const NativeTokenExistentialDeposit: u128 = MA;
+	pub const NativeTokenExistentialDeposit: u128 = 10 * cMA; // 0.1 KMA
 	pub const MaxLocks: u32 = 50;
 	pub const MaxReserves: u32 = 50;
 }
@@ -214,58 +233,7 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-	// The maximum weight that may be scheduled per block for any
-	// dispatchables of less priority than schedule::HARD_DEADLINE.
-	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
-		RuntimeBlockWeights::get().max_block;
-	// The maximum number of scheduled calls in the queue for a single block.
-	// Not strictly enforced, but used for weight estimation.
-	pub const MaxScheduledPerBlock: u32 = 50;
-}
-
-impl pallet_scheduler::Config for Runtime {
-	type Event = Event;
-	type Origin = Origin;
-	type PalletsOrigin = OriginCaller;
-	type Call = Call;
-	type MaximumWeight = MaximumSchedulerWeight;
-	type ScheduleOrigin = EnsureRoot<AccountId>;
-	type MaxScheduledPerBlock = MaxScheduledPerBlock;
-	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
-}
-
-parameter_types! {
-	pub const AssetDeposit: Balance = 100 * MA; // 100 DOLLARS deposit to create asset
-	pub const ApprovalDeposit: Balance = NativeTokenExistentialDeposit::get();
-	pub const StringLimit: u32 = 50;
-	/// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
-	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
-	pub const MetadataDepositBase: Balance = deposit(1, 68);
-	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
 	pub const ExecutiveBody: BodyId = BodyId::Executive;
-}
-
-/// We allow root and the Relay Chain council to execute privileged asset operations.
-pub type AssetsForceOrigin = EnsureOneOf<
-	AccountId,
-	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>,
->;
-
-impl pallet_assets::Config for Runtime {
-	type Event = Event;
-	type Balance = Balance;
-	type AssetId = u32;
-	type Currency = Balances;
-	type ForceOrigin = AssetsForceOrigin;
-	type AssetDeposit = AssetDeposit;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ApprovalDeposit = ApprovalDeposit;
-	type StringLimit = StringLimit;
-	type Freezer = ();
-	type Extra = ();
-	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -295,117 +263,6 @@ impl pallet_utility::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
-}
-
-parameter_types! {
-	// One storage item; key size 32, value size 8; .
-	pub const ProxyDepositBase: Balance = deposit(1, 40);
-	// Additional storage item size of 33 bytes.
-	pub const ProxyDepositFactor: Balance = deposit(0, 33);
-	pub const MaxProxies: u16 = 32;
-	// One storage item; key size 32, value size 16
-	pub const AnnouncementDepositBase: Balance = deposit(1, 48);
-	pub const AnnouncementDepositFactor: Balance = deposit(0, 66);
-	pub const MaxPending: u16 = 32;
-}
-
-/// The type used to represent the kinds of proxying allowed.
-#[derive(
-	Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug, MaxEncodedLen,
-)]
-pub enum ProxyType {
-	/// Fully permissioned proxy. Can execute any call on behalf of _proxied_.
-	Any,
-	/// Can execute any call that does not transfer funds or assets.
-	NonTransfer,
-	/// Proxy with the ability to reject time-delay proxy announcements.
-	CancelProxy,
-	/// Assets proxy. Can execute any call from `assets`, **including asset transfers**.
-	Assets,
-	/// Owner proxy. Can execute calls related to asset ownership.
-	AssetOwner,
-	/// Asset manager. Can execute calls related to asset management.
-	AssetManager,
-	// Collator selection proxy. Can execute calls related to collator selection mechanism.
-	Collator,
-}
-impl Default for ProxyType {
-	fn default() -> Self {
-		Self::Any
-	}
-}
-impl InstanceFilter<Call> for ProxyType {
-	fn filter(&self, c: &Call) -> bool {
-		match self {
-			ProxyType::Any => true,
-			ProxyType::NonTransfer => !matches!(
-				c,
-				Call::Balances(..)
-					| Call::Assets(pallet_assets::Call::transfer(..))
-					| Call::Assets(pallet_assets::Call::transfer_keep_alive(..))
-					| Call::Assets(pallet_assets::Call::force_transfer(..))
-					| Call::Assets(pallet_assets::Call::approve_transfer(..))
-					| Call::Assets(pallet_assets::Call::transfer_approved(..))
-			),
-			ProxyType::CancelProxy => matches!(
-				c,
-				Call::Proxy(pallet_proxy::Call::reject_announcement(..))
-					| Call::Utility(..) | Call::Multisig(..)
-			),
-			ProxyType::Assets => {
-				matches!(c, Call::Assets(..) | Call::Utility(..) | Call::Multisig(..))
-			}
-			ProxyType::AssetOwner => matches!(
-				c,
-				Call::Assets(pallet_assets::Call::create(..))
-					| Call::Assets(pallet_assets::Call::destroy(..))
-					| Call::Assets(pallet_assets::Call::transfer_ownership(..))
-					| Call::Assets(pallet_assets::Call::set_team(..))
-					| Call::Assets(pallet_assets::Call::set_metadata(..))
-					| Call::Assets(pallet_assets::Call::clear_metadata(..))
-					| Call::Utility(..) | Call::Multisig(..)
-			),
-			ProxyType::AssetManager => matches!(
-				c,
-				Call::Assets(pallet_assets::Call::mint(..))
-					| Call::Assets(pallet_assets::Call::burn(..))
-					| Call::Assets(pallet_assets::Call::freeze(..))
-					| Call::Assets(pallet_assets::Call::thaw(..))
-					| Call::Assets(pallet_assets::Call::freeze_asset(..))
-					| Call::Assets(pallet_assets::Call::thaw_asset(..))
-					| Call::Utility(..) | Call::Multisig(..)
-			),
-			ProxyType::Collator => matches!(
-				c,
-				Call::CollatorSelection(..) | Call::Utility(..) | Call::Multisig(..)
-			),
-		}
-	}
-	fn is_superset(&self, o: &Self) -> bool {
-		match (self, o) {
-			(x, y) if x == y => true,
-			(ProxyType::Any, _) => true,
-			(_, ProxyType::Any) => false,
-			(ProxyType::Assets, ProxyType::AssetOwner) => true,
-			(ProxyType::Assets, ProxyType::AssetManager) => true,
-			_ => false,
-		}
-	}
-}
-
-impl pallet_proxy::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
-	type Currency = Balances;
-	type ProxyType = ProxyType;
-	type ProxyDepositBase = ProxyDepositBase;
-	type ProxyDepositFactor = ProxyDepositFactor;
-	type MaxProxies = MaxProxies;
-	type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
-	type MaxPending = MaxPending;
-	type CallHasher = BlakeTwo256;
-	type AnnouncementDepositBase = AnnouncementDepositBase;
-	type AnnouncementDepositFactor = AnnouncementDepositFactor;
 }
 
 parameter_types! {
@@ -486,8 +343,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 parameter_types! {
-	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: Weight = 1_000_000_000;
+	// One XCM operation is 200_000_000 weight - almost certainly a conservative estimate.
+	pub UnitWeightCost: Weight = 200_000_000;
 }
 
 match_type! {
@@ -502,136 +359,16 @@ pub type Barrier = (
 	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
 	AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
 	// ^^^ Parent and its exec plurality get free execution
-	manta_transactor::MantaXcmTransactFilter<TrustedChains>,
 );
-
-pub mod manta_transactor {
-	use super::*;
-	use core::{convert::TryFrom, marker::PhantomData};
-	use frame_support::traits::{Currency, ExistenceRequirement, Get, WithdrawReasons};
-	use xcm::v0::{Error as XcmError, MultiAsset, MultiLocation, Result as XcmResult};
-	use xcm_executor::traits::{Convert, FilterAssetLocation, ShouldExecute, TransactAsset};
-
-	/// Todo, more docs here.
-	pub struct MantaTransactorAdaptor<NativeCurrency, AccountIdConverter, AccountId>(
-		PhantomData<(NativeCurrency, AccountIdConverter, AccountId)>,
-	);
-	impl<
-			NativeCurrency: Currency<AccountId>,
-			AccountIdConverter: Convert<MultiLocation, AccountId>,
-			AccountId: sp_std::fmt::Debug + Clone,
-		> TransactAsset for MantaTransactorAdaptor<NativeCurrency, AccountIdConverter, AccountId>
-	{
-		fn deposit_asset(asset: &MultiAsset, who: &MultiLocation) -> XcmResult {
-			log::info!(target: "manta-xassets", "deposit_asset: asset = {:?}, who = {:?}", asset, who);
-
-			let who = AccountIdConverter::convert_ref(who).map_err(|_| {
-				XcmError::FailedToTransactAsset("Failed to convert multilocation to account id")
-			})?;
-
-			match asset {
-				MultiAsset::ConcreteFungible { id: _id, amount } => {
-					let amount = NativeCurrency::Balance::try_from(*amount)
-						.map_err(|_| XcmError::Overflow)?;
-					NativeCurrency::deposit_creating(&who, amount);
-
-					Ok(())
-				}
-				_ => Err(XcmError::NotWithdrawable),
-			}
-		}
-
-		fn withdraw_asset(
-			asset: &MultiAsset,
-			who: &MultiLocation,
-		) -> Result<xcm_executor::Assets, XcmError> {
-			log::info!(target: "manta-xassets", "withdraw_asset: asset = {:?}, who = {:?}", asset, who);
-
-			let who = AccountIdConverter::convert_ref(who).map_err(|_| {
-				XcmError::FailedToTransactAsset("Failed to convert multilocation to account id")
-			})?;
-
-			match asset {
-				MultiAsset::ConcreteFungible { id: _id, amount } => {
-					let amount = NativeCurrency::Balance::try_from(*amount)
-						.map_err(|_| XcmError::Overflow)?;
-					NativeCurrency::withdraw(
-						&who,
-						amount,
-						WithdrawReasons::TRANSFER,
-						ExistenceRequirement::AllowDeath,
-					)
-					.map_err(|e| {
-						log::debug!(target: "manta-xassets", "withdraw_asset: error = {:?}", e);
-						XcmError::FailedToTransactAsset(e.into())
-					})?;
-
-					Ok(asset.clone().into())
-				}
-				_ => Err(XcmError::NotWithdrawable),
-			}
-		}
-	}
-
-	/// Manta-pc Xcm Transact Filter
-	pub struct MantaXcmTransactFilter<T>(PhantomData<T>);
-	impl<T: Get<Vec<(MultiLocation, u128)>>> ShouldExecute for MantaXcmTransactFilter<T> {
-		fn should_execute<Call>(
-			origin: &MultiLocation,
-			_top_level: bool,
-			message: &Xcm<Call>,
-			_shallow_weight: Weight,
-			_weight_credit: &mut Weight,
-		) -> Result<(), ()> {
-			log::info!(target: "manta-xassets", "should_execute: origin = {:?}, message = {:?}", origin, message);
-			match origin {
-				MultiLocation::X1(Junction::AccountId32 { network, .. })
-					if *network == NetworkId::Any =>
-				{
-					Ok(())
-				}
-				MultiLocation::X2(Junction::Parent, Junction::Parachain(id)) => {
-					log::info!(target: "manta-xassets", "should_execute: parachain id = {:?}, all trusted = {:?}", id, TrustedChains::get());
-
-					let a = TrustedChains::get()
-						.iter()
-						.map(|(location, _)| location)
-						.any(|location| *location == *origin)
-						.then(|| ())
-						.ok_or(());
-					log::info!(target: "manta-xassets", "should_execute: filter = {:?}", a);
-
-					Ok(())
-				}
-				_ => Err(()),
-			}
-		}
-	}
-
-	/// Todo, more docs here.
-	pub struct TrustedParachains<Chains>(PhantomData<Chains>);
-	impl<Chains: Get<Vec<(MultiLocation, u128)>>> FilterAssetLocation for TrustedParachains<Chains> {
-		fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
-			log::info!(target: "manta-xassets", "filter_asset_location: origin = {:?}, asset = {:?}", origin, asset);
-
-			true
-			// Chains::get()
-			// 	.iter()
-			// 	.map(|(location, _)| location)
-			// 	.any(|location| *location == *origin)
-		}
-	}
-}
 
 pub struct XcmConfig;
 impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
-	type AssetTransactor =
-		manta_transactor::MantaTransactorAdaptor<Balances, LocationToAccountId, AccountId>;
+	type AssetTransactor = LocalAssetTransactor;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	type IsReserve = manta_transactor::TrustedParachains<TrustedChains>;
+	type IsReserve = NativeAsset;
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of DOT
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
@@ -687,6 +424,7 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 
 parameter_types! {
 	pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(33);
+	// Rotate collator's spot each 6 hours.
 	pub const Period: u32 = 6 * HOURS;
 	pub const Offset: u32 = 0;
 }
@@ -712,11 +450,13 @@ impl pallet_aura::Config for Runtime {
 }
 
 parameter_types! {
+	// Pallet account for record rewards and give rewards to collator.
 	pub const PotId: PalletId = PalletId(*b"PotStake");
-	pub const MaxCandidates: u32 = 1000;
-	pub const MinCandidates: u32 = 5;
-	pub const SessionLength: BlockNumber = 6 * HOURS;
-	pub const MaxInvulnerables: u32 = 100;
+	// How many collator candidates is allowed.
+	pub const MaxCandidates: u32 = 50;
+	pub const MinCandidates: u32 = 3;
+	// How many collators who cannot be slashed.
+	pub const MaxInvulnerables: u32 = 5;
 }
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
@@ -742,35 +482,6 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-	pub const MantaXassetsPalletId: PalletId = PalletId(*b"/ma_xast");
-
-	pub const AnyNetwork: NetworkId = NetworkId::Any;
-	pub TrustedChains: Vec<(MultiLocation, u128)> = vec![
-		// Acala local and live, 0.01 ACA
-		(MultiLocation::X1(Junction::Parachain(2000)), 10_000_000_000),
-		(MultiLocation::X1(Junction::Parachain(2084)), 10_000_000_000),
-	];
-}
-
-pub type MantaPCLocationToAccountId = (
-	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
-	SiblingParachainConvertsVia<Sibling, AccountId>,
-	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
-	AccountId32Aliases<AnyNetwork, AccountId>,
-);
-
-impl manta_xassets::Config for Runtime {
-	type Event = Event;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type TrustedChains = TrustedChains;
-	type Conversion = MantaPCLocationToAccountId;
-	type PalletId = MantaXassetsPalletId;
-	type Currency = Balances;
-	type SelfParaId = ParachainInfo;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
-}
-
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -783,7 +494,6 @@ construct_runtime!(
 		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>} = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
-		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 4,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
@@ -805,14 +515,7 @@ construct_runtime!(
 		// Handy utilities.
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
-		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 42,
-		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 43,
-
-		// The main stage. To include pallet-assets-freezer and pallet-uniques.
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
-
-		// Manta pallets
-		MantaXassets: manta_xassets::{Pallet, Call, Event<T>} = 100,
+		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
 	}
 );
 
@@ -989,10 +692,8 @@ impl_runtime_apis! {
 			let params = (&config, &whitelist);
 
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
-			add_benchmark!(params, batches, pallet_assets, Assets);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_multisig, Multisig);
-			add_benchmark!(params, batches, pallet_proxy, Proxy);
 			add_benchmark!(params, batches, pallet_utility, Utility);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);

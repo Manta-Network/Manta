@@ -3,7 +3,7 @@ authors = ['Manta Network']
 edition = '2018'
 homepage = 'https://manta.network'
 license = 'GPL-3.0'
-name = 'manta-pc-runtime'
+name = 'calamari-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
 version = '3.0.0'
 
@@ -39,13 +39,10 @@ frame-system-rpc-runtime-api = { version = '3.0.0', git = 'https://github.com/pa
 frame-try-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.8" }
 
 # Substrate pallets
-pallet-assets = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
 pallet-aura = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
 pallet-authorship = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
 pallet-balances = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
 pallet-multisig = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
-pallet-proxy = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
-pallet-scheduler = { version = '3.0.0', git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.8" }
 pallet-session = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
 pallet-sudo = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
 pallet-timestamp = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
@@ -76,7 +73,6 @@ pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-featu
 
 # Self dependencies
 manta-primitives = { path = '../primitives', default-features = false }
-manta-xassets = { path = '../../pallets/manta-xassets', default-features = false }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -99,10 +95,8 @@ runtime-benchmarks = [
 	'frame-system-benchmarking',
 	'frame-support/runtime-benchmarks',
 	'frame-system/runtime-benchmarks',
-	'pallet-assets/runtime-benchmarks',
 	'pallet-balances/runtime-benchmarks',
 	'pallet-multisig/runtime-benchmarks',
-	'pallet-proxy/runtime-benchmarks',
 	'pallet-utility/runtime-benchmarks',
 	'pallet-timestamp/runtime-benchmarks',
 	'pallet-xcm/runtime-benchmarks',
@@ -129,15 +123,12 @@ std = [
 	'frame-system/std',
 	'frame-system-rpc-runtime-api/std',
 	'frame-try-runtime/std',
-	'pallet-assets/std',
 	'pallet-authorship/std',
 	'pallet-balances/std',
 	'pallet-multisig/std',
-	'pallet-proxy/std',
 	'pallet-utility/std',
 	'pallet-transaction-payment-rpc-runtime-api/std',
 	'pallet-timestamp/std',
-	'pallet-scheduler/std',
 	'pallet-session/std',
 	'pallet-sudo/std',
 	'pallet-xcm/std',

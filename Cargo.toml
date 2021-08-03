@@ -3,6 +3,7 @@ members = [
 	'node',
 	'pallets/manta-xassets',
 	'runtime/manta-pc',
+	'runtime/calamari',
 ]
 
 [profile.release]

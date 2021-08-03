@@ -19,26 +19,69 @@ use std::{io::Write, net::SocketAddr};
 
 pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
-pub const PARACHAIN_ID: u32 = 6666;
+pub const PARACHAIN_ID: u32 = 2084;
 
 fn load_spec(
 	id: &str,
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
+		// manta-pc chainspec
+		#[cfg(feature = "manta-pc")]
 		"manta-pc-dev" => Box::new(chain_spec::manta_pc_development_config(para_id)),
+		#[cfg(feature = "manta-pc")]
 		"manta-pc-local" => Box::new(chain_spec::manta_pc_local_config(para_id)),
+		#[cfg(feature = "manta-pc")]
 		"manta-pc-testnet" => Box::new(chain_spec::manta_pc_testnet_config(para_id)),
+		// calamari chainspec
+		#[cfg(feature = "calamari")]
+		"calamari-dev" => Box::new(chain_spec::calamari_development_config(para_id)),
+		#[cfg(feature = "calamari")]
+		"calamari-local" => Box::new(chain_spec::calamari_local_config(para_id)),
+		#[cfg(feature = "calamari")]
+		"calamari-testnet" => Box::new(chain_spec::calamari_testnet_config(para_id)),
+		#[cfg(feature = "calamari")]
+		"calamari" => Box::new(chain_spec::calamari_config(para_id)),
 		path => {
-			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
-			Box::new(chain_spec)
+			let path = std::path::PathBuf::from(path);
+
+			let starts_with = |prefix: &str| {
+				path.file_name()
+					.map(|f| f.to_str().map(|s| s.starts_with(&prefix)))
+					.flatten()
+					.unwrap_or(false)
+			};
+
+			if starts_with("manta-pc") {
+				#[cfg(feature = "manta-pc")]
+				{
+					Box::new(chain_spec::MantaPCChainSpec::from_json_file(path)?)
+				}
+				#[cfg(not(feature = "manta-pc"))]
+				panic!("manta-pc runtime is not avaiable.")
+			} else if starts_with("calamari") {
+				#[cfg(feature = "calamari")]
+				{
+					Box::new(chain_spec::CalamariChainSpec::from_json_file(path)?)
+				}
+				#[cfg(not(feature = "calamari"))]
+				panic!("calamari runtime is not avaiable.")
+			} else {
+				panic!("Please input a file name starting with manta-pc or calamari.")
+			}
 		}
 	})
 }
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"Manta Collator".into()
+		cfg_if::cfg_if! {
+			if #[cfg(feature = "manta-pc")] {
+				"Manta Parachain Collator".into()
+			} else {
+				"Calamari Parachain Collator".into()
+			}
+		}
 	}
 
 	fn impl_version() -> String {
@@ -47,7 +90,7 @@ impl SubstrateCli for Cli {
 
 	fn description() -> String {
 		format!(
-			"Manta Collator\n\nThe command-line arguments provided first will be \
+			"Manta Parachain Collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		{} [parachain-args] -- [relaychain-args]",
@@ -72,13 +115,26 @@ impl SubstrateCli for Cli {
 	}
 
 	fn native_runtime_version(_chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&manta_pc_runtime::VERSION
+		cfg_if::cfg_if! {
+			if #[cfg(feature = "manta-pc")] {
+				&manta_pc_runtime::VERSION
+			} else {
+				#[cfg(feature = "calamari")]
+				&calamari_runtime::VERSION
+			}
+		}
 	}
 }
 
 impl SubstrateCli for RelayChainCli {
 	fn impl_name() -> String {
-		"Manta Collator".into()
+		cfg_if::cfg_if! {
+			if #[cfg(feature = "manta-pc")] {
+				"Manta Parachain Collator".into()
+			} else {
+				"Calamari Parachain Collator".into()
+			}
+		}
 	}
 
 	fn impl_version() -> String {
@@ -86,7 +142,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn description() -> String {
-		"Manta Collator\n\nThe command-line arguments provided first will be \
+		"Manta Parachain Collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		rococo-collator [parachain-args] -- [relaychain-args]"
@@ -123,31 +179,34 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 		.ok_or_else(|| "Could not find wasm file in genesis state!".into())
 }
 
-fn use_manta_pc_runtime(chain_spec: &dyn ChainSpec) -> bool {
-	chain_spec.id().starts_with("manta_pc")
-}
-
-use crate::service::{new_partial, MantaPCRuntimeExecutor};
+use crate::service::new_partial;
+#[cfg(feature = "calamari")]
+use crate::service::CalamariRuntimeExecutor;
+#[cfg(feature = "manta-pc")]
+use crate::service::MantaPCRuntimeExecutor;
 
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
-		if use_manta_pc_runtime(&*runner.config().chain_spec) {
-			runner.async_run(|$config| {
-				let $components = new_partial::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor>(
-					&$config,
-				)?;
-				let task_manager = $components.task_manager;
-				{ $( $code )* }.map(|v| (v, task_manager))
-			})
-		} else {
-			runner.async_run(|$config| {
-				let $components = new_partial::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor>(
-					&$config,
-				)?;
-				let task_manager = $components.task_manager;
-				{ $( $code )* }.map(|v| (v, task_manager))
-			})
+		cfg_if::cfg_if! {
+			if #[cfg(feature = "manta-pc")] {
+				runner.async_run(|$config| {
+					let $components = new_partial::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor>(
+						&$config,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			} else {
+				#[cfg(feature = "calamari")]
+				runner.async_run(|$config| {
+					let $components = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor>(
+						&$config,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			}
 		}
 	}}
 }
@@ -253,19 +312,55 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::Benchmark(cmd)) => {
 			if cfg!(feature = "runtime-benchmarks") {
 				let runner = cli.create_runner(cmd)?;
-				runner.sync_run(|config| cmd.run::<Block, MantaPCRuntimeExecutor>(config))
+				cfg_if::cfg_if! {
+					if #[cfg(feature = "manta-pc")] {
+						runner.sync_run(|config| cmd.run::<Block, MantaPCRuntimeExecutor>(config))
+					} else {
+						#[cfg(feature = "calamari")]
+						runner.sync_run(|config| cmd.run::<Block, CalamariRuntimeExecutor>(config))
+					}
+				}
 			} else {
 				Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
 					.into())
 			}
 		}
+		#[cfg(feature = "try-runtime")]
+		Some(Subcommand::TryRuntime(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.async_run(|config| {
+				// we don't need any of the components of new_partial, just a runtime, or a task
+				// manager to do `async_run`.
+				let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+				let task_manager =
+					sc_service::TaskManager::new(config.task_executor.clone(), registry)
+						.map_err(|e| sc_cli::Error::Service(sc_service::Error::Prometheus(e)))?;
+
+				cfg_if::cfg_if! {
+					if #[cfg(feature = "manta-pc")] {
+						Ok((
+							cmd.run::<Block, MantaPCRuntimeExecutor>(config),
+							task_manager,
+						))
+					} else {
+						#[cfg(feature = "calamari")]
+						Ok((
+							cmd.run::<Block, CalamariRuntimeExecutor>(config),
+							task_manager,
+						))
+					}
+				}
+			})
+		}
+		#[cfg(not(feature = "try-runtime"))]
+		Some(Subcommand::TryRuntime) => Err("Try-runtime wasn't enabled when building the node. \
+		You can enable it with `--features try-runtime`."
+			.into()),
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 
 			runner.run_node_until_exit(|config| async move {
-				let key = sp_core::Pair::generate().0;
-
 				let para_id =
 					chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
 
@@ -301,17 +396,38 @@ pub fn run() -> Result<()> {
 						"no"
 					}
 				);
-
-				crate::service::start_node::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor, _>(
-					config,
-					key,
-					polkadot_config,
-					id,
-					|_| Default::default(),
-				)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into)
+				cfg_if::cfg_if! {
+					if #[cfg(feature = "manta-pc")] {
+						crate::service::start_node::<
+							manta_pc_runtime::RuntimeApi,
+							MantaPCRuntimeExecutor,
+							_,
+						>(
+							config,
+							polkadot_config,
+							id,
+							|_| Default::default(),
+						)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into)
+					} else {
+						#[cfg(feature = "calamari")]
+						crate::service::start_node::<
+							calamari_runtime::RuntimeApi,
+							CalamariRuntimeExecutor,
+							_,
+						>(
+							config,
+							polkadot_config,
+							id,
+							|_| Default::default(),
+						)
+						.await
+						.map(|r| r.0)
+						.map_err(Into::into)
+					}
+				}
 			})
 		}
 	}
