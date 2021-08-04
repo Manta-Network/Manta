@@ -27,7 +27,7 @@ pub mod time {
 	/// slot_duration()`.
 	///
 	/// Change this to adjust the block time.
-	pub const MILLISECS_PER_BLOCK: Moment = 6_000; // 12s
+	pub const MILLISECS_PER_BLOCK: Moment = 12_000; // 12s
 	pub const SLOT_DURATION: Moment = MILLISECS_PER_BLOCK;
 
 	// Time is measured by number of blocks.

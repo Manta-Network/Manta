@@ -219,7 +219,7 @@ fn manta_pc_dev_genesis(
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		aura: Default::default(),
-		sudo: manta_pc_runtime::SudoConfig { key: root_key },
+		//sudo: manta_pc_runtime::SudoConfig { key: root_key },
 		parachain_info: manta_pc_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: manta_pc_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
@@ -332,7 +332,7 @@ fn manta_pc_testnet_genesis(
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		aura: Default::default(),
-		sudo: manta_pc_runtime::SudoConfig { key: root_key },
+		//sudo: manta_pc_runtime::SudoConfig { key: root_key },
 		parachain_info: manta_pc_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: manta_pc_runtime::CollatorSelectionConfig {
 			invulnerables: initial_authorities
@@ -491,7 +491,7 @@ fn calamari_dev_genesis(
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		aura: Default::default(),
-		sudo: calamari_runtime::SudoConfig { key: root_key },
+		//sudo: calamari_runtime::SudoConfig { key: root_key },
 		parachain_info: calamari_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: calamari_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
@@ -646,7 +646,7 @@ fn calamari_testnet_genesis(
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		aura: Default::default(),
-		sudo: calamari_runtime::SudoConfig { key: root_key },
+		//sudo: calamari_runtime::SudoConfig { key: root_key },
 		parachain_info: calamari_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: calamari_runtime::CollatorSelectionConfig {
 			invulnerables: initial_authorities
@@ -749,7 +749,7 @@ fn calamari_genesis(
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		aura: Default::default(),
-		sudo: calamari_runtime::SudoConfig { key: root_key },
+		//sudo: calamari_runtime::SudoConfig { key: root_key },
 		parachain_info: calamari_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: calamari_runtime::CollatorSelectionConfig {
 			invulnerables: initial_authorities

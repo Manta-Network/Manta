@@ -50,4 +50,3 @@ jobs:
       - name: Check Calamari Build
         run: |
           cargo check --features calamari
-          cargo check --all-features
