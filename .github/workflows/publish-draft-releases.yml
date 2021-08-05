@@ -358,3 +358,137 @@ jobs:
         with:
           # yamllint disable-line rule:line-length
           args: 'draft runtime release ${{ github.ref }} created at ${{ needs.create-draft-release.outputs.release_url }}'
+
+  integration-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runtime:
+          - calamari
+          - manta-pc
+    needs:
+      - publish-node
+      - create-draft-release
+    steps:
+      -
+        name: fetch artifacts
+        run: |
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.8/polkadot
+          chmod +x $HOME/.local/bin/polkadot
+          curl -L -o $HOME/.local/bin/calamari-pc ${{ needs.create-draft-release.outputs.release_url }}/calamari-pc
+          chmod +x $HOME/.local/bin/calamari-pc
+      -
+        name: create chainspec
+        run: |
+          mkdir -p $HOME/.local/share/calamari-pc
+          $HOME/.local/bin/calamari-pc export-state \
+            --chain ${{ matrix.runtime }}-testnet | \
+          jq \
+            --sort-keys \
+            --arg sha ${GITHUB_SHA:0:7} \
+            --arg name "${{ matrix.runtime }} testnet ${GITHUB_SHA:0:7}" \
+            --arg id ${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7} \
+            --arg relay_chain rococo-local-${GITHUB_SHA:0:7} \
+            --arg parachain_id 2084 \
+            '. |
+              .name = $name |
+              .id = $id |
+              .relay_chain = $relay_chain |
+              .para_id = ($parachain_id | tonumber) |
+              .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
+            ' > $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}.json
+          jq . $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}.json
+      -
+        name: create launch config
+        run: |
+          echo '{
+            "relaychain": {
+              "chain": "rococo-local",
+              "nodes": [
+                {
+                  "name": "alice",
+                  "wsPort": 9911,
+                  "port": 31331,
+                  "flags": [
+                    "--rpc-cors=all",
+                    "--telemetry-url=wss://api.telemetry.manta.systems/submit 0"
+                  ]
+                },
+                {
+                  "name": "bob",
+                  "wsPort": 9912,
+                  "port": 31332,
+                  "flags": [
+                    "--rpc-cors=all",
+                    "--telemetry-url=wss://api.telemetry.manta.systems/submit 0"
+                  ]
+                }
+              ],
+              "genesis": {
+                "runtime": {
+                  "runtime_genesis_config": {
+                    "parachainsConfiguration": {
+                      "config": {
+                        "validation_upgrade_frequency": 1,
+                        "validation_upgrade_delay": 1
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "parachains": [
+              {
+                "id": "2084",
+                "nodes": [
+                  {
+                    "name": "alice",
+                    "wsPort": 9921,
+                    "port": 32331,
+                    "flags": [
+                      "--rpc-cors=all",
+                      "--",
+                      "--execution=wasm"
+                    ]
+                  },
+                  {
+                    "name": "bob",
+                    "wsPort": 9922,
+                    "port": 32332,
+                    "flags": [
+                      "--rpc-cors=all",
+                      "--",
+                      "--execution=wasm"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "hrmpChannels": [],
+            "types": {},
+            "finalization": false
+          }' | \
+          jq \
+            --arg relaychain_bin $HOME/.local/bin/polkadot \
+            --arg relaychain_id rococo-local-${GITHUB_SHA:0:7} \
+            --arg relaychain_name "rococo local ${GITHUB_SHA:0:7}"" \
+            --arg parachains_bin $HOME/.local/bin/calamari-pc \
+            --arg parachains_spec $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}.json \
+            '.
+              | .relaychain.bin = $relaychain_bin
+              | .relaychain.mutation.id = $relaychain_id
+              | .relaychain.mutation.name = $relaychain_name
+              | .parachains[].bin = $parachains_bin
+              | .parachains[].chain = $parachains_spec
+            ' > ${{ github.workspace }}/launch-config.json
+          jq . ${{ github.workspace }}/launch-config.json
+      -
+        uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/manta-pc-launch
+      -
+        name: launch testnet
+        run: |
+          cd ${{ github.workspace }}/manta-pc-launch
+          yarn build
+          yarn start ${{ github.workspace }}/launch-config.json
