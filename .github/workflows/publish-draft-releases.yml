@@ -482,6 +482,7 @@ jobs:
         run: |
           tree ${{ github.workspace }}
           cd ${{ github.workspace }}/manta-pc-launch
+          yarn
           yarn build
           yarn start ${{ github.workspace }}/launch-config.json
 
