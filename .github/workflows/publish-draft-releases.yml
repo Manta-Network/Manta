@@ -457,7 +457,7 @@ jobs:
           jq \
             --arg relaychain_bin $HOME/.local/bin/polkadot \
             --arg relaychain_id rococo-local-${GITHUB_SHA:0:7} \
-            --arg relaychain_name "rococo local ${GITHUB_SHA:0:7}"" \
+            --arg relaychain_name "rococo local ${GITHUB_SHA:0:7}" \
             --arg parachains_bin $HOME/.local/bin/calamari-pc \
             --arg parachains_spec $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}.json \
             '.
