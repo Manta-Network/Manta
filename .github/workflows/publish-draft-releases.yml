@@ -1,4 +1,7 @@
 ---
+
+# yamllint disable rule:line-length
+
 name: publish draft releases
 
 on:
@@ -82,7 +85,6 @@ jobs:
       -
         name: install sccache
 
-        # yamllint disable rule:line-length
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
           SCCACHE_VERSION: v0.2.15
@@ -93,7 +95,6 @@ jobs:
           mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
           chmod +x $HOME/.local/bin/sccache
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-        # yamllint enable rule:line-length
       -
         name: cache cargo registry
         uses: actions/cache@v2
@@ -118,13 +119,11 @@ jobs:
         run: sccache --start-server
       -
         name: init
-        # yamllint disable rule:line-length
         run: |
           rustup update nightly
           rustup update stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
           cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
-        # yamllint enable rule:line-length
       -
         name: build
         env:
@@ -253,7 +252,6 @@ jobs:
         name: rename underscored artifacts
         env:
           matrix_runtime: ${{ matrix.runtime }}
-        # yamllint disable rule:line-length
         run: |
           mv \
             ${matrix_runtime//-/_}_runtime.compact.compressed.wasm \
@@ -262,7 +260,6 @@ jobs:
             ${matrix_runtime//-/_}_runtime.compact.wasm \
             ${{ matrix.runtime }}_runtime.compact.wasm
           ls
-        # yamllint enable rule:line-length
       -
         name: get runtime version
         id: get-runtime-version
@@ -278,48 +275,40 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          # yamllint disable rule:line-length
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
           asset_path: ${{ matrix.runtime }}_runtime.compact.wasm
           asset_name: ${{ matrix.runtime }}-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.wasm
           asset_content_type: application/wasm
-          # yamllint enable rule:line-length
       -
         name: upload compressed ${{ matrix.runtime }} wasm
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          # yamllint disable rule:line-length
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
           asset_path: ${{ matrix.runtime }}_runtime.compact.compressed.wasm
           asset_name: ${{ matrix.runtime }}-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.compressed.wasm
           asset_content_type: application/wasm
-          # yamllint enable rule:line-length
       -
         name: upload ${{ matrix.runtime }} types json
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          # yamllint disable rule:line-length
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
           asset_path: types.json
           asset_name: ${{ matrix.runtime }}-types-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
           asset_content_type: application/json
-          # yamllint enable rule:line-length
       -
         name: upload ${{ matrix.runtime }} srtool output json
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          # yamllint disable rule:line-length
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
           asset_path: ${{ matrix.runtime }}-srtool-output.json
           asset_name: ${{ matrix.runtime }}-srtool-output-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
           asset_content_type: application/json
-          # yamllint enable rule:line-length
 
   publish-node:
     runs-on: ubuntu-latest
@@ -337,12 +326,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          # yamllint disable rule:line-length
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
           asset_path: calamari-pc
           asset_name: calamari-pc
           asset_content_type: application/octet-stream
-          # yamllint enable rule:line-length
 
   brag:
     runs-on: ubuntu-latest
@@ -352,11 +339,9 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           DISCORD_USERNAME: raybot
-          # yamllint disable-line rule:line-length
           DISCORD_AVATAR: https://gist.githubusercontent.com/grenade/66a46007b37778d81ee064394263b16c/raw/raybot.png
         uses: Ilshidur/action-discord@0.3.2
         with:
-          # yamllint disable-line rule:line-length
           args: 'draft runtime release ${{ github.ref }} created at ${{ needs.create-draft-release.outputs.release_url }}'
 
   integration-test:
@@ -492,3 +477,5 @@ jobs:
           cd ${{ github.workspace }}/manta-pc-launch
           yarn build
           yarn start ${{ github.workspace }}/launch-config.json
+
+# yamllint enable rule:line-length
