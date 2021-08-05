@@ -315,12 +315,15 @@ jobs:
     needs:
       - build-node
       - create-draft-release
+    outputs:
+      download_url: ${{ steps.upload-calamari-pc.outputs.browser_download_url }}
     steps:
       -
         uses: actions/download-artifact@v2
         with:
           name: calamari-pc
       -
+        id: upload-calamari-pc
         name: upload calamari-pc
         uses: actions/upload-release-asset@v1
         env:
@@ -361,7 +364,7 @@ jobs:
           mkdir -p $HOME/.local/{bin,share}
           curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.8/polkadot
           chmod +x $HOME/.local/bin/polkadot
-          curl -L -o $HOME/.local/bin/calamari-pc ${{ needs.create-draft-release.outputs.release_url }}/calamari-pc
+          curl -L -o $HOME/.local/bin/calamari-pc ${{ needs.publish-node.outputs.download_url }}
           chmod +x $HOME/.local/bin/calamari-pc
       -
         name: create chainspec
