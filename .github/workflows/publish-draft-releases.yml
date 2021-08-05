@@ -393,6 +393,7 @@ jobs:
           echo '{
             "relaychain": {
               "chain": "rococo-local",
+              "mutation": {},
               "nodes": [
                 {
                   "name": "alice",
@@ -478,6 +479,8 @@ jobs:
       -
         name: launch testnet
         run: |
+          ls -ahlR ${{ github.workspace }}
+          tree ${{ github.workspace }}
           cd ${{ github.workspace }}/manta-pc-launch
           yarn build
           yarn start ${{ github.workspace }}/launch-config.json
