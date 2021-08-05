@@ -358,6 +358,7 @@ jobs:
       -
         name: fetch artifacts
         run: |
+          mkdir -p $HOME/.local/{bin,share}
           curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.8/polkadot
           chmod +x $HOME/.local/bin/polkadot
           curl -L -o $HOME/.local/bin/calamari-pc ${{ needs.create-draft-release.outputs.release_url }}/calamari-pc
