@@ -476,10 +476,10 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/manta-pc-launch
+          path: manta-pc-launch
       -
         name: launch testnet
         run: |
-          ls -ahlR ${{ github.workspace }}
           tree ${{ github.workspace }}
           cd ${{ github.workspace }}/manta-pc-launch
           yarn build
