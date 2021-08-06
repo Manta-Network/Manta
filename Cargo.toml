@@ -1,9 +1,9 @@
 [workspace]
 members = [
 	'node',
-	'pallets/manta-xassets',
-	'runtime/manta-pc',
 	'runtime/calamari',
+	'runtime/manta-pc',
+	'pallets/manta-xassets',
 ]
 
 [profile.release]

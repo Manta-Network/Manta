@@ -12,7 +12,11 @@ use frame_system::{
 	ensure_signed,
 	pallet_prelude::{BlockNumberFor, OriginFor},
 };
-use sp_runtime::SaturatedConversion;
+use manta_primitives::{
+	currency_id::{CurrencyId, TokenSymbol},
+	traits::XCurrency,
+};
+use sp_runtime::{traits::Member, SaturatedConversion};
 use sp_std::{vec, vec::Vec};
 use xcm::v0::{ExecuteXcm, Junction, MultiAsset, MultiLocation, Order, Outcome, Xcm};
 use xcm_executor::traits::{Convert, WeightBounds};
@@ -22,6 +26,8 @@ pub use pallet::*;
 const MANTA_XASSETS: &str = "manta-xassets";
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
+pub type CurrencyIdOf<T> = <T as XCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -45,6 +51,9 @@ pub mod pallet {
 		/// This pallet id.
 		type PalletId: Get<PalletId>;
 
+		/// Currency Id
+		type CurrencyId: Parameter + Member + Clone;
+
 		type Currency: ReservableCurrency<Self::AccountId>;
 
 		/// Manta's parachain id.
@@ -53,6 +62,19 @@ pub mod pallet {
 		/// Means of measuring the weight consumed by an XCM message locally.
 		type Weigher: WeightBounds<Self::Call>;
 	}
+
+	// This is an workaround for depositing/withdrawing cross chain tokens
+	// Finally, we'll utilize pallet-assets to handle these external tokens.
+	#[pallet::storage]
+	pub type XTokens<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CurrencyId,
+		Blake2_128Concat,
+		T::AccountId,
+		BalanceOf<T>,
+		ValueQuery,
+	>;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -162,16 +184,31 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			para_id: ParaId,
 			dest: T::AccountId,
+			currency_id: CurrencyId,
 			#[pallet::compact] amount: BalanceOf<T>,
 			weight: Weight,
 		) -> DispatchResult {
 			let from = ensure_signed(origin)?;
 
 			ensure!(T::SelfParaId::get() != para_id, Error::<T>::SelfChain);
-			ensure!(
-				T::Currency::free_balance(&from) >= amount,
-				Error::<T>::BalanceLow
-			);
+
+			match currency_id {
+				CurrencyId::Token(TokenSymbol::MA) | CurrencyId::Token(TokenSymbol::KMA) => {
+					ensure!(
+						T::Currency::free_balance(&from) >= amount,
+						Error::<T>::BalanceLow
+					);
+				}
+				CurrencyId::Token(TokenSymbol::ACA)
+				| CurrencyId::Token(TokenSymbol::KAR)
+				| CurrencyId::Token(TokenSymbol::SDN) => {
+					ensure!(
+						Self::account(currency_id, &from) >= amount,
+						Error::<T>::BalanceLow
+					);
+				}
+			}
+
 			let xcm_origin = T::Conversion::reverse(from)
 				.map_err(|_| Error::<T>::BadAccountIdToMultiLocation)?;
 
@@ -188,9 +225,10 @@ pub mod pallet {
 			// create friend parachain xcm
 			let xcm = Xcm::WithdrawAsset {
 				assets: vec![MultiAsset::ConcreteFungible {
-					id: MultiLocation::X2(
+					id: MultiLocation::X3(
 						Junction::Parent,
 						Junction::Parachain(T::SelfParaId::get().into()),
+						Junction::GeneralKey(currency_id.encode()),
 					),
 					amount,
 				}],
@@ -214,9 +252,11 @@ pub mod pallet {
 				}],
 			};
 
+			log::info!(target: MANTA_XASSETS, "xcm = {:?}", xcm);
+
 			// Todo, just disable this line, it doesn't work for now.
-			// let weight =
-			// 	T::Weigher::weight(&mut friend_xcm).map_err(|()| Error::<T>::UnweighableMessage)?;
+			// let xcm_weight =
+			// 	T::Weigher::weight(&mut xcm).map_err(|()| Error::<T>::UnweighableMessage)?;
 
 			// The last param is the weight we buy on target chain.
 			let outcome = T::XcmExecutor::execute_xcm_in_credit(xcm_origin, xcm, weight, weight);
@@ -298,5 +338,42 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {}
+	}
+
+	impl<T: Config> XCurrency<T::AccountId> for Pallet<T> {
+		type Balance = BalanceOf<T>;
+		type CurrencyId = CurrencyId;
+
+		fn account(currency_id: Self::CurrencyId, who: &T::AccountId) -> Self::Balance {
+			XTokens::<T>::get(currency_id, who)
+		}
+
+		/// Add `amount` to the balance of `who` under `currency_id`
+		fn deposit(
+			currency_id: Self::CurrencyId,
+			who: &T::AccountId,
+			amount: Self::Balance,
+		) -> DispatchResult {
+			XTokens::<T>::mutate(currency_id, who, |balance| {
+				// *balance = balance.saturated_add(amount);
+				*balance += amount;
+			});
+
+			Ok(())
+		}
+
+		/// Remove `amount` from the balance of `who` under `currency_id`
+		fn withdraw(
+			currency_id: Self::CurrencyId,
+			who: &T::AccountId,
+			amount: Self::Balance,
+		) -> DispatchResult {
+			XTokens::<T>::mutate(currency_id, who, |balance| {
+				// *balance = balance.saturated_add(amount);
+				*balance -= amount;
+			});
+
+			Ok(())
+		}
 	}
 }
