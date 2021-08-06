@@ -182,11 +182,9 @@ jobs:
         name: create chainspec
         run: |
           tree ${{ github.workspace }}
-          ${{ github.workspace }}/calamari-pc export-state \
-            --chain ${{ matrix.runtime }}-testnet | \
+          ${{ github.workspace }}/calamari-pc export-state --chain ${{ matrix.runtime }}-testnet > ${{ github.workspace }}/${{ matrix.runtime }}-testnet-state.json
           jq \
             --sort-keys \
-            --arg sha ${GITHUB_SHA:0:7} \
             --arg name "${{ matrix.runtime }} testnet ${GITHUB_SHA:0:7}" \
             --arg id ${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7} \
             --arg relay_chain rococo-local-${GITHUB_SHA:0:7} \
@@ -197,7 +195,7 @@ jobs:
               .relay_chain = $relay_chain |
               .para_id = ($parachain_id | tonumber) |
               .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
-            ' > ${{ github.workspace }}/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}.json
+            ' ${{ github.workspace }}/${{ matrix.runtime }}-testnet-state.json > ${{ github.workspace }}/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}.json
           jq . ${{ github.workspace }}/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}.json
       -
         name: create launch config
