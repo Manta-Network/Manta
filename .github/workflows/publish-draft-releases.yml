@@ -168,6 +168,11 @@ jobs:
         with:
           name: calamari-pc
       -
+        name: chmod calamari-pc
+        run: |
+          chmod +x ${{ github.workspace }}/calamari-pc
+          ls -ahl ${{ github.workspace }}/
+      -
         name: fetch polkadot
         run: |
           curl -L -o ${{ github.workspace }}/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.8/polkadot
@@ -289,7 +294,6 @@ jobs:
         name: launch testnet
         run: |
           tree ${{ github.workspace }}
-          ls -ahl ${{ github.workspace }}/bin/
           cd ${{ github.workspace }}/manta-pc-launch
           yarn
           yarn build
