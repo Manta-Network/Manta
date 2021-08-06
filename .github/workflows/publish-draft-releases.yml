@@ -30,10 +30,11 @@ jobs:
   build-runtime:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         runtime:
           - calamari
-          - manta-pc
+          # - manta-pc
     env:
       CARGO_TERM_COLOR: always
     steps:
@@ -154,35 +155,44 @@ jobs:
   integration-test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         runtime:
           - calamari
-          - manta-pc
+          # - manta-pc
     needs:
       - build-node
       - build-runtime
     steps:
+      -
+        name: make some room
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
       -
         name: fetch calamari-pc
         uses: actions/download-artifact@v2
         with:
           name: calamari-pc
       -
-        name: chmod calamari-pc
+        name: mv and chmod calamari-pc
         run: |
-          chmod +x ${{ github.workspace }}/calamari-pc
+          mkdir -p $HOME/.local/bin
+          mv ${{ github.workspace }}/calamari-pc $HOME/.local/bin/
+          chmod +x $HOME/.local/bin/calamari-pc
           ls -ahl ${{ github.workspace }}/
       -
-        name: fetch polkadot
+        name: fetch and chmod polkadot
         run: |
-          curl -L -o ${{ github.workspace }}/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.8/polkadot
-          chmod +x ${{ github.workspace }}/polkadot
-          ls -ahl ${{ github.workspace }}/
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.8/polkadot
+          chmod +x $HOME/.local/bin/polkadot
+          ls -ahl $HOME/.local/bin/
       -
         name: create chainspec
         run: |
-          tree ${{ github.workspace }}
-          ${{ github.workspace }}/calamari-pc export-state --chain ${{ matrix.runtime }}-testnet > ${{ github.workspace }}/${{ matrix.runtime }}-testnet-state.json
+          mkdir -p $HOME/.local/share/calamari-pc
+          ${{ github.workspace }}/calamari-pc export-state --chain ${{ matrix.runtime }}-testnet > $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-state.json
           jq \
             --sort-keys \
             --arg name "${{ matrix.runtime }} testnet ${GITHUB_SHA:0:7}" \
@@ -195,8 +205,9 @@ jobs:
               .relay_chain = $relay_chain |
               .para_id = ($parachain_id | tonumber) |
               .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
-            ' ${{ github.workspace }}/${{ matrix.runtime }}-testnet-state.json > ${{ github.workspace }}/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}.json
-          jq . ${{ github.workspace }}/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}.json
+            ' $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-state.json > $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}.json
+          jq . $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}.json
+          ls -ahl $HOME/.local/share/calamari-pc/
       -
         name: create launch config
         run: |
@@ -270,19 +281,20 @@ jobs:
             "finalization": false
           }' | \
           jq \
-            --arg relaychain_bin ${{ github.workspace }}/polkadot \
+            --arg relaychain_bin $HOME/.local/bin/polkadot \
             --arg relaychain_id rococo-local-${GITHUB_SHA:0:7} \
             --arg relaychain_name "rococo local ${GITHUB_SHA:0:7}" \
-            --arg parachains_bin ${{ github.workspace }}/calamari-pc \
-            --arg parachains_spec ${{ github.workspace }}/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}.json \
+            --arg parachains_bin $HOME/.local/bin/calamari-pc \
+            --arg parachains_spec $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}.json \
             '.
               | .relaychain.bin = $relaychain_bin
               | .relaychain.mutation.id = $relaychain_id
               | .relaychain.mutation.name = $relaychain_name
               | .parachains[].bin = $parachains_bin
               | .parachains[].chain = $parachains_spec
-            ' > ${{ github.workspace }}/launch-config.json
-          jq . ${{ github.workspace }}/launch-config.json
+            ' > $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}-launch-config.json
+          jq . $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}-launch-config.json
+          ls -ahl $HOME/.local/share/calamari-pc/
       -
         uses: actions/checkout@v2
         with:
@@ -295,7 +307,7 @@ jobs:
           cd ${{ github.workspace }}/manta-pc-launch
           yarn
           yarn build
-          yarn start ${{ github.workspace }}/launch-config.json
+          yarn start $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}-launch-config.json
 
   build-changelog:
     runs-on: ubuntu-latest
@@ -373,10 +385,11 @@ jobs:
     needs:
       - create-draft-release
     strategy:
+      fail-fast: false
       matrix:
         runtime:
           - calamari
-          - manta-pc
+          # - manta-pc
     steps:
       -
         uses: actions/checkout@v2

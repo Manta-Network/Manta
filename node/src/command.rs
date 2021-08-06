@@ -58,14 +58,14 @@ fn load_spec(
 					Box::new(chain_spec::MantaPCChainSpec::from_json_file(path)?)
 				}
 				#[cfg(not(feature = "manta-pc"))]
-				panic!("manta-pc runtime is not avaiable.")
+				panic!("manta-pc runtime is not available.")
 			} else if starts_with("calamari") {
 				#[cfg(feature = "calamari")]
 				{
 					Box::new(chain_spec::CalamariChainSpec::from_json_file(path)?)
 				}
 				#[cfg(not(feature = "calamari"))]
-				panic!("calamari runtime is not avaiable.")
+				panic!("calamari runtime is not available.")
 			} else {
 				panic!("Please input a file name starting with manta-pc or calamari.")
 			}
