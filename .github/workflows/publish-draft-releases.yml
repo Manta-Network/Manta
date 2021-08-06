@@ -182,6 +182,7 @@ jobs:
           mv ${{ github.workspace }}/calamari-pc $HOME/.local/bin/
           chmod +x $HOME/.local/bin/calamari-pc
           ls -ahl ${{ github.workspace }}/
+          ls -ahl $HOME/.local/bin/
       -
         name: fetch and chmod polkadot
         run: |
@@ -192,7 +193,7 @@ jobs:
         name: create chainspec
         run: |
           mkdir -p $HOME/.local/share/calamari-pc
-          ${{ github.workspace }}/calamari-pc export-state --chain ${{ matrix.runtime }}-testnet > $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-state.json
+          $HOME/.local/bin/calamari-pc export-state --chain ${{ matrix.runtime }}-testnet > $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-state.json
           jq \
             --sort-keys \
             --arg name "${{ matrix.runtime }} testnet ${GITHUB_SHA:0:7}" \
