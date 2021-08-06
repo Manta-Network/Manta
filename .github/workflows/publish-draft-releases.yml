@@ -316,10 +316,10 @@ jobs:
       - get-rust-versions
       - build-runtime
     steps:
-      -
-        uses: actions/download-artifact@v2
-        with:
-          name: manta-pc-srtool-json
+      #-
+      #  uses: actions/download-artifact@v2
+      #  with:
+      #    name: manta-pc-srtool-json
       -
         uses: actions/download-artifact@v2
         with:
