@@ -429,7 +429,7 @@ impl parachain_info::Config for Runtime {}
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
-	pub const DotLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
+	pub DotLocation: MultiLocation = MultiLocation::X3(Junction::Parent, Junction::Parachain(2000), Junction::GeneralKey([0, 128].to_vec()));
 	pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Junction::Parachain(ParachainInfo::parachain_id().into()).into();
