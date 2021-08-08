@@ -488,6 +488,11 @@ pub type XcmOriginToTransactDispatchOrigin = (
 parameter_types! {
 	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
 	pub UnitWeightCost: Weight = 200_000_000;
+	pub AcalaLocation: MultiLocation = MultiLocation::X3(
+		Junction::Parent,
+		Junction::Parachain(2000),
+		Junction::GeneralKey(vec![0, 128])
+	);
 }
 
 match_type! {
@@ -696,7 +701,7 @@ impl Config for XcmConfig {
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
-	type Trader = UsingComponents<IdentityFee<Balance>, DotLocation, AccountId, Balances, ()>;
+	type Trader = UsingComponents<IdentityFee<Balance>, AcalaLocation, AccountId, Balances, ()>;
 	type ResponseHandler = (); // Don't handle responses for now.
 }
 

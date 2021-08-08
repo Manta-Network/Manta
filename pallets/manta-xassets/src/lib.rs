@@ -223,7 +223,7 @@ pub mod pallet {
 			let amount = amount.saturated_into::<u128>();
 
 			// create friend parachain xcm
-			let xcm = Xcm::WithdrawAsset {
+			let mut xcm = Xcm::WithdrawAsset {
 				assets: vec![MultiAsset::ConcreteFungible {
 					id: MultiLocation::X3(
 						Junction::Parent,
@@ -236,14 +236,13 @@ pub mod pallet {
 					assets: vec![MultiAsset::All],
 					dest: receiver_chain,
 					effects: vec![
-						// Todo, just disable this order, it doesn't work for now.
-						// Order::BuyExecution {
-						// 	fees: MultiAsset::All,
-						// 	weight: 0,
-						// 	debt: 3000_000_000,
-						// 	halt_on_error: false,
-						// 	xcm: vec![],
-						// },
+						Order::BuyExecution {
+							fees: MultiAsset::All,
+							weight: 0,
+							debt: weight,
+							halt_on_error: false,
+							xcm: vec![],
+						},
 						Order::DepositAsset {
 							assets: vec![MultiAsset::All],
 							dest: xcm_target,
@@ -254,12 +253,12 @@ pub mod pallet {
 
 			log::info!(target: MANTA_XASSETS, "xcm = {:?}", xcm);
 
-			// Todo, just disable this line, it doesn't work for now.
-			// let xcm_weight =
-			// 	T::Weigher::weight(&mut xcm).map_err(|()| Error::<T>::UnweighableMessage)?;
+			let xcm_weight =
+				T::Weigher::weight(&mut xcm).map_err(|()| Error::<T>::UnweighableMessage)?;
 
 			// The last param is the weight we buy on target chain.
-			let outcome = T::XcmExecutor::execute_xcm_in_credit(xcm_origin, xcm, weight, weight);
+			let outcome =
+				T::XcmExecutor::execute_xcm_in_credit(xcm_origin, xcm, xcm_weight, xcm_weight);
 			log::info!(target: MANTA_XASSETS, "xcm_outcome = {:?}", outcome);
 
 			Self::deposit_event(Event::Attempted(outcome));
