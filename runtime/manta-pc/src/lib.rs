@@ -36,7 +36,7 @@ use frame_system::{
 	EnsureOneOf, EnsureRoot,
 };
 use manta_primitives::{
-	currency::*, currency_id::CurrencyId, fee::WeightToFee, time::*, AccountId, AuraId, Balance,
+	currency::*, currency_id::{CurrencyId, TokenSymbol}, fee::WeightToFee, time::*, AccountId, AuraId, Balance,
 	BlockNumber, Hash, Header, Index, Signature,
 };
 use sp_runtime::Perbill;
@@ -491,7 +491,7 @@ parameter_types! {
 	pub AcalaLocation: MultiLocation = MultiLocation::X3(
 		Junction::Parent,
 		Junction::Parachain(2000),
-		Junction::GeneralKey(vec![0, 128])
+		Junction::GeneralKey(CurrencyId::Token(TokenSymbol::KAR).encode())
 	);
 }
 
