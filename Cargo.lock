@@ -4426,6 +4426,7 @@ dependencies = [
  "log",
  "manta-primitives",
  "manta-xassets",
+ "manta-xcm-support",
  "max-encoded-len",
  "pallet-assets",
  "pallet-aura",
@@ -4493,6 +4494,20 @@ dependencies = [
  "manta-primitives",
  "parity-scale-codec",
  "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
+name = "manta-xcm-support"
+version = "3.0.0"
+dependencies = [
+ "frame-support",
+ "log",
+ "manta-primitives",
+ "parity-scale-codec",
  "sp-runtime",
  "sp-std",
  "xcm",

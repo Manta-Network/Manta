@@ -82,8 +82,13 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	#[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance", CurrencyIdOf<T> = "CurrencyId")]
 	pub enum Event<T: Config> {
 		Attempted(Outcome),
+		/// Deposit success. [asset, to]
+		Deposited(T::AccountId, CurrencyId, BalanceOf<T>),
+		/// Withdraw success. [asset, from]
+		Withdrawn(T::AccountId, CurrencyId, BalanceOf<T>),
 	}
 
 	#[pallet::error]
@@ -92,6 +97,7 @@ pub mod pallet {
 		SelfChain,
 		BadAccountIdToMultiLocation,
 		UnweighableMessage,
+		NotSupportedToken,
 	}
 
 	#[pallet::call]
@@ -207,6 +213,7 @@ pub mod pallet {
 						Error::<T>::BalanceLow
 					);
 				}
+				_ => return Err(Error::<T>::NotSupportedToken.into()),
 			}
 
 			let xcm_origin = T::Conversion::reverse(from)
@@ -358,6 +365,8 @@ pub mod pallet {
 				*balance += amount;
 			});
 
+			Self::deposit_event(Event::Deposited(who.clone(), currency_id, amount));
+
 			Ok(())
 		}
 
@@ -371,6 +380,8 @@ pub mod pallet {
 				// *balance = balance.saturated_add(amount);
 				*balance -= amount;
 			});
+
+			Self::deposit_event(Event::Withdrawn(who.clone(), currency_id, amount));
 
 			Ok(())
 		}
