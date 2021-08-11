@@ -148,7 +148,7 @@ impl Filter<Call> for BaseFilter {
 			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
 			// pallet-authorship use for orml
 			// Sudo also cannot be filtered because it is used in runtime upgrade.
-			_ => false,
+			_ => true,
 			// Filter System to prevent users from runtime upgrade without sudo privilege.
 			// Filter Utility and Multisig to prevent users from setting keys and selecting collator for parachain (couldn't use now).
 			// Filter Session and CollatorSelection to prevent users from utility operation.
