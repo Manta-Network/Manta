@@ -6,8 +6,10 @@ name: publish draft releases
 
 on:
   push:
-    tags:
-      - v[0-9]+.[0-9]+.[0-9]+*
+    branch:
+      - manta-pc
+    #tags:
+    #  - v[0-9]+.[0-9]+.[0-9]+*
 
 jobs:
 
@@ -27,14 +29,9 @@ jobs:
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
 
-  build-runtime:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        runtime:
-          - calamari
-          # - manta-pc
+  build-calamari-runtime:
+    needs: start-calamari-runtime-builder
+    runs-on: needs.start-calamari-runtime-builder.outputs.runner-label
     env:
       CARGO_TERM_COLOR: always
     steps:
@@ -44,43 +41,41 @@ jobs:
         name: cache target dir
         uses: actions/cache@v2
         with:
-          path: "${{ github.workspace }}/runtime/${{ matrix.runtime }}/target"
-          key: srtool-target-${{ matrix.runtime }}-${{ github.sha }}
+          path: "${{ github.workspace }}/runtime/calamari/target"
+          key: srtool-target-calamari-${{ github.sha }}
           restore-keys: |
-            srtool-target-${{ matrix.runtime }}-
+            srtool-target-calamari-
             srtool-target-
       -
-        name: build ${{ matrix.runtime }} runtime
+        name: build runtime
         id: srtool-build
         uses: chevdor/srtool-actions@v0.3.0
         with:
           image: paritytech/srtool
-          chain: ${{ matrix.runtime }}
+          chain: calamari
       -
         name: persist srtool digest
-        env:
-          matrix_runtime: ${{ matrix.runtime }}
         run: >
           echo '${{ steps.srtool-build.outputs.json }}' |
-          sed "s/${matrix_runtime//-/_}/${matrix_runtime}/g" |
-          jq > ${{ matrix.runtime }}-srtool-output.json
+          jq > calamari-srtool-output.json
       -
-        name: upload ${{ matrix.runtime }} srtool json
+        name: upload srtool json
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.runtime }}-srtool-json
-          path: ${{ matrix.runtime }}-srtool-output.json
+          name: calamari-srtool-json
+          path: calamari-srtool-output.json
       -
-        name: upload ${{ matrix.runtime }} runtime
+        name: upload runtime
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.runtime }}-runtime
+          name: calamari-runtime
           path: |
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
 
   build-node:
-    runs-on: ubuntu-latest
+    needs: start-node-builder
+    runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
     env:
       CARGO_TERM_COLOR: always
     steps:
@@ -133,7 +128,6 @@ jobs:
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
-          # RUSTV: ${{ matrix.rust }}
           SCCACHE_CACHE_SIZE: 2G
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
@@ -153,16 +147,11 @@ jobs:
           path: target/release/calamari-pc
 
   integration-test:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        runtime:
-          - calamari
-          # - manta-pc
     needs:
       - build-node
-      - build-runtime
+      - build-calamari-runtime
+      - start-integration-tester
+    runs-on: ${{ needs.start-integration-tester.outputs.runner-label }}
     steps:
       -
         name: make some room
@@ -193,11 +182,11 @@ jobs:
         name: create chainspec
         run: |
           mkdir -p $HOME/.local/share/calamari-pc
-          $HOME/.local/bin/calamari-pc export-state --chain ${{ matrix.runtime }}-testnet > $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-state.json
+          $HOME/.local/bin/calamari-pc export-state --chain calamari-testnet > $HOME/.local/share/calamari-pc/calamari-testnet-state.json
           jq \
             --sort-keys \
-            --arg name "${{ matrix.runtime }} testnet ${GITHUB_SHA:0:7}" \
-            --arg id ${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7} \
+            --arg name "calamari testnet ${GITHUB_SHA:0:7}" \
+            --arg id calamari-testnet-${GITHUB_SHA:0:7} \
             --arg relay_chain rococo-local-${GITHUB_SHA:0:7} \
             --arg parachain_id 2084 \
             '. |
@@ -206,8 +195,8 @@ jobs:
               .relay_chain = $relay_chain |
               .para_id = ($parachain_id | tonumber) |
               .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
-            ' $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-state.json > $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}.json
-          jq . $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}.json
+            ' $HOME/.local/share/calamari-pc/calamari-testnet-state.json > $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}.json
+          jq . $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}.json
           ls -ahl $HOME/.local/share/calamari-pc/
       -
         name: create launch config
@@ -286,15 +275,15 @@ jobs:
             --arg relaychain_id rococo-local-${GITHUB_SHA:0:7} \
             --arg relaychain_name "rococo local ${GITHUB_SHA:0:7}" \
             --arg parachains_bin $HOME/.local/bin/calamari-pc \
-            --arg parachains_spec $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}.json \
+            --arg parachains_spec $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}.json \
             '.
               | .relaychain.bin = $relaychain_bin
               | .relaychain.mutation.id = $relaychain_id
               | .relaychain.mutation.name = $relaychain_name
               | .parachains[].bin = $parachains_bin
               | .parachains[].chain = $parachains_spec
-            ' > $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}-launch-config.json
-          jq . $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}-launch-config.json
+            ' > $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}-launch-config.json
+          jq . $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}-launch-config.json
           ls -ahl $HOME/.local/share/calamari-pc/
       -
         uses: actions/checkout@v2
@@ -308,13 +297,13 @@ jobs:
           cd ${{ github.workspace }}/manta-pc-launch
           yarn
           yarn build
-          yarn start $HOME/.local/share/calamari-pc/${{ matrix.runtime }}-testnet-${GITHUB_SHA:0:7}-launch-config.json
+          yarn start $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}-launch-config.json
 
   build-changelog:
     runs-on: ubuntu-latest
     needs:
       - get-rust-versions
-      - build-runtime
+      - build-calamari-runtime
     steps:
       #-
       #  uses: actions/download-artifact@v2
@@ -358,7 +347,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build-changelog
-      - build-runtime
+      - build-calamari-runtime
       - integration-test
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
@@ -381,97 +370,74 @@ jobs:
           body_path: changelog.md
           draft: true
 
-  publish-runtime:
+  publish-calamari-runtime:
     runs-on: ubuntu-latest
     needs:
       - create-draft-release
-    strategy:
-      fail-fast: false
-      matrix:
-        runtime:
-          - calamari
-          # - manta-pc
     steps:
       -
         uses: actions/checkout@v2
       -
         uses: actions/download-artifact@v2
         with:
-          name: ${{ matrix.runtime }}-runtime
+          name: calamari-runtime
       -
         uses: actions/download-artifact@v2
         with:
-          name: ${{ matrix.runtime }}-srtool-json
+          name: calamari-srtool-json
       -
         name: ruby setup
         uses: actions/setup-ruby@v1
         with:
           ruby-version: 2.7
       -
-        name: list artifacts
-        run: |
-          ls
-      -
-        if: contains(matrix.runtime, '-')
-        name: rename underscored artifacts
-        env:
-          matrix_runtime: ${{ matrix.runtime }}
-        run: |
-          mv \
-            ${matrix_runtime//-/_}_runtime.compact.compressed.wasm \
-            ${{ matrix.runtime }}_runtime.compact.compressed.wasm
-          mv \
-            ${matrix_runtime//-/_}_runtime.compact.wasm \
-            ${{ matrix.runtime }}_runtime.compact.wasm
-          ls
-      -
         name: get runtime version
         id: get-runtime-version
         run: |
           runtime_ver="$(ruby -e '
             require "./scripts/github/lib.rb";
-            puts get_runtime("${{ matrix.runtime }}")
+            puts get_runtime("calamari")
           ')"
           echo "::set-output name=runtime_ver::$runtime_ver"
       -
-        name: upload compact ${{ matrix.runtime }} wasm
+        name: upload compact wasm
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-          asset_path: ${{ matrix.runtime }}_runtime.compact.wasm
-          asset_name: ${{ matrix.runtime }}-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.wasm
+          asset_path: calamari_runtime.compact.wasm
+          asset_name: calamari-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.wasm
           asset_content_type: application/wasm
       -
-        name: upload compressed ${{ matrix.runtime }} wasm
+        name: upload compressed wasm
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-          asset_path: ${{ matrix.runtime }}_runtime.compact.compressed.wasm
-          asset_name: ${{ matrix.runtime }}-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.compressed.wasm
+          asset_path: calamari_runtime.compact.compressed.wasm
+          asset_name: calamari-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.compressed.wasm
           asset_content_type: application/wasm
       -
-        name: upload ${{ matrix.runtime }} types json
+        name: upload types json
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
           asset_path: types.json
-          asset_name: ${{ matrix.runtime }}-types-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
+          asset_name: calamari-types-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
           asset_content_type: application/json
       -
-        name: upload ${{ matrix.runtime }} srtool output json
+        name: upload srtool output json
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-          asset_path: ${{ matrix.runtime }}-srtool-output.json
-          asset_name: ${{ matrix.runtime }}-srtool-output-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
+          asset_path: calamari-srtool-output.json
+          asset_name: calamari-srtool-output-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
           asset_content_type: application/json
 
   publish-node:
@@ -510,5 +476,122 @@ jobs:
         uses: Ilshidur/action-discord@0.3.2
         with:
           args: 'draft runtime release ${{ github.ref }} created at ${{ needs.create-draft-release.outputs.release_url }}'
+
+  start-node-builder:
+    runs-on: ubuntu-latest
+    outputs:
+      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    steps:
+      -
+        id: start-self-hosted-runner
+        uses: audacious-network/aws-github-runner@v1.0.17
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          aws-instance-type: c5a.8xlarge # 32 vcpu, 64gb ram, $1.392 hourly
+          aws-instance-lifecycle: spot
+          aws-image-search-pattern: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
+          aws-image-search-owners: '["099720109477"]' # canonical
+
+  stop-node-builder:
+    needs:
+      - start-node-builder
+      - build-node
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      -
+        uses: audacious-network/aws-github-runner@v1.0.17
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.start-node-builder.outputs.aws-region }}
+          runner-label: ${{ needs.start-node-builder.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-node-builder.outputs.aws-instance-id }}
+
+  start-calamari-runtime-builder:
+    runs-on: ubuntu-latest
+    outputs:
+      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    steps:
+      -
+        id: start-self-hosted-runner
+        uses: audacious-network/aws-github-runner@v1.0.17
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          aws-instance-type: c5a.2xlarge # 8 vcpu, 16gb ram, $0.348 hourly
+          aws-instance-lifecycle: spot
+          aws-image-search-pattern: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
+          aws-image-search-owners: '["099720109477"]' # canonical
+
+  stop-calamari-runtime-builder:
+    needs:
+      - start-calamari-runtime-builder
+      - build-calamari-runtime
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      -
+        uses: audacious-network/aws-github-runner@v1.0.17
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.start-calamari-runtime-builder.outputs.aws-region }}
+          runner-label: ${{ needs.start-calamari-runtime-builder.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-calamari-runtime-builder.outputs.aws-instance-id }}
+
+  start-integration-tester:
+    runs-on: ubuntu-latest
+    outputs:
+      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    steps:
+      -
+        id: start-self-hosted-runner
+        uses: audacious-network/aws-github-runner@v1.0.17
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          aws-instance-type: c5a.8xlarge # 32 vcpu, 64gb ram, $1.392 hourly
+          aws-instance-lifecycle: spot
+          aws-image-search-pattern: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
+          aws-image-search-owners: '["099720109477"]' # canonical
+
+  stop-integration-tester:
+    needs:
+      - start-integration-tester
+      - integration-test
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      -
+        uses: audacious-network/aws-github-runner@v1.0.17
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.start-integration-tester.outputs.aws-region }}
+          runner-label: ${{ needs.start-integration-tester.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-integration-tester.outputs.aws-instance-id }}
 
 # yamllint enable rule:line-length
