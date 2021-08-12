@@ -14,6 +14,10 @@ pub enum TokenSymbol {
 	KAR = 128,
 	// Shiden
 	SDN = 50,
+
+	// Relaychain Token
+	KSM,
+	DOT,
 }
 
 impl Default for TokenSymbol {
@@ -31,5 +35,31 @@ pub enum CurrencyId {
 impl Default for CurrencyId {
 	fn default() -> Self {
 		Self::Token(TokenSymbol::MA)
+	}
+}
+
+#[allow(dead_code)]
+impl CurrencyId {
+	fn is_native(&self) -> bool {
+		matches!(
+			*self,
+			Self::Token(TokenSymbol::KMA) | Self::Token(TokenSymbol::MA)
+		)
+	}
+
+	fn is_parachain(&self) -> bool {
+		matches!(
+			*self,
+			Self::Token(TokenSymbol::ACA)
+				| Self::Token(TokenSymbol::KAR)
+				| Self::Token(TokenSymbol::SDN)
+		)
+	}
+
+	fn is_relaychain(&self) -> bool {
+		matches!(
+			*self,
+			Self::Token(TokenSymbol::KSM) | Self::Token(TokenSymbol::DOT)
+		)
 	}
 }

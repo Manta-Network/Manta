@@ -36,8 +36,11 @@ use frame_system::{
 	EnsureOneOf, EnsureRoot,
 };
 use manta_primitives::{
-	currency::*, currency_id::{CurrencyId, TokenSymbol}, fee::WeightToFee, time::*, AccountId, AuraId, Balance,
-	BlockNumber, Hash, Header, Index, Signature,
+	currency::*,
+	currency_id::{CurrencyId, TokenSymbol},
+	fee::WeightToFee,
+	time::*,
+	AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
 };
 use sp_runtime::Perbill;
 
@@ -508,195 +511,21 @@ pub type Barrier = (
 	AllowUnpaidExecutionFrom<All<MultiLocation>>,
 );
 
-pub mod manta_transactor {
-	use super::*;
-	use codec::{Decode, FullCodec};
-	use core::{convert::TryFrom, marker::PhantomData};
-	use frame_support::traits::{Currency, ExistenceRequirement, Get, WithdrawReasons};
-	use manta_primitives::currency_id::{CurrencyId as MantaCurrencyId, TokenSymbol};
-	use sp_runtime::traits::MaybeSerializeDeserialize;
-	use sp_std::{
-		cmp::{Eq, PartialEq},
-		fmt::Debug,
-	};
-	use xcm::v0::{Error as XcmError, MultiAsset, MultiLocation, Result as XcmResult};
-	use xcm_executor::traits::{Convert, FilterAssetLocation, TransactAsset};
-
-	/// Todo, more docs here.
-	pub struct MantaTransactorAdaptor<
-		NativeCurrency,
-		XCurrency,
-		AccountIdConverter,
-		AccountId,
-		CurrencyId,
-	>(
-		PhantomData<(
-			NativeCurrency,
-			XCurrency,
-			AccountIdConverter,
-			AccountId,
-			CurrencyId,
-		)>,
-	);
-	impl<
-			NativeCurrency: Currency<AccountId>,
-			XCurrency: manta_primitives::traits::XCurrency<
-				AccountId,
-				Balance = NativeCurrency::Balance,
-				CurrencyId = MantaCurrencyId,
-			>,
-			AccountIdConverter: Convert<MultiLocation, AccountId>,
-			AccountId: sp_std::fmt::Debug + Clone,
-			CurrencyId: FullCodec + Eq + PartialEq + Copy + MaybeSerializeDeserialize + Debug,
-		> TransactAsset
-		for MantaTransactorAdaptor<NativeCurrency, XCurrency, AccountIdConverter, AccountId, CurrencyId>
-	{
-		fn can_check_in(_origin: &MultiLocation, _what: &MultiAsset) -> XcmResult {
-			Ok(())
-		}
-
-		fn deposit_asset(asset: &MultiAsset, who: &MultiLocation) -> XcmResult {
-			log::info!(target: "manta-xassets", "deposit_asset: asset = {:?}, who = {:?}", asset, who);
-
-			let who = AccountIdConverter::convert_ref(who).map_err(|_| {
-				XcmError::FailedToTransactAsset("Failed to convert multilocation to account id")
-			})?;
-
-			match asset {
-				MultiAsset::ConcreteFungible { id, amount } => {
-					match id {
-						MultiLocation::X3(
-							_,
-							Junction::Parachain(_para_id),
-							Junction::GeneralKey(currency_id_encoded),
-						) => {
-							let currency_id =
-								MantaCurrencyId::decode(&mut &currency_id_encoded[..]).unwrap();
-							match currency_id {
-								MantaCurrencyId::Token(TokenSymbol::MA)
-								| MantaCurrencyId::Token(TokenSymbol::KMA) => {
-									let amount = NativeCurrency::Balance::try_from(*amount)
-										.map_err(|_| XcmError::Overflow)?;
-									NativeCurrency::deposit_creating(&who, amount);
-								}
-								MantaCurrencyId::Token(TokenSymbol::ACA)
-								| MantaCurrencyId::Token(TokenSymbol::KAR) => {
-									let amount = NativeCurrency::Balance::try_from(*amount)
-										.map_err(|_| XcmError::Overflow)?;
-									XCurrency::deposit(currency_id, &who, amount).map_err(|e| {
-										log::info!(target: "manta-xassets", "deposit_asset: error = {:?}", e);
-										XcmError::FailedToTransactAsset(e.into())
-									})?;
-								}
-								_ => {
-									log::info!(target: "manta-xassets", "Failed to deposit Unknow asset.");
-								}
-							}
-						}
-						_ => {
-							log::info!(target: "manta-xassets", "Now we cannot support this MulMultiLocation = {:?}.", id);
-						}
-					}
-
-					Ok(())
-				}
-				_ => Err(XcmError::NotWithdrawable),
-			}
-		}
-
-		fn withdraw_asset(
-			asset: &MultiAsset,
-			who: &MultiLocation,
-		) -> Result<xcm_executor::Assets, XcmError> {
-			log::info!(target: "manta-xassets", "withdraw_asset: asset = {:?}, who = {:?}", asset, who);
-
-			let who = AccountIdConverter::convert_ref(who).map_err(|_| {
-				XcmError::FailedToTransactAsset("Failed to convert multilocation to account id")
-			})?;
-
-			match asset {
-				MultiAsset::ConcreteFungible { id, amount } => {
-					match id {
-						MultiLocation::X3(
-							_,
-							Junction::Parachain(_para_id),
-							Junction::GeneralKey(currency_id_encoded),
-						) => {
-							let currency_id =
-								MantaCurrencyId::decode(&mut &currency_id_encoded[..]).unwrap();
-							match currency_id {
-								MantaCurrencyId::Token(TokenSymbol::MA)
-								| MantaCurrencyId::Token(TokenSymbol::KMA) => {
-									let amount = NativeCurrency::Balance::try_from(*amount)
-										.map_err(|_| XcmError::Overflow)?;
-									NativeCurrency::withdraw(
-										&who,
-										amount,
-										WithdrawReasons::TRANSFER,
-										ExistenceRequirement::AllowDeath,
-									)
-									.map_err(|e| {
-										log::info!(target: "manta-xassets", "withdraw_asset: error = {:?}", e);
-										XcmError::FailedToTransactAsset(e.into())
-									})?;
-								}
-								MantaCurrencyId::Token(TokenSymbol::ACA)
-								| MantaCurrencyId::Token(TokenSymbol::KAR) => {
-									let amount = NativeCurrency::Balance::try_from(*amount)
-										.map_err(|_| XcmError::Overflow)?;
-									XCurrency::withdraw(currency_id, &who, amount).map_err(
-										|e| {
-											log::info!(target: "manta-xassets", "withdraw_asset: error = {:?}", e);
-											XcmError::FailedToTransactAsset(e.into())
-										},
-									)?;
-								}
-								_ => {
-									log::info!(target: "manta-xassets", "Failed to withdraw Unknow asset.");
-								}
-							}
-						}
-						_ => {
-							log::info!(target: "manta-xassets", "Now we cannot support this MulMultiLocation = {:?}.", id);
-						}
-					}
-
-					Ok(asset.clone().into())
-				}
-				_ => Err(XcmError::NotWithdrawable),
-			}
-		}
-	}
-
-	/// Todo, more docs here.
-	pub struct TrustedParachains<Chains>(PhantomData<Chains>);
-	impl<Chains: Get<Vec<(MultiLocation, u128)>>> FilterAssetLocation for TrustedParachains<Chains> {
-		fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
-			log::info!(target: "manta-xassets", "filter_asset_location: origin = {:?}, asset = {:?}", origin, asset);
-
-			true
-			// Chains::get()
-			// 	.iter()
-			// 	.map(|(location, _)| location)
-			// 	.any(|location| *location == *origin)
-		}
-	}
-}
-
 pub struct XcmConfig;
 impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
-	type AssetTransactor = manta_transactor::MantaTransactorAdaptor<
+	type AssetTransactor = manta_xcm_support::MantaTransactorAdaptor<
 		Balances,
 		MantaXassets,
 		LocationToAccountId,
 		AccountId,
 		CurrencyId,
+		manta_xcm_support::MultiLocationToCurrencyId<MultiLocationMapCurrencyId>,
 	>;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	type IsReserve = manta_transactor::TrustedParachains<TrustedChains>;
+	type IsReserve = manta_xcm_support::TrustedParachains<TrustedChains>;
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of DOT
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
@@ -813,8 +642,18 @@ parameter_types! {
 	pub const AnyNetwork: NetworkId = NetworkId::Any;
 	pub TrustedChains: Vec<(MultiLocation, u128)> = vec![
 		// Acala local and live, 0.01 ACA
-		(MultiLocation::X1(Junction::Parachain(2000)), 10_000_000_000),
-		(MultiLocation::X1(Junction::Parachain(2084)), 10_000_000_000),
+		(MultiLocation::X2(Junction::Parent, Junction::Parachain(2000)), 10_000_000_000),
+		(MultiLocation::X2(Junction::Parent, Junction::Parachain(2084)), 10_000_000_000),
+	];
+	pub MultiLocationMapCurrencyId: Vec<(MultiLocation, CurrencyId)> = vec![
+		// Acala karura => KAR, native token
+		(MultiLocation::X3(Junction::Parent, Junction::Parachain(2000), Junction::GeneralKey([0, 128].to_vec())), CurrencyId::Token(TokenSymbol::KAR)),
+		// Manta manta-pc => MA, native token, for example, acala can send it back to manta parachain.
+		(MultiLocation::X3(Junction::Parent, Junction::Parachain(2000), Junction::GeneralKey([0, 5].to_vec())), CurrencyId::Token(TokenSymbol::MA)),
+		// Manta manta-pc => MA, native token, for example, manta can send it back to others parachains.
+		(MultiLocation::X3(Junction::Parent, Junction::Parachain(ParachainInfo::parachain_id().into()), Junction::GeneralKey([0, 5].to_vec())), CurrencyId::Token(TokenSymbol::MA)),
+		// Relachain kusama => KSM.
+		(MultiLocation::X1(Junction::Parent), CurrencyId::Token(TokenSymbol::KSM)),
 	];
 }
 
