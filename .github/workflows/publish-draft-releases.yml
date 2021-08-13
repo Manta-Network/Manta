@@ -29,9 +29,11 @@ jobs:
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
 
+  # test-docker-works:
+  #  needs: start-calamari-runtime-builder
+  #  runs-on: needs.start-calamari-runtime-builder.outputs.runner-label
+
   build-calamari-runtime:
-    # needs: start-calamari-runtime-builder
-    # runs-on: needs.start-calamari-runtime-builder.outputs.runner-label
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
@@ -492,7 +494,7 @@ jobs:
     steps:
       -
         id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.27
+        uses: audacious-network/aws-github-runner@v1.0.28
         with:
           mode: start
           github-token: ${{ secrets.GH_SHR_TOKEN }}
@@ -516,7 +518,7 @@ jobs:
     if: ${{ always() }}
     steps:
       -
-        uses: audacious-network/aws-github-runner@v1.0.27
+        uses: audacious-network/aws-github-runner@v1.0.28
         with:
           mode: stop
           github-token: ${{ secrets.GH_SHR_TOKEN }}
@@ -526,7 +528,7 @@ jobs:
           runner-label: ${{ needs.start-node-builder.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-node-builder.outputs.aws-instance-id }}
 
-  #start-calamari-runtime-builder:
+  # start-calamari-runtime-builder:
   #  runs-on: ubuntu-latest
   #  outputs:
   #    runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -535,7 +537,7 @@ jobs:
   #  steps:
   #    -
   #      id: start-self-hosted-runner
-  #      uses: audacious-network/aws-github-runner@v1.0.27
+  #      uses: audacious-network/aws-github-runner@v1.0.28
   #      with:
   #        mode: start
   #        github-token: ${{ secrets.GH_SHR_TOKEN }}
@@ -551,15 +553,16 @@ jobs:
   #        aws-image-search-pattern: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   #        aws-image-search-owners: '["099720109477"]' # canonical
 
-  #stop-calamari-runtime-builder:
+  # stop-calamari-runtime-builder:
   #  needs:
-  #    - build-calamari-runtime
+  #    # - build-calamari-runtime
+  #    - test-docker-works
   #    - start-calamari-runtime-builder
   #  runs-on: ubuntu-latest
   #  if: ${{ always() }}
   #  steps:
   #    -
-  #      uses: audacious-network/aws-github-runner@v1.0.27
+  #      uses: audacious-network/aws-github-runner@v1.0.28
   #      with:
   #        mode: stop
   #        github-token: ${{ secrets.GH_SHR_TOKEN }}
@@ -578,7 +581,7 @@ jobs:
     steps:
       -
         id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.27
+        uses: audacious-network/aws-github-runner@v1.0.28
         with:
           mode: start
           github-token: ${{ secrets.GH_SHR_TOKEN }}
@@ -602,7 +605,7 @@ jobs:
     if: ${{ always() }}
     steps:
       -
-        uses: audacious-network/aws-github-runner@v1.0.27
+        uses: audacious-network/aws-github-runner@v1.0.28
         with:
           mode: stop
           github-token: ${{ secrets.GH_SHR_TOKEN }}
