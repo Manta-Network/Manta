@@ -30,8 +30,9 @@ jobs:
           echo "::set-output name=nightly::$(rustc +nightly --version)"
 
   build-calamari-runtime:
-    needs: start-calamari-runtime-builder
-    runs-on: needs.start-calamari-runtime-builder.outputs.runner-label
+    # needs: start-calamari-runtime-builder
+    # runs-on: needs.start-calamari-runtime-builder.outputs.runner-label
+    runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
     steps:
@@ -525,48 +526,48 @@ jobs:
           runner-label: ${{ needs.start-node-builder.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-node-builder.outputs.aws-instance-id }}
 
-  start-calamari-runtime-builder:
-    runs-on: ubuntu-latest
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      -
-        id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.27
-        with:
-          mode: start
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
-          aws-region: us-east-1
-          aws-subnet-id: subnet-08c26caf0a52b7c19
-          aws-security-group-id: sg-0315bffea9042ac9b
-          aws-instance-type: c5a.2xlarge # 8 vcpu, 16gb ram, $0.348 hourly
-          aws-instance-root-volume-size: 16
-          aws-instance-lifecycle: spot
-          aws-image-search-pattern: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-          aws-image-search-owners: '["099720109477"]' # canonical
+  #start-calamari-runtime-builder:
+  #  runs-on: ubuntu-latest
+  #  outputs:
+  #    runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+  #    aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+  #    aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+  #  steps:
+  #    -
+  #      id: start-self-hosted-runner
+  #      uses: audacious-network/aws-github-runner@v1.0.27
+  #      with:
+  #        mode: start
+  #        github-token: ${{ secrets.GH_SHR_TOKEN }}
+  #        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #        aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
+  #        aws-region: us-east-1
+  #        aws-subnet-id: subnet-08c26caf0a52b7c19
+  #        aws-security-group-id: sg-0315bffea9042ac9b
+  #        aws-instance-type: c5a.2xlarge # 8 vcpu, 16gb ram, $0.348 hourly
+  #        aws-instance-root-volume-size: 16
+  #        aws-instance-lifecycle: spot
+  #        aws-image-search-pattern: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
+  #        aws-image-search-owners: '["099720109477"]' # canonical
 
-  stop-calamari-runtime-builder:
-    needs:
-      - build-calamari-runtime
-      - start-calamari-runtime-builder
-    runs-on: ubuntu-latest
-    #if: ${{ always() }}
-    steps:
-      -
-        uses: audacious-network/aws-github-runner@v1.0.27
-        with:
-          mode: stop
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-calamari-runtime-builder.outputs.aws-region }}
-          runner-label: ${{ needs.start-calamari-runtime-builder.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-calamari-runtime-builder.outputs.aws-instance-id }}
+  #stop-calamari-runtime-builder:
+  #  needs:
+  #    - build-calamari-runtime
+  #    - start-calamari-runtime-builder
+  #  runs-on: ubuntu-latest
+  #  if: ${{ always() }}
+  #  steps:
+  #    -
+  #      uses: audacious-network/aws-github-runner@v1.0.27
+  #      with:
+  #        mode: stop
+  #        github-token: ${{ secrets.GH_SHR_TOKEN }}
+  #        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #        aws-region: ${{ needs.start-calamari-runtime-builder.outputs.aws-region }}
+  #        runner-label: ${{ needs.start-calamari-runtime-builder.outputs.runner-label }}
+  #        aws-instance-id: ${{ needs.start-calamari-runtime-builder.outputs.aws-instance-id }}
 
   start-integration-tester:
     runs-on: ubuntu-latest
