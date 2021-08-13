@@ -17,7 +17,7 @@ use pallet_session::historical as pallet_session_historical;
 
 use manta_primitives::{
 	constants::{
-		currency::{mMA, MA},
+		currency::{mMA, MA, deposit},
 		time::{
 			DAYS, EPOCH_DURATION_IN_BLOCKS, EPOCH_DURATION_IN_SLOTS, MILLISECS_PER_BLOCK,
 			PRIMARY_PROBABILITY, SLOT_DURATION,
@@ -28,7 +28,7 @@ use manta_primitives::{
 use sp_api::impl_runtime_apis;
 use sp_core::{
 	crypto::KeyTypeId,
-	u32_trait::{_3, _4},
+	u32_trait::{_2, _3, _4},
 	OpaqueMetadata,
 };
 use sp_runtime::{
@@ -59,6 +59,7 @@ pub use frame_support::{
 };
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
+pub use pallet_election_provider_multi_phase::Call as EPMCall;
 use pallet_transaction_payment::{CurrencyAdapter, Multiplier, TargetedFeeAdjustment};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -222,6 +223,7 @@ impl frame_system::Config for Runtime {
 	type SystemWeightInfo = ();
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = SS58Prefix;
+	type OnSetCode = ();
 }
 
 parameter_types! {
@@ -264,6 +266,94 @@ pallet_staking_reward_curve::build! {
 }
 
 parameter_types! {
+	// phase durations. 1/4 of the last session for each.
+	pub const SignedPhase: u32 = EPOCH_DURATION_IN_SLOTS / 4;
+	pub const UnsignedPhase: u32 = EPOCH_DURATION_IN_SLOTS / 4;
+
+	// signed config
+	pub const SignedMaxSubmissions: u32 = 16;
+	pub const SignedDepositBase: Balance = deposit(2, 0);
+	pub const SignedDepositByte: Balance = deposit(0, 10) / 1024;
+	// Each good submission will get 1/10 KSM as reward
+	pub SignedRewardBase: Balance =  MA / 10;
+	// fallback: emergency phase.
+	pub const Fallback: pallet_election_provider_multi_phase::FallbackStrategy =
+		pallet_election_provider_multi_phase::FallbackStrategy::Nothing;
+	pub SolutionImprovementThreshold: Perbill = Perbill::from_rational(5u32, 10_000);
+
+	// miner configs
+	pub const MinerMaxIterations: u32 = 10;
+	pub OffchainRepeat: BlockNumber = 5;
+}
+
+sp_npos_elections::generate_solution_type!(
+	#[compact]
+	pub struct NposCompactSolution24::<
+		VoterIndex = u32,
+		TargetIndex = u16,
+		Accuracy = sp_runtime::PerU16,
+	>(24)
+);
+
+parameter_types! {
+	/// A limit for off-chain phragmen unsigned solution submission.
+	///
+	/// We want to keep it as high as possible, but can't risk having it reject,
+	/// so we always subtract the base block execution weight.
+	pub OffchainSolutionWeightLimit: Weight = BlockWeights::get()
+		.get(DispatchClass::Normal)
+		.max_extrinsic
+		.expect("Normal extrinsics have weight limit configured by default; qed")
+		.saturating_sub(BlockExecutionWeight::get());
+
+	/// A limit for off-chain phragmen unsigned solution length.
+	///
+	/// We allow up to 90% of the block's size to be consumed by the solution.
+	pub OffchainSolutionLengthLimit: u32 = Perbill::from_rational(90_u32, 100) *
+		*BlockLength::get()
+		.max
+		.get(DispatchClass::Normal);
+	
+	pub NposSolutionPriority: TransactionPriority =
+		Perbill::from_percent(90) * TransactionPriority::max_value();
+}
+
+pub const MAX_NOMINATIONS: u32 =
+	<NposCompactSolution24 as sp_npos_elections::CompactSolution>::LIMIT as u32;
+
+impl pallet_election_provider_multi_phase::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type UnsignedPhase = UnsignedPhase;
+	type SignedMaxSubmissions = SignedMaxSubmissions;
+	type SignedRewardBase = SignedRewardBase;
+	type SignedDepositBase = SignedDepositBase;
+	type SignedDepositByte = SignedDepositByte;
+	type SignedDepositWeight = ();
+	type SignedMaxWeight = Self::MinerMaxWeight;
+	type SlashHandler = (); // burn slashes
+	type RewardHandler = (); // nothing to do upon rewards
+	type SignedPhase = SignedPhase;
+	type SolutionImprovementThreshold = SolutionImprovementThreshold;
+	type MinerMaxIterations = MinerMaxIterations;
+	type MinerMaxWeight = OffchainSolutionWeightLimit; // For now use the one from staking.
+	type MinerMaxLength = OffchainSolutionLengthLimit;
+	type OffchainRepeat = OffchainRepeat;
+	type MinerTxPriority = NposSolutionPriority;
+	type DataProvider = Staking;
+	type CompactSolution = NposCompactSolution24;
+	type OnChainAccuracy = Perbill;
+	type Fallback = Fallback;
+	type BenchmarkingConfig = ();
+	type ForceOrigin = EnsureOneOf<
+		AccountId,
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, CouncilCollective>,
+	>;
+	type WeightInfo = ();
+}
+
+parameter_types! {
 	pub const SessionsPerEra: sp_staking::SessionIndex = 1; // previous value: 6, 6 hours
 	pub const BondingDuration: pallet_staking::EraIndex = 4;  // 24 * 28; // 28 day
 	pub const SlashDeferDuration: pallet_staking::EraIndex = 1; // 24 * 7; // 1/4 the bonding duration.
@@ -271,17 +361,19 @@ parameter_types! {
 	pub const MaxNominatorRewardedPerValidator: u32 = 256; // only top N nominators get paid for each validator
 	pub const ElectionLookahead: BlockNumber = EPOCH_DURATION_IN_BLOCKS / 4; // from Reef
 	pub const MaxIterations: u32 = 10;
-	// 0.05%. The higher the value, the more strict solution acceptance becomes.
-	pub MinSolutionScoreBump: Perbill = Perbill::from_rational_approximation(5u32, 10_000);
 	// offchain tx signing
 	pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
 }
 
 // TODO: revisit all staking parameters
 impl pallet_staking::Config for Runtime {
+	const MAX_NOMINATIONS: u32 = MAX_NOMINATIONS;
 	type Currency = Balances;
 	type UnixTime = Timestamp;
 	type CurrencyToVote = U128CurrencyToVote;
+	type ElectionProvider = ElectionProviderMultiPhase;
+	type GenesisElectionProvider = frame_election_provider_support::onchain::OnChainSequentialPhragmen<
+		pallet_election_provider_multi_phase::OnChainConfig<Self>>;
 	type RewardRemainder = (); // burn
 	type Event = Event;
 	type Slash = (); // burn slashed rewards
@@ -296,22 +388,17 @@ impl pallet_staking::Config for Runtime {
 		pallet_collective::EnsureProportionAtLeast<_3, _4, AccountId, CouncilCollective>,
 	>;
 	type SessionInterface = Self;
-	type RewardCurve = RewardCurve;
 	type NextNewSession = Session;
-	type ElectionLookahead = ElectionLookahead;
-	type Call = Call;
-	type MaxIterations = MaxIterations;
-	type MinSolutionScoreBump = MinSolutionScoreBump;
+	// TODO: revisit here
+	type EraPayout = ();
 	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
-	type UnsignedPriority = StakingUnsignedPriority;
 	type WeightInfo = pallet_staking::weights::SubstrateWeight<Runtime>;
-	type OffchainSolutionWeightLimit = ();
 }
 
 parameter_types! {
 	// NOTE: Currently it is not possible to change the epoch duration after the chain has started.
 	//       Attempting to do so will brick block production.
-	pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS;
+	pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS as u64;
 	pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
 	pub const ReportLongevity: u64 =
 		BondingDuration::get() as u64 * SessionsPerEra::get() as u64 * EpochDuration::get();
@@ -375,6 +462,7 @@ impl pallet_timestamp::Config for Runtime {
 parameter_types! {
 	pub const NativeTokenExistentialDeposit: u128 = 1 * MA;
 	pub const MaxLocks: u32 = 50;
+	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -386,6 +474,8 @@ impl pallet_balances::Config for Runtime {
 	type DustRemoval = (); // burn for now
 	type ExistentialDeposit = NativeTokenExistentialDeposit;
 	type AccountStore = System;
+	type MaxReserves = MaxReserves;
+	type ReserveIdentifier = [u8; 8];
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
 
@@ -473,10 +563,10 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_manta_pay::Config for Runtime {
-	type Event = Event;
-	type WeightInfo = pallet_manta_pay::weights::SubstrateWeight<Runtime>;
-}
+// impl pallet_manta_pay::Config for Runtime {
+// 	type Event = Event;
+// 	type WeightInfo = pallet_manta_pay::weights::SubstrateWeight<Runtime>;
+// }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -486,36 +576,37 @@ construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
 		// Core Component
-		System: frame_system::{Module, Call, Config, Storage, Event<T>},
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 
 		// Must be before session
-		Babe: pallet_babe::{Module, Call, Storage, Config, ValidateUnsigned},
+		Babe: pallet_babe::{Pallet, Call, Storage, Config, ValidateUnsigned},
 
-		Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 
 		// Token & Fees
-		Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
-		TransactionPayment: pallet_transaction_payment::{Module, Storage},
-		Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
+		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>},
 
 		// Good to have
-		Utility: pallet_utility::{Module, Call, Event},
+		Utility: pallet_utility::{Pallet, Call, Event},
 
 		// Consensus support
-		Authorship: pallet_authorship::{Module, Call, Storage, Inherent},
-		Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event},
-		Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
-		Staking: pallet_staking::{Module, Call, Config<T>, Storage, Event<T>},
-		Historical: pallet_session_historical::{Module},
+		Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
+		Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
+		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
+		Staking: pallet_staking::{Pallet, Call, Config<T>, Storage, Event<T>},
+		Historical: pallet_session_historical::{Pallet},
 
 		// Governance
 		// We have to have a council now since it requires one to setup the canceling of slashing
-		Council: pallet_collective::<Instance1>::{Module, Call, Storage, Origin<T>, Event<T>, Config<T>},
-		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
+		Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>},
+		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+
+		ElectionProviderMultiPhase: pallet_election_provider_multi_phase::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 37,
 
 		// Manta pay
-		MantaPay: pallet_manta_pay::{Module, Call, Storage, Event<T>},
+		//MantaPay: pallet_manta_pay::{Module, Call, Storage, Event<T>},
 	}
 );
 
@@ -549,7 +640,7 @@ pub type Executive = frame_executive::Executive<
 	Block,
 	frame_system::ChainContext<Runtime>,
 	Runtime,
-	AllModules,
+	AllPallets,
 >;
 
 impl_runtime_apis! {
@@ -593,17 +684,15 @@ impl_runtime_apis! {
 			data.check_extrinsics(&block)
 		}
 
-		fn random_seed() -> <Block as BlockT>::Hash {
-			RandomnessCollectiveFlip::random_seed()
-		}
 	}
 
 	impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
 		fn validate_transaction(
 			source: TransactionSource,
 			tx: <Block as BlockT>::Extrinsic,
+			block_hash: <Block as BlockT>::Hash,
 		) -> TransactionValidity {
-			Executive::validate_transaction(source, tx)
+			Executive::validate_transaction(source, tx, block_hash)
 		}
 	}
 
@@ -755,7 +844,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			add_benchmark!(params, batches, pallet_manta_pay, MantaPay);
+			//add_benchmark!(params, batches, pallet_manta_pay, MantaPay);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

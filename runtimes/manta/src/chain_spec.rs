@@ -2,7 +2,7 @@ use hex_literal::hex;
 use manta_primitives::{constants::currency::MA, AccountId, Balance, Signature};
 use manta_runtime::{
 	wasm_binary_unwrap, BabeConfig, BalancesConfig, CouncilConfig, GenesisConfig, GrandpaConfig,
-	SessionConfig, StakerStatus, StakingConfig, SudoConfig, SystemConfig,
+	SessionConfig, StakerStatus, StakingConfig, SudoConfig, SystemConfig, MAX_NOMINATIONS
 };
 use sc_service::{ChainType, Properties};
 use sc_telemetry::TelemetryEndpoints;
@@ -108,7 +108,7 @@ fn staging_testnet_config_genesis() -> GenesisConfig {
 
 	let endowed_accounts: Vec<AccountId> = vec![root_key.clone()];
 
-	testnet_genesis(initial_authorities, root_key, Some(endowed_accounts), false)
+	testnet_genesis(initial_authorities, vec![], root_key, Some(endowed_accounts))
 }
 
 /// Staging testnet config.
@@ -166,11 +166,17 @@ pub fn manta_properties() -> Properties {
 }
 
 /// Helper function to create GenesisConfig for testing
+/// Helper function to create GenesisConfig for testing
 pub fn testnet_genesis(
-	initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)>,
+	initial_authorities: Vec<(
+		AccountId,
+		AccountId,
+		GrandpaId,
+		BabeId,
+	)>,
+	initial_nominators: Vec<AccountId>,
 	root_key: AccountId,
 	endowed_accounts: Option<Vec<AccountId>>,
-	_enable_println: bool,
 ) -> GenesisConfig {
 	let mut endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_else(|| {
 		vec![
@@ -179,74 +185,90 @@ pub fn testnet_genesis(
 			get_account_id_from_seed::<sr25519::Public>("Charlie"),
 			get_account_id_from_seed::<sr25519::Public>("Dave"),
 			get_account_id_from_seed::<sr25519::Public>("Eve"),
+			get_account_id_from_seed::<sr25519::Public>("Ferdie"),
 			get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 			get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 			get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
 			get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
 			get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+			get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 		]
 	});
-	initial_authorities.iter().for_each(|x| {
-		if !endowed_accounts.contains(&x.0) {
-			endowed_accounts.push(x.0.clone())
+	// endow all authorities and nominators.
+	initial_authorities.iter().map(|x| &x.0).chain(initial_nominators.iter()).for_each(|x| {
+		if !endowed_accounts.contains(&x) {
+			endowed_accounts.push(x.clone())
 		}
 	});
 
-	const ENDOWMENT: Balance = 100_000_000 * MA; // 10 endowment so that total supply is 1B
+	// stakers: all validators and nominators.
+	let mut rng = rand::thread_rng();
+	let stakers = initial_authorities
+		.iter()
+		.map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
+		.chain(initial_nominators.iter().map(|x| {
+			use rand::{seq::SliceRandom, Rng};
+			let limit = (MAX_NOMINATIONS as usize).min(initial_authorities.len());
+			let count = rng.gen::<usize>() % limit;
+			let nominations = initial_authorities
+				.as_slice()
+				.choose_multiple(&mut rng, count)
+				.into_iter()
+				.map(|choice| choice.0.clone())
+				.collect::<Vec<_>>();
+			(x.clone(), x.clone(), STASH, StakerStatus::Nominator(nominations))
+		}))
+		.collect::<Vec<_>>();
+
+	const ENDOWMENT: Balance = 10_000_000 * MA;
 	const STASH: Balance = ENDOWMENT / 1000;
 
 	GenesisConfig {
-		frame_system: Some(SystemConfig {
+		system: SystemConfig {
 			code: wasm_binary_unwrap().to_vec(),
 			changes_trie_config: Default::default(),
-		}),
-		pallet_balances: Some(BalancesConfig {
-			balances: endowed_accounts
-				.iter()
-				.cloned()
+		},
+		balances: BalancesConfig {
+			balances: endowed_accounts.iter().cloned()
 				.map(|x| (x, ENDOWMENT))
-				.collect(),
-		}),
-		pallet_session: Some(SessionConfig {
-			keys: initial_authorities
-				.iter()
-				.map(|x| {
-					(
-						x.0.clone(),
-						x.0.clone(),
-						session_keys(x.2.clone(), x.3.clone()),
-					)
-				})
-				.collect::<Vec<_>>(),
-		}),
-		pallet_staking: Some(StakingConfig {
-			validator_count: initial_authorities.len() as u32 * 2,
+				.collect()
+		},
+		session: SessionConfig {
+			keys: initial_authorities.iter().map(|x| {
+				(x.0.clone(), x.0.clone(), session_keys(
+					x.2.clone(),
+					x.3.clone(),
+				))
+			}).collect::<Vec<_>>(),
+		},
+		staking: StakingConfig {
+			validator_count: initial_authorities.len() as u32,
 			minimum_validator_count: initial_authorities.len() as u32,
-			stakers: initial_authorities
-				.iter()
-				.map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
-				.collect(),
 			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
 			slash_reward_fraction: Perbill::from_percent(10),
-			..Default::default()
-		}),
-		pallet_collective_Instance1: Some(CouncilConfig::default()),
-		pallet_sudo: Some(SudoConfig { key: root_key }),
-		pallet_babe: Some(BabeConfig {
+			stakers,
+			.. Default::default()
+		},
+		council: CouncilConfig::default(),
+		sudo: SudoConfig {
+			key: root_key,
+		},
+		babe: BabeConfig {
 			authorities: vec![],
-		}),
-		pallet_grandpa: Some(GrandpaConfig {
+			epoch_config: Some(manta_runtime::BABE_GENESIS_EPOCH_CONFIG),
+		},
+		grandpa: GrandpaConfig {
 			authorities: vec![],
-		}),
+		},
 	}
 }
 
 fn development_config_genesis() -> GenesisConfig {
 	testnet_genesis(
 		vec![authority_keys_from_seed("Alice")],
+		vec![],
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
 		None,
-		true,
 	)
 }
 
@@ -271,9 +293,9 @@ fn local_testnet_genesis() -> GenesisConfig {
 			authority_keys_from_seed("Alice"),
 			authority_keys_from_seed("Bob"),
 		],
+		vec![],
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
-		None,
-		false,
+		None
 	)
 }
 
@@ -324,45 +346,45 @@ pub fn manta_testnet_config_genesis(
 	stash: Balance,
 	_enable_println: bool,
 ) -> GenesisConfig {
+
 	GenesisConfig {
-		frame_system: Some(SystemConfig {
+		system: SystemConfig {
 			code: wasm_binary_unwrap().to_vec(),
 			changes_trie_config: Default::default(),
-		}),
-		pallet_balances: Some(BalancesConfig {
+		},
+		balances: BalancesConfig {
 			balances: initial_balances,
-		}),
-		pallet_session: Some(SessionConfig {
-			keys: initial_authorities
-				.iter()
-				.map(|x| {
-					(
-						x.0.clone(),
-						x.0.clone(),
-						session_keys(x.2.clone(), x.3.clone()),
-					)
-				})
-				.collect::<Vec<_>>(),
-		}),
-		pallet_staking: Some(StakingConfig {
-			validator_count: initial_authorities.len() as u32 * 2,
+		},
+		session: SessionConfig {
+			keys: initial_authorities.iter().map(|x| {
+				(x.0.clone(), x.0.clone(), session_keys(
+					x.2.clone(),
+					x.3.clone(),
+				))
+			}).collect::<Vec<_>>(),
+		},
+		staking: StakingConfig {
+			validator_count: initial_authorities.len() as u32,
 			minimum_validator_count: initial_authorities.len() as u32,
-			stakers: initial_authorities
-				.iter()
-				.map(|x| (x.0.clone(), x.1.clone(), stash, StakerStatus::Validator))
-				.collect(),
 			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
 			slash_reward_fraction: Perbill::from_percent(10),
-			..Default::default()
-		}),
-		pallet_collective_Instance1: Some(CouncilConfig::default()),
-		pallet_sudo: Some(SudoConfig { key: root_key }), // we do sudo right now, this will be removed after full decentralization
-		pallet_babe: Some(BabeConfig {
+			stakers: initial_authorities
+			.iter()
+			.map(|x| (x.0.clone(), x.1.clone(), stash, StakerStatus::Validator))
+			.collect(),
+			.. Default::default()
+		},
+		council: CouncilConfig::default(),
+		sudo: SudoConfig {
+			key: root_key,
+		},
+		babe: BabeConfig {
 			authorities: vec![],
-		}),
-		pallet_grandpa: Some(GrandpaConfig {
+			epoch_config: Some(manta_runtime::BABE_GENESIS_EPOCH_CONFIG),
+		},
+		grandpa: GrandpaConfig {
 			authorities: vec![],
-		}),
+		},
 	}
 }
 
@@ -504,9 +526,9 @@ pub(crate) mod tests {
 	fn local_testnet_genesis_instant_single() -> GenesisConfig {
 		testnet_genesis(
 			vec![authority_keys_from_seed("Alice")],
+			vec![],
 			get_account_id_from_seed::<sr25519::Public>("Alice"),
 			None,
-			false,
 		)
 	}
 
