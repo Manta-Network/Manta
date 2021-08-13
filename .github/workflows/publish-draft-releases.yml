@@ -119,10 +119,14 @@ jobs:
       -
         name: init
         run: |
-          rustup update nightly
-          rustup update stable
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source /home/${username}/.cargo/env
+          rustup toolchain install stable
+          rustup toolchain install nightly
+          rustup default stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
           cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
+          rustup update
       -
         name: build
         env:
