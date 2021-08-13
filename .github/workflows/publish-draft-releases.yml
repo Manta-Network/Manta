@@ -120,7 +120,7 @@ jobs:
         name: init
         run: |
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-          source /home/${username}/.cargo/env
+          source ${HOME}/.cargo/env
           rustup toolchain install stable
           rustup toolchain install nightly
           rustup default stable
