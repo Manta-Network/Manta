@@ -490,7 +490,7 @@ jobs:
     steps:
       -
         id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.19
+        uses: audacious-network/aws-github-runner@v1.0.20
         with:
           mode: start
           github-token: ${{ secrets.GH_SHR_TOKEN }}
@@ -514,7 +514,7 @@ jobs:
     if: ${{ always() }}
     steps:
       -
-        uses: audacious-network/aws-github-runner@v1.0.19
+        uses: audacious-network/aws-github-runner@v1.0.20
         with:
           mode: stop
           github-token: ${{ secrets.GH_SHR_TOKEN }}
@@ -533,7 +533,7 @@ jobs:
     steps:
       -
         id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.19
+        uses: audacious-network/aws-github-runner@v1.0.20
         with:
           mode: start
           github-token: ${{ secrets.GH_SHR_TOKEN }}
@@ -557,7 +557,7 @@ jobs:
     if: ${{ always() }}
     steps:
       -
-        uses: audacious-network/aws-github-runner@v1.0.19
+        uses: audacious-network/aws-github-runner@v1.0.20
         with:
           mode: stop
           github-token: ${{ secrets.GH_SHR_TOKEN }}
@@ -576,7 +576,7 @@ jobs:
     steps:
       -
         id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.19
+        uses: audacious-network/aws-github-runner@v1.0.20
         with:
           mode: start
           github-token: ${{ secrets.GH_SHR_TOKEN }}
@@ -600,7 +600,7 @@ jobs:
     if: ${{ always() }}
     steps:
       -
-        uses: audacious-network/aws-github-runner@v1.0.19
+        uses: audacious-network/aws-github-runner@v1.0.20
         with:
           mode: stop
           github-token: ${{ secrets.GH_SHR_TOKEN }}
