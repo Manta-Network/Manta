@@ -68,6 +68,8 @@ docker run mantanetwork/manta:latest --chain manta-testnet --name "ILoveManta"
 
 ## ci build
 
+[![publish draft releases](https://github.com/Manta-Network/Manta/actions/workflows/publish-draft-releases.yml/badge.svg?branch=manta-pc)](https://github.com/Manta-Network/Manta/actions/workflows/publish-draft-releases.yml)
+
 the [publish draft releases](https://github.com/Manta-Network/Manta/blob/manta-pc/.github/workflows/publish-draft-releases.yml) workflow builds:
 
 * **calamari-pc** the calamari parachain executable (a substrate node)
