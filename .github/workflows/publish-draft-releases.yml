@@ -555,7 +555,7 @@ jobs:
       - build-calamari-runtime
       - start-calamari-runtime-builder
     runs-on: ubuntu-latest
-    if: ${{ always() }}
+    #if: ${{ always() }}
     steps:
       -
         uses: audacious-network/aws-github-runner@v1.0.26
