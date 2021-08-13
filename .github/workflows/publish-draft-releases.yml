@@ -160,6 +160,7 @@ jobs:
       - build-calamari-runtime
       - start-integration-tester
     runs-on: ${{ needs.start-integration-tester.outputs.runner-label }}
+    timeout-minutes: 90
     steps:
       -
         name: make some room
