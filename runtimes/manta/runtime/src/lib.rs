@@ -68,8 +68,6 @@ pub use sp_runtime::{Perbill, Permill};
 pub use pallet_staking::StakerStatus;
 
 #[cfg(test)]
-mod impls;
-#[cfg(test)]
 mod tests;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know

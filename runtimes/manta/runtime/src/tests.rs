@@ -133,27 +133,27 @@ fn authoring_blocks_in_mock_runtime_should_work() {
 
 // Follow kusama runtime configuration tests
 // https://github.com/paritytech/polkadot/blob/master/runtime/kusama/src/tests.rs
-#[test]
-fn remove_keys_weight_is_sensible() {
-	use pallet_manta_pay::WeightInfo;
-	// mint_private_asset has the max weights in manta-pay.
-	let max_weight = <crate::Runtime as pallet_manta_pay::Config>::WeightInfo::mint_private_asset();
-	// Max remove keys limit should be no more than half the total block weight.
-	assert!(max_weight * 2 < crate::BlockWeights::get().max_block);
-}
+// #[test]
+// fn remove_keys_weight_is_sensible() {
+// 	use pallet_manta_pay::WeightInfo;
+// 	// mint_private_asset has the max weights in manta-pay.
+// 	let max_weight = <crate::Runtime as pallet_manta_pay::Config>::WeightInfo::mint_private_asset();
+// 	// Max remove keys limit should be no more than half the total block weight.
+// 	assert!(max_weight * 2 < crate::BlockWeights::get().max_block);
+// }
 
-#[test]
-fn sample_size_is_sensible() {
-	use frame_support::weights::{constants::RocksDbWeight, Weight};
-	use pallet_manta_pay::WeightInfo;
-	let max_weight: Weight = RocksDbWeight::get().reads_writes(8, 5);
-	// Max sample cleanup should be no more than half the total block weight.
-	assert!(max_weight * 2 < crate::BlockWeights::get().max_block);
-	assert!(
-		<crate::Runtime as pallet_manta_pay::Config>::WeightInfo::reclaim() * 2
-			< crate::BlockWeights::get().max_block
-	);
-}
+// #[test]
+// fn sample_size_is_sensible() {
+// 	use frame_support::weights::{constants::RocksDbWeight, Weight};
+// 	use pallet_manta_pay::WeightInfo;
+// 	let max_weight: Weight = RocksDbWeight::get().reads_writes(8, 5);
+// 	// Max sample cleanup should be no more than half the total block weight.
+// 	assert!(max_weight * 2 < crate::BlockWeights::get().max_block);
+// 	// assert!(
+// 	// 	<crate::Runtime as pallet_manta_pay::Config>::WeightInfo::reclaim() * 2
+// 	// 		< crate::BlockWeights::get().max_block
+// 	// );
+// }
 
 #[test]
 fn payout_weight_portion() {
@@ -185,38 +185,38 @@ fn block_cost() {
 	);
 }
 
-#[test]
-fn transfer_cost_min_multiplier() {
-	let min_multiplier = crate::MinimumMultiplier::get();
-	let call = <pallet_balances::Call<crate::Runtime>>::transfer_keep_alive(
-		Default::default(),
-		Default::default(),
-	);
-	let info = call.get_dispatch_info();
-	// convert to outer call.
-	let call = crate::Call::Balances(call);
-	let len = call.using_encoded(|e| e.len()) as u32;
+// #[test]
+// fn transfer_cost_min_multiplier() {
+// 	let min_multiplier = crate::MinimumMultiplier::get();
+// 	let call = <pallet_balances::Call<crate::Runtime>>::transfer_keep_alive(
+// 		Default::default(),
+// 		Default::default(),
+// 	);
+// 	let info = call.get_dispatch_info();
+// 	// convert to outer call.
+// 	let call = crate::Call::Balances(call);
+// 	let len = call.using_encoded(|e| e.len()) as u32;
 
-	let mut ext = ExtBuilder::default().one_thousand_for_alice_n_bob().build();
-	let mut test_with_multiplier = |m| {
-		ext.execute_with(|| {
-			pallet_transaction_payment::NextFeeMultiplier::put(m);
-			let fee = crate::TransactionPayment::compute_fee(len, &info, 0);
-			println!(
-				"weight = {:?} // multiplier = {:?} // full transfer fee = {:?}",
-				info.weight.separated_string(),
-				pallet_transaction_payment::NextFeeMultiplier::get(),
-				fee.separated_string(),
-			);
-		});
-	};
+// 	let mut ext = ExtBuilder::default().one_thousand_for_alice_n_bob().build();
+// 	let mut test_with_multiplier = |m| {
+// 		ext.execute_with(|| {
+// 			pallet_transaction_payment::NextFeeMultiplier::put(m);
+// 			let fee = crate::TransactionPayment::compute_fee(len, &info, 0);
+// 			println!(
+// 				"weight = {:?} // multiplier = {:?} // full transfer fee = {:?}",
+// 				info.weight.separated_string(),
+// 				pallet_transaction_payment::NextFeeMultiplier::get(),
+// 				fee.separated_string(),
+// 			);
+// 		});
+// 	};
 
-	test_with_multiplier(min_multiplier);
-	test_with_multiplier(Multiplier::saturating_from_rational(1, 1u128));
-	test_with_multiplier(Multiplier::saturating_from_rational(1, 1_000u128));
-	test_with_multiplier(Multiplier::saturating_from_rational(1, 1_000_000u128));
-	test_with_multiplier(Multiplier::saturating_from_rational(1, 1_000_000_000u128));
-}
+// 	test_with_multiplier(min_multiplier);
+// 	test_with_multiplier(Multiplier::saturating_from_rational(1, 1u128));
+// 	test_with_multiplier(Multiplier::saturating_from_rational(1, 1_000u128));
+// 	test_with_multiplier(Multiplier::saturating_from_rational(1, 1_000_000u128));
+// 	test_with_multiplier(Multiplier::saturating_from_rational(1, 1_000_000_000u128));
+// }
 
 #[test]
 #[ignore = "we don't support election right now."]

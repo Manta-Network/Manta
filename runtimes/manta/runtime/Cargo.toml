@@ -68,6 +68,7 @@ pallet-election-provider-multi-phase = { git = 'https://github.com/paritytech/su
 manta-primitives = { path="../primitives", default-features = false }
 
 [dev-dependencies]
+sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
 hex-literal = '0.3.1'
 manta = { path = '../../manta' }
 separator = "0.4.1"
