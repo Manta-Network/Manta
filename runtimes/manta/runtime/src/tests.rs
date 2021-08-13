@@ -185,38 +185,38 @@ fn block_cost() {
 	);
 }
 
-// #[test]
-// fn transfer_cost_min_multiplier() {
-// 	let min_multiplier = crate::MinimumMultiplier::get();
-// 	let call = <pallet_balances::Call<crate::Runtime>>::transfer_keep_alive(
-// 		Default::default(),
-// 		Default::default(),
-// 	);
-// 	let info = call.get_dispatch_info();
-// 	// convert to outer call.
-// 	let call = crate::Call::Balances(call);
-// 	let len = call.using_encoded(|e| e.len()) as u32;
+#[test]
+fn transfer_cost_min_multiplier() {
+	let min_multiplier = crate::MinimumMultiplier::get();
+	let call = <pallet_balances::Call<crate::Runtime>>::transfer_keep_alive(
+		Default::default(),
+		Default::default(),
+	);
+	let info = call.get_dispatch_info();
+	// convert to outer call.
+	let call = crate::Call::Balances(call);
+	let len = call.using_encoded(|e| e.len()) as u32;
 
-// 	let mut ext = ExtBuilder::default().one_thousand_for_alice_n_bob().build();
-// 	let mut test_with_multiplier = |m| {
-// 		ext.execute_with(|| {
-// 			pallet_transaction_payment::NextFeeMultiplier::put(m);
-// 			let fee = crate::TransactionPayment::compute_fee(len, &info, 0);
-// 			println!(
-// 				"weight = {:?} // multiplier = {:?} // full transfer fee = {:?}",
-// 				info.weight.separated_string(),
-// 				pallet_transaction_payment::NextFeeMultiplier::get(),
-// 				fee.separated_string(),
-// 			);
-// 		});
-// 	};
+	let mut ext = ExtBuilder::default().one_thousand_for_alice_n_bob().build();
+	let mut test_with_multiplier = |m| {
+		ext.execute_with(|| {
+			<pallet_transaction_payment::NextFeeMultiplier<crate::Runtime>>::put(m);
+			let fee = crate::TransactionPayment::compute_fee(len, &info, 0);
+			println!(
+				"weight = {:?} // multiplier = {:?} // full transfer fee = {:?}",
+				info.weight.separated_string(),
+				<pallet_transaction_payment::NextFeeMultiplier<crate::Runtime>>::get(),
+				fee.separated_string(),
+			);
+		});
+	};
 
-// 	test_with_multiplier(min_multiplier);
-// 	test_with_multiplier(Multiplier::saturating_from_rational(1, 1u128));
-// 	test_with_multiplier(Multiplier::saturating_from_rational(1, 1_000u128));
-// 	test_with_multiplier(Multiplier::saturating_from_rational(1, 1_000_000u128));
-// 	test_with_multiplier(Multiplier::saturating_from_rational(1, 1_000_000_000u128));
-// }
+	test_with_multiplier(min_multiplier);
+	test_with_multiplier(Multiplier::saturating_from_rational(1, 1u128));
+	test_with_multiplier(Multiplier::saturating_from_rational(1, 1_000u128));
+	test_with_multiplier(Multiplier::saturating_from_rational(1, 1_000_000u128));
+	test_with_multiplier(Multiplier::saturating_from_rational(1, 1_000_000_000u128));
+}
 
 #[test]
 #[ignore = "we don't support election right now."]
