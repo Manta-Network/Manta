@@ -498,6 +498,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
           aws-region: us-east-1
+          aws-subnet-id: subnet-08c26caf0a52b7c19
+          aws-security-group-id: sg-0315bffea9042ac9b
           aws-instance-type: c5a.8xlarge # 32 vcpu, 64gb ram, $1.392 hourly
           aws-instance-volume-size: 32
           aws-instance-lifecycle: spot
@@ -539,6 +541,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
           aws-region: us-east-1
+          aws-subnet-id: subnet-08c26caf0a52b7c19
+          aws-security-group-id: sg-0315bffea9042ac9b
           aws-instance-type: c5a.2xlarge # 8 vcpu, 16gb ram, $0.348 hourly
           aws-instance-volume-size: 16
           aws-instance-lifecycle: spot
@@ -580,6 +584,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
           aws-region: us-east-1
+          aws-subnet-id: subnet-08c26caf0a52b7c19
+          aws-security-group-id: sg-0315bffea9042ac9b
           aws-instance-type: c5a.8xlarge # 32 vcpu, 64gb ram, $1.392 hourly
           aws-instance-volume-size: 64
           aws-instance-lifecycle: spot
