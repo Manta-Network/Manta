@@ -561,10 +561,10 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
-// impl pallet_manta_pay::Config for Runtime {
-// 	type Event = Event;
-// 	type WeightInfo = pallet_manta_pay::weights::SubstrateWeight<Runtime>;
-// }
+impl pallet_manta_pay::Config for Runtime {
+ 	type Event = Event;
+ 	type WeightInfo = pallet_manta_pay::weights::SubstrateWeight<Runtime>;
+}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -604,7 +604,7 @@ construct_runtime!(
 		ElectionProviderMultiPhase: pallet_election_provider_multi_phase::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 37,
 
 		// Manta pay
-		//MantaPay: pallet_manta_pay::{Module, Call, Storage, Event<T>},
+		MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -820,7 +820,7 @@ impl_runtime_apis! {
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
 			use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
 
-			use frame_system_benchmarking::Module as SystemBench;
+			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}
 
 			let whitelist: Vec<TrackedStorageKey> = vec![

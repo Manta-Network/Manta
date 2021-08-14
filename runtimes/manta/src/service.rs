@@ -5,8 +5,8 @@
 
 use manta_runtime::{opaque::Block, RuntimeApi};
 use sc_client_api::{ExecutorProvider, RemoteBackend};
-use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
+use sc_executor::native_executor_instance;
 use sc_consensus_babe::{self, SlotProportion};
 use sc_network::NetworkService;
 use sc_service::{config::Configuration, error::Error as ServiceError, RpcHandlers, TaskManager};
