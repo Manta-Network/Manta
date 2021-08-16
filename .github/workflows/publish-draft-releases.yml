@@ -163,6 +163,12 @@ jobs:
     timeout-minutes: 90
     steps:
       -
+        run: |
+          mkdir -p $HOME/.local/share/calamari-pc
+          mkdir -p $HOME/.local/bin
+          echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+      -
         name: fetch calamari-pc
         uses: actions/download-artifact@v2
         with:
@@ -170,7 +176,6 @@ jobs:
       -
         name: mv and chmod calamari-pc
         run: |
-          mkdir -p $HOME/.local/bin
           mv ${{ github.workspace }}/calamari-pc $HOME/.local/bin/
           chmod +x $HOME/.local/bin/calamari-pc
           ls -ahl ${{ github.workspace }}/
@@ -184,8 +189,7 @@ jobs:
       -
         name: create chainspec
         run: |
-          mkdir -p $HOME/.local/share/calamari-pc
-          $HOME/.local/bin/calamari-pc export-state --chain calamari-testnet > $HOME/.local/share/calamari-pc/calamari-testnet-state.json || true
+          calamari-pc export-state --chain calamari-testnet > $HOME/.local/share/calamari-pc/calamari-testnet-state.json || true
           jq \
             --sort-keys \
             --arg name "calamari testnet ${GITHUB_SHA:0:7}" \
@@ -203,7 +207,6 @@ jobs:
       -
         name: create launch config
         run: |
-          mkdir -p $HOME/.local/share/calamari-pc
           echo '{
             "relaychain": {
               "chain": "rococo-local",
@@ -297,9 +300,36 @@ jobs:
         run: |
           tree ${{ github.workspace }}
           cd ${{ github.workspace }}/manta-pc-launch
-          yarn
+          yarn install
           yarn build
-          pm2 start dist/cli.js -- $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}-launch-config.json
+          pm2 start dist/cli.js \
+            --name manta-pc-launch \
+            --output ${{ github.workspace }}/manta-pc-launch-stdout.log \
+            --error ${{ github.workspace }}/manta-pc-launch-stderr.log \
+            --no-autorestart \
+            -- $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}-launch-config.json
+      -
+        name: run test suites
+        run: |
+          # todo: implement moonbeam-like js test suite triggers here
+          sleep 180
+          # todo: implement manta-pc-launch stdout/stderr log checks here
+      -
+        name: stop testnet
+        run: |
+          tree ${{ github.workspace }}
+          cd ${{ github.workspace }}/manta-pc-launch
+          pm2 stop manta-pc-launch
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: manta-pc-launch-stdout
+          path: ${{ github.workspace }}/manta-pc-launch-stdout.log
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: manta-pc-launch-stderr
+          path: ${{ github.workspace }}/manta-pc-launch-stderr.log
 
   build-changelog:
     runs-on: ubuntu-latest
