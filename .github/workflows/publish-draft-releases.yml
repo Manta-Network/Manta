@@ -163,12 +163,6 @@ jobs:
     timeout-minutes: 90
     steps:
       -
-        name: make some room
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/share/boost
-      -
         name: fetch calamari-pc
         uses: actions/download-artifact@v2
         with:
@@ -191,7 +185,7 @@ jobs:
         name: create chainspec
         run: |
           mkdir -p $HOME/.local/share/calamari-pc
-          $HOME/.local/bin/calamari-pc export-state --chain calamari-testnet > $HOME/.local/share/calamari-pc/calamari-testnet-state.json
+          $HOME/.local/bin/calamari-pc export-state --chain calamari-testnet > $HOME/.local/share/calamari-pc/calamari-testnet-state.json || true
           jq \
             --sort-keys \
             --arg name "calamari testnet ${GITHUB_SHA:0:7}" \
@@ -205,12 +199,11 @@ jobs:
               .para_id = ($parachain_id | tonumber) |
               .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
             ' $HOME/.local/share/calamari-pc/calamari-testnet-state.json > $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}.json
-          jq . $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}.json
           ls -ahl $HOME/.local/share/calamari-pc/
       -
         name: create launch config
         run: |
-          tree ${{ github.workspace }}
+          mkdir -p $HOME/.local/share/calamari-pc
           echo '{
             "relaychain": {
               "chain": "rococo-local",
