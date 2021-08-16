@@ -313,7 +313,6 @@ jobs:
         run: |
           # todo: implement moonbeam-like js test suite triggers here
           sleep 180
-          # todo: implement manta-pc-launch stdout/stderr log checks here
       -
         name: stop testnet
         run: |
@@ -321,15 +320,59 @@ jobs:
           cd ${{ github.workspace }}/manta-pc-launch
           pm2 stop manta-pc-launch
       -
+        name: validate manta-pc-launch stdout log
+        run: |
+          cat ${{ github.workspace }}/manta-pc-launch-stdout.log
+      -
+        name: validate manta-pc-launch stderr log
+        run: |
+          cat ${{ github.workspace }}/manta-pc-launch-stderr.log
+      -
+        name: validate rococo alice log
+        run: |
+          cat ${{ github.workspace }}/manta-pc-launch/alice.log
+      -
+        name: validate rococo bob log
+        run: |
+          cat ${{ github.workspace }}/manta-pc-launch/bob.log
+      -
+        name: validate calamari alice log
+        run: |
+          cat ${{ github.workspace }}/manta-pc-launch/9921.log
+      -
+        name: validate calamari bob log
+        run: |
+          cat ${{ github.workspace }}/manta-pc-launch/9922.log
+      -
         uses: actions/upload-artifact@v2
         with:
-          name: manta-pc-launch-stdout
+          name: manta-pc-launch-stdout-log
           path: ${{ github.workspace }}/manta-pc-launch-stdout.log
       -
         uses: actions/upload-artifact@v2
         with:
-          name: manta-pc-launch-stderr
+          name: manta-pc-launch-stderr-log
           path: ${{ github.workspace }}/manta-pc-launch-stderr.log
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: rococo-alice-log
+          path: ${{ github.workspace }}/manta-pc-launch/alice.log
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: rococo-bob-log
+          path: ${{ github.workspace }}/manta-pc-launch/bob.log
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: calamari-alice-log
+          path: ${{ github.workspace }}/manta-pc-launch/9921.log
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: calamari-bob-log
+          path: ${{ github.workspace }}/manta-pc-launch/9922.log
 
   build-changelog:
     runs-on: ubuntu-latest
