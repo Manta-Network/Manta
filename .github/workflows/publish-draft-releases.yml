@@ -187,7 +187,7 @@ jobs:
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       -
-        name: create chainspec
+        id: create-chainspec
         run: |
           calamari-pc export-state --chain calamari-testnet > $HOME/.local/share/calamari-pc/calamari-testnet-state.json || true
           jq \
@@ -204,6 +204,17 @@ jobs:
               .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
             ' $HOME/.local/share/calamari-pc/calamari-testnet-state.json > $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}.json
           ls -ahl $HOME/.local/share/calamari-pc/
+          echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: calamari-testnet-state.json
+          path: $HOME/.local/share/calamari-pc/calamari-testnet-state.json
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: calamari-testnet-${{ steps.create-chainspec.outputs.short-sha }}.json
+          path: $HOME/.local/share/calamari-pc/calamari-testnet-${{ steps.create-chainspec.outputs.short-sha }}.json
       -
         name: create launch config
         run: |
