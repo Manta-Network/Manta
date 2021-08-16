@@ -299,7 +299,7 @@ jobs:
           cd ${{ github.workspace }}/manta-pc-launch
           yarn
           yarn build
-          yarn start $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}-launch-config.json
+          pm2 start dist/cli.js -- $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}-launch-config.json
 
   build-changelog:
     runs-on: ubuntu-latest
@@ -488,7 +488,7 @@ jobs:
     steps:
       -
         id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.29
+        uses: audacious-network/aws-github-runner@vv1.0.32
         with:
           mode: start
           github-token: ${{ secrets.GH_SHR_TOKEN }}
@@ -512,7 +512,7 @@ jobs:
     if: ${{ always() }}
     steps:
       -
-        uses: audacious-network/aws-github-runner@v1.0.29
+        uses: audacious-network/aws-github-runner@vv1.0.32
         with:
           mode: stop
           github-token: ${{ secrets.GH_SHR_TOKEN }}
@@ -531,7 +531,7 @@ jobs:
   #  steps:
   #    -
   #      id: start-self-hosted-runner
-  #      uses: audacious-network/aws-github-runner@v1.0.29
+  #      uses: audacious-network/aws-github-runner@vv1.0.32
   #      with:
   #        mode: start
   #        github-token: ${{ secrets.GH_SHR_TOKEN }}
@@ -556,7 +556,7 @@ jobs:
   #  if: ${{ always() }}
   #  steps:
   #    -
-  #      uses: audacious-network/aws-github-runner@v1.0.29
+  #      uses: audacious-network/aws-github-runner@vv1.0.32
   #      with:
   #        mode: stop
   #        github-token: ${{ secrets.GH_SHR_TOKEN }}
@@ -575,7 +575,7 @@ jobs:
     steps:
       -
         id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.29
+        uses: audacious-network/aws-github-runner@vv1.0.32
         with:
           mode: start
           github-token: ${{ secrets.GH_SHR_TOKEN }}
@@ -599,7 +599,7 @@ jobs:
     if: ${{ always() }}
     steps:
       -
-        uses: audacious-network/aws-github-runner@v1.0.29
+        uses: audacious-network/aws-github-runner@vv1.0.32
         with:
           mode: stop
           github-token: ${{ secrets.GH_SHR_TOKEN }}
