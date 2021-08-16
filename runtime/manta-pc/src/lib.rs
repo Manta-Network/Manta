@@ -36,8 +36,11 @@ use frame_system::{
 	EnsureOneOf, EnsureRoot,
 };
 use manta_primitives::{
-	currency::*, fee::WeightToFee, time::*, AccountId, AuraId, Balance, BlockNumber, Hash, Header,
-	Index, Signature,
+	currency::*,
+	currency_id::{CurrencyId, TokenSymbol},
+	fee::WeightToFee,
+	time::*,
+	AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
 };
 use sp_runtime::Perbill;
 
@@ -487,7 +490,12 @@ pub type XcmOriginToTransactDispatchOrigin = (
 
 parameter_types! {
 	// One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: Weight = 1_000_000_000;
+	pub UnitWeightCost: Weight = 200_000_000;
+	pub AcalaLocation: MultiLocation = MultiLocation::X3(
+		Junction::Parent,
+		Junction::Parachain(2000),
+		Junction::GeneralKey(CurrencyId::Token(TokenSymbol::KAR).encode())
+	);
 }
 
 match_type! {
@@ -500,147 +508,29 @@ match_type! {
 pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<All<MultiLocation>>,
-	AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-	// ^^^ Parent and its exec plurality get free execution
-	manta_transactor::MantaXcmTransactFilter<TrustedChains>,
+	AllowUnpaidExecutionFrom<All<MultiLocation>>,
 );
-
-pub mod manta_transactor {
-	use super::*;
-	use core::{convert::TryFrom, marker::PhantomData};
-	use frame_support::traits::{Currency, ExistenceRequirement, Get, WithdrawReasons};
-	use xcm::v0::{Error as XcmError, MultiAsset, MultiLocation, Result as XcmResult};
-	use xcm_executor::traits::{Convert, FilterAssetLocation, ShouldExecute, TransactAsset};
-
-	/// Todo, more docs here.
-	pub struct MantaTransactorAdaptor<NativeCurrency, AccountIdConverter, AccountId>(
-		PhantomData<(NativeCurrency, AccountIdConverter, AccountId)>,
-	);
-	impl<
-			NativeCurrency: Currency<AccountId>,
-			AccountIdConverter: Convert<MultiLocation, AccountId>,
-			AccountId: sp_std::fmt::Debug + Clone,
-		> TransactAsset for MantaTransactorAdaptor<NativeCurrency, AccountIdConverter, AccountId>
-	{
-		fn can_check_in(_origin: &MultiLocation, _what: &MultiAsset) -> XcmResult {
-			Ok(())
-		}
-
-		fn deposit_asset(asset: &MultiAsset, who: &MultiLocation) -> XcmResult {
-			log::info!(target: "manta-xassets", "deposit_asset: asset = {:?}, who = {:?}", asset, who);
-
-			let who = AccountIdConverter::convert_ref(who).map_err(|_| {
-				XcmError::FailedToTransactAsset("Failed to convert multilocation to account id")
-			})?;
-
-			match asset {
-				MultiAsset::ConcreteFungible { id: _id, amount } => {
-					let amount = NativeCurrency::Balance::try_from(*amount)
-						.map_err(|_| XcmError::Overflow)?;
-					NativeCurrency::deposit_creating(&who, amount);
-
-					Ok(())
-				}
-				_ => Err(XcmError::NotWithdrawable),
-			}
-		}
-
-		fn withdraw_asset(
-			asset: &MultiAsset,
-			who: &MultiLocation,
-		) -> Result<xcm_executor::Assets, XcmError> {
-			log::info!(target: "manta-xassets", "withdraw_asset: asset = {:?}, who = {:?}", asset, who);
-
-			let who = AccountIdConverter::convert_ref(who).map_err(|_| {
-				XcmError::FailedToTransactAsset("Failed to convert multilocation to account id")
-			})?;
-
-			match asset {
-				MultiAsset::ConcreteFungible { id: _id, amount } => {
-					let amount = NativeCurrency::Balance::try_from(*amount)
-						.map_err(|_| XcmError::Overflow)?;
-					NativeCurrency::withdraw(
-						&who,
-						amount,
-						WithdrawReasons::TRANSFER,
-						ExistenceRequirement::AllowDeath,
-					)
-					.map_err(|e| {
-						log::debug!(target: "manta-xassets", "withdraw_asset: error = {:?}", e);
-						XcmError::FailedToTransactAsset(e.into())
-					})?;
-
-					Ok(asset.clone().into())
-				}
-				_ => Err(XcmError::NotWithdrawable),
-			}
-		}
-	}
-
-	/// Manta-pc Xcm Transact Filter
-	pub struct MantaXcmTransactFilter<T>(PhantomData<T>);
-	impl<T: Get<Vec<(MultiLocation, u128)>>> ShouldExecute for MantaXcmTransactFilter<T> {
-		fn should_execute<Call>(
-			origin: &MultiLocation,
-			_top_level: bool,
-			message: &Xcm<Call>,
-			_shallow_weight: Weight,
-			_weight_credit: &mut Weight,
-		) -> Result<(), ()> {
-			log::info!(target: "manta-xassets", "should_execute: origin = {:?}, message = {:?}", origin, message);
-			match origin {
-				MultiLocation::X1(Junction::AccountId32 { network, .. })
-					if *network == NetworkId::Any =>
-				{
-					Ok(())
-				}
-				MultiLocation::X2(Junction::Parent, Junction::Parachain(id)) => {
-					log::info!(target: "manta-xassets", "should_execute: parachain id = {:?}, all trusted = {:?}", id, TrustedChains::get());
-
-					let a = TrustedChains::get()
-						.iter()
-						.map(|(location, _)| location)
-						.any(|location| *location == *origin)
-						.then(|| ())
-						.ok_or(());
-					log::info!(target: "manta-xassets", "should_execute: filter = {:?}", a);
-
-					Ok(())
-				}
-				_ => Err(()),
-			}
-		}
-	}
-
-	/// Todo, more docs here.
-	pub struct TrustedParachains<Chains>(PhantomData<Chains>);
-	impl<Chains: Get<Vec<(MultiLocation, u128)>>> FilterAssetLocation for TrustedParachains<Chains> {
-		fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
-			log::info!(target: "manta-xassets", "filter_asset_location: origin = {:?}, asset = {:?}", origin, asset);
-
-			true
-			// Chains::get()
-			// 	.iter()
-			// 	.map(|(location, _)| location)
-			// 	.any(|location| *location == *origin)
-		}
-	}
-}
 
 pub struct XcmConfig;
 impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
-	type AssetTransactor =
-		manta_transactor::MantaTransactorAdaptor<Balances, LocationToAccountId, AccountId>;
+	type AssetTransactor = manta_xcm_support::MantaTransactorAdaptor<
+		Balances,
+		MantaXassets,
+		LocationToAccountId,
+		AccountId,
+		CurrencyId,
+		manta_xcm_support::MultiLocationToCurrencyId<MultiLocationMapCurrencyId>,
+	>;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	type IsReserve = manta_transactor::TrustedParachains<TrustedChains>;
+	type IsReserve = manta_xcm_support::TrustedParachains<TrustedChains>;
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of DOT
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
-	type Trader = UsingComponents<IdentityFee<Balance>, DotLocation, AccountId, Balances, ()>;
+	type Trader = UsingComponents<IdentityFee<Balance>, AcalaLocation, AccountId, Balances, ()>;
 	type ResponseHandler = (); // Don't handle responses for now.
 }
 
@@ -752,8 +642,18 @@ parameter_types! {
 	pub const AnyNetwork: NetworkId = NetworkId::Any;
 	pub TrustedChains: Vec<(MultiLocation, u128)> = vec![
 		// Acala local and live, 0.01 ACA
-		(MultiLocation::X1(Junction::Parachain(2000)), 10_000_000_000),
-		(MultiLocation::X1(Junction::Parachain(2084)), 10_000_000_000),
+		(MultiLocation::X2(Junction::Parent, Junction::Parachain(2000)), 10_000_000_000),
+		(MultiLocation::X2(Junction::Parent, Junction::Parachain(2084)), 10_000_000_000),
+	];
+	pub MultiLocationMapCurrencyId: Vec<(MultiLocation, CurrencyId)> = vec![
+		// Acala karura => KAR, native token
+		(MultiLocation::X3(Junction::Parent, Junction::Parachain(2000), Junction::GeneralKey([0, 128].to_vec())), CurrencyId::Token(TokenSymbol::KAR)),
+		// Manta manta-pc => MA, native token, for example, acala can send it back to manta parachain.
+		(MultiLocation::X3(Junction::Parent, Junction::Parachain(2000), Junction::GeneralKey([0, 5].to_vec())), CurrencyId::Token(TokenSymbol::MA)),
+		// Manta manta-pc => MA, native token, for example, manta can send it back to others parachains.
+		(MultiLocation::X3(Junction::Parent, Junction::Parachain(ParachainInfo::parachain_id().into()), Junction::GeneralKey([0, 5].to_vec())), CurrencyId::Token(TokenSymbol::MA)),
+		// Relachain kusama => KSM.
+		(MultiLocation::X1(Junction::Parent), CurrencyId::Token(TokenSymbol::KSM)),
 	];
 }
 
@@ -770,6 +670,7 @@ impl manta_xassets::Config for Runtime {
 	type TrustedChains = TrustedChains;
 	type Conversion = MantaPCLocationToAccountId;
 	type PalletId = MantaXassetsPalletId;
+	type CurrencyId = CurrencyId;
 	type Currency = Balances;
 	type SelfParaId = ParachainInfo;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
@@ -816,7 +717,7 @@ construct_runtime!(
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
 
 		// Manta pallets
-		MantaXassets: manta_xassets::{Pallet, Call, Event<T>} = 100,
+		MantaXassets: manta_xassets::{Pallet, Call, Storage, Event<T>} = 100,
 	}
 );
 

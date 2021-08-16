@@ -1,15 +1,20 @@
 {
+    "TokenSymbol": {
+        "_enum": {
+            "MA": 5,
+            "KMA": 1,
+            "ACA": 0,
+            "KAR": 128,
+            "SDN": 50
+        }
+    },
     "CurrencyId": {
-        "_enum": [
-            "Native",
-            "DOT",
-            "KSM",
-            "BTC"
-        ]
+        "_enum": {
+            "Token": "TokenSymbol"
+        }
     },
     "CurrencyIdOf": "CurrencyId",
     "Amount": "i128",
     "AmountOf": "Amount",
     "TAssetsBalance": "u128"
 }
-

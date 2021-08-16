@@ -25,6 +25,9 @@ sp-core = { git = "https://github.com/paritytech/substrate", default-features = 
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.8" }
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.8" }
 
+# Self dependencies
+manta-primitives = { path = "../../runtime/primitives", default-features = false }
+
 [features]
 default = ["std"]
 std = [
@@ -32,6 +35,7 @@ std = [
     "log/std",
     "frame-support/std",
     "frame-system/std",
+    "manta-primitives/std",
     "sp-core/std",
     "sp-runtime/std",
     "sp-std/std",

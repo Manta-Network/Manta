@@ -12,6 +12,7 @@ targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.1.0", default-features = false }
+serde = { version = '1.0.119', features = ['derive'], optional = true }
 smallvec = "1.6.1"
 
 # Substrate primitives
@@ -29,6 +30,7 @@ default = ["std"]
 std = [
 	'codec/std',
 	'frame-support/std',
+	'serde',
 	'sp-consensus-aura/std',
 	'sp-io/std',
 	'sp-std/std',
