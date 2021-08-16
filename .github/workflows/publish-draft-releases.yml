@@ -209,12 +209,12 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: calamari-testnet-state.json
-          path: $HOME/.local/share/calamari-pc/calamari-testnet-state.json
+          path: /home/runner/.local/share/calamari-pc/calamari-testnet-state.json
       -
         uses: actions/upload-artifact@v2
         with:
           name: calamari-testnet-${{ steps.create-chainspec.outputs.short-sha }}.json
-          path: $HOME/.local/share/calamari-pc/calamari-testnet-${{ steps.create-chainspec.outputs.short-sha }}.json
+          path: /home/runner/.local/share/calamari-pc/calamari-testnet-${{ steps.create-chainspec.outputs.short-sha }}.json
       -
         name: create launch config
         run: |
