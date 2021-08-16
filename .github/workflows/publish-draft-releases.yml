@@ -329,30 +329,6 @@ jobs:
           cd ${{ github.workspace }}/manta-pc-launch
           pm2 stop manta-pc-launch
       -
-        name: validate manta-pc-launch stdout log
-        run: |
-          cat ${{ github.workspace }}/manta-pc-launch-stdout.log
-      -
-        name: validate manta-pc-launch stderr log
-        run: |
-          cat ${{ github.workspace }}/manta-pc-launch-stderr.log
-      -
-        name: validate rococo alice log
-        run: |
-          cat ${{ github.workspace }}/manta-pc-launch/alice.log
-      -
-        name: validate rococo bob log
-        run: |
-          cat ${{ github.workspace }}/manta-pc-launch/bob.log
-      -
-        name: validate calamari alice log
-        run: |
-          cat ${{ github.workspace }}/manta-pc-launch/9921.log
-      -
-        name: validate calamari bob log
-        run: |
-          cat ${{ github.workspace }}/manta-pc-launch/9922.log
-      -
         uses: actions/upload-artifact@v2
         with:
           name: manta-pc-launch-stdout.log
@@ -382,6 +358,40 @@ jobs:
         with:
           name: calamari-bob.log
           path: ${{ github.workspace }}/manta-pc-launch/9922.log
+
+      ### bash and log parsing tests ###
+      -
+        name: test - rococo alice found all peers
+        run: |
+          grep -q "💤 Idle (3 peers)" ${{ github.workspace }}/manta-pc-launch/alice.log
+      -
+        name: test - rococo alice imported block 10
+        run: |
+          grep -q "✨ Imported #10 " ${{ github.workspace }}/manta-pc-launch/alice.log
+      # -
+      #   name: validate manta-pc-launch stdout log
+      #   run: |
+      #     cat ${{ github.workspace }}/manta-pc-launch-stdout.log
+      # -
+      #   name: validate manta-pc-launch stderr log
+      #   run: |
+      #     cat ${{ github.workspace }}/manta-pc-launch-stderr.log
+      # -
+      #   name: validate rococo alice log
+      #   run: |
+      #     cat ${{ github.workspace }}/manta-pc-launch/alice.log
+      # -
+      #   name: validate rococo bob log
+      #   run: |
+      #     cat ${{ github.workspace }}/manta-pc-launch/bob.log
+      # -
+      #   name: validate calamari alice log
+      #   run: |
+      #     cat ${{ github.workspace }}/manta-pc-launch/9921.log
+      # -
+      #   name: validate calamari bob log
+      #   run: |
+      #     cat ${{ github.workspace }}/manta-pc-launch/9922.log
 
   build-changelog:
     runs-on: ubuntu-latest
