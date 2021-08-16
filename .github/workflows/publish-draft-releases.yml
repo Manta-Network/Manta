@@ -298,7 +298,6 @@ jobs:
       -
         name: launch testnet
         run: |
-          tree ${{ github.workspace }}
           cd ${{ github.workspace }}/manta-pc-launch
           yarn install
           yarn build
@@ -316,7 +315,6 @@ jobs:
       -
         name: stop testnet
         run: |
-          tree ${{ github.workspace }}
           cd ${{ github.workspace }}/manta-pc-launch
           pm2 stop manta-pc-launch
       -
