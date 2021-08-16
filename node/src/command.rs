@@ -191,8 +191,9 @@ macro_rules! construct_async_run {
 		cfg_if::cfg_if! {
 			if #[cfg(feature = "manta-pc")] {
 				runner.async_run(|$config| {
-					let $components = new_partial::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor>(
+					let $components = new_partial::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor, _>(
 						&$config,
+						crate::service::parachain_build_import_queue
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -200,8 +201,9 @@ macro_rules! construct_async_run {
 			} else {
 				#[cfg(feature = "calamari")]
 				runner.async_run(|$config| {
-					let $components = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor>(
+					let $components = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor, _>(
 						&$config,
+						crate::service::parachain_build_import_queue
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -398,30 +400,26 @@ pub fn run() -> Result<()> {
 				);
 				cfg_if::cfg_if! {
 					if #[cfg(feature = "manta-pc")] {
-						crate::service::start_node::<
+						crate::service::start_parachain_node::<
 							manta_pc_runtime::RuntimeApi,
 							MantaPCRuntimeExecutor,
-							_,
 						>(
 							config,
 							polkadot_config,
 							id,
-							|_| Default::default(),
 						)
 						.await
 						.map(|r| r.0)
 						.map_err(Into::into)
 					} else {
 						#[cfg(feature = "calamari")]
-						crate::service::start_node::<
+						crate::service::start_parachain_node::<
 							calamari_runtime::RuntimeApi,
 							CalamariRuntimeExecutor,
-							_,
 						>(
 							config,
 							polkadot_config,
 							id,
-							|_| Default::default(),
 						)
 						.await
 						.map(|r| r.0)
