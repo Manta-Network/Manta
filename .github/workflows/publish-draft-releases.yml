@@ -344,32 +344,32 @@ jobs:
       -
         uses: actions/upload-artifact@v2
         with:
-          name: manta-pc-launch-stdout-log
+          name: manta-pc-launch-stdout.log
           path: ${{ github.workspace }}/manta-pc-launch-stdout.log
       -
         uses: actions/upload-artifact@v2
         with:
-          name: manta-pc-launch-stderr-log
+          name: manta-pc-launch-stderr.log
           path: ${{ github.workspace }}/manta-pc-launch-stderr.log
       -
         uses: actions/upload-artifact@v2
         with:
-          name: rococo-alice-log
+          name: rococo-alice.log
           path: ${{ github.workspace }}/manta-pc-launch/alice.log
       -
         uses: actions/upload-artifact@v2
         with:
-          name: rococo-bob-log
+          name: rococo-bob.log
           path: ${{ github.workspace }}/manta-pc-launch/bob.log
       -
         uses: actions/upload-artifact@v2
         with:
-          name: calamari-alice-log
+          name: calamari-alice.log
           path: ${{ github.workspace }}/manta-pc-launch/9921.log
       -
         uses: actions/upload-artifact@v2
         with:
-          name: calamari-bob-log
+          name: calamari-bob.log
           path: ${{ github.workspace }}/manta-pc-launch/9922.log
 
   build-changelog:
