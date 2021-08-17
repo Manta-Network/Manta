@@ -228,26 +228,110 @@ jobs:
         with:
           name: manta
           path: /home/runner/.cargo/bin/manta
+      # -
+      #   name: benchmark
+      #   run: |
+      #     for extrinsic in init_asset transfer_asset mint_private_asset private_transfer reclaim; do
+      #       manta benchmark \
+      #         --pallet pallet_manta_pay \
+      #         --extrinsic ${extrinsic} \
+      #         --execution=Wasm \
+      #         --wasm-execution Compiled \
+      #         --repeat 1000 \
+      #         2> ${{ github.workspace }}/extrinsic-benchmark-${extrinsic}-stderr.log \
+      #         > ${{ github.workspace }}/extrinsic-benchmark-${extrinsic}-stdout.log
+      #       cat ${{ github.workspace }}/extrinsic-benchmark-${extrinsic}-stdout.log | head -8 | tail -2 | xargs -n1 | tail -2 | tr '\n' ' ' | sed 's/ *$//g' | jq \
+      #         --raw-input \
+      #         --slurp \
+      #         --arg extrinsic ${extrinsic} \
+      #         '. |= split(" ") | { ($extrinsic): { time: .[0] | tonumber, unit: .[1] }}' \
+      #         > ${{ github.workspace }}/extrinsic-benchmark-${extrinsic}.json
+      #     done
+      #     jq --slurp '. | add' ${{ github.workspace }}/extrinsic-benchmark-*.json > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay.json
       -
-        name: benchmark
+        name: benchmark pallet-manta-pay init-asset
         run: |
-          for extrinsic in init_asset transfer_asset mint_private_asset private_transfer reclaim; do
-            manta benchmark \
-              --pallet pallet_manta_pay \
-              --extrinsic ${extrinsic} \
-              --execution=Wasm \
-              --wasm-execution Compiled \
-              --repeat 1000 \
-              2> ${{ github.workspace }}/extrinsic-benchmark-${extrinsic}-stderr.log \
-              > ${{ github.workspace }}/extrinsic-benchmark-${extrinsic}-stdout.log
-            cat ${{ github.workspace }}/extrinsic-benchmark-${extrinsic}-stdout.log | head -8 | tail -2 | xargs -n1 | tail -2 | tr '\n' ' ' | sed 's/ *$//g' | jq \
-              --raw-input \
-              --slurp \
-              --arg extrinsic ${extrinsic} \
-              '. |= split(" ") | { ($extrinsic): { time: .[0] | tonumber, unit: .[1] }}' \
-              > ${{ github.workspace }}/extrinsic-benchmark-${extrinsic}.json
-          done
-          jq --slurp '. | add' ${{ github.workspace }}/extrinsic-benchmark-*.json > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay.json
+          manta benchmark \
+            --pallet pallet_manta_pay \
+            --extrinsic init_asset \
+            --execution=Wasm \
+            --wasm-execution Compiled \
+            --repeat 1000 \
+            2> ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-init-asset-stderr.log \
+            > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-init-asset-stdout.log
+          cat ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-init-asset-stdout.log | head -8 | tail -2 | xargs -n1 | tail -2 | tr '\n' ' ' | sed 's/ *$//g' | jq \
+            --raw-input \
+            --slurp \
+            '. |= split(" ") | { init_asset: { time: .[0] | tonumber, unit: .[1] }}' \
+            > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-init-asset.json
+      -
+        name: benchmark pallet-manta-pay transfer-asset
+        run: |
+          manta benchmark \
+            --pallet pallet_manta_pay \
+            --extrinsic transfer_asset \
+            --execution=Wasm \
+            --wasm-execution Compiled \
+            --repeat 1000 \
+            2> ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-transfer-asset-stderr.log \
+            > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-transfer-asset-stdout.log
+          cat ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-transfer-asset-stdout.log | head -8 | tail -2 | xargs -n1 | tail -2 | tr '\n' ' ' | sed 's/ *$//g' | jq \
+            --raw-input \
+            --slurp \
+            '. |= split(" ") | { transfer_asset: { time: .[0] | tonumber, unit: .[1] }}' \
+            > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-transfer-asset.json
+      -
+        name: benchmark pallet-manta-pay mint-private-asset
+        run: |
+          manta benchmark \
+            --pallet pallet_manta_pay \
+            --extrinsic mint_private_asset \
+            --execution=Wasm \
+            --wasm-execution Compiled \
+            --repeat 1000 \
+            2> ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-mint-private-asset-stderr.log \
+            > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-mint-private-asset-stdout.log
+          cat ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-mint-private-asset-stdout.log | head -8 | tail -2 | xargs -n1 | tail -2 | tr '\n' ' ' | sed 's/ *$//g' | jq \
+            --raw-input \
+            --slurp \
+            '. |= split(" ") | { mint_private_asset: { time: .[0] | tonumber, unit: .[1] }}' \
+            > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-mint-private-asset.json
+      -
+        name: benchmark pallet-manta-pay private-transfer
+        run: |
+          manta benchmark \
+            --pallet pallet_manta_pay \
+            --extrinsic private_transfer \
+            --execution=Wasm \
+            --wasm-execution Compiled \
+            --repeat 1000 \
+            2> ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-private-transfer-stderr.log \
+            > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-private-transfer-stdout.log
+          cat ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-private-transfer-stdout.log | head -8 | tail -2 | xargs -n1 | tail -2 | tr '\n' ' ' | sed 's/ *$//g' | jq \
+            --raw-input \
+            --slurp \
+            '. |= split(" ") | { private_transfer: { time: .[0] | tonumber, unit: .[1] }}' \
+            > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-private-transfer.json
+      -
+        name: benchmark pallet-manta-pay reclaim
+        run: |
+          manta benchmark \
+            --pallet pallet_manta_pay \
+            --extrinsic reclaim \
+            --execution=Wasm \
+            --wasm-execution Compiled \
+            --repeat 1000 \
+            2> ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-reclaim-stderr.log \
+            > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-reclaim-stdout.log
+          cat ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-reclaim-stdout.log | head -8 | tail -2 | xargs -n1 | tail -2 | tr '\n' ' ' | sed 's/ *$//g' | jq \
+            --raw-input \
+            --slurp \
+            '. |= split(" ") | { reclaim: { time: .[0] | tonumber, unit: .[1] }}' \
+            > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-reclaim.json
+      -
+        name: benchmark pallet-manta-pay
+        run: |
+          jq --slurp '. | add' ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-*.json > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay.json
       -
         uses: actions/upload-artifact@v2
         with:
@@ -257,7 +341,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: pallet-manta-pay-benchmark.zip
-          path: ${{ github.workspace }}/extrinsic-benchmark-*.*
+          path: ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-*.*
 
   integration-test:
     needs:
@@ -732,50 +816,6 @@ jobs:
           aws-region: ${{ needs.start-node-builder.outputs.aws-region }}
           runner-label: ${{ needs.start-node-builder.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-node-builder.outputs.aws-instance-id }}
-
-  # start-calamari-runtime-builder:
-  #  runs-on: ubuntu-latest
-  #  outputs:
-  #    runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-  #    aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-  #    aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-  #  steps:
-  #    -
-  #      id: start-self-hosted-runner
-  #      uses: audacious-network/aws-github-runner@v1.0.33
-  #      with:
-  #        mode: start
-  #        github-token: ${{ secrets.GH_SHR_TOKEN }}
-  #        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #        aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
-  #        aws-region: us-east-1
-  #        aws-subnet-id: subnet-08c26caf0a52b7c19
-  #        aws-security-group-id: sg-0315bffea9042ac9b
-  #        aws-instance-type: c5a.2xlarge # 8 vcpu, 16gb ram, $0.348 hourly
-  #        aws-instance-root-volume-size: 16
-  #        aws-instance-lifecycle: spot
-  #        aws-image-search-pattern: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-  #        aws-image-search-owners: '["099720109477"]' # canonical
-
-  # stop-calamari-runtime-builder:
-  #  needs:
-  #    # - build-calamari-runtime
-  #    - test-docker-works
-  #    - start-calamari-runtime-builder
-  #  runs-on: ubuntu-latest
-  #  if: ${{ always() }}
-  #  steps:
-  #    -
-  #      uses: audacious-network/aws-github-runner@v1.0.33
-  #      with:
-  #        mode: stop
-  #        github-token: ${{ secrets.GH_SHR_TOKEN }}
-  #        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #        aws-region: ${{ needs.start-calamari-runtime-builder.outputs.aws-region }}
-  #        runner-label: ${{ needs.start-calamari-runtime-builder.outputs.runner-label }}
-  #        aws-instance-id: ${{ needs.start-calamari-runtime-builder.outputs.aws-instance-id }}
 
   start-integration-tester:
     runs-on: ubuntu-latest
