@@ -248,7 +248,7 @@ jobs:
               name: pallet-manta-pay
             iterations: 1000
             expected:
-              time: 3000
+              time: 6000
               unit: µs
           -
             extrinsic:
@@ -259,7 +259,7 @@ jobs:
               name: pallet-manta-pay
             iterations: 1000
             expected:
-              time: 30
+              time: 60
               unit: µs
           -
             extrinsic:
@@ -270,7 +270,7 @@ jobs:
               name: pallet-manta-pay
             iterations: 1000
             expected:
-              time: 24000
+              time: 48000
               unit: µs
           -
             extrinsic:
@@ -281,7 +281,7 @@ jobs:
               name: pallet-manta-pay
             iterations: 1000
             expected:
-              time: 110000
+              time: 220000
               unit: µs
           -
             extrinsic:
@@ -292,7 +292,7 @@ jobs:
               name: pallet-manta-pay
             iterations: 1000
             expected:
-              time: 88000
+              time: 180000
               unit: µs
     steps:
       -
@@ -327,7 +327,7 @@ jobs:
           expected_unit=${{ matrix.benchmark.expected.time }}
           actual_time=$(jq '.time' ${{ github.workspace }}/benchmark-${{ matrix.benchmark.pallet.name }}-${{ matrix.benchmark.extrinsic.name }}.json)
           actual_unit=$(jq '.time' ${{ github.workspace }}/benchmark-${{ matrix.benchmark.pallet.name }}-${{ matrix.benchmark.extrinsic.name }}.json)
-          if (( $(echo "$actual_time <= $expected_time" | bc -l) )); then echo "actual time (${actual_time}) is within expected time (${expected_time})"; else echo "actual time (${actual_time}) exceeds expected time (${expected_time})"; exit 1; fi
+          if (( $(echo "$actual_time <= $expected_time" | bc -l) )); then echo "actual time (${actual_time} ${actual_unit}) is within expected time (${expected_time} ${expected_unit})"; else echo "actual time (${actual_time} ${actual_unit}) exceeds expected time (${expected_time} ${expected_unit})"; exit 1; fi
       -
         uses: actions/upload-artifact@v2
         with:
