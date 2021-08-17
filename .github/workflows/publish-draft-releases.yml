@@ -154,6 +154,111 @@ jobs:
           name: calamari-pc
           path: target/release/calamari-pc
 
+  benchmark:
+    needs:
+      - start-node-builder
+      - build-node
+    runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      -
+        name: install sccache
+
+        env:
+          SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
+          SCCACHE_VERSION: v0.2.15
+        run: |
+          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
+          mkdir -p $HOME/.local/bin
+          curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
+          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
+          chmod +x $HOME/.local/bin/sccache
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      -
+        name: cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-
+      -
+        name: cache sccache
+        uses: actions/cache@v2
+        continue-on-error: false
+        with:
+          path: /home/runner/.cache/sccache
+          key: sccache-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            sccache-
+      -
+        name: start sccache server
+        run: sccache --start-server
+      -
+        name: init
+        run: |
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup toolchain install nightly
+          rustup default stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
+          rustup update
+      -
+        name: build
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+        run: |
+          source ${HOME}/.cargo/env
+          # todo: replace 7f98874 with ${GITHUB_SHA:0:7} when running in manta branch
+          cargo install --verbose --git https://github.com/Manta-Network/Manta --rev 7f98874 --features runtime-benchmarks --locked --force --root ~/.cargo/bin
+      -
+        name: stop sccache server
+        run: sccache --stop-server || true
+      -
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: manta
+          path: /home/runner/.cargo/bin/manta
+      -
+        name: benchmark
+        run: |
+          for extrinsic in init_asset transfer_asset mint_private_asset private_transfer reclaim; do
+            manta benchmark \
+              --pallet pallet_manta_pay \
+              --extrinsic ${extrinsic} \
+              --execution=Wasm \
+              --wasm-execution Compiled \
+              --repeat 1000 \
+              2> ${{ github.workspace }}/extrinsic-benchmark-${extrinsic}-stderr.log \
+              > ${{ github.workspace }}/extrinsic-benchmark-${extrinsic}-stdout.log
+            cat ${{ github.workspace }}/extrinsic-benchmark-${extrinsic}-stdout.log | head -8 | tail -2 | xargs -n1 | tail -2 | tr '\n' ' ' | sed 's/ *$//g' | jq \
+              --raw-input \
+              --slurp \
+              --arg extrinsic ${extrinsic} \
+              '. |= split(" ") | { ($extrinsic): { time: .[0] | tonumber, unit: .[1] }}' \
+              > ${{ github.workspace }}/extrinsic-benchmark-${extrinsic}.json
+          done
+          jq --slurp '. | add' ${{ github.workspace }}/extrinsic-benchmark-*.json > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay.json
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: pallet-manta-pay-benchmark.json
+          path: ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay.json
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: pallet-manta-pay-benchmark.zip
+          path: ${{ github.workspace }}/extrinsic-benchmark-*.*
+
   integration-test:
     needs:
       - build-node
@@ -302,6 +407,11 @@ jobs:
           jq . $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}-launch-config.json
           ls -ahl $HOME/.local/share/calamari-pc/
       -
+        uses: actions/upload-artifact@v2
+        with:
+          name: calamari-testnet-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
+          path: /home/runner/.local/share/calamari-pc/calamari-testnet-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
+      -
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/manta-pc-launch
@@ -363,19 +473,19 @@ jobs:
       -
         name: test - rococo alice peered successfully
         run: |
-          grep -q "💤 Idle (3 peers)" ${{ github.workspace }}/manta-pc-launch/alice.log
+          grep "💤 Idle (3 peers)" ${{ github.workspace }}/manta-pc-launch/alice.log
       -
         name: test - rococo alice imported block 10
         run: |
-          grep -q "✨ Imported #10 " ${{ github.workspace }}/manta-pc-launch/alice.log
+          grep "✨ Imported #10 " ${{ github.workspace }}/manta-pc-launch/alice.log
       -
         name: test - calamari alice peered successfully
         run: |
-          grep -q "[Parachain] 💤 Idle (1 peers)" ${{ github.workspace }}/manta-pc-launch/9921.log
+          grep "[Parachain] 💤 Idle (1 peers)" ${{ github.workspace }}/manta-pc-launch/9921.log
       -
         name: test - calamari alice imported block 10
         run: |
-          grep -q "[Parachain] ✨ Imported #10" ${{ github.workspace }}/manta-pc-launch/9921.log
+          grep "[Parachain] ✨ Imported #10" ${{ github.workspace }}/manta-pc-launch/9921.log
       # -
       #   name: validate manta-pc-launch stdout log
       #   run: |
@@ -608,6 +718,7 @@ jobs:
     needs:
       - start-node-builder
       - build-node
+      - build-benchmark
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
