@@ -718,7 +718,7 @@ jobs:
     needs:
       - start-node-builder
       - build-node
-      - build-benchmark
+      - benchmark
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
