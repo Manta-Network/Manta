@@ -254,22 +254,22 @@ jobs:
         run: |
           manta benchmark --pallet pallet_manta_pay --extrinsic init_asset --execution=Wasm --wasm-execution Compiled --repeat 1000 2> ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-init-asset-stderr.log > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-init-asset-stdout.log
           cat ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-init-asset-stdout.log | head -8 | tail -2 | xargs -n1 | tail -2 | tr '\n' ' ' | sed 's/ *$//g' | jq --raw-input --slurp '. |= split(" ") | { init_asset: { time: .[0] | tonumber, unit: .[1] }}' > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-init-asset.json
-      -
-        name: benchmark pallet-manta-pay transfer-asset
-        run: |
-          manta benchmark \
-            --pallet pallet_manta_pay \
-            --extrinsic transfer_asset \
-            --execution=Wasm \
-            --wasm-execution Compiled \
-            --repeat 1000 \
-            2> ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-transfer-asset-stderr.log \
-            > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-transfer-asset-stdout.log
-          cat ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-transfer-asset-stdout.log | head -8 | tail -2 | xargs -n1 | tail -2 | tr '\n' ' ' | sed 's/ *$//g' | jq \
-            --raw-input \
-            --slurp \
-            '. |= split(" ") | { transfer_asset: { time: .[0] | tonumber, unit: .[1] }}' \
-            > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-transfer-asset.json
+      # -
+      #   name: benchmark pallet-manta-pay transfer-asset
+      #   run: |
+      #     manta benchmark \
+      #       --pallet pallet_manta_pay \
+      #       --extrinsic transfer_asset \
+      #       --execution=Wasm \
+      #       --wasm-execution Compiled \
+      #       --repeat 1000 \
+      #       2> ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-transfer-asset-stderr.log \
+      #       > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-transfer-asset-stdout.log
+      #     cat ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-transfer-asset-stdout.log | head -8 | tail -2 | xargs -n1 | tail -2 | tr '\n' ' ' | sed 's/ *$//g' | jq \
+      #       --raw-input \
+      #       --slurp \
+      #       '. |= split(" ") | { transfer_asset: { time: .[0] | tonumber, unit: .[1] }}' \
+      #       > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-transfer-asset.json
       # -
       #   name: benchmark pallet-manta-pay mint-private-asset
       #   run: |
