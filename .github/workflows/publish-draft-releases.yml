@@ -324,9 +324,9 @@ jobs:
         name: evaluate benchmark
         run: |
           expected_time=${{ matrix.benchmark.expected.time }}
-          expected_unit=${{ matrix.benchmark.expected.time }}
+          expected_unit=${{ matrix.benchmark.expected.unit }}
           actual_time=$(jq '.time' ${{ github.workspace }}/benchmark-${{ matrix.benchmark.pallet.name }}-${{ matrix.benchmark.extrinsic.name }}.json)
-          actual_unit=$(jq '.time' ${{ github.workspace }}/benchmark-${{ matrix.benchmark.pallet.name }}-${{ matrix.benchmark.extrinsic.name }}.json)
+          actual_unit=$(jq '.unit' ${{ github.workspace }}/benchmark-${{ matrix.benchmark.pallet.name }}-${{ matrix.benchmark.extrinsic.name }}.json)
           if (( $(echo "$actual_time <= $expected_time" | bc -l) )); then echo "actual time (${actual_time} ${actual_unit}) is within expected time (${expected_time} ${expected_unit})"; else echo "actual time (${actual_time} ${actual_unit}) exceeds expected time (${expected_time} ${expected_unit})"; exit 1; fi
       -
         uses: actions/upload-artifact@v2
