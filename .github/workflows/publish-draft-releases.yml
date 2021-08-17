@@ -305,7 +305,7 @@ jobs:
           chmod +x $HOME/.local/bin/manta
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       -
-        name: create benchmark
+        name: observe benchmark
         run: |
           manta benchmark \
             --pallet ${{ matrix.benchmark.pallet.id }} \
