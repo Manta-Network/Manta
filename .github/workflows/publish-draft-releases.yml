@@ -247,6 +247,9 @@ jobs:
               id: pallet_manta_pay
               name: pallet-manta-pay
             iterations: 1000
+            expected:
+              time: 3000
+              unit: µs
           -
             extrinsic:
               id: transfer_asset
@@ -255,6 +258,9 @@ jobs:
               id: pallet_manta_pay
               name: pallet-manta-pay
             iterations: 1000
+            expected:
+              time: 30
+              unit: µs
           -
             extrinsic:
               id: mint_private_asset
@@ -263,6 +269,9 @@ jobs:
               id: pallet_manta_pay
               name: pallet-manta-pay
             iterations: 1000
+            expected:
+              time: 24000
+              unit: µs
           -
             extrinsic:
               id: private_transfer
@@ -271,6 +280,9 @@ jobs:
               id: pallet_manta_pay
               name: pallet-manta-pay
             iterations: 1000
+            expected:
+              time: 110000
+              unit: µs
           -
             extrinsic:
               id: reclaim
@@ -279,6 +291,9 @@ jobs:
               id: pallet_manta_pay
               name: pallet-manta-pay
             iterations: 1000
+            expected:
+              time: 88000
+              unit: µs
     steps:
       -
         uses: actions/download-artifact@v2
@@ -290,7 +305,7 @@ jobs:
           chmod +x $HOME/.local/bin/manta
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       -
-        name: benchmark ${{ matrix.benchmark.pallet.name }} ${{ matrix.benchmark.extrinsic.name }}
+        name: create benchmark
         run: |
           manta benchmark \
             --pallet ${{ matrix.benchmark.pallet.id }} \
@@ -303,9 +318,16 @@ jobs:
           cat ${{ github.workspace }}/benchmark-${{ matrix.benchmark.pallet.name }}-${{ matrix.benchmark.extrinsic.name }}-stdout.log | head -8 | tail -2 | xargs -n1 | tail -2 | tr '\n' ' ' | sed 's/ *$//g' | jq \
             --raw-input \
             --slurp \
-            --arg extrinsic ${{ matrix.benchmark.extrinsic.id }} \
-            '. |= split(" ") | { ($extrinsic): { time: .[0] | tonumber, unit: .[1] }}' \
+            '. |= split(" ") | { time: .[0] | tonumber, unit: .[1] }' \
             > ${{ github.workspace }}/benchmark-${{ matrix.benchmark.pallet.name }}-${{ matrix.benchmark.extrinsic.name }}.json
+      -
+        name: evaluate benchmark
+        run: |
+          expected_time=${{ matrix.benchmark.expected.time }}
+          expected_unit=${{ matrix.benchmark.expected.time }}
+          actual_time=$(jq '.time' ${{ github.workspace }}/benchmark-${{ matrix.benchmark.pallet.name }}-${{ matrix.benchmark.extrinsic.name }}.json)
+          actual_unit=$(jq '.time' ${{ github.workspace }}/benchmark-${{ matrix.benchmark.pallet.name }}-${{ matrix.benchmark.extrinsic.name }}.json)
+          if (( $(echo "$actual_time <= $expected_time" | bc -l) )); then echo "actual time (${actual_time}) is within expected time (${expected_time})"; else echo "actual time (${actual_time}) exceeds expected time (${expected_time})"; exit 1; fi
       -
         uses: actions/upload-artifact@v2
         with:
@@ -617,6 +639,7 @@ jobs:
     needs:
       - build-changelog
       - build-calamari-runtime
+      - run-benchmark
       - integration-test
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
