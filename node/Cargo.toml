@@ -59,8 +59,6 @@ sc-telemetry = { version = '3.0.0', git = 'https://github.com/paritytech/substra
 sc-transaction-pool = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
 sc-tracing = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
-sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
 
 # Substrate primitives
 sp-api = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
@@ -77,6 +75,7 @@ sp-session = { version = '3.0.0', git = 'https://github.com/paritytech/substrate
 sp-timestamp = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
 sp-transaction-pool = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
 substrate-frame-rpc-system = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
 
 # Cumulus dependencies
 cumulus-client-cli = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.8" }
