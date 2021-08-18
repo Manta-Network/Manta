@@ -518,11 +518,11 @@ impl Config for XcmConfig {
 	// How to withdraw and deposit an asset.
 	type AssetTransactor = manta_xcm_support::MantaTransactorAdaptor<
 		Balances,
-		MantaXassets,
 		LocationToAccountId,
 		AccountId,
 		CurrencyId,
 		manta_xcm_support::MultiLocationToCurrencyId<MultiLocationMapCurrencyId>,
+		Assets,
 	>;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = manta_xcm_support::TrustedParachains<TrustedChains>;

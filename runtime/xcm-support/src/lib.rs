@@ -3,8 +3,9 @@
 
 use codec::FullCodec;
 use core::{convert::TryFrom, marker::PhantomData};
-use frame_support::traits::{Currency, ExistenceRequirement, Get, WithdrawReasons};
+use frame_support::traits::{tokens::fungibles, Currency, ExistenceRequirement, Get, WithdrawReasons};
 use manta_primitives::currency_id::{CurrencyId as MantaCurrencyId, TokenSymbol};
+use manta_primitives::AssetId as MultiAssetId;
 use sp_runtime::traits::{MaybeSerializeDeserialize, StaticLookup};
 use sp_std::{
 	cmp::{Eq, PartialEq},
@@ -17,40 +18,36 @@ use xcm_executor::traits::{Convert, FilterAssetLocation, TransactAsset};
 // A Handler for withdrawing/depositting relaychain/parachain tokens.
 pub struct MantaTransactorAdaptor<
 	NativeCurrency,
-	XCurrency,
 	AccountIdConverter,
 	AccountId,
 	CurrencyId,
 	LocationMapCurrencyId,
+	MultiAssetsCurrency,
 >(
 	PhantomData<(
 		NativeCurrency,
-		XCurrency,
 		AccountIdConverter,
 		AccountId,
 		CurrencyId,
 		LocationMapCurrencyId,
+		MultiAssetsCurrency,
 	)>,
 );
 impl<
 		NativeCurrency: Currency<AccountId>,
-		XCurrency: manta_primitives::traits::XCurrency<
-			AccountId,
-			Balance = NativeCurrency::Balance,
-			CurrencyId = MantaCurrencyId,
-		>,
 		AccountIdConverter: Convert<MultiLocation, AccountId>,
 		AccountId: sp_std::fmt::Debug + Clone,
 		CurrencyId: FullCodec + Eq + PartialEq + Copy + MaybeSerializeDeserialize + Debug,
 		LocationMapCurrencyId: StaticLookup<Source = MultiLocation, Target = MantaCurrencyId>,
+		MultiAssetsCurrency: fungibles::Inspect<AccountId, AssetId = MultiAssetId, Balance = NativeCurrency::Balance> + fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId>,
 	> TransactAsset
 	for MantaTransactorAdaptor<
 		NativeCurrency,
-		XCurrency,
 		AccountIdConverter,
 		AccountId,
 		CurrencyId,
 		LocationMapCurrencyId,
+		MultiAssetsCurrency,
 	>
 {
 	fn can_check_in(_origin: &MultiLocation, _what: &MultiAsset) -> XcmResult {
@@ -81,8 +78,8 @@ impl<
 					| MantaCurrencyId::Token(TokenSymbol::KAR)
 					| MantaCurrencyId::Token(TokenSymbol::SDN)
 					| MantaCurrencyId::Token(TokenSymbol::KSM) => {
-						XCurrency::deposit(currency_id, &who, amount)
-							.map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
+						let asset_id = MultiAssetId::from(currency_id);
+						MultiAssetsCurrency::mint_into(asset_id, &who, amount).map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
 					}
 					_ => {
 						log::info!(target: "manta-xassets", "Failed to deposit Unknow asset.");
@@ -133,8 +130,8 @@ impl<
 					| MantaCurrencyId::Token(TokenSymbol::KAR)
 					| MantaCurrencyId::Token(TokenSymbol::SDN)
 					| MantaCurrencyId::Token(TokenSymbol::KSM) => {
-						XCurrency::withdraw(currency_id, &who, amount)
-							.map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
+						let asset_id = MultiAssetId::from(currency_id);
+						MultiAssetsCurrency::burn_from(asset_id, &who, amount).map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
 					}
 					_ => {
 						log::info!(target: "manta-xassets", "Failed to deposit Unknow asset.");

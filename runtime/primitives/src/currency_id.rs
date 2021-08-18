@@ -1,4 +1,5 @@
 use codec::{Decode, Encode};
+use crate::AssetId;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeDebug;
@@ -35,6 +36,13 @@ pub enum CurrencyId {
 impl Default for CurrencyId {
 	fn default() -> Self {
 		Self::Token(TokenSymbol::MA)
+	}
+}
+
+impl From<CurrencyId> for AssetId {
+	fn from(currency_id: CurrencyId) -> Self {
+		let CurrencyId::Token(token_symbol) = currency_id;
+		token_symbol as AssetId
 	}
 }
 
