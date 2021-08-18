@@ -211,6 +211,7 @@ jobs:
                 observed: ISODate(),
                 pallet: "${{ matrix.benchmark.pallet.name }}",
                 extrinsic: "${{ matrix.benchmark.extrinsic.name }}",
+                machine: "c5a.8xlarge",
                 actual: {
                   time: '${actual_time}',
                   unit: "'${actual_unit}'"
