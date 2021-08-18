@@ -3,9 +3,13 @@
 
 use codec::FullCodec;
 use core::{convert::TryFrom, marker::PhantomData};
-use frame_support::traits::{tokens::fungibles, Currency, ExistenceRequirement, Get, WithdrawReasons};
-use manta_primitives::currency_id::{CurrencyId as MantaCurrencyId, TokenSymbol};
-use manta_primitives::AssetId as MultiAssetId;
+use frame_support::traits::{
+	tokens::fungibles, Currency, ExistenceRequirement, Get, WithdrawReasons,
+};
+use manta_primitives::{
+	currency_id::{CurrencyId as MantaCurrencyId, TokenSymbol},
+	AssetId as MultiAssetId,
+};
 use sp_runtime::traits::{MaybeSerializeDeserialize, StaticLookup};
 use sp_std::{
 	cmp::{Eq, PartialEq},
@@ -39,7 +43,9 @@ impl<
 		AccountId: sp_std::fmt::Debug + Clone,
 		CurrencyId: FullCodec + Eq + PartialEq + Copy + MaybeSerializeDeserialize + Debug,
 		LocationMapCurrencyId: StaticLookup<Source = MultiLocation, Target = MantaCurrencyId>,
-		MultiAssetsCurrency: fungibles::Inspect<AccountId, AssetId = MultiAssetId, Balance = NativeCurrency::Balance> + fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId>,
+		MultiAssetsCurrency: fungibles::Inspect<AccountId, AssetId = MultiAssetId, Balance = NativeCurrency::Balance>
+			+ fungibles::Mutate<AccountId>
+			+ fungibles::Transfer<AccountId>,
 	> TransactAsset
 	for MantaTransactorAdaptor<
 		NativeCurrency,
@@ -79,7 +85,8 @@ impl<
 					| MantaCurrencyId::Token(TokenSymbol::SDN)
 					| MantaCurrencyId::Token(TokenSymbol::KSM) => {
 						let asset_id = MultiAssetId::from(currency_id);
-						MultiAssetsCurrency::mint_into(asset_id, &who, amount).map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
+						MultiAssetsCurrency::mint_into(asset_id, &who, amount)
+							.map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
 					}
 					_ => {
 						log::info!(target: "manta-xassets", "Failed to deposit Unknow asset.");
@@ -131,7 +138,8 @@ impl<
 					| MantaCurrencyId::Token(TokenSymbol::SDN)
 					| MantaCurrencyId::Token(TokenSymbol::KSM) => {
 						let asset_id = MultiAssetId::from(currency_id);
-						MultiAssetsCurrency::burn_from(asset_id, &who, amount).map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
+						MultiAssetsCurrency::burn_from(asset_id, &who, amount)
+							.map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
 					}
 					_ => {
 						log::info!(target: "manta-xassets", "Failed to deposit Unknow asset.");

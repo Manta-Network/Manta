@@ -1,5 +1,5 @@
-use codec::{Decode, Encode};
 use crate::AssetId;
+use codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeDebug;
