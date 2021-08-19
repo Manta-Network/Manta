@@ -672,6 +672,7 @@ impl manta_xassets::Config for Runtime {
 	type PalletId = MantaXassetsPalletId;
 	type CurrencyId = CurrencyId;
 	type Currency = Balances;
+	type MultiAssetsCurrency = Assets;
 	type SelfParaId = ParachainInfo;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
 }

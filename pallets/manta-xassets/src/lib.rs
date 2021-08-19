@@ -5,7 +5,10 @@ use cumulus_primitives_core::ParaId;
 use frame_support::{
 	dispatch::DispatchResult,
 	pallet_prelude::*,
-	traits::{Currency, Get, Hooks, IsType, ReservableCurrency},
+	traits::{
+		tokens::fungibles::{Inspect, Mutate, Transfer},
+		Currency, Get, Hooks, IsType, ReservableCurrency,
+	},
 	PalletId,
 };
 use frame_system::{
@@ -14,7 +17,7 @@ use frame_system::{
 };
 use manta_primitives::{
 	currency_id::{CurrencyId, TokenSymbol},
-	traits::XCurrency,
+	AssetId,
 };
 use sp_runtime::{traits::Member, SaturatedConversion};
 use sp_std::{vec, vec::Vec};
@@ -27,7 +30,9 @@ const MANTA_XASSETS: &str = "manta-xassets";
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
-pub type CurrencyIdOf<T> = <T as XCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
+pub type AssetIdOf<T> = <<T as Config>::MultiAssetsCurrency as Inspect<
+	<T as frame_system::Config>::AccountId,
+>>::AssetId;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -54,7 +59,13 @@ pub mod pallet {
 		/// Currency Id
 		type CurrencyId: Parameter + Member + Clone;
 
+		/// Native token currency adapter.
 		type Currency: ReservableCurrency<Self::AccountId>;
+
+		/// Pallet assets currency adapter.
+		type MultiAssetsCurrency: Inspect<Self::AccountId, AssetId = AssetId, Balance = BalanceOf<Self>>
+			+ Mutate<Self::AccountId>
+			+ Transfer<Self::AccountId>;
 
 		/// Manta's parachain id.
 		type SelfParaId: Get<ParaId>;
@@ -63,26 +74,13 @@ pub mod pallet {
 		type Weigher: WeightBounds<Self::Call>;
 	}
 
-	// This is an workaround for depositing/withdrawing cross chain tokens
-	// Finally, we'll utilize pallet-assets to handle these external tokens.
-	#[pallet::storage]
-	pub type XTokens<T: Config> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		CurrencyId,
-		Blake2_128Concat,
-		T::AccountId,
-		BalanceOf<T>,
-		ValueQuery,
-	>;
-
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	#[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance", CurrencyIdOf<T> = "CurrencyId")]
+	#[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance")]
 	pub enum Event<T: Config> {
 		Attempted(Outcome),
 		/// Deposit success. [asset, to]
@@ -209,7 +207,8 @@ pub mod pallet {
 				| CurrencyId::Token(TokenSymbol::KAR)
 				| CurrencyId::Token(TokenSymbol::SDN) => {
 					ensure!(
-						Self::account(currency_id, &from) >= amount,
+						T::MultiAssetsCurrency::balance(AssetIdOf::<T>::from(currency_id), &from)
+							>= amount,
 						Error::<T>::BalanceLow
 					);
 				}
@@ -344,46 +343,5 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {}
-	}
-
-	impl<T: Config> XCurrency<T::AccountId> for Pallet<T> {
-		type Balance = BalanceOf<T>;
-		type CurrencyId = CurrencyId;
-
-		fn account(currency_id: Self::CurrencyId, who: &T::AccountId) -> Self::Balance {
-			XTokens::<T>::get(currency_id, who)
-		}
-
-		/// Add `amount` to the balance of `who` under `currency_id`
-		fn deposit(
-			currency_id: Self::CurrencyId,
-			who: &T::AccountId,
-			amount: Self::Balance,
-		) -> DispatchResult {
-			XTokens::<T>::mutate(currency_id, who, |balance| {
-				// *balance = balance.saturated_add(amount);
-				*balance += amount;
-			});
-
-			Self::deposit_event(Event::Deposited(who.clone(), currency_id, amount));
-
-			Ok(())
-		}
-
-		/// Remove `amount` from the balance of `who` under `currency_id`
-		fn withdraw(
-			currency_id: Self::CurrencyId,
-			who: &T::AccountId,
-			amount: Self::Balance,
-		) -> DispatchResult {
-			XTokens::<T>::mutate(currency_id, who, |balance| {
-				// *balance = balance.saturated_add(amount);
-				*balance -= amount;
-			});
-
-			Self::deposit_event(Event::Withdrawn(who.clone(), currency_id, amount));
-
-			Ok(())
-		}
 	}
 }
