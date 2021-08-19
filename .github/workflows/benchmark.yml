@@ -225,21 +225,19 @@ jobs:
           if [ "${actual_unit}" != "${expected_unit}" ]; then echo "actual unit of time (${actual_time} ${actual_unit}) differs from expected unit of time (${expected_time} ${expected_unit})"; exit 1; fi
           if (( $(echo "$actual_time <= $expected_time" | bc -l) )); then echo "actual time (${actual_time} ${actual_unit}) is within expected time (${expected_time} ${expected_unit})"; else echo "actual time (${actual_time} ${actual_unit}) exceeds expected time (${expected_time} ${expected_unit})"; exit 1; fi
 
-  #brag-or-whine:
-  #  needs: run-benchmark
-  #  runs-on: ubuntu-latest
-  #  if: ${{ always() }}
-  #  steps:
-  #    -
-  #      uses: actions/download-artifact@v2
-  #    -
-  #      env:
-  #        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-  #        DISCORD_USERNAME: raybot
-  #        DISCORD_AVATAR: https://gist.githubusercontent.com/grenade/66a46007b37778d81ee064394263b16c/raw/raybot.png
-  #      uses: Ilshidur/action-discord@0.3.2
-  #      with:
-  #        args: 'link to latest benchmark graph goes here'
+  brag-or-whine:
+    needs: run-benchmark
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      -
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_USERNAME: raybot
+          DISCORD_AVATAR: https://gist.githubusercontent.com/grenade/66a46007b37778d81ee064394263b16c/raw/raybot.png
+        uses: Ilshidur/action-discord@0.3.2
+        with:
+          args: 'new benchmark stats published to: https://dev.stats.manta.systems'
 
   start-worker:
     runs-on: ubuntu-latest
