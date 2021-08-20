@@ -430,7 +430,7 @@ where
 	}
 }
 
-/// Build the import queue for the statemint/statemine/westmine runtime.
+/// Build the import queue for the calamari/manta-pc runtime.
 pub fn parachain_build_import_queue<RuntimeApi, Executor>(
 	client: Arc<TFullClient<Block, RuntimeApi, Executor>>,
 	config: &Configuration,
@@ -509,7 +509,7 @@ where
 	))
 }
 
-/// Start a statemint/statemine/westmint parachain node.
+/// Start a calamari/manta-pc parachain node.
 pub async fn start_parachain_node<RuntimeApi, Executor>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
