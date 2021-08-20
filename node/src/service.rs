@@ -4,6 +4,7 @@ use cumulus_client_consensus_aura::{
 use cumulus_client_consensus_common::{
 	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
+use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use cumulus_client_network::build_block_announce_validator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
@@ -12,7 +13,6 @@ use cumulus_primitives_core::{
 	relay_chain::v1::{Hash as PHash, PersistedValidationData},
 	ParaId,
 };
-use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use futures::lock::Mutex;
 use sc_client_api::ExecutorProvider;
 use sc_consensus::{
