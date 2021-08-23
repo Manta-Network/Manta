@@ -498,6 +498,16 @@ jobs:
           repository: Manta-Network/manta-pc-launch
           path: manta-pc-launch
       -
+        uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/measure-block-time
+          path: measure-block-time-rococo
+      -
+        uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/measure-block-time
+          path: measure-block-time-calamari
+      -
         name: launch testnet
         run: |
           cd ${{ github.workspace }}/manta-pc-launch
@@ -510,6 +520,29 @@ jobs:
             --no-autorestart \
             -- $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}-launch-config.json
       -
+        name: init measure-block-time rococo
+        run: |
+          cd ${{ github.workspace }}/measure-block-time-rococo
+          yarn install
+          sed -i -- 's/9988/9911/g' index.js
+          pm2 start index.js \
+            --name measure-block-time-rococo \
+            --output ${{ github.workspace }}/measure-block-time-rococo-stdout.log \
+            --error ${{ github.workspace }}/measure-block-time-rococo-stderr.log \
+            --no-autorestart
+      -
+        name: init measure-block-time calamari
+        run: |
+          cd ${{ github.workspace }}/measure-block-time-calamari
+          yarn install
+          sed -i -- 's/9988/9921/g' index.js
+          pm2 start index.js \
+            --name measure-block-time-calamari \
+            --output ${{ github.workspace }}/measure-block-time-calamari-stdout.log \
+            --error ${{ github.workspace }}/measure-block-time-calamari-stderr.log \
+            --no-autorestart
+
+      -
         name: run test suites
         run: |
           # todo: implement moonbeam-like js test suite triggers here
@@ -518,6 +551,8 @@ jobs:
         name: stop testnet
         run: |
           cd ${{ github.workspace }}/manta-pc-launch
+          pm2 stop measure-block-time-rococo
+          pm2 stop measure-block-time-calamari
           pm2 stop manta-pc-launch
       -
         uses: actions/upload-artifact@v2
@@ -529,6 +564,26 @@ jobs:
         with:
           name: manta-pc-launch-stderr.log
           path: ${{ github.workspace }}/manta-pc-launch-stderr.log
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: measure-block-time-rococo-stdout.log
+          path: ${{ github.workspace }}/measure-block-time-rococo-stdout.log
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: measure-block-time-rococo-stderr.log
+          path: ${{ github.workspace }}/measure-block-time-rococo-stderr.log
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: measure-block-time-calamari-stdout.log
+          path: ${{ github.workspace }}/measure-block-time-calamari-stdout.log
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: measure-block-time-calamari-stderr.log
+          path: ${{ github.workspace }}/measure-block-time-calamari-stderr.log
       -
         uses: actions/upload-artifact@v2
         with:
