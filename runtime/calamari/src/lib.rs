@@ -137,9 +137,11 @@ pub struct BaseFilter;
 impl Contains<Call> for BaseFilter {
 	fn contains(c: &Call) -> bool {
 		match c {
-			Call::Timestamp(_) | Call::ParachainSystem(_) | Call::Authorship(_) | Call::Sudo(_) => {
-				true
-			}
+			Call::Timestamp(_)
+			| Call::ParachainSystem(_)
+			| Call::Authorship(_)
+			| Call::Sudo(_)
+			| Call::Multisig(_) => true,
 			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
 			// pallet-authorship use for orml
 			// Sudo also cannot be filtered because it is used in runtime upgrade.
@@ -222,7 +224,7 @@ impl pallet_balances::Config for Runtime {
 
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
-	pub const TransactionByteFee: Balance = mMA;
+	pub const TransactionByteFee: Balance = mMA / 100;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
