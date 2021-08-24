@@ -426,6 +426,15 @@ jobs:
                     "--rpc-cors=all",
                     "--telemetry-url=wss://api.telemetry.manta.systems/submit 0"
                   ]
+                },
+                {
+                  "name": "charlie",
+                  "wsPort": 9913,
+                  "port": 31333,
+                  "flags": [
+                    "--rpc-cors=all",
+                    "--telemetry-url=wss://api.telemetry.manta.systems/submit 0"
+                  ]
                 }
               ],
               "genesis": {
