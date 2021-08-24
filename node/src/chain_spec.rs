@@ -36,6 +36,9 @@ const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
 #[cfg(feature = "calamari")]
 const KUSAMA_RELAYCHAIN_MAIN_NET: &str = "kusama";
 
+#[cfg(feature = "calamari")]
+const ROCOCO_RELAYCHAIN_LOCAL_NET: &str = "rococo-local";
+
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
 	TPublic::Pair::from_string(&format!("//{}", seed), None)
@@ -407,7 +410,7 @@ pub fn calamari_development_config(id: ParaId) -> CalamariChainSpec {
 		Some(CALAMARI_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: KUSAMA_RELAYCHAIN_DEV_NET.into(),
+			relay_chain: ROCOCO_RELAYCHAIN_DEV_NET.into(),
 			para_id: id.into(),
 		},
 	)
@@ -457,7 +460,7 @@ pub fn calamari_local_config(id: ParaId) -> CalamariChainSpec {
 		Some(CALAMARI_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: KUSAMA_RELAYCHAIN_LOCAL_NET.into(),
+			relay_chain: ROCOCO_RELAYCHAIN_LOCAL_NET.into(),
 			para_id: id.into(),
 		},
 	)
@@ -573,7 +576,7 @@ pub fn calamari_testnet_config(id: ParaId) -> CalamariChainSpec {
 		Some(CALAMARI_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: KUSAMA_RELAYCHAIN_DEV_NET.into(),
+			relay_chain: ROCOCO_RELAYCHAIN_DEV_NET.into(),
 			para_id: id.into(),
 		},
 	)
@@ -759,7 +762,7 @@ pub fn calamari_config(id: ParaId) -> CalamariChainSpec {
 		Some(CALAMARI_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: KUSAMA_RELAYCHAIN_MAIN_NET.into(),
+			relay_chain: ROCOCO_RELAYCHAIN_MAIN_NET.into(),
 			para_id: id.into(),
 		},
 	)
