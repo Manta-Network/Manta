@@ -510,13 +510,13 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
-          ref: 8ee3341
+          ref: 8ee3341a268b892e05fdcfc0d113db557fc86234
           path: dev-tools-rococo
       -
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
-          ref: 8ee3341
+          ref: 8ee3341a268b892e05fdcfc0d113db557fc86234
           path: dev-tools-calamari
       -
         name: launch testnet
