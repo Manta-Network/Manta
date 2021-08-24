@@ -533,8 +533,8 @@ jobs:
         run: |
           cd ${{ github.workspace }}/measure-block-time-rococo
           yarn install
-          sed -i -- 's/9988/9911/g' index.js
-          pm2 start index.js \
+          sed -i -- 's/9988/9911/g' measure-block-time/index.js
+          pm2 start measure-block-time/index.js \
             --name measure-block-time-rococo \
             --output ${{ github.workspace }}/measure-block-time-rococo-stdout.log \
             --error ${{ github.workspace }}/measure-block-time-rococo-stderr.log \
@@ -544,8 +544,8 @@ jobs:
         run: |
           cd ${{ github.workspace }}/measure-block-time-calamari
           yarn install
-          sed -i -- 's/9988/9921/g' index.js
-          pm2 start index.js \
+          sed -i -- 's/9988/9921/g' measure-block-time/index.js
+          pm2 start measure-block-time/index.js \
             --name measure-block-time-calamari \
             --output ${{ github.workspace }}/measure-block-time-calamari-stdout.log \
             --error ${{ github.workspace }}/measure-block-time-calamari-stderr.log \
