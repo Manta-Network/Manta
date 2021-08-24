@@ -38,6 +38,10 @@ const KUSAMA_RELAYCHAIN_MAIN_NET: &str = "kusama";
 
 #[cfg(feature = "calamari")]
 const ROCOCO_RELAYCHAIN_LOCAL_NET: &str = "rococo-local";
+#[cfg(feature = "calamari")]
+const ROCOCO_RELAYCHAIN_DEV_NET: &str = "rococo-dev";
+#[cfg(feature = "calamari")]
+const ROCOCO_RELAYCHAIN_MAIN_NET: &str = "rococo";
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
