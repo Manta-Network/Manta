@@ -509,13 +509,13 @@ jobs:
       -
         uses: actions/checkout@v2
         with:
-          repository: Manta-Network/measure-block-time
-          path: measure-block-time-rococo
+          repository: Manta-Network/Dev-Tools
+          path: dev-tools-rococo
       -
         uses: actions/checkout@v2
         with:
-          repository: Manta-Network/measure-block-time
-          path: measure-block-time-calamari
+          repository: Manta-Network/Dev-Tools
+          path: dev-tools-calamari
       -
         name: launch testnet
         run: |
@@ -531,7 +531,7 @@ jobs:
       -
         name: init measure-block-time rococo
         run: |
-          cd ${{ github.workspace }}/measure-block-time-rococo
+          cd ${{ github.workspace }}/dev-tools-rococo
           yarn install
           sed -i -- 's/9988/9911/g' measure-block-time/index.js
           pm2 start measure-block-time/index.js \
@@ -542,7 +542,7 @@ jobs:
       -
         name: init measure-block-time calamari
         run: |
-          cd ${{ github.workspace }}/measure-block-time-calamari
+          cd ${{ github.workspace }}/dev-tools-calamari
           yarn install
           sed -i -- 's/9988/9921/g' measure-block-time/index.js
           pm2 start measure-block-time/index.js \
@@ -616,7 +616,7 @@ jobs:
       -
         name: parse rococo block times
         run: |
-          grep '#.*' ${{ github.workspace }}/measure-block-time-rococo-stdout.log | while read -r line; do words=($line); echo ${words[4]},${words[8]}>>${{ github.workspace }}/block-time-rococo.csv; done
+          grep '#.*' ${{ github.workspace }}/measure-block-time-rococo-stdout.log | while read -r line; do words=($line); echo ${words[4]},${words[8]} | tee ${{ github.workspace }}/block-time-rococo.csv; done
           jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-rococo.csv > ${{ github.workspace }}/block-time-rococo.json
       -
         uses: actions/upload-artifact@v2
@@ -631,7 +631,7 @@ jobs:
       -
         name: parse calamari block times
         run: |
-          grep '#.*' ${{ github.workspace }}/measure-block-time-calamari-stdout.log | while read -r line; do words=($line); echo ${words[4]},${words[8]}>>${{ github.workspace }}/block-time-calamari.csv; done
+          grep '#.*' ${{ github.workspace }}/measure-block-time-calamari-stdout.log | while read -r line; do words=($line); echo ${words[4]},${words[8]} | tee ${{ github.workspace }}/block-time-calamari.csv; done
           jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-calamari.csv > ${{ github.workspace }}/block-time-calamari.json
       -
         uses: actions/upload-artifact@v2
