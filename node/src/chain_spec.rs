@@ -240,6 +240,7 @@ fn manta_pc_dev_genesis(
 				.collect(),
 		},
 		aura_ext: Default::default(),
+		parachain_system: Default::default(),
 	}
 }
 
@@ -357,6 +358,7 @@ fn manta_pc_testnet_genesis(
 				.collect(),
 		},
 		aura_ext: Default::default(),
+		parachain_system: Default::default(),
 	}
 }
 
@@ -510,6 +512,7 @@ fn calamari_dev_genesis(
 				.collect(),
 		},
 		aura_ext: Default::default(),
+		parachain_system: Default::default(),
 	}
 }
 
@@ -627,6 +630,7 @@ fn calamari_testnet_genesis(
 				.collect(),
 		},
 		aura_ext: Default::default(),
+		parachain_system: Default::default(),
 	}
 }
 
@@ -688,6 +692,7 @@ fn calamari_genesis(
 				.collect(),
 		},
 		aura_ext: Default::default(),
+		parachain_system: Default::default(),
 	}
 }
 

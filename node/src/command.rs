@@ -142,11 +142,13 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn description() -> String {
-		"Manta Parachain Collator\n\nThe command-line arguments provided first will be \
+		format!(
+			"Manta parachain collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
-		rococo-collator [parachain-args] -- [relaychain-args]"
-			.into()
+		{} [parachain-args] -- [relaychain-args]",
+			Self::executable_name()
+		)
 	}
 
 	fn author() -> String {
@@ -191,8 +193,9 @@ macro_rules! construct_async_run {
 		cfg_if::cfg_if! {
 			if #[cfg(feature = "manta-pc")] {
 				runner.async_run(|$config| {
-					let $components = new_partial::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor>(
+					let $components = new_partial::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor, _>(
 						&$config,
+						crate::service::parachain_build_import_queue,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -200,8 +203,9 @@ macro_rules! construct_async_run {
 			} else {
 				#[cfg(feature = "calamari")]
 				runner.async_run(|$config| {
-					let $components = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor>(
+					let $components = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor, _>(
 						&$config,
+						crate::service::parachain_build_import_queue,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -398,30 +402,26 @@ pub fn run() -> Result<()> {
 				);
 				cfg_if::cfg_if! {
 					if #[cfg(feature = "manta-pc")] {
-						crate::service::start_node::<
+						crate::service::start_parachain_node::<
 							manta_pc_runtime::RuntimeApi,
 							MantaPCRuntimeExecutor,
-							_,
 						>(
 							config,
 							polkadot_config,
 							id,
-							|_| Default::default(),
 						)
 						.await
 						.map(|r| r.0)
 						.map_err(Into::into)
 					} else {
 						#[cfg(feature = "calamari")]
-						crate::service::start_node::<
+						crate::service::start_parachain_node::<
 							calamari_runtime::RuntimeApi,
 							CalamariRuntimeExecutor,
-							_,
 						>(
 							config,
 							polkadot_config,
 							id,
-							|_| Default::default(),
 						)
 						.await
 						.map(|r| r.0)
@@ -523,6 +523,10 @@ impl CliConfiguration<Self> for RelayChainCli {
 
 	fn rpc_ws_max_connections(&self) -> Result<Option<usize>> {
 		self.base.base.rpc_ws_max_connections()
+	}
+
+	fn rpc_http_threads(&self) -> Result<Option<usize>> {
+		self.base.base.rpc_http_threads()
 	}
 
 	fn rpc_cors(&self, is_dev: bool) -> Result<Option<Vec<String>>> {
