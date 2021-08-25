@@ -355,29 +355,29 @@ jobs:
             id: calamari-local
             expected:
               block-count:
-                relay: 15
-                para: 9
+                relay: 25
+                para: 6
               peer-count:
-                relay: 3
-                para: 3
+                relay: 5
+                para: 2
           -
             id: calamari-dev
             expected:
               block-count:
-                relay: 15
-                para: 9
+                relay: 25
+                para: 6
               peer-count:
-                relay: 3
-                para: 3
+                relay: 5
+                para: 2
           -
             id: calamari-testnet
             expected:
               block-count:
-                relay: 15
-                para: 9
+                relay: 25
+                para: 6
               peer-count:
-                relay: 3
-                para: 3
+                relay: 5
+                para: 2
     steps:
       -
         run: |
@@ -505,6 +505,16 @@ jobs:
                     "name": "bob",
                     "wsPort": 9922,
                     "port": 32332,
+                    "flags": [
+                      "--rpc-cors=all",
+                      "--",
+                      "--execution=wasm"
+                    ]
+                  },
+                  {
+                    "name": "charlie",
+                    "wsPort": 9923,
+                    "port": 32333,
                     "flags": [
                       "--rpc-cors=all",
                       "--",
