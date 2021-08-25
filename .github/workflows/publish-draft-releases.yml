@@ -353,10 +353,31 @@ jobs:
         chain-spec:
           -
             id: calamari-local
+            expected:
+              block-count:
+                relay: 15
+                para: 9
+              peer-count:
+                relay: 3
+                para: 3
           -
             id: calamari-dev
+            expected:
+              block-count:
+                relay: 15
+                para: 9
+              peer-count:
+                relay: 3
+                para: 3
           -
             id: calamari-testnet
+            expected:
+              block-count:
+                relay: 15
+                para: 9
+              peer-count:
+                relay: 3
+                para: 3
     steps:
       -
         run: |
@@ -542,8 +563,8 @@ jobs:
           yarn build
           pm2 start dist/cli.js \
             --name manta-pc-launch \
-            --output ${{ github.workspace }}/manta-pc-launch-stdout.log \
-            --error ${{ github.workspace }}/manta-pc-launch-stderr.log \
+            --output ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart \
             -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
       -
@@ -553,9 +574,9 @@ jobs:
           yarn install
           sed -i -- 's/9988/9911/g' index.js
           pm2 start index.js \
-            --name measure-block-time-rococo \
-            --output ${{ github.workspace }}/measure-block-time-rococo-stdout.log \
-            --error ${{ github.workspace }}/measure-block-time-rococo-stderr.log \
+            --name measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }} \
+            --output ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart
       -
         name: init measure-block-time calamari
@@ -564,9 +585,9 @@ jobs:
           yarn install
           sed -i -- 's/9988/9921/g' index.js
           pm2 start index.js \
-            --name measure-block-time-calamari \
-            --output ${{ github.workspace }}/measure-block-time-calamari-stdout.log \
-            --error ${{ github.workspace }}/measure-block-time-calamari-stderr.log \
+            --name measure-block-time-${{ matrix.chain-spec.id }} \
+            --output ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart
 
       -
@@ -578,109 +599,99 @@ jobs:
         name: stop testnet
         run: |
           cd ${{ github.workspace }}/manta-pc-launch
-          pm2 stop measure-block-time-rococo
-          pm2 stop measure-block-time-calamari
+          pm2 stop measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}
+          pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
           pm2 stop manta-pc-launch
       -
         uses: actions/upload-artifact@v2
         with:
-          name: manta-pc-launch-stdout.log
-          path: ${{ github.workspace }}/manta-pc-launch-stdout.log
+          name: manta-pc-launch-for-${{ matrix.chain-spec.id }}-stdout.log
+          path: ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.chain-spec.id }}-stdout.log
       -
         uses: actions/upload-artifact@v2
         with:
-          name: manta-pc-launch-stderr.log
-          path: ${{ github.workspace }}/manta-pc-launch-stderr.log
+          name: manta-pc-launch-for-${{ matrix.chain-spec.id }}-stderr.log
+          path: ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.chain-spec.id }}-stderr.log
       -
         uses: actions/upload-artifact@v2
         with:
-          name: measure-block-time-rococo-stdout.log
-          path: ${{ github.workspace }}/measure-block-time-rococo-stdout.log
+          name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
+          path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
       -
         uses: actions/upload-artifact@v2
         with:
-          name: measure-block-time-rococo-stderr.log
-          path: ${{ github.workspace }}/measure-block-time-rococo-stderr.log
+          name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
+          path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
       -
         uses: actions/upload-artifact@v2
         with:
-          name: measure-block-time-calamari-stdout.log
-          path: ${{ github.workspace }}/measure-block-time-calamari-stdout.log
+          name: measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
+          path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
       -
         uses: actions/upload-artifact@v2
         with:
-          name: measure-block-time-calamari-stderr.log
-          path: ${{ github.workspace }}/measure-block-time-calamari-stderr.log
+          name: measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
+          path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
       -
         uses: actions/upload-artifact@v2
         with:
-          name: rococo-alice.log
+          name: rococo-alice-relay-for-${{ matrix.chain-spec.id }}.log
           path: ${{ github.workspace }}/manta-pc-launch/alice.log
       -
         uses: actions/upload-artifact@v2
         with:
-          name: rococo-bob.log
+          name: rococo-bob-relay-for-${{ matrix.chain-spec.id }}.log
           path: ${{ github.workspace }}/manta-pc-launch/bob.log
       -
         uses: actions/upload-artifact@v2
         with:
-          name: calamari-alice.log
+          name: ${{ matrix.chain-spec.id }}-alice.log
           path: ${{ github.workspace }}/manta-pc-launch/9921.log
       -
         uses: actions/upload-artifact@v2
         with:
-          name: calamari-bob.log
+          name: ${{ matrix.chain-spec.id }}-bob.log
           path: ${{ github.workspace }}/manta-pc-launch/9922.log
       -
         name: parse rococo block times
         run: |
-          grep '#.*' ${{ github.workspace }}/measure-block-time-rococo-stdout.log | while read -r line; do words=($line); echo ${words[4]},${words[8]} | tee ${{ github.workspace }}/block-time-rococo.csv; done
+          grep '#.*' ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[4]},${words[8]} | tee ${{ github.workspace }}/block-time-rococo.csv; done
           if [ ! -f ${{ github.workspace }}/block-time-rococo.csv ]; then echo "block times not detected"; exit 1; fi
           jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-rococo.csv > ${{ github.workspace }}/block-time-rococo.json
       -
         uses: actions/upload-artifact@v2
         with:
-          name: block-time-rococo.csv
-          path: ${{ github.workspace }}/block-time-rococo.csv
-      -
-        uses: actions/upload-artifact@v2
-        with:
-          name: block-time-rococo.json
+          name: block-time-rococo-relay-for-${{ matrix.chain-spec.id }}.json
           path: ${{ github.workspace }}/block-time-rococo.json
       -
         name: parse calamari block times
         run: |
-          grep '#.*' ${{ github.workspace }}/measure-block-time-calamari-stdout.log | while read -r line; do words=($line); echo ${words[4]},${words[8]} | tee ${{ github.workspace }}/block-time-calamari.csv; done
-          if [ ! -f ${{ github.workspace }}/block-time-calamari.csv ]; then echo "block times not detected"; exit 1; fi
-          jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-calamari.csv > ${{ github.workspace }}/block-time-calamari.json
+          grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[4]},${words[8]} | tee ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv; done
+          if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv ]; then echo "block times not detected"; exit 1; fi
+          jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv > ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
       -
         uses: actions/upload-artifact@v2
         with:
-          name: block-time-calamari.csv
-          path: ${{ github.workspace }}/block-time-calamari.csv
-      -
-        uses: actions/upload-artifact@v2
-        with:
-          name: block-time-calamari.json
-          path: ${{ github.workspace }}/block-time-calamari.json
+          name: block-time-${{ matrix.chain-spec.id }}.json
+          path: ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
 
       ### bash and log parsing tests ###
       -
         name: test - rococo alice peered successfully
         run: |
-          grep "💤 Idle (3 peers)" ${{ github.workspace }}/manta-pc-launch/alice.log
+          grep "💤 Idle (${{ matrix.chain-spec.expected.peer-count.relay }} peers)" ${{ github.workspace }}/manta-pc-launch/alice.log
       -
-        name: test - rococo alice imported block 10
+        name: test - rococo alice imported block ${{ matrix.chain-spec.expected.block-count.relay }}
         run: |
-          grep "✨ Imported #10 " ${{ github.workspace }}/manta-pc-launch/alice.log
+          grep "✨ Imported #${{ matrix.chain-spec.expected.block-count.relay }} " ${{ github.workspace }}/manta-pc-launch/alice.log
       -
         name: test - calamari alice peered successfully
         run: |
-          grep "[Parachain] 💤 Idle (1 peers)" ${{ github.workspace }}/manta-pc-launch/9921.log
+          grep "[Parachain] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)" ${{ github.workspace }}/manta-pc-launch/9921.log
       -
-        name: test - calamari alice imported block 10
+        name: test - calamari alice imported block ${{ matrix.chain-spec.expected.block-count.para }}
         run: |
-          grep "[Parachain] ✨ Imported #10" ${{ github.workspace }}/manta-pc-launch/9921.log
+          grep "[Parachain] ✨ Imported #${{ matrix.chain-spec.expected.block-count.para }}" ${{ github.workspace }}/manta-pc-launch/9921.log
       # -
       #   name: validate manta-pc-launch stdout log
       #   run: |
