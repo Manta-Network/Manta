@@ -369,15 +369,15 @@ jobs:
               peer-count:
                 relay: 5
                 para: 2
-          -
-            id: calamari-testnet
-            expected:
-              block-count:
-                relay: 25
-                para: 6
-              peer-count:
-                relay: 5
-                para: 2
+          # -
+          #   id: calamari-testnet
+          #   expected:
+          #     block-count:
+          #       relay: 25
+          #       para: 6
+          #     peer-count:
+          #       relay: 5
+          #       para: 2
     steps:
       -
         run: |
