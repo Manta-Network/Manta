@@ -347,6 +347,16 @@ jobs:
       - start-integration-tester
     runs-on: ${{ needs.start-integration-tester.outputs.runner-label }}
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        chain-spec:
+          -
+            id: calamari-local
+          -
+            id: calamari-dev
+          -
+            id: calamari-testnet
     steps:
       -
         run: |
@@ -375,11 +385,12 @@ jobs:
       -
         id: create-chainspec
         run: |
-          calamari-pc export-state --chain calamari-testnet > $HOME/.local/share/calamari-pc/calamari-testnet-state.json || true
+          calamari-pc export-state --chain ${{ matrix.chain-spec.id }} > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
+          calamari-pc build-spec --chain ${{ matrix.chain-spec.id }} --disable-default-bootnode --raw > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
           jq \
             --sort-keys \
             --arg name "calamari testnet ${GITHUB_SHA:0:7}" \
-            --arg id calamari-testnet-${GITHUB_SHA:0:7} \
+            --arg id ${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7} \
             --arg relay_chain rococo-local-${GITHUB_SHA:0:7} \
             --arg parachain_id 2084 \
             '. |
@@ -388,19 +399,24 @@ jobs:
               .relay_chain = $relay_chain |
               .para_id = ($parachain_id | tonumber) |
               .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
-            ' $HOME/.local/share/calamari-pc/calamari-testnet-state.json > $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}.json
+            ' $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
           ls -ahl $HOME/.local/share/calamari-pc/
           echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
       -
         uses: actions/upload-artifact@v2
         with:
-          name: calamari-testnet-state.json
-          path: /home/runner/.local/share/calamari-pc/calamari-testnet-state.json
+          name: ${{ matrix.chain-spec.id }}-state.json
+          path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json
       -
         uses: actions/upload-artifact@v2
         with:
-          name: calamari-testnet-${{ steps.create-chainspec.outputs.short-sha }}.json
-          path: /home/runner/.local/share/calamari-pc/calamari-testnet-${{ steps.create-chainspec.outputs.short-sha }}.json
+          name: ${{ matrix.chain-spec.id }}-spec.json
+          path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
+          path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
       -
         name: create launch config
         run: |
@@ -486,21 +502,21 @@ jobs:
             --arg relaychain_id rococo-local-${GITHUB_SHA:0:7} \
             --arg relaychain_name "rococo local ${GITHUB_SHA:0:7}" \
             --arg parachains_bin $HOME/.local/bin/calamari-pc \
-            --arg parachains_spec $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}.json \
+            --arg parachains_spec $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json \
             '.
               | .relaychain.bin = $relaychain_bin
               | .relaychain.mutation.id = $relaychain_id
               | .relaychain.mutation.name = $relaychain_name
               | .parachains[].bin = $parachains_bin
               | .parachains[].chain = $parachains_spec
-            ' > $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}-launch-config.json
-          jq . $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}-launch-config.json
+            ' > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
+          jq . $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
           ls -ahl $HOME/.local/share/calamari-pc/
       -
         uses: actions/upload-artifact@v2
         with:
-          name: calamari-testnet-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
-          path: /home/runner/.local/share/calamari-pc/calamari-testnet-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
+          name: ${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
+          path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
       -
         uses: actions/checkout@v2
         with:
@@ -529,7 +545,7 @@ jobs:
             --output ${{ github.workspace }}/manta-pc-launch-stdout.log \
             --error ${{ github.workspace }}/manta-pc-launch-stderr.log \
             --no-autorestart \
-            -- $HOME/.local/share/calamari-pc/calamari-testnet-${GITHUB_SHA:0:7}-launch-config.json
+            -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
       -
         name: init measure-block-time rococo
         run: |
