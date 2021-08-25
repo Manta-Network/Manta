@@ -689,19 +689,19 @@ jobs:
       -
         name: test - rococo alice peered successfully
         run: |
-          grep "💤 Idle (${{ matrix.chain-spec.expected.peer-count.relay }} peers)" ${{ github.workspace }}/manta-pc-launch/alice.log
+          grep '💤 Idle (${{ matrix.chain-spec.expected.peer-count.relay }} peers)' ${{ github.workspace }}/manta-pc-launch/alice.log
       -
-        name: test - rococo alice imported block ${{ matrix.chain-spec.expected.block-count.relay }}
+        name: test - rococo alice finalized block ${{ matrix.chain-spec.expected.block-count.relay }}
         run: |
-          grep "✨ Imported #${{ matrix.chain-spec.expected.block-count.relay }} " ${{ github.workspace }}/manta-pc-launch/alice.log
+          grep ' finalized #${{ matrix.chain-spec.expected.block-count.relay }} ' ${{ github.workspace }}/manta-pc-launch/alice.log
       -
         name: test - calamari alice peered successfully
         run: |
-          grep "[Parachain] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)" ${{ github.workspace }}/manta-pc-launch/9921.log
+          grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/manta-pc-launch/9921.log
       -
-        name: test - calamari alice imported block ${{ matrix.chain-spec.expected.block-count.para }}
+        name: test - calamari alice finalized block ${{ matrix.chain-spec.expected.block-count.para }}
         run: |
-          grep "[Parachain] ✨ Imported #${{ matrix.chain-spec.expected.block-count.para }}" ${{ github.workspace }}/manta-pc-launch/9921.log
+          grep '\[Parachain\] .* finalized #${{ matrix.chain-spec.expected.block-count.para }} ' ${{ github.workspace }}/manta-pc-launch/9921.log
       # -
       #   name: validate manta-pc-launch stdout log
       #   run: |
