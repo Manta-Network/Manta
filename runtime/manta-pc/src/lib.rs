@@ -685,7 +685,7 @@ construct_runtime!(
 	{
 		// System support stuff.
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
-		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>} = 1,
+		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Config, Storage, Inherent, Event<T>} = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 4,

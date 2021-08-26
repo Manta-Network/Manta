@@ -142,11 +142,13 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn description() -> String {
-		"Manta Parachain Collator\n\nThe command-line arguments provided first will be \
-		passed to the parachain node, while the arguments provided after -- will be passed \
-		to the relaychain node.\n\n\
-		rococo-collator [parachain-args] -- [relaychain-args]"
-			.into()
+		format!(
+			"Manta Parachain Collator\n\nThe command-line arguments provided first will be \
+			passed to the parachain node, while the arguments provided after -- will be passed \
+			to the relaychain node.\n\n\
+			{} [parachain-args] -- [relaychain-args]",
+			Self::executable_name()
+		)
 	}
 
 	fn author() -> String {
@@ -162,7 +164,8 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
+		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name().to_string()].iter())
+			.load_spec(id)
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -191,8 +194,9 @@ macro_rules! construct_async_run {
 		cfg_if::cfg_if! {
 			if #[cfg(feature = "manta-pc")] {
 				runner.async_run(|$config| {
-					let $components = new_partial::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor>(
+					let $components = new_partial::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor, _>(
 						&$config,
+						crate::service::parachain_build_import_queue,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -200,8 +204,9 @@ macro_rules! construct_async_run {
 			} else {
 				#[cfg(feature = "calamari")]
 				runner.async_run(|$config| {
-					let $components = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor>(
+					let $components = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor, _>(
 						&$config,
+						crate::service::parachain_build_import_queue
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -366,7 +371,7 @@ pub fn run() -> Result<()> {
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,
-					[RelayChainCli::executable_name()]
+					[RelayChainCli::executable_name().to_string()]
 						.iter()
 						.chain(cli.relaychain_args.iter()),
 				);
@@ -398,30 +403,26 @@ pub fn run() -> Result<()> {
 				);
 				cfg_if::cfg_if! {
 					if #[cfg(feature = "manta-pc")] {
-						crate::service::start_node::<
+						crate::service::start_parachain_node::<
 							manta_pc_runtime::RuntimeApi,
 							MantaPCRuntimeExecutor,
-							_,
 						>(
 							config,
 							polkadot_config,
 							id,
-							|_| Default::default(),
 						)
 						.await
 						.map(|r| r.0)
 						.map_err(Into::into)
 					} else {
 						#[cfg(feature = "calamari")]
-						crate::service::start_node::<
+						crate::service::start_parachain_node::<
 							calamari_runtime::RuntimeApi,
 							CalamariRuntimeExecutor,
-							_,
 						>(
 							config,
 							polkadot_config,
 							id,
-							|_| Default::default(),
 						)
 						.await
 						.map(|r| r.0)

@@ -929,6 +929,7 @@ dependencies = [
  "sc-consensus",
  "sc-executor",
  "sc-keystore",
+ "sc-network",
  "sc-rpc",
  "sc-rpc-api",
  "sc-service",
@@ -943,6 +944,7 @@ dependencies = [
  "sp-consensus-aura",
  "sp-core",
  "sp-inherents",
+ "sp-keystore",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -951,6 +953,7 @@ dependencies = [
  "structopt",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
+ "substrate-prometheus-endpoint",
  "try-runtime-cli",
 ]
 

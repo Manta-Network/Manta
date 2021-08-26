@@ -58,6 +58,7 @@ sc-service = { version = '0.9.0', git = 'https://github.com/paritytech/substrate
 sc-telemetry = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
 sc-transaction-pool = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
 sc-tracing = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
 
 # Substrate primitives
 sp-api = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
@@ -67,12 +68,14 @@ sp-consensus-aura = { version = '0.9.0', git = 'https://github.com/paritytech/su
 sp-blockchain = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
 sp-core = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
 sp-inherents = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
 sp-offchain = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
 sp-runtime = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
 sp-session = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
 sp-timestamp = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
 sp-transaction-pool = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
 substrate-frame-rpc-system = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.8" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
 
 # Cumulus dependencies
 cumulus-client-cli = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.8" }
