@@ -751,6 +751,9 @@ pub fn calamari_config(id: ParaId) -> CalamariChainSpec {
 		// Account ID: dmv5qjXCqUwesFY56U9AyVsa2We7D55vYnkd5kBTdkiMyAWaF
 		hex!["32cd443cce01db659930f0391edde50dac2e511b12301bd40736c68b8a241717"].into();
 
+	// Revert this after done with testing.
+	let root_key: AccountId = get_account_id_from_seed::<sr25519::Public>("Alice");
+
 	CalamariChainSpec::from_genesis(
 		// Name
 		"Calamari Parachain",
