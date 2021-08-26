@@ -730,8 +730,6 @@ jobs:
     needs:
       - start-node-builder
       - build-node
-      - build-benchmark
-      - run-benchmark
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
