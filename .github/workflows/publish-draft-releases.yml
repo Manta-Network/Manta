@@ -176,7 +176,6 @@ jobs:
         with:
           name: calamari_runtime.compact.compressed.wasm
           path: target/release/wbuild/calamari-runtime/calamari_runtime.compact.compressed.wasm
-      -
 
   build-benchmark:
     needs:
