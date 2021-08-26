@@ -419,7 +419,7 @@ jobs:
           chmod +x $HOME/.local/bin/calamari-pc
           ls -ahl ${{ github.workspace }}/
           ls -ahl $HOME/.local/bin/
-      - 
+      -
         name: fetch calamari_runtime.compact.compressed.wasm
         uses: actions/download-artifacts@v2
         with:
