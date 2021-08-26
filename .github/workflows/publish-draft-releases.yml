@@ -143,9 +143,6 @@ jobs:
           source ${HOME}/.cargo/env
           cargo build --verbose --release --features calamari
       -
-        name: stop sccache server
-        run: sccache --stop-server || true
-      -
         name: strip
         run: |
           strip target/release/calamari-pc
@@ -155,6 +152,31 @@ jobs:
         with:
           name: calamari-pc
           path: target/release/calamari-pc
+      -
+        name: build2
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+        run: |
+          sed -i "/spec_version:/c\spec_version: 2," ./runtime/calamari/src/lib.rs
+          source ${HOME}/.cargo/env
+          cargo build --verbose --release -p calamari-runtime
+      -
+        name: stop sccache server
+        run: sccache --stop-server || true
+      -
+        name: strip
+        run: |
+          strip target/release/wbuild/calamari-runtime/calamari_runtime.compact.compressed.wasm
+      -
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: calamari_runtime.compact.compressed.wasm
+          path: target/release/wbuild/calamari-runtime/calamari_runtime.compact.compressed.wasm
+      -
 
   build-benchmark:
     needs:
@@ -397,6 +419,18 @@ jobs:
           chmod +x $HOME/.local/bin/calamari-pc
           ls -ahl ${{ github.workspace }}/
           ls -ahl $HOME/.local/bin/
+      - 
+        name: fetch calamari_runtime.compact.compressed.wasm
+        uses: actions/download-artifacts@v2
+        with:
+          name: calamari_runtime.compact.compressed.wasm
+      -
+        name: mv and chmod calamari_runtime.compact.compressed.wasm
+        run: |
+          mv ${{ github.workspace }}/calamari_runtime.compact.compressed.wasm $HOME/.local/bin/
+          chmod +x $HOME/.local/bin/calamari_runtime.compact.compressed.wasm
+          ls -ahl ${{ github.workspace }}/
+          ls -ahl $HOME/.local/bin/
       -
         name: fetch and chmod polkadot
         run: |
@@ -604,6 +638,15 @@ jobs:
         name: run test suites
         run: |
           # todo: implement moonbeam-like js test suite triggers here
+          sleep 180
+
+          git clone -b manta-tooling-unchecked-weight-sudo https://github.com/Manta-Network/tools.git
+          cd tools
+          yarn install
+          yarn
+          yarn run:api node --sudo --seed "Alice" tx.system.setCode @$HOME/.local/share/calamari_runtime.compact.compressed.wasm --ws "ws://127.0.0.1:9921" --types config/types.json
+          cd ..
+
           sleep 180
       -
         name: stop testnet
