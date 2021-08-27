@@ -84,7 +84,7 @@ jobs:
           cd Manta-Old
           git clone https://github.com/Manta-Network/Manta.git
           cd Manta
-          git checkout "${GITHUB_BASE_REF}"
+          git checkout 9616ad2e96fd04cec407e8825810a650821edaa3
       -
         name: cache target dir
         uses: actions/cache@v2
@@ -187,7 +187,7 @@ jobs:
 
   build-node-old:
     needs: start-node-builder
-    runs-on: ${{ needs.start-node-builder.outputs.runner-label2 }}
+    runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
     env:
       CARGO_TERM_COLOR: always
     steps:
@@ -247,7 +247,7 @@ jobs:
           cd temp_for_manta
           git clone https://github.com/Manta-Network/Manta.git
           cd Manta
-          git checkout "${GITHUB_BASE_REF}"
+          git checkout 9616ad2e96fd04cec407e8825810a650821edaa3
           source temp_for_manta/Manta/
           cargo build --verbose --release --features calamari
       -
@@ -804,7 +804,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      runner-label2: ${{ steps.start-self-hosted-runner.outputs.runner-label2 }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
       aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
     steps:
@@ -848,7 +847,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      runner-label2: ${{ steps.start-self-hosted-runner.outputs.runner-label2 }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
       aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
     steps:
