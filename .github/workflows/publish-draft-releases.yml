@@ -84,7 +84,7 @@ jobs:
           cd Manta-Old
           git clone https://github.com/Manta-Network/Manta.git
           cd Manta
-          git checkout "$GITHUB_BASE_REF"
+          git checkout "${GITHUB_BASE_REF}"
       -
         name: cache target dir
         uses: actions/cache@v2
@@ -247,7 +247,7 @@ jobs:
           cd temp_for_manta
           git clone https://github.com/Manta-Network/Manta.git
           cd Manta
-          git checkout "$GITHUB_BASE_REF"
+          git checkout "${GITHUB_BASE_REF}"
           source temp_for_manta/Manta/
           cargo build --verbose --release --features calamari
       -
