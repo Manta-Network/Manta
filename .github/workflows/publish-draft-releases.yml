@@ -140,11 +140,6 @@ jobs:
         with:
           name: calamari-pc-old
           path: target/release/calamari-pc
-      -
-        name: filler
-        run: |
-          cd..
-          cd..
   build-node:
     needs:
       - start-node-builder
