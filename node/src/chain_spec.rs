@@ -620,7 +620,7 @@ fn calamari_testnet_genesis(
 		sudo: calamari_runtime::SudoConfig { key: root_key },
 		parachain_info: calamari_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: calamari_runtime::CollatorSelectionConfig {
-			invulnerables: initial_authorities 
+			invulnerables: initial_authorities
 				.iter()
 				.cloned()
 				.map(|(acc, _)| acc)
@@ -663,17 +663,19 @@ fn calamari_genesis(
 		.cloned()
 		.map(|x| (x.0, collator_stake))
 		.collect();
-	
-	assert_eq!(sudo_balance, 10_000_000_000 * MA - collator_stake * (initial_authorities.len() as u128) - treasury_balance * (treasuries.len() as u128));
+
+	assert_eq!(
+		sudo_balance,
+		10_000_000_000 * MA
+			- collator_stake * (initial_authorities.len() as u128)
+			- treasury_balance * (treasuries.len() as u128)
+	);
 
 	for account in treasuries {
 		initial_balances.push((account, treasury_balance));
 	}
 
-	initial_balances.push((
-		root_key.clone(),
-		sudo_balance
-	));
+	initial_balances.push((root_key.clone(), sudo_balance));
 
 	calamari_runtime::GenesisConfig {
 		system: calamari_runtime::SystemConfig {
@@ -774,7 +776,8 @@ pub fn calamari_config(id: ParaId) -> CalamariChainSpec {
 		hex!["b950066a74e6891ba1df54b869e684fec001e0fd1aa7425024f6e44acd439993"].into(),
 		// treasury account 3 (multisig):
 		// Account ID: dmxj8Bq47uWHhKsMY2w17MMP8rbgRy1YYEyioC7QnpCa9E26J
-		hex!["a7b5337c3aa0efc3cef6a6b4c7e386a5e1879dd2d75dd6a411415a50d337633d"].into()];
+		hex!["a7b5337c3aa0efc3cef6a6b4c7e386a5e1879dd2d75dd6a411415a50d337633d"].into(),
+	];
 
 	CalamariChainSpec::from_genesis(
 		// Name
@@ -782,7 +785,14 @@ pub fn calamari_config(id: ParaId) -> CalamariChainSpec {
 		// ID
 		"calamari",
 		ChainType::Live,
-		move || calamari_genesis(initial_authorities.clone(), root_key.clone(), treasuries.clone(), id),
+		move || {
+			calamari_genesis(
+				initial_authorities.clone(),
+				root_key.clone(),
+				treasuries.clone(),
+				id,
+			)
+		},
 		vec![],
 		Some(
 			sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
