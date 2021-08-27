@@ -76,6 +76,7 @@ jobs:
           path: |
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
+      -
         name: get old code
         id: get-old-code
         run: |
