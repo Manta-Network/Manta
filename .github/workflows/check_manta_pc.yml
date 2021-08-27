@@ -49,7 +49,7 @@ jobs:
 
       - name: Check Manta-PC Clippy
         run: |
-          SKIP_WASM_BUILD= cargo clippy --features manta-pc
+          SKIP_WASM_BUILD= cargo clippy --features manta-pc -- -D warnings
 
       - name: Check Manta-PC Build
         run: |
