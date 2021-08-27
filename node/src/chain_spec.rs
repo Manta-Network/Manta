@@ -15,7 +15,7 @@ pub type CalamariChainSpec =
 pub type MantaPCChainSpec =
 	sc_service::GenericChainSpec<manta_pc_runtime::GenesisConfig, Extensions>;
 
-const ENDOWMENT: Balance = 100_000_000 * MA; // 10 endowment so that total supply is 1B
+const ENDOWMENT: Balance = 1_000_000_000 * MA; // 10 endowment so that total supply is 10B
 #[cfg(feature = "calamari")]
 const CALAMARI_PROTOCOL_ID: &str = "calamari"; // for p2p network configuration
 #[cfg(feature = "manta-pc")]
@@ -620,7 +620,7 @@ fn calamari_testnet_genesis(
 		sudo: calamari_runtime::SudoConfig { key: root_key },
 		parachain_info: calamari_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: calamari_runtime::CollatorSelectionConfig {
-			invulnerables: initial_authorities
+			invulnerables: initial_authorities 
 				.iter()
 				.cloned()
 				.map(|(acc, _)| acc)
@@ -650,20 +650,29 @@ fn calamari_testnet_genesis(
 fn calamari_genesis(
 	initial_authorities: Vec<(AccountId, AuraId)>,
 	root_key: AccountId,
+	treasuries: Vec<AccountId>,
 	id: ParaId,
 ) -> calamari_runtime::GenesisConfig {
 	// collator stake
-	let collator_stake = 20_000 * MA;
+	let collator_stake = 15_000 * MA;
+	let sudo_balance = 25_000 * MA;
+	let treasury_balance = 3_333_300_000 * MA;
 
 	let mut initial_balances: Vec<(AccountId, Balance)> = initial_authorities
 		.iter()
 		.cloned()
 		.map(|x| (x.0, collator_stake))
 		.collect();
+	
+	assert_eq!(sudo_balance, 10_000_000_000 * MA - collator_stake * (initial_authorities.len() as u128) - treasury_balance * (treasuries.len() as u128));
+
+	for account in treasuries {
+		initial_balances.push((account, treasury_balance));
+	}
 
 	initial_balances.push((
 		root_key.clone(),
-		10_000_000_000 * MA - collator_stake * (initial_authorities.len() as u128),
+		sudo_balance
 	));
 
 	calamari_runtime::GenesisConfig {
@@ -752,9 +761,20 @@ pub fn calamari_config(id: ParaId) -> CalamariChainSpec {
 	];
 
 	let root_key: AccountId =
-		// sudo account: 
-		// Account ID: dmv5qjXCqUwesFY56U9AyVsa2We7D55vYnkd5kBTdkiMyAWaF
-		hex!["32cd443cce01db659930f0391edde50dac2e511b12301bd40736c68b8a241717"].into();
+		// sudo account (multisig): 
+		// Account ID: dmxT9eL1XgH4neCK3S4wDS879xnJt27Prd2iPx9zfRPd6prE7
+		hex!["9b862dcfb8bc6b7d419e3ce659b3c1704b7dea3ec3ee2745de72e8948330af2d"].into();
+
+	let treasuries: Vec<AccountId> = vec![
+		// treasury account 1 (multisig):
+		// Account ID: dmvx16q32R59NHNz9nUQKE58N2Zjwg1S6em85dK1qwMDRCv2d
+		hex!["590f11f52dca16036634e9da9318373fd6303485fbff9620142a7ac908cd96e0"].into(),
+		// treasury account 2 (multisig):
+		// Account ID: dmy8CzbeUGALFj4XEVxPKf4FWnvNakYVxQxbEzx7QDmLazSY5
+		hex!["b950066a74e6891ba1df54b869e684fec001e0fd1aa7425024f6e44acd439993"].into(),
+		// treasury account 3 (multisig):
+		// Account ID: dmxj8Bq47uWHhKsMY2w17MMP8rbgRy1YYEyioC7QnpCa9E26J
+		hex!["a7b5337c3aa0efc3cef6a6b4c7e386a5e1879dd2d75dd6a411415a50d337633d"].into()];
 
 	CalamariChainSpec::from_genesis(
 		// Name
@@ -762,7 +782,7 @@ pub fn calamari_config(id: ParaId) -> CalamariChainSpec {
 		// ID
 		"calamari",
 		ChainType::Live,
-		move || calamari_genesis(initial_authorities.clone(), root_key.clone(), id),
+		move || calamari_genesis(initial_authorities.clone(), root_key.clone(), treasuries.clone(), id),
 		vec![],
 		Some(
 			sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
