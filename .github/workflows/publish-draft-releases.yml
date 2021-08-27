@@ -193,23 +193,23 @@ jobs:
     steps:
       -
         uses: actions/checkout@v2
-      - name: Install Rustup
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source ~/.cargo/env
-          rustup update stable
-          rustup update nightly
-          rustup target add wasm32-unknown-unknown --toolchain nightly
       -
-        name: build
+        name: init
         run: |
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup toolchain install nightly
+          rustup default stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
+          rustup update
           mkdir temp_for_manta
           cd temp_for_manta
           git clone https://github.com/Manta-Network/Manta.git
           cd Manta
           git checkout 9616ad2e96fd04cec407e8825810a650821edaa3
           cargo build --verbose --release --features calamari
-      -
         name: upload
         uses: actions/upload-artifact@v2
         with:
