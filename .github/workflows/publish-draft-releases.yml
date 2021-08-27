@@ -500,11 +500,11 @@ jobs:
           sleep 180
           git clone git@github.com:Manta-Network/Dev-Tools.git
           cd Dev-Tools/runtime-upgrade-test
-          echo "hello" > root_mnemonics
+          echo "//Alice" > root_mnemonics
           cp ${{ github.workspace }}/calamari_runtime.compact.compressed.wasm calamari.wasm
           yarn install
           yarn
-          yarn node.js
+          node index.js
           cd ..
           cd ..
           sleep 180
