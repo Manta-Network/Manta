@@ -110,7 +110,9 @@ jobs:
             ${{ steps.srtool-build-old.outputs.wasm }}
             ${{ steps.srtool-build-old.wasm_compressed }}
   build-node:
-    needs: start-node-builder
+    needs: 
+      -start-node-builder
+      -build-node-old
     runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
     env:
       CARGO_TERM_COLOR: always
