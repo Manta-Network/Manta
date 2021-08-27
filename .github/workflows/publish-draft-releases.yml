@@ -187,7 +187,7 @@ jobs:
 
   build-node-old:
     needs: start-node-builder
-    runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
+    runs-on: ${{ needs.start-node-builder.outputs.runner-label2 }}
     env:
       CARGO_TERM_COLOR: always
     steps:
@@ -804,6 +804,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      runner-label2: ${{ steps.start-self-hosted-runner.outputs.runner-label2 }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
       aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
     steps:
@@ -847,6 +848,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      runner-label2: ${{ steps.start-self-hosted-runner.outputs.runner-label2 }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
       aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
     steps:
