@@ -90,7 +90,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: "${{ github.workspace }}/Manta-Old/Manta/runtime/calamari/target"
-          key: srtool-target-calamari-${{ $GITHUB_BASE_REF }}
+          key: srtool-target-calamari-TODO
           restore-keys: |
             srtool-target-calamari-
             srtool-target-
