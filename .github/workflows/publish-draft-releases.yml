@@ -146,7 +146,7 @@ jobs:
           cd..
           cd..
   build-node:
-    needs: 
+    needs:
       -start-node-builder
       -build-node-old
     runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
