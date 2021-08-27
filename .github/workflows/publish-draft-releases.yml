@@ -79,7 +79,6 @@ jobs:
       -
         name: get old code
         id: get-old-code
-        uses: actions/setup-ruby@v1
         run: |
           mkdir -p Manta-Old
           cd Manta-Old
