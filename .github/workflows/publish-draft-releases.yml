@@ -212,7 +212,6 @@ jobs:
           git clone https://github.com/Manta-Network/Manta.git
           cd Manta
           git checkout 9616ad2e96fd04cec407e8825810a650821edaa3
-          source temp_for_manta/Manta/
           cargo build --verbose --release --features calamari
       -
         name: strip
