@@ -109,7 +109,6 @@ jobs:
           path: |
             ${{ steps.srtool-build-old.outputs.wasm }}
             ${{ steps.srtool-build-old.wasm_compressed }}
-      -
   build-node:
     needs: start-node-builder
     runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
