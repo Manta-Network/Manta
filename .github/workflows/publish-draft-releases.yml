@@ -84,13 +84,13 @@ jobs:
           cd Manta-Old
           git clone https://github.com/Manta-Network/Manta.git
           cd Manta
-          git checkout {{ github.base_ref }}
+          git checkout $GITHUB_BASE_REF
       -
         name: cache target dir
         uses: actions/cache@v2
         with:
           path: "${{ github.workspace }}/Manta-Old/Manta/runtime/calamari/target"
-          key: srtool-target-calamari-${{ github.base_ref }}
+          key: srtool-target-calamari-${{ $GITHUB_BASE_REF }}
           restore-keys: |
             srtool-target-calamari-
             srtool-target-
@@ -252,7 +252,7 @@ jobs:
           cd temp_for_manta
           git clone https://github.com/Manta-Network/Manta.git
           cd Manta
-          git checkout github.base_ref
+          git checkout $GITHUB_BASE_REF
           source temp_for_manta/Manta/
           cargo build --verbose --release --features calamari
       -
