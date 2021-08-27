@@ -194,16 +194,13 @@ jobs:
       -
         uses: actions/checkout@v2
       -
-        name: init
+      - name: Install Rustup
         run: |
-          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-          source ${HOME}/.cargo/env
-          rustup toolchain install stable
-          rustup toolchain install nightly
-          rustup default stable
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source ~/.cargo/env
+          rustup update stable
+          rustup update nightly
           rustup target add wasm32-unknown-unknown --toolchain nightly
-          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
-          rustup update
       -
         name: build
         run: |
@@ -213,10 +210,6 @@ jobs:
           cd Manta
           git checkout 9616ad2e96fd04cec407e8825810a650821edaa3
           cargo build --verbose --release --features calamari
-      -
-        name: strip
-        run: |
-          strip target/release/calamari-pc
       -
         name: upload
         uses: actions/upload-artifact@v2
