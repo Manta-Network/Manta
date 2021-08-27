@@ -225,7 +225,6 @@ jobs:
   integration-test:
     needs:
       - build-node
-      - build-node-old
       - build-calamari-runtime
       - start-integration-tester
     runs-on: ${{ needs.start-integration-tester.outputs.runner-label }}
