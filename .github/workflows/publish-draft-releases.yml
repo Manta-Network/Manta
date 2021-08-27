@@ -147,8 +147,8 @@ jobs:
           cd..
   build-node:
     needs:
-      -start-node-builder
-      -build-node-old
+      - start-node-builder
+      - build-node-old
     runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
     env:
       CARGO_TERM_COLOR: always
