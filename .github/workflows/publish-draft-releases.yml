@@ -242,11 +242,6 @@ jobs:
           rustup update
       -
         name: build
-        env:
-          RUST_BACKTRACE: full
-          RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 2G
-          SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           mkdir temp_for_manta
           cd temp_for_manta
