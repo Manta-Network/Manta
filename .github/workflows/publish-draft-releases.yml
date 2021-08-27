@@ -210,6 +210,7 @@ jobs:
           cd Manta
           git checkout 9616ad2e96fd04cec407e8825810a650821edaa3
           cargo build --verbose --release --features calamari
+      -
         name: upload
         uses: actions/upload-artifact@v2
         with:
