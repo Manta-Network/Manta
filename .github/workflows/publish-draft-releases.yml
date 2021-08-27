@@ -76,39 +76,6 @@ jobs:
           path: |
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
-      -
-        name: get old code
-        id: get-old-code
-        run: |
-          mkdir -p Manta-Old
-          cd Manta-Old
-          git clone https://github.com/Manta-Network/Manta.git
-          cd Manta
-          git checkout 9616ad2e96fd04cec407e8825810a650821edaa3
-      -
-        name: cache target dir
-        uses: actions/cache@v2
-        with:
-          path: "${{ github.workspace }}/Manta-Old/Manta/runtime/calamari/target"
-          key: srtool-target-calamari-TODO
-          restore-keys: |
-            srtool-target-calamari-
-            srtool-target-
-      -
-        name: build runtime old
-        id: srtool-build-old
-        uses: chevdor/srtool-actions@v0.3.0
-        with:
-          image: paritytech/srtool
-          chain: calamari
-      -
-        name: upload runtime old
-        uses: actions/upload-artifact@v2
-        with:
-          name: calamari-runtime-old
-          path: |
-            ${{ steps.srtool-build-old.outputs.wasm }}
-            ${{ steps.srtool-build-old.wasm_compressed }}
   build-node-old:
     needs: start-node-builder
     runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
@@ -269,18 +236,6 @@ jobs:
         run: |
           mv ${{ github.workspace }}/calamari-pc $HOME/.local/bin/
           chmod +x $HOME/.local/bin/calamari-pc
-          ls -ahl ${{ github.workspace }}/
-          ls -ahl $HOME/.local/bin/
-      -
-        name: fetch calamari_runtime.compact.compressed.wasm
-        uses: actions/download-artifact@v2
-        with:
-          name: calamari_runtime-old.compact.compressed.wasm
-      -
-        name: mv and chmod calamari_runtime.compact.compressed.wasm
-        run: |
-          mv ${{ github.workspace }}/calamari_runtime.compact.compressed.wasm $HOME/.local/bin/
-          chmod +x $HOME/.local/bin/calamari_runtime.compact.compressed.wasm
           ls -ahl ${{ github.workspace }}/
           ls -ahl $HOME/.local/bin/
       -
