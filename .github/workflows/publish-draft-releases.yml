@@ -451,9 +451,10 @@ jobs:
           # todo: implement moonbeam-like js test suite triggers here
           sleep 180
 
-          echo "Alice" > root_mnemonics
+          echo "Alice" > ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/root_mnemonics
           cp calamari_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/calamari.wasm
           cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
+          ls -a
           yarn install
           yarn
           sed -i -- 's/9801/9921/g' index.js
