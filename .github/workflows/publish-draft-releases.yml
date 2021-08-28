@@ -129,7 +129,8 @@ jobs:
         name: run test suites
         run: |
           # todo: implement moonbeam-like js test suite triggers here
-          sleep 180
+          pwd
+          ls -a
           cp calamari_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/calamari.wasm
           cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
           echo "Alice" > root_mnemonics
