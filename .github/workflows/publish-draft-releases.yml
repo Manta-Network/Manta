@@ -116,11 +116,19 @@ jobs:
     steps:
       -
         run: |
+          echo "check this"
+          pwd
           mkdir -p $HOME/.local/share/calamari-pc
           mkdir -p $HOME/.local/bin
           echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
       -
+        uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Dev-Tools
+          ref: 4a86ad8627b8ef71f1f5603597503a21632fdbe8
+          path: dev-tools-calamari
+      -      
         name: fetch new calamari_runtime.compact.compressed.wasm
         uses: actions/download-artifact@v2
         with:
@@ -129,21 +137,6 @@ jobs:
         name: run test suites
         run: |
           # todo: implement moonbeam-like js test suite triggers here
-          pwd
-          ls -a
-          cd ..
-          pwd
-          ls -a
-          cd ..
-          pwd
-          ls -a
-          cd ..
-          pwd
-          ls -a
-          cd ..
-          pwd
-          ls -a
-          cd ..
           pwd
           ls -a
           cp calamari_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/calamari.wasm
