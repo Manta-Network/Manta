@@ -74,7 +74,6 @@ jobs:
         name: run test suites
         run: |
           # todo: implement moonbeam-like js test suite triggers here
-          sleep 180
 
           echo "Alice" > ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/root_mnemonics
           cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
@@ -90,7 +89,6 @@ jobs:
             --no-autorestart
           cd ${{ github.workspace }}
           ls -a
-          sleep 180
       -
         uses: actions/upload-artifact@v2
         with:
