@@ -647,5 +647,6 @@ fn calamari_testnet_genesis(
 // Calamari mainnet
 #[cfg(feature = "calamari")]
 pub fn calamari_config() -> CalamariChainSpec {
-	CalamariChainSpec::from_json_bytes(&include_bytes!("../../genesis/calamari-genesis.json")[..]).unwrap()
+	CalamariChainSpec::from_json_bytes(&include_bytes!("../../genesis/calamari-genesis.json")[..])
+		.unwrap()
 }
