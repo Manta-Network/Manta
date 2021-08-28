@@ -6,7 +6,7 @@ name: publish draft releases
 
 # yamllint disable-line rule:truthy
 on:
-  push:
+  pull_request:
     branch:
       - manta-pc
     #tags:
