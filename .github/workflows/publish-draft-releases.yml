@@ -398,13 +398,13 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
-          ref: 82cdc384e83b9cd5849537cde070d5cf54d32a99
+          ref: 9b3832bc89d9eaa29e227cb963a5a9911282539a
           path: dev-tools-rococo
       -
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
-          ref: 82cdc384e83b9cd5849537cde070d5cf54d32a99
+          ref: 9b3832bc89d9eaa29e227cb963a5a9911282539a
           path: dev-tools-calamari
       -
         name: launch testnet
@@ -459,7 +459,12 @@ jobs:
           yarn install
           yarn
           sed -i -- 's/9801/9921/g' index.js
-          node index.js
+          pm2 start index.js \
+            --name test-runtime-upgrade-${{ matrix.chain-spec.id }} \
+            --output ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stderr.log \
+            --no-autorestart
+          pm2 stop test-runtime-upgrade-${{ matrix.chain-spec.id }}
           cd ..
           cd ..
 
