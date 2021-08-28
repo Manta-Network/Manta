@@ -71,6 +71,18 @@ jobs:
           #       para: 2
     steps:
       -
+        uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Dev-Tools
+          ref: 9b3832bc89d9eaa29e227cb963a5a9911282539a
+          path: dev-tools-rococo
+      -
+        uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Dev-Tools
+          ref: 9b3832bc89d9eaa29e227cb963a5a9911282539a
+          path: dev-tools-calamari
+      -
         name: run test suites
         run: |
           # todo: implement moonbeam-like js test suite triggers here
