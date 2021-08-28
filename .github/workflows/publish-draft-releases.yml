@@ -464,10 +464,11 @@ jobs:
             --output ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log \
             --error ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart
-          pm2 stop test-runtime-upgrade-${{ matrix.chain-spec.id }}
           cd ..
           cd ..
-
+          cd test-runtime-upgrade
+          ls -a
+          cd..
           sleep 180
       -
         name: stop testnet
@@ -476,6 +477,7 @@ jobs:
           pm2 stop measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}
           pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
           pm2 stop manta-pc-launch
+          pm2 stop test-runtime-upgrade-${{ matrix.chain-spec.id }}
       -
         uses: actions/upload-artifact@v2
         with:
