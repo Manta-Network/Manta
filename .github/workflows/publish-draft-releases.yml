@@ -444,7 +444,7 @@ jobs:
         name: fetch new calamari_runtime.compact.compressed.wasm
         uses: actions/download-artifact@v2
         with:
-          name: calamari_runtime.compact.compressed.wasm
+          name: calamari-runtime
       -
         name: run test suites
         run: |
@@ -453,7 +453,7 @@ jobs:
           git clone git@github.com:Manta-Network/Dev-Tools.git
           cd Dev-Tools/runtime-upgrade-test
           echo "Alice" > root_mnemonics
-          cp ${{ github.workspace }}/calamari_runtime.compact.compressed.wasm calamari.wasm
+          cp ${{ github.workspace }}/calamari-runtime/calamari_runtime.compact.compressed.wasm calamari.wasm
           yarn install
           yarn
           node index.js
