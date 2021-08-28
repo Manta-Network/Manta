@@ -398,13 +398,13 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
-          ref: 4a86ad8627b8ef71f1f5603597503a21632fdbe8
+          ref: c64f07b4698f6464ee881d7a463d65ecccdd0d56
           path: dev-tools-rococo
       -
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
-          ref: 4a86ad8627b8ef71f1f5603597503a21632fdbe8
+          ref: c64f07b4698f6464ee881d7a463d65ecccdd0d56
           path: dev-tools-calamari
       -
         name: launch testnet
@@ -454,6 +454,7 @@ jobs:
           echo "Alice" > ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/root_mnemonics
           cp calamari_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/calamari.wasm
           cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
+          pwd
           ls -a
           yarn install
           yarn
