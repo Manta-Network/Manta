@@ -131,7 +131,9 @@ jobs:
           # todo: implement moonbeam-like js test suite triggers here
           sleep 180
           sudo apt-get install unzip
-          unzip ${{ github.workspace }}/calamari-runtime
+          pwd
+          ls -a
+          unzip ${{ github.workspace }}/calamari-runtime.zip
           cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
           echo "Alice" > root_mnemonics
           cp ${{ github.workspace }}/calamari_runtime.compact.compressed.wasm calamari.wasm
