@@ -456,11 +456,7 @@ jobs:
           cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
           yarn install
           sed -i -- 's/9801/9921/g' index.js
-          pm2 start index.js \
-            --name runtime-upgrade-test-${{ matrix.chain-spec.id }} \
-            --output ${{ github.workspace }}/runtime-upgrade-test-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/runtime-upgrade-test-${{ matrix.chain-spec.id }}-stderr.log \
-            --no-autorestart
+          node index.js
           cd ..
           cd ..
 
