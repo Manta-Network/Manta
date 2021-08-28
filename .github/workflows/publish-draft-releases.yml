@@ -475,6 +475,11 @@ jobs:
       -
         uses: actions/upload-artifact@v2
         with:
+          name: runtime-upgrade-test-for-${{ matrix.chain-spec.id }}-stdout.log
+          path: ${{ github.workspace }}/runtime-upgrade-test-${{ matrix.chain-spec.id }}-stdout.log
+      -
+        uses: actions/upload-artifact@v2
+        with:
           name: manta-pc-launch-for-${{ matrix.chain-spec.id }}-stdout.log
           path: ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.chain-spec.id }}-stdout.log
       -
