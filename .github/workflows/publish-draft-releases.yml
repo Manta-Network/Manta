@@ -79,6 +79,7 @@ jobs:
   integration-test:
     needs:
       - start-integration-tester
+      - build-calamari-runtime
     runs-on: ${{ needs.start-integration-tester.outputs.runner-label }}
     timeout-minutes: 90
     strategy:
