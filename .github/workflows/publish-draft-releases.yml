@@ -455,6 +455,7 @@ jobs:
           cp calamari_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/calamari.wasm
           cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
           yarn install
+          yarn
           sed -i -- 's/9801/9921/g' index.js
           node index.js
           cd ..
