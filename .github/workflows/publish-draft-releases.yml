@@ -131,6 +131,21 @@ jobs:
           # todo: implement moonbeam-like js test suite triggers here
           pwd
           ls -a
+          cd ..
+          pwd
+          ls -a
+          cd ..
+          pwd
+          ls -a
+          cd ..
+          pwd
+          ls -a
+          cd ..
+          pwd
+          ls -a
+          cd ..
+          pwd
+          ls -a
           cp calamari_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/calamari.wasm
           cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
           echo "Alice" > root_mnemonics
