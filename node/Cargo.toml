@@ -104,7 +104,6 @@ manta-primitives = { path = '../runtime/primitives' }
 substrate-build-script-utils = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.9" }
 
 [features]
-default = []
 try-runtime = [ 
 	'try-runtime-cli',
 ]

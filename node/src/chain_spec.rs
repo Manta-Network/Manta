@@ -15,7 +15,7 @@ pub type CalamariChainSpec =
 pub type MantaPCChainSpec =
 	sc_service::GenericChainSpec<manta_pc_runtime::GenesisConfig, Extensions>;
 
-const ENDOWMENT: Balance = 100_000_000 * MA; // 10 endowment so that total supply is 1B
+const ENDOWMENT: Balance = 1_000_000_000 * MA; // 10 endowment so that total supply is 10B
 #[cfg(feature = "calamari")]
 const CALAMARI_PROTOCOL_ID: &str = "calamari"; // for p2p network configuration
 #[cfg(feature = "manta-pc")]
@@ -33,8 +33,6 @@ const POLKADOT_RELAYCHAIN_MAIN_NET: &str = "polkadot";
 const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
 #[cfg(feature = "calamari")]
 const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
-#[cfg(feature = "calamari")]
-const KUSAMA_RELAYCHAIN_MAIN_NET: &str = "kusama";
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -646,133 +644,9 @@ fn calamari_testnet_genesis(
 	}
 }
 
+// Calamari mainnet
 #[cfg(feature = "calamari")]
-fn calamari_genesis(
-	initial_authorities: Vec<(AccountId, AuraId)>,
-	root_key: AccountId,
-	id: ParaId,
-) -> calamari_runtime::GenesisConfig {
-	// collator stake
-	let collator_stake = 20_000 * MA;
-
-	let mut initial_balances: Vec<(AccountId, Balance)> = initial_authorities
-		.iter()
-		.cloned()
-		.map(|x| (x.0, collator_stake))
-		.collect();
-
-	initial_balances.push((
-		root_key.clone(),
-		10_000_000_000 * MA - collator_stake * (initial_authorities.len() as u128),
-	));
-
-	calamari_runtime::GenesisConfig {
-		system: calamari_runtime::SystemConfig {
-			code: calamari_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			changes_trie_config: Default::default(),
-		},
-		balances: calamari_runtime::BalancesConfig {
-			balances: initial_balances,
-		},
-		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
-		// of this.
-		aura: Default::default(),
-		sudo: calamari_runtime::SudoConfig { key: root_key },
-		parachain_info: calamari_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: calamari_runtime::CollatorSelectionConfig {
-			invulnerables: initial_authorities
-				.iter()
-				.cloned()
-				.map(|(acc, _)| acc)
-				.collect(),
-			candidacy_bond: MA * 10_000, // How many tokens will be reserved as collator
-			..Default::default()
-		},
-		session: calamari_runtime::SessionConfig {
-			keys: initial_authorities
-				.iter()
-				.cloned()
-				.map(|(acc, aura)| {
-					(
-						acc.clone(),                 // account id
-						acc,                         // validator id
-						calamari_session_keys(aura), // session keys
-					)
-				})
-				.collect(),
-		},
-		aura_ext: Default::default(),
-		parachain_system: Default::default(),
-	}
-}
-
-#[cfg(feature = "calamari")]
-pub fn calamari_config(id: ParaId) -> CalamariChainSpec {
-	let properties = calamari_properties();
-
-	// (controller_account, aura_id)
-	let initial_authorities: Vec<(AccountId, AuraId)> = vec![
-		(
-			// collator 1
-			// Account ID: dmxjZSec4Xj3xz3nBEwSHjQSnRGhvcoB4eRabkiw7pSDuv8fW
-			hex!["a80a38004dcea90dd0b91c5194ad577fb7b19517ea97e2ad263fcc5df7f57e06"].into(),
-			hex!["7c4e5ea112f816c85f2bc77383cca50b73af038e327d39dca94252a4553b897e"]
-				.unchecked_into(),
-		),
-		(
-			// collator 2
-			// Account ID: dmu63DLez715hRyhzdigz6akxS2c9W6RQvrToUWuQ1hntcBwF
-			hex!["06b7ad4ce692a1653f7e2943b05c466c76c083238837af9a69ccba80185d2e6a"].into(),
-			hex!["e6cd4aa48cfb4638c90b2b4965e28f6f0eabdc261c545a31917243ad7c45d633"]
-				.unchecked_into(),
-		),
-		(
-			// collator 3
-			// Account ID: dmxvivs72h11DBNyKbeF8KQvcksoZsK9uejLpaWygFHZ2fU9z
-			hex!["b08dda3edc4405b4283e0e3ee7a4eddf850ccb01cda1b5716a21e033f47e7912"].into(),
-			hex!["ba3ca0dcf9e7515da2ad6ad37aba358ac8dfc727d791f6607d5779f934323859"]
-				.unchecked_into(),
-		),
-		(
-			// collator 4
-			// Account ID: dmyhGnuox8ny9R1efVsWKxNU2FevMxcPZaB66uEJqJhgC4a1W
-			hex!["d287e909d2ac9ad80917aa96c49130890b0cbe025c8613aceb414c9d78836a22"].into(),
-			hex!["ae06f5c31189ad71a94c3dee0e462619694db71821467dbe3d49ab06319add18"]
-				.unchecked_into(),
-		),
-		(
-			// collator 5
-			// Account ID: dmzbLejekGYZmfo5FoSznv5bBik7vGowuLxvzqFs2gZo2kANh
-			hex!["fa3da97c21b48c74aec68124ea2102691fe44ef9aed1dd206a06fe21925c2024"].into(),
-			hex!["6efd8d34a7139069ff8eb2cfe94af804a74f3084db80b6d052c0b5e300e78602"]
-				.unchecked_into(),
-		),
-	];
-
-	let root_key: AccountId =
-		// sudo account: 
-		// Account ID: dmv5qjXCqUwesFY56U9AyVsa2We7D55vYnkd5kBTdkiMyAWaF
-		hex!["32cd443cce01db659930f0391edde50dac2e511b12301bd40736c68b8a241717"].into();
-
-	CalamariChainSpec::from_genesis(
-		// Name
-		"Calamari Parachain",
-		// ID
-		"calamari",
-		ChainType::Live,
-		move || calamari_genesis(initial_authorities.clone(), root_key.clone(), id),
-		vec![],
-		Some(
-			sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
-				.expect("Calamari testnet telemetry url is valid; qed"),
-		),
-		Some(CALAMARI_PROTOCOL_ID),
-		Some(properties),
-		Extensions {
-			relay_chain: KUSAMA_RELAYCHAIN_MAIN_NET.into(),
-			para_id: id.into(),
-		},
-	)
+pub fn calamari_config() -> CalamariChainSpec {
+	CalamariChainSpec::from_json_bytes(&include_bytes!("../../genesis/calamari-genesis.json")[..])
+		.unwrap()
 }
