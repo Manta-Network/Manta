@@ -17,6 +17,10 @@ jobs:
   get-rust-versions:
     runs-on: ubuntu-latest
     steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
       -
         id: get-rust-versions
         run: |
