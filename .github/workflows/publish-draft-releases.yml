@@ -78,20 +78,44 @@ jobs:
           path: |
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
-  build-node-old:
+
+  build-node:
     needs: start-node-builder
     runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
     env:
       CARGO_TERM_COLOR: always
     steps:
       -
-        name: set base ref
+        uses: actions/checkout@v2
+      -
+        name: init
         run: |
-          echo "9616ad2e96fd04cec407e8825810a650821edaa3" >> $GITHUB_BASE_REF
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup toolchain install nightly
+          rustup default stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
+          rustup update
+          cargo build --verbose --release --features calamari
+      -
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: calamari-pc
+          path: target/release/calamari-pc
+
+  build-node-old:
+    needs: start-node-builder
+    runs-on: ${{ needs.start-node-builder.outputs.runner-label-old }}
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
       -
         uses: actions/checkout@v2
         with: 
-          ref: $GITHUB_BASE_REF
+          ref: '9616ad2e96fd04cec407e8825810a650821edaa3'
       -
         name: init
         run: |
@@ -110,6 +134,7 @@ jobs:
         with:
           name: calamari-pc-old
           path: target/release/calamari-pc
+
   integration-test:
     needs:
       - build-node-old
@@ -521,10 +546,12 @@ jobs:
       #   name: validate calamari bob log
       #   run: |
       #     cat ${{ github.workspace }}/manta-pc-launch/9922.log
+
   start-node-builder:
     runs-on: ubuntu-latest
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      runner-label-old: ${{ steps.start-self-hosted-runner.outputs.runner-label-old }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
       aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
     steps:
@@ -562,12 +589,14 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ needs.start-node-builder.outputs.aws-region }}
           runner-label: ${{ needs.start-node-builder.outputs.runner-label }}
+          runner-label-old: ${{ needs.start-node-builder.outputs.runner-label-old }}
           aws-instance-id: ${{ needs.start-node-builder.outputs.aws-instance-id }}
 
   start-integration-tester:
     runs-on: ubuntu-latest
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      runner-label-old: ${{ steps.start-self-hosted-runner.outputs.runner-label-old }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
       aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
     steps:
@@ -605,6 +634,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ needs.start-integration-tester.outputs.aws-region }}
           runner-label: ${{ needs.start-integration-tester.outputs.runner-label }}
+          runner-label-old: ${{ needs.start-integration-tester.outputs.runner-label-old }}
           aws-instance-id: ${{ needs.start-integration-tester.outputs.aws-instance-id }}
 
 # yamllint enable rule:line-length
