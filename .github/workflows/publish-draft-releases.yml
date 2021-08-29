@@ -728,8 +728,8 @@ jobs:
          name: compare versions true
          id: comparison_result
          run: |
-            if [ $steps.get-runtime-version.outputs.runtime_ver != $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::$true"; exit 1; fi
-            if [ $steps.get-runtime-version.outputs.runtime_ver == $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::$false"; exit 1; fi
+            if [ $steps.get-runtime-version.outputs.runtime_ver != $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::$true"; exit 0; fi
+            if [ $steps.get-runtime-version.outputs.runtime_ver == $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::$false"; exit 0; fi
       -
          name: test output
          id: test_output
