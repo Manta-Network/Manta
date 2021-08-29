@@ -76,7 +76,8 @@ jobs:
           path: |
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
-  build-node-old:
+
+  build-node:
     needs: start-node-builder
     runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
     env:
@@ -84,8 +85,35 @@ jobs:
     steps:
       -
         uses: actions/checkout@v2
-        with: 
-          ref: '9616ad2e96fd04cec407e8825810a650821edaa3' 
+      -
+        name: init
+        run: |
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup toolchain install nightly
+          rustup default stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
+          rustup update
+          cargo build --verbose --release --features calamari
+      -
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: calamari-pc
+          path: target/release/calamari-pc
+
+  build-node-old:
+    needs: start-node-builder-old
+    runs-on: ${{ needs.start-node-builder-old.outputs.runner-label }}
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      -
+        uses: actions/checkout@v2
+        with:
+          ref: '9616ad2e96fd04cec407e8825810a650821edaa3'
       -
         name: init
         run: |
@@ -104,8 +132,10 @@ jobs:
         with:
           name: calamari-pc-old
           path: target/release/calamari-pc
+
   integration-test:
     needs:
+      - build-node
       - build-node-old
       - build-calamari-runtime
       - start-integration-tester
@@ -372,7 +402,7 @@ jobs:
         name: run test suites
         run: |
           # todo: implement moonbeam-like js test suite triggers here
-          sleep 180
+          sleep 120
 
           echo "Alice" > ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/root_mnemonics
           cp calamari_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/calamari.wasm
@@ -381,7 +411,6 @@ jobs:
           ls -a
           yarn install
           yarn
-          sed -i -- 's/9801/9921/g' index.js
           pm2 start index.js \
             --name test-runtime-upgrade-${{ matrix.chain-spec.id }} \
             --output ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log \
@@ -389,7 +418,7 @@ jobs:
             --no-autorestart
           cd ${{ github.workspace }}
           ls -a
-          sleep 180
+          sleep 120
       -
         name: stop testnet
         run: |
@@ -517,6 +546,7 @@ jobs:
       #   name: validate calamari bob log
       #   run: |
       #     cat ${{ github.workspace }}/manta-pc-launch/9922.log
+
   start-node-builder:
     runs-on: ubuntu-latest
     outputs:
@@ -545,7 +575,7 @@ jobs:
   stop-node-builder:
     needs:
       - start-node-builder
-      - build-node-old
+      - build-node
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
@@ -559,6 +589,49 @@ jobs:
           aws-region: ${{ needs.start-node-builder.outputs.aws-region }}
           runner-label: ${{ needs.start-node-builder.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-node-builder.outputs.aws-instance-id }}
+
+  start-node-builder-old:
+    runs-on: ubuntu-latest
+    outputs:
+      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    steps:
+      -
+        id: start-self-hosted-runner
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
+          aws-region: us-east-1
+          aws-subnet-id: subnet-08c26caf0a52b7c19
+          aws-security-group-id: sg-0315bffea9042ac9b
+          aws-instance-type: c5a.8xlarge # 32 vcpu, 64gb ram, $1.392 hourly
+          aws-instance-root-volume-size: 32
+          aws-instance-lifecycle: spot
+          aws-image-search-pattern: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
+          aws-image-search-owners: '["099720109477"]' # canonical
+
+  stop-node-builder-old:
+    needs:
+      - start-node-builder-old
+      - build-node-old
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      -
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.start-node-builder-old.outputs.aws-region }}
+          runner-label: ${{ needs.start-node-builder-old.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-node-builder-old.outputs.aws-instance-id }}
 
   start-integration-tester:
     runs-on: ubuntu-latest
