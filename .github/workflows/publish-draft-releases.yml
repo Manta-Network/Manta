@@ -734,7 +734,7 @@ jobs:
          name: test output
          id: test_output
          run: |
-            echo ${steps.comparison_result.outputs.comparison_result}
+            echo $comparison_result
             echo $steps.get-runtime-version.outputs.runtime_ver
 
 # yamllint enable rule:line-length
