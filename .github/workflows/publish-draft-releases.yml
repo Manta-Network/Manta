@@ -718,5 +718,7 @@ jobs:
             puts get_runtime("calamari")
           ')"
           echo "::set-output name=runtime_ver_old::$runtime_ver"
+          echo runtime_ver
+          echo ....................
 
 # yamllint enable rule:line-length
