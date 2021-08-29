@@ -14,21 +14,21 @@ on:
 
 jobs:
 
-  # get-rust-versions:
-  #   runs-on: ubuntu-latest
-  #   container:
-  #     image: paritytech/ci-linux:production
-  #   outputs:
-  #     rustc-stable: ${{ steps.get-rust-versions.outputs.stable }}
-  #     rustc-nightly: ${{ steps.get-rust-versions.outputs.nightly }}
-  #   env:
-  #     CARGO_TERM_COLOR: always
-  #   steps:
-  #     -
-  #       id: get-rust-versions
-  #       run: |
-  #         echo "::set-output name=stable::$(rustc +stable --version)"
-  #         echo "::set-output name=nightly::$(rustc +nightly --version)"
+  get-rust-versions:
+    runs-on: ubuntu-latest
+    container:
+      image: paritytech/ci-linux:production
+    outputs:
+      rustc-stable: ${{ steps.get-rust-versions.outputs.stable }}
+      rustc-nightly: ${{ steps.get-rust-versions.outputs.nightly }}
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      -
+        id: get-rust-versions
+        run: |
+          echo "::set-output name=stable::$(rustc +stable --version)"
+          echo "::set-output name=nightly::$(rustc +nightly --version)"
 
   # # test-docker-works:
   # #  needs: start-calamari-runtime-builder
@@ -77,126 +77,143 @@ jobs:
   #           ${{ steps.srtool-build.outputs.wasm }}
   #           ${{ steps.srtool-build.outputs.wasm_compressed }}
 
-  # build-node:
-  #   needs: start-node-builder
-  #   runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
-  #   env:
-  #     CARGO_TERM_COLOR: always
-  #   steps:
-  #     -
-  #       uses: actions/checkout@v2
-  #     -
-  #       name: init
-  #       run: |
-  #         curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-  #         source ${HOME}/.cargo/env
-  #         rustup toolchain install stable
-  #         rustup toolchain install nightly
-  #         rustup default stable
-  #         rustup target add wasm32-unknown-unknown --toolchain nightly
-  #         cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
-  #         rustup update
-  #         cargo build --verbose --release --features calamari
-  #     -
-  #       name: upload
-  #       uses: actions/upload-artifact@v2
-  #       with:
-  #         name: calamari-pc
-  #         path: target/release/calamari-pc
+  build-node:
+    needs: start-node-builder
+    runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      -
+        uses: actions/checkout@v2
+      -
+        name: init
+        run: |
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup toolchain install nightly
+          rustup default stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
+          rustup update
+          cargo build --verbose --release --features calamari
+      -
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: calamari-pc
+          path: target/release/calamari-pc
 
-  # build-node-old:
-  #   needs: start-node-builder-old
-  #   runs-on: ${{ needs.start-node-builder-old.outputs.runner-label }}
-  #   env:
-  #     CARGO_TERM_COLOR: always
-  #   steps:
-  #     -
-  #       uses: actions/checkout@v2
-  #       with:
-  #         ref: '9616ad2e96fd04cec407e8825810a650821edaa3'
-  #     -
-  #       name: init
-  #       run: |
-  #         curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-  #         source ${HOME}/.cargo/env
-  #         rustup toolchain install stable
-  #         rustup toolchain install nightly
-  #         rustup default stable
-  #         rustup target add wasm32-unknown-unknown --toolchain nightly
-  #         cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
-  #         rustup update
-  #         cargo build --verbose --release --features calamari
-  #     -
-  #       name: upload
-  #       uses: actions/upload-artifact@v2
-  #       with:
-  #         name: calamari-pc-old
-  #         path: target/release/calamari-pc
+  build-node-old:
+    needs: start-node-builder-old
+    runs-on: ${{ needs.start-node-builder-old.outputs.runner-label }}
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      -
+        uses: actions/checkout@v2
+        with:
+          ref: '9616ad2e96fd04cec407e8825810a650821edaa3'
+      -
+        name: init
+        run: |
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup toolchain install nightly
+          rustup default stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
+          rustup update
+          cargo build --verbose --release --features calamari
+      -
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: calamari-pc-old
+          path: target/release/calamari-pc
 
-  # integration-test:
-  #   needs:
-  #     - build-node
-  #     - build-node-old
-  #     - build-calamari-runtime
-  #     - start-integration-tester
-  #   runs-on: ${{ needs.start-integration-tester.outputs.runner-label }}
-  #   timeout-minutes: 90
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       chain-spec:
-  #         -
-  #           id: calamari-local
-  #           expected:
-  #             block-count:
-  #               relay: 25
-  #               para: 6
-  #             peer-count:
-  #               relay: 5
-  #               para: 2
-  #         -
-  #           id: calamari-dev
-  #           expected:
-  #             block-count:
-  #               relay: 25
-  #               para: 6
-  #             peer-count:
-  #               relay: 5
-  #               para: 2
-  #         # -
-  #         #   id: calamari-testnet
-  #         #   expected:
-  #         #     block-count:
-  #         #       relay: 25
-  #         #       para: 6
-  #         #     peer-count:
-  #         #       relay: 5
-  #         #       para: 2
-  #   steps:
-  #     -
-  #       run: |
-  #         mkdir -p $HOME/.local/share/calamari-pc
-  #         mkdir -p $HOME/.local/bin
-  #         echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
-  #         echo "${HOME}/.local/bin" >> $GITHUB_PATH
-  #     -
-  #       name: fetch calamari-pc
-  #       uses: actions/download-artifact@v2
-  #       with:
-  #         name: calamari-pc-old
-  #     -
-  #       name: mv and chmod calamari-pc
-  #       run: |
-  #         mv ${{ github.workspace }}/calamari-pc $HOME/.local/bin/
-  #         chmod +x $HOME/.local/bin/calamari-pc
-  #         ls -ahl ${{ github.workspace }}/
-  #         ls -ahl $HOME/.local/bin/
-  #     -
-  #       name: fetch and chmod polkadot
-  #       run: |
-  #         curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.9/polkadot
-  #         chmod +x $HOME/.local/bin/polkadot
-  #         ls -ahl $HOME/.local/bin/
+  integration-test:
+    needs:
+      - build-node
+      - build-node-old
+      - build-calamari-runtime
+      - start-integration-tester
+    runs-on: ${{ needs.start-integration-tester.outputs.runner-label }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        chain-spec:
+          -
+            id: calamari-local
+            expected:
+              block-count:
+                relay: 25
+                para: 6
+              peer-count:
+                relay: 5
+                para: 2
+          -
+            id: calamari-dev
+            expected:
+              block-count:
+                relay: 25
+                para: 6
+              peer-count:
+                relay: 5
+                para: 2
+          # -
+          #   id: calamari-testnet
+          #   expected:
+          #     block-count:
+          #       relay: 25
+          #       para: 6
+          #     peer-count:
+          #       relay: 5
+          #       para: 2
+    steps:
+      -
+        run: |
+          mkdir -p $HOME/.local/share/calamari-pc
+          mkdir -p $HOME/.local/share/calamari-pc-old
+          mkdir -p $HOME/.local/bin
+          echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+      -
+        name: fetch calamari-pc-old
+        uses: actions/download-artifact@v2
+        with:
+          name: calamari-pc-old
+      -
+        name: mv and chmod calamari-pc-old
+        run: |
+          mv ${{ github.workspace }}/calamari-pc-old $HOME/.local/bin/
+          chmod +x $HOME/.local/bin/calamari-pc-old
+          ls -ahl ${{ github.workspace }}/
+          ls -ahl $HOME/.local/bin/
+          cd ${{ github.workspace }}/calamari-pc-old
+          pwd
+      -
+        name: fetch calamari-pc
+        uses: actions/download-artifact@v2
+        with:
+          name: calamari-pc
+      -
+        name: mv and chmod calamari-pc
+        run: |
+          mv ${{ github.workspace }}/calamari-pc $HOME/.local/bin/
+          chmod +x $HOME/.local/bin/calamari-pc
+          ls -ahl ${{ github.workspace }}/
+          ls -ahl $HOME/.local/bin/
+          cd ${{ github.workspace }}/calamari-pc
+          pwd
+      # -
+      #   name: fetch and chmod polkadot
+      #   run: |
+      #     curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.9/polkadot
+      #     chmod +x $HOME/.local/bin/polkadot
+      #     ls -ahl $HOME/.local/bin/
   #     -
   #       id: create-chainspec
   #       run: |
@@ -731,16 +748,7 @@ jobs:
             if [ $steps.get-runtime-version.outputs.runtime_ver != $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::1"; exit 0; fi
             if [ $steps.get-runtime-version.outputs.runtime_ver == $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::0"; exit 0; fi
       -
-         name: test output
-         id: test_output
-         run: |
-            echo $comparison_result
-            echo ....................
-            echo $steps.comparison_result.outputs.comparion_result
-            echo ....................
-            echo ${{ steps.comparison_result.outputs.comparion_result }}
-
-          
+   
   check-for-runtime-upgrade-output:
     runs-on: ubuntu-latest
     needs:
