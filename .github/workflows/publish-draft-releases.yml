@@ -27,8 +27,6 @@ jobs:
       -
         id: get-rust-versions
         run: |
-          echo $GITHUB_BASE_REF
-          echo  "${{ github.base_ref }}
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
 
