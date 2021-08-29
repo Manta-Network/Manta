@@ -188,12 +188,16 @@ jobs:
       -
         name: mv and chmod calamari-pc-old
         run: |
+          pwd
+          ls -a
           mv ${{ github.workspace }}/calamari-pc-old $HOME/.local/bin/
           chmod +x $HOME/.local/bin/calamari-pc-old
           ls -ahl ${{ github.workspace }}/
           ls -ahl $HOME/.local/bin/
           cd ${{ github.workspace }}/calamari-pc-old
           pwd
+          ls -a
+          cd ..
       -
         name: fetch calamari-pc
         uses: actions/download-artifact@v2
@@ -202,12 +206,16 @@ jobs:
       -
         name: mv and chmod calamari-pc
         run: |
+          pwd
+          ls -a
           mv ${{ github.workspace }}/calamari-pc $HOME/.local/bin/
           chmod +x $HOME/.local/bin/calamari-pc
           ls -ahl ${{ github.workspace }}/
           ls -ahl $HOME/.local/bin/
           cd ${{ github.workspace }}/calamari-pc
           pwd
+          ls -a
+          cd ..
       # -
       #   name: fetch and chmod polkadot
       #   run: |
