@@ -715,27 +715,6 @@ jobs:
         run: |
           # todo: implement moonbeam-like js test suite triggers here
           sleep 120
-
-          echo "//Alice" > ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/root_mnemonics
-          cp calamari_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/calamari.wasm
-          cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
-          pwd
-          ls -a
-          yarn install
-          yarn
-          pm2 start index.js \
-            --name test-runtime-upgrade-${{ matrix.chain-spec.id }} \
-            --output ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stderr.log \
-            --no-autorestart
-          cd ${{ github.workspace }}
-          ls -a
-          cat ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log
-          echo '-----------'
-          echo '-----------'
-          echo '-----------'
-          cat ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stderr.log
-          sleep 120
       -
         name: stop testnet
         run: |
@@ -744,16 +723,6 @@ jobs:
           pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
           pm2 stop manta-pc-launch
           pm2 stop test-runtime-upgrade-${{ matrix.chain-spec.id }}
-      -
-        uses: actions/upload-artifact@v2
-        with:
-          name: runtime-upgrade-test-for-${{ matrix.chain-spec.id }}-stdout.log
-          path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log
-      -
-        uses: actions/upload-artifact@v2
-        with:
-          name: runtime-upgrade-test-for-${{ matrix.chain-spec.id }}-stderr.log
-          path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stderr.log
       -
         uses: actions/upload-artifact@v2
         with:
