@@ -176,7 +176,6 @@ jobs:
       -
         run: |
           mkdir -p $HOME/.local/share/calamari-pc
-          mkdir -p $HOME/.local/share/calamari-pc-old
           mkdir -p $HOME/.local/bin
           echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
@@ -190,14 +189,10 @@ jobs:
         run: |
           pwd
           ls -a
-          mv ${{ github.workspace }}/calamari-pc-old $HOME/.local/bin/
-          chmod +x $HOME/.local/bin/calamari-pc-old
+          mv ${{ github.workspace }}/calamari-pc $HOME/.local/bin/calamari-pc-old
+          chmod +x $HOME/.local/bin/calamari-pc
           ls -ahl ${{ github.workspace }}/
           ls -ahl $HOME/.local/bin/
-          cd ${{ github.workspace }}/calamari-pc-old
-          pwd
-          ls -a
-          cd ..
       -
         name: fetch calamari-pc
         uses: actions/download-artifact@v2
@@ -212,10 +207,6 @@ jobs:
           chmod +x $HOME/.local/bin/calamari-pc
           ls -ahl ${{ github.workspace }}/
           ls -ahl $HOME/.local/bin/
-          cd ${{ github.workspace }}/calamari-pc
-          pwd
-          ls -a
-          cd ..
       # -
       #   name: fetch and chmod polkadot
       #   run: |
