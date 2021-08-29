@@ -728,13 +728,13 @@ jobs:
          name: compare versions true
          id: comparison_result
          run: |
-            if [ $steps.get-runtime-version.outputs.runtime_ver != $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::$true"; exit 0; fi
-            if [ $steps.get-runtime-version.outputs.runtime_ver == $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::$false"; exit 0; fi
+            if [ $steps.get-runtime-version.outputs.runtime_ver != $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::1"; exit 0; fi
+            if [ $steps.get-runtime-version.outputs.runtime_ver == $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::0"; exit 0; fi
       -
          name: test output
          id: test_output
          run: |
             echo $comparison_result
-            echo $steps.get-runtime-version.outputs.runtime_ver
+            echo ${{ comparison_result }}
 
 # yamllint enable rule:line-length
