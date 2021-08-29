@@ -705,6 +705,8 @@ jobs:
             puts get_runtime("calamari")
           ')"
           echo "::set-output name=runtime_ver::$runtime_ver"
+          echo runtime_ver
+          echo ....................
       -
         name: get old runtime version
         id: get-runtime-version-old
