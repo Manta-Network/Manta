@@ -418,6 +418,11 @@ jobs:
             --no-autorestart
           cd ${{ github.workspace }}
           ls -a
+          cat ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log
+          echo '-----------'
+          echo '-----------'
+          echo '-----------'
+          cat ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stderr.log
           sleep 120
       -
         name: stop testnet
@@ -432,6 +437,11 @@ jobs:
         with:
           name: runtime-upgrade-test-for-${{ matrix.chain-spec.id }}-stdout.log
           path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: runtime-upgrade-test-for-${{ matrix.chain-spec.id }}-stderr.log
+          path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stderr.log
       -
         uses: actions/upload-artifact@v2
         with:
