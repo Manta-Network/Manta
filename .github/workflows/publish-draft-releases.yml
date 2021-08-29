@@ -734,6 +734,7 @@ jobs:
          name: test output
          id: test_output
          run: |
-            echo $steps.comparison_result.outputs.comparison_result
+            echo "${steps.comparison_result.outputs.comparison_result}"
+            echo ${steps.comparison_result.outputs.comparison_result}
 
 # yamllint enable rule:line-length
