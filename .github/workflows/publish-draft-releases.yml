@@ -722,5 +722,10 @@ jobs:
           echo "::set-output name=runtime_ver_old::$runtime_ver"
           echo $runtime_ver
           echo ....................
+      -
+         name: compare versions
+         run: |
+            res = $steps.get-runtime-version.outputs.runtime_ver != $steps.get-runtime-version.outputs.runtime_ver_old
+            echo $res
 
 # yamllint enable rule:line-length
