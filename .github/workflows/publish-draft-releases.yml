@@ -690,8 +690,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       comparison_result: ${{ steps.comparison_result.outputs.comparison_result }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
     steps:
       -
         uses: actions/checkout@v2
@@ -728,9 +726,14 @@ jobs:
           echo ....................
       -
          name: compare versions true
-         id: comparison_result_true
+         id: comparison_result
          run: |
             if [ $steps.get-runtime-version.outputs.runtime_ver != $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::$true"
             if [ $steps.get-runtime-version.outputs.runtime_ver == $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::$false"
+      -
+         name: test output
+         id: test_output
+         run: |
+            echo $steps.comparison_result.outputs.comparison_result
 
 # yamllint enable rule:line-length
