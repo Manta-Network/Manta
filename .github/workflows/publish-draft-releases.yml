@@ -112,7 +112,7 @@ jobs:
     steps:
       -
         uses: actions/checkout@v2
-        with: 
+        with:
           ref: '9616ad2e96fd04cec407e8825810a650821edaa3'
       -
         name: init
@@ -589,7 +589,7 @@ jobs:
           runner-label: ${{ needs.start-node-builder.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-node-builder.outputs.aws-instance-id }}
 
-start-node-builder-old:
+  start-node-builder-old:
     runs-on: ubuntu-latest
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
