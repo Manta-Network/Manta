@@ -736,6 +736,8 @@ jobs:
          run: |
             echo $comparison_result
             echo ....................
+            echo $steps.comparison_result.outputs.comparion_result
+            echo ....................
             echo ${{ steps.comparison_result.outputs.comparion_result }}
 
 # yamllint enable rule:line-length
