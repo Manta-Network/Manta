@@ -105,16 +105,20 @@ jobs:
   #         path: target/release/calamari-pc
 
   build-node-old:
-    needs: start-node-builder-old
+    needs: 
+      - start-node-builder-old
+      - check-for-runtime-upgrade
     runs-on: ${{ needs.start-node-builder-old.outputs.runner-label }}
     env:
       CARGO_TERM_COLOR: always
     steps:
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         uses: actions/checkout@v2
         with:
           ref: '9616ad2e96fd04cec407e8825810a650821edaa3'
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         name: init
         run: |
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
@@ -127,6 +131,7 @@ jobs:
           rustup update
           cargo build --verbose --release --features calamari
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         name: upload
         uses: actions/upload-artifact@v2
         with:
@@ -155,20 +160,22 @@ jobs:
               peer-count:
                 relay: 5
                 para: 2
-    if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 1
     steps:
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         run: |
           mkdir -p $HOME/.local/share/calamari-pc
           mkdir -p $HOME/.local/bin
           echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         name: fetch calamari-pc-old
         uses: actions/download-artifact@v2
         with:
           name: calamari-pc-old
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         name: mv and chmod calamari-pc-old
         run: |
           pwd
@@ -178,12 +185,14 @@ jobs:
           ls -ahl ${{ github.workspace }}/
           ls -ahl $HOME/.local/bin/
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         name: fetch and chmod polkadot
         run: |
           curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.9/polkadot
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         id: create-chainspec
         run: |
           calamari-pc export-state --chain ${{ matrix.chain-spec.id }} > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
@@ -204,6 +213,7 @@ jobs:
           ls -ahl $HOME/.local/share/calamari-pc/
           echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         name: create launch config
         run: |
           echo '{
@@ -309,23 +319,27 @@ jobs:
           jq . $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
           ls -ahl $HOME/.local/share/calamari-pc/
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/manta-pc-launch
           path: manta-pc-launch
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
           ref: 76e7016187b17dfec008d433fbf32cfacb0c33d5
           path: dev-tools-rococo
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
           ref: 76e7016187b17dfec008d433fbf32cfacb0c33d5
           path: dev-tools-calamari
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         name: launch testnet
         run: |
           cd ${{ github.workspace }}/manta-pc-launch
@@ -338,6 +352,7 @@ jobs:
             --no-autorestart \
             -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         name: init measure-block-time rococo
         run: |
           cd ${{ github.workspace }}/dev-tools-rococo/measure-block-time
@@ -349,6 +364,7 @@ jobs:
             --error ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         name: init measure-block-time calamari
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/measure-block-time
@@ -360,11 +376,13 @@ jobs:
             --error ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         name: fetch new calamari_runtime.compact.compressed.wasm
         uses: actions/download-artifact@v2
         with:
           name: calamari-runtime
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         name: run test suites
         run: |
           # todo: implement moonbeam-like js test suite triggers here
@@ -385,6 +403,7 @@ jobs:
           cd ${{ github.workspace }}
           sleep 120
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         name: stop testnet
         run: |
           cd ${{ github.workspace }}/manta-pc-launch
@@ -393,11 +412,13 @@ jobs:
           pm2 stop manta-pc-launch
           pm2 stop test-runtime-upgrade-${{ matrix.chain-spec.id }}
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         uses: actions/upload-artifact@v2
         with:
           name: runtime-upgrade-test-for-${{ matrix.chain-spec.id }}-stdout.log
           path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         uses: actions/upload-artifact@v2
         with:
           name: runtime-upgrade-test-for-${{ matrix.chain-spec.id }}-stderr.log
@@ -847,14 +868,15 @@ jobs:
 
   start-node-builder-old:
     runs-on: ubuntu-latest
-    needs: check-for-runtime-upgrade
+    needs:
+      - check-for-runtime-upgrade
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
       aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 1
     steps:
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         id: start-self-hosted-runner
         uses: audacious-network/aws-github-runner@v1.0.33
         with:
@@ -876,10 +898,12 @@ jobs:
     needs:
       - start-node-builder-old
       - build-node-old
+      - check-for-runtime-upgrade
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
@@ -941,9 +965,9 @@ jobs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
       aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 1
     steps:
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         id: start-self-hosted-runner
         uses: audacious-network/aws-github-runner@v1.0.33
         with:
@@ -965,10 +989,12 @@ jobs:
     needs:
       - start-runtime-upgrade-tester
       - runtime-upgrade-test
+      - check-for-runtime-upgrade
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
         uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
