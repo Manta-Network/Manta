@@ -1029,7 +1029,6 @@ jobs:
           echo "::set-output name=runtime_ver::0"
           echo $runtime_ver
           echo ....................
-      -
       - name: Show runtime_ver
         run: echo "The selected value is ${{ steps.get-runtime-version.outputs.runtime_ver }}"
       -
