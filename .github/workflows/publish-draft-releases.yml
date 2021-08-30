@@ -1074,8 +1074,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       -
-        # if: ${{ needs.check-for-runtime-upgrade.outputs.runtime_version == needs.check-for-runtime-upgrade.outputs.runtime_version_old }}
-        name: must be skipped
+        if: ${{ needs.check-for-runtime-upgrade.outputs.should_check_runtime_upgrade == 1 }}
+        name: must be done
         run: |
             echo '-------------------'
             echo "${{ needs.check-for-runtime-upgrade.outputs.should_check_runtime_upgrade }}"
