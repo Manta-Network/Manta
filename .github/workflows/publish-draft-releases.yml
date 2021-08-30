@@ -86,7 +86,7 @@ jobs:
       -
         uses: actions/checkout@v2
       -
-          name: install sccache
+        name: install sccache
 
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
@@ -156,7 +156,7 @@ jobs:
           name: calamari-pc
           path: target/release/calamari-pc
 
-build-benchmark:
+  build-benchmark:
     needs:
       - start-node-builder
       - build-node
