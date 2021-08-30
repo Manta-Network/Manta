@@ -1083,9 +1083,17 @@ jobs:
             echo "${{ needs.get-rust-versions.outputs.nightly }}"
             echo $needs.get-rust-versions.outputs.stable
             echo $needs.get-rust-versions.outputs.nightly
-            echo ${ needs.get-rust-versions.outputs.stable }
-            echo ${ needs.get-rust-versions.outputs.nightly }
             echo '-------------------'
             echo '-------------------'
+
+  random-test:
+    runs-on: ubuntu-latest
+    steps:
+      - 
+        name: Set selected color
+        run: echo '::set-output value_res=1'
+        id: random-color-generator
+      - name: Get color
+        run: echo "The selected value is ${{ steps.random-color-generator.outputs.value }}"
 
 # yamllint enable rule:line-length
