@@ -1053,7 +1053,7 @@ jobs:
     needs:
       - build-changelog
       - build-calamari-runtime
-      - run-benchmark
+      # - run-benchmark
       - integration-test
       - runtime-upgrade-test
     outputs:
