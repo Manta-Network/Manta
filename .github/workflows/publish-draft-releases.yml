@@ -863,10 +863,12 @@ jobs:
 
   start-node-builder-old:
     runs-on: ubuntu-latest
+    needs: check-for-runtime-upgrade
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
       aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 1
     steps:
       -
         id: start-self-hosted-runner
