@@ -1002,51 +1002,51 @@ jobs:
   #         runner-label: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
   #         aws-instance-id: ${{ needs.start-runtime-upgrade-tester.outputs.aws-instance-id }}
 
-  # check-for-runtime-upgrade:
-  #   runs-on: ubuntu-latest
-  #   outputs:
-  #     comparison_result: ${{ steps.comparison_result.outputs.comparison_result }}
-  #   steps:
-  #     -
-  #       uses: actions/checkout@v2
-  #     -
-  #       name: ruby setup
-  #       uses: actions/setup-ruby@v1
-  #       with:
-  #         ruby-version: 2.7
-  #     -
-  #       name: get runtime version
-  #       id: get-runtime-version
-  #       run: |
-  #         runtime_ver="$(ruby -e '
-  #           require "./scripts/github/lib.rb";
-  #           puts get_runtime("calamari")
-  #         ')"
-  #         echo "::set-output name=runtime_ver::$runtime_ver"
-  #         echo $runtime_ver
-  #         echo ....................
-  #     -
-  #       name: get old runtime version
-  #       id: get-runtime-version-old
-  #       run: |
-  #         mkdir temp_for_run
-  #         cd temp_for_run
-  #         git clone -b manta-pc https://github.com/Manta-Network/Manta.git
-  #         cd Manta
-  #         runtime_ver="$(ruby -e '
-  #           require "./scripts/github/lib.rb";
-  #           puts get_runtime("calamari")
-  #         ')"
-  #         echo "::set-output name=runtime_ver_old::$runtime_ver"
-  #         echo $runtime_ver
-  #         echo ....................
-  #     -
-  #        name: compare versions
-  #        id: comparison_result
-  #        run: |
-  #           if [ $steps.get-runtime-version.outputs.runtime_ver != $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::0"; exit 0; fi
-  #           if [ $steps.get-runtime-version.outputs.runtime_ver == $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::1"; exit 0; fi
-  #       if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result == 0 }}
+  check-for-runtime-upgrade:
+    runs-on: ubuntu-latest
+    outputs:
+      comparison_result: ${{ steps.comparison_result.outputs.comparison_result }}
+    steps:
+      -
+        uses: actions/checkout@v2
+      -
+        name: ruby setup
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+      -
+        name: get runtime version
+        id: get-runtime-version
+        run: |
+          runtime_ver="$(ruby -e '
+            require "./scripts/github/lib.rb";
+            puts get_runtime("calamari")
+          ')"
+          echo "::set-output name=runtime_ver::$runtime_ver"
+          echo $runtime_ver
+          echo ....................
+      -
+        name: get old runtime version
+        id: get-runtime-version-old
+        run: |
+          mkdir temp_for_run
+          cd temp_for_run
+          git clone -b manta-pc https://github.com/Manta-Network/Manta.git
+          cd Manta
+          runtime_ver="$(ruby -e '
+            require "./scripts/github/lib.rb";
+            puts get_runtime("calamari")
+          ')"
+          echo "::set-output name=runtime_ver_old::$runtime_ver"
+          echo $runtime_ver
+          echo ....................
+      -
+         name: compare versions
+         id: comparison_result
+         run: |
+            if [ $steps.get-runtime-version.outputs.runtime_ver != $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::0"; exit 0; fi
+            if [ $steps.get-runtime-version.outputs.runtime_ver == $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::1"; exit 0; fi
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result == 0 }}
   check-passthrough:
     needs:
       - check-for-runtime-upgrade
