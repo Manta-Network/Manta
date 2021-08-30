@@ -1345,6 +1345,7 @@ jobs:
     needs:
       - runtime-upgrade-test
       - check-for-runtime-upgrade
+      - start-runtime-upgrade-tester
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
