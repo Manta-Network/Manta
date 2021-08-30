@@ -949,10 +949,13 @@ jobs:
 
   start-runtime-upgrade-tester:
     runs-on: ubuntu-latest
+    needs:
+      - check-for-runtime-upgrade
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
       aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
     steps:
       -
         id: start-self-hosted-runner
@@ -1034,19 +1037,5 @@ jobs:
          run: |
             if [ $steps.get-runtime-version.outputs.runtime_ver != $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::0"; exit 0; fi
             if [ $steps.get-runtime-version.outputs.runtime_ver == $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::1"; exit 0; fi
-   
-  check-for-runtime-upgrade-output:
-    runs-on: ubuntu-latest
-    needs:
-      - check-for-runtime-upgrade
-    steps:
-      -
-         name: test output
-         id: test_output
-         run: |
-            echo ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }}
-            echo ....................
-            echo $needs.check-for-runtime-upgrade.outputs.comparison_result 
-            echo ....................
 
 # yamllint enable rule:line-length
