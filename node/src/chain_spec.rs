@@ -533,40 +533,34 @@ pub fn calamari_testnet_config(id: ParaId) -> CalamariChainSpec {
 	// (controller_account, aura_id)
 	let initial_authorities: Vec<(AccountId, AuraId)> = vec![
 		(
-			// account id: dmvSXhJWeJEKTZT8CCUieJDaNjNFC4ZFqfUm4Lx1z7J7oFzBf
-			hex!["4294b2a716cea91dd008d694d264feeaf9f0baf9c0b8cbe3e107515947ed440d"].into(),
-			hex!["10814b2b41bf39155ef7b38bb2431056894ba71acc35cf0101c999fd69f9c357"]
+			hex!["d664b6e69e3b1bcd89274bf90a2abf409baa9a4cd9072194cdc70ead1ba65f0c"].into(),
+			hex!["ee73f78b7dd29f30902c1a3bd1e4a6fcc2f26be088343d3ee011e2660fd02a66"]
 				.unchecked_into(),
 		),
 		(
-			// account id: dmxvZaMQir24EPxvFiCzkhDZaiScPB7ZWpHXUv5x8uct2A3du
-			hex!["b06e5d852078f64ab74af9b31add10e36d0438b847bc925fbacbf1e14963e379"].into(),
-			hex!["f2ac4141fee9f9ba42e830f39f00f316e45d280db1464a9148702ab7c4fcde52"]
+			hex!["b4cc4dcffaa95be696f76b8b68ea114f46edc67f343f6aacabe8e5000af38b50"].into(),
+			hex!["7cd4af9ad51d443740f71ecd5850385e98985224628c5ea08209bb2015523f3c"]
 				.unchecked_into(),
 		),
 		(
-			// account id: dmud2BmjLyMtbAX2FaVTUtvmutoCKvR3GbARLc4crzGvVMCwu
-			hex!["1e58d3c3900c7ce6c6d82152becb45bf7bd3453fb2d267e5f72ca51285bca173"].into(),
-			hex!["f6284f9446db8f895c6cf02d0d6de6e67885a1e55c880ccac640ff4bc076df68"]
+			hex!["c68bbab6a85bd17548f61ab26a52c577c12748f08062cffe921316a7283fbc00"].into(),
+			hex!["b40aa6bd104d0260b60350c2fb30d4882437466d66135130b667799ea6c9f52b"]
 				.unchecked_into(),
 		),
 		(
-			// account id: dmx4vuA3PnQmraqJqeJaKRydUjP1AW4wMVTPLQWgZSpDyQUrp
-			hex!["8a93e0f756448030dcb3018d25d75c7bf97a2e2ff15d02fd1f55bf3f2104fb5b"].into(),
-			hex!["741101a186479f4f28aa40fc78f02d7307ed3574e829aed76fdede5876e46a43"]
+			hex!["20e3ddcf0c6c456f2b9d035d3309fe84f43c2c5abc524a7fc903ed3d813c714b"].into(),
+			hex!["4a3aa51469e802be6504422cd9dd03be638ac3f6dc3a7c0c85a6ace3e72f0048"]
 				.unchecked_into(),
 		),
 		(
-			// account id: dmtwRyEeNyRW3KApnTxjHahWCjN5b9gDjdvxpizHt6E9zYkXj
-			hex!["0027131c176c0d19a2a5cc475ecc657f936085912b846839319249e700f37e79"].into(),
-			hex!["8ebf03bda1702d719f428bc0a4c7cfca010c44a48ef79752490818c901548d20"]
+			hex!["a2057091a6d15a9d64c398f148395b69aaae99626cffa53ac5e6beaa5790f946"].into(),
+			hex!["a68feb4fe2ea3f8ff288af4254aad2284e1cd0da67cb9ea61c13632bad57eb40"]
 				.unchecked_into(),
 		),
 	];
 
-	// root account: dmyBqgFxMPZs1wKz8vFjv7nD4RBu4HeYhZTsGxSDU1wXQV15R
 	let root_key: AccountId =
-		hex!["bc153ffd4c96de7496df009c6f4ecde6f95bf67b60e0c1025a7552d0b6926e04"].into();
+		hex!["04ac7fe1675e10c0df9c136f53df912e6ae7d2c21778a293c534226f8a3e6a0c"].into();
 
 	CalamariChainSpec::from_genesis(
 		// Name
