@@ -599,7 +599,6 @@ jobs:
         name: stop testnet
         run: |
           cd ${{ github.workspace }}/manta-pc-launch
-          pm2 stop measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}
           pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
           pm2 stop manta-pc-launch
           pm2 stop test-runtime-upgrade-${{ matrix.chain-spec.id }}
