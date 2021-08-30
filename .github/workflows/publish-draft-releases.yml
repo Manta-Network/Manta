@@ -1069,6 +1069,7 @@ jobs:
     needs:
       - check-for-runtime-upgrade
       - check-passthrough
+      - get-rust-versions
     runs-on: ubuntu-latest
     steps:
       -
@@ -1079,6 +1080,8 @@ jobs:
             echo ${{ needs.check-for-runtime-upgrade.outputs.are_equal }}
             echo ${{ needs.check-for-runtime-upgrade.outputs.runtime_version }}
             echo ${{ needs.check-for-runtime-upgrade.outputs.runtime_version_old }}
+            echo ${{ needs.get-rust-versions.outputs.stable }}
+            echo ${{ needs.get-rust-versions.outputs.nightly }}
             echo '-------------------'
             echo '-------------------'
 
