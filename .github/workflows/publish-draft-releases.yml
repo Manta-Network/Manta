@@ -111,10 +111,12 @@ jobs:
       CARGO_TERM_COLOR: always
     steps:
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result == 0 }}
         uses: actions/checkout@v2
         with:
           ref: '9616ad2e96fd04cec407e8825810a650821edaa3'
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result == 0 }}
         name: init
         run: |
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
@@ -127,6 +129,7 @@ jobs:
           rustup update
           cargo build --verbose --release --features calamari
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result == 0 }}
         name: upload
         uses: actions/upload-artifact@v2
         with:
