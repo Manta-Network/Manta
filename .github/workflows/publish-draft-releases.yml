@@ -395,7 +395,7 @@ jobs:
             ' $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
           ls -ahl $HOME/.local/share/calamari-pc/
           echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
-      -
+      -ssh mobula@crispy.westend.calamari.systems "curl localhost whatever"
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
         name: create launch config
         run: |
@@ -512,14 +512,14 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
-          ref: db74717584dcdea59c12f23b1b54e6a6b1891fc3
+          ref: 0ab0940a3a3c6a69ac9195d5d2dfc15634c7c872
           path: dev-tools-rococo
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
-          ref: db74717584dcdea59c12f23b1b54e6a6b1891fc3
+          ref: 0ab0940a3a3c6a69ac9195d5d2dfc15634c7c872
           path: dev-tools-calamari
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
