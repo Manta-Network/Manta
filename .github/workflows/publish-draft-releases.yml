@@ -691,9 +691,9 @@ jobs:
         run: |
           grep '💤 Idle (${{ matrix.chain-spec.expected.peer-count.relay }} peers)' ${{ github.workspace }}/manta-pc-launch/alice.log
       -
-        name: test - rococo alice finalized block ${{ matrix.chain-spec.expected.block-count.relay }}
+        name: test - rococo alice imported block ${{ matrix.chain-spec.expected.block-count.relay }}
         run: |
-          grep ' finalized #${{ matrix.chain-spec.expected.block-count.relay }} ' ${{ github.workspace }}/manta-pc-launch/alice.log
+          grep ' Imported #${{ matrix.chain-spec.expected.block-count.relay }} ' ${{ github.workspace }}/manta-pc-launch/alice.log
       -
         name: test - calamari alice peered successfully
         run: |
