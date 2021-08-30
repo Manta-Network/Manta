@@ -1062,5 +1062,19 @@ jobs:
             echo ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }}
             echo '-------------------'
             echo '-------------------'
+  check-passthrough-2:
+    needs:
+      - check-for-runtime-upgrade
+      - check-passthrough
+    runs-on: ubuntu-latest
+    if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result == 0 }}
+    steps:
+      -
+        name: check output
+        run: |
+            echo '-------------------'
+            echo ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }}
+            echo '-------------------'
+            echo '-------------------'
 
 # yamllint enable rule:line-length
