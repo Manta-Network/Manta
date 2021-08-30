@@ -1008,7 +1008,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       comparison_result: ${{ steps.comparison_result.outputs.are_equal }}
-      runtime-version: ${{ steps.get-runtime-version.outputs.runtime_ver }}
+      runtime_version: ${{ steps.get-runtime-version.outputs.runtime_ver }}
       runtime-version-old: ${{ steps.get-runtime-version-old.outputs.runtime_ver_old }}
     steps:
       -
@@ -1029,6 +1029,9 @@ jobs:
           echo "::set-output name=runtime_ver::0"
           echo $runtime_ver
           echo ....................
+      -
+      - name: Show runtime_ver
+        run: echo "The selected value is ${{ steps.get-runtime-version.outputs.runtime_ver }}"
       -
         name: get old runtime version
         id: get-runtime-version-old
