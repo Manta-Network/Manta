@@ -300,7 +300,7 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
         uses: actions/checkout@v2
         with:
-          ref: '9616ad2e96fd04cec407e8825810a650821edaa3'
+          ref: '4204135e90ce02fa28af0913c8f050b76bd3ea23'
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
         name: init
