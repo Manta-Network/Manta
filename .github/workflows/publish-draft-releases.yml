@@ -1053,13 +1053,13 @@ jobs:
     needs:
       - check-for-runtime-upgrade
     runs-on: ubuntu-latest
-    if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }} == 0
+    if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result == 0 }}
     steps:
       -
         name: check output
         run: |
             echo '-------------------'
-            echo 'needs.check-for-runtime-upgrade.outputs.comparison_result'
+            echo ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }}
             echo '-------------------'
             echo '-------------------'
 
