@@ -537,7 +537,7 @@ jobs:
         with:
           repository: Manta-Network/Dev-Tools
           path: dev-tools-calamari
-          ref: 2a41587e79de096bd59fea85a46c1fbdef1cb092
+          ref: fee3f9c37c4f07d309b53188bc0175e78ab7e15a
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
         name: launch testnet
@@ -618,7 +618,7 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
         name: parse runtime upgrade log
         run: |
-          grep 'Proposal status: Finalized' ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words} | tee ${{ github.workspace }}/runtime-upgrade-output.csv; done
+          grep 'Included at block hash' ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words} | tee ${{ github.workspace }}/runtime-upgrade-output.csv; done
           if [ ! -f ${{ github.workspace }}/runtime-upgrade-output.csv ]; then echo "Runtime upgrade failed"; exit 1; fi
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
