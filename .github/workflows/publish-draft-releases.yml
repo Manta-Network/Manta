@@ -1026,7 +1026,7 @@ jobs:
             require "./scripts/github/lib.rb";
             puts get_runtime("calamari")
           ')"
-          echo "::set-output name=runtime_ver::0"
+          echo "::set-output name=runtime_ver::$runtime_ver"
           echo $runtime_ver
           echo ....................
       - name: Show runtime_ver
@@ -1043,7 +1043,7 @@ jobs:
             require "./scripts/github/lib.rb";
             puts get_runtime("calamari")
           ')"
-          echo "::set-output name=runtime_ver_old::1"
+          echo "::set-output name=runtime_ver_old::$runtime_ver"
           echo $runtime_ver
           echo ....................
       -
