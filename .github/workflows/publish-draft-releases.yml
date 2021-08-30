@@ -36,48 +36,48 @@ jobs:
   #  needs: start-calamari-runtime-builder
   #  runs-on: needs.start-calamari-runtime-builder.outputs.runner-label
 
-  # build-calamari-runtime:
-  #   runs-on: ubuntu-latest
-  #   env:
-  #     CARGO_TERM_COLOR: always
-  #   steps:
-  #     -
-  #       uses: actions/checkout@v2
-  #     -
-  #       name: cache target dir
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: "${{ github.workspace }}/runtime/calamari/target"
-  #         key: srtool-target-calamari-${{ github.sha }}
-  #         restore-keys: |
-  #           srtool-target-calamari-
-  #           srtool-target-
-  #     -
-  #       name: build runtime
-  #       id: srtool-build
-  #       uses: chevdor/srtool-actions@v0.3.0
-  #       with:
-  #         image: paritytech/srtool
-  #         chain: calamari
-  #     -
-  #       name: persist srtool digest
-  #       run: >
-  #         echo '${{ steps.srtool-build.outputs.json }}' |
-  #         jq > calamari-srtool-output.json
-  #     -
-  #       name: upload srtool json
-  #       uses: actions/upload-artifact@v2
-  #       with:
-  #         name: calamari-srtool-json
-  #         path: calamari-srtool-output.json
-  #     -
-  #       name: upload runtime
-  #       uses: actions/upload-artifact@v2
-  #       with:
-  #         name: calamari-runtime
-  #         path: |
-  #           ${{ steps.srtool-build.outputs.wasm }}
-  #           ${{ steps.srtool-build.outputs.wasm_compressed }}
+  build-calamari-runtime:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      -
+        uses: actions/checkout@v2
+      -
+        name: cache target dir
+        uses: actions/cache@v2
+        with:
+          path: "${{ github.workspace }}/runtime/calamari/target"
+          key: srtool-target-calamari-${{ github.sha }}
+          restore-keys: |
+            srtool-target-calamari-
+            srtool-target-
+      -
+        name: build runtime
+        id: srtool-build
+        uses: chevdor/srtool-actions@v0.3.0
+        with:
+          image: paritytech/srtool
+          chain: calamari
+      -
+        name: persist srtool digest
+        run: >
+          echo '${{ steps.srtool-build.outputs.json }}' |
+          jq > calamari-srtool-output.json
+      -
+        name: upload srtool json
+        uses: actions/upload-artifact@v2
+        with:
+          name: calamari-srtool-json
+          path: calamari-srtool-output.json
+      -
+        name: upload runtime
+        uses: actions/upload-artifact@v2
+        with:
+          name: calamari-runtime
+          path: |
+            ${{ steps.srtool-build.outputs.wasm }}
+            ${{ steps.srtool-build.outputs.wasm_compressed }}
 
   # build-node:
   #   needs: start-node-builder
@@ -107,7 +107,9 @@ jobs:
   #         path: target/release/calamari-pc
 
   build-node-old:
-    needs: start-node-builder-old
+    needs: 
+      - start-node-builder-old
+      - check-for-runtime-upgrade
     runs-on: ${{ needs.start-node-builder-old.outputs.runner-label }}
     env:
       CARGO_TERM_COLOR: always
@@ -1029,7 +1031,7 @@ jobs:
           echo "::set-output name=runtime_ver::$runtime_ver"
           echo $runtime_ver
           echo ....................
-      - name: Show runtime_ver
+      - name: Show new runtime version
         run: echo "The selected value is ${{ steps.get-runtime-version.outputs.runtime_ver }}"
       -
         name: get old runtime version
@@ -1046,5 +1048,7 @@ jobs:
           echo "::set-output name=runtime_ver_old::$runtime_ver"
           echo $runtime_ver
           echo ....................
+      - name: Show old runtime version
+        run: echo "The selected value is ${{ steps.get-runtime-version-old.outputs.runtime_ver_old }}"
 
 # yamllint enable rule:line-length
