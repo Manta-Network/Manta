@@ -648,7 +648,6 @@ jobs:
         with:
           repository: Manta-Network/Dev-Tools
           path: dev-tools-calamari
-          ref: 5a548e2919155ac036f383cd8230f97eaeb32119
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
         name: launch testnet
@@ -998,15 +997,10 @@ jobs:
             --error ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart
       -
-        name: fetch new calamari_runtime.compact.compressed.wasm
-        uses: actions/download-artifact@v2
-        with:
-          name: calamari-runtime
-      -
         name: run test suites
         run: |
           # todo: implement moonbeam-like js test suite triggers here
-          sleep 240
+          sleep 210
       -
         name: stop testnet
         run: |
@@ -1093,9 +1087,9 @@ jobs:
         run: |
           grep '💤 Idle (${{ matrix.chain-spec.expected.peer-count.relay }} peers)' ${{ github.workspace }}/manta-pc-launch/alice.log
       -
-        name: test - rococo alice finalized block ${{ matrix.chain-spec.expected.block-count.relay }}
+        name: test - rococo alice imported block ${{ matrix.chain-spec.expected.block-count.relay }}
         run: |
-          grep ' finalized #${{ matrix.chain-spec.expected.block-count.relay }} ' ${{ github.workspace }}/manta-pc-launch/alice.log
+          grep ' Imported #${{ matrix.chain-spec.expected.block-count.relay }} ' ${{ github.workspace }}/manta-pc-launch/alice.log
       -
         name: test - calamari alice peered successfully
         run: |
@@ -1178,7 +1172,7 @@ jobs:
     needs:
       - build-changelog
       - build-calamari-runtime
-      # - run-benchmark
+      - run-benchmark
       - integration-test
       - runtime-upgrade-test
     outputs:
