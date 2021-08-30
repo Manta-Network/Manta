@@ -718,7 +718,7 @@ jobs:
         name: run test suites
         run: |
           # todo: implement moonbeam-like js test suite triggers here
-          sleep 210
+          sleep 240
       -
         name: stop testnet
         run: |
