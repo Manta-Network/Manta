@@ -1053,7 +1053,7 @@ jobs:
     steps:
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result == 1 }}
-        name: must be skipped
+        name: must executed
         run: |
             echo '-------------------'
             echo ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }}
@@ -1067,7 +1067,7 @@ jobs:
     steps:
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result == 0 }}
-        name: must be executed
+        name: must be skipped
         run: |
             echo '-------------------'
             echo ${{ needs.check-for-runtime-upgrade.outputs.comparison_result }}
