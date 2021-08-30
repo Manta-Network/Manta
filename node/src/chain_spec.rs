@@ -399,6 +399,7 @@ pub fn calamari_development_config(id: ParaId) -> CalamariChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_collator_keys_from_seed("Alice"),
 				)],
+				// COME BACK HERE
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
