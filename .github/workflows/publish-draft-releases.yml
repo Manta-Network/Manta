@@ -29,6 +29,8 @@ jobs:
         run: |
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
+          echo ${{ steps.get-rust-versions.outputs.stable }}
+          echo ${{ steps.get-rust-versions.outputs.nightly }}
 
   # test-docker-works:
   #  needs: start-calamari-runtime-builder
