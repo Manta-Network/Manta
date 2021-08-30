@@ -1046,7 +1046,6 @@ jobs:
          run: |
             if [ $steps.get-runtime-version.outputs.runtime_ver != $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::0"; exit 0; fi
             if [ $steps.get-runtime-version.outputs.runtime_ver == $steps.get-runtime-version.outputs.runtime_ver_old ]; then echo "::set-output name=comparison_result::1"; exit 0; fi
-        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result == 0 }}
   check-passthrough:
     needs:
       - check-for-runtime-upgrade
