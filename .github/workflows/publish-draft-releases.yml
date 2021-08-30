@@ -1004,49 +1004,49 @@ jobs:
       #   run: |
       #     cat ${{ github.workspace }}/manta-pc-launch/9922.log
 
-build-changelog:
-  runs-on: ubuntu-latest
-  needs:
-    - get-rust-versions
-    - build-calamari-runtime
-  steps:
+  build-changelog:
+    runs-on: ubuntu-latest
+    needs:
+      - get-rust-versions
+      - build-calamari-runtime
+    steps:
       #-
       #  uses: actions/download-artifact@v2
       #  with:
       #    name: manta-pc-srtool-json
-    -
-      uses: actions/download-artifact@v2
-      with:
-        name: calamari-srtool-json
-    -
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-        path: Manta
-    -
-      name: ruby setup
-      uses: actions/setup-ruby@v1
-      with:
-        ruby-version: 2.7
-    -
-      name: changelog gems
-      run: |
-        gem install changelogerator git toml
-    -
-      name: generate changelog
-      env:
-        RUSTC_STABLE: ${{ needs.get-rust-versions.outputs.rustc-stable }}
-        RUSTC_NIGHTLY: ${{ needs.get-rust-versions.outputs.rustc-nightly }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: >
-        ruby $GITHUB_WORKSPACE/Manta/scripts/github/generate-changelog.rb |
-        tee changelog.md
-    -
-      name: upload changelog
-      uses: actions/upload-artifact@v2
-      with:
-        name: changelog
-        path: changelog.md
+      -
+        uses: actions/download-artifact@v2
+        with:
+          name: calamari-srtool-json
+      -
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          path: Manta
+      -
+        name: ruby setup
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+      -
+        name: changelog gems
+        run: |
+          gem install changelogerator git toml
+      -
+        name: generate changelog
+        env:
+          RUSTC_STABLE: ${{ needs.get-rust-versions.outputs.rustc-stable }}
+          RUSTC_NIGHTLY: ${{ needs.get-rust-versions.outputs.rustc-nightly }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          ruby $GITHUB_WORKSPACE/Manta/scripts/github/generate-changelog.rb |
+          tee changelog.md
+      -
+        name: upload changelog
+        uses: actions/upload-artifact@v2
+        with:
+          name: changelog
+          path: changelog.md
 
   create-draft-release:
     runs-on: ubuntu-latest
