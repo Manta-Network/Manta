@@ -1088,6 +1088,8 @@ jobs:
 
   random-test:
     runs-on: ubuntu-latest
+    outputs: 
+      value_res: ${{ steps.random-color-generator.value_res }}
     steps:
       - 
         name: Set selected color
