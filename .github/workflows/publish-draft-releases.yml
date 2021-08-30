@@ -1053,9 +1053,9 @@ jobs:
     needs:
       - check-for-runtime-upgrade
     runs-on: ubuntu-latest
-    if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result == 1 }}
     steps:
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result == 1 }}
         name: check output
         run: |
             echo '-------------------'
@@ -1067,9 +1067,9 @@ jobs:
       - check-for-runtime-upgrade
       - check-passthrough
     runs-on: ubuntu-latest
-    if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result == 0 }}
     steps:
       -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.comparison_result == 0 }}
         name: check output
         run: |
             echo '-------------------'
