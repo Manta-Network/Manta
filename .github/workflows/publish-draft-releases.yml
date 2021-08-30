@@ -1094,7 +1094,7 @@ jobs:
       - 
         name: Set selected color
         id: random-id
-        run: echo '::set-output value_res=asd'
+        run: echo "::set-output value_res=asd"
       - name: Get color
         run: echo "The selected value is ${{ steps.random-id.outputs.value_res }}"
 
