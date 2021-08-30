@@ -1007,7 +1007,7 @@ jobs:
   check-for-runtime-upgrade:
     runs-on: ubuntu-latest
     outputs:
-      comparison_result: ${{ steps.comparison_result.outputs.are_equal }}
+      should_check_runtime_upgrade: ${{ steps.comparison-result.outputs.should_check_runtime_upgrade }}
       runtime_version: ${{ steps.get-runtime-version.outputs.runtime_ver }}
       runtime_version_old: ${{ steps.get-runtime-version-old.outputs.runtime_ver_old }}
     steps:
@@ -1048,10 +1048,10 @@ jobs:
           echo ....................
       -
         name: compare versions
-        id: comparison_result
+        id: comparison-result
         run: |
-            if [ ${{ steps.get-runtime-version.outputs.runtime_ver != steps.get-runtime-version-old.outputs.runtime_ver_old }} ]; then echo "::set-output name=are_equal::0"; exit 0; fi
-            if [ ${{ steps.get-runtime-version.outputs.runtime_ver == steps.get-runtime-version-old.outputs.runtime_ver_old }} ]; then echo "::set-output name=are_equal::1"; exit 0; fi
+            if [ ${{ steps.get-runtime-version.outputs.runtime_ver != steps.get-runtime-version-old.outputs.runtime_ver_old }} ]; then echo "::set-output name=should_check_runtime_upgrade::1"; exit 0; fi
+            if [ ${{ steps.get-runtime-version.outputs.runtime_ver == steps.get-runtime-version-old.outputs.runtime_ver_old }} ]; then echo "::set-output name=should_check_runtime_upgrade::0"; exit 0; fi
   # check-passthrough:
   #   needs:
   #     - check-for-runtime-upgrade
@@ -1078,7 +1078,7 @@ jobs:
         name: must be skipped
         run: |
             echo '-------------------'
-            echo "${{ needs.check-for-runtime-upgrade.outputs.are_equal }}"
+            echo "${{ needs.check-for-runtime-upgrade.outputs.should_check_runtime_upgrade }}"
             echo "${{ needs.check-for-runtime-upgrade.outputs.runtime_version }}"
             echo "${{ needs.check-for-runtime-upgrade.outputs.runtime_version_old }}"
             echo '-------------------'
