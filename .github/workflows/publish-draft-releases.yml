@@ -869,15 +869,12 @@ jobs:
 
   start-node-builder-old:
     runs-on: ubuntu-latest
-    needs:
-      - check-for-runtime-upgrade
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
       aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
     steps:
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
         id: start-self-hosted-runner
         uses: audacious-network/aws-github-runner@v1.0.33
         with:
@@ -899,12 +896,10 @@ jobs:
     needs:
       - start-node-builder-old
       - build-node-old
-      - check-for-runtime-upgrade
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
         uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
