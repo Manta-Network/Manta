@@ -512,14 +512,14 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
-          ref: 76e7016187b17dfec008d433fbf32cfacb0c33d5
+          ref: 9ec20e47d1179a77d2aa8b2749d9ea86ac68bcf6
           path: dev-tools-rococo
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
-          ref: 76e7016187b17dfec008d433fbf32cfacb0c33d5
+          ref: 9ec20e47d1179a77d2aa8b2749d9ea86ac68bcf6
           path: dev-tools-calamari
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
@@ -571,7 +571,7 @@ jobs:
           # todo: implement moonbeam-like js test suite triggers here
           sleep 120
 
-          echo "Alice" > ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/root_mnemonics
+          echo "//Alice" > ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/root_mnemonics
           cp calamari_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/calamari.wasm
           cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
           pwd
