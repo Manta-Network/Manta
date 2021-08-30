@@ -538,14 +538,14 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
-          ref: 4c919290b5d6e975460c223b9284ae2c9d8885ee
+          ref: 49bf75e376a05759db229b27e83230fdfc9585d3
           path: dev-tools-rococo
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
-          ref: 4c919290b5d6e975460c223b9284ae2c9d8885ee
+          ref: 49bf75e376a05759db229b27e83230fdfc9585d3
           path: dev-tools-calamari
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
