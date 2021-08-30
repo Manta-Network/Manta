@@ -1089,13 +1089,13 @@ jobs:
   random-test:
     runs-on: ubuntu-latest
     outputs: 
-      value_res: ${{ steps.random-color-generator.value_res }}
+      value_res: ${{ steps.random_id.value_res }}
     steps:
       - 
         name: Set selected color
-        run: echo '::set-output value_res=1'
-        id: random-color-generator
+        id: random-id
+        run: echo '::set-output value_res=asd'
       - name: Get color
-        run: echo "The selected value is ${{ steps.random-color-generator.outputs.value_res }}"
+        run: echo "The selected value is ${{ steps.random-id.outputs.value_res }}"
 
 # yamllint enable rule:line-length
