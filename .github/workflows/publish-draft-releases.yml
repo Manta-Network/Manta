@@ -7,10 +7,10 @@ name: publish draft releases
 # yamllint disable-line rule:truthy
 on:
   push:
-    branch:
-      - manta-pc
-    #tags:
-    #  - v[0-9]+.[0-9]+.[0-9]+*
+    # branch:
+    #   - manta-pc
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+*
 
 jobs:
 
