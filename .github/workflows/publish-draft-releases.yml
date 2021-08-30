@@ -1313,10 +1313,10 @@ jobs:
           github-token: ${{ secrets.GH_SHR_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
-          aws-region: us-east-1
-          aws-subnet-id: subnet-08c26caf0a52b7c19
-          aws-security-group-id: sg-0315bffea9042ac9b
+          # aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
+          aws-region: eu-west-1
+          # aws-subnet-id: subnet-08c26caf0a52b7c19
+          # aws-security-group-id: sg-0315bffea9042ac9b
           aws-instance-type: c5a.8xlarge # 32 vcpu, 64gb ram, $1.392 hourly
           aws-instance-root-volume-size: 32
           aws-instance-lifecycle: spot
@@ -1358,10 +1358,10 @@ jobs:
           github-token: ${{ secrets.GH_SHR_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
-          aws-region: us-east-1
-          aws-subnet-id: subnet-08c26caf0a52b7c19
-          aws-security-group-id: sg-0315bffea9042ac9b
+          # aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
+          aws-region: eu-west-1
+          # aws-subnet-id: subnet-08c26caf0a52b7c19
+          # aws-security-group-id: sg-0315bffea9042ac9b
           aws-instance-type: c5a.8xlarge # 32 vcpu, 64gb ram, $1.392 hourly
           aws-instance-root-volume-size: 32
           aws-instance-lifecycle: spot
@@ -1401,10 +1401,10 @@ jobs:
           github-token: ${{ secrets.GH_SHR_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
-          aws-region: us-east-1
-          aws-subnet-id: subnet-08c26caf0a52b7c19
-          aws-security-group-id: sg-0315bffea9042ac9b
+          # aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
+          aws-region: eu-west-1
+          # aws-subnet-id: subnet-08c26caf0a52b7c19
+          # aws-security-group-id: sg-0315bffea9042ac9b
           aws-instance-type: c5a.8xlarge # 32 vcpu, 64gb ram, $1.392 hourly
           aws-instance-root-volume-size: 64
           aws-instance-lifecycle: spot
@@ -1444,10 +1444,10 @@ jobs:
           github-token: ${{ secrets.GH_SHR_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
-          aws-region: us-east-1
-          aws-subnet-id: subnet-08c26caf0a52b7c19
-          aws-security-group-id: sg-0315bffea9042ac9b
+          # aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
+          aws-region: eu-west-1
+          # aws-subnet-id: subnet-08c26caf0a52b7c19
+          # aws-security-group-id: sg-0315bffea9042ac9b
           aws-instance-type: c5a.8xlarge # 32 vcpu, 64gb ram, $1.392 hourly
           aws-instance-root-volume-size: 64
           aws-instance-lifecycle: spot
