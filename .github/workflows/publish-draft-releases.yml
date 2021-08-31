@@ -6,11 +6,11 @@ name: publish draft releases
 
 # yamllint disable-line rule:truthy
 on:
+  pull_request:
+      - manta-pc
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
-    pull_request:
-      - manta-pc
 
 jobs:
 
