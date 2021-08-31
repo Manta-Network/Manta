@@ -9,8 +9,8 @@ on:
   push:
     branch:
       - manta-pc
-    #tags:
-    #  - v[0-9]+.[0-9]+.[0-9]+*
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
 
 jobs:
 
@@ -77,9 +77,9 @@ jobs:
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
 
-  build-node:
-    needs: start-node-builder
-    runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
+  build-node-current:
+    needs: start-node-builder-current
+    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     env:
       CARGO_TERM_COLOR: always
     steps:
@@ -158,9 +158,9 @@ jobs:
 
   build-benchmark:
     needs:
-      - start-node-builder
-      - build-node
-    runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
+      - start-node-builder-current
+      - build-node-current
+    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     steps:
       -
         name: install sccache
@@ -234,9 +234,9 @@ jobs:
   run-benchmark:
     name: benchmark (${{ matrix.benchmark.pallet.name }} ${{ matrix.benchmark.extrinsic.name }})
     needs:
-      - start-node-builder
+      - start-node-builder-current
       - build-benchmark
-    runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
+    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     strategy:
       matrix:
         benchmark:
@@ -340,21 +340,21 @@ jobs:
       #   run: |
       #     jq --slurp '. | add' ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay-*.json > ${{ github.workspace }}/extrinsic-benchmark-pallet-manta-pay.json
 
-  build-node-old:
+  build-node-base:
     needs:
-      - start-node-builder-old
+      - start-node-builder-base
       - check-for-runtime-upgrade
-    runs-on: ${{ needs.start-node-builder-old.outputs.runner-label }}
+    runs-on: ${{ needs.start-node-builder-base.outputs.runner-label }}
     env:
       CARGO_TERM_COLOR: always
     steps:
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         uses: actions/checkout@v2
         with:
           ref: '4204135e90ce02fa28af0913c8f050b76bd3ea23'
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: install sccache
 
         env:
@@ -369,7 +369,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: cache cargo registry
         uses: actions/cache@v2
         with:
@@ -380,7 +380,7 @@ jobs:
           restore-keys: |
             cargo-
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: cache sccache
         uses: actions/cache@v2
         continue-on-error: false
@@ -390,11 +390,11 @@ jobs:
           restore-keys: |
             sccache-
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: start sccache server
         run: sccache --start-server
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: init
         run: |
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
@@ -406,7 +406,7 @@ jobs:
           cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
           rustup update
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: build
         env:
           RUST_BACKTRACE: full
@@ -417,25 +417,25 @@ jobs:
           source ${HOME}/.cargo/env
           cargo build --verbose --release --features calamari
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: stop sccache server
         run: sccache --stop-server || true
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: strip
         run: |
           strip target/release/calamari-pc
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: upload
         uses: actions/upload-artifact@v2
         with:
-          name: calamari-pc-old
+          name: calamari-pc-base
           path: target/release/calamari-pc
 
   runtime-upgrade-test:
     needs:
-      - build-node-old
+      - build-node-base
       - build-calamari-runtime
       - start-runtime-upgrade-tester
       - check-for-runtime-upgrade
@@ -454,21 +454,21 @@ jobs:
                 para: 2
     steps:
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         run: |
           mkdir -p $HOME/.local/share/calamari-pc
           mkdir -p $HOME/.local/bin
           echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
-        name: fetch calamari-pc-old
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: fetch calamari-pc-base
         uses: actions/download-artifact@v2
         with:
-          name: calamari-pc-old
+          name: calamari-pc-base
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
-        name: mv and chmod calamari-pc-old
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: mv and chmod calamari-pc-base
         run: |
           pwd
           ls -a
@@ -477,14 +477,14 @@ jobs:
           ls -ahl ${{ github.workspace }}/
           ls -ahl $HOME/.local/bin/
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: fetch and chmod polkadot
         run: |
           curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.9/polkadot
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         id: create-chainspec
         run: |
           calamari-pc export-state --chain ${{ matrix.chain-spec.id }} > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
@@ -505,7 +505,7 @@ jobs:
           ls -ahl $HOME/.local/share/calamari-pc/
           echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: create launch config
         run: |
           echo '{
@@ -632,19 +632,19 @@ jobs:
           jq . $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
           ls -ahl $HOME/.local/share/calamari-pc/
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/manta-pc-launch
           path: manta-pc-launch
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
           path: dev-tools-calamari
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: launch testnet
         run: |
           cd ${{ github.workspace }}/manta-pc-launch
@@ -657,7 +657,7 @@ jobs:
             --no-autorestart \
             -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: init measure-block-time calamari
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/measure-block-time
@@ -669,13 +669,13 @@ jobs:
             --error ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: fetch new calamari_runtime.compact.compressed.wasm
         uses: actions/download-artifact@v2
         with:
           name: calamari-runtime
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: run test suites
         run: |
           # todo: implement moonbeam-like js test suite triggers here
@@ -700,7 +700,7 @@ jobs:
           cd ${{ github.workspace }}
           sleep 30
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: stop testnet
         run: |
           cd ${{ github.workspace }}/manta-pc-launch
@@ -708,25 +708,25 @@ jobs:
           pm2 stop manta-pc-launch
           pm2 stop test-runtime-upgrade-${{ matrix.chain-spec.id }}
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         uses: actions/upload-artifact@v2
         with:
           name: runtime-upgrade-test-for-${{ matrix.chain-spec.id }}-stdout.log
           path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         uses: actions/upload-artifact@v2
         with:
           name: runtime-upgrade-test-for-${{ matrix.chain-spec.id }}-stderr.log
           path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stderr.log
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: parse runtime upgrade log
         run: |
           grep 'Included at block hash' ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words} | tee ${{ github.workspace }}/runtime-upgrade-output.csv; done
           if [ ! -f ${{ github.workspace }}/runtime-upgrade-output.csv ]; then echo "Runtime upgrade failed"; exit 1; fi
       -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version != needs.check-for-runtime-upgrade.outputs.runtime-version-old }}
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: parse calamari block times
         run: |
           grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[4]},${words[8]} | tee ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv; done
@@ -735,7 +735,7 @@ jobs:
 
   integration-test:
     needs:
-      - build-node
+      - build-node-current
       - build-calamari-runtime
       - start-integration-tester
       - check-for-runtime-upgrade
@@ -1264,7 +1264,7 @@ jobs:
   publish-node:
     runs-on: ubuntu-latest
     needs:
-      - build-node
+      - build-node-current
       - create-draft-release
     outputs:
       download_url: ${{ steps.upload-calamari-pc.outputs.browser_download_url }}
@@ -1298,7 +1298,7 @@ jobs:
         with:
           args: 'draft runtime release ${{ github.ref }} created at ${{ needs.create-draft-release.outputs.release_url }}'
 
-  start-node-builder:
+  start-node-builder-current:
     runs-on: ubuntu-latest
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -1323,10 +1323,10 @@ jobs:
           aws-image-search-pattern: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
           aws-image-search-owners: '["099720109477"]' # canonical
 
-  stop-node-builder:
+  stop-node-builder-current:
     needs:
-      - start-node-builder
-      - build-node
+      - start-node-builder-current
+      - build-node-current
       - build-benchmark
       - run-benchmark
     runs-on: ubuntu-latest
@@ -1339,11 +1339,11 @@ jobs:
           github-token: ${{ secrets.GH_SHR_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-node-builder.outputs.aws-region }}
-          runner-label: ${{ needs.start-node-builder.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-node-builder.outputs.aws-instance-id }}
+          aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
+          runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
 
-  start-node-builder-old:
+  start-node-builder-base:
     runs-on: ubuntu-latest
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -1368,10 +1368,10 @@ jobs:
           aws-image-search-pattern: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
           aws-image-search-owners: '["099720109477"]' # canonical
 
-  stop-node-builder-old:
+  stop-node-builder-base:
     needs:
-      - start-node-builder-old
-      - build-node-old
+      - start-node-builder-base
+      - build-node-base
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
@@ -1382,9 +1382,9 @@ jobs:
           github-token: ${{ secrets.GH_SHR_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-node-builder-old.outputs.aws-region }}
-          runner-label: ${{ needs.start-node-builder-old.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-node-builder-old.outputs.aws-instance-id }}
+          aws-region: ${{ needs.start-node-builder-base.outputs.aws-region }}
+          runner-label: ${{ needs.start-node-builder-base.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-node-builder-base.outputs.aws-instance-id }}
 
   start-integration-tester:
     runs-on: ubuntu-latest
@@ -1476,9 +1476,8 @@ jobs:
   check-for-runtime-upgrade:
     runs-on: ubuntu-latest
     outputs:
-      should_check_runtime_upgrade: ${{ steps.comparison-result.outputs.should_check_runtime_upgrade }}
-      runtime-version: ${{ steps.get-runtime-version.outputs.runtime_ver }}
-      runtime-version-old: ${{ steps.get-runtime-version-old.outputs.runtime_ver_old }}
+      runtime-version-current: ${{ steps.get-runtime-version.outputs.runtime-ver-current }}
+      runtime-version-base: ${{ steps.get-runtime-version-base.outputs.runtime-ver-base }}
     steps:
       -
         uses: actions/checkout@v2
@@ -1489,33 +1488,33 @@ jobs:
           ruby-version: 2.7
       -
         name: get runtime version
-        id: get-runtime-version
+        id: get-runtime-version-current
         run: |
-          runtime_ver="$(ruby -e '
+          runtime-ver-current="$(ruby -e '
             require "./scripts/github/lib.rb";
             puts get_runtime("calamari")
           ')"
-          echo "::set-output name=runtime_ver::$runtime_ver"
-          echo $runtime_ver
+          echo "::set-output name=runtime-ver-current::$runtime-ver-current"
+          echo $runtime-ver-current
           echo ....................
       - name: Show new runtime version
-        run: echo "The selected value is ${{ steps.get-runtime-version.outputs.runtime_ver }}"
+        run: echo "The selected value is ${{ steps.get-runtime-version-current.outputs.runtime-ver-current }}"
       -
-        name: get old runtime version
-        id: get-runtime-version-old
+        name: get base runtime version
+        id: get-runtime-version-base
         run: |
           mkdir temp_for_run
           cd temp_for_run
           git clone -b manta-pc https://github.com/Manta-Network/Manta.git
           cd Manta
-          runtime_ver="$(ruby -e '
+          runtime-ver-base="$(ruby -e '
             require "./scripts/github/lib.rb";
             puts get_runtime("calamari")
           ')"
-          echo "::set-output name=runtime_ver_old::$runtime_ver"
-          echo $runtime_ver
+          echo "::set-output name=runtime-ver-base::$runtime-ver-base"
+          echo $runtime-ver-base
           echo ....................
-      - name: Show old runtime version
-        run: echo "The selected value is ${{ steps.get-runtime-version-old.outputs.runtime_ver_old }}"
+      - name: Show base runtime version
+        run: echo "The selected value is ${{ steps.get-runtime-version-base.outputs.runtime-ver-base }}"
 
 # yamllint enable rule:line-length
