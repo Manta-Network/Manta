@@ -446,7 +446,7 @@ jobs:
       matrix:
         chain-spec:
           -
-            id: calamari-testnet
+            id: calamari-testnet-ci
             expected:
               block-count:
                 para: 6

@@ -41,6 +41,8 @@ fn load_spec(
 		#[cfg(feature = "calamari")]
 		"calamari-testnet" => Box::new(chain_spec::calamari_testnet_config(para_id)),
 		#[cfg(feature = "calamari")]
+		"calamari-testnet-ci" => Box::new(chain_spec::calamari_testnet_config_ci(para_id)),
+		#[cfg(feature = "calamari")]
 		"calamari" => Box::new(chain_spec::calamari_config()),
 		path => {
 			let path = std::path::PathBuf::from(path);
