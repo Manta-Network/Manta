@@ -352,7 +352,7 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         uses: actions/checkout@v2
         with:
-          ref: '4204135e90ce02fa28af0913c8f050b76bd3ea23'
+          ref: 'f08ce6840a0ccfdeb6a34a70a28235a948aad85d'
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: install sccache
