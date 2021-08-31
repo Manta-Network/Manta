@@ -1490,12 +1490,12 @@ jobs:
         name: get runtime version
         id: get-runtime-version-current
         run: |
-          runtime-ver-current="$(ruby -e '
+          runtime_ver_current="$(ruby -e '
             require "./scripts/github/lib.rb";
             puts get_runtime("calamari")
           ')"
-          echo "::set-output name=runtime-ver-current::$runtime-ver-current"
-          echo $runtime-ver-current
+          echo "::set-output name=runtime-ver-current::$runtime_ver_current"
+          echo $runtime_ver_current
           echo ....................
       - name: Show new runtime version
         run: echo "The selected value is ${{ steps.get-runtime-version-current.outputs.runtime-ver-current }}"
@@ -1507,12 +1507,12 @@ jobs:
           cd temp_for_run
           git clone -b manta-pc https://github.com/Manta-Network/Manta.git
           cd Manta
-          runtime-ver-base="$(ruby -e '
+          runtime_ver_base="$(ruby -e '
             require "./scripts/github/lib.rb";
             puts get_runtime("calamari")
           ')"
-          echo "::set-output name=runtime-ver-base::$runtime-ver-base"
-          echo $runtime-ver-base
+          echo "::set-output name=runtime-ver-base::$runtime_ver_base"
+          echo $runtime_ver_base
           echo ....................
       - name: Show base runtime version
         run: echo "The selected value is ${{ steps.get-runtime-version-base.outputs.runtime-ver-base }}"
