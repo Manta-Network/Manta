@@ -1,7 +1,7 @@
 //! Calamari Parachain CLI
 #![warn(missing_docs)]
 
-mod chain_spec;
+mod chain_specs;
 #[macro_use]
 mod service;
 mod cli;

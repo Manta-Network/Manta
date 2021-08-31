@@ -1,5 +1,5 @@
 use crate::{
-	chain_spec,
+	chain_specs,
 	cli::{Cli, RelayChainCli, Subcommand},
 };
 use codec::Encode;
@@ -28,20 +28,20 @@ fn load_spec(
 	Ok(match id {
 		// manta-pc chainspec
 		#[cfg(feature = "manta-pc")]
-		"manta-pc-dev" => Box::new(chain_spec::manta_pc_development_config(para_id)),
+		"manta-pc-dev" => Box::new(chain_specs::manta_pc_development_config(para_id)),
 		#[cfg(feature = "manta-pc")]
-		"manta-pc-local" => Box::new(chain_spec::manta_pc_local_config(para_id)),
+		"manta-pc-local" => Box::new(chain_specs::manta_pc_local_config(para_id)),
 		#[cfg(feature = "manta-pc")]
-		"manta-pc-testnet" => Box::new(chain_spec::manta_pc_testnet_config(para_id)),
+		"manta-pc-testnet" => Box::new(chain_specs::manta_pc_testnet_config(para_id)),
 		// calamari chainspec
 		#[cfg(feature = "calamari")]
-		"calamari-dev" => Box::new(chain_spec::calamari_development_config(para_id)),
+		"calamari-dev" => Box::new(chain_specs::calamari_development_config(para_id)),
 		#[cfg(feature = "calamari")]
-		"calamari-local" => Box::new(chain_spec::calamari_local_config(para_id)),
+		"calamari-local" => Box::new(chain_specs::calamari_local_config(para_id)),
 		#[cfg(feature = "calamari")]
-		"calamari-testnet" => Box::new(chain_spec::calamari_testnet_config(para_id)),
+		"calamari-testnet" => Box::new(chain_specs::calamari_testnet_config(para_id)),
 		#[cfg(feature = "calamari")]
-		"calamari" => Box::new(chain_spec::calamari_config()),
+		"calamari" | "" => Box::new(chain_specs::calamari_config()),
 		path => {
 			let path = std::path::PathBuf::from(path);
 
@@ -55,14 +55,14 @@ fn load_spec(
 			if starts_with("manta-pc") {
 				#[cfg(feature = "manta-pc")]
 				{
-					Box::new(chain_spec::MantaPCChainSpec::from_json_file(path)?)
+					Box::new(chain_specs::MantaPCChainSpec::from_json_file(path)?)
 				}
 				#[cfg(not(feature = "manta-pc"))]
 				panic!("manta-pc runtime is not available.")
 			} else if starts_with("calamari") {
 				#[cfg(feature = "calamari")]
 				{
-					Box::new(chain_spec::CalamariChainSpec::from_json_file(path)?)
+					Box::new(chain_specs::CalamariChainSpec::from_json_file(path)?)
 				}
 				#[cfg(not(feature = "calamari"))]
 				panic!("calamari runtime is not available.")
@@ -366,7 +366,7 @@ pub fn run() -> Result<()> {
 
 			runner.run_node_until_exit(|config| async move {
 				let para_id =
-					chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
+					chain_specs::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,
