@@ -15,7 +15,7 @@
     "tokenDecimals": 12,
     "tokenSymbol": "KMA"
   },
-  "relay_chain": "kusama-dev",
+  "relay_chain": "westend",
   "para_id": 2084,
   "consensusEngine": null,
   "codeSubstitutes": {},
