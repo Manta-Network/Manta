@@ -23,4 +23,4 @@ write a little note why.
 - [ ] Wrote unit tests
 - [ ] Updated relevant documentation in the code
 - [ ] Re-reviewed `Files changed` in the Github PR explorer
-- [ ] Create a tag for your commit in order to trigger the publish-draft-release job
+- [ ] If needed, notify the committer this is a draft-release and a tag is needed after merging the PR.
