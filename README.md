@@ -14,8 +14,8 @@ cargo build --release -p manta
 
 ## Manta Developement
 Currently, there are two developing branches:
-* `manta`: Manta Network's testnet/mainnet node
-* `manta-pc`: Manta Network's parachain node
+* `manta`: Manta Network's testnet/mainnet runtime
+* `manta-pc`: Manta Network's parachain runtime
 
 ## Using Docker
 You can run manta nodes using docker.

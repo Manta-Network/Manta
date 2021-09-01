@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+#![allow(dead_code)]
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 use manta_primitives::{constants, currency::MA, AccountId, AuraId, Balance, Signature};
