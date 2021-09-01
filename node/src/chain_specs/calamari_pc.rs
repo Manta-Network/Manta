@@ -183,7 +183,6 @@ pub fn calamari_testnet_config() -> Result<CalamariChainSpec, String> {
 	)
 }
 
-
 // Calamari mainnet
 pub fn calamari_config() -> Result<CalamariChainSpec, String> {
 	CalamariChainSpec::from_json_bytes(
