@@ -177,10 +177,12 @@ fn calamari_dev_genesis(
 	}
 }
 
-pub fn calamari_testnet_config() -> Result<CalamariChainSpec, String> {
-	CalamariChainSpec::from_json_bytes(
+pub fn calamari_testnet_config(id: ParaId) -> Result<CalamariChainSpec, String> {
+	let mut spec = CalamariChainSpec::from_json_bytes(
 		&include_bytes!("../../../genesis/calamari-testnet-genesis.json")[..],
-	)
+	)?;
+	spec.extensions_mut().para_id = id.into();
+	Ok(spec)
 }
 
 // Calamari mainnet
