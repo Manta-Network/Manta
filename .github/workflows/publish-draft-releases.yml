@@ -6,8 +6,6 @@ name: publish draft releases
 
 # yamllint disable-line rule:truthy
 on:
-  pull_request:
-    branches: [manta-pc]
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
@@ -354,7 +352,8 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         uses: actions/checkout@v2
         with:
-          ref: 'f08ce6840a0ccfdeb6a34a70a28235a948aad85d'
+          ref: 'manta-pc'
+          # ref: 'f08ce6840a0ccfdeb6a34a70a28235a948aad85d'
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: install sccache
