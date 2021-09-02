@@ -11,7 +11,6 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
-    branches: [ghzlatarev/runtime-upgrade-ci]
     # branch:
     #   - manta-pc
 
@@ -1118,185 +1117,185 @@ jobs:
       #   run: |
       #     cat ${{ github.workspace }}/manta-pc-launch/9922.log
 
-  # build-changelog:
-  #   runs-on: ubuntu-latest
-  #   needs:
-  #     - get-rust-versions
-  #     - build-calamari-runtime
-  #   steps:
-  #     #-
-  #     #  uses: actions/download-artifact@v2
-  #     #  with:
-  #     #    name: manta-pc-srtool-json
-  #     -
-  #       uses: actions/download-artifact@v2
-  #       with:
-  #         name: calamari-srtool-json
-  #     -
-  #       uses: actions/checkout@v2
-  #       with:
-  #         fetch-depth: 0
-  #         path: Manta
-  #     -
-  #       name: ruby setup
-  #       uses: actions/setup-ruby@v1
-  #       with:
-  #         ruby-version: 2.7
-  #     -
-  #       name: changelog gems
-  #       run: |
-  #         gem install changelogerator git toml
-  #     -
-  #       name: generate changelog
-  #       env:
-  #         RUSTC_STABLE: ${{ needs.get-rust-versions.outputs.rustc-stable }}
-  #         RUSTC_NIGHTLY: ${{ needs.get-rust-versions.outputs.rustc-nightly }}
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       run: >
-  #         ruby $GITHUB_WORKSPACE/Manta/scripts/github/generate-changelog.rb |
-  #         tee changelog.md
-  #     -
-  #       name: upload changelog
-  #       uses: actions/upload-artifact@v2
-  #       with:
-  #         name: changelog
-  #         path: changelog.md
+  build-changelog:
+    runs-on: ubuntu-latest
+    needs:
+      - get-rust-versions
+      - build-calamari-runtime
+    steps:
+      #-
+      #  uses: actions/download-artifact@v2
+      #  with:
+      #    name: manta-pc-srtool-json
+      -
+        uses: actions/download-artifact@v2
+        with:
+          name: calamari-srtool-json
+      -
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          path: Manta
+      -
+        name: ruby setup
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+      -
+        name: changelog gems
+        run: |
+          gem install changelogerator git toml
+      -
+        name: generate changelog
+        env:
+          RUSTC_STABLE: ${{ needs.get-rust-versions.outputs.rustc-stable }}
+          RUSTC_NIGHTLY: ${{ needs.get-rust-versions.outputs.rustc-nightly }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          ruby $GITHUB_WORKSPACE/Manta/scripts/github/generate-changelog.rb |
+          tee changelog.md
+      -
+        name: upload changelog
+        uses: actions/upload-artifact@v2
+        with:
+          name: changelog
+          path: changelog.md
 
-  # create-draft-release:
-  #   runs-on: ubuntu-latest
-  #   needs:
-  #     - build-changelog
-  #     - build-calamari-runtime
-  #     - run-benchmark
-  #     - integration-test
-  #     - runtime-upgrade-test
-  #   outputs:
-  #     release_url: ${{ steps.create-release.outputs.html_url }}
-  #     asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
-  #   steps:
-  #     -
-  #       uses: actions/download-artifact@v2
-  #       with:
-  #         name: changelog
-  #         path: ./
-  #     -
-  #       name: create draft release
-  #       id: create-release
-  #       uses: actions/create-release@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         tag_name: ${{ github.ref }}
-  #         release_name: manta ${{ github.ref }}
-  #         body_path: changelog.md
-  #         draft: true
+  create-draft-release:
+    runs-on: ubuntu-latest
+    needs:
+      - build-changelog
+      - build-calamari-runtime
+      - run-benchmark
+      - integration-test
+      - runtime-upgrade-test
+    outputs:
+      release_url: ${{ steps.create-release.outputs.html_url }}
+      asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
+    steps:
+      -
+        uses: actions/download-artifact@v2
+        with:
+          name: changelog
+          path: ./
+      -
+        name: create draft release
+        id: create-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: manta ${{ github.ref }}
+          body_path: changelog.md
+          draft: true
 
-  # publish-calamari-runtime:
-  #   runs-on: ubuntu-latest
-  #   needs:
-  #     - create-draft-release
-  #   steps:
-  #     -
-  #       uses: actions/checkout@v2
-  #     -
-  #       uses: actions/download-artifact@v2
-  #       with:
-  #         name: calamari-runtime
-  #     -
-  #       uses: actions/download-artifact@v2
-  #       with:
-  #         name: calamari-srtool-json
-  #     -
-  #       name: ruby setup
-  #       uses: actions/setup-ruby@v1
-  #       with:
-  #         ruby-version: 2.7
-  #     -
-  #       name: get runtime version
-  #       id: get-runtime-version
-  #       run: |
-  #         runtime_ver="$(ruby -e '
-  #           require "./scripts/github/lib.rb";
-  #           puts get_runtime("calamari")
-  #         ')"
-  #         echo "::set-output name=runtime_ver::$runtime_ver"
-  #     -
-  #       name: upload compact wasm
-  #       uses: actions/upload-release-asset@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-  #         asset_path: calamari_runtime.compact.wasm
-  #         asset_name: calamari-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.wasm
-  #         asset_content_type: application/wasm
-  #     -
-  #       name: upload compressed wasm
-  #       uses: actions/upload-release-asset@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-  #         asset_path: calamari_runtime.compact.compressed.wasm
-  #         asset_name: calamari-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.compressed.wasm
-  #         asset_content_type: application/wasm
-  #     -
-  #       name: upload types json
-  #       uses: actions/upload-release-asset@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-  #         asset_path: types.json
-  #         asset_name: calamari-types-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
-  #         asset_content_type: application/json
-  #     -
-  #       name: upload srtool output json
-  #       uses: actions/upload-release-asset@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-  #         asset_path: calamari-srtool-output.json
-  #         asset_name: calamari-srtool-output-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
-  #         asset_content_type: application/json
+  publish-calamari-runtime:
+    runs-on: ubuntu-latest
+    needs:
+      - create-draft-release
+    steps:
+      -
+        uses: actions/checkout@v2
+      -
+        uses: actions/download-artifact@v2
+        with:
+          name: calamari-runtime
+      -
+        uses: actions/download-artifact@v2
+        with:
+          name: calamari-srtool-json
+      -
+        name: ruby setup
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+      -
+        name: get runtime version
+        id: get-runtime-version
+        run: |
+          runtime_ver="$(ruby -e '
+            require "./scripts/github/lib.rb";
+            puts get_runtime("calamari")
+          ')"
+          echo "::set-output name=runtime_ver::$runtime_ver"
+      -
+        name: upload compact wasm
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+          asset_path: calamari_runtime.compact.wasm
+          asset_name: calamari-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.wasm
+          asset_content_type: application/wasm
+      -
+        name: upload compressed wasm
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+          asset_path: calamari_runtime.compact.compressed.wasm
+          asset_name: calamari-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.compressed.wasm
+          asset_content_type: application/wasm
+      -
+        name: upload types json
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+          asset_path: types.json
+          asset_name: calamari-types-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
+          asset_content_type: application/json
+      -
+        name: upload srtool output json
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+          asset_path: calamari-srtool-output.json
+          asset_name: calamari-srtool-output-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
+          asset_content_type: application/json
 
-  # publish-node:
-  #   runs-on: ubuntu-latest
-  #   needs:
-  #     - build-node-current
-  #     - create-draft-release
-  #   outputs:
-  #     download_url: ${{ steps.upload-calamari-pc.outputs.browser_download_url }}
-  #   steps:
-  #     -
-  #       uses: actions/download-artifact@v2
-  #       with:
-  #         name: calamari-pc
-  #     -
-  #       id: upload-calamari-pc
-  #       name: upload calamari-pc
-  #       uses: actions/upload-release-asset@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-  #         asset_path: calamari-pc
-  #         asset_name: calamari-pc
-  #         asset_content_type: application/octet-stream
+  publish-node:
+    runs-on: ubuntu-latest
+    needs:
+      - build-node-current
+      - create-draft-release
+    outputs:
+      download_url: ${{ steps.upload-calamari-pc.outputs.browser_download_url }}
+    steps:
+      -
+        uses: actions/download-artifact@v2
+        with:
+          name: calamari-pc
+      -
+        id: upload-calamari-pc
+        name: upload calamari-pc
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+          asset_path: calamari-pc
+          asset_name: calamari-pc
+          asset_content_type: application/octet-stream
 
-  # brag:
-  #   runs-on: ubuntu-latest
-  #   needs: create-draft-release
-  #   steps:
-  #     -
-  #       env:
-  #         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-  #         DISCORD_USERNAME: raybot
-  #         DISCORD_AVATAR: https://gist.githubusercontent.com/grenade/66a46007b37778d81ee064394263b16c/raw/raybot.png
-  #       uses: Ilshidur/action-discord@0.3.2
-  #       with:
-  #         args: 'draft runtime release ${{ github.ref }} created at ${{ needs.create-draft-release.outputs.release_url }}'
+  brag:
+    runs-on: ubuntu-latest
+    needs: create-draft-release
+    steps:
+      -
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_USERNAME: raybot
+          DISCORD_AVATAR: https://gist.githubusercontent.com/grenade/66a46007b37778d81ee064394263b16c/raw/raybot.png
+        uses: Ilshidur/action-discord@0.3.2
+        with:
+          args: 'draft runtime release ${{ github.ref }} created at ${{ needs.create-draft-release.outputs.release_url }}'
 
   start-node-builder-current:
     runs-on: ubuntu-latest
