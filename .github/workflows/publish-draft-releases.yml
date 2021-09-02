@@ -1191,75 +1191,75 @@ jobs:
   #         body_path: changelog.md
   #         draft: true
 
-  publish-calamari-runtime:
-    runs-on: ubuntu-latest
-    needs:
-      - create-draft-release
-    steps:
-      -
-        uses: actions/checkout@v2
-      -
-        uses: actions/download-artifact@v2
-        with:
-          name: calamari-runtime
-      -
-        uses: actions/download-artifact@v2
-        with:
-          name: calamari-srtool-json
-      -
-        name: ruby setup
-        uses: actions/setup-ruby@v1
-        with:
-          ruby-version: 2.7
-      -
-        name: get runtime version
-        id: get-runtime-version
-        run: |
-          runtime_ver="$(ruby -e '
-            require "./scripts/github/lib.rb";
-            puts get_runtime("calamari")
-          ')"
-          echo "::set-output name=runtime_ver::$runtime_ver"
-      -
-        name: upload compact wasm
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-          asset_path: calamari_runtime.compact.wasm
-          asset_name: calamari-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.wasm
-          asset_content_type: application/wasm
-      -
-        name: upload compressed wasm
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-          asset_path: calamari_runtime.compact.compressed.wasm
-          asset_name: calamari-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.compressed.wasm
-          asset_content_type: application/wasm
-      -
-        name: upload types json
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-          asset_path: types.json
-          asset_name: calamari-types-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
-          asset_content_type: application/json
-      -
-        name: upload srtool output json
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-          asset_path: calamari-srtool-output.json
-          asset_name: calamari-srtool-output-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
-          asset_content_type: application/json
+  # publish-calamari-runtime:
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - create-draft-release
+  #   steps:
+  #     -
+  #       uses: actions/checkout@v2
+  #     -
+  #       uses: actions/download-artifact@v2
+  #       with:
+  #         name: calamari-runtime
+  #     -
+  #       uses: actions/download-artifact@v2
+  #       with:
+  #         name: calamari-srtool-json
+  #     -
+  #       name: ruby setup
+  #       uses: actions/setup-ruby@v1
+  #       with:
+  #         ruby-version: 2.7
+  #     -
+  #       name: get runtime version
+  #       id: get-runtime-version
+  #       run: |
+  #         runtime_ver="$(ruby -e '
+  #           require "./scripts/github/lib.rb";
+  #           puts get_runtime("calamari")
+  #         ')"
+  #         echo "::set-output name=runtime_ver::$runtime_ver"
+  #     -
+  #       name: upload compact wasm
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+  #         asset_path: calamari_runtime.compact.wasm
+  #         asset_name: calamari-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.wasm
+  #         asset_content_type: application/wasm
+  #     -
+  #       name: upload compressed wasm
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+  #         asset_path: calamari_runtime.compact.compressed.wasm
+  #         asset_name: calamari-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.compressed.wasm
+  #         asset_content_type: application/wasm
+  #     -
+  #       name: upload types json
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+  #         asset_path: types.json
+  #         asset_name: calamari-types-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
+  #         asset_content_type: application/json
+  #     -
+  #       name: upload srtool output json
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+  #         asset_path: calamari-srtool-output.json
+  #         asset_name: calamari-srtool-output-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
+  #         asset_content_type: application/json
 
   # publish-node:
   #   runs-on: ubuntu-latest
