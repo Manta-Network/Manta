@@ -191,3 +191,12 @@ pub fn calamari_config() -> Result<CalamariChainSpec, String> {
 		&include_bytes!("../../../genesis/calamari-genesis.json")[..],
 	)
 }
+
+// Calamari testnet for ci jobs
+#[cfg(feature = "calamari")]
+pub fn calamari_testnet_ci_config() -> CalamariChainSpec {
+	CalamariChainSpec::from_json_bytes(
+		&include_bytes!("../../genesis/calamari-testnet-ci-genesis.json")[..],
+	)
+	.unwrap()
+}
