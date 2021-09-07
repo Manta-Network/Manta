@@ -2,17 +2,31 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::FullCodec;
-use core::{convert::TryFrom, marker::PhantomData};
-use frame_support::traits::{Currency, ExistenceRequirement, Get, WithdrawReasons};
+use core::{
+	convert::{TryFrom, TryInto},
+	marker::PhantomData,
+};
+use frame_support::{
+	traits::{
+		tokens::currency::Currency as CurrencyT, Currency, ExistenceRequirement, Get,
+		OnUnbalanced as OnUnbalancedT, WithdrawReasons,
+	},
+	weights::{Weight, WeightToFeePolynomial},
+};
 use manta_primitives::currency_id::{CurrencyId as MantaCurrencyId, TokenSymbol};
-use sp_runtime::traits::{MaybeSerializeDeserialize, StaticLookup};
+use sp_runtime::{
+	traits::{MaybeSerializeDeserialize, Saturating, StaticLookup, Zero},
+};
 use sp_std::{
 	cmp::{Eq, PartialEq},
 	fmt::Debug,
 	vec::Vec,
 };
 use xcm::v0::{Error as XcmError, MultiAsset, MultiLocation, Result as XcmResult};
-use xcm_executor::traits::{Convert, FilterAssetLocation, TransactAsset};
+use xcm_executor::{
+	traits::{Convert, FilterAssetLocation, TransactAsset, WeightTrader},
+	AssetId as ConcreteAssetId, Assets,
+};
 
 // A Handler for withdrawing/depositting relaychain/parachain tokens.
 pub struct MantaTransactorAdaptor<
@@ -190,6 +204,76 @@ impl<MultiLocationMapCurrencyId: Get<Vec<(MultiLocation, MantaCurrencyId)>>> Sta
 
 		// This means we don't find multilocation by currency id.
 		MultiLocation::Null
+	}
+}
+
+/// Manta fee trader
+pub struct MantaFeeTrader<
+	WeightToFee: WeightToFeePolynomial<Balance = Currency::Balance>,
+	AssetId: Get<Vec<MultiLocation>>,
+	AccountId,
+	Currency: CurrencyT<AccountId>,
+	OnUnbalanced: OnUnbalancedT<Currency::NegativeImbalance>,
+>(
+	Weight,
+	Currency::Balance,
+	PhantomData<(WeightToFee, AssetId, AccountId, Currency, OnUnbalanced)>,
+);
+impl<
+		WeightToFee: WeightToFeePolynomial<Balance = Currency::Balance>,
+		AssetId: Get<Vec<MultiLocation>>,
+		AccountId,
+		Currency: CurrencyT<AccountId>,
+		OnUnbalanced: OnUnbalancedT<Currency::NegativeImbalance>,
+	> WeightTrader for MantaFeeTrader<WeightToFee, AssetId, AccountId, Currency, OnUnbalanced>
+{
+	fn new() -> Self {
+		Self(0, Zero::zero(), PhantomData)
+	}
+
+	fn buy_weight(&mut self, weight: Weight, payment: Assets) -> Result<Assets, XcmError> {
+		let amount = WeightToFee::calc(&weight);
+		// Get the correct multilocation
+		let mut non = MultiLocation::Null;
+		let id = {
+			let all_locations = AssetId::get();
+			let Assets { ref fungible, .. } = payment;
+
+			if all_locations.iter().any(|localtion| {
+				let asset_id = ConcreteAssetId::Concrete(localtion.clone());
+				non = localtion.clone();
+				fungible.contains_key(&asset_id)
+			}) {
+				non
+			} else {
+				return Err(XcmError::NotHoldingFees);
+			}
+		};
+		let required = MultiAsset::ConcreteFungible {
+			amount: amount.try_into().map_err(|_| XcmError::Overflow)?,
+			id,
+		};
+		let (unused, _) = payment.less(required).map_err(|_| XcmError::TooExpensive)?;
+		self.0 = self.0.saturating_add(weight);
+		self.1 = self.1.saturating_add(amount);
+		Ok(unused)
+	}
+
+	fn refund_weight(&mut self, weight: Weight) -> MultiAsset {
+		// Todo: impl this method
+		MultiAsset::None
+	}
+}
+impl<
+		WeightToFee: WeightToFeePolynomial<Balance = Currency::Balance>,
+		AssetId: Get<Vec<MultiLocation>>,
+		AccountId,
+		Currency: CurrencyT<AccountId>,
+		OnUnbalanced: OnUnbalancedT<Currency::NegativeImbalance>,
+	> Drop for MantaFeeTrader<WeightToFee, AssetId, AccountId, Currency, OnUnbalanced>
+{
+	fn drop(&mut self) {
+		OnUnbalanced::on_unbalanced(Currency::issue(self.1));
 	}
 }
 
