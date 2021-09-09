@@ -18,9 +18,10 @@ Before we can merge this PR, please make sure that all the following items have 
 checked off. If any of the checklist items are not applicable, please leave them but
 write a little note why.
 
-- [ ] Targeted PR against correct branch (`manta` or `manta-pc`) with right title (start with [Manta] or [Manta-PC])
+- [ ] Targeted PR against correct branch (`manta` or `manta-pc`) with right title (start with [Manta] or [Manta-PC]),
 - [ ] Linked to Github issue with discussion and accepted design OR have an explanation in the PR that describes this work.
-- [ ] Wrote unit tests
-- [ ] Updated relevant documentation in the code
-- [ ] Re-reviewed `Files changed` in the Github PR explorer
+- [ ] Wrote unit tests.
+- [ ] Updated relevant documentation in the code.
+- [ ] Re-reviewed `Files changed` in the Github PR explorer.
+- [ ] If runtime changes (i.e. generate a different WASM), need to bump spec version.
 - [ ] If needed, notify the committer this is a draft-release and a tag is needed after merging the PR.
