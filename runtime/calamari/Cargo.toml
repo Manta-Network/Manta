@@ -48,6 +48,10 @@ pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', defaul
 pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.9" }
 pallet-transaction-payment-rpc-runtime-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.9" }
 pallet-utility = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.9" }
+pallet-collective = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.9" }
+pallet-democracy = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.9" }
+pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.9" }
+pallet-treasury = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.9" }
 
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.9" }
@@ -134,6 +138,10 @@ std = [
 	'pallet-sudo/std',
 	'pallet-xcm/std',
 	'pallet-transaction-payment/std',
+	'pallet-collective/std',
+	'pallet-democracy/std',
+	'pallet-scheduler/std',
+	'pallet-treasury/std',
 	'manta-primitives/std',
 	'parachain-info/std',
 	"cumulus-pallet-aura-ext/std",

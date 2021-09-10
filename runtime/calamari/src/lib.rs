@@ -16,6 +16,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult,
 };
 
+use sp_core::u32_trait::{_1, _2, _3, _4, _5};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -38,7 +39,7 @@ use manta_primitives::{
 	currency::*, fee::WeightToFee, time::*, AccountId, AuraId, Balance, BlockNumber, Hash, Header,
 	Index, Signature,
 };
-use sp_runtime::Perbill;
+use sp_runtime::{Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -48,6 +49,7 @@ use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 use xcm::v0::{BodyId, Junction, MultiLocation, NetworkId};
+
 use xcm_builder::{
 	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
 	EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset,
@@ -130,28 +132,6 @@ parameter_types! {
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
 	pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
-}
-
-// Don't allow permission-less asset creation.
-pub struct BaseFilter;
-impl Contains<Call> for BaseFilter {
-	fn contains(c: &Call) -> bool {
-		match c {
-			Call::Timestamp(_)
-			| Call::ParachainSystem(_)
-			| Call::Authorship(_)
-			| Call::Sudo(_)
-			| Call::Multisig(_) => true,
-			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
-			// pallet-authorship use for orml
-			// Sudo also cannot be filtered because it is used in runtime upgrade.
-			_ => false,
-			// Filter System to prevent users from runtime upgrade without sudo privilege.
-			// Filter Utility and Multisig to prevent users from setting keys and selecting collator for parachain (couldn't use now).
-			// Filter Session and CollatorSelection to prevent users from utility operation.
-			// Filter XCM pallet.
-		}
-	}
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -265,6 +245,195 @@ impl pallet_utility::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
+}
+
+parameter_types! {
+	pub const LaunchPeriod: BlockNumber = 7 * DAYS;
+	pub const VotingPeriod: BlockNumber = 7 * DAYS;
+	pub const FastTrackVotingPeriod: BlockNumber = 3 * HOURS;
+	pub const InstantAllowed: bool = true;
+	// TODO: acala = 100 * dollar(KAR);
+	//		 moonriver = 4 * currency::MOVR;
+	// 		 khala = 10 * DOLLARS;
+	//		 kusama = 10 * MILLICENTS;
+	pub const MinimumDeposit: Balance = 1 * cMA;
+	// TODO: acala = 1 * DAYS;
+	//  	 moonriver = 1 * DAYS;
+	//		 khala = 8 * DAYS;
+	//		 kusama = 8 * DAYS;
+	pub const EnactmentPeriod: BlockNumber = 1 * DAYS;
+	pub const CooloffPeriod: BlockNumber = 7 * DAYS;
+	// TODO: acala = deposit(0, 1);
+	//		 moonriver = 100 * MICROMOVR;
+	//		 khala = 1 * CENTS;
+	//		 kusama = 10 * MILLICENTS;
+	pub const PreimageByteDeposit: Balance = deposit(0, 1);
+	pub const MaxVotes: u32 = 100;
+	pub const MaxProposals: u32 = 100;
+}
+
+// TODO: acala = same config as us except that all origins can also be root;
+//  	 moonriver = same config as us except FastTrackOrigin which needs 2/3;
+//		 khala = same config as Acala;
+//		 kusama = same config as us;
+impl pallet_democracy::Config for Runtime {
+	type Proposal = Call;
+	type Event = Event;
+	type Currency = Balances;
+	type EnactmentPeriod = EnactmentPeriod;
+	type LaunchPeriod = LaunchPeriod;
+	type VotingPeriod = VotingPeriod;
+	type MinimumDeposit = MinimumDeposit;
+	/// A straight majority of the council can decide what their next motion is.
+	type ExternalOrigin =
+		pallet_collective::EnsureProportionAtLeast<_1, _2, AccountId, CouncilCollective>;
+	/// A super-majority can have the next scheduled referendum be a straight majority-carries vote.
+	type ExternalMajorityOrigin =
+		pallet_collective::EnsureProportionAtLeast<_3, _4, AccountId, CouncilCollective>;
+	/// A unanimous council can have the next scheduled referendum be a straight default-carries
+	/// (NTB) vote.
+	type ExternalDefaultOrigin =
+		pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>;
+	/// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
+	/// be tabled immediately and with a shorter voting/enactment period.
+	type FastTrackOrigin =
+		pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, TechnicalCollective>;
+	type InstantOrigin =
+		pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>;
+	type InstantAllowed = InstantAllowed;
+	type FastTrackVotingPeriod = FastTrackVotingPeriod;
+	// To cancel a proposal which has been passed, 2/3 of the council must agree to it.
+	type CancellationOrigin =
+		pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, CouncilCollective>;
+	// To cancel a proposal before it has been passed, the technical committee must be unanimous or
+	// Root must agree.
+	type CancelProposalOrigin = EnsureOneOf<
+		AccountId,
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>,
+	>;
+	type BlacklistOrigin = EnsureRoot<AccountId>;
+	// Any single technical committee member may veto a coming council proposal, however they can
+	// only do it once and it lasts only for the cool-off period.
+	type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCollective>;
+	type CooloffPeriod = CooloffPeriod;
+	type PreimageByteDeposit = PreimageByteDeposit;
+	type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
+	type Slash = Treasury;
+	type Scheduler = Scheduler;
+	type PalletsOrigin = OriginCaller;
+	type MaxVotes = MaxVotes;
+	type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
+	type MaxProposals = MaxProposals;
+}
+
+parameter_types! {
+	// TODO: everyone except Kusama uses -> 3 * DAYS
+	/// The maximum amount of time (in blocks) for council members to vote on motions.
+	/// Motions may end in fewer blocks if enough votes are cast to determine the result.
+	pub const CouncilMotionDuration: BlockNumber = 3 * DAYS;
+	pub const CouncilMaxProposals: u32 = 100;
+	pub const CouncilMaxMembers: u32 = 100;
+}
+
+type CouncilCollective = pallet_collective::Instance1;
+impl pallet_collective::Config<CouncilCollective> for Runtime {
+	type Origin = Origin;
+	type Proposal = Call;
+	type Event = Event;
+	type MotionDuration = CouncilMotionDuration;
+	type MaxProposals = CouncilMaxProposals;
+	type MaxMembers = CouncilMaxMembers;
+	// TODO: only moonriver uses -> MoreThanMajorityThenPrimeDefaultVote
+	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	// TODO: everyone except Kusama uses -> 3 * DAYS
+	pub const TechnicalMotionDuration: BlockNumber = 3 * DAYS;
+	// TODO: Only Acala uses -> 20 and 30 days for the next two
+	pub const TechnicalMaxProposals: u32 = 100;
+	pub const TechnicalMaxMembers: u32 = 100;
+}
+
+type TechnicalCollective = pallet_collective::Instance2;
+impl pallet_collective::Config<TechnicalCollective> for Runtime {
+	type Origin = Origin;
+	type Proposal = Call;
+	type Event = Event;
+	type MotionDuration = TechnicalMotionDuration;
+	type MaxProposals = TechnicalMaxProposals;
+	type MaxMembers = TechnicalMaxMembers;
+	// TODO: only moonriver uses -> MoreThanMajorityThenPrimeDefaultVote
+	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const ProposalBond: Permill = Permill::from_percent(5);
+	// TODO: acala 	   = 5 * dollar(KAR);
+	//  	 moonriver = 1 * currency::MOVR;
+	//		 khala 	   = 1 * DOLLARS;
+	//		 kusama    = 2000 * CENTS;
+	pub const ProposalBondMinimum: Balance = 1 * MA;
+	// TODO: 6 is typical, only Khala use 1 * DAYS
+	pub const SpendPeriod: BlockNumber = 6 * DAYS;
+	// TODO: only Kusama uses Permill::from_perthousand(2);
+	pub const Burn: Permill = Permill::from_percent(0);
+	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+	// TODO: only Acala uses 30
+	pub const MaxApprovals: u32 = 100;
+}
+
+type TreasuryApproveOrigin = EnsureOneOf<
+	AccountId,
+	EnsureRoot<AccountId>,
+	// TODO: only Acala uses EnsureRootOrHalfGeneralCouncil
+	pallet_collective::EnsureProportionAtLeast<_3, _5, AccountId, CouncilCollective>,
+>;
+
+type TreasuryRejectOrigin = EnsureOneOf<
+	AccountId,
+	EnsureRoot<AccountId>,
+	pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>,
+>;
+
+impl pallet_treasury::Config for Runtime {
+	type PalletId = TreasuryPalletId;
+	type Currency = Balances;
+	type ApproveOrigin = TreasuryApproveOrigin;
+	type RejectOrigin = TreasuryRejectOrigin;
+	type Event = Event;
+	// TODO: only Khala has no slashing -> ()
+	type OnSlash = Treasury;
+	type ProposalBond = ProposalBond;
+	type ProposalBondMinimum = ProposalBondMinimum;
+	type SpendPeriod = SpendPeriod;
+	type Burn = Burn;
+	type BurnDestination = ();
+	type MaxApprovals = MaxApprovals;
+	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+	// TODO: Acala, Khala and Kusama have bounties here
+	type SpendFunds = ();
+}
+
+parameter_types! {
+	// pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+	// 	RuntimeBlockWeights::get().max_block;
+	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) * 1000;
+	pub const MaxScheduledPerBlock: u32 = 50;
+}
+
+impl pallet_scheduler::Config for Runtime {
+	type Event = Event;
+	type Origin = Origin;
+	type PalletsOrigin = OriginCaller;
+	type Call = Call;
+	type MaximumWeight = MaximumSchedulerWeight;
+	type ScheduleOrigin = EnsureRoot<AccountId>;
+	type MaxScheduledPerBlock = MaxScheduledPerBlock;
+	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -486,6 +655,33 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 
+// Don't allow permission-less asset creation.
+pub struct BaseFilter;
+impl Contains<Call> for BaseFilter {
+	fn contains(c: &Call) -> bool {
+		match c {
+			Call::Timestamp(_)
+			| Call::ParachainSystem(_)
+			| Call::Authorship(_)
+			| Call::Sudo(_)
+			| Call::Multisig(_)
+			| Call::Democracy(_)
+			| Call::Treasury(_)
+			| Call::Council(_)
+			| Call::TechnicalCommittee(_)
+			| Call::Scheduler(_) => true,
+			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
+			// pallet-authorship use for orml
+			// Sudo also cannot be filtered because it is used in runtime upgrade.
+			_ => false,
+			// Filter System to prevent users from runtime upgrade without sudo privilege.
+			// Filter Utility and Multisig to prevent users from setting keys and selecting collator for parachain (couldn't use now).
+			// Filter Session and CollatorSelection to prevent users from utility operation.
+			// Filter XCM pallet.
+		}
+	}
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -505,12 +701,23 @@ construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
 
+		// Governance stuff.
+		Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>} = 14,
+		Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 15,
+		TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 16,
+		//PhragmenElection: pallet_elections_phragmen::{Pallet, Call, Storage, Event<T>, Config<T>} = 17,
+		//TechnicalMembership: pallet_membership::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
+		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 19,
+
 		// Collator support. the order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
 		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
+
+		// System scheduler.
+		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 29,
 
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,

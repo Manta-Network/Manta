@@ -1,5 +1,7 @@
 use super::*;
 
+use calamari_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
+
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type CalamariChainSpec =
 	sc_service::GenericChainSpec<calamari_runtime::GenesisConfig, Extensions>;
@@ -131,6 +133,8 @@ fn calamari_dev_genesis(
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> calamari_runtime::GenesisConfig {
+	let num_endowed_accounts = endowed_accounts.len();
+
 	calamari_runtime::GenesisConfig {
 		system: calamari_runtime::SystemConfig {
 			code: calamari_runtime::WASM_BINARY
@@ -172,6 +176,17 @@ fn calamari_dev_genesis(
 				})
 				.collect(),
 		},
+		democracy: DemocracyConfig::default(),
+		council: CouncilConfig::default(),
+		technical_committee: TechnicalCommitteeConfig {
+			members: endowed_accounts
+				.iter()
+				.take((num_endowed_accounts + 1) / 2)
+				.cloned()
+				.collect(),
+			phantom: Default::default(),
+		},
+		treasury: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
 	}
