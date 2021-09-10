@@ -84,7 +84,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 1,
+	spec_version: 2,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -248,21 +248,29 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-	pub const LaunchPeriod: BlockNumber = 7 * DAYS;
-	pub const VotingPeriod: BlockNumber = 7 * DAYS;
-	pub const FastTrackVotingPeriod: BlockNumber = 3 * HOURS;
+	pub const LaunchPeriod: BlockNumber = 1 * MINUTES;
+	pub const VotingPeriod: BlockNumber = 1 * MINUTES;
+	pub const FastTrackVotingPeriod: BlockNumber = 1 * MINUTES;
+	// pub const LaunchPeriod: BlockNumber = 7 * DAYS;
+	// pub const VotingPeriod: BlockNumber = 7 * DAYS;
+	// pub const FastTrackVotingPeriod: BlockNumber = 3 * HOURS;
+
 	pub const InstantAllowed: bool = true;
 	// TODO: acala = 100 * dollar(KAR);
 	//		 moonriver = 4 * currency::MOVR;
 	// 		 khala = 10 * DOLLARS;
 	//		 kusama = 10 * MILLICENTS;
 	pub const MinimumDeposit: Balance = 1 * cMA;
+
 	// TODO: acala = 1 * DAYS;
 	//  	 moonriver = 1 * DAYS;
 	//		 khala = 8 * DAYS;
 	//		 kusama = 8 * DAYS;
-	pub const EnactmentPeriod: BlockNumber = 1 * DAYS;
-	pub const CooloffPeriod: BlockNumber = 7 * DAYS;
+	pub const EnactmentPeriod: BlockNumber = 1 * MINUTES;
+	pub const CooloffPeriod: BlockNumber = 1 * MINUTES;
+	// pub const EnactmentPeriod: BlockNumber = 1 * DAYS;
+	// pub const CooloffPeriod: BlockNumber = 7 * DAYS;
+
 	// TODO: acala = deposit(0, 1);
 	//		 moonriver = 100 * MICROMOVR;
 	//		 khala = 1 * CENTS;
