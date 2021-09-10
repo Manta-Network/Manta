@@ -1,8 +1,9 @@
 FROM ubuntu:20.04 as builder
 LABEL description="run calamari binary distribution in docker"
-ARG BINARY="https://github.com/Manta-Network/Manta/releases/download/v3.0.1-6147698/calamari-pc"
-ARG CALAMARI_GENESIS="https://raw.githubusercontent.com/Manta-Network/Manta/6147698/genesis/calamari-genesis.json"
-ARG KUSAMA_GENESIS="https://raw.githubusercontent.com/paritytech/polkadot/f9d5ad2/node/service/res/kusama.json"
+ARG TAG_NAME
+ARG BINARY="https://github.com/Manta-Network/Manta/releases/download/${TAG_NAME}/calamari-pc"
+ARG CALAMARI_GENESIS="https://raw.githubusercontent.com/Manta-Network/Manta/manta-pc/genesis/calamari-genesis.json"
+ARG KUSAMA_GENESIS="https://raw.githubusercontent.com/paritytech/polkadot/master/node/service/res/kusama.json"
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -20,7 +21,7 @@ RUN rm -rf /usr/share/*
 
 # make executable and check	
 RUN cp ./calamari-pc /usr/local/bin/calamari-pc && \
-    chmod 777 /usr/local/bin/calamari-pc && \
+    chmod +x /usr/local/bin/calamari-pc && \
     ldd /usr/local/bin/calamari-pc && \
     /usr/local/bin/calamari-pc --version
 
