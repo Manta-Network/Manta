@@ -248,29 +248,17 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-	pub const LaunchPeriod: BlockNumber = 1 * MINUTES;
-	pub const VotingPeriod: BlockNumber = 1 * MINUTES;
-	pub const FastTrackVotingPeriod: BlockNumber = 1 * MINUTES;
-	// pub const LaunchPeriod: BlockNumber = 7 * DAYS;
-	// pub const VotingPeriod: BlockNumber = 7 * DAYS;
-	// pub const FastTrackVotingPeriod: BlockNumber = 3 * HOURS;
-
+	pub const LaunchPeriod: BlockNumber = 7 * DAYS;
+	pub const VotingPeriod: BlockNumber = 7 * DAYS;
+	pub const FastTrackVotingPeriod: BlockNumber = 3 * HOURS;
 	pub const InstantAllowed: bool = true;
 	// TODO: acala = 100 * dollar(KAR);
 	//		 moonriver = 4 * currency::MOVR;
 	// 		 khala = 10 * DOLLARS;
 	//		 kusama = 10 * MILLICENTS;
 	pub const MinimumDeposit: Balance = 1 * cMA;
-
-	// TODO: acala = 1 * DAYS;
-	//  	 moonriver = 1 * DAYS;
-	//		 khala = 8 * DAYS;
-	//		 kusama = 8 * DAYS;
-	pub const EnactmentPeriod: BlockNumber = 1 * MINUTES;
-	pub const CooloffPeriod: BlockNumber = 1 * MINUTES;
-	// pub const EnactmentPeriod: BlockNumber = 1 * DAYS;
-	// pub const CooloffPeriod: BlockNumber = 7 * DAYS;
-
+	pub const EnactmentPeriod: BlockNumber = 1 * DAYS;
+	pub const CooloffPeriod: BlockNumber = 7 * DAYS;
 	// TODO: acala = deposit(0, 1);
 	//		 moonriver = 100 * MICROMOVR;
 	//		 khala = 1 * CENTS;
@@ -280,10 +268,6 @@ parameter_types! {
 	pub const MaxProposals: u32 = 100;
 }
 
-// TODO: acala = same config as us except that all origins can also be root;
-//  	 moonriver = same config as us except FastTrackOrigin which needs 2/3;
-//		 khala = same config as Acala;
-//		 kusama = same config as us;
 impl pallet_democracy::Config for Runtime {
 	type Proposal = Call;
 	type Event = Event;
@@ -336,7 +320,6 @@ impl pallet_democracy::Config for Runtime {
 }
 
 parameter_types! {
-	// TODO: everyone except Kusama uses -> 3 * DAYS
 	/// The maximum amount of time (in blocks) for council members to vote on motions.
 	/// Motions may end in fewer blocks if enough votes are cast to determine the result.
 	pub const CouncilMotionDuration: BlockNumber = 3 * DAYS;
@@ -352,15 +335,12 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type MotionDuration = CouncilMotionDuration;
 	type MaxProposals = CouncilMaxProposals;
 	type MaxMembers = CouncilMaxMembers;
-	// TODO: only moonriver uses -> MoreThanMajorityThenPrimeDefaultVote
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
-	// TODO: everyone except Kusama uses -> 3 * DAYS
 	pub const TechnicalMotionDuration: BlockNumber = 3 * DAYS;
-	// TODO: Only Acala uses -> 20 and 30 days for the next two
 	pub const TechnicalMaxProposals: u32 = 100;
 	pub const TechnicalMaxMembers: u32 = 100;
 }
@@ -373,7 +353,6 @@ impl pallet_collective::Config<TechnicalCollective> for Runtime {
 	type MotionDuration = TechnicalMotionDuration;
 	type MaxProposals = TechnicalMaxProposals;
 	type MaxMembers = TechnicalMaxMembers;
-	// TODO: only moonriver uses -> MoreThanMajorityThenPrimeDefaultVote
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
@@ -385,19 +364,15 @@ parameter_types! {
 	//		 khala 	   = 1 * DOLLARS;
 	//		 kusama    = 2000 * CENTS;
 	pub const ProposalBondMinimum: Balance = 1 * MA;
-	// TODO: 6 is typical, only Khala use 1 * DAYS
 	pub const SpendPeriod: BlockNumber = 6 * DAYS;
-	// TODO: only Kusama uses Permill::from_perthousand(2);
 	pub const Burn: Permill = Permill::from_percent(0);
 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
-	// TODO: only Acala uses 30
 	pub const MaxApprovals: u32 = 100;
 }
 
 type TreasuryApproveOrigin = EnsureOneOf<
 	AccountId,
 	EnsureRoot<AccountId>,
-	// TODO: only Acala uses EnsureRootOrHalfGeneralCouncil
 	pallet_collective::EnsureProportionAtLeast<_3, _5, AccountId, CouncilCollective>,
 >;
 
@@ -427,9 +402,8 @@ impl pallet_treasury::Config for Runtime {
 }
 
 parameter_types! {
-	// pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
-	// 	RuntimeBlockWeights::get().max_block;
-	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) * 1000;
+	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+		RuntimeBlockWeights::get().max_block;
 	pub const MaxScheduledPerBlock: u32 = 50;
 }
 
@@ -713,8 +687,6 @@ construct_runtime!(
 		Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>} = 14,
 		Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 15,
 		TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 16,
-		//PhragmenElection: pallet_elections_phragmen::{Pallet, Call, Storage, Event<T>, Config<T>} = 17,
-		//TechnicalMembership: pallet_membership::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 19,
 
 		// Collator support. the order of these 4 are important and shall not change.
