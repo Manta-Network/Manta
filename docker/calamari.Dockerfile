@@ -3,7 +3,7 @@ LABEL description="run calamari binary distribution in docker"
 ARG TAG_NAME
 ARG BINARY="https://github.com/Manta-Network/Manta/releases/download/${TAG_NAME}/calamari-pc"
 ARG CALAMARI_GENESIS="https://raw.githubusercontent.com/Manta-Network/Manta/${TAG_NAME}/genesis/calamari-genesis.json"
-ARG KUSAMA_GENESIS="https://github.com/paritytech/polkadot/blob/v0.9.9-1/node/service/res/kusama.json"
+ARG KUSAMA_GENESIS="https://raw.githubusercontent.com/paritytech/polkadot/v0.9.9-1/node/service/res/kusama.json"
 
 ENV DEBIAN_FRONTEND noninteractive
 
