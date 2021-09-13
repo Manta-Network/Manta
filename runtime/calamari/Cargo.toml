@@ -107,6 +107,11 @@ runtime-benchmarks = [
 	'pallet-timestamp/runtime-benchmarks',
 	'pallet-xcm/runtime-benchmarks',
 	'pallet-collator-selection/runtime-benchmarks',
+	'pallet-collective/runtime-benchmarks',
+	'pallet-democracy/runtime-benchmarks',
+	'pallet-scheduler/runtime-benchmarks',
+	'pallet-treasury/runtime-benchmarks',
+	'pallet-membership/runtime-benchmarks',
 ]
 std = [
 	'codec/std',
