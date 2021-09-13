@@ -377,7 +377,7 @@ pub type EnsureRootOrThreeFourthsTechnicalCommittee = EnsureOneOf<
 >;
 
 type TechnicalMembershipInstance = pallet_membership::Instance2;
-impl pallet_membership::Config<pallet_membership::TechnicalMembershipInstance> for Runtime {
+impl pallet_membership::Config<TechnicalMembershipInstance> for Runtime {
 	type Event = Event;
 	type AddOrigin = EnsureRootOrThreeFourthsTechnicalCommittee;
 	type RemoveOrigin = EnsureRootOrThreeFourthsTechnicalCommittee;
@@ -907,6 +907,13 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
 			list_benchmark!(list, extra, pallet_utility, Utility);
 			list_benchmark!(list, extra, pallet_collator_selection, CollatorSelection);
+			list_benchmark!(list, extra, pallet_democracy, Democracy);
+			list_benchmark!(list, extra, pallet_collective, Council);
+			list_benchmark!(list, extra, pallet_membership, CouncilMembership);
+			list_benchmark!(list, extra, pallet_collective, TechnicalCommittee);
+			list_benchmark!(list, extra, pallet_membership, TechnicalMembership);
+			list_benchmark!(list, extra, pallet_scheduler, Scheduler);
+			list_benchmark!(list, extra, pallet_treasury, Treasury);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -947,6 +954,13 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_utility, Utility);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
+			add_benchmark!(params, batches, pallet_democracy, Democracy);
+			add_benchmark!(params, batches, pallet_collective, Council);
+			add_benchmark!(params, batches, pallet_membership, CouncilMembership);
+			add_benchmark!(params, batches, pallet_collective, TechnicalCommittee);
+			add_benchmark!(params, batches, pallet_membership, TechnicalMembership);
+			add_benchmark!(params, batches, pallet_scheduler, Scheduler);
+			add_benchmark!(params, batches, pallet_treasury, Treasury);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
