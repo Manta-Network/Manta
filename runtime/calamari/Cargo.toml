@@ -52,6 +52,7 @@ pallet-collective = { git = "https://github.com/paritytech/substrate.git", defau
 pallet-democracy = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.9" }
 pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.9" }
 pallet-treasury = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.9" }
+pallet-membership = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.9" }
 
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.9" }
@@ -142,6 +143,7 @@ std = [
 	'pallet-democracy/std',
 	'pallet-scheduler/std',
 	'pallet-treasury/std',
+	'pallet-membership/std',
 	'manta-primitives/std',
 	'parachain-info/std',
 	"cumulus-pallet-aura-ext/std",

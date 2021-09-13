@@ -332,6 +332,26 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
+pub type EnsureRootOrThreeFourthsCouncil = EnsureOneOf<
+	AccountId,
+	EnsureRoot<AccountId>,
+	pallet_collective::EnsureProportionAtLeast<_3, _4, AccountId, CouncilCollective>,
+>;
+
+type CouncilMembershipInstance = pallet_membership::Instance1;
+impl pallet_membership::Config<CouncilMembershipInstance> for Runtime {
+	type Event = Event;
+	type AddOrigin = EnsureRootOrThreeFourthsCouncil;
+	type RemoveOrigin = EnsureRootOrThreeFourthsCouncil;
+	type SwapOrigin = EnsureRootOrThreeFourthsCouncil;
+	type ResetOrigin = EnsureRootOrThreeFourthsCouncil;
+	type PrimeOrigin = EnsureRootOrThreeFourthsCouncil;
+	type MembershipInitialized = Council;
+	type MembershipChanged = Council;
+	type MaxMembers = CouncilMaxMembers;
+	type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
+}
+
 parameter_types! {
 	pub const TechnicalMotionDuration: BlockNumber = 3 * DAYS;
 	pub const TechnicalMaxProposals: u32 = 100;
@@ -348,6 +368,26 @@ impl pallet_collective::Config<TechnicalCollective> for Runtime {
 	type MaxMembers = TechnicalMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+}
+
+pub type EnsureRootOrThreeFourthsTechnicalCommittee = EnsureOneOf<
+	AccountId,
+	EnsureRoot<AccountId>,
+	pallet_collective::EnsureProportionAtLeast<_3, _4, AccountId, TechnicalCollective>,
+>;
+
+type TechnicalMembershipInstance = pallet_membership::Instance2;
+impl pallet_membership::Config<pallet_membership::TechnicalMembershipInstance> for Runtime {
+	type Event = Event;
+	type AddOrigin = EnsureRootOrThreeFourthsTechnicalCommittee;
+	type RemoveOrigin = EnsureRootOrThreeFourthsTechnicalCommittee;
+	type SwapOrigin = EnsureRootOrThreeFourthsTechnicalCommittee;
+	type ResetOrigin = EnsureRootOrThreeFourthsTechnicalCommittee;
+	type PrimeOrigin = EnsureRootOrThreeFourthsTechnicalCommittee;
+	type MembershipInitialized = TechnicalCommittee;
+	type MembershipChanged = TechnicalCommittee;
+	type MaxMembers = TechnicalMaxMembers;
+	type WeightInfo = pallet_membership::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -638,6 +678,8 @@ impl Contains<Call> for BaseFilter {
 			| Call::Treasury(_)
 			| Call::Council(_)
 			| Call::TechnicalCommittee(_)
+			| Call::CouncilMembership(_)
+			| Call::TechnicalMembership(_)
 			| Call::Scheduler(_) => true,
 			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
 			// pallet-authorship use for orml
@@ -673,7 +715,9 @@ construct_runtime!(
 		// Governance stuff.
 		Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>} = 14,
 		Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 15,
-		TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 16,
+		CouncilMembership: pallet_membership::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 16,
+		TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 17,
+		TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 19,
 
 		// Collator support. the order of these 4 are important and shall not change.
