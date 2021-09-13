@@ -252,17 +252,10 @@ parameter_types! {
 	pub const VotingPeriod: BlockNumber = 7 * DAYS;
 	pub const FastTrackVotingPeriod: BlockNumber = 3 * HOURS;
 	pub const InstantAllowed: bool = true;
-	// TODO: acala = 100 * dollar(KAR);
-	//		 moonriver = 4 * currency::MOVR;
-	// 		 khala = 10 * DOLLARS;
-	//		 kusama = 10 * MILLICENTS;
-	pub const MinimumDeposit: Balance = 1 * cMA;
+	pub const MinimumDeposit: Balance = 20 * MA;
 	pub const EnactmentPeriod: BlockNumber = 1 * DAYS;
 	pub const CooloffPeriod: BlockNumber = 7 * DAYS;
-	// TODO: acala = deposit(0, 1);
-	//		 moonriver = 100 * MICROMOVR;
-	//		 khala = 1 * CENTS;
-	//		 kusama = 10 * MILLICENTS;
+	// (bytes as Balance) * 6 * mMA
 	pub const PreimageByteDeposit: Balance = deposit(0, 1);
 	pub const MaxVotes: u32 = 100;
 	pub const MaxProposals: u32 = 100;
@@ -359,10 +352,6 @@ impl pallet_collective::Config<TechnicalCollective> for Runtime {
 
 parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(5);
-	// TODO: acala 	   = 5 * dollar(KAR);
-	//  	 moonriver = 1 * currency::MOVR;
-	//		 khala 	   = 1 * DOLLARS;
-	//		 kusama    = 2000 * CENTS;
 	pub const ProposalBondMinimum: Balance = 1 * MA;
 	pub const SpendPeriod: BlockNumber = 6 * DAYS;
 	pub const Burn: Permill = Permill::from_percent(0);
@@ -388,7 +377,6 @@ impl pallet_treasury::Config for Runtime {
 	type ApproveOrigin = TreasuryApproveOrigin;
 	type RejectOrigin = TreasuryRejectOrigin;
 	type Event = Event;
-	// TODO: only Khala has no slashing -> ()
 	type OnSlash = Treasury;
 	type ProposalBond = ProposalBond;
 	type ProposalBondMinimum = ProposalBondMinimum;
@@ -397,7 +385,6 @@ impl pallet_treasury::Config for Runtime {
 	type BurnDestination = ();
 	type MaxApprovals = MaxApprovals;
 	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
-	// TODO: Acala, Khala and Kusama have bounties here
 	type SpendFunds = ();
 }
 
