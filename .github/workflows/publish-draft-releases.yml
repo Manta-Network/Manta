@@ -173,6 +173,303 @@ jobs:
           name: config-for-integration-test
           path: .github/resources/config-for-integration-test.json
 
+  build-node-base:
+    needs:
+      - start-node-builder-base
+      - check-for-runtime-upgrade
+    runs-on: ${{ needs.start-node-builder-base.outputs.runner-label }}
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        uses: actions/checkout@v2
+        with:
+          ref: 'manta-pc'
+          # ref: '5da21e508cc3229486ec49daeb4fe71e0b53479d'
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: install sccache
+
+        env:
+          SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
+          SCCACHE_VERSION: v0.2.15
+        run: |
+          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
+          mkdir -p $HOME/.local/bin
+          curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
+          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
+          chmod +x $HOME/.local/bin/sccache
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: cache sccache
+        uses: actions/cache@v2
+        continue-on-error: false
+        with:
+          path: /home/runner/.cache/sccache
+          key: sccache-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            sccache-
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: start sccache server
+        run: sccache --start-server
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: init
+        run: |
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup toolchain install nightly
+          rustup default stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
+          rustup update
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: build
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+        run: |
+          source ${HOME}/.cargo/env
+          cargo build --verbose --release --features calamari
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: stop sccache server
+        run: sccache --stop-server || true
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: strip
+        run: |
+          strip target/release/calamari-pc
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: calamari-pc-base
+          path: target/release/calamari-pc
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: config-for-runtime-upgrade-test
+          path: .github/resources/config-for-runtime-upgrade-test.json
+
+  runtime-upgrade-test:
+    needs:
+      - build-node-base
+      - build-calamari-runtime
+      - start-runtime-upgrade-tester
+      - check-for-runtime-upgrade
+    runs-on: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        chain-spec:
+          -
+            id: calamari-testnet-ci
+            expected:
+              block-count:
+                para: 6
+              peer-count:
+                para: 2
+    steps:
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        run: |
+          mkdir -p $HOME/.local/share/calamari-pc
+          mkdir -p $HOME/.local/bin
+          echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: fetch calamari-pc-base
+        uses: actions/download-artifact@v2
+        with:
+          name: calamari-pc-base
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: mv and chmod calamari-pc-base
+        run: |
+          mv ${{ github.workspace }}/calamari-pc $HOME/.local/bin/
+          chmod +x $HOME/.local/bin/calamari-pc
+          ls -ahl ${{ github.workspace }}/
+          ls -ahl $HOME/.local/bin/
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: fetch and chmod polkadot
+        run: |
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.9/polkadot
+          chmod +x $HOME/.local/bin/polkadot
+          ls -ahl $HOME/.local/bin/
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        id: create-chainspec
+        run: |
+          calamari-pc build-spec --chain ${{ matrix.chain-spec.id }} --disable-default-bootnode --raw > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
+          jq \
+            --sort-keys \
+            --arg name "calamari testnet base" \
+            --arg id ${{ matrix.chain-spec.id }}-base \
+            --arg relay_chain rococo-local-base \
+            --arg parachain_id 2084 \
+            '. |
+              .name = $name |
+              .id = $id |
+              .relay_chain = $relay_chain |
+              .para_id = ($parachain_id | tonumber) |
+              .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
+            ' $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-spec.json
+          ls -ahl $HOME/.local/share/calamari-pc/
+          calamari-pc export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: fetch config-for-runtime-upgrade-test
+        uses: actions/download-artifact@v2
+        with:
+          name: config-for-runtime-upgrade-test
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: create launch config
+        run: |
+          ls -a
+          cat config-for-runtime-upgrade-test.json | \
+          jq \
+            --arg relaychain_bin $HOME/.local/bin/polkadot \
+            --arg relaychain_id rococo-local-base \
+            --arg relaychain_name "rococo local base" \
+            --arg parachains_bin $HOME/.local/bin/calamari-pc \
+            --arg parachains_spec $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-spec.json \
+            '.
+              | .relaychain.bin = $relaychain_bin
+              | .relaychain.mutation.id = $relaychain_id
+              | .relaychain.mutation.name = $relaychain_name
+              | .parachains[].bin = $parachains_bin
+              | .parachains[].chain = $parachains_spec
+            ' > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-launch-config.json
+          jq . $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-launch-config.json
+          ls -ahl $HOME/.local/share/calamari-pc/
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/manta-pc-launch
+          path: manta-pc-launch
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Dev-Tools
+          path: dev-tools-calamari
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: launch testnet
+        run: |
+          cd ${{ github.workspace }}/manta-pc-launch
+          yarn install
+          yarn build
+          pm2 start dist/cli.js \
+            --name manta-pc-launch \
+            --output ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
+            --no-autorestart \
+            -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-launch-config.json
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: init measure-block-time calamari
+        run: |
+          cd ${{ github.workspace }}/dev-tools-calamari/measure-block-time
+          yarn install
+          sed -i -- 's/9988/9921/g' index.js
+          pm2 start index.js \
+            --name measure-block-time-${{ matrix.chain-spec.id }} \
+            --output ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
+            --no-autorestart
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: fetch new calamari_runtime.compact.compressed.wasm
+        uses: actions/download-artifact@v2
+        with:
+          name: calamari-runtime
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: run test suites
+        run: |
+          # todo: implement moonbeam-like js test suite triggers here
+          sleep 120
+          echo "midnight supply never you faith veteran danger purity tired illness dune token" > ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/root_mnemonics
+          curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "inhale connect winner reduce cheese bachelor crucial never metal seat time wage", "0xee73f78b7dd29f30902c1a3bd1e4a6fcc2f26be088343d3ee011e2660fd02a66"],"id":1 }' localhost:9971
+          curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "timber else work trophy build winner mechanic chunk budget orchard glide extra", "0x7cd4af9ad51d443740f71ecd5850385e98985224628c5ea08209bb2015523f3c"],"id":1 }' localhost:9972
+          curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "civil cigar remain hybrid glove symptom review what pole lock concert lamp", "0xb40aa6bd104d0260b60350c2fb30d4882437466d66135130b667799ea6c9f52b"],"id":1 }' localhost:9973
+          curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "output evidence anger invest country opinion girl mouse direct double carbon usage", "0x4a3aa51469e802be6504422cd9dd03be638ac3f6dc3a7c0c85a6ace3e72f0048"],"id":1 }' localhost:9974
+          curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "series disorder today argue interest pond flight guess asthma guilt road gadget", "0xa68feb4fe2ea3f8ff288af4254aad2284e1cd0da67cb9ea61c13632bad57eb40"],"id":1 }' localhost:9975
+          cp calamari_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/calamari.wasm
+          cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
+          yarn install
+          yarn
+          sleep 60
+          pm2 start index.js \
+            --name test-runtime-upgrade-${{ matrix.chain-spec.id }} \
+            --output ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stderr.log \
+            --no-autorestart
+          cd ${{ github.workspace }}
+          sleep 30
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: stop testnet
+        run: |
+          cd ${{ github.workspace }}/manta-pc-launch
+          pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
+          pm2 stop manta-pc-launch
+          pm2 stop test-runtime-upgrade-${{ matrix.chain-spec.id }}
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: runtime-upgrade-test-for-${{ matrix.chain-spec.id }}-stdout.log
+          path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: runtime-upgrade-test-for-${{ matrix.chain-spec.id }}-stderr.log
+          path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stderr.log
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: parse runtime upgrade log
+        run: |
+          grep 'Included at block hash' ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words} | tee ${{ github.workspace }}/runtime-upgrade-output.csv; done
+          if [ ! -f ${{ github.workspace }}/runtime-upgrade-output.csv ]; then echo "Runtime upgrade failed"; exit 1; fi
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: parse calamari block times
+        run: |
+          grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[4]},${words[8]} | tee ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv; done
+          if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv ]; then echo "block times not detected"; exit 1; fi
+          jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv > ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
+
   integration-test:
     needs:
       - build-node-current
