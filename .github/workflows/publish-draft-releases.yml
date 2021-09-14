@@ -186,7 +186,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           ref: 'manta-pc'
-          # ref: '5da21e508cc3229486ec49daeb4fe71e0b53479d'
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
         name: install sccache
