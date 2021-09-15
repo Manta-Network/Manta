@@ -26,7 +26,7 @@ env:
 jobs:
 
   get-rust-versions:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: paritytech/ci-linux:production
     outputs:
@@ -46,7 +46,7 @@ jobs:
   #  runs-on: needs.start-calamari-runtime-builder.outputs.runner-label
 
   build-calamari-runtime:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
     steps:
@@ -774,7 +774,7 @@ jobs:
       #     cat ${{ github.workspace }}/manta-pc-launch/9922.log
 
   build-changelog:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs:
       - get-rust-versions
       - build-calamari-runtime
@@ -818,7 +818,7 @@ jobs:
           path: changelog.md
 
   create-draft-release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs:
       - build-changelog
       - build-calamari-runtime
@@ -846,7 +846,7 @@ jobs:
           draft: true
 
   publish-calamari-runtime:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs:
       - create-draft-release
     steps:
@@ -916,7 +916,7 @@ jobs:
           asset_content_type: application/json
 
   publish-node:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs:
       - build-node-current
       - create-draft-release
@@ -940,7 +940,7 @@ jobs:
           asset_content_type: application/octet-stream
 
   brag:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: create-draft-release
     steps:
       -
@@ -953,7 +953,7 @@ jobs:
           args: 'draft runtime release ${{ github.ref }} created at ${{ needs.create-draft-release.outputs.release_url }}'
 
   start-node-builder-current:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
@@ -981,7 +981,7 @@ jobs:
     needs:
       - start-node-builder-current
       - build-node-current
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
       -
@@ -996,7 +996,7 @@ jobs:
           aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
 
   start-node-builder-base:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
@@ -1024,7 +1024,7 @@ jobs:
     needs:
       - start-node-builder-base
       - build-node-base
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
       -
@@ -1039,7 +1039,7 @@ jobs:
           aws-instance-id: ${{ needs.start-node-builder-base.outputs.aws-instance-id }}
 
   start-integration-tester:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
@@ -1067,7 +1067,7 @@ jobs:
     needs:
       - start-integration-tester
       - integration-test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
       -
@@ -1082,7 +1082,7 @@ jobs:
           aws-instance-id: ${{ needs.start-integration-tester.outputs.aws-instance-id }}
 
   start-runtime-upgrade-tester:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
@@ -1111,7 +1111,7 @@ jobs:
       - runtime-upgrade-test
       - check-for-runtime-upgrade
       - start-runtime-upgrade-tester
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
       -
@@ -1126,7 +1126,7 @@ jobs:
           aws-instance-id: ${{ needs.start-runtime-upgrade-tester.outputs.aws-instance-id }}
 
   check-for-runtime-upgrade:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       runtime-version-current: ${{ steps.get-runtime-version.outputs.runtime-ver-current }}
       runtime-version-base: ${{ steps.get-runtime-version-base.outputs.runtime-ver-base }}
@@ -1171,7 +1171,9 @@ jobs:
 
   # Build docker image
   docker-image-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+    needs:
+      - publish-node
 
     steps:
       # Get tag name
