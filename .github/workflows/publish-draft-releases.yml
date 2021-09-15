@@ -1203,7 +1203,9 @@ jobs:
           tags: |
             mantanetwork/calamari:latest
             mantanetwork/calamari:${{ env.RELEASE_VERSION }}
-          build-args: TAG_NAME=${{ env.RELEASE_VERSION }}
+          build-args: |
+            TAG_NAME=${{ env.RELEASE_VERSION }}
+            CALAMARI_TMP_TAG=${{ github.workspace }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
