@@ -1206,7 +1206,7 @@ jobs:
           build-args: |
             TAG_NAME=${{ env.RELEASE_VERSION }}
             CALAMARI_PATH=${{ github.workspace }}
-            COMMIT_HASH=${{ GITHUB_SHA }}
+            COMMIT_HASH=${{ github.sha }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
