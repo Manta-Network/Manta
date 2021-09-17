@@ -1204,8 +1204,6 @@ jobs:
             mantanetwork/calamari:latest
             mantanetwork/calamari:${{ env.RELEASE_VERSION }}
           build-args: |
-            TAG_NAME=${{ env.RELEASE_VERSION }}
-            CALAMARI_PATH=${{ github.workspace }}
             COMMIT_HASH=${{ github.sha }}
 
       - name: Image digest
