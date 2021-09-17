@@ -7,3 +7,48 @@ members = [
 
 [profile.release]
 panic = "unwind"
+
+[patch.'https://github.com/paritytech/substrate.git']
+sc-block-builder = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sc-consensus-epochs = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sc-client-api = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sc-network = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sc-telemetry = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sc-transaction-pool = { git = 'https://github.com/Bewater-rs/substrate.git', branch = "polkadot-v0.9.10" }
+sc-transaction-pool-api = { git = 'https://github.com/Bewater-rs/substrate.git', branch = "polkadot-v0.9.10" }
+sc-authority-discovery = { git = 'https://github.com/Bewater-rs/substrate.git', branch = "polkadot-v0.9.10" }
+sc-basic-authorship = { git = 'https://github.com/Bewater-rs/substrate.git', branch = "polkadot-v0.9.10" }
+sc-executor = { git = 'https://github.com/Bewater-rs/substrate.git', branch = "polkadot-v0.9.10" }
+sc-executor-common = { git = 'https://github.com/Bewater-rs/substrate.git', branch = "polkadot-v0.9.10" }
+sc-consensus = { git = 'https://github.com/Bewater-rs/substrate.git', branch = "polkadot-v0.9.10" }
+sc-allocator = { git = 'https://github.com/Bewater-rs/substrate.git', branch = "polkadot-v0.9.10" }
+sc-network-gossip = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sc-client-db = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sc-tracing = { git = 'https://github.com/Bewater-rs/substrate.git', branch = "polkadot-v0.9.10" }
+sp-consensus = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-core = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-tasks = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-runtime = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-io = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-api = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-utils = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-version = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-rpc = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-trie = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-storage = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-keyring = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-authority-discovery = { git = 'https://github.com/Bewater-rs/substrate.git', branch = "polkadot-v0.9.10" }
+sp-blockchain = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-inherents = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-arithmetic = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-block-builder = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-database = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-state-machine = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-finality-grandpa = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-wasm-interface = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-transaction-pool = { git = 'https://github.com/Bewater-rs/substrate.git', branch = "polkadot-v0.9.10" }
+sp-application-crypto = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-externalities = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+sp-keystore = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+frame-support = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
+fork-tree = { git = "https://github.com/Bewater-rs/substrate.git", branch = "polkadot-v0.9.10" }
