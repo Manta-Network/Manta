@@ -1,5 +1,7 @@
 ---
 
+# yamllint disable rule:line-length
+
 name: Check Calamari-PC
 
 # Controls when the action will run.
@@ -10,18 +12,46 @@ on:
   pull_request:
     branches: [manta-pc]
   push:
-    branches: [manta-pc]
+    branches: [ghzlatarev/faster-ci]
 
-# A workflow run is made up of one or more jobs
-# that can run sequentially or in parallel
+env:
+  AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
+  AWS_REGION: us-east-1
+  AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
+  AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
+  AWS_INSTANCE_TYPE: c5a.8xlarge # 32 vcpu, 64gb ram, $1.392 hourly
+  AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
+  AWS_INSTANCE_LIFECYCLE: spot
+  AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
+  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]' # canonical
+
+
 jobs:
-  check:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks
-    # that will be executed as part of the job
+  start-builder:
+    runs-on: ubuntu-20.04
+    outputs:
+      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
     steps:
+      -
+        id: start-self-hosted-runner
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
+          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }} # 32 vcpu, 64gb ram, $1.392 hourly
+          aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
+          aws-instance-lifecycle: ${{ env.AWS_INSTANCE_LIFECYCLE }}
+          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }} # canonical
       - uses: actions/checkout@v2
 
       - name: Run yamllint
@@ -51,3 +81,20 @@ jobs:
         run: |
           cargo check --features calamari
           cargo check --all-features
+
+  stop-builder:
+    needs:
+      - start-builder
+    runs-on: ubuntu-20.04
+    if: ${{ always() }}
+    steps:
+      -
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
+          runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
