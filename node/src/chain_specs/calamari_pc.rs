@@ -202,6 +202,14 @@ pub fn calamari_testnet_config(id: ParaId) -> Result<CalamariChainSpec, String> 
 	Ok(spec)
 }
 
+// Calamari testnet for ci jobs
+#[cfg(feature = "calamari")]
+pub fn calamari_testnet_ci_config() -> Result<CalamariChainSpec, String> {
+	CalamariChainSpec::from_json_bytes(
+		&include_bytes!("../../../genesis/calamari-testnet-ci-genesis.json")[..],
+	)
+}
+
 // Calamari mainnet
 pub fn calamari_config() -> Result<CalamariChainSpec, String> {
 	CalamariChainSpec::from_json_bytes(

@@ -12,6 +12,17 @@ on:
     # branch:
     #   - manta-pc
 
+env:
+  AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
+  AWS_REGION: us-east-1
+  AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
+  AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
+  AWS_INSTANCE_TYPE: c5a.8xlarge # 32 vcpu, 64gb ram, $1.392 hourly
+  AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
+  AWS_INSTANCE_LIFECYCLE: spot
+  AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
+  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]' # canonical
+
 jobs:
 
   get-rust-versions:
@@ -77,9 +88,9 @@ jobs:
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
 
-  build-node:
-    needs: start-node-builder
-    runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
+  build-node-current:
+    needs: start-node-builder-current
+    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     env:
       CARGO_TERM_COLOR: always
     steps:
@@ -155,12 +166,315 @@ jobs:
         with:
           name: calamari-pc
           path: target/release/calamari-pc
+      -
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: config-for-integration-test
+          path: .github/resources/config-for-integration-test.json
+
+  build-node-base:
+    needs:
+      - start-node-builder-base
+      - check-for-runtime-upgrade
+    runs-on: ${{ needs.start-node-builder-base.outputs.runner-label }}
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        uses: actions/checkout@v2
+        with:
+          ref: 'manta-pc'
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: install sccache
+
+        env:
+          SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
+          SCCACHE_VERSION: v0.2.15
+        run: |
+          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
+          mkdir -p $HOME/.local/bin
+          curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
+          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
+          chmod +x $HOME/.local/bin/sccache
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: cache sccache
+        uses: actions/cache@v2
+        continue-on-error: false
+        with:
+          path: /home/runner/.cache/sccache
+          key: sccache-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            sccache-
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: start sccache server
+        run: sccache --start-server
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: init
+        run: |
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup toolchain install nightly
+          rustup default stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
+          rustup update
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: build
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+        run: |
+          source ${HOME}/.cargo/env
+          cargo build --verbose --release --features calamari
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: stop sccache server
+        run: sccache --stop-server || true
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: strip
+        run: |
+          strip target/release/calamari-pc
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: calamari-pc-base
+          path: target/release/calamari-pc
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: config-for-runtime-upgrade-test
+          path: .github/resources/config-for-runtime-upgrade-test.json
+
+  runtime-upgrade-test:
+    needs:
+      - build-node-base
+      - build-calamari-runtime
+      - start-runtime-upgrade-tester
+      - check-for-runtime-upgrade
+    runs-on: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        chain-spec:
+          -
+            id: calamari-testnet-ci
+            expected:
+              block-count:
+                para: 6
+              peer-count:
+                para: 2
+    steps:
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        run: |
+          mkdir -p $HOME/.local/share/calamari-pc
+          mkdir -p $HOME/.local/bin
+          echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: fetch calamari-pc-base
+        uses: actions/download-artifact@v2
+        with:
+          name: calamari-pc-base
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: mv and chmod calamari-pc-base
+        run: |
+          mv ${{ github.workspace }}/calamari-pc $HOME/.local/bin/
+          chmod +x $HOME/.local/bin/calamari-pc
+          ls -ahl ${{ github.workspace }}/
+          ls -ahl $HOME/.local/bin/
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: fetch and chmod polkadot
+        run: |
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.9/polkadot
+          chmod +x $HOME/.local/bin/polkadot
+          ls -ahl $HOME/.local/bin/
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        id: create-chainspec
+        run: |
+          calamari-pc build-spec --chain ${{ matrix.chain-spec.id }} --disable-default-bootnode --raw > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
+          jq \
+            --sort-keys \
+            --arg name "calamari testnet base" \
+            --arg id ${{ matrix.chain-spec.id }}-base \
+            --arg relay_chain rococo-local-base \
+            --arg parachain_id 2084 \
+            '. |
+              .name = $name |
+              .id = $id |
+              .relay_chain = $relay_chain |
+              .para_id = ($parachain_id | tonumber) |
+              .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
+            ' $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-spec.json
+          ls -ahl $HOME/.local/share/calamari-pc/
+          calamari-pc export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: fetch config-for-runtime-upgrade-test
+        uses: actions/download-artifact@v2
+        with:
+          name: config-for-runtime-upgrade-test
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: create launch config
+        run: |
+          ls -a
+          cat config-for-runtime-upgrade-test.json | \
+          jq \
+            --arg relaychain_bin $HOME/.local/bin/polkadot \
+            --arg relaychain_id rococo-local-base \
+            --arg relaychain_name "rococo local base" \
+            --arg parachains_bin $HOME/.local/bin/calamari-pc \
+            --arg parachains_spec $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-spec.json \
+            '.
+              | .relaychain.bin = $relaychain_bin
+              | .relaychain.mutation.id = $relaychain_id
+              | .relaychain.mutation.name = $relaychain_name
+              | .parachains[].bin = $parachains_bin
+              | .parachains[].chain = $parachains_spec
+            ' > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-launch-config.json
+          jq . $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-launch-config.json
+          ls -ahl $HOME/.local/share/calamari-pc/
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/manta-pc-launch
+          path: manta-pc-launch
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Dev-Tools
+          path: dev-tools-calamari
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: launch testnet
+        run: |
+          cd ${{ github.workspace }}/manta-pc-launch
+          yarn install
+          yarn build
+          pm2 start dist/cli.js \
+            --name manta-pc-launch \
+            --output ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
+            --no-autorestart \
+            -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-launch-config.json
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: init measure-block-time calamari
+        run: |
+          cd ${{ github.workspace }}/dev-tools-calamari/measure-block-time
+          yarn install
+          sed -i -- 's/9988/9921/g' index.js
+          pm2 start index.js \
+            --name measure-block-time-${{ matrix.chain-spec.id }} \
+            --output ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
+            --no-autorestart
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: fetch new calamari_runtime.compact.compressed.wasm
+        uses: actions/download-artifact@v2
+        with:
+          name: calamari-runtime
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: run test suites
+        run: |
+          # todo: implement moonbeam-like js test suite triggers here
+          sleep 120
+          echo "midnight supply never you faith veteran danger purity tired illness dune token" > ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/root_mnemonics
+          curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "inhale connect winner reduce cheese bachelor crucial never metal seat time wage", "0xee73f78b7dd29f30902c1a3bd1e4a6fcc2f26be088343d3ee011e2660fd02a66"],"id":1 }' localhost:9971
+          curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "timber else work trophy build winner mechanic chunk budget orchard glide extra", "0x7cd4af9ad51d443740f71ecd5850385e98985224628c5ea08209bb2015523f3c"],"id":1 }' localhost:9972
+          curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "civil cigar remain hybrid glove symptom review what pole lock concert lamp", "0xb40aa6bd104d0260b60350c2fb30d4882437466d66135130b667799ea6c9f52b"],"id":1 }' localhost:9973
+          curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "output evidence anger invest country opinion girl mouse direct double carbon usage", "0x4a3aa51469e802be6504422cd9dd03be638ac3f6dc3a7c0c85a6ace3e72f0048"],"id":1 }' localhost:9974
+          curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "series disorder today argue interest pond flight guess asthma guilt road gadget", "0xa68feb4fe2ea3f8ff288af4254aad2284e1cd0da67cb9ea61c13632bad57eb40"],"id":1 }' localhost:9975
+          cp calamari_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/calamari.wasm
+          cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
+          yarn install
+          yarn
+          sleep 60
+          pm2 start index.js \
+            --name test-runtime-upgrade-${{ matrix.chain-spec.id }} \
+            --output ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stderr.log \
+            --no-autorestart
+          cd ${{ github.workspace }}
+          sleep 30
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: stop testnet
+        run: |
+          cd ${{ github.workspace }}/manta-pc-launch
+          pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
+          pm2 stop manta-pc-launch
+          pm2 stop test-runtime-upgrade-${{ matrix.chain-spec.id }}
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: runtime-upgrade-test-for-${{ matrix.chain-spec.id }}-stdout.log
+          path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: runtime-upgrade-test-for-${{ matrix.chain-spec.id }}-stderr.log
+          path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stderr.log
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: parse runtime upgrade log
+        run: |
+          grep 'Included at block hash' ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words} | tee ${{ github.workspace }}/runtime-upgrade-output.csv; done
+          if [ ! -f ${{ github.workspace }}/runtime-upgrade-output.csv ]; then echo "Runtime upgrade failed"; exit 1; fi
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.runtime-version-current != needs.check-for-runtime-upgrade.outputs.runtime-version-base }}
+        name: parse calamari block times
+        run: |
+          grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[4]},${words[8]} | tee ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv; done
+          if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv ]; then echo "block times not detected"; exit 1; fi
+          jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv > ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
 
   integration-test:
     needs:
-      - build-node
+      - build-node-current
       - build-calamari-runtime
       - start-integration-tester
+      - check-for-runtime-upgrade
     runs-on: ${{ needs.start-integration-tester.outputs.runner-label }}
     timeout-minutes: 90
     strategy:
@@ -222,7 +536,6 @@ jobs:
       -
         id: create-chainspec
         run: |
-          calamari-pc export-state --chain ${{ matrix.chain-spec.id }} > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
           calamari-pc build-spec --chain ${{ matrix.chain-spec.id }} --disable-default-bootnode --raw > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
           jq \
             --sort-keys \
@@ -239,6 +552,7 @@ jobs:
             ' $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
           ls -ahl $HOME/.local/share/calamari-pc/
           echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
+          calamari-pc export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
       -
         uses: actions/upload-artifact@v2
         with:
@@ -255,95 +569,14 @@ jobs:
           name: ${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
       -
+        name: fetch config-for-integration-test
+        uses: actions/download-artifact@v2
+        with:
+          name: config-for-integration-test
+      -
         name: create launch config
         run: |
-          echo '{
-            "relaychain": {
-              "chain": "rococo-local",
-              "mutation": {},
-              "nodes": [
-                {
-                  "name": "alice",
-                  "wsPort": 9911,
-                  "port": 31331,
-                  "flags": [
-                    "--rpc-cors=all",
-                    "--telemetry-url=wss://api.telemetry.manta.systems/submit 0"
-                  ]
-                },
-                {
-                  "name": "bob",
-                  "wsPort": 9912,
-                  "port": 31332,
-                  "flags": [
-                    "--rpc-cors=all",
-                    "--telemetry-url=wss://api.telemetry.manta.systems/submit 0"
-                  ]
-                },
-                {
-                  "name": "charlie",
-                  "wsPort": 9913,
-                  "port": 31333,
-                  "flags": [
-                    "--rpc-cors=all",
-                    "--telemetry-url=wss://api.telemetry.manta.systems/submit 0"
-                  ]
-                }
-              ],
-              "genesis": {
-                "runtime": {
-                  "runtime_genesis_config": {
-                    "parachainsConfiguration": {
-                      "config": {
-                        "validation_upgrade_frequency": 1,
-                        "validation_upgrade_delay": 1
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "parachains": [
-              {
-                "id": "2084",
-                "nodes": [
-                  {
-                    "name": "alice",
-                    "wsPort": 9921,
-                    "port": 32331,
-                    "flags": [
-                      "--rpc-cors=all",
-                      "--",
-                      "--execution=wasm"
-                    ]
-                  },
-                  {
-                    "name": "bob",
-                    "wsPort": 9922,
-                    "port": 32332,
-                    "flags": [
-                      "--rpc-cors=all",
-                      "--",
-                      "--execution=wasm"
-                    ]
-                  },
-                  {
-                    "name": "charlie",
-                    "wsPort": 9923,
-                    "port": 32333,
-                    "flags": [
-                      "--rpc-cors=all",
-                      "--",
-                      "--execution=wasm"
-                    ]
-                  }
-                ]
-              }
-            ],
-            "hrmpChannels": [],
-            "types": {},
-            "finalization": false
-          }' | \
+          cat config-for-integration-test.json | \
           jq \
             --arg relaychain_bin $HOME/.local/bin/polkadot \
             --arg relaychain_id rococo-local-${GITHUB_SHA:0:7} \
@@ -373,13 +606,11 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
-          ref: 8ee3341a268b892e05fdcfc0d113db557fc86234
           path: dev-tools-rococo
       -
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
-          ref: 8ee3341a268b892e05fdcfc0d113db557fc86234
           path: dev-tools-calamari
       -
         name: launch testnet
@@ -415,7 +646,6 @@ jobs:
             --output ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
             --error ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart
-
       -
         name: run test suites
         run: |
@@ -593,6 +823,7 @@ jobs:
       - build-changelog
       - build-calamari-runtime
       - integration-test
+      - runtime-upgrade-test
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
       asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
@@ -687,7 +918,7 @@ jobs:
   publish-node:
     runs-on: ubuntu-latest
     needs:
-      - build-node
+      - build-node-current
       - create-draft-release
     outputs:
       download_url: ${{ steps.upload-calamari-pc.outputs.browser_download_url }}
@@ -721,7 +952,7 @@ jobs:
         with:
           args: 'draft runtime release ${{ github.ref }} created at ${{ needs.create-draft-release.outputs.release_url }}'
 
-  start-node-builder:
+  start-node-builder-current:
     runs-on: ubuntu-latest
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -736,20 +967,20 @@ jobs:
           github-token: ${{ secrets.GH_SHR_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
-          aws-region: us-east-1
-          aws-subnet-id: subnet-08c26caf0a52b7c19
-          aws-security-group-id: sg-0315bffea9042ac9b
-          aws-instance-type: c5a.8xlarge # 32 vcpu, 64gb ram, $1.392 hourly
+          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-subnet-id: ${{ env.AWS_SUBNET_IP }}
+          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }} # 32 vcpu, 64gb ram, $1.392 hourly
           aws-instance-root-volume-size: 32
-          aws-instance-lifecycle: spot
-          aws-image-search-pattern: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-          aws-image-search-owners: '["099720109477"]' # canonical
+          aws-instance-lifecycle: ${{ env.AWS_INSTANCE_LIFECYCLE }}
+          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }} # canonical
 
-  stop-node-builder:
+  stop-node-builder-current:
     needs:
-      - start-node-builder
-      - build-node
+      - start-node-builder-current
+      - build-node-current
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
@@ -760,9 +991,52 @@ jobs:
           github-token: ${{ secrets.GH_SHR_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-node-builder.outputs.aws-region }}
-          runner-label: ${{ needs.start-node-builder.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-node-builder.outputs.aws-instance-id }}
+          aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
+          runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
+
+  start-node-builder-base:
+    runs-on: ubuntu-latest
+    outputs:
+      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    steps:
+      -
+        id: start-self-hosted-runner
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-subnet-id: ${{ env.AWS_SUBNET_IP }}
+          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }} # 32 vcpu, 64gb ram, $1.392 hourly
+          aws-instance-root-volume-size: 32
+          aws-instance-lifecycle: ${{ env.AWS_INSTANCE_LIFECYCLE }}
+          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }} # canonical
+
+  stop-node-builder-base:
+    needs:
+      - start-node-builder-base
+      - build-node-base
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      -
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.start-node-builder-base.outputs.aws-region }}
+          runner-label: ${{ needs.start-node-builder-base.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-node-builder-base.outputs.aws-instance-id }}
 
   start-integration-tester:
     runs-on: ubuntu-latest
@@ -779,15 +1053,15 @@ jobs:
           github-token: ${{ secrets.GH_SHR_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
-          aws-region: us-east-1
-          aws-subnet-id: subnet-08c26caf0a52b7c19
-          aws-security-group-id: sg-0315bffea9042ac9b
-          aws-instance-type: c5a.8xlarge # 32 vcpu, 64gb ram, $1.392 hourly
+          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-subnet-id: ${{ env.AWS_SUBNET_IP }}
+          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }} # 32 vcpu, 64gb ram, $1.392 hourly
           aws-instance-root-volume-size: 64
-          aws-instance-lifecycle: spot
-          aws-image-search-pattern: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-          aws-image-search-owners: '["099720109477"]' # canonical
+          aws-instance-lifecycle: ${{ env.AWS_INSTANCE_LIFECYCLE }}
+          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }} # canonical
 
   stop-integration-tester:
     needs:
@@ -806,5 +1080,130 @@ jobs:
           aws-region: ${{ needs.start-integration-tester.outputs.aws-region }}
           runner-label: ${{ needs.start-integration-tester.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-integration-tester.outputs.aws-instance-id }}
+
+  start-runtime-upgrade-tester:
+    runs-on: ubuntu-latest
+    outputs:
+      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    steps:
+      -
+        id: start-self-hosted-runner
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-subnet-id: ${{ env.AWS_SUBNET_IP }}
+          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }} # 32 vcpu, 64gb ram, $1.392 hourly
+          aws-instance-root-volume-size: 64
+          aws-instance-lifecycle: ${{ env.AWS_INSTANCE_LIFECYCLE }}
+          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }} # canonical
+
+  stop-runtime-upgrade-tester:
+    needs:
+      - runtime-upgrade-test
+      - check-for-runtime-upgrade
+      - start-runtime-upgrade-tester
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      -
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.start-runtime-upgrade-tester.outputs.aws-region }}
+          runner-label: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-runtime-upgrade-tester.outputs.aws-instance-id }}
+
+  check-for-runtime-upgrade:
+    runs-on: ubuntu-latest
+    outputs:
+      runtime-version-current: ${{ steps.get-runtime-version.outputs.runtime-ver-current }}
+      runtime-version-base: ${{ steps.get-runtime-version-base.outputs.runtime-ver-base }}
+    steps:
+      -
+        uses: actions/checkout@v2
+      -
+        name: ruby setup
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+      -
+        name: get runtime version
+        id: get-runtime-version-current
+        run: |
+          runtime_ver_current="$(ruby -e '
+            require "./scripts/github/lib.rb";
+            puts get_runtime("calamari")
+          ')"
+          echo "::set-output name=runtime-ver-current::$runtime_ver_current"
+          echo $runtime_ver_current
+          echo ....................
+      - name: Show new runtime version
+        run: echo "The selected value is ${{ steps.get-runtime-version-current.outputs.runtime-ver-current }}"
+      -
+        name: get base runtime version
+        id: get-runtime-version-base
+        run: |
+          mkdir temp_for_run
+          cd temp_for_run
+          git clone -b manta-pc https://github.com/Manta-Network/Manta.git
+          cd Manta
+          runtime_ver_base="$(ruby -e '
+            require "./scripts/github/lib.rb";
+            puts get_runtime("calamari")
+          ')"
+          echo "::set-output name=runtime-ver-base::$runtime_ver_base"
+          echo $runtime_ver_base
+          echo ....................
+      - name: Show base runtime version
+        run: echo "The selected value is ${{ steps.get-runtime-version-base.outputs.runtime-ver-base }}"
+
+  # Build docker image
+  docker-image-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Get tag name
+      - run: |
+          echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to Dockerhub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.MANTABOT_DOCKER_USERNAME }}
+          password: ${{ secrets.MANTABOT_DOCKER_TOKEN }}
+
+      - name: Set Tag env
+        if: ${{ github.event.release.tag_name }}
+        run: |
+          echo "RELEASE_VERSION=${{ github.event.release.tag_name }}" >> "$GITHUB_ENV"
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          file: docker/calamari.Dockerfile
+          tags: |
+            mantanetwork/calamari:latest
+            mantanetwork/calamari:${{ env.RELEASE_VERSION }}
+          build-args: TAG_NAME=${{ env.RELEASE_VERSION }}
+
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
 
 # yamllint enable rule:line-length
