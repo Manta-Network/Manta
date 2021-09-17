@@ -27,7 +27,7 @@ env:
 
 jobs:
 
-  start-builder:
+  start-manta-pc-checks:
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -85,9 +85,9 @@ jobs:
           cargo check --features manta-pc
           cargo check --all-features
 
-  stop-builder:
+  stop-manta-pc-checks:
     needs:
-      - start-builder
+      - start-manta-pc-checks
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
@@ -98,6 +98,6 @@ jobs:
           github-token: ${{ secrets.GH_SHR_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
-          runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
+          aws-region: ${{ needs.start-manta-pc-checks.outputs.aws-region }}
+          runner-label: ${{ needs.start-manta-pc-checks.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-manta-pc-checks.outputs.aws-instance-id }}
