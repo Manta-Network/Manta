@@ -36,7 +36,6 @@ jobs:
           | tail -n 100
           df -h
           echo "Removing large packages"
-          sudo apt-get remove -y '^ghc-8.*'
           sudo apt-get remove -y '^dotnet-.*'
           sudo apt-get remove -y 'php.*'
           sudo apt-get remove -y azure-cli\
