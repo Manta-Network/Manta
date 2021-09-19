@@ -9,7 +9,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 WORKDIR /calamari-bin
 
-COPY "${CALAMARI_PATH}/calamari-pc" /calamari-bin/calamari-pc
+COPY calamari-pc /calamari-bin/calamari-pc
 
 ADD "$CALAMARI_GENESIS" /calamari-bin/calamari-genesis.json
 ADD "$KUSAMA_GENESIS" /calamari-bin/kusama.json
