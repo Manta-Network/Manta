@@ -1195,8 +1195,15 @@ jobs:
         run: |
           echo "RELEASE_VERSION=${{ github.event.release.tag_name }}" >> "$GITHUB_ENV"
 
-      - name: Copy Binary to workspace
-        run: cp ${{ github.workspace }}/calamari-pc .
+      - name: fetch calamari-pc
+        uses: actions/download-artifact@v2
+        with:
+          name: calamari-pc
+
+      - name: mv and chmod calamari-pc
+        run: |
+          mv ${{ github.workspace }}/calamari-pc .
+          chmod +x calamari-pc
 
       - name: Build and push
         id: docker_build
