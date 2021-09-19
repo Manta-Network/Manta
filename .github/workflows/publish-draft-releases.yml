@@ -1200,11 +1200,6 @@ jobs:
         with:
           name: calamari-pc
 
-      - name: mv and chmod calamari-pc
-        run: |
-          mv ${{ github.workspace }}/calamari-pc .
-          chmod +x calamari-pc
-
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v2
