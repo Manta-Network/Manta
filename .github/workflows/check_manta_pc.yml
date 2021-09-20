@@ -2,13 +2,10 @@
 
 # yamllint disable rule:line-length
 
-name: Check Calamari-PC
+name: Check Manta-PC
 
-# Controls when the action will run.
 # yamllint disable-line rule:truthy
 on:
-  # Triggers the workflow on push or pull request events
-  # but only for the calamari (default) branch.
   pull_request:
     branches: [manta-pc]
   push:
@@ -27,7 +24,7 @@ env:
 
 jobs:
 
-  start-calamari-pc-checks:
+  start-manta-pc-checks:
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -104,7 +101,7 @@ jobs:
         name: Run yamllint
         uses: actionshub/yamllint@main
       -
-        name: Check Calamari Clippy
+        name: Check Manta-PC Clippy
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -112,9 +109,9 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          SKIP_WASM_BUILD= cargo clippy --features calamari
+          SKIP_WASM_BUILD= cargo clippy --features manta-pc
       -
-        name: Check Calamari Build
+        name: Check Manta-PC Build
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -122,15 +119,15 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo check --features calamari
+          cargo check --features manta-pc
           cargo check --all-features
       -
         name: stop sccache server
         run: sccache --stop-server || true
 
-  stop-calamari-pc-checks:
+  stop-manta-pc-checks:
     needs:
-      - start-calamari-pc-checks
+      - start-manta-pc-checks
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
@@ -141,6 +138,6 @@ jobs:
           github-token: ${{ secrets.GH_SHR_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-calamari-pc-checks.outputs.aws-region }}
-          runner-label: ${{ needs.start-calamari-pc-checks.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-calamari-pc-checks.outputs.aws-instance-id }}
+          aws-region: ${{ needs.start-manta-pc-checks.outputs.aws-region }}
+          runner-label: ${{ needs.start-manta-pc-checks.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-manta-pc-checks.outputs.aws-instance-id }}
