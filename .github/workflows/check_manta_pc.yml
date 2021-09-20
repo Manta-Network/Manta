@@ -7,13 +7,13 @@ name: Check Manta-PC
 # yamllint disable-line rule:truthy
 on:
   pull_request:
-    branches: [ghzlatarev/faster-ci]
+    branches: [manta-pc]
   push:
-    branches: [ghzlatarev/faster-ci]
+    branches: [manta-pc]
 
 env:
   AWS_REGION: eu-west-1
-  AWS_INSTANCE_TYPE: c5a.12xlarge # 48 vcpu, 96gb ram, $1.848 hourly
+  AWS_INSTANCE_TYPE: c5a.16xlarge # 64 vcpu, 128gb ram, $2.464 hourly
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_INSTANCE_LIFECYCLE: spot
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
