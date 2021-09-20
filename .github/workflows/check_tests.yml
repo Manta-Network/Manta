@@ -2,7 +2,7 @@
 
 # yamllint disable rule:line-length
 
-name: Check Calamari-PC
+name: Run Tests
 
 # yamllint disable-line rule:truthy
 on:
@@ -17,14 +17,14 @@ env:
   AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
   AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
   AWS_INSTANCE_TYPE: c5a.8xlarge # 32 vcpu, 64gb ram, $1.392 hourly
-  AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
+  AWS_INSTANCE_ROOT_VOLUME_SIZE: 64
   AWS_INSTANCE_LIFECYCLE: spot
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]' # canonical
 
 jobs:
 
-  start-calamari-pc-checks:
+  start-unit-test-checks:
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -98,10 +98,7 @@ jobs:
           cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
           rustup update
       -
-        name: Run yamllint
-        uses: actionshub/yamllint@main
-      -
-        name: Check Calamari Clippy
+        name: Run Unit Tests
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -109,25 +106,14 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          SKIP_WASM_BUILD= cargo clippy --features calamari
-      -
-        name: Check Calamari Build
-        env:
-          RUST_BACKTRACE: full
-          RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 2G
-          SCCACHE_DIR: /home/runner/.cache/sccache
-        run: |
-          source ${HOME}/.cargo/env
-          cargo check --features calamari
-          cargo check --all-features
+          cargo test --all-features
       -
         name: stop sccache server
         run: sccache --stop-server || true
 
-  stop-calamari-pc-checks:
+  stop-unit-test-checks:
     needs:
-      - start-calamari-pc-checks
+      - start-unit-test-checks
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
@@ -138,6 +124,6 @@ jobs:
           github-token: ${{ secrets.GH_SHR_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-calamari-pc-checks.outputs.aws-region }}
-          runner-label: ${{ needs.start-calamari-pc-checks.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-calamari-pc-checks.outputs.aws-instance-id }}
+          aws-region: ${{ needs.start-unit-test-checks.outputs.aws-region }}
+          runner-label: ${{ needs.start-unit-test-checks.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-unit-test-checks.outputs.aws-instance-id }}
