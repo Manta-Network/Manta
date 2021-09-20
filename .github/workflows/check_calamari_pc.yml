@@ -140,12 +140,12 @@ jobs:
           source ${HOME}/.cargo/env
           cargo check --features calamari
           cargo check --all-features
-      - 
+      -
         name: Check Calamari Build
         run: |
           cargo check --features calamari
           cargo check --all-features
-      - 
+      -
         name: stop sccache server
         run: sccache --stop-server || true
 
