@@ -12,7 +12,7 @@ on:
     branches: [manta-pc]
 
 env:
-  AWS_REGION: us-west-1
+  AWS_REGION: eu-west-2
   AWS_INSTANCE_TYPE: c5a.16xlarge # 64 vcpu, 128gb ram, $2.464 hourly
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 64
   AWS_INSTANCE_LIFECYCLE: spot
