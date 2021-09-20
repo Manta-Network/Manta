@@ -101,7 +101,7 @@ jobs:
         name: Run yamllint
         uses: actionshub/yamllint@main
       -
-        name: Check Manta-PC Clippy
+        name: Check Manta-PC Clippy & Formatting
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -110,6 +110,7 @@ jobs:
         run: |
           source ${HOME}/.cargo/env
           SKIP_WASM_BUILD= cargo clippy --features manta-pc
+          SKIP_WASM_BUILD= cargo fmt
       -
         name: Check Manta-PC Build
         env:
