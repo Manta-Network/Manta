@@ -119,15 +119,8 @@ jobs:
       #     rustup component add clippy
       #     rustup component add rustfmt
 
-      - name: Check Calamari Clippy
-        run: |
-          SKIP_WASM_BUILD= cargo clippy --features calamari
-
-      - name: Check Calamari Build
-        run: |
-          cargo check --features calamari
-          cargo check --all-features
-        name: build
+      -
+        name: Check Calamari Clippy
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -135,8 +128,24 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo build --verbose --release --features calamari
+          SKIP_WASM_BUILD= cargo clippy --features calamari
       -
+        name: Check Calamari Build
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+        run: |
+          source ${HOME}/.cargo/env
+          cargo check --features calamari
+          cargo check --all-features
+      - 
+        name: Check Calamari Build
+        run: |
+          cargo check --features calamari
+          cargo check --all-features
+      - 
         name: stop sccache server
         run: sccache --stop-server || true
 
