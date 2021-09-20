@@ -7,7 +7,7 @@ name: Check Manta-PC
 # yamllint disable-line rule:truthy
 on:
   pull_request:
-    branches: [manta-pc]
+    branches: [ghzlatarev/faster-ci]
   push:
     branches: [ghzlatarev/faster-ci]
 
