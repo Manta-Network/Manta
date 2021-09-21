@@ -46,7 +46,7 @@ jobs:
   #  runs-on: needs.start-calamari-runtime-builder.outputs.runner-label
 
   build-calamari-runtime:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
     steps:
