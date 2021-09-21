@@ -9,7 +9,7 @@ on:
   pull_request:
     branches: [manta-pc]
   push:
-    branches: [manta-pc]
+    branches: [ghzlatarev/conditional-release-ci-jobs]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 
@@ -46,7 +46,7 @@ jobs:
   #  runs-on: needs.start-calamari-runtime-builder.outputs.runner-label
 
   build-calamari-runtime:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
     steps:
