@@ -9,7 +9,7 @@ on:
   pull_request:
     branches: [manta-pc]
   push:
-    branches: [ghzlatarev/conditional-release-ci-jobs]
+    branches: [manta-pc]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 
