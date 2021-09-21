@@ -39,7 +39,7 @@ EXPOSE ${SUBSTRATE_PORT}
 EXPOSE ${SUBSTRATE_RPC_PORT}
 EXPOSE ${SUBSTRATE_WS_PORT}
 
-ENTRYPOINT ["/usr/local/bin/calamari"]
+ENTRYPOINT ["${PARA_BINARY_PATH}"]
 CMD [ \
     "--chain", "${PARA_GENESIS_PATH}", \
     "--base-path", "${SUBSTRATE_BASE_PATH}", \
