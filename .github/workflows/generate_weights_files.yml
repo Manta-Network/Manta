@@ -166,7 +166,9 @@ jobs:
             --extrinsic=${{ matrix.benchmark.extrinsic.id }} \
             --execution=Wasm \
             --wasm-execution=Compiled \
+            --heap-pages=4096
             --repeat=${{ matrix.benchmark.iterations }} \
+            --steps=50 \
             --output=${{ matrix.benchmark.pallet.name }}.rs
       -
         uses: actions/upload-artifact@v2
