@@ -1,0 +1,219 @@
+---
+
+# yamllint disable rule:line-length
+
+name: benchmark pallets & generate weights files
+
+# yamllint disable-line rule:truthy
+on:
+  pull_request:
+    branches: [manta-pc]
+  push:
+    branches: [manta-pc]
+
+env:
+  AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
+  AWS_REGION: us-east-1
+  AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
+  AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
+  AWS_INSTANCE_TYPE: c5a.8xlarge # 32 vcpu, 64gb ram, $1.392 hourly
+  AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
+  AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
+  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]' # canonical
+
+jobs:
+
+  build-benchmark:
+    needs:
+      - start-node-builder-current
+    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
+    steps:
+      -
+        uses: actions/checkout@v2
+      -
+        name: install sccache
+
+        env:
+          SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
+          SCCACHE_VERSION: v0.2.15
+        run: |
+          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
+          mkdir -p $HOME/.local/bin
+          curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
+          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
+          chmod +x $HOME/.local/bin/sccache
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      -
+        name: cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-
+      -
+        name: cache sccache
+        uses: actions/cache@v2
+        continue-on-error: false
+        with:
+          path: /home/runner/.cache/sccache
+          key: sccache-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            sccache-
+      -
+        name: start sccache server
+        run: sccache --start-server
+      -
+        name: init
+        run: |
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup toolchain install nightly
+          rustup default stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
+          rustup update
+      -
+        name: build
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+          CARGO_TERM_COLOR: always
+        run: |
+          source ${HOME}/.cargo/env
+          cargo build --verbose --release --features=calamari,runtime-benchmarks
+      -
+        name: stop sccache server
+        run: sccache --stop-server || true
+      -
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: calamari-pc
+          path: target/release/calamari-pc
+
+  run-benchmark:
+    name: benchmark (${{ matrix.benchmark.pallet.name }} ${{ matrix.benchmark.extrinsic.name }})
+    needs:
+      - start-node-builder-current
+      - build-benchmark
+    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
+    strategy:
+      matrix:
+        benchmark:
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_democracy
+            pallet:
+              id: pallet_democracy
+              name: pallet_democracy
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_collective
+            pallet:
+              id: pallet_collective
+              name: pallet_collective
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_membership
+            pallet:
+              id: pallet_membership
+              name: pallet_membership
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_treasury
+            pallet:
+              id: pallet_treasury
+              name: pallet_treasury
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_scheduler
+            pallet:
+              id: pallet_scheduler
+              name: pallet_scheduler
+            iterations: 20
+    steps:
+      -
+        uses: actions/download-artifact@v2
+        with:
+          name: calamari-pc
+      -
+        run: |
+          mv calamari-pc $HOME/.local/bin/
+          chmod +x $HOME/.local/bin/calamari-pc
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      -
+        name: run benchmark
+        run: |
+          calamari-pc benchmark \
+            --chain=calamari-dev \
+            --pallet=${{ matrix.benchmark.pallet.id }} \
+            --extrinsic=${{ matrix.benchmark.extrinsic.id }} \
+            --execution=Wasm \
+            --wasm-execution=Compiled \
+            --repeat=${{ matrix.benchmark.iterations }} \
+            --output=${{ matrix.benchmark.pallet.name }}.rs
+      -
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.benchmark.pallet.name }}.rs
+          path: ${{ github.workspace }}/${{ matrix.benchmark.pallet.name }}.rs
+
+  start-node-builder-current:
+    runs-on: ubuntu-20.04
+    outputs:
+      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    steps:
+      -
+        id: start-self-hosted-runner
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
+          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }} # 32 vcpu, 64gb ram, $1.392 hourly
+          aws-instance-root-volume-size: 32
+          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }} # canonical
+
+  stop-node-builder-current:
+    needs:
+      - start-node-builder-current
+      - run-benchmark
+    runs-on: ubuntu-20.04
+    if: ${{ always() }}
+    steps:
+      -
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
+          runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
+
+# yamllint enable rule:line-length
