@@ -6,10 +6,7 @@ name: benchmark pallets & generate weights files
 
 # yamllint disable-line rule:truthy
 on:
-  pull_request:
-    branches: [manta-pc]
-  push:
-    branches: [manta-pc]
+  workflow_dispatch:
 
 env:
   AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
