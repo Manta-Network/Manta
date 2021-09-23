@@ -168,7 +168,7 @@ jobs:
             --wasm-execution=Compiled \
             --heap-pages=4096 \
             --repeat=${{ matrix.benchmark.iterations }} \
-            --steps=50 \
+            --steps=10 \
             --output=${{ matrix.benchmark.pallet.name }}.rs
       -
         uses: actions/upload-artifact@v2
