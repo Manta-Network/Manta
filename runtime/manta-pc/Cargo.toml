@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'manta-pc-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '3.0.2'
+version = '3.0.5'
 
 [dependencies]
 smallvec = "1.6.1"
