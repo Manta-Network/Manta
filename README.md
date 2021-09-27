@@ -17,6 +17,18 @@ Currently, there are two developing branches:
 * `manta`: Manta Network's testnet/mainnet runtime
 * `manta-pc`: Manta Network's parachain runtime
 
+## Semantic Versioning
+Manta/Calamari's version number:
+`v<x>.<y>.<z>-<relay-id>.<para-id>`
+
+where:
+
+* `<x>` is the major version, i.e. major product release.
+* `<y>` is the middle verison, i.e. adding major features.
+* `<z>` is the minor version, i.e. performance improvement and bug fixes.
+* `<relay-id>` is the relay chain name, i.e. kusama or polkadot
+* `<para-id>` is the parachain name, i.e. clamari or manta
+
 ## Using Docker
 You can run manta nodes using docker.
 
