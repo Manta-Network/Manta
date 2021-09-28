@@ -10,7 +10,7 @@
 
 ### Bug fixes
 
-## v0.5.0
+## v3.0.5
 
 ### Breaking changes
 - [\#195](https://github.com/Manta-Network/Manta/pull/195) Update Parity dependencies to `v0.9.10`.
