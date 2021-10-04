@@ -406,8 +406,8 @@ impl pallet_membership::Config<TechnicalMembershipInstance> for Runtime {
 }
 
 parameter_types! {
-	pub const ProposalBond: Permill = Permill::from_percent(5);
-	pub const ProposalBondMinimum: Balance = 1 * MA;
+	pub const ProposalBond: Permill = Permill::from_percent(1);
+	pub const ProposalBondMinimum: Balance = 50 * MA;
 	pub const SpendPeriod: BlockNumber = 6 * DAYS;
 	pub const Burn: Permill = Permill::from_percent(0);
 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
