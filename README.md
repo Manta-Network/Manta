@@ -3,6 +3,11 @@
 </a>
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/Manta-Network/Manta/Check%20Calamari-PC/manta-pc)
+[![Twitter](https://img.shields.io/badge/-Twitter-5c5c5c?logo=Twitter)](https://twitter.com/mantanetwork)
+[![Discord](https://img.shields.io/badge/Discord-gray?logo=discord)](https://discord.gg/n4QFj4n5vg)
+[![Telegram](https://img.shields.io/badge/Telegram-gray?logo=telegram)](https://t.me/mantanetworkofficial)
+[![Medium](https://img.shields.io/badge/Medium-gray?logo=medium)](https://mantanetwork.medium.com/)
 
 Manta is a privacy preserving DeFi stack on Polkadot/Substrate. The code currently hasn't been properly security audited (work in progress), use it at your own risk. 
 
@@ -16,6 +21,18 @@ cargo build --release -p manta
 Currently, there are two developing branches:
 * `manta`: Manta Network's testnet/mainnet runtime
 * `manta-pc`: Manta Network's parachain runtime
+
+## Semantic Versioning
+Manta/Calamari's version number:
+`v<x>.<y>.<z>-<relay-id>.<para-id>`
+
+where:
+
+* `<x>` is the major version, i.e. major product release.
+* `<y>` is the middle verison, i.e. adding major features.
+* `<z>` is the minor version, i.e. performance improvement and bug fixes.
+* `<relay-id>` is the relay chain name, i.e. kusama or polkadot
+* `<para-id>` is the parachain name, i.e. clamari or manta
 
 ## Using Docker
 You can run manta nodes using docker.

@@ -18,10 +18,10 @@ env:
   AWS_REGION: us-east-1
   AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
   AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
-  AWS_INSTANCE_TYPE: c5a.8xlarge # 32 vcpu, 64gb ram, $1.392 hourly
+  AWS_INSTANCE_TYPE: c5a.8xlarge  # 32 vcpu, 64gb ram, $1.392 hourly
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]' # canonical
+  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
 
 jobs:
 
@@ -40,10 +40,6 @@ jobs:
         run: |
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
-
-  # test-docker-works:
-  #  needs: start-calamari-runtime-builder
-  #  runs-on: needs.start-calamari-runtime-builder.outputs.runner-label
 
   build-calamari-runtime:
     runs-on: ubuntu-20.04
@@ -317,7 +313,7 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch and chmod polkadot
         run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.9/polkadot
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.10/polkadot
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       -
@@ -498,15 +494,6 @@ jobs:
               peer-count:
                 relay: 5
                 para: 2
-          # -
-          #   id: calamari-testnet
-          #   expected:
-          #     block-count:
-          #       relay: 25
-          #       para: 6
-          #     peer-count:
-          #       relay: 5
-          #       para: 2
     steps:
       -
         run: |
@@ -529,7 +516,7 @@ jobs:
       -
         name: fetch and chmod polkadot
         run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.9/polkadot
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.10/polkadot
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       -
@@ -779,10 +766,6 @@ jobs:
       - build-calamari-runtime
     if: startsWith(github.ref, 'refs/tags')
     steps:
-      #-
-      #  uses: actions/download-artifact@v2
-      #  with:
-      #    name: manta-pc-srtool-json
       -
         uses: actions/download-artifact@v2
         with:
@@ -975,10 +958,10 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
           aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }} # 32 vcpu, 64gb ram, $1.392 hourly
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}  # 32 vcpu, 64gb ram, $1.392 hourly
           aws-instance-root-volume-size: 32
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }} # canonical
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
 
   stop-node-builder-current:
     needs:
@@ -1017,10 +1000,10 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
           aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }} # 32 vcpu, 64gb ram, $1.392 hourly
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}  # 32 vcpu, 64gb ram, $1.392 hourly
           aws-instance-root-volume-size: 32
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }} # canonical
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
 
   stop-node-builder-base:
     needs:
@@ -1059,10 +1042,10 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
           aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }} # 32 vcpu, 64gb ram, $1.392 hourly
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}  # 32 vcpu, 64gb ram, $1.392 hourly
           aws-instance-root-volume-size: 64
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }} # canonical
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
 
   stop-integration-tester:
     needs:
@@ -1101,10 +1084,10 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
           aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }} # 32 vcpu, 64gb ram, $1.392 hourly
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}  # 32 vcpu, 64gb ram, $1.392 hourly
           aws-instance-root-volume-size: 64
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }} # canonical
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
 
   stop-runtime-upgrade-tester:
     needs:
