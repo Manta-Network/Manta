@@ -394,7 +394,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/measure-block-time
           yarn install
-          sed -i -- 's/9988/9921/g' index.js
+          sed -i -- 's/9944/9921/g' index.js
           pm2 start index.js \
             --name measure-block-time-${{ matrix.chain-spec.id }} \
             --output ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
@@ -615,7 +615,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}/dev-tools-rococo/measure-block-time
           yarn install
-          sed -i -- 's/9988/9911/g' index.js
+          sed -i -- 's/9944/9911/g' index.js
           pm2 start index.js \
             --name measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }} \
             --output ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log \
@@ -626,7 +626,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/measure-block-time
           yarn install
-          sed -i -- 's/9988/9921/g' index.js
+          sed -i -- 's/9944/9921/g' index.js
           pm2 start index.js \
             --name measure-block-time-${{ matrix.chain-spec.id }} \
             --output ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
