@@ -394,7 +394,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/measure-block-time
           yarn install
-          pm2 start index.js --address 9921 \
+          pm2 start index.js "address=ws://127.0.0.1:9921 " \
             --name measure-block-time-${{ matrix.chain-spec.id }} \
             --output ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
             --error ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
@@ -614,7 +614,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}/dev-tools-rococo/measure-block-time
           yarn install
-          pm2 start index.js address=ws://127.0.0.1:9911 \
+          pm2 start index.js "address=ws://127.0.0.1:9911 " \
             --name measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }} \
             --output ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log \
             --error ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log \
@@ -624,7 +624,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/measure-block-time
           yarn install
-          pm2 start index.js address=ws://127.0.0.1:9921 \
+          pm2 start index.js "address=ws://127.0.0.1:9921 " \
             --name measure-block-time-${{ matrix.chain-spec.id }} \
             --output ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
             --error ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
