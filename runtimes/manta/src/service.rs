@@ -32,14 +32,16 @@ type LightClient = sc_service::TLightClient<Block, RuntimeApi, Executor>;
 pub fn new_partial(
 	config: &Configuration,
 ) -> Result<sc_service::PartialComponents<
-	FullClient, FullBackend, FullSelectChain,
-	sp_consensus::DefaultImportQueue<Block, FullClient>,
+	FullClient, 
+	FullBackend, 
+	FullSelectChain,
+	sc_consensus::DefaultImportQueue<Block, FullClient>,
 	sc_transaction_pool::FullPool<Block, FullClient>,
 	(
 		impl Fn(
 			crate::rpc::DenyUnsafe,
 			sc_rpc::SubscriptionTaskExecutor,
-		) -> crate::rpc::IoHandler,
+		) -> Result<crate::rpc::IoHandler, sc_service::Error>,
 		(
 			sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
 			sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
@@ -169,7 +171,7 @@ pub fn new_partial(
 				},
 			};
 
-			crate::rpc::create_full(deps)
+			crate::rpc::create_full(deps).map_err(Into::into)
 		};
 
 		(rpc_extensions_builder, rpc_setup)
@@ -216,6 +218,10 @@ pub fn new_full_base(
 	let shared_voter_state = rpc_setup;
 
 	config.network.extra_sets.push(sc_finality_grandpa::grandpa_peers_set_config());
+	let warp_sync = Arc::new(sc_finality_grandpa::warp_proof::NetworkProvider::new(
+		backend.clone(),
+		import_setup.1.shared_authority_set().clone(),
+	));
 
 	#[cfg(feature = "cli")]
 	config.network.request_response_protocols.push(
@@ -236,6 +242,7 @@ pub fn new_full_base(
 			import_queue,
 			on_demand: None,
 			block_announce_validator_builder: None,
+			warp_sync: Some(warp_sync),
 		})?;
 
 	if config.offchain_worker.enabled {
@@ -479,6 +486,11 @@ pub fn new_light_base(
 		telemetry.as_ref().map(|x| x.handle()),
 	)?;
 
+	let warp_sync = Arc::new(sc_finality_grandpa::warp_proof::NetworkProvider::new(
+		backend.clone(),
+		grandpa_link.shared_authority_set().clone(),
+	));
+
 	let (network, system_rpc_tx, network_starter) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &config,
@@ -488,6 +500,7 @@ pub fn new_light_base(
 			import_queue,
 			on_demand: Some(on_demand.clone()),
 			block_announce_validator_builder: None,
+			warp_sync: Some(warp_sync),
 		})?;
 
 	let enable_grandpa = !config.disable_grandpa;

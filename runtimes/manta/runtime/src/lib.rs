@@ -286,11 +286,11 @@ parameter_types! {
 
 sp_npos_elections::generate_solution_type!(
 	#[compact]
-	pub struct NposCompactSolution24::<
+	pub struct NposSolution16::<
 		VoterIndex = u32,
 		TargetIndex = u16,
 		Accuracy = sp_runtime::PerU16,
-	>(24)
+	>(16)
 );
 
 parameter_types! {
@@ -317,12 +317,13 @@ parameter_types! {
 }
 
 pub const MAX_NOMINATIONS: u32 =
-	<NposCompactSolution24 as sp_npos_elections::CompactSolution>::LIMIT as u32;
+	<NposSolution16 as sp_npos_elections::NposSolution>::LIMIT as u32;
 
 impl pallet_election_provider_multi_phase::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
 	type UnsignedPhase = UnsignedPhase;
+	type EstimateCallFee = TransactionPayment;
 	type SignedMaxSubmissions = SignedMaxSubmissions;
 	type SignedRewardBase = SignedRewardBase;
 	type SignedDepositBase = SignedDepositBase;
@@ -339,7 +340,7 @@ impl pallet_election_provider_multi_phase::Config for Runtime {
 	type OffchainRepeat = OffchainRepeat;
 	type MinerTxPriority = NposSolutionPriority;
 	type DataProvider = Staking;
-	type CompactSolution = NposCompactSolution24;
+	type Solution = NposSolution16;
 	type OnChainAccuracy = Perbill;
 	type Fallback = Fallback;
 	type BenchmarkingConfig = ();
@@ -407,6 +408,7 @@ impl pallet_babe::Config for Runtime {
 	type EpochDuration = EpochDuration;
 	type ExpectedBlockTime = ExpectedBlockTime;
 	type EpochChangeTrigger = pallet_babe::ExternalTrigger;
+	type DisabledValidators = Session;
 
 	type KeyOwnerProofSystem = Historical;
 
@@ -561,10 +563,10 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
-impl pallet_manta_pay::Config for Runtime {
- 	type Event = Event;
- 	type WeightInfo = pallet_manta_pay::weights::SubstrateWeight<Runtime>;
-}
+// impl pallet_manta_pay::Config for Runtime {
+//  	type Event = Event;
+//  	type WeightInfo = pallet_manta_pay::weights::SubstrateWeight<Runtime>;
+// }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -604,7 +606,7 @@ construct_runtime!(
 		ElectionProviderMultiPhase: pallet_election_provider_multi_phase::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 37,
 
 		// Manta pay
-		MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>},
+		// MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -769,6 +771,10 @@ impl_runtime_apis! {
 	impl fg_primitives::GrandpaApi<Block> for Runtime {
 		fn grandpa_authorities() -> GrandpaAuthorityList {
 			Grandpa::grandpa_authorities()
+		}
+
+		fn current_set_id() -> fg_primitives::SetId {
+			Grandpa::current_set_id()
 		}
 
 		fn submit_report_equivocation_unsigned_extrinsic(
