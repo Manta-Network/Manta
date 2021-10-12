@@ -1,13 +1,12 @@
-
 #![warn(unused_extern_crates)]
 
 //! Service implementation. Specialized wrapper over substrate service.
 
 use manta_runtime::{opaque::Block, RuntimeApi};
 use sc_client_api::{ExecutorProvider, RemoteBackend};
-pub use sc_executor::NativeExecutor;
-use sc_executor::native_executor_instance;
 use sc_consensus_babe::{self, SlotProportion};
+use sc_executor::native_executor_instance;
+pub use sc_executor::NativeExecutor;
 use sc_network::NetworkService;
 use sc_service::{config::Configuration, error::Error as ServiceError, RpcHandlers, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
@@ -31,27 +30,32 @@ type LightClient = sc_service::TLightClient<Block, RuntimeApi, Executor>;
 
 pub fn new_partial(
 	config: &Configuration,
-) -> Result<sc_service::PartialComponents<
-	FullClient, 
-	FullBackend, 
-	FullSelectChain,
-	sc_consensus::DefaultImportQueue<Block, FullClient>,
-	sc_transaction_pool::FullPool<Block, FullClient>,
-	(
-		impl Fn(
-			crate::rpc::DenyUnsafe,
-			sc_rpc::SubscriptionTaskExecutor,
-		) -> Result<crate::rpc::IoHandler, sc_service::Error>,
+) -> Result<
+	sc_service::PartialComponents<
+		FullClient,
+		FullBackend,
+		FullSelectChain,
+		sc_consensus::DefaultImportQueue<Block, FullClient>,
+		sc_transaction_pool::FullPool<Block, FullClient>,
 		(
-			sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
-			sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
-			sc_consensus_babe::BabeLink<Block>,
+			impl Fn(
+				crate::rpc::DenyUnsafe,
+				sc_rpc::SubscriptionTaskExecutor,
+			) -> Result<crate::rpc::IoHandler, sc_service::Error>,
+			(
+				sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
+				sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
+				sc_consensus_babe::BabeLink<Block>,
+			),
+			sc_finality_grandpa::SharedVoterState,
+			Option<Telemetry>,
 		),
-		sc_finality_grandpa::SharedVoterState,
-		Option<Telemetry>,
-	)
->, ServiceError> {
-	let telemetry = config.telemetry_endpoints.clone()
+	>,
+	ServiceError,
+> {
+	let telemetry = config
+		.telemetry_endpoints
+		.clone()
 		.filter(|x| !x.is_empty())
 		.map(|endpoints| -> Result<_, sc_telemetry::Error> {
 			let worker = TelemetryWorker::new(16)?;
@@ -67,11 +71,10 @@ pub fn new_partial(
 		)?;
 	let client = Arc::new(client);
 
-	let telemetry = telemetry
-		.map(|(worker, telemetry)| {
-			task_manager.spawn_handle().spawn("telemetry", worker.run());
-			telemetry
-		});
+	let telemetry = telemetry.map(|(worker, telemetry)| {
+		task_manager.spawn_handle().spawn("telemetry", worker.run());
+		telemetry
+	});
 
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
@@ -104,21 +107,19 @@ pub fn new_partial(
 		Some(Box::new(justification_import)),
 		client.clone(),
 		select_chain.clone(),
-		move |_, ()| {
-			async move {
-				let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+		move |_, ()| async move {
+			let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
-				let slot =
-					sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_duration(
-						*timestamp,
-						slot_duration,
-					);
+			let slot =
+				sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_duration(
+					*timestamp,
+					slot_duration,
+				);
 
-				let uncles =
-					sp_authorship::InherentDataProvider::<<Block as BlockT>::Header>::check_inherents();
+			let uncles =
+				sp_authorship::InherentDataProvider::<<Block as BlockT>::Header>::check_inherents();
 
-				Ok((timestamp, slot, uncles))
-			}
+			Ok((timestamp, slot, uncles))
 		},
 		&task_manager.spawn_essential_handle(),
 		config.prometheus_registry(),
@@ -202,7 +203,7 @@ pub fn new_full_base(
 	with_startup_data: impl FnOnce(
 		&sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
 		&sc_consensus_babe::BabeLink<Block>,
-	)
+	),
 ) -> Result<NewFullBase, ServiceError> {
 	let sc_service::PartialComponents {
 		client,
@@ -217,7 +218,10 @@ pub fn new_full_base(
 
 	let shared_voter_state = rpc_setup;
 
-	config.network.extra_sets.push(sc_finality_grandpa::grandpa_peers_set_config());
+	config
+		.network
+		.extra_sets
+		.push(sc_finality_grandpa::grandpa_peers_set_config());
 	let warp_sync = Arc::new(sc_finality_grandpa::warp_proof::NetworkProvider::new(
 		backend.clone(),
 		import_setup.1.shared_authority_set().clone(),
@@ -230,7 +234,7 @@ pub fn new_full_base(
 			task_manager.spawn_handle(),
 			backend.clone(),
 			import_setup.1.shared_authority_set().clone(),
-		)
+		),
 	);
 
 	let (network, system_rpc_tx, network_starter) =
@@ -247,7 +251,10 @@ pub fn new_full_base(
 
 	if config.offchain_worker.enabled {
 		sc_service::build_offchain_workers(
-			&config, task_manager.spawn_handle(), client.clone(), network.clone(),
+			&config,
+			task_manager.spawn_handle(),
+			client.clone(),
+			network.clone(),
 		);
 	}
 
@@ -259,22 +266,20 @@ pub fn new_full_base(
 	let enable_grandpa = !config.disable_grandpa;
 	let prometheus_registry = config.prometheus_registry().cloned();
 
-	let _rpc_handlers = sc_service::spawn_tasks(
-		sc_service::SpawnTasksParams {
-			config,
-			backend: backend.clone(),
-			client: client.clone(),
-			keystore: keystore_container.sync_keystore(),
-			network: network.clone(),
-			rpc_extensions_builder: Box::new(rpc_extensions_builder),
-			transaction_pool: transaction_pool.clone(),
-			task_manager: &mut task_manager,
-			on_demand: None,
-			remote_blockchain: None,
-			system_rpc_tx,
-			telemetry: telemetry.as_mut(),
-		},
-	)?;
+	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+		config,
+		backend: backend.clone(),
+		client: client.clone(),
+		keystore: keystore_container.sync_keystore(),
+		network: network.clone(),
+		rpc_extensions_builder: Box::new(rpc_extensions_builder),
+		transaction_pool: transaction_pool.clone(),
+		task_manager: &mut task_manager,
+		on_demand: None,
+		remote_blockchain: None,
+		system_rpc_tx,
+		telemetry: telemetry.as_mut(),
+	})?;
 
 	let (block_import, grandpa_link, babe_link) = import_setup;
 
@@ -331,7 +336,9 @@ pub fn new_full_base(
 		};
 
 		let babe = sc_consensus_babe::start_babe(babe_config)?;
-		task_manager.spawn_essential_handle().spawn_blocking("babe-proposer", babe);
+		task_manager
+			.spawn_essential_handle()
+			.spawn_blocking("babe-proposer", babe);
 	}
 
 	// if the node isn't actively participating in consensus then it doesn't
@@ -374,7 +381,7 @@ pub fn new_full_base(
 		// if it fails we take down the service with it.
 		task_manager.spawn_essential_handle().spawn_blocking(
 			"grandpa-voter",
-			sc_finality_grandpa::run_grandpa_voter(grandpa_config)?
+			sc_finality_grandpa::run_grandpa_voter(grandpa_config)?,
 		);
 	}
 
@@ -388,30 +395,33 @@ pub fn new_full_base(
 }
 
 /// Builds a new service for a full client.
-pub fn new_full(
-	config: Configuration,
-) -> Result<TaskManager, ServiceError> {
-	new_full_base(config, |_, _| ()).map(|NewFullBase { task_manager, .. }| {
-		task_manager
-	})
+pub fn new_full(config: Configuration) -> Result<TaskManager, ServiceError> {
+	new_full_base(config, |_, _| ()).map(|NewFullBase { task_manager, .. }| task_manager)
 }
 
 pub fn new_light_base(
 	mut config: Configuration,
-) -> Result<(
-	TaskManager,
-	RpcHandlers,
-	Arc<LightClient>,
-	Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
-	Arc<sc_transaction_pool::LightPool<Block, LightClient, sc_network::config::OnDemand<Block>>>
-), ServiceError> {
-	let telemetry = config.telemetry_endpoints.clone()
+) -> Result<
+	(
+		TaskManager,
+		RpcHandlers,
+		Arc<LightClient>,
+		Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+		Arc<
+			sc_transaction_pool::LightPool<Block, LightClient, sc_network::config::OnDemand<Block>>,
+		>,
+	),
+	ServiceError,
+> {
+	let telemetry = config
+		.telemetry_endpoints
+		.clone()
 		.filter(|x| !x.is_empty())
 		.map(|endpoints| -> Result<_, sc_telemetry::Error> {
 			#[cfg(feature = "browser")]
-			let transport = Some(
-				sc_telemetry::ExtTransport::new(libp2p_wasm_ext::ffi::websocket_transport())
-			);
+			let transport = Some(sc_telemetry::ExtTransport::new(
+				libp2p_wasm_ext::ffi::websocket_transport(),
+			));
 			#[cfg(not(feature = "browser"))]
 			let transport = None;
 
@@ -427,13 +437,15 @@ pub fn new_light_base(
 			telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
 		)?;
 
-	let mut telemetry = telemetry
-		.map(|(worker, telemetry)| {
-			task_manager.spawn_handle().spawn("telemetry", worker.run());
-			telemetry
-		});
+	let mut telemetry = telemetry.map(|(worker, telemetry)| {
+		task_manager.spawn_handle().spawn("telemetry", worker.run());
+		telemetry
+	});
 
-	config.network.extra_sets.push(sc_finality_grandpa::grandpa_peers_set_config());
+	config
+		.network
+		.extra_sets
+		.push(sc_finality_grandpa::grandpa_peers_set_config());
 
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
@@ -541,19 +553,20 @@ pub fn new_light_base(
 
 	let rpc_extensions = crate::rpc::create_light(light_deps);
 
-	let rpc_handlers =
-		sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-			on_demand: Some(on_demand),
-			remote_blockchain: Some(backend.remote_blockchain()),
-			rpc_extensions_builder: Box::new(sc_service::NoopRpcExtensionBuilder(rpc_extensions)),
-			client: client.clone(),
-			transaction_pool: transaction_pool.clone(),
-			keystore: keystore_container.sync_keystore(),
-			config, backend, system_rpc_tx,
-			network: network.clone(),
-			task_manager: &mut task_manager,
-			telemetry: telemetry.as_mut(),
-		})?;
+	let rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+		on_demand: Some(on_demand),
+		remote_blockchain: Some(backend.remote_blockchain()),
+		rpc_extensions_builder: Box::new(sc_service::NoopRpcExtensionBuilder(rpc_extensions)),
+		client: client.clone(),
+		transaction_pool: transaction_pool.clone(),
+		keystore: keystore_container.sync_keystore(),
+		config,
+		backend,
+		system_rpc_tx,
+		network: network.clone(),
+		task_manager: &mut task_manager,
+		telemetry: telemetry.as_mut(),
+	})?;
 
 	network_starter.start_network();
 	Ok((
@@ -566,12 +579,8 @@ pub fn new_light_base(
 }
 
 /// Builds a new service for a light client.
-pub fn new_light(
-	config: Configuration,
-) -> Result<TaskManager, ServiceError> {
-	new_light_base(config).map(|(task_manager, _, _, _, _)| {
-		task_manager
-	})
+pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
+	new_light_base(config).map(|(task_manager, _, _, _, _)| task_manager)
 }
 
 // TODO: add service test

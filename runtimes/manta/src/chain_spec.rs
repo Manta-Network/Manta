@@ -1,11 +1,14 @@
 use hex_literal::hex;
 use manta_primitives::{constants::currency::MA, AccountId, Balance, Signature};
 use manta_runtime::{
-	wasm_binary_unwrap, BabeConfig, BalancesConfig, CouncilConfig, GenesisConfig, GrandpaConfig,
-	SessionConfig, StakerStatus, StakingConfig, SudoConfig, SystemConfig, MAX_NOMINATIONS
+	wasm_binary_unwrap, BabeConfig, BalancesConfig, Block, CouncilConfig, GenesisConfig,
+	GrandpaConfig, SessionConfig, StakerStatus, StakingConfig, SudoConfig, SystemConfig,
+	MAX_NOMINATIONS,
 };
+use sc_chain_spec::ChainSpecExtension;
 use sc_service::{ChainType, Properties};
 use sc_telemetry::TelemetryEndpoints;
+use serde::{Deserialize, Serialize};
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
@@ -33,8 +36,23 @@ const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 // 	pub bad_blocks: sc_client_api::BadBlocks<Block>,
 // }
 
+/// Node `ChainSpec` extensions.
+///
+/// Additional parameters for some Substrate core modules,
+/// customizable from the chain spec.
+#[derive(Default, Clone, Serialize, Deserialize, ChainSpecExtension)]
+#[serde(rename_all = "camelCase")]
+pub struct Extensions {
+	/// Block numbers with known hashes.
+	pub fork_blocks: sc_client_api::ForkBlocks<Block>,
+	/// Known bad block hashes.
+	pub bad_blocks: sc_client_api::BadBlocks<Block>,
+	/// The light sync state extension used by the sync-state rpc.
+	pub light_sync_state: sc_sync_state_rpc::LightSyncStateExtension,
+}
+
 /// Specialized `ChainSpec`.
-pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
+pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
 fn session_keys(grandpa: GrandpaId, babe: BabeId) -> manta_runtime::opaque::SessionKeys {
 	manta_runtime::opaque::SessionKeys { babe, grandpa }
@@ -108,7 +126,12 @@ fn staging_testnet_config_genesis() -> GenesisConfig {
 
 	let endowed_accounts: Vec<AccountId> = vec![root_key.clone()];
 
-	testnet_genesis(initial_authorities, vec![], root_key, Some(endowed_accounts))
+	testnet_genesis(
+		initial_authorities,
+		vec![],
+		root_key,
+		Some(endowed_accounts),
+	)
 }
 
 /// Staging testnet config.
@@ -168,12 +191,7 @@ pub fn manta_properties() -> Properties {
 /// Helper function to create GenesisConfig for testing
 /// Helper function to create GenesisConfig for testing
 pub fn testnet_genesis(
-	initial_authorities: Vec<(
-		AccountId,
-		AccountId,
-		GrandpaId,
-		BabeId,
-	)>,
+	initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)>,
 	initial_nominators: Vec<AccountId>,
 	root_key: AccountId,
 	endowed_accounts: Option<Vec<AccountId>>,
@@ -195,11 +213,15 @@ pub fn testnet_genesis(
 		]
 	});
 	// endow all authorities and nominators.
-	initial_authorities.iter().map(|x| &x.0).chain(initial_nominators.iter()).for_each(|x| {
-		if !endowed_accounts.contains(&x) {
-			endowed_accounts.push(x.clone())
-		}
-	});
+	initial_authorities
+		.iter()
+		.map(|x| &x.0)
+		.chain(initial_nominators.iter())
+		.for_each(|x| {
+			if !endowed_accounts.contains(&x) {
+				endowed_accounts.push(x.clone())
+			}
+		});
 
 	// stakers: all validators and nominators.
 	let mut rng = rand::thread_rng();
@@ -216,7 +238,12 @@ pub fn testnet_genesis(
 				.into_iter()
 				.map(|choice| choice.0.clone())
 				.collect::<Vec<_>>();
-			(x.clone(), x.clone(), STASH, StakerStatus::Nominator(nominations))
+			(
+				x.clone(),
+				x.clone(),
+				STASH,
+				StakerStatus::Nominator(nominations),
+			)
 		}))
 		.collect::<Vec<_>>();
 
@@ -229,17 +256,23 @@ pub fn testnet_genesis(
 			changes_trie_config: Default::default(),
 		},
 		balances: BalancesConfig {
-			balances: endowed_accounts.iter().cloned()
+			balances: endowed_accounts
+				.iter()
+				.cloned()
 				.map(|x| (x, ENDOWMENT))
-				.collect()
+				.collect(),
 		},
 		session: SessionConfig {
-			keys: initial_authorities.iter().map(|x| {
-				(x.0.clone(), x.0.clone(), session_keys(
-					x.2.clone(),
-					x.3.clone(),
-				))
-			}).collect::<Vec<_>>(),
+			keys: initial_authorities
+				.iter()
+				.map(|x| {
+					(
+						x.0.clone(),
+						x.0.clone(),
+						session_keys(x.2.clone(), x.3.clone()),
+					)
+				})
+				.collect::<Vec<_>>(),
 		},
 		staking: StakingConfig {
 			validator_count: initial_authorities.len() as u32,
@@ -247,12 +280,10 @@ pub fn testnet_genesis(
 			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
 			slash_reward_fraction: Perbill::from_percent(10),
 			stakers,
-			.. Default::default()
+			..Default::default()
 		},
 		council: CouncilConfig::default(),
-		sudo: SudoConfig {
-			key: root_key,
-		},
+		sudo: SudoConfig { key: root_key },
 		babe: BabeConfig {
 			authorities: vec![],
 			epoch_config: Some(manta_runtime::BABE_GENESIS_EPOCH_CONFIG),
@@ -295,7 +326,7 @@ fn local_testnet_genesis() -> GenesisConfig {
 		],
 		vec![],
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
-		None
+		None,
 	)
 }
 
@@ -346,7 +377,6 @@ pub fn manta_testnet_config_genesis(
 	stash: Balance,
 	_enable_println: bool,
 ) -> GenesisConfig {
-
 	GenesisConfig {
 		system: SystemConfig {
 			code: wasm_binary_unwrap().to_vec(),
@@ -356,12 +386,16 @@ pub fn manta_testnet_config_genesis(
 			balances: initial_balances,
 		},
 		session: SessionConfig {
-			keys: initial_authorities.iter().map(|x| {
-				(x.0.clone(), x.0.clone(), session_keys(
-					x.2.clone(),
-					x.3.clone(),
-				))
-			}).collect::<Vec<_>>(),
+			keys: initial_authorities
+				.iter()
+				.map(|x| {
+					(
+						x.0.clone(),
+						x.0.clone(),
+						session_keys(x.2.clone(), x.3.clone()),
+					)
+				})
+				.collect::<Vec<_>>(),
 		},
 		staking: StakingConfig {
 			validator_count: initial_authorities.len() as u32,
@@ -369,15 +403,13 @@ pub fn manta_testnet_config_genesis(
 			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
 			slash_reward_fraction: Perbill::from_percent(10),
 			stakers: initial_authorities
-			.iter()
-			.map(|x| (x.0.clone(), x.1.clone(), stash, StakerStatus::Validator))
-			.collect(),
-			.. Default::default()
+				.iter()
+				.map(|x| (x.0.clone(), x.1.clone(), stash, StakerStatus::Validator))
+				.collect(),
+			..Default::default()
 		},
 		council: CouncilConfig::default(),
-		sudo: SudoConfig {
-			key: root_key,
-		},
+		sudo: SudoConfig { key: root_key },
 		babe: BabeConfig {
 			authorities: vec![],
 			epoch_config: Some(manta_runtime::BABE_GENESIS_EPOCH_CONFIG),
