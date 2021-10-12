@@ -66,7 +66,7 @@ pallet-election-provider-multi-phase = { git = 'https://github.com/paritytech/su
 # If you need to change any of the below lines, make sure to reflect the changes in whichever script is supposed to modify them.
 # Search for "Check Manta-Node" in Manta-Network repositories to find the relevant scripts.
 manta-primitives = { path="../primitives", default-features = false }
-# pallet-manta-pay = { path="../../../../pallet-manta-pay", default-features = false }
+pallet-manta-pay = { path="../../../../pallet-manta-pay", default-features = false }
 
 [dev-dependencies]
 sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
@@ -88,7 +88,7 @@ runtime-benchmarks = [
     'pallet-timestamp/runtime-benchmarks',
     "pallet-collective/runtime-benchmarks",
     "pallet-utility/runtime-benchmarks",
-    #"pallet-manta-pay/runtime-benchmarks",
+    "pallet-manta-pay/runtime-benchmarks",
     'sp-runtime/runtime-benchmarks',
 ]
 std = [
@@ -102,7 +102,7 @@ std = [
     'pallet-balances/std',
     'pallet-collective/std',
     'pallet-grandpa/std',
-    #'pallet-manta-pay/std',
+    'pallet-manta-pay/std',
     'pallet-randomness-collective-flip/std',
     "pallet-scheduler/std",
     "pallet-session/std",
