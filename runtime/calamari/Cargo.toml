@@ -51,7 +51,6 @@ pallet-utility = { git = 'https://github.com/paritytech/substrate.git', default-
 pallet-collective = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.10" }
 pallet-democracy = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.10" }
 pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.10" }
-pallet-treasury = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.10" }
 pallet-membership = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.10" }
 
 # Cumulus dependencies
@@ -110,7 +109,6 @@ runtime-benchmarks = [
 	'pallet-collective/runtime-benchmarks',
 	'pallet-democracy/runtime-benchmarks',
 	'pallet-scheduler/runtime-benchmarks',
-	'pallet-treasury/runtime-benchmarks',
 	'pallet-membership/runtime-benchmarks',
 ]
 std = [
@@ -147,7 +145,6 @@ std = [
 	'pallet-collective/std',
 	'pallet-democracy/std',
 	'pallet-scheduler/std',
-	'pallet-treasury/std',
 	'pallet-membership/std',
 	'manta-primitives/std',
 	'parachain-info/std',

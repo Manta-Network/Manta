@@ -186,7 +186,6 @@ fn calamari_dev_genesis(
 				.collect(),
 			phantom: Default::default(),
 		},
-		treasury: Default::default(),
 		council_membership: Default::default(),
 		technical_membership: Default::default(),
 		aura_ext: Default::default(),

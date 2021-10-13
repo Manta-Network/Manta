@@ -16,7 +16,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult,
 };
 
-use sp_core::u32_trait::{_1, _2, _3, _4, _5};
+use sp_core::u32_trait::{_1, _2, _3, _4};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -24,7 +24,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Contains, Currency as PalletCurrency, Everything, OnUnbalanced},
+	traits::{Contains,Everything},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -39,7 +39,7 @@ use manta_primitives::{
 	currency::*, fee::WeightToFee, time::*, AccountId, AuraId, Balance, BlockNumber, Hash, Header,
 	Index, Signature,
 };
-use sp_runtime::{Perbill, Permill};
+use sp_runtime::Perbill;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -209,19 +209,8 @@ parameter_types! {
 	pub const TransactionByteFee: Balance = mMA / 100;
 }
 
-type NegativeImbalance = <Balances as PalletCurrency<AccountId>>::NegativeImbalance;
-pub struct DealWithFees;
-impl OnUnbalanced<NegativeImbalance> for DealWithFees {
-	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
-		if let Some(fees) = fees_then_tips.next() {
-			// 100% of fees go to treasury
-			Treasury::on_unbalanced(fees);
-		}
-	}
-}
-
 impl pallet_transaction_payment::Config for Runtime {
-	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
+	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = WeightToFee;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
@@ -317,7 +306,7 @@ impl pallet_democracy::Config for Runtime {
 	type CooloffPeriod = CooloffPeriod;
 	type PreimageByteDeposit = PreimageByteDeposit;
 	type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
-	type Slash = Treasury;
+	type Slash = ();
 	type Scheduler = Scheduler;
 	type PalletsOrigin = OriginCaller;
 	type MaxVotes = MaxVotes;
@@ -383,63 +372,20 @@ impl pallet_collective::Config<TechnicalCollective> for Runtime {
 	type WeightInfo = weights::pallet_collective::WeightInfo<Runtime>;
 }
 
-pub type EnsureRootOrThreeFourthsTechnicalCommittee = EnsureOneOf<
-	AccountId,
-	EnsureRoot<AccountId>,
-	pallet_collective::EnsureProportionAtLeast<_3, _4, AccountId, TechnicalCollective>,
->;
-
 type TechnicalMembershipInstance = pallet_membership::Instance2;
 impl pallet_membership::Config<TechnicalMembershipInstance> for Runtime {
 	type Event = Event;
-	type AddOrigin = EnsureRootOrThreeFourthsTechnicalCommittee;
-	type RemoveOrigin = EnsureRootOrThreeFourthsTechnicalCommittee;
-	type SwapOrigin = EnsureRootOrThreeFourthsTechnicalCommittee;
-	type ResetOrigin = EnsureRootOrThreeFourthsTechnicalCommittee;
-	type PrimeOrigin = EnsureRootOrThreeFourthsTechnicalCommittee;
+	type AddOrigin = EnsureRootOrThreeFourthsCouncil;
+	type RemoveOrigin = EnsureRootOrThreeFourthsCouncil;
+	type SwapOrigin = EnsureRootOrThreeFourthsCouncil;
+	type ResetOrigin = EnsureRootOrThreeFourthsCouncil;
+	type PrimeOrigin = EnsureRootOrThreeFourthsCouncil;
 	type MembershipInitialized = TechnicalCommittee;
 	type MembershipChanged = TechnicalCommittee;
 	type MaxMembers = TechnicalMaxMembers;
 	type WeightInfo = weights::pallet_membership::WeightInfo<Runtime>;
 }
 
-parameter_types! {
-	pub const ProposalBond: Permill = Permill::from_percent(1);
-	pub const ProposalBondMinimum: Balance = 50 * MA;
-	pub const SpendPeriod: BlockNumber = 6 * DAYS;
-	pub const Burn: Permill = Permill::from_percent(0);
-	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
-	pub const MaxApprovals: u32 = 100;
-}
-
-type TreasuryApproveOrigin = EnsureOneOf<
-	AccountId,
-	EnsureRoot<AccountId>,
-	pallet_collective::EnsureProportionAtLeast<_3, _5, AccountId, CouncilCollective>,
->;
-
-type TreasuryRejectOrigin = EnsureOneOf<
-	AccountId,
-	EnsureRoot<AccountId>,
-	pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>,
->;
-
-impl pallet_treasury::Config for Runtime {
-	type PalletId = TreasuryPalletId;
-	type Currency = Balances;
-	type ApproveOrigin = TreasuryApproveOrigin;
-	type RejectOrigin = TreasuryRejectOrigin;
-	type Event = Event;
-	type OnSlash = Treasury;
-	type ProposalBond = ProposalBond;
-	type ProposalBondMinimum = ProposalBondMinimum;
-	type SpendPeriod = SpendPeriod;
-	type Burn = Burn;
-	type BurnDestination = ();
-	type MaxApprovals = MaxApprovals;
-	type WeightInfo = weights::pallet_treasury::WeightInfo<Runtime>;
-	type SpendFunds = ();
-}
 
 parameter_types! {
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
@@ -689,8 +635,35 @@ impl Contains<Call> for BaseFilter {
 			| Call::Authorship(_)
 			| Call::Sudo(_)
 			| Call::Multisig(_)
-			| Call::Democracy(_)
-			| Call::Treasury(_)
+			// For now disallow public proposal workflows, treasury workflows,
+			// as well as external_propose and external_propose_majority.
+			// The following are filtered out:
+			// pallet_democracy::Call::propose(_)
+			// pallet_democracy::Call::second(_, _)
+			// pallet_democracy::Call::cancel_proposal(_)
+			// pallet_democracy::Call::clear_public_proposals()
+			// pallet_democracy::Call::external_propose(_)
+			// pallet_democracy::Call::external_propose_majority(_)
+			// Call::Treasury(_)
+			| Call::Democracy(pallet_democracy::Call::vote(_, _) 
+								| pallet_democracy::Call::emergency_cancel(_) 
+								| pallet_democracy::Call::external_propose_default(_) 
+								| pallet_democracy::Call::fast_track(_, _, _)  
+								| pallet_democracy::Call::veto_external(_)  
+								| pallet_democracy::Call::cancel_referendum(_)  
+								| pallet_democracy::Call::cancel_queued(_)  
+								| pallet_democracy::Call::delegate(_, _, _)  
+								| pallet_democracy::Call::undelegate()  
+								| pallet_democracy::Call::note_preimage(_)  
+								| pallet_democracy::Call::note_preimage_operational(_) 
+								| pallet_democracy::Call::note_imminent_preimage(_)
+								| pallet_democracy::Call::note_imminent_preimage_operational(_) 
+								| pallet_democracy::Call::reap_preimage(_, _) 
+								| pallet_democracy::Call::unlock(_)
+								| pallet_democracy::Call::remove_vote(_) 
+								| pallet_democracy::Call::remove_other_vote(_, _)
+								| pallet_democracy::Call::enact_proposal(_, _)
+								| pallet_democracy::Call::blacklist(_, _))
 			| Call::Council(_)
 			| Call::TechnicalCommittee(_)
 			| Call::CouncilMembership(_)
@@ -733,7 +706,6 @@ construct_runtime!(
 		CouncilMembership: pallet_membership::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 16,
 		TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 17,
 		TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
-		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 19,
 
 		// Collator support. the order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -926,7 +898,6 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_collective, Council);
 			list_benchmark!(list, extra, pallet_membership, CouncilMembership);
 			list_benchmark!(list, extra, pallet_scheduler, Scheduler);
-			list_benchmark!(list, extra, pallet_treasury, Treasury);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -971,7 +942,6 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_collective, Council);
 			add_benchmark!(params, batches, pallet_membership, CouncilMembership);
 			add_benchmark!(params, batches, pallet_scheduler, Scheduler);
-			add_benchmark!(params, batches, pallet_treasury, Treasury);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
