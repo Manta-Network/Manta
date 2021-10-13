@@ -24,7 +24,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Contains,Everything},
+	traits::{Contains, Everything},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -386,7 +386,6 @@ impl pallet_membership::Config<TechnicalMembershipInstance> for Runtime {
 	type WeightInfo = weights::pallet_membership::WeightInfo<Runtime>;
 }
 
-
 parameter_types! {
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
 		RuntimeBlockWeights::get().max_block;
@@ -645,22 +644,22 @@ impl Contains<Call> for BaseFilter {
 			// pallet_democracy::Call::external_propose(_)
 			// pallet_democracy::Call::external_propose_majority(_)
 			// Call::Treasury(_)
-			| Call::Democracy(pallet_democracy::Call::vote(_, _) 
-								| pallet_democracy::Call::emergency_cancel(_) 
-								| pallet_democracy::Call::external_propose_default(_) 
-								| pallet_democracy::Call::fast_track(_, _, _)  
-								| pallet_democracy::Call::veto_external(_)  
-								| pallet_democracy::Call::cancel_referendum(_)  
-								| pallet_democracy::Call::cancel_queued(_)  
-								| pallet_democracy::Call::delegate(_, _, _)  
-								| pallet_democracy::Call::undelegate()  
-								| pallet_democracy::Call::note_preimage(_)  
-								| pallet_democracy::Call::note_preimage_operational(_) 
+			| Call::Democracy(pallet_democracy::Call::vote(_, _)
+								| pallet_democracy::Call::emergency_cancel(_)
+								| pallet_democracy::Call::external_propose_default(_)
+								| pallet_democracy::Call::fast_track(_, _, _)
+								| pallet_democracy::Call::veto_external(_)
+								| pallet_democracy::Call::cancel_referendum(_)
+								| pallet_democracy::Call::cancel_queued(_)
+								| pallet_democracy::Call::delegate(_, _, _)
+								| pallet_democracy::Call::undelegate()
+								| pallet_democracy::Call::note_preimage(_)
+								| pallet_democracy::Call::note_preimage_operational(_)
 								| pallet_democracy::Call::note_imminent_preimage(_)
-								| pallet_democracy::Call::note_imminent_preimage_operational(_) 
-								| pallet_democracy::Call::reap_preimage(_, _) 
+								| pallet_democracy::Call::note_imminent_preimage_operational(_)
+								| pallet_democracy::Call::reap_preimage(_, _)
 								| pallet_democracy::Call::unlock(_)
-								| pallet_democracy::Call::remove_vote(_) 
+								| pallet_democracy::Call::remove_vote(_)
 								| pallet_democracy::Call::remove_other_vote(_, _)
 								| pallet_democracy::Call::enact_proposal(_, _)
 								| pallet_democracy::Call::blacklist(_, _))
