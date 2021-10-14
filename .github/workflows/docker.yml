@@ -22,7 +22,7 @@ jobs:
           push: true
           file: docker/calamari.Dockerfile
           tags: |
-            mantabot/calamari:latest
-            mantabot/calamari:${{ github.event.release.tag_name }}
+            mantanetwork/calamari:latest
+            mantanetwork/calamari:${{ github.event.release.tag_name }}
           build-args: |
             PARA_BINARY_REF=${{ github.event.release.tag_name }}
