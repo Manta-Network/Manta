@@ -15,6 +15,7 @@ substrate-wasm-builder = { git = 'https://github.com/paritytech/substrate.git', 
 codec = { default-features = false, features = ['derive'], package = 'parity-scale-codec', version = '2.0.0' }
 hex-literal = { optional = true, version = '0.3.1' }
 serde = { version = "1.0.119", optional = true, features = ["derive"] }
+getrandom = { version = "0.2", default-features = false, features = ["js"], optional = true }
 
 # primitives
 sp-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
@@ -66,7 +67,7 @@ pallet-election-provider-multi-phase = { git = 'https://github.com/paritytech/su
 # If you need to change any of the below lines, make sure to reflect the changes in whichever script is supposed to modify them.
 # Search for "Check Manta-Node" in Manta-Network repositories to find the relevant scripts.
 manta-primitives = { path="../primitives", default-features = false }
-pallet-manta-pay = { git = "https://github.com/Manta-Network/pallet-manta-pay", rev = "d3dbd3282cd4dbbd0939766ab9237a8e25a9f809", default-features = false }
+pallet-manta-pay = { path="../../../../pallet-manta-pay", default-features = false }
 
 [dev-dependencies]
 sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
@@ -78,6 +79,7 @@ separator = "0.4.1"
 default = [
     'std', 
 ]
+
 runtime-benchmarks = [
     'frame-benchmarking',
     'frame-support/runtime-benchmarks',
@@ -90,7 +92,9 @@ runtime-benchmarks = [
     "pallet-utility/runtime-benchmarks",
     "pallet-manta-pay/runtime-benchmarks",
     'sp-runtime/runtime-benchmarks',
+    "getrandom",
 ]
+
 std = [
     'codec/std',
     'frame-executive/std',

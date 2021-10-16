@@ -8,8 +8,6 @@ use sp_runtime::{
 	MultiSignature, RuntimeDebug,
 };
 
-use sp_std::convert::Into; // TODO: add TryFrom and TryInto
-
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 

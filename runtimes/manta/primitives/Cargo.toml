@@ -6,7 +6,6 @@ edition = "2018"
 [dependencies]
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
 serde = { version = '1.0.119', features = ['derive'], optional = true }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 
@@ -21,5 +20,4 @@ std = [
     "serde",
     'sp-core/std',
     'sp-runtime/std',
-    "sp-std/std",
 ]
