@@ -10,6 +10,22 @@
 
 ### Bug fixes
 
+## v3.0.6
+
+### Breaking changes
+- [\#211](https://github.com/Manta-Network/Manta/pull/211) Update Parity dependencies to `v0.9.11`.
+- [Support Metadata V14](https://github.com/paritytech/cumulus/pull/623)
+
+### Features
+- [Support XCM V2](https://github.com/paritytech/polkadot/pull/3629)
+
+### Improvements
+- [Follow Rework Transaction Priority calculation](https://github.com/paritytech/substrate/pull/9834)
+- Refactor Node Rpc Service.
+- Remove some unused dependencies.
+
+### Bug fixes
+
 ## v3.0.5
 
 ### Breaking changes

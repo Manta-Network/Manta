@@ -82,7 +82,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 1,
+	spec_version: 2,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -225,6 +225,7 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
 	pub const TransactionByteFee: Balance = mMA / 100;
+	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -232,6 +233,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = WeightToFee;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
+	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }
 
 parameter_types! {
@@ -347,6 +349,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 parameter_types! {
 	// One XCM operation is 200_000_000 weight - almost certainly a conservative estimate.
 	pub UnitWeightCost: Weight = 200_000_000;
+	pub const MaxInstructions: u32 = 100;
 }
 
 match_type! {
@@ -374,9 +377,11 @@ impl Config for XcmConfig {
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of KSM
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type Trader = UsingComponents<IdentityFee<Balance>, KsmLocation, AccountId, Balances, ()>;
-	type ResponseHandler = (); // Don't handle responses for now.
+	type ResponseHandler = PolkadotXcm; // Don't handle responses for now.
+	type AssetTrap = PolkadotXcm;
+	type AssetClaims = PolkadotXcm;
 	type SubscriptionService = PolkadotXcm;
 }
 
@@ -397,6 +402,10 @@ pub type XcmRouter = (
 );
 
 impl pallet_xcm::Config for Runtime {
+	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
+
+	type Origin = Origin;
+	type Call = Call;
 	type Event = Event;
 	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
 	type XcmRouter = XcmRouter;
@@ -405,8 +414,9 @@ impl pallet_xcm::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
 	type XcmReserveTransferFilter = Everything;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type LocationInverter = LocationInverter<Ancestry>;
+	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -432,6 +442,7 @@ parameter_types! {
 	// Rotate collator's spot each 6 hours.
 	pub const Period: u32 = 6 * HOURS;
 	pub const Offset: u32 = 0;
+	pub const MaxAuthorities: u32 = 100_000;
 }
 
 impl pallet_session::Config for Runtime {
@@ -453,6 +464,7 @@ impl pallet_session::Config for Runtime {
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
+	type MaxAuthorities = MaxAuthorities;
 }
 
 parameter_types! {
@@ -565,7 +577,7 @@ impl_runtime_apis! {
 		}
 
 		fn authorities() -> Vec<AuraId> {
-			Aura::authorities()
+			Aura::authorities().into_inner()
 		}
 	}
 
@@ -585,7 +597,7 @@ impl_runtime_apis! {
 
 	impl sp_api::Metadata<Block> for Runtime {
 		fn metadata() -> OpaqueMetadata {
-			Runtime::metadata().into()
+			OpaqueMetadata::new(Runtime::metadata().into())
 		}
 	}
 
@@ -667,9 +679,13 @@ impl_runtime_apis! {
 
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
-		fn on_runtime_upgrade() -> Result<(Weight, Weight), sp_runtime::RuntimeString> {
-			let weight = Executive::try_runtime_upgrade()?;
-			Ok((weight, RuntimeBlockWeights::get().max_block))
+		fn on_runtime_upgrade() -> (Weight, Weight) {
+			let weight = Executive::try_runtime_upgrade().unwrap();
+			(weight, RuntimeBlockWeights::get().max_block)
+		}
+
+		fn execute_block_no_check(block: Block) -> Weight {
+			Executive::execute_block_no_check(block)
 		}
 	}
 
