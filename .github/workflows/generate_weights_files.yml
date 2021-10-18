@@ -129,45 +129,45 @@ jobs:
       matrix:
         benchmark:
           -
-          #   extrinsic:
-          #     id: '*'
-          #     name: pallet_democracy
-          #   pallet:
-          #     id: pallet_democracy
-          #     name: pallet_democracy
-          #   iterations: 20
-          # -
-          #   extrinsic:
-          #     id: '*'
-          #     name: pallet_collective
-          #   pallet:
-          #     id: pallet_collective
-          #     name: pallet_collective
-          #   iterations: 20
-          # -
-          #   extrinsic:
-          #     id: '*'
-          #     name: pallet_membership
-          #   pallet:
-          #     id: pallet_membership
-          #     name: pallet_membership
-          #   iterations: 20
-          # -
-          #   extrinsic:
-          #     id: '*'
-          #     name: pallet_treasury
-          #   pallet:
-          #     id: pallet_treasury
-          #     name: pallet_treasury
-          #   iterations: 20
-          # -
-          #   extrinsic:
-          #     id: '*'
-          #     name: pallet_scheduler
-          #   pallet:
-          #     id: pallet_scheduler
-          #     name: pallet_scheduler
-          #   iterations: 20
+            extrinsic:
+              id: '*'
+              name: pallet_democracy
+            pallet:
+              id: pallet_democracy
+              name: pallet_democracy
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_collective
+            pallet:
+              id: pallet_collective
+              name: pallet_collective
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_membership
+            pallet:
+              id: pallet_membership
+              name: pallet_membership
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_treasury
+            pallet:
+              id: pallet_treasury
+              name: pallet_treasury
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_scheduler
+            pallet:
+              id: pallet_scheduler
+              name: pallet_scheduler
+            iterations: 20
     steps:
       -
         uses: actions/download-artifact@v2
