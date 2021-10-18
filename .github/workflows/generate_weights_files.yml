@@ -7,7 +7,7 @@ name: Benchmark Pallets & Generate Weights Files
 # yamllint disable-line rule:truthy
 on:
   pull_request:
-    types: [opened]
+    branches: [manta-pc]
   issue_comment:
     types: [created]
 
