@@ -207,6 +207,7 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
 	pub const TransactionByteFee: Balance = mMA / 100;
+	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -214,6 +215,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = WeightToFee;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
+	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }
 
 parameter_types! {
@@ -268,6 +270,7 @@ impl pallet_democracy::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
 	type EnactmentPeriod = EnactmentPeriod;
+	type VoteLockingPeriod = EnactmentPeriod;
 	type LaunchPeriod = LaunchPeriod;
 	type VotingPeriod = VotingPeriod;
 	type MinimumDeposit = MinimumDeposit;
@@ -483,6 +486,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 parameter_types! {
 	// One XCM operation is 200_000_000 weight - almost certainly a conservative estimate.
 	pub UnitWeightCost: Weight = 200_000_000;
+	pub const MaxInstructions: u32 = 100;
 }
 
 match_type! {
@@ -510,9 +514,11 @@ impl Config for XcmConfig {
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of KSM
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type Trader = UsingComponents<IdentityFee<Balance>, KsmLocation, AccountId, Balances, ()>;
-	type ResponseHandler = (); // Don't handle responses for now.
+	type ResponseHandler = PolkadotXcm; // Don't handle responses for now.
+	type AssetTrap = PolkadotXcm;
+	type AssetClaims = PolkadotXcm;
 	type SubscriptionService = PolkadotXcm;
 }
 
@@ -533,6 +539,10 @@ pub type XcmRouter = (
 );
 
 impl pallet_xcm::Config for Runtime {
+	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
+
+	type Origin = Origin;
+	type Call = Call;
 	type Event = Event;
 	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
 	type XcmRouter = XcmRouter;
@@ -541,8 +551,9 @@ impl pallet_xcm::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
 	type XcmReserveTransferFilter = Everything;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type LocationInverter = LocationInverter<Ancestry>;
+	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -568,6 +579,7 @@ parameter_types! {
 	// Rotate collator's spot each 6 hours.
 	pub const Period: u32 = 6 * HOURS;
 	pub const Offset: u32 = 0;
+	pub const MaxAuthorities: u32 = 100_000;
 }
 
 impl pallet_session::Config for Runtime {
@@ -589,6 +601,7 @@ impl pallet_session::Config for Runtime {
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
+	type MaxAuthorities = MaxAuthorities;
 }
 
 parameter_types! {
@@ -644,25 +657,25 @@ impl Contains<Call> for BaseFilter {
 			// pallet_democracy::Call::external_propose(_)
 			// pallet_democracy::Call::external_propose_majority(_)
 			// Call::Treasury(_)
-			| Call::Democracy(pallet_democracy::Call::vote(_, _)
-								| pallet_democracy::Call::emergency_cancel(_)
-								| pallet_democracy::Call::external_propose_default(_)
-								| pallet_democracy::Call::fast_track(_, _, _)
-								| pallet_democracy::Call::veto_external(_)
-								| pallet_democracy::Call::cancel_referendum(_)
-								| pallet_democracy::Call::cancel_queued(_)
-								| pallet_democracy::Call::delegate(_, _, _)
-								| pallet_democracy::Call::undelegate()
-								| pallet_democracy::Call::note_preimage(_)
-								| pallet_democracy::Call::note_preimage_operational(_)
-								| pallet_democracy::Call::note_imminent_preimage(_)
-								| pallet_democracy::Call::note_imminent_preimage_operational(_)
-								| pallet_democracy::Call::reap_preimage(_, _)
-								| pallet_democracy::Call::unlock(_)
-								| pallet_democracy::Call::remove_vote(_)
-								| pallet_democracy::Call::remove_other_vote(_, _)
-								| pallet_democracy::Call::enact_proposal(_, _)
-								| pallet_democracy::Call::blacklist(_, _))
+			| Call::Democracy(pallet_democracy::Call::vote {..}
+								| pallet_democracy::Call::emergency_cancel {..}
+								| pallet_democracy::Call::external_propose_default {..}
+								| pallet_democracy::Call::fast_track  {..}
+								| pallet_democracy::Call::veto_external {..}
+								| pallet_democracy::Call::cancel_referendum {..}
+								| pallet_democracy::Call::cancel_queued {..}
+								| pallet_democracy::Call::delegate {..}
+								| pallet_democracy::Call::undelegate {..}
+								| pallet_democracy::Call::note_preimage {..}
+								| pallet_democracy::Call::note_preimage_operational {..}
+								| pallet_democracy::Call::note_imminent_preimage {..}
+								| pallet_democracy::Call::note_imminent_preimage_operational {..}
+								| pallet_democracy::Call::reap_preimage {..}
+								| pallet_democracy::Call::unlock {..}
+								| pallet_democracy::Call::remove_vote {..}
+								| pallet_democracy::Call::remove_other_vote {..}
+								| pallet_democracy::Call::enact_proposal {..}
+								| pallet_democracy::Call::blacklist {..})
 			| Call::Council(_)
 			| Call::TechnicalCommittee(_)
 			| Call::CouncilMembership(_)
@@ -767,7 +780,7 @@ impl_runtime_apis! {
 		}
 
 		fn authorities() -> Vec<AuraId> {
-			Aura::authorities()
+			Aura::authorities().into_inner()
 		}
 	}
 
@@ -787,7 +800,7 @@ impl_runtime_apis! {
 
 	impl sp_api::Metadata<Block> for Runtime {
 		fn metadata() -> OpaqueMetadata {
-			Runtime::metadata().into()
+			OpaqueMetadata::new(Runtime::metadata().into())
 		}
 	}
 
@@ -869,9 +882,13 @@ impl_runtime_apis! {
 
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
-		fn on_runtime_upgrade() -> Result<(Weight, Weight), sp_runtime::RuntimeString> {
-			let weight = Executive::try_runtime_upgrade()?;
-			Ok((weight, RuntimeBlockWeights::get().max_block))
+		fn on_runtime_upgrade() -> (Weight, Weight) {
+			let weight = Executive::try_runtime_upgrade().unwrap();
+			(weight, RuntimeBlockWeights::get().max_block)
+		}
+
+		fn execute_block_no_check(block: Block) -> Weight {
+			Executive::execute_block_no_check(block)
 		}
 	}
 

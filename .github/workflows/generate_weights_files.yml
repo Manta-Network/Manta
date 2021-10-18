@@ -2,7 +2,7 @@
 
 # yamllint disable rule:line-length
 
-name: benchmark pallets & generate weights files
+name: Benchmark Pallets & Generate Weights Files
 
 # yamllint disable-line rule:truthy
 on:

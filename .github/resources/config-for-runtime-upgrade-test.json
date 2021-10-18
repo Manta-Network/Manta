@@ -101,6 +101,7 @@
       ]
     }
   ],
+  "simpleParachains": [],
   "hrmpChannels": [],
   "types": {},
   "finalization": false
