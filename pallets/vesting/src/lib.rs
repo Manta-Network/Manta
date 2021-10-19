@@ -5,7 +5,6 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-use codec::{Decode, Encode};
 use frame_support::{
 	ensure,
 	pallet_prelude::*,
@@ -16,10 +15,7 @@ use frame_support::{
 use frame_system::{ensure_root, ensure_signed, pallet_prelude::*};
 pub use pallet::*;
 use scale_info::TypeInfo;
-use sp_runtime::{
-	traits::{Saturating, StaticLookup, Zero},
-	Permill, RuntimeDebug,
-};
+use sp_runtime::{Perbill, Percent, Permill, RuntimeDebug, traits::{Saturating, StaticLookup, Zero}};
 use sp_std::prelude::*;
 
 type BalanceOf<T> =
@@ -28,54 +24,6 @@ type BalanceOf<T> =
 const VESTING_ID: LockIdentifier = *b"mantavst";
 pub type Round = u32;
 pub type IsClaimed = bool;
-
-/// Struct to encode the vesting schedule of an individual account.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-#[scale_info(skip_type_params(T))]
-pub struct VestingInfo<T: Config> {
-	/// Locked amount at genesis.
-	pub total_vesting: BalanceOf<T>,
-	/// Record how many rounds user has claimed.
-	pub round: Round,
-}
-
-impl<T: Config> VestingInfo<T> {
-	// 
-	pub fn locked_at(&self, who: &T::AccountId, n: T::BlockNumber) -> (BalanceOf<T>, Round) {
-		// Calculate how many rounds user can claim.
-
-		let mut current_round = self.round;
-		let mut portion = Permill::default();
-		for (index, schedule) in T::VestingSchedule::get().iter().enumerate() {
-			if n < schedule.1 {
-				current_round = index as Round + 1;
-				break;
-			} else {
-				if self.round >= index as Round {
-					portion = portion.saturating_add(schedule.0);
-				}
-			}
-		}
-
-		// move this part out if this method to update_lock
-		// let _: Result<_, Error<T>> = Vesting::<T>::try_mutate(&who, |info| {
-		// 	match info.as_mut() {
-		// 		Some(v) => {
-		// 			if v.round < current_round {
-		// 				v.round = current_round;
-		// 			}
-		// 		}
-		// 		_ => (),
-		// 	}
-
-		// 	Ok(())
-		// });
-
-		let locked = (Permill::from_percent(100) - portion) * self.locked;
-
-		(locked, current_round)
-	}
-}
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -99,13 +47,13 @@ pub mod pallet {
 	/// Information regarding the vesting of a given account.
 	#[pallet::storage]
 	#[pallet::getter(fn vesting)]
-	pub type Vesting<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, VestingInfo<T>>;
+	pub type VestingBalances<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>>;
 
 	/// Store schedules about when and how much tokens will be released.
 	#[pallet::storage]
 	#[pallet::getter(fn vesting_schedules)]
-	pub type VestingSchedules<T: Config> =
-		StorageValue<_, Vec<(Permill, BlockNumberFor<T>)>, ValueQuery>;
+	pub type VestingSchedule<T: Config> =
+		StorageValue<_, Vec<(Percent, BlockNumberFor<T>)>, ValueQuery>;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -152,7 +100,7 @@ pub mod pallet {
 		#[pallet::weight(10_000)]
 		pub fn vest(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
-			Self::update_lock(who);
+			Self::update_lock(who)
 		}
 
 		#[pallet::weight(10_000)]
@@ -174,7 +122,7 @@ pub mod pallet {
 
 			let who = T::Lookup::lookup(target)?;
 			ensure!(
-				!Vesting::<T>::contains_key(&who),
+				!VestingBalances::<T>::contains_key(&who),
 				Error::<T>::ExistingVestingSchedule
 			);
 
@@ -193,22 +141,33 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	// /// (Re)set or remove the pallet's currency lock on `who`'s account in accordance with their
+	// /// (Re)set pallet's currency lock on `who`'s account in accordance with their
 	// /// current unvested amount.
 	fn update_lock(who: T::AccountId) -> DispatchResult {
 		let vesting = Self::vesting(&who).ok_or(Error::<T>::NotVesting)?;
 		let now = <frame_system::Pallet<T>>::block_number();
-		let locked_now = vesting.locked_at(&who, now);
+		
+		// compute the vested portion
+		let mut portion = Percent::default();
+		for (percentage, block_number) in VestingSchedule::<T>::get() {
+			if now < block_number {
+				break;
+			} else {
+				portion = portion.saturating_add(percentage);
+			}
+		}
+
+		let unvested = (Percent::from_percent(100) - portion) * vesting;
 
 		// try to remove if, lock 0 amount of token.
-		if locked_now.is_zero() {
+		if unvested.is_zero() {
 			T::Currency::remove_lock(VESTING_ID, &who);
-			Vesting::<T>::remove(&who);
+			VestingBalances::<T>::remove(&who);
 			Self::deposit_event(Event::<T>::VestingCompleted(who));
 		} else {
 			let reasons = WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE;
-			T::Currency::set_lock(VESTING_ID, &who, locked_now, reasons);
-			Self::deposit_event(Event::<T>::VestingUpdated(who, locked_now));
+			T::Currency::set_lock(VESTING_ID, &who, unvested, reasons);
+			Self::deposit_event(Event::<T>::VestingUpdated(who, unvested));
 		}
 		Ok(())
 	}
@@ -217,12 +176,11 @@ impl<T: Config> Pallet<T> {
 		if locked.is_zero() {
 			return Ok(());
 		}
-		if Vesting::<T>::contains_key(who) {
+		if VestingBalances::<T>::contains_key(who) {
 			Err(Error::<T>::ExistingVestingSchedule)?
 		}
 
-		let vesting_schedule = VestingInfo { locked, round: 0 };
-		Vesting::<T>::insert(who, vesting_schedule);
+		VestingBalances::<T>::insert(who, locked);
 		// it can't fail, but even if somehow it did, we don't really care.
 		let _res = Self::update_lock(who.clone());
 
