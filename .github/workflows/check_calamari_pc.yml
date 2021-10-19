@@ -101,8 +101,8 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          SKIP_WASM_BUILD= cargo clippy --features calamari
-          SKIP_WASM_BUILD= cargo fmt
+          SKIP_WASM_BUILD=1 cargo clippy --features calamari
+          SKIP_WASM_BUILD=1 cargo fmt
       -
         name: Check Calamari Build
         env:
@@ -112,8 +112,8 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo check --features calamari
-          cargo check --all-features
+          SKIP_WASM_BUILD=1 cargo check --features calamari
+          SKIP_WASM_BUILD=1 cargo check --all-features
       -
         name: stop sccache server
         run: sccache --stop-server || true
