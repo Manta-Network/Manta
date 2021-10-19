@@ -36,8 +36,7 @@ use frame_system::{
 	EnsureOneOf, EnsureRoot,
 };
 use manta_primitives::{
-	currency::*, fee::WeightToFee, time::*, AccountId, AuraId, Balance, BlockNumber, Hash, Header,
-	Index, Signature,
+	time::*, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
 };
 use sp_runtime::Perbill;
 
@@ -57,6 +56,12 @@ use xcm_builder::{
 	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{Config, XcmExecutor};
+
+pub mod currency;
+pub mod fee;
+
+use currency::*;
+use fee::WeightToFee;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats

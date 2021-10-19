@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use manta_primitives::{constants, currency::MA, AccountId, AuraId, Balance, Signature};
+use manta_primitives::{constants, AccountId, AuraId, Balance, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, Properties};
 use serde::{Deserialize, Serialize};
@@ -18,7 +18,12 @@ pub mod manta_pc;
 #[cfg(feature = "manta-pc")]
 pub use self::manta_pc::*;
 
-const ENDOWMENT: Balance = 1_000_000_000 * MA; // 10 endowment so that total supply is 10B
+#[cfg(feature = "calamari")]
+const ENDOWMENT: Balance = 1_000_000_000 * calamari_pc::currency::KMA; // 10 endowment so that total supply is 10B
+
+#[cfg(feature = "manta-pc")]
+const ENDOWMENT: Balance = 1_000_000_000 * manta_pc::currency::MA; // 10 endowment so that total supply is 10B
+
 const STAGING_TELEMETRY_URL: &str = "wss://api.telemetry.manta.systems/submit/";
 
 /// Helper function to generate a crypto pair from seed

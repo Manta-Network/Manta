@@ -4,7 +4,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod constants;
-pub use constants::{currency, fee, time};
+pub use constants::time;
 
 use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
 
