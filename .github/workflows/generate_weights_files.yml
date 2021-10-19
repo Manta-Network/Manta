@@ -154,14 +154,6 @@ jobs:
           -
             extrinsic:
               id: '*'
-              name: pallet_treasury
-            pallet:
-              id: pallet_treasury
-              name: pallet_treasury
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
               name: pallet_scheduler
             pallet:
               id: pallet_scheduler
