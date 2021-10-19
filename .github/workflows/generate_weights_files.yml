@@ -6,8 +6,10 @@ name: Benchmark Pallets & Generate Weights Files
 
 # yamllint disable-line rule:truthy
 on:
-  push:
-    branches: [ghzlatarev/governance-benchmark-v0.9.11]
+  # push:
+  #   branches: [ghzlatarev/governance-benchmark-v0.9.11]
+  pull_request:
+    branches: [manta-pc]
   issue_comment:
     types: [created]
 
@@ -25,9 +27,11 @@ jobs:
 
   dump:
     runs-on: ubuntu-latest
+    if: ${{ github.event.comment.body == 'generate-weights-files'}}
     steps:
       -
         uses: actions/checkout@v2
+        ref: ${{GITHUB_REF}}
       -
         name: Dump context
         uses: crazy-max/ghaction-dump-context@v1
