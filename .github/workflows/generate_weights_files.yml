@@ -31,7 +31,8 @@ jobs:
     steps:
       -
         uses: actions/checkout@v2
-        ref: ${{GITHUB_REF}}
+        with:
+          ref: ${{GITHUB_REF}}
       -
         name: Dump context
         uses: crazy-max/ghaction-dump-context@v1
