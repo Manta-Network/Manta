@@ -32,7 +32,7 @@ jobs:
       -
         uses: actions/checkout@v2
         with:
-          ref: ${{GITHUB_REF}}
+          ref: ${{ env.GITHUB_REF }}
       -
         name: Dump context
         uses: crazy-max/ghaction-dump-context@v1
