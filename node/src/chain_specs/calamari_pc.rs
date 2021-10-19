@@ -156,7 +156,7 @@ fn calamari_dev_genesis(
 		parachain_info: calamari_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: calamari_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: MA * 1000, // How many tokens will be reserved as collator
+			candidacy_bond: KMA * 1000, // How many tokens will be reserved as collator
 			..Default::default()
 		},
 		session: calamari_runtime::SessionConfig {
