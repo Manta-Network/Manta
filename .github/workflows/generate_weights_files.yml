@@ -6,8 +6,6 @@ name: Benchmark Pallets & Generate Weights Files
 
 # yamllint disable-line rule:truthy
 on:
-  pull_request:
-    branches: [manta-pc]
   issue_comment:
     types: [created]
 
@@ -151,14 +149,6 @@ jobs:
             pallet:
               id: pallet_membership
               name: pallet_membership
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_treasury
-            pallet:
-              id: pallet_treasury
-              name: pallet_treasury
             iterations: 20
           -
             extrinsic:
