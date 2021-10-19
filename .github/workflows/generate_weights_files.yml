@@ -6,8 +6,8 @@ name: Benchmark Pallets & Generate Weights Files
 
 # yamllint disable-line rule:truthy
 on:
-  # push:
-  #   branches: [ghzlatarev/governance-benchmark-v0.9.11]
+  push:
+    branches: [ghzlatarev/governance-benchmark-v0.9.11]
   issue_comment:
     types: [created]
 
