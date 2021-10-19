@@ -124,6 +124,7 @@ jobs:
       - build-benchmark
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     strategy:
+      fail-fast: false
       matrix:
         benchmark:
           -
