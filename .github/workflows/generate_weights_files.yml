@@ -25,17 +25,25 @@ env:
 
 jobs:
 
-  dump:
-    runs-on: ubuntu-latest
-    if: ${{ github.event.comment.body == 'generate-weights-files'}}
+  deploy:
     steps:
-      -
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ env.GITHUB_REF }}
-      -
-        name: Dump context
-        uses: crazy-max/ghaction-dump-context@v1
+      - uses: alexjurkiewicz/pr-comment-github-deployment@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          trigger_phrase: 'generate-weights-files2'
+
+
+  # dump:
+  #   runs-on: ubuntu-latest
+  #   if: ${{ github.event.comment.body == 'generate-weights-files'}}
+  #   steps:
+  #     -
+  #       uses: actions/checkout@v2
+  #       with:
+  #         ref: ${{ env.GITHUB_REF }}
+  #     -
+  #       name: Dump context
+  #       uses: crazy-max/ghaction-dump-context@v1
 
   # build-benchmark:
   #   needs:
