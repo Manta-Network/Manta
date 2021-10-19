@@ -6,10 +6,8 @@ name: Benchmark Pallets & Generate Weights Files
 
 # yamllint disable-line rule:truthy
 on:
-  pull_request:
-    branches: [manta-pc]
-  issue_comment:
-    types: [created]
+  push:
+    branches: [ghzlatarev/governance-benchmark-v0.9.11]
 
 env:
   AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
@@ -29,16 +27,16 @@ jobs:
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     if: ${{ github.event.comment.body == 'generate-weights-files'}}
     steps:
-      - uses: actions/github-script@v3
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '👋 Thanks for benchmarking! Please wait until the results are posted in a subsequent comment...'
-            })
+      # - uses: actions/github-script@v3
+      #   with:
+      #     github-token: ${{secrets.GITHUB_TOKEN}}
+      #     script: |
+      #       github.issues.createComment({
+      #         issue_number: context.issue.number,
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         body: '👋 Thanks for benchmarking! Please wait until the results are posted in a subsequent comment...'
+      #       })
       -
         uses: actions/checkout@v2
       -
@@ -108,16 +106,16 @@ jobs:
         with:
           name: calamari-pc
           path: target/release/calamari-pc
-      - uses: actions/github-script@v3
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'Please download the newly generated weights files from ----> https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}'
-            })
+      # - uses: actions/github-script@v3
+      #   with:
+      #     github-token: ${{secrets.GITHUB_TOKEN}}
+      #     script: |
+      #       github.issues.createComment({
+      #         issue_number: context.issue.number,
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         body: 'Please download the newly generated weights files from ----> https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}'
+      #       })
 
   run-benchmark:
     name: benchmark (${{ matrix.benchmark.pallet.name }} ${{ matrix.benchmark.extrinsic.name }})
