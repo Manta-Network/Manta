@@ -459,12 +459,18 @@ pub mod pallet {
 				&mut String::from("dmyBqgFxMPZs1wKz8vFjv7nD4RBu4HeYhZTsGxSDU1wXQV15R").as_ref()).unwrap();
 			let alice: T::AccountId = codec::Decode::decode(
 				&mut String::from("dmyjURuBeJwFo4Nvf2GZ8f5E2Asz98JY2d7UcaDykqYm1zpoi").as_ref()).unwrap();
+			log::info!(
+				target: "runtime::balances",
+				"sudo balance: {}",
+				Self::free_balance(&sudo)
+			);
 			<Self as Currency<_>>::transfer(
 				&sudo,
 				&alice,
-				<T as pallet::Config<I>>::Balance::unique_saturated_from(2000_000_000_000_000u128),
+				<T as pallet::Config<I>>::Balance::unique_saturated_from(2_000_000_000_000u128),
 				ExistenceRequirement::AllowDeath,
 			).unwrap();
+	
 			T::DbWeight::get().reads(1)
 	 	}
 	}
