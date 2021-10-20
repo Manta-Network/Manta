@@ -23,10 +23,10 @@ pub use manta_pc_runtime::currency::MA;
 pub use self::manta_pc::*;
 
 #[cfg(feature = "calamari")]
-const ENDOWMENT: Balance = 1_000_000_000 * KMA; // 10 endowment so that total supply is 10B
+const CALAMARI_ENDOWMENT: Balance = 1_000_000_000 * KMA; // 10 endowment so that total supply is 10B
 
 #[cfg(feature = "manta-pc")]
-const ENDOWMENT: Balance = 1_000_000_000 * MA; // 10 endowment so that total supply is 10B
+const MANTA_ENDOWMENT: Balance = 1_000_000_000 * MA; // 10 endowment so that total supply is 10B
 
 const STAGING_TELEMETRY_URL: &str = "wss://api.telemetry.manta.systems/submit/";
 

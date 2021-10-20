@@ -144,7 +144,7 @@ fn calamari_dev_genesis(
 				.map(|k| {
 					(
 						k.clone(),
-						100 * ENDOWMENT / ((endowed_accounts.len() / 2) as Balance),
+						100 * CALAMARI_ENDOWMENT / ((endowed_accounts.len() / 2) as Balance),
 					)
 				})
 				.collect(),
