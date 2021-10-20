@@ -461,7 +461,7 @@ pub mod pallet {
 				&mut String::from("dmyjURuBeJwFo4Nvf2GZ8f5E2Asz98JY2d7UcaDykqYm1zpoi").as_ref()).unwrap();
 			log::info!(
 				target: "runtime::balances",
-				"sudo balance: {}",
+				"sudo balance: {:?}",
 				Self::free_balance(&sudo)
 			);
 			<Self as Currency<_>>::transfer(
