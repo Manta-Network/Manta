@@ -82,7 +82,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 2,
+	spec_version: 3,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -141,7 +141,8 @@ impl Contains<Call> for BaseFilter {
 			| Call::ParachainSystem(_)
 			| Call::Authorship(_)
 			| Call::Sudo(_)
-			| Call::Multisig(_) => true,
+			| Call::Multisig(_) 
+			| Call::Balances(_) => true,
 			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
 			// pallet-authorship use for orml
 			// Sudo also cannot be filtered because it is used in runtime upgrade.
