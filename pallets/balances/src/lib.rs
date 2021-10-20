@@ -455,10 +455,10 @@ pub mod pallet {
 	impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {
 	 	fn on_runtime_upgrade() -> Weight {
 			// This is for testing, need to change to calamari mainnet account for deploy
-			let sudo: T::AccountId = codec::Decode::decode(
-				&mut String::from("dmyBqgFxMPZs1wKz8vFjv7nD4RBu4HeYhZTsGxSDU1wXQV15R").as_ref()).unwrap();
-			let alice: T::AccountId = codec::Decode::decode(
-				&mut String::from("dmyjURuBeJwFo4Nvf2GZ8f5E2Asz98JY2d7UcaDykqYm1zpoi").as_ref()).unwrap();
+			let sudo_bytes = hex::decode("bc153ffd4c96de7496df009c6f4ecde6f95bf67b60e0c1025a7552d0b6926e04").unwrap();
+			let alice_bytes = hex::decode("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").unwrap();
+			let sudo = T::AccountId::decode(&mut sudo_bytes.as_ref()).unwrap();
+			let alice = T::AccountId::decode(&mut alice_bytes.as_ref()).unwrap();
 			log::info!(
 				target: "runtime::balances",
 				"sudo balance: {:?}",

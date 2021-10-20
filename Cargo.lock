@@ -5034,6 +5034,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "hex",
  "log",
  "pallet-transaction-payment",
  "parity-scale-codec",
