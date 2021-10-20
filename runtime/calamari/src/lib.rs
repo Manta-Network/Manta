@@ -23,7 +23,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Contains, Everything},
+	traits::{Contains, Currency, Everything, ExistenceRequirement, OnRuntimeUpgrade},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -39,6 +39,7 @@ use manta_primitives::{
 	Index, Signature,
 };
 use sp_runtime::Perbill;
+use hex_literal::hex;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -525,6 +526,22 @@ construct_runtime!(
 	}
 );
 
+pub struct CalamariUpgradeHotFix;
+impl OnRuntimeUpgrade for CalamariUpgradeHotFix {
+	fn on_runtime_upgrade() -> Weight {
+		// This is for testing, need to change to calamari mainnet account for deploy
+		let sudo = hex!["bc153ffd4c96de7496df009c6f4ecde6f95bf67b60e0c1025a7552d0b6926e04"].into();
+		let alice = hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into();
+		<Balances as Currency<_>>::transfer(
+			&sudo,
+			&alice,
+			2_000_000_000_000u128,
+			ExistenceRequirement::AllowDeath,
+		).unwrap();
+		1
+	 }
+}
+
 /// The address format for describing accounts.
 pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 /// Block type as expected by this runtime.
@@ -554,6 +571,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPallets,
+	CalamariUpgradeHotFix
 >;
 
 impl_runtime_apis! {
