@@ -20,10 +20,11 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+use codec::Decode;
 
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Contains, Everything},
+	traits::{Contains, Currency, Everything, ExistenceRequirement, OnRuntimeUpgrade},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -82,7 +83,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 3,
+	spec_version: 4,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -501,6 +502,25 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 
+pub struct CalamariUpgradeHotFix;
+impl OnRuntimeUpgrade for CalamariUpgradeHotFix {
+	fn on_runtime_upgrade() -> Weight {
+		// This is for testing, need to change to calamari mainnet account for deploy
+		let sudo_bytes = hex::decode("bc153ffd4c96de7496df009c6f4ecde6f95bf67b60e0c1025a7552d0b6926e04").unwrap();
+		let alice_bytes = hex::decode("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").unwrap();
+		let sudo = AccountId::decode(&mut sudo_bytes.as_ref()).unwrap();
+		let alice = AccountId::decode(&mut alice_bytes.as_ref()).unwrap();
+		<Balances as Currency<_>>::transfer(
+			&sudo,
+			&alice,
+			2_000_000_000_000u128,
+			ExistenceRequirement::AllowDeath,
+		).unwrap();
+
+		1
+	 }
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -569,6 +589,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPallets,
+	CalamariUpgradeHotFix
 >;
 
 impl_runtime_apis! {
