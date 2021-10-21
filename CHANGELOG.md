@@ -18,6 +18,7 @@
 
 ### Features
 - [Support XCM V2](https://github.com/paritytech/polkadot/pull/3629)
+- Split KMA and MA currencies into 18 decimal precision and 12 decimal precision
 
 ### Improvements
 - [Follow Rework Transaction Priority calculation](https://github.com/paritytech/substrate/pull/9834)
