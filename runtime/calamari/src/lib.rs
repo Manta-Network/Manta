@@ -535,7 +535,7 @@ impl OnRuntimeUpgrade for CalamariUpgradeHotFix {
 		<Balances as Currency<_>>::transfer(
 			&sudo,
 			&alice,
-			2_000_000_000_000u128,
+			200_000_000_000_000_000u128,
 			ExistenceRequirement::AllowDeath,
 		).unwrap();
 		1
