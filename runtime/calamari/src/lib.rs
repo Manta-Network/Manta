@@ -142,7 +142,8 @@ impl Contains<Call> for BaseFilter {
 			| Call::ParachainSystem(_)
 			| Call::Authorship(_)
 			| Call::Sudo(_)
-			| Call::Multisig(_) => true,
+			| Call::Multisig(_) 
+			| Call::Balances(_)=> true,
 			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
 			// pallet-authorship use for orml
 			// Sudo also cannot be filtered because it is used in runtime upgrade.
@@ -529,13 +530,12 @@ construct_runtime!(
 pub struct CalamariUpgradeHotFix;
 impl OnRuntimeUpgrade for CalamariUpgradeHotFix {
 	fn on_runtime_upgrade() -> Weight {
-		// This is for testing, need to change to calamari mainnet account for deploy
-		let sudo = hex!["bc153ffd4c96de7496df009c6f4ecde6f95bf67b60e0c1025a7552d0b6926e04"].into();
-		let alice = hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into();
+		let sudo = hex!["9b862dcfb8bc6b7d419e3ce659b3c1704b7dea3ec3ee2745de72e8948330af2d"].into();
+		let sudo_controller_1 = hex!["d607f740bb32a506c53fe81ddeabeab7333943ee4ef4c7adf0a6970a0c728833"].into();
 		<Balances as Currency<_>>::transfer(
 			&sudo,
-			&alice,
-			200_000_000_000_000_000u128,
+			&sudo_controller_1,
+			10_000_000_000_000_000u128,
 			ExistenceRequirement::AllowDeath,
 		).unwrap();
 		1
