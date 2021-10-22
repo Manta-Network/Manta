@@ -4,14 +4,13 @@ version = "3.0.1"
 edition = "2018"
 
 [dependencies]
-sp-core = { default-features = false, version = '3.0.0' }
-sp-runtime = { default-features = false, version = '3.0.0'}
-sp-std = { version = "3.0.0", default-features = false }
-serde = { version = "1.0.101", optional = true }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
+serde = { version = '1.0.119', features = ['derive'], optional = true }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 
 [dev-dependencies]
-frame-support = '3.0.0'
+frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
 manta-runtime = { path = '../runtime' }
 
 [features]
@@ -21,5 +20,4 @@ std = [
     "serde",
     'sp-core/std',
     'sp-runtime/std',
-    "sp-std/std",
 ]

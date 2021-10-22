@@ -10,6 +10,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use frame_support::traits::Everything;
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -17,7 +18,7 @@ use pallet_session::historical as pallet_session_historical;
 
 use manta_primitives::{
 	constants::{
-		currency::{mMA, MA},
+		currency::{deposit, mMA, MA},
 		time::{
 			DAYS, EPOCH_DURATION_IN_BLOCKS, EPOCH_DURATION_IN_SLOTS, MILLISECS_PER_BLOCK,
 			PRIMARY_PROBABILITY, SLOT_DURATION,
@@ -28,7 +29,7 @@ use manta_primitives::{
 use sp_api::impl_runtime_apis;
 use sp_core::{
 	crypto::KeyTypeId,
-	u32_trait::{_3, _4},
+	u32_trait::{_2, _3, _4},
 	OpaqueMetadata,
 };
 use sp_runtime::{
@@ -46,7 +47,10 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
-use frame_system::{EnsureOneOf, EnsureRoot};
+use frame_system::{
+	limits::{BlockLength, BlockWeights},
+	EnsureOneOf, EnsureRoot,
+};
 
 pub use frame_support::{
 	construct_runtime, parameter_types,
@@ -58,6 +62,7 @@ pub use frame_support::{
 	StorageValue,
 };
 pub use pallet_balances::Call as BalancesCall;
+pub use pallet_election_provider_multi_phase::Call as EPMCall;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::{CurrencyAdapter, Multiplier, TargetedFeeAdjustment};
 #[cfg(any(feature = "std", test))]
@@ -66,8 +71,6 @@ pub use sp_runtime::{Perbill, Permill};
 
 pub use pallet_staking::StakerStatus;
 
-#[cfg(test)]
-mod impls;
 #[cfg(test)]
 mod tests;
 
@@ -148,9 +151,11 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 pub const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
 
 parameter_types! {
-	pub const Version: RuntimeVersion = VERSION;
 	pub const BlockHashCount: BlockNumber = 2400;
-	pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights::builder()
+	pub const Version: RuntimeVersion = VERSION;
+	pub RuntimeBlockLength: BlockLength =
+		BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
 		.base_block(BlockExecutionWeight::get())
 		.for_class(DispatchClass::all(), |weights| {
 			weights.base_extrinsic = ExtrinsicBaseWeight::get();
@@ -160,34 +165,32 @@ parameter_types! {
 		})
 		.for_class(DispatchClass::Operational, |weights| {
 			weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
-			// Operational transactions have an extra reserved space, so that they
+			// Operational transactions have some extra reserved space, so that they
 			// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
 			weights.reserved = Some(
-				MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT,
+				MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
 			);
 		})
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
-	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
-		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
-	pub const SS58Prefix: u8 = 42;
+	pub const SS58Prefix: u16 = 42;
 }
 
 // Configure FRAME pallets to include in runtime.
 
 impl frame_system::Config for Runtime {
 	/// The basic call filter to use in dispatchable.
-	type BaseCallFilter = ();
+	type BaseCallFilter = Everything;
 	/// Block & extrinsics weights: base values and limits.
-	type BlockWeights = BlockWeights;
+	type BlockWeights = RuntimeBlockWeights;
 	/// The maximum length of a block (in bytes).
-	type BlockLength = BlockLength;
-	/// The identifier used to distinguish between accounts.
-	type AccountId = AccountId;
+	type BlockLength = RuntimeBlockLength;
+	/// The weight of database operations that the runtime can invoke.
+	type DbWeight = RocksDbWeight;
+	/// The ubiquitous origin type.
+	type Origin = Origin;
 	/// The aggregated dispatch type that is available for extrinsics.
 	type Call = Call;
-	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
-	type Lookup = AccountIdLookup<AccountId, ()>;
 	/// The index type for storing how many extrinsics an account has signed.
 	type Index = Index;
 	/// The index type for blocks.
@@ -196,32 +199,33 @@ impl frame_system::Config for Runtime {
 	type Hash = Hash;
 	/// The hashing algorithm used.
 	type Hashing = BlakeTwo256;
+	/// The identifier used to distinguish between accounts.
+	type AccountId = AccountId;
+	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
+	type Lookup = AccountIdLookup<AccountId, ()>;
 	/// The header type.
 	type Header = generic::Header<BlockNumber, BlakeTwo256>;
 	/// The ubiquitous event type.
 	type Event = Event;
-	/// The ubiquitous origin type.
-	type Origin = Origin;
 	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	type BlockHashCount = BlockHashCount;
-	/// The weight of database operations that the runtime can invoke.
-	type DbWeight = RocksDbWeight;
 	/// Version of the runtime.
 	type Version = Version;
 	/// Converts a module to the index of the module in `construct_runtime!`.
 	///
 	/// This type is being generated by `construct_runtime!`.
 	type PalletInfo = PalletInfo;
+	/// The data to be stored in an account.
+	type AccountData = pallet_balances::AccountData<Balance>;
 	/// What to do if a new account is created.
 	type OnNewAccount = ();
 	/// What to do if an account is fully reaped from the system.
 	type OnKilledAccount = ();
-	/// The data to be stored in an account.
-	type AccountData = pallet_balances::AccountData<Balance>;
 	/// Weight information for the extrinsics of this pallet.
-	type SystemWeightInfo = ();
+	type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = SS58Prefix;
+	type OnSetCode = ();
 }
 
 parameter_types! {
@@ -234,10 +238,6 @@ impl pallet_session::Config for Runtime {
 	type ValidatorIdOf = pallet_staking::StashOf<Self>;
 	type ShouldEndSession = Babe;
 	type NextSessionRotation = Babe;
-	// TODO: SessionManager setting needs to be revisited for security audit purpose
-	// A SessionManager manages the creation of new validator set.
-	// Our current setting is the same with Reef (https://github.com/reef-defi/reef-chain/blob/ba8b18bccdfe626c475a3b194c20e04fab2842b3/runtime/src/lib.rs#L321)
-	// and substrate (https://github.com/paritytech/substrate/blob/46a64ac817ec909c66203a7e0715ee111762d3f7/bin/node/runtime/src/lib.rs#L445)
 	type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, Staking>;
 	type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = opaque::SessionKeys;
@@ -264,6 +264,94 @@ pallet_staking_reward_curve::build! {
 }
 
 parameter_types! {
+	// phase durations. 1/4 of the last session for each.
+	pub const SignedPhase: u32 = EPOCH_DURATION_IN_SLOTS / 4;
+	pub const UnsignedPhase: u32 = EPOCH_DURATION_IN_SLOTS / 4;
+
+	// signed config
+	pub const SignedMaxSubmissions: u32 = 16;
+	pub const SignedDepositBase: Balance = deposit(2, 0);
+	pub const SignedDepositByte: Balance = deposit(0, 10) / 1024;
+	// Each good submission will get 1/10 KSM as reward
+	pub SignedRewardBase: Balance =  MA / 10;
+	// fallback: emergency phase.
+	pub const Fallback: pallet_election_provider_multi_phase::FallbackStrategy =
+		pallet_election_provider_multi_phase::FallbackStrategy::Nothing;
+	pub SolutionImprovementThreshold: Perbill = Perbill::from_rational(5u32, 10_000);
+
+	// miner configs
+	pub const MinerMaxIterations: u32 = 10;
+	pub OffchainRepeat: BlockNumber = 5;
+}
+
+sp_npos_elections::generate_solution_type!(
+	#[compact]
+	pub struct NposSolution16::<
+		VoterIndex = u32,
+		TargetIndex = u16,
+		Accuracy = sp_runtime::PerU16,
+	>(16)
+);
+
+parameter_types! {
+	/// A limit for off-chain phragmen unsigned solution submission.
+	///
+	/// We want to keep it as high as possible, but can't risk having it reject,
+	/// so we always subtract the base block execution weight.
+	pub OffchainSolutionWeightLimit: Weight = RuntimeBlockWeights::get()
+		.get(DispatchClass::Normal)
+		.max_extrinsic
+		.expect("Normal extrinsics have weight limit configured by default; qed")
+		.saturating_sub(BlockExecutionWeight::get());
+
+	/// A limit for off-chain phragmen unsigned solution length.
+	///
+	/// We allow up to 90% of the block's size to be consumed by the solution.
+	pub OffchainSolutionLengthLimit: u32 = Perbill::from_rational(90_u32, 100) *
+		*RuntimeBlockLength::get()
+		.max
+		.get(DispatchClass::Normal);
+
+	pub NposSolutionPriority: TransactionPriority =
+		Perbill::from_percent(90) * TransactionPriority::max_value();
+}
+
+pub const MAX_NOMINATIONS: u32 = <NposSolution16 as sp_npos_elections::NposSolution>::LIMIT as u32;
+
+impl pallet_election_provider_multi_phase::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type UnsignedPhase = UnsignedPhase;
+	type EstimateCallFee = TransactionPayment;
+	type SignedMaxSubmissions = SignedMaxSubmissions;
+	type SignedRewardBase = SignedRewardBase;
+	type SignedDepositBase = SignedDepositBase;
+	type SignedDepositByte = SignedDepositByte;
+	type SignedDepositWeight = ();
+	type SignedMaxWeight = Self::MinerMaxWeight;
+	type SlashHandler = (); // burn slashes
+	type RewardHandler = (); // nothing to do upon rewards
+	type SignedPhase = SignedPhase;
+	type SolutionImprovementThreshold = SolutionImprovementThreshold;
+	type MinerMaxIterations = MinerMaxIterations;
+	type MinerMaxWeight = OffchainSolutionWeightLimit; // For now use the one from staking.
+	type MinerMaxLength = OffchainSolutionLengthLimit;
+	type OffchainRepeat = OffchainRepeat;
+	type MinerTxPriority = NposSolutionPriority;
+	type DataProvider = Staking;
+	type Solution = NposSolution16;
+	type OnChainAccuracy = Perbill;
+	type Fallback = Fallback;
+	type BenchmarkingConfig = ();
+	type ForceOrigin = EnsureOneOf<
+		AccountId,
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, CouncilCollective>,
+	>;
+	type WeightInfo = ();
+}
+
+parameter_types! {
 	pub const SessionsPerEra: sp_staking::SessionIndex = 1; // previous value: 6, 6 hours
 	pub const BondingDuration: pallet_staking::EraIndex = 4;  // 24 * 28; // 28 day
 	pub const SlashDeferDuration: pallet_staking::EraIndex = 1; // 24 * 7; // 1/4 the bonding duration.
@@ -271,17 +359,21 @@ parameter_types! {
 	pub const MaxNominatorRewardedPerValidator: u32 = 256; // only top N nominators get paid for each validator
 	pub const ElectionLookahead: BlockNumber = EPOCH_DURATION_IN_BLOCKS / 4; // from Reef
 	pub const MaxIterations: u32 = 10;
-	// 0.05%. The higher the value, the more strict solution acceptance becomes.
-	pub MinSolutionScoreBump: Perbill = Perbill::from_rational_approximation(5u32, 10_000);
 	// offchain tx signing
 	pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
 }
 
 // TODO: revisit all staking parameters
 impl pallet_staking::Config for Runtime {
+	const MAX_NOMINATIONS: u32 = MAX_NOMINATIONS;
 	type Currency = Balances;
 	type UnixTime = Timestamp;
 	type CurrencyToVote = U128CurrencyToVote;
+	type ElectionProvider = ElectionProviderMultiPhase;
+	type GenesisElectionProvider =
+		frame_election_provider_support::onchain::OnChainSequentialPhragmen<
+			pallet_election_provider_multi_phase::OnChainConfig<Self>,
+		>;
 	type RewardRemainder = (); // burn
 	type Event = Event;
 	type Slash = (); // burn slashed rewards
@@ -296,22 +388,17 @@ impl pallet_staking::Config for Runtime {
 		pallet_collective::EnsureProportionAtLeast<_3, _4, AccountId, CouncilCollective>,
 	>;
 	type SessionInterface = Self;
-	type RewardCurve = RewardCurve;
 	type NextNewSession = Session;
-	type ElectionLookahead = ElectionLookahead;
-	type Call = Call;
-	type MaxIterations = MaxIterations;
-	type MinSolutionScoreBump = MinSolutionScoreBump;
+	// TODO: revisit here
+	type EraPayout = ();
 	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
-	type UnsignedPriority = StakingUnsignedPriority;
 	type WeightInfo = pallet_staking::weights::SubstrateWeight<Runtime>;
-	type OffchainSolutionWeightLimit = ();
 }
 
 parameter_types! {
 	// NOTE: Currently it is not possible to change the epoch duration after the chain has started.
 	//       Attempting to do so will brick block production.
-	pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS;
+	pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS as u64;
 	pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
 	pub const ReportLongevity: u64 =
 		BondingDuration::get() as u64 * SessionsPerEra::get() as u64 * EpochDuration::get();
@@ -322,6 +409,7 @@ impl pallet_babe::Config for Runtime {
 	type EpochDuration = EpochDuration;
 	type ExpectedBlockTime = ExpectedBlockTime;
 	type EpochChangeTrigger = pallet_babe::ExternalTrigger;
+	type DisabledValidators = Session;
 
 	type KeyOwnerProofSystem = Historical;
 
@@ -346,7 +434,7 @@ impl pallet_grandpa::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
 
-	type KeyOwnerProofSystem = ();
+	type KeyOwnerProofSystem = Historical;
 
 	type KeyOwnerProof =
 		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
@@ -375,6 +463,7 @@ impl pallet_timestamp::Config for Runtime {
 parameter_types! {
 	pub const NativeTokenExistentialDeposit: u128 = 1 * MA;
 	pub const MaxLocks: u32 = 50;
+	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -386,6 +475,8 @@ impl pallet_balances::Config for Runtime {
 	type DustRemoval = (); // burn for now
 	type ExistentialDeposit = NativeTokenExistentialDeposit;
 	type AccountStore = System;
+	type MaxReserves = MaxReserves;
+	type ReserveIdentifier = [u8; 8];
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
 
@@ -413,7 +504,7 @@ parameter_types! {
 	// The maximum weight that may be scheduled per block for any
 	// dispatchables of less priority than schedule::HARD_DEADLINE.
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
-		BlockWeights::get().max_block;
+		RuntimeBlockWeights::get().max_block;
 	// The maximum number of scheduled calls in the queue for a single block.
 	// Not strictly enforced, but used for weight estimation.
 	pub const MaxScheduledPerBlock: u32 = 50;
@@ -486,36 +577,37 @@ construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
 		// Core Component
-		System: frame_system::{Module, Call, Config, Storage, Event<T>},
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 
 		// Must be before session
-		Babe: pallet_babe::{Module, Call, Storage, Config, ValidateUnsigned},
+		Babe: pallet_babe::{Pallet, Call, Storage, Config, ValidateUnsigned},
 
-		Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 
 		// Token & Fees
-		Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
-		TransactionPayment: pallet_transaction_payment::{Module, Storage},
-		Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
+		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>},
 
 		// Good to have
-		Utility: pallet_utility::{Module, Call, Event},
+		Utility: pallet_utility::{Pallet, Call, Event},
 
 		// Consensus support
-		Authorship: pallet_authorship::{Module, Call, Storage, Inherent},
-		Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event},
-		Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
-		Staking: pallet_staking::{Module, Call, Config<T>, Storage, Event<T>},
-		Historical: pallet_session_historical::{Module},
+		Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
+		Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event, ValidateUnsigned},
+		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
+		Staking: pallet_staking::{Pallet, Call, Config<T>, Storage, Event<T>},
+		Historical: pallet_session_historical::{Pallet},
 
 		// Governance
 		// We have to have a council now since it requires one to setup the canceling of slashing
-		Council: pallet_collective::<Instance1>::{Module, Call, Storage, Origin<T>, Event<T>, Config<T>},
-		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
+		Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>},
+		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+
+		ElectionProviderMultiPhase: pallet_election_provider_multi_phase::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 37,
 
 		// Manta pay
-		MantaPay: pallet_manta_pay::{Module, Call, Storage, Event<T>},
+		MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -549,7 +641,7 @@ pub type Executive = frame_executive::Executive<
 	Block,
 	frame_system::ChainContext<Runtime>,
 	Runtime,
-	AllModules,
+	AllPallets,
 >;
 
 impl_runtime_apis! {
@@ -593,17 +685,15 @@ impl_runtime_apis! {
 			data.check_extrinsics(&block)
 		}
 
-		fn random_seed() -> <Block as BlockT>::Hash {
-			RandomnessCollectiveFlip::random_seed()
-		}
 	}
 
 	impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
 		fn validate_transaction(
 			source: TransactionSource,
 			tx: <Block as BlockT>::Extrinsic,
+			block_hash: <Block as BlockT>::Hash,
 		) -> TransactionValidity {
-			Executive::validate_transaction(source, tx)
+			Executive::validate_transaction(source, tx, block_hash)
 		}
 	}
 
@@ -684,6 +774,10 @@ impl_runtime_apis! {
 			Grandpa::grandpa_authorities()
 		}
 
+		fn current_set_id() -> fg_primitives::SetId {
+			Grandpa::current_set_id()
+		}
+
 		fn submit_report_equivocation_unsigned_extrinsic(
 			_equivocation_proof: fg_primitives::EquivocationProof<
 				<Block as BlockT>::Hash,
@@ -728,12 +822,32 @@ impl_runtime_apis! {
 
 	#[cfg(feature = "runtime-benchmarks")]
 	impl frame_benchmarking::Benchmark<Block> for Runtime {
+		fn benchmark_metadata(extra: bool) -> (
+			Vec<frame_benchmarking::BenchmarkList>,
+			Vec<frame_support::traits::StorageInfo>,
+		) {
+			use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
+			use frame_support::traits::StorageInfoTrait;
+			use frame_system_benchmarking::Pallet as SystemBench;
+
+			let mut list = Vec::<BenchmarkList>::new();
+
+			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
+			list_benchmark!(list, extra, pallet_balances, Balances);
+			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
+			list_benchmark!(list, extra, pallet_manta_pay, MantaPay);
+
+			let storage_info = AllPalletsWithSystem::storage_info();
+
+			return (list, storage_info)
+		}
+
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
 			use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
 
-			use frame_system_benchmarking::Module as SystemBench;
+			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}
 
 			let whitelist: Vec<TrackedStorageKey> = vec![

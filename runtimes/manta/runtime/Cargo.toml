@@ -9,70 +9,77 @@ version = '3.0.1'
 targets = ['x86_64-unknown-linux-gnu']
 
 [build-dependencies]
-substrate-wasm-builder = '4.0.0'
+substrate-wasm-builder = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.10" }
 
 [dependencies]
 codec = { default-features = false, features = ['derive'], package = 'parity-scale-codec', version = '2.0.0' }
 hex-literal = { optional = true, version = '0.3.1' }
 serde = { version = "1.0.119", optional = true, features = ["derive"] }
+getrandom = { version = "0.2", default-features = false, features = ["js"], optional = true }
 
 # primitives
-sp-api = { default-features = false, version = '3.0.0' }
-sp-block-builder = { default-features = false, version = '3.0.0' }
-sp-consensus-babe = { default-features = false, version = "0.9.0" }
-sp-core = { default-features = false, version = '3.0.0' }
-sp-inherents = { default-features = false, version = '3.0.0' }
-sp-offchain = { default-features = false, version = '3.0.0' }
-sp-runtime = { default-features = false, version = '3.0.0' }
-sp-session = { default-features = false, version = '3.0.0' }
-sp-staking = { default-features = false, version = "3.0.0" }
-sp-std = { default-features = false, version = '3.0.0' }
-sp-transaction-pool = { default-features = false, version = '3.0.0' }
-sp-version = { default-features = false, version = '3.0.0' }
+sp-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+sp-authority-discovery = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+sp-block-builder = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+sp-consensus-babe = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+sp-npos-elections = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+sp-inherents = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+sp-offchain = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+sp-session = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+sp-staking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+sp-transaction-pool = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+sp-version = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
 
 # frame dependencies
-frame-benchmarking = { default-features = false, optional = true, version = '3.0.0' }
-frame-executive = { default-features = false, version = '3.0.0' }
-frame-support = { default-features = false, version = '3.0.0' }
-frame-system = { default-features = false, version = '3.0.0' }
-frame-system-benchmarking = { default-features = false, optional = true, version = '3.0.0' }
-frame-system-rpc-runtime-api = { default-features = false, version = '3.0.0' }
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, optional = true, branch = "polkadot-v0.9.10" }
+frame-election-provider-support = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.10" }
+frame-executive = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+frame-system-benchmarking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, optional = true, branch = "polkadot-v0.9.10" }
+frame-system-rpc-runtime-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
 
 # pallets
-pallet-authorship = { default-features = false, version = "3.0.0" }
-pallet-babe = { default-features = false, version = '3.0.0' }
-pallet-balances = { default-features = false, version = '3.0.0' }
-pallet-collective = { default-features = false, version = '3.0.0' }
-pallet-grandpa = { default-features = false, version = '3.0.0' }
-pallet-randomness-collective-flip = { default-features = false, version = '3.0.0' }
-pallet-scheduler = { version = "3.0.0", default-features = false }
-pallet-session = { version = "3.0.0", features = ["historical"], default-features = false }
-pallet-staking = { default-features = false, version = "3.0.0" }
-pallet-staking-reward-curve = { default-features = false, version = "3.0.0" }
-pallet-sudo = { default-features = false, version = '3.0.0' }
-pallet-timestamp = { default-features = false, version = '3.0.0' }
-pallet-transaction-payment = { default-features = false, version = '3.0.0' }
-pallet-transaction-payment-rpc-runtime-api = { default-features = false, version = '3.0.0' }
-pallet-utility = { default-features = false, version = '3.0.0' }
+pallet-authorship = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+pallet-authority-discovery = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+pallet-babe = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+pallet-balances = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+pallet-collective = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+pallet-grandpa = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+pallet-randomness-collective-flip = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+pallet-scheduler = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+pallet-session = { git = 'https://github.com/paritytech/substrate.git', default-features = false, features = ["historical"], branch = "polkadot-v0.9.10" }
+pallet-staking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+pallet-staking-reward-curve = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+pallet-sudo = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+pallet-transaction-payment-rpc-runtime-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+pallet-utility = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+pallet-election-provider-multi-phase = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
 
 # Manta
 
 # Attention! Our integration test scripts modify these dependencies with "sed" command.
 # If you need to change any of the below lines, make sure to reflect the changes in whichever script is supposed to modify them.
 # Search for "Check Manta-Node" in Manta-Network repositories to find the relevant scripts.
-pallet-manta-pay = { branch = "calamari", git = "https://github.com/Manta-Network/pallet-manta-pay", default-features = false }
 manta-primitives = { path="../primitives", default-features = false }
+pallet-manta-pay = { git = "https://github.com/Manta-Network/pallet-manta-pay", default-features = false }
 
 [dev-dependencies]
+sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
 hex-literal = '0.3.1'
 manta = { path = '../../manta' }
 separator = "0.4.1"
-sp-io = '3.0.0'
 
 [features]
 default = [
     'std', 
 ]
+
 runtime-benchmarks = [
     'frame-benchmarking',
     'frame-support/runtime-benchmarks',
@@ -81,11 +88,13 @@ runtime-benchmarks = [
     'hex-literal',
     'pallet-balances/runtime-benchmarks',
     'pallet-timestamp/runtime-benchmarks',
-    'pallet-manta-pay/runtime-benchmarks',
     "pallet-collective/runtime-benchmarks",
     "pallet-utility/runtime-benchmarks",
+    "pallet-manta-pay/runtime-benchmarks",
     'sp-runtime/runtime-benchmarks',
+    "getrandom",
 ]
+
 std = [
     'codec/std',
     'frame-executive/std',
