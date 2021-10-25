@@ -131,7 +131,7 @@ fn manta_pc_dev_genesis(
 				.map(|k| {
 					(
 						k.clone(),
-						10 * ENDOWMENT / ((endowed_accounts.len() / 2) as Balance),
+						10 * MANTA_ENDOWMENT / ((endowed_accounts.len() / 2) as Balance),
 					)
 				})
 				.collect(),
@@ -234,7 +234,7 @@ fn manta_pc_testnet_genesis(
 	let mut initial_balances: Vec<(AccountId, Balance)> = initial_authorities
 		.iter()
 		.cloned()
-		.map(|x| (x.0, ENDOWMENT))
+		.map(|x| (x.0, MANTA_ENDOWMENT))
 		.collect();
 	initial_balances.push((root_key.clone(), 500_000_000 * MA));
 
