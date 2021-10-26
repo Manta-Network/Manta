@@ -1,6 +1,7 @@
 use super::*;
 use frame_support::{assert_noop, assert_ok};
 use mock::*;
+use sp_runtime::SaturatedConversion;
 
 #[test]
 fn alice_vesting_for_bob_should_work() {
@@ -17,6 +18,13 @@ fn alice_vesting_for_bob_should_work() {
 			assert_eq!(Balances::free_balance(ALICE), 10_000 - locked);
 
 			run_to_block(3);
+			let now = VestingSchedule::get()[0]
+				.1
+				.as_millis()
+				.saturated_into::<u64>()
+				+ 1;
+			Timestamp::set_timestamp(now);
+
 			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
 			assert_eq!(Balances::free_balance(BOB), locked);
 
@@ -49,6 +57,13 @@ fn alice_vesting_for_bob_claim_slowly_should_work() {
 			assert_eq!(Balances::free_balance(ALICE), 10_000 - locked);
 
 			run_to_block(5);
+			let now = VestingSchedule::get()[1]
+				.1
+				.as_millis()
+				.saturated_into::<u64>()
+				+ 1;
+			Timestamp::set_timestamp(now);
+
 			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
 			assert_eq!(Balances::free_balance(BOB), locked);
 
@@ -85,6 +100,12 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
 			assert_eq!(Balances::free_balance(BOB), locked);
 
 			run_to_block(7);
+			let now = VestingSchedule::get()[2]
+				.1
+				.as_millis()
+				.saturated_into::<u64>()
+				+ 1;
+			Timestamp::set_timestamp(now);
 
 			// BOB cannot transfer more than 34 tokens.
 			// Bacause rest of 66 is locked now.
@@ -108,9 +129,4 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
 			assert_eq!(Balances::free_balance(ALICE), 10_000 - locked + amount);
 			assert_eq!(Balances::free_balance(BOB), locked - amount);
 		});
-}
-
-#[test]
-fn update_schedules_should_work() {
-	todo!();
 }

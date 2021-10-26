@@ -13,10 +13,10 @@ use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult,
+	ApplyExtrinsicResult, Percent,
 };
 
-use sp_std::prelude::*;
+use sp_std::{prelude::*, time::Duration};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -141,6 +141,7 @@ impl Contains<Call> for BaseFilter {
 			| Call::ParachainSystem(_)
 			| Call::Authorship(_)
 			| Call::Sudo(_)
+			| Call::CalamariVesting(_)
 			| Call::Multisig(_) => true,
 			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
 			// pallet-authorship use for orml
@@ -500,6 +501,28 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 
+// Calamari pallets configuration
+parameter_types! {
+	pub const MinVestedTransfer: Balance = MA;
+	pub const VestingSchedule: [(Percent, Duration); 7] = [
+		(Percent::from_percent(34), Duration::from_secs(1635120000)),
+		(Percent::from_percent(11), Duration::from_secs(1636502400)),
+		(Percent::from_percent(11), Duration::from_secs(1641340800)),
+		(Percent::from_percent(11), Duration::from_secs(1646179200)),
+		(Percent::from_percent(11), Duration::from_secs(1651017600)),
+		(Percent::from_percent(11), Duration::from_secs(1655856000)),
+		(Percent::from_percent(11), Duration::from_secs(1660694400)),
+	];
+}
+
+impl manta_vesting::Config for Runtime {
+	type Currency = Balances;
+	type Event = Event;
+	type Timestamp = Timestamp;
+	type MinVestedTransfer = MinVestedTransfer;
+	type VestingSchedule = VestingSchedule;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -536,6 +559,9 @@ construct_runtime!(
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
+
+		// Calamari stuff
+		CalamariVesting: manta_vesting::{Pallet, Call, Storage, Event<T>} = 50,
 	}
 );
 
@@ -707,6 +733,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
 			list_benchmark!(list, extra, pallet_utility, Utility);
 			list_benchmark!(list, extra, pallet_collator_selection, CollatorSelection);
+			list_benchmark!(list, extra, manta_vesting, CalamariVesting);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -747,6 +774,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_utility, Utility);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
+			add_benchmark!(params, batches, manta_vesting, CalamariVesting);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

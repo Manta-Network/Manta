@@ -4,6 +4,7 @@ use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
+use sp_std::time::Duration;
 
 use super::*;
 use crate as manta_vesting;
@@ -17,7 +18,6 @@ pub type Balance = u128;
 
 pub const ALICE: AccountId = 1;
 pub const BOB: AccountId = 2;
-pub const CHARLIE: AccountId = 3;
 
 frame_support::construct_runtime!(
 	pub enum Test where
@@ -26,6 +26,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		MantaVesting: manta_vesting::{Pallet, Call, Storage, Event<T>},
 	}
@@ -61,6 +62,7 @@ impl frame_system::Config for Test {
 	type SystemWeightInfo = ();
 	type Version = ();
 }
+
 parameter_types! {
 	pub const MaxLocks: u32 = 10;
 }
@@ -75,24 +77,36 @@ impl pallet_balances::Config for Test {
 	type ReserveIdentifier = [u8; 8];
 	type WeightInfo = ();
 }
+
+parameter_types! {
+	pub const MinimumPeriod: u64 = 12_000 / 2;
+}
+impl pallet_timestamp::Config for Test {
+	type Moment = u64;
+	type OnTimestampSet = ();
+	type MinimumPeriod = MinimumPeriod;
+	type WeightInfo = ();
+}
+
 parameter_types! {
 	pub const MinVestedTransfer: Balance = 1;
 	pub static ExistentialDeposit: Balance = 1;
-    pub CalamariVestingSchedules: Vec<(Permill, BlockNumber)> = vec![
-        (Permill::from_percent(34), 2),
-        (Permill::from_percent(11), 4),
-        (Permill::from_percent(11), 6),
-        (Permill::from_percent(11), 10),
-        (Permill::from_percent(11), 16),
-        (Permill::from_percent(11), 19),
-        (Permill::from_percent(11), 25),
-    ];
+	pub VestingSchedule: [(Percent, Duration); 7] = [
+		(Percent::from_percent(34), Duration::from_secs(1635120000)),
+		(Percent::from_percent(11), Duration::from_secs(1636502400)),
+		(Percent::from_percent(11), Duration::from_secs(1641340800)),
+		(Percent::from_percent(11), Duration::from_secs(1646179200)),
+		(Percent::from_percent(11), Duration::from_secs(1651017600)),
+		(Percent::from_percent(11), Duration::from_secs(1655856000)),
+		(Percent::from_percent(11), Duration::from_secs(1660694400)),
+	];
 }
 impl Config for Test {
 	type Currency = Balances;
 	type Event = Event;
+	type Timestamp = Timestamp;
 	type MinVestedTransfer = MinVestedTransfer;
-    type CalamariVestingSchedules = CalamariVestingSchedules;
+	type VestingSchedule = VestingSchedule;
 }
 
 pub struct ExtBuilder {
@@ -101,7 +115,9 @@ pub struct ExtBuilder {
 
 impl Default for ExtBuilder {
 	fn default() -> Self {
-		Self { existential_deposit: 1 }
+		Self {
+			existential_deposit: 1,
+		}
 	}
 }
 
@@ -113,21 +129,25 @@ impl ExtBuilder {
 
 	pub fn build(self) -> sp_io::TestExternalities {
 		EXISTENTIAL_DEPOSIT.with(|v| *v.borrow_mut() = self.existential_deposit);
-		let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+		let mut t = frame_system::GenesisConfig::default()
+			.build_storage::<Test>()
+			.unwrap();
 		pallet_balances::GenesisConfig::<Test> {
-			balances: vec![
-				(ALICE, 10_000 * self.existential_deposit),
-			],
+			balances: vec![(ALICE, 10_000 * self.existential_deposit)],
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();
 
 		let mut ext = sp_io::TestExternalities::new(t);
-		ext.execute_with(|| System::set_block_number(1));
+		ext.execute_with(|| {
+			// 1635120000 - 3 * 6000
+			Timestamp::set_timestamp(1635102000000);
+			System::set_block_number(1);
+		});
 		ext
 	}
 }
 
 pub(crate) fn run_to_block(n: u64) {
-    System::set_block_number(n);
+	System::set_block_number(n);
 }

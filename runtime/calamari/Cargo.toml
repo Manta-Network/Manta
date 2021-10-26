@@ -74,6 +74,7 @@ pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-featu
 
 # Self dependencies
 manta-primitives = { path = '../primitives', default-features = false }
+manta-vesting = { path = '../../pallets/vesting', default-features = false }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -87,7 +88,6 @@ try-runtime = [
 	'frame-executive/try-runtime',
 	'frame-try-runtime',
 ]
-
 runtime-benchmarks = [
 	'cumulus-pallet-session-benchmarking/runtime-benchmarks',
 	'hex-literal',
@@ -103,6 +103,7 @@ runtime-benchmarks = [
 	'pallet-timestamp/runtime-benchmarks',
 	'pallet-xcm/runtime-benchmarks',
 	'pallet-collator-selection/runtime-benchmarks',
+	'manta-vesting/runtime-benchmarks',
 ]
 std = [
 	'codec/std',
@@ -151,4 +152,5 @@ std = [
 	'polkadot-runtime-common/std',
 	'polkadot-primitives/std',
 	'pallet-collator-selection/std',
+	'manta-vesting/std',
 ]
