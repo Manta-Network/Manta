@@ -92,7 +92,7 @@ parameter_types! {
 	pub const MinVestedTransfer: Balance = 1;
 	pub static ExistentialDeposit: Balance = 1;
 	pub VestingSchedule: [(Percent, Duration); 7] = [
-		(Percent::from_percent(34), Duration::from_secs(1635120000)),
+		(Percent::from_percent(34), Duration::from_secs(1636329600)),
 		(Percent::from_percent(11), Duration::from_secs(1636502400)),
 		(Percent::from_percent(11), Duration::from_secs(1641340800)),
 		(Percent::from_percent(11), Duration::from_secs(1646179200)),
@@ -140,8 +140,8 @@ impl ExtBuilder {
 
 		let mut ext = sp_io::TestExternalities::new(t);
 		ext.execute_with(|| {
-			// 1635120000 - 3 * 6000
-			Timestamp::set_timestamp(1635102000000);
+			// 1636329600 - 3 * 6000
+			Timestamp::set_timestamp(1636311600000);
 			System::set_block_number(1);
 		});
 		ext

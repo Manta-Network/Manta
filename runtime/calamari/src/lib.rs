@@ -87,7 +87,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 2,
+	spec_version: 4,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -147,6 +147,8 @@ impl Contains<Call> for BaseFilter {
 			| Call::Authorship(_)
 			| Call::Sudo(_)
 			| Call::CalamariVesting(_)
+			| Call::Balances(_)
+			| Call::Utility(_)
 			| Call::Multisig(_) => true,
 			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
 			// pallet-authorship use for orml
@@ -510,7 +512,7 @@ impl pallet_collator_selection::Config for Runtime {
 parameter_types! {
 	pub const MinVestedTransfer: Balance = KMA;
 	pub const VestingSchedule: [(Percent, Duration); 7] = [
-		(Percent::from_percent(34), Duration::from_secs(1635120000)),
+		(Percent::from_percent(34), Duration::from_secs(1636329600)),
 		(Percent::from_percent(11), Duration::from_secs(1636502400)),
 		(Percent::from_percent(11), Duration::from_secs(1641340800)),
 		(Percent::from_percent(11), Duration::from_secs(1646179200)),

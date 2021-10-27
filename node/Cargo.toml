@@ -106,6 +106,7 @@ try-runtime = [
 	'try-runtime-cli',
 ]
 runtime-benchmarks = [
+	'calamari-runtime/runtime-benchmarks',
 	'polkadot-service/runtime-benchmarks',
 	'manta-pc-runtime/runtime-benchmarks',
 ]

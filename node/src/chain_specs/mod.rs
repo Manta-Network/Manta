@@ -12,15 +12,15 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 #[cfg(feature = "calamari")]
 pub mod calamari_pc;
 #[cfg(feature = "calamari")]
-pub use calamari_runtime::currency::KMA;
-#[cfg(feature = "calamari")]
 pub use self::calamari_pc::*;
+#[cfg(feature = "calamari")]
+pub use calamari_runtime::currency::KMA;
 #[cfg(feature = "manta-pc")]
 pub mod manta_pc;
 #[cfg(feature = "manta-pc")]
-pub use manta_pc_runtime::currency::MA;
-#[cfg(feature = "manta-pc")]
 pub use self::manta_pc::*;
+#[cfg(feature = "manta-pc")]
+pub use manta_pc_runtime::currency::MA;
 
 #[cfg(feature = "calamari")]
 const CALAMARI_ENDOWMENT: Balance = 1_000_000_000 * KMA; // 10 endowment so that total supply is 10B

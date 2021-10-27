@@ -80,26 +80,30 @@ pub mod pallet {
 		ExistingVestingSchedule,
 		/// Amount being transferred is too low to create a vesting schedule.
 		AmountLow,
-		/// Not ready for vesting.
-		NotReadyForVesting,
 		/// Not enough tokens for vesting.
 		BalanceLow,
-		/// The size of new schedule is wrong.
-		InvalidScheduleLength,
-		/// Invalid block number.
-		InvalidBlockNumber,
-		/// Invalid order of block numbers.
-		UnsortedBlockNumbers,
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Unlock any vested funds of the sender account.
+		///
+		/// The dispatch origin for this call must be _Signed_ and the sender must have funds still
+		/// locked under this pallet.
+		///
+		/// Emits either `VestingCompleted` or `VestingUpdated`.
 		#[pallet::weight(10_000)]
 		pub fn vest(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			Self::update_lock(&who)
 		}
 
+		/// Create a vested transfer.
+		///
+		/// The dispatch origin for this call must be _Signed_.
+		///
+		/// - `target`: The account receiving the vested funds.
+		/// - `locked_amount`: How much tokens will be transfered.
 		#[pallet::weight(10_000)]
 		pub fn vested_transfer(
 			origin: OriginFor<T>,
@@ -146,8 +150,8 @@ impl<T: Config> Pallet<T> {
 
 		// compute the vested portion
 		let mut portion = Percent::default();
-		for (percentage, block_number) in T::VestingSchedule::get() {
-			if now < block_number {
+		for (percentage, timestamp) in T::VestingSchedule::get() {
+			if now < timestamp {
 				break;
 			} else {
 				portion = portion.saturating_add(percentage);
