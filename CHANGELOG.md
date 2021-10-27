@@ -10,6 +10,18 @@
 
 ### Bug fixes
 
+## v3.0.7
+
+### Breaking changes
+
+### Features
+
+### Improvements
+- [\#225](https://github.com/Manta-Network/Manta/pull/225) split MA and KMA definitions.
+- Bump spec version to 3
+
+### Bug fixes
+
 ## v3.0.6
 
 ### Breaking changes
