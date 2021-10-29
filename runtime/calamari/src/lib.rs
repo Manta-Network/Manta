@@ -685,7 +685,8 @@ impl Contains<Call> for BaseFilter {
 			| Call::TechnicalCommittee(_)
 			| Call::CouncilMembership(_)
 			| Call::TechnicalMembership(_)
-			| Call::Scheduler(_) => true,
+			| Call::Scheduler(_)
+			| Call::Balances(_) => true,
 			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
 			// pallet-authorship use for orml
 			// Sudo also cannot be filtered because it is used in runtime upgrade.
