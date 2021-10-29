@@ -112,8 +112,8 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          SKIP_WASM_BUILD cargo check --features calamari
-          SKIP_WASM_BUILD cargo check --all-features
+          cargo check --features calamari
+          cargo check --all-features
       -
         name: stop sccache server
         run: sccache --stop-server || true
