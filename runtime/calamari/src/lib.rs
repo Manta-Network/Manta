@@ -16,6 +16,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult,
 };
 
+use sp_core::u32_trait::{_1, _2, _3, _4};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -82,15 +83,18 @@ pub mod opaque {
 	}
 }
 
+// Weights used in the runtime.
+mod weights;
+
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 3,
+	spec_version: 4,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 1,
+	transaction_version: 2,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -135,28 +139,6 @@ parameter_types! {
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
 	pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
-}
-
-// Don't allow permission-less asset creation.
-pub struct BaseFilter;
-impl Contains<Call> for BaseFilter {
-	fn contains(c: &Call) -> bool {
-		match c {
-			Call::Timestamp(_)
-			| Call::ParachainSystem(_)
-			| Call::Authorship(_)
-			| Call::Sudo(_)
-			| Call::Multisig(_) => true,
-			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
-			// pallet-authorship use for orml
-			// Sudo also cannot be filtered because it is used in runtime upgrade.
-			_ => false,
-			// Filter System to prevent users from runtime upgrade without sudo privilege.
-			// Filter Utility and Multisig to prevent users from setting keys and selecting collator for parachain (couldn't use now).
-			// Filter Session and CollatorSelection to prevent users from utility operation.
-			// Filter XCM pallet.
-		}
-	}
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -272,6 +254,161 @@ impl pallet_utility::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
+}
+
+parameter_types! {
+	pub const LaunchPeriod: BlockNumber = 7 * DAYS;
+	pub const VotingPeriod: BlockNumber = 7 * DAYS;
+	pub const FastTrackVotingPeriod: BlockNumber = 3 * HOURS;
+	pub const InstantAllowed: bool = true;
+	pub const MinimumDeposit: Balance = 20 * KMA;
+	pub const EnactmentPeriod: BlockNumber = 1 * DAYS;
+	pub const CooloffPeriod: BlockNumber = 7 * DAYS;
+	// (bytes as Balance) * 6 * mMA
+	pub const PreimageByteDeposit: Balance = deposit(0, 1);
+	pub const MaxVotes: u32 = 100;
+	pub const MaxProposals: u32 = 100;
+}
+
+impl pallet_democracy::Config for Runtime {
+	type Proposal = Call;
+	type Event = Event;
+	type Currency = Balances;
+	type EnactmentPeriod = EnactmentPeriod;
+	type VoteLockingPeriod = EnactmentPeriod;
+	type LaunchPeriod = LaunchPeriod;
+	type VotingPeriod = VotingPeriod;
+	type MinimumDeposit = MinimumDeposit;
+	/// A straight majority of the council can decide what their next motion is.
+	type ExternalOrigin =
+		pallet_collective::EnsureProportionAtLeast<_1, _2, AccountId, CouncilCollective>;
+	/// A super-majority can have the next scheduled referendum be a straight majority-carries vote.
+	type ExternalMajorityOrigin =
+		pallet_collective::EnsureProportionAtLeast<_3, _4, AccountId, CouncilCollective>;
+	/// A unanimous council can have the next scheduled referendum be a straight default-carries
+	/// (NTB) vote.
+	type ExternalDefaultOrigin =
+		pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>;
+	/// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
+	/// be tabled immediately and with a shorter voting/enactment period.
+	type FastTrackOrigin =
+		pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, TechnicalCollective>;
+	type InstantOrigin =
+		pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>;
+	type InstantAllowed = InstantAllowed;
+	type FastTrackVotingPeriod = FastTrackVotingPeriod;
+	// To cancel a proposal which has been passed, 2/3 of the council must agree to it.
+	type CancellationOrigin =
+		pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, CouncilCollective>;
+	// To cancel a proposal before it has been passed, the technical committee must be unanimous or
+	// Root must agree.
+	type CancelProposalOrigin = EnsureOneOf<
+		AccountId,
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>,
+	>;
+	type BlacklistOrigin = EnsureRoot<AccountId>;
+	// Any single technical committee member may veto a coming council proposal, however they can
+	// only do it once and it lasts only for the cool-off period.
+	type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCollective>;
+	type CooloffPeriod = CooloffPeriod;
+	type PreimageByteDeposit = PreimageByteDeposit;
+	type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
+	type Slash = ();
+	type Scheduler = Scheduler;
+	type PalletsOrigin = OriginCaller;
+	type MaxVotes = MaxVotes;
+	type WeightInfo = weights::pallet_democracy::WeightInfo<Runtime>;
+	type MaxProposals = MaxProposals;
+}
+
+parameter_types! {
+	/// The maximum amount of time (in blocks) for council members to vote on motions.
+	/// Motions may end in fewer blocks if enough votes are cast to determine the result.
+	pub const CouncilMotionDuration: BlockNumber = 3 * DAYS;
+	pub const CouncilMaxProposals: u32 = 100;
+	pub const CouncilMaxMembers: u32 = 100;
+}
+
+type CouncilCollective = pallet_collective::Instance1;
+impl pallet_collective::Config<CouncilCollective> for Runtime {
+	type Origin = Origin;
+	type Proposal = Call;
+	type Event = Event;
+	type MotionDuration = CouncilMotionDuration;
+	type MaxProposals = CouncilMaxProposals;
+	type MaxMembers = CouncilMaxMembers;
+	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type WeightInfo = weights::pallet_collective::WeightInfo<Runtime>;
+}
+
+pub type EnsureRootOrThreeFourthsCouncil = EnsureOneOf<
+	AccountId,
+	EnsureRoot<AccountId>,
+	pallet_collective::EnsureProportionAtLeast<_3, _4, AccountId, CouncilCollective>,
+>;
+
+type CouncilMembershipInstance = pallet_membership::Instance1;
+impl pallet_membership::Config<CouncilMembershipInstance> for Runtime {
+	type Event = Event;
+	type AddOrigin = EnsureRootOrThreeFourthsCouncil;
+	type RemoveOrigin = EnsureRootOrThreeFourthsCouncil;
+	type SwapOrigin = EnsureRootOrThreeFourthsCouncil;
+	type ResetOrigin = EnsureRootOrThreeFourthsCouncil;
+	type PrimeOrigin = EnsureRootOrThreeFourthsCouncil;
+	type MembershipInitialized = Council;
+	type MembershipChanged = Council;
+	type MaxMembers = CouncilMaxMembers;
+	type WeightInfo = weights::pallet_membership::WeightInfo<Runtime>;
+}
+
+parameter_types! {
+	pub const TechnicalMotionDuration: BlockNumber = 3 * DAYS;
+	pub const TechnicalMaxProposals: u32 = 100;
+	pub const TechnicalMaxMembers: u32 = 100;
+}
+
+type TechnicalCollective = pallet_collective::Instance2;
+impl pallet_collective::Config<TechnicalCollective> for Runtime {
+	type Origin = Origin;
+	type Proposal = Call;
+	type Event = Event;
+	type MotionDuration = TechnicalMotionDuration;
+	type MaxProposals = TechnicalMaxProposals;
+	type MaxMembers = TechnicalMaxMembers;
+	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type WeightInfo = weights::pallet_collective::WeightInfo<Runtime>;
+}
+
+type TechnicalMembershipInstance = pallet_membership::Instance2;
+impl pallet_membership::Config<TechnicalMembershipInstance> for Runtime {
+	type Event = Event;
+	type AddOrigin = EnsureRootOrThreeFourthsCouncil;
+	type RemoveOrigin = EnsureRootOrThreeFourthsCouncil;
+	type SwapOrigin = EnsureRootOrThreeFourthsCouncil;
+	type ResetOrigin = EnsureRootOrThreeFourthsCouncil;
+	type PrimeOrigin = EnsureRootOrThreeFourthsCouncil;
+	type MembershipInitialized = TechnicalCommittee;
+	type MembershipChanged = TechnicalCommittee;
+	type MaxMembers = TechnicalMaxMembers;
+	type WeightInfo = weights::pallet_membership::WeightInfo<Runtime>;
+}
+
+parameter_types! {
+	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+		RuntimeBlockWeights::get().max_block;
+	pub const MaxScheduledPerBlock: u32 = 50;
+}
+
+impl pallet_scheduler::Config for Runtime {
+	type Event = Event;
+	type Origin = Origin;
+	type PalletsOrigin = OriginCaller;
+	type Call = Call;
+	type MaximumWeight = MaximumSchedulerWeight;
+	type ScheduleOrigin = EnsureRoot<AccountId>;
+	type MaxScheduledPerBlock = MaxScheduledPerBlock;
+	type WeightInfo = weights::pallet_scheduler::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -505,6 +642,63 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 
+// Don't allow permission-less asset creation.
+pub struct BaseFilter;
+impl Contains<Call> for BaseFilter {
+	fn contains(c: &Call) -> bool {
+		match c {
+			Call::Timestamp(_)
+			| Call::ParachainSystem(_)
+			| Call::Authorship(_)
+			| Call::Sudo(_)
+			| Call::Multisig(_)
+			// For now disallow public proposal workflows, treasury workflows,
+			// as well as external_propose and external_propose_majority.
+			// The following are filtered out:
+			// pallet_democracy::Call::propose(_)
+			// pallet_democracy::Call::second(_, _)
+			// pallet_democracy::Call::cancel_proposal(_)
+			// pallet_democracy::Call::clear_public_proposals()
+			// pallet_democracy::Call::external_propose(_)
+			// pallet_democracy::Call::external_propose_majority(_)
+			// Call::Treasury(_)
+			| Call::Democracy(pallet_democracy::Call::vote {..}
+								| pallet_democracy::Call::emergency_cancel {..}
+								| pallet_democracy::Call::external_propose_default {..}
+								| pallet_democracy::Call::fast_track  {..}
+								| pallet_democracy::Call::veto_external {..}
+								| pallet_democracy::Call::cancel_referendum {..}
+								| pallet_democracy::Call::cancel_queued {..}
+								| pallet_democracy::Call::delegate {..}
+								| pallet_democracy::Call::undelegate {..}
+								| pallet_democracy::Call::note_preimage {..}
+								| pallet_democracy::Call::note_preimage_operational {..}
+								| pallet_democracy::Call::note_imminent_preimage {..}
+								| pallet_democracy::Call::note_imminent_preimage_operational {..}
+								| pallet_democracy::Call::reap_preimage {..}
+								| pallet_democracy::Call::unlock {..}
+								| pallet_democracy::Call::remove_vote {..}
+								| pallet_democracy::Call::remove_other_vote {..}
+								| pallet_democracy::Call::enact_proposal {..}
+								| pallet_democracy::Call::blacklist {..})
+			| Call::Council(_)
+			| Call::TechnicalCommittee(_)
+			| Call::CouncilMembership(_)
+			| Call::TechnicalMembership(_)
+			| Call::Scheduler(_)
+			| Call::Balances(_) => true,
+			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
+			// pallet-authorship use for orml
+			// Sudo also cannot be filtered because it is used in runtime upgrade.
+			_ => false,
+			// Filter System to prevent users from runtime upgrade without sudo privilege.
+			// Filter Utility and Multisig to prevent users from setting keys and selecting collator for parachain (couldn't use now).
+			// Filter Session and CollatorSelection to prevent users from utility operation.
+			// Filter XCM pallet.
+		}
+	}
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -524,12 +718,22 @@ construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
 
+		// Governance stuff.
+		Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>} = 14,
+		Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 15,
+		CouncilMembership: pallet_membership::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 16,
+		TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 17,
+		TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
+
 		// Collator support. the order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
 		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
+
+		// System scheduler.
+		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 29,
 
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
@@ -712,6 +916,10 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
 			list_benchmark!(list, extra, pallet_utility, Utility);
 			list_benchmark!(list, extra, pallet_collator_selection, CollatorSelection);
+			list_benchmark!(list, extra, pallet_democracy, Democracy);
+			list_benchmark!(list, extra, pallet_collective, Council);
+			list_benchmark!(list, extra, pallet_membership, CouncilMembership);
+			list_benchmark!(list, extra, pallet_scheduler, Scheduler);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -752,6 +960,10 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_utility, Utility);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
+			add_benchmark!(params, batches, pallet_democracy, Democracy);
+			add_benchmark!(params, batches, pallet_collective, Council);
+			add_benchmark!(params, batches, pallet_membership, CouncilMembership);
+			add_benchmark!(params, batches, pallet_scheduler, Scheduler);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

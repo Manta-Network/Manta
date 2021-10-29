@@ -10,6 +10,18 @@
 
 ### Bug fixes
 
+## v3.0.8
+
+### Breaking changes
+
+### Features
+- [\#190](https://github.com/Manta-Network/Manta/pull/190) Governance configurations for calamari runtime.
+
+### Improvements
+- Bump spec version to 4
+
+### Bug fixes
+
 ## v3.0.7
 
 ### Breaking changes
