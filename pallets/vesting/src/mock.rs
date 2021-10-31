@@ -4,7 +4,6 @@ use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
-use sp_std::time::Duration;
 
 use super::*;
 use crate as manta_vesting;
@@ -91,22 +90,14 @@ impl pallet_timestamp::Config for Test {
 parameter_types! {
 	pub const MinVestedTransfer: Balance = 1;
 	pub static ExistentialDeposit: Balance = 1;
-	pub VestingSchedule: [(Percent, Duration); 7] = [
-		(Percent::from_percent(34), Duration::from_secs(1636329600)),
-		(Percent::from_percent(11), Duration::from_secs(1636502400)),
-		(Percent::from_percent(11), Duration::from_secs(1641340800)),
-		(Percent::from_percent(11), Duration::from_secs(1646179200)),
-		(Percent::from_percent(11), Duration::from_secs(1651017600)),
-		(Percent::from_percent(11), Duration::from_secs(1655856000)),
-		(Percent::from_percent(11), Duration::from_secs(1660694400)),
-	];
+	pub const MaxReserves: u32 = 7;
 }
 impl Config for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type Timestamp = Timestamp;
 	type MinVestedTransfer = MinVestedTransfer;
-	type VestingSchedule = VestingSchedule;
+	type MaxReserves = MaxReserves;
 }
 
 pub struct ExtBuilder {

@@ -4404,6 +4404,7 @@ dependencies = [
 name = "manta-vesting"
 version = "3.0.6"
 dependencies = [
+ "chrono",
  "frame-benchmarking",
  "frame-support",
  "frame-system",

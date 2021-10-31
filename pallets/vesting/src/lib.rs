@@ -7,6 +7,7 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+use core::convert::TryFrom;
 use frame_support::{
 	ensure,
 	pallet_prelude::*,
@@ -21,10 +22,10 @@ use sp_runtime::{
 	traits::{Saturating, StaticLookup, Zero},
 	Percent,
 };
-use sp_std::time::Duration;
 
 type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+pub type Schedule = u64;
 
 const VESTING_ID: LockIdentifier = *b"mantavst";
 
@@ -46,15 +47,41 @@ pub mod pallet {
 		#[pallet::constant]
 		type MinVestedTransfer: Get<BalanceOf<Self>>;
 
-		// Store schedules about when and how much tokens will be released.
-		type VestingSchedule: Get<[(Percent, Duration); 7]>;
+		/// The maximum length of schedule is allowed.
+		#[pallet::constant]
+		type MaxReserves: Get<u32>;
 	}
 
 	/// Information regarding the vesting of a given account.
 	#[pallet::storage]
-	#[pallet::getter(fn vesting)]
-	pub type VestingBalances<T: Config> =
+	#[pallet::getter(fn vesting_balance)]
+	pub(super) type VestingBalances<T: Config> =
 		StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>>;
+
+	/// Information regarding the vesting of a given account.
+	#[pallet::storage]
+	#[pallet::getter(fn vesting_schedule)]
+	pub(super) type VestingSchedule<T: Config> = StorageValue<
+		_,
+		BoundedVec<(Percent, Schedule), T::MaxReserves>,
+		ValueQuery,
+		DefaultVestingSchedule<T>,
+	>;
+
+	#[pallet::type_value]
+	pub(super) fn DefaultVestingSchedule<T: Config>(
+	) -> BoundedVec<(Percent, Schedule), T::MaxReserves> {
+		BoundedVec::try_from(vec![
+			(Percent::from_percent(34), 1636329600),
+			(Percent::from_percent(11), 1636502400),
+			(Percent::from_percent(11), 1641340800),
+			(Percent::from_percent(11), 1646179200),
+			(Percent::from_percent(11), 1651017600),
+			(Percent::from_percent(11), 1655856000),
+			(Percent::from_percent(11), 1660694400),
+		])
+		.unwrap_or_default()
+	}
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -69,6 +96,8 @@ pub mod pallet {
 		VestingUpdated(T::AccountId, BalanceOf<T>),
 		/// An \[account\] has become fully vested. No further vesting can happen.
 		VestingCompleted(T::AccountId),
+		/// Update a vesting schedule.
+		VestingScheduleUpdated(BoundedVec<Schedule, T::MaxReserves>),
 	}
 
 	/// Error for the vesting pallet.
@@ -82,10 +111,57 @@ pub mod pallet {
 		AmountLow,
 		/// Not enough tokens for vesting.
 		BalanceLow,
+		/// Cannot input
+		InvalidTimestamp,
+		/// The length of new schedule cannot be bigger/smaller than 7.
+		InvalidScheduleLength,
+		/// The new schedule should be sorted.
+		UnsortedSchedule,
+		/// The first round of vesting is not done yet.
+		ClaimTooEarly,
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Update vesting schedule.
+		///
+		/// - `new_schedule`: New schedule for vesting.
+		#[pallet::weight(10_000)]
+		pub fn update_vesting_schedule(
+			origin: OriginFor<T>,
+			new_schedule: BoundedVec<Schedule, T::MaxReserves>,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+
+			let old_schedule = VestingSchedule::<T>::get();
+			ensure!(
+				new_schedule.len() == old_schedule.len(),
+				Error::<T>::InvalidScheduleLength
+			);
+
+			ensure!(
+				new_schedule.as_slice().windows(2).all(|w| w[0] < w[1]),
+				Error::<T>::UnsortedSchedule
+			);
+
+			let now = T::Timestamp::now().as_secs();
+			ensure!(
+				new_schedule.iter().all(|&s| now <= s),
+				Error::<T>::InvalidTimestamp
+			);
+
+			VestingSchedule::<T>::mutate(|schedule| {
+				for (schedule, newer_schedule) in
+					schedule.as_mut().iter_mut().zip(new_schedule.iter())
+				{
+					schedule.1 = *newer_schedule;
+				}
+			});
+
+			Self::deposit_event(Event::VestingScheduleUpdated(new_schedule));
+			Ok(())
+		}
+
 		/// Unlock any vested funds of the sender account.
 		///
 		/// The dispatch origin for this call must be _Signed_ and the sender must have funds still
@@ -95,6 +171,14 @@ pub mod pallet {
 		#[pallet::weight(10_000)]
 		pub fn vest(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+
+			let now = T::Timestamp::now().as_secs();
+			// Ensure signer can claim once time is up to schedule.
+			ensure!(
+				Some(now) >= VestingSchedule::<T>::get().first().map(|v| v.1),
+				Error::<T>::ClaimTooEarly
+			);
+
 			Self::update_lock(&who)
 		}
 
@@ -145,12 +229,12 @@ impl<T: Config> Pallet<T> {
 	/// (Re)set pallet's currency lock on `who`'s account in accordance with their
 	/// current unvested amount.
 	fn update_lock(who: &T::AccountId) -> DispatchResult {
-		let vesting = Self::vesting(&who).ok_or(Error::<T>::NotVesting)?;
-		let now = T::Timestamp::now();
+		let vesting = Self::vesting_balance(&who).ok_or(Error::<T>::NotVesting)?;
+		let now = T::Timestamp::now().as_secs();
 
 		// compute the vested portion
 		let mut portion = Percent::default();
-		for (percentage, timestamp) in T::VestingSchedule::get() {
+		for (percentage, timestamp) in VestingSchedule::<T>::get() {
 			if now < timestamp {
 				break;
 			} else {
