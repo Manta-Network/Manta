@@ -49,7 +49,7 @@ pub mod pallet {
 
 		/// The maximum length of schedule is allowed.
 		#[pallet::constant]
-		type MaxReserves: Get<u32>;
+		type MaxScheduleLength: Get<u32>;
 	}
 
 	/// Information regarding the vesting of a given account.
@@ -63,15 +63,15 @@ pub mod pallet {
 	#[pallet::getter(fn vesting_schedule)]
 	pub(super) type VestingSchedule<T: Config> = StorageValue<
 		_,
-		BoundedVec<(Percent, Schedule), T::MaxReserves>,
+		BoundedVec<(Percent, Schedule), T::MaxScheduleLength>,
 		ValueQuery,
 		DefaultVestingSchedule<T>,
 	>;
 
 	#[pallet::type_value]
 	pub(super) fn DefaultVestingSchedule<T: Config>(
-	) -> BoundedVec<(Percent, Schedule), T::MaxReserves> {
-		BoundedVec::try_from(vec![
+	) -> BoundedVec<(Percent, Schedule), T::MaxScheduleLength> {
+		BoundedVec::try_from(sp_std::vec![
 			(Percent::from_percent(34), 1636329600),
 			(Percent::from_percent(11), 1636502400),
 			(Percent::from_percent(11), 1641340800),
@@ -97,7 +97,7 @@ pub mod pallet {
 		/// An \[account\] has become fully vested. No further vesting can happen.
 		VestingCompleted(T::AccountId),
 		/// Update a vesting schedule.
-		VestingScheduleUpdated(BoundedVec<Schedule, T::MaxReserves>),
+		VestingScheduleUpdated(BoundedVec<Schedule, T::MaxScheduleLength>),
 	}
 
 	/// Error for the vesting pallet.
@@ -129,7 +129,7 @@ pub mod pallet {
 		#[pallet::weight(10_000)]
 		pub fn update_vesting_schedule(
 			origin: OriginFor<T>,
-			new_schedule: BoundedVec<Schedule, T::MaxReserves>,
+			new_schedule: BoundedVec<Schedule, T::MaxScheduleLength>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 

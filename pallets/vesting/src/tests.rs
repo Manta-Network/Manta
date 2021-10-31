@@ -327,7 +327,7 @@ fn update_vesting_schedule_should_work() {
 		.execute_with(|| {
 			// Check current schedule.
 			let schedule = VestingSchedule::<Test>::get();
-			assert_eq!(schedule.len(), MaxReserves::get() as usize);
+			assert_eq!(schedule.len(), MaxScheduleLength::get() as usize);
 
 			//Check percentage.
 			assert_eq!(
@@ -350,14 +350,14 @@ fn update_vesting_schedule_should_work() {
 			}
 
 			// Cannot update the length of schedule is bigger than 7 or smaller than 7.
-			let wrong_length_schedule: BoundedVec<u64, MaxReserves> =
+			let wrong_length_schedule: BoundedVec<u64, MaxScheduleLength> =
 				BoundedVec::try_from(vec![1, 2, 3, 4, 5, 6, 7, 8]).unwrap_or_default();
 			assert_noop!(
 				MantaVesting::update_vesting_schedule(Origin::root(), wrong_length_schedule),
 				Error::<Test>::InvalidScheduleLength,
 			);
 
-			let wrong_length_schedule: BoundedVec<u64, MaxReserves> =
+			let wrong_length_schedule: BoundedVec<u64, MaxScheduleLength> =
 				BoundedVec::try_from(vec![1, 2, 3, 4, 5, 6]).unwrap_or_default();
 			assert_noop!(
 				MantaVesting::update_vesting_schedule(Origin::root(), wrong_length_schedule),
@@ -365,7 +365,7 @@ fn update_vesting_schedule_should_work() {
 			);
 
 			// The new schedule should be a sorted array.
-			let invalid_schedule: BoundedVec<u64, MaxReserves> =
+			let invalid_schedule: BoundedVec<u64, MaxScheduleLength> =
 				BoundedVec::try_from(vec![1, 2, 9, 4, 8, 6, 7]).unwrap_or_default();
 			assert_noop!(
 				MantaVesting::update_vesting_schedule(Origin::root(), invalid_schedule),
@@ -376,7 +376,7 @@ fn update_vesting_schedule_should_work() {
 			Timestamp::set_timestamp(now);
 
 			// The new schedule should not be past time.
-			let invalid_schedule: BoundedVec<u64, MaxReserves> = BoundedVec::try_from(vec![
+			let invalid_schedule: BoundedVec<u64, MaxScheduleLength> = BoundedVec::try_from(vec![
 				1636311600, 1636311601, 1636311602, 1636311603, 1636311604, 1636311605, 1636311606,
 			])
 			.unwrap_or_default();

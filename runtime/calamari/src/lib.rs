@@ -13,10 +13,10 @@ use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, Percent,
+	ApplyExtrinsicResult,
 };
 
-use sp_std::{prelude::*, time::Duration};
+use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -510,16 +510,8 @@ impl pallet_collator_selection::Config for Runtime {
 
 // Calamari pallets configuration
 parameter_types! {
-	pub const MinVestedTransfer: Balance = KMA;
-	pub const VestingSchedule: [(Percent, Duration); 7] = [
-		(Percent::from_percent(34), Duration::from_secs(1636329600)),
-		(Percent::from_percent(11), Duration::from_secs(1636502400)),
-		(Percent::from_percent(11), Duration::from_secs(1641340800)),
-		(Percent::from_percent(11), Duration::from_secs(1646179200)),
-		(Percent::from_percent(11), Duration::from_secs(1651017600)),
-		(Percent::from_percent(11), Duration::from_secs(1655856000)),
-		(Percent::from_percent(11), Duration::from_secs(1660694400)),
-	];
+	pub const MinVestedTransfer: Balance = 1;
+	pub const MaxScheduleLength: u32 = 7;
 }
 
 impl manta_vesting::Config for Runtime {
@@ -527,7 +519,7 @@ impl manta_vesting::Config for Runtime {
 	type Event = Event;
 	type Timestamp = Timestamp;
 	type MinVestedTransfer = MinVestedTransfer;
-	type VestingSchedule = VestingSchedule;
+	type MaxScheduleLength = MaxScheduleLength;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

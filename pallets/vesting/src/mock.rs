@@ -90,14 +90,14 @@ impl pallet_timestamp::Config for Test {
 parameter_types! {
 	pub const MinVestedTransfer: Balance = 1;
 	pub static ExistentialDeposit: Balance = 1;
-	pub const MaxReserves: u32 = 7;
+	pub const MaxScheduleLength: u32 = 7;
 }
 impl Config for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type Timestamp = Timestamp;
 	type MinVestedTransfer = MinVestedTransfer;
-	type MaxReserves = MaxReserves;
+	type MaxScheduleLength = MaxScheduleLength;
 }
 
 pub struct ExtBuilder {
