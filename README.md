@@ -19,8 +19,8 @@ cargo build --release -p manta
 
 ## Manta Developement
 Currently, there are two developing branches:
-* `manta`: Manta Network's testnet/mainnet runtime
-* `manta-pc`: Manta Network's parachain runtime
+* `manta-pc`: Manta Network/Calamari Network's parachain runtime
+* `dolphin`: Dolphin testnet runtime (a standlone testnet runs its own consensus)
 
 ## Semantic Versioning
 Manta/Calamari's version number:
@@ -33,50 +33,6 @@ where:
 * `<z>` is the minor version, i.e. performance improvement and bug fixes.
 * `<relay-id>` is the relay chain name, i.e. kusama or polkadot
 * `<para-id>` is the parachain name, i.e. clamari or manta
-
-## Using Docker
-You can run manta nodes using docker.
-
-* Pull latest image.
-```
-docker pull mantanetwork/manta:latest
-```
-
-* Run one dev node locally.
-```
-docker run -it -p 9944:9944 mantanetwork/manta:latest --dev --tmp --alice --unsafe-ws-external
-```
-
-* Run two nodes locally.
-```
-# Alice node
-docker run \
--p 9944:9944 \
--p 30333:30333 \
---name=alice mantanetwork/manta:latest \
---chain=local \
---tmp \
---alice \
---node-key 0000000000000000000000000000000000000000000000000000000000000001 \
---unsafe-ws-external \
---validator
-
-docker run \
--p 9945:9944 \
--p 30334:30333 \
---name=bob mantanetwork/manta:latest \
---bootnodes /ip4/127.0.0.1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp \
---chain=local \
---bob \
---unsafe-ws-external \
---validator
-```
-Normally, both nodes will produce and finalize blocks.
-
-* Connect to manta testnet.
-```
-docker run mantanetwork/manta:latest --chain manta-testnet --name "ILoveManta"
-```
 
 ## Contributing
 * use `[Manta]` as the prefix to submit a PR to `manta` branch, use `[Manta-PC]` as the prefix to submit a PR to `manta-pc` branch.
