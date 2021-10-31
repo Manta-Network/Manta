@@ -20,7 +20,7 @@ cargo build --release -p manta
 ## Manta Developement
 Currently, there are two developing branches:
 * `manta-pc`: Manta Network/Calamari Network's parachain runtime
-* `dolphin`: Manta Network/Calamari Network's dolphin testnet runtime
+* `dolphin`: Dolphin testnet runtime (a standlone testnet runs its own consensus)
 
 ## Semantic Versioning
 Manta/Calamari's version number:
