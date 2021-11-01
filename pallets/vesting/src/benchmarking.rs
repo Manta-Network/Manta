@@ -53,10 +53,9 @@ benchmarks! {
 			crate::Pallet::<T>::vesting_schedule()
 				.iter()
 				.map(|(_, s)| s + 1)
-				.collect::<Vec<u64>>(),
+				.collect::<sp_std::vec::Vec<u64>>(),
 		)
 		.unwrap_or_default();
-		dbg!(&new_schedule);
 	}: _(RawOrigin::Root, new_schedule.clone())
 	verify {
 		assert_has_event::<T>(Event::VestingScheduleUpdated(new_schedule).into());
