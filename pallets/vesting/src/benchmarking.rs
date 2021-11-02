@@ -5,13 +5,15 @@ extern crate alloc;
 use super::*;
 #[allow(unused_imports)]
 use crate::Pallet as MantaVesting;
-use core::{convert::TryInto, time::Duration};
+use core::{convert::TryInto, ops::Div, time::Duration};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
 use sp_runtime::{traits::AtLeast32BitUnsigned, SaturatedConversion};
 
 const SEED: u32 = 0;
+// existential deposit multiplier
+const ED_MULTIPLIER: u32 = 100;
 
 fn assert_has_event<T: Config>(generic_event: <T as Config>::Event) {
 	frame_system::Pallet::<T>::assert_has_event(generic_event.into());
@@ -22,7 +24,6 @@ fn init_setup<
 	I: 'static,
 >(
 	caller: &T::AccountId,
-	amount: BalanceOf<T>,
 ) where
 	<T as pallet_balances::Config>::Balance: TryFrom<u128>,
 	T: pallet_balances::Config,
@@ -33,10 +34,20 @@ fn init_setup<
 		+ 1;
 	pallet_timestamp::Pallet::<T>::set_timestamp(now);
 
-	let amount = amount.saturated_into::<u128>();
-	let _ = pallet_balances::Pallet::<T, I>::deposit_creating(
-		&caller,
-		amount.try_into().map_err(|_| "").unwrap(),
+	let existential_deposit = <T as pallet_balances::Config<I>>::ExistentialDeposit::get();
+	let amount = existential_deposit.saturating_mul(ED_MULTIPLIER.into());
+	let source_caller = T::Lookup::unlookup(caller.clone());
+	let _ = pallet_balances::Pallet::<T, I>::make_free_balance_be(&caller, amount);
+
+	assert_ok!(pallet_balances::Pallet::<T, I>::set_balance(
+		RawOrigin::Root.into(),
+		source_caller,
+		amount,
+		amount
+	));
+	assert_eq!(
+		pallet_balances::Pallet::<T, I>::free_balance(caller),
+		amount
 	);
 }
 
@@ -66,10 +77,11 @@ benchmarks! {
 		let recipient: T::AccountId = account("receiver", 0, SEED);
 		let source_recipient = T::Lookup::unlookup(recipient.clone());
 
-		let unvested: BalanceOf<T> = 1000u32.into();
-		init_setup::<T, ()>(&caller, unvested);
-		assert_ok!(crate::Pallet::<T>::vested_transfer(RawOrigin::Signed(caller.clone()).into(), source_recipient, 100u32.into()));
-		assert_eq!(crate::Pallet::<T>::vesting_balance(&recipient).is_some(), true);
+		init_setup::<T, ()>(&caller);
+		let existential_deposit = <T as pallet_balances::Config<()>>::ExistentialDeposit::get();
+		let unvested = existential_deposit.saturating_mul(ED_MULTIPLIER.div(10u32).into()).saturated_into::<u128>().try_into().ok().unwrap();
+		assert_ok!(crate::Pallet::<T>::vested_transfer(RawOrigin::Signed(caller.clone()).into(), source_recipient, unvested));
+		assert!(crate::Pallet::<T>::vesting_balance(&recipient).is_some());
 
 		let now = Duration::from_secs(1660694400)
 			.as_millis()
@@ -83,8 +95,9 @@ benchmarks! {
 
 	vested_transfer {
 		let caller: T::AccountId = whitelisted_caller();
-		let unvested: BalanceOf<T> = 100u32.into();
-		init_setup::<T, ()>(&caller, unvested);
+		init_setup::<T, ()>(&caller);
+		let existential_deposit = <T as pallet_balances::Config<()>>::ExistentialDeposit::get();
+		let unvested = existential_deposit.saturating_mul(ED_MULTIPLIER.div(10u32).into()).saturated_into::<u128>().try_into().ok().unwrap();
 		let recipient: T::AccountId = account("receiver", 0, SEED);
 		let source_recipient = T::Lookup::unlookup(recipient.clone());
 	}: _(RawOrigin::Signed(caller.clone()), source_recipient, unvested)

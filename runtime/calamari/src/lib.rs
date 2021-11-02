@@ -91,7 +91,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 4,
+	spec_version: 5,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 2,
@@ -644,7 +644,7 @@ impl pallet_collator_selection::Config for Runtime {
 
 // Calamari pallets configuration
 parameter_types! {
-	pub const MinVestedTransfer: Balance = 1;
+	pub const MinVestedTransfer: Balance = KMA;
 	pub const MaxScheduleLength: u32 = 7;
 }
 
