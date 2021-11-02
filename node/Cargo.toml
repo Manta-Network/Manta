@@ -23,7 +23,7 @@ path = 'src/manta-pc.rs'
 required-features = ['manta-pc']
 
 [dependencies]
-derive_more = '0.15.0'
+derive_more = '0.99.16'
 log = "0.4.13"
 codec = { package = 'parity-scale-codec', version = '2.3.1' }
 cfg-if = "1.0.0"
