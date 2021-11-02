@@ -939,7 +939,7 @@ checksum = "631ae5198c9be5e753e5cc215e1bd73c2b466a3565173db433f52bb9d3e66dba"
 
 [[package]]
 name = "calamari-pc"
-version = "3.0.8"
+version = "3.0.9"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -1006,7 +1006,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-runtime"
-version = "3.0.8"
+version = "3.0.9"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -4338,7 +4338,7 @@ dependencies = [
 
 [[package]]
 name = "manta-pc-runtime"
-version = "3.0.8"
+version = "3.0.9"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -4401,7 +4401,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "3.0.8"
+version = "3.0.9"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
