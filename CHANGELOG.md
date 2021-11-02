@@ -10,6 +10,20 @@
 
 ### Bug fixes
 
+## v3.0.9
+
+### Breaking changes
+
+### Features
+- [\#221](https://github.com/Manta-Network/Manta/pull/221) Add manta-vesting pallet.
+- Update weight for `pallet_democracy`/`pallet_collective`/`pallet_membership`/`pallet_scheduler`/`pallet_balances`/`manta-vesting`.
+
+### Improvements
+- Bump spec version to 5
+- [\#244](https://github.com/Manta-Network/Manta/pull/244) Adjust benchmarking workflow.
+
+### Bug fixes
+
 ## v3.0.8
 
 ### Breaking changes
