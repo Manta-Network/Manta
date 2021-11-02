@@ -1,3 +1,5 @@
+#![allow(non_upper_case_globals)]
+
 use manta_primitives::Balance;
 
 pub const MA: Balance = 1_000_000_000_000_000_000; // 18 decimal
