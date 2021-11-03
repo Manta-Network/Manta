@@ -136,6 +136,14 @@ jobs:
               id: pallet_scheduler
               name: pallet_scheduler
             iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_balances
+            pallet:
+              id: pallet_balances
+              name: pallet_balances
+            iterations: 20
     steps:
       -
         uses: actions/download-artifact@v2
@@ -157,7 +165,8 @@ jobs:
             --wasm-execution=Compiled \
             --heap-pages=4096 \
             --repeat=${{ matrix.benchmark.iterations }} \
-            --steps=10 \
+            --steps=50 \
+            --template=.github/resources/frame-weight-template.hbs \
             --output=${{ matrix.benchmark.pallet.name }}.rs
       -
         uses: actions/upload-artifact@v2
