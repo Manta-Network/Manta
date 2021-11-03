@@ -144,6 +144,14 @@ jobs:
               id: pallet_balances
               name: pallet_balances
             iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: manta_vesting
+            pallet:
+              id: manta_vesting
+              name: manta_vesting
+            iterations: 20
     steps:
       -
         uses: actions/download-artifact@v2
