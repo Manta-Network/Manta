@@ -2,7 +2,7 @@
 
 # yamllint disable rule:line-length
 
-name: Check Manta-PC
+name: Check Build
 
 # yamllint disable-line rule:truthy
 on:
@@ -12,7 +12,7 @@ on:
     branches: [manta-pc]
 
 env:
-  AWS_REGION: eu-west-1
+  AWS_REGION: us-east-1
   AWS_INSTANCE_TYPE: c5a.8xlarge  # 32 vcpu, 64gb ram, $1.392 hourly
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
@@ -20,7 +20,7 @@ env:
 
 jobs:
 
-  start-manta-pc-checks:
+  start-checks:
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -93,7 +93,7 @@ jobs:
         name: Run yamllint
         uses: actionshub/yamllint@main
       -
-        name: Check Manta-PC Clippy & Formatting
+        name: Check Clippy & Formatting
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -101,10 +101,10 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          SKIP_WASM_BUILD=1 cargo clippy --features manta-pc
+          SKIP_WASM_BUILD=1 cargo clippy
           SKIP_WASM_BUILD=1 cargo fmt
       -
-        name: Check Manta-PC Build
+        name: Check Build
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -112,15 +112,15 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo check --features manta-pc
+          cargo check --no-default-features
           cargo check --all-features
       -
         name: stop sccache server
         run: sccache --stop-server || true
 
-  stop-manta-pc-checks:
+  stop-checks:
     needs:
-      - start-manta-pc-checks
+      - start-checks
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
@@ -131,6 +131,6 @@ jobs:
           github-token: ${{ secrets.GH_SHR_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-manta-pc-checks.outputs.aws-region }}
-          runner-label: ${{ needs.start-manta-pc-checks.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-manta-pc-checks.outputs.aws-instance-id }}
+          aws-region: ${{ needs.start-checks.outputs.aws-region }}
+          runner-label: ${{ needs.start-checks.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-checks.outputs.aws-instance-id }}
