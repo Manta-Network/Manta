@@ -4308,7 +4308,6 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
- "try-runtime-cli",
 ]
 
 [[package]]

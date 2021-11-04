@@ -25,7 +25,6 @@ futures = "0.3.14"
 # Substrate frames
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.11" }
 frame-benchmarking-cli = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.11" }
-try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11", optional = true }
 
 # RPC related dependencies
 jsonrpc-core = "18.0.0"
@@ -91,9 +90,6 @@ manta-primitives = { path = '../runtime/primitives' }
 substrate-build-script-utils = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.11" }
 
 [features]
-try-runtime = [ 
-	'try-runtime-cli',
-]
 runtime-benchmarks = [
 	'polkadot-service/runtime-benchmarks',
 	'manta-runtime/runtime-benchmarks',
