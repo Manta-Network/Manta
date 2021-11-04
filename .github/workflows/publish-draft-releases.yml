@@ -306,6 +306,7 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: mv and chmod calamari-pc-base
         run: |
+          ls -ahl ${{ github.workspace }}/
           mv ${{ github.workspace }}/calamari-pc $HOME/.local/bin/
           chmod +x $HOME/.local/bin/calamari-pc
           ls -ahl ${{ github.workspace }}/
