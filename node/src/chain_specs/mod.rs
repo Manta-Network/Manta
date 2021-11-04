@@ -25,26 +25,21 @@ use serde::{Deserialize, Serialize};
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
-#[cfg(feature = "calamari")]
 pub mod calamari;
-#[cfg(feature = "calamari")]
-pub use calamari_runtime::currency::KMA;
-#[cfg(feature = "calamari")]
 pub use self::calamari::*;
-#[cfg(feature = "manta")]
+pub use calamari_runtime::currency::KMA;
 pub mod manta;
-#[cfg(feature = "manta")]
-pub use manta_runtime::currency::MA;
-#[cfg(feature = "manta")]
 pub use self::manta::*;
+pub use manta_runtime::currency::MA;
 
-#[cfg(feature = "calamari")]
 const CALAMARI_ENDOWMENT: Balance = 1_000_000_000 * KMA; // 10 endowment so that total supply is 10B
 
-#[cfg(feature = "manta")]
 const MANTA_ENDOWMENT: Balance = 1_000_000_000 * MA; // 10 endowment so that total supply is 10B
 
 const STAGING_TELEMETRY_URL: &str = "wss://api.telemetry.manta.systems/submit/";
+
+// A generic chain spec
+pub type ChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {

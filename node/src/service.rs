@@ -56,10 +56,8 @@ use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
 
 // Native Manta Parachain executor instance.
-#[cfg(feature = "manta")]
-pub struct MantaPCRuntimeExecutor;
-#[cfg(feature = "manta")]
-impl sc_executor::NativeExecutionDispatch for MantaPCRuntimeExecutor {
+pub struct MantaRuntimeExecutor;
+impl sc_executor::NativeExecutionDispatch for MantaRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -72,9 +70,7 @@ impl sc_executor::NativeExecutionDispatch for MantaPCRuntimeExecutor {
 }
 
 // Native Calamari Parachain executor instance.
-#[cfg(feature = "calamari")]
 pub struct CalamariRuntimeExecutor;
-#[cfg(feature = "calamari")]
 impl sc_executor::NativeExecutionDispatch for CalamariRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 

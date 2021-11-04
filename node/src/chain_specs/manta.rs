@@ -16,8 +16,7 @@
 
 use super::*;
 
-pub type MantaPCChainSpec =
-	sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
+pub type MantaChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
 
 const MANTAPC_PROTOCOL_ID: &str = "manta"; // for p2p network configuration
 const POLKADOT_RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";
@@ -42,10 +41,10 @@ pub fn manta_properties() -> Properties {
 }
 
 // manta chain spec
-pub fn manta_development_config(id: ParaId) -> MantaPCChainSpec {
+pub fn manta_development_config(id: ParaId) -> MantaChainSpec {
 	let properties = manta_properties();
 
-	MantaPCChainSpec::from_genesis(
+	MantaChainSpec::from_genesis(
 		// Name
 		"Manta Parachain Development",
 		// ID
@@ -79,10 +78,10 @@ pub fn manta_development_config(id: ParaId) -> MantaPCChainSpec {
 	)
 }
 
-pub fn manta_local_config(id: ParaId) -> MantaPCChainSpec {
+pub fn manta_local_config(id: ParaId) -> MantaChainSpec {
 	let properties = manta_properties();
 
-	MantaPCChainSpec::from_genesis(
+	MantaChainSpec::from_genesis(
 		// Name
 		"Manta Parachain Local",
 		// ID
@@ -168,8 +167,8 @@ fn manta_dev_genesis(
 				.cloned()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                 // account id
-						acc,                         // validator id
+						acc.clone(),              // account id
+						acc,                      // validator id
 						manta_session_keys(aura), // session keys
 					)
 				})
@@ -180,7 +179,7 @@ fn manta_dev_genesis(
 	}
 }
 
-pub fn manta_testnet_config(id: ParaId) -> MantaPCChainSpec {
+pub fn manta_testnet_config(id: ParaId) -> MantaChainSpec {
 	let properties = manta_properties();
 
 	// (controller_account, aura_id)
@@ -221,7 +220,7 @@ pub fn manta_testnet_config(id: ParaId) -> MantaPCChainSpec {
 	let root_key: AccountId =
 		hex!["4e128922a811d874f91c219aaa597ee3bd73bcb22910b3b1c57d297b9175336e"].into();
 
-	MantaPCChainSpec::from_genesis(
+	MantaChainSpec::from_genesis(
 		// Name
 		"Manta Parachain Testnet",
 		// ID
@@ -284,8 +283,8 @@ fn manta_testnet_genesis(
 				.cloned()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                 // account id
-						acc,                         // validator id
+						acc.clone(),              // account id
+						acc,                      // validator id
 						manta_session_keys(aura), // session keys
 					)
 				})

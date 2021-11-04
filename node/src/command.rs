@@ -17,7 +17,9 @@
 use crate::{
 	chain_specs,
 	cli::{Cli, RelayChainCli, Subcommand},
+	service::{new_partial, CalamariRuntimeExecutor, MantaRuntimeExecutor},
 };
+
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
@@ -35,7 +37,31 @@ use std::{io::Write, net::SocketAddr};
 
 pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
+// TODO: add Manta parachain ID if available
 pub const PARACHAIN_ID: u32 = 2084;
+
+trait IdentifyChain {
+	fn is_manta(&self) -> bool;
+	fn is_calamari(&self) -> bool;
+}
+
+impl IdentifyChain for dyn sc_service::ChainSpec {
+	fn is_manta(&self) -> bool {
+		self.id().starts_with("statemint")
+	}
+	fn is_calamari(&self) -> bool {
+		self.id().starts_with("statemine")
+	}
+}
+
+impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
+	fn is_manta(&self) -> bool {
+		<dyn sc_service::ChainSpec>::is_manta(self)
+	}
+	fn is_calamari(&self) -> bool {
+		<dyn sc_service::ChainSpec>::is_calamari(self)
+	}
+}
 
 fn load_spec(
 	id: &str,
@@ -43,47 +69,22 @@ fn load_spec(
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
 		// manta chainspec
-		#[cfg(feature = "manta")]
 		"manta-dev" => Box::new(chain_specs::manta_development_config(para_id)),
-		#[cfg(feature = "manta")]
 		"manta-local" => Box::new(chain_specs::manta_local_config(para_id)),
-		#[cfg(feature = "manta")]
 		"manta-testnet" => Box::new(chain_specs::manta_testnet_config(para_id)),
 		// calamari chainspec
-		#[cfg(feature = "calamari")]
 		"calamari-dev" => Box::new(chain_specs::calamari_development_config(para_id)),
-		#[cfg(feature = "calamari")]
 		"calamari-local" => Box::new(chain_specs::calamari_local_config(para_id)),
-		#[cfg(feature = "calamari")]
 		"calamari-testnet" => Box::new(chain_specs::calamari_testnet_config(para_id)?),
-		#[cfg(feature = "calamari")]
 		"calamari-testnet-ci" => Box::new(chain_specs::calamari_testnet_ci_config()?),
-		#[cfg(feature = "calamari")]
 		"calamari" | "" => Box::new(chain_specs::calamari_config()?),
 		path => {
-			let path = std::path::PathBuf::from(path);
+			let chain_spec = chain_specs::ChainSpec::from_json_file(path.into())?;
 
-			let starts_with = |prefix: &str| {
-				path.file_name()
-					.map(|f| f.to_str().map(|s| s.starts_with(&prefix)))
-					.flatten()
-					.unwrap_or(false)
-			};
-
-			if starts_with("manta") {
-				#[cfg(feature = "manta")]
-				{
-					Box::new(chain_specs::MantaPCChainSpec::from_json_file(path)?)
-				}
-				#[cfg(not(feature = "manta"))]
-				panic!("manta runtime is not available.")
-			} else if starts_with("calamari") {
-				#[cfg(feature = "calamari")]
-				{
-					Box::new(chain_specs::CalamariChainSpec::from_json_file(path)?)
-				}
-				#[cfg(not(feature = "calamari"))]
-				panic!("calamari runtime is not available.")
+			if chain_spec.is_manta() {
+				Box::new(chain_specs::MantaChainSpec::from_json_file(path.into())?)
+			} else if chain_spec.is_calamari() {
+				Box::new(chain_specs::CalamariChainSpec::from_json_file(path.into())?)
 			} else {
 				panic!("Please input a file name starting with manta or calamari.")
 			}
@@ -93,13 +94,7 @@ fn load_spec(
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		cfg_if::cfg_if! {
-			if #[cfg(feature = "manta")] {
-				"Manta Parachain Collator".into()
-			} else {
-				"Calamari Parachain Collator".into()
-			}
-		}
+		"Manta/Calamari Collator".into()
 	}
 
 	fn impl_version() -> String {
@@ -108,7 +103,7 @@ impl SubstrateCli for Cli {
 
 	fn description() -> String {
 		format!(
-			"Manta Parachain Collator\n\nThe command-line arguments provided first will be \
+			"Manta/Calamari Collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		{} [parachain-args] -- [relaychain-args]",
@@ -132,27 +127,20 @@ impl SubstrateCli for Cli {
 		load_spec(id, self.run.parachain_id.unwrap_or(PARACHAIN_ID).into())
 	}
 
-	fn native_runtime_version(_chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		cfg_if::cfg_if! {
-			if #[cfg(feature = "manta")] {
-				&manta_runtime::VERSION
-			} else {
-				#[cfg(feature = "calamari")]
-				&calamari_runtime::VERSION
-			}
+	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+		if chain_spec.is_manta() {
+			&manta_runtime::VERSION
+		} else if chain_spec.is_calamari() {
+			&calamari_runtime::VERSION
+		} else {
+			panic!("invalid chain spec! should be one of manta or calamari chain specs")
 		}
 	}
 }
 
 impl SubstrateCli for RelayChainCli {
 	fn impl_name() -> String {
-		cfg_if::cfg_if! {
-			if #[cfg(feature = "manta")] {
-				"Manta Parachain Collator".into()
-			} else {
-				"Calamari Parachain Collator".into()
-			}
-		}
+		"Manta/Calamari Collator".into()
 	}
 
 	fn impl_version() -> String {
@@ -161,7 +149,7 @@ impl SubstrateCli for RelayChainCli {
 
 	fn description() -> String {
 		format!(
-			"Manta parachain collator\n\nThe command-line arguments provided first will be \
+			"Manta/Calamari collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		{} [parachain-args] -- [relaychain-args]",
@@ -199,27 +187,19 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 		.ok_or_else(|| "Could not find wasm file in genesis state!".into())
 }
 
-use crate::service::new_partial;
-#[cfg(feature = "calamari")]
-use crate::service::CalamariRuntimeExecutor;
-#[cfg(feature = "manta")]
-use crate::service::MantaPCRuntimeExecutor;
-
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
-		cfg_if::cfg_if! {
-			if #[cfg(feature = "manta")] {
+			if runner.config().chain_spec.is_manta() {
 				runner.async_run(|$config| {
-					let $components = new_partial::<manta_runtime::RuntimeApi, MantaPCRuntimeExecutor, _>(
+					let $components = new_partial::<manta_runtime::RuntimeApi, MantaRuntimeExecutor, _>(
 						&$config,
 						crate::service::parachain_build_import_queue,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
-			} else {
-				#[cfg(feature = "calamari")]
+			} else if runner.config().chain_spec.is_calamari() {
 				runner.async_run(|$config| {
 					let $components = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor, _>(
 						&$config,
@@ -228,8 +208,9 @@ macro_rules! construct_async_run {
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
+			} else {
+				panic!("wrong chain spec, must be one of manta or calamari chain specs");
 			}
-		}
 	}}
 }
 
@@ -332,16 +313,11 @@ pub fn run() -> Result<()> {
 			Ok(())
 		}
 		Some(Subcommand::Benchmark(cmd)) => {
-			if cfg!(feature = "runtime-benchmarks") {
-				let runner = cli.create_runner(cmd)?;
-				cfg_if::cfg_if! {
-					if #[cfg(feature = "manta")] {
-						runner.sync_run(|config| cmd.run::<Block, MantaPCRuntimeExecutor>(config))
-					} else {
-						#[cfg(feature = "calamari")]
-						runner.sync_run(|config| cmd.run::<Block, CalamariRuntimeExecutor>(config))
-					}
-				}
+			let runner = cli.create_runner(cmd)?;
+			if runner.config().chain_spec.is_manta() {
+				runner.sync_run(|config| cmd.run::<Block, MantaRuntimeExecutor>(config))
+			} else if runner.config().chain_spec.is_calamari() {
+				runner.sync_run(|config| cmd.run::<Block, CalamariRuntimeExecutor>(config))
 			} else {
 				Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
@@ -359,19 +335,15 @@ pub fn run() -> Result<()> {
 					sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
 						.map_err(|e| sc_cli::Error::Service(sc_service::Error::Prometheus(e)))?;
 
-				cfg_if::cfg_if! {
-					if #[cfg(feature = "manta")] {
-						Ok((
-							cmd.run::<Block, MantaPCRuntimeExecutor>(config),
-							task_manager,
-						))
-					} else {
-						#[cfg(feature = "calamari")]
-						Ok((
-							cmd.run::<Block, CalamariRuntimeExecutor>(config),
-							task_manager,
-						))
-					}
+				if runner.config().chain_spec.is_manta() {
+					Ok((cmd.run::<Block, MantaRuntimeExecutor>(config), task_manager))
+				} else if runner.config().chain_spec.is_calamari() {
+					Ok((
+						cmd.run::<Block, CalamariRuntimeExecutor>(config),
+						task_manager,
+					))
+				} else {
+					Err("chain spec doesn't support try_runtime.").into()
 				}
 			})
 		}
@@ -419,33 +391,24 @@ pub fn run() -> Result<()> {
 					}
 				);
 
-				cfg_if::cfg_if! {
-					if #[cfg(feature = "manta")] {
-						crate::service::start_parachain_node::<
-							manta_runtime::RuntimeApi,
-							MantaPCRuntimeExecutor,
-						>(
-							config,
-							polkadot_config,
-							id,
-						)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
-					} else {
-						#[cfg(feature = "calamari")]
-						crate::service::start_parachain_node::<
-							calamari_runtime::RuntimeApi,
-							CalamariRuntimeExecutor,
-						>(
-							config,
-							polkadot_config,
-							id,
-						)
-						.await
-						.map(|r| r.0)
-						.map_err(Into::into)
-					}
+				if config.chain_spec.is_manta() {
+					crate::service::start_parachain_node::<
+						manta_runtime::RuntimeApi,
+						MantaRuntimeExecutor,
+					>(config, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
+				} else if config.chain_spec.is_calamari() {
+					crate::service::start_parachain_node::<
+						calamari_runtime::RuntimeApi,
+						CalamariRuntimeExecutor,
+					>(config, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
+				} else {
+					Err("chain spec error: must be one of manta or calamari chain specs".into())
 				}
 			})
 		}
