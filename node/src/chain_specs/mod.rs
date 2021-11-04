@@ -10,22 +10,22 @@ use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 #[cfg(feature = "calamari")]
-pub mod calamari_pc;
+pub mod calamari;
 #[cfg(feature = "calamari")]
 pub use calamari_runtime::currency::KMA;
 #[cfg(feature = "calamari")]
-pub use self::calamari_pc::*;
-#[cfg(feature = "manta-pc")]
-pub mod manta_pc;
-#[cfg(feature = "manta-pc")]
-pub use manta_pc_runtime::currency::MA;
-#[cfg(feature = "manta-pc")]
-pub use self::manta_pc::*;
+pub use self::calamari::*;
+#[cfg(feature = "manta")]
+pub mod manta;
+#[cfg(feature = "manta")]
+pub use manta_runtime::currency::MA;
+#[cfg(feature = "manta")]
+pub use self::manta::*;
 
 #[cfg(feature = "calamari")]
 const CALAMARI_ENDOWMENT: Balance = 1_000_000_000 * KMA; // 10 endowment so that total supply is 10B
 
-#[cfg(feature = "manta-pc")]
+#[cfg(feature = "manta")]
 const MANTA_ENDOWMENT: Balance = 1_000_000_000 * MA; // 10 endowment so that total supply is 10B
 
 const STAGING_TELEMETRY_URL: &str = "wss://api.telemetry.manta.systems/submit/";

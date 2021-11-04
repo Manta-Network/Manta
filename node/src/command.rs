@@ -26,13 +26,13 @@ fn load_spec(
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
-		// manta-pc chainspec
-		#[cfg(feature = "manta-pc")]
-		"manta-pc-dev" => Box::new(chain_specs::manta_pc_development_config(para_id)),
-		#[cfg(feature = "manta-pc")]
-		"manta-pc-local" => Box::new(chain_specs::manta_pc_local_config(para_id)),
-		#[cfg(feature = "manta-pc")]
-		"manta-pc-testnet" => Box::new(chain_specs::manta_pc_testnet_config(para_id)),
+		// manta chainspec
+		#[cfg(feature = "manta")]
+		"manta-dev" => Box::new(chain_specs::manta_development_config(para_id)),
+		#[cfg(feature = "manta")]
+		"manta-local" => Box::new(chain_specs::manta_local_config(para_id)),
+		#[cfg(feature = "manta")]
+		"manta-testnet" => Box::new(chain_specs::manta_testnet_config(para_id)),
 		// calamari chainspec
 		#[cfg(feature = "calamari")]
 		"calamari-dev" => Box::new(chain_specs::calamari_development_config(para_id)),
@@ -54,13 +54,13 @@ fn load_spec(
 					.unwrap_or(false)
 			};
 
-			if starts_with("manta-pc") {
-				#[cfg(feature = "manta-pc")]
+			if starts_with("manta") {
+				#[cfg(feature = "manta")]
 				{
 					Box::new(chain_specs::MantaPCChainSpec::from_json_file(path)?)
 				}
-				#[cfg(not(feature = "manta-pc"))]
-				panic!("manta-pc runtime is not available.")
+				#[cfg(not(feature = "manta"))]
+				panic!("manta runtime is not available.")
 			} else if starts_with("calamari") {
 				#[cfg(feature = "calamari")]
 				{
@@ -69,7 +69,7 @@ fn load_spec(
 				#[cfg(not(feature = "calamari"))]
 				panic!("calamari runtime is not available.")
 			} else {
-				panic!("Please input a file name starting with manta-pc or calamari.")
+				panic!("Please input a file name starting with manta or calamari.")
 			}
 		}
 	})
@@ -78,7 +78,7 @@ fn load_spec(
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
 		cfg_if::cfg_if! {
-			if #[cfg(feature = "manta-pc")] {
+			if #[cfg(feature = "manta")] {
 				"Manta Parachain Collator".into()
 			} else {
 				"Calamari Parachain Collator".into()
@@ -118,8 +118,8 @@ impl SubstrateCli for Cli {
 
 	fn native_runtime_version(_chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
 		cfg_if::cfg_if! {
-			if #[cfg(feature = "manta-pc")] {
-				&manta_pc_runtime::VERSION
+			if #[cfg(feature = "manta")] {
+				&manta_runtime::VERSION
 			} else {
 				#[cfg(feature = "calamari")]
 				&calamari_runtime::VERSION
@@ -131,7 +131,7 @@ impl SubstrateCli for Cli {
 impl SubstrateCli for RelayChainCli {
 	fn impl_name() -> String {
 		cfg_if::cfg_if! {
-			if #[cfg(feature = "manta-pc")] {
+			if #[cfg(feature = "manta")] {
 				"Manta Parachain Collator".into()
 			} else {
 				"Calamari Parachain Collator".into()
@@ -186,16 +186,16 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 use crate::service::new_partial;
 #[cfg(feature = "calamari")]
 use crate::service::CalamariRuntimeExecutor;
-#[cfg(feature = "manta-pc")]
+#[cfg(feature = "manta")]
 use crate::service::MantaPCRuntimeExecutor;
 
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
 		cfg_if::cfg_if! {
-			if #[cfg(feature = "manta-pc")] {
+			if #[cfg(feature = "manta")] {
 				runner.async_run(|$config| {
-					let $components = new_partial::<manta_pc_runtime::RuntimeApi, MantaPCRuntimeExecutor, _>(
+					let $components = new_partial::<manta_runtime::RuntimeApi, MantaPCRuntimeExecutor, _>(
 						&$config,
 						crate::service::parachain_build_import_queue,
 					)?;
@@ -319,7 +319,7 @@ pub fn run() -> Result<()> {
 			if cfg!(feature = "runtime-benchmarks") {
 				let runner = cli.create_runner(cmd)?;
 				cfg_if::cfg_if! {
-					if #[cfg(feature = "manta-pc")] {
+					if #[cfg(feature = "manta")] {
 						runner.sync_run(|config| cmd.run::<Block, MantaPCRuntimeExecutor>(config))
 					} else {
 						#[cfg(feature = "calamari")]
@@ -344,7 +344,7 @@ pub fn run() -> Result<()> {
 						.map_err(|e| sc_cli::Error::Service(sc_service::Error::Prometheus(e)))?;
 
 				cfg_if::cfg_if! {
-					if #[cfg(feature = "manta-pc")] {
+					if #[cfg(feature = "manta")] {
 						Ok((
 							cmd.run::<Block, MantaPCRuntimeExecutor>(config),
 							task_manager,
@@ -404,9 +404,9 @@ pub fn run() -> Result<()> {
 				);
 
 				cfg_if::cfg_if! {
-					if #[cfg(feature = "manta-pc")] {
+					if #[cfg(feature = "manta")] {
 						crate::service::start_parachain_node::<
-							manta_pc_runtime::RuntimeApi,
+							manta_runtime::RuntimeApi,
 							MantaPCRuntimeExecutor,
 						>(
 							config,

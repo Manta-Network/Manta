@@ -1,3 +1,4 @@
+#![allow(non_camel_case_types)]
 use manta_primitives::Balance;
 
 pub const KMA: Balance = 1_000_000_000_000; // 12 decimal

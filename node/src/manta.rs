@@ -1,4 +1,4 @@
-//! Manta Parachain CLI
+//! Manta/Calamari Parachain CLI
 #![warn(missing_docs)]
 
 mod chain_specs;

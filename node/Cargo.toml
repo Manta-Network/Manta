@@ -1,3 +1,8 @@
+[[bin]]
+name = 'manta'
+path = 'src/manta.rs'
+required-features = ['manta', 'calamari']
+
 [package]
 authors = ['Manta Network']
 build = 'build.rs'
@@ -5,22 +10,12 @@ description = 'Manta Parachain Node.'
 edition = '2018'
 homepage = 'https://manta.network'
 license = 'GPL-3.0'
-name = 'calamari-pc'
+name = 'manta'
 repository = 'https://github.com/Manta-Network/Manta/'
 version = '3.0.8'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
-
-[[bin]]
-name = 'calamari-pc'
-path = 'src/calamari-pc.rs'
-required-features = ['calamari']
-
-[[bin]]
-name = 'manta-pc'
-path = 'src/manta-pc.rs'
-required-features = ['manta-pc']
 
 [dependencies]
 derive_more = '0.15.0'
@@ -95,7 +90,7 @@ polkadot-service = { git = 'https://github.com/paritytech/polkadot.git', branch 
 
 # Self dependencies
 calamari-runtime = { path = '../runtime/calamari', optional = true }
-manta-pc-runtime = { path = '../runtime/manta-pc', optional = true }
+manta-runtime = { path = '../runtime/manta', optional = true }
 manta-primitives = { path = '../runtime/primitives' }
 
 [build-dependencies]
@@ -107,11 +102,11 @@ try-runtime = [
 ]
 runtime-benchmarks = [
 	'polkadot-service/runtime-benchmarks',
-	'manta-pc-runtime/runtime-benchmarks',
+	'manta-runtime/runtime-benchmarks',
 ]
 calamari = [
 	"calamari-runtime"
 ]
-manta-pc = [
-	"manta-pc-runtime"
+manta = [
+	"manta-runtime"
 ]

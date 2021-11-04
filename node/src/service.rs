@@ -40,18 +40,18 @@ use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
 
 // Native Manta Parachain executor instance.
-#[cfg(feature = "manta-pc")]
+#[cfg(feature = "manta")]
 pub struct MantaPCRuntimeExecutor;
-#[cfg(feature = "manta-pc")]
+#[cfg(feature = "manta")]
 impl sc_executor::NativeExecutionDispatch for MantaPCRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		manta_pc_runtime::api::dispatch(method, data)
+		manta_runtime::api::dispatch(method, data)
 	}
 
 	fn native_version() -> sc_executor::NativeVersion {
-		manta_pc_runtime::native_version()
+		manta_runtime::native_version()
 	}
 }
 
@@ -482,7 +482,7 @@ where
 	}
 }
 
-/// Build the import queue for the calamari/manta-pc runtime.
+/// Build the import queue for the calamari/manta runtime.
 pub fn parachain_build_import_queue<RuntimeApi, Executor>(
 	client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 	config: &Configuration,
@@ -564,7 +564,7 @@ where
 	))
 }
 
-/// Start a calamari/manta-pc parachain node.
+/// Start a calamari/manta parachain node.
 pub async fn start_parachain_node<RuntimeApi, Executor>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
