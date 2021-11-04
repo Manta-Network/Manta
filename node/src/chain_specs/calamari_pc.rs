@@ -133,8 +133,6 @@ fn calamari_dev_genesis(
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> calamari_runtime::GenesisConfig {
-	let num_endowed_accounts = endowed_accounts.len();
-
 	calamari_runtime::GenesisConfig {
 		system: calamari_runtime::SystemConfig {
 			code: calamari_runtime::WASM_BINARY

@@ -291,6 +291,7 @@ jobs:
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         run: |
+          ls -ahl ${{ github.workspace }}/
           mkdir -p $HOME/.local/share/calamari-pc
           mkdir -p $HOME/.local/bin
           echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
