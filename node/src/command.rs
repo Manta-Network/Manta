@@ -47,10 +47,10 @@ trait IdentifyChain {
 
 impl IdentifyChain for dyn sc_service::ChainSpec {
 	fn is_manta(&self) -> bool {
-		self.id().starts_with("statemint")
+		self.id().starts_with("manta")
 	}
 	fn is_calamari(&self) -> bool {
-		self.id().starts_with("statemine")
+		self.id().starts_with("calamari")
 	}
 }
 
