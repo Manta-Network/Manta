@@ -177,13 +177,12 @@ fn calamari_dev_genesis(
 				.collect(),
 		},
 		democracy: DemocracyConfig::default(),
-		council: CouncilConfig::default(),
+		council: CouncilConfig {
+			members: endowed_accounts.iter().take(1).cloned().collect(),
+			phantom: Default::default(),
+		},
 		technical_committee: TechnicalCommitteeConfig {
-			members: endowed_accounts
-				.iter()
-				.take((num_endowed_accounts + 1) / 2)
-				.cloned()
-				.collect(),
+			members: endowed_accounts.iter().take(1).cloned().collect(),
 			phantom: Default::default(),
 		},
 		council_membership: Default::default(),
