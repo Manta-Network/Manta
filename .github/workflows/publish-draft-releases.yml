@@ -307,7 +307,7 @@ jobs:
         name: mv and chmod manta-base
         run: |
           ls -ahl ${{ github.workspace }}/
-          mv ${{ github.workspace }}/manta-base $HOME/.local/bin/
+          mv ${{ github.workspace }}/manta $HOME/.local/bin/manta-base
           chmod +x $HOME/.local/bin/manta-base
           ls -ahl ${{ github.workspace }}/
           ls -ahl $HOME/.local/bin/
