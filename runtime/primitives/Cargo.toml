@@ -21,14 +21,10 @@ sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features
 sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 
-# Substrate frames
-frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
-
 [features]
 default = ["std"]
 std = [
 	'codec/std',
-	'frame-support/std',
 	'sp-consensus-aura/std',
 	'sp-io/std',
 	'sp-std/std',

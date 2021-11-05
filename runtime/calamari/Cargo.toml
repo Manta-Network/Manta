@@ -149,7 +149,6 @@ std = [
 	'pallet-membership/std',
 	'manta-primitives/std',
 	'parachain-info/std',
-	#'pallet-asset-tx-payment/std',
 	"cumulus-pallet-aura-ext/std",
 	'cumulus-pallet-parachain-system/std',
 	'cumulus-pallet-dmp-queue/std',

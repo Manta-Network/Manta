@@ -4324,7 +4324,6 @@ dependencies = [
 name = "manta-primitives"
 version = "3.0.9"
 dependencies = [
- "frame-support",
  "parity-scale-codec",
  "smallvec",
  "sp-consensus-aura",
