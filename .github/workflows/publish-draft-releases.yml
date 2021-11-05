@@ -148,20 +148,20 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo build --verbose --release --features calamari
+          cargo build --verbose --release
       -
         name: stop sccache server
         run: sccache --stop-server || true
       -
         name: strip
         run: |
-          strip target/release/calamari-pc
+          strip target/release/manta
       -
         name: upload
         uses: actions/upload-artifact@v2
         with:
-          name: calamari-pc
-          path: target/release/calamari-pc
+          name: manta
+          path: target/release/manta
       -
         name: upload
         uses: actions/upload-artifact@v2
@@ -243,7 +243,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo build --verbose --release --features calamari
+          cargo build --verbose --release
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: stop sccache server
@@ -252,14 +252,14 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: strip
         run: |
-          strip target/release/calamari-pc
+          strip target/release/manta
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: upload
         uses: actions/upload-artifact@v2
         with:
-          name: calamari-pc-base
-          path: target/release/calamari-pc
+          name: manta-base
+          path: target/release/manta
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: upload
@@ -298,17 +298,17 @@ jobs:
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: fetch calamari-pc-base
+        name: fetch manta-base
         uses: actions/download-artifact@v2
         with:
-          name: calamari-pc-base
+          name: manta-base
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: mv and chmod calamari-pc-base
+        name: mv and chmod manta-base
         run: |
           ls -ahl ${{ github.workspace }}/
-          mv ${{ github.workspace }}/calamari-pc $HOME/.local/bin/
-          chmod +x $HOME/.local/bin/calamari-pc
+          mv ${{ github.workspace }}/manta-base $HOME/.local/bin/
+          chmod +x $HOME/.local/bin/manta-base
           ls -ahl ${{ github.workspace }}/
           ls -ahl $HOME/.local/bin/
       -
@@ -322,7 +322,7 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         id: create-chainspec
         run: |
-          calamari-pc build-spec --chain ${{ matrix.chain-spec.id }} --disable-default-bootnode --raw > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
+          manta-base build-spec --chain ${{ matrix.chain-spec.id }} --disable-default-bootnode --raw > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
           jq \
             --sort-keys \
             --arg name "calamari testnet base" \
@@ -337,7 +337,7 @@ jobs:
               .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
             ' $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-spec.json
           ls -ahl $HOME/.local/share/calamari-pc/
-          calamari-pc export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
+          manta-base export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch config-for-runtime-upgrade-test
@@ -354,7 +354,7 @@ jobs:
             --arg relaychain_bin $HOME/.local/bin/polkadot \
             --arg relaychain_id rococo-local-base \
             --arg relaychain_name "rococo local base" \
-            --arg parachains_bin $HOME/.local/bin/calamari-pc \
+            --arg parachains_bin $HOME/.local/bin/manta-base \
             --arg parachains_spec $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-spec.json \
             '.
               | .relaychain.bin = $relaychain_bin
@@ -505,15 +505,15 @@ jobs:
           echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
       -
-        name: fetch calamari-pc
+        name: fetch manta
         uses: actions/download-artifact@v2
         with:
-          name: calamari-pc
+          name: manta
       -
-        name: mv and chmod calamari-pc
+        name: mv and chmod manta
         run: |
-          mv ${{ github.workspace }}/calamari-pc $HOME/.local/bin/
-          chmod +x $HOME/.local/bin/calamari-pc
+          mv ${{ github.workspace }}/manta $HOME/.local/bin/
+          chmod +x $HOME/.local/bin/manta
           ls -ahl ${{ github.workspace }}/
           ls -ahl $HOME/.local/bin/
       -
@@ -525,7 +525,7 @@ jobs:
       -
         id: create-chainspec
         run: |
-          calamari-pc build-spec --chain ${{ matrix.chain-spec.id }} --disable-default-bootnode --raw > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
+          manta build-spec --chain ${{ matrix.chain-spec.id }} --disable-default-bootnode --raw > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
           jq \
             --sort-keys \
             --arg name "calamari testnet ${GITHUB_SHA:0:7}" \
@@ -541,7 +541,7 @@ jobs:
             ' $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
           ls -ahl $HOME/.local/share/calamari-pc/
           echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
-          calamari-pc export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
+          manta export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
       -
         uses: actions/upload-artifact@v2
         with:
@@ -570,7 +570,7 @@ jobs:
             --arg relaychain_bin $HOME/.local/bin/polkadot \
             --arg relaychain_id rococo-local-${GITHUB_SHA:0:7} \
             --arg relaychain_name "rococo local ${GITHUB_SHA:0:7}" \
-            --arg parachains_bin $HOME/.local/bin/calamari-pc \
+            --arg parachains_bin $HOME/.local/bin/manta \
             --arg parachains_spec $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json \
             '.
               | .relaychain.bin = $relaychain_bin
@@ -911,23 +911,23 @@ jobs:
       - build-node-current
       - create-draft-release
     outputs:
-      download_url: ${{ steps.upload-calamari-pc.outputs.browser_download_url }}
+      download_url: ${{ steps.upload-manta.outputs.browser_download_url }}
     if: startsWith(github.ref, 'refs/tags')
     steps:
       -
         uses: actions/download-artifact@v2
         with:
-          name: calamari-pc
+          name: manta
       -
-        id: upload-calamari-pc
-        name: upload calamari-pc
+        id: upload-manta
+        name: upload manta
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-          asset_path: calamari-pc
-          asset_name: calamari-pc
+          asset_path: manta
+          asset_name: manta
           asset_content_type: application/octet-stream
 
   brag:

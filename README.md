@@ -11,10 +11,10 @@
 
 Manta is a privacy preserving DeFi stack on Polkadot/Substrate. The code currently hasn't been properly security audited (work in progress), use it at your own risk. 
 
-## Compile Manta
+## Build Manta/Calamari Node
 ```
 ./scripts/init.sh
-cargo build --release -p manta
+cargo build --release
 ```
 
 ## Manta Developement
@@ -35,7 +35,6 @@ where:
 * `<para-id>` is the parachain name, i.e. clamari or manta
 
 ## Contributing
-* use `[Manta]` as the prefix to submit a PR to `manta` branch, use `[Manta-PC]` as the prefix to submit a PR to `manta-pc` branch.
 * please submit your code through PR.
 * please run `cargo +nightly fmt` before pushing your code.
 
@@ -45,9 +44,9 @@ where:
 
 the [publish draft releases](https://github.com/Manta-Network/Manta/blob/manta-pc/.github/workflows/publish-draft-releases.yml) workflow builds:
 
-* **calamari-pc** the calamari parachain executable (a substrate node)
+* **manta** the manta/calamari parachain executable
 * wasm runtimes:
-  * **manta-pc** the manta parachain wasm runtime
+  * **manta** the manta parachain wasm runtime
   * **calamari** the calamari parachain wasm runtime
 
 the workflow is triggered whenever a tag containing a semver is pushed to the github repo. if you have a branch derived from the [manta-pc](https://github.com/Manta-Network/Manta/tree/manta-pc) branch, you may trigger a ci-build and create a draft release (only available to Manta-Network org members) with commands similar to the following:

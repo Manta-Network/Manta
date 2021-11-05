@@ -1,3 +1,19 @@
+// Copyright 2020-2021 Manta Network.
+// This file is part of Manta.
+//
+// Manta is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Manta is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Manta.  If not, see <http://www.gnu.org/licenses/>.
+
 use cumulus_client_consensus_aura::{
 	build_aura_consensus, BuildAuraConsensusParams, SlotProportion,
 };
@@ -40,25 +56,21 @@ use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
 
 // Native Manta Parachain executor instance.
-#[cfg(feature = "manta-pc")]
-pub struct MantaPCRuntimeExecutor;
-#[cfg(feature = "manta-pc")]
-impl sc_executor::NativeExecutionDispatch for MantaPCRuntimeExecutor {
+pub struct MantaRuntimeExecutor;
+impl sc_executor::NativeExecutionDispatch for MantaRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		manta_pc_runtime::api::dispatch(method, data)
+		manta_runtime::api::dispatch(method, data)
 	}
 
 	fn native_version() -> sc_executor::NativeVersion {
-		manta_pc_runtime::native_version()
+		manta_runtime::native_version()
 	}
 }
 
 // Native Calamari Parachain executor instance.
-#[cfg(feature = "calamari")]
 pub struct CalamariRuntimeExecutor;
-#[cfg(feature = "calamari")]
 impl sc_executor::NativeExecutionDispatch for CalamariRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
@@ -482,7 +494,7 @@ where
 	}
 }
 
-/// Build the import queue for the calamari/manta-pc runtime.
+/// Build the import queue for the calamari/manta runtime.
 pub fn parachain_build_import_queue<RuntimeApi, Executor>(
 	client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 	config: &Configuration,
@@ -564,7 +576,7 @@ where
 	))
 }
 
-/// Start a calamari/manta-pc parachain node.
+/// Start a calamari/manta parachain node.
 pub async fn start_parachain_node<RuntimeApi, Executor>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,

@@ -1,3 +1,19 @@
+// Copyright 2020-2021 Manta Network.
+// This file is part of Manta.
+//
+// Manta is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Manta is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Manta.  If not, see <http://www.gnu.org/licenses/>.
+
 #![allow(unused_imports)]
 #![allow(dead_code)]
 use cumulus_primitives_core::ParaId;
@@ -9,26 +25,21 @@ use serde::{Deserialize, Serialize};
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
-#[cfg(feature = "calamari")]
-pub mod calamari_pc;
-#[cfg(feature = "calamari")]
+pub mod calamari;
+pub use self::calamari::*;
 pub use calamari_runtime::currency::KMA;
-#[cfg(feature = "calamari")]
-pub use self::calamari_pc::*;
-#[cfg(feature = "manta-pc")]
-pub mod manta_pc;
-#[cfg(feature = "manta-pc")]
-pub use manta_pc_runtime::currency::MA;
-#[cfg(feature = "manta-pc")]
-pub use self::manta_pc::*;
+pub mod manta;
+pub use self::manta::*;
+pub use manta_runtime::currency::MA;
 
-#[cfg(feature = "calamari")]
 const CALAMARI_ENDOWMENT: Balance = 1_000_000_000 * KMA; // 10 endowment so that total supply is 10B
 
-#[cfg(feature = "manta-pc")]
 const MANTA_ENDOWMENT: Balance = 1_000_000_000 * MA; // 10 endowment so that total supply is 10B
 
 const STAGING_TELEMETRY_URL: &str = "wss://api.telemetry.manta.systems/submit/";
+
+// A generic chain spec
+pub type ChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {

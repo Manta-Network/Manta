@@ -938,73 +938,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "631ae5198c9be5e753e5cc215e1bd73c2b466a3565173db433f52bb9d3e66dba"
 
 [[package]]
-name = "calamari-pc"
-version = "3.0.9"
-dependencies = [
- "async-trait",
- "calamari-runtime",
- "cfg-if 1.0.0",
- "cumulus-client-cli",
- "cumulus-client-consensus-aura",
- "cumulus-client-consensus-common",
- "cumulus-client-consensus-relay-chain",
- "cumulus-client-network",
- "cumulus-client-service",
- "cumulus-primitives-core",
- "cumulus-primitives-parachain-inherent",
- "derive_more",
- "frame-benchmarking",
- "frame-benchmarking-cli",
- "futures 0.3.17",
- "hex-literal",
- "jsonrpc-core",
- "log",
- "manta-pc-runtime",
- "manta-primitives",
- "pallet-transaction-payment-rpc",
- "parity-scale-codec",
- "polkadot-cli",
- "polkadot-parachain",
- "polkadot-primitives",
- "polkadot-service",
- "sc-basic-authorship",
- "sc-chain-spec",
- "sc-cli",
- "sc-client-api",
- "sc-consensus",
- "sc-executor",
- "sc-keystore",
- "sc-network",
- "sc-rpc",
- "sc-rpc-api",
- "sc-service",
- "sc-telemetry",
- "sc-tracing",
- "sc-transaction-pool",
- "sc-transaction-pool-api",
- "serde",
- "sp-api",
- "sp-block-builder",
- "sp-blockchain",
- "sp-consensus",
- "sp-consensus-aura",
- "sp-core",
- "sp-inherents",
- "sp-io",
- "sp-keystore",
- "sp-offchain",
- "sp-runtime",
- "sp-session",
- "sp-timestamp",
- "sp-transaction-pool",
- "structopt",
- "substrate-build-script-utils",
- "substrate-frame-rpc-system",
- "substrate-prometheus-endpoint",
- "try-runtime-cli",
-]
-
-[[package]]
 name = "calamari-runtime"
 version = "3.0.9"
 dependencies = [
@@ -2431,9 +2364,9 @@ dependencies = [
 
 [[package]]
 name = "frame-metadata"
-version = "14.0.0"
+version = "14.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96616f82e069102b95a72c87de4c84d2f87ef7f0f20630e78ce3824436483110"
+checksum = "37ed5e5c346de62ca5c184b4325a6600d1eaca210666e4606fe4e449574978d0"
 dependencies = [
  "cfg-if 1.0.0",
  "parity-scale-codec",
@@ -4323,7 +4256,86 @@ dependencies = [
 ]
 
 [[package]]
-name = "manta-pc-runtime"
+name = "manta"
+version = "3.0.9"
+dependencies = [
+ "async-trait",
+ "calamari-runtime",
+ "cfg-if 1.0.0",
+ "cumulus-client-cli",
+ "cumulus-client-consensus-aura",
+ "cumulus-client-consensus-common",
+ "cumulus-client-consensus-relay-chain",
+ "cumulus-client-network",
+ "cumulus-client-service",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
+ "frame-benchmarking",
+ "frame-benchmarking-cli",
+ "futures 0.3.17",
+ "hex-literal",
+ "jsonrpc-core",
+ "log",
+ "manta-primitives",
+ "manta-runtime",
+ "pallet-transaction-payment-rpc",
+ "parity-scale-codec",
+ "polkadot-cli",
+ "polkadot-parachain",
+ "polkadot-primitives",
+ "polkadot-service",
+ "sc-basic-authorship",
+ "sc-chain-spec",
+ "sc-cli",
+ "sc-client-api",
+ "sc-consensus",
+ "sc-executor",
+ "sc-keystore",
+ "sc-network",
+ "sc-rpc",
+ "sc-rpc-api",
+ "sc-service",
+ "sc-telemetry",
+ "sc-tracing",
+ "sc-transaction-pool",
+ "sc-transaction-pool-api",
+ "serde",
+ "sp-api",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-keystore",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-timestamp",
+ "sp-transaction-pool",
+ "structopt",
+ "substrate-build-script-utils",
+ "substrate-frame-rpc-system",
+ "substrate-prometheus-endpoint",
+]
+
+[[package]]
+name = "manta-primitives"
+version = "3.0.9"
+dependencies = [
+ "frame-support",
+ "parity-scale-codec",
+ "smallvec",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "manta-runtime"
 version = "3.0.9"
 dependencies = [
  "cumulus-pallet-aura-ext",
@@ -4383,20 +4395,6 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
-]
-
-[[package]]
-name = "manta-primitives"
-version = "3.0.9"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "smallvec",
- "sp-consensus-aura",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -11457,18 +11455,18 @@ dependencies = [
 
 [[package]]
 name = "zeroize"
-version = "1.4.2"
+version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf68b08513768deaa790264a7fac27a58cbf2705cfcdc9448362229217d7e970"
+checksum = "d68d9dcec5f9b43a30d38c49f91dfedfaac384cb8f085faca366c26207dd1619"
 dependencies = [
  "zeroize_derive",
 ]
 
 [[package]]
 name = "zeroize_derive"
-version = "1.2.0"
+version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bdff2024a851a322b08f179173ae2ba620445aef1e838f0c196820eade4ae0c7"
+checksum = "65f1a51723ec88c66d5d1fe80c841f17f63587d6691901d66be9bec6c3b51f73"
 dependencies = [
  "proc-macro2",
  "quote",

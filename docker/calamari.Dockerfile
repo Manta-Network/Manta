@@ -4,7 +4,7 @@ LABEL description="calamari parachain node"
 ARG PARA_BINARY_REF
 
 ARG PARA_GENESIS_REF=manta-pc
-ARG PARA_BINARY_URL=https://github.com/Manta-Network/Manta/releases/download/$PARA_BINARY_REF/calamari-pc
+ARG PARA_BINARY_URL=https://github.com/Manta-Network/Manta/releases/download/$PARA_BINARY_REF/manta
 ARG PARA_BINARY_PATH=/usr/local/bin/parachain
 
 ARG PARA_GENESIS_URL=https://raw.githubusercontent.com/Manta-Network/Manta/$PARA_GENESIS_REF/genesis/calamari-genesis.json

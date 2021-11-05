@@ -1,19 +1,34 @@
+// Copyright 2020-2021 Manta Network.
+// This file is part of Manta.
+//
+// Manta is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Manta is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Manta.  If not, see <http://www.gnu.org/licenses/>.
+
 use super::*;
 
-pub type MantaPCChainSpec =
-	sc_service::GenericChainSpec<manta_pc_runtime::GenesisConfig, Extensions>;
+pub type MantaChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
 
-const MANTAPC_PROTOCOL_ID: &str = "manta-pc"; // for p2p network configuration
+const MANTAPC_PROTOCOL_ID: &str = "manta"; // for p2p network configuration
 const POLKADOT_RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";
 const POLKADOT_RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
 #[allow(dead_code)]
 const POLKADOT_RELAYCHAIN_MAIN_NET: &str = "polkadot";
 
-/// Generate the manta-pc session keys from individual elements.
+/// Generate the manta session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn manta_pc_session_keys(keys: AuraId) -> manta_pc_runtime::opaque::SessionKeys {
-	manta_pc_runtime::opaque::SessionKeys { aura: keys }
+pub fn manta_session_keys(keys: AuraId) -> manta_runtime::opaque::SessionKeys {
+	manta_runtime::opaque::SessionKeys { aura: keys }
 }
 
 /// Token
@@ -25,18 +40,18 @@ pub fn manta_properties() -> Properties {
 	p
 }
 
-// manta-pc chain spec
-pub fn manta_pc_development_config(id: ParaId) -> MantaPCChainSpec {
+// manta chain spec
+pub fn manta_development_config(id: ParaId) -> MantaChainSpec {
 	let properties = manta_properties();
 
-	MantaPCChainSpec::from_genesis(
+	MantaChainSpec::from_genesis(
 		// Name
 		"Manta Parachain Development",
 		// ID
-		"manta_pc_dev",
+		"manta_dev",
 		ChainType::Local,
 		move || {
-			manta_pc_dev_genesis(
+			manta_dev_genesis(
 				// initial collators.
 				vec![(
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -63,17 +78,17 @@ pub fn manta_pc_development_config(id: ParaId) -> MantaPCChainSpec {
 	)
 }
 
-pub fn manta_pc_local_config(id: ParaId) -> MantaPCChainSpec {
+pub fn manta_local_config(id: ParaId) -> MantaChainSpec {
 	let properties = manta_properties();
 
-	MantaPCChainSpec::from_genesis(
+	MantaChainSpec::from_genesis(
 		// Name
 		"Manta Parachain Local",
 		// ID
-		"manta_pc_local",
+		"manta_local",
 		ChainType::Local,
 		move || {
-			manta_pc_dev_genesis(
+			manta_dev_genesis(
 				// initial collators.
 				vec![
 					(
@@ -112,20 +127,20 @@ pub fn manta_pc_local_config(id: ParaId) -> MantaPCChainSpec {
 	)
 }
 
-fn manta_pc_dev_genesis(
+fn manta_dev_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
-) -> manta_pc_runtime::GenesisConfig {
-	manta_pc_runtime::GenesisConfig {
-		system: manta_pc_runtime::SystemConfig {
-			code: manta_pc_runtime::WASM_BINARY
+) -> manta_runtime::GenesisConfig {
+	manta_runtime::GenesisConfig {
+		system: manta_runtime::SystemConfig {
+			code: manta_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		balances: manta_pc_runtime::BalancesConfig {
+		balances: manta_runtime::BalancesConfig {
 			balances: endowed_accounts[..endowed_accounts.len() / 2]
 				.iter()
 				.map(|k| {
@@ -139,22 +154,22 @@ fn manta_pc_dev_genesis(
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		aura: Default::default(),
-		sudo: manta_pc_runtime::SudoConfig { key: root_key },
-		parachain_info: manta_pc_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: manta_pc_runtime::CollatorSelectionConfig {
+		sudo: manta_runtime::SudoConfig { key: root_key },
+		parachain_info: manta_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: manta_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: MA * 1000, // How many tokens will be reserved as collator
 			..Default::default()
 		},
-		session: manta_pc_runtime::SessionConfig {
+		session: manta_runtime::SessionConfig {
 			keys: invulnerables
 				.iter()
 				.cloned()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                 // account id
-						acc,                         // validator id
-						manta_pc_session_keys(aura), // session keys
+						acc.clone(),              // account id
+						acc,                      // validator id
+						manta_session_keys(aura), // session keys
 					)
 				})
 				.collect(),
@@ -164,7 +179,7 @@ fn manta_pc_dev_genesis(
 	}
 }
 
-pub fn manta_pc_testnet_config(id: ParaId) -> MantaPCChainSpec {
+pub fn manta_testnet_config(id: ParaId) -> MantaChainSpec {
 	let properties = manta_properties();
 
 	// (controller_account, aura_id)
@@ -205,13 +220,13 @@ pub fn manta_pc_testnet_config(id: ParaId) -> MantaPCChainSpec {
 	let root_key: AccountId =
 		hex!["4e128922a811d874f91c219aaa597ee3bd73bcb22910b3b1c57d297b9175336e"].into();
 
-	MantaPCChainSpec::from_genesis(
+	MantaChainSpec::from_genesis(
 		// Name
 		"Manta Parachain Testnet",
 		// ID
-		"manta_pc_testnet",
+		"manta_testnet",
 		ChainType::Local,
-		move || manta_pc_testnet_genesis(initial_authorities.clone(), root_key.clone(), id),
+		move || manta_testnet_genesis(initial_authorities.clone(), root_key.clone(), id),
 		vec![],
 		Some(
 			sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
@@ -226,11 +241,11 @@ pub fn manta_pc_testnet_config(id: ParaId) -> MantaPCChainSpec {
 	)
 }
 
-fn manta_pc_testnet_genesis(
+fn manta_testnet_genesis(
 	initial_authorities: Vec<(AccountId, AuraId)>,
 	root_key: AccountId,
 	id: ParaId,
-) -> manta_pc_runtime::GenesisConfig {
+) -> manta_runtime::GenesisConfig {
 	let mut initial_balances: Vec<(AccountId, Balance)> = initial_authorities
 		.iter()
 		.cloned()
@@ -238,22 +253,22 @@ fn manta_pc_testnet_genesis(
 		.collect();
 	initial_balances.push((root_key.clone(), 500_000_000 * MA));
 
-	manta_pc_runtime::GenesisConfig {
-		system: manta_pc_runtime::SystemConfig {
-			code: manta_pc_runtime::WASM_BINARY
+	manta_runtime::GenesisConfig {
+		system: manta_runtime::SystemConfig {
+			code: manta_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 			changes_trie_config: Default::default(),
 		},
-		balances: manta_pc_runtime::BalancesConfig {
+		balances: manta_runtime::BalancesConfig {
 			balances: initial_balances,
 		},
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		aura: Default::default(),
-		sudo: manta_pc_runtime::SudoConfig { key: root_key },
-		parachain_info: manta_pc_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: manta_pc_runtime::CollatorSelectionConfig {
+		sudo: manta_runtime::SudoConfig { key: root_key },
+		parachain_info: manta_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: manta_runtime::CollatorSelectionConfig {
 			invulnerables: initial_authorities
 				.iter()
 				.cloned()
@@ -262,15 +277,15 @@ fn manta_pc_testnet_genesis(
 			candidacy_bond: MA * 1000, // How many tokens will be reserved as collator
 			..Default::default()
 		},
-		session: manta_pc_runtime::SessionConfig {
+		session: manta_runtime::SessionConfig {
 			keys: initial_authorities
 				.iter()
 				.cloned()
 				.map(|(acc, aura)| {
 					(
-						acc.clone(),                 // account id
-						acc,                         // validator id
-						manta_pc_session_keys(aura), // session keys
+						acc.clone(),              // account id
+						acc,                      // validator id
+						manta_session_keys(aura), // session keys
 					)
 				})
 				.collect(),
