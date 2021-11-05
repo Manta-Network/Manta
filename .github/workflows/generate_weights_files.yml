@@ -84,7 +84,7 @@ jobs:
           CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
-          cargo build --verbose --release --features=calamari,runtime-benchmarks
+          cargo build --verbose --release --features=runtime-benchmarks
       -
         name: stop sccache server
         run: sccache --stop-server || true
@@ -92,8 +92,8 @@ jobs:
         name: upload
         uses: actions/upload-artifact@v2
         with:
-          name: calamari-pc
-          path: target/release/calamari-pc
+          name: manta
+          path: target/release/manta
 
   run-benchmark:
     name: benchmark (${{ matrix.benchmark.pallet.name }} ${{ matrix.benchmark.extrinsic.name }})
@@ -148,16 +148,16 @@ jobs:
       -
         uses: actions/download-artifact@v2
         with:
-          name: calamari-pc
+          name: manta
       -
         run: |
-          mv calamari-pc $HOME/.local/bin/
-          chmod +x $HOME/.local/bin/calamari-pc
+          mv manta $HOME/.local/bin/
+          chmod +x $HOME/.local/bin/manta
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       -
         name: run benchmark
         run: |
-          calamari-pc benchmark \
+          manta benchmark \
             --chain=calamari-dev \
             --pallet=${{ matrix.benchmark.pallet.id }} \
             --extrinsic=${{ matrix.benchmark.extrinsic.id }} \

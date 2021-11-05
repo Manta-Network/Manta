@@ -5,25 +5,14 @@ description = 'Manta Parachain Node.'
 edition = '2018'
 homepage = 'https://manta.network'
 license = 'GPL-3.0'
-name = 'calamari-pc'
+name = 'manta'
 repository = 'https://github.com/Manta-Network/Manta/'
 version = '3.0.8'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
-[[bin]]
-name = 'calamari-pc'
-path = 'src/calamari-pc.rs'
-required-features = ['calamari']
-
-[[bin]]
-name = 'manta-pc'
-path = 'src/manta-pc.rs'
-required-features = ['manta-pc']
-
 [dependencies]
-derive_more = '0.15.0'
 log = "0.4.13"
 codec = { package = 'parity-scale-codec', version = '2.3.1' }
 cfg-if = "1.0.0"
@@ -36,7 +25,6 @@ futures = "0.3.14"
 # Substrate frames
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.11" }
 frame-benchmarking-cli = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.11" }
-try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11", optional = true }
 
 # RPC related dependencies
 jsonrpc-core = "18.0.0"
@@ -94,24 +82,15 @@ polkadot-primitives = { git = 'https://github.com/paritytech/polkadot.git', bran
 polkadot-service = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.11" }
 
 # Self dependencies
-calamari-runtime = { path = '../runtime/calamari', optional = true }
-manta-pc-runtime = { path = '../runtime/manta-pc', optional = true }
+calamari-runtime = { path = '../runtime/calamari'}
+manta-runtime = { path = '../runtime/manta'}
 manta-primitives = { path = '../runtime/primitives' }
 
 [build-dependencies]
 substrate-build-script-utils = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.11" }
 
 [features]
-try-runtime = [ 
-	'try-runtime-cli',
-]
 runtime-benchmarks = [
 	'polkadot-service/runtime-benchmarks',
-	'manta-pc-runtime/runtime-benchmarks',
-]
-calamari = [
-	"calamari-runtime"
-]
-manta-pc = [
-	"manta-pc-runtime"
+	'manta-runtime/runtime-benchmarks',
 ]
