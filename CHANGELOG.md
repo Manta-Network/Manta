@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Pending
+- [\#245](https://github.com/Manta-Network/Manta/pull/245) Unify manta and calamari client.
 
 ### Breaking changes
 
