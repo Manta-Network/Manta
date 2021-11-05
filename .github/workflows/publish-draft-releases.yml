@@ -432,7 +432,7 @@ jobs:
             --error ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart
           cd ${{ github.workspace }}
-          sleep 30
+          sleep 120
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: stop testnet
