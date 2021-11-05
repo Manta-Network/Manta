@@ -67,29 +67,28 @@ fn load_spec(
 	id: &str,
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-	Ok(match id {
+	match id {
 		// manta chainspec
-		"manta-dev" => Box::new(chain_specs::manta_development_config(para_id)),
-		"manta-local" => Box::new(chain_specs::manta_local_config(para_id)),
-		"manta-testnet" => Box::new(chain_specs::manta_testnet_config(para_id)),
+		"manta-dev" => Ok(Box::new(chain_specs::manta_development_config(para_id))),
+		"manta-local" => Ok(Box::new(chain_specs::manta_local_config(para_id))),
+		"manta-testnet" => Ok(Box::new(chain_specs::manta_testnet_config(para_id))),
 		// calamari chainspec
-		"calamari-dev" => Box::new(chain_specs::calamari_development_config(para_id)),
-		"calamari-local" => Box::new(chain_specs::calamari_local_config(para_id)),
-		"calamari-testnet" => Box::new(chain_specs::calamari_testnet_config(para_id)?),
-		"calamari-testnet-ci" => Box::new(chain_specs::calamari_testnet_ci_config()?),
-		"calamari" | "" => Box::new(chain_specs::calamari_config()?),
+		"calamari-dev" => Ok(Box::new(chain_specs::calamari_development_config(para_id))),
+		"calamari-local" => Ok(Box::new(chain_specs::calamari_local_config(para_id))),
+		"calamari-testnet" => Ok(Box::new(chain_specs::calamari_testnet_config(para_id)?)),
+		"calamari-testnet-ci" => Ok(Box::new(chain_specs::calamari_testnet_ci_config()?)),
+		"calamari" | "" => Ok(Box::new(chain_specs::calamari_config()?)),
 		path => {
 			let chain_spec = chain_specs::ChainSpec::from_json_file(path.into())?;
-
 			if chain_spec.is_manta() {
-				Box::new(chain_specs::MantaChainSpec::from_json_file(path.into())?)
+				Ok(Box::new(chain_specs::MantaChainSpec::from_json_file(path.into())?))
 			} else if chain_spec.is_calamari() {
-				Box::new(chain_specs::CalamariChainSpec::from_json_file(path.into())?)
+				Ok(Box::new(chain_specs::CalamariChainSpec::from_json_file(path.into())?))
 			} else {
-				panic!("Please input a file name starting with manta or calamari.")
+				Err("Please input a file name starting with manta or calamari.".into())
 			}
 		}
-	})
+	}
 }
 
 impl SubstrateCli for Cli {
