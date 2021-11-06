@@ -291,6 +291,7 @@ jobs:
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         run: |
+          ls -ahl ${{ github.workspace }}/
           mkdir -p $HOME/.local/share/calamari-pc
           mkdir -p $HOME/.local/bin
           echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
@@ -305,7 +306,8 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: mv and chmod manta-base
         run: |
-          mv ${{ github.workspace }}/manta-base $HOME/.local/bin/
+          ls -ahl ${{ github.workspace }}/
+          mv ${{ github.workspace }}/manta $HOME/.local/bin/manta-base
           chmod +x $HOME/.local/bin/manta-base
           ls -ahl ${{ github.workspace }}/
           ls -ahl $HOME/.local/bin/
@@ -313,7 +315,7 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch and chmod polkadot
         run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.11/polkadot
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.12/polkadot
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       -
@@ -430,7 +432,7 @@ jobs:
             --error ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart
           cd ${{ github.workspace }}
-          sleep 30
+          sleep 120
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: stop testnet
@@ -517,7 +519,7 @@ jobs:
       -
         name: fetch and chmod polkadot
         run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.11/polkadot
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.12/polkadot
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       -

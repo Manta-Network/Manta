@@ -149,8 +149,6 @@ fn calamari_dev_genesis(
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> calamari_runtime::GenesisConfig {
-	let num_endowed_accounts = endowed_accounts.len();
-
 	calamari_runtime::GenesisConfig {
 		system: calamari_runtime::SystemConfig {
 			code: calamari_runtime::WASM_BINARY
@@ -193,13 +191,12 @@ fn calamari_dev_genesis(
 				.collect(),
 		},
 		democracy: DemocracyConfig::default(),
-		council: CouncilConfig::default(),
+		council: CouncilConfig {
+			members: endowed_accounts.iter().take(1).cloned().collect(),
+			phantom: Default::default(),
+		},
 		technical_committee: TechnicalCommitteeConfig {
-			members: endowed_accounts
-				.iter()
-				.take((num_endowed_accounts + 1) / 2)
-				.cloned()
-				.collect(),
+			members: endowed_accounts.iter().take(1).cloned().collect(),
 			phantom: Default::default(),
 		},
 		council_membership: Default::default(),
