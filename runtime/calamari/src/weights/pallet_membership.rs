@@ -55,7 +55,7 @@ pub trait WeightInfo {
 
 /// Weights for pallet_membership using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
+impl<T: frame_system::Config> pallet_membership::WeightInfo for SubstrateWeight<T> {
 	// Storage: CouncilMembership Members (r:1 w:1)
 	// Storage: Council Proposals (r:1 w:0)
 	// Storage: Council Members (r:0 w:1)

@@ -74,7 +74,7 @@ pub trait WeightInfo {
 
 /// Weights for pallet_democracy using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
+impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T> {
 	// Storage: Democracy PublicPropCount (r:1 w:1)
 	// Storage: Democracy PublicProps (r:1 w:1)
 	// Storage: Democracy Blacklist (r:1 w:0)
