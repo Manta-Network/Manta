@@ -14,10 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+// Calamari constants
 pub const CALAMARI_SS58PREFIX: u8 = 78;
-pub const MANTAPC_SS58PREFIX: u8 = 77;
-pub const MANTA_DECIMAL: u8 = 12;
+pub const CALAMARI_DECIMAL: u8 = 12;
 pub const CALAMARI_TOKEN_SYMBOL: &str = "KMA";
+
+// Manta constants 
+pub const MANTA_SS58PREFIX: u8 = 77;
+pub const MANTA_DECIMAL: u8 = 18;
 pub const MANTA_TOKEN_SYMBOL: &str = "MA";
 
 /// Manta parachain time-related

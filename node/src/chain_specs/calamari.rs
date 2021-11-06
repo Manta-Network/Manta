@@ -37,7 +37,7 @@ pub fn calamari_session_keys(keys: AuraId) -> calamari_runtime::opaque::SessionK
 pub fn calamari_properties() -> Properties {
 	let mut p = Properties::new();
 	p.insert("ss58format".into(), constants::CALAMARI_SS58PREFIX.into());
-	p.insert("tokenDecimals".into(), constants::MANTA_DECIMAL.into());
+	p.insert("tokenDecimals".into(), constants::CALAMARI_DECIMAL.into());
 	p.insert(
 		"tokenSymbol".into(),
 		constants::CALAMARI_TOKEN_SYMBOL.into(),

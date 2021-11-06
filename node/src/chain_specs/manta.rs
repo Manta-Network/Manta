@@ -34,7 +34,7 @@ pub fn manta_session_keys(keys: AuraId) -> manta_runtime::opaque::SessionKeys {
 /// Token
 pub fn manta_properties() -> Properties {
 	let mut p = Properties::new();
-	p.insert("ss58format".into(), constants::MANTAPC_SS58PREFIX.into());
+	p.insert("ss58format".into(), constants::MANTA_SS58PREFIX.into());
 	p.insert("tokenDecimals".into(), constants::MANTA_DECIMAL.into());
 	p.insert("tokenSymbol".into(), constants::MANTA_TOKEN_SYMBOL.into());
 	p
