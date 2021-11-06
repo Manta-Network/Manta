@@ -181,7 +181,7 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         uses: actions/checkout@v2
         with:
-          ref: 'manta-pc'
+          ref: 'manta'
       -
         name: install sccache
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
