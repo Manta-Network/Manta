@@ -18,7 +18,7 @@ use super::*;
 
 pub type MantaChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
 
-const MANTAPC_PROTOCOL_ID: &str = "manta"; // for p2p network configuration
+const MANTA_PROTOCOL_ID: &str = "manta"; // for p2p network configuration
 const POLKADOT_RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";
 const POLKADOT_RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
 #[allow(dead_code)]
@@ -69,7 +69,7 @@ pub fn manta_development_config(id: ParaId) -> MantaChainSpec {
 		},
 		vec![],
 		None,
-		Some(MANTAPC_PROTOCOL_ID),
+		Some(MANTA_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
 			relay_chain: POLKADOT_RELAYCHAIN_DEV_NET.into(),
@@ -118,7 +118,7 @@ pub fn manta_local_config(id: ParaId) -> MantaChainSpec {
 		},
 		vec![],
 		None,
-		Some(MANTAPC_PROTOCOL_ID),
+		Some(MANTA_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
 			relay_chain: POLKADOT_RELAYCHAIN_LOCAL_NET.into(),
@@ -158,7 +158,7 @@ fn manta_dev_genesis(
 		parachain_info: manta_runtime::ParachainInfoConfig { parachain_id: id },
 		collator_selection: manta_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: MA * 1000, // How many tokens will be reserved as collator
+			candidacy_bond: MANTA * 10000, // How many tokens will be reserved as collator
 			..Default::default()
 		},
 		session: manta_runtime::SessionConfig {
@@ -232,7 +232,7 @@ pub fn manta_testnet_config(id: ParaId) -> MantaChainSpec {
 			sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
 				.expect("Manta testnet telemetry url is valid; qed"),
 		),
-		Some(MANTAPC_PROTOCOL_ID),
+		Some(MANTA_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
 			relay_chain: POLKADOT_RELAYCHAIN_DEV_NET.into(),
@@ -251,7 +251,7 @@ fn manta_testnet_genesis(
 		.cloned()
 		.map(|x| (x.0, MANTA_ENDOWMENT))
 		.collect();
-	initial_balances.push((root_key.clone(), 500_000_000 * MA));
+	initial_balances.push((root_key.clone(), 500_000_000 * MANTA));
 
 	manta_runtime::GenesisConfig {
 		system: manta_runtime::SystemConfig {
@@ -274,7 +274,7 @@ fn manta_testnet_genesis(
 				.cloned()
 				.map(|(acc, _)| acc)
 				.collect(),
-			candidacy_bond: MA * 1000, // How many tokens will be reserved as collator
+			candidacy_bond: MANTA * 1000, // How many tokens will be reserved as collator
 			..Default::default()
 		},
 		session: manta_runtime::SessionConfig {

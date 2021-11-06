@@ -227,7 +227,7 @@ impl pallet_authorship::Config for Runtime {
 }
 
 parameter_types! {
-	pub const NativeTokenExistentialDeposit: u128 = MA;
+	pub const NativeTokenExistentialDeposit: u128 = MANTA;
 	pub const MaxLocks: u32 = 50;
 	pub const MaxReserves: u32 = 50;
 }
@@ -246,7 +246,7 @@ impl pallet_balances::Config for Runtime {
 
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
-	pub const TransactionByteFee: Balance = mMA/10;
+	pub const TransactionByteFee: Balance = mMANTA/10;
 	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
@@ -285,18 +285,6 @@ impl pallet_utility::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
-}
-
-parameter_types! {
-	// One storage item; key size 32, value size 8; .
-	pub const ProxyDepositBase: Balance = deposit(1, 40);
-	// Additional storage item size of 33 bytes.
-	pub const ProxyDepositFactor: Balance = deposit(0, 33);
-	pub const MaxProxies: u16 = 32;
-	// One storage item; key size 32, value size 16
-	pub const AnnouncementDepositBase: Balance = deposit(1, 48);
-	pub const AnnouncementDepositFactor: Balance = deposit(0, 66);
-	pub const MaxPending: u16 = 32;
 }
 
 parameter_types! {

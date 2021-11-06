@@ -22,7 +22,7 @@ pub const CALAMARI_TOKEN_SYMBOL: &str = "KMA";
 // Manta constants 
 pub const MANTA_SS58PREFIX: u8 = 77;
 pub const MANTA_DECIMAL: u8 = 18;
-pub const MANTA_TOKEN_SYMBOL: &str = "MA";
+pub const MANTA_TOKEN_SYMBOL: &str = "MANTA";
 
 /// Manta parachain time-related
 pub mod time {
