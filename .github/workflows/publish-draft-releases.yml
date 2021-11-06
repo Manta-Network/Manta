@@ -7,9 +7,9 @@ name: publish draft releases
 # yamllint disable-line rule:truthy
 on:
   pull_request:
-    branches: [manta-pc]
+    branches: [manta]
   push:
-    branches: [manta-pc]
+    branches: [manta]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 
