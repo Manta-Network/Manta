@@ -472,7 +472,7 @@ jobs:
       - build-node-current
       - build-calamari-runtime
       - start-integration-tester
-      - check-for-runtime-upgrade
+      # - check-for-runtime-upgrade
     runs-on: ${{ needs.start-integration-tester.outputs.runner-label }}
     timeout-minutes: 90
     strategy:
