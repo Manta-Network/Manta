@@ -19,7 +19,7 @@ pub const CALAMARI_SS58PREFIX: u8 = 78;
 pub const CALAMARI_DECIMAL: u8 = 12;
 pub const CALAMARI_TOKEN_SYMBOL: &str = "KMA";
 
-// Manta constants 
+// Manta constants
 pub const MANTA_SS58PREFIX: u8 = 77;
 pub const MANTA_DECIMAL: u8 = 18;
 pub const MANTA_TOKEN_SYMBOL: &str = "MANTA";

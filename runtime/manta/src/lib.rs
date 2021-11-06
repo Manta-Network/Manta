@@ -163,7 +163,6 @@ impl Contains<Call> for MantaFilter {
 			| Call::Authorship(_)
 			| Call::Sudo(_)
 			| Call::Multisig(_)
-			| Call::Scheduler(_)
 			| Call::Balances(_) => true,
 			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
 			// Sudo also cannot be filtered because it is used in runtime upgrade.

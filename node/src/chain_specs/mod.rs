@@ -34,7 +34,7 @@ pub use manta_runtime::currency::MANTA;
 
 const CALAMARI_ENDOWMENT: Balance = 1_000_000_000 * KMA; // 10 endowment so that total supply is 10B
 
-const MANTA_ENDOWMENT: Balance = 1000_000_000 * MANTA; // 10 endowment so that total supply is 1B
+const MANTA_ENDOWMENT: Balance = 100_000_000 * MANTA; // 10 endowment so that total supply is 1B
 
 const STAGING_TELEMETRY_URL: &str = "wss://api.telemetry.manta.systems/submit/";
 
