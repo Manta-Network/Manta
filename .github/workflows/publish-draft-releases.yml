@@ -46,14 +46,15 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
-    matrix:
-      runtime:
-        -
-          name: calamari
-          para-id: 2084
-        -
-          name: manta
-          para-id: 2015
+    strategy:
+      matrix:
+        runtime:
+          -
+            name: calamari
+            para-id: 2084
+          -
+            name: manta
+            para-id: 2015
     steps:
       -
         uses: actions/checkout@v2
@@ -753,14 +754,15 @@ jobs:
     needs:
       - get-rust-versions
       - build-runtimes
-    matrix:
-      runtime:
-        -
-          name: calamari
-          para-id: 2084
-        -
-          name: manta
-          para-id: 2015
+    strategy:
+      matrix:
+        runtime:
+          -
+            name: calamari
+            para-id: 2084
+          -
+            name: manta
+            para-id: 2015
     if: startsWith(github.ref, 'refs/tags')
     steps:
       -
@@ -831,14 +833,15 @@ jobs:
     runs-on: ubuntu-20.04
     needs:
       - create-draft-release
-    matrix:
-      runtime:
-        -
-          name: calamari
-          para-id: 2084
-        -
-          name: manta
-          para-id: 2015
+    strategy:
+      matrix:
+        runtime:
+          -
+            name: calamari
+            para-id: 2084
+          -
+            name: manta
+            para-id: 2015
     if: startsWith(github.ref, 'refs/tags')
     steps:
       -
