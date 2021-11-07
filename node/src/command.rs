@@ -78,7 +78,7 @@ fn load_spec(
 		"calamari-local" => Ok(Box::new(chain_specs::calamari_local_config(para_id))),
 		"calamari-testnet" => Ok(Box::new(chain_specs::calamari_testnet_config(para_id)?)),
 		"calamari-testnet-ci" => Ok(Box::new(chain_specs::calamari_testnet_ci_config()?)),
-		"calamari" | "" => Ok(Box::new(chain_specs::calamari_config()?)),
+		"calamari" => Ok(Box::new(chain_specs::calamari_config()?)),
 		path => {
 			let chain_spec = chain_specs::ChainSpec::from_json_file(path.into())?;
 			if chain_spec.is_manta() {
@@ -133,7 +133,7 @@ impl SubstrateCli for Cli {
 				id,
 				self.run.parachain_id.unwrap_or(MANTA_PARACHAIN_ID).into(),
 			)
-		} else if id.starts_with("calamari") {
+		} else {
 			load_spec(
 				id,
 				self.run
@@ -141,8 +141,6 @@ impl SubstrateCli for Cli {
 					.unwrap_or(CALAMARI_PARACHAIN_ID)
 					.into(),
 			)
-		} else {
-			Err("invalid chain spec".into())
 		}
 	}
 
