@@ -7,9 +7,9 @@ name: Check Build
 # yamllint disable-line rule:truthy
 on:
   pull_request:
-    branches: [manta-pc]
+    branches: [manta]
   push:
-    branches: [manta-pc]
+    branches: [manta]
 
 env:
   AWS_REGION: us-east-1

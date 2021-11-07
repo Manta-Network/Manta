@@ -7,9 +7,9 @@ name: publish draft releases
 # yamllint disable-line rule:truthy
 on:
   pull_request:
-    branches: [manta-pc]
+    branches: [manta]
   push:
-    branches: [manta-pc]
+    branches: [manta]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 
@@ -181,7 +181,7 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         uses: actions/checkout@v2
         with:
-          ref: 'manta-pc'
+          ref: 'manta'
       -
         name: install sccache
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
@@ -739,30 +739,6 @@ jobs:
         name: test - calamari alice finalized block ${{ matrix.chain-spec.expected.block-count.para }}
         run: |
           grep '\[Parachain\] .* finalized #${{ matrix.chain-spec.expected.block-count.para }} ' ${{ github.workspace }}/manta-pc-launch/9921.log
-      # -
-      #   name: validate manta-pc-launch stdout log
-      #   run: |
-      #     cat ${{ github.workspace }}/manta-pc-launch-stdout.log
-      # -
-      #   name: validate manta-pc-launch stderr log
-      #   run: |
-      #     cat ${{ github.workspace }}/manta-pc-launch-stderr.log
-      # -
-      #   name: validate rococo alice log
-      #   run: |
-      #     cat ${{ github.workspace }}/manta-pc-launch/alice.log
-      # -
-      #   name: validate rococo bob log
-      #   run: |
-      #     cat ${{ github.workspace }}/manta-pc-launch/bob.log
-      # -
-      #   name: validate calamari alice log
-      #   run: |
-      #     cat ${{ github.workspace }}/manta-pc-launch/9921.log
-      # -
-      #   name: validate calamari bob log
-      #   run: |
-      #     cat ${{ github.workspace }}/manta-pc-launch/9922.log
 
   build-changelog:
     runs-on: ubuntu-20.04
@@ -1146,7 +1122,7 @@ jobs:
         run: |
           mkdir temp_for_run
           cd temp_for_run
-          git clone -b manta-pc https://github.com/Manta-Network/Manta.git
+          git clone -b manta https://github.com/Manta-Network/Manta.git
           cd Manta
           runtime_ver_base="$(ruby -e '
             require "./scripts/github/lib.rb";
