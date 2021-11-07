@@ -185,40 +185,48 @@ pub fn manta_testnet_config(id: ParaId) -> MantaChainSpec {
 	// (controller_account, aura_id)
 	let initial_authorities: Vec<(AccountId, AuraId)> = vec![
 		(
-			// account id: dfcAcdrGMvrhhuVnqsXsCi53rGp9JWzyczHdRxn9THe8TiNNt
-			hex!["f853f56e9bdec8841c71251dc7c0e4d5160919df9c309907a1d7ab61b35bf530"].into(),
-			hex!["56bea77a6396efe47022814f7e34d5e8bae80dc89ba28fca9e413e14709b6002"]
+			// account id: dfZKJxcgRqQsPdC53eXBsgQWFrKTbXHm76v35ndypRPxz2JJR
+			hex!["7a40f6773ffa7d13147daa0f8cf7e5ea5b54a14fb515ccded35ea7df7ce2c26a"].into(),
+			hex!["a6da86747dce627b0a0cf4189ce35247a5c0c9a69570f2b5b72241beb711a141"]
 				.unchecked_into(),
 		),
 		(
-			// account id: dfY7Mi9craRmPdMaW8dNYp7Hj9fc8eP1Ti4hvF5ELsdLk36oN
-			hex!["44e70b3104b2a6d8140fe0044e1432be8442206e7190a7edd10fa92d365ceb30"].into(),
-			hex!["fe5329b7da9f11ce5d0ad8a449b197b4f5ca587ebf5a36841d4ca6dfbd2cf951"]
+			// account id: dfWsu5CrRwsnmJHNM1xW4iUJSQLNavVC1D2PmwtRBHT7dNxRV
+			hex!["0e66f3b49250bced29cff1d717b944f4f57e5ced096e4b6aeeb7d5206d7b1d0e"].into(),
+			hex!["c8ddaec483dfa0a580a7c8194ee625a6251743859070415aa7f8f384abd6c550"]
 				.unchecked_into(),
 		),
 		(
-			// account id: dfXk5vAbd5JyqB7XL5HvooReGxA4QdXZiuS4rPhmSs2NBL4z9
-			hex!["34adba14c165d5a968dc9e19ec7268c46df418e00a6e4b730a55aa1d58dcce4a"].into(),
-			hex!["c06f516066d3c99edbffdc55841107d3518830e0080c979f454f06b53c359645"]
+			// account id: dfbzNJu8JcX2ixaVKgbG65qBBDV9M6yYWpg2UgnyNVwPdjGWt
+			hex!["f08346ce33e5c8c29d0fcb7aa70db75964d763f0537777ef9d5f0091fe3d371c"].into(),
+			hex!["6c14813c02fa0b9992560cae02337c748af2e46bb5a1b26b6011bde02f92f356"]
 				.unchecked_into(),
 		),
 		(
-			// account id: dfZY9gDWqu3eunq3feCetwXppVUapUk6tJbPmrQBgUfB2JTzr
-			hex!["840be78d2675c54f026fd807d2d0da145cf2577689b21cdcfe1a6680c83f9710"].into(),
-			hex!["d86fc37d2bcfbcbae99eceb6255a5e063f49e9a90d0ea385343dd8805e5bc533"]
+			// account id: dfYKdJMKT4X8inLTaSvtGjmtBGAyCbP1AuQjNu73EX4Hv6cG3
+			hex!["4e4277d721cfed60407222cb7e47701a60597d7b598cda5d0ac38fc29dab8d72"].into(),
+			hex!["966c68c4308b757bef26f21e4951cfd47e6a56ce6c68350dff5d3355bbf27749"]
 				.unchecked_into(),
 		),
 		(
-			// account id: dfWnpKTX74uCZrWxPbNUWprLsDTJkdr69kwH3Kan8PFEEV4Go
-			hex!["0a86b87ebd460a526e5d15f80586f9e0f07310ce6d364bcfe8befba3e742e822"].into(),
-			hex!["b08921fb75be024361b8fe8291a5f4368b0db136e08b932fa5c769ff5e704912"]
+			// account id: dfaE1cZfyqn1taSRno43bHRKNXFxErfhtDquErcfEL11YxxMr
+			hex!["a272940a6d11b48f691225841e168d0f16c8101cc034f115298c4aa53c2a5d6f"].into(),
+			hex!["2e6dba967ee6ca20655e92ee82954aed4d88975435a835b97973c270dfa67402"]
 				.unchecked_into(),
 		),
 	];
 
-	// root accout: dfYKP4VdPHmSfNU3gCwb1FXqEZrnkw2fKGfQkh6JT4b2z8X4N
+	// root accout: dfaKjznDQQFYixKSBNkfxShEbzfQ6Jvjkkn6cifV2jSCNoY1e
 	let root_key: AccountId =
-		hex!["4e128922a811d874f91c219aaa597ee3bd73bcb22910b3b1c57d297b9175336e"].into();
+		hex!["a6d17ab57e1a1b7e70aea7d1c084afef514ae69613e67397fe9690ae8c0944a4"].into();
+	
+	let root_controllers: Vec<AccountId> = vec![
+		hex!["3e3bed621633daf5ff0aa6b37d7e676aff09a942da813ab2dc6dd5e8baaf9c09"].into(),
+		hex!["543e1e0ff9213cd1a3ed8cefd1443c4d7434c3d109aa665c8ec5b4ea80d37445"].into(),
+		hex!["c0592dc117d6e9497d5f2ce4babadfee405761475534c7cc3b834824e845ee2c"].into(),
+		hex!["5e0910c13f5f5c2b8256b8a5a1e8c9a04e377acda504f25b8a07dfc748f4382d"].into(),
+		hex!["deb9e5b3f5942f66b94a5496f79053b83efc7df0eadbb4e17344b03c96efd52f"].into()
+	];
 
 	MantaChainSpec::from_genesis(
 		// Name
@@ -226,7 +234,7 @@ pub fn manta_testnet_config(id: ParaId) -> MantaChainSpec {
 		// ID
 		"manta_testnet",
 		ChainType::Local,
-		move || manta_testnet_genesis(initial_authorities.clone(), root_key.clone(), id),
+		move || manta_testnet_genesis(initial_authorities.clone(), root_key.clone(), root_controllers.clone(), id),
 		vec![],
 		Some(
 			sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
@@ -244,6 +252,7 @@ pub fn manta_testnet_config(id: ParaId) -> MantaChainSpec {
 fn manta_testnet_genesis(
 	initial_authorities: Vec<(AccountId, AuraId)>,
 	root_key: AccountId,
+	root_controllers: Vec<AccountId>,
 	id: ParaId,
 ) -> manta_runtime::GenesisConfig {
 	let mut initial_balances: Vec<(AccountId, Balance)> = initial_authorities
@@ -251,7 +260,10 @@ fn manta_testnet_genesis(
 		.cloned()
 		.map(|x| (x.0, MANTA_ENDOWMENT))
 		.collect();
-	initial_balances.push((root_key.clone(), 500_000_000 * MANTA));
+	initial_balances.push((root_key.clone(), 499_500_000 * MANTA));
+	for account in root_controllers {
+		initial_balances.push((account, 100_000 * MANTA));
+	}
 
 	manta_runtime::GenesisConfig {
 		system: manta_runtime::SystemConfig {
