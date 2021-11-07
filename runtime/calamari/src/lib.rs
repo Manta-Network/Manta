@@ -595,10 +595,6 @@ impl Config for XcmConfig {
 	type SubscriptionService = PolkadotXcm;
 }
 
-parameter_types! {
-	pub const MaxDownwardMessageWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 10;
-}
-
 /// No one is allowed to dispatch XCM sends/executions.
 pub type LocalOriginToLocation = ();
 
