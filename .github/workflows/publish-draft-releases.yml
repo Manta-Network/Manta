@@ -787,7 +787,8 @@ jobs:
       - build-changelog
       - build-calamari-runtime
       - integration-test
-      - runtime-upgrade-test
+      # a work around of rococo bug
+      # - runtime-upgrade-test
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
       asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
