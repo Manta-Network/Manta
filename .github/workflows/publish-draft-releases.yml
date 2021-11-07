@@ -47,11 +47,11 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
     matrix:
-      - runtime:
-        - 
+      runtime:
+        -
           name: calamari
           para-id: 2084
-        - 
+        -
           name: manta
           para-id: 2015
     steps:
@@ -288,13 +288,13 @@ jobs:
       fail-fast: false
       matrix:
         runtime:
-        - 
-          name: calamari
-          chain-spec: calamari-testnet-ci
-          para-id: 2084
-        - 
-          name: manta
-          para-id: 2015
+          -
+            name: calamari
+            chain-spec: calamari-testnet-ci
+            para-id: 2084
+          -
+            name: manta
+            para-id: 2015
     steps:
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
@@ -754,11 +754,11 @@ jobs:
       - get-rust-versions
       - build-runtimes
     matrix:
-      - runtime:
-        - 
+      runtime:
+        -
           name: calamari
           para-id: 2084
-        - 
+        -
           name: manta
           para-id: 2015
     if: startsWith(github.ref, 'refs/tags')
@@ -832,11 +832,11 @@ jobs:
     needs:
       - create-draft-release
     matrix:
-      - runtime:
-        - 
+      runtime:
+        -
           name: calamari
           para-id: 2084
-        - 
+        -
           name: manta
           para-id: 2015
     if: startsWith(github.ref, 'refs/tags')
