@@ -37,8 +37,8 @@ use std::{io::Write, net::SocketAddr};
 
 pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
-// TODO: add Manta parachain ID if available
-pub const PARACHAIN_ID: u32 = 2084;
+pub const MANTA_PARACHAIN_ID: u32 = 2015;
+pub const CALAMARI_PARACHAIN_ID: u32 = 2084;
 
 trait IdentifyChain {
 	fn is_manta(&self) -> bool;
@@ -81,9 +81,13 @@ fn load_spec(
 		path => {
 			let chain_spec = chain_specs::ChainSpec::from_json_file(path.into())?;
 			if chain_spec.is_manta() {
-				Ok(Box::new(chain_specs::MantaChainSpec::from_json_file(path.into())?))
+				Ok(Box::new(chain_specs::MantaChainSpec::from_json_file(
+					path.into(),
+				)?))
 			} else if chain_spec.is_calamari() {
-				Ok(Box::new(chain_specs::CalamariChainSpec::from_json_file(path.into())?))
+				Ok(Box::new(chain_specs::CalamariChainSpec::from_json_file(
+					path.into(),
+				)?))
 			} else {
 				Err("Please input a file name starting with manta or calamari.".into())
 			}
@@ -123,7 +127,22 @@ impl SubstrateCli for Cli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		load_spec(id, self.run.parachain_id.unwrap_or(PARACHAIN_ID).into())
+		if id.starts_with("manta") {
+			load_spec(
+				id,
+				self.run.parachain_id.unwrap_or(MANTA_PARACHAIN_ID).into(),
+			)
+		} else if id.starts_with("calamari") {
+			load_spec(
+				id,
+				self.run
+					.parachain_id
+					.unwrap_or(CALAMARI_PARACHAIN_ID)
+					.into(),
+			)
+		} else {
+			Err("invalid chain spec".into())
+		}
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -273,7 +292,7 @@ pub fn run() -> Result<()> {
 
 			let block: Block = generate_genesis_block(&load_spec(
 				&params.chain.clone().unwrap_or_default(),
-				params.parachain_id.unwrap_or(PARACHAIN_ID).into(),
+				params.parachain_id.unwrap_or(MANTA_PARACHAIN_ID).into(),
 			)?)?;
 			let raw_header = block.header().encode();
 			let output_buf = if params.raw {
@@ -340,7 +359,12 @@ pub fn run() -> Result<()> {
 						.chain(cli.relaychain_args.iter()),
 				);
 
-				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(PARACHAIN_ID));
+				let id = ParaId::from(
+					cli.run
+						.parachain_id
+						.or(para_id)
+						.unwrap_or(MANTA_PARACHAIN_ID),
+				);
 
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);

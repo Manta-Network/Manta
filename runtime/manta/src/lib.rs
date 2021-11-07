@@ -424,7 +424,6 @@ impl Config for XcmConfig {
 	type SubscriptionService = PolkadotXcm;
 }
 
-
 /// No local origins on this chain are allowed to dispatch XCM sends/executions.
 pub type LocalOriginToLocation = ();
 

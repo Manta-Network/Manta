@@ -219,13 +219,13 @@ pub fn manta_testnet_config(id: ParaId) -> MantaChainSpec {
 	// root accout: dfaKjznDQQFYixKSBNkfxShEbzfQ6Jvjkkn6cifV2jSCNoY1e
 	let root_key: AccountId =
 		hex!["a6d17ab57e1a1b7e70aea7d1c084afef514ae69613e67397fe9690ae8c0944a4"].into();
-	
+
 	let root_controllers: Vec<AccountId> = vec![
 		hex!["3e3bed621633daf5ff0aa6b37d7e676aff09a942da813ab2dc6dd5e8baaf9c09"].into(),
 		hex!["543e1e0ff9213cd1a3ed8cefd1443c4d7434c3d109aa665c8ec5b4ea80d37445"].into(),
 		hex!["c0592dc117d6e9497d5f2ce4babadfee405761475534c7cc3b834824e845ee2c"].into(),
 		hex!["5e0910c13f5f5c2b8256b8a5a1e8c9a04e377acda504f25b8a07dfc748f4382d"].into(),
-		hex!["deb9e5b3f5942f66b94a5496f79053b83efc7df0eadbb4e17344b03c96efd52f"].into()
+		hex!["deb9e5b3f5942f66b94a5496f79053b83efc7df0eadbb4e17344b03c96efd52f"].into(),
 	];
 
 	MantaChainSpec::from_genesis(
@@ -234,7 +234,14 @@ pub fn manta_testnet_config(id: ParaId) -> MantaChainSpec {
 		// ID
 		"manta_testnet",
 		ChainType::Local,
-		move || manta_testnet_genesis(initial_authorities.clone(), root_key.clone(), root_controllers.clone(), id),
+		move || {
+			manta_testnet_genesis(
+				initial_authorities.clone(),
+				root_key.clone(),
+				root_controllers.clone(),
+				id,
+			)
+		},
 		vec![],
 		Some(
 			sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
