@@ -1122,7 +1122,7 @@ jobs:
         run: |
           mkdir temp_for_run
           cd temp_for_run
-          git clone -b manta-pc https://github.com/Manta-Network/Manta.git
+          git clone -b manta https://github.com/Manta-Network/Manta.git
           cd Manta
           runtime_ver_base="$(ruby -e '
             require "./scripts/github/lib.rb";
