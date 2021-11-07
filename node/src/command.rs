@@ -72,6 +72,7 @@ fn load_spec(
 		"manta-dev" => Ok(Box::new(chain_specs::manta_development_config(para_id))),
 		"manta-local" => Ok(Box::new(chain_specs::manta_local_config(para_id))),
 		"manta-testnet" => Ok(Box::new(chain_specs::manta_testnet_config(para_id))),
+		"manta" => Ok(Box::new(chain_specs::manta_config(para_id))),
 		// calamari chainspec
 		"calamari-dev" => Ok(Box::new(chain_specs::calamari_development_config(para_id))),
 		"calamari-local" => Ok(Box::new(chain_specs::calamari_local_config(para_id))),

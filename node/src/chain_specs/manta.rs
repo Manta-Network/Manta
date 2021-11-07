@@ -313,3 +313,154 @@ fn manta_testnet_genesis(
 		parachain_system: Default::default(),
 	}
 }
+
+pub fn manta_config(id: ParaId) -> MantaChainSpec {
+	let properties = manta_properties();
+
+	// (controller_account, aura_id)
+	let initial_authorities: Vec<(AccountId, AuraId)> = vec![
+		(
+			hex!["0a667c67f4b0499b222eb2f4e7fa23cc2404587c7b3c38a4c80d2a4bf1173415"].into(),
+			hex!["be333c8657539b601306850f6fd0e939541fddc139861ea36c44b1dab880990a"]
+				.unchecked_into(),
+		),
+		(
+			hex!["24bbcf0d98d8a4c88c32e49693eb9d45526718eb7113e890473dddcad5d8e90c"].into(),
+			hex!["628dd3b79748ce21a74107f10e417107a59c83988ef57598482f47eb4506dd2f"]
+				.unchecked_into(),
+		),
+		(
+			hex!["fa4a27839a0fb276700fe3f89dd9483ee6e125b6805a3e56abde8194c8156421"].into(),
+			hex!["deff6eeef76208eb1e76013519a54ecacfc87d070902e305dfc65df707c5cb27"]
+				.unchecked_into(),
+		),
+		(
+			hex!["dee345754f20c0b7bbd26af13af1703093f066fb45f1401c4ecea0451932e92a"].into(),
+			hex!["82ea3434902300b10cca7080af294f41ad478d4dde5bc85231820a9a3d434529"]
+				.unchecked_into(),
+		),
+		(
+			hex!["0206514b020cb93e5ed853954f9f461d694b1016cff6cc108ad6ba905f660a52"].into(),
+			hex!["fefd3f734afedea792f94d1f5c0e622b97decab99a116337996ceac044893811"]
+				.unchecked_into(),
+		),
+	];
+
+	// root accout:
+	let root_key: AccountId =
+		hex!["6f29ececbfe810fc957e53bc66af53f9f6722d51d1b7417b0caa179770d190b0"].into();
+	// treasury account:
+	let treasury_key: AccountId =
+		hex!["4e8a2a12d210f77c7c051406061c605f7c2fe41165f61abd1591292d0acc01ac"].into();
+
+	// first 5 are root controllers, next 5 are treasury controllers
+	let controllers: Vec<AccountId> = vec![
+		hex!["8421393ff776ee8cdc4116d3eeb62afdf014aed077a13907308437ba560b8c61"].into(),
+		hex!["50049deef9dc52327ceee49fb3934860678434fef94f0383bd7d2844c8e89f24"].into(),
+		hex!["3c4dffe781018bb43259dd18ff566d5290fe3a7bdcd40c59362c7a3947af314a"].into(),
+		hex!["2cf40ae574a3a762fb70e5cb577bafce2cf930e606ec581fa421ef770cd40840"].into(),
+		hex!["4eccdc12de7dd755993e2d6cd3aa941005ded69c1fd3abbc8854cafaa9e70e29"].into(),
+		hex!["e0b4301d7cd7ea22ca16b1424ef0dfb9d58575054cbcfaca1d97b2cda292cb68"].into(),
+		hex!["10a7075d5206123d836d442e44bed9e48cafa5dc73730d08cf77871f28568249"].into(),
+		hex!["ee73111842e7d40653c4680bfd94865fe8c99c867adfcac3ebe6497b6b4ae51f"].into(),
+		hex!["2e7d715571d612051f7a4c951769f090e82b41803adf1e2da92f52629ff28611"].into(),
+		hex!["5c555792cf64b4e1ac1e17afdd35a661ecb4610e21dd3d48f9898feb21295539"].into(),
+	];
+
+	MantaChainSpec::from_genesis(
+		// Name
+		"Manta Parachain",
+		// ID
+		"manta",
+		ChainType::Live,
+		move || {
+			manta_genesis(
+				initial_authorities.clone(),
+				root_key.clone(),
+				controllers.clone(),
+				treasury_key.clone(),
+				id,
+			)
+		},
+		vec![],
+		Some(
+			sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
+				.expect("Manta telemetry url is valid; qed"),
+		),
+		Some(MANTA_PROTOCOL_ID),
+		Some(properties),
+		Extensions {
+			relay_chain: POLKADOT_RELAYCHAIN_MAIN_NET.into(),
+			para_id: id.into(),
+		},
+	)
+}
+
+fn manta_genesis(
+	initial_authorities: Vec<(AccountId, AuraId)>,
+	root_key: AccountId,
+	controllers: Vec<AccountId>,
+	treasury: AccountId,
+	id: ParaId,
+) -> manta_runtime::GenesisConfig {
+	const TOTAL_SUPPLY: u128 = 1000_000_000 * MANTA;
+	// default initial balances for root, controller, and collators
+	const DEFAULT_INITIAL_BALANCE: u128 = 100_000 * MANTA;
+
+	let mut initial_balances: Vec<(AccountId, Balance)> = initial_authorities
+		.iter()
+		.cloned()
+		.map(|x| (x.0, DEFAULT_INITIAL_BALANCE))
+		.collect();
+
+	initial_balances.push((root_key.clone(), DEFAULT_INITIAL_BALANCE));
+	for account in controllers.clone() {
+		initial_balances.push((account, DEFAULT_INITIAL_BALANCE));
+	}
+
+	let treasury_balance = TOTAL_SUPPLY
+		- (initial_authorities.len() as u128 + controllers.len() as u128 + 1)
+			* DEFAULT_INITIAL_BALANCE;
+	initial_balances.push((treasury.clone(), treasury_balance));
+
+	manta_runtime::GenesisConfig {
+		system: manta_runtime::SystemConfig {
+			code: manta_runtime::WASM_BINARY
+				.expect("WASM binary was not build, please build it!")
+				.to_vec(),
+			changes_trie_config: Default::default(),
+		},
+		balances: manta_runtime::BalancesConfig {
+			balances: initial_balances,
+		},
+		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
+		// of this.
+		aura: Default::default(),
+		sudo: manta_runtime::SudoConfig { key: root_key },
+		parachain_info: manta_runtime::ParachainInfoConfig { parachain_id: id },
+		collator_selection: manta_runtime::CollatorSelectionConfig {
+			invulnerables: initial_authorities
+				.iter()
+				.cloned()
+				.map(|(acc, _)| acc)
+				.collect(),
+			candidacy_bond: MANTA * 10_000, // How many tokens will be reserved as collator
+			..Default::default()
+		},
+		session: manta_runtime::SessionConfig {
+			keys: initial_authorities
+				.iter()
+				.cloned()
+				.map(|(acc, aura)| {
+					(
+						acc.clone(),              // account id
+						acc,                      // validator id
+						manta_session_keys(aura), // session keys
+					)
+				})
+				.collect(),
+		},
+		aura_ext: Default::default(),
+		parachain_system: Default::default(),
+	}
+}
