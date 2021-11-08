@@ -1177,11 +1177,9 @@ jobs:
           echo "::set-output name=match::true"
           if [[ ${{ needs.parse-runtimes.outputs.manta-runtime-base }} != ${{ needs.parse-runtimes.outputs.manta-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
           if [[ ${{ needs.parse-runtimes.outputs.calamari-runtime-base }} != ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
-      -
-        name: print result
-        id: print-result
+      -  
+        name: force fail if new versions don't match
         run: |
-          echo ${{ steps.check-match.outputs.match }}
-          echo ....................
+          if [[  ${{ needs.parse-runtimes.outputs.manta-runtime-current }} !=  ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then exit 1; fi
 
 # yamllint enable rule:line-length
