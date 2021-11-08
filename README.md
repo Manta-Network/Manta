@@ -19,20 +19,19 @@ cargo build --release
 
 ## Manta Developement
 Currently, there are two developing branches:
-* `manta-pc`: Manta Network/Calamari Network's parachain runtime
+* `manta`: Manta Network/Calamari Network's parachain runtime
 * `dolphin`: Dolphin testnet runtime (a standlone testnet runs its own consensus)
 
 ## Semantic Versioning
 Manta/Calamari's version number:
-`v<x>.<y>.<z>-<relay-id>.<para-id>`
+`v<x>.<y>.<z>
 
 where:
 
 * `<x>` is the major version, i.e. major product release.
 * `<y>` is the middle verison, i.e. adding major features.
 * `<z>` is the minor version, i.e. performance improvement and bug fixes.
-* `<relay-id>` is the relay chain name, i.e. kusama or polkadot
-* `<para-id>` is the parachain name, i.e. clamari or manta
+
 
 ## Contributing
 * please submit your code through PR.
