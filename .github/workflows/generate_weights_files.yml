@@ -144,6 +144,14 @@ jobs:
               id: pallet_balances
               name: pallet_balances
             iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_multisig
+            pallet:
+              id: pallet_multisig
+              name: pallet_multisig
+            iterations: 20
     steps:
       -
         uses: actions/download-artifact@v2
