@@ -134,7 +134,7 @@ jobs:
         name: run benchmark
         run: |
           manta benchmark \
-            --chain=manta-dev \
+            --chain=manta-local \
             --pallet=${{ matrix.benchmark.pallet.id }} \
             --extrinsic=${{ matrix.benchmark.extrinsic.id }} \
             --execution=Wasm \
