@@ -7,9 +7,9 @@ name: publish draft releases
 # yamllint disable-line rule:truthy
 on:
   pull_request:
-    branches: [manta-pc]
+    branches: [manta]
   push:
-    branches: [manta-pc]
+    branches: [manta]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 
@@ -41,10 +41,20 @@ jobs:
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
 
-  build-calamari-runtime:
+  build-runtimes:
+    needs: check-for-runtime-upgrade
     runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
+    strategy:
+      matrix:
+        runtime:
+          -
+            name: calamari
+            para-id: 2084
+          -
+            name: manta
+            para-id: 2015
     steps:
       -
         uses: actions/checkout@v2
@@ -52,34 +62,33 @@ jobs:
         name: cache target dir
         uses: actions/cache@v2
         with:
-          path: "${{ github.workspace }}/runtime/calamari/target"
-          key: srtool-target-calamari-${{ github.sha }}
+          path: "${{ github.workspace }}/runtime/${{ matrix.runtime.name }}/target"
+          key: srtool-target-${{ matrix.runtime.name }}-${{ github.sha }}
           restore-keys: |
-            srtool-target-calamari-
-            srtool-target-
+            srtool-target-${{ matrix.runtime.name }}
       -
         name: build runtime
         id: srtool-build
         uses: chevdor/srtool-actions@v0.3.0
         with:
           image: paritytech/srtool
-          chain: calamari
+          chain: ${{ matrix.runtime.name }}
       -
         name: persist srtool digest
         run: >
           echo '${{ steps.srtool-build.outputs.json }}' |
-          jq > calamari-srtool-output.json
+          jq > ${{ matrix.runtime.name }}-srtool-output.json
       -
         name: upload srtool json
         uses: actions/upload-artifact@v2
         with:
-          name: calamari-srtool-json
-          path: calamari-srtool-output.json
+          name: ${{ matrix.runtime.name }}-srtool-json
+          path: ${{ matrix.runtime.name }}-srtool-output.json
       -
         name: upload runtime
         uses: actions/upload-artifact@v2
         with:
-          name: calamari-runtime
+          name: ${{ matrix.runtime.name }}-runtime
           path: |
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
@@ -181,7 +190,7 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         uses: actions/checkout@v2
         with:
-          ref: 'manta-pc'
+          ref: 'manta'
       -
         name: install sccache
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
@@ -271,7 +280,7 @@ jobs:
   runtime-upgrade-test:
     needs:
       - build-node-base
-      - build-calamari-runtime
+      - build-runtimes
       - start-runtime-upgrade-tester
       - check-for-runtime-upgrade
     runs-on: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
@@ -279,14 +288,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        chain-spec:
+        runtime:
           -
-            id: calamari-testnet-ci
-            expected:
-              block-count:
-                para: 6
-              peer-count:
-                para: 2
+            name: calamari
+            chain-spec: calamari-testnet-ci
+            para-id: 2084
+          -
+            name: manta
+            para-id: 2015
     steps:
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
@@ -322,11 +331,11 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         id: create-chainspec
         run: |
-          manta-base build-spec --chain ${{ matrix.chain-spec.id }} --disable-default-bootnode --raw > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
+          manta-base build-spec --chain ${{ matrix.runtime.chain-spec }} --disable-default-bootnode --raw > $HOME/.local/share/calamari-pc/${{ matrix.runtime.chain-spec }}-spec.json
           jq \
             --sort-keys \
             --arg name "calamari testnet base" \
-            --arg id ${{ matrix.chain-spec.id }}-base \
+            --arg id ${{ matrix.runtime.chain-spec }}-base \
             --arg relay_chain rococo-local-base \
             --arg parachain_id 2084 \
             '. |
@@ -335,9 +344,9 @@ jobs:
               .relay_chain = $relay_chain |
               .para_id = ($parachain_id | tonumber) |
               .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
-            ' $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-spec.json
+            ' $HOME/.local/share/calamari-pc/${{ matrix.runtime.chain-spec }}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.runtime.chain-spec }}-base-spec.json
           ls -ahl $HOME/.local/share/calamari-pc/
-          manta-base export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
+          manta-base export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.runtime.chain-spec }}-base-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.runtime.chain-spec }}-state.json || true
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch config-for-runtime-upgrade-test
@@ -355,15 +364,15 @@ jobs:
             --arg relaychain_id rococo-local-base \
             --arg relaychain_name "rococo local base" \
             --arg parachains_bin $HOME/.local/bin/manta-base \
-            --arg parachains_spec $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-spec.json \
+            --arg parachains_spec $HOME/.local/share/calamari-pc/${{ matrix.runtime.chain-spec }}-base-spec.json \
             '.
               | .relaychain.bin = $relaychain_bin
               | .relaychain.mutation.id = $relaychain_id
               | .relaychain.mutation.name = $relaychain_name
               | .parachains[].bin = $parachains_bin
               | .parachains[].chain = $parachains_spec
-            ' > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-launch-config.json
-          jq . $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-launch-config.json
+            ' > $HOME/.local/share/calamari-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
+          jq . $HOME/.local/share/calamari-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
           ls -ahl $HOME/.local/share/calamari-pc/
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
@@ -386,10 +395,10 @@ jobs:
           yarn build
           pm2 start dist/cli.js \
             --name manta-pc-launch \
-            --output ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
+            --output ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.runtime.chain-spec }}-stdout.log \
+            --error ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.runtime.chain-spec }}-stderr.log \
             --no-autorestart \
-            -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-base-launch-config.json
+            -- $HOME/.local/share/calamari-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: init measure-block-time calamari
@@ -397,9 +406,9 @@ jobs:
           cd ${{ github.workspace }}/dev-tools-calamari/measure-block-time
           yarn install
           pm2 start index.js \
-            --name measure-block-time-${{ matrix.chain-spec.id }} \
-            --output ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
+            --name measure-block-time-${{ matrix.runtime.chain-spec }} \
+            --output ${{ github.workspace }}/measure-block-time-${{ matrix.runtime.chain-spec }}-stdout.log \
+            --error ${{ github.workspace }}/measure-block-time-${{ matrix.runtime.chain-spec }}-stderr.log \
             --no-autorestart \
             -- \
             --address=ws://127.0.0.1:9921
@@ -427,9 +436,9 @@ jobs:
           yarn
           sleep 60
           pm2 start index.js \
-            --name test-runtime-upgrade-${{ matrix.chain-spec.id }} \
-            --output ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stderr.log \
+            --name test-runtime-upgrade-${{ matrix.runtime.chain-spec }} \
+            --output ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log \
+            --error ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log \
             --no-autorestart
           cd ${{ github.workspace }}
           sleep 120
@@ -438,39 +447,39 @@ jobs:
         name: stop testnet
         run: |
           cd ${{ github.workspace }}/manta-pc-launch
-          pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
+          pm2 stop measure-block-time-${{ matrix.runtime.chain-spec }}
           pm2 stop manta-pc-launch
-          pm2 stop test-runtime-upgrade-${{ matrix.chain-spec.id }}
+          pm2 stop test-runtime-upgrade-${{ matrix.runtime.chain-spec }}
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         uses: actions/upload-artifact@v2
         with:
-          name: runtime-upgrade-test-for-${{ matrix.chain-spec.id }}-stdout.log
-          path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log
+          name: runtime-upgrade-test-for-${{ matrix.runtime.chain-spec }}-stdout.log
+          path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         uses: actions/upload-artifact@v2
         with:
-          name: runtime-upgrade-test-for-${{ matrix.chain-spec.id }}-stderr.log
-          path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stderr.log
+          name: runtime-upgrade-test-for-${{ matrix.runtime.chain-spec }}-stderr.log
+          path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: parse runtime upgrade log
         run: |
-          grep 'Included at block hash' ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words} | tee ${{ github.workspace }}/runtime-upgrade-output.csv; done
+          grep 'Included at block hash' ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log | while read -r line; do words=($line); echo ${words} | tee ${{ github.workspace }}/runtime-upgrade-output.csv; done
           if [ ! -f ${{ github.workspace }}/runtime-upgrade-output.csv ]; then echo "Runtime upgrade failed"; exit 1; fi
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: parse calamari block times
         run: |
-          grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv; done
-          if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv ]; then echo "block times not detected"; exit 1; fi
-          jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv > ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
+          grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.runtime.chain-spec }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv; done
+          if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv ]; then echo "block times not detected"; exit 1; fi
+          jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv > ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.json
 
   integration-test:
     needs:
       - build-node-current
-      - build-calamari-runtime
+      - build-runtimes
       - start-integration-tester
       - check-for-runtime-upgrade
     runs-on: ${{ needs.start-integration-tester.outputs.runner-label }}
@@ -739,42 +748,27 @@ jobs:
         name: test - calamari alice finalized block ${{ matrix.chain-spec.expected.block-count.para }}
         run: |
           grep '\[Parachain\] .* finalized #${{ matrix.chain-spec.expected.block-count.para }} ' ${{ github.workspace }}/manta-pc-launch/9921.log
-      # -
-      #   name: validate manta-pc-launch stdout log
-      #   run: |
-      #     cat ${{ github.workspace }}/manta-pc-launch-stdout.log
-      # -
-      #   name: validate manta-pc-launch stderr log
-      #   run: |
-      #     cat ${{ github.workspace }}/manta-pc-launch-stderr.log
-      # -
-      #   name: validate rococo alice log
-      #   run: |
-      #     cat ${{ github.workspace }}/manta-pc-launch/alice.log
-      # -
-      #   name: validate rococo bob log
-      #   run: |
-      #     cat ${{ github.workspace }}/manta-pc-launch/bob.log
-      # -
-      #   name: validate calamari alice log
-      #   run: |
-      #     cat ${{ github.workspace }}/manta-pc-launch/9921.log
-      # -
-      #   name: validate calamari bob log
-      #   run: |
-      #     cat ${{ github.workspace }}/manta-pc-launch/9922.log
 
   build-changelog:
     runs-on: ubuntu-20.04
     needs:
       - get-rust-versions
-      - build-calamari-runtime
+      - build-runtimes
+    strategy:
+      matrix:
+        runtime:
+          -
+            name: calamari
+            para-id: 2084
+          -
+            name: manta
+            para-id: 2015
     if: startsWith(github.ref, 'refs/tags')
     steps:
       -
         uses: actions/download-artifact@v2
         with:
-          name: calamari-srtool-json
+          name: ${{ matrix.runtime.name }}-srtool-json
       -
         uses: actions/checkout@v2
         with:
@@ -809,9 +803,10 @@ jobs:
     runs-on: ubuntu-20.04
     needs:
       - build-changelog
-      - build-calamari-runtime
+      - build-runtimes
       - integration-test
-      - runtime-upgrade-test
+      # a work around of rococo bug
+      # - runtime-upgrade-test
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
       asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
@@ -830,14 +825,23 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: manta ${{ github.ref }}
+          release_name: ${{ github.ref }}
           body_path: changelog.md
           draft: true
 
-  publish-calamari-runtime:
+  publish-runtimes:
     runs-on: ubuntu-20.04
     needs:
       - create-draft-release
+    strategy:
+      matrix:
+        runtime:
+          -
+            name: calamari
+            para-id: 2084
+          -
+            name: manta
+            para-id: 2015
     if: startsWith(github.ref, 'refs/tags')
     steps:
       -
@@ -845,11 +849,11 @@ jobs:
       -
         uses: actions/download-artifact@v2
         with:
-          name: calamari-runtime
+          name: ${{ matrix.runtime.name }}-runtime
       -
         uses: actions/download-artifact@v2
         with:
-          name: calamari-srtool-json
+          name: ${{ matrix.runtime.name }}-srtool-json
       -
         name: ruby setup
         uses: actions/setup-ruby@v1
@@ -871,8 +875,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-          asset_path: calamari_runtime.compact.wasm
-          asset_name: calamari-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.wasm
+          asset_path: ${{ matrix.runtime.name }}_runtime.compact.wasm
+          asset_name: ${{ matrix.runtime.name }}-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.wasm
           asset_content_type: application/wasm
       -
         name: upload compressed wasm
@@ -881,8 +885,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-          asset_path: calamari_runtime.compact.compressed.wasm
-          asset_name: calamari-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.compressed.wasm
+          asset_path: ${{ matrix.runtime.name }}_runtime.compact.compressed.wasm
+          asset_name: ${{ matrix.runtime.name }}-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.compressed.wasm
           asset_content_type: application/wasm
       -
         name: upload types json
@@ -892,7 +896,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
           asset_path: types.json
-          asset_name: calamari-types-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
+          asset_name: ${{ matrix.runtime.name }}-types-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
           asset_content_type: application/json
       -
         name: upload srtool output json
@@ -901,8 +905,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
-          asset_path: calamari-srtool-output.json
-          asset_name: calamari-srtool-output-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
+          asset_path: ${{ matrix.runtime.name }}-srtool-output.json
+          asset_name: ${{ matrix.runtime.name }}-srtool-output-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
           asset_content_type: application/json
 
   publish-node:
@@ -1146,7 +1150,7 @@ jobs:
         run: |
           mkdir temp_for_run
           cd temp_for_run
-          git clone -b manta-pc https://github.com/Manta-Network/Manta.git
+          git clone -b manta https://github.com/Manta-Network/Manta.git
           cd Manta
           runtime_ver_base="$(ruby -e '
             require "./scripts/github/lib.rb";
@@ -1164,42 +1168,5 @@ jobs:
           echo "::set-output name=match::false"
           if [[ ${{ steps.get-runtime-version-base.outputs.runtime-ver-base }} == ${{ steps.get-runtime-version-current.outputs.runtime-ver-current }} ]]; then echo "::set-output name=match::true"
           fi
-
-  # # Build docker image
-  # docker-image-build:
-  #   runs-on: ubuntu-20.04
-
-  #   steps:
-  #     # Get tag name
-  #     - run: |
-  #         echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-  #     - uses: actions/checkout@v2
-
-  #     - name: Set up Docker Buildx
-  #       uses: docker/setup-buildx-action@v1
-
-  #     - name: Login to Dockerhub
-  #       uses: docker/login-action@v1
-  #       with:
-  #         username: ${{ secrets.MANTABOT_DOCKER_USERNAME }}
-  #         password: ${{ secrets.MANTABOT_DOCKER_TOKEN }}
-
-  #     - name: Set Tag env
-  #       if: ${{ github.event.release.tag_name }}
-  #       run: |
-  #         echo "RELEASE_VERSION=${{ github.event.release.tag_name }}" >> "$GITHUB_ENV"
-  #     - name: Build and push
-  #       id: docker_build
-  #       uses: docker/build-push-action@v2
-  #       with:
-  #         push: true
-  #         file: docker/calamari.Dockerfile
-  #         tags: |
-  #           mantanetwork/calamari:latest
-  #           mantanetwork/calamari:${{ env.RELEASE_VERSION }}
-  #         build-args: TAG_NAME=${{ env.RELEASE_VERSION }}
-
-  #     - name: Image digest
-  #       run: echo ${{ steps.docker_build.outputs.digest }}
 
 # yamllint enable rule:line-length

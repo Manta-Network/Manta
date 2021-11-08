@@ -17,6 +17,7 @@
 ### Features
 
 ### Improvements
+- [\#250](https://github.com/Manta-Network/Manta/pull/250) Manta initial release
 - [\#242](https://github.com/Manta-Network/Manta/pull/242) Update upstream dependencies to `0.9.12`. Various XCM safeguards. Bump runtime version to 5
 - [\#244](https://github.com/Manta-Network/Manta/pull/244) Align benchmarking work flow with polkadot/kusama
 - [\#245](https://github.com/Manta-Network/Manta/pull/245) Unify manta and calamari client.
