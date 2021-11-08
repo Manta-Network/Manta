@@ -1177,7 +1177,7 @@ jobs:
           echo "::set-output name=match::true"
           if [[ ${{ needs.parse-runtimes.outputs.manta-runtime-base }} != ${{ needs.parse-runtimes.outputs.manta-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
           if [[ ${{ needs.parse-runtimes.outputs.calamari-runtime-base }} != ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
-      -  
+      -
         name: force fail if new versions don't match
         run: |
           if [[  ${{ needs.parse-runtimes.outputs.manta-runtime-current }} !=  ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then exit 1; fi
