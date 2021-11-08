@@ -1178,7 +1178,7 @@ jobs:
           echo "::set-output name=match::true"
           if [[ ${{ needs.parse-runtimes.outputs.manta-runtime-base }} != ${{ needs.parse-runtimes.outputs.manta-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
           if [[ ${{ needs.parse-runtimes.outputs.calamari-runtime-base }} != ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
-      -  
+      -
         name: print result
         id: print-result
         run: |
