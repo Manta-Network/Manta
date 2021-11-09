@@ -14,7 +14,7 @@ fn alice_vesting_for_bob_should_work() {
 				BOB,
 				unvested
 			));
-			assert_eq!(Balances::free_balance(ALICE), 10_000 - unvested);
+			assert_eq!(Balances::free_balance(ALICE), ALICE_DEPOSIT - unvested);
 			assert_eq!(Balances::free_balance(BOB), unvested);
 			assert_eq!(VestingBalances::<Test>::get(BOB), Some(unvested));
 
@@ -30,15 +30,17 @@ fn alice_vesting_for_bob_should_work() {
 			)));
 
 			run_to_block(3);
+			// Ensure current timestamp is bigger than the 1th round of schedule.
+			// Now Bob can claim 1th round vested tokens.
 			let now = VestingSchedule::<Test>::get()[0].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
 			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
 			assert_eq!(Balances::free_balance(BOB), unvested);
 
-			// BOB cannot transfer more than 34 tokens.
-			// Bacause rest of 66 is locked now.
-			let vested = 34;
+			// BOB cannot transfer more than 1th round of vested tokens.
+			// Bacause the rest of tokens are locked.
+			let vested = VestingSchedule::<Test>::get()[0].0 * unvested;
 			// Check event
 			System::assert_has_event(MockEvent::MantaVesting(PalletEvent::VestingUpdated(
 				BOB,
@@ -51,10 +53,14 @@ fn alice_vesting_for_bob_should_work() {
 			);
 
 			assert_ok!(Balances::transfer(Origin::signed(BOB), ALICE, vested));
-			assert_eq!(Balances::free_balance(ALICE), 10_000 - unvested + vested);
+			assert_eq!(
+				Balances::free_balance(ALICE),
+				ALICE_DEPOSIT - unvested + vested
+			);
 			assert_eq!(Balances::free_balance(BOB), unvested - vested);
 
-			// Ensure Bob can claim all tokens once vesting is done.
+			// Ensure current timestamp is bigger than the 7th round of schedule.
+			// Now Bob can claim 7th round vested tokens.
 			let now = VestingSchedule::<Test>::get()[6].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
@@ -70,7 +76,7 @@ fn alice_vesting_for_bob_should_work() {
 				ALICE,
 				unvested - vested
 			));
-			assert_eq!(Balances::free_balance(ALICE), 10_000);
+			assert_eq!(Balances::free_balance(ALICE), ALICE_DEPOSIT);
 			assert_eq!(Balances::free_balance(BOB), 0);
 
 			// Ensure vesting info is removed once vesting is done.
@@ -90,7 +96,7 @@ fn alice_vesting_for_bob_claim_slowly_should_work() {
 				BOB,
 				unvested
 			));
-			assert_eq!(Balances::free_balance(ALICE), 10_000 - unvested);
+			assert_eq!(Balances::free_balance(ALICE), ALICE_DEPOSIT - unvested);
 			assert_eq!(Balances::free_balance(BOB), unvested);
 			assert_eq!(VestingBalances::<Test>::get(BOB), Some(unvested));
 
@@ -105,7 +111,8 @@ fn alice_vesting_for_bob_claim_slowly_should_work() {
 				BOB, unvested,
 			)));
 
-			// Ensure Bob can cliam his token once the 4th round is done.
+			// Ensure current timestamp is bigger than the 4th round of schedule.
+			// Now Bob can claim 4th round vested tokens.
 			let now = VestingSchedule::<Test>::get()[3].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
@@ -114,14 +121,22 @@ fn alice_vesting_for_bob_claim_slowly_should_work() {
 
 			// BOB cannot transfer more than 67 tokens.
 			// Bacause rest of 33 is locked now.
-			let vested = 67;
+			// let vested = 67;
+			let vested = VestingSchedule::<Test>::get()[..4]
+				.iter()
+				.map(|s| s.0)
+				.fold(Percent::from_percent(0), |acc, p| acc.saturating_add(p))
+				* unvested;
 			assert_noop!(
 				Balances::transfer(Origin::signed(BOB), ALICE, vested + 1),
 				pallet_balances::Error::<Test, _>::LiquidityRestrictions,
 			);
 
 			assert_ok!(Balances::transfer(Origin::signed(BOB), ALICE, vested));
-			assert_eq!(Balances::free_balance(ALICE), 10_000 - unvested + vested);
+			assert_eq!(
+				Balances::free_balance(ALICE),
+				ALICE_DEPOSIT - unvested + vested
+			);
 			assert_eq!(Balances::free_balance(BOB), unvested - vested);
 		});
 }
@@ -138,45 +153,54 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
 				BOB,
 				unvested
 			));
-			assert_eq!(Balances::free_balance(ALICE), 10_000 - unvested);
+			assert_eq!(Balances::free_balance(ALICE), ALICE_DEPOSIT - unvested);
 			assert_eq!(Balances::free_balance(BOB), unvested);
 			assert_eq!(VestingBalances::<Test>::get(BOB), Some(unvested));
 
 			run_to_block(3);
+			// Ensure current timestamp is bigger than the 1th round of schedule.
+			// Now Bob can claim 1th round vested tokens.
 			let now = VestingSchedule::<Test>::get()[0].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
 			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
 			assert_eq!(Balances::free_balance(BOB), unvested);
 
-			// BOB cannot transfer more than 34 tokens.
-			// Bacause rest of 66 is locked now.
-			let vested = 34;
+			// BOB cannot transfer more than 1th round of vested tokens.
+			// Bacause the rest of tokens are locked.
+			let vested_1 = VestingSchedule::<Test>::get()[0].0 * unvested;
 			// Check event
 			System::assert_has_event(MockEvent::MantaVesting(PalletEvent::VestingUpdated(
 				BOB,
-				unvested - vested,
+				unvested - vested_1,
 			)));
 
 			assert_noop!(
-				Balances::transfer(Origin::signed(BOB), ALICE, vested + 1),
+				Balances::transfer(Origin::signed(BOB), ALICE, vested_1 + 1),
 				pallet_balances::Error::<Test, _>::LiquidityRestrictions,
 			);
 
-			assert_ok!(Balances::transfer(Origin::signed(BOB), ALICE, vested));
-			assert_eq!(Balances::free_balance(ALICE), 10_000 - unvested + vested);
-			assert_eq!(Balances::free_balance(BOB), unvested - vested);
+			assert_ok!(Balances::transfer(Origin::signed(BOB), ALICE, vested_1));
+			assert_eq!(
+				Balances::free_balance(ALICE),
+				ALICE_DEPOSIT - unvested + vested_1
+			);
+			assert_eq!(Balances::free_balance(BOB), unvested - vested_1);
 
-			// Now release tokens for the 6th round.
+			// Ensure current timestamp is bigger than the 6th round of schedule.
+			// Now Bob can claim 6th round vested tokens.
 			let now = VestingSchedule::<Test>::get()[5].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
 			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
-			// BOB cannot transfer more than 34 tokens.
-			// Bacause rest of 11 is locked now.
-			let vested = 55;
+
+			let vested_5 = VestingSchedule::<Test>::get()[..6]
+				.iter()
+				.map(|s| s.0)
+				.fold(Percent::from_percent(0), |acc, p| acc.saturating_add(p))
+				* unvested;
 			assert_noop!(
-				Balances::transfer(Origin::signed(BOB), ALICE, vested + 1),
+				Balances::transfer(Origin::signed(BOB), ALICE, vested_5 + 1),
 				pallet_balances::Error::<Test, _>::LiquidityRestrictions,
 			);
 
@@ -184,10 +208,10 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
 			System::assert_has_event(MockEvent::MantaVesting(PalletEvent::VestingUpdated(
 				BOB, 11,
 			)));
-			assert_eq!(Balances::free_balance(BOB), vested + 11);
+			assert_eq!(Balances::free_balance(BOB), vested_5 + 11);
 
-			assert_ok!(Balances::transfer(Origin::signed(BOB), ALICE, vested));
-			assert_eq!(Balances::free_balance(ALICE), 10_000 - 11);
+			assert_ok!(Balances::transfer(Origin::signed(BOB), ALICE, vested_5));
+			assert_eq!(Balances::free_balance(ALICE), ALICE_DEPOSIT - 11);
 			assert_eq!(Balances::free_balance(BOB), 11);
 		});
 }
@@ -204,7 +228,7 @@ fn vesting_complete_should_work() {
 				BOB,
 				unvested
 			));
-			assert_eq!(Balances::free_balance(ALICE), 10_000 - unvested);
+			assert_eq!(Balances::free_balance(ALICE), ALICE_DEPOSIT - unvested);
 			assert_eq!(VestingBalances::<Test>::get(BOB), Some(unvested));
 
 			// Now Bob cannot claim any token.
@@ -224,7 +248,8 @@ fn vesting_complete_should_work() {
 				pallet_balances::Error::<Test, _>::LiquidityRestrictions,
 			);
 
-			// Ensure Bob can claim all tokens once vesting is done.
+			// Ensure current timestamp is bigger than the 7th round of schedule.
+			// Now Bob can claim 7th round vested tokens.
 			let now = VestingSchedule::<Test>::get()[6].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
@@ -237,7 +262,7 @@ fn vesting_complete_should_work() {
 
 			// Now, Bob can transfer all his tokens.
 			assert_ok!(Balances::transfer(Origin::signed(BOB), ALICE, vested));
-			assert_eq!(Balances::free_balance(ALICE), 10_000);
+			assert_eq!(Balances::free_balance(ALICE), ALICE_DEPOSIT);
 			assert_eq!(Balances::free_balance(BOB), 0);
 
 			// Ensure vesting info is removed once vesting is done.
@@ -372,6 +397,8 @@ fn update_vesting_schedule_should_work() {
 				Error::<Test>::UnsortedSchedule,
 			);
 
+			// Ensure current timestamp is bigger than the 7th round of schedule.
+			// Now Bob can claim 7th round vested tokens.
 			let now = VestingSchedule::<Test>::get()[6].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
@@ -385,6 +412,8 @@ fn update_vesting_schedule_should_work() {
 				Error::<Test>::InvalidTimestamp,
 			);
 
+			// Ensure current timestamp is bigger than the 1th round of schedule.
+			// Now Bob can claim 1th round vested tokens.
 			let now = VestingSchedule::<Test>::get()[0].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 

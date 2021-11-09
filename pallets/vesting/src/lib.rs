@@ -27,7 +27,7 @@ type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 pub type Schedule = u64;
 
-const VESTING_ID: LockIdentifier = *b"mantavst";
+const VESTING_ID: LockIdentifier = *b"calamvst";
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -72,13 +72,20 @@ pub mod pallet {
 	pub(super) fn DefaultVestingSchedule<T: Config>(
 	) -> BoundedVec<(Percent, Schedule), T::MaxScheduleLength> {
 		BoundedVec::try_from(sp_std::vec![
-			(Percent::from_percent(34), 1636329600),
-			(Percent::from_percent(11), 1636502400),
-			(Percent::from_percent(11), 1641340800),
-			(Percent::from_percent(11), 1646179200),
-			(Percent::from_percent(11), 1651017600),
-			(Percent::from_percent(11), 1655856000),
-			(Percent::from_percent(11), 1660694400),
+			// 1636329600 = 2021-11-08 00:00:00
+			(Percent::from_percent(34), 1636329600u64.into()),
+			// 1636502400 = 2021-11-10 00:00:00
+			(Percent::from_percent(11), 1636502400u64.into()),
+			// 1641340800 = 2022-01-05 00:00:00
+			(Percent::from_percent(11), 1641340800u64.into()),
+			// 1646179200 = 2022-03-02 00:00:00
+			(Percent::from_percent(11), 1646179200u64.into()),
+			// 1651017600 = 2022-04-27 00:00:00
+			(Percent::from_percent(11), 1651017600u64.into()),
+			// 1655856000 = 2022-06-22 00:00:00
+			(Percent::from_percent(11), 1655856000u64.into()),
+			// 1660694400 = 2022-08-17 00:00:00
+			(Percent::from_percent(11), 1660694400u64.into()),
 		])
 		.unwrap_or_default()
 	}
@@ -162,7 +169,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Unlock any vested funds of the sender account.
+		/// Unlock vested balance according to the schedule.
 		///
 		/// The dispatch origin for this call must be _Signed_ and the sender must have funds still
 		/// locked under this pallet.
@@ -182,7 +189,7 @@ pub mod pallet {
 			Self::update_lock(&who)
 		}
 
-		/// Create a vested transfer.
+		/// Create a vested transfer: send `target` balance with the vesting schedule.
 		///
 		/// The dispatch origin for this call must be _Signed_.
 		///
@@ -218,7 +225,7 @@ pub mod pallet {
 				ExistenceRequirement::AllowDeath,
 			)?;
 
-			Self::add_vesting_schedule(&who, locked_amount)?;
+			Self::new_vesting_account(&who, locked_amount)?;
 
 			Ok(())
 		}
@@ -256,7 +263,8 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	fn add_vesting_schedule(who: &T::AccountId, locked: BalanceOf<T>) -> DispatchResult {
+	///  
+	fn new_vesting_account(who: &T::AccountId, locked: BalanceOf<T>) -> DispatchResult {
 		if locked.is_zero() {
 			return Ok(());
 		}

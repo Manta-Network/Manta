@@ -930,7 +930,7 @@ checksum = "631ae5198c9be5e753e5cc215e1bd73c2b466a3565173db433f52bb9d3e66dba"
 
 [[package]]
 name = "calamari-pc"
-version = "3.0.9"
+version = "3.10.0"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -997,8 +997,9 @@ dependencies = [
 
 [[package]]
 name = "calamari-runtime"
-version = "3.0.9"
+version = "3.10.0"
 dependencies = [
+ "calamari-vesting",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -1018,7 +1019,6 @@ dependencies = [
  "hex-literal",
  "log",
  "manta-primitives",
- "manta-vesting",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -1059,6 +1059,24 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+]
+
+[[package]]
+name = "calamari-vesting"
+version = "3.10.0"
+dependencies = [
+ "chrono",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -4392,29 +4410,11 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "3.0.9"
+version = "3.10.0"
 dependencies = [
  "parity-scale-codec",
  "smallvec",
  "sp-consensus-aura",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "manta-vesting"
-version = "3.0.9"
-dependencies = [
- "chrono",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-balances",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
  "sp-core",
  "sp-io",
  "sp-runtime",

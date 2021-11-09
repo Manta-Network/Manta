@@ -17,6 +17,7 @@ pub type Balance = u128;
 
 pub const ALICE: AccountId = 1;
 pub const BOB: AccountId = 2;
+pub const ALICE_DEPOSIT: Balance = 10_000;
 
 frame_support::construct_runtime!(
 	pub enum Test where
@@ -124,7 +125,7 @@ impl ExtBuilder {
 			.build_storage::<Test>()
 			.unwrap();
 		pallet_balances::GenesisConfig::<Test> {
-			balances: vec![(ALICE, 10_000 * self.existential_deposit)],
+			balances: vec![(ALICE, ALICE_DEPOSIT * self.existential_deposit)],
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();

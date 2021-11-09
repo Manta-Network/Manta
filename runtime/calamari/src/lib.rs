@@ -91,7 +91,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 5,
+	spec_version: 3100,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 2,
@@ -648,7 +648,7 @@ parameter_types! {
 	pub const MaxScheduleLength: u32 = 7;
 }
 
-impl manta_vesting::Config for Runtime {
+impl calamari_vesting::Config for Runtime {
 	type Currency = Balances;
 	type Event = Event;
 	type Timestamp = Timestamp;
@@ -763,7 +763,7 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
 
 		// Calamari stuff
-		CalamariVesting: manta_vesting::{Pallet, Call, Storage, Event<T>} = 50,
+		CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
 	}
 );
 
@@ -939,7 +939,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_collective, Council);
 			list_benchmark!(list, extra, pallet_membership, CouncilMembership);
 			list_benchmark!(list, extra, pallet_scheduler, Scheduler);
-			list_benchmark!(list, extra, manta_vesting, CalamariVesting);
+			list_benchmark!(list, extra, calamari_vesting, CalamariVesting);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -984,7 +984,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_collective, Council);
 			add_benchmark!(params, batches, pallet_membership, CouncilMembership);
 			add_benchmark!(params, batches, pallet_scheduler, Scheduler);
-			add_benchmark!(params, batches, manta_vesting, CalamariVesting);
+			add_benchmark!(params, batches, calamari_vesting, CalamariVesting);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

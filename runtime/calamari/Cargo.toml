@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'calamari-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '3.0.9'
+version = '3.10.0'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive", "max-encoded-len"] }
@@ -78,7 +78,7 @@ pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-featu
 
 # Self dependencies
 manta-primitives = { path = '../primitives', default-features = false }
-manta-vesting = { path = '../../pallets/vesting', default-features = false }
+calamari-vesting = { path = '../../pallets/vesting', default-features = false }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -111,7 +111,7 @@ runtime-benchmarks = [
 	'pallet-democracy/runtime-benchmarks',
 	'pallet-scheduler/runtime-benchmarks',
 	'pallet-membership/runtime-benchmarks',
-	'manta-vesting/runtime-benchmarks',
+	'calamari-vesting/runtime-benchmarks',
 ]
 std = [
 	'codec/std',
@@ -164,5 +164,5 @@ std = [
 	'polkadot-runtime-common/std',
 	'polkadot-primitives/std',
 	'pallet-collator-selection/std',
-	'manta-vesting/std',
+	'calamari-vesting/std',
 ]
