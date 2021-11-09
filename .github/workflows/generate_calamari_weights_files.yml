@@ -2,7 +2,7 @@
 
 # yamllint disable rule:line-length
 
-name: Benchmark Pallets & Generate Weights Files
+name: Benchmark Clamari Runtime & Generate Weights Files
 
 # yamllint disable-line rule:truthy
 on:
@@ -171,7 +171,7 @@ jobs:
       -
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.benchmark.pallet.name }}.rs
+          name: ${{ matrix.benchmark.pallet.id }}-${{ matrix.benchmark.pallet.name }}.rs
           path: ${{ github.workspace }}/${{ matrix.benchmark.pallet.name }}.rs
 
   start-node-builder-current:
