@@ -607,7 +607,7 @@ construct_runtime!(
 		ElectionProviderMultiPhase: pallet_election_provider_multi_phase::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 37,
 
 		// Manta pay
-		MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>},
+		MantaPay: pallet_manta_pay::{Pallet, Call, Config<T>, Storage, Event<T>},
 	}
 );
 
