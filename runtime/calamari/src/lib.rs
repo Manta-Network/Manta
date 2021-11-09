@@ -278,7 +278,7 @@ impl pallet_balances::Config for Runtime {
 	type Event = Event;
 	type ExistentialDeposit = NativeTokenExistentialDeposit;
 	type AccountStore = frame_system::Pallet<Runtime>;
-	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -385,7 +385,7 @@ impl pallet_democracy::Config for Runtime {
 	type Scheduler = Scheduler;
 	type PalletsOrigin = OriginCaller;
 	type MaxVotes = MaxVotes;
-	type WeightInfo = weights::pallet_democracy::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_democracy::SubstrateWeight<Runtime>;
 	type MaxProposals = MaxProposals;
 }
 
@@ -406,7 +406,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type MaxProposals = CouncilMaxProposals;
 	type MaxMembers = CouncilMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
-	type WeightInfo = weights::pallet_collective::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
 }
 
 pub type EnsureRootOrThreeFourthsCouncil = EnsureOneOf<
@@ -426,7 +426,7 @@ impl pallet_membership::Config<CouncilMembershipInstance> for Runtime {
 	type MembershipInitialized = Council;
 	type MembershipChanged = Council;
 	type MaxMembers = CouncilMaxMembers;
-	type WeightInfo = weights::pallet_membership::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_membership::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -444,7 +444,7 @@ impl pallet_collective::Config<TechnicalCollective> for Runtime {
 	type MaxProposals = TechnicalMaxProposals;
 	type MaxMembers = TechnicalMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
-	type WeightInfo = weights::pallet_collective::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
 }
 
 type TechnicalMembershipInstance = pallet_membership::Instance2;
@@ -458,7 +458,7 @@ impl pallet_membership::Config<TechnicalMembershipInstance> for Runtime {
 	type MembershipInitialized = TechnicalCommittee;
 	type MembershipChanged = TechnicalCommittee;
 	type MaxMembers = TechnicalMaxMembers;
-	type WeightInfo = weights::pallet_membership::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_membership::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -475,7 +475,7 @@ impl pallet_scheduler::Config for Runtime {
 	type MaximumWeight = MaximumSchedulerWeight;
 	type ScheduleOrigin = EnsureRoot<AccountId>;
 	type MaxScheduledPerBlock = MaxScheduledPerBlock;
-	type WeightInfo = weights::pallet_scheduler::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_scheduler::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {

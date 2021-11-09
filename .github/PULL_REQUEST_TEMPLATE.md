@@ -18,7 +18,7 @@ Before we can merge this PR, please make sure that all the following items have 
 checked off. If any of the checklist items are not applicable, please leave them but
 write a little note why.
 
-- [ ] Targeted PR against correct branch (`manta` or `manta-pc`) with right title (start with [Manta] or [Manta-PC]),
+- [ ] Targeted PR against correct branch (`manta` or `dolphin`) with right title (start with [Manta] or [Dolphin]),
 - [ ] Linked to Github issue with discussion and accepted design OR have an explanation in the PR that describes this work.
 - [ ] Wrote unit tests.
 - [ ] Updated relevant documentation in the code.
