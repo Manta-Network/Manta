@@ -63,6 +63,7 @@ pub mod pallet {
 	#[pallet::getter(fn vesting_schedule)]
 	pub(super) type VestingSchedule<T: Config> = StorageValue<
 		_,
+		// The schedule is UTC.
 		BoundedVec<(Percent, Schedule), T::MaxScheduleLength>,
 		ValueQuery,
 		DefaultVestingSchedule<T>,
@@ -72,20 +73,20 @@ pub mod pallet {
 	pub(super) fn DefaultVestingSchedule<T: Config>(
 	) -> BoundedVec<(Percent, Schedule), T::MaxScheduleLength> {
 		BoundedVec::try_from(sp_std::vec![
-			// 1636329600 = 2021-11-08 00:00:00
-			(Percent::from_percent(34), 1636329600u64.into()),
-			// 1636502400 = 2021-11-10 00:00:00
-			(Percent::from_percent(11), 1636502400u64.into()),
-			// 1641340800 = 2022-01-05 00:00:00
-			(Percent::from_percent(11), 1641340800u64.into()),
-			// 1646179200 = 2022-03-02 00:00:00
-			(Percent::from_percent(11), 1646179200u64.into()),
-			// 1651017600 = 2022-04-27 00:00:00
-			(Percent::from_percent(11), 1651017600u64.into()),
-			// 1655856000 = 2022-06-22 00:00:00
-			(Percent::from_percent(11), 1655856000u64.into()),
-			// 1660694400 = 2022-08-17 00:00:00
-			(Percent::from_percent(11), 1660694400u64.into()),
+			// 1636329600 = 2021-11-08 00:00:00(UTC)
+			(Percent::from_percent(34), 1636329600u64),
+			// 1636502400 = 2021-11-10 00:00:00(UTC)
+			(Percent::from_percent(11), 1636502400u64),
+			// 1641340800 = 2022-01-05 00:00:00(UTC)
+			(Percent::from_percent(11), 1641340800u64),
+			// 1646179200 = 2022-03-02 00:00:00(UTC)
+			(Percent::from_percent(11), 1646179200u64),
+			// 1651017600 = 2022-04-27 00:00:00(UTC)
+			(Percent::from_percent(11), 1651017600u64),
+			// 1655856000 = 2022-06-22 00:00:00(UTC)
+			(Percent::from_percent(11), 1655856000u64),
+			// 1660694400 = 2022-08-17 00:00:00(UTC)
+			(Percent::from_percent(11), 1660694400u64),
 		])
 		.unwrap_or_default()
 	}
@@ -97,13 +98,14 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// The amount vested has been updated. This could indicate more funds are available. The
-		/// balance given is the amount which is left unvested (and thus locked).
+		/// The amount vested has been updated. This could indicate more funds are available.
+		/// The balance given is the amount which is left unvested (and thus locked).
 		/// \[account, unvested\]
 		VestingUpdated(T::AccountId, BalanceOf<T>),
 		/// An \[account\] has become fully vested. No further vesting can happen.
 		VestingCompleted(T::AccountId),
 		/// Update a vesting schedule.
+		/// \[new_schedule\]
 		VestingScheduleUpdated(BoundedVec<Schedule, T::MaxScheduleLength>),
 	}
 
@@ -140,17 +142,20 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_root(origin)?;
 
+			// We have only 7 rounds of schedule.
 			let old_schedule = VestingSchedule::<T>::get();
 			ensure!(
 				new_schedule.len() == old_schedule.len(),
 				Error::<T>::InvalidScheduleLength
 			);
 
+			// Ensure the new schedule should be sorted.
 			ensure!(
 				new_schedule.as_slice().windows(2).all(|w| w[0] < w[1]),
 				Error::<T>::UnsortedSchedule
 			);
 
+			// Todo, consider some vesting schedule happen.
 			let now = T::Timestamp::now().as_secs();
 			ensure!(
 				new_schedule.iter().all(|&s| now <= s),
@@ -263,7 +268,7 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	///  
+	/// Adds a vesting schedule to a given account.
 	fn new_vesting_account(who: &T::AccountId, locked: BalanceOf<T>) -> DispatchResult {
 		if locked.is_zero() {
 			return Ok(());

@@ -1,4 +1,5 @@
 use super::{Event as PalletEvent, *};
+use chrono::prelude::*;
 use frame_support::{assert_noop, assert_ok};
 use mock::{Event as MockEvent, *};
 
@@ -32,7 +33,8 @@ fn alice_vesting_for_bob_should_work() {
 			run_to_block(3);
 			// Ensure current timestamp is bigger than the 1th round of schedule.
 			// Now Bob can claim 1th round vested tokens.
-			let now = VestingSchedule::<Test>::get()[0].1 * 1000 + 1;
+			let first_round = 0;
+			let now = VestingSchedule::<Test>::get()[first_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
 			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
@@ -40,7 +42,7 @@ fn alice_vesting_for_bob_should_work() {
 
 			// BOB cannot transfer more than 1th round of vested tokens.
 			// Bacause the rest of tokens are locked.
-			let vested = VestingSchedule::<Test>::get()[0].0 * unvested;
+			let vested = VestingSchedule::<Test>::get()[first_round].0 * unvested;
 			// Check event
 			System::assert_has_event(MockEvent::MantaVesting(PalletEvent::VestingUpdated(
 				BOB,
@@ -61,7 +63,8 @@ fn alice_vesting_for_bob_should_work() {
 
 			// Ensure current timestamp is bigger than the 7th round of schedule.
 			// Now Bob can claim 7th round vested tokens.
-			let now = VestingSchedule::<Test>::get()[6].1 * 1000 + 1;
+			let last_round = 6;
+			let now = VestingSchedule::<Test>::get()[last_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
 			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
@@ -113,7 +116,8 @@ fn alice_vesting_for_bob_claim_slowly_should_work() {
 
 			// Ensure current timestamp is bigger than the 4th round of schedule.
 			// Now Bob can claim 4th round vested tokens.
-			let now = VestingSchedule::<Test>::get()[3].1 * 1000 + 1;
+			let fourth_round = 3;
+			let now = VestingSchedule::<Test>::get()[fourth_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
 			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
@@ -122,7 +126,7 @@ fn alice_vesting_for_bob_claim_slowly_should_work() {
 			// BOB cannot transfer more than 67 tokens.
 			// Bacause rest of 33 is locked now.
 			// let vested = 67;
-			let vested = VestingSchedule::<Test>::get()[..4]
+			let vested = VestingSchedule::<Test>::get()[..=fourth_round]
 				.iter()
 				.map(|s| s.0)
 				.fold(Percent::from_percent(0), |acc, p| acc.saturating_add(p))
@@ -160,7 +164,8 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
 			run_to_block(3);
 			// Ensure current timestamp is bigger than the 1th round of schedule.
 			// Now Bob can claim 1th round vested tokens.
-			let now = VestingSchedule::<Test>::get()[0].1 * 1000 + 1;
+			let first_round = 0;
+			let now = VestingSchedule::<Test>::get()[first_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
 			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
@@ -168,7 +173,7 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
 
 			// BOB cannot transfer more than 1th round of vested tokens.
 			// Bacause the rest of tokens are locked.
-			let vested_1 = VestingSchedule::<Test>::get()[0].0 * unvested;
+			let vested_1 = VestingSchedule::<Test>::get()[first_round].0 * unvested;
 			// Check event
 			System::assert_has_event(MockEvent::MantaVesting(PalletEvent::VestingUpdated(
 				BOB,
@@ -189,30 +194,42 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
 
 			// Ensure current timestamp is bigger than the 6th round of schedule.
 			// Now Bob can claim 6th round vested tokens.
-			let now = VestingSchedule::<Test>::get()[5].1 * 1000 + 1;
+			let sixth_round = 5;
+			let now = VestingSchedule::<Test>::get()[sixth_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
 			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
 
-			let vested_5 = VestingSchedule::<Test>::get()[..6]
+			// All vested for 6th round.
+			let vested_0_to_5 = VestingSchedule::<Test>::get()[..=sixth_round]
 				.iter()
 				.map(|s| s.0)
 				.fold(Percent::from_percent(0), |acc, p| acc.saturating_add(p))
 				* unvested;
 			assert_noop!(
-				Balances::transfer(Origin::signed(BOB), ALICE, vested_5 + 1),
+				Balances::transfer(Origin::signed(BOB), ALICE, vested_0_to_5 + 1 - vested_1),
 				pallet_balances::Error::<Test, _>::LiquidityRestrictions,
 			);
+
+			// Vested only 6th round.
+			let vested_5 = VestingSchedule::<Test>::get()[sixth_round].0 * unvested;
 
 			// Check event
 			System::assert_has_event(MockEvent::MantaVesting(PalletEvent::VestingUpdated(
 				BOB, 11,
 			)));
-			assert_eq!(Balances::free_balance(BOB), vested_5 + 11);
+			assert_eq!(
+				Balances::free_balance(BOB),
+				vested_0_to_5 + vested_5 - vested_1
+			);
 
-			assert_ok!(Balances::transfer(Origin::signed(BOB), ALICE, vested_5));
-			assert_eq!(Balances::free_balance(ALICE), ALICE_DEPOSIT - 11);
-			assert_eq!(Balances::free_balance(BOB), 11);
+			assert_ok!(Balances::transfer(
+				Origin::signed(BOB),
+				ALICE,
+				vested_0_to_5 - vested_1
+			));
+			assert_eq!(Balances::free_balance(ALICE), ALICE_DEPOSIT - vested_5);
+			assert_eq!(Balances::free_balance(BOB), vested_5);
 		});
 }
 
@@ -250,7 +267,8 @@ fn vesting_complete_should_work() {
 
 			// Ensure current timestamp is bigger than the 7th round of schedule.
 			// Now Bob can claim 7th round vested tokens.
-			let now = VestingSchedule::<Test>::get()[6].1 * 1000 + 1;
+			let last_round = 6;
+			let now = VestingSchedule::<Test>::get()[last_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
 			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
@@ -272,149 +290,14 @@ fn vesting_complete_should_work() {
 
 #[test]
 fn update_vesting_schedule_should_work() {
-	use chrono::prelude::*;
-
-	let default_schedule: [(Percent, i32, u32, u32, u32, u32, u32, &'static str); 7] = [
-		(
-			Percent::from_percent(34),
-			2021,
-			11,
-			08,
-			0,
-			0,
-			0,
-			"2021-11-08 00:00:00",
-		),
-		(
-			Percent::from_percent(11),
-			2021,
-			11,
-			10,
-			0,
-			0,
-			0,
-			"2021-11-10 00:00:00",
-		),
-		(
-			Percent::from_percent(11),
-			2022,
-			01,
-			05,
-			0,
-			0,
-			0,
-			"2022-01-05 00:00:00",
-		),
-		(
-			Percent::from_percent(11),
-			2022,
-			03,
-			02,
-			0,
-			0,
-			0,
-			"2022-03-02 00:00:00",
-		),
-		(
-			Percent::from_percent(11),
-			2022,
-			04,
-			27,
-			0,
-			0,
-			0,
-			"2022-04-27 00:00:00",
-		),
-		(
-			Percent::from_percent(11),
-			2022,
-			06,
-			22,
-			0,
-			0,
-			0,
-			"2022-06-22 00:00:00",
-		),
-		(
-			Percent::from_percent(11),
-			2022,
-			08,
-			17,
-			0,
-			0,
-			0,
-			"2022-08-17 00:00:00",
-		),
-	];
 	ExtBuilder::default()
 		.existential_deposit(1)
 		.build()
 		.execute_with(|| {
-			// Check current schedule.
-			let schedule = VestingSchedule::<Test>::get();
-			assert_eq!(schedule.len(), MaxScheduleLength::get() as usize);
-
-			//Check percentage.
-			assert_eq!(
-				schedule
-					.iter()
-					.map(|(p, _)| p)
-					.fold(Percent::from_percent(0), |acc, p| acc.saturating_add(*p)),
-				Percent::from_percent(100)
-			);
-
-			for ((p, s), ds) in schedule.iter().zip(default_schedule.iter()) {
-				let dt = Utc.ymd(ds.1, ds.2, ds.3).and_hms(ds.4, ds.5, ds.6);
-
-				// Check each percentage is correct.
-				assert_eq!(ds.0, *p);
-				// Check datetime is correct.
-				assert_eq!(dt.format("%Y-%m-%d %H:%M:%S").to_string(), ds.7);
-				// Check timestamp is correct.
-				assert_eq!(dt.timestamp() as u64, *s);
-			}
-
-			// Cannot update the length of schedule is bigger than 7 or smaller than 7.
-			let wrong_length_schedule: BoundedVec<u64, MaxScheduleLength> =
-				BoundedVec::try_from(vec![1, 2, 3, 4, 5, 6, 7, 8]).unwrap_or_default();
-			assert_noop!(
-				MantaVesting::update_vesting_schedule(Origin::root(), wrong_length_schedule),
-				Error::<Test>::InvalidScheduleLength,
-			);
-
-			let wrong_length_schedule: BoundedVec<u64, MaxScheduleLength> =
-				BoundedVec::try_from(vec![1, 2, 3, 4, 5, 6]).unwrap_or_default();
-			assert_noop!(
-				MantaVesting::update_vesting_schedule(Origin::root(), wrong_length_schedule),
-				Error::<Test>::InvalidScheduleLength,
-			);
-
-			// The new schedule should be a sorted array.
-			let invalid_schedule: BoundedVec<u64, MaxScheduleLength> =
-				BoundedVec::try_from(vec![1, 2, 9, 4, 8, 6, 7]).unwrap_or_default();
-			assert_noop!(
-				MantaVesting::update_vesting_schedule(Origin::root(), invalid_schedule),
-				Error::<Test>::UnsortedSchedule,
-			);
-
-			// Ensure current timestamp is bigger than the 7th round of schedule.
-			// Now Bob can claim 7th round vested tokens.
-			let now = VestingSchedule::<Test>::get()[6].1 * 1000 + 1;
-			Timestamp::set_timestamp(now);
-
-			// The new schedule should not be past time.
-			let invalid_schedule: BoundedVec<u64, MaxScheduleLength> = BoundedVec::try_from(vec![
-				1636311600, 1636311601, 1636311602, 1636311603, 1636311604, 1636311605, 1636311606,
-			])
-			.unwrap_or_default();
-			assert_noop!(
-				MantaVesting::update_vesting_schedule(Origin::root(), invalid_schedule),
-				Error::<Test>::InvalidTimestamp,
-			);
-
 			// Ensure current timestamp is bigger than the 1th round of schedule.
 			// Now Bob can claim 1th round vested tokens.
-			let now = VestingSchedule::<Test>::get()[0].1 * 1000 + 1;
+			let frist_round = 0;
+			let now = VestingSchedule::<Test>::get()[frist_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
 			let new_schedule = BoundedVec::try_from(
@@ -440,5 +323,99 @@ fn update_vesting_schedule_should_work() {
 			System::assert_has_event(MockEvent::MantaVesting(
 				PalletEvent::VestingScheduleUpdated(new_schedule),
 			));
+		});
+}
+
+#[test]
+fn invalid_schedule_should_not_be_updated() {
+	ExtBuilder::default()
+		.existential_deposit(1)
+		.build()
+		.execute_with(|| {
+			// Cannot update the length of schedule is bigger than 7 or smaller than 7.
+			let wrong_length_schedule: BoundedVec<u64, MaxScheduleLength> =
+				BoundedVec::try_from(vec![1, 2, 3, 4, 5, 6, 7, 8]).unwrap_or_default();
+			assert_noop!(
+				MantaVesting::update_vesting_schedule(Origin::root(), wrong_length_schedule),
+				Error::<Test>::InvalidScheduleLength,
+			);
+
+			// We have only 7 rounds of schedule.
+			let wrong_length_schedule: BoundedVec<u64, MaxScheduleLength> =
+				BoundedVec::try_from(vec![1, 2, 3, 4, 5, 6]).unwrap_or_default();
+			assert_noop!(
+				MantaVesting::update_vesting_schedule(Origin::root(), wrong_length_schedule),
+				Error::<Test>::InvalidScheduleLength,
+			);
+
+			// The new schedule should be a sorted array.
+			let invalid_schedule: BoundedVec<u64, MaxScheduleLength> =
+				BoundedVec::try_from(vec![1, 2, 9, 4, 8, 6, 7]).unwrap_or_default();
+			assert_noop!(
+				MantaVesting::update_vesting_schedule(Origin::root(), invalid_schedule),
+				Error::<Test>::UnsortedSchedule,
+			);
+
+			// Ensure current timestamp is bigger than the 7th round of schedule.
+			// Now Bob can claim 7th round vested tokens.
+			let last_round = 6;
+			let now = VestingSchedule::<Test>::get()[last_round].1 * 1000 + 1;
+			Timestamp::set_timestamp(now);
+
+			// The new schedule should not be past time.
+			let invalid_schedule: BoundedVec<u64, MaxScheduleLength> = BoundedVec::try_from(vec![
+				1636311600, 1636311601, 1636311602, 1636311603, 1636311604, 1636311605, 1636311606,
+			])
+			.unwrap_or_default();
+			assert_noop!(
+				MantaVesting::update_vesting_schedule(Origin::root(), invalid_schedule),
+				Error::<Test>::InvalidTimestamp,
+			);
+		});
+}
+
+#[test]
+fn check_vesting_schedule() {
+	#[rustfmt::skip]
+	let default_schedule: [(Percent, (i32, u32, u32, u32, u32, u32), &'static str); 7] = [
+		// (Percentage, (timestamp), date)
+		(Percent::from_percent(34), (2021, 11, 08, 0, 0, 0), "2021-11-08 00:00:00"),
+		(Percent::from_percent(11), (2021, 11, 10, 0, 0, 0), "2021-11-10 00:00:00"),
+		(Percent::from_percent(11), (2022, 01, 05, 0, 0, 0), "2022-01-05 00:00:00"),
+		(Percent::from_percent(11), (2022, 03, 02, 0, 0, 0), "2022-03-02 00:00:00"),
+		(Percent::from_percent(11), (2022, 04, 27, 0, 0, 0), "2022-04-27 00:00:00"),
+		(Percent::from_percent(11), (2022, 06, 22, 0, 0, 0), "2022-06-22 00:00:00"),
+		(Percent::from_percent(11), (2022, 08, 17, 0, 0, 0), "2022-08-17 00:00:00"),
+	];
+
+	ExtBuilder::default()
+		.existential_deposit(1)
+		.build()
+		.execute_with(|| {
+			// Check current schedule.
+			let schedule = VestingSchedule::<Test>::get();
+			assert_eq!(schedule.len(), MaxScheduleLength::get() as usize);
+
+			//Check percentage.
+			assert_eq!(
+				schedule
+					.iter()
+					.map(|(p, _)| p)
+					.fold(Percent::from_percent(0), |acc, p| acc.saturating_add(*p)),
+				Percent::from_percent(100)
+			);
+
+			for ((p, s), ds) in schedule.iter().zip(default_schedule.iter()) {
+				let dt = Utc
+					.ymd(ds.1 .0, ds.1 .1, ds.1 .2)
+					.and_hms(ds.1 .3, ds.1 .4, ds.1 .5);
+
+				// Check each percentage is correct.
+				assert_eq!(ds.0, *p);
+				// Check datetime is correct.
+				assert_eq!(dt.format("%Y-%m-%d %H:%M:%S").to_string(), ds.2);
+				// Check timestamp is correct.
+				assert_eq!(dt.timestamp() as u64, *s);
+			}
 		});
 }

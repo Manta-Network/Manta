@@ -2,16 +2,7 @@
 
 ## Pending
 
-### Breaking changes
-
-### Features
-
-### Improvements
-
-### Bug fixes
-
-## v3.0.9
-
+## v3.1.0
 ### Breaking changes
 
 ### Features
@@ -19,10 +10,23 @@
 - Update weight for `pallet_democracy`/`pallet_collective`/`pallet_membership`/`pallet_scheduler`/`pallet_balances`/`manta-vesting`.
 
 ### Improvements
-- Bump spec version to 5
-- [\#244](https://github.com/Manta-Network/Manta/pull/244) Adjust benchmarking workflow.
+Bump spec version to 3100
+### Bug fixes
+
+## v3.0.9
+
+### Breaking changes
+
+### Features
+
+### Improvements
+- [\#250](https://github.com/Manta-Network/Manta/pull/250) Manta initial release
+- [\#242](https://github.com/Manta-Network/Manta/pull/242) Update upstream dependencies to `0.9.12`. Various XCM safeguards. Bump runtime version to 5
+- [\#244](https://github.com/Manta-Network/Manta/pull/244) Align benchmarking work flow with polkadot/kusama
+- [\#245](https://github.com/Manta-Network/Manta/pull/245) Unify manta and calamari client.
 
 ### Bug fixes
+- [\#233](https://github.com/Manta-Network/Manta/pull/233) Fix dockerfile so that build args are available at runtime and container entrypoint is correctly executed
 
 ## v3.0.8
 

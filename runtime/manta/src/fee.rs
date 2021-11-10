@@ -1,3 +1,19 @@
+// Copyright 2020-2021 Manta Network.
+// This file is part of Manta.
+//
+// Manta is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Manta is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Manta.  If not, see <http://www.gnu.org/licenses/>.
+
 use crate::currency;
 use frame_support::weights::{
 	constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -27,7 +43,7 @@ impl WeightToFeePolynomial for WeightToFee {
 		// in Polkadot, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 CENT:
 		// in Manta Parachain, we map to 1/10 of that, or 1/100 CENT
 		// TODO, revisit here to figure out why use this polynomial
-		let p = currency::cMA;
+		let p = currency::cMANTA;
 		let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
 		smallvec![WeightToFeeCoefficient {
 			degree: 1,

@@ -3,8 +3,8 @@ LABEL description="calamari parachain node"
 
 ARG PARA_BINARY_REF
 
-ARG PARA_GENESIS_REF=manta-pc
-ARG PARA_BINARY_URL=https://github.com/Manta-Network/Manta/releases/download/$PARA_BINARY_REF/calamari-pc
+ARG PARA_GENESIS_REF=manta
+ARG PARA_BINARY_URL=https://github.com/Manta-Network/Manta/releases/download/$PARA_BINARY_REF/manta
 ARG PARA_BINARY_PATH=/usr/local/bin/parachain
 
 ARG PARA_GENESIS_URL=https://raw.githubusercontent.com/Manta-Network/Manta/$PARA_GENESIS_REF/genesis/calamari-genesis.json
@@ -72,8 +72,10 @@ ENTRYPOINT $PARA_BINARY_PATH \
   --base-path $SUBSTRATE_BASE_PATH \
   --parachain-id $SUBSTRATE_PARACHAIN_ID \
   --port $SUBSTRATE_PORT \
-  --rpc-port $SUBSTRATE_RPC_PORT \
   --ws-port $SUBSTRATE_WS_PORT \
+  --ws-external \
+  --rpc-port $SUBSTRATE_RPC_PORT \
+  --rpc-external \
   --rpc-cors $SUBSTRATE_RPC_CORS \
   --rpc-methods $SUBSTRATE_RPC_METHODS \
   --ws-max-connections $SUBSTRATE_WS_MAX_CONNECTIONS \

@@ -1,3 +1,19 @@
+// Copyright 2020-2021 Manta Network.
+// This file is part of Manta.
+//
+// Manta is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Manta is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Manta.  If not, see <http://www.gnu.org/licenses/>.
+
 //! Calamari Parachain runtime.
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -24,7 +40,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Contains, Everything},
+	traits::{Contains, Everything, Nothing},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -52,8 +68,8 @@ use xcm_builder::{
 	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
 	EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset,
 	ParentAsSuperuser, ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	SiblingParachainConvertsVia, SignedAccountId32AsNative, SovereignSignedViaLocation,
+	TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{Config, XcmExecutor};
 
@@ -141,6 +157,62 @@ parameter_types! {
 	pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
 }
 
+// Don't allow permission-less asset creation.
+pub struct BaseFilter;
+impl Contains<Call> for BaseFilter {
+	fn contains(c: &Call) -> bool {
+		match c {
+			Call::Timestamp(_)
+			| Call::ParachainSystem(_)
+			| Call::Authorship(_)
+			| Call::Sudo(_)
+			| Call::Multisig(_)
+			// For now disallow public proposal workflows, treasury workflows,
+			// as well as external_propose and external_propose_majority.
+			// The following are filtered out:
+			// pallet_democracy::Call::propose(_)
+			// pallet_democracy::Call::second(_, _)
+			// pallet_democracy::Call::cancel_proposal(_)
+			// pallet_democracy::Call::clear_public_proposals()
+			// pallet_democracy::Call::external_propose(_)
+			// pallet_democracy::Call::external_propose_majority(_)
+			// Call::Treasury(_)
+			| Call::Democracy(pallet_democracy::Call::vote {..}
+								| pallet_democracy::Call::emergency_cancel {..}
+								| pallet_democracy::Call::external_propose_default {..}
+								| pallet_democracy::Call::fast_track  {..}
+								| pallet_democracy::Call::veto_external {..}
+								| pallet_democracy::Call::cancel_referendum {..}
+								| pallet_democracy::Call::cancel_queued {..}
+								| pallet_democracy::Call::delegate {..}
+								| pallet_democracy::Call::undelegate {..}
+								| pallet_democracy::Call::note_preimage {..}
+								| pallet_democracy::Call::note_preimage_operational {..}
+								| pallet_democracy::Call::note_imminent_preimage {..}
+								| pallet_democracy::Call::note_imminent_preimage_operational {..}
+								| pallet_democracy::Call::reap_preimage {..}
+								| pallet_democracy::Call::unlock {..}
+								| pallet_democracy::Call::remove_vote {..}
+								| pallet_democracy::Call::remove_other_vote {..}
+								| pallet_democracy::Call::enact_proposal {..}
+								| pallet_democracy::Call::blacklist {..})
+			| Call::Council(_)
+			| Call::TechnicalCommittee(_)
+			| Call::CouncilMembership(_)
+			| Call::TechnicalMembership(_)
+			| Call::Scheduler(_)
+			| Call::Balances(_) => true,
+			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
+			// Sudo also cannot be filtered because it is used in runtime upgrade.
+			_ => false,
+			// Filter System to prevent users from runtime upgrade without sudo privilege.
+			// Filter Utility and Multisig to prevent users from setting keys and selecting collator for parachain (couldn't use now).
+			// Filter Session and CollatorSelection to prevent users from utility operation.
+			// Filter XCM pallet.
+		}
+	}
+}
+
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
 	type BaseCallFilter = BaseFilter; // Let filter activate.
@@ -224,10 +296,6 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ExecutiveBody: BodyId = BodyId::Executive;
-}
-
-parameter_types! {
 	// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
 	pub const DepositBase: Balance = deposit(1, 88);
 	// Additional storage item size of 32 bytes.
@@ -264,7 +332,6 @@ parameter_types! {
 	pub const MinimumDeposit: Balance = 20 * KMA;
 	pub const EnactmentPeriod: BlockNumber = 1 * DAYS;
 	pub const CooloffPeriod: BlockNumber = 7 * DAYS;
-	// (bytes as Balance) * 6 * mMA
 	pub const PreimageByteDeposit: Balance = deposit(0, 1);
 	pub const MaxVotes: u32 = 100;
 	pub const MaxProposals: u32 = 100;
@@ -433,7 +500,7 @@ impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
 	pub const KsmLocation: MultiLocation = MultiLocation::parent();
-	pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
+	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 }
@@ -489,8 +556,9 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 parameter_types! {
-	// One XCM operation is 200_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: Weight = 200_000_000;
+	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
+	// see https://github.com/paritytech/cumulus/blob/master/polkadot-parachains/statemine/src/lib.rs#L551
+	pub UnitWeightCost: Weight = 1_000_000_000;
 	pub const MaxInstructions: u32 = 100;
 }
 
@@ -527,12 +595,8 @@ impl Config for XcmConfig {
 	type SubscriptionService = PolkadotXcm;
 }
 
-parameter_types! {
-	pub const MaxDownwardMessageWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 10;
-}
-
-/// No local origins on this chain are allowed to dispatch XCM sends/executions.
-pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, RelayNetwork>;
+/// No one is allowed to dispatch XCM sends/executions.
+pub type LocalOriginToLocation = ();
 
 /// The means for routing XCM messages which are not for local execution into the right message
 /// queues.
@@ -552,7 +616,9 @@ impl pallet_xcm::Config for Runtime {
 	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
 	type XcmRouter = XcmRouter;
 	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-	type XcmExecuteFilter = Everything;
+	/// This means that no location will pass XcmExecuteFilter, so a dispatched `execute` message will be filtered.
+	/// This shouldn't be reachable since `LocalOriginToLocation = ();`, but let's be on the safe side.
+	type XcmExecuteFilter = Nothing;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type XcmTeleportFilter = Everything;
 	type XcmReserveTransferFilter = Everything;
@@ -580,7 +646,6 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 }
 
 parameter_types! {
-	pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(33);
 	// Rotate collator's spot each 6 hours.
 	pub const Period: u32 = 6 * HOURS;
 	pub const Offset: u32 = 0;
@@ -599,7 +664,6 @@ impl pallet_session::Config for Runtime {
 	type SessionHandler =
 		<opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = opaque::SessionKeys;
-	type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
 	type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
 }
 
@@ -617,6 +681,10 @@ parameter_types! {
 	pub const MinCandidates: u32 = 3;
 	// How many collators who cannot be slashed.
 	pub const MaxInvulnerables: u32 = 5;
+}
+
+parameter_types! {
+	pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
@@ -654,65 +722,6 @@ impl calamari_vesting::Config for Runtime {
 	type Timestamp = Timestamp;
 	type MinVestedTransfer = MinVestedTransfer;
 	type MaxScheduleLength = MaxScheduleLength;
-}
-
-// Don't allow permission-less asset creation.
-pub struct BaseFilter;
-impl Contains<Call> for BaseFilter {
-	fn contains(c: &Call) -> bool {
-		match c {
-			Call::Timestamp(_)
-			| Call::ParachainSystem(_)
-			| Call::Authorship(_)
-			| Call::Sudo(_)
-			| Call::Multisig(_)
-			// For now disallow public proposal workflows, treasury workflows,
-			// as well as external_propose and external_propose_majority.
-			// The following are filtered out:
-			// pallet_democracy::Call::propose(_)
-			// pallet_democracy::Call::second(_, _)
-			// pallet_democracy::Call::cancel_proposal(_)
-			// pallet_democracy::Call::clear_public_proposals()
-			// pallet_democracy::Call::external_propose(_)
-			// pallet_democracy::Call::external_propose_majority(_)
-			// Call::Treasury(_)
-			| Call::Democracy(pallet_democracy::Call::vote {..}
-								| pallet_democracy::Call::emergency_cancel {..}
-								| pallet_democracy::Call::external_propose_default {..}
-								| pallet_democracy::Call::fast_track  {..}
-								| pallet_democracy::Call::veto_external {..}
-								| pallet_democracy::Call::cancel_referendum {..}
-								| pallet_democracy::Call::cancel_queued {..}
-								| pallet_democracy::Call::delegate {..}
-								| pallet_democracy::Call::undelegate {..}
-								| pallet_democracy::Call::note_preimage {..}
-								| pallet_democracy::Call::note_preimage_operational {..}
-								| pallet_democracy::Call::note_imminent_preimage {..}
-								| pallet_democracy::Call::note_imminent_preimage_operational {..}
-								| pallet_democracy::Call::reap_preimage {..}
-								| pallet_democracy::Call::unlock {..}
-								| pallet_democracy::Call::remove_vote {..}
-								| pallet_democracy::Call::remove_other_vote {..}
-								| pallet_democracy::Call::enact_proposal {..}
-								| pallet_democracy::Call::blacklist {..})
-			| Call::Council(_)
-			| Call::TechnicalCommittee(_)
-			| Call::CouncilMembership(_)
-			| Call::TechnicalMembership(_)
-			| Call::Scheduler(_)
-			| Call::Balances(_)
-			| Call::Utility(_)
-			| Call::CalamariVesting(_) => true,
-			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
-			// pallet-authorship use for orml
-			// Sudo also cannot be filtered because it is used in runtime upgrade.
-			_ => false,
-			// Filter System to prevent users from runtime upgrade without sudo privilege.
-			// Filter Utility and Multisig to prevent users from setting keys and selecting collator for parachain (couldn't use now).
-			// Filter Session and CollatorSelection to prevent users from utility operation.
-			// Filter XCM pallet.
-		}
-	}
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

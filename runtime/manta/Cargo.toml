@@ -3,17 +3,16 @@ authors = ['Manta Network']
 edition = '2018'
 homepage = 'https://manta.network'
 license = 'GPL-3.0'
-name = 'calamari-runtime'
+name = 'manta-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
 version = '3.1.0'
 
 [dependencies]
+smallvec = "1.6.1"
 codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive", "max-encoded-len"] }
-log = { version = "0.4.14", default-features = false }
 hex-literal = { version = '0.3.3', optional = true }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 serde = { version = '1.0.119', features = ['derive'], optional = true }
-smallvec = "1.6.1"
 
 # Substrate primitives
 sp-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
@@ -21,7 +20,7 @@ sp-block-builder = { git = 'https://github.com/paritytech/substrate.git', defaul
 sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 sp-inherents = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
-sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
+sp-io = {  git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 sp-offchain = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 sp-session = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
@@ -43,16 +42,13 @@ pallet-aura = { git = 'https://github.com/paritytech/substrate.git', default-fea
 pallet-authorship = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 pallet-multisig = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
+pallet-scheduler = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
 pallet-session = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 pallet-sudo = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 pallet-transaction-payment-rpc-runtime-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 pallet-utility = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
-pallet-collective = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.12" }
-pallet-democracy = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.12" }
-pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.12" }
-pallet-membership = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.12" }
 
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.12" }
@@ -78,7 +74,6 @@ pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-featu
 
 # Self dependencies
 manta-primitives = { path = '../primitives', default-features = false }
-calamari-vesting = { path = '../../pallets/vesting', default-features = false }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -92,6 +87,7 @@ try-runtime = [
 	'frame-executive/try-runtime',
 	'frame-try-runtime',
 ]
+
 runtime-benchmarks = [
 	'cumulus-pallet-session-benchmarking/runtime-benchmarks',
 	'hex-literal',
@@ -107,11 +103,7 @@ runtime-benchmarks = [
 	'pallet-timestamp/runtime-benchmarks',
 	'pallet-xcm/runtime-benchmarks',
 	'pallet-collator-selection/runtime-benchmarks',
-	'pallet-collective/runtime-benchmarks',
-	'pallet-democracy/runtime-benchmarks',
 	'pallet-scheduler/runtime-benchmarks',
-	'pallet-membership/runtime-benchmarks',
-	'calamari-vesting/runtime-benchmarks',
 ]
 std = [
 	'codec/std',
@@ -140,14 +132,11 @@ std = [
 	'pallet-utility/std',
 	'pallet-transaction-payment-rpc-runtime-api/std',
 	'pallet-timestamp/std',
+	'pallet-scheduler/std',
 	'pallet-session/std',
 	'pallet-sudo/std',
 	'pallet-xcm/std',
 	'pallet-transaction-payment/std',
-	'pallet-collective/std',
-	'pallet-democracy/std',
-	'pallet-scheduler/std',
-	'pallet-membership/std',
 	'manta-primitives/std',
 	'parachain-info/std',
 	"cumulus-pallet-aura-ext/std",
@@ -164,5 +153,4 @@ std = [
 	'polkadot-runtime-common/std',
 	'polkadot-primitives/std',
 	'pallet-collator-selection/std',
-	'calamari-vesting/std',
 ]

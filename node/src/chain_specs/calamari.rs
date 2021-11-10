@@ -1,3 +1,19 @@
+// Copyright 2020-2021 Manta Network.
+// This file is part of Manta.
+//
+// Manta is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Manta is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Manta.  If not, see <http://www.gnu.org/licenses/>.
+
 use super::*;
 
 use calamari_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
@@ -21,7 +37,7 @@ pub fn calamari_session_keys(keys: AuraId) -> calamari_runtime::opaque::SessionK
 pub fn calamari_properties() -> Properties {
 	let mut p = Properties::new();
 	p.insert("ss58format".into(), constants::CALAMARI_SS58PREFIX.into());
-	p.insert("tokenDecimals".into(), constants::MANTA_DECIMAL.into());
+	p.insert("tokenDecimals".into(), constants::CALAMARI_DECIMAL.into());
 	p.insert(
 		"tokenSymbol".into(),
 		constants::CALAMARI_TOKEN_SYMBOL.into(),
@@ -133,8 +149,6 @@ fn calamari_dev_genesis(
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> calamari_runtime::GenesisConfig {
-	let num_endowed_accounts = endowed_accounts.len();
-
 	calamari_runtime::GenesisConfig {
 		system: calamari_runtime::SystemConfig {
 			code: calamari_runtime::WASM_BINARY
@@ -177,13 +191,12 @@ fn calamari_dev_genesis(
 				.collect(),
 		},
 		democracy: DemocracyConfig::default(),
-		council: CouncilConfig::default(),
+		council: CouncilConfig {
+			members: endowed_accounts.iter().take(1).cloned().collect(),
+			phantom: Default::default(),
+		},
 		technical_committee: TechnicalCommitteeConfig {
-			members: endowed_accounts
-				.iter()
-				.take((num_endowed_accounts + 1) / 2)
-				.cloned()
-				.collect(),
+			members: endowed_accounts.iter().take(1).cloned().collect(),
 			phantom: Default::default(),
 		},
 		council_membership: Default::default(),
@@ -202,7 +215,6 @@ pub fn calamari_testnet_config(id: ParaId) -> Result<CalamariChainSpec, String> 
 }
 
 // Calamari testnet for ci jobs
-#[cfg(feature = "calamari")]
 pub fn calamari_testnet_ci_config() -> Result<CalamariChainSpec, String> {
 	CalamariChainSpec::from_json_bytes(
 		&include_bytes!("../../../genesis/calamari-testnet-ci-genesis.json")[..],

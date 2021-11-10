@@ -14,9 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! A list of the different weight modules for our runtime.
+#![allow(non_upper_case_globals)]
+use manta_primitives::Balance;
 
-pub mod pallet_collective;
-pub mod pallet_democracy;
-pub mod pallet_membership;
-pub mod pallet_scheduler;
+pub const MANTA: Balance = 1_000_000_000_000_000_000; // 18 decimal
+pub const cMANTA: Balance = MANTA / 100; // 16 decimal, cent-MA
+pub const mMANTA: Balance = MANTA / 1_000; // 15 decimal, milli-MA
+pub const uMANTA: Balance = MANTA / 1_000_000; // 12 decimal, micro-MA
+
+pub const fn deposit(items: u32, bytes: u32) -> Balance {
+	items as Balance * 15 * mMANTA + (bytes as Balance) * 6 * mMANTA // TODO: revisit the storage cost here
+}

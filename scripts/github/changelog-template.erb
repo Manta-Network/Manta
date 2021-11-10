@@ -2,7 +2,7 @@
 
 Native runtimes:
 
-- Manta: **<%= manta_pc_runtime %>**
+- Manta: **<%= manta_runtime %>**
 - Calamari: **<%= calamari_runtime %>**
 
 This release was tested against the following versions of `rustc`. Other versions may work.
@@ -10,10 +10,10 @@ This release was tested against the following versions of `rustc`. Other version
 - <%= rustc_stable %>
 - <%= rustc_nightly %>
 
-WASM runtimes built with [srtool](https://github.com/paritytech/srtool) using `<%= manta_pc_json['rustc'] %>`.
+WASM runtimes built with [srtool](https://github.com/paritytech/srtool) using `<%= manta_json['rustc'] %>`.
 
 Proposal hashes:
-* `manta-pc-runtime-v<%= manta_pc_runtime %>.compact.wasm - <%= manta_pc_json['prop'] %>`
+* `manta-pc-runtime-v<%= manta_runtime %>.compact.wasm - <%= manta_json['prop'] %>`
 * `calamari-runtime-v<%= calamari_runtime %>.compact.wasm - <%= calamari_json['prop'] %>`
 
 <% unless misc_changes.empty? %>

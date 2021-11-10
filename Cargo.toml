@@ -2,7 +2,7 @@
 members = [
 	'node',
 	'pallets/*',
-	'runtime/manta-pc',
+	'runtime/manta',
 	'runtime/calamari',
 ]
 
