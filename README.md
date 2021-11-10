@@ -19,8 +19,8 @@ cargo build --release -p manta
 
 ## Manta Developement
 Currently, there are two developing branches:
-* `manta`: Manta Network's testnet/mainnet node
-* `manta-pc`: Manta Network's parachain node
+* `manta`: Manta/Calamari Network's node
+* `dolphin`: Dolphin testnet's node
 
 ## Contributing
 * use `[Manta]` as the prefix to submit a PR to `manta` branch, use `[Manta-PC]` as the prefix to submit a PR to `manta-pc` branch.
