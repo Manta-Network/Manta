@@ -147,10 +147,10 @@ jobs:
           -
             extrinsic:
               id: '*'
-              name: manta_vesting
+              name: calamari_vesting
             pallet:
-              id: manta_vesting
-              name: manta_vesting
+              id: calamari_vesting
+              name: calamari_vesting
             iterations: 20
     steps:
       -
