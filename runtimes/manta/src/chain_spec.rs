@@ -1,9 +1,11 @@
 use hex_literal::hex;
-use manta_primitives::{constants::currency::MA, AccountId, Balance, Signature};
+use manta_primitives::{
+	constants::currency::MA, AccountId, AssetBalance, AssetId, Balance, Signature,
+};
 use manta_runtime::{
 	wasm_binary_unwrap, BabeConfig, BalancesConfig, Block, CouncilConfig, GenesisConfig,
-	GrandpaConfig, SessionConfig, StakerStatus, StakingConfig, SudoConfig, SystemConfig,
-	MAX_NOMINATIONS,
+	GrandpaConfig, MantaPayConfig, SessionConfig, StakerStatus, StakingConfig, SudoConfig,
+	SystemConfig, MAX_NOMINATIONS,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::{ChainType, Properties};
@@ -58,101 +60,20 @@ fn session_keys(grandpa: GrandpaId, babe: BabeId) -> manta_runtime::opaque::Sess
 	manta_runtime::opaque::SessionKeys { babe, grandpa }
 }
 
-#[allow(dead_code)]
-fn staging_testnet_config_genesis() -> GenesisConfig {
-	// stash, controller, session-key
-	// generated with secret:
-	// for i in 1 2 3 4 ; do for j in stash controller; do subkey inspect "$secret"/fir/$j/$i; done; done
-	// and
-	// for i in 1 2 3 4 ; do for j in session; do subkey --ed25519 inspect "$secret"//fir//$j//$i; done; done
-
-	let initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)> = vec![
-		(
-			// 5Fbsd6WXDGiLTxunqeK5BATNiocfCqu9bS1yArVjCgeBLkVy
-			hex!["9c7a2ee14e565db0c69f78c7b4cd839fbf52b607d867e9e9c5a79042898a0d12"].into(),
-			// 5EnCiV7wSHeNhjW3FSUwiJNkcc2SBkPLn5Nj93FmbLtBjQUq
-			hex!["781ead1e2fa9ccb74b44c19d29cb2a7a4b5be3972927ae98cd3877523976a276"].into(),
-			// 5Fb9ayurnxnaXj56CjmyQLBiadfRCqUbL2VWNbbe1nZU6wiC
-			hex!["9becad03e6dcac03cee07edebca5475314861492cdfc96a2144a67bbe9699332"]
-				.unchecked_into(),
-			// 5EZaeQ8djPcq9pheJUhgerXQZt9YaHnMJpiHMRhwQeinqUW8
-			hex!["6e7e4eb42cbd2e0ab4cae8708ce5509580b8c04d11f6758dbf686d50fe9f9106"]
-				.unchecked_into(),
-		),
-		(
-			// 5ERawXCzCWkjVq3xz1W5KGNtVx2VdefvZ62Bw1FEuZW4Vny2
-			hex!["68655684472b743e456907b398d3a44c113f189e56d1bbfd55e889e295dfde78"].into(),
-			// 5Gc4vr42hH1uDZc93Nayk5G7i687bAQdHHc9unLuyeawHipF
-			hex!["c8dc79e36b29395413399edaec3e20fcca7205fb19776ed8ddb25d6f427ec40e"].into(),
-			// 5EockCXN6YkiNCDjpqqnbcqd4ad35nU4RmA1ikM4YeRN4WcE
-			hex!["7932cff431e748892fa48e10c63c17d30f80ca42e4de3921e641249cd7fa3c2f"]
-				.unchecked_into(),
-			// 5DhLtiaQd1L1LU9jaNeeu9HJkP6eyg3BwXA7iNMzKm7qqruQ
-			hex!["482dbd7297a39fa145c570552249c2ca9dd47e281f0c500c971b59c9dcdcd82e"]
-				.unchecked_into(),
-		),
-		(
-			// 5DyVtKWPidondEu8iHZgi6Ffv9yrJJ1NDNLom3X9cTDi98qp
-			hex!["547ff0ab649283a7ae01dbc2eb73932eba2fb09075e9485ff369082a2ff38d65"].into(),
-			// 5FeD54vGVNpFX3PndHPXJ2MDakc462vBCD5mgtWRnWYCpZU9
-			hex!["9e42241d7cd91d001773b0b616d523dd80e13c6c2cab860b1234ef1b9ffc1526"].into(),
-			// 5E1jLYfLdUQKrFrtqoKgFrRvxM3oQPMbf6DfcsrugZZ5Bn8d
-			hex!["5633b70b80a6c8bb16270f82cca6d56b27ed7b76c8fd5af2986a25a4788ce440"]
-				.unchecked_into(),
-			// 5DhKqkHRkndJu8vq7pi2Q5S3DfftWJHGxbEUNH43b46qNspH
-			hex!["482a3389a6cf42d8ed83888cfd920fec738ea30f97e44699ada7323f08c3380a"]
-				.unchecked_into(),
-		),
-		(
-			// 5HYZnKWe5FVZQ33ZRJK1rG3WaLMztxWrrNDb1JRwaHHVWyP9
-			hex!["f26cdb14b5aec7b2789fd5ca80f979cef3761897ae1f37ffb3e154cbcc1c2663"].into(),
-			// 5EPQdAQ39WQNLCRjWsCk5jErsCitHiY5ZmjfWzzbXDoAoYbn
-			hex!["66bc1e5d275da50b72b15de072a2468a5ad414919ca9054d2695767cf650012f"].into(),
-			// 5DMa31Hd5u1dwoRKgC4uvqyrdK45RHv3CpwvpUC1EzuwDit4
-			hex!["3919132b851ef0fd2dae42a7e734fe547af5a6b809006100f48944d7fae8e8ef"]
-				.unchecked_into(),
-			// 5C4vDQxA8LTck2xJEy4Yg1hM9qjDt4LvTQaMo4Y8ne43aU6x
-			hex!["00299981a2b92f878baaf5dbeba5c18d4e70f2a1fcd9c61b32ea18daf38f4378"]
-				.unchecked_into(),
-		),
-	];
-
-	// generated with secret: subkey inspect "$secret"
-	let root_key: AccountId = hex![
-		// 5Ff3iXP75ruzroPWRP2FYBHWnmGGBSb63857BgnzCoXNxfPo
-		"9ee5e5bdc0ec239eb164f865ecc345ce4c88e76ee002e0f7e318097347471809"
-	]
-	.into();
-
-	let endowed_accounts: Vec<AccountId> = vec![root_key.clone()];
-
-	testnet_genesis(
-		initial_authorities,
-		vec![],
-		root_key,
-		Some(endowed_accounts),
-	)
-}
-
-/// Staging testnet config.
-#[allow(dead_code)]
-pub fn staging_testnet_config() -> ChainSpec {
-	let boot_nodes = vec![];
-	ChainSpec::from_genesis(
-		"Staging Testnet",
-		"staging_testnet",
-		ChainType::Live,
-		staging_testnet_config_genesis,
-		boot_nodes,
-		Some(
-			TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
-				.expect("Staging telemetry url is valid; qed"),
-		),
-		None,
-		None,
-		Default::default(),
-	)
-}
+const TESTNET_ASSETS: &[(AssetId, AssetBalance)] = &[
+	// DOT, 1.2B, decimal 10
+    (0, 11_200_000_000_000_000_000),
+	// KSM, 11.6M, decimal 12
+    (1, 11_600_000_000_000_000_000),
+	// BTC, 21M, decimal 8
+    (2, 2_100_000_000_000_000),
+	// ETH, 112M, decimal 18
+    (3, 112_000_000_000_000_000_000_000_000),
+	// ACA, 1B, decimal 18
+    (4, 1_000_000_000_000_000_000_000_000_000),
+	// // GLMR, 1B, decimal 18
+    (5, 1_000_000_000_000_000_000_000_000_000),
+];
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -184,13 +105,12 @@ pub fn manta_properties() -> Properties {
 	let mut p = Properties::new();
 	p.insert("ss58format".into(), 77.into());
 	p.insert("tokenDecimals".into(), 12.into());
-	p.insert("tokenSymbol".into(), "MA".into());
+	p.insert("tokenSymbol".into(), "DOL".into());
 	p
 }
 
 /// Helper function to create GenesisConfig for testing
-/// Helper function to create GenesisConfig for testing
-pub fn testnet_genesis(
+pub fn devnet_genesis(
 	initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)>,
 	initial_nominators: Vec<AccountId>,
 	root_key: AccountId,
@@ -291,11 +211,15 @@ pub fn testnet_genesis(
 		grandpa: GrandpaConfig {
 			authorities: vec![],
 		},
+		manta_pay: MantaPayConfig {
+			owner: get_account_id_from_seed::<sr25519::Public>("Alice"),
+			assets: TESTNET_ASSETS.to_vec(),
+		},
 	}
 }
 
 fn development_config_genesis() -> GenesisConfig {
-	testnet_genesis(
+	devnet_genesis(
 		vec![authority_keys_from_seed("Alice")],
 		vec![],
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -319,7 +243,7 @@ pub fn development_config() -> ChainSpec {
 }
 
 fn local_testnet_genesis() -> GenesisConfig {
-	testnet_genesis(
+	devnet_genesis(
 		vec![
 			authority_keys_from_seed("Alice"),
 			authority_keys_from_seed("Bob"),
@@ -346,14 +270,14 @@ pub fn local_testnet_config() -> ChainSpec {
 }
 
 /// Manta testnet config
-pub fn manta_testnet_config() -> ChainSpec {
-	let protocol_id = Some("manta");
+pub fn dolphin_testnet_config() -> ChainSpec {
+	let protocol_id = Some("dolphin");
 
 	ChainSpec::from_genesis(
-		"Manta Testnet",
-		"manta_testnet",
-		ChainType::Custom("Manta Testnet".into()),
-		manta_testnet_genesis,
+		"Dolphin Testnet",
+		"dolphin_testnet",
+		ChainType::Custom("Dolphin Testnet".into()),
+		dolphin_testnet_genesis,
 		vec![
 			"/dns/n1.testnet.manta.network/tcp/30333/p2p/12D3KooWBV7qb2LshmqCr74edBk5h4Fi1Zt71fhpvdyi8ah3KzAa".parse().expect("failed to parse multiaddress."),
 			"/dns/n2.testnet.manta.network/tcp/30333/p2p/12D3KooWBGhNQyzkKEpN7QQnP94BhM8wyhpJwsZ58wbr1r3Pi6gV".parse().expect("failed to parse multiaddress."),
@@ -370,7 +294,7 @@ pub fn manta_testnet_config() -> ChainSpec {
 }
 
 /// Helper function to create GenesisConfig for manta testnets
-pub fn manta_testnet_config_genesis(
+pub fn testnet_genesis(
 	initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)>,
 	initial_balances: Vec<(AccountId, Balance)>,
 	root_key: AccountId,
@@ -417,11 +341,15 @@ pub fn manta_testnet_config_genesis(
 		grandpa: GrandpaConfig {
 			authorities: vec![],
 		},
+		manta_pay: MantaPayConfig {
+			owner: hex!["12b73670c56f4fcd319636bdd6ec4a803ae2d06fdbc715087524a5151395d16c"].into(),
+			assets: TESTNET_ASSETS.to_vec(),
+		},
 	}
 }
 
 /// Manta testnet genesis
-pub fn manta_testnet_genesis() -> GenesisConfig {
+pub fn dolphin_testnet_genesis() -> GenesisConfig {
 	// (stash_account, controller_account, grandpa_id, babe_id)
 	let initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)> = vec![
 		(
@@ -480,72 +408,12 @@ pub fn manta_testnet_genesis() -> GenesisConfig {
 
 	initial_balances.push((root_key.clone(), 500_000_000 * MA)); // root_key get half of the stake
 
-	manta_testnet_config_genesis(
+	testnet_genesis(
 		initial_authorities,
 		initial_balances,
 		root_key,
 		STASH,
 		false,
-	)
-}
-
-/// a single node dev testnet genesis
-pub fn manta_local_dev_genesis() -> GenesisConfig {
-	let stash_account: AccountId = hex![
-		// 5EcVwmgGB8GTduy53PpsGBpsEEZAGEWYBeLuwSz76kxUzJid
-		"70b8386b105ab594513031ed15cb9226e7db0ac285cccbcee59e55eae1e4922c"
-	]
-	.into();
-	let controller_account: AccountId = hex![
-		// 5HGdhHoyvPXkmXwNYg2vcNTU9584AfN7EsFM8DySKS53Ehxg
-		"e6461a44f71ac6c43bc6c9df20310211fb3d600ad0f3a51a66e7959caa599e6f"
-	]
-	.into();
-	let root_key: AccountId = hex![
-		//root account: 5DrGMpT3dYm8cWPp6ZDbdkKVfYzAdWBGZjkrtcE5GTqS9EC1
-		"4efbb0ab7942a237b3ce5b2540a0faad8cda8eeef44da6e4a614b3d8c08c0823"
-	]
-	.into();
-
-	let initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)> = vec![(
-		stash_account.clone(),
-		controller_account.clone(),
-		// Grandpa ID: 5DCj1vKWeHWdni8LwtKVaCuh8vq4HvBUDKAJja5S7BW6M3ho
-		hex!["325a1995421793437bffa10eef55b028e61a02354e6ec66ab58b075349f6e9ca"].unchecked_into(),
-		// Babe ID: 5DAA4avV1euhv9gkNfa4bGsjZRaYTHXVa8t6F6yunAmauR7v
-		hex!["3064ad09d3fb2dd412aeaadf150bd6646ff2ed889e9bcea4068be8f9c2b65657"].unchecked_into(),
-	)];
-
-	let initial_balances = vec![
-		(root_key.clone(), 1000 * MA),
-		(stash_account, 1_000_000_000 * MA),
-		(controller_account, 20_000_000 * MA),
-	];
-
-	manta_testnet_config_genesis(
-		initial_authorities,
-		initial_balances,
-		root_key,
-		100_000_000 * MA,
-		false,
-	)
-}
-
-/// Manta testnet dev config
-pub fn manta_local_dev_config() -> ChainSpec {
-	ChainSpec::from_genesis(
-		"Manta local dev",
-		"manta_local_dev",
-		ChainType::Custom("Manta Local Dev".into()),
-		manta_local_dev_genesis,
-		vec![],
-		Some(
-			TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
-				.expect("Manta testnet telemetry url is valid; qed"),
-		),
-		Some("manta_local_dev"),
-		Some(manta_properties()),
-		Default::default(),
 	)
 }
 
@@ -556,7 +424,7 @@ pub(crate) mod tests {
 
 	#[allow(dead_code)]
 	fn local_testnet_genesis_instant_single() -> GenesisConfig {
-		testnet_genesis(
+		devnet_genesis(
 			vec![authority_keys_from_seed("Alice")],
 			vec![],
 			get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -596,24 +464,6 @@ pub(crate) mod tests {
 		)
 	}
 
-	//TODO: see whether we can recover this test
-	// #[test]
-	// #[ignore]
-	// fn test_connectivity() {
-	// 	sc_service_test::connectivity(
-	// 		integration_test_config_with_two_authorities(),
-	// 		|config| {
-	// 			let NewFullBase { task_manager, client, network, transaction_pool, .. }
-	// 				= new_full_base(config,|_, _| ())?;
-	// 			Ok(sc_service_test::TestNetComponents::new(task_manager, client, network, transaction_pool))
-	// 		},
-	// 		|config| {
-	// 			let (keep_alive, _, _, client, network, transaction_pool) = new_light_base(config)?;
-	// 			Ok(sc_service_test::TestNetComponents::new(keep_alive, client, network, transaction_pool))
-	// 		}
-	// 	);
-	// }
-
 	#[test]
 	fn test_create_development_chain_spec() {
 		assert!(development_config().build_storage().is_ok());
@@ -625,23 +475,8 @@ pub(crate) mod tests {
 	}
 
 	#[test]
-	fn test_staging_test_net_chain_spec() {
-		assert!(staging_testnet_config().build_storage().is_ok());
-	}
-
-	#[test]
 	fn test_manta_testnet_chain_spec() {
-		assert!(manta_testnet_config().build_storage().is_ok());
-	}
-
-	#[test]
-	fn test_manta_local_dev_genesis() {
-		assert!(manta_local_dev_genesis().build_storage().is_ok());
-	}
-
-	#[test]
-	fn test_manta_local_dev_config() {
-		assert!(manta_local_dev_config().build_storage().is_ok());
+		assert!(dolphin_testnet_config().build_storage().is_ok());
 	}
 
 	#[test]

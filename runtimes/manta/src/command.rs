@@ -42,7 +42,7 @@ use sc_service::PartialComponents;
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"Manta Node".into()
+		"Dolphin Node".into()
 	}
 
 	fn impl_version() -> String {
@@ -75,8 +75,7 @@ impl SubstrateCli for Cli {
 			}
 			"dev" => Box::new(chain_spec::development_config()),
 			"local" => Box::new(chain_spec::local_testnet_config()),
-			"manta-testnet" => Box::new(chain_spec::manta_testnet_config()),
-			"manta-local-dev" => Box::new(chain_spec::manta_local_dev_config()),
+			"dolphin-testnet" => Box::new(chain_spec::dolphin_testnet_config()),
 			path => Box::new(chain_spec::ChainSpec::from_json_file(
 				std::path::PathBuf::from(path),
 			)?),
@@ -193,6 +192,5 @@ fn test_load_spec() {
 
 	assert!(cli.load_spec("dev").is_ok());
 	assert!(cli.load_spec("local").is_ok());
-	assert!(cli.load_spec("manta-testnet").is_ok());
-	assert!(cli.load_spec("manta-local-dev").is_ok());
+	assert!(cli.load_spec("dolphin-testnet").is_ok());
 }

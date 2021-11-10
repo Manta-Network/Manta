@@ -30,6 +30,12 @@ pub type AccountIndex = u32;
 /// Balance of an account.
 pub type Balance = u128;
 
+/// Asset id
+pub type AssetId = u32;
+
+/// Asset Balance
+pub type AssetBalance = u128;
+
 /// Index of a transaction in the chain.
 pub type Index = u32;
 
@@ -46,7 +52,7 @@ pub type Moment = u64;
 #[derive(Encode, Decode, Eq, PartialEq, Copy, Clone, RuntimeDebug, PartialOrd, Ord)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum TokenSymbol {
-	MA = 0,
+	DOL = 0,
 }
 
 #[cfg(test)]
@@ -55,7 +61,7 @@ mod tests {
 
 	#[test]
 	fn token_symbol_should_work() {
-		let native_token = TokenSymbol::MA;
+		let native_token = TokenSymbol::DOL;
 
 		assert_eq!(native_token as u8, 0);
 	}
