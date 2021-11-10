@@ -97,17 +97,6 @@ jobs:
         benchmark:
           -
             extrinsic:
-              id: init_asset
-              name: init-asset
-            pallet:
-              id: pallet_manta_pay
-              name: pallet-manta-pay
-            iterations: 1000
-            expected:
-              time: 6000
-              unit: µs
-          -
-            extrinsic:
               id: transfer_asset
               name: transfer-asset
             pallet:
