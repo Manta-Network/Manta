@@ -164,7 +164,7 @@ pub mod pallet {
 					continue;
 				}
 				// This is an invalid schedule. New schedule cannot be past time.
-				if *n <= now  {
+				if *n <= now {
 					return Err(Error::<T>::InvalidTimestamp.into());
 				}
 			}

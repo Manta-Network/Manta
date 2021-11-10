@@ -4,7 +4,7 @@ extern crate alloc;
 
 use super::*;
 #[allow(unused_imports)]
-use crate::Pallet as MantaVesting;
+use crate::Pallet as CalamariVesting;
 use core::{convert::TryInto, ops::Div, time::Duration};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::assert_ok;
@@ -108,7 +108,7 @@ benchmarks! {
 }
 
 impl_benchmark_test_suite!(
-	MantaVesting,
+	CalamariVesting,
 	crate::mock::ExtBuilder::default()
 		.existential_deposit(1)
 		.build(),

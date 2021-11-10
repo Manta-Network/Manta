@@ -6,8 +6,8 @@
 ### Breaking changes
 
 ### Features
-- [\#221](https://github.com/Manta-Network/Manta/pull/221) Add manta-vesting pallet.
-- Update weight for `pallet_democracy`/`pallet_collective`/`pallet_membership`/`pallet_scheduler`/`pallet_balances`/`manta-vesting`.
+- [\#221](https://github.com/Manta-Network/Manta/pull/221) Add calamari-vesting pallet.
+- Update weight for `pallet_democracy`/`pallet_collective`/`pallet_membership`/`pallet_scheduler`/`pallet_balances`/`calamari-vesting`.
 
 ### Improvements
 Bump spec version to 3100

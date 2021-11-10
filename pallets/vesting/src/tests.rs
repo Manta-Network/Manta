@@ -10,7 +10,7 @@ fn alice_vesting_for_bob_should_work() {
 		.build()
 		.execute_with(|| {
 			let unvested = 100;
-			assert_ok!(MantaVesting::vested_transfer(
+			assert_ok!(CalamariVesting::vested_transfer(
 				Origin::signed(ALICE),
 				BOB,
 				unvested
@@ -21,12 +21,12 @@ fn alice_vesting_for_bob_should_work() {
 
 			// Now Bob cannot claim any token.
 			assert_noop!(
-				MantaVesting::vest(Origin::signed(BOB)),
+				CalamariVesting::vest(Origin::signed(BOB)),
 				Error::<Test>::ClaimTooEarly,
 			);
 
 			// Check event
-			System::assert_has_event(MockEvent::MantaVesting(PalletEvent::VestingUpdated(
+			System::assert_has_event(MockEvent::CalamariVesting(PalletEvent::VestingUpdated(
 				BOB, unvested,
 			)));
 
@@ -37,14 +37,14 @@ fn alice_vesting_for_bob_should_work() {
 			let now = VestingSchedule::<Test>::get()[first_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
-			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
+			assert_ok!(CalamariVesting::vest(Origin::signed(BOB)));
 			assert_eq!(Balances::free_balance(BOB), unvested);
 
 			// BOB cannot transfer more than 1th round of vested tokens.
 			// Bacause the rest of tokens are locked.
 			let vested = VestingSchedule::<Test>::get()[first_round].0 * unvested;
 			// Check event
-			System::assert_has_event(MockEvent::MantaVesting(PalletEvent::VestingUpdated(
+			System::assert_has_event(MockEvent::CalamariVesting(PalletEvent::VestingUpdated(
 				BOB,
 				unvested - vested,
 			)));
@@ -67,11 +67,13 @@ fn alice_vesting_for_bob_should_work() {
 			let now = VestingSchedule::<Test>::get()[last_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
-			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
+			assert_ok!(CalamariVesting::vest(Origin::signed(BOB)));
 			assert_eq!(Balances::free_balance(BOB), unvested - vested);
 
 			// Check vested done event
-			System::assert_has_event(MockEvent::MantaVesting(PalletEvent::VestingCompleted(BOB)));
+			System::assert_has_event(MockEvent::CalamariVesting(PalletEvent::VestingCompleted(
+				BOB,
+			)));
 
 			// Now, Bob can transfer all his tokens.
 			assert_ok!(Balances::transfer(
@@ -94,7 +96,7 @@ fn alice_vesting_for_bob_claim_slowly_should_work() {
 		.build()
 		.execute_with(|| {
 			let unvested = 100;
-			assert_ok!(MantaVesting::vested_transfer(
+			assert_ok!(CalamariVesting::vested_transfer(
 				Origin::signed(ALICE),
 				BOB,
 				unvested
@@ -105,12 +107,12 @@ fn alice_vesting_for_bob_claim_slowly_should_work() {
 
 			// Now Bob cannot claim any token.
 			assert_noop!(
-				MantaVesting::vest(Origin::signed(BOB)),
+				CalamariVesting::vest(Origin::signed(BOB)),
 				Error::<Test>::ClaimTooEarly,
 			);
 
 			// Check event
-			System::assert_has_event(MockEvent::MantaVesting(PalletEvent::VestingUpdated(
+			System::assert_has_event(MockEvent::CalamariVesting(PalletEvent::VestingUpdated(
 				BOB, unvested,
 			)));
 
@@ -120,7 +122,7 @@ fn alice_vesting_for_bob_claim_slowly_should_work() {
 			let now = VestingSchedule::<Test>::get()[fourth_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
-			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
+			assert_ok!(CalamariVesting::vest(Origin::signed(BOB)));
 			assert_eq!(Balances::free_balance(BOB), unvested);
 
 			// BOB cannot transfer more than 67 tokens.
@@ -152,7 +154,7 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
 		.build()
 		.execute_with(|| {
 			let unvested = 100;
-			assert_ok!(MantaVesting::vested_transfer(
+			assert_ok!(CalamariVesting::vested_transfer(
 				Origin::signed(ALICE),
 				BOB,
 				unvested
@@ -168,14 +170,14 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
 			let now = VestingSchedule::<Test>::get()[first_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
-			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
+			assert_ok!(CalamariVesting::vest(Origin::signed(BOB)));
 			assert_eq!(Balances::free_balance(BOB), unvested);
 
 			// BOB cannot transfer more than 1th round of vested tokens.
 			// Bacause the rest of tokens are locked.
 			let vested_1 = VestingSchedule::<Test>::get()[first_round].0 * unvested;
 			// Check event
-			System::assert_has_event(MockEvent::MantaVesting(PalletEvent::VestingUpdated(
+			System::assert_has_event(MockEvent::CalamariVesting(PalletEvent::VestingUpdated(
 				BOB,
 				unvested - vested_1,
 			)));
@@ -198,7 +200,7 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
 			let now = VestingSchedule::<Test>::get()[sixth_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
-			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
+			assert_ok!(CalamariVesting::vest(Origin::signed(BOB)));
 
 			// All vested for 6th round.
 			let vested_0_to_5 = VestingSchedule::<Test>::get()[..=sixth_round]
@@ -215,7 +217,7 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
 			let vested_5 = VestingSchedule::<Test>::get()[sixth_round].0 * unvested;
 
 			// Check event
-			System::assert_has_event(MockEvent::MantaVesting(PalletEvent::VestingUpdated(
+			System::assert_has_event(MockEvent::CalamariVesting(PalletEvent::VestingUpdated(
 				BOB, 11,
 			)));
 			assert_eq!(
@@ -240,7 +242,7 @@ fn vesting_complete_should_work() {
 		.build()
 		.execute_with(|| {
 			let unvested = 100;
-			assert_ok!(MantaVesting::vested_transfer(
+			assert_ok!(CalamariVesting::vested_transfer(
 				Origin::signed(ALICE),
 				BOB,
 				unvested
@@ -250,12 +252,12 @@ fn vesting_complete_should_work() {
 
 			// Now Bob cannot claim any token.
 			assert_noop!(
-				MantaVesting::vest(Origin::signed(BOB)),
+				CalamariVesting::vest(Origin::signed(BOB)),
 				Error::<Test>::ClaimTooEarly,
 			);
 
 			// Check event
-			System::assert_has_event(MockEvent::MantaVesting(PalletEvent::VestingUpdated(
+			System::assert_has_event(MockEvent::CalamariVesting(PalletEvent::VestingUpdated(
 				BOB, unvested,
 			)));
 
@@ -271,11 +273,13 @@ fn vesting_complete_should_work() {
 			let now = VestingSchedule::<Test>::get()[last_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
-			assert_ok!(MantaVesting::vest(Origin::signed(BOB)));
+			assert_ok!(CalamariVesting::vest(Origin::signed(BOB)));
 			assert_eq!(Balances::free_balance(BOB), unvested);
 
 			// Check vested done event
-			System::assert_has_event(MockEvent::MantaVesting(PalletEvent::VestingCompleted(BOB)));
+			System::assert_has_event(MockEvent::CalamariVesting(PalletEvent::VestingCompleted(
+				BOB,
+			)));
 			let vested = unvested;
 
 			// Now, Bob can transfer all his tokens.
@@ -302,30 +306,27 @@ fn partially_update_vesting_schedule_should_work() {
 
 			// skip 2 round of old schedule.
 			let skipped_count = 2;
-			let new_schedule = BoundedVec::try_from(
-				{
-					let mut new_schedule = vec![];
-					for (index, (_, schedule)) in VestingSchedule::<Test>::get().iter().enumerate() {
-						if index < skipped_count {
-							// Do not change old schedule
-							new_schedule.push(*schedule);
-							continue;
-						}
-						// odd means more early than old schedle but still later than now.
-						// even means more late than old schedle but still later than now.
-						if index % 2 == 0 {
-							new_schedule.push(*schedule + 1);
-						} else {
-							new_schedule.push(*schedule - 1);
-						}
+			let new_schedule = BoundedVec::try_from({
+				let mut new_schedule = vec![];
+				for (index, (_, schedule)) in VestingSchedule::<Test>::get().iter().enumerate() {
+					if index < skipped_count {
+						// Do not change old schedule
+						new_schedule.push(*schedule);
+						continue;
 					}
-					new_schedule
+					// odd means more early than old schedle but still later than now.
+					// even means more late than old schedle but still later than now.
+					if index % 2 == 0 {
+						new_schedule.push(*schedule + 1);
+					} else {
+						new_schedule.push(*schedule - 1);
+					}
 				}
-			)
+				new_schedule
+			})
 			.unwrap_or_default();
-			dbg!(new_schedule.len());
 
-			assert_ok!(MantaVesting::update_vesting_schedule(
+			assert_ok!(CalamariVesting::update_vesting_schedule(
 				Origin::root(),
 				new_schedule.clone()
 			));
@@ -338,7 +339,7 @@ fn partially_update_vesting_schedule_should_work() {
 				*new_schedule
 			);
 			// Check event
-			System::assert_has_event(MockEvent::MantaVesting(
+			System::assert_has_event(MockEvent::CalamariVesting(
 				PalletEvent::VestingScheduleUpdated(new_schedule),
 			));
 		});
@@ -363,7 +364,7 @@ fn update_brand_new_vesting_schedule_should_work() {
 					.collect::<Vec<u64>>(),
 			)
 			.unwrap_or_default();
-			assert_ok!(MantaVesting::update_vesting_schedule(
+			assert_ok!(CalamariVesting::update_vesting_schedule(
 				Origin::root(),
 				new_schedule.clone()
 			));
@@ -376,7 +377,7 @@ fn update_brand_new_vesting_schedule_should_work() {
 				*new_schedule
 			);
 			// Check event
-			System::assert_has_event(MockEvent::MantaVesting(
+			System::assert_has_event(MockEvent::CalamariVesting(
 				PalletEvent::VestingScheduleUpdated(new_schedule),
 			));
 		});
@@ -392,7 +393,7 @@ fn invalid_schedule_should_not_be_updated() {
 			let wrong_length_schedule: BoundedVec<u64, MaxScheduleLength> =
 				BoundedVec::try_from(vec![1, 2, 3, 4, 5, 6, 7, 8]).unwrap_or_default();
 			assert_noop!(
-				MantaVesting::update_vesting_schedule(Origin::root(), wrong_length_schedule),
+				CalamariVesting::update_vesting_schedule(Origin::root(), wrong_length_schedule),
 				Error::<Test>::InvalidScheduleLength,
 			);
 
@@ -400,7 +401,7 @@ fn invalid_schedule_should_not_be_updated() {
 			let wrong_length_schedule: BoundedVec<u64, MaxScheduleLength> =
 				BoundedVec::try_from(vec![1, 2, 3, 4, 5, 6]).unwrap_or_default();
 			assert_noop!(
-				MantaVesting::update_vesting_schedule(Origin::root(), wrong_length_schedule),
+				CalamariVesting::update_vesting_schedule(Origin::root(), wrong_length_schedule),
 				Error::<Test>::InvalidScheduleLength,
 			);
 
@@ -408,7 +409,7 @@ fn invalid_schedule_should_not_be_updated() {
 			let invalid_schedule: BoundedVec<u64, MaxScheduleLength> =
 				BoundedVec::try_from(vec![1, 2, 9, 4, 8, 6, 7]).unwrap_or_default();
 			assert_noop!(
-				MantaVesting::update_vesting_schedule(Origin::root(), invalid_schedule),
+				CalamariVesting::update_vesting_schedule(Origin::root(), invalid_schedule),
 				Error::<Test>::UnsortedSchedule,
 			);
 
@@ -418,30 +419,28 @@ fn invalid_schedule_should_not_be_updated() {
 			let now = VestingSchedule::<Test>::get()[next_round].1 * 1000 - 1000;
 			Timestamp::set_timestamp(now);
 
-			let invalid_schedule = BoundedVec::try_from(
-				{
-					let mut new_schedule = vec![];
-					for (index, (_, schedule)) in VestingSchedule::<Test>::get().iter().enumerate() {
-						if index < next_round {
-							// Do not change old schedule
-							new_schedule.push(*schedule);
-							continue;
-						}
-						// Set one schedule that is past time.
-						if index == next_round {
-							new_schedule.push(now / 1000 - 1);
-							continue;
-						}
-						// Do not change the rest of future schedule;
+			let invalid_schedule = BoundedVec::try_from({
+				let mut new_schedule = vec![];
+				for (index, (_, schedule)) in VestingSchedule::<Test>::get().iter().enumerate() {
+					if index < next_round {
+						// Do not change old schedule
 						new_schedule.push(*schedule);
+						continue;
 					}
-					new_schedule
+					// Set one schedule that is past time.
+					if index == next_round {
+						new_schedule.push(now / 1000 - 1);
+						continue;
+					}
+					// Do not change the rest of future schedule;
+					new_schedule.push(*schedule);
 				}
-			)
+				new_schedule
+			})
 			.unwrap_or_default();
 
 			assert_noop!(
-				MantaVesting::update_vesting_schedule(Origin::root(), invalid_schedule),
+				CalamariVesting::update_vesting_schedule(Origin::root(), invalid_schedule),
 				Error::<Test>::InvalidTimestamp,
 			);
 		});

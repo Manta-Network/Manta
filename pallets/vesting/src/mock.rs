@@ -6,7 +6,7 @@ use sp_runtime::{
 };
 
 use super::*;
-use crate as manta_vesting;
+use crate as calamari_vesting;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -28,7 +28,7 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		MantaVesting: manta_vesting::{Pallet, Call, Storage, Event<T>},
+		CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
