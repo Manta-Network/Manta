@@ -289,7 +289,63 @@ fn vesting_complete_should_work() {
 }
 
 #[test]
-fn update_vesting_schedule_should_work() {
+fn partially_update_vesting_schedule_should_work() {
+	ExtBuilder::default()
+		.existential_deposit(1)
+		.build()
+		.execute_with(|| {
+			// Ensure current timestamp is bigger than the 1th round of schedule.
+			// Now Bob can claim 1th round vested tokens.
+			let frist_round = 0;
+			let now = VestingSchedule::<Test>::get()[frist_round].1 * 1000 + 1;
+			Timestamp::set_timestamp(now);
+
+			// skip 2 round of old schedule.
+			let skipped_count = 2;
+			let new_schedule = BoundedVec::try_from(
+				{
+					let mut new_schedule = vec![];
+					for (index, (_, schedule)) in VestingSchedule::<Test>::get().iter().enumerate() {
+						if index < skipped_count {
+							// Do not change old schedule
+							new_schedule.push(*schedule);
+							continue;
+						}
+						// odd means more early than old schedle but still later than now.
+						// even means more late than old schedle but still later than now.
+						if index % 2 == 0 {
+							new_schedule.push(*schedule + 1);
+						} else {
+							new_schedule.push(*schedule - 1);
+						}
+					}
+					new_schedule
+				}
+			)
+			.unwrap_or_default();
+			dbg!(new_schedule.len());
+
+			assert_ok!(MantaVesting::update_vesting_schedule(
+				Origin::root(),
+				new_schedule.clone()
+			));
+			// Check storage
+			assert_eq!(
+				VestingSchedule::<Test>::get()
+					.iter()
+					.map(|(_, s)| *s)
+					.collect::<Vec<u64>>(),
+				*new_schedule
+			);
+			// Check event
+			System::assert_has_event(MockEvent::MantaVesting(
+				PalletEvent::VestingScheduleUpdated(new_schedule),
+			));
+		});
+}
+
+#[test]
+fn update_brand_new_vesting_schedule_should_work() {
 	ExtBuilder::default()
 		.existential_deposit(1)
 		.build()
@@ -356,17 +412,34 @@ fn invalid_schedule_should_not_be_updated() {
 				Error::<Test>::UnsortedSchedule,
 			);
 
-			// Ensure current timestamp is bigger than the 7th round of schedule.
-			// Now Bob can claim 7th round vested tokens.
-			let last_round = 6;
-			let now = VestingSchedule::<Test>::get()[last_round].1 * 1000 + 1;
+			// Check updating invalid partial schedule should not work.
+			let next_round = 3;
+			// now is between 3th round and 4th round.
+			let now = VestingSchedule::<Test>::get()[next_round].1 * 1000 - 1000;
 			Timestamp::set_timestamp(now);
 
-			// The new schedule should not be past time.
-			let invalid_schedule: BoundedVec<u64, MaxScheduleLength> = BoundedVec::try_from(vec![
-				1636311600, 1636311601, 1636311602, 1636311603, 1636311604, 1636311605, 1636311606,
-			])
+			let invalid_schedule = BoundedVec::try_from(
+				{
+					let mut new_schedule = vec![];
+					for (index, (_, schedule)) in VestingSchedule::<Test>::get().iter().enumerate() {
+						if index < next_round {
+							// Do not change old schedule
+							new_schedule.push(*schedule);
+							continue;
+						}
+						// Set one schedule that is past time.
+						if index == next_round {
+							new_schedule.push(now / 1000 - 1);
+							continue;
+						}
+						// Do not change the rest of future schedule;
+						new_schedule.push(*schedule);
+					}
+					new_schedule
+				}
+			)
 			.unwrap_or_default();
+
 			assert_noop!(
 				MantaVesting::update_vesting_schedule(Origin::root(), invalid_schedule),
 				Error::<Test>::InvalidTimestamp,

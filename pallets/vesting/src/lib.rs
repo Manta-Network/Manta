@@ -155,12 +155,19 @@ pub mod pallet {
 				Error::<T>::UnsortedSchedule
 			);
 
-			// Todo, consider some vesting schedule happen.
 			let now = T::Timestamp::now().as_secs();
-			ensure!(
-				new_schedule.iter().all(|&s| now <= s),
-				Error::<T>::InvalidTimestamp
-			);
+			for (n, o) in new_schedule.iter().zip(old_schedule.iter()) {
+				// n == o means we will partialy update vesting schedule.
+				// n > o means new schedule is future schedule.
+				// n < o && n > now, also fine.
+				if *n == o.1 {
+					continue;
+				}
+				// This is an invalid schedule. New schedule cannot be past time.
+				if *n <= now  {
+					return Err(Error::<T>::InvalidTimestamp.into());
+				}
+			}
 
 			VestingSchedule::<T>::mutate(|schedule| {
 				for (schedule, newer_schedule) in
