@@ -48,7 +48,7 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 {{~#if (eq pallet "frame_system")}}
 impl<T: crate::Config> WeightInfo for SubstrateWeight<T> {
 {{~else}}
-impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
+impl<T: frame_system::Config> {{pallet}}::WeightInfo for SubstrateWeight<T> {
 {{~/if}}
 	{{~#each benchmarks as |benchmark|}}
 	{{~#each benchmark.comments as |comment|}}
