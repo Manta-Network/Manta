@@ -1,4 +1,7 @@
 ---
+
+# yamllint disable rule:line-length
+
 name: publish calamari parachain container
 # yamllint disable-line rule:truthy
 on:
@@ -54,3 +57,5 @@ jobs:
           if [ ${nums[0]} == 0 ]; then echo "sync not detected"; exit 1; fi
           if [ ${nums[1]} == 0 ]; then echo "sync not detected"; exit 1; fi
           echo "All good!"
+
+# yamllint enable rule:line-length
