@@ -153,17 +153,38 @@ parameter_types! {
 	pub const SS58Prefix: u8 = manta_primitives::constants::MANTA_SS58PREFIX;
 }
 
+impl pallet_tx_pause::Config for Runtime {
+	type Event = Event;
+	type UpdateOrigin = EnsureRoot<AccountId>;
+	type WeightInfo = ();
+}
+
 // Don't allow permission-less asset creation.
 pub struct MantaFilter;
 impl Contains<Call> for MantaFilter {
-	fn contains(c: &Call) -> bool {
-		match c {
-			Call::Timestamp(_)
-			| Call::ParachainSystem(_)
-			| Call::Authorship(_)
+	fn contains(call: &Call) -> bool {
+		// let is_core_call = matches!(
+		// 	call,
+		// 	Call::System(_) | Call::Timestamp(_) | Call::ParachainSystem(_)
+		// );
+		let is_core_call = matches!(call, Call::Timestamp(_) | Call::ParachainSystem(_));
+		if is_core_call {
+			// always allow core call
+			return true;
+		}
+
+		let is_paused = pallet_tx_pause::PausedTransactionFilter::<Runtime>::contains(call);
+		if is_paused {
+			// no paused call
+			return false;
+		}
+
+		match call {
+			Call::Authorship(_)
 			| Call::Sudo(_)
 			| Call::Multisig(_)
-			| Call::Balances(_) => true,
+			| Call::Balances(_)
+			| Call::TransactionPause(_) => true,
 			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
 			// Sudo also cannot be filtered because it is used in runtime upgrade.
 			_ => false,
@@ -550,7 +571,7 @@ construct_runtime!(
 		} = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
-
+		TransactionPause: pallet_tx_pause::{Pallet, Call, Storage, Event<T>} = 4,
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
