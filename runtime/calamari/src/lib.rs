@@ -160,7 +160,7 @@ parameter_types! {
 impl pallet_tx_pause::Config for Runtime {
 	type Event = Event;
 	type UpdateOrigin = EnsureRoot<AccountId>;
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
 // Don't allow permission-less asset creation.

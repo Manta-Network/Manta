@@ -98,6 +98,9 @@ pub mod opaque {
 	}
 }
 
+// Weights used in the runtime.
+mod weights;
+
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("manta"),
@@ -156,7 +159,7 @@ parameter_types! {
 impl pallet_tx_pause::Config for Runtime {
 	type Event = Event;
 	type UpdateOrigin = EnsureRoot<AccountId>;
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
 // Don't allow permission-less asset creation.
@@ -176,11 +179,7 @@ impl Contains<Call> for MantaFilter {
 		}
 
 		match call {
-			Call::Authorship(_)
-			| Call::Sudo(_)
-			| Call::Multisig(_)
-			| Call::Balances(_)
-			| Call::TransactionPause(_) => true,
+			Call::Authorship(_) | Call::Sudo(_) | Call::Multisig(_) | Call::Balances(_) => true,
 			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
 			// Sudo also cannot be filtered because it is used in runtime upgrade.
 			_ => false,

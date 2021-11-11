@@ -50,7 +50,7 @@ pub trait WeightInfo {
 
 /// Weights for pallet_tx_pause using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
+impl<T: frame_system::Config> pallet_tx_pause::WeightInfo for SubstrateWeight<T> {
 	// Storage: TransactionPause PausedTransactions (r:1 w:1)
 	fn pause_transaction() -> Weight {
 		(42_000_000 as Weight)

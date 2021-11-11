@@ -18,12 +18,12 @@
 //!
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2021-11-11, STEPS: `50`, REPEAT: 20, LOW RANGE: `[]`, HIGH RANGE: `[]`
-//! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("manta-local"), DB CACHE: 128
+//! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("calamari-dev"), DB CACHE: 128
 
 // Executed Command:
 // manta
 // benchmark
-// --chain=manta-local
+// --chain=calamari-dev
 // --pallet=pallet_tx_pause
 // --extrinsic=*
 // --execution=Wasm
@@ -50,16 +50,16 @@ pub trait WeightInfo {
 
 /// Weights for pallet_tx_pause using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
+impl<T: frame_system::Config> pallet_tx_pause::WeightInfo for SubstrateWeight<T> {
 	// Storage: TransactionPause PausedTransactions (r:1 w:1)
 	fn pause_transaction() -> Weight {
-		(42_000_000 as Weight)
+		(42_691_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: TransactionPause PausedTransactions (r:1 w:1)
 	fn unpause_transaction() -> Weight {
-		(42_450_000 as Weight)
+		(43_171_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
@@ -69,13 +69,13 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 impl WeightInfo for () {
 	// Storage: TransactionPause PausedTransactions (r:1 w:1)
 	fn pause_transaction() -> Weight {
-		(42_000_000 as Weight)
+		(42_691_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	// Storage: TransactionPause PausedTransactions (r:1 w:1)
 	fn unpause_transaction() -> Weight {
-		(42_450_000 as Weight)
+		(43_171_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
