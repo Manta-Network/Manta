@@ -157,11 +157,29 @@ parameter_types! {
 	pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
 }
 
+impl pallet_tx_pause::Config for Runtime {
+	type Event = Event;
+	type UpdateOrigin = EnsureRoot<AccountId>;
+	type WeightInfo = ();
+}
+
 // Don't allow permission-less asset creation.
 pub struct BaseFilter;
 impl Contains<Call> for BaseFilter {
-	fn contains(c: &Call) -> bool {
-		match c {
+	fn contains(call: &Call) -> bool {
+		let is_core_call = matches!(call, Call::Timestamp(_) | Call::ParachainSystem(_));
+		if is_core_call {
+			// always allow core call
+			return true;
+		}
+
+		let is_paused = pallet_tx_pause::PausedTransactionFilter::<Runtime>::contains(call);
+		if is_paused {
+			// no paused call
+			return false;
+		}
+
+		match call {
 			Call::Timestamp(_)
 			| Call::ParachainSystem(_)
 			| Call::Authorship(_)
@@ -724,6 +742,7 @@ construct_runtime!(
 		} = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
+		TransactionPause: pallet_tx_pause::{Pallet, Call, Storage, Event<T>} = 4,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
@@ -931,6 +950,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_collective, Council);
 			list_benchmark!(list, extra, pallet_membership, CouncilMembership);
 			list_benchmark!(list, extra, pallet_scheduler, Scheduler);
+			list_benchmark!(list, extra, pallet_tx_pause, TransactionPause);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -975,6 +995,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_collective, Council);
 			add_benchmark!(params, batches, pallet_membership, CouncilMembership);
 			add_benchmark!(params, batches, pallet_scheduler, Scheduler);
+			add_benchmark!(params, batches, pallet_tx_pause, TransactionPause);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

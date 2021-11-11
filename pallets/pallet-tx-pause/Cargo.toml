@@ -6,6 +6,7 @@ edition    = "2018"
 homepage   = 'https://manta.network'
 license    = 'GPL-3.0'
 repository = 'https://github.com/Manta-Network/Manta/'
+
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
@@ -13,6 +14,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkad
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12", default-features = false }
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.12", default-features = false, optional = true }
 
 [dev-dependencies]
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
@@ -32,4 +34,12 @@ std = [
 	"sp-std/std",
 	"manta-primitives/std",
 ]
-try-runtime = ["frame-support/try-runtime"]
+try-runtime = [
+	"frame-support/try-runtime",
+]
+
+runtime-benchmarks = [
+	"frame-benchmarking",
+	'frame-support/runtime-benchmarks',
+	'frame-system/runtime-benchmarks',
+]

@@ -163,10 +163,6 @@ impl pallet_tx_pause::Config for Runtime {
 pub struct MantaFilter;
 impl Contains<Call> for MantaFilter {
 	fn contains(call: &Call) -> bool {
-		// let is_core_call = matches!(
-		// 	call,
-		// 	Call::System(_) | Call::Timestamp(_) | Call::ParachainSystem(_)
-		// );
 		let is_core_call = matches!(call, Call::Timestamp(_) | Call::ParachainSystem(_));
 		if is_core_call {
 			// always allow core call
@@ -769,6 +765,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_utility, Utility);
 			list_benchmark!(list, extra, pallet_collator_selection, CollatorSelection);
 			list_benchmark!(list, extra, pallet_scheduler, Scheduler);
+			list_benchmark!(list, extra, pallet_tx_pause, TransactionPause);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -810,6 +807,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
 			add_benchmark!(params, batches, pallet_scheduler, Scheduler);
+			add_benchmark!(params, batches, pallet_tx_pause, TransactionPause);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

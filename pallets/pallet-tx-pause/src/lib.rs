@@ -17,6 +17,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::unused_unit)]
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
 use frame_support::{
 	dispatch::{CallMetadata, GetCallMetadata},
 	pallet_prelude::*,

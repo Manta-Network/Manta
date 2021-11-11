@@ -974,6 +974,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-tx-pause",
  "pallet-utility",
  "pallet-xcm",
  "parachain-info",
@@ -5732,6 +5733,7 @@ dependencies = [
 name = "pallet-tx-pause"
 version = "3.0.9"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "manta-primitives",
