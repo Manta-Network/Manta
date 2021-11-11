@@ -98,6 +98,9 @@ pub mod opaque {
 	}
 }
 
+// Weights used in the runtime.
+mod weights;
+
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("manta"),
@@ -153,17 +156,30 @@ parameter_types! {
 	pub const SS58Prefix: u8 = manta_primitives::constants::MANTA_SS58PREFIX;
 }
 
+impl pallet_tx_pause::Config for Runtime {
+	type Event = Event;
+	type UpdateOrigin = EnsureRoot<AccountId>;
+	type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
+}
+
 // Don't allow permission-less asset creation.
 pub struct MantaFilter;
 impl Contains<Call> for MantaFilter {
-	fn contains(c: &Call) -> bool {
-		match c {
-			Call::Timestamp(_)
-			| Call::ParachainSystem(_)
-			| Call::Authorship(_)
-			| Call::Sudo(_)
-			| Call::Multisig(_)
-			| Call::Balances(_) => true,
+	fn contains(call: &Call) -> bool {
+		let is_core_call = matches!(call, Call::Timestamp(_) | Call::ParachainSystem(_));
+		if is_core_call {
+			// always allow core call
+			return true;
+		}
+
+		let is_paused = pallet_tx_pause::PausedTransactionFilter::<Runtime>::contains(call);
+		if is_paused {
+			// no paused call
+			return false;
+		}
+
+		match call {
+			Call::Authorship(_) | Call::Sudo(_) | Call::Multisig(_) | Call::Balances(_) => true,
 			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
 			// Sudo also cannot be filtered because it is used in runtime upgrade.
 			_ => false,
@@ -550,7 +566,7 @@ construct_runtime!(
 		} = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
-
+		TransactionPause: pallet_tx_pause::{Pallet, Call, Storage, Event<T>} = 4,
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
@@ -748,6 +764,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_utility, Utility);
 			list_benchmark!(list, extra, pallet_collator_selection, CollatorSelection);
 			list_benchmark!(list, extra, pallet_scheduler, Scheduler);
+			list_benchmark!(list, extra, pallet_tx_pause, TransactionPause);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -789,6 +806,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
 			add_benchmark!(params, batches, pallet_scheduler, Scheduler);
+			add_benchmark!(params, batches, pallet_tx_pause, TransactionPause);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
