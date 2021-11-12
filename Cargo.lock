@@ -4485,6 +4485,7 @@ dependencies = [
 [[package]]
 name = "pallet-manta-pay"
 version = "0.2.1"
+source = "git+https://github.com/Manta-Network/pallet-manta-pay#a94e0a9b835f3950e6984fc45118617bbefbe2bc"
 dependencies = [
  "ark-serialize",
  "ark-std",
