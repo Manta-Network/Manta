@@ -5740,7 +5740,6 @@ dependencies = [
  "pallet-balances",
  "parity-scale-codec",
  "scale-info",
- "smallvec",
  "sp-core",
  "sp-io",
  "sp-runtime",

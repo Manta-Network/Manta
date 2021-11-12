@@ -20,6 +20,7 @@
 
 use super::*;
 use frame_support::{assert_noop, assert_ok};
+use frame_system::RawOrigin;
 use mock::{Event, *};
 use sp_runtime::traits::BadOrigin;
 
@@ -33,10 +34,9 @@ const BALANCE_TRANSFER: &<Runtime as frame_system::Config>::Call =
 fn pause_transaction_work() {
 	ExtBuilder::default().build().execute_with(|| {
 		System::set_block_number(1);
-
 		assert_noop!(
 			TransactionPause::pause_transaction(
-				Origin::signed(5),
+				Origin::signed(1),
 				b"Balances".to_vec(),
 				b"transfer".to_vec()
 			),
@@ -48,7 +48,7 @@ fn pause_transaction_work() {
 			None
 		);
 		assert_ok!(TransactionPause::pause_transaction(
-			Origin::signed(1),
+			RawOrigin::Root.into(),
 			b"Balances".to_vec(),
 			b"transfer".to_vec()
 		));
@@ -63,7 +63,7 @@ fn pause_transaction_work() {
 
 		assert_noop!(
 			TransactionPause::pause_transaction(
-				Origin::signed(1),
+				RawOrigin::Root.into(),
 				b"TransactionPause".to_vec(),
 				b"pause_transaction".to_vec()
 			),
@@ -71,14 +71,14 @@ fn pause_transaction_work() {
 		);
 		assert_noop!(
 			TransactionPause::pause_transaction(
-				Origin::signed(1),
+				RawOrigin::Root.into(),
 				b"TransactionPause".to_vec(),
 				b"some_other_call".to_vec()
 			),
 			Error::<Runtime>::CannotPause
 		);
 		assert_ok!(TransactionPause::pause_transaction(
-			Origin::signed(1),
+			RawOrigin::Root.into(),
 			b"OtherPallet".to_vec(),
 			b"pause_transaction".to_vec()
 		));
@@ -91,7 +91,7 @@ fn unpause_transaction_work() {
 		System::set_block_number(1);
 
 		assert_ok!(TransactionPause::pause_transaction(
-			Origin::signed(1),
+			RawOrigin::Root.into(),
 			b"Balances".to_vec(),
 			b"transfer".to_vec()
 		));
@@ -102,7 +102,7 @@ fn unpause_transaction_work() {
 
 		assert_noop!(
 			TransactionPause::unpause_transaction(
-				Origin::signed(5),
+				Origin::signed(1),
 				b"Balances".to_vec(),
 				b"transfer".to_vec()
 			),
@@ -110,7 +110,7 @@ fn unpause_transaction_work() {
 		);
 
 		assert_ok!(TransactionPause::unpause_transaction(
-			Origin::signed(1),
+			RawOrigin::Root.into(),
 			b"Balances".to_vec(),
 			b"transfer".to_vec()
 		));
@@ -132,7 +132,7 @@ fn paused_transaction_filter_work() {
 			BALANCE_TRANSFER
 		));
 		assert_ok!(TransactionPause::pause_transaction(
-			Origin::signed(1),
+			RawOrigin::Root.into(),
 			b"Balances".to_vec(),
 			b"transfer".to_vec()
 		));
@@ -140,7 +140,7 @@ fn paused_transaction_filter_work() {
 			BALANCE_TRANSFER
 		));
 		assert_ok!(TransactionPause::unpause_transaction(
-			Origin::signed(1),
+			RawOrigin::Root.into(),
 			b"Balances".to_vec(),
 			b"transfer".to_vec()
 		));

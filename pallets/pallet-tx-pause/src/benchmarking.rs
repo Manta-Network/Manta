@@ -20,7 +20,7 @@
 
 use super::*;
 
-use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 use frame_system::{EventRecord, RawOrigin};
 
 use crate::Pallet as TransactionPause;
@@ -38,7 +38,6 @@ benchmarks! {
 	pause_transaction {
 		let pallet_name = b"Balances".to_vec();
 		let function_name =  b"transfer".to_vec();
-		let caller: T::AccountId = whitelisted_caller();
 	}: pause_transaction(RawOrigin::Root, pallet_name.clone(), function_name.clone())
 	verify {
 		assert_last_event::<T>(
@@ -48,7 +47,6 @@ benchmarks! {
 
 	// Benchmark `unpause_transaction` extrinsic:
 	unpause_transaction {
-		let caller: T::AccountId = whitelisted_caller();
 		let origin: T::Origin = T::Origin::from(RawOrigin::Root);
 		let pallet_name = b"Balances".to_vec();
 		let function_name =  b"transfer".to_vec();
@@ -65,6 +63,6 @@ benchmarks! {
 
 impl_benchmark_test_suite!(
 	TransactionPause,
-	crate::tests_composite::ExtBuilder::default().build(),
-	crate::tests_composite::Test,
+	crate::mock::ExtBuilder::default().build(),
+	crate::mock::Runtime,
 );

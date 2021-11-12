@@ -20,7 +20,7 @@
 
 use super::*;
 use frame_support::{construct_runtime, ord_parameter_types, parameter_types, traits::Everything};
-use frame_system::EnsureSignedBy;
+use frame_system::EnsureRoot;
 use manta_primitives::Balance;
 
 use sp_core::H256;
@@ -86,7 +86,7 @@ ord_parameter_types! {
 
 impl Config for Runtime {
 	type Event = Event;
-	type UpdateOrigin = EnsureSignedBy<One, AccountId>;
+	type UpdateOrigin = EnsureRoot<AccountId>;
 	type WeightInfo = ();
 }
 

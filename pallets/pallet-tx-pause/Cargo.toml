@@ -22,8 +22,6 @@ sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
 manta-primitives = { path = '../../runtime/primitives', default-features = false }
 
-smallvec = "1.4.1"
-
 [features]
 default = ["std"]
 std = [
@@ -32,7 +30,6 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"sp-std/std",
-	"manta-primitives/std",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
