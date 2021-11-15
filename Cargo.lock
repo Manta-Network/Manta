@@ -3693,8 +3693,8 @@ dependencies = [
 
 [[package]]
 name = "manta-asset"
-version = "0.3.0"
-source = "git+https://github.com/Manta-Network/manta-types?branch=manta#e281d37b047ea705c96ebb70655a28f2788f98cf"
+version = "0.3.2"
+source = "git+https://github.com/Manta-Network/manta-types?branch=manta#d4c14964217c0e598085913fa84bbe17a263ed94"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ed-on-bls12-381",
@@ -3710,8 +3710,8 @@ dependencies = [
 
 [[package]]
 name = "manta-crypto"
-version = "0.3.1"
-source = "git+https://github.com/Manta-Network/manta-crypto?branch=manta#d32ab9589e05d00b579b5443260104e457a360cc"
+version = "0.3.2"
+source = "git+https://github.com/Manta-Network/manta-crypto?branch=manta#46939c35fd24a42bc8550046822c3cb14623d83f"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -3736,8 +3736,8 @@ dependencies = [
 
 [[package]]
 name = "manta-data"
-version = "0.3.0"
-source = "git+https://github.com/Manta-Network/manta-types?branch=manta#e281d37b047ea705c96ebb70655a28f2788f98cf"
+version = "0.3.2"
+source = "git+https://github.com/Manta-Network/manta-types?branch=manta#d4c14964217c0e598085913fa84bbe17a263ed94"
 dependencies = [
  "ark-ed-on-bls12-381",
  "ark-groth16",
@@ -4485,6 +4485,7 @@ dependencies = [
 [[package]]
 name = "pallet-manta-pay"
 version = "0.2.1"
+source = "git+https://github.com/Manta-Network/pallet-manta-pay#a94e0a9b835f3950e6984fc45118617bbefbe2bc"
 dependencies = [
  "ark-serialize",
  "ark-std",
@@ -8600,7 +8601,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f559b464de2e2bdabcac6a210d12e9b5a5973c251e102c44c585c71d51bd78e"
 dependencies = [
  "cfg-if 1.0.0",
- "rand 0.8.4",
+ "rand 0.3.23",
  "static_assertions",
 ]
 
