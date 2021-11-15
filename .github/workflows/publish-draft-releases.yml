@@ -1201,24 +1201,17 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       -
-        name: setup directories
-        run: |
-          mkdir -p $HOME/.local/share/manta
-          mkdir -p $HOME/.local/bin
-          echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
-          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+        uses: actions/checkout@v2
       -
         name: fetch manta
         uses: actions/download-artifact@v2
         with:
           name: manta
       -
-        uses: actions/checkout@v2
-      -
         name: build docker image
         run: |
+          mv manta docker/manta
           cd docker/
-          mv ${{ github.workspace }}/manta manta
           chmod +x manta
           GIT_TAG=${{ github.event.release.tag_name }}
           BINARY_NAME=manta
