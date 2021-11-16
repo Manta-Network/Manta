@@ -1,3 +1,19 @@
+// Copyright 2020-2021 Manta Network.
+// This file is part of Manta.
+//
+// Manta is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Manta is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Manta.  If not, see <http://www.gnu.org/licenses/>.
+
 use super::{Event as PalletEvent, *};
 use chrono::prelude::*;
 use frame_support::{assert_noop, assert_ok};
@@ -354,7 +370,7 @@ fn update_brand_new_vesting_schedule_should_work() {
 			// Ensure current timestamp is bigger than the 1th round of schedule.
 			// Now Bob can claim 1th round vested tokens.
 			let frist_round = 0;
-			let now = VestingSchedule::<Test>::get()[frist_round].1 * 1000 + 1;
+			let now = VestingSchedule::<Test>::get()[frist_round].1 * 1000 - 1;
 			Timestamp::set_timestamp(now);
 
 			let new_schedule = BoundedVec::try_from(
@@ -416,7 +432,7 @@ fn invalid_schedule_should_not_be_updated() {
 			// Check updating invalid partial schedule should not work.
 			let next_round = 3;
 			// now is between 3th round and 4th round.
-			let now = VestingSchedule::<Test>::get()[next_round].1 * 1000 - 1000;
+			let now = (VestingSchedule::<Test>::get()[next_round].1 - 1) * 1000;
 			Timestamp::set_timestamp(now);
 
 			let invalid_schedule = BoundedVec::try_from({
@@ -428,8 +444,9 @@ fn invalid_schedule_should_not_be_updated() {
 						continue;
 					}
 					// Set one schedule that is past time.
+					// This schedule is earlier than now.
 					if index == next_round {
-						new_schedule.push(now / 1000 - 1);
+						new_schedule.push((now - 2) / 1000);
 						continue;
 					}
 					// Do not change the rest of future schedule;
@@ -441,7 +458,7 @@ fn invalid_schedule_should_not_be_updated() {
 
 			assert_noop!(
 				CalamariVesting::update_vesting_schedule(Origin::root(), invalid_schedule),
-				Error::<Test>::InvalidTimestamp,
+				Error::<Test>::InvalidSchedule,
 			);
 		});
 }

@@ -1,3 +1,19 @@
+// Copyright 2020-2021 Manta Network.
+// This file is part of Manta.
+//
+// Manta is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Manta is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Manta.  If not, see <http://www.gnu.org/licenses/>.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -6,7 +22,9 @@ mod benchmarking;
 mod mock;
 #[cfg(test)]
 mod tests;
+pub mod weights;
 
+use crate::weights::WeightInfo;
 use core::convert::TryFrom;
 use frame_support::{
 	ensure,
@@ -50,6 +68,8 @@ pub mod pallet {
 		/// The maximum length of schedule is allowed.
 		#[pallet::constant]
 		type MaxScheduleLength: Get<u32>;
+
+		type WeightInfo: crate::weights::WeightInfo;
 	}
 
 	/// Information regarding the vesting of a given account.
@@ -121,7 +141,7 @@ pub mod pallet {
 		/// Not enough tokens for vesting.
 		BalanceLow,
 		/// Cannot input
-		InvalidTimestamp,
+		InvalidSchedule,
 		/// The length of new schedule cannot be bigger/smaller than 7.
 		InvalidScheduleLength,
 		/// The new schedule should be sorted.
@@ -135,7 +155,7 @@ pub mod pallet {
 		/// Update vesting schedule.
 		///
 		/// - `new_schedule`: New schedule for vesting.
-		#[pallet::weight(10_000)]
+		#[pallet::weight(T::WeightInfo::update_vesting_schedule())]
 		pub fn update_vesting_schedule(
 			origin: OriginFor<T>,
 			new_schedule: BoundedVec<Schedule, T::MaxScheduleLength>,
@@ -160,12 +180,13 @@ pub mod pallet {
 				// n == o means we will partialy update vesting schedule.
 				// n > o means new schedule is future schedule.
 				// n < o && n > now, also fine.
-				if *n == o.1 {
-					continue;
-				}
-				// This is an invalid schedule. New schedule cannot be past time.
-				if *n <= now {
-					return Err(Error::<T>::InvalidTimestamp.into());
+				if o.1 <= now {
+					// Check partialy updating vesting schedule.
+					// We don't change past schedule, just skip it.
+					ensure!(*n == o.1, Error::<T>::InvalidSchedule);
+				} else {
+					// New schedule should future time.
+					ensure!(*n >= now, Error::<T>::InvalidSchedule);
 				}
 			}
 
@@ -187,7 +208,7 @@ pub mod pallet {
 		/// locked under this pallet.
 		///
 		/// Emits either `VestingCompleted` or `VestingUpdated`.
-		#[pallet::weight(10_000)]
+		#[pallet::weight(T::WeightInfo::vest())]
 		pub fn vest(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -207,7 +228,7 @@ pub mod pallet {
 		///
 		/// - `target`: The account receiving the vested funds.
 		/// - `locked_amount`: How much tokens will be transfered.
-		#[pallet::weight(10_000)]
+		#[pallet::weight(T::WeightInfo::vested_transfer())]
 		pub fn vested_transfer(
 			origin: OriginFor<T>,
 			target: <T::Lookup as StaticLookup>::Source,
