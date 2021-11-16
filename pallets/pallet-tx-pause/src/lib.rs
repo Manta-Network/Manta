@@ -88,6 +88,8 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Pause an extrinsic by passing the extrinsic and corresponding pallet names.
+		/// Use names as they are written in the source code of the pallet.
 		#[pallet::weight(T::WeightInfo::pause_transaction())]
 		#[transactional]
 		pub fn pause_transaction(
@@ -117,6 +119,8 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Unpause an extrinsic by passing the extrinsic and corresponding pallet names.
+		/// Use names as they are written in the source code of the pallet.
 		#[pallet::weight(T::WeightInfo::unpause_transaction())]
 		#[transactional]
 		pub fn unpause_transaction(
