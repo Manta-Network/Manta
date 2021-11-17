@@ -159,6 +159,7 @@ impl Contains<Call> for MantaFilter {
 	fn contains(c: &Call) -> bool {
 		match c {
 			Call::Timestamp(_)
+			| Call::System(_)
 			| Call::ParachainSystem(_)
 			| Call::Authorship(_)
 			| Call::Sudo(_)
