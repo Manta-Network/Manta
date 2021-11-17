@@ -2,11 +2,12 @@
 
 # yamllint disable rule:line-length
 
-name: Benchmark Pallets & Generate Weights Files
+name: Benchmark Manta Runtime & Generate Weights Files
 
 # yamllint disable-line rule:truthy
 on:
-  workflow_dispatch:
+  push:
+    branches: [ghzlatarev/multisig-weights]
 
 env:
   AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
@@ -104,45 +105,29 @@ jobs:
     strategy:
       matrix:
         benchmark:
+          # -
+          #   extrinsic:
+          #     id: '*'
+          #     name: pallet_scheduler
+          #   pallet:
+          #     id: pallet_scheduler
+          #     name: pallet_scheduler
+          #   iterations: 20
+          # -
+          #   extrinsic:
+          #     id: '*'
+          #     name: pallet_balances
+          #   pallet:
+          #     id: pallet_balances
+          #     name: pallet_balances
+          #   iterations: 20
           -
             extrinsic:
               id: '*'
-              name: pallet_democracy
+              name: pallet_multisig
             pallet:
-              id: pallet_democracy
-              name: pallet_democracy
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_collective
-            pallet:
-              id: pallet_collective
-              name: pallet_collective
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_membership
-            pallet:
-              id: pallet_membership
-              name: pallet_membership
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_scheduler
-            pallet:
-              id: pallet_scheduler
-              name: pallet_scheduler
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_balances
-            pallet:
-              id: pallet_balances
-              name: pallet_balances
+              id: pallet_multisig
+              name: pallet_multisig
             iterations: 20
     steps:
       -
@@ -158,7 +143,7 @@ jobs:
         name: run benchmark
         run: |
           manta benchmark \
-            --chain=calamari-dev \
+            --chain=manta-local \
             --pallet=${{ matrix.benchmark.pallet.id }} \
             --extrinsic=${{ matrix.benchmark.extrinsic.id }} \
             --execution=Wasm \
@@ -171,7 +156,7 @@ jobs:
       -
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.benchmark.pallet.name }}.rs
+          name: ${{ matrix.benchmark.pallet.id }}-${{ matrix.benchmark.pallet.name }}.rs
           path: ${{ github.workspace }}/${{ matrix.benchmark.pallet.name }}.rs
 
   start-node-builder-current:
