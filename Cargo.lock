@@ -939,7 +939,7 @@ checksum = "631ae5198c9be5e753e5cc215e1bd73c2b466a3565173db433f52bb9d3e66dba"
 
 [[package]]
 name = "calamari-runtime"
-version = "3.0.9"
+version = "3.1.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -4258,7 +4258,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "3.0.9"
+version = "3.1.0"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -4323,7 +4323,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "3.0.9"
+version = "3.1.0"
 dependencies = [
  "parity-scale-codec",
  "smallvec",
@@ -4336,7 +4336,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "3.0.9"
+version = "3.1.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -5731,7 +5731,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "3.0.9"
+version = "3.1.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
