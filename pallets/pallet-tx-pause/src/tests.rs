@@ -36,6 +36,10 @@ const BALANCE_TRANSFER: &<Runtime as frame_system::Config>::Call =
 #[test]
 fn pause_transaction_work() {
 	ExtBuilder::default().build().execute_with(|| {
+		assert!(<Runtime as frame_system::Config>::BaseCallFilter::contains(
+			BALANCE_TRANSFER
+		));
+
 		System::set_block_number(1);
 		assert_noop!(
 			TransactionPause::pause_transaction(
@@ -63,6 +67,7 @@ fn pause_transaction_work() {
 			TransactionPause::paused_transactions((b"Balances".to_vec(), b"transfer".to_vec())),
 			Some(())
 		);
+		assert!(!<Runtime as frame_system::Config>::BaseCallFilter::contains(BALANCE_TRANSFER));
 
 		assert_noop!(
 			TransactionPause::pause_transaction(
@@ -91,6 +96,10 @@ fn pause_transaction_work() {
 #[test]
 fn unpause_transaction_work() {
 	ExtBuilder::default().build().execute_with(|| {
+		assert!(<Runtime as frame_system::Config>::BaseCallFilter::contains(
+			BALANCE_TRANSFER
+		));
+
 		System::set_block_number(1);
 
 		assert_ok!(TransactionPause::pause_transaction(
@@ -102,6 +111,8 @@ fn unpause_transaction_work() {
 			TransactionPause::paused_transactions((b"Balances".to_vec(), b"transfer".to_vec())),
 			Some(())
 		);
+
+		assert!(!<Runtime as frame_system::Config>::BaseCallFilter::contains(BALANCE_TRANSFER));
 
 		assert_noop!(
 			TransactionPause::unpause_transaction(
@@ -125,6 +136,10 @@ fn unpause_transaction_work() {
 			TransactionPause::paused_transactions((b"Balances".to_vec(), b"transfer".to_vec())),
 			None
 		);
+
+		assert!(<Runtime as frame_system::Config>::BaseCallFilter::contains(
+			BALANCE_TRANSFER
+		));
 	});
 }
 

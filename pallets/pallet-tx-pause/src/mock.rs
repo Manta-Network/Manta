@@ -22,7 +22,7 @@
 #![cfg(test)]
 
 use super::*;
-use frame_support::{construct_runtime, ord_parameter_types, parameter_types, traits::Everything};
+use frame_support::{construct_runtime, ord_parameter_types, parameter_types};
 use frame_system::EnsureRoot;
 use manta_primitives::Balance;
 
@@ -38,6 +38,20 @@ mod tx_pause {
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
+}
+
+// Don't allow permission-less asset creation.
+pub struct BaseFilter;
+impl Contains<Call> for BaseFilter {
+	fn contains(call: &Call) -> bool {
+		let is_paused = tx_pause::PausedTransactionFilter::<Runtime>::contains(call);
+		if is_paused {
+			// no paused call
+			return false;
+		}
+
+		return true;
+	}
 }
 
 impl frame_system::Config for Runtime {
@@ -60,7 +74,7 @@ impl frame_system::Config for Runtime {
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type DbWeight = ();
-	type BaseCallFilter = Everything;
+	type BaseCallFilter = BaseFilter;
 	type SystemWeightInfo = ();
 	type SS58Prefix = ();
 	type OnSetCode = ();
