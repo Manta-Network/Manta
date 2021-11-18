@@ -6,8 +6,7 @@ name: Benchmark Clamari Runtime & Generate Weights Files
 
 # yamllint disable-line rule:truthy
 on:
-  push:
-    branches: [ghzlatarev/multisig-weights]
+  workflow_dispatch:
 
 env:
   AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
@@ -105,46 +104,46 @@ jobs:
     strategy:
       matrix:
         benchmark:
-          # -
-          #   extrinsic:
-          #     id: '*'
-          #     name: pallet_democracy
-          #   pallet:
-          #     id: pallet_democracy
-          #     name: pallet_democracy
-          #   iterations: 20
-          # -
-          #   extrinsic:
-          #     id: '*'
-          #     name: pallet_collective
-          #   pallet:
-          #     id: pallet_collective
-          #     name: pallet_collective
-          #   iterations: 20
-          # -
-          #   extrinsic:
-          #     id: '*'
-          #     name: pallet_membership
-          #   pallet:
-          #     id: pallet_membership
-          #     name: pallet_membership
-          #   iterations: 20
-          # -
-          #   extrinsic:
-          #     id: '*'
-          #     name: pallet_scheduler
-          #   pallet:
-          #     id: pallet_scheduler
-          #     name: pallet_scheduler
-          #   iterations: 20
-          # -
-          #   extrinsic:
-          #     id: '*'
-          #     name: pallet_balances
-          #   pallet:
-          #     id: pallet_balances
-          #     name: pallet_balances
-          #   iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_democracy
+            pallet:
+              id: pallet_democracy
+              name: pallet_democracy
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_collective
+            pallet:
+              id: pallet_collective
+              name: pallet_collective
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_membership
+            pallet:
+              id: pallet_membership
+              name: pallet_membership
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_scheduler
+            pallet:
+              id: pallet_scheduler
+              name: pallet_scheduler
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_balances
+            pallet:
+              id: pallet_balances
+              name: pallet_balances
+            iterations: 20
           -
             extrinsic:
               id: '*'
