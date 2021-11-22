@@ -135,6 +135,10 @@ jobs:
             pallet:
               id: pallet_session
               name: pallet_session
+              name: pallet_multisig
+            pallet:
+              id: pallet_multisig
+              name: pallet_multisig
             iterations: 20
     steps:
       -

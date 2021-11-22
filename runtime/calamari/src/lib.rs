@@ -163,6 +163,7 @@ impl Contains<Call> for BaseFilter {
 	fn contains(c: &Call) -> bool {
 		match c {
 			Call::Timestamp(_)
+			| Call::System(_)
 			| Call::ParachainSystem(_)
 			| Call::Authorship(_)
 			| Call::Sudo(_)
@@ -310,7 +311,7 @@ impl pallet_multisig::Config for Runtime {
 	type DepositBase = DepositBase;
 	type DepositFactor = DepositFactor;
 	type MaxSignatories = MaxSignatories;
-	type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_multisig::SubstrateWeight<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
