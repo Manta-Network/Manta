@@ -167,8 +167,12 @@ impl pallet_tx_pause::Config for Runtime {
 pub struct BaseFilter;
 impl Contains<Call> for BaseFilter {
 	fn contains(call: &Call) -> bool {
-		if matches!(call, Call::Timestamp(_) | Call::ParachainSystem(_)) {
+		if matches!(
+			call,
+			Call::Timestamp(_) | Call::ParachainSystem(_) | Call::System(_)
+		) {
 			// always allow core call
+			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
 			return true;
 		}
 
@@ -178,9 +182,8 @@ impl Contains<Call> for BaseFilter {
 		}
 
 		match call {
-			Call::Timestamp(_)
-			| Call::ParachainSystem(_)
 			| Call::Authorship(_)
+			// Sudo also cannot be filtered because it is used in runtime upgrade.
 			| Call::Sudo(_)
 			| Call::Multisig(_)
 			// For now disallow public proposal workflows, treasury workflows,
@@ -218,11 +221,8 @@ impl Contains<Call> for BaseFilter {
 			| Call::TechnicalMembership(_)
 			| Call::Scheduler(_)
 			| Call::Balances(_) => true,
-			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
-			// Sudo also cannot be filtered because it is used in runtime upgrade.
 			_ => false,
-			// Filter System to prevent users from runtime upgrade without sudo privilege.
-			// Filter Utility and Multisig to prevent users from setting keys and selecting collator for parachain (couldn't use now).
+			// Filter Utility to prevent users from setting keys and selecting collator for parachain (couldn't use now).
 			// Filter Session and CollatorSelection to prevent users from utility operation.
 			// Filter XCM pallet.
 		}
@@ -326,7 +326,7 @@ impl pallet_multisig::Config for Runtime {
 	type DepositBase = DepositBase;
 	type DepositFactor = DepositFactor;
 	type MaxSignatories = MaxSignatories;
-	type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_multisig::SubstrateWeight<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
