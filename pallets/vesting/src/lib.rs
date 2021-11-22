@@ -93,10 +93,8 @@ pub mod pallet {
 	pub(super) fn DefaultVestingSchedule<T: Config>(
 	) -> BoundedVec<(Percent, Schedule), T::MaxScheduleLength> {
 		BoundedVec::try_from(sp_std::vec![
-			// 1636329600 = 2021-11-08 00:00:00(UTC)
-			(Percent::from_percent(34), 1636329600u64),
-			// 1636502400 = 2021-11-10 00:00:00(UTC)
-			(Percent::from_percent(11), 1636502400u64),
+			// 1636502400 = 2021-12-10 00:00:00(UTC)
+			(Percent::from_percent(45), 1636502400u64),
 			// 1641340800 = 2022-01-05 00:00:00(UTC)
 			(Percent::from_percent(11), 1641340800u64),
 			// 1646179200 = 2022-03-02 00:00:00(UTC)

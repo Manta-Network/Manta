@@ -714,7 +714,7 @@ impl pallet_collator_selection::Config for Runtime {
 // Calamari pallets configuration
 parameter_types! {
 	pub const MinVestedTransfer: Balance = KMA;
-	pub const MaxScheduleLength: u32 = 7;
+	pub const MaxScheduleLength: u32 = 6;
 }
 
 impl calamari_vesting::Config for Runtime {
