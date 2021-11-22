@@ -24,7 +24,7 @@ Currently, there are two developing branches:
 
 ## Semantic Versioning
 Manta/Calamari's version number:
-`v<x>.<y>.<z>
+`v<x>.<y>.<z>`
 
 where:
 
