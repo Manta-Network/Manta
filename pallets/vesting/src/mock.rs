@@ -105,9 +105,9 @@ impl pallet_timestamp::Config for Test {
 }
 
 parameter_types! {
-	pub const MinVestedTransfer: Balance = 1;
+	pub const MinVestedTransfer: Balance = 2;
 	pub static ExistentialDeposit: Balance = 1;
-	pub const MaxScheduleLength: u32 = 7;
+	pub const MaxScheduleLength: u32 = 6;
 }
 impl Config for Test {
 	type Currency = Balances;
@@ -149,28 +149,8 @@ impl ExtBuilder {
 
 		let mut ext = sp_io::TestExternalities::new(t);
 		ext.execute_with(|| {
-			// Set vesting schedule for testing.
-			let new_schedule = BoundedVec::try_from(sp_std::vec![
-				// 1636329600 = 2021-11-08 00:00:00(UTC)
-				(Percent::from_percent(34), 1636329600u64),
-				// 1636502400 = 2021-11-10 00:00:00(UTC)
-				(Percent::from_percent(11), 1636502400u64),
-				// 1641340800 = 2022-01-05 00:00:00(UTC)
-				(Percent::from_percent(11), 1641340800u64),
-				// 1646179200 = 2022-03-02 00:00:00(UTC)
-				(Percent::from_percent(11), 1646179200u64),
-				// 1651017600 = 2022-04-27 00:00:00(UTC)
-				(Percent::from_percent(11), 1651017600u64),
-				// 1655856000 = 2022-06-22 00:00:00(UTC)
-				(Percent::from_percent(11), 1655856000u64),
-				// 1660694400 = 2022-08-17 00:00:00(UTC)
-				(Percent::from_percent(11), 1660694400u64),
-			])
-			.unwrap_or_default();
-			VestingSchedule::<Test>::put(new_schedule);
-
-			// 1636329600 - 3 * 6000
-			Timestamp::set_timestamp(1636311600000);
+			// Set current time more early than the first schedule.
+			Timestamp::set_timestamp(VestingSchedule::<Test>::get()[0].1 * 1000 - 3 * 6000);
 			System::set_block_number(1);
 		});
 		ext

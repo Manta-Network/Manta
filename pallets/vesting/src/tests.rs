@@ -25,12 +25,35 @@ fn alice_vesting_for_bob_should_work() {
 		.existential_deposit(1)
 		.build()
 		.execute_with(|| {
+			// Cannot vest tokens that is less than expected.
+			assert_noop!(
+				CalamariVesting::vested_transfer(
+					Origin::signed(ALICE),
+					BOB,
+					MinVestedTransfer::get() - 1
+				),
+				Error::<Test>::AmountLow
+			);
+
+			// Signer cannot vest tokens that exceeds all he has.
+			assert_noop!(
+				CalamariVesting::vested_transfer(Origin::signed(ALICE), BOB, ALICE_DEPOSIT + 1),
+				Error::<Test>::BalanceLow
+			);
+
 			let unvested = 100;
 			assert_ok!(CalamariVesting::vested_transfer(
 				Origin::signed(ALICE),
 				BOB,
 				unvested
 			));
+
+			// Cannot vest tokens the same user more than twice.
+			assert_noop!(
+				CalamariVesting::vested_transfer(Origin::signed(ALICE), BOB, unvested),
+				Error::<Test>::ExistingVestingSchedule
+			);
+
 			assert_eq!(Balances::free_balance(ALICE), ALICE_DEPOSIT - unvested);
 			assert_eq!(Balances::free_balance(BOB), unvested);
 			assert_eq!(VestingBalances::<Test>::get(BOB), Some(unvested));
@@ -77,9 +100,9 @@ fn alice_vesting_for_bob_should_work() {
 			);
 			assert_eq!(Balances::free_balance(BOB), unvested - vested);
 
-			// Ensure current timestamp is bigger than the 7th round of schedule.
-			// Now Bob can claim 7th round vested tokens.
-			let last_round = 6;
+			// Ensure current timestamp is bigger than the 6th round of schedule.
+			// Now Bob can claim 6th round vested tokens.
+			let last_round = 5;
 			let now = VestingSchedule::<Test>::get()[last_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
@@ -141,9 +164,7 @@ fn alice_vesting_for_bob_claim_slowly_should_work() {
 			assert_ok!(CalamariVesting::vest(Origin::signed(BOB)));
 			assert_eq!(Balances::free_balance(BOB), unvested);
 
-			// BOB cannot transfer more than 67 tokens.
-			// Bacause rest of 33 is locked now.
-			// let vested = 67;
+			// Calculate how many tokens that have been vested.
 			let vested = VestingSchedule::<Test>::get()[..=fourth_round]
 				.iter()
 				.map(|s| s.0)
@@ -210,22 +231,22 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
 			);
 			assert_eq!(Balances::free_balance(BOB), unvested - vested_1);
 
-			// Ensure current timestamp is bigger than the 6th round of schedule.
-			// Now Bob can claim 6th round vested tokens.
-			let sixth_round = 5;
+			// Ensure current timestamp is bigger than the 5th round of schedule.
+			// Now Bob can claim 5th round vested tokens.
+			let sixth_round = 4;
 			let now = VestingSchedule::<Test>::get()[sixth_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
 			assert_ok!(CalamariVesting::vest(Origin::signed(BOB)));
 
-			// All vested for 6th round.
-			let vested_0_to_5 = VestingSchedule::<Test>::get()[..=sixth_round]
+			// All vested for 5th round.
+			let vested_0_to_4 = VestingSchedule::<Test>::get()[..=sixth_round]
 				.iter()
 				.map(|s| s.0)
 				.fold(Percent::from_percent(0), |acc, p| acc.saturating_add(p))
 				* unvested;
 			assert_noop!(
-				Balances::transfer(Origin::signed(BOB), ALICE, vested_0_to_5 + 1 - vested_1),
+				Balances::transfer(Origin::signed(BOB), ALICE, vested_0_to_4 + 1 - vested_1),
 				pallet_balances::Error::<Test, _>::LiquidityRestrictions,
 			);
 
@@ -238,13 +259,13 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
 			)));
 			assert_eq!(
 				Balances::free_balance(BOB),
-				vested_0_to_5 + vested_5 - vested_1
+				vested_0_to_4 + vested_5 - vested_1
 			);
 
 			assert_ok!(Balances::transfer(
 				Origin::signed(BOB),
 				ALICE,
-				vested_0_to_5 - vested_1
+				vested_0_to_4 - vested_1
 			));
 			assert_eq!(Balances::free_balance(ALICE), ALICE_DEPOSIT - vested_5);
 			assert_eq!(Balances::free_balance(BOB), vested_5);
@@ -285,7 +306,7 @@ fn vesting_complete_should_work() {
 
 			// Ensure current timestamp is bigger than the 7th round of schedule.
 			// Now Bob can claim 7th round vested tokens.
-			let last_round = 6;
+			let last_round = 5;
 			let now = VestingSchedule::<Test>::get()[last_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);
 
@@ -405,17 +426,17 @@ fn invalid_schedule_should_not_be_updated() {
 		.existential_deposit(1)
 		.build()
 		.execute_with(|| {
-			// Cannot update the length of schedule is bigger than 7 or smaller than 7.
+			// Cannot update the length of schedule is bigger than 6 or smaller than 6.
 			let wrong_length_schedule: BoundedVec<u64, MaxScheduleLength> =
-				BoundedVec::try_from(vec![1, 2, 3, 4, 5, 6, 7, 8]).unwrap_or_default();
+				BoundedVec::try_from(vec![1, 2, 3, 4, 5, 6, 7]).unwrap_or_default();
 			assert_noop!(
 				CalamariVesting::update_vesting_schedule(Origin::root(), wrong_length_schedule),
 				Error::<Test>::InvalidScheduleLength,
 			);
 
-			// We have only 7 rounds of schedule.
+			// We have only 6 rounds of schedule.
 			let wrong_length_schedule: BoundedVec<u64, MaxScheduleLength> =
-				BoundedVec::try_from(vec![1, 2, 3, 4, 5, 6]).unwrap_or_default();
+				BoundedVec::try_from(vec![1, 2, 3, 4, 5]).unwrap_or_default();
 			assert_noop!(
 				CalamariVesting::update_vesting_schedule(Origin::root(), wrong_length_schedule),
 				Error::<Test>::InvalidScheduleLength,
@@ -423,7 +444,7 @@ fn invalid_schedule_should_not_be_updated() {
 
 			// The new schedule should be a sorted array.
 			let invalid_schedule: BoundedVec<u64, MaxScheduleLength> =
-				BoundedVec::try_from(vec![1, 2, 9, 4, 8, 6, 7]).unwrap_or_default();
+				BoundedVec::try_from(vec![1, 2, 9, 4, 8, 6]).unwrap_or_default();
 			assert_noop!(
 				CalamariVesting::update_vesting_schedule(Origin::root(), invalid_schedule),
 				Error::<Test>::UnsortedSchedule,
@@ -466,10 +487,9 @@ fn invalid_schedule_should_not_be_updated() {
 #[test]
 fn check_vesting_schedule() {
 	#[rustfmt::skip]
-	let default_schedule: [(Percent, (i32, u32, u32, u32, u32, u32), &'static str); 7] = [
+	let default_schedule: [(Percent, (i32, u32, u32, u32, u32, u32), &'static str); 6] = [
 		// (Percentage, (timestamp), date)
-		(Percent::from_percent(34), (2021, 11, 08, 0, 0, 0), "2021-11-08 00:00:00"),
-		(Percent::from_percent(11), (2021, 11, 10, 0, 0, 0), "2021-11-10 00:00:00"),
+		(Percent::from_percent(45), (2021, 12, 10, 0, 0, 0), "2021-12-10 00:00:00"),
 		(Percent::from_percent(11), (2022, 01, 05, 0, 0, 0), "2022-01-05 00:00:00"),
 		(Percent::from_percent(11), (2022, 03, 02, 0, 0, 0), "2022-03-02 00:00:00"),
 		(Percent::from_percent(11), (2022, 04, 27, 0, 0, 0), "2022-04-27 00:00:00"),

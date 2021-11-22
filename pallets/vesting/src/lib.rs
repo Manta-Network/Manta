@@ -94,7 +94,7 @@ pub mod pallet {
 	) -> BoundedVec<(Percent, Schedule), T::MaxScheduleLength> {
 		BoundedVec::try_from(sp_std::vec![
 			// 1636502400 = 2021-12-10 00:00:00(UTC)
-			(Percent::from_percent(45), 1636502400u64),
+			(Percent::from_percent(45), 1639094400u64),
 			// 1641340800 = 2022-01-05 00:00:00(UTC)
 			(Percent::from_percent(11), 1641340800u64),
 			// 1646179200 = 2022-03-02 00:00:00(UTC)
@@ -299,9 +299,12 @@ impl<T: Config> Pallet<T> {
 		if locked.is_zero() {
 			return Ok(());
 		}
-		if VestingBalances::<T>::contains_key(&who) {
-			return Err(Error::<T>::ExistingVestingSchedule.into());
-		}
+
+		// Ensure current user doesn't have any vested token.
+		ensure!(
+			!VestingBalances::<T>::contains_key(&who),
+			Error::<T>::ExistingVestingSchedule
+		);
 
 		VestingBalances::<T>::insert(&who, locked);
 		// it can't fail, but even if somehow it did, we don't really care.
