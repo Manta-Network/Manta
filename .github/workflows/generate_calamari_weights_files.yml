@@ -159,6 +159,10 @@ jobs:
             pallet:
               id: pallet_session
               name: pallet_session
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
               name: pallet_multisig
             pallet:
               id: pallet_multisig
