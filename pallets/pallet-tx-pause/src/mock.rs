@@ -44,8 +44,7 @@ parameter_types! {
 pub struct BaseFilter;
 impl Contains<Call> for BaseFilter {
 	fn contains(call: &Call) -> bool {
-		let is_paused = tx_pause::PausedTransactionFilter::<Runtime>::contains(call);
-		if is_paused {
+		if tx_pause::PausedTransactionFilter::<Runtime>::contains(call) {
 			// no paused call
 			return false;
 		}
