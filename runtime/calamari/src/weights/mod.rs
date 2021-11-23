@@ -22,3 +22,4 @@ pub mod pallet_democracy;
 pub mod pallet_membership;
 pub mod pallet_multisig;
 pub mod pallet_scheduler;
+pub mod pallet_tx_pause;

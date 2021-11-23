@@ -123,6 +123,14 @@ jobs:
           -
             extrinsic:
               id: '*'
+              name: pallet_tx_pause
+            pallet:
+              id: pallet_tx_pause
+              name: pallet_tx_pause
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
               name: pallet_multisig
             pallet:
               id: pallet_multisig
