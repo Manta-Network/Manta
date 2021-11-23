@@ -147,6 +147,22 @@ jobs:
           -
             extrinsic:
               id: '*'
+              name: frame_system
+            pallet:
+              id: frame_system
+              name: frame_system
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_session
+            pallet:
+              id: pallet_session
+              name: pallet_session
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
               name: pallet_tx_pause
             pallet:
               id: pallet_tx_pause
