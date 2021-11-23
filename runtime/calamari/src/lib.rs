@@ -157,14 +157,33 @@ parameter_types! {
 	pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
 }
 
+impl pallet_tx_pause::Config for Runtime {
+	type Event = Event;
+	type UpdateOrigin = EnsureRoot<AccountId>;
+	type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
+}
+
 // Don't allow permission-less asset creation.
 pub struct BaseFilter;
 impl Contains<Call> for BaseFilter {
-	fn contains(c: &Call) -> bool {
-		match c {
-			Call::Timestamp(_)
-			| Call::ParachainSystem(_)
+	fn contains(call: &Call) -> bool {
+		if matches!(
+			call,
+			Call::Timestamp(_) | Call::ParachainSystem(_) | Call::System(_)
+		) {
+			// always allow core call
+			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
+			return true;
+		}
+
+		if pallet_tx_pause::PausedTransactionFilter::<Runtime>::contains(call) {
+			// no paused call
+			return false;
+		}
+
+		match call {
 			| Call::Authorship(_)
+			// Sudo also cannot be filtered because it is used in runtime upgrade.
 			| Call::Sudo(_)
 			| Call::Multisig(_)
 			// For now disallow public proposal workflows, treasury workflows,
@@ -203,11 +222,8 @@ impl Contains<Call> for BaseFilter {
 			| Call::Scheduler(_)
 			| Call::CalamariVesting(_)
 			| Call::Balances(_) => true,
-			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
-			// Sudo also cannot be filtered because it is used in runtime upgrade.
 			_ => false,
-			// Filter System to prevent users from runtime upgrade without sudo privilege.
-			// Filter Utility and Multisig to prevent users from setting keys and selecting collator for parachain (couldn't use now).
+			// Filter Utility to prevent users from setting keys and selecting collator for parachain (couldn't use now).
 			// Filter Session and CollatorSelection to prevent users from utility operation.
 			// Filter XCM pallet.
 		}
@@ -279,7 +295,7 @@ impl pallet_balances::Config for Runtime {
 	type Event = Event;
 	type ExistentialDeposit = NativeTokenExistentialDeposit;
 	type AccountStore = frame_system::Pallet<Runtime>;
-	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -311,7 +327,7 @@ impl pallet_multisig::Config for Runtime {
 	type DepositBase = DepositBase;
 	type DepositFactor = DepositFactor;
 	type MaxSignatories = MaxSignatories;
-	type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_multisig::SubstrateWeight<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -386,7 +402,7 @@ impl pallet_democracy::Config for Runtime {
 	type Scheduler = Scheduler;
 	type PalletsOrigin = OriginCaller;
 	type MaxVotes = MaxVotes;
-	type WeightInfo = weights::pallet_democracy::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_democracy::SubstrateWeight<Runtime>;
 	type MaxProposals = MaxProposals;
 }
 
@@ -407,7 +423,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type MaxProposals = CouncilMaxProposals;
 	type MaxMembers = CouncilMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
-	type WeightInfo = weights::pallet_collective::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
 }
 
 pub type EnsureRootOrThreeFourthsCouncil = EnsureOneOf<
@@ -427,7 +443,7 @@ impl pallet_membership::Config<CouncilMembershipInstance> for Runtime {
 	type MembershipInitialized = Council;
 	type MembershipChanged = Council;
 	type MaxMembers = CouncilMaxMembers;
-	type WeightInfo = weights::pallet_membership::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_membership::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -445,7 +461,7 @@ impl pallet_collective::Config<TechnicalCollective> for Runtime {
 	type MaxProposals = TechnicalMaxProposals;
 	type MaxMembers = TechnicalMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
-	type WeightInfo = weights::pallet_collective::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
 }
 
 type TechnicalMembershipInstance = pallet_membership::Instance2;
@@ -459,7 +475,7 @@ impl pallet_membership::Config<TechnicalMembershipInstance> for Runtime {
 	type MembershipInitialized = TechnicalCommittee;
 	type MembershipChanged = TechnicalCommittee;
 	type MaxMembers = TechnicalMaxMembers;
-	type WeightInfo = weights::pallet_membership::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_membership::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -476,7 +492,7 @@ impl pallet_scheduler::Config for Runtime {
 	type MaximumWeight = MaximumSchedulerWeight;
 	type ScheduleOrigin = EnsureRoot<AccountId>;
 	type MaxScheduledPerBlock = MaxScheduledPerBlock;
-	type WeightInfo = weights::pallet_scheduler::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_scheduler::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -740,6 +756,7 @@ construct_runtime!(
 		} = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
+		TransactionPause: pallet_tx_pause::{Pallet, Call, Storage, Event<T>} = 9,
 
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
@@ -951,6 +968,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_membership, CouncilMembership);
 			list_benchmark!(list, extra, pallet_scheduler, Scheduler);
 			list_benchmark!(list, extra, calamari_vesting, CalamariVesting);
+			list_benchmark!(list, extra, pallet_tx_pause, TransactionPause);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -996,6 +1014,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_membership, CouncilMembership);
 			add_benchmark!(params, batches, pallet_scheduler, Scheduler);
 			add_benchmark!(params, batches, calamari_vesting, CalamariVesting);
+			add_benchmark!(params, batches, pallet_tx_pause, TransactionPause);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
