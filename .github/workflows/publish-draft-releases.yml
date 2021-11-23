@@ -1118,12 +1118,20 @@ jobs:
           runner-label: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-runtime-upgrade-tester.outputs.aws-instance-id }}
 
-  check-for-runtime-upgrade:
+  parse-runtimes:
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        runtime:
+          -
+            name: calamari
+          -
+            name: manta
     outputs:
-      runtime-version-current: ${{ steps.get-runtime-version.outputs.runtime-ver-current }}
-      runtime-version-base: ${{ steps.get-runtime-version-base.outputs.runtime-ver-base }}
-      do-versions-match: ${{ steps.check-match.outputs.match }}
+      calamari-runtime-current: ${{ steps.get-runtime-current.outputs.calamari-runtime-current }}
+      calamari-runtime-base: ${{ steps.get-runtime-base.outputs.calamari-runtime-base }}
+      manta-runtime-current: ${{ steps.get-runtime-current.outputs.manta-runtime-current }}
+      manta-runtime-base: ${{ steps.get-runtime-base.outputs.manta-runtime-base }}
     steps:
       -
         uses: actions/checkout@v2
@@ -1133,42 +1141,48 @@ jobs:
         with:
           ruby-version: 2.7
       -
-        name: get runtime version
-        id: get-runtime-version-current
+        name: get ${{ matrix.runtime.name }} runtime version current
+        id: get-runtime-current
         run: |
-          runtime_ver_current="$(ruby -e '
+          runtime_current="$(ruby -e '
             require "./scripts/github/lib.rb";
-            puts get_runtime("calamari")
+            puts get_runtime("${{ matrix.runtime.name }}")
           ')"
-          echo "::set-output name=runtime-ver-current::$runtime_ver_current"
-          echo $runtime_ver_current
+          echo "::set-output name=${{ matrix.runtime.name }}-runtime-current::$runtime_current"
           echo ....................
-      - name: Show new runtime version
-        run: echo "The selected value is ${{ steps.get-runtime-version-current.outputs.runtime-ver-current }}"
       -
-        name: get base runtime version
-        id: get-runtime-version-base
+        name: get ${{ matrix.runtime.name }} runtime version base
+        id: get-runtime-base
         run: |
           mkdir temp_for_run
           cd temp_for_run
           git clone -b manta https://github.com/Manta-Network/Manta.git
           cd Manta
-          runtime_ver_base="$(ruby -e '
+          runtime_base="$(ruby -e '
             require "./scripts/github/lib.rb";
-            puts get_runtime("calamari")
+            puts get_runtime("${{ matrix.runtime.name }}")
           ')"
-          echo "::set-output name=runtime-ver-base::$runtime_ver_base"
-          echo $runtime_ver_base
+          echo "::set-output name=${{ matrix.runtime.name }}-runtime-base::$runtime_base"
           echo ....................
-      - name: Show base runtime version
-        run: echo "The selected value is ${{ steps.get-runtime-version-base.outputs.runtime-ver-base }}"
+
+  check-for-runtime-upgrade:
+    needs:
+      - parse-runtimes
+    runs-on: ubuntu-20.04
+    outputs:
+      do-versions-match: ${{ steps.check-match.outputs.match }}
+    steps:
       -
-        name: check-match
+        name: check if runtime versions match
         id: check-match
         run: |
-          echo "::set-output name=match::false"
-          if [[ ${{ steps.get-runtime-version-base.outputs.runtime-ver-base }} == ${{ steps.get-runtime-version-current.outputs.runtime-ver-current }} ]]; then echo "::set-output name=match::true"
-          fi
+          echo "::set-output name=match::true"
+          if [[ ${{ needs.parse-runtimes.outputs.manta-runtime-base }} != ${{ needs.parse-runtimes.outputs.manta-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
+          if [[ ${{ needs.parse-runtimes.outputs.calamari-runtime-base }} != ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
+      -
+        name: force fail if new versions don't match
+        run: |
+          if [[  ${{ needs.parse-runtimes.outputs.manta-runtime-current }} !=  ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then exit 1; fi
 
   start-docker-image-tester:
     runs-on: ubuntu-20.04
