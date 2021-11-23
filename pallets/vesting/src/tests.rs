@@ -304,8 +304,8 @@ fn vesting_complete_should_work() {
 				pallet_balances::Error::<Test, _>::LiquidityRestrictions,
 			);
 
-			// Ensure current timestamp is bigger than the 7th round of schedule.
-			// Now Bob can claim 7th round vested tokens.
+			// Ensure current timestamp is bigger than the 6th round of schedule.
+			// Now Bob can claim 6th round vested tokens.
 			let last_round = 5;
 			let now = VestingSchedule::<Test>::get()[last_round].1 * 1000 + 1;
 			Timestamp::set_timestamp(now);

@@ -93,7 +93,7 @@ pub mod pallet {
 	pub(super) fn DefaultVestingSchedule<T: Config>(
 	) -> BoundedVec<(Percent, Schedule), T::MaxScheduleLength> {
 		BoundedVec::try_from(sp_std::vec![
-			// 1636502400 = 2021-12-10 00:00:00(UTC)
+			// 1639094400 = 2021-12-10 00:00:00(UTC)
 			(Percent::from_percent(45), 1639094400u64),
 			// 1641340800 = 2022-01-05 00:00:00(UTC)
 			(Percent::from_percent(11), 1641340800u64),
@@ -140,7 +140,7 @@ pub mod pallet {
 		BalanceLow,
 		/// Cannot input
 		InvalidSchedule,
-		/// The length of new schedule cannot be bigger/smaller than 7.
+		/// The length of new schedule cannot be bigger/smaller than 6.
 		InvalidScheduleLength,
 		/// The new schedule should be sorted.
 		UnsortedSchedule,
@@ -160,7 +160,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_root(origin)?;
 
-			// We have only 7 rounds of schedule.
+			// We have only 6 rounds of schedule.
 			let old_schedule = VestingSchedule::<T>::get();
 			ensure!(
 				new_schedule.len() == old_schedule.len(),
