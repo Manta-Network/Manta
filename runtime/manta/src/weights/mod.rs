@@ -21,3 +21,4 @@ pub mod pallet_balances;
 pub mod pallet_multisig;
 pub mod pallet_session;
 pub mod pallet_timestamp;
+pub mod pallet_tx_pause;
