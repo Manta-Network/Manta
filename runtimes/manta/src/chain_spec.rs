@@ -71,7 +71,7 @@ const TESTNET_ASSETS: &[(AssetId, AssetBalance)] = &[
     (3, 112_000_000_000_000_000_000_000_000),
 	// ACA, 1B, decimal 18
     (4, 1_000_000_000_000_000_000_000_000_000),
-	// // GLMR, 1B, decimal 18
+	// GLMR(Moonbeam), 1B, decimal 18
     (5, 1_000_000_000_000_000_000_000_000_000),
 ];
 
@@ -279,11 +279,11 @@ pub fn dolphin_testnet_config() -> ChainSpec {
 		ChainType::Custom("Dolphin Testnet".into()),
 		dolphin_testnet_genesis,
 		vec![
-			"/dns/n1.testnet.manta.network/tcp/30333/p2p/12D3KooWBV7qb2LshmqCr74edBk5h4Fi1Zt71fhpvdyi8ah3KzAa".parse().expect("failed to parse multiaddress."),
-			"/dns/n2.testnet.manta.network/tcp/30333/p2p/12D3KooWBGhNQyzkKEpN7QQnP94BhM8wyhpJwsZ58wbr1r3Pi6gV".parse().expect("failed to parse multiaddress."),
-			"/dns/n3.testnet.manta.network/tcp/30333/p2p/12D3KooWSBpCHCHi4jmwJTkdMmb7vWBBjPJnoGsRE1VwERMTgvVD".parse().expect("failed to parse multiaddress."),
-			"/dns/n4.testnet.manta.network/tcp/30333/p2p/12D3KooWNkupfxbGwPLBhkXLV7c9P2cGHm8JbGadSXQG854F2nrM".parse().expect("failed to parse multiaddress."),
-			"/dns/n5.testnet.manta.network/tcp/30333/p2p/12D3KooWBwTA8KdcBhRn6tJSRqQ8JTdxy1MKRHjHyjqcDcRcSuC6".parse().expect("failed to parse multiaddress."),
+			"/dns/n1.testnet.manta.network/tcp/30333/p2p/12D3KooWNXxthQYVaXA1yDD7q6VfDK9iud7t6aUAmyyeabeT5PJ9".parse().expect("failed to parse multiaddress."),
+			"/dns/n2.testnet.manta.network/tcp/30333/p2p/12D3KooWBKvCn32z1RZzWuM84VzzK1JubokjLKfaeq9fVJMWnZje".parse().expect("failed to parse multiaddress."),
+			"/dns/n3.testnet.manta.network/tcp/30333/p2p/12D3KooWS3BxpSPeDU59KmocL1RMdK4wucw34abfyayUt9kY6vg1".parse().expect("failed to parse multiaddress."),
+			"/dns/n4.testnet.manta.network/tcp/30333/p2p/12D3KooWDT6En2QzURmh7FDZjkAXVsk6Qy68MYqVhVRMrsTq8oF4".parse().expect("failed to parse multiaddress."),
+			"/dns/n5.testnet.manta.network/tcp/30333/p2p/12D3KooWQQgTNm1jeQFekLHsqU9BrR8wrVTNkhdCvwbB3hNA5eSZ".parse().expect("failed to parse multiaddress."),
 		],
 		Some(TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
 			.expect("Manta testnet telemetry url is valid; qed")),
@@ -342,7 +342,7 @@ pub fn testnet_genesis(
 			authorities: vec![],
 		},
 		manta_pay: MantaPayConfig {
-			owner: hex!["12b73670c56f4fcd319636bdd6ec4a803ae2d06fdbc715087524a5151395d16c"].into(),
+			owner: hex!["fe25242cf9cb6239520319037206cae7b0cd2c2be218c0d2e5c26f9d86d41f0e"].into(),
 			assets: TESTNET_ASSETS.to_vec(),
 		},
 	}
@@ -353,49 +353,49 @@ pub fn dolphin_testnet_genesis() -> GenesisConfig {
 	// (stash_account, controller_account, grandpa_id, babe_id)
 	let initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)> = vec![
 		(
-			hex!["16b77c266c577ad605bec26cd2421a9b405d102bd54663c5f242454e0de81376"].into(),
-			hex!["7a40f6773ffa7d13147daa0f8cf7e5ea5b54a14fb515ccded35ea7df7ce2c26a"].into(),
-			hex!["c5189d7881d966d8355c403a8b490267e1ca28b471d948f1a054f536fef0ecdc"]
+			hex!["10d9b9a1d7ab94c2ee0cd003e5a29a3a7d686c07bfafe8839484980023557202"].into(),
+			hex!["3c6fbc3d0b8931885d93ed15af934a5fe19d167995728b3ee0acb095e5b96d70"].into(),
+			hex!["099795fb88bbb7c37f06237109e013c84bbaa4f59a4e094bdff1212193b4e680"]
 				.unchecked_into(),
-			hex!["a6da86747dce627b0a0cf4189ce35247a5c0c9a69570f2b5b72241beb711a141"]
-				.unchecked_into(),
-		),
-		(
-			hex!["c233dbba1667da231e1091fdd99e1ead60270c836ee809521b40a5c89cde497c"].into(),
-			hex!["0e66f3b49250bced29cff1d717b944f4f57e5ced096e4b6aeeb7d5206d7b1d0e"].into(),
-			hex!["6725d2323bc3e69d1017a47cefe70a4ee5760ffd4175852370c439132fe06916"]
-				.unchecked_into(),
-			hex!["c8ddaec483dfa0a580a7c8194ee625a6251743859070415aa7f8f384abd6c550"]
+			hex!["947569714b326872b281b368ea5e3251df33beb7c78246d18aeb5fa90f0f456a"]
 				.unchecked_into(),
 		),
 		(
-			hex!["088eb36dcb104076d56705d27c7fe94db3f32a399d48a21ac4b1470a231c0a54"].into(),
-			hex!["f08346ce33e5c8c29d0fcb7aa70db75964d763f0537777ef9d5f0091fe3d371c"].into(),
-			hex!["06a368a12a24785b2be5f332ae51d947c49d2aac1d8b5804c25a1c47bb838272"]
+			hex!["3223497291b5e36ed927d48f216085fdbff66cea340229366a7b392651e25a60"].into(),
+			hex!["42b48222eb545172e64f54e2158258ea5d4136ad0b343366f817c278013c5e0c"].into(),
+			hex!["dba8d8d14157c94f08fff43f3f4a61f47ddcb59e2887cc90a73474dd32e4f839"]
 				.unchecked_into(),
-			hex!["6c14813c02fa0b9992560cae02337c748af2e46bb5a1b26b6011bde02f92f356"]
-				.unchecked_into(),
-		),
-		(
-			hex!["ccc16c960eed8939a66043b7a26d97f7363ac862b50bf50a8ecceff4a6f1d44a"].into(),
-			hex!["4e4277d721cfed60407222cb7e47701a60597d7b598cda5d0ac38fc29dab8d72"].into(),
-			hex!["290ed0c0ce03c67d598f31321fe77f79684ffe9cdb5824d02707dc21e1843823"]
-				.unchecked_into(),
-			hex!["966c68c4308b757bef26f21e4951cfd47e6a56ce6c68350dff5d3355bbf27749"]
+			hex!["fa9318d4dfffd8eab186fb9f6102db06ee8482b03a8292f40de0226c3d12167e"]
 				.unchecked_into(),
 		),
 		(
-			hex!["fe66a8f15b1c29b69fdb246a7368316192db12b98fca934a6f1e4c5863a2885c"].into(),
-			hex!["a272940a6d11b48f691225841e168d0f16c8101cc034f115298c4aa53c2a5d6f"].into(),
-			hex!["d76c05af97a59a4a3bb8ccbe5811547e26bc185f3acf7b401ad0e40f17ac880b"]
+			hex!["0a005d4883ac8d869e4fd4b23d71d6c76252c02c98aeefeabf59005aa2c2130f"].into(),
+			hex!["0c8c1b8a94d5c549cc63ce4aedfc5b018ae09ab7cfefc02e958ef900e55ac240"].into(),
+			hex!["a9a1faa6cf8d1ca76cc32ca057469f22d0481dbbd5dbb33a6e6981f7c9f562c5"]
 				.unchecked_into(),
-			hex!["2e6dba967ee6ca20655e92ee82954aed4d88975435a835b97973c270dfa67402"]
+			hex!["5201be9c473b98c043a47bee3c4a07b06d748068a838f59b31b0e636a617b811"]
+				.unchecked_into(),
+		),
+		(
+			hex!["d842a1aecdde6e437fa89afbeb26479343c8220573f24eb0ae767c75a9d41723"].into(),
+			hex!["9eccf7214c8ac17b57205a0cf8afe9012e0d79e7b89234722541274e104c7464"].into(),
+			hex!["a6c42d155cf067f83ab01064591d3f92dd39c4671be51d4f8a9ae0be96d0f6f5"]
+				.unchecked_into(),
+			hex!["183fae74e24e19001f131b9f0105b058da622ce458f8500cb7aa07b006c71810"]
+				.unchecked_into(),
+		),
+		(
+			hex!["827a761c6f4a579f3caa1c5e59ddf290aeda35435df50162d2682c494918610c"].into(),
+			hex!["8c9b0fad7780e2c20a16d9160014558739b3006356279822a01c54f20908f660"].into(),
+			hex!["f42ed04232657986efb42181bdbdddac1d820f5ed4963a0d4a059a2bf4258aa7"]
+				.unchecked_into(),
+			hex!["d26915a544c5ffc1ec6e60d814620d7bb1b0bc8271a017ae80354b239f6f4d03"]
 				.unchecked_into(),
 		),
 	];
 
 	let root_key: AccountId =
-		hex!["7200ed745a32b3843eed5889b48185dca0519412b673d1650a0986ac361ffd32"].into();
+		hex!["fe25242cf9cb6239520319037206cae7b0cd2c2be218c0d2e5c26f9d86d41f0e"].into();
 
 	const ENDOWMENT: Balance = 100_000_000 * MA; // 5 initial validators
 	const STASH: Balance = ENDOWMENT / 2; // every initial validator use half of their tokens to stake
