@@ -230,7 +230,7 @@ pub mod pallet {
 		pub fn vested_transfer(
 			origin: OriginFor<T>,
 			target: <T::Lookup as StaticLookup>::Source,
-			locked_amount: BalanceOf<T>,
+			#[pallet::compact] locked_amount: BalanceOf<T>,
 		) -> DispatchResult {
 			let transactor = ensure_signed(origin)?;
 			ensure!(
