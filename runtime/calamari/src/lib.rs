@@ -107,7 +107,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 3090,
+	spec_version: 3100,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 2,
@@ -220,6 +220,7 @@ impl Contains<Call> for BaseFilter {
 			| Call::CouncilMembership(_)
 			| Call::TechnicalMembership(_)
 			| Call::Scheduler(_)
+			| Call::CalamariVesting(_)
 			| Call::Balances(_) => true,
 			_ => false,
 			// Filter Utility to prevent users from setting keys and selecting collator for parachain (couldn't use now).
@@ -726,6 +727,21 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 
+// Calamari pallets configuration
+parameter_types! {
+	pub const MinVestedTransfer: Balance = KMA;
+	pub const MaxScheduleLength: u32 = 6;
+}
+
+impl calamari_vesting::Config for Runtime {
+	type Currency = Balances;
+	type Event = Event;
+	type Timestamp = Timestamp;
+	type MinVestedTransfer = MinVestedTransfer;
+	type MaxScheduleLength = MaxScheduleLength;
+	type WeightInfo = calamari_vesting::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -773,6 +789,9 @@ construct_runtime!(
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
+
+		// Calamari stuff
+		CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
 	}
 );
 
@@ -949,6 +968,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_collective, Council);
 			list_benchmark!(list, extra, pallet_membership, CouncilMembership);
 			list_benchmark!(list, extra, pallet_scheduler, Scheduler);
+			list_benchmark!(list, extra, calamari_vesting, CalamariVesting);
 			list_benchmark!(list, extra, pallet_session, SessionBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_tx_pause, TransactionPause);
 
@@ -995,6 +1015,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_collective, Council);
 			add_benchmark!(params, batches, pallet_membership, CouncilMembership);
 			add_benchmark!(params, batches, pallet_scheduler, Scheduler);
+			add_benchmark!(params, batches, calamari_vesting, CalamariVesting);
 			add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_tx_pause, TransactionPause);
 
