@@ -107,46 +107,6 @@ jobs:
           -
             extrinsic:
               id: '*'
-              name: pallet_democracy
-            pallet:
-              id: pallet_democracy
-              name: pallet_democracy
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_collective
-            pallet:
-              id: pallet_collective
-              name: pallet_collective
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_membership
-            pallet:
-              id: pallet_membership
-              name: pallet_membership
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_scheduler
-            pallet:
-              id: pallet_scheduler
-              name: pallet_scheduler
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_balances
-            pallet:
-              id: pallet_balances
-              name: pallet_balances
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
               name: calamari_vesting
             pallet:
               id: calamari_vesting
@@ -159,6 +119,54 @@ jobs:
             pallet:
               id: frame_system
               name: frame_system
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_balances
+            pallet:
+              id: pallet_balances
+              name: pallet_balances
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_collective
+            pallet:
+              id: pallet_collective
+              name: pallet_collective
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_democracy
+            pallet:
+              id: pallet_democracy
+              name: pallet_democracy
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_membership
+            pallet:
+              id: pallet_membership
+              name: pallet_membership
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_multisig
+            pallet:
+              id: pallet_multisig
+              name: pallet_multisig
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_scheduler
+            pallet:
+              id: pallet_scheduler
+              name: pallet_scheduler
             iterations: 20
           -
             extrinsic:
@@ -179,10 +187,10 @@ jobs:
           -
             extrinsic:
               id: '*'
-              name: pallet_multisig
+              name: pallet_utility
             pallet:
-              id: pallet_multisig
-              name: pallet_multisig
+              id: pallet_utility
+              name: pallet_utility
             iterations: 20
     steps:
       -
