@@ -107,7 +107,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 3100,
+	spec_version: 3101,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 2,
@@ -221,9 +221,9 @@ impl Contains<Call> for BaseFilter {
 			| Call::TechnicalMembership(_)
 			| Call::Scheduler(_)
 			| Call::CalamariVesting(_)
-			| Call::Balances(_) => true,
+			| Call::Balances(_)
+			| Call::Utility(_) => true,
 			_ => false,
-			// Filter Utility to prevent users from setting keys and selecting collator for parachain (couldn't use now).
 			// Filter Session and CollatorSelection to prevent users from utility operation.
 			// Filter XCM pallet.
 		}
@@ -333,7 +333,7 @@ impl pallet_multisig::Config for Runtime {
 impl pallet_utility::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
-	type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;
 }
 
 impl pallet_sudo::Config for Runtime {
