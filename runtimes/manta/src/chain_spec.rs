@@ -67,12 +67,12 @@ const TESTNET_ASSETS: &[(AssetId, AssetBalance)] = &[
     (1, 11_600_000_000_000_000_000),
 	// BTC, 21M, decimal 8
     (2, 2_100_000_000_000_000),
-	// ETH, 112M, decimal 18
-    (3, 112_000_000_000_000_000_000_000_000),
-	// ACA, 1B, decimal 18
-    (4, 1_000_000_000_000_000_000_000_000_000),
-	// GLMR(Moonbeam), 1B, decimal 18
-    (5, 1_000_000_000_000_000_000_000_000_000),
+	// ETH, 112M, decimal 12 (work around)
+    (3, 112_000_000_000_000_000_000),
+	// ACA, 1B, decimal 12 (work around)
+    (4, 1_000_000_000_000_000_000_000),
+	// GLMR(Moonbeam), 1B, decimal 12 (work around)
+    (5, 1_000_000_000_000_000_000_000),
 ];
 
 /// Helper function to generate a crypto pair from seed
