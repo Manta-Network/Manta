@@ -3630,7 +3630,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "3.0.1"
+version = "0.2.1"
 dependencies = [
  "assert_cmd",
  "frame-benchmarking",
@@ -3765,7 +3765,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "3.0.1"
+version = "0.2.1"
 dependencies = [
  "frame-support",
  "manta-runtime",
@@ -3777,7 +3777,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "3.0.1"
+version = "0.2.1"
 dependencies = [
  "frame-benchmarking",
  "frame-election-provider-support",

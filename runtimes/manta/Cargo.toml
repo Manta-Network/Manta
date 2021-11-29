@@ -6,7 +6,7 @@ edition = '2018'
 homepage = 'manta.network'
 license = 'GPL V3'
 name = 'manta'
-version = '3.0.1'
+version = '0.2.1'
 
 [[bin]]
 name = 'manta'

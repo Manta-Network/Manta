@@ -1,6 +1,6 @@
 [package]
 name = "manta-primitives"
-version = "3.0.1"
+version = "0.2.1"
 edition = "2018"
 
 [dependencies]
