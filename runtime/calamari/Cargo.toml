@@ -78,6 +78,7 @@ pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-featu
 
 # Self dependencies
 manta-primitives = { path = '../primitives', default-features = false }
+calamari-vesting = { path = '../../pallets/vesting', default-features = false }
 pallet-tx-pause = { path = '../../pallets/pallet-tx-pause', default-features = false }
 
 [package.metadata.docs.rs]
@@ -92,7 +93,6 @@ try-runtime = [
 	'frame-executive/try-runtime',
 	'frame-try-runtime',
 ]
-
 runtime-benchmarks = [
 	'cumulus-pallet-session-benchmarking/runtime-benchmarks',
 	'hex-literal',
@@ -112,6 +112,7 @@ runtime-benchmarks = [
 	'pallet-democracy/runtime-benchmarks',
 	'pallet-scheduler/runtime-benchmarks',
 	'pallet-membership/runtime-benchmarks',
+	'calamari-vesting/runtime-benchmarks',
 	'pallet-tx-pause/runtime-benchmarks',
 ]
 std = [
@@ -165,5 +166,6 @@ std = [
 	'polkadot-runtime-common/std',
 	'polkadot-primitives/std',
 	'pallet-collator-selection/std',
+	'calamari-vesting/std',
 	'pallet-tx-pause/std',
 ]
