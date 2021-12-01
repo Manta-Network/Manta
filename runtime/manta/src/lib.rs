@@ -102,12 +102,15 @@ pub mod opaque {
 	}
 }
 
+// Weights used in the runtime.
+mod weights;
+
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("manta"),
 	impl_name: create_runtime_str!("manta"),
 	authoring_version: 1,
-	spec_version: 3090,
+	spec_version: 3101,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -157,22 +160,35 @@ parameter_types! {
 	pub const SS58Prefix: u8 = manta_primitives::constants::MANTA_SS58PREFIX;
 }
 
+impl pallet_tx_pause::Config for Runtime {
+	type Event = Event;
+	type UpdateOrigin = EnsureRoot<AccountId>;
+	type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
+}
+
 // Don't allow permission-less asset creation.
 pub struct MantaFilter;
 impl Contains<Call> for MantaFilter {
-	fn contains(c: &Call) -> bool {
-		match c {
-			Call::Timestamp(_)
-			| Call::ParachainSystem(_)
-			| Call::Authorship(_)
-			| Call::Sudo(_)
-			| Call::Multisig(_)
-			| Call::Balances(_) => true,
+	fn contains(call: &Call) -> bool {
+		if matches!(
+			call,
+			Call::Timestamp(_) | Call::ParachainSystem(_) | Call::System(_)
+		) {
+			// always allow core call
 			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
+			return true;
+		}
+
+		if pallet_tx_pause::PausedTransactionFilter::<Runtime>::contains(call) {
+			// no paused call
+			return false;
+		}
+
+		match call {
+			Call::Authorship(_) | Call::Sudo(_) | Call::Multisig(_) | Call::Balances(_) => true,
 			// Sudo also cannot be filtered because it is used in runtime upgrade.
 			_ => false,
-			// Filter System to prevent users from runtime upgrade without sudo privilege.
-			// Filter Utility and Multisig to prevent users from setting keys and selecting collator for parachain (couldn't use now).
+			// Filter Utility to prevent users from setting keys and selecting collator for parachain (couldn't use now).
 			// Filter Session and CollatorSelection to prevent users from utility operation.
 			// Filter XCM pallet.
 		}
@@ -201,7 +217,7 @@ impl frame_system::Config for Runtime {
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type AccountData = pallet_balances::AccountData<Balance>;
-	type SystemWeightInfo = ();
+	type SystemWeightInfo = weights::frame_system::SubstrateWeight<Runtime>;
 	type SS58Prefix = SS58Prefix;
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
 }
@@ -215,7 +231,7 @@ impl pallet_timestamp::Config for Runtime {
 	type Moment = u64;
 	type OnTimestampSet = ();
 	type MinimumPeriod = MinimumPeriod;
-	type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_timestamp::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -244,7 +260,7 @@ impl pallet_balances::Config for Runtime {
 	type Event = Event;
 	type ExistentialDeposit = NativeTokenExistentialDeposit;
 	type AccountStore = frame_system::Pallet<Runtime>;
-	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -276,7 +292,7 @@ impl pallet_multisig::Config for Runtime {
 	type DepositBase = DepositBase;
 	type DepositFactor = DepositFactor;
 	type MaxSignatories = MaxSignatories;
-	type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_multisig::SubstrateWeight<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -494,7 +510,7 @@ impl pallet_session::Config for Runtime {
 	type SessionHandler =
 		<opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = opaque::SessionKeys;
-	type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_session::SubstrateWeight<Runtime>;
 }
 
 impl pallet_aura::Config for Runtime {
@@ -554,7 +570,7 @@ construct_runtime!(
 		} = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
-
+		TransactionPause: pallet_tx_pause::{Pallet, Call, Storage, Event<T>} = 9,
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
@@ -742,16 +758,20 @@ impl_runtime_apis! {
 			use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
 			use frame_system_benchmarking::Pallet as SystemBench;
+			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
 
-			list_benchmark!(list, extra, pallet_balances, Balances);
-			list_benchmark!(list, extra, pallet_multisig, Multisig);
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
-			list_benchmark!(list, extra, pallet_utility, Utility);
+			list_benchmark!(list, extra, pallet_balances, Balances);
 			list_benchmark!(list, extra, pallet_collator_selection, CollatorSelection);
 			list_benchmark!(list, extra, pallet_scheduler, Scheduler);
+			list_benchmark!(list, extra, pallet_session, SessionBench::<Runtime>);
+			list_benchmark!(list, extra, pallet_utility, Utility);
+			list_benchmark!(list, extra, pallet_multisig, Multisig);
+
+			list_benchmark!(list, extra, pallet_tx_pause, TransactionPause);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -786,13 +806,14 @@ impl_runtime_apis! {
 			let params = (&config, &whitelist);
 
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
-			add_benchmark!(params, batches, pallet_balances, Balances);
-			add_benchmark!(params, batches, pallet_multisig, Multisig);
-			add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
-			add_benchmark!(params, batches, pallet_utility, Utility);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
+			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
 			add_benchmark!(params, batches, pallet_scheduler, Scheduler);
+			add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
+			add_benchmark!(params, batches, pallet_utility, Utility);
+			add_benchmark!(params, batches, pallet_multisig, Multisig);
+			add_benchmark!(params, batches, pallet_tx_pause, TransactionPause);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

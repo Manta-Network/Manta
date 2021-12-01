@@ -30,3 +30,7 @@ write a little note why.
    * `transaction_version`: The version of the extrinsics interface. This number must be updated in the following circumstances: extrinsic parameters (number, order, or types) have been changed; extrinsics or pallets have been removed; or the pallet order in the construct_runtime! macro or extrinsic order in a pallet has been changed. If this number is updated, then the spec_version must also be updated 
 - [ ] If needed, notify the committer this is a draft-release and a tag is needed after merging the PR.
 - [ ] Verify benchmarks & weights have been updated for any modified runtime logics
+- [ ] If needed, bump `version` for every crate.
+- [ ] If import a new pallet, choose a proper module index for it, and allow it in `BaseFilter`. Ensure **every** extrinsic works from front-end. If there's corresponding tool, ensure both work for each other.
+- [ ] If needed, update our Javascript/Typescript APIs. These APIs are offcially used by exchanges or community developers.
+- [ ] If we're going to issue a new release, freeze the code one week early(it depends, but usually it's one week), ensure we have enough time for related testing.
