@@ -138,7 +138,6 @@ fn manta_dev_genesis(
 			code: manta_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		balances: manta_runtime::BalancesConfig {
 			balances: endowed_accounts[..endowed_accounts.len() / 2]

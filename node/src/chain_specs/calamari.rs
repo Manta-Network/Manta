@@ -154,7 +154,6 @@ fn calamari_dev_genesis(
 			code: calamari_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		balances: calamari_runtime::BalancesConfig {
 			balances: endowed_accounts[..endowed_accounts.len() / 2]

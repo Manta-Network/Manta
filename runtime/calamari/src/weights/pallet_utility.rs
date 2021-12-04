@@ -65,6 +65,9 @@ impl<T: frame_system::Config> pallet_utility::WeightInfo for SubstrateWeight<T> 
 			// Standard Error: 4_000
 			.saturating_add((15_469_000 as Weight).saturating_mul(c as Weight))
 	}
+	fn dispatch_as() -> Weight {
+		(14_795_000 as Weight)
+	}
 }
 
 // For backwards compatibility and tests

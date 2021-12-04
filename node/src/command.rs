@@ -129,18 +129,9 @@ impl SubstrateCli for Cli {
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 		if id.starts_with("manta") {
-			load_spec(
-				id,
-				self.run.parachain_id.unwrap_or(MANTA_PARACHAIN_ID).into(),
-			)
+			load_spec(id, MANTA_PARACHAIN_ID.into())
 		} else {
-			load_spec(
-				id,
-				self.run
-					.parachain_id
-					.unwrap_or(CALAMARI_PARACHAIN_ID)
-					.into(),
-			)
+			load_spec(id, CALAMARI_PARACHAIN_ID.into())
 		}
 	}
 
@@ -358,12 +349,7 @@ pub fn run() -> Result<()> {
 						.chain(cli.relaychain_args.iter()),
 				);
 
-				let id = ParaId::from(
-					cli.run
-						.parachain_id
-						.or(para_id)
-						.unwrap_or(MANTA_PARACHAIN_ID),
-				);
+				let id = ParaId::from(para_id.unwrap_or(MANTA_PARACHAIN_ID));
 
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
