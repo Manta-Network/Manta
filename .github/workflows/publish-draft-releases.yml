@@ -806,7 +806,7 @@ jobs:
       - build-runtimes
       - integration-test
       # a work around of rococo bug
-      # - runtime-upgrade-test
+      - runtime-upgrade-test
       - docker-image-test
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
