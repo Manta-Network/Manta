@@ -175,6 +175,9 @@ fn manta_dev_genesis(
 		},
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		xcm_pallet: manta_runtime::XcmPalletConfig {
+			safe_xcm_version: Some(0),
+		},
 	}
 }
 

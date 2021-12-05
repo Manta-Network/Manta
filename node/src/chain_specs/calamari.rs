@@ -202,6 +202,9 @@ fn calamari_dev_genesis(
 		technical_membership: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
+		xcm_pallet: calamari_runtime::XcmPalletConfig {
+			safe_xcm_version: Some(0),
+		},
 	}
 }
 
