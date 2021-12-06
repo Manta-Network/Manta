@@ -777,7 +777,7 @@ impl calamari_vesting::Config for Runtime {
 	type Timestamp = Timestamp;
 	type MinVestedTransfer = MinVestedTransfer;
 	type MaxScheduleLength = MaxScheduleLength;
-	type WeightInfo = calamari_vesting::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::calamari_vesting::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

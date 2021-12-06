@@ -24,7 +24,7 @@ mod mock;
 mod tests;
 pub mod weights;
 
-use crate::weights::WeightInfo;
+pub use crate::weights::WeightInfo;
 use core::convert::TryFrom;
 use frame_support::{
 	ensure,

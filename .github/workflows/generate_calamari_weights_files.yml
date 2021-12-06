@@ -2,7 +2,7 @@
 
 # yamllint disable rule:line-length
 
-name: Benchmark Clamari Runtime & Generate Weights Files
+name: Benchmark Calamari Runtime & Generate Weights Files
 
 # yamllint disable-line rule:truthy
 on:
@@ -191,6 +191,14 @@ jobs:
             pallet:
               id: pallet_utility
               name: pallet_utility
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_timestamp
+            pallet:
+              id: pallet_timestamp
+              name: pallet_timestamp
             iterations: 20
     steps:
       -
