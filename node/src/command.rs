@@ -63,20 +63,17 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 	}
 }
 
-fn load_spec(
-	id: &str,
-	para_id: ParaId,
-) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	match id {
 		// manta chainspec
-		"manta-dev" => Ok(Box::new(chain_specs::manta_development_config(para_id))),
-		"manta-local" => Ok(Box::new(chain_specs::manta_local_config(para_id))),
-		"manta-testnet" => Ok(Box::new(chain_specs::manta_testnet_config(para_id)?)),
+		"manta-dev" => Ok(Box::new(chain_specs::manta_development_config())),
+		"manta-local" => Ok(Box::new(chain_specs::manta_local_config())),
+		"manta-testnet" => Ok(Box::new(chain_specs::manta_testnet_config()?)),
 		"manta" => Ok(Box::new(chain_specs::manta_config()?)),
 		// calamari chainspec
-		"calamari-dev" => Ok(Box::new(chain_specs::calamari_development_config(para_id))),
-		"calamari-local" => Ok(Box::new(chain_specs::calamari_local_config(para_id))),
-		"calamari-testnet" => Ok(Box::new(chain_specs::calamari_testnet_config(para_id)?)),
+		"calamari-dev" => Ok(Box::new(chain_specs::calamari_development_config())),
+		"calamari-local" => Ok(Box::new(chain_specs::calamari_local_config())),
+		"calamari-testnet" => Ok(Box::new(chain_specs::calamari_testnet_config()?)),
 		"calamari-testnet-ci" => Ok(Box::new(chain_specs::calamari_testnet_ci_config()?)),
 		"calamari" => Ok(Box::new(chain_specs::calamari_config()?)),
 		path => {
@@ -128,11 +125,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		if id.starts_with("manta") {
-			load_spec(id, MANTA_PARACHAIN_ID.into())
-		} else {
-			load_spec(id, CALAMARI_PARACHAIN_ID.into())
-		}
+		load_spec(id)
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -280,10 +273,8 @@ pub fn run() -> Result<()> {
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
 			let _ = builder.init();
 
-			let block: Block = generate_genesis_block(&load_spec(
-				&params.chain.clone().unwrap_or_default(),
-				params.parachain_id.unwrap_or(MANTA_PARACHAIN_ID).into(),
-			)?)?;
+			let block: Block =
+				generate_genesis_block(&load_spec(&params.chain.clone().unwrap_or_default())?)?;
 			let raw_header = block.header().encode();
 			let output_buf = if params.raw {
 				raw_header

@@ -15,6 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
+use crate::command::CALAMARI_PARACHAIN_ID;
 
 use calamari_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
 
@@ -45,7 +46,7 @@ pub fn calamari_properties() -> Properties {
 	p
 }
 
-pub fn calamari_development_config(id: ParaId) -> CalamariChainSpec {
+pub fn calamari_development_config() -> CalamariChainSpec {
 	let properties = calamari_properties();
 
 	CalamariChainSpec::from_genesis(
@@ -68,7 +69,6 @@ pub fn calamari_development_config(id: ParaId) -> CalamariChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 				],
-				id,
 			)
 		},
 		vec![],
@@ -77,12 +77,12 @@ pub fn calamari_development_config(id: ParaId) -> CalamariChainSpec {
 		Some(properties),
 		Extensions {
 			relay_chain: KUSAMA_RELAYCHAIN_DEV_NET.into(),
-			para_id: id.into(),
+			para_id: CALAMARI_PARACHAIN_ID.into(),
 		},
 	)
 }
 
-pub fn calamari_local_config(id: ParaId) -> CalamariChainSpec {
+pub fn calamari_local_config() -> CalamariChainSpec {
 	let properties = calamari_properties();
 
 	CalamariChainSpec::from_genesis(
@@ -129,7 +129,6 @@ pub fn calamari_local_config(id: ParaId) -> CalamariChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 				],
-				id,
 			)
 		},
 		vec![],
@@ -138,7 +137,7 @@ pub fn calamari_local_config(id: ParaId) -> CalamariChainSpec {
 		Some(properties),
 		Extensions {
 			relay_chain: KUSAMA_RELAYCHAIN_LOCAL_NET.into(),
-			para_id: id.into(),
+			para_id: CALAMARI_PARACHAIN_ID.into(),
 		},
 	)
 }
@@ -147,7 +146,6 @@ fn calamari_dev_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
-	id: ParaId,
 ) -> calamari_runtime::GenesisConfig {
 	calamari_runtime::GenesisConfig {
 		system: calamari_runtime::SystemConfig {
@@ -170,7 +168,9 @@ fn calamari_dev_genesis(
 		// of this.
 		aura: Default::default(),
 		sudo: calamari_runtime::SudoConfig { key: root_key },
-		parachain_info: calamari_runtime::ParachainInfoConfig { parachain_id: id },
+		parachain_info: calamari_runtime::ParachainInfoConfig {
+			parachain_id: CALAMARI_PARACHAIN_ID.into(),
+		},
 		collator_selection: calamari_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: KMA * 1000, // How many tokens will be reserved as collator
@@ -208,11 +208,11 @@ fn calamari_dev_genesis(
 	}
 }
 
-pub fn calamari_testnet_config(id: ParaId) -> Result<CalamariChainSpec, String> {
+pub fn calamari_testnet_config() -> Result<CalamariChainSpec, String> {
 	let mut spec = CalamariChainSpec::from_json_bytes(
 		&include_bytes!("../../../genesis/calamari-testnet-genesis.json")[..],
 	)?;
-	spec.extensions_mut().para_id = id.into();
+	spec.extensions_mut().para_id = CALAMARI_PARACHAIN_ID.into();
 	Ok(spec)
 }
 
