@@ -107,7 +107,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 3102,
+	spec_version: 3101,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 2,
@@ -623,8 +623,11 @@ pub type Barrier = (
 	// Parent and its exec plurality get free execution
 	AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
 	// Expected responses are OK.
+	// Allows `Pending` or `VersionNotifier` query responses.
 	AllowKnownQueryResponses<PolkadotXcm>,
 	// Subscriptions for version tracking are OK.
+	// Allows execution of `SubscribeVersion` or `UnsubscribeVersion` instruction,
+	// from parent or sibling chains.
 	AllowSubscriptionsFrom<ParentOrSiblings>,
 );
 
