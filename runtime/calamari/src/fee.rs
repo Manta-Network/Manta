@@ -14,10 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::currency;
 use frame_support::weights::{
-	constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-	WeightToFeePolynomial,
+	WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 };
 use manta_primitives::Balance;
 use smallvec::smallvec;
@@ -40,11 +38,11 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
 	type Balance = Balance;
 	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		smallvec!(WeightToFeeCoefficient {
+		smallvec![WeightToFeeCoefficient {
 			coeff_integer: 5000u32.into(),
 			coeff_frac: Perbill::zero(),
 			negative: false,
 			degree: 1,
-		})
+		}]
 	}
 }
