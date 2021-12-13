@@ -21,7 +21,7 @@ extern crate alloc;
 use super::*;
 #[allow(unused_imports)]
 use crate::Pallet as CalamariVesting;
-use core::{convert::TryInto, ops::Div, time::Duration};
+use core::{ops::Div, time::Duration};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;

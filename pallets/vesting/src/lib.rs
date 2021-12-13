@@ -25,7 +25,6 @@ mod tests;
 pub mod weights;
 
 pub use crate::weights::WeightInfo;
-use core::convert::TryFrom;
 use frame_support::{
 	ensure,
 	pallet_prelude::*,
