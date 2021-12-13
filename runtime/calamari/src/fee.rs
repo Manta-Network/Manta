@@ -38,6 +38,7 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
 	type Balance = Balance;
 	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+		// fee = coeff_integer * (weight ^ degree) + coeff_friction * (weight ^ degree)
 		smallvec![WeightToFeeCoefficient {
 			coeff_integer: 5000u32.into(),
 			coeff_frac: Perbill::zero(),
