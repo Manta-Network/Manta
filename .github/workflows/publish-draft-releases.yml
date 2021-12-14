@@ -51,10 +51,8 @@ jobs:
         runtime:
           -
             name: calamari
-            para-id: 2084
           -
             name: manta
-            para-id: 2015
     steps:
       -
         uses: actions/checkout@v2
@@ -292,10 +290,8 @@ jobs:
           -
             name: calamari
             chain-spec: calamari-testnet-ci
-            para-id: 2084
           -
             name: manta
-            para-id: 2015
     steps:
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
@@ -759,10 +755,8 @@ jobs:
         runtime:
           -
             name: calamari
-            para-id: 2084
           -
             name: manta
-            para-id: 2015
     if: startsWith(github.ref, 'refs/tags')
     steps:
       -
@@ -839,10 +833,8 @@ jobs:
         runtime:
           -
             name: calamari
-            para-id: 2084
           -
             name: manta
-            para-id: 2015
     if: startsWith(github.ref, 'refs/tags')
     steps:
       -

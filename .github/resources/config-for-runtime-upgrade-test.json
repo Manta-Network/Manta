@@ -46,7 +46,6 @@
   },
   "parachains": [
     {
-      "id": "2084",
       "nodes": [
         {
           "wsPort": 9921,
