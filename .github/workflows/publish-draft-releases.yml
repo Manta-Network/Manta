@@ -333,12 +333,10 @@ jobs:
             --arg name "calamari testnet base" \
             --arg id ${{ matrix.runtime.chain-spec }}-base \
             --arg relay_chain rococo-local-base \
-            --arg parachain_id 2084 \
             '. |
               .name = $name |
               .id = $id |
               .relay_chain = $relay_chain |
-              .para_id = ($parachain_id | tonumber) |
               .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
             ' $HOME/.local/share/calamari-pc/${{ matrix.runtime.chain-spec }}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.runtime.chain-spec }}-base-spec.json
           ls -ahl $HOME/.local/share/calamari-pc/
@@ -536,12 +534,10 @@ jobs:
             --arg name "calamari testnet ${GITHUB_SHA:0:7}" \
             --arg id ${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7} \
             --arg relay_chain rococo-local-${GITHUB_SHA:0:7} \
-            --arg parachain_id 2084 \
             '. |
               .name = $name |
               .id = $id |
               .relay_chain = $relay_chain |
-              .para_id = ($parachain_id | tonumber) |
               .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
             ' $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
           ls -ahl $HOME/.local/share/calamari-pc/
