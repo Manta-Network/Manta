@@ -9,7 +9,7 @@ on:
   pull_request:
     branches: [manta]
   push:
-    branches: [manta]
+    branches: [ghzlatarev/better-rtu-parsing]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 
@@ -475,6 +475,14 @@ jobs:
           grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.runtime.chain-spec }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv; done
           if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv ]; then echo "block times not detected"; exit 1; fi
           jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv > ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.json
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
+        name: check if spec version was incremented
+        run: |
+          sleep 60
+          node check_runtime_version.js --compare_to={{ needs.check-for-runtime-upgrade.outputs.old_version }}
+          echo $?
+          if [ ${ $? } == 0 ]; then echo "Runtime upgrade failed, spec_version was not incremented..."; exit 1; fi
 
   integration-test:
     needs:
@@ -1171,6 +1179,7 @@ jobs:
     runs-on: ubuntu-20.04
     outputs:
       do-versions-match: ${{ steps.check-match.outputs.match }}
+      old_version: ${{ needs.parse-runtimes.old_version }}
     steps:
       -
         name: check if runtime versions match
