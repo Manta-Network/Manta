@@ -6,12 +6,8 @@ name: publish draft releases
 
 # yamllint disable-line rule:truthy
 on:
-  pull_request:
-    branches: [manta]
   push:
     branches: [ghzlatarev/better-rtu-parsing]
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+*'
 
 env:
   AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
