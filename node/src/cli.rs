@@ -1,4 +1,20 @@
-use crate::chain_spec;
+// Copyright 2020-2021 Manta Network.
+// This file is part of Manta.
+//
+// Manta is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Manta is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Manta.  If not, see <http://www.gnu.org/licenses/>.
+
+use crate::chain_specs;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -55,6 +71,8 @@ pub struct ExportGenesisStateCommand {
 	pub output: Option<PathBuf>,
 
 	/// Id of the parachain this state is for.
+	///
+	/// Default: 2084
 	#[structopt(long)]
 	pub parachain_id: Option<u32>,
 
@@ -119,7 +137,7 @@ impl RelayChainCli {
 		para_config: &sc_service::Configuration,
 		relay_chain_args: impl Iterator<Item = &'a String>,
 	) -> Self {
-		let extension = chain_spec::Extensions::try_get(&*para_config.chain_spec);
+		let extension = chain_specs::Extensions::try_get(&*para_config.chain_spec);
 		let chain_id = extension.map(|e| e.relay_chain.clone());
 		let base_path = para_config
 			.base_path

@@ -1,33 +1,33 @@
 [package]
-authors = ['Manta Network']
-name = "manta-xcm-support"
-version = "3.0.0"
-edition = "2018"
-homepage = 'https://manta.network'
-license = 'GPL-3.0'
+authors    = ['Manta Network']
+name       = "manta-xcm-support"
+version    = "3.1.0"
+edition    = "2018"
+homepage   = 'https://manta.network'
+license    = 'GPL-3.0'
 repository = 'https://github.com/Manta-Network/Manta/'
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2.1.0", default-features = false }
-log = { version = "0.4.14", default-features = false }
+codec            = { package = "parity-scale-codec", version = "2.3.1", default-features = false }
+log              = { version = "0.4.14", default-features = false }
 
 # Substrate primitives
-sp-runtime = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
-sp-std = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
+sp-runtime       = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
+sp-std           = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 
 # Substrate frames
-frame-support = { version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.8" }
+frame-support    = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 
 # xcm dependencies
-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.8" }
-xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.8" }
+xcm              = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.12" }
+xcm-executor     = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.12" }
 
 # Self dependencies
 manta-primitives = { path = '../primitives', default-features = false }
 
 [features]
 default = ["std"]
-std = [
+std     = [
 	'codec/std',
 	'frame-support/std',
 	'log/std',
