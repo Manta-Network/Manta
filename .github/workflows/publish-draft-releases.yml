@@ -453,7 +453,7 @@ jobs:
           cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
           node check_runtime_version.js --address=ws://127.0.0.1:9921 --compare_to={{ needs.check-for-runtime-upgrade.outputs.old_version }}
           echo $?
-          if [ $? == 0 ]; then echo "Runtime upgrade failed, still using old spec version - {{ needs.check-for-runtime-upgrade.outputs.old_version }}"; exit 1; fi
+          if [ $? == 0 ]; then echo "Runtime upgrade failed, still using old spec version - ${{ needs.check-for-runtime-upgrade.outputs.old_version }}"; exit 1; fi
           cd ${{ github.workspace }}
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
