@@ -426,16 +426,9 @@ impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
-	type AssetTransactor = manta_xcm_support::MantaTransactorAdaptor<
-		Balances,
-		MantaXassets,
-		LocationToAccountId,
-		AccountId,
-		CurrencyId,
-		manta_xcm_support::MultiLocationToCurrencyId<MultiLocationMapCurrencyId>,
-	>;
+	type AssetTransactor = LocalAssetTransactor;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	type IsReserve = manta_xcm_support::TrustedParachains<TrustedChains>;
+	type IsReserve = NativeAsset;
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of DOT
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
@@ -557,46 +550,6 @@ impl pallet_collator_selection::Config for Runtime {
 	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;
 	type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
-}
-
-parameter_types! {
-	pub const MantaXassetsPalletId: PalletId = PalletId(*b"/ma_xast");
-
-	pub const AnyNetwork: NetworkId = NetworkId::Any;
-	pub TrustedChains: Vec<(MultiLocation, u128)> = vec![
-		// Acala local and live, 0.01 ACA
-		(MultiLocation::X2(Junction::Parent, Junction::Parachain(2000)), 10_000_000_000),
-		(MultiLocation::X2(Junction::Parent, Junction::Parachain(2084)), 10_000_000_000),
-	];
-	pub MultiLocationMapCurrencyId: Vec<(MultiLocation, CurrencyId)> = vec![
-		// Acala karura => KAR, native token
-		(MultiLocation::X3(Junction::Parent, Junction::Parachain(2000), Junction::GeneralKey([0, 128].to_vec())), CurrencyId::Token(TokenSymbol::KAR)),
-		// Manta manta-pc => MA, native token, for example, acala can send it back to manta parachain.
-		(MultiLocation::X3(Junction::Parent, Junction::Parachain(2000), Junction::GeneralKey([0, 5].to_vec())), CurrencyId::Token(TokenSymbol::MA)),
-		// Manta manta-pc => MA, native token, for example, manta can send it back to others parachains.
-		(MultiLocation::X3(Junction::Parent, Junction::Parachain(ParachainInfo::parachain_id().into()), Junction::GeneralKey([0, 5].to_vec())), CurrencyId::Token(TokenSymbol::MA)),
-		// Relachain kusama => KSM.
-		(MultiLocation::X1(Junction::Parent), CurrencyId::Token(TokenSymbol::KSM)),
-	];
-}
-
-pub type MantaPCLocationToAccountId = (
-	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
-	SiblingParachainConvertsVia<Sibling, AccountId>,
-	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
-	AccountId32Aliases<AnyNetwork, AccountId>,
-);
-
-impl manta_xassets::Config for Runtime {
-	type Event = Event;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type TrustedChains = TrustedChains;
-	type Conversion = MantaPCLocationToAccountId;
-	type PalletId = MantaXassetsPalletId;
-	type CurrencyId = CurrencyId;
-	type Currency = Balances;
-	type SelfParaId = ParachainInfo;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
