@@ -428,14 +428,14 @@ jobs:
           cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
           yarn install
           yarn
-          sleep 60
+          sleep 120
           pm2 start index.js \
             --name test-runtime-upgrade-${{ matrix.runtime.chain-spec }} \
             --output ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log \
             --error ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log \
             --no-autorestart
           cd ${{ github.workspace }}
-          sleep 120
+          sleep 180
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: stop testnet
