@@ -39,6 +39,10 @@ impl WeightToFeePolynomial for WeightToFee {
 	type Balance = Balance;
 	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
 		// fee = coeff_integer * (weight ^ degree) + coeff_friction * (weight ^ degree)
+		// We want to choose a coefficient so that it's expensive to fully congest our network for days at a time.
+		// For example make it as expensive as some large number like ~$250k for the first day alone.
+		// It can be calculated by: `transfer_fee * transfers_per_block * blocks_per_day * kma_price`
+		// currently `transfers_per_block` is ~1134 and `blocks_per_day` is 7200. `kma_price` can be checked daily.
 		smallvec![WeightToFeeCoefficient {
 			coeff_integer: 5000u32.into(),
 			coeff_frac: Perbill::zero(),
