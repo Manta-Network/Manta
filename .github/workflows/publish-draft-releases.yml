@@ -295,6 +295,7 @@ jobs:
             para-id: 2084
           -
             name: manta
+            chain-spec: manta-testnet-ci
             para-id: 2015
     steps:
       -
