@@ -225,6 +225,7 @@ impl Contains<Call> for BaseFilter {
 			| Call::TechnicalMembership(_)
 			| Call::Scheduler(_)
 			| Call::CalamariVesting(_)
+			| Call::CollatorSelection(_)
 			| Call::Balances(_)
 			| Call::Utility(_) => true,
 			_ => false,
