@@ -4,7 +4,6 @@ members = [
 	'pallets/*',
 	'runtime/manta',
 	'runtime/calamari',
-	'pallets/manta-xassets',
 ]
 
 [profile.release]

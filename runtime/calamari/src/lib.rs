@@ -742,6 +742,30 @@ impl calamari_vesting::Config for Runtime {
 	type WeightInfo = calamari_vesting::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub const AssetDeposit: Balance = 100 * KMA;
+	pub const ApprovalDeposit: Balance = 1 * KMA;
+	pub const StringLimit: u32 = 50;
+	pub const MetadataDepositBase: Balance = 10 * KMA;
+	pub const MetadataDepositPerByte: Balance = 1 * KMA;
+}
+
+impl pallet_assets::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type AssetId = manta_primitives::currency_id::CurrencyId;
+	type Currency = Balances;
+	type ForceOrigin = EnsureRoot<AccountId>;
+	type AssetDeposit = AssetDeposit;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = StringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -761,6 +785,7 @@ construct_runtime!(
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 12,
 
 		// Governance stuff.
 		Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>} = 14,
