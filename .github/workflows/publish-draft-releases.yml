@@ -419,14 +419,14 @@ jobs:
         run: |
           # todo: implement moonbeam-like js test suite triggers here
           sleep 120
-          echo "midnight supply never you faith veteran danger purity tired illness dune token" > ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/root_mnemonics
+          echo "midnight supply never you faith veteran danger purity tired illness dune token" > ${{ github.workspace }}/dev-tools/runtime-upgrade-test/root_mnemonics
           curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "inhale connect winner reduce cheese bachelor crucial never metal seat time wage", "0xee73f78b7dd29f30902c1a3bd1e4a6fcc2f26be088343d3ee011e2660fd02a66"],"id":1 }' localhost:9971
           curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "timber else work trophy build winner mechanic chunk budget orchard glide extra", "0x7cd4af9ad51d443740f71ecd5850385e98985224628c5ea08209bb2015523f3c"],"id":1 }' localhost:9972
           curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "civil cigar remain hybrid glove symptom review what pole lock concert lamp", "0xb40aa6bd104d0260b60350c2fb30d4882437466d66135130b667799ea6c9f52b"],"id":1 }' localhost:9973
           curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "output evidence anger invest country opinion girl mouse direct double carbon usage", "0x4a3aa51469e802be6504422cd9dd03be638ac3f6dc3a7c0c85a6ace3e72f0048"],"id":1 }' localhost:9974
           curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "series disorder today argue interest pond flight guess asthma guilt road gadget", "0xa68feb4fe2ea3f8ff288af4254aad2284e1cd0da67cb9ea61c13632bad57eb40"],"id":1 }' localhost:9975
-          cp calamari_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test/calamari.wasm
-          cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
+          cp calamari_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools/runtime-upgrade-test/calamari.wasm
+          cd ${{ github.workspace }}/dev-tools/runtime-upgrade-test
           yarn install
           yarn
           sleep 120
