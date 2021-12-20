@@ -447,9 +447,9 @@ jobs:
         name: check if spec version was successfully incremented
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
-          node check_runtime_version.js --address=ws://127.0.0.1:9921 --compare_to={{ needs.parse-runtimes.outputs.calamari-runtime-base }}
+          node check_runtime_version.js --address=ws://127.0.0.1:9921 --compare_to=${{ needs.parse-runtimes.outputs.calamari-runtime-base }}
           echo $?
-          if [ $? == 0 ]; then echo "Runtime upgrade failed, still using old spec version - ${{ needs.parse-runtimes.outputs.calamari-runtime-base }}"; exit 1; fi
+          if [ $? == 1 ]; then echo "Runtime upgrade failed, still using old spec version - ${{ needs.parse-runtimes.outputs.calamari-runtime-base }}"; exit 1; fi
           cd ${{ github.workspace }}
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
