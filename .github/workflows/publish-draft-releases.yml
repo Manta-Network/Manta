@@ -291,9 +291,9 @@ jobs:
           -
             name: calamari
             chain-spec: calamari-testnet-ci
-          -
-            name: manta
-            chain-spec: manta-testnet-ci
+          # -
+          #   name: manta
+          #   chain-spec: manta-testnet-ci
     steps:
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
