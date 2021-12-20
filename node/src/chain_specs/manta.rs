@@ -193,10 +193,10 @@ pub fn manta_config() -> Result<MantaChainSpec, String> {
 	MantaChainSpec::from_json_bytes(&include_bytes!("../../../genesis/manta-genesis.json")[..])
 }
 
-pub fn manta_testnet_ci_config(id: ParaId) -> Result<MantaChainSpec, String> {
+pub fn manta_testnet_ci_config() -> Result<MantaChainSpec, String> {
 	let mut spec = MantaChainSpec::from_json_bytes(
 		&include_bytes!("../../../genesis/manta-testnet-ci-genesis.json")[..],
 	)?;
-	spec.extensions_mut().para_id = id.into();
+	spec.extensions_mut().para_id = MANTA_PARACHAIN_ID.into();
 	Ok(spec)
 }
