@@ -281,6 +281,7 @@ jobs:
       - build-runtimes
       - start-runtime-upgrade-tester
       - check-for-runtime-upgrade
+      - parse-runtimes
     runs-on: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
     timeout-minutes: 90
     strategy:
@@ -292,6 +293,7 @@ jobs:
             chain-spec: calamari-testnet-ci
           -
             name: manta
+            chain-spec: manta-testnet-ci
     steps:
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
@@ -437,6 +439,19 @@ jobs:
           cd ${{ github.workspace }}
           sleep 180
       -
+        # check_runtime_version.js reads the spec-version on-chain
+        # and compares it to the old runtime version we parsed earlier
+        # returns 0 if the former is less than or equal to the latter
+        # otherwise returns 1
+        if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
+        name: check if spec version was successfully incremented
+        run: |
+          cd ${{ github.workspace }}/dev-tools-calamari/runtime-upgrade-test
+          node check_runtime_version.js --address=ws://127.0.0.1:9921 --compare_to={{ needs.parse-runtimes.outputs.calamari-runtime-base }}
+          echo $?
+          if [ $? == 0 ]; then echo "Runtime upgrade failed, still using old spec version - ${{ needs.parse-runtimes.outputs.calamari-runtime-base }}"; exit 1; fi
+          cd ${{ github.workspace }}
+      -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: stop testnet
         run: |
@@ -456,12 +471,6 @@ jobs:
         with:
           name: runtime-upgrade-test-for-${{ matrix.runtime.chain-spec }}-stderr.log
           path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log
-      -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: parse runtime upgrade log
-        run: |
-          grep 'Included at block hash' ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log | while read -r line; do words=($line); echo ${words} | tee ${{ github.workspace }}/runtime-upgrade-output.csv; done
-          if [ ! -f ${{ github.workspace }}/runtime-upgrade-output.csv ]; then echo "Runtime upgrade failed"; exit 1; fi
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: parse calamari block times
