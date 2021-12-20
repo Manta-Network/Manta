@@ -69,6 +69,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		"manta-dev" => Ok(Box::new(chain_specs::manta_development_config())),
 		"manta-local" => Ok(Box::new(chain_specs::manta_local_config())),
 		"manta-testnet" => Ok(Box::new(chain_specs::manta_testnet_config()?)),
+		"manta-testnet-ci" => Ok(Box::new(chain_specs::manta_testnet_ci_config()?)),
 		"manta" => Ok(Box::new(chain_specs::manta_config()?)),
 		// calamari chainspec
 		"calamari-dev" => Ok(Box::new(chain_specs::calamari_development_config())),
