@@ -38,11 +38,27 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
 	type Balance = Balance;
 	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		// fee = coeff_integer * (weight ^ degree) + coeff_friction * (weight ^ degree)
-		// We want to choose a coefficient so that it's expensive to fully congest our network for days at a time.
-		// For example make it as expensive as some large number like ~$250k for the first day alone.
-		// It can be calculated by: `transfer_fee * transfers_per_block * blocks_per_day * kma_price`
-		// currently `transfers_per_block` is ~1134 and `blocks_per_day` is 7200. `kma_price` can be checked daily.
+		// Consider the daily cost to fully congest our network to be defined as:
+		// daily_cost_to_fully_congest = inclusion_fee * txs_per_block * blocks_per_day * kma_price
+		// The weight fee is defined as:
+		// weight_fee = coeff_integer * (weight ^ degree) + coeff_friction * (weight ^ degree)
+		// The inclusion fee is defined as:
+		// inclusion_fee = base_fee + length_fee + [targeted_fee_adjustment * weight_fee]
+		// As of the day of writing this code a single `balances.transfer` is benchmarked at 156626000 weight.
+		// Let's assume worst case scenarios where the `length_fee` of a transfer is negligible,
+		// and that `targeted_fee_adjustment` is simply 1, as if the network is not congested.
+		// Furthermore we know the `base_fee` is 0.000125KMA defined in our runtime. So:
+		// inclusion_fee = 0.000125 * coeff + 0.000156626 * coeff = 0.000281626 * coeff
+		// We have profiled `txs_per_block` to be around 1134 and `blocks_per_day` is known to be 7200.
+		// KMA price in dollars can be checked daily but at the time of writing the code it was $0.02. So:
+		// daily_cost_to_fully_congest = 0.000281626 * coeff * 1134 * 7200 * 0.02 = 45.988399296 * coeff
+		// Assuming we want the daily cost to be around $250000 we get:
+		// 250000 = 45.988399296 * coeff
+		// coeff = 5436
+
+		// Keep in mind this is a rough worst-case scenario calculation.
+		// The length_fee could not be negligible, and the targeted_fee_adjustment will hike the fees,
+		// as the network gets congested more and more congested, and this will further increase the costs.
 		smallvec![WeightToFeeCoefficient {
 			coeff_integer: 5000u32.into(),
 			coeff_frac: Perbill::zero(),
