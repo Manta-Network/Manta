@@ -425,7 +425,7 @@ jobs:
           curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "civil cigar remain hybrid glove symptom review what pole lock concert lamp", "0xb40aa6bd104d0260b60350c2fb30d4882437466d66135130b667799ea6c9f52b"],"id":1 }' localhost:9973
           curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "output evidence anger invest country opinion girl mouse direct double carbon usage", "0x4a3aa51469e802be6504422cd9dd03be638ac3f6dc3a7c0c85a6ace3e72f0048"],"id":1 }' localhost:9974
           curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "series disorder today argue interest pond flight guess asthma guilt road gadget", "0xa68feb4fe2ea3f8ff288af4254aad2284e1cd0da67cb9ea61c13632bad57eb40"],"id":1 }' localhost:9975
-          cp calamari_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools/runtime-upgrade-test/calamari.wasm
+          cp ${{ matrix.runtime.name }}_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools/runtime-upgrade-test/calamari.wasm
           cd ${{ github.workspace }}/dev-tools/runtime-upgrade-test
           yarn install
           yarn
