@@ -54,11 +54,11 @@ impl WeightToFeePolynomial for WeightToFee {
 		// daily_cost_to_fully_congest = 0.000281626 * coeff * 1134 * 7200 * 0.02 = 45.988399296 * coeff
 		// Assuming we want the daily cost to be around $250000 we get:
 		// 250000 = 45.988399296 * coeff
-		// coeff = 5436
+		// coeff = ~5436
 
 		// Keep in mind this is a rough worst-case scenario calculation.
-		// The length_fee could not be negligible, and the targeted_fee_adjustment will hike the fees,
-		// as the network gets congested more and more congested, and this will further increase the costs.
+		// The `length_fee` could not be negligible, and the `targeted_fee_adjustment` will hike the fees
+		// as the network gets more and more congested, which will further increase the costs.
 		smallvec![WeightToFeeCoefficient {
 			coeff_integer: 5000u32.into(),
 			coeff_frac: Perbill::zero(),
