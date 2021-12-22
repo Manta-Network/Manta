@@ -1,6 +1,21 @@
+// Copyright 2020-2021 Manta Network.
+// This file is part of Manta.
+//
+// Manta is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Manta is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Manta.  If not, see <http://www.gnu.org/licenses/>.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use cumulus_primitives_core::ParaId;
 use frame_support::{
 	dispatch::DispatchResult,
 	pallet_prelude::*,
@@ -14,16 +29,24 @@ use frame_system::{
 use manta_primitives::{
 	currency_id::{CurrencyId, TokenSymbol},
 	traits::XCurrency,
+	ParaId,
 };
-use sp_runtime::{traits::Member, SaturatedConversion};
-use sp_std::{vec, vec::Vec};
-use xcm::latest::prelude::*;
-use xcm::v1::{
-	AssetId, Fungibility, Junction, Junctions, MultiAsset, MultiAssetFilter, MultiAssets,
-	MultiLocation, WildMultiAsset,
+use sp_runtime::SaturatedConversion;
+use sp_runtime::traits::{AccountIdConversion, Convert};
+use sp_std::vec;
+use xcm::{
+	v1::{
+		AssetId, Fungibility, Junction, Junctions, MultiAsset, MultiAssetFilter, MultiAssets,
+		MultiLocation, WildMultiAsset,
+	},
+	v2::{ExecuteXcm, Instruction, Outcome, WeightLimit, Xcm as XcmV2, NetworkId},
 };
-use xcm::v2::{ExecuteXcm, Instruction, WeightLimit, Xcm as XcmV2};
-use xcm_executor::traits::{Convert, WeightBounds};
+use xcm_executor::traits::WeightBounds;
+
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
 
 pub use pallet::*;
 // Log filter
@@ -45,7 +68,7 @@ pub mod pallet {
 		type XcmExecutor: ExecuteXcm<Self::Call>;
 
 		/// Convert AccountId to MultiLocation.
-		type Conversion: Convert<MultiLocation, Self::AccountId>;
+		type Conversion: Convert<Self::AccountId, MultiLocation>;
 
 		/// This pallet id.
 		type PalletId: Get<PalletId>;
@@ -62,6 +85,7 @@ pub mod pallet {
 	// This is an workaround for depositing/withdrawing cross chain tokens
 	// Finally, we'll utilize pallet-assets to handle these external tokens.
 	#[pallet::storage]
+	#[pallet::getter(fn xtokens)]
 	pub type XTokens<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
@@ -108,18 +132,17 @@ pub mod pallet {
 		#[pallet::weight(10000)]
 		pub fn transfer_to_parachain(
 			origin: OriginFor<T>,
-			para_id: ParaId,
+			#[pallet::compact] para_id: ParaId,
 			dest: T::AccountId,
 			currency_id: CurrencyId,
 			#[pallet::compact] amount: BalanceOf<T>,
-			weight: Weight,
 		) -> DispatchResult {
 			let from = ensure_signed(origin)?;
 
 			ensure!(T::SelfParaId::get() != para_id, Error::<T>::SelfChain);
 
 			match currency_id {
-				CurrencyId::Token(TokenSymbol::MA) | CurrencyId::Token(TokenSymbol::KMA) => {
+				CurrencyId::Token(TokenSymbol::MANTA) | CurrencyId::Token(TokenSymbol::KMA) => {
 					ensure!(
 						T::Currency::free_balance(&from) >= amount,
 						Error::<T>::BalanceLow
@@ -136,12 +159,17 @@ pub mod pallet {
 				_ => return Err(Error::<T>::NotSupportedToken.into()),
 			}
 
-			let xcm_origin = T::Conversion::reverse(from)
-				.map_err(|_| Error::<T>::BadAccountIdToMultiLocation)?;
+			let xcm_origin = T::Conversion::convert(from);
 
 			// create sibling parachain target
-			let beneficiary = T::Conversion::reverse(dest)
-				.map_err(|_| Error::<T>::BadAccountIdToMultiLocation)?;
+			let xcm_target = T::Conversion::convert(dest);
+
+			// let receiver_chain = Junctions::X1(Junction::Parachain(para_id.into())).into();
+			let receiver_chain = Junctions::X1(Junction::AccountId32 {
+				network: NetworkId::Any,
+				id: para_id.into_account()
+			})
+			.into();
 
 			let amount = amount.saturated_into::<u128>();
 			let para_id = para_id.saturated_into::<u32>();
@@ -151,20 +179,22 @@ pub mod pallet {
 				Junction::Parachain(para_id),
 				Junction::GeneralKey(currency_id.encode()),
 			);
-			let multi_location = MultiLocation::new(0, junctions);
+			let multi_location = MultiLocation::new(1, junctions);
 			let asset_id = AssetId::Concrete(multi_location.clone());
 			let multi_asset = MultiAsset {
 				id: asset_id,
 				fun: fungibility,
 			};
 			// Todo, handle weight_limit
+			let beneficiary = xcm_target;
 
 			let mut xcm = XcmV2(vec![
 				Instruction::WithdrawAsset(MultiAssets::from(vec![multi_asset.clone()])),
 				Instruction::DepositReserveAsset {
 					assets: MultiAssetFilter::Wild(WildMultiAsset::All),
 					max_assets: 1,
-					dest: multi_location.clone(),
+					// dest: multi_location.clone(),
+					dest: receiver_chain,
 					xcm: XcmV2(vec![
 						Instruction::BuyExecution {
 							fees: multi_asset,

@@ -23,6 +23,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use codec::Encode;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -65,7 +66,10 @@ pub use sp_runtime::BuildStorage;
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
-use xcm::latest::prelude::*;
+use xcm::{
+	latest::prelude::*,
+	v1::{AssetId as XAssetId, Junction, Junctions, MultiLocation},
+};
 use xcm_builder::{
 	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
 	EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset,
@@ -779,18 +783,31 @@ parameter_types! {
 	pub const MantaXassetsPalletId: PalletId = PalletId(*b"/ma_xast");
 
 	pub const AnyNetwork: NetworkId = NetworkId::Any;
-	pub MultiLocationMapCurrencyId: Vec<(Junctions, CurrencyId)> = vec![
+	pub MultiLocationMapCurrencyId: Vec<(XAssetId, CurrencyId)> = vec![
 		// Acala karura => KAR, native token
-		(Junctions::X2(Junction::Parachain(2000), Junction::GeneralKey([0, 128].to_vec())), CurrencyId::Token(TokenSymbol::KAR)),
+		(
+			MultiLocation::new(
+				1,
+				Junctions::X2(
+					Junction::Parachain(2000),
+					Junction::GeneralKey(TokenSymbol::KAR.encode())
+				)
+			).into(),
+			CurrencyId::Token(TokenSymbol::KAR),
+		)
 	];
 }
 
-pub type MantaPCLocationToAccountId = (
-	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
-	SiblingParachainConvertsVia<Sibling, AccountId>,
-	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
-	AccountId32Aliases<AnyNetwork, AccountId>,
-);
+pub struct MantaPCLocationToAccountId;
+impl Convert<AccountId, MultiLocation> for MantaPCLocationToAccountId {
+	fn convert(account: AccountId) -> MultiLocation {
+		X1(AccountId32 {
+			network: NetworkId::Any,
+			id: account.into(),
+		})
+		.into()
+	}
+}
 
 impl manta_xassets::Config for Runtime {
 	type Event = Event;

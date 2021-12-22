@@ -12,10 +12,9 @@ use sp_std::{
 	vec::Vec,
 };
 use xcm::v2::{
-	AssetId, Error as XcmError, Fungibility, Junction, Junctions, MultiAsset, MultiAssets,
-	MultiLocation, Result as XcmResult,
+	AssetId, Error as XcmError, Fungibility, MultiAsset, MultiLocation, Result as XcmResult,
 };
-use xcm_executor::traits::{Convert, FilterAssetLocation, TransactAsset};
+use xcm_executor::traits::{Convert, TransactAsset};
 
 // A Handler for withdrawing/depositting relaychain/parachain tokens.
 pub struct MantaTransactorAdaptor<
@@ -45,7 +44,7 @@ impl<
 		AccountIdConverter: Convert<MultiLocation, AccountId>,
 		AccountId: sp_std::fmt::Debug + Clone,
 		CurrencyId: FullCodec + Eq + PartialEq + Copy + MaybeSerializeDeserialize + Debug,
-		LocationMapCurrencyId: StaticLookup<Source = Junctions, Target = MantaCurrencyId>,
+		LocationMapCurrencyId: StaticLookup<Source = AssetId, Target = MantaCurrencyId>,
 	> TransactAsset
 	for MantaTransactorAdaptor<
 		NativeCurrency,
@@ -56,10 +55,6 @@ impl<
 		LocationMapCurrencyId,
 	>
 {
-	fn can_check_in(_origin: &MultiLocation, _what: &MultiAsset) -> XcmResult {
-		Ok(())
-	}
-
 	fn deposit_asset(asset: &MultiAsset, who: &MultiLocation) -> XcmResult {
 		log::info!(target: "manta-xassets", "deposit_asset: asset = {:?}, who = {:?}", asset, who);
 
@@ -69,29 +64,18 @@ impl<
 
 		match asset {
 			MultiAsset {
-				id: AssetId::Concrete(multi_location),
+				id,
 				fun: Fungibility::Fungible(amount),
 			} => {
-				let currency_id = match multi_location {
-					MultiLocation {
-						parents,
-						interior:
-							Junctions::X2(
-								Junction::Parachain(para_id),
-								Junction::GeneralKey(encoded_currency_id),
-							),
-					} => {
-						// encoded_currency_id.decode()
-						MantaCurrencyId::Token(TokenSymbol::KAR)
-					}
-					_ => unreachable!(),
-				};
+				let currency_id = LocationMapCurrencyId::lookup(id.clone()).map_err(|_| {
+					XcmError::FailedToTransactAsset("Now we didn't support this multiLocation")
+				})?;
 
 				let amount =
 					NativeCurrency::Balance::try_from(*amount).map_err(|_| XcmError::Overflow)?;
 
 				match currency_id {
-					MantaCurrencyId::Token(TokenSymbol::MA)
+					MantaCurrencyId::Token(TokenSymbol::MANTA)
 					| MantaCurrencyId::Token(TokenSymbol::KMA) => {
 						NativeCurrency::deposit_creating(&who, amount);
 					}
@@ -115,10 +99,7 @@ impl<
 		}
 	}
 
-	fn withdraw_asset(
-		asset: &MultiAsset,
-		who: &MultiLocation,
-	) -> Result<xcm_executor::Assets, XcmError> {
+	fn withdraw_asset(asset: &MultiAsset,who: &MultiLocation) -> Result<xcm_executor::Assets, XcmError> {
 		log::info!(target: "manta-xassets", "withdraw_asset: asset = {:?}, who = {:?}", asset, who);
 
 		let who = AccountIdConverter::convert_ref(who).map_err(|_| {
@@ -127,26 +108,18 @@ impl<
 
 		match asset {
 			MultiAsset {
-				id: AssetId::Concrete(multi_location),
+				id,
 				fun: Fungibility::Fungible(amount),
 			} => {
 				let amount =
 					NativeCurrency::Balance::try_from(*amount).map_err(|_| XcmError::Overflow)?;
 
-				let currency_id = match multi_location {
-					MultiLocation {
-						parents,
-						interior:
-							Junctions::X2(
-								Junction::Parachain(para_id),
-								Junction::GeneralKey(encoded_currency_id),
-							),
-					} => MantaCurrencyId::Token(TokenSymbol::KAR),
-					_ => unreachable!(),
-				};
+				let currency_id = LocationMapCurrencyId::lookup(id.clone()).map_err(|_| {
+					XcmError::FailedToTransactAsset("Now we didn't support this multiLocation")
+				})?;
 
 				match currency_id {
-					MantaCurrencyId::Token(TokenSymbol::MA)
+					MantaCurrencyId::Token(TokenSymbol::MANTA)
 					| MantaCurrencyId::Token(TokenSymbol::KMA) => {
 						NativeCurrency::withdraw(
 							&who,
@@ -180,10 +153,10 @@ impl<
 
 /// Lookup table for finding currency id by multilocation.
 pub struct MultiLocationToCurrencyId<T>(PhantomData<T>);
-impl<MultiLocationMapCurrencyId: Get<Vec<(Junctions, MantaCurrencyId)>>> StaticLookup
+impl<MultiLocationMapCurrencyId: Get<Vec<(AssetId, MantaCurrencyId)>>> StaticLookup
 	for MultiLocationToCurrencyId<MultiLocationMapCurrencyId>
 {
-	type Source = Junctions;
+	type Source = AssetId;
 	type Target = MantaCurrencyId;
 
 	fn lookup(s: Self::Source) -> Result<Self::Target, frame_support::error::LookupError> {

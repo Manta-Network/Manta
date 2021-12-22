@@ -64,3 +64,5 @@ pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
 pub type Moment = u64;
 
 pub type AssetId = u32;
+
+pub use cumulus_primitives_core::ParaId;

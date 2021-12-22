@@ -20,8 +20,8 @@ use sp_runtime::RuntimeDebug;
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum TokenSymbol {
 	// Native token
-	MA = 5,
-	KMA = 1,
+	MANTA = 5,
+	KMA = 171,
 	// Acala tokens
 	ACA = 0,
 	KAR = 128,
@@ -35,7 +35,7 @@ pub enum TokenSymbol {
 
 impl Default for TokenSymbol {
 	fn default() -> Self {
-		Self::MA
+		Self::MANTA
 	}
 }
 
@@ -59,7 +59,7 @@ pub enum CurrencyId {
 
 impl Default for CurrencyId {
 	fn default() -> Self {
-		Self::Token(TokenSymbol::MA)
+		Self::Token(TokenSymbol::MANTA)
 	}
 }
 
@@ -68,7 +68,7 @@ impl CurrencyId {
 	fn is_native(&self) -> bool {
 		matches!(
 			*self,
-			Self::Token(TokenSymbol::KMA) | Self::Token(TokenSymbol::MA)
+			Self::Token(TokenSymbol::KMA) | Self::Token(TokenSymbol::MANTA)
 		)
 	}
 

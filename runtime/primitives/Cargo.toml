@@ -16,6 +16,9 @@ scale-info        = { version = "1.0.0", default-features = false, features = ["
 serde             = { version = "1.0.119", features = ["derive"], optional = true }
 smallvec          = "1.6.1"
 
+# Cumulus dependencies
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus.git", default-features = false, branch = "polkadot-v0.9.12" }
+
 # Substrate primitives
 sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
 sp-core           = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
@@ -27,6 +30,7 @@ sp-runtime        = { git = 'https://github.com/paritytech/substrate.git', defau
 default = ["std"]
 std     = [
 	'codec/std',
+	'cumulus-primitives-core/std',
 	'scale-info/std',
 	'serde/std',
 	'sp-consensus-aura/std',
