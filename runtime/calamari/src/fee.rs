@@ -14,10 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::currency;
 use frame_support::weights::{
-	constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-	WeightToFeePolynomial,
+	WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 };
 use manta_primitives::Balance;
 use smallvec::smallvec;
@@ -40,16 +38,32 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
 	type Balance = Balance;
 	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		// in Polkadot, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 CENT:
-		// in Manta Parachain, we map to 1/10 of that, or 1/100 CENT
-		// TODO, revisit here to figure out why use this polynomial
-		let p = currency::cKMA;
-		let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
+		// Consider the daily cost to fully congest our network to be defined as:
+		// daily_cost_to_fully_congest = inclusion_fee * txs_per_block * blocks_per_day * kma_price
+		// The weight fee is defined as:
+		// weight_fee = coeff_integer * (weight ^ degree) + coeff_friction * (weight ^ degree)
+		// The inclusion fee is defined as:
+		// inclusion_fee = base_fee + length_fee + [targeted_fee_adjustment * weight_fee]
+		// As of the day of writing this code a single `balances.transfer` is benchmarked at 156626000 weight.
+		// Let's assume worst case scenarios where the `length_fee` of a transfer is negligible,
+		// and that `targeted_fee_adjustment` is simply 1, as if the network is not congested.
+		// Furthermore we know the `base_fee` is 0.000125KMA defined in our runtime. So:
+		// inclusion_fee = 0.000125 * coeff + 0.000156626 * coeff = 0.000281626 * coeff
+		// We have profiled `txs_per_block` to be around 1134 and `blocks_per_day` is known to be 7200.
+		// KMA price in dollars can be checked daily but at the time of writing the code it was $0.02. So:
+		// daily_cost_to_fully_congest = 0.000281626 * coeff * 1134 * 7200 * 0.02 = 45.988399296 * coeff
+		// Assuming we want the daily cost to be around $250000 we get:
+		// 250000 = 45.988399296 * coeff
+		// coeff = ~5436
+
+		// Keep in mind this is a rough worst-case scenario calculation.
+		// The `length_fee` could not be negligible, and the `targeted_fee_adjustment` will hike the fees
+		// as the network gets more and more congested, which will further increase the costs.
 		smallvec![WeightToFeeCoefficient {
-			degree: 1,
+			coeff_integer: 5000u32.into(),
+			coeff_frac: Perbill::zero(),
 			negative: false,
-			coeff_frac: Perbill::from_rational(p % q, q),
-			coeff_integer: p / q,
+			degree: 1,
 		}]
 	}
 }
