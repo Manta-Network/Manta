@@ -52,7 +52,9 @@ use frame_system::{
 	EnsureOneOf, EnsureRoot,
 };
 use manta_primitives::{
-	time::*, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	currency_id::{CurrencyId, TokenSymbol},
+	time::*,
+	AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
 };
 use sp_runtime::Perbill;
 
@@ -598,7 +600,14 @@ impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// How to withdraw and deposit an asset.
-	type AssetTransactor = LocalAssetTransactor;
+	type AssetTransactor = manta_xcm_support::MantaTransactorAdaptor<
+		Balances,
+		CalamariXassets,
+		LocationToAccountId,
+		AccountId,
+		CurrencyId,
+		manta_xcm_support::MultiLocationToCurrencyId<MultiLocationMapCurrencyId>,
+	>;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = NativeAsset;
 	type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of KSM
@@ -753,7 +762,7 @@ parameter_types! {
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
 	type Balance = Balance;
-	type AssetId = manta_primitives::currency_id::CurrencyId;
+	type AssetId = manta_primitives::AssetId;
 	type Currency = Balances;
 	type ForceOrigin = EnsureRoot<AccountId>;
 	type AssetDeposit = AssetDeposit;
@@ -764,6 +773,33 @@ impl pallet_assets::Config for Runtime {
 	type Freezer = ();
 	type Extra = ();
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const MantaXassetsPalletId: PalletId = PalletId(*b"/ma_xast");
+
+	pub const AnyNetwork: NetworkId = NetworkId::Any;
+	pub MultiLocationMapCurrencyId: Vec<(Junctions, CurrencyId)> = vec![
+		// Acala karura => KAR, native token
+		(Junctions::X2(Junction::Parachain(2000), Junction::GeneralKey([0, 128].to_vec())), CurrencyId::Token(TokenSymbol::KAR)),
+	];
+}
+
+pub type MantaPCLocationToAccountId = (
+	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
+	SiblingParachainConvertsVia<Sibling, AccountId>,
+	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
+	AccountId32Aliases<AnyNetwork, AccountId>,
+);
+
+impl manta_xassets::Config for Runtime {
+	type Event = Event;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type Conversion = MantaPCLocationToAccountId;
+	type PalletId = MantaXassetsPalletId;
+	type Currency = Balances;
+	type SelfParaId = ParachainInfo;
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -817,6 +853,7 @@ construct_runtime!(
 
 		// Calamari stuff
 		CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
+		CalamariXassets: manta_xassets::{Pallet, Call, Storage, Event<T>} = 51,
 	}
 );
 

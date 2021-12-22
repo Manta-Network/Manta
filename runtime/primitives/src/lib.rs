@@ -20,8 +20,8 @@
 #![forbid(clippy::unwrap_used)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub mod currency_id;
 pub mod constants;
+pub mod currency_id;
 pub mod traits;
 pub use constants::time;
 
@@ -62,3 +62,5 @@ pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
 
 // Moment
 pub type Moment = u64;
+
+pub type AssetId = u32;

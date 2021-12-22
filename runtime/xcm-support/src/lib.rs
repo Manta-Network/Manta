@@ -12,8 +12,8 @@ use sp_std::{
 	vec::Vec,
 };
 use xcm::v2::{
-	MultiAssets, MultiAsset, AssetId, Fungibility, MultiLocation, 
-	Junctions, Junction, Result as XcmResult, Error as XcmError
+	AssetId, Error as XcmError, Fungibility, Junction, Junctions, MultiAsset, MultiAssets,
+	MultiLocation, Result as XcmResult,
 };
 use xcm_executor::traits::{Convert, FilterAssetLocation, TransactAsset};
 
@@ -45,7 +45,7 @@ impl<
 		AccountIdConverter: Convert<MultiLocation, AccountId>,
 		AccountId: sp_std::fmt::Debug + Clone,
 		CurrencyId: FullCodec + Eq + PartialEq + Copy + MaybeSerializeDeserialize + Debug,
-		LocationMapCurrencyId: StaticLookup<Source = MultiLocation, Target = MantaCurrencyId>,
+		LocationMapCurrencyId: StaticLookup<Source = Junctions, Target = MantaCurrencyId>,
 	> TransactAsset
 	for MantaTransactorAdaptor<
 		NativeCurrency,
@@ -67,39 +67,52 @@ impl<
 			XcmError::FailedToTransactAsset("Failed to convert multilocation to account id")
 		})?;
 
-		todo!();
+		match asset {
+			MultiAsset {
+				id: AssetId::Concrete(multi_location),
+				fun: Fungibility::Fungible(amount),
+			} => {
+				let currency_id = match multi_location {
+					MultiLocation {
+						parents,
+						interior:
+							Junctions::X2(
+								Junction::Parachain(para_id),
+								Junction::GeneralKey(encoded_currency_id),
+							),
+					} => {
+						// encoded_currency_id.decode()
+						MantaCurrencyId::Token(TokenSymbol::KAR)
+					}
+					_ => unreachable!(),
+				};
 
-		// match asset {
-		// 	MultiAsset { id, fun } => {
-		// 		let currency_id = LocationMapCurrencyId::lookup(id.clone()).map_err(|_| {
-		// 			XcmError::FailedToTransactAsset("Now we didn't support this multiLocation")
-		// 		})?;
-		// 		let amount =
-		// 			NativeCurrency::Balance::try_from(*amount).map_err(|_| XcmError::Overflow)?;
+				let amount =
+					NativeCurrency::Balance::try_from(*amount).map_err(|_| XcmError::Overflow)?;
 
-		// 		match currency_id {
-		// 			MantaCurrencyId::Token(TokenSymbol::MA)
-		// 			| MantaCurrencyId::Token(TokenSymbol::KMA) => {
-		// 				NativeCurrency::deposit_creating(&who, amount);
-		// 			}
-		// 			MantaCurrencyId::Token(TokenSymbol::ACA)
-		// 			| MantaCurrencyId::Token(TokenSymbol::KAR)
-		// 			| MantaCurrencyId::Token(TokenSymbol::SDN)
-		// 			| MantaCurrencyId::Token(TokenSymbol::KSM) => {
-		// 				XCurrency::deposit(currency_id, &who, amount)
-		// 					.map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
-		// 			}
-		// 			_ => {
-		// 				log::info!(target: "manta-xassets", "Failed to deposit Unknow asset.");
-		// 			}
-		// 		}
+				match currency_id {
+					MantaCurrencyId::Token(TokenSymbol::MA)
+					| MantaCurrencyId::Token(TokenSymbol::KMA) => {
+						NativeCurrency::deposit_creating(&who, amount);
+					}
+					MantaCurrencyId::Token(TokenSymbol::ACA)
+					| MantaCurrencyId::Token(TokenSymbol::KAR)
+					| MantaCurrencyId::Token(TokenSymbol::SDN)
+					| MantaCurrencyId::Token(TokenSymbol::KSM) => {
+						XCurrency::deposit(currency_id, &who, amount)
+							.map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
+					}
+					_ => {
+						log::info!(target: "manta-xassets", "Failed to deposit Unknow asset.");
+					}
+				}
 
-		// 		Ok(())
-		// 	}
-		// 	_ => Err(XcmError::FailedToTransactAsset(
-		// 		"We don't support this multi-asset now",
-		// 	)),
-		// }
+				Ok(())
+			}
+			_ => Err(XcmError::FailedToTransactAsset(
+				"We don't support this multi-asset now",
+			)),
+		}
 	}
 
 	fn withdraw_asset(
@@ -112,68 +125,65 @@ impl<
 			XcmError::FailedToTransactAsset("Failed to convert multilocation to account id")
 		})?;
 
-		todo!();
+		match asset {
+			MultiAsset {
+				id: AssetId::Concrete(multi_location),
+				fun: Fungibility::Fungible(amount),
+			} => {
+				let amount =
+					NativeCurrency::Balance::try_from(*amount).map_err(|_| XcmError::Overflow)?;
 
-		// match asset {
-		// 	MultiAsset::ConcreteFungible { id, amount } => {
-		// 		let amount =
-		// 			NativeCurrency::Balance::try_from(*amount).map_err(|_| XcmError::Overflow)?;
-		// 		let currency_id = LocationMapCurrencyId::lookup(id.clone()).map_err(|_| {
-		// 			XcmError::FailedToTransactAsset("Now we didn't support this multiLocation")
-		// 		})?;
+				let currency_id = match multi_location {
+					MultiLocation {
+						parents,
+						interior:
+							Junctions::X2(
+								Junction::Parachain(para_id),
+								Junction::GeneralKey(encoded_currency_id),
+							),
+					} => MantaCurrencyId::Token(TokenSymbol::KAR),
+					_ => unreachable!(),
+				};
 
-		// 		match currency_id {
-		// 			MantaCurrencyId::Token(TokenSymbol::MA)
-		// 			| MantaCurrencyId::Token(TokenSymbol::KMA) => {
-		// 				NativeCurrency::withdraw(
-		// 					&who,
-		// 					amount,
-		// 					WithdrawReasons::TRANSFER,
-		// 					ExistenceRequirement::AllowDeath,
-		// 				)
-		// 				.map_err(|e| {
-		// 					log::info!(target: "manta-xassets", "withdraw_asset: error = {:?}", e);
-		// 					XcmError::FailedToTransactAsset(e.into())
-		// 				})?;
-		// 			}
-		// 			MantaCurrencyId::Token(TokenSymbol::ACA)
-		// 			| MantaCurrencyId::Token(TokenSymbol::KAR)
-		// 			| MantaCurrencyId::Token(TokenSymbol::SDN)
-		// 			| MantaCurrencyId::Token(TokenSymbol::KSM) => {
-		// 				XCurrency::withdraw(currency_id, &who, amount)
-		// 					.map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
-		// 			}
-		// 			_ => {
-		// 				log::info!(target: "manta-xassets", "Failed to deposit Unknow asset.");
-		// 			}
-		// 		}
+				match currency_id {
+					MantaCurrencyId::Token(TokenSymbol::MA)
+					| MantaCurrencyId::Token(TokenSymbol::KMA) => {
+						NativeCurrency::withdraw(
+							&who,
+							amount,
+							WithdrawReasons::TRANSFER,
+							ExistenceRequirement::AllowDeath,
+						)
+						.map_err(|e| {
+							log::info!(target: "manta-xassets", "withdraw_asset: error = {:?}", e);
+							XcmError::FailedToTransactAsset(e.into())
+						})?;
+					}
+					MantaCurrencyId::Token(TokenSymbol::ACA)
+					| MantaCurrencyId::Token(TokenSymbol::KAR)
+					| MantaCurrencyId::Token(TokenSymbol::SDN)
+					| MantaCurrencyId::Token(TokenSymbol::KSM) => {
+						XCurrency::withdraw(currency_id, &who, amount)
+							.map_err(|e| XcmError::FailedToTransactAsset(e.into()))?;
+					}
+					_ => {
+						log::info!(target: "manta-xassets", "Failed to deposit Unknow asset.");
+					}
+				}
 
-		// 		Ok(asset.clone().into())
-		// 	}
-		// 	_ => Err(XcmError::NotWithdrawable),
-		// }
-	}
-}
-
-/// Which parachain or asset we support
-pub struct TrustedParachains<Chains>(PhantomData<Chains>);
-impl<Chains: Get<Vec<(MultiLocation, u128)>>> FilterAssetLocation for TrustedParachains<Chains> {
-	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
-		log::info!(target: "manta-xassets", "filter_asset_location: origin = {:?}, asset = {:?}", origin, asset);
-
-		Chains::get()
-			.iter()
-			.map(|(location, _)| location)
-			.any(|location| *location == *origin)
+				Ok(asset.clone().into())
+			}
+			_ => Err(XcmError::NotWithdrawable),
+		}
 	}
 }
 
 /// Lookup table for finding currency id by multilocation.
 pub struct MultiLocationToCurrencyId<T>(PhantomData<T>);
-impl<MultiLocationMapCurrencyId: Get<Vec<(MultiLocation, MantaCurrencyId)>>> StaticLookup
+impl<MultiLocationMapCurrencyId: Get<Vec<(Junctions, MantaCurrencyId)>>> StaticLookup
 	for MultiLocationToCurrencyId<MultiLocationMapCurrencyId>
 {
-	type Source = MultiLocation;
+	type Source = Junctions;
 	type Target = MantaCurrencyId;
 
 	fn lookup(s: Self::Source) -> Result<Self::Target, frame_support::error::LookupError> {
@@ -195,9 +205,6 @@ impl<MultiLocationMapCurrencyId: Get<Vec<(MultiLocation, MantaCurrencyId)>>> Sta
 			}
 		}
 		todo!();
-
-		// This means we don't find multilocation by currency id.
-		// MultiLocation::Null
 	}
 }
 

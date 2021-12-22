@@ -1,6 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use core::marker::PhantomData;
 use cumulus_primitives_core::ParaId;
 use frame_support::{
 	dispatch::DispatchResult,
@@ -18,9 +17,12 @@ use manta_primitives::{
 };
 use sp_runtime::{traits::Member, SaturatedConversion};
 use sp_std::{vec, vec::Vec};
-use xcm::v1::{MultiAssets, MultiAsset, AssetId, Fungibility, MultiLocation, Junctions, Junction};
-use xcm::v2::{Xcm as XcmV2, Instruction, ExecuteXcm};
 use xcm::latest::prelude::*;
+use xcm::v1::{
+	AssetId, Fungibility, Junction, Junctions, MultiAsset, MultiAssetFilter, MultiAssets,
+	MultiLocation, WildMultiAsset,
+};
+use xcm::v2::{ExecuteXcm, Instruction, WeightLimit, Xcm as XcmV2};
 use xcm_executor::traits::{Convert, WeightBounds};
 
 pub use pallet::*;
@@ -28,8 +30,6 @@ pub use pallet::*;
 const MANTA_XASSETS: &str = "manta-xassets";
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
-
-pub type CurrencyIdOf<T> = <T as XCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -44,17 +44,11 @@ pub mod pallet {
 		/// Something to execute an XCM message.
 		type XcmExecutor: ExecuteXcm<Self::Call>;
 
-		/// Some parachains manta trusts.
-		type TrustedChains: Get<Vec<(MultiLocation, u128)>>;
-
 		/// Convert AccountId to MultiLocation.
 		type Conversion: Convert<MultiLocation, Self::AccountId>;
 
 		/// This pallet id.
 		type PalletId: Get<PalletId>;
-
-		/// Currency Id
-		type CurrencyId: Parameter + Member + Clone;
 
 		type Currency: ReservableCurrency<Self::AccountId>;
 
@@ -80,7 +74,8 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
-	pub struct Pallet<T>(PhantomData<T>);
+	#[pallet::generate_storage_info]
+	pub struct Pallet<T>(_);
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -103,82 +98,6 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Teleport manta tokens to sibling parachain.
-		///
-		/// - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
-		/// - `para_id`: Sibling parachain id.
-		/// - `dest`: Who will receive foreign tokens on sibling parachain.
-		/// - `amount`: How many tokens will be transferred.
-		#[pallet::weight(10000)]
-		pub fn teleport_to_parachain(
-			origin: OriginFor<T>,
-			para_id: ParaId,
-			dest: T::AccountId,
-			#[pallet::compact] amount: BalanceOf<T>,
-		) -> DispatchResult {
-			let from = ensure_signed(origin)?;
-
-			// ensure!(T::SelfParaId::get() != para_id, Error::<T>::SelfChain);
-			// ensure!(
-			// 	T::Currency::free_balance(&from) >= amount,
-			// 	Error::<T>::BalanceLow
-			// );
-			// let xcm_origin = T::Conversion::reverse(from)
-			// 	.map_err(|_| Error::<T>::BadAccountIdToMultiLocation)?;
-
-			// // create sibling parachain target
-			// let xcm_target = T::Conversion::reverse(dest)
-			// 	.map_err(|_| Error::<T>::BadAccountIdToMultiLocation)?;
-
-			// // target chain location
-			// let receiver_chain =
-			// 	MultiLocation::X2(Junction::Parent, Junction::Parachain(para_id.into()));
-
-			// let amount = amount.saturated_into::<u128>();
-
-			// // create friend parachain xcm
-			// let xcm = Xcm::WithdrawAsset {
-			// 	assets: vec![MultiAsset::ConcreteFungible {
-			// 		id: MultiLocation::X2(
-			// 			Junction::Parent,
-			// 			Junction::Parachain(T::SelfParaId::get().into()),
-			// 		),
-			// 		amount,
-			// 	}],
-			// 	effects: vec![Order::InitiateTeleport {
-			// 		assets: vec![MultiAsset::All],
-			// 		dest: receiver_chain,
-			// 		effects: vec![
-			// 			// Todo, just disable this order, it doesn't work for now.
-			// 			// Order::BuyExecution {
-			// 			// 	fees: MultiAsset::All,
-			// 			// 	weight: 0,
-			// 			// 	debt: 3000_000_000,
-			// 			// 	halt_on_error: false,
-			// 			// 	xcm: vec![],
-			// 			// },
-			// 			Order::DepositAsset {
-			// 				assets: vec![MultiAsset::All],
-			// 				dest: xcm_target,
-			// 			},
-			// 		],
-			// 	}],
-			// };
-
-			// // Todo, just disable this line, it doesn't work for now.
-			// // let weight =
-			// // 	T::Weigher::weight(&mut friend_xcm).map_err(|()| Error::<T>::UnweighableMessage)?;
-
-			// // The last param is the weight we buy on target chain.
-			// let outcome =
-			// 	T::XcmExecutor::execute_xcm_in_credit(xcm_origin, xcm, 3000000000, 3000000000);
-			// log::info!(target: MANTA_XASSETS, "xcm_outcome = {:?}", outcome);
-
-			// Self::deposit_event(Event::Attempted(outcome));
-
-			Ok(())
-		}
-
 		/// Transfer manta tokens to sibling parachain.
 		///
 		/// - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
@@ -221,68 +140,44 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::BadAccountIdToMultiLocation)?;
 
 			// create sibling parachain target
-			let xcm_target = T::Conversion::reverse(dest)
+			let beneficiary = T::Conversion::reverse(dest)
 				.map_err(|_| Error::<T>::BadAccountIdToMultiLocation)?;
-
-			// target chain location
-			// let receiver_chain =
-			// 	MultiLocation::X2(Junction::Parent, Junction::Parachain(para_id.into()));
 
 			let amount = amount.saturated_into::<u128>();
 			let para_id = para_id.saturated_into::<u32>();
 
-			// create friend parachain xcm
-			// let mut xcm = Xcm::WithdrawAsset {
-			// 	assets: vec![MultiAsset::ConcreteFungible {
-			// 		id: MultiLocation::X3(
-			// 			Junction::Parent,
-			// 			Junction::Parachain(T::SelfParaId::get().into()),
-			// 			Junction::GeneralKey(currency_id.encode()),
-			// 		),
-			// 		amount,
-			// 	}],
-			// 	effects: vec![Order::DepositReserveAsset {
-			// 		assets: vec![MultiAsset::All],
-			// 		dest: receiver_chain,
-			// 		effects: vec![
-			// 			Order::BuyExecution {
-			// 				fees: MultiAsset::All,
-			// 				weight: 0,
-			// 				debt: weight,
-			// 				halt_on_error: false,
-			// 				xcm: vec![],
-			// 			},
-			// 			Order::DepositAsset {
-			// 				assets: vec![MultiAsset::All],
-			// 				dest: xcm_target,
-			// 			},
-			// 		],
-			// 	}],
-			// };
-
 			let fungibility = Fungibility::Fungible(amount);
 			let junctions = Junctions::X2(
 				Junction::Parachain(para_id),
-				Junction::GeneralKey(currency_id.encode())
+				Junction::GeneralKey(currency_id.encode()),
 			);
 			let multi_location = MultiLocation::new(0, junctions);
-			let asset_id = AssetId::Concrete(multi_location);
+			let asset_id = AssetId::Concrete(multi_location.clone());
+			let multi_asset = MultiAsset {
+				id: asset_id,
+				fun: fungibility,
+			};
+			// Todo, handle weight_limit
 
-			let mut xcm = XcmV2(
-				vec![
-					Instruction::WithdrawAsset(
-						MultiAssets::from(vec![
-							MultiAsset {
-								id: asset_id,
-								fun: fungibility,
-							}
-						])
-					),
-					// Instruction::DepositReserveAsset,
-					// Instruction::BuyExecution,
-					// Instruction::DepositAsset,
-				]
-			);
+			let mut xcm = XcmV2(vec![
+				Instruction::WithdrawAsset(MultiAssets::from(vec![multi_asset.clone()])),
+				Instruction::DepositReserveAsset {
+					assets: MultiAssetFilter::Wild(WildMultiAsset::All),
+					max_assets: 1,
+					dest: multi_location.clone(),
+					xcm: XcmV2(vec![
+						Instruction::BuyExecution {
+							fees: multi_asset,
+							weight_limit: WeightLimit::Limited(100_000_000_000),
+						},
+						Instruction::DepositAsset {
+							assets: MultiAssetFilter::Wild(WildMultiAsset::All),
+							max_assets: 1,
+							beneficiary,
+						},
+					]),
+				},
+			]);
 
 			log::info!(target: MANTA_XASSETS, "xcm = {:?}", xcm);
 
@@ -295,56 +190,6 @@ pub mod pallet {
 			log::info!(target: MANTA_XASSETS, "xcm_outcome = {:?}", outcome);
 
 			Self::deposit_event(Event::Attempted(outcome));
-
-			Ok(())
-		}
-
-		/// Transfer DOT to relaychain.
-		///
-		/// - `origin`: Must be capable of withdrawing the `assets` and executing UP.
-		/// - `dest`: Who will receive DOT on relaychain.
-		/// - `amount`: How many tokens will be transferred.
-		/// - `weight`: Specify the weight of um.
-		#[pallet::weight(10000)]
-		pub fn transfer_to_relaychain(
-			origin: OriginFor<T>,
-			dest: T::AccountId,
-			#[pallet::compact] amount: BalanceOf<T>,
-			weight: Weight,
-		) -> DispatchResult {
-			let from = ensure_signed(origin)?;
-			// let um_origin = T::Conversion::reverse(from)
-			// 	.map_err(|_| Error::<T>::BadAccountIdToMultiLocation)?;
-			// // Todo, ensure this caller has enough DOT to transfer.
-
-			// // create relaychain target
-			// let um_target = T::Conversion::reverse(dest)
-			// 	.map_err(|_| Error::<T>::BadAccountIdToMultiLocation)?;
-			// let amount = amount.saturated_into::<u128>();
-
-			// // create friend relaychain xcm
-			// let um = Xcm::WithdrawAsset {
-			// 	assets: vec![MultiAsset::ConcreteFungible {
-			// 		id: MultiLocation::X1(Junction::Parent),
-			// 		amount,
-			// 	}],
-			// 	effects: vec![Order::DepositReserveAsset {
-			// 		assets: vec![MultiAsset::All],
-			// 		dest: MultiLocation::X2(
-			// 			Junction::Parent,
-			// 			Junction::Parachain(T::SelfParaId::get().into()),
-			// 		),
-			// 		effects: vec![Order::DepositAsset {
-			// 			assets: vec![MultiAsset::All],
-			// 			dest: um_target,
-			// 		}],
-			// 	}],
-			// };
-
-			// let outcome = T::XcmExecutor::execute_xcm_in_credit(um_origin, um, weight, weight);
-			// log::info!(target: MANTA_XASSETS, "um_outcome = {:?}", outcome);
-
-			// Self::deposit_event(Event::Attempted(outcome));
 
 			Ok(())
 		}
