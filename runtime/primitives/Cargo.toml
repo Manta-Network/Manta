@@ -1,8 +1,8 @@
 [package]
 authors = ['Manta Network']
 name = "manta-primitives"
-version = '3.1.0'
-edition = "2018"
+version = '3.1.1'
+edition = "2021"
 homepage = 'https://manta.network'
 license = 'GPL-3.0'
 repository = 'https://github.com/Manta-Network/Manta/'
@@ -15,11 +15,11 @@ codec = { package = "parity-scale-codec", version = "2.3.1", default-features = 
 smallvec = "1.6.1"
 
 # Substrate primitives
-sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
-sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
-sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
-sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
-sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.12" }
+sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.13" }
+sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.13" }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.13" }
+sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.13" }
+sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.13" }
 
 [features]
 default = ["std"]

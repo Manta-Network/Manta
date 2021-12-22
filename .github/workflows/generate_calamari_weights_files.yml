@@ -2,7 +2,7 @@
 
 # yamllint disable rule:line-length
 
-name: Benchmark Clamari Runtime & Generate Weights Files
+name: Benchmark Calamari Runtime & Generate Weights Files
 
 # yamllint disable-line rule:truthy
 on:
