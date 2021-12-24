@@ -920,11 +920,11 @@ dependencies = [
  "frame-try-runtime",
  "hex-literal",
  "log",
+ "manta-collator-selection",
  "manta-primitives",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
  "pallet-membership",
@@ -4330,6 +4330,32 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
+]
+
+[[package]]
+name = "manta-collator-selection"
+version = "3.1.1"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-aura",
+ "pallet-authorship",
+ "pallet-balances",
+ "pallet-session",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "rand 0.7.3",
+ "scale-info",
+ "serde",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+ "sp-tracing",
 ]
 
 [[package]]
