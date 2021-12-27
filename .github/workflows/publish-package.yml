@@ -49,8 +49,17 @@ jobs:
           sudo mkdir -p /usr/local/bin
           sudo curl -sL -o /usr/local/bin/discord https://raw.githubusercontent.com/ChaoticWeg/discord.sh/59cab0c/discord.sh
           sudo chmod +x /usr/local/bin/discord
-
-          
+      -
+        name: configure gpg
+        run: |
+          mkdir -p ${HOME}/.gnupg
+          echo '${{ secrets.C9C4E2EEF4FE07264C5FE9F1D593CC9274BFD23D }}' > ${HOME}/.gnupg/C9C4E2EEF4FE07264C5FE9F1D593CC9274BFD23D
+          chmod 700 ${HOME}/.gnupg
+          chmod 600 ${HOME}/.gnupg/*
+          gpg --import ${HOME}/.gnupg/C9C4E2EEF4FE07264C5FE9F1D593CC9274BFD23D
+          expect -c 'spawn gpg --edit-key C9C4E2EEF4FE07264C5FE9F1D593CC9274BFD23D trust quit; send "5\ry\r"; expect eof'
+          gpg --list-keys
+          gpg --armor --export C9C4E2EEF4FE07264C5FE9F1D593CC9274BFD23D
       -
         name: configure aws
         run: |
