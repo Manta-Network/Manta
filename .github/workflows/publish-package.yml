@@ -1,0 +1,65 @@
+---
+
+# yamllint disable rule:line-length
+
+name: publish deb/rpm packages
+# yamllint disable-line rule:truthy
+on:
+  push:
+    branches:
+      - deb-rpm
+  release:
+    types:
+      - published
+jobs:
+  sync-repo-bucket:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        bucket:
+          -
+            name: deb.manta.systems
+          -
+            name: rpm.manta.systems
+    steps:
+      -
+        name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gnupg
+          sudo apt-get install -y software-properties-common
+          sudo apt-get install -y pass
+          sudo apt-get install -y expect
+          sudo apt-get install -y gpg
+          pip3 install awscli --upgrade --user
+          pip3 install yq --upgrade --user
+          sudo mkdir -p /usr/local/bin
+          sudo curl -sL -o /usr/local/bin/discord https://raw.githubusercontent.com/ChaoticWeg/discord.sh/59cab0c/discord.sh
+          sudo chmod +x /usr/local/bin/discord
+      -
+        name: configure aws
+        run: |
+          mkdir -p ${HOME}/.aws
+          echo [pelagos] >> ${HOME}/.aws/credentials
+          echo aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }} >> ${HOME}/.aws/credentials
+          echo aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }} >> ${HOME}/.aws/credentials
+      -
+        run: |
+          if ! aws s3api head-bucket \
+            --profile pelagos \
+            --region eu-central-1 \
+            --bucket ${{ matrix.bucket.name }} \
+            2> /dev/null; then
+            aws s3api create-bucket \
+              --profile pelagos \
+              --region eu-central-1 \
+              --bucket ${{ matrix.bucket.name }} \
+              --acl public-read \
+              --create-bucket-configuration LocationConstraint=eu-central-1
+            aws s3 website \
+              --profile pelagos \
+              --region eu-central-1 \
+              --index-document index.html \
+              --error-document error.html \
+              s3://${{ matrix.bucket.name }}
+          fi
