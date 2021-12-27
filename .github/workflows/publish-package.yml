@@ -55,8 +55,8 @@ jobs:
         run: |
           mkdir -p ${HOME}/.aws
           echo [pelagos] >> ${HOME}/.aws/credentials
-          echo aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }} >> ${HOME}/.aws/credentials
-          echo aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }} >> ${HOME}/.aws/credentials
+          echo aws_access_key_id = ${{ secrets.OPS_AWS_ACCESS_KEY_ID }} >> ${HOME}/.aws/credentials
+          echo aws_secret_access_key = ${{ secrets.OPS_AWS_SECRET_ACCESS_KEY }} >> ${HOME}/.aws/credentials
       -
         run: |
           if ! aws s3api head-bucket \
