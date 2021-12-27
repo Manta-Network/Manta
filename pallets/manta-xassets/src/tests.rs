@@ -16,7 +16,7 @@
 
 use crate as manta_xassets;
 use crate::mock::*;
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, traits::Currency};
 use manta_primitives::currency_id::{CurrencyId, TokenSymbol};
 use xcm_simulator::TestExt;
 
@@ -34,13 +34,14 @@ fn send_para_tokens_to_sibling_para() {
 			currency_id,
 			amount
 		));
-		// assert_eq!(manta_xassets::Pallet::<parachain::Runtime>::xtokens(currency_id, ALICE), 1_000);
+		assert_eq!(pallet_balances::Pallet::<parachain::Runtime>::free_balance(ALICE), INITIAL_BALANCE - amount);
+		assert_eq!(pallet_balances::Pallet::<parachain::Runtime>::total_issuance(), INITIAL_BALANCE);
 	});
 
 	CalamariPara::execute_with(|| {
 		assert_eq!(
-			manta_xassets::Pallet::<parachain::Runtime>::xtokens(currency_id, BOB),
-			1_000
+			pallet_balances::Pallet::<parachain::Runtime>::free_balance(BOB),
+			amount
 		);
 	});
 }

@@ -164,12 +164,11 @@ pub mod pallet {
 			// create sibling parachain target
 			let xcm_target = T::Conversion::convert(dest);
 
-			// let receiver_chain = Junctions::X1(Junction::Parachain(para_id.into())).into();
-			let receiver_chain = Junctions::X1(Junction::AccountId32 {
-				network: NetworkId::Any,
-				id: para_id.into_account()
-			})
-			.into();
+			let dest_junc = Junctions::X1(Junction::Parachain(para_id.into()));
+			let destination = MultiLocation {
+				parents: 1, // must be 1, no idea, will figure it out
+				interior: dest_junc
+			};
 
 			let amount = amount.saturated_into::<u128>();
 			let para_id = para_id.saturated_into::<u32>();
@@ -186,15 +185,15 @@ pub mod pallet {
 				fun: fungibility,
 			};
 			// Todo, handle weight_limit
-			let beneficiary = xcm_target;
+			let mut beneficiary = xcm_target;
+			beneficiary.parents = 1;
 
 			let mut xcm = XcmV2(vec![
 				Instruction::WithdrawAsset(MultiAssets::from(vec![multi_asset.clone()])),
 				Instruction::DepositReserveAsset {
 					assets: MultiAssetFilter::Wild(WildMultiAsset::All),
 					max_assets: 1,
-					// dest: multi_location.clone(),
-					dest: receiver_chain,
+					dest: destination.into(),
 					xcm: XcmV2(vec![
 						Instruction::BuyExecution {
 							fees: multi_asset,
