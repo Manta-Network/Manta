@@ -80,7 +80,7 @@ jobs:
           if [ -n "${{ matrix.repo.generator.config.target }}" ]; then
             mkdir -p $(dirname ${{ github.workspace }}/${{ matrix.repo.name }}/${{ matrix.repo.generator.config.target }})
             curl \
-              -Lo $(dirname ${{ github.workspace }}/${{ matrix.repo.name }}/${{ matrix.repo.generator.config.target }}) \
+              -Lo ${{ github.workspace }}/${{ matrix.repo.name }}/${{ matrix.repo.generator.config.target }} \
               ${{ matrix.repo.generator.config.source }}
           fi
           # todo: pull from release
