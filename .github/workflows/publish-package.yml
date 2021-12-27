@@ -77,11 +77,11 @@ jobs:
             --region eu-central-1 \
             s3://${{ matrix.repo.name }} \
             ${{ github.workspace }}/${{ matrix.repo.name }}
-          if [ -n "${{ matrix.repo.config.target }}" ]; then
-            mkdir -p $(dirname ${{ github.workspace }}/${{ matrix.repo.name }}/${{ matrix.repo.config.target }})
+          if [ -n "${{ matrix.repo.generator.config.target }}" ]; then
+            mkdir -p $(dirname ${{ github.workspace }}/${{ matrix.repo.name }}/${{ matrix.repo.generator.config.target }})
             curl \
-              -Lo $(dirname ${{ github.workspace }}/${{ matrix.repo.name }}/${{ matrix.repo.config.target }}) \
-              ${{ matrix.repo.config.source }}
+              -Lo $(dirname ${{ github.workspace }}/${{ matrix.repo.name }}/${{ matrix.repo.generator.config.target }}) \
+              ${{ matrix.repo.generator.config.source }}
           fi
           # todo: pull from release
           curl -Lo ${{ github.workspace }}/manta_3.1.1_amd64.deb https://manta-ops.s3.amazonaws.com/deb/tmp/manta_3.1.1_amd64.deb
