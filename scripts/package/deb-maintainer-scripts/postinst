@@ -1,0 +1,21 @@
+#!/bin/sh
+
+set -e
+
+action="$1"
+config_file="/etc/default/manta"
+
+if [ "$action" = "configure" ]; then
+  # Make user and group
+  getent group manta >/dev/null 2>&1 || addgroup \
+    --system manta
+  getent passwd manta >/dev/null 2>&1 || adduser \
+    --system \
+    --home /home/manta \
+    --disabled-password \
+    --ingroup manta \
+    manta
+  if [ ! -e "$config_file" ]; then
+    echo 'MANTA_CLI_ARGS=""' > /etc/default/manta
+  fi
+fi

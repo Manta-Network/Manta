@@ -11,6 +11,52 @@
 
 Manta is a privacy preserving DeFi stack on Polkadot/Substrate. The code currently hasn't been properly security audited (work in progress), use it at your own risk. 
 
+## Install Manta/Calamari Node
+
+If you just wish to run a Manta node without compiling it yourself, you may
+either run the latest binary from our
+[releases](https://github.com/Manta-Network/Manta/releases) page, or install
+Manta from one of our package repositories.
+
+Installation from the debian or rpm repositories will create a `systemd`
+service that can be used to run a Manta/Calamari Parachain node. This is disabled by default,
+and can be started by running `systemctl start manta` on demand (use
+`systemctl enable manta` to make it auto-start after reboot). By default, it
+will run as the `manta` user.  Command-line flags passed to the binary can
+be customised by editing `/etc/default/manta`. This file will not be
+overwritten on updating manta. You may also just run the node directly from
+the command-line.
+
+### Debian-based (Debian, Ubuntu)
+
+Currently supports Debian 10 (Buster) and Ubuntu 20.04 (Focal), and
+derivatives. Run the following commands as the `root` user.
+
+```
+# Import the security@manta.network GPG key
+gpg --recv-keys --keyserver hkps://keys.mailvelope.com C9C4E2EEF4FE07264C5FE9F1D593CC9274BFD23D
+gpg --export C9C4E2EEF4FE07264C5FE9F1D593CC9274BFD23D > /usr/share/keyrings/manta.gpg
+# Add the Manta repository and update the package index
+echo 'deb [signed-by=/usr/share/keyrings/manta.gpg] https://packages.manta.systems/deb release main' > /etc/apt/sources.list.d/manta.list
+apt update
+# Install manta
+apt install manta
+```
+
+### RPM-based (Fedora, CentOS)
+Currently supports Fedora 35 and CentOS 8, and derivatives.
+
+```
+# Install dnf-plugins-core (This might already be installed)
+dnf install dnf-plugins-core
+# Add the repository and enable it
+dnf config-manager --add-repo https://packages.manta.systems/rpm/manta.repo
+dnf config-manager --set-enabled manta
+# Install manta (You may have to confirm the import of the GPG key, which
+# should have the following fingerprint: C9C4E2EEF4FE07264C5FE9F1D593CC9274BFD23D)
+dnf install manta
+```
+
 ## Build Manta/Calamari Node
 ```
 ./scripts/init.sh

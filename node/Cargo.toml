@@ -1,13 +1,14 @@
 [package]
 authors = ['Manta Network']
 build = 'build.rs'
-description = 'Manta Parachain Node.'
+description = 'Implementation of a https://manta.network parachain node in Rust based on the Substrate framework.'
 edition = '2021'
 homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'manta'
 repository = 'https://github.com/Manta-Network/Manta/'
 version = '3.1.1'
+readme = '../README.md'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -95,3 +96,34 @@ runtime-benchmarks = [
 	'polkadot-service/runtime-benchmarks',
 	'manta-runtime/runtime-benchmarks',
 ]
+
+# Configuration for building a .deb package - for use with `cargo-deb`
+[package.metadata.deb]
+name = 'manta'
+extended-description = 'Implementation of a https://manta.network parachain node in Rust based on the Substrate framework.'
+section = 'misc'
+maintainer = 'rob@manta.network'
+license-file = ['../LICENSE', '0']
+# https://www.debian.org/doc/debian-policy/ch-maintainerscripts.html
+maintainer-scripts = '../scripts/package/deb-maintainer-scripts'
+assets = [
+	['../target/release/manta', '/usr/bin/', '755'],
+	['../scripts/package/manta.service', '/lib/systemd/system/', '644']
+]
+conf-files = [
+	'/etc/default/manta'
+]
+
+# Configuration for building an .rpm package - for use with `cargo-rpm`
+[package.metadata.rpm]
+package = 'manta'
+
+[package.metadata.rpm.cargo]
+buildflags = ['--release']
+
+[package.metadata.rpm.targets]
+manta = { path = '/usr/bin/manta' }
+
+[package.metadata.rpm.files]
+'../../scripts/package/manta.service' = { path = '/usr/lib/systemd/system/manta.service', mode = '644' }
+'../../scripts/package/manta.env' = { path = '/etc/default/manta', mode = '644' }
