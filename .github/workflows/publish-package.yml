@@ -95,3 +95,9 @@ jobs:
           # todo: pull from release
           curl -Lo ${{ github.workspace }}/manta_3.1.1_amd64.deb https://manta-ops.s3.amazonaws.com/deb/tmp/manta_3.1.1_amd64.deb
           reprepro -b ${{ github.workspace }}/${{ matrix.repo.name }}/ includedeb focal ${{ github.workspace }}/manta_3.1.1_amd64.deb
+          aws s3 sync \
+            --profile pelagos \
+            --region eu-central-1 \
+            --delete \
+            ${{ github.workspace }}/${{ matrix.repo.name }} \
+            s3://${{ matrix.repo.name }}
