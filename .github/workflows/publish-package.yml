@@ -28,8 +28,8 @@ jobs:
           -
             name: rpm.manta.systems
             generator:
-              package: createrepo
-              command: createrepo
+              package: createrepo-c
+              command: createrepo_c
     steps:
       -
         name: install dependencies
