@@ -16,11 +16,20 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        bucket:
+        repo:
           -
             name: deb.manta.systems
+            generator:
+              package: reprepro
+              command: reprepro
+              config:
+                source: https://raw.githubusercontent.com/Manta-Network/Manta/deb-rpm/scripts/package/deb-maintainer-scripts/distributions
+                target: conf/distributions
           -
             name: rpm.manta.systems
+            generator:
+              package: createrepo
+              command: createrepo
     steps:
       -
         name: install dependencies
@@ -31,11 +40,16 @@ jobs:
           sudo apt-get install -y pass
           sudo apt-get install -y expect
           sudo apt-get install -y gpg
+          sudo apt-get install -y ${{ matrix.repo.generator.package }}
+
           pip3 install awscli --upgrade --user
           pip3 install yq --upgrade --user
+
           sudo mkdir -p /usr/local/bin
           sudo curl -sL -o /usr/local/bin/discord https://raw.githubusercontent.com/ChaoticWeg/discord.sh/59cab0c/discord.sh
           sudo chmod +x /usr/local/bin/discord
+
+          
       -
         name: configure aws
         run: |
@@ -48,18 +62,23 @@ jobs:
           if ! aws s3api head-bucket \
             --profile pelagos \
             --region eu-central-1 \
-            --bucket ${{ matrix.bucket.name }} \
+            --bucket ${{ matrix.repo.name }} \
             2> /dev/null; then
             aws s3api create-bucket \
               --profile pelagos \
               --region eu-central-1 \
-              --bucket ${{ matrix.bucket.name }} \
+              --bucket ${{ matrix.repo.name }} \
               --acl public-read \
               --create-bucket-configuration LocationConstraint=eu-central-1
-            aws s3 website \
-              --profile pelagos \
-              --region eu-central-1 \
-              --index-document index.html \
-              --error-document error.html \
-              s3://${{ matrix.bucket.name }}
+          fi
+          aws s3 sync \
+            --profile pelagos \
+            --region eu-central-1 \
+            s3://${{ matrix.repo.name }} \
+            ${{ github.workspace }}/${{ matrix.repo.name }}
+          if [ -n "${{ matrix.repo.config.target }}" ]; then
+            mkdir -p $(dirname ${{ github.workspace }}/${{ matrix.repo.name }}/${{ matrix.repo.config.target }})
+            curl \
+              -Lo $(dirname ${{ github.workspace }}/${{ matrix.repo.name }}/${{ matrix.repo.config.target }}) \
+              ${{ matrix.repo.config.source }}
           fi

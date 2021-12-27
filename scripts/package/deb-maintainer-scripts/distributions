@@ -1,0 +1,7 @@
+Origin: deb.manta.systems
+Label: deb.manta.systems
+Codename: focal
+Architectures: amd64 source
+Components: main
+Description: Manta/Calamari Parachain Node
+SignWith: C9C4E2EEF4FE07264C5FE9F1D593CC9274BFD23D
