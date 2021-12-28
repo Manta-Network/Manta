@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'calamari-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '3.1.1'
+version = '3.1.2'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive", "max-encoded-len"] }
@@ -64,7 +64,6 @@ cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', 
 cumulus-pallet-session-benchmarking = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, optional = true, branch = "polkadot-v0.9.13" }
 cumulus-pallet-xcmp-queue = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.13" }
 cumulus-pallet-xcm = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.13" }
-pallet-collator-selection = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.13" }
 parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.13" }
 
 # Polkadot dependencies
@@ -79,6 +78,7 @@ pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-featu
 # Self dependencies
 manta-primitives = { path = '../primitives', default-features = false }
 calamari-vesting = { path = '../../pallets/vesting', default-features = false }
+manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
 pallet-tx-pause = { path = '../../pallets/pallet-tx-pause', default-features = false }
 
 [package.metadata.docs.rs]
@@ -107,7 +107,7 @@ runtime-benchmarks = [
 	'pallet-utility/runtime-benchmarks',
 	'pallet-timestamp/runtime-benchmarks',
 	'pallet-xcm/runtime-benchmarks',
-	'pallet-collator-selection/runtime-benchmarks',
+	'manta-collator-selection/runtime-benchmarks',
 	'pallet-collective/runtime-benchmarks',
 	'pallet-democracy/runtime-benchmarks',
 	'pallet-scheduler/runtime-benchmarks',
@@ -165,7 +165,7 @@ std = [
 	'xcm-executor/std',
 	'polkadot-runtime-common/std',
 	'polkadot-primitives/std',
-	'pallet-collator-selection/std',
+	'manta-collator-selection/std',
 	'calamari-vesting/std',
 	'pallet-tx-pause/std',
 ]
