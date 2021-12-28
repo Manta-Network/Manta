@@ -53,6 +53,7 @@ pallet-collective = { git = "https://github.com/paritytech/substrate.git", defau
 pallet-democracy = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.13" }
 pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.13" }
 pallet-membership = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.13" }
+pallet-treasury = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.13" }
 
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.13" }
@@ -114,6 +115,7 @@ runtime-benchmarks = [
 	'pallet-membership/runtime-benchmarks',
 	'calamari-vesting/runtime-benchmarks',
 	'pallet-tx-pause/runtime-benchmarks',
+	'pallet-treasury/runtime-benchmarks',
 ]
 std = [
 	'codec/std',
@@ -168,4 +170,5 @@ std = [
 	'pallet-collator-selection/std',
 	'calamari-vesting/std',
 	'pallet-tx-pause/std',
+	'pallet-treasury/std',
 ]
