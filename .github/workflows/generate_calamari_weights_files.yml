@@ -200,6 +200,14 @@ jobs:
               id: pallet_timestamp
               name: pallet_timestamp
             iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_treasury
+            pallet:
+              id: pallet_treasury
+              name: pallet_trasury
+            iterations: 20
     steps:
       -
         uses: actions/download-artifact@v2
