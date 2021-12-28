@@ -206,7 +206,7 @@ jobs:
               name: pallet_treasury
             pallet:
               id: pallet_treasury
-              name: pallet_trasury
+              name: pallet_treasury
             iterations: 20
     steps:
       -

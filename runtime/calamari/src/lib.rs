@@ -517,7 +517,7 @@ impl pallet_treasury::Config for Runtime {
 	type Burn = Burn;
 	type BurnDestination = ();
 	type MaxApprovals = MaxApprovals;
-	type WeightInfo = weights::pallet_treasury::WeightInfo<Runtime>;
+	type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
 	type SpendFunds = ();
 }
 
