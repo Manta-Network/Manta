@@ -2,6 +2,23 @@
 
 ## Pending
 
+## v3.1.1
+### Breaking changes
+
+### Features
+- [\#275](https://github.com/Manta-Network/Manta/pull/275) Deposit all TX fees to block authors.
+
+### Improvements
+- [\#280](https://github.com/Manta-Network/Manta/pull/280) Update README.md
+- [\#283](https://github.com/Manta-Network/Manta/pull/283) CI runtime upgrade test for manta parachain.
+- [\#288](https://github.com/Manta-Network/Manta/pull/288) Update PR template.
+- [\#294](https://github.com/Manta-Network/Manta/pull/294) Integrate `v0.9.13` upstream changes.
+- [\#296](https://github.com/Manta-Network/Manta/pull/296) Adjust `weight_2_fee` calculation to increase TX fees and improve DDoS protection.
+
+### Bug fixes
+- [\#284](https://github.com/Manta-Network/Manta/pull/284) Unfilter utility for batched token transfer.
+- [\#302](https://github.com/Manta-Network/Manta/pull/302) Better CI runtime upgrade test success criteria.
+
 ## v3.1.0
 ### Breaking changes
 
