@@ -227,9 +227,9 @@ impl Contains<Call> for BaseFilter {
 			| Call::CalamariVesting(_)
 			| Call::CollatorSelection(
 				manta_collator_selection::Call::set_invulnerables{..}
-				| manta_collator_selection::Call::set_desired_candidates{..})
-				| manta_collator_selection::Call::set_candidacy_bond{..})
-				| manta_collator_selection::Call::register_candidate{..})
+				| manta_collator_selection::Call::set_desired_candidates{..}
+				| manta_collator_selection::Call::set_candidacy_bond{..}
+				| manta_collator_selection::Call::register_candidate{..}
 				| manta_collator_selection::Call::remove_collator{..})
 			| Call::Balances(_)
 			| Call::Utility(_) => true,
