@@ -7,4 +7,14 @@ members = [
 ]
 
 [profile.release]
-panic = "unwind"
+lto = true
+codegen-units = 1
+
+[profile.bench]
+lto = true
+opt-level = 3
+codegen-units = 1
+debug = false
+
+[profile.test]
+debug = true
