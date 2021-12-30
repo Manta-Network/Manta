@@ -114,7 +114,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_version: 3110,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 2,
+	transaction_version: 3,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -226,8 +226,11 @@ impl Contains<Call> for BaseFilter {
 			| Call::Scheduler(_)
 			| Call::CalamariVesting(_)
 			| Call::CollatorSelection(
-				manta_collator_selection::Call::register_as_candidate{..}
-				| manta_collator_selection::Call::leave_intent{..})
+				manta_collator_selection::Call::set_invulnerables{..}
+				| manta_collator_selection::Call::set_desired_candidates{..})
+				| manta_collator_selection::Call::set_candidacy_bond{..})
+				| manta_collator_selection::Call::register_candidate{..})
+				| manta_collator_selection::Call::remove_collator{..})
 			| Call::Balances(_)
 			| Call::Utility(_) => true,
 			_ => false,
