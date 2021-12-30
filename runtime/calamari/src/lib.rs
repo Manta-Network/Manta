@@ -225,6 +225,7 @@ impl Contains<Call> for BaseFilter {
 			| Call::TechnicalMembership(_)
 			| Call::Scheduler(_)
 			| Call::CalamariVesting(_)
+			| Call::Session(_)
 			| Call::CollatorSelection(
 				manta_collator_selection::Call::set_invulnerables{..}
 				| manta_collator_selection::Call::set_desired_candidates{..}
