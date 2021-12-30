@@ -363,8 +363,8 @@ pub mod pallet {
 
 			let current_count =
 				<Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
-					if candidates.into_iter().any(|candidate| candidate.who == who) {
-						Err(Error::<T>::AlreadyCandidate)?
+					if candidates.iter_mut().any(|candidate| candidate.who == who) {
+						Err(Error::<T>::AlreadyCandidate.into())
 					} else {
 						T::Currency::reserve(&who, deposit)?;
 						candidates.push(incoming);
@@ -380,7 +380,7 @@ pub mod pallet {
 			Ok(Some(T::WeightInfo::register_as_candidate(current_count as u32)).into())
 		}
 
-		#[pallet::weight(T::WeightInfo::register_as_candidate(T::MaxCandidates::get()))]
+		#[pallet::weight(T::WeightInfo::register_candidate(T::MaxCandidates::get()))]
 		pub fn register_candidate(
 			origin: OriginFor<T>,
 			who: T::AccountId,
@@ -414,8 +414,8 @@ pub mod pallet {
 
 			let current_count =
 				<Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
-					if candidates.into_iter().any(|candidate| candidate.who == who) {
-						Err(Error::<T>::AlreadyCandidate)?
+					if candidates.iter_mut().any(|candidate| candidate.who == who) {
+						Err(Error::<T>::AlreadyCandidate.into())
 					} else {
 						T::Currency::reserve(&who, deposit)?;
 						candidates.push(incoming);
@@ -428,7 +428,7 @@ pub mod pallet {
 				})?;
 
 			Self::deposit_event(Event::CandidateAdded(who, deposit));
-			Ok(Some(T::WeightInfo::register_as_candidate(current_count as u32)).into())
+			Ok(Some(T::WeightInfo::register_candidate(current_count as u32)).into())
 		}
 
 		#[pallet::weight(T::WeightInfo::leave_intent(T::MaxCandidates::get()))]
@@ -443,7 +443,7 @@ pub mod pallet {
 			Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
 		}
 
-		#[pallet::weight(T::WeightInfo::leave_intent(T::MaxCandidates::get()))]
+		#[pallet::weight(T::WeightInfo::remove_collator(T::MaxCandidates::get()))]
 		pub fn remove_collator(
 			origin: OriginFor<T>,
 			collator: T::AccountId,
@@ -458,7 +458,7 @@ pub mod pallet {
 
 			let current_count = Self::try_remove_candidate(&collator)?;
 
-			Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
+			Ok(Some(T::WeightInfo::remove_collator(current_count as u32)).into())
 		}
 	}
 
@@ -476,7 +476,7 @@ pub mod pallet {
 						.iter()
 						.position(|candidate| candidate.who == *who)
 						.ok_or(Error::<T>::NotCandidate)?;
-					T::Currency::unreserve(&who, candidates[index].deposit);
+					T::Currency::unreserve(who, candidates[index].deposit);
 					candidates.remove(index);
 					<LastAuthoredBlock<T>>::remove(who.clone());
 					Ok(candidates.len())
@@ -499,7 +499,7 @@ pub mod pallet {
 		) -> Vec<T::AccountId> {
 			let now = frame_system::Pallet::<T>::block_number();
 			let kick_threshold = T::KickThreshold::get();
-			let new_candidates = candidates
+			candidates
 				.into_iter()
 				.filter_map(|c| {
 					let last_block = <LastAuthoredBlock<T>>::get(c.who.clone());
@@ -517,8 +517,7 @@ pub mod pallet {
 						None
 					}
 				})
-				.collect::<Vec<_>>();
-			new_candidates
+				.collect::<Vec<_>>()
 		}
 	}
 

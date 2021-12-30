@@ -89,7 +89,7 @@ fn register_validators<T: Config + session::Config>(count: u32) {
 	let validators = (0..count).map(|c| validator::<T>(c)).collect::<Vec<_>>();
 
 	for (who, keys) in validators {
-		<session::Module<T>>::set_keys(RawOrigin::Signed(who).into(), keys, Vec::new()).unwrap();
+		<session::Pallet<T>>::set_keys(RawOrigin::Signed(who).into(), keys, Vec::new()).unwrap();
 	}
 }
 
@@ -188,6 +188,58 @@ benchmarks! {
 	}: _(RawOrigin::Signed(leaving.clone()))
 	verify {
 		assert_last_event::<T>(Event::CandidateRemoved(leaving).into());
+	}
+
+	// worse case is the last candidate leaving.
+	remove_collator {
+		let c in (T::MinCandidates::get() + 1) .. T::MaxCandidates::get();
+		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
+		<DesiredCandidates<T>>::put(c);
+
+		register_validators::<T>(c);
+		register_candidates::<T>(c);
+
+		let leaving = <Candidates<T>>::get().last().unwrap().who.clone();
+		whitelist!(leaving);
+		let origin = T::UpdateOrigin::successful_origin();
+	}: {
+		assert_ok!(
+			<CollatorSelection<T>>::remove_collator(origin, leaving.clone())
+		);
+	}
+	verify {
+		assert_last_event::<T>(Event::CandidateRemoved(leaving).into());
+	}
+
+	// worse case is when we have all the max-candidate slots filled except one, and we fill that
+	// one.
+	register_candidate {
+		let c in 1 .. T::MaxCandidates::get();
+
+		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
+		<DesiredCandidates<T>>::put(c + 1);
+
+		register_validators::<T>(c);
+		register_candidates::<T>(c);
+
+		let caller: T::AccountId = whitelisted_caller();
+		let bond: BalanceOf<T> = T::Currency::minimum_balance() * 2u32.into();
+		T::Currency::make_free_balance_be(&caller, bond.clone());
+
+		<session::Pallet<T>>::set_keys(
+			RawOrigin::Signed(caller.clone()).into(),
+			keys::<T>(c + 1),
+			Vec::new()
+		).unwrap();
+
+		let origin = T::UpdateOrigin::successful_origin();
+	}: {
+		assert_ok!(
+			<CollatorSelection<T>>::register_candidate(origin, caller.clone())
+		);
+	}
+	verify {
+		assert_last_event::<T>(Event::CandidateAdded(caller, bond / 2u32.into()).into());
 	}
 
 	// worse case is paying a non-existing candidate account.
