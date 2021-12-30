@@ -29,31 +29,34 @@ the command-line.
 
 ### Debian-based (Debian, Ubuntu)
 
-Currently supports Debian 10 (Buster) and Ubuntu 20.04 (Focal), and
-derivatives. Run the following commands as the `root` user.
+Currently supports Ubuntu 20.04 (Focal), and derivatives.
+
+Run the following commands as the `root` user.
 
 ```
 # Import the security@manta.network GPG key
 gpg --recv-keys --keyserver hkps://keys.mailvelope.com C9C4E2EEF4FE07264C5FE9F1D593CC9274BFD23D
 gpg --export C9C4E2EEF4FE07264C5FE9F1D593CC9274BFD23D > /usr/share/keyrings/manta.gpg
 # Add the Manta repository and update the package index
-echo 'deb [signed-by=/usr/share/keyrings/manta.gpg] https://packages.manta.systems/deb release main' > /etc/apt/sources.list.d/manta.list
+echo 'deb [signed-by=/usr/share/keyrings/manta.gpg] https://deb.manta.systems release main' > /etc/apt/sources.list.d/manta.list
 apt update
 # Install manta
 apt install manta
 ```
 
 ### RPM-based (Fedora, CentOS)
-Currently supports Fedora 35 and CentOS 8, and derivatives.
+Currently supports Fedora 35 and derivatives.
+
+Run the following commands as the `root` user.
 
 ```
 # Install dnf-plugins-core (This might already be installed)
 dnf install dnf-plugins-core
 # Add the repository and enable it
-dnf config-manager --add-repo https://packages.manta.systems/rpm/manta.repo
+dnf config-manager --add-repo https://rpm.manta.systems/manta.repo
 dnf config-manager --set-enabled manta
 # Install manta (You may have to confirm the import of the GPG key, which
-# should have the following fingerprint: C9C4E2EEF4FE07264C5FE9F1D593CC9274BFD23D)
+# should have the fingerprint: C9C4E2EEF4FE07264C5FE9F1D593CC9274BFD23D)
 dnf install manta
 ```
 

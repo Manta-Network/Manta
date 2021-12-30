@@ -30,7 +30,9 @@ cp -a * %{buildroot}
 
 %post
 config_file="/etc/default/manta"
-getent group manta >/dev/null || groupadd -r manta
+getent group manta >/dev/null || \
+    groupadd \
+        -r manta
 getent passwd manta >/dev/null || \
     useradd \
         -r \
