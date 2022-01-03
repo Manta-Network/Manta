@@ -1,6 +1,6 @@
 %define debug_package %{nil}
 
-Name: manta
+Name: Manta
 Summary: Implementation of a https://manta.network node in Rust based on the Substrate framework.
 Version: @@VERSION@@
 Release: @@RELEASE@@%{?dist}
