@@ -1,0 +1,69 @@
+---
+
+# yamllint disable rule:line-length
+
+name: publish rpm package
+# yamllint disable-line rule:truthy
+on:
+  release:
+    types:
+      - published
+jobs:
+  publish:
+    runs-on: ubuntu-20.04
+    env:
+      pkg_contents: ${{ github.workspace }}/contents
+      rpmbuild: ${{ env.HOME }}/rpmbuild
+      git_repo: ${{ github.workspace }}/repo
+      GITHUB_REF_NAME: ${{ github.event.release.tag_name }}
+    steps:
+      -
+        uses: actions/checkout@v2
+        with:
+          path: repo
+      -
+        name: install packaging dependencies
+        run: >
+          sudo apt-get install -y rpm
+      -
+        name: prepare package contents
+        run: >
+          mkdir -p ${pkg_contents}/{etc/default,usr/{bin,lib/systemd/system,share/substrate}}
+          mkdir -p ${rpmbuild}/{SOURCES,SPECS}
+
+          cp \
+            ${git_repo}/scripts/package/manta.env \
+            ${pkg_contents}/etc/default/manta
+          cp \
+            ${git_repo}/scripts/package/manta.service \
+            ${pkg_contents}/usr/lib/systemd/system/manta.service
+          cp \
+            ${git_repo}/node/.rpm/manta.spec \
+            ${rpmbuild}/SPECS/manta.spec
+
+          curl \
+            -Lo ${pkg_contents}/usr/bin/manta \
+            ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/manta
+          curl \
+            -Lo ${rpmbuild}/SOURCES/${GITHUB_REPOSITORY##*/}-${GITHUB_REF_NAME:1}.tar.gz \
+            ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME:1}.tar.gz
+
+          for relay in kusama polkadot; do
+            curl \
+              -Lo ${pkg_contents}/usr/share/substrate/${relay}.json \
+              https://raw.githubusercontent.com/paritytech/polkadot/master/node/service/res/${relay}.json
+          done
+
+          for para in calamari manta; do
+            curl \
+              -Lo ${pkg_contents}/usr/share/substrate/${para}.json \
+              https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/manta/genesis/${para}-genesis.json
+          done
+
+          sed -i "s/@@VERSION@@/${GITHUB_REF_NAME:1}/" ${rpmbuild}/SPECS/manta.spec
+          sed -i "s/@@RELEASE@@/1/" ${rpmbuild}/SPECS/manta.spec
+      -
+        name: build package
+        run: >
+          cd ${pkg_contents}
+          rpmbuild --build-in-place -ba ${rpmbuild}/SPECS/manta.spec

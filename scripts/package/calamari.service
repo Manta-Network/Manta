@@ -1,10 +1,10 @@
 [Unit]
-Description=Manta Parachain Node
+Description=Calamari Parachain Node
 After=network.target
 
 [Service]
-EnvironmentFile=/etc/default/manta
-ExecStart=/usr/bin/manta \
+EnvironmentFile=/etc/default/calamari
+ExecStart=/usr/bin/calamari \
   ${sn_para_flags} \
   --name ${sn_name} \
   --chain ${sn_para_spec} \
