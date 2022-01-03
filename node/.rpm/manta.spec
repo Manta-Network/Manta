@@ -27,7 +27,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 rm -rf %{buildroot}
 mkdir -p %{buildroot}
 cp -a * %{buildroot}
-ln -sf /usr/bin/manta %{buildroot}/usr/bin/calamari
+ln --relative --symbolic /usr/bin/manta %{buildroot}/usr/bin/calamari
 
 %post
 config_file="/etc/default/manta"
