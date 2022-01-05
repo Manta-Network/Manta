@@ -492,13 +492,13 @@ parameter_types! {
 	pub const MaxApprovals: u32 = 100;
 }
 
-type TreasuryApproveOrigin = EnsureOneOf<
+type EnsureRootOrThreeFifthsCouncil = EnsureOneOf<
 	AccountId,
 	EnsureRoot<AccountId>,
 	pallet_collective::EnsureProportionAtLeast<_3, _5, AccountId, CouncilCollective>,
 >;
 
-type TreasuryRejectOrigin = EnsureOneOf<
+type EnsureRootOrMoreThanHalfCouncil = EnsureOneOf<
 	AccountId,
 	EnsureRoot<AccountId>,
 	pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>,
@@ -507,8 +507,8 @@ type TreasuryRejectOrigin = EnsureOneOf<
 impl pallet_treasury::Config for Runtime {
 	type PalletId = TreasuryPalletId;
 	type Currency = Balances;
-	type ApproveOrigin = TreasuryApproveOrigin;
-	type RejectOrigin = TreasuryRejectOrigin;
+	type ApproveOrigin = EnsureRootOrThreeFifthsCouncil;
+	type RejectOrigin = EnsureRootOrMoreThanHalfCouncil;
 	type Event = Event;
 	type OnSlash = Treasury;
 	type ProposalBond = ProposalBond;
