@@ -84,7 +84,7 @@ jobs:
           CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
-          cargo build --verbose --release --features=runtime-benchmarks
+          CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose --features=runtime-benchmarks
       -
         name: stop sccache server
         run: sccache --stop-server || true
