@@ -119,6 +119,7 @@ fn cannot_register_candidate_if_too_many() {
 }
 
 #[test]
+#[ignore = "We don't need this test case any more due to MinCandidates removed."]
 fn cannot_unregister_candidate_if_too_few() {
 	new_test_ext().execute_with(|| {
 		// reset desired candidates:
@@ -362,6 +363,7 @@ fn kick_mechanism() {
 }
 
 #[test]
+#[ignore = "We don't need this test case any more due to MinCandidates removed."]
 fn should_not_kick_mechanism_too_few() {
 	new_test_ext().execute_with(|| {
 		// add a new collator

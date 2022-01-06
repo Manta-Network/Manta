@@ -747,7 +747,6 @@ parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
 	// How many collator candidates is allowed.
 	pub const MaxCandidates: u32 = 50;
-	pub const MinCandidates: u32 = 3;
 	// How many collators who cannot be slashed.
 	pub const MaxInvulnerables: u32 = 5;
 }
@@ -769,7 +768,6 @@ impl manta_collator_selection::Config for Runtime {
 	type UpdateOrigin = CollatorSelectionUpdateOrigin;
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
-	type MinCandidates = MinCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
 	// should be a multiple of session or things will get inconsistent
 	type KickThreshold = Period;

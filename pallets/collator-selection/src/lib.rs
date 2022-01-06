@@ -46,9 +46,6 @@
 //! The current implementation resolves congestion of [`Candidates`] in a first-come-first-serve
 //! manner.
 //!
-//! Candidates will not be allowed to get kicked or leave_intent if the total number of candidates
-//! fall below MinCandidates. This is for potential disaster recovery scenarios.
-//!
 //! ### Rewards
 //!
 //! The Collator Selection pallet maintains an on-chain account (the "Pot"). In each block, the
@@ -133,11 +130,6 @@ pub mod pallet {
 		///
 		/// This does not take into account the invulnerables.
 		type MaxCandidates: Get<u32>;
-
-		/// Minimum number of candidates that we should have. This is used for disaster recovery.
-		///
-		/// This does not take into account the invulnerables.
-		type MinCandidates: Get<u32>;
 
 		/// Maximum number of invulnerables.
 		///
@@ -451,11 +443,6 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::leave_intent(T::MaxCandidates::get()))]
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-			// Todo, need to discuss it later.
-			// ensure!(
-			// 	Self::candidates().len() as u32 > T::MinCandidates::get(),
-			// 	Error::<T>::TooFewCandidates
-			// );
 			let current_count = Self::try_remove_candidate(&who)?;
 
 			Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
@@ -525,9 +512,7 @@ pub mod pallet {
 				.filter_map(|c| {
 					let last_block = <LastAuthoredBlock<T>>::get(c.who.clone());
 					let since_last = now.saturating_sub(last_block);
-					if since_last < kick_threshold
-						|| Self::candidates().len() as u32 <= T::MinCandidates::get()
-					{
+					if since_last < kick_threshold {
 						Some(c.who)
 					} else {
 						let outcome = Self::try_remove_candidate(&c.who);
