@@ -196,7 +196,7 @@ pub fn devnet_genesis(
 		},
 		staking: StakingConfig {
 			validator_count: initial_authorities.len() as u32,
-			minimum_validator_count: initial_authorities.len() as u32,
+			minimum_validator_count: 3 as u32,
 			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
 			slash_reward_fraction: Perbill::from_percent(10),
 			stakers,
@@ -323,7 +323,7 @@ pub fn testnet_genesis(
 		},
 		staking: StakingConfig {
 			validator_count: initial_authorities.len() as u32,
-			minimum_validator_count: initial_authorities.len() as u32,
+			minimum_validator_count: 3 as u32,
 			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
 			slash_reward_fraction: Perbill::from_percent(10),
 			stakers: initial_authorities
