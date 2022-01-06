@@ -225,13 +225,16 @@ impl Contains<Call> for BaseFilter {
 			| Call::TechnicalMembership(_)
 			| Call::Scheduler(_)
 			| Call::CalamariVesting(_)
+			// We open pallet-session because user has to set his own session keys before register as collator.
 			| Call::Session(_)
+			// Currently, We filter `register_as_candidate` due to this call is not ready for community.
 			| Call::CollatorSelection(
 				manta_collator_selection::Call::set_invulnerables{..}
 				| manta_collator_selection::Call::set_desired_candidates{..}
 				| manta_collator_selection::Call::set_candidacy_bond{..}
 				| manta_collator_selection::Call::register_candidate{..}
-				| manta_collator_selection::Call::remove_collator{..})
+				| manta_collator_selection::Call::remove_collator{..}
+				| manta_collator_selection::Call::leave_intent{..})
 			| Call::Balances(_)
 			| Call::Utility(_) => true,
 			_ => false,

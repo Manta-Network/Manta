@@ -289,6 +289,9 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Set candidate collator as invulnerable.
+		///
+		/// `new`: candidate collator.
 		#[pallet::weight(T::WeightInfo::set_invulnerables(new.len() as u32))]
 		pub fn set_invulnerables(
 			origin: OriginFor<T>,
@@ -306,6 +309,9 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		/// Set how many candidate collator are allowed.
+		///
+		/// `max`: The max number of candidates.
 		#[pallet::weight(T::WeightInfo::set_desired_candidates())]
 		pub fn set_desired_candidates(
 			origin: OriginFor<T>,
@@ -321,6 +327,9 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		/// Set the amount held on reserved for candidate collator.
+		///
+		/// `bond`: The amount held on reserved.
 		#[pallet::weight(T::WeightInfo::set_candidacy_bond())]
 		pub fn set_candidacy_bond(
 			origin: OriginFor<T>,
@@ -332,6 +341,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		/// Register as candidate collator.
 		#[pallet::weight(T::WeightInfo::register_as_candidate(T::MaxCandidates::get()))]
 		pub fn register_as_candidate(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
@@ -380,10 +390,13 @@ pub mod pallet {
 			Ok(Some(T::WeightInfo::register_as_candidate(current_count as u32)).into())
 		}
 
+		/// Register an specified candidate as collator.
+		///
+		/// - `new_candidate`: Who is going to be collator.
 		#[pallet::weight(T::WeightInfo::register_candidate(T::MaxCandidates::get()))]
 		pub fn register_candidate(
 			origin: OriginFor<T>,
-			who: T::AccountId,
+			new_candidate: T::AccountId,
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
 
@@ -394,11 +407,11 @@ pub mod pallet {
 				Error::<T>::TooManyCandidates
 			);
 			ensure!(
-				!Self::invulnerables().contains(&who),
+				!Self::invulnerables().contains(&new_candidate),
 				Error::<T>::AlreadyInvulnerable
 			);
 
-			let validator_key = T::ValidatorIdOf::convert(who.clone())
+			let validator_key = T::ValidatorIdOf::convert(new_candidate.clone())
 				.ok_or(Error::<T>::NoAssociatedValidatorId)?;
 			ensure!(
 				T::ValidatorRegistration::is_registered(&validator_key),
@@ -408,41 +421,49 @@ pub mod pallet {
 			let deposit = Self::candidacy_bond();
 			// First authored block is current block plus kick threshold to handle session delay
 			let incoming = CandidateInfo {
-				who: who.clone(),
+				who: new_candidate.clone(),
 				deposit,
 			};
 
 			let current_count =
 				<Candidates<T>>::try_mutate(|candidates| -> Result<usize, DispatchError> {
-					if candidates.iter_mut().any(|candidate| candidate.who == who) {
+					if candidates
+						.iter_mut()
+						.any(|candidate| candidate.who == new_candidate)
+					{
 						Err(Error::<T>::AlreadyCandidate.into())
 					} else {
-						T::Currency::reserve(&who, deposit)?;
+						T::Currency::reserve(&new_candidate, deposit)?;
 						candidates.push(incoming);
 						<LastAuthoredBlock<T>>::insert(
-							who.clone(),
+							new_candidate.clone(),
 							frame_system::Pallet::<T>::block_number() + T::KickThreshold::get(),
 						);
 						Ok(candidates.len())
 					}
 				})?;
 
-			Self::deposit_event(Event::CandidateAdded(who, deposit));
+			Self::deposit_event(Event::CandidateAdded(new_candidate, deposit));
 			Ok(Some(T::WeightInfo::register_candidate(current_count as u32)).into())
 		}
 
+		/// Leave from collator set.
 		#[pallet::weight(T::WeightInfo::leave_intent(T::MaxCandidates::get()))]
 		pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-			ensure!(
-				Self::candidates().len() as u32 > T::MinCandidates::get(),
-				Error::<T>::TooFewCandidates
-			);
+			// Todo, need to discuss it later.
+			// ensure!(
+			// 	Self::candidates().len() as u32 > T::MinCandidates::get(),
+			// 	Error::<T>::TooFewCandidates
+			// );
 			let current_count = Self::try_remove_candidate(&who)?;
 
 			Ok(Some(T::WeightInfo::leave_intent(current_count as u32)).into())
 		}
 
+		/// Remove an specified collator.
+		///
+		/// - `collator`: Who is going to be remove from collators set.
 		#[pallet::weight(T::WeightInfo::remove_collator(T::MaxCandidates::get()))]
 		pub fn remove_collator(
 			origin: OriginFor<T>,
