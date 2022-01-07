@@ -222,7 +222,8 @@ impl Contains<Call> for BaseFilter {
 			| Call::TechnicalCommittee(_)
 			| Call::CouncilMembership(_)
 			| Call::TechnicalMembership(_)
-			| Call::Treasury(_)
+			// Treasury calls are filtered while it is accumulating funds.
+			//| Call::Treasury(_)
 			| Call::Scheduler(_)
 			| Call::CalamariVesting(_)
 			| Call::Balances(_)
@@ -857,7 +858,7 @@ construct_runtime!(
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
 
 		// Treasury
-		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 26,
+		Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,
 
 		// System scheduler.
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 29,
