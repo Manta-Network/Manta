@@ -285,7 +285,7 @@ impl pallet_authorship::Config for Runtime {
 }
 
 parameter_types! {
-	pub const NativeTokenExistentialDeposit: u128 = 2 * KMA;
+	pub const NativeTokenExistentialDeposit: u128 = 150 * cKMA;
 	pub const MaxLocks: u32 = 50;
 	pub const MaxReserves: u32 = 50;
 }
