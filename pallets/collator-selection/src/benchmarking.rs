@@ -176,7 +176,7 @@ benchmarks! {
 
 	// worse case is the last candidate leaving.
 	leave_intent {
-		let c in (T::MinCandidates::get() + 1) .. T::MaxCandidates::get();
+		let c in 1 .. T::MaxCandidates::get();
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c);
 
@@ -192,7 +192,7 @@ benchmarks! {
 
 	// worse case is the last candidate leaving.
 	remove_collator {
-		let c in (T::MinCandidates::get() + 1) .. T::MaxCandidates::get();
+		let c in 1 .. T::MaxCandidates::get();
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
 		<DesiredCandidates<T>>::put(c);
 
@@ -301,10 +301,8 @@ benchmarks! {
 	}: {
 		<CollatorSelection<T> as SessionManager<_>>::new_session(0)
 	} verify {
-		if c > r && non_removals >= T::MinCandidates::get() {
+		if c > r {
 			assert!(<Candidates<T>>::get().len() < pre_length);
-		} else if c > r && non_removals < T::MinCandidates::get() {
-			assert!(<Candidates<T>>::get().len() == T::MinCandidates::get() as usize);
 		} else {
 			assert!(<Candidates<T>>::get().len() == pre_length);
 		}
