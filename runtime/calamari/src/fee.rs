@@ -107,7 +107,6 @@ mod multiplier_tests {
 			.max_total
 			.unwrap() - 10;
 
-		// Default substrate weight. Not adjusted.
 		let base_fee = <Runtime as pallet_transaction_payment::Config>::WeightToFee::calc(
 			&frame_support::weights::constants::ExtrinsicBaseWeight::get(),
 		);
