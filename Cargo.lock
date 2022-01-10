@@ -899,7 +899,7 @@ checksum = "631ae5198c9be5e753e5cc215e1bd73c2b466a3565173db433f52bb9d3e66dba"
 
 [[package]]
 name = "calamari-runtime"
-version = "3.1.1"
+version = "3.1.2"
 dependencies = [
  "calamari-vesting",
  "cumulus-pallet-aura-ext",
@@ -920,11 +920,11 @@ dependencies = [
  "frame-try-runtime",
  "hex-literal",
  "log",
+ "manta-collator-selection",
  "manta-primitives",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
  "pallet-membership",
@@ -966,7 +966,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-vesting"
-version = "3.1.1"
+version = "3.1.2"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -4269,7 +4269,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "3.1.1"
+version = "3.1.2"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -4333,8 +4333,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "manta-collator-selection"
+version = "3.1.2"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-aura",
+ "pallet-authorship",
+ "pallet-balances",
+ "pallet-session",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "rand 0.7.3",
+ "scale-info",
+ "serde",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+ "sp-tracing",
+]
+
+[[package]]
 name = "manta-primitives"
-version = "3.1.1"
+version = "3.1.2"
 dependencies = [
  "parity-scale-codec",
  "smallvec",
@@ -4347,7 +4373,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "3.1.1"
+version = "3.1.2"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -5750,7 +5776,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "3.1.1"
+version = "3.1.2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",

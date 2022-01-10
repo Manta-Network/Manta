@@ -60,7 +60,7 @@ use sp_runtime::Perbill;
 pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
-use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
+use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 use xcm::latest::prelude::*;
@@ -114,7 +114,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_version: 3110,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 2,
+	transaction_version: 3,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -225,6 +225,16 @@ impl Contains<Call> for BaseFilter {
 			| Call::TechnicalMembership(_)
 			| Call::Scheduler(_)
 			| Call::CalamariVesting(_)
+			// We open pallet-session because user has to set his own session keys before register as collator.
+			| Call::Session(_)
+			// Currently, We filter `register_as_candidate` due to this call is not ready for community.
+			| Call::CollatorSelection(
+				manta_collator_selection::Call::set_invulnerables{..}
+				| manta_collator_selection::Call::set_desired_candidates{..}
+				| manta_collator_selection::Call::set_candidacy_bond{..}
+				| manta_collator_selection::Call::register_candidate{..}
+				| manta_collator_selection::Call::remove_collator{..}
+				| manta_collator_selection::Call::leave_intent{..})
 			| Call::Balances(_)
 			| Call::Utility(_) => true,
 			_ => false,
@@ -715,7 +725,7 @@ impl pallet_session::Config for Runtime {
 	type Event = Event;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	// we don't have stash and controller, thus we don't need the convert as well.
-	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
+	type ValidatorIdOf = manta_collator_selection::IdentityCollator;
 	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
 	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
 	type SessionManager = CollatorSelection;
@@ -737,7 +747,6 @@ parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
 	// How many collator candidates is allowed.
 	pub const MaxCandidates: u32 = 50;
-	pub const MinCandidates: u32 = 3;
 	// How many collators who cannot be slashed.
 	pub const MaxInvulnerables: u32 = 5;
 }
@@ -750,23 +759,22 @@ parameter_types! {
 pub type CollatorSelectionUpdateOrigin = EnsureOneOf<
 	AccountId,
 	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>,
+	pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>,
 >;
 
-impl pallet_collator_selection::Config for Runtime {
+impl manta_collator_selection::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
 	type UpdateOrigin = CollatorSelectionUpdateOrigin;
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
-	type MinCandidates = MinCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
 	// should be a multiple of session or things will get inconsistent
 	type KickThreshold = Period;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
-	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
+	type ValidatorIdOf = manta_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;
-	type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = manta_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 
 // Calamari pallets configuration
@@ -813,7 +821,7 @@ construct_runtime!(
 
 		// Collator support. the order of these 5 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
-		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
+		CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
@@ -1005,7 +1013,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
 			list_benchmark!(list, extra, pallet_utility, Utility);
-			list_benchmark!(list, extra, pallet_collator_selection, CollatorSelection);
+			list_benchmark!(list, extra, manta_collator_selection, CollatorSelection);
 			list_benchmark!(list, extra, pallet_democracy, Democracy);
 			list_benchmark!(list, extra, pallet_collective, Council);
 			list_benchmark!(list, extra, pallet_membership, CouncilMembership);
@@ -1052,7 +1060,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_utility, Utility);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
+			add_benchmark!(params, batches, manta_collator_selection, CollatorSelection);
 			add_benchmark!(params, batches, pallet_democracy, Democracy);
 			add_benchmark!(params, batches, pallet_collective, Council);
 			add_benchmark!(params, batches, pallet_membership, CouncilMembership);
