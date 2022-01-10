@@ -116,7 +116,7 @@ mod multiplier_tests {
 			let mut fee_adjustment = Multiplier::one();
 			assert_eq!(fee_adjustment, TransactionPayment::next_fee_multiplier());
 			let mut accumulated_fee: u128 = 0;
-			// Simulates 1 day of parachian blocks (12 seconds each)
+			// Simulates 1 day of parachain blocks (12 seconds each)
 			for iteration in 0..7200 {
 				let next = runtime_multiplier_update(fee_adjustment);
 				// if no change, panic. This should never happen in this case.
