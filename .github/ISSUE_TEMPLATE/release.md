@@ -5,8 +5,8 @@ title: Manta {{ SET_VERSION }} Release checklist
 ---
 # Release Checklist
 
-**All** following checks should be completed before publishing a new release of the
-Calamari/Manta runtime or client.
+Most of the following checks should be completed before officially publishing the new release
+of the Calamari/Manta runtime or client. Some need to be completed after the new code is deployed.
 
 ### Runtime Releases
 
@@ -95,9 +95,8 @@ as long as the indexes did not change.
 There are three benchmarking machines reserved for updating the weights at
 release-time. To initialise a benchmark run for each production runtime
 (calamari, manta):
-* Go to:
-  -[Calamari Benchmarking Github Action](https://github.com/Manta-Network/Manta/actions/workflows/generate_calamari_weights_files.yml)
-  -[Manta Benchmarking Github Action](https://github.com/Manta-Network/Manta/actions/workflows/generate_manta_weights_files.yml)
+* Go to [Calamari Benchmarking Github Action](https://github.com/Manta-Network/Manta/actions/workflows/generate_calamari_weights_files.yml) 
+  and [Manta Benchmarking Github Action](https://github.com/Manta-Network/Manta/actions/workflows/generate_manta_weights_files.yml)
 * Open "Run workflow" drop-down menu.
 * Choose your branch and run the workflow.
 * When these jobs have completed (it takes a few hours), custom weights files will
