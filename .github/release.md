@@ -1,0 +1,113 @@
+---
+name: Release issue template
+about: Tracking issue for new releases
+title: Manta {{ env.VERSION }} Release checklist
+---
+# Release Checklist
+
+This is the release checklist for Polkadot {{ env.VERSION }}. **All** following
+checks should be completed before publishing a new release of the
+Polkadot/Kusama/Westend runtime or client. The current release candidate can be
+checked out with `git checkout release-{{ env.VERSION }}`
+
+### Runtime Releases
+
+These checks should be performed on the codebase prior to forking to a release-
+candidate branch.
+
+- [ ] Verify [`spec_version`](#spec-version) has been incremented since the
+    last release for any native runtimes from any existing use on public
+    (non-private/test) networks. If the runtime was published (release or pre-release), either
+    the `spec_version` or `impl` must be bumped.
+- [ ] Verify pallet and [extrinsic ordering](#extrinsic-ordering) has stayed
+    the same. Bump `transaction_version` if not.
+- [ ] Verify new extrinsics have been correctly whitelisted/blacklisted for
+    [proxy filters](#proxy-filtering).
+- [ ] Verify [benchmarks](#benchmarks) have been updated for any modified
+    runtime logic.
+
+The following checks can be performed after we have forked off to the release branch.
+
+- [ ] Verify [new migrations](#new-migrations) complete successfully, and the
+    runtime state is correctly updated for any public (non-private/test)
+    networks.
+- [ ] Verify [Polkadot JS API](#polkadot-js) are up to date with the latest
+    runtime changes.
+- [ ] Push runtime upgrade to Baikal and verify network stability.
+
+### All Releases
+
+- [ ] Check that the new client versions have [run on the network](#burn-in)
+    without issue for 12 hours.
+- [ ] Check that a draft release has been created at
+    https://github.com/paritytech/polkadot/releases with relevant [release
+    notes](#release-notes)
+- [ ] Check that [build artifacts](#build-artifacts) have been added to the
+    draft-release
+
+## Notes
+
+### Burn In
+
+Ensure that Parity DevOps has run the new release on Como and Baikal nodes
+for at least 12 hours prior to publishing the release.
+
+### Release notes
+
+The release notes should list:
+
+- The priority of the release (i.e., how quickly users should upgrade) - this is
+    based on the max priority of any *client* changes.
+- Which native runtimes and their versions are included
+- The proposal hashes of the runtimes as built with
+    [srtool](https://gitlab.com/chevdor/srtool)
+- Any changes in this release that are still awaiting audit
+
+The release notes may also list:
+
+- Free text at the beginning of the notes mentioning anything important
+    regarding this release
+- Notable changes (those labelled with B[1-9]-* labels) separated into sections
+
+### Spec Version
+
+A runtime upgrade must bump the spec number. This may follow a pattern with the
+client release
+
+### Extrinsic Ordering
+
+Offline signing libraries depend on a consistent ordering of call indices and
+functions. Compare the metadata of the current and new runtimes and ensure that
+the `module index, call index` tuples map to the same set of functions. In case
+of a breaking change, increase `transaction_version`.
+
+To verify the order has not changed, you may manually start the following [Github Action](https://github.com/paritytech/polkadot/actions/workflows/extrinsic-ordering-check-from-bin.yml). It takes around a minute to run and will produce the report as artifact you need to manually check.
+
+The things to look for in the output are lines like:
+  - `[Identity] idx 28 -> 25 (calls 15)` - indicates the index for `Identity` has changed
+  - `[+] Society, Recovery` - indicates the new version includes 2 additional modules/pallets.
+  - If no indices have changed, every modules line should look something like `[Identity] idx 25 (calls 15)`
+
+Note: Adding new functions to the runtime does not constitute a breaking change
+as long as the indexes did not change.
+
+### Benchmarks
+
+There are three benchmarking machines reserved for updating the weights at
+release-time. To initialise a benchmark run for each production runtime
+(calamari, manta):
+* Go to:
+  -For Calamari: https://github.com/Manta-Network/Manta/actions/workflows/generate_calamari_weights_files.yml
+  -For Manta: https://github.com/Manta-Network/Manta/actions/workflows/generate_manta_weights_files.yml
+* Open "Run workflow" drop-down menu.
+* Choose your branch and run the workflow.
+* When these jobs have completed (it takes a few hours), custom weights files will
+    be available to download as artifacts. 
+* Commit the changes to your branch and push to the remote branch for review.
+* The weights should be (Currently manually) checked to make sure there are no
+    big outliers (i.e., twice or half the weight).
+
+### Polkadot JS
+
+Ensure that a release of [Polkadot JS API]() contains any new types or
+interfaces necessary to interact with the new runtime.
