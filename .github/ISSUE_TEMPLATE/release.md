@@ -1,14 +1,12 @@
 ---
 name: Release issue template
 about: Tracking issue for new releases
-title: Manta {{ env.VERSION }} Release checklist
+title: Manta {{ SET_VERSION }} Release checklist
 ---
 # Release Checklist
 
-This is the release checklist for Polkadot {{ env.VERSION }}. **All** following
-checks should be completed before publishing a new release of the
-Polkadot/Kusama/Westend runtime or client. The current release candidate can be
-checked out with `git checkout release-{{ env.VERSION }}`
+**All** following checks should be completed before publishing a new release of the
+Calamari/Manta runtime or client.
 
 ### Runtime Releases
 
@@ -21,8 +19,7 @@ candidate branch.
     the `spec_version` or `impl` must be bumped.
 - [ ] Verify pallet and [extrinsic ordering](#extrinsic-ordering) has stayed
     the same. Bump `transaction_version` if not.
-- [ ] Verify new extrinsics have been correctly whitelisted/blacklisted for
-    [proxy filters](#proxy-filtering).
+- [ ] Verify new extrinsics have been correctly whitelisted/blacklisted
 - [ ] Verify [benchmarks](#benchmarks) have been updated for any modified
     runtime logic.
 
