@@ -24,7 +24,7 @@ candidate branch.
     runtime logic.
 
 The following checks can be performed after we have forked off to the release branch.
-
+- [ ] Complete the following [manual QA workflow](https://hackmd.io/TbFmorG2RnOPmLuFcg9JOQ?view).
 - [ ] Verify [new migrations](#new-migrations) complete successfully, and the
     runtime state is correctly updated for any public (non-private/test)
     networks.
@@ -41,6 +41,10 @@ The following checks can be performed after we have forked off to the release br
     notes](#release-notes)
 - [ ] Check that [build artifacts](#build-artifacts) have been added to the
     draft-release
+
+### After Runtime Upgrade
+- [ ] Notify subscan team. Ensure subscan service can continue to scan calamari blocks.
+- [ ] Sidecar [update](https://github.com/paritytech/substrate-api-sidecar/blob/master/src/chains-config/metadata-consts/calamariConsts.ts#L6)
 
 ## Notes
 
@@ -101,8 +105,3 @@ release-time. To initialise a benchmark run for each production runtime
 * Commit the changes to your branch and push to the remote branch for review.
 * The weights should be (Currently manually) checked to make sure there are no
     big outliers (i.e., twice or half the weight).
-
-### Polkadot JS
-
-Ensure that a release of [Polkadot JS API]() contains any new types or
-interfaces necessary to interact with the new runtime.
