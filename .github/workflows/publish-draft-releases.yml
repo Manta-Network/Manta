@@ -175,12 +175,6 @@ jobs:
         with:
           name: config-for-integration-test
           path: .github/resources/config-for-integration-test.json
-      -
-        name: upload
-        uses: actions/upload-artifact@v2
-        with:
-          name: config-for-runtime-upgrade-test
-          path: .github/resources/config-for-runtime-upgrade-test.json
 
   build-node-base:
     needs:
@@ -273,6 +267,12 @@ jobs:
         with:
           name: manta-base
           path: target/release/manta
+      -
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: config-for-runtime-upgrade-test
+          path: .github/resources/config-for-runtime-upgrade-test.json
 
   runtime-upgrade-test:
     needs:

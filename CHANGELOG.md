@@ -11,8 +11,9 @@
 - [\#313](https://github.com/Manta-Network/Manta/pull/313) Add treasury to Calamari runtime.
 
 ### Improvements
-- Bump spec version to **3120**.
+- Bump spec version to **3120**, transaction version to **3**.
 - Todo, explain how much performance we improved and related weights.
+- Re-benchmark all unfiltered pallets due to [\#313](https://github.com/Manta-Network/Manta/pull/313) and [\#329](https://github.com/Manta-Network/Manta/pull/329).
 - [\#318](https://github.com/Manta-Network/Manta/pull/318) Update copyright year.
 - [\#329](https://github.com/Manta-Network/Manta/pull/329) Use bare metal instance for Calamari/Manta benchmarking workflows.
 
