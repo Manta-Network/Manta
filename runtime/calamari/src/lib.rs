@@ -32,7 +32,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult,
 };
 
-use sp_core::u32_trait::{_1, _2, _3, _4};
+use sp_core::u32_trait::{_1, _2, _3, _4, _5};
 use sp_std::{cmp::Ordering, prelude::*};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -54,7 +54,7 @@ use frame_system::{
 use manta_primitives::{
 	time::*, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
 };
-use sp_runtime::Perbill;
+use sp_runtime::{Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -199,7 +199,6 @@ impl Contains<Call> for BaseFilter {
 			// pallet_democracy::Call::clear_public_proposals()
 			// pallet_democracy::Call::external_propose(_)
 			// pallet_democracy::Call::external_propose_majority(_)
-			// Call::Treasury(_)
 			| Call::Democracy(pallet_democracy::Call::vote {..}
 								| pallet_democracy::Call::emergency_cancel {..}
 								| pallet_democracy::Call::external_propose_default {..}
@@ -223,6 +222,8 @@ impl Contains<Call> for BaseFilter {
 			| Call::TechnicalCommittee(_)
 			| Call::CouncilMembership(_)
 			| Call::TechnicalMembership(_)
+			// Treasury calls are filtered while it is accumulating funds.
+			//| Call::Treasury(_)
 			| Call::Scheduler(_)
 			| Call::CalamariVesting(_)
 			// We open pallet-session because user has to set his own session keys before register as collator.
@@ -491,6 +492,44 @@ impl pallet_membership::Config<TechnicalMembershipInstance> for Runtime {
 	type MembershipChanged = TechnicalCommittee;
 	type MaxMembers = TechnicalMaxMembers;
 	type WeightInfo = weights::pallet_membership::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const ProposalBond: Permill = Permill::from_percent(1);
+	pub const ProposalBondMinimum: Balance = 50 * KMA;
+	pub const SpendPeriod: BlockNumber = 6 * DAYS;
+	pub const Burn: Permill = Permill::from_percent(0);
+	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+	pub const MaxApprovals: u32 = 100;
+}
+
+type EnsureRootOrThreeFifthsCouncil = EnsureOneOf<
+	AccountId,
+	EnsureRoot<AccountId>,
+	pallet_collective::EnsureProportionAtLeast<_3, _5, AccountId, CouncilCollective>,
+>;
+
+type EnsureRootOrMoreThanHalfCouncil = EnsureOneOf<
+	AccountId,
+	EnsureRoot<AccountId>,
+	pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>,
+>;
+
+impl pallet_treasury::Config for Runtime {
+	type PalletId = TreasuryPalletId;
+	type Currency = Balances;
+	type ApproveOrigin = EnsureRootOrThreeFifthsCouncil;
+	type RejectOrigin = EnsureRootOrMoreThanHalfCouncil;
+	type Event = Event;
+	type OnSlash = Treasury;
+	type ProposalBond = ProposalBond;
+	type ProposalBondMinimum = ProposalBondMinimum;
+	type SpendPeriod = SpendPeriod;
+	type Burn = Burn;
+	type BurnDestination = ();
+	type MaxApprovals = MaxApprovals;
+	type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
+	type SpendFunds = ();
 }
 
 parameter_types! {
@@ -826,6 +865,9 @@ construct_runtime!(
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
 
+		// Treasury
+		Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,
+
 		// System scheduler.
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 29,
 
@@ -1017,6 +1059,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_democracy, Democracy);
 			list_benchmark!(list, extra, pallet_collective, Council);
 			list_benchmark!(list, extra, pallet_membership, CouncilMembership);
+			list_benchmark!(list, extra, pallet_treasury, Treasury);
 			list_benchmark!(list, extra, pallet_scheduler, Scheduler);
 			list_benchmark!(list, extra, calamari_vesting, CalamariVesting);
 			list_benchmark!(list, extra, pallet_session, SessionBench::<Runtime>);
@@ -1065,6 +1108,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_collective, Council);
 			add_benchmark!(params, batches, pallet_membership, CouncilMembership);
 			add_benchmark!(params, batches, pallet_scheduler, Scheduler);
+			add_benchmark!(params, batches, pallet_treasury, Treasury);
 			add_benchmark!(params, batches, calamari_vesting, CalamariVesting);
 			add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_tx_pause, TransactionPause);
