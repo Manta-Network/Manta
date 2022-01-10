@@ -37,7 +37,7 @@ The following checks can be performed after we have forked off to the release br
 - [ ] Check that the new client versions have [run on the network](#burn-in)
     without issue for 12 hours.
 - [ ] Check that a draft release has been created at
-    https://github.com/paritytech/polkadot/releases with relevant [release
+    https://github.com/Manta-Network/Manta/releases with relevant [release
     notes](#release-notes)
 - [ ] Check that [build artifacts](#build-artifacts) have been added to the
     draft-release
@@ -46,7 +46,7 @@ The following checks can be performed after we have forked off to the release br
 
 ### Burn In
 
-Ensure that Parity DevOps has run the new release on Como and Baikal nodes
+Ensure that Manta DevOps has run the new release on Como and Baikal nodes
 for at least 12 hours prior to publishing the release.
 
 ### Release notes
@@ -78,8 +78,6 @@ functions. Compare the metadata of the current and new runtimes and ensure that
 the `module index, call index` tuples map to the same set of functions. In case
 of a breaking change, increase `transaction_version`.
 
-To verify the order has not changed, you may manually start the following [Github Action](https://github.com/paritytech/polkadot/actions/workflows/extrinsic-ordering-check-from-bin.yml). It takes around a minute to run and will produce the report as artifact you need to manually check.
-
 The things to look for in the output are lines like:
   - `[Identity] idx 28 -> 25 (calls 15)` - indicates the index for `Identity` has changed
   - `[+] Society, Recovery` - indicates the new version includes 2 additional modules/pallets.
@@ -94,8 +92,8 @@ There are three benchmarking machines reserved for updating the weights at
 release-time. To initialise a benchmark run for each production runtime
 (calamari, manta):
 * Go to:
-  -For Calamari: https://github.com/Manta-Network/Manta/actions/workflows/generate_calamari_weights_files.yml
-  -For Manta: https://github.com/Manta-Network/Manta/actions/workflows/generate_manta_weights_files.yml
+  -[Calamari Benchmarking Github Action](https://github.com/Manta-Network/Manta/actions/workflows/generate_calamari_weights_files.yml)
+  -[Manta Benchmarking Github Action](https://github.com/Manta-Network/Manta/actions/workflows/generate_manta_weights_files.yml)
 * Open "Run workflow" drop-down menu.
 * Choose your branch and run the workflow.
 * When these jobs have completed (it takes a few hours), custom weights files will
