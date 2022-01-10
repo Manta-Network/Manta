@@ -2,6 +2,23 @@
 
 ## Pending
 
+## v3.1.2
+### Breaking changes
+
+### Features
+- [\#311](https://github.com/Manta-Network/Manta/pull/311) Enable LTO for native binary build.
+- [\#312](https://github.com/Manta-Network/Manta/pull/312) Enable collaor-selection.
+- [\#313](https://github.com/Manta-Network/Manta/pull/313) Add treasury to Calamari runtime.
+
+### Improvements
+- Bump spec version to **3120**.
+- Todo, explain how much performance we improved and related weights.
+- [\#318](https://github.com/Manta-Network/Manta/pull/318) Update copyright year.
+- [\#329](https://github.com/Manta-Network/Manta/pull/329) Use bare metal instance for Calamari/Manta benchmarking workflows.
+
+### Bug fixes
+- [\#317](https://github.com/Manta-Network/Manta/pull/317) Revert workaround for failing rococo-local runtime upgrade tests in CI.
+
 ## v3.1.1
 ### Breaking changes
 
@@ -9,7 +26,7 @@
 - [\#275](https://github.com/Manta-Network/Manta/pull/275) Deposit all TX fees to block authors.
 
 ### Improvements
-- [\#280](https://github.com/Manta-Network/Manta/pull/280) Update README.md
+- [\#280](https://github.com/Manta-Network/Manta/pull/280) Update README.md.
 - [\#283](https://github.com/Manta-Network/Manta/pull/283) CI runtime upgrade test for manta parachain.
 - [\#288](https://github.com/Manta-Network/Manta/pull/288) Update PR template.
 - [\#294](https://github.com/Manta-Network/Manta/pull/294) Integrate `v0.9.13` upstream changes.
