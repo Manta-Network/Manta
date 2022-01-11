@@ -813,7 +813,7 @@ impl manta_collator_selection::Config for Runtime {
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = manta_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;
-	type WeightInfo = manta_collator_selection::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
 }
 
 // Calamari pallets configuration
