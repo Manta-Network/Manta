@@ -83,6 +83,20 @@ mod multiplier_tests {
 		>::convert(fm)
 	}
 
+	fn fetch_kma_price() -> Result<f32, &'static str> {
+		let body = reqwest::blocking::get(
+			"https://api.coingecko.com/api/v3/simple/price?ids=calamari-network&vs_currencies=usd",
+		)
+		.unwrap();
+		let json_reply: serde_json::Value = serde_json::from_reader(body).unwrap();
+		if let Some(price) = json_reply["calamari-network"]["usd"].as_f64() {
+			// CG API return: {"calamari-network":{"usd": 0.01092173}}
+			Ok(price as f32)
+		} else {
+			Err("KMA price not found in reply from Coingecko. API changed? Check https://www.coingecko.com/en/api/documentation")
+		}
+	}
+
 	// Consider the daily cost to fully congest our network to be defined as:
 	// `target_daily_congestion_cost_usd = inclusion_fee * blocks_per_day * kma_price`
 	// Where:
@@ -94,9 +108,10 @@ mod multiplier_tests {
 	// This test loops 1 day of parachain blocks (7200) and calculates accumulated fee if every block is almost full
 	#[test]
 	fn congested_chain_simulation() {
-		// Configure these values depending on current prices and target cost.
-		let kma_price = 0.012f32;
+		// Configure the target cost depending on the current state of the network.
 		let target_daily_congestion_cost_usd = 250000;
+		let kma_price = fetch_kma_price().unwrap();
+		println!("KMA/USD price as read from CoinGecko = {}", kma_price);
 		let target_daily_congestion_cost_kma =
 			(target_daily_congestion_cost_usd as f32 * kma_price * KMA as f32) as u128;
 
