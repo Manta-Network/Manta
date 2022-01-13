@@ -256,8 +256,6 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Too many candidates
 		TooManyCandidates,
-		/// Too few candidates
-		TooFewCandidates,
 		/// Unknown error
 		Unknown,
 		/// Permission issue
