@@ -16,6 +16,7 @@
 - Re-benchmark all unfiltered pallets due to [\#313](https://github.com/Manta-Network/Manta/pull/313) and [\#329](https://github.com/Manta-Network/Manta/pull/329).
 - [\#318](https://github.com/Manta-Network/Manta/pull/318) Update copyright year.
 - [\#329](https://github.com/Manta-Network/Manta/pull/329) Use bare metal instance for Calamari/Manta benchmarking workflows.
+- [\#353](https://github.com/Manta-Network/Manta/pull/353) Update dockerfile.
 
 ### Bug fixes
 - [\#317](https://github.com/Manta-Network/Manta/pull/317) Revert workaround for failing rococo-local runtime upgrade tests in CI.
