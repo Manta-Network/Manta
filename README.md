@@ -72,5 +72,4 @@ git push origin my-awesome-feature --tags
 now you can watch the ci build your awesome feature and publish your draft release on the [actions tab](https://github.com/Manta-Network/Manta/actions/workflows/publish-draft-releases.yml). note that draft [releases](https://github.com/Manta-Network/Manta/releases) become available relatively quickly, but wasm and binary artifacts are only added to the draft release when their ci build completes, which may be an hour or more after your git push.
 
 ## Minimum supported rust compiler
-
 This project's MSRV is `rustc 1.56`
