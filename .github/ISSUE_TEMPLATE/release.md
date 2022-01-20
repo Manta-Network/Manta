@@ -25,12 +25,11 @@ candidate branch.
 
 The following checks can be performed after we have forked off to the release branch.
 - [ ] Complete the following [manual QA workflow](https://hackmd.io/TbFmorG2RnOPmLuFcg9JOQ?view).
-- [ ] Verify [new migrations](#new-migrations) complete successfully, and the
-    runtime state is correctly updated for any public (non-private/test)
-    networks.
 - [ ] Verify [Polkadot JS API](#polkadot-js) are up to date with the latest
     runtime changes.
-- [ ] Push runtime upgrade to Baikal and verify network stability.
+- [ ] Execute runtime upgrade to Como and verify network stability.
+- [ ] Execute runtime upgrade to Baikal and verify network stability.
+- [ ] Prepare a governance post and submit to our forum with description and motivation for changes.
 
 ### All Releases
 
@@ -41,6 +40,7 @@ The following checks can be performed after we have forked off to the release br
     notes](#release-notes)
 - [ ] Check that [build artifacts](#build-artifacts) have been added to the
     draft-release
+- [ ] Coordinate with marketing team for documenation updates and other relevant tasks.
 
 ### After Runtime Upgrade
 - [ ] Notify subscan team. Ensure subscan service can continue to scan calamari blocks.
