@@ -111,7 +111,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 3110,
+	spec_version: 3120,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 3,
@@ -813,7 +813,7 @@ impl manta_collator_selection::Config for Runtime {
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = manta_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;
-	type WeightInfo = manta_collator_selection::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
 }
 
 // Calamari pallets configuration
