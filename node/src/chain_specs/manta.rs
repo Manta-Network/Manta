@@ -73,7 +73,7 @@ pub fn manta_development_config() -> MantaChainSpec {
 		Some(properties),
 		Extensions {
 			relay_chain: POLKADOT_RELAYCHAIN_DEV_NET.into(),
-			para_id: MANTA_PARACHAIN_ID.into(),
+			para_id: MANTA_PARACHAIN_ID,
 		},
 	)
 }
@@ -121,7 +121,7 @@ pub fn manta_local_config() -> MantaChainSpec {
 		Some(properties),
 		Extensions {
 			relay_chain: POLKADOT_RELAYCHAIN_LOCAL_NET.into(),
-			para_id: MANTA_PARACHAIN_ID.into(),
+			para_id: MANTA_PARACHAIN_ID,
 		},
 	)
 }
@@ -185,7 +185,7 @@ pub fn manta_testnet_config() -> Result<MantaChainSpec, String> {
 	let mut spec = MantaChainSpec::from_json_bytes(
 		&include_bytes!("../../../genesis/manta-testnet-genesis.json")[..],
 	)?;
-	spec.extensions_mut().para_id = MANTA_PARACHAIN_ID.into();
+	spec.extensions_mut().para_id = MANTA_PARACHAIN_ID;
 	Ok(spec)
 }
 
@@ -197,6 +197,6 @@ pub fn manta_testnet_ci_config() -> Result<MantaChainSpec, String> {
 	let mut spec = MantaChainSpec::from_json_bytes(
 		&include_bytes!("../../../genesis/manta-testnet-ci-genesis.json")[..],
 	)?;
-	spec.extensions_mut().para_id = MANTA_PARACHAIN_ID.into();
+	spec.extensions_mut().para_id = MANTA_PARACHAIN_ID;
 	Ok(spec)
 }

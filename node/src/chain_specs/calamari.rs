@@ -77,7 +77,7 @@ pub fn calamari_development_config() -> CalamariChainSpec {
 		Some(properties),
 		Extensions {
 			relay_chain: KUSAMA_RELAYCHAIN_DEV_NET.into(),
-			para_id: CALAMARI_PARACHAIN_ID.into(),
+			para_id: CALAMARI_PARACHAIN_ID,
 		},
 	)
 }
@@ -137,7 +137,7 @@ pub fn calamari_local_config() -> CalamariChainSpec {
 		Some(properties),
 		Extensions {
 			relay_chain: KUSAMA_RELAYCHAIN_LOCAL_NET.into(),
-			para_id: CALAMARI_PARACHAIN_ID.into(),
+			para_id: CALAMARI_PARACHAIN_ID,
 		},
 	)
 }
@@ -212,7 +212,7 @@ pub fn calamari_testnet_config() -> Result<CalamariChainSpec, String> {
 	let mut spec = CalamariChainSpec::from_json_bytes(
 		&include_bytes!("../../../genesis/calamari-testnet-genesis.json")[..],
 	)?;
-	spec.extensions_mut().para_id = CALAMARI_PARACHAIN_ID.into();
+	spec.extensions_mut().para_id = CALAMARI_PARACHAIN_ID;
 	Ok(spec)
 }
 
