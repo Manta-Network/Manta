@@ -26,10 +26,17 @@
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::pallet_prelude::*;
+	use frame_support::{pallet_prelude::*, PalletId};
 	use frame_system::pallet_prelude::*;
 	use codec::HasCompact;
 	use scale_info::TypeInfo;
+	use sp_runtime::{traits::{AtLeast32BitUnsigned, CheckedAdd, Bounded, One}, ArithmeticError};
+
+	#[pallet::pallet]
+	pub struct Pallet<T>(PhantomData<T>);
+
+	/// The AssetManagers's pallet id
+	pub const PALLET_ID: PalletId = PalletId(*b"asstmngr");
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -42,9 +49,16 @@ pub mod pallet {
 			+ Default
 			+ Copy
 			+ HasCompact
+			+ CheckedAdd
+			+ Bounded
+			+ One
+			+ AtLeast32BitUnsigned
 			+ MaybeSerializeDeserialize
 			+ MaxEncodedLen
 			+ TypeInfo;
+		
+		/// The units in which we record balances.
+		type Balance: Member + Parameter + AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen;
 		
 		/// Metadata type that required in token storage: e.g. AssetMetadata in Pallet-Assets.
 		type StorageMetadata: Member + Parameter + Default;
@@ -52,8 +66,8 @@ pub mod pallet {
 		/// The Asset Metadata type stored in this pallet.
 		type AssetRegistrarMetadata: Member + Parameter + Default + Into<Self::StorageMetadata>;
 
-		/// The MultiLocation type.
-		type MultiLocation: Member + Parameter + Default;
+		/// The AssetLocation type: could be just a thin wrapper of MultiLocation
+		type AssetLocation: Member + Parameter + Default;
 		
 		/// The origin which may forcibly create or destroy an asset or otherwise alter privileged
 		/// attributes.
@@ -70,13 +84,13 @@ pub mod pallet {
 		/// A new asset registered.
 		AssetRegistered {
 			asset_id: T::AssetId,
-			asset_address: T::MultiLocation,
+			asset_address: T::AssetLocation,
 			metadata: T::AssetRegistrarMetadata,
 		},
 		/// An asset has been updated.
 		AssetUpdated {
 			asset_id: T::AssetId,
-			asset_address: T::MultiLocation,
+			asset_address: T::AssetLocation,
 			metadata: T::AssetRegistrarMetadata,
 		},
 		/// Asset frozen.
@@ -105,14 +119,14 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn asset_id_location)]
 	pub(super) type AssetIdLocation<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::AssetId, T::MultiLocation>;
+		StorageMap<_, Blake2_128Concat, T::AssetId, T::AssetLocation>;
 	
 	/// MultiLocation to AssetId Map.
 	/// This is mostly useful when receiving an asset from a foreign location.
 	#[pallet::storage]
 	#[pallet::getter(fn location_asset_id)]
 	pub(super) type LocationAssetId<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::MultiLocation, T::AssetId>;
+		StorageMap<_, Blake2_128Concat, T::AssetLocation, T::AssetId>;
 
 	/// AssetId to AssetRegistrar Map.
 	#[pallet::storage]
@@ -120,21 +134,40 @@ pub mod pallet {
 	pub(super) type AssetIdMetadata<T: Config> =
 		StorageMap<_, Blake2_128Concat, T::AssetId, T::AssetRegistrarMetadata>;
 	
-	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
-	pub struct Pallet<T>(_);
-
+	/// Get the next available AssetId
+	#[pallet::storage]
+	#[pallet::getter(fn next_asset_id)]
+	pub type NextAssetId<T: Config> = StorageValue<_, T::AssetId, ValueQuery>;
+	
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// 
+		//// * `is_sufficient`: Whether this asset needs users to have an existential deposit to hold
+	    ///  this asset.
 		/// # <weight>
 		/// TODO: get actual weight
 		/// # </weight>
 		#[pallet::weight(50_000_000)]
-		pub fn set_name(origin: OriginFor<T>, name: Vec<u8>) -> DispatchResult {
-			
+		pub fn register_asset(
+			origin: OriginFor<T>, 
+			location: T::AssetLocation,
+			metadata: T::AssetRegistrarMetadata,
+			min_balance: T::Balance,
+			is_sufficient: bool,
+		) -> DispatchResult {
+			T::ForceOrigin::ensure_origin(origin)?;
 			Ok(())
 		}
 
+	}
+
+	impl<T: Config> Pallet<T> {
+		fn get_next_asset_id() -> Result<T::AssetId, DispatchError> {
+			NextAssetId::<T>::try_mutate(|current| -> Result<T::AssetId, DispatchError> {
+				let id = *current;
+				*current = current.checked_add(One::one()).ok_or(ArithmeticError::Overflow)?;
+				Ok(id)
+			})
+		}
+	
 	}
 }
