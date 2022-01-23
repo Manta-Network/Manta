@@ -1,9 +1,9 @@
 [package]
 name = "pallet-staking-reward-curve"
-version = "4.0.0-dev"
+version = '3.1.2'
 authors = ['Manta Network']
 edition = "2018"
-license = "Apache-2.0"
+license = 'GPL-3.0'
 homepage = "https://manta.network"
 repository = 'https://github.com/Manta-Network/Manta/'
 description = "Reward Curve for FRAME staking pallet"
