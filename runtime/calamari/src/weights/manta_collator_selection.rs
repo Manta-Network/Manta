@@ -56,7 +56,7 @@ pub trait WeightInfo {
 
 /// Weights for manta_collator_selection using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
+impl<T: frame_system::Config> manta_collator_selection::WeightInfo for SubstrateWeight<T> {
 	// Storage: CollatorSelection Invulnerables (r:0 w:1)
 	fn set_invulnerables(b: u32, ) -> Weight {
 		(12_488_000 as Weight)

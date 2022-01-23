@@ -208,6 +208,14 @@ jobs:
               id: pallet_treasury
               name: pallet_treasury
             iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: manta_collator_selection
+            pallet:
+              id: manta_collator_selection
+              name: manta_collator_selection
+            iterations: 20
     steps:
       -
         uses: actions/download-artifact@v2
