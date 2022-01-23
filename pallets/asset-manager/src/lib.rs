@@ -253,12 +253,18 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		/// Get and increment the `NextAssetID` by one.
 		fn get_next_asset_id() -> Result<T::AssetId, DispatchError> {
 			NextAssetId::<T>::try_mutate(|current| -> Result<T::AssetId, DispatchError> {
 				let id = *current;
 				*current = current.checked_add(&One::one()).ok_or(ArithmeticError::Overflow)?;
 				Ok(id)
 			})
+		}
+
+		/// The account ID of AssetManager
+		pub fn account_id() -> T::AccountId {
+			PALLET_ID.into_account()
 		}
 	
 	}
