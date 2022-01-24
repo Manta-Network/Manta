@@ -134,8 +134,8 @@ mod multiplier_tests {
 			// Simulates 1 day of parachain blocks (12 seconds each)
 			for iteration in 0..7200 {
 				let next = runtime_multiplier_update(fee_adjustment);
-				// if no change, panic. This should never happen in this case.
-				if fee_adjustment == next {
+				// if no change or less, panic. This should never happen in this case.
+				if fee_adjustment >= next {
 					println!("final fee_adjustment: {}", fee_adjustment);
 					println!("final next: {}", next);
 					panic!("The fee should ever increase");
