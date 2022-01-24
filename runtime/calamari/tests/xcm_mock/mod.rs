@@ -17,16 +17,12 @@
 pub mod parachain;
 pub mod relay_chain;
 
-use cumulus_primitives_core::ParaId;
-use polkadot_parachain::primitives::AccountIdConversion;
-use sp_runtime::AccountId32;
+use polkadot_parachain::primitives::Id as ParaId;
+use sp_runtime::traits::AccountIdConversion;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
-pub const PARAALICE: [u8; 20] = [1u8; 20];
-pub const RELAYALICE: AccountId32 = AccountId32::new([0u8; 32]);
 
-pub fn para_a_account() -> AccountId32 {
-	ParaId::from(1).into_account()
-}
+pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
+pub const INITIAL_BALANCE: u128 = 1_000_000_000;
 
 decl_test_parachain! {
 	pub struct ParaA {
@@ -46,15 +42,6 @@ decl_test_parachain! {
 	}
 }
 
-decl_test_parachain! {
-	pub struct ParaC {
-		Runtime = parachain::Runtime,
-		XcmpMessageHandler = parachain::MsgQueue,
-		DmpMessageHandler = parachain::MsgQueue,
-		new_ext = para_ext(3),
-	}
-}
-
 decl_test_relay_chain! {
 	pub struct Relay {
 		Runtime = relay_chain::Runtime,
@@ -69,12 +56,13 @@ decl_test_network! {
 		parachains = vec![
 			(1, ParaA),
 			(2, ParaB),
-			(3, ParaC),
 		],
 	}
 }
 
-pub const INITIAL_BALANCE: u128 = 10_000_000_000_000_000;
+pub fn para_account_id(id: u32) -> relay_chain::AccountId {
+	ParaId::from(id).into_account()
+}
 
 pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
 	use parachain::{MsgQueue, Runtime, System};
@@ -84,7 +72,7 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
 		.unwrap();
 
 	pallet_balances::GenesisConfig::<Runtime> {
-		balances: vec![(PARAALICE.into(), INITIAL_BALANCE)],
+		balances: vec![(ALICE, INITIAL_BALANCE)],
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
@@ -105,7 +93,10 @@ pub fn relay_ext() -> sp_io::TestExternalities {
 		.unwrap();
 
 	pallet_balances::GenesisConfig::<Runtime> {
-		balances: vec![(RELAYALICE, INITIAL_BALANCE)],
+		balances: vec![
+			(ALICE, INITIAL_BALANCE),
+			(para_account_id(1), INITIAL_BALANCE),
+		],
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
@@ -117,10 +108,8 @@ pub fn relay_ext() -> sp_io::TestExternalities {
 
 pub type RelayChainPalletXcm = pallet_xcm::Pallet<relay_chain::Runtime>;
 pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
-pub type Assets = pallet_assets::Pallet<parachain::Runtime>;
-pub type Treasury = pallet_treasury::Pallet<parachain::Runtime>;
-pub type AssetManager = pallet_asset_manager::Pallet<parachain::Runtime>;
-pub type XTokens = orml_xtokens::Pallet<parachain::Runtime>;
-pub type RelayBalances = pallet_balances::Pallet<relay_chain::Runtime>;
-pub type ParaBalances = pallet_balances::Pallet<parachain::Runtime>;
-pub type XcmTransactor = xcm_transactor::Pallet<parachain::Runtime>;
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+}

@@ -1,6 +1,6 @@
 [package]
 authors    = ['Manta Network']
-name = "asset-manager"
+name = "pallet-asset-manager"
 version = "3.1.0"
 edition = "2018"
 homepage   = 'https://manta.network'
@@ -16,6 +16,9 @@ frame-support = { git = "https://github.com/paritytech/substrate", branch = "pol
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12", default-features = false }
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.12", default-features = false, optional = true }
+
+[dev-dependencies]
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
 
 [features]
 default = ["std"]
