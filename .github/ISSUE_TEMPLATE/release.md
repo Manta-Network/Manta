@@ -41,6 +41,7 @@ The following checks can be performed after we have forked off to the release br
 - [ ] Check that [build artifacts](#build-artifacts) have been added to the
     draft-release
 - [ ] Coordinate with marketing team for documenation updates and other relevant tasks.
+- [ ] Update changelog.
 
 ### After Runtime Upgrade
 - [ ] Notify subscan team. Ensure subscan service can continue to scan calamari blocks.
