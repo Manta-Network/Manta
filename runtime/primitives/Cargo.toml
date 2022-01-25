@@ -16,6 +16,7 @@ smallvec = "1.6.1"
 
 # Substrate primitives
 sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.13" }
+#sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.13" }
 sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.13" }
 sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.13" }
 sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.13" }
@@ -28,4 +29,5 @@ std = [
 	'sp-consensus-aura/std',
 	'sp-io/std',
 	'sp-std/std',
+	'sp-core/std',
 ]

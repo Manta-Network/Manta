@@ -10,7 +10,8 @@ version = '3.1.2'
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive", "max-encoded-len"] }
 log = { version = "0.4.14", default-features = false }
-hex-literal = { version = '0.3.3', optional = true }
+#hex-literal = { version = '0.3.3', optional = true }
+hex-literal = { version = "0.3.1" }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 serde = { version = '1.0.119', features = ['derive'], optional = true }
 smallvec = "1.6.1"
@@ -54,6 +55,10 @@ pallet-democracy = { git = "https://github.com/paritytech/substrate.git", defaul
 pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.13" }
 pallet-membership = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.13" }
 pallet-treasury = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.13" }
+pallet-assets = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.13" }
+orml-xtokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "polkadot-v0.9.13", default-features = false }
+pallet-asset-manager = { path = "../../pallets/asset-manager", default-features = false }
+xcm-primitives = { path = "../../primitives/xcm/", default-features = false }
 
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.13" }
@@ -96,7 +101,7 @@ try-runtime = [
 ]
 runtime-benchmarks = [
 	'cumulus-pallet-session-benchmarking/runtime-benchmarks',
-	'hex-literal',
+	#'hex-literal',
 	'sp-runtime/runtime-benchmarks',
 	'xcm-builder/runtime-benchmarks',
 	'frame-benchmarking',
@@ -171,4 +176,8 @@ std = [
 	'calamari-vesting/std',
 	'pallet-tx-pause/std',
 	'pallet-treasury/std',
+	'pallet-assets/std',
+	'orml-xtokens/std',
+	'pallet-asset-manager/std',
+	'xcm-primitives/std',
 ]

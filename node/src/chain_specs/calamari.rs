@@ -203,7 +203,7 @@ fn calamari_dev_genesis(
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
 		polkadot_xcm: calamari_runtime::PolkadotXcmConfig {
-			safe_xcm_version: Some(0),
+			safe_xcm_version: Some(2),
 		},
 	}
 }

@@ -59,3 +59,5 @@ pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
 
 // Moment
 pub type Moment = u64;
+
+pub type AssetId = u128;
