@@ -20,7 +20,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod constants;
+mod xcm;
 pub use constants::time;
+pub use crate::xcm::MultiNativeAsset;
 
 use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
 
