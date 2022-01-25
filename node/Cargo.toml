@@ -84,7 +84,7 @@ polkadot-service = { git = 'https://github.com/paritytech/polkadot.git', branch 
 # Self dependencies
 calamari-runtime = { path = '../runtime/calamari' }
 manta-runtime = { path = '../runtime/manta' }
-manta-primitives = { path = '../runtime/primitives' }
+manta-primitives = { path = '../runtime/primitives/manta' }
 
 [build-dependencies]
 substrate-build-script-utils = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.13" }

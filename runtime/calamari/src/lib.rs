@@ -23,10 +23,10 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use codec::{Decode, Encode, MaxEncodedLen};
+use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, sr25519, OpaqueMetadata};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
@@ -37,7 +37,7 @@ use sp_runtime::{
 
 use sp_core::{
 	u32_trait::{_1, _2, _3, _4, _5},
-	H160, H256,
+	H256,
 };
 
 use sp_std::{cmp::Ordering, prelude::*};
@@ -74,19 +74,18 @@ use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AccountId32Aliases, AccountKey20Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
 	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter,
-	IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsDefault,
-	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	IsConcrete, LocationInverter, ParentAsSuperuser, ParentIsDefault, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::traits::JustTry;
 
 use xcm_primitives::{
-	AccountIdToCurrencyId, AccountIdToMultiLocation, AsAssetType, FirstAssetTrader,
-	MultiNativeAsset, SignedToAccountId32, UtilityAvailableCalls, UtilityEncodeCall,
-	XcmFeesToAccount, XcmTransact,
+	AccountIdToMultiLocation, AsAssetType, FirstAssetTrader, MultiNativeAsset, SignedToAccountId32,
+	XcmFeesToAccount,
 };
 
 pub mod currency;
@@ -777,8 +776,8 @@ impl xcm_executor::Config for XcmExecutorConfig {
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 
 	// Filter to the reserve withdraw operations
-	//type IsReserve = MultiNativeAsset;
-	type IsReserve = NativeAsset;
+	type IsReserve = MultiNativeAsset;
+	//type IsReserve = NativeAsset;
 	type IsTeleporter = (); // No teleport
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = XcmBarrier;
@@ -944,24 +943,15 @@ impl From<AssetType> for AssetId {
 	}
 }
 
-// type AccountPublic = <Signature as Verify>::Signer;
-// /// Helper function to generate an account ID from seed
-// pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
-// where
-// 	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
-// {
-// 	AccountPublic::from(get_pair_from_seed::<TPublic>(seed)).into_account()
+// parameter_types! {
+// 	pub KaruraFoundationAccounts: Vec<AccountId> = vec![
+// 		hex_literal::hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into(),	// tij5W2NzmtxxAbwudwiZpif9ScmZfgFYdzrJWKYq6oNbSNH
+// 		// hex_literal::hex!["41dd2515ea11692c02306b68a2c6ff69b6606ebddaac40682789cfab300971c4"].into(),	// pndshZqDAC9GutDvv7LzhGhgWeGv5YX9puFA8xDidHXCyjd
+// 		// hex_literal::hex!["dad0a28c620ba73b51234b1b2ae35064d90ee847e2c37f9268294646c5af65eb"].into(),	// tFBV65Ts7wpQPxGM6PET9euNzp4pXdi9DVtgLZDJoFveR9F
+// 		// TreasuryPalletId::get().into_account(),
+// 		// TreasuryReservePalletId::get().into_account(),
+// 	];
 // }
-
-parameter_types! {
-	pub KaruraFoundationAccounts: Vec<AccountId> = vec![
-		hex_literal::hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into(),	// tij5W2NzmtxxAbwudwiZpif9ScmZfgFYdzrJWKYq6oNbSNH
-		// hex_literal::hex!["41dd2515ea11692c02306b68a2c6ff69b6606ebddaac40682789cfab300971c4"].into(),	// pndshZqDAC9GutDvv7LzhGhgWeGv5YX9puFA8xDidHXCyjd
-		// hex_literal::hex!["dad0a28c620ba73b51234b1b2ae35064d90ee847e2c37f9268294646c5af65eb"].into(),	// tFBV65Ts7wpQPxGM6PET9euNzp4pXdi9DVtgLZDJoFveR9F
-		// TreasuryPalletId::get().into_account(),
-		// TreasuryReservePalletId::get().into_account(),
-	];
-}
 
 // We instruct how to register the Assets
 // In this case, we tell it to Create an Asset in pallet-assets
@@ -979,21 +969,12 @@ impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
 		Assets::force_create(
 			Origin::root(),
 			asset,
-			//AssetManager::account_id(),
-			//PalletId(*b"asstmngr"),
-			//AccountId32("\\Alice"),
-			//sp_runtime::MultiAddress::Id(AssetManager::account_id()),
-			// sp_runtime::MultiAddress::Id(AccountId::from(
-			// 	<sp_core::sr25519::Public as TraitPublic>::Pair::from_string("Alice", None)
-			// 		.expect("static values are valid; qed")
-			// 		.public(),
-			// )),
-			//get_account_id_from_seed::<sr25519::Public>("//Alice"),
-			//sp_runtime::MultiAddress::Id(AccountId::from_ss58check("//Alice")),
-			sp_runtime::MultiAddress::Id(KaruraFoundationAccounts::get()[0].clone()),
+			sp_runtime::MultiAddress::Id(AssetManager::account_id()),
+			//sp_runtime::MultiAddress::Id(KaruraFoundationAccounts::get()[0].clone()),
 			is_sufficient,
 			min_balance,
 		)?;
+
 		// TODO uncomment when we feel comfortable
 		/*
 		// The asset has been created. Let's put the revert code in the precompile address
@@ -1058,32 +1039,6 @@ where
 				let multi: MultiLocation = SelfReserve::get();
 				Some(multi)
 			}
-			// pub struct AsAssetType<AssetId, AssetType, AssetIdInfoGetter>(
-			// 	PhantomData<(AssetId, AssetType, AssetIdInfoGetter)>,
-			// );
-			// impl<AssetId, AssetType, AssetIdInfoGetter> xcm_executor::traits::Convert<MultiLocation, AssetId>
-			// 	for AsAssetType<AssetId, AssetType, AssetIdInfoGetter>
-			// where
-			// 	AssetId: From<AssetType> + Clone,
-			// 	AssetType: From<MultiLocation> + Into<Option<MultiLocation>> + Clone,
-			// 	AssetIdInfoGetter: AssetTypeGetter<AssetId, AssetType>,
-			// {
-			// 	fn convert_ref(id: impl Borrow<MultiLocation>) -> Result<AssetId, ()> {
-			// 		let asset_type: AssetType = id.borrow().clone().into();
-			// 		Ok(AssetId::from(asset_type))
-			// 	}
-			// 	fn reverse_ref(what: impl Borrow<AssetId>) -> Result<MultiLocation, ()> {
-			// 		if let Some(asset_type) = AssetIdInfoGetter::get_asset_type(what.borrow().clone()) {
-			// 			if let Some(location) = asset_type.into() {
-			// 				Ok(location)
-			// 			} else {
-			// 				Err(())
-			// 			}
-			// 		} else {
-			// 			Err(())
-			// 		}
-			// 	}
-			// }
 			CurrencyId::OtherReserve(asset) => {
 				log::info!(
 					"\n Calling `impl<AssetXConverter> convert()` currency is OtherReserve: {:?} \n",

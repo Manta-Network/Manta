@@ -20,7 +20,7 @@ frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', bran
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
-manta-primitives = { path = '../../runtime/primitives', default-features = false }
+manta-primitives = { path = '../../runtime/primitives/manta', default-features = false }
 
 [features]
 default = ["std"]

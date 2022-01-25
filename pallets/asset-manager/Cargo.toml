@@ -8,7 +8,7 @@ version = "0.1.0"
 serde = { version = "1.0.124", optional = true }
 
 # Moonbeam
-xcm-primitives = { path = "../../primitives/xcm/", default-features = false }
+xcm-primitives = { path = "../../runtime/primitives/xcm/", default-features = false }
 
 # Substrate
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.13", default-features = false }

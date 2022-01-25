@@ -1,19 +1,3 @@
-// Copyright 2019-2022 PureStake Inc.
-// This file is part of Moonbeam.
-
-// Moonbeam is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// Moonbeam is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-
-// You should have received a copy of the GNU General Public License
-// along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
-
 //! The XCM primitive trait implementations
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -27,14 +11,12 @@ use sp_std::borrow::Borrow;
 use sp_std::{convert::TryInto, marker::PhantomData};
 use xcm::latest::{
 	AssetId as xcmAssetId, Error as XcmError, Fungibility,
-	Junction::{AccountId32, AccountKey20, Parachain},
+	Junction::{AccountId32, Parachain},
 	Junctions::*,
 	MultiAsset, MultiLocation, NetworkId,
 };
 use xcm_builder::TakeRevenue;
 use xcm_executor::traits::{FilterAssetLocation, MatchesFungibles, WeightTrader};
-
-use sp_std::vec::Vec;
 
 /// Converter struct implementing `AssetIdConversion` converting a numeric asset ID
 /// (must be `TryFrom/TryInto<u128>`) into a MultiLocation Value and Viceversa through
@@ -338,40 +320,6 @@ pub trait AssetTypeGetter<AssetId, AssetType> {
 pub trait UnitsToWeightRatio<AssetId> {
 	// Get units per second from asset type
 	fn get_units_per_second(asset_id: AssetId) -> Option<u128>;
-}
-
-// The utility calls that need to be implemented as part of
-// this pallet
-#[derive(Debug, PartialEq, Eq)]
-pub enum UtilityAvailableCalls {
-	AsDerivative(u16, Vec<u8>),
-}
-
-// Trait that the ensures we can encode a call with utility functions.
-// With this trait we ensure that the user cannot control entirely the call
-// to be performed in the destination chain. It only can control the call inside
-// the as_derivative extrinsic, and thus, this call can only be dispatched from the
-// derivative account
-pub trait UtilityEncodeCall {
-	fn encode_call(self, call: UtilityAvailableCalls) -> Vec<u8>;
-}
-
-// Trait to ensure we can retrieve the destination if a given type
-// It must implement UtilityEncodeCall
-// We separate this in two traits to be able to implement UtilityEncodeCall separately
-// for different runtimes of our choice
-pub trait XcmTransact: UtilityEncodeCall {
-	/// Encode call from the relay.
-	fn destination(self) -> MultiLocation;
-	/// Maximum weight for the entire Transact operation
-	fn max_transact_weight(self) -> Weight;
-}
-
-/// This trait ensure we can convert AccountIds to CurrencyIds
-/// We will require Runtime to have this trait implemented
-pub trait AccountIdToCurrencyId<Account, CurrencyId> {
-	// Get assetId from account
-	fn account_to_currency_id(account: Account) -> Option<CurrencyId>;
 }
 
 /// XCM fee depositor to which we implement the TakeRevenue trait
