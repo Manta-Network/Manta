@@ -40,7 +40,7 @@ use xcm::{latest::prelude::*, VersionedXcm};
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, CurrencyAdapter as XcmCurrencyAdapter,
 	EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, IsConcrete, LocationInverter,
-	NativeAsset, ParentIsDefault, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	ParentIsDefault, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SignedToAccountId32, SovereignSignedViaLocation,
 };
 use xcm_executor::{Config, XcmExecutor};
@@ -179,6 +179,7 @@ impl Config for XcmConfig {
 	// Defines how to withdraw and deposit an asset.
 	type AssetTransactor = LocalAssetTransactor;
 	type OriginConverter = XcmOriginToCallOrigin;
+	// Combinations of (Location, Asset) pairs which we trust as reserves.
 	type IsReserve = MultiNativeAsset;
 	type IsTeleporter = ();
 	type LocationInverter = LocationInverter<Ancestry>;
