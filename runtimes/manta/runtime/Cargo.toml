@@ -52,7 +52,7 @@ pallet-grandpa = { git = 'https://github.com/paritytech/substrate.git', default-
 pallet-randomness-collective-flip = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
 pallet-scheduler = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
 pallet-session = { git = 'https://github.com/paritytech/substrate.git', default-features = false, features = ["historical"], branch = "polkadot-v0.9.10" }
-pallet-staking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
+pallet-staking = { path = '../../../pallets/staking', default-features = false }
 pallet-staking-reward-curve = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
 pallet-sudo = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
 pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.10" }
