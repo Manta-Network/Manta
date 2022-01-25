@@ -17,11 +17,11 @@
 use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
 
-use calamari_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
+use dolphin_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type CalamariChainSpec =
-	sc_service::GenericChainSpec<calamari_runtime::GenesisConfig, Extensions>;
+pub type DolphinChainSpec =
+	sc_service::GenericChainSpec<dolphin_runtime::GenesisConfig, Extensions>;
 
 const DOLPHIN_PROTOCOL_ID: &str = "dolphin"; // for p2p network configuration
 const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
@@ -30,33 +30,33 @@ const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
 /// Generate the calamari session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn calamari_session_keys(keys: AuraId) -> calamari_runtime::opaque::SessionKeys {
-	calamari_runtime::opaque::SessionKeys { aura: keys }
+pub fn dolphin_session_keys(keys: AuraId) -> dolphin_runtime::opaque::SessionKeys {
+	dolphin_runtime::opaque::SessionKeys { aura: keys }
 }
 
 // calamari chain specs
-pub fn calamari_properties() -> Properties {
+pub fn dolphin_properties() -> Properties {
 	let mut p = Properties::new();
 	p.insert("ss58format".into(), constants::CALAMARI_SS58PREFIX.into());
-	p.insert("tokenDecimals".into(), constants::CALAMARI_DECIMAL.into());
+	p.insert("tokenDecimals".into(), constants::DOLPHIN_DECIMAL.into());
 	p.insert(
 		"tokenSymbol".into(),
-		constants::CALAMARI_TOKEN_SYMBOL.into(),
+		constants::DOLPHIN_TOKEN_SYMBOL.into(),
 	);
 	p
 }
 
-pub fn calamari_development_config() -> CalamariChainSpec {
-	let properties = calamari_properties();
+pub fn dolphin_development_config() -> DolphinChainSpec {
+	let properties = dolphin_properties();
 
-	CalamariChainSpec::from_genesis(
+	DolphinChainSpec::from_genesis(
 		// Name
-		"Calamari Parachain Development",
+		"Dolphin Parachain Development",
 		// ID
-		"calamari_dev",
+		"dolphin_dev",
 		ChainType::Local,
 		move || {
-			calamari_dev_genesis(
+			dolphin_dev_genesis(
 				// initial collators.
 				vec![(
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -73,26 +73,26 @@ pub fn calamari_development_config() -> CalamariChainSpec {
 		},
 		vec![],
 		None,
-		Some(CALAMARI_PROTOCOL_ID),
+		Some(DOLPHIN_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: KUSAMA_RELAYCHAIN_DEV_NET.into(),
+			relay_chain: "".into(),
 			para_id: CALAMARI_PARACHAIN_ID.into(),
 		},
 	)
 }
 
-pub fn calamari_local_config() -> CalamariChainSpec {
-	let properties = calamari_properties();
+pub fn dolphin_local_config() -> DolphinChainSpec {
+	let properties = dolphin_properties();
 
-	CalamariChainSpec::from_genesis(
+	DolphinChainSpec::from_genesis(
 		// Name
-		"Calamari Parachain Local",
+		"Dolphin Parachain Local",
 		// ID
-		"calamari_local",
+		"dolphin_local",
 		ChainType::Local,
 		move || {
-			calamari_dev_genesis(
+			dolphin_dev_genesis(
 				// initial collators.
 				vec![
 					(
@@ -133,27 +133,27 @@ pub fn calamari_local_config() -> CalamariChainSpec {
 		},
 		vec![],
 		None,
-		Some(CALAMARI_PROTOCOL_ID),
+		Some(DOLPHIN_PROTOCOL_ID),
 		Some(properties),
 		Extensions {
-			relay_chain: KUSAMA_RELAYCHAIN_LOCAL_NET.into(),
+			relay_chain: "".into(),
 			para_id: CALAMARI_PARACHAIN_ID.into(),
 		},
 	)
 }
 
-fn calamari_dev_genesis(
+fn dolphin_dev_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
-) -> calamari_runtime::GenesisConfig {
-	calamari_runtime::GenesisConfig {
-		system: calamari_runtime::SystemConfig {
-			code: calamari_runtime::WASM_BINARY
+) -> dolphin_runtime::GenesisConfig {
+	dolphin_runtime::GenesisConfig {
+		system: dolphin_runtime::SystemConfig {
+			code: dolphin_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
 		},
-		balances: calamari_runtime::BalancesConfig {
+		balances: dolphin_runtime::BalancesConfig {
 			balances: endowed_accounts[..endowed_accounts.len() / 2]
 				.iter()
 				.map(|k| {
@@ -167,16 +167,16 @@ fn calamari_dev_genesis(
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		aura: Default::default(),
-		sudo: calamari_runtime::SudoConfig { key: root_key },
-		parachain_info: calamari_runtime::ParachainInfoConfig {
+		sudo: dolphin_runtime::SudoConfig { key: root_key },
+		parachain_info: dolphin_runtime::ParachainInfoConfig {
 			parachain_id: CALAMARI_PARACHAIN_ID.into(),
 		},
-		collator_selection: calamari_runtime::CollatorSelectionConfig {
+		collator_selection: dolphin_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: KMA * 1000, // How many tokens will be reserved as collator
+			candidacy_bond: DOL * 1000, // How many tokens will be reserved as collator
 			..Default::default()
 		},
-		session: calamari_runtime::SessionConfig {
+		session: dolphin_runtime::SessionConfig {
 			keys: invulnerables
 				.iter()
 				.cloned()
@@ -184,7 +184,7 @@ fn calamari_dev_genesis(
 					(
 						acc.clone(),                 // account id
 						acc,                         // validator id
-						calamari_session_keys(aura), // session keys
+						dolphin_session_keys(aura), // session keys
 					)
 				})
 				.collect(),
@@ -202,30 +202,30 @@ fn calamari_dev_genesis(
 		technical_membership: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
-		polkadot_xcm: calamari_runtime::PolkadotXcmConfig {
+		polkadot_xcm: dolphin_runtime::PolkadotXcmConfig {
 			safe_xcm_version: Some(0),
 		},
 	}
 }
 
-pub fn calamari_testnet_config() -> Result<CalamariChainSpec, String> {
-	let mut spec = CalamariChainSpec::from_json_bytes(
-		&include_bytes!("../../../genesis/calamari-testnet-genesis.json")[..],
-	)?;
-	spec.extensions_mut().para_id = CALAMARI_PARACHAIN_ID.into();
-	Ok(spec)
-}
+// pub fn dolphin_testnet_config() -> Result<DolphinChainSpec, String> {
+// 	let mut spec = DolphinChainSpec::from_json_bytes(
+// 		&include_bytes!("../../../genesis/dolphin-testnet-genesis.json")[..],
+// 	)?;
+// 	spec.extensions_mut().para_id = CALAMARI_PARACHAIN_ID.into();
+// 	Ok(spec)
+// }
 
-// Calamari testnet for ci jobs
-pub fn calamari_testnet_ci_config() -> Result<CalamariChainSpec, String> {
-	CalamariChainSpec::from_json_bytes(
-		&include_bytes!("../../../genesis/calamari-testnet-ci-genesis.json")[..],
-	)
-}
+// // Dolphin testnet for ci jobs
+// pub fn dolphin_testnet_ci_config() -> Result<DolphinChainSpec, String> {
+// 	DolphinChainSpec::from_json_bytes(
+// 		&include_bytes!("../../../genesis/dolphin-testnet-ci-genesis.json")[..],
+// 	)
+// }
 
-// Calamari mainnet
-pub fn calamari_config() -> Result<CalamariChainSpec, String> {
-	CalamariChainSpec::from_json_bytes(
-		&include_bytes!("../../../genesis/calamari-genesis.json")[..],
-	)
-}
+// // Dolphin mainnet
+// pub fn dolphin_config() -> Result<DolphinChainSpec, String> {
+// 	DolphinChainSpec::from_json_bytes(
+// 		&include_bytes!("../../../genesis/dolphin-genesis.json")[..],
+// 	)
+// }

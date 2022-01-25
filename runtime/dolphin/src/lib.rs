@@ -108,8 +108,8 @@ mod weights;
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("calamari"),
-	impl_name: create_runtime_str!("calamari"),
+	spec_name: create_runtime_str!("dolphin"),
+	impl_name: create_runtime_str!("dolphin"),
 	authoring_version: 1,
 	spec_version: 3110,
 	impl_version: 1,
@@ -225,7 +225,6 @@ impl Contains<Call> for BaseFilter {
 			// Treasury calls are filtered while it is accumulating funds.
 			//| Call::Treasury(_)
 			| Call::Scheduler(_)
-			| Call::CalamariVesting(_)
 			// We open pallet-session because user has to set his own session keys before register as collator.
 			| Call::Session(_)
 			// Currently, We filter `register_as_candidate` due to this call is not ready for community.
