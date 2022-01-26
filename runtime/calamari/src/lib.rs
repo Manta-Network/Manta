@@ -254,6 +254,7 @@ impl Contains<Call> for BaseFilter {
 			| Call::Balances(_)
 			| Call::Assets(_)
 			| Call::AssetManager(_)
+			| Call::XTokens(_)
 			| Call::Utility(_) => true,
 			_ => false,
 			// Filter Session and CollatorSelection to prevent users from utility operation.
