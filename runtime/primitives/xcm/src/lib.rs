@@ -93,14 +93,29 @@ where
 		+ TryInto<frame_system::RawOrigin<AccountId>, Error = Origin::PalletsOrigin>,
 {
 	fn convert(o: Origin) -> Result<MultiLocation, Origin> {
+		log::info!(
+			"\n Calling `impl<Origin: OriginTrait + Clone, AccountId: Into<[u8; 32]>, Network: Get<NetworkId>> convert()` \n"
+		);
 		o.try_with_caller(|caller| match caller.try_into() {
-			Ok(frame_system::RawOrigin::Signed(who)) => Ok(AccountId32 {
+			Ok(frame_system::RawOrigin::Signed(who)) => { 
+				log::info!(
+					"\n Calling `impl<Origin: OriginTrait + Clone, AccountId: Into<[u8; 32]>, Network: Get<NetworkId>> convert()` match arm 1 \n"
+				);
+				Ok(AccountId32 {
 				network: Network::get(),
 				id: who.into(),
 			}
-			.into()),
-			Ok(other) => Err(other.into()),
-			Err(other) => Err(other),
+			.into())},
+			Ok(other) => {
+				log::info!(
+					"\n Calling `impl<Origin: OriginTrait + Clone, AccountId: Into<[u8; 32]>, Network: Get<NetworkId>> convert()` match arm 2 \n"
+				);
+				Err(other.into())},
+			Err(other) => {
+				log::info!(
+					"\n Calling `impl<Origin: OriginTrait + Clone, AccountId: Into<[u8; 32]>, Network: Get<NetworkId>> convert()` match arm 3 \n"
+				);
+				Err(other)},
 		})
 	}
 }
