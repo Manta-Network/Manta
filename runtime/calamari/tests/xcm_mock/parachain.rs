@@ -23,13 +23,15 @@ use frame_support::{
 	traits::{Everything, Nothing},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
-use sp_core::H256;
+use pallet_asset_manager::AssetMetadata;
+use sp_core::{H256, H160};
 use sp_runtime::{
 	testing::Header,
 	traits::{Hash, IdentityLookup},
 	AccountId32,
 };
 use sp_std::{convert::TryFrom, prelude::*};
+use scale_info::TypeInfo;
 
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
@@ -41,10 +43,10 @@ use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, CurrencyAdapter as XcmCurrencyAdapter,
 	EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, IsConcrete, LocationInverter,
 	ParentIsDefault, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-	SignedToAccountId32, SovereignSignedViaLocation,
+	SignedToAccountId32, SovereignSignedViaLocation, ConvertedConcreteAssetId, FungiblesAdapter
 };
-use xcm_executor::{Config, XcmExecutor};
-use manta_primitives::MultiNativeAsset;
+use xcm_executor::{Config, XcmExecutor, traits::JustTry};
+use manta_primitives::{MultiNativeAsset, AssetIdLocationConvert, AssetLocation};
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
@@ -166,8 +168,31 @@ parameter_types! {
 	pub const MaxInstructions: u32 = 100;
 }
 
-pub type LocalAssetTransactor =
-	XcmCurrencyAdapter<Balances, IsConcrete<KsmLocation>, LocationToAccountId, AccountId, ()>;
+// pub type LocalAssetTransactor =
+// 	XcmCurrencyAdapter<
+// 		// Transacting native currency, i.e. MANTA, KMA, DOL
+// 		Balances, 
+// 		IsConcrete<KsmLocation>, 
+// 		LocationToAccountId, 
+// 		AccountId, 
+// 		()>;
+
+pub type FungiblesTransactor = FungiblesAdapter<
+	Assets,
+	ConvertedConcreteAssetId<
+		AssetId,
+		Balance,
+		AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>,
+		JustTry
+	>,
+	// "default" implementation of converting a `MultiLocation` to an `AccountId`
+	LocationToAccountId,
+	AccountId,
+	// No teleport support.
+	Nothing,
+	// No teleport tracking.
+	()
+>;
 
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
 pub type Barrier = AllowUnpaidExecutionFrom<Everything>;
@@ -177,7 +202,7 @@ impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// Defines how to withdraw and deposit an asset.
-	type AssetTransactor = LocalAssetTransactor;
+	type AssetTransactor = FungiblesTransactor;
 	type OriginConverter = XcmOriginToCallOrigin;
 	// Combinations of (Location, Asset) pairs which we trust as reserves.
 	type IsReserve = MultiNativeAsset;
@@ -377,6 +402,83 @@ impl pallet_xcm::Config for Runtime {
 	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 }
 
+#[derive(Clone, Default, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
+pub struct AssetRegistarMetadata {
+	pub name: Vec<u8>,
+	pub symbol: Vec<u8>,
+	pub decimals: u8,
+	pub evm_address: Option<H160>,
+	pub is_frozen: bool,
+	pub min_balance: Balance,
+	pub is_sufficient: bool,
+}
+
+impl AssetMetadata<Runtime> for AssetRegistarMetadata {
+	fn min_balance(&self) ->Balance{
+		self.min_balance
+	}
+
+	fn is_sufficient(&self) -> bool {
+		self.is_sufficient
+	}
+}
+
+impl Into<AssetStorageMetadata> for AssetRegistarMetadata {
+	fn into(self) -> AssetStorageMetadata {
+		AssetStorageMetadata {
+			name: self.name,
+			symbol: self.symbol,
+			decimals: self.decimals,
+			is_frozen: self.is_frozen,
+		}
+	}
+}
+
+#[derive(Clone, Default, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
+pub struct AssetStorageMetadata {
+	pub name: Vec<u8>,
+	pub symbol: Vec<u8>,
+	pub decimals: u8,
+	pub is_frozen: bool,
+}
+
+pub struct AssetRegistrar;
+use frame_support::pallet_prelude::DispatchResult;
+impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
+	fn create_asset(
+		asset_id:AssetId, 
+		min_balance:Balance, 
+		metadata: AssetStorageMetadata, 
+		is_sufficient:bool) ->DispatchResult {
+			Assets::force_create(
+				Origin::root(),
+				asset_id,
+				AssetManager::account_id(),
+				is_sufficient,
+				min_balance,
+			)?;
+	
+			Assets::force_set_metadata(
+				Origin::root(),
+				asset_id,
+				metadata.name,
+				metadata.symbol,
+				metadata.decimals,
+				metadata.is_frozen,
+			)
+	}
+}
+impl pallet_asset_manager::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type AssetId = AssetId;
+	type AssetRegistrarMetadata = AssetRegistarMetadata;
+	type StorageMetadata = AssetStorageMetadata;
+	type AssetLocation = AssetLocation;
+	type AssetRegistrar = AssetRegistrar;
+	type ModifierOrigin = EnsureRoot<AccountId>;
+}
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
@@ -388,6 +490,7 @@ construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
 		Assets: pallet_assets::{Pallet, Storage, Event<T>},
+		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		MsgQueue: mock_msg_queue::{Pallet, Storage, Event<T>},
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
