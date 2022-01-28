@@ -32,7 +32,7 @@ use xcm_builder::{
 	AllowTopLevelPaidExecutionFrom, ChildParachainAsNative, ChildParachainConvertsVia,
 	ChildSystemParachainAsSuperuser, CurrencyAdapter as XcmCurrencyAdapter, FixedRateOfFungible,
 	FixedWeightBounds, IsConcrete, LocationInverter, SignedAccountId32AsNative,
-	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, ConvertedConcreteAssetId,
 };
 use xcm_executor::{Config, XcmExecutor};
 pub type AccountId = AccountId32;

@@ -5,6 +5,7 @@ use frame_support::assert_ok;
 use xcm::latest::prelude::*;
 use xcm_mock::*;
 use xcm_simulator::TestExt;
+use manta_primitives::AssetLocation;
 
 // Helper function for forming buy execution message
 fn buy_execution<C>(fees: impl Into<MultiAsset>) -> Instruction<C> {
@@ -102,8 +103,30 @@ fn xcmp() {
 }
 
 #[test]
-fn reserve_transfer() {
+fn reserve_transfer_relaychain_to_parachain_a() {
 	MockNet::reset();
+
+	let relay_asset_id: parachain::AssetId = 0;
+	let source_location = AssetLocation::Xcm(MultiLocation::parent());
+
+	let asset_metadata = parachain::AssetRegistarMetadata {
+		name: b"Kusama".to_vec(),
+		symbol: b"KSM".to_vec(),
+		decimals: 12,
+		min_balance: 1u128,
+		evm_address: None,
+		is_frozen: false,
+		is_sufficient: true,
+	};
+
+	// Register relay chain asset in parachain A
+	ParaA::execute_with(|| {
+		assert_ok!(parachain::AssetManager::register_asset(
+			parachain::Origin::root(),
+			source_location,
+			asset_metadata
+		));
+	});
 
 	let withdraw_amount = 123;
 
@@ -131,8 +154,8 @@ fn reserve_transfer() {
 	ParaA::execute_with(|| {
 		// free execution, full amount received
 		assert_eq!(
-			pallet_balances::Pallet::<parachain::Runtime>::free_balance(&ALICE),
-			INITIAL_BALANCE + withdraw_amount
+			pallet_assets::Pallet::<parachain::Runtime>::balance(relay_asset_id, &ALICE.into()),
+			withdraw_amount
 		);
 	});
 }

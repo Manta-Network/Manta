@@ -26,6 +26,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub use pallet::*;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -38,6 +40,7 @@ pub mod pallet {
 		traits::{AccountIdConversion, AtLeast32BitUnsigned, Bounded, CheckedAdd, One},
 		ArithmeticError,
 	};
+	use manta_primitives::AssetIdLocationGetter;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(PhantomData<T>);
@@ -70,6 +73,17 @@ pub mod pallet {
 
 		/// Returns a boolean value indicating whether this asset needs an existential deposit
 		fn is_sufficient(&self) -> bool;
+	}
+
+	/// Convert AssetId and AssetLocation
+	impl<T: Config> AssetIdLocationGetter<T::AssetId, T::AssetLocation> for Pallet<T>{
+		fn get_asset_id(loc: T::AssetLocation) -> Option<T::AssetId>{
+			LocationAssetId::<T>::get(loc)
+		}
+
+		fn get_asset_location(id: T::AssetId) -> Option<T::AssetLocation>{
+			AssetIdLocation::<T>::get(id)
+		}
 	}
 
 	#[pallet::config]
@@ -113,11 +127,7 @@ pub mod pallet {
 
 		/// The origin which may forcibly create or destroy an asset or otherwise alter privileged
 		/// attributes.
-		type ForceOrigin: EnsureOrigin<Self::Origin>;
-
-		/// The maximum number of assets this pallet can manage
-		#[pallet::constant]
-		type Capacity: Get<u32>;
+		type ModifierOrigin: EnsureOrigin<Self::Origin>;
 	}
 
 	#[pallet::event]
@@ -201,7 +211,7 @@ pub mod pallet {
 			location: T::AssetLocation,
 			metadata: T::AssetRegistrarMetadata,
 		) -> DispatchResult {
-			T::ForceOrigin::ensure_origin(origin)?;
+			T::ModifierOrigin::ensure_origin(origin)?;
 			ensure!(
 				LocationAssetId::<T>::get(&location).is_none(),
 				Error::<T>::LocationAlreadyExists
@@ -244,7 +254,7 @@ pub mod pallet {
 			metadata_option: Option<T::AssetRegistrarMetadata>,
 		) -> DispatchResult {
 			// check validity.
-			T::ForceOrigin::ensure_origin(origin)?;
+			T::ModifierOrigin::ensure_origin(origin)?;
 			ensure!(
 				AssetIdLocation::<T>::contains_key(&asset_id),
 				Error::<T>::UpdateNonExistAsset
