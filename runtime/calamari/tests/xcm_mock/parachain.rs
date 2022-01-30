@@ -479,6 +479,54 @@ impl pallet_asset_manager::Config for Runtime {
 	type ModifierOrigin = EnsureRoot<AccountId>;
 }
 
+// We wrap AssetId for XToken
+#[derive(Clone, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
+pub enum CurrencyId {
+	MantaCurrency(AssetId),
+}
+
+pub struct CurrencyIdtoMultiLocation<AssetXConverter>(sp_std::marker::PhantomData<AssetXConverter>);
+impl<AssetXConverter> sp_runtime::traits::Convert<CurrencyId, Option<MultiLocation>>
+	for CurrencyIdtoMultiLocation<AssetXConverter>
+where
+	AssetXConverter: xcm_executor::traits::Convert<MultiLocation, AssetId>,
+{
+	fn convert(currency: CurrencyId) -> Option<MultiLocation> {
+		match currency {
+			CurrencyId::MantaCurrency(asset_id) => 
+				match AssetXConverter::reverse_ref(&asset_id) {
+					Ok(location) => Some(location),
+					Err(_) => None
+				}
+		}
+	}
+}
+
+parameter_types! {
+	pub const BaseXcmWeight: Weight = 100;
+	pub SelfLocation: MultiLocation = MultiLocation {
+		parents:1,
+		interior: Junctions::X1(
+			Parachain(MsgQueue::parachain_id().into())
+		)
+	};
+}
+
+// The XCM message wrapper wrapper
+impl orml_xtokens::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type CurrencyId = CurrencyId;
+	type AccountIdToMultiLocation = manta_primitives::AccountIdToMultiLocation<AccountId>;
+	type CurrencyIdConvert = 
+		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>>;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type SelfLocation = SelfLocation;
+	type Weigher = xcm_builder::FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+	type BaseXcmWeight = BaseXcmWeight;
+	type LocationInverter = LocationInverter<Ancestry>;
+}
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
@@ -494,5 +542,6 @@ construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		MsgQueue: mock_msg_queue::{Pallet, Storage, Event<T>},
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
+		XTokens: orml_xtokens::{Pallet, Call, Event<T>, Storage},
 	}
 );

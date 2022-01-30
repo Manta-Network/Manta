@@ -34,6 +34,8 @@ impl Default for AssetLocation {
     }
 }
 
+/// Convert a `MultiLocaiton` to an `AssetLocation`
+/// Note: This does not guaranttee the `AssetLocation` is registered (i.e. have an AssetId)
 impl From<MultiLocation> for AssetLocation {
 	fn from(location: MultiLocation) -> Self {
         match location {
@@ -43,6 +45,8 @@ impl From<MultiLocation> for AssetLocation {
 	}
 }
 
+/// Convert an `AssetLocation` to a MultiLocation
+/// If Native, retrun none.
 impl Into<Option<MultiLocation>> for AssetLocation {
 	fn into(self: Self) -> Option<MultiLocation> {
 		match self {

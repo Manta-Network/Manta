@@ -30,7 +30,6 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use super::*;
 
 	use codec::{Codec, HasCompact};
 	use frame_support::{pallet_prelude::*, transactional, PalletId};

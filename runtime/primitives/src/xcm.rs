@@ -14,12 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+use sp_std::marker::PhantomData;
+
 use xcm_executor::traits::FilterAssetLocation;
-use xcm::v1::{
+use sp_runtime::traits::Convert;
+use xcm::{v1::{
 	MultiAsset, MultiLocation, AssetId as xcmAssetId,
-    Junction::Parachain, 
-    Junctions::*
-};
+    Junction::{Parachain, AccountId32}, 
+    Junctions::*,
+	NetworkId,
+}};
 
 pub trait Reserve {
 	/// Returns assets reserve location.
@@ -56,5 +60,19 @@ impl FilterAssetLocation for MultiNativeAsset {
 			}
 		}
 		false
+	}
+}
+
+pub struct AccountIdToMultiLocation<AccountId>(PhantomData<AccountId>);
+impl<AccountId> Convert<AccountId, MultiLocation> for AccountIdToMultiLocation<AccountId>
+where AccountId: Into<[u8; 32]> + Clone {
+	fn convert(account: AccountId) -> MultiLocation {
+		MultiLocation {
+			parents: 0,
+			interior: X1(AccountId32 {
+				network: NetworkId::Any,
+				id: account.into(),
+			}),
+		}
 	}
 }
