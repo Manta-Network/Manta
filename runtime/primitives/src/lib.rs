@@ -23,7 +23,7 @@ pub mod constants;
 mod xcm;
 mod assets;
 pub use constants::time;
-pub use crate::xcm::MultiNativeAsset;
+pub use crate::xcm::{MultiNativeAsset, AccountIdToMultiLocation};
 pub use crate::assets::{AssetLocation, AssetIdLocationConvert, AssetIdLocationGetter};
 
 use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};

@@ -3,6 +3,7 @@ mod xcm_mock;
 use codec::Encode;
 use frame_support::assert_ok;
 use xcm::latest::prelude::*;
+use xcm::VersionedMultiLocation;
 use xcm_mock::*;
 use xcm_simulator::TestExt;
 use manta_primitives::AssetLocation;
@@ -158,6 +159,100 @@ fn reserve_transfer_relaychain_to_parachain_a() {
 			withdraw_amount
 		);
 	});
+}
+
+#[test]
+fn reserve_transfer_relaychain_to_parachain_a_then_back() {
+	MockNet::reset();
+
+	let relay_asset_id: parachain::AssetId = 0;
+	let source_location = AssetLocation::Xcm(MultiLocation::parent());
+
+	let asset_metadata = parachain::AssetRegistarMetadata {
+		name: b"Kusama".to_vec(),
+		symbol: b"KSM".to_vec(),
+		decimals: 12,
+		min_balance: 1u128,
+		evm_address: None,
+		is_frozen: false,
+		is_sufficient: true,
+	};
+
+	// Register relay chain asset in parachain A
+	ParaA::execute_with(|| {
+		assert_ok!(parachain::AssetManager::register_asset(
+			parachain::Origin::root(),
+			source_location,
+			asset_metadata
+		));
+	});
+
+	let withdraw_amount = 123;
+
+	Relay::execute_with(|| {
+		assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+			relay_chain::Origin::signed(ALICE),
+			Box::new(X1(Parachain(1)).into().into()),
+			Box::new(
+				X1(AccountId32 {
+					network: Any,
+					id: ALICE.into()
+				})
+				.into()
+				.into()
+			),
+			Box::new((Here, withdraw_amount).into()),
+			0,
+		));
+		assert_eq!(
+			parachain::Balances::free_balance(&para_account_id(1)),
+			INITIAL_BALANCE + withdraw_amount
+		);
+	});
+
+	ParaA::execute_with(|| {
+		// free execution, full amount received
+		assert_eq!(
+			pallet_assets::Pallet::<parachain::Runtime>::balance(relay_asset_id, &ALICE.into()),
+			withdraw_amount
+		);
+	});
+
+	// Checking the balance of relay chain before sending token back
+	let mut balance_before_sending = 0;
+	Relay::execute_with(|| {
+		balance_before_sending = RelayBalances::free_balance(&ALICE);
+	});
+
+	let dest = MultiLocation {
+	 	parents: 1,
+	 	interior: X1(AccountId32 {
+	 		network: NetworkId::Any,
+	 		id: ALICE.into(),
+	 	}),
+	};
+
+	ParaA::execute_with(|| {
+	 	// free execution, full amount received
+	 	assert_ok!(parachain::XTokens::transfer(
+	 		parachain::Origin::signed(ALICE.into()),
+	 		parachain::CurrencyId::MantaCurrency(relay_asset_id),
+	 		withdraw_amount,
+	 		Box::new(VersionedMultiLocation::V1(dest)),
+	 		40000
+	 	));
+	});
+
+	ParaA::execute_with(|| {
+	 	// free execution, full amount received
+	 	assert_eq!(parachain::Assets::balance(relay_asset_id, &ALICE.into()), 0);
+	});
+
+	Relay::execute_with(|| {
+	 	// free execution,x	 full amount received
+	 	assert!(RelayBalances::free_balance(&ALICE) > balance_before_sending);
+	});
+		
 }
 
 /// Scenario:
