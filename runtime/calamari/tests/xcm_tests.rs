@@ -187,7 +187,7 @@ fn reserve_transfer_relaychain_to_parachain_a_then_back() {
 		));
 	});
 
-	let withdraw_amount = 123;
+	let amount = 123;
 
 	Relay::execute_with(|| {
 		assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
@@ -201,12 +201,12 @@ fn reserve_transfer_relaychain_to_parachain_a_then_back() {
 				.into()
 				.into()
 			),
-			Box::new((Here, withdraw_amount).into()),
+			Box::new((Here, amount).into()),
 			0,
 		));
 		assert_eq!(
 			parachain::Balances::free_balance(&para_account_id(1)),
-			INITIAL_BALANCE + withdraw_amount
+			INITIAL_BALANCE + amount
 		);
 	});
 
@@ -214,7 +214,7 @@ fn reserve_transfer_relaychain_to_parachain_a_then_back() {
 		// free execution, full amount received
 		assert_eq!(
 			pallet_assets::Pallet::<parachain::Runtime>::balance(relay_asset_id, &ALICE.into()),
-			withdraw_amount
+			amount
 		);
 	});
 
@@ -237,20 +237,21 @@ fn reserve_transfer_relaychain_to_parachain_a_then_back() {
 	 	assert_ok!(parachain::XTokens::transfer(
 	 		parachain::Origin::signed(ALICE.into()),
 	 		parachain::CurrencyId::MantaCurrency(relay_asset_id),
-	 		withdraw_amount,
+	 		amount,
 	 		Box::new(VersionedMultiLocation::V1(dest)),
 	 		40000
 	 	));
 	});
 
 	ParaA::execute_with(|| {
-	 	// free execution, full amount received
+	 	// free execution, this will drain the parachain asset account
 	 	assert_eq!(parachain::Assets::balance(relay_asset_id, &ALICE.into()), 0);
 	});
 
 	Relay::execute_with(|| {
-	 	// free execution,x	 full amount received
-	 	assert!(RelayBalances::free_balance(&ALICE) > balance_before_sending);
+	 	// free execution, full amount received
+		let relay_balance = RelayBalances::free_balance(&ALICE);
+	 	assert_eq!(RelayBalances::free_balance(&ALICE), balance_before_sending + amount);
 	});
 		
 }
