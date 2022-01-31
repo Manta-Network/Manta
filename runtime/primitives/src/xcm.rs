@@ -16,14 +16,14 @@
 
 use sp_std::marker::PhantomData;
 
-use xcm_executor::traits::FilterAssetLocation;
 use sp_runtime::traits::Convert;
-use xcm::{v1::{
-	MultiAsset, MultiLocation, AssetId as xcmAssetId,
-    Junction::{Parachain, AccountId32}, 
-    Junctions::*,
-	NetworkId,
-}};
+use xcm::v1::{
+	AssetId as xcmAssetId,
+	Junction::{AccountId32, Parachain},
+	Junctions::*,
+	MultiAsset, MultiLocation, NetworkId,
+};
+use xcm_executor::traits::FilterAssetLocation;
 
 pub trait Reserve {
 	/// Returns assets reserve location.
@@ -33,7 +33,7 @@ pub trait Reserve {
 // Takes the chain part of a MultiAsset
 impl Reserve for MultiAsset {
 	fn reserve(&self) -> Option<MultiLocation> {
-        // We only care about concrete location now.
+		// We only care about concrete location now.
 		if let xcmAssetId::Concrete(location) = self.id.clone() {
 			let first_interior = location.first_interior();
 			let parents = location.parent_count();
@@ -65,7 +65,9 @@ impl FilterAssetLocation for MultiNativeAsset {
 
 pub struct AccountIdToMultiLocation<AccountId>(PhantomData<AccountId>);
 impl<AccountId> Convert<AccountId, MultiLocation> for AccountIdToMultiLocation<AccountId>
-where AccountId: Into<[u8; 32]> + Clone {
+where
+	AccountId: Into<[u8; 32]> + Clone,
+{
 	fn convert(account: AccountId) -> MultiLocation {
 		MultiLocation {
 			parents: 0,

@@ -34,12 +34,12 @@ pub mod pallet {
 	use codec::{Codec, HasCompact};
 	use frame_support::{pallet_prelude::*, transactional, PalletId};
 	use frame_system::pallet_prelude::*;
+	use manta_primitives::AssetIdLocationGetter;
 	use scale_info::TypeInfo;
 	use sp_runtime::{
 		traits::{AccountIdConversion, AtLeast32BitUnsigned, Bounded, CheckedAdd, One},
 		ArithmeticError,
 	};
-	use manta_primitives::AssetIdLocationGetter;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(PhantomData<T>);
@@ -75,12 +75,12 @@ pub mod pallet {
 	}
 
 	/// Convert AssetId and AssetLocation
-	impl<T: Config> AssetIdLocationGetter<T::AssetId, T::AssetLocation> for Pallet<T>{
-		fn get_asset_id(loc: T::AssetLocation) -> Option<T::AssetId>{
+	impl<T: Config> AssetIdLocationGetter<T::AssetId, T::AssetLocation> for Pallet<T> {
+		fn get_asset_id(loc: T::AssetLocation) -> Option<T::AssetId> {
 			LocationAssetId::<T>::get(loc)
 		}
 
-		fn get_asset_location(id: T::AssetId) -> Option<T::AssetLocation>{
+		fn get_asset_location(id: T::AssetId) -> Option<T::AssetLocation> {
 			AssetIdLocation::<T>::get(id)
 		}
 	}

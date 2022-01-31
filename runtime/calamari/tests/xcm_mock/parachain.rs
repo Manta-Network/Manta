@@ -17,22 +17,23 @@
 //! Parachain runtime mock.
 
 use codec::{Decode, Encode};
-use frame_system::EnsureRoot;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{Everything, Nothing, PalletInfo as PalletInfoTrait},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
+use frame_system::EnsureRoot;
 use pallet_asset_manager::AssetMetadata;
-use sp_core::{H256, H160};
+use scale_info::TypeInfo;
+use sp_core::{H160, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{Hash, IdentityLookup},
 	AccountId32,
 };
 use sp_std::{convert::TryFrom, prelude::*};
-use scale_info::TypeInfo;
 
+use manta_primitives::{AssetIdLocationConvert, AssetLocation, MultiNativeAsset};
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain::primitives::{
@@ -40,14 +41,13 @@ use polkadot_parachain::primitives::{
 };
 use xcm::{latest::prelude::*, VersionedXcm};
 use xcm_builder::{
-	AccountId32Aliases, AllowUnpaidExecutionFrom, SiblingParachainAsNative,
-	EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, LocationInverter,
-	ParentIsDefault, SiblingParachainConvertsVia, SignedAccountId32AsNative, 
-	SignedToAccountId32, SovereignSignedViaLocation, ConvertedConcreteAssetId, 
-	FungiblesAdapter, CurrencyAdapter as XcmCurrencyAdapter, IsConcrete,
+	AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
+	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
+	FungiblesAdapter, IsConcrete, LocationInverter, ParentIsDefault, SiblingParachainAsNative,
+	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+	SovereignSignedViaLocation,
 };
-use xcm_executor::{Config, XcmExecutor, traits::JustTry};
-use manta_primitives::{MultiNativeAsset, AssetIdLocationConvert, AssetLocation};
+use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
@@ -110,7 +110,7 @@ parameter_types! {
 	pub const KsmLocation: MultiLocation = MultiLocation::parent();
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
 	pub Ancestry: MultiLocation = Parachain(MsgQueue::parachain_id().into()).into();
-	// This self reserve only works for pre-v0.9.16 
+	// This self reserve only works for pre-v0.9.16
 	pub SelfReserve: MultiLocation = MultiLocation {
 		parents:1,
 		interior: Junctions::X2(
@@ -164,8 +164,8 @@ pub type XcmOriginToCallOrigin = (
 	// using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
 	// foreign chains who want to have a local sovereign account on this chain which they control.
 	SovereignSignedViaLocation<LocationToAccountId, Origin>,
-	// If the incoming XCM origin is of type `AccountId32` and the Network is Network::Any 
-	// or `RelayNetwork`, convert it to a Native 32 byte account. 
+	// If the incoming XCM origin is of type `AccountId32` and the Network is Network::Any
+	// or `RelayNetwork`, convert it to a Native 32 byte account.
 	SignedAccountId32AsNative<RelayNetwork, Origin>,
 	// Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
 	// recognised.
@@ -181,14 +181,14 @@ parameter_types! {
 }
 
 /// Transactor for native currency, i.e. implements `fungible` trait
-pub type LocalAssetTransactor =
- 	XcmCurrencyAdapter<
- 		// Transacting native currency, i.e. MANTA, KMA, DOL
- 		Balances, 
- 		IsConcrete<SelfReserve>, 
- 		LocationToAccountId, 
- 		AccountId, 
- 		()>;
+pub type LocalAssetTransactor = XcmCurrencyAdapter<
+	// Transacting native currency, i.e. MANTA, KMA, DOL
+	Balances,
+	IsConcrete<SelfReserve>,
+	LocationToAccountId,
+	AccountId,
+	(),
+>;
 
 /// Transactor for currency in pallet-assets, i.e. implements `fungibles` trait
 pub type FungiblesTransactor = FungiblesAdapter<
@@ -197,7 +197,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 		AssetId,
 		Balance,
 		AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>,
-		JustTry
+		JustTry,
 	>,
 	// "default" implementation of converting a `MultiLocation` to an `AccountId`
 	LocationToAccountId,
@@ -205,7 +205,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	// No teleport support.
 	Nothing,
 	// No teleport tracking.
-	()
+	(),
 >;
 
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
@@ -216,7 +216,7 @@ impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// Defines how to Withdraw and Deposit instruction work
-	// Under the hood, substrate framework will do pattern matching in macro, 
+	// Under the hood, substrate framework will do pattern matching in macro,
 	// as a result, the order of the following tuple matters.
 	type AssetTransactor = (LocalAssetTransactor, FungiblesTransactor);
 	type OriginConverter = XcmOriginToCallOrigin;
@@ -228,7 +228,7 @@ impl Config for XcmConfig {
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	// Trader is the means to purchasing weight credit for XCM execution.
 	// We need customize this.
-	// 
+	//
 	// Moonbase mock runtime uses the following logic:
 	// When receiving the self-reserve asset, they use pallet-transaction-payment.
 	// When receiving a non-reserve asset, they use AssetManager to fetch how many
@@ -430,7 +430,7 @@ pub struct AssetRegistarMetadata {
 }
 
 impl AssetMetadata<Runtime> for AssetRegistarMetadata {
-	fn min_balance(&self) ->Balance{
+	fn min_balance(&self) -> Balance {
 		self.min_balance
 	}
 
@@ -462,26 +462,27 @@ pub struct AssetRegistrar;
 use frame_support::pallet_prelude::DispatchResult;
 impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
 	fn create_asset(
-		asset_id:AssetId, 
-		min_balance:Balance, 
-		metadata: AssetStorageMetadata, 
-		is_sufficient:bool) ->DispatchResult {
-			Assets::force_create(
-				Origin::root(),
-				asset_id,
-				AssetManager::account_id(),
-				is_sufficient,
-				min_balance,
-			)?;
-	
-			Assets::force_set_metadata(
-				Origin::root(),
-				asset_id,
-				metadata.name,
-				metadata.symbol,
-				metadata.decimals,
-				metadata.is_frozen,
-			)
+		asset_id: AssetId,
+		min_balance: Balance,
+		metadata: AssetStorageMetadata,
+		is_sufficient: bool,
+	) -> DispatchResult {
+		Assets::force_create(
+			Origin::root(),
+			asset_id,
+			AssetManager::account_id(),
+			is_sufficient,
+			min_balance,
+		)?;
+
+		Assets::force_set_metadata(
+			Origin::root(),
+			asset_id,
+			metadata.name,
+			metadata.symbol,
+			metadata.decimals,
+			metadata.is_frozen,
+		)
 	}
 }
 impl pallet_asset_manager::Config for Runtime {
@@ -514,11 +515,10 @@ where
 {
 	fn convert(currency: CurrencyId) -> Option<MultiLocation> {
 		match currency {
-			CurrencyId::MantaCurrency(asset_id) => 
-				match AssetXConverter::reverse_ref(&asset_id) {
-					Ok(location) => Some(location),
-					Err(_) => None
-				}
+			CurrencyId::MantaCurrency(asset_id) => match AssetXConverter::reverse_ref(&asset_id) {
+				Ok(location) => Some(location),
+				Err(_) => None,
+			},
 		}
 	}
 }
@@ -539,7 +539,7 @@ impl orml_xtokens::Config for Runtime {
 	type Balance = Balance;
 	type CurrencyId = CurrencyId;
 	type AccountIdToMultiLocation = manta_primitives::AccountIdToMultiLocation<AccountId>;
-	type CurrencyIdConvert = 
+	type CurrencyIdConvert =
 		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>>;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type SelfLocation = SelfLocation;
