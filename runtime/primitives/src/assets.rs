@@ -16,21 +16,20 @@
 
 ///! Manta/Calamari/Dolphin Asset
 
-use xcm::v1::{MultiLocation, Junctions};
+use xcm::{v1::{MultiLocation, Junctions}, VersionedMultiLocation};
 use codec::{Encode, Decode};
 use scale_info::TypeInfo;
 use sp_std::{marker::PhantomData, borrow::Borrow};
 
 
-#[derive(Clone, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
-pub enum AssetLocation {
-    Native, // Native Currency, e.g KMA, MANTA, DOL
-    Xcm(MultiLocation),
-}
+#[derive(Clone, Eq, Debug, PartialEq, Encode, Decode, TypeInfo)]
+pub struct AssetLocation(pub VersionedMultiLocation);
 
+/// This cannot act as the default before v0.9.16 and need overwrite
+/// https://docs.google.com/document/d/1W8y00IcJb0JXPBF59aP4nm-c7DY8Ld02-yIAO7UxR80
 impl Default for AssetLocation {
     fn default() -> Self {
-        Self::Native
+        AssetLocation(VersionedMultiLocation::V1(MultiLocation {parents: 0, interior: Junctions::Here}))
     }
 }
 
@@ -38,10 +37,7 @@ impl Default for AssetLocation {
 /// Note: This does not guaranttee the `AssetLocation` is registered (i.e. have an AssetId)
 impl From<MultiLocation> for AssetLocation {
 	fn from(location: MultiLocation) -> Self {
-        match location {
-            MultiLocation {parents: 0, interior: Junctions::Here} => Self::Native,
-            _ => Self::Xcm(location)
-        }
+       AssetLocation(VersionedMultiLocation::V1(location))
 	}
 }
 
@@ -49,10 +45,12 @@ impl From<MultiLocation> for AssetLocation {
 /// If Native, retrun none.
 impl Into<Option<MultiLocation>> for AssetLocation {
 	fn into(self: Self) -> Option<MultiLocation> {
-		match self {
-			Self::Xcm(location) => Some(location),
-            Self::Native => None
-		}
+        // only support specific version
+		if let AssetLocation(VersionedMultiLocation::V1(loc)) = self {
+            Some(loc)
+        } else {
+            None
+        }
 	}
 }
 

@@ -22,7 +22,7 @@ use sp_runtime::traits::AccountIdConversion;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
-pub const INITIAL_BALANCE: u128 = 1_000_000_000;
+pub const INITIAL_BALANCE: u128 = 10_000_000_000_000_000;
 
 decl_test_parachain! {
 	pub struct ParaA {

@@ -20,7 +20,7 @@ use codec::{Decode, Encode};
 use frame_system::EnsureRoot;
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{Everything, Nothing},
+	traits::{Everything, Nothing, PalletInfo as PalletInfoTrait},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 use pallet_asset_manager::AssetMetadata;
@@ -40,10 +40,11 @@ use polkadot_parachain::primitives::{
 };
 use xcm::{latest::prelude::*, VersionedXcm};
 use xcm_builder::{
-	AccountId32Aliases, AllowUnpaidExecutionFrom, CurrencyAdapter as XcmCurrencyAdapter,
-	EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, IsConcrete, LocationInverter,
-	ParentIsDefault, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-	SignedToAccountId32, SovereignSignedViaLocation, ConvertedConcreteAssetId, FungiblesAdapter
+	AccountId32Aliases, AllowUnpaidExecutionFrom, SiblingParachainAsNative,
+	EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, LocationInverter,
+	ParentIsDefault, SiblingParachainConvertsVia, SignedAccountId32AsNative, 
+	SignedToAccountId32, SovereignSignedViaLocation, ConvertedConcreteAssetId, 
+	FungiblesAdapter, CurrencyAdapter as XcmCurrencyAdapter, IsConcrete,
 };
 use xcm_executor::{Config, XcmExecutor, traits::JustTry};
 use manta_primitives::{MultiNativeAsset, AssetIdLocationConvert, AssetLocation};
@@ -109,6 +110,14 @@ parameter_types! {
 	pub const KsmLocation: MultiLocation = MultiLocation::parent();
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
 	pub Ancestry: MultiLocation = Parachain(MsgQueue::parachain_id().into()).into();
+	// This self reserve only works for pre-v0.9.16 
+	pub SelfReserve: MultiLocation = MultiLocation {
+		parents:1,
+		interior: Junctions::X2(
+			Parachain(MsgQueue::parachain_id().into()),
+			PalletInstance(<Runtime as frame_system::Config>::PalletInfo::index::<Balances>().unwrap() as u8)
+		)
+	};
 }
 
 parameter_types! {
@@ -158,6 +167,9 @@ pub type XcmOriginToCallOrigin = (
 	// If the incoming XCM origin is of type `AccountId32` and the Network is Network::Any 
 	// or `RelayNetwork`, convert it to a Native 32 byte account. 
 	SignedAccountId32AsNative<RelayNetwork, Origin>,
+	// Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
+	// recognised.
+	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, Origin>,
 	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
 	XcmPassthrough<Origin>,
 );
@@ -168,15 +180,17 @@ parameter_types! {
 	pub const MaxInstructions: u32 = 100;
 }
 
-// pub type LocalAssetTransactor =
-// 	XcmCurrencyAdapter<
-// 		// Transacting native currency, i.e. MANTA, KMA, DOL
-// 		Balances, 
-// 		IsConcrete<KsmLocation>, 
-// 		LocationToAccountId, 
-// 		AccountId, 
-// 		()>;
+/// Transactor for native currency, i.e. implements `fungible` trait
+pub type LocalAssetTransactor =
+ 	XcmCurrencyAdapter<
+ 		// Transacting native currency, i.e. MANTA, KMA, DOL
+ 		Balances, 
+ 		IsConcrete<SelfReserve>, 
+ 		LocationToAccountId, 
+ 		AccountId, 
+ 		()>;
 
+/// Transactor for currency in pallet-assets, i.e. implements `fungibles` trait
 pub type FungiblesTransactor = FungiblesAdapter<
 	Assets,
 	ConvertedConcreteAssetId<
@@ -201,8 +215,10 @@ pub struct XcmConfig;
 impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
-	// Defines how to withdraw and deposit an asset.
-	type AssetTransactor = FungiblesTransactor;
+	// Defines how to Withdraw and Deposit instruction work
+	// Under the hood, substrate framework will do pattern matching in macro, 
+	// as a result, the order of the following tuple matters.
+	type AssetTransactor = (LocalAssetTransactor, FungiblesTransactor);
 	type OriginConverter = XcmOriginToCallOrigin;
 	// Combinations of (Location, Asset) pairs which we trust as reserves.
 	type IsReserve = MultiNativeAsset;
@@ -479,6 +495,11 @@ impl pallet_asset_manager::Config for Runtime {
 	type ModifierOrigin = EnsureRoot<AccountId>;
 }
 
+impl cumulus_pallet_xcm::Config for Runtime {
+	type Event = Event;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
 // We wrap AssetId for XToken
 #[derive(Clone, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
 pub enum CurrencyId {
@@ -536,12 +557,15 @@ construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
-		Assets: pallet_assets::{Pallet, Storage, Event<T>},
-		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		MsgQueue: mock_msg_queue::{Pallet, Storage, Event<T>},
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
-		XTokens: orml_xtokens::{Pallet, Call, Event<T>, Storage},
+		System: frame_system::{Pallet, Call, Storage, Config, Event<T>} = 0,
+		Assets: pallet_assets::{Pallet, Storage, Event<T>} = 1,
+		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>} = 2,
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 3,
+		MsgQueue: mock_msg_queue::{Pallet, Storage, Event<T>} = 4,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 5,
+		XTokens: orml_xtokens::{Pallet, Call, Event<T>, Storage} = 6,
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 7,
 	}
 );
+
+pub const PALLET_BALANCES_INDEX: u8 = 3u8;
