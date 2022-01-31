@@ -74,10 +74,11 @@ pub fn calamari_development_config() -> CalamariChainSpec {
 		vec![],
 		None,
 		Some(CALAMARI_PROTOCOL_ID),
+		None,
 		Some(properties),
 		Extensions {
 			relay_chain: KUSAMA_RELAYCHAIN_DEV_NET.into(),
-			para_id: CALAMARI_PARACHAIN_ID.into(),
+			para_id: CALAMARI_PARACHAIN_ID,
 		},
 	)
 }
@@ -134,10 +135,11 @@ pub fn calamari_local_config() -> CalamariChainSpec {
 		vec![],
 		None,
 		Some(CALAMARI_PROTOCOL_ID),
+		None,
 		Some(properties),
 		Extensions {
 			relay_chain: KUSAMA_RELAYCHAIN_LOCAL_NET.into(),
-			para_id: CALAMARI_PARACHAIN_ID.into(),
+			para_id: CALAMARI_PARACHAIN_ID,
 		},
 	)
 }
@@ -167,7 +169,9 @@ fn calamari_dev_genesis(
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		aura: Default::default(),
-		sudo: calamari_runtime::SudoConfig { key: root_key },
+		sudo: calamari_runtime::SudoConfig {
+			key: Some(root_key),
+		},
 		parachain_info: calamari_runtime::ParachainInfoConfig {
 			parachain_id: CALAMARI_PARACHAIN_ID.into(),
 		},
@@ -212,7 +216,7 @@ pub fn calamari_testnet_config() -> Result<CalamariChainSpec, String> {
 	let mut spec = CalamariChainSpec::from_json_bytes(
 		&include_bytes!("../../../genesis/calamari-testnet-genesis.json")[..],
 	)?;
-	spec.extensions_mut().para_id = CALAMARI_PARACHAIN_ID.into();
+	spec.extensions_mut().para_id = CALAMARI_PARACHAIN_ID;
 	Ok(spec)
 }
 
