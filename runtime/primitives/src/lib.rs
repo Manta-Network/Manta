@@ -19,12 +19,14 @@
 #![allow(clippy::upper_case_acronyms)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
+mod assets;
 pub mod constants;
 mod xcm;
-mod assets;
+pub use crate::{
+	assets::{AssetIdLocationConvert, AssetIdLocationGetter, AssetLocation},
+	xcm::{AccountIdToMultiLocation, MultiNativeAsset},
+};
 pub use constants::time;
-pub use crate::xcm::{MultiNativeAsset, AccountIdToMultiLocation};
-pub use crate::assets::{AssetLocation, AssetIdLocationConvert, AssetIdLocationGetter};
 
 use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
 
