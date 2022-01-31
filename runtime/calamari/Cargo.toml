@@ -78,7 +78,7 @@ xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-fea
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.16" }
 
 # Third party (vendored) dependencies
-orml-xtokens = { git = "https://github.com/Manta-Network/open-runtime-module-library.git", default-features = false, branch = "polkadot-v0.9.12"}
+orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, branch = "polkadot-v0.9.12"}
 
 # Self dependencies
 manta-primitives = { path = '../primitives', default-features = false }
