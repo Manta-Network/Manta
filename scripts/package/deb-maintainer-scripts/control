@@ -1,0 +1,11 @@
+Package: manta
+Version: @@VERSION@@
+Architecture: amd64
+Vcs-Browser: https://github.com/Manta-Network/Manta
+Vcs-Git: https://github.com/Manta-Network/Manta
+Homepage: https://manta.network
+Section: misc
+Priority: optional
+Installed-Size: @@INSTALLED_SIZE@@
+Maintainer: rob@manta.network
+Description: https://manta.network and https://calamari.network substrate service nodes
