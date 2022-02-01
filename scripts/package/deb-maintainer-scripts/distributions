@@ -1,6 +1,6 @@
 Origin: deb.manta.systems
 Label: deb.manta.systems
-Codename: focal
+Codename: manta-focal
 Architectures: amd64 source
 Components: main
 Description: https://manta.network and https://calamari.network substrate service nodes
