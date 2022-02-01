@@ -1,0 +1,8 @@
+/etc/default/calamari
+/etc/default/manta
+/usr/lib/systemd/system/calamari.service
+/usr/lib/systemd/system/manta.service
+/usr/share/substrate/calamari.json
+/usr/share/substrate/kusama.json
+/usr/share/substrate/manta.json
+/usr/share/substrate/polkadot.json
