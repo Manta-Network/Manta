@@ -207,25 +207,3 @@ fn dolphin_dev_genesis(
 		},
 	}
 }
-
-// pub fn dolphin_testnet_config() -> Result<DolphinChainSpec, String> {
-// 	let mut spec = DolphinChainSpec::from_json_bytes(
-// 		&include_bytes!("../../../genesis/dolphin-testnet-genesis.json")[..],
-// 	)?;
-// 	spec.extensions_mut().para_id = CALAMARI_PARACHAIN_ID.into();
-// 	Ok(spec)
-// }
-
-// // Dolphin testnet for ci jobs
-// pub fn dolphin_testnet_ci_config() -> Result<DolphinChainSpec, String> {
-// 	DolphinChainSpec::from_json_bytes(
-// 		&include_bytes!("../../../genesis/dolphin-testnet-ci-genesis.json")[..],
-// 	)
-// }
-
-// // Dolphin mainnet
-// pub fn dolphin_config() -> Result<DolphinChainSpec, String> {
-// 	DolphinChainSpec::from_json_bytes(
-// 		&include_bytes!("../../../genesis/dolphin-genesis.json")[..],
-// 	)
-// }

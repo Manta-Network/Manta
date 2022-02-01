@@ -111,10 +111,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("dolphin"),
 	impl_name: create_runtime_str!("dolphin"),
 	authoring_version: 1,
-	spec_version: 3111,
+	spec_version: 3120,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 3,
+	transaction_version: 1,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -357,13 +357,13 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-	pub const LaunchPeriod: BlockNumber = 7 * DAYS;
-	pub const VotingPeriod: BlockNumber = 7 * DAYS;
-	pub const FastTrackVotingPeriod: BlockNumber = 3 * HOURS;
+	pub const LaunchPeriod: BlockNumber = 5 * MINUTES;
+	pub const VotingPeriod: BlockNumber = 5 * MINUTES;
+	pub const FastTrackVotingPeriod: BlockNumber = 5 * MINUTES;
 	pub const InstantAllowed: bool = true;
 	pub const MinimumDeposit: Balance = 20 * DOL;
-	pub const EnactmentPeriod: BlockNumber = 1 * DAYS;
-	pub const CooloffPeriod: BlockNumber = 7 * DAYS;
+	pub const EnactmentPeriod: BlockNumber = 5 * MINUTES;
+	pub const CooloffPeriod: BlockNumber = 5 * MINUTES;
 	pub const PreimageByteDeposit: Balance = deposit(0, 1);
 	pub const MaxVotes: u32 = 100;
 	pub const MaxProposals: u32 = 100;
@@ -496,7 +496,7 @@ impl pallet_membership::Config<TechnicalMembershipInstance> for Runtime {
 parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(1);
 	pub const ProposalBondMinimum: Balance = 50 * DOL;
-	pub const SpendPeriod: BlockNumber = 6 * DAYS;
+	pub const SpendPeriod: BlockNumber = 10 * MINUTES;
 	pub const Burn: Permill = Permill::from_percent(0);
 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
 	pub const MaxApprovals: u32 = 100;
@@ -754,7 +754,7 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 
 parameter_types! {
 	// Rotate collator's spot each 6 hours.
-	pub const Period: u32 = 6 * HOURS;
+	pub const Period: u32 = 10 * MINUTES;
 	pub const Offset: u32 = 0;
 	pub const MaxAuthorities: u32 = 100_000;
 }
