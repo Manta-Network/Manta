@@ -859,7 +859,6 @@ construct_runtime!(
 		TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 
 		// Collator support. the order of these 5 are important and shall not change.
-				// Collator support. the order of these 5 are important and shall not change.
 		// Authorship and Session uses CollatorSelection functions in their on_initialize hooks.
 		// So CollatorSelection's on_initialize hook has to be executed first.
 		// Since we are using AllPalletsWithSystem the declared order should be respected.
