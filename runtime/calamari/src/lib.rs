@@ -114,7 +114,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_version: 3120,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 4,
+	transaction_version: 3,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -859,11 +859,8 @@ construct_runtime!(
 		TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 
 		// Collator support. the order of these 5 are important and shall not change.
-		// Authorship and Session use CollatorSelection functions in their on_initialize hooks.
-		// So CollatorSelection's on_initialize hook has to be executed first.
-		// Since we are using AllPalletsWithSystem the declared order should be respected.
-		CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 20,
-		Authorship: pallet_authorship::{Pallet, Call, Storage} = 21,
+		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
+		CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
