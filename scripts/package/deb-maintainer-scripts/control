@@ -7,5 +7,5 @@ Homepage: https://manta.network
 Section: misc
 Priority: optional
 Installed-Size: @@INSTALLED_SIZE@@
-Maintainer: rob@manta.network
+Maintainer: rob thijssen <rob@manta.network>
 Description: https://manta.network and https://calamari.network substrate service nodes
