@@ -1,0 +1,1 @@
+deb [ arch=amd64 signed-by=/usr/share/keyrings/manta.gpg ] https://deb.manta.systems focal main
