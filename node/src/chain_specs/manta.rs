@@ -25,6 +25,9 @@ const POLKADOT_RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
 #[allow(dead_code)]
 const POLKADOT_RELAYCHAIN_MAIN_NET: &str = "polkadot";
 
+/// The default XCM version to set in genesis config.
+const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
+
 /// Generate the manta session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
@@ -180,7 +183,7 @@ fn manta_dev_genesis(
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
 		polkadot_xcm: manta_runtime::PolkadotXcmConfig {
-			safe_xcm_version: Some(0),
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 	}
 }

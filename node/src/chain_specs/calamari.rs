@@ -27,6 +27,9 @@ const CALAMARI_PROTOCOL_ID: &str = "calamari"; // for p2p network configuration
 const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
 const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
 
+/// The default XCM version to set in genesis config.
+const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
+
 /// Generate the calamari session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
@@ -207,7 +210,7 @@ fn calamari_dev_genesis(
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
 		polkadot_xcm: calamari_runtime::PolkadotXcmConfig {
-			safe_xcm_version: Some(0),
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 	}
 }
