@@ -755,7 +755,7 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 
 parameter_types! {
 	// Rotate collator's spot each 6 hours.
-	pub const Period: u32 = 6 * HOURS;
+	pub const Period: u32 = 2 * MINUTES;
 	pub const Offset: u32 = 0;
 	pub const MaxAuthorities: u32 = 100_000;
 }
@@ -915,7 +915,7 @@ pub type Executive = frame_executive::Executive<
 	Block,
 	frame_system::ChainContext<Runtime>,
 	Runtime,
-	AllPalletsWithSystem,
+	AllPalletsReversedWithSystemFirst,
 >;
 
 impl_runtime_apis! {
@@ -1065,7 +1065,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_session, SessionBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_tx_pause, TransactionPause);
 
-			let storage_info = AllPalletsWithSystem::storage_info();
+			let storage_info = AllPalletsReversedWithSystemFirst::storage_info();
 
 			return (list, storage_info)
 		}
