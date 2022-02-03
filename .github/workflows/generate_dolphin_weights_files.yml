@@ -107,14 +107,6 @@ jobs:
           -
             extrinsic:
               id: '*'
-              name: calamari_vesting
-            pallet:
-              id: calamari_vesting
-              name: calamari_vesting
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
               name: frame_system
             pallet:
               id: frame_system
