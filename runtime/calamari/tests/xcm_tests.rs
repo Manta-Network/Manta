@@ -129,6 +129,11 @@ fn reserve_transfer_relaychain_to_parachain_a() {
 			source_location,
 			asset_metadata
 		));
+		// we don't charge anything during test
+		assert_ok!(parachain::AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			relay_asset_id, 
+			0u128));
 	});
 
 	let withdraw_amount = 123;
@@ -149,7 +154,7 @@ fn reserve_transfer_relaychain_to_parachain_a() {
 			0,
 		));
 		assert_eq!(
-			parachain::Balances::free_balance(&para_account_id(1)),
+			relay_chain::Balances::free_balance(&para_account_id(1)),
 			INITIAL_BALANCE + withdraw_amount
 		);
 	});
@@ -187,6 +192,11 @@ fn reserve_transfer_relaychain_to_parachain_a_then_back() {
 			source_location,
 			asset_metadata
 		));
+		// we don't charge anything
+		assert_ok!(parachain::AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			relay_asset_id, 
+			0u128));
 	});
 
 	let amount = 123;
@@ -291,6 +301,10 @@ fn send_para_a_asset_to_para_b() {
 			source_location.clone(),
 			asset_metadata.clone()
 		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			a_currency_id, 
+			0u128));
 		assert_eq!(
 			Some(a_currency_id),
 			AssetManager::location_asset_id(source_location.clone())
@@ -306,6 +320,10 @@ fn send_para_a_asset_to_para_b() {
 			source_location.clone(),
 			asset_metadata
 		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			a_currency_id, 
+			0u128));
 		assert_eq!(
 			Some(a_currency_id),
 			AssetManager::location_asset_id(source_location)
@@ -379,6 +397,10 @@ fn send_para_a_asset_para_b_and_then_send_back() {
 			source_location.clone(),
 			asset_metadata.clone()
 		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			a_currency_id, 
+			0u128));
 		assert_eq!(
 			Some(a_currency_id),
 			parachain::AssetManager::location_asset_id(source_location.clone())
@@ -391,6 +413,10 @@ fn send_para_a_asset_para_b_and_then_send_back() {
 			source_location.clone(),
 			asset_metadata.clone()
 		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			a_currency_id, 
+			0u128));
 		assert_eq!(
 			Some(a_currency_id),
 			parachain::AssetManager::location_asset_id(source_location.clone())
@@ -497,6 +523,10 @@ fn send_para_a_asset_from_para_b_to_para_c() {
 			source_location.clone(),
 			asset_metadata.clone()
 		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			a_currency_id, 
+			0u128));
 		assert_eq!(
 			Some(a_currency_id),
 			parachain::AssetManager::location_asset_id(source_location.clone())
@@ -509,6 +539,10 @@ fn send_para_a_asset_from_para_b_to_para_c() {
 			source_location.clone(),
 			asset_metadata.clone()
 		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			a_currency_id, 
+			0u128));
 		assert_eq!(
 			Some(a_currency_id),
 			parachain::AssetManager::location_asset_id(source_location.clone())
@@ -521,6 +555,10 @@ fn send_para_a_asset_from_para_b_to_para_c() {
 			source_location.clone(),
 			asset_metadata.clone()
 		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			a_currency_id, 
+			0u128));
 		assert_eq!(
 			Some(a_currency_id),
 			parachain::AssetManager::location_asset_id(source_location.clone())
@@ -595,6 +633,76 @@ fn send_para_a_asset_from_para_b_to_para_c() {
 			amount
 		);
 	});	
+}
+
+
+#[test]
+fn receive_relay_asset_with_trader(){
+	MockNet::reset();
+
+	let relay_asset_id: parachain::AssetId = 0;
+	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+	let asset_metadata = parachain::AssetRegistarMetadata {
+		name: b"Kusama".to_vec(),
+		symbol: b"KSM".to_vec(),
+		decimals: 12,
+		min_balance: 1u128,
+		evm_address: None,
+		is_frozen: false,
+		is_sufficient: true,
+	};
+	let amount = 666u128;
+
+	ParaA::execute_with(||{
+		assert_ok!(parachain::AssetManager::register_asset(
+			parachain::Origin::root(),
+			source_location,
+			asset_metadata
+		));
+		// We charge 10^9 as units per second
+		assert_ok!(parachain::AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			relay_asset_id, 
+			1000_000_000u128));
+	});
+
+	let dest: MultiLocation = AccountId32 {
+		network: Any,
+		id: ALICE.into()
+	}.into();
+
+	Relay::execute_with(|| {
+		assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+			relay_chain::Origin::signed(ALICE),
+			Box::new(X1(Parachain(1)).into().into()),
+			Box::new(VersionedMultiLocation::V1(dest).clone().into()),
+			Box::new((Here, amount).into()),
+			0,
+		));
+		assert_eq!(
+			relay_chain::Balances::free_balance(&para_account_id(1)),
+			INITIAL_BALANCE + amount
+		);
+	});
+	
+	// `reserved_transfer_asset` contains the following 4 instructions
+	//  1. ReserveAssetDeposited(assets.clone()),
+	//  2. ClearOrigin,
+	//  3. BuyExecution { fees, weight_limit: Limited(0) },
+	//  4. DepositAsset { assets: Wild(All), max_assets, beneficiary },
+	//  each instruction's weight is 1000, thus, the total charge is:
+	//  10^9 * 1^3 * 4 / 10^12 (WEIGHT_PER_SECOND defined by frame_support) = 4
+	ParaA::execute_with(||{
+		assert_eq!(
+			parachain::Assets::balance(relay_asset_id, &ALICE.into()),
+			amount - 4u128
+		);
+		assert_eq!(
+			parachain::Assets::balance(relay_asset_id, AssetManager::account_id()),
+			4u128
+		);
+	});
+
 }
 
 /// Scenario:

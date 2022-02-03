@@ -23,8 +23,8 @@ mod assets;
 pub mod constants;
 mod xcm;
 pub use crate::{
-	assets::{AssetIdLocationConvert, AssetIdLocationGetter, AssetLocation},
-	xcm::{AccountIdToMultiLocation, MultiNativeAsset},
+	assets::{AssetIdLocationConvert, AssetIdLocationGetter, AssetLocation, UnitsToWeightRatio},
+	xcm::{AccountIdToMultiLocation, MultiNativeAsset, FirstAssetTrader, XcmFeesToAccount},
 };
 pub use constants::time;
 
