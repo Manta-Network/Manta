@@ -53,6 +53,8 @@ jobs:
             name: calamari
           -
             name: manta
+          -
+            name: dolphin
     steps:
       -
         uses: actions/checkout@v2
@@ -768,6 +770,8 @@ jobs:
             name: calamari
           -
             name: manta
+          -
+            name: dolphin
     if: startsWith(github.ref, 'refs/tags')
     steps:
       -
@@ -1129,6 +1133,8 @@ jobs:
             name: calamari
           -
             name: manta
+          -
+            name: dolphin
     outputs:
       calamari-runtime-current: ${{ steps.get-runtime-current.outputs.calamari-runtime-current }}
       calamari-runtime-base: ${{ steps.get-runtime-base.outputs.calamari-runtime-base }}
