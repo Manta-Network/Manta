@@ -8,13 +8,17 @@ config_file="/etc/default/manta"
 chmod +x /usr/bin/manta
 
 if [ "$action" = "configure" ]; then
-  getent group manta > /dev/null 2>&1 || addgroup \
-    --system \
-    manta
-  getent passwd manta > /dev/null 2>&1 || adduser \
-    --system \
-    --home /var/lib/substrate \
-    --disabled-password \
-    --ingroup manta \
-    manta
+    if ! getent group manta > /dev/null 2>&1; then
+        addgroup --system manta
+        echo "addgroup manta, result: $?"
+    fi
+    if ! getent passwd manta > /dev/null 2>&1; then
+        adduser \
+            --system \
+            --home /var/lib/substrate \
+            --disabled-password \
+            --ingroup manta \
+            manta
+        echo "adduser manta, result: $?"
+    fi
 fi

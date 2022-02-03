@@ -1,0 +1,23 @@
+#!/bin/sh
+# Copyright Manta Inc. All Rights Reserved.
+# SPDX-License-Identifier: MIT
+
+if [ "$1" = "upgrade" ]; then
+    systemctl is-active --quiet calamari.service && systemctl stop calamari.service
+    systemctl is-active --quiet manta.service && systemctl stop manta.service
+fi
+
+if ! getent group manta > /dev/null 2>&1; then
+    addgroup --system manta
+    echo "addgroup manta, result: $?"
+fi
+
+if ! getent passwd manta > /dev/null 2>&1; then
+    adduser \
+        --system \
+        --home /var/lib/substrate \
+        --disabled-password \
+        --ingroup manta \
+        manta
+    echo "adduser manta, result: $?"
+fi

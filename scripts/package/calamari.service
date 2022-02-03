@@ -11,6 +11,7 @@ ExecStart=/usr/bin/calamari \
   --base-path ${sn_base_path} \
   --port ${sn_port} \
   --ws-port ${sn_ws_port} \
+  --ws-max-connections ${sn_ws_max_connections} \
   --rpc-port ${sn_rpc_port} \
   --rpc-cors ${sn_rpc_cors} \
   --rpc-methods ${sn_rpc_methods} \

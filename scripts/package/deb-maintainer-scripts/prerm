@@ -1,0 +1,8 @@
+#!/bin/sh
+# Copyright Manta Inc. All Rights Reserved.
+# SPDX-License-Identifier: MIT
+
+if [ "$1" = "remove" ]; then
+    systemctl is-active --quiet calamari.service && systemctl stop calamari.service
+    systemctl is-active --quiet manta.service && systemctl stop manta.service
+fi
