@@ -10,6 +10,7 @@ repository = 'https://github.com/Manta-Network/Manta/'
 [dependencies]
 codec              = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info         = { version = "1.0", default-features = false, features = ["derive"] }
+
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16", optional = true }
 pallet-timestamp   = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16", optional = true }
 pallet-balances    = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16", optional = true }
