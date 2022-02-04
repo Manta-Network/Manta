@@ -1,5 +1,3 @@
-/etc/default/calamari
-/etc/default/manta
 /usr/lib/systemd/system/calamari.service
 /usr/lib/systemd/system/manta.service
 /usr/share/substrate/calamari.json
