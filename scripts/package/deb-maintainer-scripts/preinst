@@ -3,8 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 if [ "$1" = "upgrade" ]; then
-    systemctl is-active --quiet calamari.service && systemctl stop calamari.service
-    systemctl is-active --quiet manta.service && systemctl stop manta.service
+    if systemctl is-active --quiet calamari.service; then
+        systemctl stop calamari.service
+    fi
+    if systemctl is-active --quiet manta.service; then
+        systemctl stop manta.service
+    fi
 fi
 
 if ! getent group manta > /dev/null 2>&1; then
