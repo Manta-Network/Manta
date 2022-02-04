@@ -3,25 +3,24 @@ Description=Manta Parachain Node
 After=network.target
 
 [Service]
-EnvironmentFile=/etc/default/manta
 ExecStart=/usr/bin/manta \
-  ${sn_para_flags} \
-  --name ${sn_name} \
-  --chain ${sn_para_spec} \
-  --base-path ${sn_base_path} \
-  --port ${sn_port} \
-  --ws-port ${sn_ws_port} \
-  --ws-max-connections ${sn_ws_max_connections} \
-  --rpc-port ${sn_rpc_port} \
-  --rpc-cors ${sn_rpc_cors} \
-  --rpc-methods ${sn_rpc_methods} \
-  --state-cache-size ${sn_state_cache_size} \
-  ${sn_para_args} \
-  --bootnodes ${sn_para_bootnodes} \
-  -- \
-  ${sn_relay_flags} \
-  --chain ${sn_relay_spec} \
-  ${sn_relay_args}
+    --chain /usr/share/substrate/manta.json \
+    --base-path /var/lib/substrate \
+    --port 32333 \
+    --ws-port 9244 \
+    --ws-max-connections 100 \
+    --rpc-port 9233 \
+    --rpc-cors all \
+    --rpc-methods safe \
+    --state-cache-size 0 \
+    --bootnodes \
+        /dns/alfredi.manta.systems/tcp/30333/p2p/12D3KooWKMw84HHuEbjHep6FVqUM2sss6TCzqehfXKw3PGoB4HoG \
+        /dns/birostris.manta.systems/tcp/30333/p2p/12D3KooWP5ASruuz1BEnD5M1QMSS7GiiFTnXMNoDUDn7o9GmcRyZ \
+        /dns/eregoodootenkey.manta.systems/tcp/30333/p2p/12D3KooWCKgXKVYbpxkmouHBrCyaPGr7NJSHVAgncUPVzH9fTB5e \
+        /dns/hypostoma.manta.systems/tcp/30333/p2p/12D3KooWHF462NFNuhPAK3cmqZ6c9jD85GnknsFT43n8TFdWcxJY \
+        /dns/japanica.manta.systems/tcp/30333/p2p/12D3KooWQvvB62n2dEWEYxUCcqzU6dxzVgi8ACPA6X7VeWzxAFMF \
+    -- \
+    --chain /usr/share/substrate/polkadot.json
 User=manta
 Group=manta
 Restart=always
