@@ -4,7 +4,7 @@
 
 if [ "$1" = "purge" ]; then
     if getent passwd manta > /dev/null 2>&1; then
-        deluser --system --remove-home --remove-all-files manta
+        deluser --system --remove-home manta
         echo "deluser manta, result: $?"
     fi
     if getent group manta > /dev/null 2>&1; then
