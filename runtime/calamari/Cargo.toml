@@ -98,6 +98,7 @@ default = ['std']
 try-runtime = [
 	'frame-executive/try-runtime',
 	'frame-try-runtime',
+	'pallet-scheduler/try-runtime',
 ]
 runtime-benchmarks = [
 	'cumulus-pallet-session-benchmarking/runtime-benchmarks',
