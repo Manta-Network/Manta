@@ -207,3 +207,11 @@ fn dolphin_dev_genesis(
 		},
 	}
 }
+
+pub fn dolphin_testnet_config() -> Result<DolphinChainSpec, String> {
+	let mut spec = DolphinChainSpec::from_json_bytes(
+		&include_bytes!("../../../genesis/dolphin-testnet.json")[..],
+	)?;
+	spec.extensions_mut().para_id = DOLPHIN_PARACHAIN_ID.into();
+	Ok(spec)
+}
