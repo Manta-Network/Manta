@@ -1,13 +1,25 @@
 mod xcm_mock;
 
 use codec::Encode;
-use frame_support::assert_ok;
+use frame_support::{assert_ok, weights::constants::WEIGHT_PER_SECOND};
 use manta_primitives::AssetLocation;
 use xcm::{latest::prelude::*, VersionedMultiLocation};
 use xcm_mock::{parachain::PALLET_BALANCES_INDEX, *};
 use xcm_simulator::TestExt;
 
 use crate::xcm_mock::parachain::AssetManager;
+
+// `reserved_transfer_asset` contains the following 4 instructions
+//  1. ReserveAssetDeposited(assets.clone()),
+//  2. ClearOrigin,
+//  3. BuyExecution { fees, weight_limit: Limited(0) },
+//  4. DepositAsset { assets: Wild(All), max_assets, beneficiary },
+//  each instruction's weight is 1000, thus, the total weight is 4000
+const RESERVE_TRANSFER_WEIGHT: u64 = 4000;
+
+fn calculate_fee(units_per_seconds: u128, weight: u64) -> u128 {
+	units_per_seconds * (weight as u128) / (WEIGHT_PER_SECOND as u128)
+}
 
 // Helper function for forming buy execution message
 fn buy_execution<C>(fees: impl Into<MultiAsset>) -> Instruction<C> {
@@ -651,6 +663,9 @@ fn receive_relay_asset_with_trader(){
 		is_sufficient: true,
 	};
 	let amount = 666u128;
+	let units_per_second = 1_000_000_000u128;
+	// We charge 10^9 as units per second on ParaA
+	let fee = calculate_fee(units_per_second, RESERVE_TRANSFER_WEIGHT);
 
 	ParaA::execute_with(||{
 		assert_ok!(parachain::AssetManager::register_asset(
@@ -658,11 +673,10 @@ fn receive_relay_asset_with_trader(){
 			source_location,
 			asset_metadata
 		));
-		// We charge 10^9 as units per second
 		assert_ok!(parachain::AssetManager::set_units_per_second(
 			parachain::Origin::root(), 
 			relay_asset_id, 
-			1000_000_000u128));
+			units_per_second));
 	});
 
 	let dest: MultiLocation = AccountId32 {
@@ -683,22 +697,17 @@ fn receive_relay_asset_with_trader(){
 			INITIAL_BALANCE + amount
 		);
 	});
-	
-	// `reserved_transfer_asset` contains the following 4 instructions
-	//  1. ReserveAssetDeposited(assets.clone()),
-	//  2. ClearOrigin,
-	//  3. BuyExecution { fees, weight_limit: Limited(0) },
-	//  4. DepositAsset { assets: Wild(All), max_assets, beneficiary },
-	//  each instruction's weight is 1000, thus, the total charge is:
-	//  10^9 * 1^3 * 4 / 10^12 (WEIGHT_PER_SECOND defined by frame_support) = 4
+
 	ParaA::execute_with(||{
+		// ALICE gets amount - fee
 		assert_eq!(
 			parachain::Assets::balance(relay_asset_id, &ALICE.into()),
-			amount - 4u128
+			amount - fee
 		);
+		// Fee sink gets fee
 		assert_eq!(
 			parachain::Assets::balance(relay_asset_id, AssetManager::account_id()),
-			4u128
+			fee
 		);
 	});
 
@@ -712,7 +721,9 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 	let source_location = AssetLocation(VersionedMultiLocation::V1(para_a_balances));
 	let a_currency_id = 0u32;
 	let amount = 222u128;
-	let fee = 1u128;
+	let units_per_second = 1_250_000u128;
+	let dest_weight = 800_000u64;
+	let fee = calculate_fee(units_per_second, dest_weight);
 
 	let asset_metadata = parachain::AssetRegistarMetadata {
 		name: b"ParaAToken".to_vec(),
@@ -743,9 +754,6 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 		);
 	});
 
-	// Register ParaA native asset in ParaB
-	// We set the units_per_second 1_250_000, then the total fee would be 
-	// 1_250_000 * 800_000 (weight) / 10^12 (WEIGHT_PER_SECOND) = 1 
 	ParaB::execute_with(|| {
 		assert_ok!(AssetManager::register_asset(
 			parachain::Origin::root(),
@@ -755,7 +763,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(), 
 			a_currency_id, 
-			1_250_000u128));
+			units_per_second));
 		assert_eq!(
 			Some(a_currency_id),
 			AssetManager::location_asset_id(source_location.clone())
@@ -781,7 +789,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 			amount,
 			1,
 			Box::new(VersionedMultiLocation::V1(dest)),
-			800000
+			dest_weight,
 		));
 		assert_eq!(
 			parachain::Balances::free_balance(&ALICE.into()),
@@ -793,6 +801,155 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 		assert_eq!(parachain::Assets::balance(a_currency_id, &ALICE.into()), amount);
 	});
 }
+
+#[test]
+fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
+	MockNet::reset();
+
+	// source location of para a asset
+	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+		1,
+		X2(Parachain(1), PalletInstance(PALLET_BALANCES_INDEX)),
+	)));
+	let a_currency_id = 0u32;
+	let mut amount = 888u128;
+	let units_per_second = 1_250_000u128;
+	let dest_weight = 800_000u64;
+	let fee = calculate_fee(units_per_second, dest_weight);
+
+	let asset_metadata = parachain::AssetRegistarMetadata {
+		name: b"ParaAToken".to_vec(),
+		symbol: b"ParaA".to_vec(),
+		decimals: 18,
+		evm_address: None,
+		min_balance: 1,
+		is_frozen: false,
+		is_sufficient: true,
+	};
+
+	// register a_currency in ParaA, ParaB and ParaC
+
+	// we don't charge any fee in A
+	ParaA::execute_with(|| {
+		assert_ok!(parachain::AssetManager::register_asset(
+			parachain::Origin::root(),
+			// we need to change this on/after v0.9.16
+			source_location.clone(),
+			asset_metadata.clone()
+		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			a_currency_id, 
+			0u128));
+		assert_eq!(
+			Some(a_currency_id),
+			parachain::AssetManager::location_asset_id(source_location.clone())
+		);
+	});
+
+	// We set units_per_seconds on ParaB to 1_250_000,
+	ParaB::execute_with(||{
+		assert_ok!(parachain::AssetManager::register_asset(
+			parachain::Origin::root(),
+			source_location.clone(),
+			asset_metadata.clone()
+		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			a_currency_id, 
+			units_per_second));
+		assert_eq!(
+			Some(a_currency_id),
+			parachain::AssetManager::location_asset_id(source_location.clone())
+		);
+	});
+
+	ParaC::execute_with(||{
+		assert_ok!(parachain::AssetManager::register_asset(
+			parachain::Origin::root(),
+			source_location.clone(),
+			asset_metadata.clone()
+		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			a_currency_id, 
+			units_per_second));
+		assert_eq!(
+			Some(a_currency_id),
+			parachain::AssetManager::location_asset_id(source_location.clone())
+		);
+	});
+
+	// A send B some token
+	let alice_on_b = MultiLocation {
+		parents: 1,
+		interior: X2(
+			Parachain(2),
+			AccountId32 {
+				network: NetworkId::Any,
+				id: ALICE.into(),
+			},
+		),
+	};
+
+	ParaA::execute_with(||{
+		assert_ok!(parachain::XTokens::transfer(
+			parachain::Origin::signed(ALICE.into()),
+			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			amount,
+			Box::new(VersionedMultiLocation::V1(alice_on_b.clone())),
+			dest_weight
+		));
+		assert_eq!(
+			parachain::Balances::free_balance(&ALICE.into()),
+			INITIAL_BALANCE - amount
+		)
+	});
+
+	ParaB::execute_with(|| {
+		amount = amount - fee;
+		assert_eq!(
+			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			amount
+		);
+	});	
+
+	// B send C para A asset
+	let alice_on_c = MultiLocation {
+		parents: 1,
+		interior: X2(
+			Parachain(3),
+			AccountId32 {
+				network: NetworkId::Any,
+				id: ALICE.into(),
+			},
+		),
+	};
+
+	ParaB::execute_with(||{
+		assert_ok!(parachain::XTokens::transfer(
+			parachain::Origin::signed(ALICE.into()),
+			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			amount,
+			Box::new(VersionedMultiLocation::V1(alice_on_c)),
+			dest_weight
+		));
+		assert_eq!(
+			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			0
+		);
+	});
+
+	// Make sure C received the token
+	ParaC::execute_with(|| {
+		amount = amount - fee;
+		assert_eq!(
+		 	parachain::Assets::balance(a_currency_id, &ALICE.into()),
+		 	amount
+		);
+	});	
+}
+
 
 /// Scenario:
 /// A parachain transfers funds on the relay chain to another parachain account.
