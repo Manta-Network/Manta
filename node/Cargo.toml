@@ -95,7 +95,6 @@ runtime-benchmarks = [
 	'polkadot-service/runtime-benchmarks',
 	'manta-runtime/runtime-benchmarks',
 ]
-
 fast-runtime = [
 	"manta-runtime/fast-runtime",
 	"calamari-runtime/fast-runtime",
