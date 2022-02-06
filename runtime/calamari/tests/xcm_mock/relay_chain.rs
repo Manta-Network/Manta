@@ -28,7 +28,7 @@ use polkadot_parachain::primitives::Id as ParaId;
 use polkadot_runtime_parachains::{configuration, origin, shared, ump};
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom,
 	AllowTopLevelPaidExecutionFrom, ChildParachainAsNative, ChildParachainConvertsVia,
 	ChildSystemParachainAsSuperuser, CurrencyAdapter as XcmCurrencyAdapter, FixedRateOfFungible,
 	FixedWeightBounds, IsConcrete, LocationInverter, SignedAccountId32AsNative,
@@ -136,6 +136,8 @@ pub type Barrier = (
 	AllowKnownQueryResponses<XcmPallet>,
 	// Subscriptions for version tracking are OK.
 	AllowSubscriptionsFrom<Everything>,
+	// The following is purely for testing ump
+	AllowUnpaidExecutionFrom<Everything>,
 );
 
 pub struct XcmConfig;

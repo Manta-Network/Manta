@@ -246,23 +246,11 @@ impl Config for XcmConfig {
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	// Trader is the means to purchasing weight credit for XCM execution.
-	// We need customize this.
-	//
-	// Moonbase mock runtime uses the following logic:
-	// When receiving the self-reserve asset, they use pallet-transaction-payment.
-	// When receiving a non-reserve asset, they use AssetManager to fetch how many
-	// units per second we should charge.
-	//
-	// type Trader = (
-	// 	UsingComponents<
-	// 		IdentityFee<Balance>,
-	// 		SelfReserve,
-	// 		AccountId,
-	// 		Balances,
-	// 		DealWithFees<Runtime>,
-	// 	>,
-	// 	FirstAssetTrader<AssetId, AssetType, AssetManager, XcmFeesToAccount_>,
-	// );
+	// We define two traders:
+	// The first one will charge parachain's native currency, who's `MultiLocation`
+	// is defined in `SelfReserve`.
+	// The second one will charge the first asset in the MultiAssets with pre-defined rate
+	// i.e. units_per_second in `AssetManager`
 	type Trader = (
 		FixedRateOfFungible<ParaTokenPerSecond, ()>, 
 		FirstAssetTrader<AssetId, AssetLocation, AssetManager, XcmFeesToAccount>);

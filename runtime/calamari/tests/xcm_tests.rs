@@ -58,7 +58,6 @@ fn dmp() {
 	});
 }
 
-// TO BE FIXED: This test is known to fail.
 #[test]
 fn ump() {
 	MockNet::reset();
