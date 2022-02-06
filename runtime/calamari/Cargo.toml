@@ -122,6 +122,7 @@ runtime-benchmarks = [
 	'calamari-vesting/runtime-benchmarks',
 	'pallet-tx-pause/runtime-benchmarks',
 	'pallet-treasury/runtime-benchmarks',
+	'pallet-preimage/runtime-benchmarks',
 ]
 std = [
 	'codec/std',
