@@ -16,6 +16,7 @@
 
 use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
+use crate::command::DOLPHIN_PARACHAIN_ID;
 
 use dolphin_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
 
