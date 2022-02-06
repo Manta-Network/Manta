@@ -140,8 +140,8 @@ pub type Barrier = (
 	AllowUnpaidExecutionFrom<Everything>,
 );
 
-pub struct XcmConfig;
-impl Config for XcmConfig {
+pub struct XcmExecutorConfig;
+impl Config for XcmExecutorConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	type AssetTransactor = LocalAssetTransactor;
@@ -167,7 +167,7 @@ impl pallet_xcm::Config for Runtime {
 	// Anyone can execute XCM messages locally...
 	type ExecuteXcmOrigin = xcm_builder::EnsureXcmOrigin<Origin, LocalOriginToLocation>;
 	type XcmExecuteFilter = Nothing;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 	type XcmTeleportFilter = Everything;
 	type XcmReserveTransferFilter = Everything;
 	type Weigher = FixedWeightBounds<BaseXcmWeight, Call, MaxInstructions>;
@@ -184,7 +184,7 @@ parameter_types! {
 
 impl ump::Config for Runtime {
 	type Event = Event;
-	type UmpSink = ump::XcmSink<XcmExecutor<XcmConfig>, Runtime>;
+	type UmpSink = ump::XcmSink<XcmExecutor<XcmExecutorConfig>, Runtime>;
 	type FirstMessageFactorPercent = FirstMessageFactorPercent;
 	type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
 }

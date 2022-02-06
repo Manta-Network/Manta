@@ -39,7 +39,7 @@ use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain::primitives::{
 	DmpMessageHandler, Id as ParaId, Sibling, XcmpMessageFormat, XcmpMessageHandler,
 };
-use xcm::{latest::prelude::*, VersionedXcm};
+use xcm::{latest::prelude::*, VersionedXcm, Version as XcmVersion};
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
 	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
@@ -230,8 +230,8 @@ pub type XcmFeesToAccount = manta_primitives::XcmFeesToAccount<
 	XcmFeesAccount,
 >;
 
-pub struct XcmConfig;
-impl Config for XcmConfig {
+pub struct XcmExecutorConfig;
+impl Config for XcmExecutorConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// Defines how to Withdraw and Deposit instruction work
@@ -254,10 +254,55 @@ impl Config for XcmConfig {
 	type Trader = (
 		FixedRateOfFungible<ParaTokenPerSecond, ()>, 
 		FirstAssetTrader<AssetId, AssetLocation, AssetManager, XcmFeesToAccount>);
-	type ResponseHandler = ();
-	type AssetTrap = ();
-	type AssetClaims = ();
-	type SubscriptionService = ();
+	type ResponseHandler = PolkadotXcm;
+	type AssetTrap = PolkadotXcm;
+	type AssetClaims = PolkadotXcm;
+	// This is needed for the version change notifier work
+	type SubscriptionService = PolkadotXcm;
+}
+
+// Pallet to provide the version, used to test runtime upgrade version changes
+#[frame_support::pallet]
+pub mod mock_version_changer {
+	use super::*;
+	use frame_support::pallet_prelude::*;
+
+	#[pallet::config]
+	pub trait Config: frame_system::Config {
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+	}
+
+	#[pallet::call]
+	impl<T: Config> Pallet<T> {}
+
+	#[pallet::pallet]
+	#[pallet::generate_store(pub(super) trait Store)]
+	pub struct Pallet<T>(_);
+
+	#[pallet::storage]
+	#[pallet::getter(fn current_version)]
+	pub(super) type CurrentVersion<T: Config> = StorageValue<_, XcmVersion, ValueQuery>;
+
+	impl<T: Config> Get<XcmVersion> for Pallet<T> {
+		fn get() -> XcmVersion {
+			Self::current_version()
+		}
+	}
+
+	#[pallet::event]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	pub enum Event<T: Config> {
+		// XCMP
+		/// Some XCM was executed OK.
+		VersionChanged(XcmVersion),
+	}
+
+	impl<T: Config> Pallet<T> {
+		pub fn set_version(version: XcmVersion) {
+			CurrentVersion::<T>::put(version);
+			Self::deposit_event(Event::VersionChanged(version));
+		}
+	}
 }
 
 #[frame_support::pallet]
@@ -403,7 +448,11 @@ pub mod mock_msg_queue {
 
 impl mock_msg_queue::Config for Runtime {
 	type Event = Event;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
+}
+
+impl mock_version_changer::Config for Runtime {
+	type Event = Event;
 }
 
 pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, RelayNetwork>;
@@ -414,7 +463,7 @@ impl pallet_xcm::Config for Runtime {
 	type XcmRouter = XcmRouter;
 	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
 	type XcmExecuteFilter = Everything;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 	// Do not allow teleports
 	type XcmTeleportFilter = Nothing;
 	type XcmReserveTransferFilter = Everything;
@@ -423,8 +472,7 @@ impl pallet_xcm::Config for Runtime {
 	type Origin = Origin;
 	type Call = Call;
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
-	// May consider using a customized one like Moonbase to test runtime upgrades
-	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
+	type AdvertisedXcmVersion = XcmVersioner;
 }
 
 #[derive(Clone, Default, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
@@ -509,7 +557,7 @@ impl pallet_asset_manager::Config for Runtime {
 
 impl cumulus_pallet_xcm::Config for Runtime {
 	type Event = Event;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 }
 
 // We wrap AssetId for XToken
@@ -552,7 +600,7 @@ impl orml_xtokens::Config for Runtime {
 	type AccountIdToMultiLocation = manta_primitives::AccountIdToMultiLocation<AccountId>;
 	type CurrencyIdConvert =
 		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>>;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 	type SelfLocation = SelfLocation;
 	type Weigher = xcm_builder::FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type BaseXcmWeight = BaseXcmWeight;
@@ -576,7 +624,33 @@ construct_runtime!(
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 5,
 		XTokens: orml_xtokens::{Pallet, Call, Event<T>, Storage} = 6,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 7,
+		XcmVersioner: mock_version_changer::{Pallet, Storage, Event<T>} = 8,
 	}
 );
 
 pub const PALLET_BALANCES_INDEX: u8 = 3u8;
+
+pub(crate) fn para_events() -> Vec<Event> {
+	System::events()
+		.into_iter()
+		.map(|r| r.event)
+		.filter_map(|e| Some(e))
+		.collect::<Vec<_>>()
+}
+
+use frame_support::traits::{OnFinalize, OnInitialize, OnRuntimeUpgrade};
+pub(crate) fn on_runtime_upgrade() {
+	PolkadotXcm::on_runtime_upgrade();
+}
+
+pub(crate) fn para_roll_to(n: u64) {
+	while System::block_number() < n {
+		PolkadotXcm::on_finalize(System::block_number());
+		Balances::on_finalize(System::block_number());
+		System::on_finalize(System::block_number());
+		System::set_block_number(System::block_number() + 1);
+		System::on_initialize(System::block_number());
+		Balances::on_initialize(System::block_number());
+		PolkadotXcm::on_initialize(System::block_number());
+	}
+}
