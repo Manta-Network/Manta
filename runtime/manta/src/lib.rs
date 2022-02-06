@@ -51,7 +51,7 @@ use frame_system::{
 	EnsureOneOf, EnsureRoot,
 };
 use manta_primitives::{
-	time::*, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	prod_or_fast, time::*, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
 };
 use sp_runtime::Perbill;
 
@@ -509,7 +509,7 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 }
 
 parameter_types! {
-	pub const Period: u32 = 6 * HOURS;
+	pub Period: u32 = prod_or_fast!(7 * HOURS, 2 * MINUTES, "MANTA_PERIOD");
 	pub const Offset: u32 = 0;
 	pub const MaxAuthorities: u32 = 100_000;
 }

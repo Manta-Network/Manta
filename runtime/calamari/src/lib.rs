@@ -52,7 +52,7 @@ use frame_system::{
 	EnsureOneOf, EnsureRoot,
 };
 use manta_primitives::{
-	time::*, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	prod_or_fast, time::*, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
 };
 use sp_runtime::{Perbill, Permill};
 
@@ -358,13 +358,13 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-	pub const LaunchPeriod: BlockNumber = 7 * DAYS;
-	pub const VotingPeriod: BlockNumber = 7 * DAYS;
-	pub const FastTrackVotingPeriod: BlockNumber = 3 * HOURS;
+	pub LaunchPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 5 * MINUTES,"CALAMARI_LAUNCHPERIOD");
+	pub VotingPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 5 * MINUTES,"CALAMARI_VOTINGPERIOD");
+	pub FastTrackVotingPeriod: BlockNumber = prod_or_fast!(3 * HOURS, 2 * MINUTES,"CALAMARI_FASTTRACKVOTINGPERIOD");
 	pub const InstantAllowed: bool = true;
 	pub const MinimumDeposit: Balance = 20 * KMA;
-	pub const EnactmentPeriod: BlockNumber = 1 * DAYS;
-	pub const CooloffPeriod: BlockNumber = 7 * DAYS;
+	pub EnactmentPeriod: BlockNumber = prod_or_fast!(1 * DAYS, 2 * MINUTES,"CALAMARI_ENACTMENTPERIOD");
+	pub CooloffPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 2 * MINUTES,"CALAMARI_COOLOFFPERIOD");
 	pub const PreimageByteDeposit: Balance = deposit(0, 1);
 	pub const MaxVotes: u32 = 100;
 	pub const MaxProposals: u32 = 100;
@@ -755,7 +755,7 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 
 parameter_types! {
 	// Rotate collator's spot each 6 hours.
-	pub const Period: u32 = 6 * HOURS;
+	pub Period: u32 = prod_or_fast!(6 * HOURS, 2 * MINUTES,"CALAMARI_PERIOD");
 	pub const Offset: u32 = 0;
 	pub const MaxAuthorities: u32 = 100_000;
 }
