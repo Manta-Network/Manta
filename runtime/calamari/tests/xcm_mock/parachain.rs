@@ -447,6 +447,8 @@ pub struct AssetRegistarMetadata {
 	pub evm_address: Option<H160>,
 	pub is_frozen: bool,
 	pub min_balance: Balance,
+	/// true means existential deposit (`min_balance`) is not required,
+	/// false means existential deposit is required.
 	pub is_sufficient: bool,
 }
 

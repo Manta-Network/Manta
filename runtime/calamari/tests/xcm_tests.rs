@@ -635,7 +635,6 @@ fn send_para_a_asset_from_para_b_to_para_c() {
 	});	
 }
 
-
 #[test]
 fn receive_relay_asset_with_trader(){
 	MockNet::reset();
@@ -703,6 +702,96 @@ fn receive_relay_asset_with_trader(){
 		);
 	});
 
+}
+
+#[test]
+fn send_para_a_asset_to_para_b_with_trader_and_fee() {
+	MockNet::reset();
+
+	let para_a_balances = MultiLocation::new(1, X2(Parachain(1), PalletInstance(PALLET_BALANCES_INDEX)));
+	let source_location = AssetLocation(VersionedMultiLocation::V1(para_a_balances));
+	let a_currency_id = 0u32;
+	let amount = 222u128;
+	let fee = 1u128;
+
+	let asset_metadata = parachain::AssetRegistarMetadata {
+		name: b"ParaAToken".to_vec(),
+		symbol: b"ParaA".to_vec(),
+		decimals: 18,
+		evm_address: None,
+		min_balance: 1,
+		is_frozen: false,
+		is_sufficient: true,
+	};
+
+	// Register ParaA native asset in ParaA
+	ParaA::execute_with(|| {
+		assert_ok!(AssetManager::register_asset(
+			parachain::Origin::root(),
+			// This need to be changed starting from v0.9.16
+			// need to use something like MultiLocation { parents: 0, interior: here} instead
+			source_location.clone(),
+			asset_metadata.clone()
+		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			a_currency_id, 
+			0u128));
+		assert_eq!(
+			Some(a_currency_id),
+			AssetManager::location_asset_id(source_location.clone())
+		);
+	});
+
+	// Register ParaA native asset in ParaB
+	// We set the units_per_second 1_250_000, then the total fee would be 
+	// 1_250_000 * 800_000 (weight) / 10^12 (WEIGHT_PER_SECOND) = 1 
+	ParaB::execute_with(|| {
+		assert_ok!(AssetManager::register_asset(
+			parachain::Origin::root(),
+			source_location.clone(),
+			asset_metadata.clone()
+		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			a_currency_id, 
+			1_250_000u128));
+		assert_eq!(
+			Some(a_currency_id),
+			AssetManager::location_asset_id(source_location.clone())
+		);
+	});
+
+	let dest = MultiLocation {
+		parents: 1,
+		interior: X2(
+			Parachain(2),
+			AccountId32 {
+				network: NetworkId::Any,
+				id: ALICE.into(),
+			},
+		),
+	};
+
+	// Transfer ParaA balance to B
+	ParaA::execute_with(|| {
+		assert_ok!(parachain::XTokens::transfer_with_fee(
+			parachain::Origin::signed(ALICE.into()),
+			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			amount,
+			1,
+			Box::new(VersionedMultiLocation::V1(dest)),
+			800000
+		));
+		assert_eq!(
+			parachain::Balances::free_balance(&ALICE.into()),
+			INITIAL_BALANCE - amount - fee
+		)
+	});
+
+	ParaB::execute_with(|| {
+		assert_eq!(parachain::Assets::balance(a_currency_id, &ALICE.into()), amount);
+	});
 }
 
 /// Scenario:
