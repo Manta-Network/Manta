@@ -17,14 +17,14 @@
 //! A list of the different weight modules for our runtime.
 
 pub mod calamari_vesting;
-// pub mod frame_system;
+pub mod frame_system;
 pub mod manta_collator_selection;
 pub mod pallet_balances;
 pub mod pallet_collective;
 pub mod pallet_democracy;
 pub mod pallet_membership;
 pub mod pallet_multisig;
-// pub mod pallet_scheduler;
+pub mod pallet_scheduler;
 pub mod pallet_session;
 pub mod pallet_timestamp;
 pub mod pallet_treasury;

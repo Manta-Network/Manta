@@ -167,8 +167,7 @@ parameter_types! {
 impl pallet_tx_pause::Config for Runtime {
 	type Event = Event;
 	type UpdateOrigin = EnsureRoot<AccountId>;
-	// type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
 // Don't allow permission-less asset creation.
@@ -271,8 +270,7 @@ impl frame_system::Config for Runtime {
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type AccountData = pallet_balances::AccountData<Balance>;
-	// type SystemWeightInfo = weights::frame_system::SubstrateWeight<Runtime>;
-	type SystemWeightInfo = ();
+	type SystemWeightInfo = weights::frame_system::SubstrateWeight<Runtime>;
 	type SS58Prefix = SS58Prefix;
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
@@ -287,8 +285,7 @@ impl pallet_timestamp::Config for Runtime {
 	type Moment = u64;
 	type OnTimestampSet = ();
 	type MinimumPeriod = MinimumPeriod;
-	// type WeightInfo = weights::pallet_timestamp::SubstrateWeight<Runtime>;
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_timestamp::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -575,8 +572,7 @@ impl pallet_scheduler::Config for Runtime {
 	type MaximumWeight = MaximumSchedulerWeight;
 	type ScheduleOrigin = ScheduleOrigin;
 	type MaxScheduledPerBlock = MaxScheduledPerBlock;
-	// type WeightInfo = weights::pallet_scheduler::SubstrateWeight<Runtime>;
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_scheduler::SubstrateWeight<Runtime>;
 	type OriginPrivilegeCmp = OriginPrivilegeCmp;
 	type PreimageProvider = Preimage;
 	type NoPreimagePostponement = NoPreimagePostponement;
