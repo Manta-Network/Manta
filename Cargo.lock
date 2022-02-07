@@ -889,7 +889,7 @@ checksum = "c1db59621ec70f09c5e9b597b220c7a2b43611f4710dc03ceb8748637775692c"
 
 [[package]]
 name = "calamari-runtime"
-version = "3.1.2"
+version = "3.1.4"
 dependencies = [
  "calamari-vesting",
  "cumulus-pallet-aura-ext",
@@ -960,7 +960,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-vesting"
-version = "3.1.2"
+version = "3.1.4"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -4371,7 +4371,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "3.1.2"
+version = "3.1.4"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -4434,12 +4434,13 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
+ "try-runtime-cli",
  "xcm",
 ]
 
 [[package]]
 name = "manta-collator-selection"
-version = "3.1.2"
+version = "3.1.4"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -4465,7 +4466,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "3.1.2"
+version = "3.1.4"
 dependencies = [
  "parity-scale-codec",
  "smallvec",
@@ -4478,7 +4479,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "3.1.2"
+version = "3.1.4"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -5948,7 +5949,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "3.1.2"
+version = "3.1.4"
 dependencies = [
  "frame-benchmarking",
  "frame-support",

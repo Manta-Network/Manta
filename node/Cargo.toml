@@ -7,7 +7,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'manta'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '3.1.2'
+version = '3.1.4'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -25,6 +25,7 @@ futures = "0.3.14"
 # Substrate frames
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
 frame-benchmarking-cli = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
+try-runtime-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16", optional = true }
 
 # RPC related dependencies
 jsonrpc-core = "18.0.0"
@@ -77,7 +78,6 @@ cumulus-client-service = { git = 'https://github.com/paritytech/cumulus.git', br
 cumulus-relay-chain-interface = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.16" }
 cumulus-relay-chain-local = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.16" }
 
-
 # Polkadot dependencies
 polkadot-cli = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.16" }
 polkadot-parachain = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.16" }
@@ -98,4 +98,7 @@ runtime-benchmarks = [
 	'calamari-runtime/runtime-benchmarks',
 	'polkadot-service/runtime-benchmarks',
 	'manta-runtime/runtime-benchmarks',
+]
+try-runtime = [
+	'try-runtime-cli',
 ]
