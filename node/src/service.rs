@@ -31,7 +31,7 @@ use cumulus_primitives_core::{
 use polkadot_service::NativeExecutionDispatch;
 
 use crate::rpc;
-pub use manta_primitives::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
+pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
 
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use futures::lock::Mutex;

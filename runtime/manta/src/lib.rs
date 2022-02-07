@@ -51,7 +51,9 @@ use frame_system::{
 	EnsureOneOf, EnsureRoot,
 };
 use manta_primitives::{
-	prod_or_fast, time::*, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	constants::time::*,
+	prod_or_fast,
+	types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use sp_runtime::Perbill;
 

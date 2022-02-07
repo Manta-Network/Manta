@@ -24,7 +24,7 @@
 use super::*;
 use frame_support::{construct_runtime, ord_parameter_types, parameter_types};
 use frame_system::EnsureRoot;
-use manta_primitives::Balance;
+use manta_primitives::types::Balance;
 
 use sp_core::H256;
 use sp_runtime::{testing::Header, traits::IdentityLookup};
