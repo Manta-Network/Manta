@@ -483,8 +483,12 @@ pub struct AssetRegistarMetadata {
 	pub evm_address: Option<H160>,
 	pub is_frozen: bool,
 	pub min_balance: Balance,
-	/// true means existential deposit (`min_balance`) is not required,
-	/// false means existential deposit is required.
+	/// `is_sufficient`: Whether a non-zero balance of this asset is deposit of sufficient
+	/// value to account for the state bloat associated with its balance storage. If set to
+	/// `true`, then non-zero balances may be stored without a `consumer` reference (and thus
+	/// an ED in the Balances pallet or whatever else is used to control user-account state
+	/// growth).
+	/// For example, if is_sufficient set to `false`, a fresh account cannot receive XCM tokens.
 	pub is_sufficient: bool,
 }
 

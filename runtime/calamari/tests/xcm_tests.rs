@@ -1249,6 +1249,148 @@ fn send_para_a_asset_to_para_b_without_specifying_units_per_second() {
 	});
 }
 
+#[test]
+fn receive_asset_with_is_sufficient_false(){
+	MockNet::reset();
+
+	let new_account = [5u8; 32];
+	let relay_asset_id = 0u32;
+	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+	let asset_metadata = parachain::AssetRegistarMetadata {
+		name: b"Kusama".to_vec(),
+		symbol: b"KSM".to_vec(),
+		decimals: 12,
+		min_balance: 1u128,
+		evm_address: None,
+		is_frozen: false,
+		is_sufficient: false,
+	};
+	let amount = 123u128;
+
+	// register relay asset in parachain A
+	ParaA::execute_with(|| {
+		assert_ok!(parachain::AssetManager::register_asset(
+			parachain::Origin::root(),
+			source_location,
+			asset_metadata
+		));
+		// we don't charge anything during test
+		assert_ok!(parachain::AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			relay_asset_id, 
+			0u128));
+	});
+
+	let dest: MultiLocation = AccountId32 {
+		network: Any,
+		id: new_account.into()
+	}.into();
+
+	Relay::execute_with(|| {
+		assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+			relay_chain::Origin::signed(ALICE),
+			Box::new(X1(Parachain(1)).into().into()),
+			Box::new(VersionedMultiLocation::V1(dest.clone()).clone().into()),
+			Box::new((Here, amount).into()),
+			0,
+		));
+		assert_eq!(
+			relay_chain::Balances::free_balance(&para_account_id(1)),
+			INITIAL_BALANCE + amount
+		);
+	});
+
+	// parachain should not have received assets
+	ParaA::execute_with(|| {
+		assert_eq!(parachain::Assets::balance(relay_asset_id, &new_account.into()), 0);
+	});
+
+	// Send native token to fresh_account
+	ParaA::execute_with(|| {
+		assert_ok!(parachain::Balances::transfer(
+			parachain::Origin::signed(ALICE.into()),
+			new_account.into(),
+			100
+		));
+	});
+
+	Relay::execute_with(|| {
+		assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+			relay_chain::Origin::signed(ALICE),
+			Box::new(X1(Parachain(1)).into().into()),
+			Box::new(VersionedMultiLocation::V1(dest).clone().into()),
+			Box::new((Here, amount).into()),
+			0,
+		));
+		assert_eq!(
+			relay_chain::Balances::free_balance(&para_account_id(1)),
+			INITIAL_BALANCE + amount + amount
+		);
+	});
+
+	// parachain should not have received assets
+	ParaA::execute_with(|| {
+		println!("fresh account bal: {}", parachain::Assets::balance(relay_asset_id, &new_account.into()));
+	});
+
+}
+
+#[test]
+fn receive_asset_with_is_sufficient_true(){
+	MockNet::reset();
+
+	let new_account = [5u8; 32];
+	let relay_asset_id = 0u32;
+	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+	let asset_metadata = parachain::AssetRegistarMetadata {
+		name: b"Kusama".to_vec(),
+		symbol: b"KSM".to_vec(),
+		decimals: 12,
+		min_balance: 1u128,
+		evm_address: None,
+		is_frozen: false,
+		is_sufficient: true,
+	};
+	let amount = 123u128;
+
+	// register relay asset in parachain A
+	ParaA::execute_with(|| {
+		assert_ok!(parachain::AssetManager::register_asset(
+			parachain::Origin::root(),
+			source_location,
+			asset_metadata
+		));
+		// we don't charge anything during test
+		assert_ok!(parachain::AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			relay_asset_id, 
+			0u128));
+	});
+
+	let dest: MultiLocation = AccountId32 {
+		network: Any,
+		id: new_account.into()
+	}.into();
+
+	Relay::execute_with(|| {
+		assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+			relay_chain::Origin::signed(ALICE),
+			Box::new(X1(Parachain(1)).into().into()),
+			Box::new(VersionedMultiLocation::V1(dest.clone()).clone().into()),
+			Box::new((Here, amount).into()),
+			0,
+		));
+		assert_eq!(
+			relay_chain::Balances::free_balance(&para_account_id(1)),
+			INITIAL_BALANCE + amount
+		);
+	});
+
+	// parachain should have received assets
+	ParaA::execute_with(|| {
+		assert_eq!(parachain::Assets::balance(relay_asset_id, &new_account.into()), amount);
+	});
+}
 
 /// Scenario:
 /// A parachain transfers funds on the relay chain to another parachain account.
@@ -1477,5 +1619,173 @@ fn test_versioning_on_runtime_upgrade_with_relay(){
 		// Assert that the events vector contains the new version change
 		assert!(relay_chain::relay_events().contains(&expected_supported_version_2));
 	});
+}
 
+#[test]
+fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
+	MockNet::reset();
+
+	let para_a_balances = MultiLocation::new(1, X2(Parachain(1), PalletInstance(PALLET_BALANCES_INDEX)));
+	let source_location = AssetLocation(VersionedMultiLocation::V1(para_a_balances));
+	let a_currency_id = 0u32;
+
+	let asset_metadata = parachain::AssetRegistarMetadata {
+		name: b"ParaAToken".to_vec(),
+		symbol: b"ParaA".to_vec(),
+		decimals: 18,
+		evm_address: None,
+		min_balance: 1,
+		is_frozen: false,
+		is_sufficient: true,
+	};
+	let response = Response::Version(2);
+
+	// This is irrelevant, nothing will be done with this message,
+	// but we need to pass a message as an argument to trigger the storage change
+	let mock_message: Xcm<()> = Xcm(vec![QueryResponse {
+		query_id: 0,
+		response,
+		max_weight: 0,
+	}]);
+
+	ParaA::execute_with(|| {
+		// advertised version
+		parachain::XcmVersioner::set_version(2);
+		// Register ParaA native asset in ParaA
+		assert_ok!(AssetManager::register_asset(
+			parachain::Origin::root(),
+			// This need to be changed starting from v0.9.16
+			// need to use something like MultiLocation { parents: 0, interior: here} instead
+			source_location.clone(),
+			asset_metadata.clone()
+		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(), 
+			a_currency_id, 
+			0u128));
+		assert_eq!(
+			Some(a_currency_id),
+			AssetManager::location_asset_id(source_location.clone())
+		);
+	});
+
+	ParaB::execute_with(|| {
+		// Let's try with v0
+		parachain::XcmVersioner::set_version(0);
+
+		assert_ok!(AssetManager::register_asset(
+			parachain::Origin::root(),
+			source_location,
+			asset_metadata
+		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(),
+			a_currency_id,
+			0u128
+		));
+	});
+
+	ParaA::execute_with(|| {
+		// This sets the default version, for not known destinations
+		assert_ok!(ParachainPalletXcm::force_default_xcm_version(
+			parachain::Origin::root(),
+			Some(2)
+		));
+		// Wrap version, which sets VersionedStorage
+		assert_ok!(<ParachainPalletXcm as WrapVersion>::wrap_version(
+			&MultiLocation::new(1, X1(Parachain(2))).into(),
+			mock_message
+		));
+
+		parachain::para_roll_to(2);
+
+		// queries should have been updated
+		assert!(ParachainPalletXcm::query(0).is_some());
+	});
+
+	let expected_supported_version: parachain::Event = pallet_xcm::Event::SupportedVersionChanged(
+		MultiLocation {
+			parents: 1,
+			interior: X1(Parachain(2)),
+		},
+		0,
+	)
+	.into();
+
+	ParaA::execute_with(|| {
+		// Assert that the events vector contains the version change
+		assert!(parachain::para_events().contains(&expected_supported_version));
+	});
+
+	// Let's ensure talking in v0 works
+	let dest = MultiLocation {
+		parents: 1,
+		interior: X2(
+			Parachain(2),
+			AccountId32 {
+				network: NetworkId::Any,
+				id: ALICE.into(),
+			},
+		),
+	};
+
+	ParaA::execute_with(|| {
+		// free execution, full amount received
+		assert_ok!(parachain::XTokens::transfer(
+			parachain::Origin::signed(ALICE.into()),
+			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			100,
+			Box::new(VersionedMultiLocation::V1(dest)),
+			80
+		));
+		// free execution, full amount received
+		assert_eq!(
+			parachain::Balances::free_balance(&ALICE.into()),
+			INITIAL_BALANCE - 100
+		);
+	});
+
+	ParaB::execute_with(|| {
+		// free execution, full amount received
+		assert_eq!(parachain::Assets::balance(a_currency_id, &ALICE.into()), 100);
+	});
+
+	let expected_version_notified: parachain::Event = pallet_xcm::Event::VersionChangeNotified(
+		MultiLocation {
+			parents: 1,
+			interior: X1(Parachain(1)),
+		},
+		2,
+	)
+	.into();
+
+	// ParaB changes version to 2, and calls on_runtime_upgrade. This should notify the targets
+	// of the new version change
+	ParaB::execute_with(|| {
+		// Set version
+		parachain::XcmVersioner::set_version(2);
+		// Do runtime upgrade
+		parachain::on_runtime_upgrade();
+		// Initialize block, to call on_initialize and notify targets
+		parachain::para_roll_to(2);
+		// Expect the event in the parachain
+		assert!(parachain::para_events().contains(&expected_version_notified));
+	});
+
+	// This event should have been seen in para A
+	let expected_supported_version_2: parachain::Event =
+		pallet_xcm::Event::SupportedVersionChanged(
+			MultiLocation {
+				parents: 1,
+				interior: X1(Parachain(2)),
+			},
+			2,
+		)
+		.into();
+
+	// Para A should have received the version change
+	ParaA::execute_with(|| {
+		// Assert that the events vector contains the new version change
+		assert!(parachain::para_events().contains(&expected_supported_version_2));
+	});
 }
