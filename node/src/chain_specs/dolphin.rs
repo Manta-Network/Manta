@@ -15,7 +15,6 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::command::CALAMARI_PARACHAIN_ID;
 use crate::command::DOLPHIN_PARACHAIN_ID;
 
 use dolphin_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
@@ -78,7 +77,7 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
 		Some(properties),
 		Extensions {
 			relay_chain: "".into(),
-			para_id: CALAMARI_PARACHAIN_ID.into(),
+			para_id: DOLPHIN_PARACHAIN_ID.into(),
 		},
 	)
 }
@@ -138,7 +137,7 @@ pub fn dolphin_local_config() -> DolphinChainSpec {
 		Some(properties),
 		Extensions {
 			relay_chain: "".into(),
-			para_id: CALAMARI_PARACHAIN_ID.into(),
+			para_id: DOLPHIN_PARACHAIN_ID.into(),
 		},
 	)
 }
@@ -160,7 +159,7 @@ fn dolphin_dev_genesis(
 				.map(|k| {
 					(
 						k.clone(),
-						100 * CALAMARI_ENDOWMENT / ((endowed_accounts.len() / 2) as Balance),
+						100 * DOLPHIN_ENDOWMENT / ((endowed_accounts.len() / 2) as Balance),
 					)
 				})
 				.collect(),
@@ -170,7 +169,7 @@ fn dolphin_dev_genesis(
 		aura: Default::default(),
 		sudo: dolphin_runtime::SudoConfig { key: root_key },
 		parachain_info: dolphin_runtime::ParachainInfoConfig {
-			parachain_id: CALAMARI_PARACHAIN_ID.into(),
+			parachain_id: DOLPHIN_PARACHAIN_ID.into(),
 		},
 		collator_selection: dolphin_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
