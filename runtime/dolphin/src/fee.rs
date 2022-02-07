@@ -56,9 +56,7 @@ impl WeightToFeePolynomial for WeightToFee {
 		// 250000 = 45.988399296 * coeff
 		// coeff = ~5436
 
-		// Keep in mind this is a rough worst-case scenario calculation.
-		// The `length_fee` could not be negligible, and the `targeted_fee_adjustment` will hike the fees
-		// as the network gets more and more congested, which will further increase the costs.
+		// Refer to Calamari's congested_chain_simulation() test for how to come up with the coefficient.
 		smallvec![WeightToFeeCoefficient {
 			coeff_integer: 5000u32.into(),
 			coeff_frac: Perbill::zero(),
