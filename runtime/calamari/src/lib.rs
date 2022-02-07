@@ -360,13 +360,13 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-	pub LaunchPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 5 * MINUTES,"CALAMARI_LAUNCHPERIOD");
-	pub VotingPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 5 * MINUTES,"CALAMARI_VOTINGPERIOD");
-	pub FastTrackVotingPeriod: BlockNumber = prod_or_fast!(3 * HOURS, 2 * MINUTES,"CALAMARI_FASTTRACKVOTINGPERIOD");
+	pub LaunchPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 5 * MINUTES, "CALAMARI_LAUNCHPERIOD");
+	pub VotingPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 5 * MINUTES, "CALAMARI_VOTINGPERIOD");
+	pub FastTrackVotingPeriod: BlockNumber = prod_or_fast!(3 * HOURS, 2 * MINUTES, "CALAMARI_FASTTRACKVOTINGPERIOD");
 	pub const InstantAllowed: bool = true;
 	pub const MinimumDeposit: Balance = 20 * KMA;
-	pub EnactmentPeriod: BlockNumber = prod_or_fast!(1 * DAYS, 2 * MINUTES,"CALAMARI_ENACTMENTPERIOD");
-	pub CooloffPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 2 * MINUTES,"CALAMARI_COOLOFFPERIOD");
+	pub EnactmentPeriod: BlockNumber = prod_or_fast!(1 * DAYS, 2 * MINUTES, "CALAMARI_ENACTMENTPERIOD");
+	pub CooloffPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 2 * MINUTES, "CALAMARI_COOLOFFPERIOD");
 	pub const PreimageByteDeposit: Balance = deposit(0, 1);
 	pub const MaxVotes: u32 = 100;
 	pub const MaxProposals: u32 = 100;
@@ -499,7 +499,7 @@ impl pallet_membership::Config<TechnicalMembershipInstance> for Runtime {
 parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(1);
 	pub const ProposalBondMinimum: Balance = 50 * KMA;
-	pub const SpendPeriod: BlockNumber = prod_or_fast!(6 * DAYS, 2 * MINUTES,"CALAMARI_SPENDPERIOD");
+	pub const SpendPeriod: BlockNumber = prod_or_fast!(6 * DAYS, 2 * MINUTES, "CALAMARI_SPENDPERIOD");
 	pub const Burn: Permill = Permill::from_percent(0);
 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
 	pub const MaxApprovals: u32 = 100;
@@ -757,7 +757,7 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 
 parameter_types! {
 	// Rotate collator's spot each 6 hours.
-	pub Period: u32 = prod_or_fast!(6 * HOURS, 2 * MINUTES,"CALAMARI_PERIOD");
+	pub Period: u32 = prod_or_fast!(6 * HOURS, 2 * MINUTES, "CALAMARI_PERIOD");
 	pub const Offset: u32 = 0;
 	pub const MaxAuthorities: u32 = 100_000;
 }
