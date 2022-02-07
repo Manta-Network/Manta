@@ -326,37 +326,38 @@ pub fn run() -> Result<()> {
 					.into())
 			}
 		}
+		#[cfg(feature = "try-runtime")]
 		Some(Subcommand::TryRuntime(cmd)) => {
-			if cfg!(feature = "try-runtime") {
-				// grab the task manager.
-				let runner = cli.create_runner(cmd)?;
-				let registry = &runner
-					.config()
-					.prometheus_config
-					.as_ref()
-					.map(|cfg| &cfg.registry);
-				let task_manager =
-					sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
-						.map_err(|e| format!("Error: {:?}", e))?;
+			// grab the task manager.
+			let runner = cli.create_runner(cmd)?;
+			let registry = &runner
+				.config()
+				.prometheus_config
+				.as_ref()
+				.map(|cfg| &cfg.registry);
+			let task_manager =
+				sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
+					.map_err(|e| format!("Error: {:?}", e))?;
 
-				if runner.config().chain_spec.is_manta() {
-					runner.async_run(|config| {
-						Ok((cmd.run::<Block, MantaRuntimeExecutor>(config), task_manager))
-					})
-				} else if runner.config().chain_spec.is_calamari() {
-					runner.async_run(|config| {
-						Ok((
-							cmd.run::<Block, CalamariRuntimeExecutor>(config),
-							task_manager,
-						))
-					})
-				} else {
-					Err("Chain doesn't support try-runtime".into())
-				}
+			if runner.config().chain_spec.is_manta() {
+				runner.async_run(|config| {
+					Ok((cmd.run::<Block, MantaRuntimeExecutor>(config), task_manager))
+				})
+			} else if runner.config().chain_spec.is_calamari() {
+				runner.async_run(|config| {
+					Ok((
+						cmd.run::<Block, CalamariRuntimeExecutor>(config),
+						task_manager,
+					))
+				})
 			} else {
-				Err("Try-runtime must be enabled by `--features try-runtime`.".into())
+				Err("Chain doesn't support try-runtime".into())
 			}
 		}
+		#[cfg(not(feature = "try-runtime"))]
+		Some(Subcommand::TryRuntime) => Err("Try-runtime wasn't enabled when building the node. \
+		You can enable it with `--features try-runtime`."
+			.into()),
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 

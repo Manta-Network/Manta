@@ -100,5 +100,7 @@ runtime-benchmarks = [
 	'manta-runtime/runtime-benchmarks',
 ]
 try-runtime = [
+	'calamari-runtime/try-runtime',
+	'manta-runtime/try-runtime',
 	'try-runtime-cli',
 ]
