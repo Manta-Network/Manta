@@ -38,23 +38,6 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
 	type Balance = Balance;
 	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		// Consider the daily cost to fully congest our network to be defined as:
-		// daily_cost_to_fully_congest = inclusion_fee * txs_per_block * blocks_per_day * dol_price
-		// The weight fee is defined as:
-		// weight_fee = coeff_integer * (weight ^ degree) + coeff_friction * (weight ^ degree)
-		// The inclusion fee is defined as:
-		// inclusion_fee = base_fee + length_fee + [targeted_fee_adjustment * weight_fee]
-		// As of the day of writing this code a single `balances.transfer` is benchmarked at 156626000 weight.
-		// Let's assume worst case scenarios where the `length_fee` of a transfer is negligible,
-		// and that `targeted_fee_adjustment` is simply 1, as if the network is not congested.
-		// Furthermore we know the `base_fee` is 0.000125DOL defined in our runtime. So:
-		// inclusion_fee = 0.000125 * coeff + 0.000156626 * coeff = 0.000281626 * coeff
-		// We have profiled `txs_per_block` to be around 1134 and `blocks_per_day` is known to be 7200.
-		// DOL price in dollars can be checked daily but at the time of writing the code it was $0.02. So:
-		// daily_cost_to_fully_congest = 0.000281626 * coeff * 1134 * 7200 * 0.02 = 45.988399296 * coeff
-		// Assuming we want the daily cost to be around $250000 we get:
-		// 250000 = 45.988399296 * coeff
-		// coeff = ~5436
 
 		// Refer to Calamari's congested_chain_simulation() test for how to come up with the coefficient.
 		smallvec![WeightToFeeCoefficient {
