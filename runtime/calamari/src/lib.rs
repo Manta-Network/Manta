@@ -526,7 +526,7 @@ impl pallet_treasury::Config for Runtime {
 	type OnSlash = Treasury;
 	type ProposalBond = ProposalBond;
 	type ProposalBondMinimum = ProposalBondMinimum;
-	type SpendPeriod = SpendPeriod;
+	type SpendPeriod = prod_or_fast!(SpendPeriod, 2 * MINUTES,"CALAMARI_SPENDPERIOD");
 	type Burn = Burn;
 	type BurnDestination = ();
 	type MaxApprovals = MaxApprovals;
