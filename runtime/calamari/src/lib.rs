@@ -590,6 +590,8 @@ impl pallet_preimage::Config for Runtime {
 	type Currency = Balances;
 	type ManagerOrigin = EnsureRoot<AccountId>;
 	type MaxSize = PreimageMaxSize;
+	// The sum of the below 2 amounts will get reserved every time someone submits a preimage.
+	// Their sum will be unreserved when the preimage is requested, i.e. when it is going to be used.
 	type BaseDeposit = PreimageBaseDeposit;
 	type ByteDeposit = PreimageByteDeposit;
 }
