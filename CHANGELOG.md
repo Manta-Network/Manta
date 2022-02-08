@@ -2,6 +2,20 @@
 
 ## Pending
 
+## v3.1.3
+### Breaking changes
+
+### Features
+
+### Improvements
+- Bump spec version to **3130**.
+- [\#359](https://github.com/Manta-Network/Manta/pull/359) Update upstream dependencies to v0.9.15.
+- [\#337](https://github.com/Manta-Network/Manta/pull/337) Add a congested_chain_simulation test in Calamari.
+- [\#341](https://github.com/Manta-Network/Manta/pull/341) Create Release Checklist Issue Template.
+- [\#350](https://github.com/Manta-Network/Manta/pull/350) Setting minValidatorCount to a default value on runtime upgrade.
+
+### Bug fixes
+
 ## v3.1.2
 ### Breaking changes
 
