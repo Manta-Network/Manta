@@ -31,8 +31,13 @@ pub use calamari_runtime::currency::KMA;
 pub mod manta;
 pub use self::manta::*;
 pub use manta_runtime::currency::MANTA;
+pub mod dolphin;
+pub use self::dolphin::*;
+pub use dolphin_runtime::currency::DOL;
 
 const CALAMARI_ENDOWMENT: Balance = 1_000_000_000 * KMA; // 10 endowment so that total supply is 10B
+
+const DOLPHIN_ENDOWMENT: Balance = 1_000_000_000 * DOL; // 10 endowment so that total supply is 10B
 
 const MANTA_ENDOWMENT: Balance = 100_000_000 * MANTA; // 10 endowment so that total supply is 1B
 

@@ -17,13 +17,14 @@
 use crate::{
 	chain_specs,
 	cli::{Cli, RelayChainCli, Subcommand},
-	service::{new_partial, CalamariRuntimeExecutor, MantaRuntimeExecutor},
+	service::{new_partial, CalamariRuntimeExecutor, MantaRuntimeExecutor, DolphinRuntimeExecutor},
 };
 
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::info;
+
 use manta_primitives::Header;
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
@@ -39,10 +40,12 @@ pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
 pub const MANTA_PARACHAIN_ID: u32 = 2015;
 pub const CALAMARI_PARACHAIN_ID: u32 = 2084;
+pub const DOLPHIN_PARACHAIN_ID: u32 = 2085;
 
 trait IdentifyChain {
 	fn is_manta(&self) -> bool;
 	fn is_calamari(&self) -> bool;
+	fn is_dolphin(&self) -> bool;
 }
 
 impl IdentifyChain for dyn sc_service::ChainSpec {
@@ -52,6 +55,9 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 	fn is_calamari(&self) -> bool {
 		self.id().starts_with("calamari")
 	}
+	fn is_dolphin(&self) -> bool {
+		self.id().starts_with("dolphin")
+	}
 }
 
 impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
@@ -60,6 +66,9 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 	}
 	fn is_calamari(&self) -> bool {
 		<dyn sc_service::ChainSpec>::is_calamari(self)
+	}
+	fn is_dolphin(&self) -> bool {
+		<dyn sc_service::ChainSpec>::is_dolphin(self)
 	}
 }
 
@@ -77,6 +86,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		"calamari-testnet" => Ok(Box::new(chain_specs::calamari_testnet_config()?)),
 		"calamari-testnet-ci" => Ok(Box::new(chain_specs::calamari_testnet_ci_config()?)),
 		"calamari" => Ok(Box::new(chain_specs::calamari_config()?)),
+		// dolphin chainspec
+		"dolphin-dev" => Ok(Box::new(chain_specs::dolphin_development_config())),
+		"dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config())),
 		path => {
 			let chain_spec = chain_specs::ChainSpec::from_json_file(path.into())?;
 			if chain_spec.is_manta() {
@@ -87,8 +99,12 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 				Ok(Box::new(chain_specs::CalamariChainSpec::from_json_file(
 					path.into(),
 				)?))
+			} else if chain_spec.is_dolphin() {
+				Ok(Box::new(chain_specs::DolphinChainSpec::from_json_file(
+					path.into(),
+				)?))
 			} else {
-				Err("Please input a file name starting with manta or calamari.".into())
+				Err("Please input a file name starting with manta, calamari, or dolphin.".into())
 			}
 		}
 	}
@@ -96,7 +112,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"Manta/Calamari Collator".into()
+		"Manta/Calamari/Dolphin Collator".into()
 	}
 
 	fn impl_version() -> String {
@@ -105,7 +121,7 @@ impl SubstrateCli for Cli {
 
 	fn description() -> String {
 		format!(
-			"Manta/Calamari Collator\n\nThe command-line arguments provided first will be \
+			"Manta/Calamari/Dolphin Collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		{} [parachain-args] -- [relaychain-args]",
@@ -134,15 +150,17 @@ impl SubstrateCli for Cli {
 			&manta_runtime::VERSION
 		} else if chain_spec.is_calamari() {
 			&calamari_runtime::VERSION
+		} else if chain_spec.is_dolphin() {
+			&dolphin_runtime::VERSION
 		} else {
-			panic!("invalid chain spec! should be one of manta or calamari chain specs")
+			panic!("invalid chain spec! should be one of manta, calamari, or dolphin chain specs")
 		}
 	}
 }
 
 impl SubstrateCli for RelayChainCli {
 	fn impl_name() -> String {
-		"Manta/Calamari Collator".into()
+		"Manta/Calamari/Dolphin Collator".into()
 	}
 
 	fn impl_version() -> String {
@@ -151,7 +169,7 @@ impl SubstrateCli for RelayChainCli {
 
 	fn description() -> String {
 		format!(
-			"Manta/Calamari collator\n\nThe command-line arguments provided first will be \
+			"Manta/Calamari/Dolphin collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		{} [parachain-args] -- [relaychain-args]",
@@ -210,8 +228,17 @@ macro_rules! construct_async_run {
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
+			} else if runner.config().chain_spec.is_dolphin() {
+				runner.async_run(|$config| {
+					let $components = new_partial::<dolphin_runtime::RuntimeApi, DolphinRuntimeExecutor, _>(
+						&$config,
+						crate::service::parachain_build_import_queue,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
 			} else {
-				panic!("wrong chain spec, must be one of manta or calamari chain specs");
+				panic!("wrong chain spec, must be one of manta, calamari, or dolphin chain specs");
 			}
 	}}
 }
@@ -318,6 +345,8 @@ pub fn run() -> Result<()> {
 				runner.sync_run(|config| cmd.run::<Block, MantaRuntimeExecutor>(config))
 			} else if runner.config().chain_spec.is_calamari() {
 				runner.sync_run(|config| cmd.run::<Block, CalamariRuntimeExecutor>(config))
+			} else if runner.config().chain_spec.is_dolphin() {
+				runner.sync_run(|config| cmd.run::<Block, DolphinRuntimeExecutor>(config))
 			} else {
 				Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
@@ -379,6 +408,14 @@ pub fn run() -> Result<()> {
 					crate::service::start_parachain_node::<
 						calamari_runtime::RuntimeApi,
 						CalamariRuntimeExecutor,
+					>(config, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
+				} else if config.chain_spec.is_dolphin() {
+					crate::service::start_parachain_node::<
+						dolphin_runtime::RuntimeApi,
+						DolphinRuntimeExecutor,
 					>(config, polkadot_config, id)
 					.await
 					.map(|r| r.0)

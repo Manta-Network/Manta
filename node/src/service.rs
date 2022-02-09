@@ -83,6 +83,20 @@ impl sc_executor::NativeExecutionDispatch for CalamariRuntimeExecutor {
 	}
 }
 
+// Native Dolphin Parachain executor instance.
+pub struct DolphinRuntimeExecutor;
+impl sc_executor::NativeExecutionDispatch for DolphinRuntimeExecutor {
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		dolphin_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		dolphin_runtime::native_version()
+	}
+}
+
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
