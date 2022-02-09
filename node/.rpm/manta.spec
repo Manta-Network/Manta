@@ -27,7 +27,6 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 rm -rf %{buildroot}
 mkdir -p %{buildroot}
 cp -a * %{buildroot}
-ln --relative --symbolic /usr/bin/manta %{buildroot}/usr/bin/calamari
 
 %pre
 if [ $1 -eq 2 ] ; then
