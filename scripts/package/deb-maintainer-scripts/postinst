@@ -3,7 +3,6 @@
 set -e
 
 action="$1"
-config_file="/etc/default/manta"
 
 chmod +x /usr/bin/manta
 
