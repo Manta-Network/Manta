@@ -175,98 +175,6 @@ jobs:
         with:
           name: config-for-integration-test
           path: .github/resources/config-for-integration-test.json
-
-  build-node-base:
-    needs:
-      - start-node-builder-base
-      - check-for-runtime-upgrade
-    runs-on: ${{ needs.start-node-builder-base.outputs.runner-label }}
-    env:
-      CARGO_TERM_COLOR: always
-    steps:
-      -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        uses: actions/checkout@v2
-        with:
-          ref: 'manta'
-      -
-        name: install sccache
-        if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        env:
-          SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
-          SCCACHE_VERSION: v0.2.15
-        run: |
-          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
-          mkdir -p $HOME/.local/bin
-          curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
-          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
-          chmod +x $HOME/.local/bin/sccache
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-
-      -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: cache sccache
-        uses: actions/cache@v2
-        continue-on-error: false
-        with:
-          path: /home/runner/.cache/sccache
-          key: sccache-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            sccache-
-      -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: start sccache server
-        run: sccache --start-server
-      -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: init
-        run: |
-          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-          source ${HOME}/.cargo/env
-          rustup toolchain install stable
-          rustup toolchain install nightly
-          rustup default stable
-          rustup target add wasm32-unknown-unknown --toolchain nightly
-          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
-          rustup update
-      -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: build
-        env:
-          RUST_BACKTRACE: full
-          RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 2G
-          SCCACHE_DIR: /home/runner/.cache/sccache
-        run: |
-          source ${HOME}/.cargo/env
-          cargo build --verbose --release
-      -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: stop sccache server
-        run: sccache --stop-server || true
-      -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: strip
-        run: |
-          strip target/release/manta
-      -
-        if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: upload
-        uses: actions/upload-artifact@v2
-        with:
-          name: manta-base
-          path: target/release/manta
       -
         name: upload
         uses: actions/upload-artifact@v2
@@ -276,7 +184,7 @@ jobs:
 
   runtime-upgrade-test:
     needs:
-      - build-node-base
+      - build-node-current
       - build-runtimes
       - start-runtime-upgrade-tester
       - check-for-runtime-upgrade
@@ -304,17 +212,17 @@ jobs:
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: fetch manta-base
+        name: fetch manta
         uses: actions/download-artifact@v2
         with:
-          name: manta-base
+          name: manta
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: mv and chmod manta-base
+        name: mv and chmod manta
         run: |
           ls -ahl ${{ github.workspace }}/
-          mv ${{ github.workspace }}/manta $HOME/.local/bin/manta-base
-          chmod +x $HOME/.local/bin/manta-base
+          mv ${{ github.workspace }}/manta $HOME/.local/bin/manta
+          chmod +x $HOME/.local/bin/manta
           ls -ahl ${{ github.workspace }}/
           ls -ahl $HOME/.local/bin/
       -
@@ -328,20 +236,20 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         id: create-chainspec
         run: |
-          manta-base build-spec --chain ${{ matrix.runtime.chain-spec }} --disable-default-bootnode --raw > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json
+          manta build-spec --chain ${{ matrix.runtime.chain-spec }} --disable-default-bootnode --raw > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json
           jq \
             --sort-keys \
-            --arg name "${{ matrix.runtime.name }} testnet base" \
-            --arg id ${{ matrix.runtime.chain-spec }}-base \
-            --arg relay_chain rococo-local-base \
+            --arg name "${{ matrix.runtime.name }} testnet" \
+            --arg id ${{ matrix.runtime.chain-spec }} \
+            --arg relay_chain rococo-local \
             '. |
               .name = $name |
               .id = $id |
               .relay_chain = $relay_chain |
               .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
-            ' $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json
+            ' $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json
           ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-pc/
-          manta-base export-state --chain $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-state.json || true
+          manta export-state --chain $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-state.json || true
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch config-for-runtime-upgrade-test
@@ -356,18 +264,18 @@ jobs:
           cat config-for-runtime-upgrade-test.json | \
           jq \
             --arg relaychain_bin $HOME/.local/bin/polkadot \
-            --arg relaychain_id rococo-local-base \
-            --arg relaychain_name "rococo local base" \
-            --arg parachains_bin $HOME/.local/bin/manta-base \
-            --arg parachains_spec $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json \
+            --arg relaychain_id rococo-local \
+            --arg relaychain_name "rococo local" \
+            --arg parachains_bin $HOME/.local/bin/manta \
+            --arg parachains_spec $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json \
             '.
               | .relaychain.bin = $relaychain_bin
               | .relaychain.mutation.id = $relaychain_id
               | .relaychain.mutation.name = $relaychain_name
               | .parachains[].bin = $parachains_bin
               | .parachains[].chain = $parachains_spec
-            ' > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
-          jq . $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
+            ' > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-launch-config.json
+          jq . $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-launch-config.json
           ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-pc/
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
@@ -393,7 +301,7 @@ jobs:
             --output ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.runtime.chain-spec }}-stdout.log \
             --error ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.runtime.chain-spec }}-stderr.log \
             --no-autorestart \
-            -- $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
+            -- $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-launch-config.json
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: init measure-block-time ${{ matrix.runtime.name }}
@@ -446,9 +354,9 @@ jobs:
         name: check if spec version was successfully incremented
         run: |
           cd ${{ github.workspace }}/dev-tools/runtime-upgrade-test
-          node check_runtime_version.js --address=ws://127.0.0.1:9921 --compare_to=${{ needs.parse-runtimes.outputs.calamari-runtime-base }}
+          node check_runtime_version.js --address=ws://127.0.0.1:9921 --compare_to=${{ needs.parse-runtimes.outputs.calamari-runtime }}
           echo $?
-          if [ $? == 1 ]; then echo "Runtime upgrade failed, still using old spec version - ${{ needs.parse-runtimes.outputs.calamari-runtime-base }}"; exit 1; fi
+          if [ $? == 1 ]; then echo "Runtime upgrade failed, still using old spec version - ${{ needs.parse-runtimes.outputs.calamari-runtime }}"; exit 1; fi
           cd ${{ github.workspace }}
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
@@ -1013,7 +921,6 @@ jobs:
   stop-node-builder-base:
     needs:
       - start-node-builder-base
-      - build-node-base
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
