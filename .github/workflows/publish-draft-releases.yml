@@ -184,7 +184,6 @@ jobs:
 
   runtime-upgrade-test:
     needs:
-      - build-node-base
       - build-runtimes
       - start-runtime-upgrade-tester
       - check-for-runtime-upgrade
