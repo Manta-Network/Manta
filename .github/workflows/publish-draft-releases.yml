@@ -184,7 +184,7 @@ jobs:
 
   runtime-upgrade-test:
     needs:
-      - build-node-current
+      - build-node-base
       - build-runtimes
       - start-runtime-upgrade-tester
       - check-for-runtime-upgrade
@@ -212,17 +212,17 @@ jobs:
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: fetch manta
+        name: fetch manta-base
         uses: actions/download-artifact@v2
         with:
           name: manta
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: mv and chmod manta
+        name: mv and chmod manta-base
         run: |
           ls -ahl ${{ github.workspace }}/
-          mv ${{ github.workspace }}/manta $HOME/.local/bin/manta
-          chmod +x $HOME/.local/bin/manta
+          mv ${{ github.workspace }}/manta $HOME/.local/bin/manta-base
+          chmod +x $HOME/.local/bin/manta-base
           ls -ahl ${{ github.workspace }}/
           ls -ahl $HOME/.local/bin/
       -
@@ -236,20 +236,20 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         id: create-chainspec
         run: |
-          manta build-spec --chain ${{ matrix.runtime.chain-spec }} --disable-default-bootnode --raw > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json
+          manta-base build-spec --chain ${{ matrix.runtime.chain-spec }} --disable-default-bootnode --raw > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json
           jq \
             --sort-keys \
-            --arg name "${{ matrix.runtime.name }} testnet" \
-            --arg id ${{ matrix.runtime.chain-spec }} \
-            --arg relay_chain rococo-local \
+            --arg name "${{ matrix.runtime.name }} testnet base" \
+            --arg id ${{ matrix.runtime.chain-spec }}-base \
+            --arg relay_chain rococo-local-base \
             '. |
               .name = $name |
               .id = $id |
               .relay_chain = $relay_chain |
               .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
-            ' $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json
+            ' $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json
           ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-pc/
-          manta export-state --chain $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-state.json || true
+          manta-base export-state --chain $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-state.json || true
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch config-for-runtime-upgrade-test
@@ -264,18 +264,18 @@ jobs:
           cat config-for-runtime-upgrade-test.json | \
           jq \
             --arg relaychain_bin $HOME/.local/bin/polkadot \
-            --arg relaychain_id rococo-local \
-            --arg relaychain_name "rococo local" \
-            --arg parachains_bin $HOME/.local/bin/manta \
-            --arg parachains_spec $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json \
+            --arg relaychain_id rococo-local-base \
+            --arg relaychain_name "rococo local base" \
+            --arg parachains_bin $HOME/.local/bin/manta-base \
+            --arg parachains_spec $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json \
             '.
               | .relaychain.bin = $relaychain_bin
               | .relaychain.mutation.id = $relaychain_id
               | .relaychain.mutation.name = $relaychain_name
               | .parachains[].bin = $parachains_bin
               | .parachains[].chain = $parachains_spec
-            ' > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-launch-config.json
-          jq . $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-launch-config.json
+            ' > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
+          jq . $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
           ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-pc/
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
@@ -301,7 +301,7 @@ jobs:
             --output ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.runtime.chain-spec }}-stdout.log \
             --error ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.runtime.chain-spec }}-stderr.log \
             --no-autorestart \
-            -- $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-launch-config.json
+            -- $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: init measure-block-time ${{ matrix.runtime.name }}
@@ -354,9 +354,9 @@ jobs:
         name: check if spec version was successfully incremented
         run: |
           cd ${{ github.workspace }}/dev-tools/runtime-upgrade-test
-          node check_runtime_version.js --address=ws://127.0.0.1:9921 --compare_to=${{ needs.parse-runtimes.outputs.calamari-runtime }}
+          node check_runtime_version.js --address=ws://127.0.0.1:9921 --compare_to=${{ needs.parse-runtimes.outputs.calamari-runtime-base }}
           echo $?
-          if [ $? == 1 ]; then echo "Runtime upgrade failed, still using old spec version - ${{ needs.parse-runtimes.outputs.calamari-runtime }}"; exit 1; fi
+          if [ $? == 1 ]; then echo "Runtime upgrade failed, still using old spec version - ${{ needs.parse-runtimes.outputs.calamari-runtime-base }}"; exit 1; fi
           cd ${{ github.workspace }}
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
@@ -893,47 +893,6 @@ jobs:
           aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
           runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
-
-  start-node-builder-base:
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      -
-        id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
-          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}  # 32 vcpu, 64gb ram, $1.392 hourly
-          aws-instance-root-volume-size: 32
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
-
-  stop-node-builder-base:
-    needs:
-      - start-node-builder-base
-    runs-on: ubuntu-20.04
-    if: ${{ always() }}
-    steps:
-      -
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-node-builder-base.outputs.aws-region }}
-          runner-label: ${{ needs.start-node-builder-base.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-node-builder-base.outputs.aws-instance-id }}
 
   start-integration-tester:
     runs-on: ubuntu-20.04
