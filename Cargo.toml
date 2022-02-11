@@ -1,9 +1,11 @@
+
 [workspace]
 members = [
 	'node',
 	'pallets/*',
 	'runtime/manta',
 	'runtime/calamari',
+	'runtime/dolphin',
 ]
 
 [profile.release]

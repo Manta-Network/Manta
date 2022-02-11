@@ -24,6 +24,10 @@ pub const MANTA_SS58PREFIX: u8 = 77;
 pub const MANTA_DECIMAL: u8 = 18;
 pub const MANTA_TOKEN_SYMBOL: &str = "MANTA";
 
+// Dolphin constants
+pub const DOLPHIN_DECIMAL: u8 = 18;
+pub const DOLPHIN_TOKEN_SYMBOL: &str = "DOL";
+
 /// Manta parachain time-related
 pub mod time {
 	use crate::{BlockNumber, Moment};
