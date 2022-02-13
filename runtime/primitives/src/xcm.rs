@@ -1,4 +1,4 @@
-// Copyright 2020-2021 Manta Network.
+// Copyright 2020-2022 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -14,24 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use sp_std::marker::PhantomData;
 use sp_runtime::traits::{Convert, Zero};
+use sp_std::marker::PhantomData;
 
-use frame_support::{weights::{Weight, constants::WEIGHT_PER_SECOND}};
-use frame_support::traits::fungibles::Mutate;
-use frame_support::pallet_prelude::Get;
-
-use xcm::v1::{
-	AssetId as xcmAssetId,
-	Junction::{AccountId32, Parachain},
-	Junctions::*,
-	MultiAsset, MultiLocation, NetworkId, Fungibility
+use frame_support::{
+	pallet_prelude::Get,
+	traits::fungibles::Mutate,
+	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
-use xcm::latest::Error as XcmError;
-use xcm_builder::TakeRevenue;
-use xcm_executor::traits::{FilterAssetLocation, WeightTrader, MatchesFungibles};
-use crate::{UnitsToWeightRatio, AssetIdLocationGetter};
 
+use crate::{AssetIdLocationGetter, UnitsToWeightRatio};
+use xcm::{
+	latest::Error as XcmError,
+	v1::{
+		AssetId as xcmAssetId, Fungibility,
+		Junction::{AccountId32, Parachain},
+		Junctions::*,
+		MultiAsset, MultiLocation, NetworkId,
+	},
+};
+use xcm_builder::TakeRevenue;
+use xcm_executor::traits::{FilterAssetLocation, MatchesFungibles, WeightTrader};
 
 pub trait Reserve {
 	/// Returns assets reserve location.
@@ -46,8 +49,8 @@ impl Reserve for MultiAsset {
 			let first_interior = location.first_interior();
 			let parents = location.parent_count();
 			match (parents, first_interior.clone()) {
-				(0, Some(Parachain(id))) => Some(MultiLocation::new(0, X1(Parachain(id.clone())))),
-				(1, Some(Parachain(id))) => Some(MultiLocation::new(1, X1(Parachain(id.clone())))),
+				(0, Some(Parachain(id))) => Some(MultiLocation::new(0, X1(Parachain(*id)))),
+				(1, Some(Parachain(id))) => Some(MultiLocation::new(1, X1(Parachain(*id)))),
 				(1, _) => Some(MultiLocation::parent()),
 				_ => None,
 			}
@@ -62,12 +65,7 @@ impl Reserve for MultiAsset {
 pub struct MultiNativeAsset;
 impl FilterAssetLocation for MultiNativeAsset {
 	fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
-		if let Some(ref reserve) = asset.reserve() {
-			if reserve == origin {
-				return true;
-			}
-		}
-		false
+		asset.reserve().map(|r| r == *origin).unwrap_or(false)
 	}
 }
 
@@ -95,36 +93,49 @@ pub struct FirstAssetTrader<
 	AssetLocation: From<MultiLocation> + Clone,
 	AssetIdInfoGetter: UnitsToWeightRatio<AssetId> + AssetIdLocationGetter<AssetId, AssetLocation>,
 	R: TakeRevenue,
->(	
-	Weight,
-	Option<(MultiLocation, u128, u128)>,
-	sp_std::marker::PhantomData<(AssetId, AssetLocation, AssetIdInfoGetter, R)>);
-impl <
-	AssetId: Clone,
-	AssetLocation: From<MultiLocation> + Clone,
-	AssetIdInfoGetter: UnitsToWeightRatio<AssetId> + AssetIdLocationGetter<AssetId, AssetLocation>,
-	R: TakeRevenue,
-> WeightTrader for FirstAssetTrader<AssetId, AssetLocation, AssetIdInfoGetter, R>{
+>{
+	weight: Weight,
+	refund_cache: Option<(MultiLocation, u128, u128)>,
+	__: sp_std::marker::PhantomData<(AssetId, AssetLocation, AssetIdInfoGetter, R)>,
+}
+
+impl<
+		AssetId: Clone,
+		AssetLocation: From<MultiLocation> + Clone,
+		AssetIdInfoGetter: UnitsToWeightRatio<AssetId> + AssetIdLocationGetter<AssetId, AssetLocation>,
+		R: TakeRevenue,
+	> WeightTrader for FirstAssetTrader<AssetId, AssetLocation, AssetIdInfoGetter, R>
+{
 	fn new() -> Self {
-		FirstAssetTrader(Zero::zero(), None, sp_std::marker::PhantomData)
+		FirstAssetTrader{
+			weight: Zero::zero(), 
+			refund_cache: None, 
+			__: sp_std::marker::PhantomData
+		}
 	}
 
 	/// buy weight for XCM execution. We always return `TooExpensive` error if this fails.
-	fn buy_weight(&mut self, weight: Weight, payment: xcm_executor::Assets) -> Result<xcm_executor::Assets, XcmError> {
+	fn buy_weight(
+		&mut self,
+		weight: Weight,
+		payment: xcm_executor::Assets,
+	) -> Result<xcm_executor::Assets, XcmError> {
 		let first_asset = payment
 			.clone()
 			.fungible_assets_iter()
 			.next()
 			.ok_or(XcmError::TooExpensive)?;
-		
+
 		// Check the first asset
 		match (first_asset.id, first_asset.fun) {
 			(xcmAssetId::Concrete(id), Fungibility::Fungible(_)) => {
 				let asset_loc: AssetLocation = id.clone().into();
-				let asset_id = AssetIdInfoGetter::get_asset_id(asset_loc).ok_or(XcmError::TooExpensive)?;
-				let units_per_second = AssetIdInfoGetter::get_units_per_second(asset_id).ok_or(XcmError::TooExpensive)?;
+				let asset_id =
+					AssetIdInfoGetter::get_asset_id(&asset_loc).ok_or(XcmError::TooExpensive)?;
+				let units_per_second = AssetIdInfoGetter::get_units_per_second(asset_id)
+					.ok_or(XcmError::TooExpensive)?;
 				let amount = units_per_second * (weight as u128) / (WEIGHT_PER_SECOND as u128);
-				// we don't need to proceed if amount is zero. 
+				// we don't need to proceed if amount is zero.
 				// This is very useful in tests.
 				if amount.is_zero() {
 					return Ok(payment);
@@ -136,7 +147,7 @@ impl <
 				let unused = payment
 					.checked_sub(required)
 					.map_err(|_| XcmError::TooExpensive)?;
-				self.0 = self.0.saturating_add(weight);
+				self.weight = self.weight.saturating_add(weight);
 
 				// In case the asset matches the one the trader already stored before, add
 				// to later refund
@@ -146,9 +157,9 @@ impl <
 
 				// In short, we only refund on the asset the trader first succesfully was able
 				// to pay for an execution
-				let new_asset = match self.1.clone() {
+				let new_asset = match self.refund_cache.clone() {
 					Some((prev_id, prev_amount, units_per_second)) => {
-						if prev_id == id.clone() {
+						if prev_id == id {
 							Some((id, prev_amount.saturating_add(amount), units_per_second))
 						} else {
 							None
@@ -159,47 +170,47 @@ impl <
 
 				// Due to the trait bound, we can only refund one asset.
 				if let Some(new_asset) = new_asset {
-					self.0 = self.0.saturating_add(weight);
-					self.1 = Some(new_asset);
+					self.weight = self.weight.saturating_add(weight);
+					self.refund_cache = Some(new_asset);
 				};
 				return Ok(unused);
 			}
-			_ => Err(XcmError::TooExpensive)
+			_ => Err(XcmError::TooExpensive),
 		}
 	}
 
 	fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
-		if let Some((id, prev_amount, units_per_second)) = self.1.clone() {
-			let weight = weight.min(self.0);
-			self.0 -= weight;
+		if let Some((id, prev_amount, units_per_second)) = self.refund_cache.clone() {
+			let weight = weight.min(self.weight);
+			self.weight -= weight;
 			let amount = units_per_second * (weight as u128) / (WEIGHT_PER_SECOND as u128);
-			self.1 = Some((
+			self.refund_cache = Some((
 				id.clone(),
 				prev_amount.saturating_sub(amount),
 				units_per_second,
 			));
 			Some(MultiAsset {
 				fun: Fungibility::Fungible(amount),
-				id: xcmAssetId::Concrete(id.clone()),
+				id: xcmAssetId::Concrete(id),
 			})
 		} else {
 			None
-		} 
+		}
 	}
 }
 
 /// Handle spent fees, deposit them as defined by R
-impl <
-	AssetId: Clone,
-	AssetLocation: From<MultiLocation> + Clone,
-	AssetIdInfoGetter: UnitsToWeightRatio<AssetId> + AssetIdLocationGetter<AssetId, AssetLocation>,
-	R: TakeRevenue,
-> Drop for FirstAssetTrader<AssetId, AssetLocation, AssetIdInfoGetter, R>
+impl<
+		AssetId: Clone,
+		AssetLocation: From<MultiLocation> + Clone,
+		AssetIdInfoGetter: UnitsToWeightRatio<AssetId> + AssetIdLocationGetter<AssetId, AssetLocation>,
+		R: TakeRevenue,
+	> Drop for FirstAssetTrader<AssetId, AssetLocation, AssetIdInfoGetter, R>
 {
 	fn drop(&mut self) {
-		if let Some((id, amount, _)) = self.1.clone() {
+		if let Some((id, amount, _)) = self.refund_cache.clone() {
 			R::take_revenue((id, amount).into());
-		}	
+		}
 	}
 }
 
@@ -220,8 +231,7 @@ impl<
 		match Matcher::matches_fungibles(&revenue) {
 			Ok((asset_id, amount)) => {
 				if !amount.is_zero() {
-					let ok = Assets::mint_into(asset_id, &ReceiverAccount::get(), amount).is_ok();
-					debug_assert!(ok, "`mint_into` cannot generally fail; qed");
+					Assets::mint_into(asset_id, &ReceiverAccount::get(), amount).expect("`mint_into` cannot generally fail; qed");
 				}
 			}
 			Err(_) => log::debug!(

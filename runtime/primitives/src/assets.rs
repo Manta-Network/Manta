@@ -1,4 +1,4 @@
-// Copyright 2020-2021 Manta Network.
+// Copyright 2020-2022 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -47,15 +47,13 @@ impl From<MultiLocation> for AssetLocation {
 
 /// Convert an `AssetLocation` to a MultiLocation
 /// If Native, return none.
-impl Into<Option<MultiLocation>> for AssetLocation {
-	fn into(self: Self) -> Option<MultiLocation> {
-		// only support specific version
-		if let AssetLocation(VersionedMultiLocation::V1(loc)) = self {
-			Some(loc)
-		} else {
-			None
-		}
-	}
+impl From<AssetLocation> for Option<MultiLocation> {
+    fn from(location: AssetLocation) -> Self {
+        match location {
+            AssetLocation(VersionedMultiLocation::V1(location)) => Some(location),
+            _ => None,
+        }
+    }
 }
 
 /// Defines the trait to obtain a generic AssetId
@@ -64,7 +62,7 @@ pub trait AssetIdLocationGetter<AssetId, AssetLocation> {
 	fn get_asset_location(asset_id: AssetId) -> Option<AssetLocation>;
 
 	// get AssetId from AssetLocation
-	fn get_asset_id(loc: AssetLocation) -> Option<AssetId>;
+	fn get_asset_id(loc: &AssetLocation) -> Option<AssetId>;
 }
 
 /// Defines the units per second charged given an `AssetId`.
@@ -72,7 +70,6 @@ pub trait UnitsToWeightRatio<AssetId> {
 	/// Get units per second from asset id
 	fn get_units_per_second(asset_id: AssetId) -> Option<u128>;
 }
-
 
 /// Converter struct implementing `Convert`.
 /// This enforce the `AssetInfoGetter` implements `AssetIdLocationGetter`
@@ -87,22 +84,10 @@ where
 	AssetInfoGetter: AssetIdLocationGetter<AssetId, AssetLocation>,
 {
 	fn convert_ref(loc: impl Borrow<MultiLocation>) -> Result<AssetId, ()> {
-		if let Some(asset_id) = AssetInfoGetter::get_asset_id(loc.borrow().clone().into()) {
-			Ok(asset_id)
-		} else {
-			Err(())
-		}
+		AssetInfoGetter::get_asset_id(&loc.borrow().clone().into()).ok_or(())
 	}
 
 	fn reverse_ref(id: impl Borrow<AssetId>) -> Result<MultiLocation, ()> {
-		if let Some(asset_loc) = AssetInfoGetter::get_asset_location(id.borrow().clone()) {
-			if let Some(location) = asset_loc.into() {
-				Ok(location)
-			} else {
-				Err(())
-			}
-		} else {
-			Err(())
-		}
+		AssetInfoGetter::get_asset_location(id.borrow().clone()).and_then(Into::into).ok_or(())
 	}
 }

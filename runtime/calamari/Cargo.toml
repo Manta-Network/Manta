@@ -104,7 +104,7 @@ orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-lib
 manta-primitives = { path = '../primitives', default-features = false }
 calamari-vesting = { path = '../../pallets/vesting', default-features = false }
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
-pallet-tx-pause = { path = '../../pallets/pallet-tx-pause', default-features = false }
+pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
 
 [dev-dependencies]

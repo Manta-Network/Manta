@@ -1,15 +1,17 @@
 [package]
 authors    = ['Manta Network']
 name = "pallet-asset-manager"
-version = "3.1.0"
-edition = "2018"
+version = "3.1.3"
+edition = "2021"
 homepage   = 'https://manta.network'
 license    = 'GPL-3.0'
 repository = 'https://github.com/Manta-Network/Manta/'
 
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false }
+# codec has to be 2.0.0 for now
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+# scale-info has to be 1.0 for now
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.15", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.15", default-features = false }

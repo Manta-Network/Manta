@@ -39,7 +39,7 @@ use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain::primitives::{
 	DmpMessageHandler, Id as ParaId, Sibling, XcmpMessageFormat, XcmpMessageHandler,
 };
-use xcm::{latest::prelude::*, VersionedXcm, Version as XcmVersion};
+use xcm::{latest::prelude::*, Version as XcmVersion, VersionedXcm};
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
 	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
@@ -252,8 +252,9 @@ impl Config for XcmExecutorConfig {
 	// The second one will charge the first asset in the MultiAssets with pre-defined rate
 	// i.e. units_per_second in `AssetManager`
 	type Trader = (
-		FixedRateOfFungible<ParaTokenPerSecond, ()>, 
-		FirstAssetTrader<AssetId, AssetLocation, AssetManager, XcmFeesToAccount>);
+		FixedRateOfFungible<ParaTokenPerSecond, ()>,
+		FirstAssetTrader<AssetId, AssetLocation, AssetManager, XcmFeesToAccount>,
+	);
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;

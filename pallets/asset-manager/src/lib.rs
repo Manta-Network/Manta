@@ -31,18 +31,19 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
 
-	use codec::{Codec, HasCompact};
+	use codec::{Codec};
 	use frame_support::{pallet_prelude::*, transactional, PalletId};
 	use frame_system::pallet_prelude::*;
 	use manta_primitives::{AssetIdLocationGetter, UnitsToWeightRatio};
 	use scale_info::TypeInfo;
 	use sp_runtime::{
-		traits::{AccountIdConversion, AtLeast32BitUnsigned, Bounded, CheckedAdd, One},
+		traits::{AccountIdConversion, AtLeast32BitUnsigned, CheckedAdd, One},
 		ArithmeticError,
 	};
 
 	#[pallet::pallet]
-	pub struct Pallet<T>(PhantomData<T>);
+	#[pallet::generate_store(pub(super) trait Store)]
+	pub struct Pallet<T>(_);
 
 	/// The AssetManagers's pallet id
 	pub const PALLET_ID: PalletId = PalletId(*b"asstmngr");
@@ -55,8 +56,8 @@ pub mod pallet {
 		/// * `asset_id`: the asset id to be created
 		/// * `min_balance`: the minimum balance to hold this asset
 		/// * `metadata`: the metadata that the implementation layer stores
-		/// * `is_sufficient`: Whether this asset needs users to have an existential deposit to hold
-		///  this asset.
+		/// * `is_sufficient`: whether this asset can be used as reserve asset,
+		/// 	to the first approximation
 		fn create_asset(
 			asset_id: T::AssetId,
 			min_balance: T::Balance,
@@ -76,7 +77,7 @@ pub mod pallet {
 
 	/// Convert AssetId and AssetLocation
 	impl<T: Config> AssetIdLocationGetter<T::AssetId, T::AssetLocation> for Pallet<T> {
-		fn get_asset_id(loc: T::AssetLocation) -> Option<T::AssetId> {
+		fn get_asset_id(loc: &T::AssetLocation) -> Option<T::AssetId> {
 			LocationAssetId::<T>::get(loc)
 		}
 
@@ -102,10 +103,6 @@ pub mod pallet {
 			+ Parameter
 			+ Default
 			+ Copy
-			+ HasCompact
-			+ CheckedAdd
-			+ Bounded
-			+ One
 			+ AtLeast32BitUnsigned
 			+ MaybeSerializeDeserialize
 			+ MaxEncodedLen
@@ -129,7 +126,7 @@ pub mod pallet {
 			+ AssetMetadata<Self>;
 
 		/// The AssetLocation type: could be just a thin wrapper of MultiLocation
-		type AssetLocation: Member + Parameter + Default;
+		type AssetLocation: Member + Parameter + Default + TypeInfo;
 
 		/// The origin which may forcibly create or destroy an asset or otherwise alter privileged
 		/// attributes.
@@ -145,16 +142,20 @@ pub mod pallet {
 			asset_address: T::AssetLocation,
 			metadata: T::AssetRegistrarMetadata,
 		},
-		/// An asset has been updated.
-		AssetUpdated {
+		/// An asset's location has been updated.
+		AssetLocationUpdated {
 			asset_id: T::AssetId,
-			location: Option<T::AssetLocation>,
-			metadata: Option<T::AssetRegistrarMetadata>,
+			location: T::AssetLocation,
+		},
+		/// An asset;s metadata has been updated.
+		AssetMetadataUpdated {
+			asset_id: T::AssetId,
+			metadata: T::AssetRegistrarMetadata,
 		},
 		/// Update units per second of an asset
 		UnitsPerSecondUpdated {
-			asset_id: T::AssetId, 
-			units_per_second: u128
+			asset_id: T::AssetId,
+			units_per_second: u128,
 		},
 		/// Asset frozen.
 		AssetFrozen { asset_id: T::AssetId },
@@ -171,6 +172,8 @@ pub mod pallet {
 		ErrorCreatingAsset,
 		/// Update a non-exist asset
 		UpdateNonExistAsset,
+		/// Asset already registered.
+		AssetAlreadyRegistered,
 	}
 
 	/// AssetId to MultiLocation Map.
@@ -217,6 +220,7 @@ pub mod pallet {
 		/// TODO: get actual weight
 		/// # </weight>
 		#[pallet::weight(50_000_000)]
+		#[transactional]
 		pub fn register_asset(
 			origin: OriginFor<T>,
 			location: T::AssetLocation,
@@ -250,48 +254,60 @@ pub mod pallet {
 		///
 		/// * `origin`: Caller of this extrinsic, the acess control is specfied by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
-		/// * `metadata_option`: `Some(meta)` to update the metadata to `meta`, `None` means no update on metadata.
-		/// * `location_option`: `Some(location)` to update the asset location, `None` means no update on location.
-		///
+		/// * `location`: `location` to update the asset location.
 		/// # <weight>
 		/// TODO: get actual weight
 		/// # </weight>
 		#[pallet::weight(50_000_000)]
 		#[transactional]
-		pub fn update_asset(
+		pub fn update_asset_location(
 			origin: OriginFor<T>,
-			asset_id: T::AssetId,
-			location_option: Option<T::AssetLocation>,
-			metadata_option: Option<T::AssetRegistrarMetadata>,
+			#[pallet::compact] asset_id: T::AssetId,
+			location: T::AssetLocation,
 		) -> DispatchResult {
-			// check validity.
+			// checks validity
 			T::ModifierOrigin::ensure_origin(origin)?;
 			ensure!(
 				AssetIdLocation::<T>::contains_key(&asset_id),
 				Error::<T>::UpdateNonExistAsset
 			);
-			if let Some(location) = location_option.clone() {
-				ensure!(
-					!LocationAssetId::<T>::contains_key(&location),
-					Error::<T>::LocationAlreadyExists
-				)
-			}
-			// write to the ledger state.
-			if let Some(location) = location_option.clone() {
-				let old_location =
-					AssetIdLocation::<T>::get(&asset_id).ok_or(Error::<T>::UpdateNonExistAsset)?;
-				LocationAssetId::<T>::remove(&old_location);
-				LocationAssetId::<T>::insert(&location, &asset_id);
-				AssetIdLocation::<T>::insert(&asset_id, &location);
-			}
-			if let Some(metadata) = metadata_option.clone() {
-				AssetIdMetadata::<T>::insert(&asset_id, &metadata)
-			}
-			Self::deposit_event(Event::<T>::AssetUpdated{
+			ensure!(
+				!LocationAssetId::<T>::contains_key(&location),
+				Error::<T>::LocationAlreadyExists
+			);
+			// change the ledger state.
+			let old_location =
+				AssetIdLocation::<T>::get(&asset_id).ok_or(Error::<T>::UpdateNonExistAsset)?;
+			LocationAssetId::<T>::remove(&old_location);
+			LocationAssetId::<T>::insert(&location, &asset_id);
+			AssetIdLocation::<T>::insert(&asset_id, &location);
+			// deposit event.
+			Self::deposit_event(Event::<T>::AssetLocationUpdated {
 				asset_id,
-				location: location_option,
-				metadata: metadata_option,
+				location: location,
 			});
+			Ok(())
+		}
+
+		/// Update an asset's metadata by its `asset_id`
+		///
+		/// * `origin`: Caller of this extrinsic, the acess control is specfied by `ForceOrigin`.
+		/// * `asset_id`: AssetId to be updated.
+		/// * `metadata`: new `metadata` to be associated with `asset_id`.
+		#[pallet::weight(50_000_000)]
+		#[transactional]
+		pub fn update_asset_metadata(
+			origin: OriginFor<T>,
+			#[pallet::compact] asset_id: T::AssetId,
+			metadata: T::AssetRegistrarMetadata,
+		) -> DispatchResult {
+			T::ModifierOrigin::ensure_origin(origin)?;
+			ensure!(
+				AssetIdLocation::<T>::contains_key(&asset_id),
+				Error::<T>::UpdateNonExistAsset
+			);
+			AssetIdMetadata::<T>::insert(&asset_id, &metadata);
+			Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata });
 			Ok(())
 		}
 
@@ -307,8 +323,8 @@ pub mod pallet {
 		#[transactional]
 		pub fn set_units_per_second(
 			origin: OriginFor<T>,
-			asset_id: T::AssetId,
-			units_per_second: u128,
+			#[pallet::compact] asset_id: T::AssetId,
+			#[pallet::compact] units_per_second: u128,
 		) -> DispatchResult {
 			T::ModifierOrigin::ensure_origin(origin)?;
 			ensure!(
@@ -318,7 +334,7 @@ pub mod pallet {
 			UnitsPerSecond::<T>::insert(&asset_id, &units_per_second);
 			Self::deposit_event(Event::<T>::UnitsPerSecondUpdated {
 				asset_id,
-				units_per_second
+				units_per_second,
 			});
 			Ok(())
 		}
