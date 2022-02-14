@@ -84,6 +84,7 @@ polkadot-service = { git = 'https://github.com/paritytech/polkadot.git', branch 
 # Self dependencies
 calamari-runtime = { path = '../runtime/calamari' }
 manta-runtime = { path = '../runtime/manta' }
+dolphin-runtime = { path = '../runtime/dolphin' }
 manta-primitives = { path = '../runtime/primitives' }
 
 [build-dependencies]
