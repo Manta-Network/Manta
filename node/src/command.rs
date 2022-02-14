@@ -17,7 +17,7 @@
 use crate::{
 	chain_specs,
 	cli::{Cli, RelayChainCli, Subcommand},
-	service::{new_partial, CalamariRuntimeExecutor, MantaRuntimeExecutor, DolphinRuntimeExecutor},
+	service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
 };
 
 use codec::Encode;
