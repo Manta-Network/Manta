@@ -17,7 +17,7 @@
 use frame_support::weights::{
 	WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 };
-use manta_primitives::Balance;
+use manta_primitives::types::Balance;
 use smallvec::smallvec;
 pub use sp_runtime::Perbill;
 

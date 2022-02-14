@@ -52,7 +52,8 @@ use frame_system::{
 	EnsureOneOf, EnsureRoot,
 };
 use manta_primitives::{
-	time::*, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	constants::time::*,
+	types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use sp_runtime::{Perbill, Permill};
 
@@ -814,7 +815,6 @@ impl manta_collator_selection::Config for Runtime {
 	type ValidatorRegistration = Session;
 	type WeightInfo = manta_collator_selection::weights::SubstrateWeight<Runtime>;
 }
-
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
