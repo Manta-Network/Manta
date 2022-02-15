@@ -46,7 +46,6 @@ pub trait WeightInfo {
 	fn remark(b: u32, ) -> Weight;
 	fn remark_with_event(b: u32, ) -> Weight;
 	fn set_heap_pages() -> Weight;
-	fn set_changes_trie_config() -> Weight;
 	fn set_storage(i: u32, ) -> Weight;
 	fn kill_storage(i: u32, ) -> Weight;
 	fn kill_prefix(p: u32, ) -> Weight;
@@ -69,13 +68,6 @@ impl<T: frame_system::Config> frame_system::WeightInfo for SubstrateWeight<T> {
 	// Storage: unknown [0x3a686561707061676573] (r:0 w:1)
 	fn set_heap_pages() -> Weight {
 		(4_259_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
-	}
-	// Storage: System Digest (r:1 w:1)
-	// Storage: unknown [0x3a6368616e6765735f74726965] (r:0 w:1)
-	fn set_changes_trie_config() -> Weight {
-		(14_281_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
@@ -118,13 +110,6 @@ impl WeightInfo for () {
 	// Storage: unknown [0x3a686561707061676573] (r:0 w:1)
 	fn set_heap_pages() -> Weight {
 		(4_259_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
-	}
-	// Storage: System Digest (r:1 w:1)
-	// Storage: unknown [0x3a6368616e6765735f74726965] (r:0 w:1)
-	fn set_changes_trie_config() -> Weight {
-		(14_281_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
 	}

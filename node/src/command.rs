@@ -17,7 +17,7 @@
 use crate::{
 	chain_specs,
 	cli::{Cli, RelayChainCli, Subcommand},
-	service::{new_partial, CalamariRuntimeExecutor, MantaRuntimeExecutor, DolphinRuntimeExecutor},
+	service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
 };
 
 use codec::Encode;
@@ -214,7 +214,7 @@ macro_rules! construct_async_run {
 				runner.async_run(|$config| {
 					let $components = new_partial::<manta_runtime::RuntimeApi, MantaRuntimeExecutor, _>(
 						&$config,
-						crate::service::parachain_build_import_queue,
+						crate::service::parachain_build_import_queue::<_, _, manta_primitives::AuraId>,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -223,7 +223,7 @@ macro_rules! construct_async_run {
 				runner.async_run(|$config| {
 					let $components = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor, _>(
 						&$config,
-						crate::service::parachain_build_import_queue,
+						crate::service::parachain_build_import_queue::<_, _, manta_primitives::AuraId>,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -232,7 +232,7 @@ macro_rules! construct_async_run {
 				runner.async_run(|$config| {
 					let $components = new_partial::<dolphin_runtime::RuntimeApi, DolphinRuntimeExecutor, _>(
 						&$config,
-						crate::service::parachain_build_import_queue,
+						crate::service::parachain_build_import_queue::<_, _, manta_primitives::AuraId>,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -301,8 +301,10 @@ pub fn run() -> Result<()> {
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
 			let _ = builder.init();
 
-			let block: Block =
-				generate_genesis_block(&load_spec(&params.chain.clone().unwrap_or_default())?)?;
+			let spec = load_spec(&params.chain.clone().unwrap_or_default())?;
+			let state_version = Cli::native_runtime_version(&spec).state_version();
+
+			let block: crate::service::Block = generate_genesis_block(&spec, state_version)?;
 			let raw_header = block.header().encode();
 			let output_buf = if params.raw {
 				raw_header
@@ -353,6 +355,35 @@ pub fn run() -> Result<()> {
 					.into())
 			}
 		}
+		#[cfg(feature = "try-runtime")]
+		Some(Subcommand::TryRuntime(cmd)) => {
+			// grab the task manager.
+			let runner = cli.create_runner(cmd)?;
+			let registry = &runner
+				.config()
+				.prometheus_config
+				.as_ref()
+				.map(|cfg| &cfg.registry);
+			let task_manager =
+				sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
+					.map_err(|e| format!("Error: {:?}", e))?;
+
+			if runner.config().chain_spec.is_manta() {
+				runner.async_run(|config| {
+					Ok((cmd.run::<Block, MantaRuntimeExecutor>(config), task_manager))
+				})
+			} else if runner.config().chain_spec.is_calamari() {
+				runner.async_run(|config| {
+					Ok((
+						cmd.run::<Block, CalamariRuntimeExecutor>(config),
+						task_manager,
+					))
+				})
+			} else {
+				Err("Chain doesn't support try-runtime".into())
+			}
+		}
+		#[cfg(not(feature = "try-runtime"))]
 		Some(Subcommand::TryRuntime) => Err("Try-runtime wasn't enabled when building the node. \
 		You can enable it with `--features try-runtime`."
 			.into()),
@@ -360,8 +391,9 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 
 			runner.run_node_until_exit(|config| async move {
-				let para_id =
-					chain_specs::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
+				let para_id = crate::chain_specs::Extensions::try_get(&*config.chain_spec)
+					.map(|e| e.para_id)
+					.ok_or_else(|| "Could not find parachain extension in chain-spec.")?;
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,
@@ -370,13 +402,17 @@ pub fn run() -> Result<()> {
 						.chain(cli.relaychain_args.iter()),
 				);
 
-				let id = ParaId::from(para_id.unwrap_or(MANTA_PARACHAIN_ID));
+				let id = ParaId::from(para_id);
 
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
 
-				let block: Block =
-					generate_genesis_block(&config.chain_spec).map_err(|e| format!("{:?}", e))?;
+				let state_version =
+					RelayChainCli::native_runtime_version(&config.chain_spec).state_version();
+
+				let block: crate::service::Block =
+					generate_genesis_block(&config.chain_spec, state_version)
+						.map_err(|e| format!("{:?}", e))?;
 				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
 				let tokio_handle = config.tokio_handle.clone();
@@ -400,6 +436,7 @@ pub fn run() -> Result<()> {
 					crate::service::start_parachain_node::<
 						manta_runtime::RuntimeApi,
 						MantaRuntimeExecutor,
+						manta_primitives::AuraId,
 					>(config, polkadot_config, id)
 					.await
 					.map(|r| r.0)
@@ -408,6 +445,7 @@ pub fn run() -> Result<()> {
 					crate::service::start_parachain_node::<
 						calamari_runtime::RuntimeApi,
 						CalamariRuntimeExecutor,
+						manta_primitives::AuraId,
 					>(config, polkadot_config, id)
 					.await
 					.map(|r| r.0)
@@ -416,6 +454,7 @@ pub fn run() -> Result<()> {
 					crate::service::start_parachain_node::<
 						dolphin_runtime::RuntimeApi,
 						DolphinRuntimeExecutor,
+						manta_primitives::AuraId,
 					>(config, polkadot_config, id)
 					.await
 					.map(|r| r.0)
@@ -482,11 +521,26 @@ impl CliConfiguration<Self> for RelayChainCli {
 		self.base.base.rpc_ws(default_listen_port)
 	}
 
-	fn prometheus_config(&self, default_listen_port: u16) -> Result<Option<PrometheusConfig>> {
-		self.base.base.prometheus_config(default_listen_port)
+	fn prometheus_config(
+		&self,
+		default_listen_port: u16,
+		chain_spec: &Box<dyn ChainSpec>,
+	) -> Result<Option<PrometheusConfig>> {
+		self.base
+			.base
+			.prometheus_config(default_listen_port, chain_spec)
 	}
 
-	fn init<C: SubstrateCli>(&self) -> Result<()> {
+	fn init<F>(
+		&self,
+		_support_url: &String,
+		_impl_version: &String,
+		_logger_hook: F,
+		_config: &sc_service::Configuration,
+	) -> Result<()>
+	where
+		F: FnOnce(&mut sc_cli::LoggerBuilder, &sc_service::Configuration),
+	{
 		unreachable!("PolkadotCli is never initialized; qed");
 	}
 

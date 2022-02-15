@@ -21,6 +21,7 @@ use frame_support::{
 	traits::{Currency, GenesisBuild, OnInitialize},
 };
 use pallet_balances::Error as BalancesError;
+use sp_runtime::testing::UintAuthorityId;
 use sp_runtime::traits::BadOrigin;
 
 #[test]
@@ -296,7 +297,11 @@ fn session_management_works() {
 
 		// add a new collator
 		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
-
+		assert_ok!(Session::set_keys(
+			Origin::signed(3),
+			UintAuthorityId(3).into(),
+			vec![]
+		));
 		// session won't see this.
 		assert_eq!(SessionHandlerCollators::get(), vec![1, 2]);
 		// but we have a new candidate.
@@ -323,7 +328,17 @@ fn kick_mechanism() {
 	new_test_ext().execute_with(|| {
 		// add a new collator
 		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
+		assert_ok!(Session::set_keys(
+			Origin::signed(3),
+			UintAuthorityId(3).into(),
+			vec![]
+		));
 		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
+		assert_ok!(Session::set_keys(
+			Origin::signed(4),
+			UintAuthorityId(4).into(),
+			vec![]
+		));
 		initialize_to_block(10);
 		assert_eq!(CollatorSelection::candidates().len(), 2);
 		initialize_to_block(20);
