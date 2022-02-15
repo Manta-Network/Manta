@@ -155,7 +155,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose
+          cargo build --release --verbose
       -
         name: stop sccache server
         run: sccache --stop-server || true
