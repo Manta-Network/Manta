@@ -2,15 +2,15 @@ mod common;
 use common::*;
 
 use calamari_runtime::{
-	currency::KMA, Authorship, Origin, PolkadotXcm, Runtime, RuntimeBlockWeights,
+	currency::KMA, impls::DealWithFees, Authorship, Balances, Origin, PolkadotXcm, Runtime,
+	Treasury,
 };
 
 use frame_support::{
 	assert_ok,
 	codec::Encode,
 	dispatch::Dispatchable,
-	traits::{PalletInfo, StorageInfo, StorageInfoTrait},
-	weights::{DispatchClass, Weight},
+	traits::{Currency, OnUnbalanced, PalletInfo, StorageInfo, StorageInfoTrait},
 	StorageHasher, Twox128,
 };
 use manta_primitives::{
@@ -18,13 +18,13 @@ use manta_primitives::{
 	AccountId, Header,
 };
 
-use pallet_transaction_payment::{ChargeTransactionPayment, Multiplier};
+use pallet_transaction_payment::ChargeTransactionPayment;
 
 use sp_consensus_aura::AURA_ENGINE_ID;
 use sp_core::sr25519;
 use sp_runtime::{
 	generic::DigestItem,
-	traits::{Convert, Header as HeaderT, One, SignedExtension},
+	traits::{Header as HeaderT, SignedExtension},
 	Percent,
 };
 
@@ -221,7 +221,7 @@ fn seal_header(mut header: Header, author: AccountId) -> Header {
 }
 
 #[test]
-fn reward_block_authors() {
+fn reward_fees_to_block_author_and_treasury() {
 	let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
 	let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
 	let charlie = get_account_id_from_seed::<sr25519::Public>("Charlie");
@@ -295,70 +295,14 @@ fn reward_block_authors() {
 			let actual_fee =
 				TransactionPayment::compute_actual_fee(len as u32, &info, &post_info, 0);
 			assert_eq!(rewarded_amount, p * actual_fee);
+
+			// Treasury gets 40% of fee
+			let p = Percent::from_percent(40);
+			assert_eq!(
+				Balances::free_balance(Treasury::account_id()),
+				p * actual_fee
+			);
 		});
-}
-
-fn run_with_system_weight<F>(w: Weight, mut assertions: F)
-where
-	F: FnMut() -> (),
-{
-	let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
-		.build_storage::<Runtime>()
-		.unwrap()
-		.into();
-	t.execute_with(|| {
-		System::set_block_consumed_resources(w, 0);
-		assertions()
-	});
-}
-
-#[test]
-fn multiplier_can_grow_from_zero() {
-	let minimum_multiplier = polkadot_runtime_common::MinimumMultiplier::get();
-	let target = polkadot_runtime_common::TargetBlockFullness::get()
-		* RuntimeBlockWeights::get()
-			.get(DispatchClass::Normal)
-			.max_total
-			.unwrap();
-	// if the min is too small, then this will not change, and we are doomed forever.
-	// the weight is 1/100th bigger than target.
-	run_with_system_weight(target * 101 / 100, || {
-		let next =
-			polkadot_runtime_common::SlowAdjustingFeeUpdate::<Runtime>::convert(minimum_multiplier);
-		assert!(
-			next > minimum_multiplier,
-			"{:?} !>= {:?}",
-			next,
-			minimum_multiplier
-		);
-	})
-}
-
-#[test]
-#[ignore] // test runs for a very long time
-fn multiplier_growth_simulator() {
-	// assume the multiplier is initially set to its minimum. We update it with values twice the
-	//target (target is 25%, thus 50%) and we see at which point it reaches 1.
-	// last run was: block = 1842069
-	let mut multiplier = polkadot_runtime_common::MinimumMultiplier::get();
-	let block_weight = polkadot_runtime_common::TargetBlockFullness::get()
-		* RuntimeBlockWeights::get()
-			.get(DispatchClass::Normal)
-			.max_total
-			.unwrap()
-		* 2;
-	let mut blocks = 0;
-	while multiplier <= Multiplier::one() {
-		run_with_system_weight(block_weight, || {
-			let next =
-				polkadot_runtime_common::SlowAdjustingFeeUpdate::<Runtime>::convert(multiplier);
-			// ensure that it is growing as well.
-			assert!(next > multiplier, "{:?} !>= {:?}", next, multiplier);
-			multiplier = next;
-		});
-		blocks += 1;
-		println!("block = {} multiplier {:?}", blocks, multiplier);
-	}
 }
 
 #[test]
