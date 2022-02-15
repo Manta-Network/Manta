@@ -27,6 +27,9 @@ const CALAMARI_PROTOCOL_ID: &str = "calamari"; // for p2p network configuration
 const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
 const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
 
+/// The default XCM version to set in genesis config.
+const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
+
 /// Generate the calamari session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
@@ -74,10 +77,11 @@ pub fn calamari_development_config() -> CalamariChainSpec {
 		vec![],
 		None,
 		Some(CALAMARI_PROTOCOL_ID),
+		None,
 		Some(properties),
 		Extensions {
 			relay_chain: KUSAMA_RELAYCHAIN_DEV_NET.into(),
-			para_id: CALAMARI_PARACHAIN_ID.into(),
+			para_id: CALAMARI_PARACHAIN_ID,
 		},
 	)
 }
@@ -134,10 +138,11 @@ pub fn calamari_local_config() -> CalamariChainSpec {
 		vec![],
 		None,
 		Some(CALAMARI_PROTOCOL_ID),
+		None,
 		Some(properties),
 		Extensions {
 			relay_chain: KUSAMA_RELAYCHAIN_LOCAL_NET.into(),
-			para_id: CALAMARI_PARACHAIN_ID.into(),
+			para_id: CALAMARI_PARACHAIN_ID,
 		},
 	)
 }
@@ -167,7 +172,9 @@ fn calamari_dev_genesis(
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		aura: Default::default(),
-		sudo: calamari_runtime::SudoConfig { key: root_key },
+		sudo: calamari_runtime::SudoConfig {
+			key: Some(root_key),
+		},
 		parachain_info: calamari_runtime::ParachainInfoConfig {
 			parachain_id: CALAMARI_PARACHAIN_ID.into(),
 		},
@@ -203,7 +210,7 @@ fn calamari_dev_genesis(
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
 		polkadot_xcm: calamari_runtime::PolkadotXcmConfig {
-			safe_xcm_version: Some(0),
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 	}
 }
@@ -212,7 +219,7 @@ pub fn calamari_testnet_config() -> Result<CalamariChainSpec, String> {
 	let mut spec = CalamariChainSpec::from_json_bytes(
 		&include_bytes!("../../../genesis/calamari-testnet-genesis.json")[..],
 	)?;
-	spec.extensions_mut().para_id = CALAMARI_PARACHAIN_ID.into();
+	spec.extensions_mut().para_id = CALAMARI_PARACHAIN_ID;
 	Ok(spec)
 }
 
