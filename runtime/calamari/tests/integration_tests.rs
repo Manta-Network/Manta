@@ -2,7 +2,7 @@ mod common;
 use common::*;
 
 use calamari_runtime::{
-	currency::KMA, opaque, Authorship, Executive, Origin, PolkadotXcm, Runtime, RuntimeBlockWeights,
+	currency::KMA, Authorship, Origin, PolkadotXcm, Runtime, RuntimeBlockWeights,
 };
 
 use frame_support::{
@@ -13,12 +13,15 @@ use frame_support::{
 	weights::{DispatchClass, Weight},
 	StorageHasher, Twox128,
 };
-use manta_primitives::{AccountId, Header};
+use manta_primitives::{
+	helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
+	AccountId, Header,
+};
 
 use pallet_transaction_payment::{ChargeTransactionPayment, Multiplier};
 
 use sp_consensus_aura::AURA_ENGINE_ID;
-use sp_core::{sr25519, H256};
+use sp_core::sr25519;
 use sp_runtime::{
 	generic::DigestItem,
 	traits::{Convert, Header as HeaderT, One, SignedExtension},
@@ -229,6 +232,10 @@ fn reward_block_authors() {
 			(bob.clone(), 1_000_000_000_000 * KMA),
 			(charlie.clone(), 1_000_000_000_000 * KMA),
 		])
+		.with_authorities(vec![(
+			get_account_id_from_seed::<sr25519::Public>("Alice"),
+			get_collator_keys_from_seed("Alice"),
+		)])
 		.with_collators(vec![alice.clone()])
 		.build()
 		.execute_with(|| {
@@ -282,7 +289,7 @@ fn reward_block_authors() {
 			);
 
 			let rewarded_amount = Balances::free_balance(alice) - 1_000_000_000_000 * KMA;
-			println!("\n The rewarded_amount is: {:?} \n", rewarded_amount);
+			println!("The rewarded_amount is: {:?}", rewarded_amount);
 
 			let p = Percent::from_percent(60);
 			let actual_fee =
@@ -354,26 +361,6 @@ fn multiplier_growth_simulator() {
 	}
 }
 
-// #[test]
-// fn transfer_ed_0_substrate() {
-// 	ExtBuilder::default()
-// 		.with_balances(vec![
-// 			(AccountId::from(ALICE), (1 * KMA) + (1 * cKMA)),
-// 			(AccountId::from(BOB), 0),
-// 		])
-// 		.build()
-// 		.execute_with(|| {
-// 			// Substrate transfer
-// 			assert_ok!(Balances::transfer(
-// 				origin_of(AccountId::from(ALICE)),
-// 				sp_runtime::MultiAddress::Id(AccountId::from(BOB)),
-// 				1 * KMA,
-// 			));
-// 			// 1 WEI is left in the account
-// 			assert_eq!(Balances::free_balance(AccountId::from(ALICE)), 1 * cKMA);
-// 		});
-// }
-
 #[test]
 fn root_can_change_default_xcm_vers() {
 	ExtBuilder::default().build().execute_with(|| {
@@ -384,13 +371,3 @@ fn root_can_change_default_xcm_vers() {
 		));
 	})
 }
-
-// #[test]
-// fn base_fee_should_default_to_associate_type_value() {
-// 	ExtBuilder::default().build().execute_with(|| {
-// 		assert_eq!(
-// 			BaseFee::base_fee_per_gas(),
-// 			(1 * GIGAWEI * SUPPLY_FACTOR).into()
-// 		);
-// 	});
-// }
