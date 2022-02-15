@@ -20,6 +20,11 @@ use frame_support::traits::{Currency, Imbalance, OnUnbalanced};
 pub struct Author;
 impl OnUnbalanced<NegativeImbalance> for Author {
 	fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+		#[cfg(feature = "std")]
+		println!(
+			"\n on_nonzero_unbalanced - paying to author: {:?} \n",
+			Authorship::author()
+		);
 		Balances::resolve_creating(&Authorship::author(), amount);
 	}
 }
@@ -27,6 +32,8 @@ impl OnUnbalanced<NegativeImbalance> for Author {
 pub struct DealWithFees;
 impl OnUnbalanced<NegativeImbalance> for DealWithFees {
 	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+		#[cfg(feature = "std")]
+		println!("\n on_unbalanceds - The start of on_unbalanceds \n ");
 		if let Some(fees) = fees_then_tips.next() {
 			// for fees, 40% to treasury, 60% to author
 			let mut split = fees.ration(40, 60);
@@ -34,7 +41,12 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
 				// for tips, 100% to block author.
 				tips.ration_merge_into(0, 100, &mut split);
 			}
+			#[cfg(feature = "std")]
+			println!("\n on_unbalanceds - split.0 {:?}: \n", split.0);
 			Treasury::on_unbalanced(split.0);
+
+			#[cfg(feature = "std")]
+			println!("\n on_unbalanceds - going to pay {:?}: \n", split.1);
 			Author::on_unbalanced(split.1);
 		}
 	}
