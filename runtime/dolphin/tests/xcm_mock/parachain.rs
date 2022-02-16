@@ -19,7 +19,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{Everything, Nothing, PalletInfo as PalletInfoTrait},
+	traits::{Everything, Nothing, PalletInfo as PalletInfoTrait, ConstU32},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 use frame_system::EnsureRoot;
@@ -81,6 +81,7 @@ impl frame_system::Config for Runtime {
 	type SystemWeightInfo = ();
 	type SS58Prefix = ();
 	type OnSetCode = ();
+	type MaxConsumers = ConstU32<16>;
 }
 
 parameter_types! {
@@ -122,6 +123,7 @@ parameter_types! {
 
 parameter_types! {
 	pub const AssetDeposit: Balance = 0; // Does not really matter as this will be only called by root
+	pub const AssetAccountDeposit: Balance = 0;
 	pub const ApprovalDeposit: Balance = 0;
 	pub const AssetsStringLimit: u32 = 50;
 	pub const MetadataDepositBase: Balance = 0;
@@ -135,6 +137,7 @@ impl pallet_assets::Config for Runtime {
 	type Currency = Balances;
 	type ForceOrigin = EnsureRoot<AccountId>;
 	type AssetDeposit = AssetDeposit;
+	type AssetAccountDeposit = AssetAccountDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ApprovalDeposit = ApprovalDeposit;
@@ -320,8 +323,10 @@ pub mod mock_msg_queue {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {}
 
+	// without storage info is a work around
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
@@ -573,6 +578,7 @@ parameter_types! {
 			Parachain(MsgQueue::parachain_id().into())
 		)
 	};
+	pub const MaxAssetsForTransfer: usize = 2;
 }
 
 // The XCM message wrapper wrapper
@@ -588,6 +594,7 @@ impl orml_xtokens::Config for Runtime {
 	type Weigher = xcm_builder::FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type BaseXcmWeight = BaseXcmWeight;
 	type LocationInverter = LocationInverter<Ancestry>;
+	type MaxAssetsForTransfer = MaxAssetsForTransfer;
 }
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
