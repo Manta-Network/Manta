@@ -129,10 +129,10 @@ pub fn native_version() -> NativeVersion {
 	}
 }
 
-/// We assume that ~5% of the block weight is consumed by `on_initialize` handlers. This is
+/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers. This is
 /// used to limit the maximal weight of a single extrinsic.
 pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
-/// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used by
+/// We allow `Normal` extrinsics to fill up the block up to 70%, the rest can be used by
 /// Operational  extrinsics.
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(70);
 
@@ -580,7 +580,9 @@ impl pallet_scheduler::Config for Runtime {
 }
 
 parameter_types! {
-	pub const PreimageMaxSize: u32 = 4096 * 1024;
+	// Our NORMAL_DISPATCH_RATIO is 70% of the 5MB limit
+	// So anything more than 3.5MB doesn't make sense here
+	pub const PreimageMaxSize: u32 = 3584 * 1024;
 	pub const PreimageBaseDeposit: Balance = 1 * KMA;
 }
 
