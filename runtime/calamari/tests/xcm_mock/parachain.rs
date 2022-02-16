@@ -17,6 +17,7 @@
 //! Parachain runtime mock.
 
 use codec::{Decode, Encode};
+use frame_system::EnsureRoot;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{Everything, Nothing},
@@ -39,13 +40,15 @@ use xcm::{latest::prelude::*, VersionedXcm};
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, CurrencyAdapter as XcmCurrencyAdapter,
 	EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, IsConcrete, LocationInverter,
-	NativeAsset, ParentIsDefault, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	ParentIsDefault, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SignedToAccountId32, SovereignSignedViaLocation,
 };
 use xcm_executor::{Config, XcmExecutor};
+use manta_primitives::MultiNativeAsset;
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
+pub type AssetId = u32; // Manta plans to use u32 as AssetId
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -106,6 +109,30 @@ parameter_types! {
 	pub Ancestry: MultiLocation = Parachain(MsgQueue::parachain_id().into()).into();
 }
 
+parameter_types! {
+	pub const AssetDeposit: Balance = 0; // Does not really matter as this will be only called by root
+	pub const ApprovalDeposit: Balance = 0;
+	pub const AssetsStringLimit: u32 = 50;
+	pub const MetadataDepositBase: Balance = 0;
+	pub const MetadataDepositPerByte: Balance = 0;
+}
+
+impl pallet_assets::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type AssetId = AssetId;
+	type Currency = Balances;
+	type ForceOrigin = EnsureRoot<AccountId>;
+	type AssetDeposit = AssetDeposit;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = AssetsStringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+}
+
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
 /// when determining ownership of accounts for asset transacting and when attempting to use XCM
 /// `Transact` in order to determine the dispatch Origin.
@@ -135,7 +162,7 @@ pub type XcmOriginToCallOrigin = (
 
 parameter_types! {
 	pub const UnitWeightCost: Weight = 1;
-	pub KsmPerSecond: (AssetId, u128) = (Concrete(Parent.into()), 1);
+	pub KsmPerSecond: (xcm::v1::AssetId, u128) = (Concrete(Parent.into()), 1);
 	pub const MaxInstructions: u32 = 100;
 }
 
@@ -149,9 +176,11 @@ pub struct XcmConfig;
 impl Config for XcmConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
+	// Defines how to withdraw and deposit an asset.
 	type AssetTransactor = LocalAssetTransactor;
 	type OriginConverter = XcmOriginToCallOrigin;
-	type IsReserve = NativeAsset;
+	// Combinations of (Location, Asset) pairs which we trust as reserves.
+	type IsReserve = MultiNativeAsset;
 	type IsTeleporter = ();
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
@@ -159,7 +188,7 @@ impl Config for XcmConfig {
 	// Trader is the means to purchasing weight credit for XCM execution.
 	// We need customize this.
 	// 
-	// Moonbase uses the following logic:
+	// Moonbase mock runtime uses the following logic:
 	// When receiving the self-reserve asset, they use pallet-transaction-payment.
 	// When receiving a non-reserve asset, they use AssetManager to fetch how many
 	// units per second we should charge.
@@ -358,6 +387,7 @@ construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
+		Assets: pallet_assets::{Pallet, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		MsgQueue: mock_msg_queue::{Pallet, Storage, Event<T>},
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
