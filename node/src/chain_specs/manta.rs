@@ -26,6 +26,9 @@ const POLKADOT_RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
 #[allow(dead_code)]
 const POLKADOT_RELAYCHAIN_MAIN_NET: &str = "polkadot";
 
+/// The default XCM version to set in genesis config.
+const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
+
 /// Generate the manta session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
@@ -71,10 +74,11 @@ pub fn manta_development_config() -> MantaChainSpec {
 		vec![],
 		None,
 		Some(MANTA_PROTOCOL_ID),
+		None,
 		Some(properties),
 		Extensions {
 			relay_chain: POLKADOT_RELAYCHAIN_DEV_NET.into(),
-			para_id: MANTA_PARACHAIN_ID.into(),
+			para_id: MANTA_PARACHAIN_ID,
 		},
 	)
 }
@@ -119,10 +123,11 @@ pub fn manta_local_config() -> MantaChainSpec {
 		vec![],
 		None,
 		Some(MANTA_PROTOCOL_ID),
+		None,
 		Some(properties),
 		Extensions {
 			relay_chain: POLKADOT_RELAYCHAIN_LOCAL_NET.into(),
-			para_id: MANTA_PARACHAIN_ID.into(),
+			para_id: MANTA_PARACHAIN_ID,
 		},
 	)
 }
@@ -152,7 +157,9 @@ fn manta_dev_genesis(
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		aura: Default::default(),
-		sudo: manta_runtime::SudoConfig { key: root_key },
+		sudo: manta_runtime::SudoConfig {
+			key: Some(root_key),
+		},
 		parachain_info: manta_runtime::ParachainInfoConfig {
 			parachain_id: MANTA_PARACHAIN_ID.into(),
 		},
@@ -177,7 +184,7 @@ fn manta_dev_genesis(
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
 		polkadot_xcm: manta_runtime::PolkadotXcmConfig {
-			safe_xcm_version: Some(0),
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 	}
 }
@@ -186,7 +193,7 @@ pub fn manta_testnet_config() -> Result<MantaChainSpec, String> {
 	let mut spec = MantaChainSpec::from_json_bytes(
 		&include_bytes!("../../../genesis/manta-testnet-genesis.json")[..],
 	)?;
-	spec.extensions_mut().para_id = MANTA_PARACHAIN_ID.into();
+	spec.extensions_mut().para_id = MANTA_PARACHAIN_ID;
 	Ok(spec)
 }
 
@@ -198,6 +205,6 @@ pub fn manta_testnet_ci_config() -> Result<MantaChainSpec, String> {
 	let mut spec = MantaChainSpec::from_json_bytes(
 		&include_bytes!("../../../genesis/manta-testnet-ci-genesis.json")[..],
 	)?;
-	spec.extensions_mut().para_id = MANTA_PARACHAIN_ID.into();
+	spec.extensions_mut().para_id = MANTA_PARACHAIN_ID;
 	Ok(spec)
 }

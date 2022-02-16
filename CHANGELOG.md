@@ -2,13 +2,14 @@
 
 ## Pending
 
-## v3.1.3
+## v3.1.4
 ### Breaking changes
 
 ### Features
 
 ### Improvements
-- Bump spec version to **3130**.
+- Bump spec version to **3140**.
+- [\#377](https://github.com/Manta-Network/Manta/pull/377) Update upstream dependencies to v0.9.16.
 - [\#359](https://github.com/Manta-Network/Manta/pull/359) Update upstream dependencies to v0.9.15.
 - [\#337](https://github.com/Manta-Network/Manta/pull/337) Add a congested_chain_simulation test in Calamari.
 - [\#341](https://github.com/Manta-Network/Manta/pull/341) Create Release Checklist Issue Template.
