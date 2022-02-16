@@ -92,8 +92,8 @@ substrate-wasm-builder = { git = 'https://github.com/paritytech/substrate.git', 
 [dev-dependencies]
 serde_json = "1.0"
 reqwest = { version = "0.11", features = ["blocking"] }
-cumulus-primitives-parachain-inherent = { git = "https://github.com/paritytech/cumulus.git", branch = "polkadot-v0.9.15", default-features = false }
-cumulus-test-relay-sproof-builder = { git = "https://github.com/paritytech/cumulus.git", branch = "polkadot-v0.9.15", default-features = false }
+cumulus-primitives-parachain-inherent = { git = "https://github.com/paritytech/cumulus.git", branch = "polkadot-v0.9.16", default-features = false }
+cumulus-test-relay-sproof-builder = { git = "https://github.com/paritytech/cumulus.git", branch = "polkadot-v0.9.16", default-features = false }
 
 [features]
 default = ['std']

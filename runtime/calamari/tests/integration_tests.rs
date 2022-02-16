@@ -2,15 +2,14 @@ mod common;
 use common::*;
 
 use calamari_runtime::{
-	currency::KMA, impls::DealWithFees, Authorship, Balances, Origin, PolkadotXcm, Runtime,
-	Treasury,
+	currency::KMA, Authorship, Balances, Origin, PolkadotXcm, Runtime, Treasury,
 };
 
 use frame_support::{
 	assert_ok,
 	codec::Encode,
 	dispatch::Dispatchable,
-	traits::{Currency, OnUnbalanced, PalletInfo, StorageInfo, StorageInfoTrait},
+	traits::{PalletInfo, StorageInfo, StorageInfoTrait},
 	StorageHasher, Twox128,
 };
 use manta_primitives::{
@@ -232,10 +231,7 @@ fn reward_fees_to_block_author_and_treasury() {
 			(bob.clone(), 1_000_000_000_000 * KMA),
 			(charlie.clone(), 1_000_000_000_000 * KMA),
 		])
-		.with_authorities(vec![(
-			get_account_id_from_seed::<sr25519::Public>("Alice"),
-			get_collator_keys_from_seed("Alice"),
-		)])
+		.with_authorities(vec![(alice.clone(), get_collator_keys_from_seed("Alice"))])
 		.with_collators(vec![alice.clone()])
 		.build()
 		.execute_with(|| {
@@ -254,13 +250,8 @@ fn reward_fees_to_block_author_and_treasury() {
 			);
 
 			header.digest_mut().pop(); // pop the seal off.
-			calamari_runtime::System::initialize(
-				&1,
-				&Default::default(),
-				header.digest(),
-				Default::default(),
-			);
-			assert_eq!(Authorship::author(), author);
+			calamari_runtime::System::initialize(&1, &Default::default(), header.digest());
+			assert_eq!(Authorship::author().unwrap(), author);
 
 			let call = Call::Balances(pallet_balances::Call::transfer {
 				dest: sp_runtime::MultiAddress::Id(charlie),
@@ -281,7 +272,7 @@ fn reward_fees_to_block_author_and_treasury() {
 			};
 
 			let _res = ChargeTransactionPayment::<Runtime>::post_dispatch(
-				maybe_pre,
+				Some(maybe_pre),
 				&info,
 				&post_info,
 				len,

@@ -18,9 +18,7 @@
 #![allow(dead_code)]
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use manta_primitives::{
-	constants, helpers::get_pair_from_seed, AccountId, AuraId, Balance, Signature,
-};
+use manta_primitives::{constants, AccountId, AuraId, Balance, Signature};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, Properties};
 use serde::{Deserialize, Serialize};

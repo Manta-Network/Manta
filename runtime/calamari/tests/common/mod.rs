@@ -4,8 +4,6 @@ pub use calamari_runtime::{
 	currency::KMA, Balances, Call, CollatorSelection, Event, Executive, Origin, Runtime, Session,
 	System, TransactionPayment, UncheckedExtrinsic,
 };
-use manta_primitives::{AccountId, AuraId, Balance};
-
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use frame_support::{
 	assert_ok,
@@ -13,6 +11,11 @@ use frame_support::{
 	traits::{GenesisBuild, OnFinalize, OnInitialize},
 	weights::{DispatchInfo, Weight},
 };
+use manta_primitives::{
+	helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
+	AccountId, AuraId, Balance,
+};
+use sp_core::sr25519;
 
 /// create a transaction info struct from weight. Handy to avoid building the whole struct.
 pub fn info_from_weight(w: Weight) -> DispatchInfo {
@@ -46,9 +49,15 @@ pub struct ExtBuilder {
 impl Default for ExtBuilder {
 	fn default() -> ExtBuilder {
 		ExtBuilder {
-			balances: vec![],
-			authorities: vec![],
-			invulnerables: vec![],
+			balances: vec![(
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				1_000_000_000_000 * KMA,
+			)],
+			authorities: vec![(
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				get_collator_keys_from_seed("Alice"),
+			)],
+			invulnerables: vec![get_account_id_from_seed::<sr25519::Public>("Alice")],
 			safe_xcm_version: None,
 		}
 	}
