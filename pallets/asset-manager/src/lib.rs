@@ -28,6 +28,12 @@
 
 pub use pallet::*;
 
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
 #[frame_support::pallet]
 pub mod pallet {
 
@@ -52,7 +58,8 @@ pub mod pallet {
 	/// We may revisit this interface design (e.g. add change asset interface). However, change StorageMetadata
 	/// should be rare.
 	pub trait AssetRegistrar<T: Config> {
-		///
+		/// Create an new asset.
+		/// 
 		/// * `asset_id`: the asset id to be created
 		/// * `min_balance`: the minimum balance to hold this asset
 		/// * `metadata`: the metadata that the implementation layer stores
@@ -63,6 +70,15 @@ pub mod pallet {
 			min_balance: T::Balance,
 			metadata: T::StorageMetadata,
 			is_sufficient: bool,
+		) -> DispatchResult;
+
+		/// Update asset metadata by `AssetId`.
+		/// 
+		/// * `asset_id`: the asset id to be created.
+		/// * `metadata`: the metadata that the implementation layer stores.
+		fn update_asset_metadata(
+			asset_id: T::AssetId,
+			metadata: T::StorageMetadata,
 		) -> DispatchResult;
 	}
 
@@ -156,12 +172,8 @@ pub mod pallet {
 		UnitsPerSecondUpdated {
 			asset_id: T::AssetId,
 			units_per_second: u128,
-		},
-		/// Asset frozen.
-		AssetFrozen { asset_id: T::AssetId },
-		/// Asset unfrozen.
-		AssetUnfrozen { asset_id: T::AssetId },
-	}
+		},	
+}
 
 	/// Error.
 	#[pallet::error]

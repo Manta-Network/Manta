@@ -16,12 +16,53 @@
 
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
-use sp_std::{borrow::Borrow, marker::PhantomData};
+use sp_std::{borrow::Borrow, prelude::Vec, marker::PhantomData};
+use sp_core::{H160};
+
 ///! Manta/Calamari/Dolphin Asset
 use xcm::{
 	v1::{Junctions, MultiLocation},
 	VersionedMultiLocation,
 };
+
+/// The metadata of a Manta Asset
+#[derive(Clone, Default, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
+pub struct AssetRegistarMetadata<Balance> {
+	pub name: Vec<u8>,
+	pub symbol: Vec<u8>,
+	pub decimals: u8,
+	pub evm_address: Option<H160>,
+	pub is_frozen: bool,
+	pub min_balance: Balance,
+	/// `is_sufficient`: Whether a non-zero balance of this asset is deposit of sufficient
+	/// value to account for the state bloat associated with its balance storage. If set to
+	/// `true`, then non-zero balances may be stored without a `consumer` reference (and thus
+	/// an ED in the Balances pallet or whatever else is used to control user-account state
+	/// growth).
+	/// For example, if is_sufficient set to `false`, a fresh account cannot receive XCM tokens.
+	pub is_sufficient: bool,
+}
+
+/// Asset storage metadata
+/// Currently, `AssetStorageMetadata` is stored at `pallet-asset`. 
+#[derive(Clone, Default, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
+pub struct AssetStorageMetadata {
+	pub name: Vec<u8>,
+	pub symbol: Vec<u8>,
+	pub decimals: u8,
+	pub is_frozen: bool,
+}
+
+impl<Balance> From<AssetRegistarMetadata<Balance>> for AssetStorageMetadata {
+	fn from(source: AssetRegistarMetadata<Balance>) -> Self {
+		AssetStorageMetadata {
+			name: source.name,
+			symbol: source.symbol,
+			decimals: source.decimals,
+			is_frozen: source.is_frozen,
+		}
+	}
+}
 
 #[derive(Clone, Eq, Debug, PartialEq, Encode, Decode, TypeInfo)]
 pub struct AssetLocation(pub VersionedMultiLocation);

@@ -25,7 +25,7 @@ use frame_support::{
 use frame_system::EnsureRoot;
 use pallet_asset_manager::AssetMetadata;
 use scale_info::TypeInfo;
-use sp_core::{H160, H256};
+use sp_core::{H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{Hash, IdentityLookup},
@@ -49,9 +49,9 @@ use xcm_builder::{
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
+pub use manta_primitives::{AssetId, AssetStorageMetadata, AssetRegistarMetadata};
 pub type AccountId = AccountId32;
 pub type Balance = u128;
-pub type AssetId = u32; // Manta plans to use u32 as AssetId
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -476,24 +476,7 @@ impl pallet_xcm::Config for Runtime {
 	type AdvertisedXcmVersion = XcmVersioner;
 }
 
-#[derive(Clone, Default, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
-pub struct AssetRegistarMetadata {
-	pub name: Vec<u8>,
-	pub symbol: Vec<u8>,
-	pub decimals: u8,
-	pub evm_address: Option<H160>,
-	pub is_frozen: bool,
-	pub min_balance: Balance,
-	/// `is_sufficient`: Whether a non-zero balance of this asset is deposit of sufficient
-	/// value to account for the state bloat associated with its balance storage. If set to
-	/// `true`, then non-zero balances may be stored without a `consumer` reference (and thus
-	/// an ED in the Balances pallet or whatever else is used to control user-account state
-	/// growth).
-	/// For example, if is_sufficient set to `false`, a fresh account cannot receive XCM tokens.
-	pub is_sufficient: bool,
-}
-
-impl AssetMetadata<Runtime> for AssetRegistarMetadata {
+impl AssetMetadata<Runtime> for AssetRegistarMetadata<Balance> {
 	fn min_balance(&self) -> Balance {
 		self.min_balance
 	}
@@ -501,25 +484,6 @@ impl AssetMetadata<Runtime> for AssetRegistarMetadata {
 	fn is_sufficient(&self) -> bool {
 		self.is_sufficient
 	}
-}
-
-impl Into<AssetStorageMetadata> for AssetRegistarMetadata {
-	fn into(self) -> AssetStorageMetadata {
-		AssetStorageMetadata {
-			name: self.name,
-			symbol: self.symbol,
-			decimals: self.decimals,
-			is_frozen: self.is_frozen,
-		}
-	}
-}
-
-#[derive(Clone, Default, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
-pub struct AssetStorageMetadata {
-	pub name: Vec<u8>,
-	pub symbol: Vec<u8>,
-	pub decimals: u8,
-	pub is_frozen: bool,
 }
 
 pub struct AssetRegistrar;
@@ -548,12 +512,26 @@ impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
 			metadata.is_frozen,
 		)
 	}
+	
+	fn update_asset_metadata(
+		asset_id: AssetId,
+		metadata: AssetStorageMetadata,
+	) -> DispatchResult {
+		Assets::force_set_metadata(
+			Origin::root(),
+			asset_id,
+			metadata.name,
+			metadata.symbol,
+			metadata.decimals,
+			metadata.is_frozen,
+		)
+	}
 }
 impl pallet_asset_manager::Config for Runtime {
 	type Event = Event;
 	type Balance = Balance;
 	type AssetId = AssetId;
-	type AssetRegistrarMetadata = AssetRegistarMetadata;
+	type AssetRegistrarMetadata = AssetRegistarMetadata<Balance>;
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
 	type AssetRegistrar = AssetRegistrar;
