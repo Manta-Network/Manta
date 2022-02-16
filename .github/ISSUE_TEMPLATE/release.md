@@ -22,6 +22,7 @@ candidate branch.
 - [ ] Verify new extrinsics have been correctly whitelisted/blacklisted
 - [ ] Verify [benchmarks](#benchmarks) have been updated for any modified
     runtime logic.
+- [ ] Check for any upstream storage migrations and perform tests with `try-runtime`, if any.
 
 The following checks can be performed after we have forked off to the release branch.
 - [ ] Complete the following [manual QA workflow](https://hackmd.io/TbFmorG2RnOPmLuFcg9JOQ?view).

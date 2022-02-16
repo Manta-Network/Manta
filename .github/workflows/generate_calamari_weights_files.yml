@@ -216,6 +216,14 @@ jobs:
               id: manta_collator_selection
               name: manta_collator_selection
             iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_preimage
+            pallet:
+              id: pallet_preimage
+              name: pallet_preimage
+            iterations: 20
     steps:
       -
         uses: actions/download-artifact@v2

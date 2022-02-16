@@ -38,7 +38,6 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
 	type Balance = Balance;
 	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-
 		// Refer to Calamari's congested_chain_simulation() test for how to come up with the coefficient.
 		smallvec![WeightToFeeCoefficient {
 			coeff_integer: 5000u32.into(),

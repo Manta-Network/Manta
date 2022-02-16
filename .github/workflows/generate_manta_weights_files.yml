@@ -160,6 +160,14 @@ jobs:
               id: pallet_timestamp
               name: pallet_timestamp
             iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_preimage
+            pallet:
+              id: pallet_preimage
+              name: pallet_preimage
+            iterations: 20
     steps:
       -
         uses: actions/download-artifact@v2
