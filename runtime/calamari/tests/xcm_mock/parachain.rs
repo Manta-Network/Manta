@@ -33,7 +33,7 @@ use sp_runtime::{
 };
 use sp_std::{convert::TryFrom, prelude::*};
 
-use manta_primitives::{AssetIdLocationConvert, AssetLocation, MultiNativeAsset};
+use manta_primitives::{AssetIdLocationConvert, AssetLocation, FirstAssetTrader, MultiNativeAsset};
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain::primitives::{
@@ -176,7 +176,9 @@ pub type XcmOriginToCallOrigin = (
 
 parameter_types! {
 	pub const UnitWeightCost: Weight = 1;
-	pub KsmPerSecond: (xcm::v1::AssetId, u128) = (Concrete(Parent.into()), 1);
+	// Used in native traders
+	// This might be able to skipped.
+	pub ParaTokenPerSecond: (xcm::v1::AssetId, u128) = (Concrete(SelfReserve::get()), 1_000_000_000);
 	pub const MaxInstructions: u32 = 100;
 }
 
@@ -211,6 +213,23 @@ pub type FungiblesTransactor = FungiblesAdapter<
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
 pub type Barrier = AllowUnpaidExecutionFrom<Everything>;
 
+parameter_types! {
+	/// Xcm fees will go to the asset manager (we don't implement treasury yet)
+	pub XcmFeesAccount: AccountId = AssetManager::account_id();
+}
+
+pub type XcmFeesToAccount = manta_primitives::XcmFeesToAccount<
+	Assets,
+	ConvertedConcreteAssetId<
+		AssetId,
+		Balance,
+		AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>,
+		JustTry,
+	>,
+	AccountId,
+	XcmFeesAccount,
+>;
+
 pub struct XcmConfig;
 impl Config for XcmConfig {
 	type Call = Call;
@@ -244,7 +263,9 @@ impl Config for XcmConfig {
 	// 	>,
 	// 	FirstAssetTrader<AssetId, AssetType, AssetManager, XcmFeesToAccount_>,
 	// );
-	type Trader = FixedRateOfFungible<KsmPerSecond, ()>;
+	type Trader = (
+		FixedRateOfFungible<ParaTokenPerSecond, ()>, 
+		FirstAssetTrader<AssetId, AssetLocation, AssetManager, XcmFeesToAccount>);
 	type ResponseHandler = ();
 	type AssetTrap = ();
 	type AssetClaims = ();

@@ -34,7 +34,7 @@ pub mod pallet {
 	use codec::{Codec, HasCompact};
 	use frame_support::{pallet_prelude::*, transactional, PalletId};
 	use frame_system::pallet_prelude::*;
-	use manta_primitives::AssetIdLocationGetter;
+	use manta_primitives::{AssetIdLocationGetter, UnitsToWeightRatio};
 	use scale_info::TypeInfo;
 	use sp_runtime::{
 		traits::{AccountIdConversion, AtLeast32BitUnsigned, Bounded, CheckedAdd, One},
@@ -82,6 +82,13 @@ pub mod pallet {
 
 		fn get_asset_location(id: T::AssetId) -> Option<T::AssetLocation> {
 			AssetIdLocation::<T>::get(id)
+		}
+	}
+
+	/// Get unit per second from `AssetId`
+	impl<T: Config> UnitsToWeightRatio<T::AssetId> for Pallet<T> {
+		fn get_units_per_second(id: T::AssetId) -> Option<u128> {
+			UnitsPerSecond::<T>::get(id)
 		}
 	}
 
@@ -141,8 +148,13 @@ pub mod pallet {
 		/// An asset has been updated.
 		AssetUpdated {
 			asset_id: T::AssetId,
-			asset_address: T::AssetLocation,
-			metadata: T::AssetRegistrarMetadata,
+			location: Option<T::AssetLocation>,
+			metadata: Option<T::AssetRegistrarMetadata>,
+		},
+		/// Update units per second of an asset
+		UnitsPerSecondUpdated {
+			asset_id: T::AssetId, 
+			units_per_second: u128
 		},
 		/// Asset frozen.
 		AssetFrozen { asset_id: T::AssetId },
@@ -188,7 +200,7 @@ pub mod pallet {
 
 	/// XCM transfer cost for different asset.
 	#[pallet::storage]
-	pub type AssetTransferCost<T: Config> = StorageMap<_, Blake2_128Concat, T::AssetId, T::Balance>;
+	pub type UnitsPerSecond<T: Config> = StorageMap<_, Blake2_128Concat, T::AssetId, u128>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -265,16 +277,49 @@ pub mod pallet {
 				)
 			}
 			// write to the ledger state.
-			if let Some(location) = location_option {
+			if let Some(location) = location_option.clone() {
 				let old_location =
 					AssetIdLocation::<T>::get(&asset_id).ok_or(Error::<T>::UpdateNonExistAsset)?;
 				LocationAssetId::<T>::remove(&old_location);
 				LocationAssetId::<T>::insert(&location, &asset_id);
 				AssetIdLocation::<T>::insert(&asset_id, &location);
 			}
-			if let Some(metadata) = metadata_option {
+			if let Some(metadata) = metadata_option.clone() {
 				AssetIdMetadata::<T>::insert(&asset_id, &metadata)
 			}
+			Self::deposit_event(Event::<T>::AssetUpdated{
+				asset_id,
+				location: location_option,
+				metadata: metadata_option,
+			});
+			Ok(())
+		}
+
+		/// Update an asset by its asset id in the asset manager.
+		///
+		/// * `origin`: Caller of this extrinsic, the acess control is specfied by `ForceOrigin`.
+		/// * `asset_id`: AssetId to be updated.
+		/// * `units_per_second`: units per second for `asset_id`
+		/// # <weight>
+		/// TODO: get actual weight
+		/// # </weight>
+		#[pallet::weight(50_000_000)]
+		#[transactional]
+		pub fn set_units_per_second(
+			origin: OriginFor<T>,
+			asset_id: T::AssetId,
+			units_per_second: u128,
+		) -> DispatchResult {
+			T::ModifierOrigin::ensure_origin(origin)?;
+			ensure!(
+				AssetIdLocation::<T>::contains_key(&asset_id),
+				Error::<T>::UpdateNonExistAsset
+			);
+			UnitsPerSecond::<T>::insert(&asset_id, &units_per_second);
+			Self::deposit_event(Event::<T>::UnitsPerSecondUpdated {
+				asset_id,
+				units_per_second
+			});
 			Ok(())
 		}
 	}

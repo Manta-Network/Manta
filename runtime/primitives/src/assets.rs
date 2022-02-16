@@ -46,7 +46,7 @@ impl From<MultiLocation> for AssetLocation {
 }
 
 /// Convert an `AssetLocation` to a MultiLocation
-/// If Native, retrun none.
+/// If Native, return none.
 impl Into<Option<MultiLocation>> for AssetLocation {
 	fn into(self: Self) -> Option<MultiLocation> {
 		// only support specific version
@@ -66,6 +66,13 @@ pub trait AssetIdLocationGetter<AssetId, AssetLocation> {
 	// get AssetId from AssetLocation
 	fn get_asset_id(loc: AssetLocation) -> Option<AssetId>;
 }
+
+/// Defines the units per second charged given an `AssetId`.
+pub trait UnitsToWeightRatio<AssetId> {
+	/// Get units per second from asset id
+	fn get_units_per_second(asset_id: AssetId) -> Option<u128>;
+}
+
 
 /// Converter struct implementing `Convert`.
 /// This enforce the `AssetInfoGetter` implements `AssetIdLocationGetter`
