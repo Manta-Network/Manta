@@ -34,3 +34,4 @@ write a little note why.
 - [ ] If import a new pallet, choose a proper module index for it, and allow it in `BaseFilter`. Ensure **every** extrinsic works from front-end. If there's corresponding tool, ensure both work for each other.
 - [ ] If needed, update our Javascript/Typescript APIs. These APIs are offcially used by exchanges or community developers.
 - [ ] If we're going to issue a new release, freeze the code one week early(it depends, but usually it's one week), ensure we have enough time for related testing.
+- [ ] Check if inheriting any upstream runtime storage migrations. If any, perform tests with `try-runtime`.
