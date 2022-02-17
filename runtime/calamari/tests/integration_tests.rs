@@ -2,12 +2,12 @@ mod common;
 use common::*;
 
 pub use calamari_runtime::{
-	currency::KMA, Authorship, Balances, CalamariVesting, Origin, PolkadotXcm, Runtime, Timestamp,
-	Treasury,
+	currency::KMA, Authorship, Balances, CalamariVesting, NativeTokenExistentialDeposit, Origin,
+	PolkadotXcm, Runtime, Timestamp, Treasury,
 };
 
 use frame_support::{
-	assert_ok,
+	assert_err, assert_ok,
 	codec::Encode,
 	dispatch::Dispatchable,
 	traits::{PalletInfo, StorageInfo, StorageInfoTrait, ValidatorSet},
@@ -205,6 +205,97 @@ fn verify_pallet_indices() {
 	is_pallet_index::<calamari_runtime::Multisig>(41);
 	is_pallet_index::<calamari_runtime::Sudo>(42);
 	is_pallet_index::<calamari_runtime::CalamariVesting>(50);
+}
+
+#[test]
+fn balances_operations_should_work() {
+	let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+	let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
+	let charlie = get_account_id_from_seed::<sr25519::Public>("Charlie");
+	let dave = get_account_id_from_seed::<sr25519::Public>("Dave");
+	let initial_balance = 1_000 * KMA;
+
+	ExtBuilder::default()
+		.with_balances(vec![
+			(alice.clone(), initial_balance),
+			(bob.clone(), initial_balance),
+			(charlie.clone(), initial_balance),
+			(dave.clone(), initial_balance),
+		])
+		.with_authorities(vec![(alice.clone(), get_collator_keys_from_seed("Alice"))])
+		.with_collators(vec![alice.clone()])
+		.build()
+		.execute_with(|| {
+			set_parachain_inherent_data();
+			let transfer = 10 * KMA;
+
+			// Basic transfer should work
+			assert_ok!(Balances::transfer(
+				Origin::signed(alice.clone()),
+				sp_runtime::MultiAddress::Id(charlie.clone()),
+				10 * KMA,
+			));
+			assert_eq!(
+				Balances::free_balance(alice.clone()),
+				initial_balance - transfer
+			);
+			assert_eq!(
+				Balances::free_balance(charlie.clone()),
+				initial_balance + transfer
+			);
+
+			// Force transfer some tokens from one account to another with Root
+			assert_ok!(Balances::force_transfer(
+				root_origin(),
+				sp_runtime::MultiAddress::Id(charlie.clone()),
+				sp_runtime::MultiAddress::Id(alice.clone()),
+				10 * KMA,
+			));
+			assert_eq!(Balances::free_balance(alice.clone()), initial_balance);
+			assert_eq!(Balances::free_balance(charlie.clone()), initial_balance);
+
+			// Should not be able to trnasfer all with this call
+			assert_err!(
+				Balances::transfer_keep_alive(
+					Origin::signed(alice.clone()),
+					sp_runtime::MultiAddress::Id(charlie.clone()),
+					initial_balance,
+				),
+				pallet_balances::Error::<Runtime>::KeepAlive
+			);
+
+			// Transfer all down to zero
+			assert_ok!(Balances::transfer_all(
+				Origin::signed(bob.clone()),
+				sp_runtime::MultiAddress::Id(charlie.clone()),
+				false
+			));
+			assert_eq!(Balances::free_balance(bob.clone()), 0);
+			assert_eq!(Balances::free_balance(charlie.clone()), initial_balance * 2);
+
+			// Transfer all but keep alive with ED
+			assert_ok!(Balances::transfer_all(
+				Origin::signed(dave.clone()),
+				sp_runtime::MultiAddress::Id(alice.clone()),
+				true
+			));
+			assert_eq!(
+				Balances::free_balance(dave.clone()),
+				NativeTokenExistentialDeposit::get()
+			);
+
+			// Even though keep alive is set to false alice cannot fall below the ED
+			// because it has an outstanding consumer reference, from being a collator.
+			assert_ok!(Balances::transfer_all(
+				Origin::signed(alice.clone()),
+				sp_runtime::MultiAddress::Id(charlie.clone()),
+				false
+			));
+			assert_eq!(
+				Balances::free_balance(alice.clone()),
+				NativeTokenExistentialDeposit::get()
+			);
+		});
 }
 
 fn seal_header(mut header: Header, author: AccountId) -> Header {
