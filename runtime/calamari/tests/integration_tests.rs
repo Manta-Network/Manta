@@ -427,7 +427,7 @@ fn sanity_check_weight_per_time_constants_are_as_expected() {
 }
 
 #[test]
-fn test_vesting_use_relaychain_block_number() {
+fn calamari_vesting_works() {
 	ExtBuilder::default().build().execute_with(|| {
 		let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
 		let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
