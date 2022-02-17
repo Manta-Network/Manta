@@ -495,7 +495,7 @@ impl pallet_membership::Config<TechnicalMembershipInstance> for Runtime {
 
 parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(1);
-	pub const ProposalBondMinimum: Balance = 50 * DOL;
+	pub const ProposalBondMinimum: Balance = 500 * DOL;
 	pub const ProposalBondMaximum: Balance = 10_000 * DOL;
 	pub const SpendPeriod: BlockNumber = 10 * MINUTES;
 	pub const Burn: Permill = Permill::from_percent(0);
