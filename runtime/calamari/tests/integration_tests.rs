@@ -402,18 +402,70 @@ fn root_can_change_default_xcm_vers() {
 }
 
 #[test]
-fn test_session_advancement() {
-	ExtBuilder::default().build().execute_with(|| {
-		// Session length is 6 hours
-		assert_eq!(Session::session_index(), 0);
-		run_to_block(1800);
-		assert_eq!(Session::session_index(), 1);
+fn session_and_collator_selection_work() {
+	let initial_balance = 1_000 * KMA;
+	let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
 
-		run_to_block(3599);
-		assert_eq!(Session::session_index(), 1);
-		run_to_block(3600);
-		assert_eq!(Session::session_index(), 2);
-	});
+	ExtBuilder::default()
+		.with_balances(vec![(bob.clone(), initial_balance)])
+		.build()
+		.execute_with(|| {
+			let keys = calamari_runtime::opaque::SessionKeys {
+				aura: get_collator_keys_from_seed("Bob"),
+			};
+			assert_ok!(Session::set_keys(Origin::signed(bob.clone()), keys, vec![]));
+			// Alice is invulnerable by default so not part of the candidates set.
+			assert_eq!(CollatorSelection::candidates(), vec![]);
+			assert_ok!(CollatorSelection::register_candidate(
+				root_origin(),
+				bob.clone()
+			));
+			let candidate = manta_collator_selection::CandidateInfo {
+				who: bob.clone(),
+				deposit: 1_000 * KMA,
+			};
+			// Bob is a candidate but only Alice is queued as a collator in this session.
+			assert_eq!(CollatorSelection::candidates(), vec![candidate.clone()]);
+			assert_eq!(Session::queued_keys().len(), 1);
+			assert_eq!(Session::validators().len(), 1);
+
+			// Session length is 6 hours
+			assert_eq!(Session::session_index(), 0);
+			// Advance session
+			run_to_block(1800);
+			// Session index should be increased
+			assert_eq!(Session::session_index(), 1);
+
+			// After 1 sessions both Alice and Bob are queued for collators
+			// But only Alice is actually a collator for now.
+			assert_eq!(Session::queued_keys().len(), 2);
+			assert_eq!(Session::validators().len(), 1);
+
+			run_to_block(3599);
+			// Session index should not be advanced until the end of a session
+			assert_eq!(Session::session_index(), 1);
+			// Advance session
+			run_to_block(3600);
+			assert_eq!(Session::session_index(), 2);
+
+			// Bob has finally been included as a collator
+			assert_eq!(Session::validators().len(), 2);
+
+			// Once Bob decides to leave he will be removed from the candidates set immediately.
+			assert_ok!(CollatorSelection::leave_intent(Origin::signed(bob)));
+			assert_eq!(CollatorSelection::candidates(), vec![]);
+			// But will not leave as a validator until after one full session.
+			assert_eq!(Session::validators().len(), 2);
+
+			// Advance session.
+			run_to_block(5400);
+			assert_eq!(Session::validators().len(), 2);
+
+			// Advance session.
+			run_to_block(7200);
+			// Bob was removed as a collator.
+			assert_eq!(Session::validators().len(), 1);
+		});
 }
 
 #[test]
