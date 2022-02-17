@@ -1,15 +1,17 @@
 mod common;
 use common::*;
 
-use calamari_runtime::{
-	currency::KMA, Authorship, Balances, Origin, PolkadotXcm, Runtime, Treasury,
+pub use calamari_runtime::{
+	currency::KMA, Authorship, Balances, CalamariVesting, Origin, PolkadotXcm, Runtime, Timestamp,
+	Treasury,
 };
 
 use frame_support::{
 	assert_ok,
 	codec::Encode,
 	dispatch::Dispatchable,
-	traits::{PalletInfo, StorageInfo, StorageInfoTrait},
+	traits::{PalletInfo, StorageInfo, StorageInfoTrait, ValidatorSet},
+	weights::constants::*,
 	StorageHasher, Twox128,
 };
 use manta_primitives::{
@@ -224,12 +226,13 @@ fn reward_fees_to_block_author_and_treasury() {
 	let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
 	let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
 	let charlie = get_account_id_from_seed::<sr25519::Public>("Charlie");
+	let initial_balance = 1_000_000_000_000 * KMA;
 
 	ExtBuilder::default()
 		.with_balances(vec![
-			(alice.clone(), 1_000_000_000_000 * KMA),
-			(bob.clone(), 1_000_000_000_000 * KMA),
-			(charlie.clone(), 1_000_000_000_000 * KMA),
+			(alice.clone(), initial_balance),
+			(bob.clone(), initial_balance),
+			(charlie.clone(), initial_balance),
 		])
 		.with_authorities(vec![(alice.clone(), get_collator_keys_from_seed("Alice"))])
 		.with_collators(vec![alice.clone()])
@@ -279,19 +282,19 @@ fn reward_fees_to_block_author_and_treasury() {
 				&res.map(|_| ()).map_err(|e| e.error),
 			);
 
-			let rewarded_amount = Balances::free_balance(alice) - 1_000_000_000_000 * KMA;
-			println!("The rewarded_amount is: {:?}", rewarded_amount);
+			let author_received_reward = Balances::free_balance(alice) - initial_balance;
+			println!("The rewarded_amount is: {:?}", author_received_reward);
 
-			let p = Percent::from_percent(60);
-			let actual_fee =
+			let author_percent = Percent::from_percent(60);
+			let expected_fee =
 				TransactionPayment::compute_actual_fee(len as u32, &info, &post_info, 0);
-			assert_eq!(rewarded_amount, p * actual_fee);
+			assert_eq!(author_received_reward, author_percent * expected_fee);
 
 			// Treasury gets 40% of fee
-			let p = Percent::from_percent(40);
+			let treasury_percent = Percent::from_percent(40);
 			assert_eq!(
 				Balances::free_balance(Treasury::account_id()),
-				p * actual_fee
+				treasury_percent * expected_fee
 			);
 		});
 }
@@ -305,4 +308,58 @@ fn root_can_change_default_xcm_vers() {
 			Some(2)
 		));
 	})
+}
+
+#[test]
+fn test_session_advancement() {
+	ExtBuilder::default().build().execute_with(|| {
+		// Session length is 6 hours
+		assert_eq!(Session::session_index(), 0);
+		run_to_block(1800);
+		assert_eq!(Session::session_index(), 1);
+
+		run_to_block(3599);
+		assert_eq!(Session::session_index(), 1);
+		run_to_block(3600);
+		assert_eq!(Session::session_index(), 2);
+	});
+}
+
+#[test]
+fn sanity_check_weight_per_time_constants_are_as_expected() {
+	// These values comes from Substrate, we want to make sure that if it
+	// ever changes we don't accidently break Polkadot
+	assert_eq!(WEIGHT_PER_SECOND, 1_000_000_000_000);
+	assert_eq!(WEIGHT_PER_MILLIS, WEIGHT_PER_SECOND / 1000);
+	assert_eq!(WEIGHT_PER_MICROS, WEIGHT_PER_MILLIS / 1000);
+	assert_eq!(WEIGHT_PER_NANOS, WEIGHT_PER_MICROS / 1000);
+}
+
+#[test]
+fn test_vesting_use_relaychain_block_number() {
+	ExtBuilder::default().build().execute_with(|| {
+		let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+		let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
+
+		let unvested = 100 * KMA;
+		assert_ok!(CalamariVesting::vested_transfer(
+			Origin::signed(alice),
+			sp_runtime::MultiAddress::Id(bob.clone()),
+			unvested
+		));
+
+		assert_eq!(Balances::free_balance(&bob), 100 * KMA);
+		assert_eq!(Balances::usable_balance(&bob), 0);
+
+		let schedule = calamari_vesting::Pallet::<Runtime>::vesting_schedule();
+		let mut vested = 0;
+
+		for period in 0..schedule.len() {
+			let now = schedule[period].1 * 1000 + 1;
+			Timestamp::set_timestamp(now);
+			let _res = CalamariVesting::vest(Origin::signed(bob.clone()));
+			vested += schedule[period].0 * unvested;
+			assert_eq!(Balances::usable_balance(&bob), vested);
+		}
+	});
 }
