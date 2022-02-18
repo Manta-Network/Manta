@@ -2,8 +2,9 @@ mod common;
 use common::*;
 
 pub use calamari_runtime::{
-	currency::KMA, Authorship, Balances, CalamariVesting, NativeTokenExistentialDeposit, Origin,
-	PolkadotXcm, Runtime, Timestamp, Treasury,
+	currency::KMA, Authorship, Balances, CalamariVesting, Council, Democracy,
+	NativeTokenExistentialDeposit, Origin, PolkadotXcm, Runtime, TechnicalCommittee, Timestamp,
+	Treasury,
 };
 
 use frame_support::{
@@ -14,6 +15,7 @@ use frame_support::{
 	weights::constants::*,
 	StorageHasher, Twox128,
 };
+
 use manta_primitives::{
 	helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
 	AccountId, Header,
@@ -25,13 +27,129 @@ use sp_consensus_aura::AURA_ENGINE_ID;
 use sp_core::sr25519;
 use sp_runtime::{
 	generic::DigestItem,
-	traits::{Header as HeaderT, SignedExtension},
+	traits::{BlakeTwo256, Hash, Header as HeaderT, SignedExtension},
 	Percent,
 };
 
 #[test]
 fn fast_track_available() {
 	assert!(<calamari_runtime::Runtime as pallet_democracy::Config>::InstantAllowed::get());
+}
+
+#[test]
+fn democracy_external_propose_default_with_fast_track_works() {
+	assert!(<calamari_runtime::Runtime as pallet_democracy::Config>::InstantAllowed::get());
+
+	let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+
+	ExtBuilder::default().build().execute_with(|| {
+		set_parachain_inherent_data();
+
+		// Setup the preimage and preimage hash
+		let proposal_call = Call::System(frame_system::Call::remark { remark: vec![0] });
+		let preimage = proposal_call.encode();
+		let preimage_hash = BlakeTwo256::hash(&preimage[..]);
+		assert_ok!(Democracy::note_preimage(
+			Origin::signed(alice.clone()),
+			preimage.clone()
+		));
+
+		// Setup the Council and Technical Committee
+		assert_ok!(Council::set_members(
+			root_origin(),
+			vec![alice.clone()],
+			None,
+			0
+		));
+		assert_ok!(TechnicalCommittee::set_members(
+			root_origin(),
+			vec![alice.clone()],
+			None,
+			0
+		));
+
+		// Setup and propose the Council motion for external_propose_default routine
+		// No voting required because there's only 1 seat.
+		let council_motion = Call::Democracy(pallet_democracy::Call::external_propose_default {
+			proposal_hash: preimage_hash,
+		});
+		let council_motion_len: u32 = council_motion.using_encoded(|p| p.len() as u32);
+		assert_ok!(Council::propose(
+			Origin::signed(alice.clone()),
+			1,
+			Box::new(council_motion.clone()),
+			council_motion_len
+		));
+		// Make sure it was actually executed
+		let council_motion_hash = BlakeTwo256::hash_of(&council_motion);
+		assert_eq!(
+			last_event(),
+			calamari_runtime::Event::Council(pallet_collective::Event::Executed {
+				proposal_hash: council_motion_hash,
+				result: Ok(())
+			})
+		);
+
+		// Setup and propose the Technical Committee motion for the fast_track routine
+		// No voting required because there's only 1 seat.
+		// Voting and delay periods of 5 blocks so this should be enacted on block 11
+		let tech_committee_motion = Call::Democracy(pallet_democracy::Call::fast_track {
+			proposal_hash: preimage_hash,
+			voting_period: 5,
+			delay: 5,
+		});
+		let tech_committee_motion_len: u32 =
+			tech_committee_motion.using_encoded(|p| p.len() as u32);
+		let tech_committee_motion_hash = BlakeTwo256::hash_of(&tech_committee_motion);
+		assert_ok!(TechnicalCommittee::propose(
+			Origin::signed(alice.clone()),
+			1,
+			Box::new(tech_committee_motion),
+			tech_committee_motion_len
+		));
+		// Make sure the motion was actually executed
+		assert_eq!(
+			last_event(),
+			calamari_runtime::Event::TechnicalCommittee(pallet_collective::Event::Executed {
+				proposal_hash: tech_committee_motion_hash,
+				result: Ok(())
+			})
+		);
+
+		// Time to vote for the referendum with some amount
+		assert_ok!(Democracy::vote(
+			Origin::signed(alice.clone()),
+			0,
+			pallet_democracy::AccountVote::Standard {
+				vote: pallet_democracy::Vote {
+					aye: true,
+					conviction: pallet_democracy::Conviction::None
+				},
+				balance: 10 * KMA
+			}
+		));
+
+		run_to_block(6);
+		// At block 6 the voting should be concluded and the original proposal scheduled
+		assert_eq!(
+			last_event(),
+			calamari_runtime::Event::Scheduler(pallet_scheduler::Event::Scheduled {
+				when: 11,
+				index: 0
+			})
+		);
+
+		run_to_block(11);
+		// At block 11 the scheduler should have dispatched the proposal passed with referendum 0
+		assert_eq!(
+			last_event(),
+			calamari_runtime::Event::Scheduler(pallet_scheduler::Event::Dispatched {
+				task: (11, 0),
+				id: Some(vec![100, 101, 109, 111, 99, 114, 97, 99, 0, 0, 0, 0]),
+				result: Ok(())
+			})
+		);
+	});
 }
 
 #[test]

@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
 pub use calamari_runtime::{
-	currency::KMA, Balances, Call, CollatorSelection, Event, Executive, Origin, Runtime, Session,
-	System, TransactionPayment, UncheckedExtrinsic,
+	currency::KMA, Balances, Call, CollatorSelection, Democracy, Event, Executive, Origin,
+	Preimage, Runtime, Scheduler, Session, System, TransactionPayment, UncheckedExtrinsic,
 };
 use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use frame_support::{
@@ -33,6 +33,8 @@ pub fn run_to_block(n: u32) {
 		System::set_block_number(System::block_number() + 1);
 		System::on_initialize(System::block_number());
 		Session::on_initialize(System::block_number());
+		Scheduler::on_initialize(System::block_number());
+		Democracy::on_initialize(System::block_number());
 	}
 }
 
