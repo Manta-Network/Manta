@@ -22,7 +22,10 @@
 #![cfg(test)]
 
 use super::*;
-use frame_support::{construct_runtime, ord_parameter_types, parameter_types, traits::{ConstU32, ConstU64}};
+use frame_support::{
+	construct_runtime, ord_parameter_types, parameter_types,
+	traits::{ConstU32, ConstU64},
+};
 use frame_system::EnsureRoot;
 use manta_primitives::Balance;
 
