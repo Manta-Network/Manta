@@ -1,4 +1,20 @@
-#![allow(dead_code)]
+// Copyright 2020-2022 Manta Network.
+// This file is part of Manta.
+//
+// Manta is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Manta is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Manta.  If not, see <http://www.gnu.org/licenses/>.
+
+//! Calamari Parachain Integration Tests.
 
 pub use calamari_runtime::{
 	currency::KMA, Balances, Call, CollatorSelection, Democracy, Event, Executive, Origin,
@@ -79,11 +95,6 @@ impl ExtBuilder {
 
 	pub fn with_collators(mut self, invulnerables: Vec<AccountId>) -> Self {
 		self.invulnerables = invulnerables;
-		self
-	}
-
-	pub fn with_safe_xcm_version(mut self, safe_xcm_version: u32) -> Self {
-		self.safe_xcm_version = Some(safe_xcm_version);
 		self
 	}
 
