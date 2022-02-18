@@ -289,6 +289,12 @@ fn send_para_a_asset_to_para_b() {
 	// ParaA balance location
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
+		X1(
+			Parachain(1),
+		),
+	)));
+	let source_location_reanchored = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+		1,
 		X2(
 			Parachain(1),
 			PalletInstance(parachain::PALLET_BALANCES_INDEX),
@@ -311,7 +317,7 @@ fn send_para_a_asset_to_para_b() {
 	ParaB::execute_with(|| {
 		assert_ok!(AssetManager::register_asset(
 			parachain::Origin::root(),
-			source_location.clone(),
+			source_location_reanchored.clone(),
 			asset_metadata.clone()
 		));
 		assert_ok!(AssetManager::set_units_per_second(
@@ -321,7 +327,7 @@ fn send_para_a_asset_to_para_b() {
 		));
 		assert_eq!(
 			Some(a_currency_id),
-			AssetManager::location_asset_id(source_location.clone())
+			AssetManager::location_asset_id(source_location_reanchored.clone())
 		);
 	});
 
