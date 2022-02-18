@@ -10,8 +10,7 @@ of the Calamari/Manta runtime or client. Some need to be completed after the new
 
 ### Runtime Releases
 
-These checks should be performed on the codebase prior to forking to a release-
-candidate branch.
+These checks should be performed on the codebase prior to freezing our release candidate:
 
 - [ ] Verify [`spec_version`](#spec-version) has been incremented since the
     last release for any native runtimes from any existing use on public
@@ -24,7 +23,9 @@ candidate branch.
     runtime logic.
 - [ ] Check for any upstream storage migrations and perform tests with `try-runtime`, if any.
 
-The following checks can be performed after we have forked off to the release branch.
+The following checks can be performed after we have frozen our release candidate:
+
+- [ ] Code freeze should typically happen one week prior to rlease, to ensure we have enough time for related testing.
 - [ ] Complete the following [manual QA workflow](https://hackmd.io/TbFmorG2RnOPmLuFcg9JOQ?view).
 - [ ] Verify [Polkadot JS API](#polkadot-js) are up to date with the latest
     runtime changes.
@@ -32,10 +33,13 @@ The following checks can be performed after we have forked off to the release br
 - [ ] Execute runtime upgrade to Baikal and verify network stability.
 - [ ] Prepare a governance post and submit to our forum with description and motivation for changes.
 
+### Client Releases
+
+- [ ] Verify that each crate's `version` has been bumped from previous release.
+- [ ] Check that the new client versions have [run on the network](#burn-in) without issue for 12 hours.
+
 ### All Releases
 
-- [ ] Check that the new client versions have [run on the network](#burn-in)
-    without issue for 12 hours.
 - [ ] Check that a draft release has been created at
     https://github.com/Manta-Network/Manta/releases with relevant [release
     notes](#release-notes)
