@@ -2,6 +2,18 @@
 
 ## Pending
 
+## v3.1.4-1
+### Breaking changes
+
+### Features
+
+### Improvements
+- Bump spec version to **3141**.
+- [\#403](https://github.com/Manta-Network/Manta/pull/403) Remove pallet_scheduler v3 migration after 3140 runtime upgrade.
+- [\407](https://github.com/Manta-Network/Manta/pull/407) Update substrate dependencies to fix some low hanging fruit in democracy pallet.
+
+### Bug fixes
+
 ## v3.1.4
 ### Breaking changes
 
