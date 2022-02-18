@@ -113,11 +113,8 @@ parameter_types! {
 	pub Ancestry: MultiLocation = Parachain(MsgQueue::parachain_id().into()).into();
 	// This self reserve only works for pre-v0.9.16
 	pub SelfReserve: MultiLocation = MultiLocation {
-		parents:1,
-		interior: Junctions::X2(
-			Parachain(MsgQueue::parachain_id().into()),
-			PalletInstance(<Runtime as frame_system::Config>::PalletInfo::index::<Balances>().unwrap() as u8)
-		)
+		parents:0,
+		interior: Junctions::Here
 	};
 }
 
@@ -572,12 +569,7 @@ where
 
 parameter_types! {
 	pub const BaseXcmWeight: Weight = 100;
-	pub SelfLocation: MultiLocation = MultiLocation {
-		parents:1,
-		interior: Junctions::X1(
-			Parachain(MsgQueue::parachain_id().into())
-		)
-	};
+	pub SelfLocation: MultiLocation = MultiLocation::here();
 	pub const MaxAssetsForTransfer: usize = 2;
 }
 

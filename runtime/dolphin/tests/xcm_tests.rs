@@ -287,18 +287,10 @@ fn send_para_a_asset_to_para_b() {
 	MockNet::reset();
 
 	// ParaA balance location
-	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
-		1,
-		X1(
-			Parachain(1),
-		),
-	)));
+	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::here()));
 	let source_location_reanchored = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
-		X2(
-			Parachain(1),
-			PalletInstance(parachain::PALLET_BALANCES_INDEX),
-		),
+		X1(Parachain(1)),
 	)));
 	let a_currency_id = 0u32;
 	let amount = 100u128;
