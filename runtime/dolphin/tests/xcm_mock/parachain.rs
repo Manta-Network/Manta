@@ -19,7 +19,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{Everything, Nothing, PalletInfo as PalletInfoTrait, ConstU32},
+	traits::{Everything, Nothing, ConstU32},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 use frame_system::EnsureRoot;
@@ -609,8 +609,6 @@ construct_runtime!(
 		XcmVersioner: mock_version_changer::{Pallet, Storage, Event<T>} = 8,
 	}
 );
-
-pub const PALLET_BALANCES_INDEX: u8 = 3u8;
 
 pub(crate) fn para_events() -> Vec<Event> {
 	System::events()
