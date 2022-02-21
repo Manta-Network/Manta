@@ -4,7 +4,7 @@ use codec::Encode;
 use frame_support::{assert_ok, weights::constants::WEIGHT_PER_SECOND};
 use manta_primitives::AssetLocation;
 use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
-use xcm_mock::*;
+use xcm_mock::{*, parachain::PALLET_ASSET_INDEX};
 use xcm_simulator::TestExt;
 
 use crate::xcm_mock::parachain::AssetManager;
@@ -283,7 +283,7 @@ fn reserve_transfer_relaychain_to_parachain_a_then_back() {
 }
 
 #[test]
-fn send_para_a_asset_to_para_b() {
+fn send_para_a_native_asset_to_para_b() {
 	MockNet::reset();
 
 	// ParaA balance location
@@ -327,8 +327,6 @@ fn send_para_a_asset_to_para_b() {
 	ParaA::execute_with(|| {
 		assert_ok!(AssetManager::register_asset(
 			parachain::Origin::root(),
-			// This need to be changed starting from v0.9.16
-			// need to use something like MultiLocation { parents: 0, interior: here} instead
 			source_location.clone(),
 			asset_metadata
 		));
@@ -380,7 +378,123 @@ fn send_para_a_asset_to_para_b() {
 }
 
 #[test]
-fn send_para_a_asset_para_b_and_then_send_back() {
+fn send_para_a_custom_asset_to_para_b(){
+	let a_currency_id: u32 = 0;
+	let amount = 321;
+	let asset_metadata = parachain::AssetRegistarMetadata {
+		name: b"ParaADoge".to_vec(),
+		symbol: b"Doge".to_vec(),
+		decimals: 18,
+		evm_address: None,
+		min_balance: 1,
+		is_frozen: false,
+		is_sufficient: true,
+	};
+
+	let source_location = AssetLocation(VersionedMultiLocation::V1(
+		MultiLocation::new(
+			0, 
+			X2(PalletInstance(PALLET_ASSET_INDEX), GeneralIndex(0)))));
+	let source_location_reanchored = AssetLocation(VersionedMultiLocation::V1(
+		MultiLocation::new(
+			1, 
+			X3(
+				Parachain(1), 
+				PalletInstance(PALLET_ASSET_INDEX), 
+				GeneralIndex(0)))));
+	
+	// register a_currency in ParaA, ParaB
+	ParaA::execute_with(|| {
+		assert_ok!(parachain::AssetManager::register_asset(
+			parachain::Origin::root(),
+			source_location.clone(),
+			asset_metadata.clone()
+		));
+		// we have to do this in order to mint asset to alice on A
+		assert_ok!(parachain::Assets::force_asset_status(
+			parachain::Origin::root(),
+			0, 
+			ALICE.into(), 
+			ALICE.into(), 
+			ALICE.into(), 
+			ALICE.into(), 
+			1, 
+			true, 
+			false,));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(),
+			a_currency_id,
+			0u128
+		));
+		assert_eq!(
+			Some(a_currency_id),
+			parachain::AssetManager::location_asset_id(source_location.clone())
+		);
+	});
+
+	ParaB::execute_with(|| {
+		assert_ok!(parachain::AssetManager::register_asset(
+			parachain::Origin::root(),
+			source_location_reanchored.clone(),
+			asset_metadata.clone()
+		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(),
+			a_currency_id,
+			0u128
+		));
+		assert_eq!(
+			Some(a_currency_id),
+			parachain::AssetManager::location_asset_id(source_location_reanchored.clone())
+		);
+	});
+
+	let alice_on_b = MultiLocation {
+		parents: 1,
+		interior: X2(
+			Parachain(2),
+			AccountId32 {
+				network: NetworkId::Any,
+				id: ALICE.into(),
+			},
+		),
+	};
+
+	ParaA::execute_with(|| {
+		// Force customized asset balance for Alice
+		assert_ok!(parachain::Assets::mint(
+			parachain::Origin::signed(ALICE.into()),
+			0,
+			ALICE.into(),
+			INITIAL_BALANCE
+		));
+		assert_ok!(parachain::XTokens::transfer(
+			parachain::Origin::signed(ALICE.into()),
+			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			amount,
+			Box::new(VersionedMultiLocation::V1(alice_on_b)),
+			800000
+		));
+		assert_eq!(
+			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			INITIAL_BALANCE - amount
+		)
+	});
+
+	// Make sure B received the token
+	ParaB::execute_with(|| {
+		// free execution, full amount received
+		assert_eq!(
+			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			amount
+		);
+	});
+
+	
+}
+
+#[test]
+fn send_para_a_native_asset_para_b_and_then_send_back() {
 	MockNet::reset();
 
 	// para a asset location
@@ -407,7 +521,6 @@ fn send_para_a_asset_para_b_and_then_send_back() {
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::AssetManager::register_asset(
 			parachain::Origin::root(),
-			// we need to change this on/after v0.9.16
 			source_location.clone(),
 			asset_metadata.clone()
 		));
@@ -506,7 +619,7 @@ fn send_para_a_asset_para_b_and_then_send_back() {
 }
 
 #[test]
-fn send_para_a_asset_from_para_b_to_para_c() {
+fn send_para_a_native_asset_from_para_b_to_para_c() {
 	MockNet::reset();
 
 	// para a asset location

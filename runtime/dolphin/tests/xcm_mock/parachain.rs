@@ -592,6 +592,8 @@ impl orml_xtokens::Config for Runtime {
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
+pub const PALLET_ASSET_INDEX: u8 = 1;
+
 construct_runtime!(
 	pub enum Runtime where
 		Block = Block,
