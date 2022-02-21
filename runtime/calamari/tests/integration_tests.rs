@@ -46,7 +46,7 @@ use sp_core::sr25519;
 use sp_runtime::{
 	generic::DigestItem,
 	traits::{BlakeTwo256, Hash, Header as HeaderT, SignedExtension},
-	Percent,
+	DispatchError, Percent,
 };
 
 #[test]
@@ -171,175 +171,92 @@ fn democracy_external_propose_default_with_fast_track_works() {
 }
 
 #[test]
-fn verify_pallet_prefixes() {
-	fn is_pallet_prefix<P: 'static>(name: &str) {
-		// Compares the unhashed pallet prefix in the `StorageInstance` implementation by every
-		// storage item in the pallet P. This pallet prefix is used in conjunction with the
-		// item name to get the unique storage key: hash(PalletPrefix) + hash(StorageName)
-		// https://github.com/paritytech/substrate/blob/master/frame/support/procedural/src/pallet/
-		// expand/storage.rs#L389-L401
-		assert_eq!(
-			<calamari_runtime::Runtime as frame_system::Config>::PalletInfo::name::<P>(),
-			Some(name)
+fn governance_filters_work() {
+	assert!(<calamari_runtime::Runtime as pallet_democracy::Config>::InstantAllowed::get());
+
+	let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+
+	ExtBuilder::default().build().execute_with(|| {
+		set_parachain_inherent_data();
+
+		// Setup the preimage and preimage hash
+		let proposal_call = Call::System(frame_system::Call::remark { remark: vec![0] });
+		let preimage = proposal_call.encode();
+		let preimage_hash = BlakeTwo256::hash(&preimage[..]);
+		assert_ok!(Democracy::note_preimage(
+			Origin::signed(alice.clone()),
+			preimage.clone()
+		));
+
+		// Public proposals should be filtered out.
+		let public_proposal_call = Call::Democracy(pallet_democracy::Call::propose {
+			proposal_hash: preimage_hash,
+			value: 100 * KMA,
+		});
+		assert_err!(
+			public_proposal_call
+				.clone()
+				.dispatch(Origin::signed(alice.clone())),
+			frame_system::Error::<Runtime>::CallFiltered
 		);
-	}
 
-	is_pallet_prefix::<calamari_runtime::System>("System");
-	is_pallet_prefix::<calamari_runtime::ParachainSystem>("ParachainSystem");
-	is_pallet_prefix::<calamari_runtime::Timestamp>("Timestamp");
-	is_pallet_prefix::<calamari_runtime::ParachainInfo>("ParachainInfo");
-	is_pallet_prefix::<calamari_runtime::TransactionPause>("TransactionPause");
-	is_pallet_prefix::<calamari_runtime::Balances>("Balances");
-	is_pallet_prefix::<calamari_runtime::TransactionPayment>("TransactionPayment");
-	is_pallet_prefix::<calamari_runtime::Democracy>("Democracy");
-	is_pallet_prefix::<calamari_runtime::Council>("Council");
-	is_pallet_prefix::<calamari_runtime::CouncilMembership>("CouncilMembership");
-	is_pallet_prefix::<calamari_runtime::TechnicalCommittee>("TechnicalCommittee");
-	is_pallet_prefix::<calamari_runtime::TechnicalMembership>("TechnicalMembership");
-	is_pallet_prefix::<calamari_runtime::Authorship>("Authorship");
-	is_pallet_prefix::<calamari_runtime::CollatorSelection>("CollatorSelection");
-	is_pallet_prefix::<calamari_runtime::Session>("Session");
-	is_pallet_prefix::<calamari_runtime::Aura>("Aura");
-	is_pallet_prefix::<calamari_runtime::AuraExt>("AuraExt");
-	is_pallet_prefix::<calamari_runtime::Treasury>("Treasury");
-	is_pallet_prefix::<calamari_runtime::Scheduler>("Scheduler");
-	is_pallet_prefix::<calamari_runtime::XcmpQueue>("XcmpQueue");
-	is_pallet_prefix::<calamari_runtime::PolkadotXcm>("PolkadotXcm");
-	is_pallet_prefix::<calamari_runtime::CumulusXcm>("CumulusXcm");
-	is_pallet_prefix::<calamari_runtime::DmpQueue>("DmpQueue");
-	is_pallet_prefix::<calamari_runtime::Utility>("Utility");
-	is_pallet_prefix::<calamari_runtime::Multisig>("Multisig");
-	is_pallet_prefix::<calamari_runtime::Sudo>("Sudo");
-	is_pallet_prefix::<calamari_runtime::CalamariVesting>("CalamariVesting");
+		// Setup the Council
+		assert_ok!(Council::set_members(
+			root_origin(),
+			vec![alice.clone()],
+			None,
+			0
+		));
 
-	let prefix = |pallet_name, storage_name| {
-		let mut res = [0u8; 32];
-		res[0..16].copy_from_slice(&Twox128::hash(pallet_name));
-		res[16..32].copy_from_slice(&Twox128::hash(storage_name));
-		res.to_vec()
-	};
-	assert_eq!(
-		<calamari_runtime::Timestamp as StorageInfoTrait>::storage_info(),
-		vec![
-			StorageInfo {
-				pallet_name: b"Timestamp".to_vec(),
-				storage_name: b"Now".to_vec(),
-				prefix: prefix(b"Timestamp", b"Now"),
-				max_values: Some(1),
-				max_size: Some(8),
-			},
-			StorageInfo {
-				pallet_name: b"Timestamp".to_vec(),
-				storage_name: b"DidUpdate".to_vec(),
-				prefix: prefix(b"Timestamp", b"DidUpdate"),
-				max_values: Some(1),
-				max_size: Some(1),
-			}
-		]
-	);
-	assert_eq!(
-		<calamari_runtime::Balances as StorageInfoTrait>::storage_info(),
-		vec![
-			StorageInfo {
-				pallet_name: b"Balances".to_vec(),
-				storage_name: b"TotalIssuance".to_vec(),
-				prefix: prefix(b"Balances", b"TotalIssuance"),
-				max_values: Some(1),
-				max_size: Some(16),
-			},
-			StorageInfo {
-				pallet_name: b"Balances".to_vec(),
-				storage_name: b"Account".to_vec(),
-				prefix: prefix(b"Balances", b"Account"),
-				max_values: Some(300_000),
-				max_size: Some(112),
-			},
-			StorageInfo {
-				pallet_name: b"Balances".to_vec(),
-				storage_name: b"Locks".to_vec(),
-				prefix: prefix(b"Balances", b"Locks"),
-				max_values: Some(300_000),
-				max_size: Some(1299),
-			},
-			StorageInfo {
-				pallet_name: b"Balances".to_vec(),
-				storage_name: b"Reserves".to_vec(),
-				prefix: prefix(b"Balances", b"Reserves"),
-				max_values: None,
-				max_size: Some(1249),
-			},
-			StorageInfo {
-				pallet_name: b"Balances".to_vec(),
-				storage_name: b"StorageVersion".to_vec(),
-				prefix: prefix(b"Balances", b"StorageVersion"),
-				max_values: Some(1),
-				max_size: Some(1),
-			}
-		]
-	);
-	assert_eq!(
-		<calamari_runtime::Sudo as StorageInfoTrait>::storage_info(),
-		vec![StorageInfo {
-			pallet_name: b"Sudo".to_vec(),
-			storage_name: b"Key".to_vec(),
-			prefix: prefix(b"Sudo", b"Key"),
-			max_values: Some(1),
-			max_size: Some(32),
-		}]
-	);
-}
+		// External proposals other than external_proposal_default should be filtered out.
+		let council_motion = Call::Democracy(pallet_democracy::Call::external_propose {
+			proposal_hash: preimage_hash,
+		});
+		let council_motion_len: u32 = council_motion.using_encoded(|p| p.len() as u32);
+		assert_ok!(Council::propose(
+			Origin::signed(alice.clone()),
+			1,
+			Box::new(council_motion.clone()),
+			council_motion_len
+		));
 
-#[test]
-fn test_collectives_storage_item_prefixes() {
-	for StorageInfo { pallet_name, .. } in
-		<calamari_runtime::CouncilMembership as StorageInfoTrait>::storage_info()
-	{
-		assert_eq!(pallet_name, b"CouncilMembership".to_vec());
-	}
-
-	for StorageInfo { pallet_name, .. } in
-		<calamari_runtime::TechnicalMembership as StorageInfoTrait>::storage_info()
-	{
-		assert_eq!(pallet_name, b"TechnicalMembership".to_vec());
-	}
-}
-
-#[test]
-fn verify_pallet_indices() {
-	fn is_pallet_index<P: 'static>(index: usize) {
+		let council_motion_hash = BlakeTwo256::hash_of(&council_motion);
 		assert_eq!(
-			<calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<P>(),
-			Some(index)
+			last_event(),
+			calamari_runtime::Event::Council(pallet_collective::Event::Executed {
+				proposal_hash: council_motion_hash,
+				result: Err(DispatchError::Module {
+					index: 0,
+					error: 5,
+					message: None
+				})
+			})
 		);
-	}
 
-	is_pallet_index::<calamari_runtime::System>(0);
-	is_pallet_index::<calamari_runtime::ParachainSystem>(1);
-	is_pallet_index::<calamari_runtime::Timestamp>(2);
-	is_pallet_index::<calamari_runtime::ParachainInfo>(3);
-	is_pallet_index::<calamari_runtime::TransactionPause>(9);
-	is_pallet_index::<calamari_runtime::Balances>(10);
-	is_pallet_index::<calamari_runtime::TransactionPayment>(11);
-	is_pallet_index::<calamari_runtime::Democracy>(14);
-	is_pallet_index::<calamari_runtime::Council>(15);
-	is_pallet_index::<calamari_runtime::CouncilMembership>(16);
-	is_pallet_index::<calamari_runtime::TechnicalCommittee>(17);
-	is_pallet_index::<calamari_runtime::TechnicalMembership>(18);
-	is_pallet_index::<calamari_runtime::Authorship>(20);
-	is_pallet_index::<calamari_runtime::CollatorSelection>(21);
-	is_pallet_index::<calamari_runtime::Session>(22);
-	is_pallet_index::<calamari_runtime::Aura>(23);
-	is_pallet_index::<calamari_runtime::AuraExt>(24);
-	is_pallet_index::<calamari_runtime::Treasury>(26);
-	is_pallet_index::<calamari_runtime::Scheduler>(29);
-	is_pallet_index::<calamari_runtime::XcmpQueue>(30);
-	is_pallet_index::<calamari_runtime::PolkadotXcm>(31);
-	is_pallet_index::<calamari_runtime::CumulusXcm>(32);
-	is_pallet_index::<calamari_runtime::DmpQueue>(33);
-	is_pallet_index::<calamari_runtime::Utility>(40);
-	is_pallet_index::<calamari_runtime::Multisig>(41);
-	is_pallet_index::<calamari_runtime::Sudo>(42);
-	is_pallet_index::<calamari_runtime::CalamariVesting>(50);
+		// External proposals other than external_proposal_default should be filtered out.
+		let council_motion = Call::Democracy(pallet_democracy::Call::external_propose_majority {
+			proposal_hash: preimage_hash,
+		});
+		let council_motion_len: u32 = council_motion.using_encoded(|p| p.len() as u32);
+		assert_ok!(Council::propose(
+			Origin::signed(alice.clone()),
+			1,
+			Box::new(council_motion.clone()),
+			council_motion_len
+		));
+		let council_motion_hash = BlakeTwo256::hash_of(&council_motion);
+		assert_eq!(
+			last_event(),
+			calamari_runtime::Event::Council(pallet_collective::Event::Executed {
+				proposal_hash: council_motion_hash,
+				result: Err(DispatchError::Module {
+					index: 0,
+					error: 5,
+					message: None
+				})
+			})
+		);
+	});
 }
 
 #[test]
@@ -640,4 +557,176 @@ fn calamari_vesting_works() {
 			assert_eq!(Balances::usable_balance(&bob), vested);
 		}
 	});
+}
+
+#[test]
+fn verify_pallet_prefixes() {
+	fn is_pallet_prefix<P: 'static>(name: &str) {
+		// Compares the unhashed pallet prefix in the `StorageInstance` implementation by every
+		// storage item in the pallet P. This pallet prefix is used in conjunction with the
+		// item name to get the unique storage key: hash(PalletPrefix) + hash(StorageName)
+		// https://github.com/paritytech/substrate/blob/master/frame/support/procedural/src/pallet/
+		// expand/storage.rs#L389-L401
+		assert_eq!(
+			<calamari_runtime::Runtime as frame_system::Config>::PalletInfo::name::<P>(),
+			Some(name)
+		);
+	}
+
+	is_pallet_prefix::<calamari_runtime::System>("System");
+	is_pallet_prefix::<calamari_runtime::ParachainSystem>("ParachainSystem");
+	is_pallet_prefix::<calamari_runtime::Timestamp>("Timestamp");
+	is_pallet_prefix::<calamari_runtime::ParachainInfo>("ParachainInfo");
+	is_pallet_prefix::<calamari_runtime::TransactionPause>("TransactionPause");
+	is_pallet_prefix::<calamari_runtime::Balances>("Balances");
+	is_pallet_prefix::<calamari_runtime::TransactionPayment>("TransactionPayment");
+	is_pallet_prefix::<calamari_runtime::Democracy>("Democracy");
+	is_pallet_prefix::<calamari_runtime::Council>("Council");
+	is_pallet_prefix::<calamari_runtime::CouncilMembership>("CouncilMembership");
+	is_pallet_prefix::<calamari_runtime::TechnicalCommittee>("TechnicalCommittee");
+	is_pallet_prefix::<calamari_runtime::TechnicalMembership>("TechnicalMembership");
+	is_pallet_prefix::<calamari_runtime::Authorship>("Authorship");
+	is_pallet_prefix::<calamari_runtime::CollatorSelection>("CollatorSelection");
+	is_pallet_prefix::<calamari_runtime::Session>("Session");
+	is_pallet_prefix::<calamari_runtime::Aura>("Aura");
+	is_pallet_prefix::<calamari_runtime::AuraExt>("AuraExt");
+	is_pallet_prefix::<calamari_runtime::Treasury>("Treasury");
+	is_pallet_prefix::<calamari_runtime::Scheduler>("Scheduler");
+	is_pallet_prefix::<calamari_runtime::XcmpQueue>("XcmpQueue");
+	is_pallet_prefix::<calamari_runtime::PolkadotXcm>("PolkadotXcm");
+	is_pallet_prefix::<calamari_runtime::CumulusXcm>("CumulusXcm");
+	is_pallet_prefix::<calamari_runtime::DmpQueue>("DmpQueue");
+	is_pallet_prefix::<calamari_runtime::Utility>("Utility");
+	is_pallet_prefix::<calamari_runtime::Multisig>("Multisig");
+	is_pallet_prefix::<calamari_runtime::Sudo>("Sudo");
+	is_pallet_prefix::<calamari_runtime::CalamariVesting>("CalamariVesting");
+
+	let prefix = |pallet_name, storage_name| {
+		let mut res = [0u8; 32];
+		res[0..16].copy_from_slice(&Twox128::hash(pallet_name));
+		res[16..32].copy_from_slice(&Twox128::hash(storage_name));
+		res.to_vec()
+	};
+	assert_eq!(
+		<calamari_runtime::Timestamp as StorageInfoTrait>::storage_info(),
+		vec![
+			StorageInfo {
+				pallet_name: b"Timestamp".to_vec(),
+				storage_name: b"Now".to_vec(),
+				prefix: prefix(b"Timestamp", b"Now"),
+				max_values: Some(1),
+				max_size: Some(8),
+			},
+			StorageInfo {
+				pallet_name: b"Timestamp".to_vec(),
+				storage_name: b"DidUpdate".to_vec(),
+				prefix: prefix(b"Timestamp", b"DidUpdate"),
+				max_values: Some(1),
+				max_size: Some(1),
+			}
+		]
+	);
+	assert_eq!(
+		<calamari_runtime::Balances as StorageInfoTrait>::storage_info(),
+		vec![
+			StorageInfo {
+				pallet_name: b"Balances".to_vec(),
+				storage_name: b"TotalIssuance".to_vec(),
+				prefix: prefix(b"Balances", b"TotalIssuance"),
+				max_values: Some(1),
+				max_size: Some(16),
+			},
+			StorageInfo {
+				pallet_name: b"Balances".to_vec(),
+				storage_name: b"Account".to_vec(),
+				prefix: prefix(b"Balances", b"Account"),
+				max_values: Some(300_000),
+				max_size: Some(112),
+			},
+			StorageInfo {
+				pallet_name: b"Balances".to_vec(),
+				storage_name: b"Locks".to_vec(),
+				prefix: prefix(b"Balances", b"Locks"),
+				max_values: Some(300_000),
+				max_size: Some(1299),
+			},
+			StorageInfo {
+				pallet_name: b"Balances".to_vec(),
+				storage_name: b"Reserves".to_vec(),
+				prefix: prefix(b"Balances", b"Reserves"),
+				max_values: None,
+				max_size: Some(1249),
+			},
+			StorageInfo {
+				pallet_name: b"Balances".to_vec(),
+				storage_name: b"StorageVersion".to_vec(),
+				prefix: prefix(b"Balances", b"StorageVersion"),
+				max_values: Some(1),
+				max_size: Some(1),
+			}
+		]
+	);
+	assert_eq!(
+		<calamari_runtime::Sudo as StorageInfoTrait>::storage_info(),
+		vec![StorageInfo {
+			pallet_name: b"Sudo".to_vec(),
+			storage_name: b"Key".to_vec(),
+			prefix: prefix(b"Sudo", b"Key"),
+			max_values: Some(1),
+			max_size: Some(32),
+		}]
+	);
+}
+
+#[test]
+fn test_collectives_storage_item_prefixes() {
+	for StorageInfo { pallet_name, .. } in
+		<calamari_runtime::CouncilMembership as StorageInfoTrait>::storage_info()
+	{
+		assert_eq!(pallet_name, b"CouncilMembership".to_vec());
+	}
+
+	for StorageInfo { pallet_name, .. } in
+		<calamari_runtime::TechnicalMembership as StorageInfoTrait>::storage_info()
+	{
+		assert_eq!(pallet_name, b"TechnicalMembership".to_vec());
+	}
+}
+
+#[test]
+fn verify_pallet_indices() {
+	fn is_pallet_index<P: 'static>(index: usize) {
+		assert_eq!(
+			<calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<P>(),
+			Some(index)
+		);
+	}
+
+	is_pallet_index::<calamari_runtime::System>(0);
+	is_pallet_index::<calamari_runtime::ParachainSystem>(1);
+	is_pallet_index::<calamari_runtime::Timestamp>(2);
+	is_pallet_index::<calamari_runtime::ParachainInfo>(3);
+	is_pallet_index::<calamari_runtime::TransactionPause>(9);
+	is_pallet_index::<calamari_runtime::Balances>(10);
+	is_pallet_index::<calamari_runtime::TransactionPayment>(11);
+	is_pallet_index::<calamari_runtime::Democracy>(14);
+	is_pallet_index::<calamari_runtime::Council>(15);
+	is_pallet_index::<calamari_runtime::CouncilMembership>(16);
+	is_pallet_index::<calamari_runtime::TechnicalCommittee>(17);
+	is_pallet_index::<calamari_runtime::TechnicalMembership>(18);
+	is_pallet_index::<calamari_runtime::Authorship>(20);
+	is_pallet_index::<calamari_runtime::CollatorSelection>(21);
+	is_pallet_index::<calamari_runtime::Session>(22);
+	is_pallet_index::<calamari_runtime::Aura>(23);
+	is_pallet_index::<calamari_runtime::AuraExt>(24);
+	is_pallet_index::<calamari_runtime::Treasury>(26);
+	is_pallet_index::<calamari_runtime::Scheduler>(29);
+	is_pallet_index::<calamari_runtime::XcmpQueue>(30);
+	is_pallet_index::<calamari_runtime::PolkadotXcm>(31);
+	is_pallet_index::<calamari_runtime::CumulusXcm>(32);
+	is_pallet_index::<calamari_runtime::DmpQueue>(33);
+	is_pallet_index::<calamari_runtime::Utility>(40);
+	is_pallet_index::<calamari_runtime::Multisig>(41);
+	is_pallet_index::<calamari_runtime::Sudo>(42);
+	is_pallet_index::<calamari_runtime::CalamariVesting>(50);
 }
