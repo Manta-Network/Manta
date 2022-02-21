@@ -42,7 +42,7 @@ use manta_primitives::{
 use pallet_transaction_payment::ChargeTransactionPayment;
 
 use sp_consensus_aura::AURA_ENGINE_ID;
-use sp_core::sr25519;
+use sp_core::{sr25519, H256};
 use sp_runtime::{
 	generic::DigestItem,
 	traits::{BlakeTwo256, Hash, Header as HeaderT, SignedExtension},
@@ -54,23 +54,115 @@ fn fast_track_available() {
 	assert!(<calamari_runtime::Runtime as pallet_democracy::Config>::InstantAllowed::get());
 }
 
-#[test]
-fn democracy_external_propose_default_with_fast_track_works() {
-	assert!(<calamari_runtime::Runtime as pallet_democracy::Config>::InstantAllowed::get());
+fn note_preimage(proposer: &AccountId) -> H256 {
+	let proposal_call = Call::System(frame_system::Call::remark { remark: vec![0] });
+	let preimage = proposal_call.encode();
+	let preimage_hash = BlakeTwo256::hash(&preimage[..]);
+	assert_ok!(Democracy::note_preimage(
+		Origin::signed(proposer.clone()),
+		preimage.clone()
+	));
+	preimage_hash
+}
 
+fn propose_council_motion(council_motion: &Call, proposer: &AccountId) -> H256 {
+	let council_motion_len: u32 = council_motion.using_encoded(|p| p.len() as u32);
+	assert_ok!(Council::propose(
+		Origin::signed(proposer.clone()),
+		1,
+		Box::new(council_motion.clone()),
+		council_motion_len
+	));
+	let council_motion_hash = BlakeTwo256::hash_of(&council_motion);
+	council_motion_hash
+}
+
+#[test]
+fn slow_governance_works() {
 	let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
 
 	ExtBuilder::default().build().execute_with(|| {
 		set_parachain_inherent_data();
 
 		// Setup the preimage and preimage hash
-		let proposal_call = Call::System(frame_system::Call::remark { remark: vec![0] });
-		let preimage = proposal_call.encode();
-		let preimage_hash = BlakeTwo256::hash(&preimage[..]);
-		assert_ok!(Democracy::note_preimage(
-			Origin::signed(alice.clone()),
-			preimage.clone()
+		let preimage_hash = note_preimage(&alice);
+
+		// Setup the Council
+		assert_ok!(Council::set_members(
+			root_origin(),
+			vec![alice.clone()],
+			None,
+			0
 		));
+
+		// Setup and propose the Council motion for external_propose_default routine
+		// No voting required because there's only 1 seat.
+		let council_motion = Call::Democracy(pallet_democracy::Call::external_propose_default {
+			proposal_hash: preimage_hash,
+		});
+		let council_motion_hash = propose_council_motion(&council_motion, &alice);
+		assert_eq!(
+			last_event(),
+			calamari_runtime::Event::Council(pallet_collective::Event::Executed {
+				proposal_hash: council_motion_hash,
+				result: Ok(())
+			})
+		);
+
+		// 7 days in the external proposal queue before the referendum starts.
+		run_to_block(50400);
+		assert_eq!(
+			last_event(),
+			calamari_runtime::Event::Democracy(pallet_democracy::Event::Started {
+				ref_index: 0,
+				threshold: pallet_democracy::VoteThreshold::SuperMajorityAgainst
+			})
+		);
+		// Time to vote for the referendum with some amount
+		assert_ok!(Democracy::vote(
+			Origin::signed(alice.clone()),
+			0,
+			pallet_democracy::AccountVote::Standard {
+				vote: pallet_democracy::Vote {
+					aye: true,
+					conviction: pallet_democracy::Conviction::None
+				},
+				balance: 10 * KMA
+			}
+		));
+
+		// After 7 more days of voting period the referendum ends:
+		run_to_block(100800);
+		assert_eq!(
+			last_event(),
+			calamari_runtime::Event::Scheduler(pallet_scheduler::Event::Scheduled {
+				when: 108000,
+				index: 0
+			})
+		);
+
+		// After 1 more day enactment period the proposal is dispatched:
+		run_to_block(108000);
+		assert_eq!(
+			last_event(),
+			calamari_runtime::Event::Scheduler(pallet_scheduler::Event::Dispatched {
+				task: (108000, 0),
+				id: Some(vec![100, 101, 109, 111, 99, 114, 97, 99, 0, 0, 0, 0]),
+				result: Ok(())
+			})
+		);
+	});
+}
+
+#[test]
+fn fast_track_governance_works() {
+	let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+
+	ExtBuilder::default().build().execute_with(|| {
+		set_parachain_inherent_data();
+
+		// Setup the preimage and preimage hash
+		let preimage_hash = note_preimage(&alice);
 
 		// Setup the Council and Technical Committee
 		assert_ok!(Council::set_members(
@@ -91,15 +183,8 @@ fn democracy_external_propose_default_with_fast_track_works() {
 		let council_motion = Call::Democracy(pallet_democracy::Call::external_propose_default {
 			proposal_hash: preimage_hash,
 		});
-		let council_motion_len: u32 = council_motion.using_encoded(|p| p.len() as u32);
-		assert_ok!(Council::propose(
-			Origin::signed(alice.clone()),
-			1,
-			Box::new(council_motion.clone()),
-			council_motion_len
-		));
-		// Make sure it was actually executed
-		let council_motion_hash = BlakeTwo256::hash_of(&council_motion);
+		let council_motion_hash = propose_council_motion(&council_motion, &alice);
+
 		assert_eq!(
 			last_event(),
 			calamari_runtime::Event::Council(pallet_collective::Event::Executed {
@@ -180,13 +265,7 @@ fn governance_filters_work() {
 		set_parachain_inherent_data();
 
 		// Setup the preimage and preimage hash
-		let proposal_call = Call::System(frame_system::Call::remark { remark: vec![0] });
-		let preimage = proposal_call.encode();
-		let preimage_hash = BlakeTwo256::hash(&preimage[..]);
-		assert_ok!(Democracy::note_preimage(
-			Origin::signed(alice.clone()),
-			preimage.clone()
-		));
+		let preimage_hash = note_preimage(&alice);
 
 		// Public proposals should be filtered out.
 		let public_proposal_call = Call::Democracy(pallet_democracy::Call::propose {
@@ -209,18 +288,11 @@ fn governance_filters_work() {
 		));
 
 		// External proposals other than external_proposal_default should be filtered out.
-		let council_motion = Call::Democracy(pallet_democracy::Call::external_propose {
+		let external_propose_motion = Call::Democracy(pallet_democracy::Call::external_propose {
 			proposal_hash: preimage_hash,
 		});
-		let council_motion_len: u32 = council_motion.using_encoded(|p| p.len() as u32);
-		assert_ok!(Council::propose(
-			Origin::signed(alice.clone()),
-			1,
-			Box::new(council_motion.clone()),
-			council_motion_len
-		));
+		let council_motion_hash = propose_council_motion(&external_propose_motion, &alice);
 
-		let council_motion_hash = BlakeTwo256::hash_of(&council_motion);
 		assert_eq!(
 			last_event(),
 			calamari_runtime::Event::Council(pallet_collective::Event::Executed {
@@ -234,17 +306,12 @@ fn governance_filters_work() {
 		);
 
 		// External proposals other than external_proposal_default should be filtered out.
-		let council_motion = Call::Democracy(pallet_democracy::Call::external_propose_majority {
-			proposal_hash: preimage_hash,
-		});
-		let council_motion_len: u32 = council_motion.using_encoded(|p| p.len() as u32);
-		assert_ok!(Council::propose(
-			Origin::signed(alice.clone()),
-			1,
-			Box::new(council_motion.clone()),
-			council_motion_len
-		));
-		let council_motion_hash = BlakeTwo256::hash_of(&council_motion);
+		let external_propose_majority_motion =
+			Call::Democracy(pallet_democracy::Call::external_propose_majority {
+				proposal_hash: preimage_hash,
+			});
+		let council_motion_hash = propose_council_motion(&external_propose_majority_motion, &alice);
+
 		assert_eq!(
 			last_event(),
 			calamari_runtime::Event::Council(pallet_collective::Event::Executed {
