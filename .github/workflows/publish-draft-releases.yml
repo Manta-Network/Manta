@@ -155,7 +155,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo b --profile production --verbose
+          cargo build --profile production --verbose
       -
         name: stop sccache server
         run: sccache --stop-server || true
@@ -250,7 +250,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo b --profile production --verbose
+          cargo build --profile production --verbose
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: stop sccache server
