@@ -25,7 +25,7 @@ These checks should be performed on the codebase prior to freezing our release c
 
 The following checks can be performed after we have frozen our release candidate:
 
-- [ ] Code freeze should typically happen one week prior to rlease, to ensure we have enough time for related testing.
+- [ ] Code freeze should typically happen one week prior to release, to ensure we have enough time for related testing.
 - [ ] Complete the following [manual QA workflow](https://hackmd.io/TbFmorG2RnOPmLuFcg9JOQ?view).
 - [ ] Verify [Polkadot JS API](#polkadot-js) are up to date with the latest
     runtime changes.
