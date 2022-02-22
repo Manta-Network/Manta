@@ -365,7 +365,7 @@ parameter_types! {
 	pub const VotingPeriod: BlockNumber = 7 * DAYS;
 	pub const FastTrackVotingPeriod: BlockNumber = 3 * HOURS;
 	pub const InstantAllowed: bool = true;
-	pub const MinimumDeposit: Balance = 20 * KMA;
+	pub const MinimumDeposit: Balance = 1000 * KMA;
 	pub const EnactmentPeriod: BlockNumber = 1 * DAYS;
 	pub const CooloffPeriod: BlockNumber = 7 * DAYS;
 	pub const PreimageByteDeposit: Balance = deposit(0, 1);
@@ -497,8 +497,8 @@ impl pallet_membership::Config<TechnicalMembershipInstance> for Runtime {
 
 parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(1);
-	pub const ProposalBondMinimum: Balance = 50 * KMA;
-	pub const ProposalBondMaximum: Balance = 1000 * KMA;
+	pub const ProposalBondMinimum: Balance = 500 * KMA;
+	pub const ProposalBondMaximum: Balance = 10_000 * KMA;
 	pub const SpendPeriod: BlockNumber = 6 * DAYS;
 	pub const Burn: Permill = Permill::from_percent(0);
 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
@@ -579,7 +579,7 @@ impl pallet_scheduler::Config for Runtime {
 
 parameter_types! {
 	pub const PreimageMaxSize: u32 = 4096 * 1024;
-	pub const PreimageBaseDeposit: Balance = 1 * KMA;
+	pub const PreimageBaseDeposit: Balance = 1_000 * KMA;
 }
 
 impl pallet_preimage::Config for Runtime {
