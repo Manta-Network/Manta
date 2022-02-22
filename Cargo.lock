@@ -5214,7 +5214,7 @@ dependencies = [
 [[package]]
 name = "orml-traits"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=stechu-update-reserve-check#0adbaa5a12f82d1a901a6f3b3d8e77b7dda1afb4"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?rev=4a66b29#4a66b299037cc3997689538f82847785f9afa65d"
 dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
@@ -5232,7 +5232,7 @@ dependencies = [
 [[package]]
 name = "orml-utilities"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=stechu-update-reserve-check#0adbaa5a12f82d1a901a6f3b3d8e77b7dda1afb4"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?rev=4a66b29#4a66b299037cc3997689538f82847785f9afa65d"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -5246,7 +5246,7 @@ dependencies = [
 [[package]]
 name = "orml-xcm-support"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=stechu-update-reserve-check#0adbaa5a12f82d1a901a6f3b3d8e77b7dda1afb4"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?rev=4a66b29#4a66b299037cc3997689538f82847785f9afa65d"
 dependencies = [
  "frame-support",
  "orml-traits",
@@ -5260,7 +5260,7 @@ dependencies = [
 [[package]]
 name = "orml-xtokens"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=stechu-update-reserve-check#0adbaa5a12f82d1a901a6f3b3d8e77b7dda1afb4"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?rev=4a66b29#4a66b299037cc3997689538f82847785f9afa65d"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",

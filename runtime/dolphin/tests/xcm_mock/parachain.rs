@@ -48,6 +48,7 @@ use xcm_builder::{
 	SovereignSignedViaLocation,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
+use xcm_simulator::Get;
 
 pub use manta_primitives::{AssetId, AssetStorageMetadata, AssetRegistarMetadata};
 pub type AccountId = AccountId32;
@@ -111,11 +112,7 @@ parameter_types! {
 	pub const KsmLocation: MultiLocation = MultiLocation::parent();
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
 	pub Ancestry: MultiLocation = Parachain(MsgQueue::parachain_id().into()).into();
-	// This self reserve only works for pre-v0.9.16
-	pub SelfReserve: MultiLocation = MultiLocation {
-		parents:0,
-		interior: Junctions::Here
-	};
+	pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::get().into())));
 }
 
 parameter_types! {
@@ -569,7 +566,6 @@ where
 
 parameter_types! {
 	pub const BaseXcmWeight: Weight = 100;
-	pub SelfLocation: MultiLocation = MultiLocation::here();
 	pub const MaxAssetsForTransfer: usize = 2;
 }
 
@@ -582,12 +578,14 @@ impl orml_xtokens::Config for Runtime {
 	type CurrencyIdConvert =
 		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>>;
 	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
-	type SelfLocation = SelfLocation;
+	type SelfLocation = SelfReserve;
 	type Weigher = xcm_builder::FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type BaseXcmWeight = BaseXcmWeight;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type MaxAssetsForTransfer = MaxAssetsForTransfer;
 }
+
+impl parachain_info::Config for Runtime {}
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
@@ -609,6 +607,7 @@ construct_runtime!(
 		XTokens: orml_xtokens::{Pallet, Call, Event<T>, Storage} = 6,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 7,
 		XcmVersioner: mock_version_changer::{Pallet, Storage, Event<T>} = 8,
+		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 9,
 	}
 );
 
