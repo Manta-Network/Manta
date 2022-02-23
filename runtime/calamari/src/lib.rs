@@ -40,9 +40,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{
-		Contains, Currency, EnsureOneOf, Everything, Nothing, OnRuntimeUpgrade, PrivilegeCmp,
-	},
+	traits::{Contains, Currency, EnsureOneOf, Everything, Nothing, PrivilegeCmp},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -115,7 +113,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 3140,
+	spec_version: 3141,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 4,
@@ -369,7 +367,7 @@ parameter_types! {
 	pub VotingPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 5 * MINUTES, "CALAMARI_VOTINGPERIOD");
 	pub FastTrackVotingPeriod: BlockNumber = prod_or_fast!(3 * HOURS, 2 * MINUTES, "CALAMARI_FASTTRACKVOTINGPERIOD");
 	pub const InstantAllowed: bool = true;
-	pub const MinimumDeposit: Balance = 20 * KMA;
+	pub const MinimumDeposit: Balance = 1000 * KMA;
 	pub EnactmentPeriod: BlockNumber = prod_or_fast!(1 * DAYS, 2 * MINUTES, "CALAMARI_ENACTMENTPERIOD");
 	pub CooloffPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 2 * MINUTES, "CALAMARI_COOLOFFPERIOD");
 	pub const PreimageByteDeposit: Balance = deposit(0, 1);
@@ -501,8 +499,8 @@ impl pallet_membership::Config<TechnicalMembershipInstance> for Runtime {
 
 parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(1);
-	pub const ProposalBondMinimum: Balance = 50 * KMA;
-	pub const ProposalBondMaximum: Balance = 1000 * KMA;
+	pub const ProposalBondMinimum: Balance = 500 * KMA;
+	pub const ProposalBondMaximum: Balance = 10_000 * KMA;
 	pub SpendPeriod: BlockNumber = prod_or_fast!(6 * DAYS, 2 * MINUTES, "CALAMARI_SPENDPERIOD");
 	pub const Burn: Permill = Permill::from_percent(0);
 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
@@ -583,7 +581,7 @@ impl pallet_scheduler::Config for Runtime {
 
 parameter_types! {
 	pub const PreimageMaxSize: u32 = 4096 * 1024;
-	pub const PreimageBaseDeposit: Balance = 1 * KMA;
+	pub const PreimageBaseDeposit: Balance = 1_000 * KMA;
 }
 
 impl pallet_preimage::Config for Runtime {
@@ -943,35 +941,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsReversedWithSystemFirst,
-	SchedulerMigrationV3,
 >;
-
-// Migration for scheduler pallet to move from a plain Call to a CallOrHash.
-pub struct SchedulerMigrationV3;
-
-impl OnRuntimeUpgrade for SchedulerMigrationV3 {
-	fn on_runtime_upgrade() -> frame_support::weights::Weight {
-		Scheduler::migrate_v1_to_v3()
-	}
-
-	#[cfg(feature = "try-runtime")]
-	fn pre_upgrade() -> Result<(), &'static str> {
-		Scheduler::pre_migrate_to_v3()
-	}
-
-	#[cfg(feature = "try-runtime")]
-	fn post_upgrade() -> Result<(), &'static str> {
-		use frame_support::dispatch::GetStorageVersion;
-
-		Scheduler::post_migrate_to_v3()?;
-		log::info!(
-			"Scheduler migrated to version {:?}",
-			Scheduler::current_storage_version()
-		);
-
-		Ok(())
-	}
-}
 
 impl_runtime_apis! {
 	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {

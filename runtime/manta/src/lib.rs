@@ -112,7 +112,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("manta"),
 	impl_name: create_runtime_str!("manta"),
 	authoring_version: 1,
-	spec_version: 3140,
+	spec_version: 3141,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -339,7 +339,7 @@ impl pallet_scheduler::Config for Runtime {
 
 parameter_types! {
 	pub const PreimageMaxSize: u32 = 4096 * 1024;
-	pub const PreimageBaseDeposit: Balance = 1 * MANTA;
+	pub const PreimageBaseDeposit: Balance = 10 * MANTA;
 	// One cent: $10,000 / MB
 	pub const PreimageByteDeposit: Balance = 1 * cMANTA;
 }
