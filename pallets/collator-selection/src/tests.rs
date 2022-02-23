@@ -21,8 +21,7 @@ use frame_support::{
 	traits::{Currency, GenesisBuild, OnInitialize},
 };
 use pallet_balances::Error as BalancesError;
-use sp_runtime::testing::UintAuthorityId;
-use sp_runtime::traits::BadOrigin;
+use sp_runtime::{testing::UintAuthorityId, traits::BadOrigin};
 
 #[test]
 fn basic_setup_works() {
@@ -455,5 +454,65 @@ fn remove_collator_should_work() {
 			CollatorSelection::remove_collator(Origin::signed(RootAccount::get()), invulnerable),
 			Error::<Test>::NotAllowRemoveInvulnerable
 		);
+	});
+}
+
+#[test]
+fn increase_bond_after_register_candidate() {
+	// It's a corner case:
+	// 1. Set orignal bond as 100KMA.
+	// 2. Register candidate.
+	// 3. increase bond to 150KMA.
+	// 3. Unregister candidate.
+	// 4. The owner should get 100KMA back instead of 150KMA.
+	// Increasing bond should not affect previous candidates.
+	new_test_ext().execute_with(|| {
+		// add candidate_1 by root
+		let candidate_1 = 3;
+		assert_ok!(CollatorSelection::register_candidate(
+			Origin::signed(RootAccount::get()),
+			candidate_1
+		));
+
+		// check candidate_1's reserved balance
+		let prev_bond = CollatorSelection::candidacy_bond();
+		// candidate_1 should be reserved prev_bond KMA
+		assert_eq!(prev_bond, Balances::reserved_balance(candidate_1));
+
+		// increase bond
+		let new_bond = prev_bond + 5;
+		assert_ok!(CollatorSelection::set_candidacy_bond(
+			Origin::signed(RootAccount::get()),
+			new_bond
+		));
+
+		// register new candidate after increase bond
+		let candidate_2 = 4;
+		assert_ok!(CollatorSelection::register_candidate(
+			Origin::signed(RootAccount::get()),
+			candidate_2
+		));
+		// check new bond
+		assert_eq!(new_bond, CollatorSelection::candidacy_bond());
+		// candidate_2 should be reserved new_bond KMA
+		assert_eq!(new_bond, Balances::reserved_balance(candidate_2));
+
+		// remove candidate_1
+		assert_ok!(CollatorSelection::remove_collator(
+			Origin::signed(RootAccount::get()),
+			candidate_1
+		));
+		// check candidate_1
+		assert_eq!(0, Balances::reserved_balance(candidate_1));
+		assert_eq!(100, Balances::free_balance(candidate_1));
+
+		// remove candidate_2
+		assert_ok!(CollatorSelection::remove_collator(
+			Origin::signed(RootAccount::get()),
+			candidate_2
+		));
+		// check candidate_2
+		assert_eq!(0, Balances::reserved_balance(candidate_2));
+		assert_eq!(100, Balances::free_balance(candidate_2));
 	});
 }
