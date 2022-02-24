@@ -84,7 +84,7 @@ jobs:
           CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
-          CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose --features=runtime-benchmarks
+          cargo build --profile production --verbose --features=runtime-benchmarks
       -
         name: stop sccache server
         run: sccache --stop-server || true
@@ -93,7 +93,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: manta
-          path: target/release/manta
+          path: target/production/manta
 
   run-benchmark:
     name: benchmark (${{ matrix.benchmark.pallet.name }} ${{ matrix.benchmark.extrinsic.name }})
