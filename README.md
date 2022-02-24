@@ -12,11 +12,12 @@
 Manta is a privacy preserving DeFi stack on Polkadot/Substrate. The code currently hasn't been properly security audited (work in progress), use it at your own risk. 
 
 ## Build Manta/Calamari Node
-```
+```bash
 chmod u+x ./scripts/init.sh
 ./scripts/init.sh
-cargo build --release
+cargo b --profile production
 ```
+> Tips: The binary will be generated under `target/production/manta`.
 
 ## Manta Developement
 Currently, there are two developing branches:
@@ -73,4 +74,4 @@ now you can watch the ci build your awesome feature and publish your draft relea
 
 ## Minimum supported rust compiler
 
-This project's MSRV is `rustc 1.56`
+This project's MSRV is `rustc 1.57`

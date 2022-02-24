@@ -3,6 +3,7 @@ authors = ['Manta Network']
 build = 'build.rs'
 description = 'Manta Parachain Node.'
 edition = '2021'
+rust-version = '1.57'
 homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'manta'
