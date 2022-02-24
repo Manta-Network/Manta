@@ -104,7 +104,6 @@ jobs:
     strategy:
       matrix:
         benchmark:
-          -
           extrinsic:
             id: '*'
             name: [frame_system, pallet_balances, pallet_collective, pallet_democracy, pallet_membership, pallet_multisig, pallet_scheduler, pallet_session, pallet_tx_pause, pallet_utility, pallet_timestamp, pallet_treasury, manta_collator_selection]
