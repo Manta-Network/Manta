@@ -96,7 +96,7 @@ jobs:
           path: target/release/manta
 
   run-benchmark:
-    name: benchmark (${{ matrix.benchmark.pallet.name }} ${{ matrix.benchmark.extrinsic.name }})
+    name: benchmark (${{ matrix.benchmark.extrinsic.name }} ${{ matrix.benchmark.extrinsic.name }})
     needs:
       - start-node-builder-current
       - build-benchmark
@@ -105,109 +105,10 @@ jobs:
       matrix:
         benchmark:
           -
-            extrinsic:
-              id: '*'
-              name: frame_system
-            pallet:
-              id: frame_system
-              name: frame_system
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_balances
-            pallet:
-              id: pallet_balances
-              name: pallet_balances
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_collective
-            pallet:
-              id: pallet_collective
-              name: pallet_collective
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_democracy
-            pallet:
-              id: pallet_democracy
-              name: pallet_democracy
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_membership
-            pallet:
-              id: pallet_membership
-              name: pallet_membership
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_multisig
-            pallet:
-              id: pallet_multisig
-              name: pallet_multisig
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_scheduler
-            pallet:
-              id: pallet_scheduler
-              name: pallet_scheduler
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_session
-            pallet:
-              id: pallet_session
-              name: pallet_session
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_tx_pause
-            pallet:
-              id: pallet_tx_pause
-              name: pallet_tx_pause
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_utility
-            pallet:
-              id: pallet_utility
-              name: pallet_utility
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_timestamp
-            pallet:
-              id: pallet_timestamp
-              name: pallet_timestamp
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: pallet_treasury
-            pallet:
-              id: pallet_treasury
-              name: pallet_treasury
-            iterations: 20
-          -
-            extrinsic:
-              id: '*'
-              name: manta_collator_selection
-            pallet:
-              id: manta_collator_selection
-              name: manta_collator_selection
-            iterations: 20
+          extrinsic:
+            id: '*'
+            name: [frame_system, pallet_balances, pallet_collective, pallet_democracy, pallet_membership, pallet_multisig, pallet_scheduler, pallet_session, pallet_tx_pause, pallet_utility, pallet_timestamp, pallet_treasury, manta_collator_selection]
+          iterations: 20
     steps:
       -
         uses: actions/download-artifact@v2
@@ -223,7 +124,7 @@ jobs:
         run: |
           manta benchmark \
             --chain=dolphin-dev \
-            --pallet=${{ matrix.benchmark.pallet.id }} \
+            --pallet=${{ matrix.benchmark.extrinsic.name }} \
             --extrinsic=${{ matrix.benchmark.extrinsic.id }} \
             --execution=Wasm \
             --wasm-execution=Compiled \
@@ -231,12 +132,12 @@ jobs:
             --repeat=${{ matrix.benchmark.iterations }} \
             --steps=50 \
             --template=.github/resources/frame-weight-template.hbs \
-            --output=${{ matrix.benchmark.pallet.name }}.rs
+            --output=${{ matrix.benchmark.extrinsic.name }}.rs
       -
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.benchmark.pallet.id }}-${{ matrix.benchmark.pallet.name }}.rs
-          path: ${{ github.workspace }}/${{ matrix.benchmark.pallet.name }}.rs
+          name: ${{ matrix.benchmark.pallet.id }}-${{ matrix.benchmark.extrinsic.name }}.rs
+          path: ${{ github.workspace }}/${{ matrix.benchmark.extrinsic.name }}.rs
 
   start-node-builder-current:
     runs-on: ubuntu-20.04
