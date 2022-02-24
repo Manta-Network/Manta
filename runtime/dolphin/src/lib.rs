@@ -809,8 +809,7 @@ impl manta_collator_selection::Config for Runtime {
 	type PotId = PotId;
 	type MaxCandidates = ConstU32<50>; // 50 candidates at most
 	type MaxInvulnerables = ConstU32<5>; // 5 invulnerables at most
-									 // should be a multiple of session or things will get inconsistent
-	type KickThreshold = Period;
+	type KickThreshold = Period; // should be a multiple of session or things will get inconsistent
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = manta_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;
