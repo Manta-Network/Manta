@@ -460,11 +460,11 @@ fn remove_collator_should_work() {
 #[test]
 fn increase_bond_after_register_candidate() {
 	// It's a corner case:
-	// 1. Set orignal bond as 100KMA.
+	// 1. Set orignal bond as 10KMA.
 	// 2. Register candidate.
-	// 3. increase bond to 150KMA.
+	// 3. Increase bond to 15KMA.
 	// 3. Unregister candidate.
-	// 4. The owner should get 100KMA back instead of 150KMA.
+	// 4. The owner should get 10KMA back instead of 15KMA.
 	// Increasing bond should not affect previous candidates.
 	new_test_ext().execute_with(|| {
 		// add candidate_1 by root
