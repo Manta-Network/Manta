@@ -14,7 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use frame_support::parameter_types;
+use frame_support::{
+	parameter_types,
+	traits::{ConstU32, ConstU64},
+};
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
@@ -49,7 +52,6 @@ frame_support::construct_runtime!(
 );
 
 parameter_types! {
-	pub const BlockHashCount: u64 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::simple_max(1024);
 }
@@ -57,7 +59,7 @@ impl frame_system::Config for Test {
 	type AccountData = pallet_balances::AccountData<Balance>;
 	type AccountId = AccountId;
 	type BaseCallFilter = frame_support::traits::Everything;
-	type BlockHashCount = BlockHashCount;
+	type BlockHashCount = ConstU64<250>;
 	type BlockLength = ();
 	type BlockNumber = BlockNumber;
 	type BlockWeights = ();
@@ -80,16 +82,13 @@ impl frame_system::Config for Test {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
-parameter_types! {
-	pub const MaxLocks: u32 = 10;
-}
 impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type Balance = Balance;
 	type DustRemoval = ();
 	type Event = Event;
 	type ExistentialDeposit = ExistentialDeposit;
-	type MaxLocks = MaxLocks;
+	type MaxLocks = ConstU32<10>;
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
 	type WeightInfo = ();
@@ -108,14 +107,13 @@ impl pallet_timestamp::Config for Test {
 parameter_types! {
 	pub const MinVestedTransfer: Balance = 2;
 	pub static ExistentialDeposit: Balance = 1;
-	pub const MaxScheduleLength: u32 = 6;
 }
 impl Config for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type Timestamp = Timestamp;
 	type MinVestedTransfer = MinVestedTransfer;
-	type MaxScheduleLength = MaxScheduleLength;
+	type MaxScheduleLength = ConstU32<6>;
 	type WeightInfo = ();
 }
 

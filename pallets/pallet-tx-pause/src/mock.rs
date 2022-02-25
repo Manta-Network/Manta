@@ -22,7 +22,10 @@
 #![cfg(test)]
 
 use super::*;
-use frame_support::{construct_runtime, ord_parameter_types, parameter_types};
+use frame_support::{
+	construct_runtime, ord_parameter_types, parameter_types,
+	traits::{ConstU32, ConstU64},
+};
 use frame_system::EnsureRoot;
 use manta_primitives::Balance;
 
@@ -34,10 +37,6 @@ pub const ALICE: AccountId = 1;
 
 mod tx_pause {
 	pub use super::super::*;
-}
-
-parameter_types! {
-	pub const BlockHashCount: u64 = 250;
 }
 
 // Don't allow permission-less asset creation.
@@ -64,7 +63,7 @@ impl frame_system::Config for Runtime {
 	type Lookup = IdentityLookup<AccountId>;
 	type Header = Header;
 	type Event = Event;
-	type BlockHashCount = BlockHashCount;
+	type BlockHashCount = ConstU64<250>;
 	type BlockWeights = ();
 	type BlockLength = ();
 	type Version = ();
@@ -82,7 +81,6 @@ impl frame_system::Config for Runtime {
 
 parameter_types! {
 	pub const NativeTokenExistentialDeposit: Balance = 10;
-	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -92,7 +90,7 @@ impl pallet_balances::Config for Runtime {
 	type ExistentialDeposit = NativeTokenExistentialDeposit;
 	type AccountStore = System;
 	type MaxLocks = ();
-	type MaxReserves = MaxReserves;
+	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = ();
 	type WeightInfo = ();
 }

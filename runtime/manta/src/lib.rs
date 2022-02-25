@@ -39,7 +39,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Contains, Currency, EnsureOneOf, Everything, Nothing},
+	traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, Everything, Nothing},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -236,26 +236,20 @@ impl pallet_timestamp::Config for Runtime {
 	type WeightInfo = weights::pallet_timestamp::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-	pub const UncleGenerations: u32 = 0;
-}
-
 impl pallet_authorship::Config for Runtime {
 	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-	type UncleGenerations = UncleGenerations;
+	type UncleGenerations = ConstU32<0>;
 	type FilterUncle = ();
 	type EventHandler = (CollatorSelection,);
 }
 
 parameter_types! {
 	pub const NativeTokenExistentialDeposit: u128 = MANTA;
-	pub const MaxLocks: u32 = 50;
-	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
-	type MaxLocks = MaxLocks;
-	type MaxReserves = MaxReserves;
+	type MaxLocks = ConstU32<50>;
+	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = [u8; 8];
 	type Balance = Balance;
 	type DustRemoval = ();
@@ -268,7 +262,6 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
 	pub const TransactionByteFee: Balance = mMANTA/10;
-	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -276,7 +269,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = WeightToFee;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
-	type OperationalFeeMultiplier = OperationalFeeMultiplier;
+	type OperationalFeeMultiplier = ConstU8<5>;
 }
 
 parameter_types! {
@@ -284,7 +277,6 @@ parameter_types! {
 	pub const DepositBase: Balance = deposit(1, 88);
 	// Additional storage item size of 32 bytes.
 	pub const DepositFactor: Balance = deposit(0, 32);
-	pub const MaxSignatories: u16 = 100;
 }
 
 impl pallet_multisig::Config for Runtime {
@@ -293,7 +285,7 @@ impl pallet_multisig::Config for Runtime {
 	type Currency = Balances;
 	type DepositBase = DepositBase;
 	type DepositFactor = DepositFactor;
-	type MaxSignatories = MaxSignatories;
+	type MaxSignatories = ConstU16<100>;
 	type WeightInfo = weights::pallet_multisig::SubstrateWeight<Runtime>;
 }
 
@@ -314,9 +306,6 @@ parameter_types! {
 	// dispatchables of less priority than schedule::HARD_DEADLINE.
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
 		RuntimeBlockWeights::get().max_block;
-	// The maximum number of scheduled calls in the queue for a single block.
-	// Not strictly enforced, but used for weight estimation.
-	pub const MaxScheduledPerBlock: u32 = 50;
 	pub const NoPreimagePostponement: Option<u32> = Some(10);
 }
 
@@ -328,7 +317,7 @@ impl pallet_scheduler::Config for Runtime {
 	type Call = Call;
 	type MaximumWeight = MaximumSchedulerWeight;
 	type ScheduleOrigin = ScheduleOrigin;
-	type MaxScheduledPerBlock = MaxScheduledPerBlock;
+	type MaxScheduledPerBlock = ConstU32<50>; // 50 scheduled calls at most in the queue for a single block.
 	type WeightInfo = weights::pallet_scheduler::SubstrateWeight<Runtime>;
 	type OriginPrivilegeCmp = frame_support::traits::EqualPrivilegeOnly;
 	type PreimageProvider = Preimage;
@@ -536,7 +525,6 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 parameter_types! {
 	pub const Period: u32 = 6 * HOURS;
 	pub const Offset: u32 = 0;
-	pub const MaxAuthorities: u32 = 100_000;
 }
 
 impl pallet_session::Config for Runtime {
@@ -557,17 +545,12 @@ impl pallet_session::Config for Runtime {
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
-	type MaxAuthorities = MaxAuthorities;
+	type MaxAuthorities = ConstU32<100_000>;
 }
 
 parameter_types! {
 	// Pallet account for record rewards and give rewards to collator.
 	pub const PotId: PalletId = PalletId(*b"PotStake");
-	// How many collator candidates is allowed.
-	pub const MaxCandidates: u32 = 50;
-	pub const MinCandidates: u32 = 3;
-	// How many collators who cannot be slashed.
-	pub const MaxInvulnerables: u32 = 5;
 }
 
 parameter_types! {
@@ -583,11 +566,10 @@ impl pallet_collator_selection::Config for Runtime {
 	type Currency = Balances;
 	type UpdateOrigin = CollatorSelectionUpdateOrigin;
 	type PotId = PotId;
-	type MaxCandidates = MaxCandidates;
-	type MinCandidates = MinCandidates;
-	type MaxInvulnerables = MaxInvulnerables;
-	// should be a multiple of session or things will get inconsistent
-	type KickThreshold = Period;
+	type MaxCandidates = ConstU32<50>; // 50 candidates at most
+	type MinCandidates = ConstU32<3>; // 3 candidates at least
+	type MaxInvulnerables = ConstU32<5>; // 5 invulnerables at most
+	type KickThreshold = Period; // should be a multiple of session or things will get inconsistent
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;
