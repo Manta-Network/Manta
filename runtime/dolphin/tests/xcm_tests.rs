@@ -22,7 +22,7 @@ use codec::Encode;
 use frame_support::{assert_ok, weights::constants::WEIGHT_PER_SECOND};
 use manta_primitives::AssetLocation;
 use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
-use xcm_mock::{*, parachain::PALLET_ASSET_INDEX};
+use xcm_mock::{parachain::PALLET_ASSET_INDEX, *};
 use xcm_simulator::TestExt;
 
 use crate::xcm_mock::parachain::{AssetManager, ParaTokenPerSecond};
@@ -305,9 +305,9 @@ fn send_para_a_native_asset_to_para_b() {
 	MockNet::reset();
 
 	// We use an opinioned source location here:
-	// Ideally, we could use `here()`, however, we always prefer to use the location from 
+	// Ideally, we could use `here()`, however, we always prefer to use the location from
 	// `root` when possible.
-	let source_location= AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
 		X1(Parachain(1)),
 	)));
@@ -397,7 +397,7 @@ fn send_para_a_native_asset_to_para_b() {
 }
 
 #[test]
-fn send_para_a_custom_asset_to_para_b(){
+fn send_para_a_custom_asset_to_para_b() {
 	let a_currency_id: u32 = 0;
 	let amount = 321;
 	let asset_metadata = parachain::AssetRegistarMetadata {
@@ -410,14 +410,15 @@ fn send_para_a_custom_asset_to_para_b(){
 		is_sufficient: true,
 	};
 
-	let source_location = AssetLocation(VersionedMultiLocation::V1(
-		MultiLocation::new(
-			1, 
-			X3(
-				Parachain(1), 
-				PalletInstance(PALLET_ASSET_INDEX), 
-				GeneralIndex(0)))));
-	
+	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+		1,
+		X3(
+			Parachain(1),
+			PalletInstance(PALLET_ASSET_INDEX),
+			GeneralIndex(0),
+		),
+	)));
+
 	// register a_currency in ParaA, ParaB
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::AssetManager::register_asset(
@@ -428,14 +429,15 @@ fn send_para_a_custom_asset_to_para_b(){
 		// we have to do this in order to mint asset to alice on A
 		assert_ok!(parachain::Assets::force_asset_status(
 			parachain::Origin::root(),
-			0, 
-			ALICE.into(), 
-			ALICE.into(), 
-			ALICE.into(), 
-			ALICE.into(), 
-			1, 
-			true, 
-			false,));
+			0,
+			ALICE.into(),
+			ALICE.into(),
+			ALICE.into(),
+			ALICE.into(),
+			1,
+			true,
+			false,
+		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
 			a_currency_id,
@@ -504,8 +506,6 @@ fn send_para_a_custom_asset_to_para_b(){
 			amount
 		);
 	});
-
-	
 }
 
 #[test]
@@ -513,10 +513,10 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 	MockNet::reset();
 
 	// para a native asset location
-	let source_location = AssetLocation(VersionedMultiLocation::V1(
-		MultiLocation::new(
-			1,
-			X1(Parachain(1)))));
+	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+		1,
+		X1(Parachain(1)),
+	)));
 	// a's currency id in para a, para b, and para c
 	let a_currency_id = 0u32;
 	let amount = 5000u128;
@@ -648,7 +648,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 	let amount = 8888u128;
 	let weight = 800_000u64;
 	let fee_at_reserve = calculate_fee(ParaTokenPerSecond::get().1, weight);
-	assert!(amount >= fee_at_reserve*2 as u128);
+	assert!(amount >= fee_at_reserve * 2 as u128);
 
 	let asset_metadata = parachain::AssetRegistarMetadata {
 		name: b"ParaAToken".to_vec(),
@@ -853,7 +853,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 	MockNet::reset();
 
 	// para a balance location
-	let source_location  = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
 		X1(Parachain(1)),
 	)));
@@ -1037,7 +1037,7 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 		),
 	};
 
-	assert!(amount>=fee_at_b);
+	assert!(amount >= fee_at_b);
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
@@ -1072,7 +1072,7 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 		),
 	};
 
-	assert!(amount>= fee_at_b + fee_at_a);
+	assert!(amount >= fee_at_b + fee_at_a);
 	ParaB::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),

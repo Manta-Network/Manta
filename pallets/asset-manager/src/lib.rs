@@ -37,7 +37,7 @@ mod tests;
 #[frame_support::pallet]
 pub mod pallet {
 
-	use codec::{Codec};
+	use codec::Codec;
 	use frame_support::{pallet_prelude::*, transactional, PalletId};
 	use frame_system::pallet_prelude::*;
 	use manta_primitives::{AssetIdLocationGetter, UnitsToWeightRatio};
@@ -60,7 +60,7 @@ pub mod pallet {
 	/// should be rare.
 	pub trait AssetRegistrar<T: Config> {
 		/// Create an new asset.
-		/// 
+		///
 		/// * `asset_id`: the asset id to be created
 		/// * `min_balance`: the minimum balance to hold this asset
 		/// * `metadata`: the metadata that the implementation layer stores
@@ -74,7 +74,7 @@ pub mod pallet {
 		) -> DispatchResult;
 
 		/// Update asset metadata by `AssetId`.
-		/// 
+		///
 		/// * `asset_id`: the asset id to be created.
 		/// * `metadata`: the metadata that the implementation layer stores.
 		fn update_asset_metadata(
@@ -173,8 +173,8 @@ pub mod pallet {
 		UnitsPerSecondUpdated {
 			asset_id: T::AssetId,
 			units_per_second: u128,
-		},	
-}
+		},
+	}
 
 	/// Error.
 	#[pallet::error]

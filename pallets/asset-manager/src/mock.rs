@@ -21,18 +21,18 @@
 
 use super::*;
 use crate as pallet_asset_manager;
+use frame_support::{construct_runtime, parameter_types, traits::ConstU32};
 use frame_system as system;
-use frame_support::{
-	construct_runtime, parameter_types, traits::ConstU32};
 use frame_system::EnsureRoot;
+use manta_primitives::{
+	AccountId, AssetId, AssetLocation, AssetRegistarMetadata, AssetStorageMetadata, Balance,
+	ASSET_STRING_LIMIT,
+};
 use sp_core::H256;
 use sp_runtime::{
-	testing::{Header},
+	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
-use manta_primitives::{AccountId, AssetId, AssetLocation, Balance, 
-	AssetRegistarMetadata, AssetStorageMetadata, ASSET_STRING_LIMIT};
-
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -137,10 +137,7 @@ impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
 		)
 	}
 
-	fn update_asset_metadata(
-		asset_id: AssetId,
-		metadata: AssetStorageMetadata,
-	) -> DispatchResult {
+	fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
 		Assets::force_set_metadata(
 			Origin::root(),
 			asset_id,
@@ -160,7 +157,6 @@ impl AssetMetadata<Runtime> for AssetRegistarMetadata<Balance> {
 	fn is_sufficient(&self) -> bool {
 		self.is_sufficient
 	}
-
 }
 
 impl pallet_asset_manager::Config for Runtime {
@@ -190,11 +186,11 @@ construct_runtime!(
 	}
 );
 
-pub const PALLET_BALANCES_INDEX:u8 = 3;
+pub const PALLET_BALANCES_INDEX: u8 = 3;
 
-pub fn new_test_ext() -> sp_io::TestExternalities{
+pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = frame_system::GenesisConfig::default()
-			.build_storage::<Runtime>()
-			.unwrap();
+		.build_storage::<Runtime>()
+		.unwrap();
 	sp_io::TestExternalities::new(t)
 }

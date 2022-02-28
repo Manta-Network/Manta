@@ -19,13 +19,13 @@
 use codec::{Decode, Encode};
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{Everything, Nothing, ConstU32},
+	traits::{ConstU32, Everything, Nothing},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 use frame_system::EnsureRoot;
 use pallet_asset_manager::AssetMetadata;
 use scale_info::TypeInfo;
-use sp_core::{H256};
+use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{Hash, IdentityLookup},
@@ -33,7 +33,9 @@ use sp_runtime::{
 };
 use sp_std::{convert::TryFrom, prelude::*};
 
-use manta_primitives::{AssetIdLocationConvert, AssetLocation, FirstAssetTrader, MultiNativeAsset, IsNativeConcrete};
+use manta_primitives::{
+	AssetIdLocationConvert, AssetLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset,
+};
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain::primitives::{
@@ -50,7 +52,7 @@ use xcm_builder::{
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::Get;
 
-pub use manta_primitives::{AssetId, AssetStorageMetadata, AssetRegistarMetadata};
+pub use manta_primitives::{AssetId, AssetRegistarMetadata, AssetStorageMetadata};
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 
@@ -512,11 +514,8 @@ impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
 			metadata.is_frozen,
 		)
 	}
-	
-	fn update_asset_metadata(
-		asset_id: AssetId,
-		metadata: AssetStorageMetadata,
-	) -> DispatchResult {
+
+	fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
 		Assets::force_set_metadata(
 			Origin::root(),
 			asset_id,

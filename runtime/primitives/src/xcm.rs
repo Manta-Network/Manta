@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use sp_runtime::traits::{Convert, Zero, CheckedConversion};
+use sp_runtime::traits::{CheckedConversion, Convert, Zero};
 use sp_std::marker::PhantomData;
 
 use frame_support::{
@@ -25,17 +25,17 @@ use frame_support::{
 
 use crate::{AssetIdLocationGetter, UnitsToWeightRatio};
 use xcm::{
-	latest::Error as XcmError,
-	latest::prelude::Concrete,
+	latest::{prelude::Concrete, Error as XcmError},
 	v1::{
-		AssetId as xcmAssetId, Fungibility, Fungibility::*,
+		AssetId as xcmAssetId, Fungibility,
+		Fungibility::*,
 		Junction::{AccountId32, Parachain},
 		Junctions::*,
 		MultiAsset, MultiLocation, NetworkId,
 	},
 };
 use xcm_builder::TakeRevenue;
-use xcm_executor::traits::{FilterAssetLocation, MatchesFungibles, WeightTrader, MatchesFungible};
+use xcm_executor::traits::{FilterAssetLocation, MatchesFungible, MatchesFungibles, WeightTrader};
 
 pub trait Reserve {
 	/// Returns assets reserve location.
@@ -94,7 +94,7 @@ pub struct FirstAssetTrader<
 	AssetLocation: From<MultiLocation> + Clone,
 	AssetIdInfoGetter: UnitsToWeightRatio<AssetId> + AssetIdLocationGetter<AssetId, AssetLocation>,
 	R: TakeRevenue,
->{
+> {
 	weight: Weight,
 	refund_cache: Option<(MultiLocation, u128, u128)>,
 	__: sp_std::marker::PhantomData<(AssetId, AssetLocation, AssetIdInfoGetter, R)>,
@@ -108,10 +108,10 @@ impl<
 	> WeightTrader for FirstAssetTrader<AssetId, AssetLocation, AssetIdInfoGetter, R>
 {
 	fn new() -> Self {
-		FirstAssetTrader{
-			weight: Zero::zero(), 
-			refund_cache: None, 
-			__: sp_std::marker::PhantomData
+		FirstAssetTrader {
+			weight: Zero::zero(),
+			refund_cache: None,
+			__: sp_std::marker::PhantomData,
 		}
 	}
 
@@ -232,7 +232,8 @@ impl<
 		match Matcher::matches_fungibles(&revenue) {
 			Ok((asset_id, amount)) => {
 				if !amount.is_zero() {
-					Assets::mint_into(asset_id, &ReceiverAccount::get(), amount).expect("`mint_into` cannot generally fail; qed");
+					Assets::mint_into(asset_id, &ReceiverAccount::get(), amount)
+						.expect("`mint_into` cannot generally fail; qed");
 				}
 			}
 			Err(_) => log::debug!(
@@ -246,8 +247,8 @@ impl<
 /// Manta's `MatchFungible` implementation.
 /// It resolves the reanchoring logic as well, i.e. it recognize `here()` as
 /// `../parachain(id)`.
-/// `T` should specify a `SelfLocation` in the form of absolute path to the 
-/// relaychain. 
+/// `T` should specify a `SelfLocation` in the form of absolute path to the
+/// relaychain.
 pub struct IsNativeConcrete<T>(PhantomData<T>);
 impl<T, Balance> MatchesFungible<Balance> for IsNativeConcrete<T>
 where
@@ -256,12 +257,10 @@ where
 {
 	fn matches_fungible(a: &MultiAsset) -> Option<Balance> {
 		if let (Fungible(ref amount), Concrete(ref location)) = (&a.fun, &a.id) {
-			if location == &T::get() || MultiLocation::is_here(location){
+			if location == &T::get() || MultiLocation::is_here(location) {
 				return CheckedConversion::checked_from(*amount);
 			}
 		}
 		None
 	}
 }
-
-

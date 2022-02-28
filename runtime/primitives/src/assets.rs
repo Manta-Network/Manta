@@ -16,8 +16,8 @@
 
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
-use sp_std::{borrow::Borrow, prelude::Vec, marker::PhantomData};
-use sp_core::{H160};
+use sp_core::H160;
+use sp_std::{borrow::Borrow, marker::PhantomData, prelude::Vec};
 
 ///! Manta/Calamari/Dolphin Asset
 use xcm::{
@@ -44,7 +44,7 @@ pub struct AssetRegistarMetadata<Balance> {
 }
 
 /// Asset storage metadata
-/// Currently, `AssetStorageMetadata` is stored at `pallet-asset`. 
+/// Currently, `AssetStorageMetadata` is stored at `pallet-asset`.
 #[derive(Clone, Default, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
 pub struct AssetStorageMetadata {
 	pub name: Vec<u8>,
@@ -89,12 +89,12 @@ impl From<MultiLocation> for AssetLocation {
 /// Convert an `AssetLocation` to a MultiLocation
 /// If Native, return none.
 impl From<AssetLocation> for Option<MultiLocation> {
-    fn from(location: AssetLocation) -> Self {
-        match location {
-            AssetLocation(VersionedMultiLocation::V1(location)) => Some(location),
-            _ => None,
-        }
-    }
+	fn from(location: AssetLocation) -> Self {
+		match location {
+			AssetLocation(VersionedMultiLocation::V1(location)) => Some(location),
+			_ => None,
+		}
+	}
 }
 
 /// Defines the trait to obtain a generic AssetId
@@ -129,6 +129,8 @@ where
 	}
 
 	fn reverse_ref(id: impl Borrow<AssetId>) -> Result<MultiLocation, ()> {
-		AssetInfoGetter::get_asset_location(id.borrow().clone()).and_then(Into::into).ok_or(())
+		AssetInfoGetter::get_asset_location(id.borrow().clone())
+			.and_then(Into::into)
+			.ok_or(())
 	}
 }

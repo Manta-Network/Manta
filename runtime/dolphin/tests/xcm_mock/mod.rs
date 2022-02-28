@@ -17,10 +17,10 @@
 pub mod parachain;
 pub mod relay_chain;
 
+use frame_support::traits::GenesisBuild;
 use polkadot_parachain::primitives::Id as ParaId;
 use sp_runtime::traits::AccountIdConversion;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
-use frame_support::traits::GenesisBuild;
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
 pub const INITIAL_BALANCE: u128 = 10_000_000_000_000_000;
 
@@ -90,8 +90,11 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
 	let parachain_info_config = parachain_info::GenesisConfig {
 		parachain_id: para_id.into(),
 	};
-	<parachain_info::GenesisConfig as GenesisBuild<Runtime, _>>::assimilate_storage(&parachain_info_config, &mut t)
-		.unwrap();
+	<parachain_info::GenesisConfig as GenesisBuild<Runtime, _>>::assimilate_storage(
+		&parachain_info_config,
+		&mut t,
+	)
+	.unwrap();
 
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| {
