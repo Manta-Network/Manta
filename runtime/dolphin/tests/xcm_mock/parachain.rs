@@ -33,7 +33,7 @@ use sp_runtime::{
 };
 use sp_std::{convert::TryFrom, prelude::*};
 
-use manta_primitives::{AssetIdLocationConvert, AssetLocation, FirstAssetTrader, MultiNativeAsset};
+use manta_primitives::{AssetIdLocationConvert, AssetLocation, FirstAssetTrader, MultiNativeAsset, IsNativeConcrete};
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain::primitives::{
@@ -43,7 +43,7 @@ use xcm::{latest::prelude::*, Version as XcmVersion, VersionedXcm};
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
 	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
-	FungiblesAdapter, IsConcrete, LocationInverter, ParentIsDefault, SiblingParachainAsNative,
+	FungiblesAdapter, LocationInverter, ParentIsDefault, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
 	SovereignSignedViaLocation,
 };
@@ -175,7 +175,8 @@ parameter_types! {
 	pub const UnitWeightCost: Weight = 1;
 	// Used in native traders
 	// This might be able to skipped.
-	pub ParaTokenPerSecond: (xcm::v1::AssetId, u128) = (Concrete(SelfReserve::get()), 1_000_000_000);
+	// We have to use `here()` because of reanchoring logic
+	pub ParaTokenPerSecond: (xcm::v1::AssetId, u128) = (Concrete(MultiLocation::here()), 1_000_000_000);
 	pub const MaxInstructions: u32 = 100;
 }
 
@@ -183,7 +184,7 @@ parameter_types! {
 pub type LocalAssetTransactor = XcmCurrencyAdapter<
 	// Transacting native currency, i.e. MANTA, KMA, DOL
 	Balances,
-	IsConcrete<SelfReserve>,
+	IsNativeConcrete<SelfReserve>,
 	LocationToAccountId,
 	AccountId,
 	(),

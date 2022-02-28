@@ -7,7 +7,7 @@ use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion}
 use xcm_mock::{*, parachain::PALLET_ASSET_INDEX};
 use xcm_simulator::TestExt;
 
-use crate::xcm_mock::parachain::AssetManager;
+use crate::xcm_mock::parachain::{AssetManager, ParaTokenPerSecond};
 
 // `reserved_transfer_asset` contains the following 4 instructions
 //  1. ReserveAssetDeposited(assets.clone()),
@@ -501,7 +501,10 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 			X1(Parachain(1)))));
 	// a's currency id in para a, para b, and para c
 	let a_currency_id = 0u32;
-	let amount = 321u128;
+	let amount = 5000u128;
+	let weight = 800000u64;
+	let fee_on_b_when_send_back = calculate_fee(ParaTokenPerSecond::get().1, weight);
+	assert!(fee_on_b_when_send_back < amount);
 
 	let asset_metadata = parachain::AssetRegistarMetadata {
 		name: b"ParaAToken".to_vec(),
@@ -609,7 +612,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 	ParaA::execute_with(|| {
 		assert_eq!(
 			parachain::Balances::free_balance(&ALICE.into()),
-			INITIAL_BALANCE
+			INITIAL_BALANCE - fee_on_b_when_send_back
 		)
 	});
 }
@@ -619,13 +622,15 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 	MockNet::reset();
 
 	// para a asset location
-	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::here()));
-	let source_location_reanchored = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
 		X1(Parachain(1)),
 	)));
 	let a_currency_id = 0u32;
-	let amount = 888u128;
+	let amount = 8888u128;
+	let weight = 800_000u64;
+	let fee_at_reserve = calculate_fee(ParaTokenPerSecond::get().1, weight);
+	assert!(amount >= fee_at_reserve*2 as u128);
 
 	let asset_metadata = parachain::AssetRegistarMetadata {
 		name: b"ParaAToken".to_vec(),
@@ -659,7 +664,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 	ParaB::execute_with(|| {
 		assert_ok!(parachain::AssetManager::register_asset(
 			parachain::Origin::root(),
-			source_location_reanchored.clone(),
+			source_location.clone(),
 			asset_metadata.clone()
 		));
 		assert_ok!(AssetManager::set_units_per_second(
@@ -669,14 +674,14 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 		));
 		assert_eq!(
 			Some(a_currency_id),
-			parachain::AssetManager::location_asset_id(source_location_reanchored.clone())
+			parachain::AssetManager::location_asset_id(source_location.clone())
 		);
 	});
 
 	ParaC::execute_with(|| {
 		assert_ok!(parachain::AssetManager::register_asset(
 			parachain::Origin::root(),
-			source_location_reanchored.clone(),
+			source_location.clone(),
 			asset_metadata.clone()
 		));
 		assert_ok!(AssetManager::set_units_per_second(
@@ -686,7 +691,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 		));
 		assert_eq!(
 			Some(a_currency_id),
-			parachain::AssetManager::location_asset_id(source_location_reanchored.clone())
+			parachain::AssetManager::location_asset_id(source_location.clone())
 		);
 	});
 
@@ -742,7 +747,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 			parachain::CurrencyId::MantaCurrency(a_currency_id),
 			amount,
 			Box::new(VersionedMultiLocation::V1(alice_on_c)),
-			800000
+			weight,
 		));
 		assert_eq!(parachain::Assets::balance(a_currency_id, &ALICE.into()), 0);
 	});
@@ -752,7 +757,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 		// free execution, full amount received
 		assert_eq!(
 			parachain::Assets::balance(a_currency_id, &ALICE.into()),
-			amount
+			amount - fee_at_reserve
 		);
 	});
 }
@@ -830,8 +835,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 	MockNet::reset();
 
 	// para a balance location
-	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::here()));
-	let source_location_reanchored = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+	let source_location  = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
 		X1(Parachain(1)),
 	)));
@@ -874,7 +878,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 	ParaB::execute_with(|| {
 		assert_ok!(AssetManager::register_asset(
 			parachain::Origin::root(),
-			source_location_reanchored.clone(),
+			source_location.clone(),
 			asset_metadata.clone()
 		));
 		assert_ok!(AssetManager::set_units_per_second(
@@ -884,7 +888,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 		));
 		assert_eq!(
 			Some(a_currency_id),
-			AssetManager::location_asset_id(source_location_reanchored.clone())
+			AssetManager::location_asset_id(source_location.clone())
 		);
 	});
 
@@ -928,17 +932,16 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 	MockNet::reset();
 
 	// para a balance location
-	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::here()));
-	let source_location_reanchored = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
 		X1(Parachain(1)),
 	)));
 	let a_currency_id = 0u32;
-	let mut amount = 888u128;
-	let units_per_second = 1_250_000u128;
+	let mut amount = 8888u128;
+	let units_per_second_at_b = 1_250_000u128;
 	let dest_weight = 800_000u64;
-	let fee = calculate_fee(units_per_second, dest_weight);
-
+	let fee_at_b = calculate_fee(units_per_second_at_b, dest_weight);
+	let fee_at_a = calculate_fee(ParaTokenPerSecond::get().1, dest_weight);
 	let asset_metadata = parachain::AssetRegistarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
@@ -955,7 +958,6 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::AssetManager::register_asset(
 			parachain::Origin::root(),
-			// we need to change this on/after v0.9.16
 			source_location.clone(),
 			asset_metadata.clone()
 		));
@@ -974,34 +976,34 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 	ParaB::execute_with(|| {
 		assert_ok!(parachain::AssetManager::register_asset(
 			parachain::Origin::root(),
-			source_location_reanchored.clone(),
+			source_location.clone(),
 			asset_metadata.clone()
 		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
 			a_currency_id,
-			units_per_second
+			units_per_second_at_b
 		));
 		assert_eq!(
 			Some(a_currency_id),
-			parachain::AssetManager::location_asset_id(source_location_reanchored.clone())
+			parachain::AssetManager::location_asset_id(source_location.clone())
 		);
 	});
 
 	ParaC::execute_with(|| {
 		assert_ok!(parachain::AssetManager::register_asset(
 			parachain::Origin::root(),
-			source_location_reanchored.clone(),
+			source_location.clone(),
 			asset_metadata.clone()
 		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
 			a_currency_id,
-			units_per_second
+			units_per_second_at_b
 		));
 		assert_eq!(
 			Some(a_currency_id),
-			parachain::AssetManager::location_asset_id(source_location_reanchored.clone())
+			parachain::AssetManager::location_asset_id(source_location.clone())
 		);
 	});
 
@@ -1017,6 +1019,7 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 		),
 	};
 
+	assert!(amount>=fee_at_b);
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
@@ -1032,7 +1035,7 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 	});
 
 	ParaB::execute_with(|| {
-		amount = amount - fee;
+		amount = amount - fee_at_b;
 		assert_eq!(
 			parachain::Assets::balance(a_currency_id, &ALICE.into()),
 			amount
@@ -1051,6 +1054,7 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 		),
 	};
 
+	assert!(amount>= fee_at_b + fee_at_a);
 	ParaB::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
@@ -1064,7 +1068,7 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 
 	// Make sure C received the token
 	ParaC::execute_with(|| {
-		amount = amount - fee;
+		amount = amount - fee_at_b - fee_at_a;
 		assert_eq!(
 			parachain::Assets::balance(a_currency_id, &ALICE.into()),
 			amount
@@ -1198,8 +1202,7 @@ fn send_para_a_asset_to_para_b_with_insufficient_fee() {
 	MockNet::reset();
 
 	// para a balance location
-	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::here()));
-	let source_location_reanchored = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
 		X1(Parachain(1)),
 	)));
@@ -1243,7 +1246,7 @@ fn send_para_a_asset_to_para_b_with_insufficient_fee() {
 	ParaB::execute_with(|| {
 		assert_ok!(AssetManager::register_asset(
 			parachain::Origin::root(),
-			source_location_reanchored.clone(),
+			source_location.clone(),
 			asset_metadata.clone()
 		));
 		assert_ok!(AssetManager::set_units_per_second(
@@ -1253,7 +1256,7 @@ fn send_para_a_asset_to_para_b_with_insufficient_fee() {
 		));
 		assert_eq!(
 			Some(a_currency_id),
-			AssetManager::location_asset_id(source_location_reanchored.clone())
+			AssetManager::location_asset_id(source_location.clone())
 		);
 	});
 
@@ -1294,8 +1297,7 @@ fn send_para_a_asset_to_para_b_without_specifying_units_per_second() {
 	MockNet::reset();
 
 	// para a balance location
-	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::here()));
-	let source_location_reanchored = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
 		X1(Parachain(1)),
 	)));
@@ -1337,12 +1339,12 @@ fn send_para_a_asset_to_para_b_without_specifying_units_per_second() {
 	ParaB::execute_with(|| {
 		assert_ok!(AssetManager::register_asset(
 			parachain::Origin::root(),
-			source_location_reanchored.clone(),
+			source_location.clone(),
 			asset_metadata.clone()
 		));
 		assert_eq!(
 			Some(a_currency_id),
-			AssetManager::location_asset_id(source_location_reanchored.clone())
+			AssetManager::location_asset_id(source_location.clone())
 		);
 	});
 
@@ -1769,8 +1771,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 	MockNet::reset();
 
 	// para a balance location
-	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::here()));
-	let source_location_reanchored = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
 		X1(Parachain(1)),
 	)));
@@ -1823,7 +1824,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 
 		assert_ok!(AssetManager::register_asset(
 			parachain::Origin::root(),
-			source_location_reanchored,
+			source_location,
 			asset_metadata
 		));
 		assert_ok!(AssetManager::set_units_per_second(
