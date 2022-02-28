@@ -257,7 +257,7 @@ pub mod pallet {
 			)
 			.map_err(|_| Error::<T>::ErrorCreatingAsset)?;
 			AssetIdLocation::<T>::insert(&asset_id, &location);
-			AssetIdMetadata::<T>::insert(&asset_id, &metadata.clone());
+			AssetIdMetadata::<T>::insert(&asset_id, &metadata);
 			LocationAssetId::<T>::insert(&location, &asset_id);
 			Self::deposit_event(Event::<T>::AssetRegistered {
 				asset_id,
@@ -301,7 +301,7 @@ pub mod pallet {
 			// deposit event.
 			Self::deposit_event(Event::<T>::AssetLocationUpdated {
 				asset_id,
-				location: location,
+				location,
 			});
 			Ok(())
 		}
