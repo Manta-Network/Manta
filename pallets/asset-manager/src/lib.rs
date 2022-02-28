@@ -65,7 +65,11 @@ pub mod pallet {
 		/// * `min_balance`: the minimum balance to hold this asset
 		/// * `metadata`: the metadata that the implementation layer stores
 		/// * `is_sufficient`: whether this asset can be used as reserve asset,
-		/// 	to the first approximation
+		/// 	to the first approximation. More specifically, Whether a non-zero balance of this asset is deposit of sufficient
+		/// 	value to account for the state bloat associated with its balance storage. If set to
+		/// 	`true`, then non-zero balances may be stored without a `consumer` reference (and thus
+		/// 	an ED in the Balances pallet or whatever else is used to control user-account state
+		/// 	growth).
 		fn create_asset(
 			asset_id: T::AssetId,
 			min_balance: T::Balance,
