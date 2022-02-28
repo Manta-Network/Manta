@@ -82,8 +82,6 @@ fn slow_governance_works() {
 	let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
 
 	ExtBuilder::default().build().execute_with(|| {
-		set_parachain_inherent_data();
-
 		// Setup the preimage and preimage hash
 		let preimage_hash = note_preimage(&alice);
 
@@ -159,8 +157,6 @@ fn fast_track_governance_works() {
 	let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
 
 	ExtBuilder::default().build().execute_with(|| {
-		set_parachain_inherent_data();
-
 		// Setup the preimage and preimage hash
 		let preimage_hash = note_preimage(&alice);
 
@@ -262,8 +258,6 @@ fn governance_filters_work() {
 	let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
 
 	ExtBuilder::default().build().execute_with(|| {
-		set_parachain_inherent_data();
-
 		// Setup the preimage and preimage hash
 		let preimage_hash = note_preimage(&alice);
 
@@ -345,7 +339,6 @@ fn balances_operations_should_work() {
 		.with_collators(vec![alice.clone()])
 		.build()
 		.execute_with(|| {
-			set_parachain_inherent_data();
 			let transfer = 10 * KMA;
 
 			// Basic transfer should work
@@ -448,8 +441,6 @@ fn reward_fees_to_block_author_and_treasury() {
 		.with_collators(vec![alice.clone()])
 		.build()
 		.execute_with(|| {
-			set_parachain_inherent_data();
-
 			let author = alice.clone();
 			let mut header = seal_header(
 				Header::new(

@@ -19,6 +19,7 @@
 #![allow(clippy::upper_case_acronyms)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(feature = "std")]
 pub mod helpers;
 
 pub mod constants;

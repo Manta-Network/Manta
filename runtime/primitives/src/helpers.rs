@@ -1,5 +1,3 @@
-#![cfg(feature = "std")]
-
 use super::*;
 use sp_core::{Pair, Public};
 
