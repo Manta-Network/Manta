@@ -21,8 +21,8 @@ use common::*;
 
 pub use calamari_runtime::{
 	currency::KMA, Authorship, Balances, CalamariVesting, Council, Democracy,
-	NativeTokenExistentialDeposit, Origin, PolkadotXcm, Runtime, TechnicalCommittee, Timestamp,
-	Treasury,
+	NativeTokenExistentialDeposit, Origin, PolkadotXcm, Runtime, Sudo, TechnicalCommittee,
+	Timestamp, Treasury, Utility,
 };
 
 use frame_support::{
@@ -54,8 +54,7 @@ fn fast_track_available() {
 	assert!(<calamari_runtime::Runtime as pallet_democracy::Config>::InstantAllowed::get());
 }
 
-fn note_preimage(proposer: &AccountId) -> H256 {
-	let proposal_call = Call::System(frame_system::Call::remark { remark: vec![0] });
+fn note_preimage(proposer: &AccountId, proposal_call: &Call) -> H256 {
 	let preimage = proposal_call.encode();
 	let preimage_hash = BlakeTwo256::hash(&preimage[..]);
 	assert_ok!(Democracy::note_preimage(
@@ -83,7 +82,10 @@ fn slow_governance_works() {
 
 	ExtBuilder::default().build().execute_with(|| {
 		// Setup the preimage and preimage hash
-		let preimage_hash = note_preimage(&alice);
+		let preimage_hash = note_preimage(
+			&alice,
+			&Call::System(frame_system::Call::remark { remark: vec![0] }),
+		);
 
 		// Setup the Council
 		assert_ok!(Council::set_members(
@@ -158,7 +160,10 @@ fn fast_track_governance_works() {
 
 	ExtBuilder::default().build().execute_with(|| {
 		// Setup the preimage and preimage hash
-		let preimage_hash = note_preimage(&alice);
+		let preimage_hash = note_preimage(
+			&alice,
+			&Call::System(frame_system::Call::remark { remark: vec![0] }),
+		);
 
 		// Setup the Council and Technical Committee
 		assert_ok!(Council::set_members(
@@ -259,7 +264,10 @@ fn governance_filters_work() {
 
 	ExtBuilder::default().build().execute_with(|| {
 		// Setup the preimage and preimage hash
-		let preimage_hash = note_preimage(&alice);
+		let preimage_hash = note_preimage(
+			&alice,
+			&Call::System(frame_system::Call::remark { remark: vec![0] }),
+		);
 
 		// Public proposals should be filtered out.
 		let public_proposal_call = Call::Democracy(pallet_democracy::Call::propose {
@@ -336,7 +344,7 @@ fn balances_operations_should_work() {
 			(dave.clone(), initial_balance),
 		])
 		.with_authorities(vec![(alice.clone(), get_collator_keys_from_seed("Alice"))])
-		.with_collators(vec![alice.clone()])
+		.with_collators(vec![alice.clone()], 0)
 		.build()
 		.execute_with(|| {
 			let transfer = 10 * KMA;
@@ -438,7 +446,7 @@ fn reward_fees_to_block_author_and_treasury() {
 			(charlie.clone(), initial_balance),
 		])
 		.with_authorities(vec![(alice.clone(), get_collator_keys_from_seed("Alice"))])
-		.with_collators(vec![alice.clone()])
+		.with_collators(vec![alice.clone()], 0)
 		.build()
 		.execute_with(|| {
 			let author = alice.clone();
@@ -575,6 +583,79 @@ fn session_and_collator_selection_work() {
 			run_to_block(7200);
 			// Bob was removed as a collator.
 			assert_eq!(Session::validators().len(), 1);
+		});
+}
+
+#[test]
+fn batched_registration_of_collator_candidates_works() {
+	let initial_balance = 1_000_000_0000 * KMA;
+	let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+	let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
+	let charlie = get_account_id_from_seed::<sr25519::Public>("Charlie");
+	let desired_candidates = 2;
+	ExtBuilder::default()
+		.with_balances(vec![
+			(alice.clone(), initial_balance),
+			(bob.clone(), initial_balance),
+			(charlie.clone(), initial_balance),
+		])
+		.with_collators(vec![alice.clone()], desired_candidates)
+		.build()
+		.execute_with(|| {
+			let keys = calamari_runtime::opaque::SessionKeys {
+				aura: get_collator_keys_from_seed("Bob"),
+			};
+			assert_ok!(Session::set_keys(Origin::signed(bob.clone()), keys, vec![]));
+
+			let keys = calamari_runtime::opaque::SessionKeys {
+				aura: get_collator_keys_from_seed("Charlie"),
+			};
+			assert_ok!(Session::set_keys(
+				Origin::signed(charlie.clone()),
+				keys,
+				vec![]
+			));
+
+			assert_eq!(CollatorSelection::candidates(), vec![]);
+
+			assert_ok!(Utility::batch(
+				root_origin(),
+				vec![
+					Call::CollatorSelection(manta_collator_selection::Call::register_candidate {
+						new_candidate: bob.clone(),
+					}),
+					Call::CollatorSelection(manta_collator_selection::Call::register_candidate {
+						new_candidate: charlie.clone(),
+					}),
+				],
+			));
+
+			let candidate_bob = manta_collator_selection::CandidateInfo {
+				who: bob.clone(),
+				deposit: 1_000 * KMA,
+			};
+			let candidate_charlie = manta_collator_selection::CandidateInfo {
+				who: charlie.clone(),
+				deposit: 1_000 * KMA,
+			};
+			assert_eq!(
+				CollatorSelection::candidates(),
+				vec![candidate_bob, candidate_charlie]
+			);
+			assert_eq!(Session::queued_keys().len(), 1);
+			assert_eq!(Session::validators().len(), 1);
+
+			// Advance session
+			run_to_block(1800);
+
+			assert_eq!(Session::queued_keys().len(), 3);
+			assert_eq!(Session::validators().len(), 1);
+
+			// Advance session
+			run_to_block(3600);
+
+			assert_eq!(Session::queued_keys().len(), 3);
+			assert_eq!(Session::validators().len(), 3);
 		});
 }
 

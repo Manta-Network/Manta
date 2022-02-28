@@ -59,6 +59,7 @@ pub struct ExtBuilder {
 	balances: Vec<(AccountId, Balance)>,
 	authorities: Vec<(AccountId, AuraId)>,
 	invulnerables: Vec<AccountId>,
+	desired_candidates: u32,
 	safe_xcm_version: Option<u32>,
 }
 
@@ -75,6 +76,7 @@ impl Default for ExtBuilder {
 			)],
 			invulnerables: vec![get_account_id_from_seed::<sr25519::Public>("Alice")],
 			safe_xcm_version: None,
+			desired_candidates: 1,
 		}
 	}
 }
@@ -90,8 +92,13 @@ impl ExtBuilder {
 		self
 	}
 
-	pub fn with_collators(mut self, invulnerables: Vec<AccountId>) -> Self {
+	pub fn with_collators(
+		mut self,
+		invulnerables: Vec<AccountId>,
+		desired_candidates: u32,
+	) -> Self {
 		self.invulnerables = invulnerables;
+		self.desired_candidates = desired_candidates;
 		self
 	}
 
@@ -109,7 +116,7 @@ impl ExtBuilder {
 		manta_collator_selection::GenesisConfig::<Runtime> {
 			invulnerables: self.invulnerables,
 			candidacy_bond: KMA * 1000, // How many tokens will be reserved as collator
-			desired_candidates: 1,
+			desired_candidates: self.desired_candidates,
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();
