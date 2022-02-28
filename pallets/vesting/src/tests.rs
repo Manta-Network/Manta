@@ -427,7 +427,7 @@ fn invalid_schedule_should_not_be_updated() {
 		.build()
 		.execute_with(|| {
 			// Cannot update the length of schedule is bigger than 6 or smaller than 6.
-			let wrong_length_schedule: BoundedVec<u64, MaxScheduleLength> =
+			let wrong_length_schedule: BoundedVec<u64, <Test as Config>::MaxScheduleLength> =
 				BoundedVec::try_from(vec![1, 2, 3, 4, 5, 6, 7]).unwrap_or_default();
 			assert_noop!(
 				CalamariVesting::update_vesting_schedule(Origin::root(), wrong_length_schedule),
@@ -435,7 +435,7 @@ fn invalid_schedule_should_not_be_updated() {
 			);
 
 			// We have only 6 rounds of schedule.
-			let wrong_length_schedule: BoundedVec<u64, MaxScheduleLength> =
+			let wrong_length_schedule: BoundedVec<u64, <Test as Config>::MaxScheduleLength> =
 				BoundedVec::try_from(vec![1, 2, 3, 4, 5]).unwrap_or_default();
 			assert_noop!(
 				CalamariVesting::update_vesting_schedule(Origin::root(), wrong_length_schedule),
@@ -443,7 +443,7 @@ fn invalid_schedule_should_not_be_updated() {
 			);
 
 			// The new schedule should be a sorted array.
-			let invalid_schedule: BoundedVec<u64, MaxScheduleLength> =
+			let invalid_schedule: BoundedVec<u64, <Test as Config>::MaxScheduleLength> =
 				BoundedVec::try_from(vec![1, 2, 9, 4, 8, 6]).unwrap_or_default();
 			assert_noop!(
 				CalamariVesting::update_vesting_schedule(Origin::root(), invalid_schedule),
@@ -503,7 +503,8 @@ fn check_vesting_schedule() {
 		.execute_with(|| {
 			// Check current schedule.
 			let schedule = VestingSchedule::<Test>::get();
-			assert_eq!(schedule.len(), MaxScheduleLength::get() as usize);
+			let schedule_len: u32 = <Test as Config>::MaxScheduleLength::get();
+			assert_eq!(schedule.len(), schedule_len as usize);
 
 			//Check percentage.
 			assert_eq!(

@@ -21,8 +21,7 @@ use frame_support::{
 	traits::{Currency, GenesisBuild, OnInitialize},
 };
 use pallet_balances::Error as BalancesError;
-use sp_runtime::testing::UintAuthorityId;
-use sp_runtime::traits::BadOrigin;
+use sp_runtime::{testing::UintAuthorityId, traits::BadOrigin};
 
 #[test]
 fn basic_setup_works() {
