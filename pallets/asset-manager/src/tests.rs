@@ -19,7 +19,7 @@
 
 //! unit tests for asset-manager
 
-use crate::{self as asset_manager, AssetIdLocation};
+use crate::{self as asset_manager, AssetIdLocation, UnitsPerSecond};
 use asset_manager::mock::*;
 use frame_support::{assert_noop, assert_ok};
 use manta_primitives::{AssetLocation, AssetRegistarMetadata};
@@ -161,6 +161,13 @@ fn update_asset() {
 			0,
 			new_location.clone()
 		));
+		// Update asset units per seconds
+		assert_ok!(AssetManager::set_units_per_second(
+			Origin::root(),
+			0,
+			125u128
+		));
+		assert_eq!(UnitsPerSecond::<Runtime>::get(0), Some(125));
 		// Update a non-exist asset should fail
 		assert_noop!(
 			AssetManager::update_asset_location(Origin::root(), 1, new_location.clone()),
