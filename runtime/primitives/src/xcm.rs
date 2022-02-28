@@ -49,7 +49,7 @@ impl Reserve for MultiAsset {
 		if let xcmAssetId::Concrete(location) = self.id.clone() {
 			let first_interior = location.first_interior();
 			let parents = location.parent_count();
-			match (parents, first_interior.clone()) {
+			match (parents, first_interior) {
 				(0, Some(Parachain(id))) => Some(MultiLocation::new(0, X1(Parachain(*id)))),
 				(1, Some(Parachain(id))) => Some(MultiLocation::new(1, X1(Parachain(*id)))),
 				(1, _) => Some(MultiLocation::parent()),
@@ -122,7 +122,6 @@ impl<
 		payment: xcm_executor::Assets,
 	) -> Result<xcm_executor::Assets, XcmError> {
 		let first_asset = payment
-			.clone()
 			.fungible_assets_iter()
 			.next()
 			.ok_or(XcmError::TooExpensive)?;
@@ -142,7 +141,7 @@ impl<
 					return Ok(payment);
 				}
 				let required = MultiAsset {
-					fun: Fungibility::Fungible(amount.into()),
+					fun: Fungibility::Fungible(amount),
 					id: xcmAssetId::Concrete(id.clone()),
 				};
 				let unused = payment
@@ -174,7 +173,7 @@ impl<
 					self.weight = self.weight.saturating_add(weight);
 					self.refund_cache = Some(new_asset);
 				};
-				return Ok(unused);
+				Ok(unused)
 			}
 			_ => Err(XcmError::TooExpensive),
 		}

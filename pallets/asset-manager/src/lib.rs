@@ -245,7 +245,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			T::ModifierOrigin::ensure_origin(origin)?;
 			ensure!(
-				LocationAssetId::<T>::get(&location).is_none(),
+				!LocationAssetId::<T>::contains_key(&location),
 				Error::<T>::LocationAlreadyExists
 			);
 			let asset_id = Self::get_next_asset_id()?;
