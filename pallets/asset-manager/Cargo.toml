@@ -9,7 +9,6 @@ repository = 'https://github.com/Manta-Network/Manta/'
 
 
 [dependencies]
-# codec has to be 2.0.0 for now
 codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false }
 # scale-info has to be 1.0 for now
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
