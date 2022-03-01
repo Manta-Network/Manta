@@ -81,7 +81,11 @@ pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-featu
 manta-primitives = { path = '../primitives', default-features = false }
 calamari-vesting = { path = '../../pallets/vesting', default-features = false }
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
-pallet-tx-pause = { path = '../../pallets/pallet-tx-pause', default-features = false }
+pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
+
+[dev-dependencies]
+serde_json = "1.0"
+reqwest = { version = "0.11", features = ["blocking"] }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -89,9 +93,6 @@ targets = ['x86_64-unknown-linux-gnu']
 [build-dependencies]
 substrate-wasm-builder = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
 
-[dev-dependencies]
-serde_json = "1.0"
-reqwest = { version = "0.11", features = ["blocking"] }
 
 [features]
 default = ['std']
@@ -156,6 +157,7 @@ std = [
 	'pallet-sudo/std',
 	'pallet-xcm/std',
 	'pallet-transaction-payment/std',
+	'pallet-treasury/std',
 	'pallet-collective/std',
 	'pallet-democracy/std',
 	'pallet-scheduler/std',

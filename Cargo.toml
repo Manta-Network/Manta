@@ -8,5 +8,13 @@ members = [
 	'runtime/dolphin',
 ]
 
+[profile.production]
+inherits = "release"
+codegen-units = 1
+lto = true
+
 [profile.release]
 panic = "unwind"
+
+[profile.test]
+debug = true

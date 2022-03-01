@@ -75,7 +75,7 @@ pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-featu
 
 # Self dependencies
 manta-primitives = { path = '../primitives', default-features = false }
-pallet-tx-pause = { path = '../../pallets/pallet-tx-pause', default-features = false }
+pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']

@@ -155,20 +155,20 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose
+          cargo build --profile production --verbose
       -
         name: stop sccache server
         run: sccache --stop-server || true
       -
         name: strip
         run: |
-          strip target/release/manta
+          strip target/production/manta
       -
         name: upload
         uses: actions/upload-artifact@v2
         with:
           name: manta
-          path: target/release/manta
+          path: target/production/manta
       -
         name: upload
         uses: actions/upload-artifact@v2
@@ -250,7 +250,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo build --verbose --release
+          cargo build --profile production --verbose
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: stop sccache server
@@ -259,14 +259,14 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: strip
         run: |
-          strip target/release/manta
+          strip target/production/manta
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: upload
         uses: actions/upload-artifact@v2
         with:
           name: manta-base
-          path: target/release/manta
+          path: target/production/manta
       -
         name: upload
         uses: actions/upload-artifact@v2
