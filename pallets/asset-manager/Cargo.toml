@@ -1,0 +1,50 @@
+[package]
+authors    = ['Manta Network']
+name = "pallet-asset-manager"
+version = "3.1.4"
+edition = "2021"
+homepage   = 'https://manta.network'
+license    = 'GPL-3.0'
+repository = 'https://github.com/Manta-Network/Manta/'
+
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false }
+# scale-info has to be 1.0 for now
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16", default-features = false, optional = true }
+manta-primitives = { path = '../../runtime/primitives', default-features = false}
+
+[dev-dependencies]
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
+pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+xcm = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.16" }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"scale-info/std",
+	"sp-runtime/std",
+	"frame-support/std",
+	"frame-system/std",
+	"sp-std/std",
+	"manta-primitives/std",
+	"frame-benchmarking/std",
+]
+try-runtime = [
+	"frame-support/try-runtime",
+]
+
+runtime-benchmarks = [
+	"frame-benchmarking",
+	'frame-support/runtime-benchmarks',
+	'frame-system/runtime-benchmarks',
+]
+

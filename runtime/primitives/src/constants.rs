@@ -45,3 +45,5 @@ pub mod time {
 	pub const HOURS: BlockNumber = MINUTES * 60;
 	pub const DAYS: BlockNumber = HOURS * 24;
 }
+
+pub const ASSET_STRING_LIMIT: u32 = 50;
