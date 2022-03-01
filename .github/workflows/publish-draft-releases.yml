@@ -402,8 +402,8 @@ jobs:
             id: calamari-local
             expected:
               block-count:
-                relay: 20
-                para: 2
+                relay: 25
+                para: 6
               peer-count:
                 relay: 5
                 para: 2
@@ -411,8 +411,8 @@ jobs:
             id: calamari-dev
             expected:
               block-count:
-                relay: 20
-                para: 2
+                relay: 25
+                para: 6
               peer-count:
                 relay: 5
                 para: 2
