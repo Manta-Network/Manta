@@ -750,6 +750,8 @@ jobs:
         name: check if target block is finalized
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
+          yarn install
+          yarn
           node index.js --address=ws://127.0.0.1:9921 --target_block=${{ matrix.chain-spec.expected.block-count.para }}
           echo $?
           if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
