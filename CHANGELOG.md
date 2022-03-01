@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Pending
+- [\#411](https://github.com/Manta-Network/Manta/pull/411) Add a corner case about increasing/decreasing candidate bond in collator-selection.
 
 ## v3.1.4-1
 ### Breaking changes
