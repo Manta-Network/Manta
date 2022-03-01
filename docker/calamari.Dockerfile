@@ -32,8 +32,8 @@ RUN $PARA_BINARY_PATH --version
 ADD $PARA_GENESIS_URL $PARA_GENESIS_PATH
 ADD $RELAY_GENESIS_URL $RELAY_GENESIS_PATH
 
-# Expose three ports by default
-EXPOSE 30333 9933 9944
+# Expose 5 ports by default
+EXPOSE 30333 30334 9933 9944 9615
 
 ENTRYPOINT [\
   "/usr/local/bin/manta",\

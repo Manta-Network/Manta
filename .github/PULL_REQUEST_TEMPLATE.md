@@ -21,6 +21,7 @@ write a little note why.
 - [ ] Linked to Github issue with discussion and accepted design OR have an explanation in the PR that describes this work.
 - [ ] Wrote unit tests.
 - [ ] Updated relevant documentation in the code.
+- [ ] Added **one** line describing your change in `<branch>/CHANGELOG.md`
 - [ ] Re-reviewed `Files changed` in the Github PR explorer.
 - [ ] If runtime changes, need to update the version numbers properly:
    * `authoring_version`: The version of the authorship interface. An authoring node will not attempt to author blocks unless this is equal to its native runtime.

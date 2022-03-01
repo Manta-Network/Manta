@@ -1,5 +1,5 @@
 <a href="https://manta.network">
-<img width="650" alt="github-banner" src="https://user-images.githubusercontent.com/720571/119246129-f6f39800-bb4c-11eb-8d9f-d68e9fe482e9.png">
+<img width="650" alt="github-banner" src="https://user-images.githubusercontent.com/98164067/154848582-58988e81-6a89-4c5f-bdae-ec83478e245c.png">
 </a>
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
@@ -12,11 +12,12 @@
 Manta is a privacy preserving DeFi stack on Polkadot/Substrate. The code currently hasn't been properly security audited (work in progress), use it at your own risk. 
 
 ## Build Manta/Calamari Node
-```
+```bash
 chmod u+x ./scripts/init.sh
 ./scripts/init.sh
-cargo build --release
+cargo b --profile production
 ```
+> Tips: The binary will be generated under `target/production/manta`.
 
 ## Manta Developement
 Currently, there are two developing branches:
@@ -73,4 +74,4 @@ now you can watch the ci build your awesome feature and publish your draft relea
 
 ## Minimum supported rust compiler
 
-This project's MSRV is `rustc 1.56`
+This project's MSRV is `rustc 1.57`

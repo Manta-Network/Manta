@@ -155,20 +155,20 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose
+          cargo build --profile production --verbose
       -
         name: stop sccache server
         run: sccache --stop-server || true
       -
         name: strip
         run: |
-          strip target/release/manta
+          strip target/production/manta
       -
         name: upload
         uses: actions/upload-artifact@v2
         with:
           name: manta
-          path: target/release/manta
+          path: target/production/manta
       -
         name: upload
         uses: actions/upload-artifact@v2
