@@ -1,8 +1,12 @@
 # CHANGELOG
 
 ## Pending
+
 ### Features
 - [\#419](https://github.com/Manta-Network/Manta/pull/419) Add asset manager and XCM support.
+
+### Improvements
+- [\#411](https://github.com/Manta-Network/Manta/pull/411) Add a corner case about increasing/decreasing candidate bond in collator-selection.
 
 ## v3.1.4-1
 ### Breaking changes
