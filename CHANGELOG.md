@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Pending
+### Features
+- [\#419](https://github.com/Manta-Network/Manta/pull/419) Add asset manager and XCM support.
 
 ## v3.1.4-1
 ### Breaking changes
