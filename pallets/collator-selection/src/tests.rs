@@ -18,7 +18,7 @@ use crate as collator_selection;
 use crate::{mock::*, CandidateInfo, Error};
 use frame_support::{
 	assert_noop, assert_ok,
-	traits::{Currency, GenesisBuild, OnInitialize},
+	traits::{Currency, GenesisBuild, OnInitialize, ReservableCurrency},
 };
 use pallet_balances::Error as BalancesError;
 use sp_runtime::{testing::UintAuthorityId, traits::BadOrigin};
@@ -469,6 +469,17 @@ fn increase_bond_after_register_candidate() {
 	new_test_ext().execute_with(|| {
 		// add candidate_1 by root
 		let candidate_1 = 3;
+
+		// reserve some tokens first
+		let locked_amount = 50;
+		assert_ok!(<Test as crate::Config>::Currency::reserve(
+			&candidate_1,
+			locked_amount
+		));
+
+		// get free balances after first reserve
+		let candidate_1_balances_before_registration = Balances::free_balance(candidate_1);
+
 		assert_ok!(CollatorSelection::register_candidate(
 			Origin::signed(RootAccount::get()),
 			candidate_1
@@ -477,7 +488,10 @@ fn increase_bond_after_register_candidate() {
 		// check candidate_1's reserved balance
 		let prev_bond = CollatorSelection::candidacy_bond();
 		// candidate_1 should be reserved prev_bond KMA
-		assert_eq!(prev_bond, Balances::reserved_balance(candidate_1));
+		assert_eq!(
+			prev_bond + locked_amount,
+			Balances::reserved_balance(candidate_1)
+		);
 
 		// increase bond
 		let new_bond = prev_bond + 5;
@@ -488,6 +502,16 @@ fn increase_bond_after_register_candidate() {
 
 		// register new candidate after increase bond
 		let candidate_2 = 4;
+
+		let locked_amount_2 = 55;
+		assert_ok!(<Test as crate::Config>::Currency::reserve(
+			&candidate_2,
+			locked_amount_2
+		));
+
+		// get free balances after first reserve
+		let candidate_2_balances_before_registration = Balances::free_balance(candidate_2);
+
 		assert_ok!(CollatorSelection::register_candidate(
 			Origin::signed(RootAccount::get()),
 			candidate_2
@@ -495,7 +519,10 @@ fn increase_bond_after_register_candidate() {
 		// check new bond
 		assert_eq!(new_bond, CollatorSelection::candidacy_bond());
 		// candidate_2 should be reserved new_bond KMA
-		assert_eq!(new_bond, Balances::reserved_balance(candidate_2));
+		assert_eq!(
+			new_bond + locked_amount_2,
+			Balances::reserved_balance(candidate_2)
+		);
 
 		// remove candidate_1
 		assert_ok!(CollatorSelection::remove_collator(
@@ -503,8 +530,11 @@ fn increase_bond_after_register_candidate() {
 			candidate_1
 		));
 		// check candidate_1
-		assert_eq!(0, Balances::reserved_balance(candidate_1));
-		assert_eq!(100, Balances::free_balance(candidate_1));
+		assert_eq!(locked_amount, Balances::reserved_balance(candidate_1));
+		assert_eq!(
+			candidate_1_balances_before_registration,
+			Balances::free_balance(candidate_1)
+		);
 
 		// remove candidate_2
 		assert_ok!(CollatorSelection::remove_collator(
@@ -512,7 +542,10 @@ fn increase_bond_after_register_candidate() {
 			candidate_2
 		));
 		// check candidate_2
-		assert_eq!(0, Balances::reserved_balance(candidate_2));
-		assert_eq!(100, Balances::free_balance(candidate_2));
+		assert_eq!(locked_amount_2, Balances::reserved_balance(candidate_2));
+		assert_eq!(
+			candidate_2_balances_before_registration,
+			Balances::free_balance(candidate_2)
+		);
 	});
 }
