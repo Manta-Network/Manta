@@ -1,5 +1,6 @@
-use super::*;
+use crate::types::{AccountId, AuraId, Signature};
 use sp_core::{Pair, Public};
+use sp_runtime::traits::{IdentifyAccount, Verify};
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
