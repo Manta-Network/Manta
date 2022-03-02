@@ -30,6 +30,9 @@ use manta_primitives::{
 };
 use sp_core::sr25519;
 
+pub const BOND_AMOUNT: Balance = 1_000 * KMA;
+pub const INITIAL_BALANCE: Balance = 1_000_000_000_000 * KMA;
+
 /// create a transaction info struct from weight. Handy to avoid building the whole struct.
 pub fn info_from_weight(w: Weight) -> DispatchInfo {
 	// pays_fee: Pays::Yes -- class: DispatchClass::Normal
@@ -68,7 +71,7 @@ impl Default for ExtBuilder {
 		ExtBuilder {
 			balances: vec![(
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				1_000_000_000_000 * KMA,
+				INITIAL_BALANCE,
 			)],
 			authorities: vec![(
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -115,7 +118,7 @@ impl ExtBuilder {
 
 		manta_collator_selection::GenesisConfig::<Runtime> {
 			invulnerables: self.invulnerables,
-			candidacy_bond: KMA * 1000, // How many tokens will be reserved as collator
+			candidacy_bond: BOND_AMOUNT,
 			desired_candidates: self.desired_candidates,
 		}
 		.assimilate_storage(&mut t)
