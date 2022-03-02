@@ -18,6 +18,7 @@ use super::*;
 use crate::command::MANTA_PARACHAIN_ID;
 
 pub type MantaChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
+use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 const MANTA_PROTOCOL_ID: &str = "manta"; // for p2p network configuration
 const POLKADOT_RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";

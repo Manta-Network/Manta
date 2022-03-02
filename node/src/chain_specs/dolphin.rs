@@ -18,6 +18,7 @@ use super::*;
 use crate::command::DOLPHIN_PARACHAIN_ID;
 
 use dolphin_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
+use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type DolphinChainSpec =
