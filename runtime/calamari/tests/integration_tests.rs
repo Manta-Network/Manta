@@ -17,7 +17,7 @@
 //! Calamari Parachain Integration Tests.
 
 mod common;
-use common::*;
+use common::{info_from_weight, last_event, mock::*, root_origin, BOND_AMOUNT, INITIAL_BALANCE};
 
 pub use calamari_runtime::{
 	currency::KMA,
