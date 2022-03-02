@@ -24,6 +24,12 @@ pub use sp_runtime::Perbill;
 /// The block saturation level. Fees will be updates based on this value.
 pub const TARGET_BLOCK_FULLNESS: Perbill = Perbill::from_percent(25);
 
+pub const FEES_PERCENTAGE_TO_AUTHOR: u8 = 60;
+pub const FEES_PERCENTAGE_TO_TREASURY: u8 = 40;
+
+pub const TIPS_PERCENTAGE_TO_AUTHOR: u8 = 100;
+pub const TIPS_PERCENTAGE_TO_TREASURY: u8 = 0;
+
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
 /// node's balance type.
 ///
@@ -59,9 +65,9 @@ mod multiplier_tests {
 		FixedPointNumber,
 	};
 
-	fn run_with_system_weight<F>(w: Weight, assertions: F)
+	fn run_with_system_weight<F>(w: Weight, mut assertions: F)
 	where
-		F: Fn() -> (),
+		F: FnMut() -> (),
 	{
 		let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
 			.build_storage::<Runtime>()
@@ -161,5 +167,53 @@ mod multiplier_tests {
 				panic!("The cost to fully congest our network should be over the target_daily_congestion_cost_kma after 1 day.");
 			}
 		});
+	}
+
+	#[test]
+	fn multiplier_can_grow_from_zero() {
+		let minimum_multiplier = polkadot_runtime_common::MinimumMultiplier::get();
+		let target = polkadot_runtime_common::TargetBlockFullness::get()
+			* BlockWeights::get()
+				.get(DispatchClass::Normal)
+				.max_total
+				.unwrap();
+		// if the min is too small, then this will not change, and we are doomed forever.
+		// the weight is 1/100th bigger than target.
+		run_with_system_weight(target * 101 / 100, || {
+			let next = polkadot_runtime_common::SlowAdjustingFeeUpdate::<Runtime>::convert(
+				minimum_multiplier,
+			);
+			assert!(
+				next > minimum_multiplier,
+				"{:?} !>= {:?}",
+				next,
+				minimum_multiplier
+			);
+		})
+	}
+
+	#[test]
+	#[ignore] // test runs for a very long time
+	fn multiplier_growth_simulator() {
+		// assume the multiplier is initially set to its minimum. We update it with values twice the
+		//target (target is 25%, thus 50%) and we see at which point it reaches 1.
+		let mut multiplier = polkadot_runtime_common::MinimumMultiplier::get();
+		let block_weight = polkadot_runtime_common::TargetBlockFullness::get()
+			* BlockWeights::get()
+				.get(DispatchClass::Normal)
+				.max_total
+				.unwrap() * 2;
+		let mut blocks = 0;
+		while multiplier <= Multiplier::one() {
+			run_with_system_weight(block_weight, || {
+				let next =
+					polkadot_runtime_common::SlowAdjustingFeeUpdate::<Runtime>::convert(multiplier);
+				// ensure that it is growing as well.
+				assert!(next > multiplier, "{:?} !>= {:?}", next, multiplier);
+				multiplier = next;
+			});
+			blocks += 1;
+			println!("block = {} multiplier {:?}", blocks, multiplier);
+		}
 	}
 }
