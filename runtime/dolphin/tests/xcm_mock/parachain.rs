@@ -52,7 +52,7 @@ use xcm_builder::{
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::Get;
 
-pub use manta_primitives::{AssetId, AssetRegistarMetadata, AssetStorageMetadata};
+pub use manta_primitives::{types::AssetId, AssetRegistarMetadata, AssetStorageMetadata};
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 
