@@ -27,7 +27,7 @@ use frame_system::EnsureRoot;
 use manta_primitives::{
 	constants::ASSET_STRING_LIMIT,
 	types::{AccountId, AssetId, Balance},
-	AssetLocation, AssetRegistarMetadata, AssetStorageMetadata,
+	assets::{AssetLocation, AssetRegistarMetadata, AssetStorageMetadata},
 };
 use sp_core::H256;
 use sp_runtime::{

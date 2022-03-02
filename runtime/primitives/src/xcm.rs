@@ -23,7 +23,7 @@ use frame_support::{
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 
-use crate::{AssetIdLocationGetter, UnitsToWeightRatio};
+use crate::assets::{AssetIdLocationGetter, UnitsToWeightRatio};
 use xcm::{
 	latest::{prelude::Concrete, Error as XcmError},
 	v1::{
