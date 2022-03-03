@@ -98,7 +98,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo test --all-features
+          cargo test --features=runtime-benchmarks,try-runtime
       -
         name: stop sccache server
         run: sccache --stop-server || true
