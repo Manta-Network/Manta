@@ -245,6 +245,7 @@ impl Contains<Call> for BaseFilter {
 				| manta_collator_selection::Call::remove_collator{..}
 				| manta_collator_selection::Call::leave_intent{..})
 			| Call::Balances(_)
+			| Call::XTokens(_)
 			| Call::Utility(_) => true,
 			_ => false,
 			// Filter Session and CollatorSelection to prevent users from utility operation.
