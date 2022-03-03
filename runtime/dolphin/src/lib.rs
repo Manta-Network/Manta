@@ -29,7 +29,7 @@ use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult,
+	ApplyExtrinsicResult, Perbill, Permill,
 };
 
 use sp_core::u32_trait::{_1, _2, _3, _4, _5};
@@ -55,9 +55,10 @@ use frame_system::{
 	EnsureRoot,
 };
 use manta_primitives::{
-	time::*, AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	time::*, AccountId, AssetId, AssetLocation, AssetRegistarMetadata, AssetStorageMetadata,
+	AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
 };
-use sp_runtime::{Perbill, Permill};
+use pallet_asset_manager::AssetMetadata;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -608,6 +609,66 @@ impl pallet_assets::Config for Runtime {
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
+impl AssetMetadata<Runtime> for AssetRegistarMetadata<Balance> {
+	fn min_balance(&self) -> Balance {
+		self.min_balance
+	}
+
+	fn is_sufficient(&self) -> bool {
+		self.is_sufficient
+	}
+}
+
+pub struct AssetRegistrar;
+use frame_support::pallet_prelude::DispatchResult;
+impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
+	fn create_asset(
+		asset_id: AssetId,
+		min_balance: Balance,
+		metadata: AssetStorageMetadata,
+		is_sufficient: bool,
+	) -> DispatchResult {
+		Assets::force_create(
+			Origin::root(),
+			asset_id,
+			sp_runtime::MultiAddress::Id(AssetManager::account_id()),
+			is_sufficient,
+			min_balance,
+		)?;
+
+		Assets::force_set_metadata(
+			Origin::root(),
+			asset_id,
+			metadata.name,
+			metadata.symbol,
+			metadata.decimals,
+			metadata.is_frozen,
+		)
+	}
+
+	fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
+		Assets::force_set_metadata(
+			Origin::root(),
+			asset_id,
+			metadata.name,
+			metadata.symbol,
+			metadata.decimals,
+			metadata.is_frozen,
+		)
+	}
+}
+
+impl pallet_asset_manager::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type AssetId = AssetId;
+	type AssetRegistrarMetadata = AssetRegistarMetadata<Balance>;
+	type StorageMetadata = AssetStorageMetadata;
+	type AssetLocation = AssetLocation;
+	type AssetRegistrar = AssetRegistrar;
+	type ModifierOrigin = EnsureRoot<AccountId>;
+}
+
 parameter_types! {
 	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
 	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
@@ -900,6 +961,7 @@ construct_runtime!(
 
 		// Assets mana
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 51,
+		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>} = 52,
 	}
 );
 
