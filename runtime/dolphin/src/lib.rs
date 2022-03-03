@@ -55,7 +55,8 @@ use frame_system::{
 	EnsureRoot,
 };
 use manta_primitives::{
-	time::*, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	constants::time::*,
+	types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use sp_runtime::{Perbill, Permill};
 

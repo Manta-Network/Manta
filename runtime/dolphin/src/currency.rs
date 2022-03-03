@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 #![allow(non_upper_case_globals)]
-use manta_primitives::Balance;
+use manta_primitives::types::Balance;
 
 pub const DOL: Balance = 1_000_000_000_000_000_000; // 18 decimal
 pub const cDOL: Balance = DOL / 100; // 16 decimal, cent-DOL

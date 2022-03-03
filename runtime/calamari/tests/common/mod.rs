@@ -19,7 +19,7 @@ pub mod mock;
 pub use calamari_runtime::{currency::KMA, Event, Origin, Runtime, System};
 
 use frame_support::weights::{DispatchInfo, Weight};
-use manta_primitives::Balance;
+use manta_primitives::types::Balance;
 
 pub const BOND_AMOUNT: Balance = 1_000 * KMA;
 pub const INITIAL_BALANCE: Balance = 1_000_000_000_000 * KMA;

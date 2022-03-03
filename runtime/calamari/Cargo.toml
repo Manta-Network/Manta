@@ -126,6 +126,9 @@ runtime-benchmarks = [
 	'pallet-treasury/runtime-benchmarks',
 	'pallet-preimage/runtime-benchmarks',
 ]
+# Set timing constants (e.g. session period) to faster versions to speed up testing.
+fast-runtime = []
+
 std = [
 	'codec/std',
 	'serde',

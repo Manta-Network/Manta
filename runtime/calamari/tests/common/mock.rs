@@ -23,7 +23,7 @@ pub use calamari_runtime::{
 use frame_support::traits::{GenesisBuild, OnFinalize, OnInitialize};
 use manta_primitives::{
 	helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
-	AccountId, AuraId, Balance,
+	types::{AccountId, AuraId, Balance},
 };
 use sp_core::sr25519;
 pub struct ExtBuilder {

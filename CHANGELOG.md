@@ -1,6 +1,15 @@
 # CHANGELOG
 
-## Pending
+## Unreleased
+### Breaking changes
+
+### Features
+- [\#383](https://github.com/Manta-Network/Manta/pull/383) Calamari & Manta support `cargo build --features=fast-runtime`, setting most configurable timers to 2 or 5 minutes (instead of days)
+
+### Improvements
+
+### Bug fixes
+
 
 ### Features
 - [\#419](https://github.com/Manta-Network/Manta/pull/419) Add asset manager and XCM support.

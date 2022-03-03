@@ -42,7 +42,7 @@ use frame_support::{
 use manta_primitives::{
 	constants::time::{DAYS, HOURS},
 	helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
-	AccountId, Header,
+	types::{AccountId, Header},
 };
 
 use pallet_transaction_payment::ChargeTransactionPayment;
