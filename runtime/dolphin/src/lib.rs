@@ -56,7 +56,7 @@ use frame_system::{
 };
 use manta_primitives::{
 	constants::time::*,
-	types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
+	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use sp_runtime::{Perbill, Permill};
 
@@ -583,6 +583,33 @@ impl pallet_preimage::Config for Runtime {
 }
 
 parameter_types! {
+	// Does not really matter as this will be only called by root
+	pub const AssetDeposit: Balance = 0;
+	pub const AssetAccountDeposit: Balance = 0;
+	pub const ApprovalDeposit: Balance = 0;
+	pub const AssetsStringLimit: u32 = 50;
+	pub const MetadataDepositBase: Balance = 0;
+	pub const MetadataDepositPerByte: Balance = 0;
+}
+
+impl pallet_assets::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type AssetId = AssetId;
+	type Currency = Balances;
+	type ForceOrigin = EnsureRoot<AccountId>;
+	type AssetDeposit = AssetDeposit;
+	type AssetAccountDeposit = AssetAccountDeposit;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = AssetsStringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
 	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
 	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
 }
@@ -871,6 +898,9 @@ construct_runtime!(
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
+
+		// Assets mana
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 51,
 	}
 );
 
@@ -1051,6 +1081,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_scheduler, Scheduler);
 			list_benchmark!(list, extra, pallet_session, SessionBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_tx_pause, TransactionPause);
+			list_benchmark!(list, extra, pallet_assets, Assets);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1099,6 +1130,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_treasury, Treasury);
 			add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_tx_pause, TransactionPause);
+			add_benchmark!(params, batches, pallet_assets, Assets);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
