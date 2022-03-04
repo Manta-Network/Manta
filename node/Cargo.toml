@@ -106,3 +106,7 @@ try-runtime = [
 	'manta-runtime/try-runtime',
 	'try-runtime-cli',
 ]
+fast-runtime = [
+	"manta-runtime/fast-runtime",
+	"calamari-runtime/fast-runtime",
+]

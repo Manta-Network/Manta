@@ -898,8 +898,10 @@ dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.17)",
+ "cumulus-primitives-parachain-inherent 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.16)",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
+ "cumulus-test-relay-sproof-builder 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.16)",
  "frame-benchmarking",
  "frame-executive",
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17)",
@@ -1669,7 +1671,7 @@ source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.17#
 dependencies = [
  "cumulus-pallet-parachain-system-proc-macro",
  "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.17)",
- "cumulus-primitives-parachain-inherent",
+ "cumulus-primitives-parachain-inherent 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.17)",
  "environmental",
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17)",
  "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17)",
@@ -1787,12 +1789,26 @@ dependencies = [
 [[package]]
 name = "cumulus-primitives-parachain-inherent"
 version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.16#86f76c5619c64d1300315612695ad4b4fcd0f562"
+dependencies = [
+ "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.16)",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core 4.1.0-dev",
+ "sp-inherents 4.0.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.16)",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.16)",
+ "sp-trie 4.0.0",
+]
+
+[[package]]
+name = "cumulus-primitives-parachain-inherent"
+version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
 dependencies = [
  "async-trait",
  "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.17)",
  "cumulus-relay-chain-interface",
- "cumulus-test-relay-sproof-builder",
+ "cumulus-test-relay-sproof-builder 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.17)",
  "parity-scale-codec",
  "sc-client-api",
  "scale-info",
@@ -1882,6 +1898,19 @@ dependencies = [
  "sp-runtime 5.0.0",
  "sp-state-machine 0.11.0",
  "tracing",
+]
+
+[[package]]
+name = "cumulus-test-relay-sproof-builder"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.16#86f76c5619c64d1300315612695ad4b4fcd0f562"
+dependencies = [
+ "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.16)",
+ "parity-scale-codec",
+ "polkadot-primitives 0.9.16",
+ "sp-runtime 4.1.0-dev",
+ "sp-state-machine 0.10.0",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.16)",
 ]
 
 [[package]]
@@ -4643,7 +4672,7 @@ dependencies = [
  "cumulus-client-network",
  "cumulus-client-service",
  "cumulus-primitives-core 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.17)",
- "cumulus-primitives-parachain-inherent",
+ "cumulus-primitives-parachain-inherent 0.1.0 (git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.17)",
  "cumulus-relay-chain-interface",
  "cumulus-relay-chain-local",
  "dolphin-runtime",
