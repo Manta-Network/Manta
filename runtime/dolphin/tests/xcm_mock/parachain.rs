@@ -21,6 +21,7 @@ use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{ConstU32, Everything, Nothing},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
+	PalletId,
 };
 use frame_system::EnsureRoot;
 use pallet_asset_manager::AssetMetadata;
@@ -35,6 +36,7 @@ use sp_std::{convert::TryFrom, prelude::*};
 
 use manta_primitives::{
 	assets::{AssetIdLocationConvert, AssetLocation},
+	constants::*,
 	xcm::{FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
 };
 use pallet_xcm::XcmPassthrough;
@@ -53,7 +55,10 @@ use xcm_builder::{
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::Get;
 
-pub use manta_primitives::{types::AssetId, assets::{AssetRegistarMetadata, AssetStorageMetadata}};
+pub use manta_primitives::{
+	assets::{AssetRegistarMetadata, AssetStorageMetadata},
+	types::AssetId,
+};
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 
@@ -489,6 +494,10 @@ impl AssetMetadata<Runtime> for AssetRegistarMetadata<Balance> {
 	}
 }
 
+parameter_types! {
+	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
+}
+
 pub struct AssetRegistrar;
 use frame_support::pallet_prelude::DispatchResult;
 impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
@@ -536,6 +545,7 @@ impl pallet_asset_manager::Config for Runtime {
 	type AssetLocation = AssetLocation;
 	type AssetRegistrar = AssetRegistrar;
 	type ModifierOrigin = EnsureRoot<AccountId>;
+	type PalletId = AssetManagerPalletId;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {

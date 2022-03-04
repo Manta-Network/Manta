@@ -52,9 +52,6 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
-	/// The AssetManagers's pallet id
-	pub const PALLET_ID: PalletId = PalletId(*b"asstmngr");
-
 	/// The registrar trait: defines the interface of creating an asset in the asset implementation layer.
 	/// We may revisit this interface design (e.g. add change asset interface). However, change StorageMetadata
 	/// should be rare.
@@ -152,6 +149,9 @@ pub mod pallet {
 		/// The origin which may forcibly create or destroy an asset or otherwise alter privileged
 		/// attributes.
 		type ModifierOrigin: EnsureOrigin<Self::Origin>;
+
+		/// Pallet ID
+		type PalletId: Get<PalletId>;
 	}
 
 	#[pallet::event]
@@ -368,7 +368,7 @@ pub mod pallet {
 
 		/// The account ID of AssetManager
 		pub fn account_id() -> T::AccountId {
-			PALLET_ID.into_account()
+			T::PalletId::get().into_account()
 		}
 	}
 }

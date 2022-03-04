@@ -54,16 +54,18 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
-use manta_primitives::{
-	constants::time::*,
-	types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
-};
 use sp_runtime::{Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
+use manta_primitives::{
+	assets::{AssetLocation, AssetRegistarMetadata, AssetStorageMetadata},
+	constants::{time::*, *},
+	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
+};
+use pallet_asset_manager::AssetMetadata;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
@@ -489,7 +491,7 @@ parameter_types! {
 	pub const ProposalBondMaximum: Balance = 10_000 * DOL;
 	pub const SpendPeriod: BlockNumber = 10 * MINUTES;
 	pub const Burn: Permill = Permill::from_percent(0);
-	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+	pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
 }
 
 type EnsureRootOrThreeFifthsCouncil = EnsureOneOf<
@@ -792,7 +794,7 @@ impl pallet_aura::Config for Runtime {
 
 parameter_types! {
 	// Pallet account for record rewards and give rewards to collator.
-	pub const PotId: PalletId = PalletId(*b"PotStake");
+	pub const PotId: PalletId = STAKING_PALLET_ID;
 }
 
 parameter_types! {
@@ -817,6 +819,98 @@ impl manta_collator_selection::Config for Runtime {
 	type ValidatorIdOf = manta_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;
 	type WeightInfo = manta_collator_selection::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const AssetDeposit: Balance = 0; // Does not really matter as this will be only called by root
+	pub const AssetAccountDeposit: Balance = 0;
+	pub const ApprovalDeposit: Balance = 0;
+	pub const AssetsStringLimit: u32 = 50;
+	pub const MetadataDepositBase: Balance = 0;
+	pub const MetadataDepositPerByte: Balance = 0;
+}
+
+impl pallet_assets::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type AssetId = AssetId;
+	type Currency = Balances;
+	type ForceOrigin = EnsureRoot<AccountId>;
+	type AssetDeposit = AssetDeposit;
+	type AssetAccountDeposit = AssetAccountDeposit;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = AssetsStringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	// Pallet account for record rewards and give rewards to collator.
+	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
+}
+
+impl AssetMetadata<Runtime> for AssetRegistarMetadata<Balance> {
+	fn min_balance(&self) -> Balance {
+		self.min_balance
+	}
+
+	fn is_sufficient(&self) -> bool {
+		self.is_sufficient
+	}
+}
+
+pub struct AssetRegistrar;
+use frame_support::pallet_prelude::DispatchResult;
+impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
+	fn create_asset(
+		asset_id: AssetId,
+		min_balance: Balance,
+		metadata: AssetStorageMetadata,
+		is_sufficient: bool,
+	) -> DispatchResult {
+		Assets::force_create(
+			Origin::root(),
+			asset_id,
+			sp_runtime::MultiAddress::Id(AssetManager::account_id()),
+			is_sufficient,
+			min_balance,
+		)?;
+
+		Assets::force_set_metadata(
+			Origin::root(),
+			asset_id,
+			metadata.name,
+			metadata.symbol,
+			metadata.decimals,
+			metadata.is_frozen,
+		)
+	}
+
+	fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
+		Assets::force_set_metadata(
+			Origin::root(),
+			asset_id,
+			metadata.name,
+			metadata.symbol,
+			metadata.decimals,
+			metadata.is_frozen,
+		)
+	}
+}
+
+impl pallet_asset_manager::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type AssetId = AssetId;
+	type AssetRegistrarMetadata = AssetRegistarMetadata<Balance>;
+	type StorageMetadata = AssetStorageMetadata;
+	type AssetLocation = AssetLocation;
+	type AssetRegistrar = AssetRegistrar;
+	type ModifierOrigin = EnsureRoot<AccountId>;
+	type PalletId = AssetManagerPalletId;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -871,6 +965,10 @@ construct_runtime!(
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
+
+		// Asset and Private Payment
+		Assets: pallet_assets::{Pallet, Storage, Event<T>} = 45,
+		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>} = 46,
 	}
 );
 

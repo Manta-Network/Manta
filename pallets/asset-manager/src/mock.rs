@@ -21,13 +21,13 @@
 
 use super::*;
 use crate as pallet_asset_manager;
-use frame_support::{construct_runtime, parameter_types, traits::ConstU32};
+use frame_support::{construct_runtime, parameter_types, traits::ConstU32, PalletId};
 use frame_system as system;
 use frame_system::EnsureRoot;
 use manta_primitives::{
+	assets::{AssetLocation, AssetRegistarMetadata, AssetStorageMetadata},
 	constants::ASSET_STRING_LIMIT,
 	types::{AccountId, AssetId, Balance},
-	assets::{AssetLocation, AssetRegistarMetadata, AssetStorageMetadata},
 };
 use sp_core::H256;
 use sp_runtime::{
@@ -160,6 +160,10 @@ impl AssetMetadata<Runtime> for AssetRegistarMetadata<Balance> {
 	}
 }
 
+parameter_types! {
+	pub const AssetManagerPalletId: PalletId = PalletId(*b"asstmngr");
+}
+
 impl pallet_asset_manager::Config for Runtime {
 	type Event = Event;
 	type Balance = Balance;
@@ -169,6 +173,7 @@ impl pallet_asset_manager::Config for Runtime {
 	type AssetLocation = AssetLocation;
 	type AssetRegistrar = AssetRegistrar;
 	type ModifierOrigin = EnsureRoot<AccountId>;
+	type PalletId = AssetManagerPalletId;
 }
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
