@@ -2,13 +2,13 @@
 
 # yamllint disable rule:line-length
 
-name: "DCO check"
+name: "Developer Certificate of Origin"
 
 # yamllint disable-line rule:truthy
 on: [pull_request]
 jobs:
   commits_check_job:
-    name: "Commits Check"
+    name: "Validate presence of DCO information"
     runs-on: ubuntu-latest
     steps:
       -
