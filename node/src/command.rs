@@ -17,7 +17,10 @@
 use crate::{
 	chain_specs,
 	cli::{Cli, RelayChainCli, Subcommand},
-	service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
+	service::{
+		new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, DolphinTwoRuntimeExecutor,
+		MantaRuntimeExecutor,
+	},
 };
 
 use codec::Encode;
@@ -41,11 +44,13 @@ pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 pub const MANTA_PARACHAIN_ID: u32 = 2015;
 pub const CALAMARI_PARACHAIN_ID: u32 = 2084;
 pub const DOLPHIN_PARACHAIN_ID: u32 = 2085;
+pub const DOLPHIN_TWO_PARACHAIN_ID: u32 = 2086;
 
 trait IdentifyChain {
 	fn is_manta(&self) -> bool;
 	fn is_calamari(&self) -> bool;
 	fn is_dolphin(&self) -> bool;
+	fn is_dolphin_two(&self) -> bool;
 }
 
 impl IdentifyChain for dyn sc_service::ChainSpec {
@@ -58,6 +63,9 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 	fn is_dolphin(&self) -> bool {
 		self.id().starts_with("dolphin")
 	}
+	fn is_dolphin_two(&self) -> bool {
+		self.id().starts_with("dolphin_two")
+	}
 }
 
 impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
@@ -69,6 +77,9 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 	}
 	fn is_dolphin(&self) -> bool {
 		<dyn sc_service::ChainSpec>::is_dolphin(self)
+	}
+	fn is_dolphin_two(&self) -> bool {
+		<dyn sc_service::ChainSpec>::is_dolphin_two(self)
 	}
 }
 
@@ -89,6 +100,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		// dolphin chainspec
 		"dolphin-dev" => Ok(Box::new(chain_specs::dolphin_development_config())),
 		"dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config())),
+		// dolphin chainspec
+		"dolphin-two-dev" => Ok(Box::new(chain_specs::dolphin_two_development_config())),
+		"dolphin-two-local" => Ok(Box::new(chain_specs::dolphin_two_local_config())),
 		path => {
 			let chain_spec = chain_specs::ChainSpec::from_json_file(path.into())?;
 			if chain_spec.is_manta() {
@@ -100,6 +114,10 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 					path.into(),
 				)?))
 			} else if chain_spec.is_dolphin() {
+				Ok(Box::new(chain_specs::DolphinChainSpec::from_json_file(
+					path.into(),
+				)?))
+			} else if chain_spec.is_dolphin_two() {
 				Ok(Box::new(chain_specs::DolphinChainSpec::from_json_file(
 					path.into(),
 				)?))
@@ -152,6 +170,8 @@ impl SubstrateCli for Cli {
 			&calamari_runtime::VERSION
 		} else if chain_spec.is_dolphin() {
 			&dolphin_runtime::VERSION
+		} else if chain_spec.is_dolphin_two() {
+			&dolphin_two_runtime::VERSION
 		} else {
 			panic!("invalid chain spec! should be one of manta, calamari, or dolphin chain specs")
 		}
@@ -237,7 +257,17 @@ macro_rules! construct_async_run {
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
-			} else {
+			}else if runner.config().chain_spec.is_dolphin_two() {
+				runner.async_run(|$config| {
+					let $components = new_partial::<dolphin_two_runtime::RuntimeApi, DolphinTwoRuntimeExecutor, _>(
+						&$config,
+						crate::service::parachain_build_import_queue::<_, _, manta_primitives::AuraId>,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
+			}
+			else {
 				panic!("wrong chain spec, must be one of manta, calamari, or dolphin chain specs");
 			}
 	}}
@@ -349,6 +379,8 @@ pub fn run() -> Result<()> {
 				runner.sync_run(|config| cmd.run::<Block, CalamariRuntimeExecutor>(config))
 			} else if runner.config().chain_spec.is_dolphin() {
 				runner.sync_run(|config| cmd.run::<Block, DolphinRuntimeExecutor>(config))
+			} else if runner.config().chain_spec.is_dolphin_two() {
+				runner.sync_run(|config| cmd.run::<Block, DolphinTwoRuntimeExecutor>(config))
 			} else {
 				Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
@@ -454,6 +486,15 @@ pub fn run() -> Result<()> {
 					crate::service::start_parachain_node::<
 						dolphin_runtime::RuntimeApi,
 						DolphinRuntimeExecutor,
+						manta_primitives::AuraId,
+					>(config, polkadot_config, id)
+					.await
+					.map(|r| r.0)
+					.map_err(Into::into)
+				} else if config.chain_spec.is_dolphin_two() {
+					crate::service::start_parachain_node::<
+						dolphin_two_runtime::RuntimeApi,
+						DolphinTwoRuntimeExecutor,
 						manta_primitives::AuraId,
 					>(config, polkadot_config, id)
 					.await

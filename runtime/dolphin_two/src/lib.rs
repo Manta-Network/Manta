@@ -116,8 +116,8 @@ mod weights;
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("dolphin"),
-	impl_name: create_runtime_str!("dolphin"),
+	spec_name: create_runtime_str!("dolphin_two"),
+	impl_name: create_runtime_str!("dolphin_two"),
 	authoring_version: 1,
 	spec_version: 3141,
 	impl_version: 1,
@@ -921,14 +921,10 @@ where
 {
 	fn convert(currency: CurrencyId) -> Option<MultiLocation> {
 		match currency {
-			CurrencyId::MantaCurrency(asset_id) => {
-				log::info!("\n reverse_ref asset_id: {:?} \n", asset_id);
-
-				match AssetXConverter::reverse_ref(&asset_id) {
-					Ok(location) => Some(location),
-					Err(_) => None,
-				}
-			}
+			CurrencyId::MantaCurrency(asset_id) => match AssetXConverter::reverse_ref(&asset_id) {
+				Ok(location) => Some(location),
+				Err(_) => None,
+			},
 		}
 	}
 }
