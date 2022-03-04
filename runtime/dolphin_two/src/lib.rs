@@ -57,10 +57,9 @@ use frame_system::{
 	EnsureRoot,
 };
 use manta_primitives::{
-	assets::{AssetIdLocationConvert, AssetLocation, AssetRegistarMetadata, AssetStorageMetadata},
-	constants::time::*,
-	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
-	xcm::{AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
+	time::*, AccountId, AssetId, AssetIdLocationConvert, AssetLocation, AssetRegistarMetadata,
+	AssetStorageMetadata, AuraId, Balance, BlockNumber, FirstAssetTrader, Hash, Header, Index,
+	IsNativeConcrete, MultiNativeAsset, Signature,
 };
 use pallet_asset_manager::AssetMetadata;
 
@@ -117,10 +116,10 @@ mod weights;
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("dolphin"),
-	impl_name: create_runtime_str!("dolphin"),
+	spec_name: create_runtime_str!("dolphin_two"),
+	impl_name: create_runtime_str!("dolphin_two"),
 	authoring_version: 1,
-	spec_version: 3142,
+	spec_version: 3141,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -752,6 +751,7 @@ pub type XcmOriginToCallOrigin = (
 
 parameter_types! {
 	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
+	// see https://github.com/paritytech/cumulus/blob/master/polkadot-parachains/statemine/src/lib.rs#L551
 	pub UnitWeightCost: Weight = 1_000_000_000;
 	// Used in native traders
 	// This might be able to skipped.
@@ -793,10 +793,7 @@ match_type! {
 }
 
 pub type Barrier = (
-	// Allows local origin messages which call weight_credit >= weight_limit.
 	TakeWeightCredit,
-	// Allows non-local origin messages, for example from from the xcmp queue,
-	// which have the ability to deposit assets and pay for their own execution.
 	AllowTopLevelPaidExecutionFrom<Everything>,
 	// Parent and its exec plurality get free execution
 	// AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
@@ -815,7 +812,7 @@ parameter_types! {
 	pub XcmFeesAccount: AccountId = AssetManager::account_id();
 }
 
-pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
+pub type XcmFeesToAccount = manta_primitives::XcmFeesToAccount<
 	Assets,
 	ConvertedConcreteAssetId<
 		AssetId,
@@ -924,14 +921,10 @@ where
 {
 	fn convert(currency: CurrencyId) -> Option<MultiLocation> {
 		match currency {
-			CurrencyId::MantaCurrency(asset_id) => {
-				log::info!("\n reverse_ref asset_id: {:?} \n", asset_id);
-
-				match AssetXConverter::reverse_ref(&asset_id) {
-					Ok(location) => Some(location),
-					Err(_) => None,
-				}
-			}
+			CurrencyId::MantaCurrency(asset_id) => match AssetXConverter::reverse_ref(&asset_id) {
+				Ok(location) => Some(location),
+				Err(_) => None,
+			},
 		}
 	}
 }
@@ -946,7 +939,7 @@ impl orml_xtokens::Config for Runtime {
 	type Event = Event;
 	type Balance = Balance;
 	type CurrencyId = CurrencyId;
-	type AccountIdToMultiLocation = AccountIdToMultiLocation<AccountId>;
+	type AccountIdToMultiLocation = manta_primitives::AccountIdToMultiLocation<AccountId>;
 	type CurrencyIdConvert =
 		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>>;
 	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
@@ -1067,7 +1060,7 @@ construct_runtime!(
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
 
-		// Assets management
+		// Assets mana
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 51,
 		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>} = 52,
 	}
