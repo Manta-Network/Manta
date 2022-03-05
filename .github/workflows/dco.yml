@@ -1,0 +1,39 @@
+---
+
+# yamllint disable rule:line-length
+
+name: "Developer Certificate of Origin"
+
+# yamllint disable-line rule:truthy
+on: [pull_request]
+jobs:
+  commits_check_job:
+    name: "Validate presence of DCO information"
+    runs-on: ubuntu-latest
+    steps:
+      -
+        id: get-pr-commits
+        name: "Get PR Commits"
+        uses: tim-actions/get-pr-commits@master
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"
+      -
+        name: "DCO Check"
+        uses: tim-actions/dco@master
+        with:
+          commits: "${{ steps.get-pr-commits.outputs.commits }}"
+      -
+        name: "Check Failure Resolution Steps"
+        if: ${{ failure() }}
+        run: |
+          echo -e "Please follow the steps to resolve the issue: \n
+          $ git config --global user.name 'your_name' \n
+          $ git config --global user.email 'you_email' \n
+          That is  it. \n
+          Git will add the correct paragraph at the end of the your commit message. \n
+          COMMAND: $ git commit -s -S -m 'your_commit_message' \n
+          '-s' = 'Signed-off-by' \n
+          '-S' = 'Verify commit using gpg key' \n
+          ALL COMMITS MUST BE SIGNED"
+          echo -e "How to sign the PR using gpg key ?"
+          echo -e 'https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits\'

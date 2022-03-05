@@ -654,6 +654,15 @@ jobs:
           # todo: implement moonbeam-like js test suite triggers here
           sleep 300
       -
+        name: check if target block is finalized
+        run: |
+          cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
+          yarn install
+          yarn
+          node index.js --address=ws://127.0.0.1:9921 --target_block=${{ matrix.chain-spec.expected.block-count.para }}
+          echo $?
+          if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
+      -
         name: stop testnet
         run: |
           cd ${{ github.workspace }}/manta-pc-launch
@@ -746,10 +755,6 @@ jobs:
         name: test - calamari alice peered successfully
         run: |
           grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/manta-pc-launch/9921.log
-      -
-        name: test - calamari alice finalized block ${{ matrix.chain-spec.expected.block-count.para }}
-        run: |
-          grep '\[Parachain\] .* finalized #${{ matrix.chain-spec.expected.block-count.para }} ' ${{ github.workspace }}/manta-pc-launch/9921.log
 
   build-changelog:
     runs-on: ubuntu-20.04
