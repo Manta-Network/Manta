@@ -778,7 +778,6 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	(),
 >;
 
-// pub type Barrier = AllowUnpaidExecutionFrom<Everything>;
 match_type! {
 	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
@@ -799,8 +798,7 @@ pub type Barrier = (
 	// which have the ability to deposit assets and pay for their own execution.
 	AllowTopLevelPaidExecutionFrom<Everything>,
 	// Parent and its exec plurality get free execution
-	// AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-	// AllowUnpaidExecutionFrom<Everything>,
+	AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
 	// Expected responses are OK.
 	// Allows `Pending` or `VersionNotifier` query responses.
 	AllowKnownQueryResponses<PolkadotXcm>,
