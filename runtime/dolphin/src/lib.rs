@@ -119,7 +119,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("dolphin"),
 	impl_name: create_runtime_str!("dolphin"),
 	authoring_version: 1,
-	spec_version: 3141,
+	spec_version: 3142,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -778,7 +778,6 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	(),
 >;
 
-// pub type Barrier = AllowUnpaidExecutionFrom<Everything>;
 match_type! {
 	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
@@ -796,8 +795,7 @@ pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<Everything>,
 	// Parent and its exec plurality get free execution
-	// AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-	// AllowUnpaidExecutionFrom<Everything>,
+	AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
 	// Expected responses are OK.
 	// Allows `Pending` or `VersionNotifier` query responses.
 	AllowKnownQueryResponses<PolkadotXcm>,
