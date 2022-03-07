@@ -57,9 +57,10 @@ use frame_system::{
 	EnsureRoot,
 };
 use manta_primitives::{
-	time::*, AccountId, AssetId, AssetIdLocationConvert, AssetLocation, AssetRegistarMetadata,
-	AssetStorageMetadata, AuraId, Balance, BlockNumber, FirstAssetTrader, Hash, Header, Index,
-	IsNativeConcrete, MultiNativeAsset, Signature,
+	assets::{AssetIdLocationConvert, AssetLocation, AssetRegistarMetadata, AssetStorageMetadata},
+	constants::time::*,
+	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
+	xcm::{AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
 };
 use pallet_asset_manager::AssetMetadata;
 
@@ -810,7 +811,7 @@ parameter_types! {
 	pub XcmFeesAccount: AccountId = AssetManager::account_id();
 }
 
-pub type XcmFeesToAccount = manta_primitives::XcmFeesToAccount<
+pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
 	Assets,
 	ConvertedConcreteAssetId<
 		AssetId,
@@ -941,7 +942,7 @@ impl orml_xtokens::Config for Runtime {
 	type Event = Event;
 	type Balance = Balance;
 	type CurrencyId = CurrencyId;
-	type AccountIdToMultiLocation = manta_primitives::AccountIdToMultiLocation<AccountId>;
+	type AccountIdToMultiLocation = AccountIdToMultiLocation<AccountId>;
 	type CurrencyIdConvert =
 		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>>;
 	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;

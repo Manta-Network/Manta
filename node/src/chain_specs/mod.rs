@@ -18,7 +18,10 @@
 #![allow(dead_code)]
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use manta_primitives::{constants, AccountId, AuraId, Balance, Signature};
+use manta_primitives::{
+	constants,
+	types::{AccountId, AuraId, Balance, Signature},
+};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, Properties};
 use serde::{Deserialize, Serialize};
@@ -34,8 +37,6 @@ pub use manta_runtime::currency::MANTA;
 pub mod dolphin;
 pub use self::dolphin::*;
 pub use dolphin_runtime::currency::DOL;
-pub mod dolphin_two;
-pub use self::dolphin_two::*;
 
 const CALAMARI_ENDOWMENT: Balance = 1_000_000_000 * KMA; // 10 endowment so that total supply is 10B
 

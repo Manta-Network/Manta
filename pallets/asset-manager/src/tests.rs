@@ -22,7 +22,7 @@
 use crate::{self as asset_manager, AssetIdLocation, UnitsPerSecond};
 use asset_manager::mock::*;
 use frame_support::{assert_noop, assert_ok};
-use manta_primitives::{AssetLocation, AssetRegistarMetadata};
+use manta_primitives::assets::{AssetLocation, AssetRegistarMetadata};
 use sp_runtime::traits::BadOrigin;
 use xcm::{latest::prelude::*, VersionedMultiLocation};
 

@@ -33,7 +33,7 @@ use cumulus_relay_chain_local::build_relay_chain_interface;
 use polkadot_service::NativeExecutionDispatch;
 
 use crate::rpc;
-pub use manta_primitives::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
+pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
 
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use futures::lock::Mutex;
@@ -98,19 +98,6 @@ impl sc_executor::NativeExecutionDispatch for DolphinRuntimeExecutor {
 
 	fn native_version() -> sc_executor::NativeVersion {
 		dolphin_runtime::native_version()
-	}
-}
-
-pub struct DolphinTwoRuntimeExecutor;
-impl sc_executor::NativeExecutionDispatch for DolphinTwoRuntimeExecutor {
-	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		dolphin_two_runtime::api::dispatch(method, data)
-	}
-
-	fn native_version() -> sc_executor::NativeVersion {
-		dolphin_two_runtime::native_version()
 	}
 }
 
