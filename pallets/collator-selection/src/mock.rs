@@ -18,11 +18,14 @@ use super::*;
 use crate as collator_selection;
 use frame_support::{
 	ord_parameter_types, parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64, FindAuthor, GenesisBuild, ValidatorRegistration},
+	traits::{
+		ConstU16, ConstU32, ConstU64, FindAuthor, GenesisBuild, ValidatorRegistration, ValidatorSet,
+	},
 	PalletId,
 };
 
 use frame_system::EnsureSignedBy;
+use sp_arithmetic::Percent;
 use sp_core::H256;
 use sp_runtime::{
 	testing::{Header, UintAuthorityId},
@@ -188,6 +191,17 @@ impl ValidatorRegistration<u64> for IsRegistered {
 	}
 }
 
+impl ValidatorSet<u64> for IsRegistered {
+	type ValidatorId = u64;
+	type ValidatorIdOf = IdentityCollator;
+	fn session_index() -> sp_staking::SessionIndex {
+		Session::current_index()
+	}
+	fn validators() -> Vec<Self::ValidatorId> {
+		Session::validators()
+	}
+}
+
 impl Config for Test {
 	type Event = Event;
 	type Currency = Balances;
@@ -195,9 +209,9 @@ impl Config for Test {
 	type PotId = PotId;
 	type MaxCandidates = ConstU32<20>;
 	type MaxInvulnerables = ConstU32<20>;
-	type KickThreshold = Period;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = IdentityCollator;
+	type AccountIdOf = IdentityCollator;
 	type ValidatorRegistration = IsRegistered;
 	type WeightInfo = ();
 }
@@ -227,6 +241,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let collator_selection = collator_selection::GenesisConfig::<Test> {
 		desired_candidates: 2,
 		candidacy_bond: 10,
+		eviction_baseline: Percent::from_percent(80),
+		eviction_tolerance: Percent::from_percent(10),
 		invulnerables,
 	};
 	let session = pallet_session::GenesisConfig::<Test> { keys };

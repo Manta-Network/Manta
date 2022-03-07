@@ -912,7 +912,7 @@ dependencies = [
  "frame-try-runtime",
  "hex-literal",
  "log",
- "manta-collator-selection",
+ "manta-collator-selection 3.1.4 (git+https://github.com/Manta-Network/Manta.git?rev=bdfb86861011e333236b6a8607fc72018b338aff)",
  "manta-primitives",
  "pallet-aura",
  "pallet-authorship",
@@ -943,6 +943,7 @@ dependencies = [
  "serde_json",
  "smallvec",
  "sp-api",
+ "sp-arithmetic",
  "sp-block-builder",
  "sp-consensus-aura",
  "sp-core",
@@ -2046,7 +2047,7 @@ dependencies = [
  "frame-try-runtime",
  "hex-literal",
  "log",
- "manta-collator-selection",
+ "manta-collator-selection 3.1.4",
  "manta-primitives",
  "orml-xtokens",
  "pallet-asset-manager",
@@ -2080,6 +2081,7 @@ dependencies = [
  "serde",
  "smallvec",
  "sp-api",
+ "sp-arithmetic",
  "sp-block-builder",
  "sp-consensus-aura",
  "sp-core",
@@ -4520,6 +4522,7 @@ dependencies = [
  "rand 0.7.3",
  "scale-info",
  "serde",
+ "sp-arithmetic",
  "sp-consensus-aura",
  "sp-core",
  "sp-io",
@@ -4527,6 +4530,26 @@ dependencies = [
  "sp-staking",
  "sp-std",
  "sp-tracing",
+]
+
+[[package]]
+name = "manta-collator-selection"
+version = "3.1.4"
+source = "git+https://github.com/Manta-Network/Manta.git?rev=bdfb86861011e333236b6a8607fc72018b338aff#bdfb86861011e333236b6a8607fc72018b338aff"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-authorship",
+ "pallet-session",
+ "parity-scale-codec",
+ "rand 0.7.3",
+ "scale-info",
+ "serde",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
 ]
 
 [[package]]
