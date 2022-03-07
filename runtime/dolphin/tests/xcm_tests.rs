@@ -20,7 +20,7 @@ mod xcm_mock;
 
 use codec::Encode;
 use frame_support::{assert_ok, weights::constants::WEIGHT_PER_SECOND};
-use manta_primitives::AssetLocation;
+use manta_primitives::assets::AssetLocation;
 use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
 use xcm_mock::{parachain::PALLET_ASSET_INDEX, *};
 use xcm_simulator::TestExt;

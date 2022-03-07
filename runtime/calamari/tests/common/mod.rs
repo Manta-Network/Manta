@@ -14,14 +14,29 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-#![allow(non_upper_case_globals)]
+pub mod mock;
+
+pub use calamari_runtime::{currency::KMA, Event, Origin, Runtime, System};
+
+use frame_support::weights::{DispatchInfo, Weight};
 use manta_primitives::types::Balance;
 
-pub const MANTA: Balance = 1_000_000_000_000_000_000; // 18 decimal
-pub const cMANTA: Balance = MANTA / 100; // 16 decimal, cent-MA
-pub const mMANTA: Balance = MANTA / 1_000; // 15 decimal, milli-MA
-pub const uMANTA: Balance = MANTA / 1_000_000; // 12 decimal, micro-MA
+pub const BOND_AMOUNT: Balance = 1_000 * KMA;
+pub const INITIAL_BALANCE: Balance = 1_000_000_000_000 * KMA;
 
-pub const fn deposit(items: u32, bytes: u32) -> Balance {
-	items as Balance * 15 * mMANTA + (bytes as Balance) * 6 * mMANTA // TODO: revisit the storage cost here
+/// create a transaction info struct from weight. Handy to avoid building the whole struct.
+pub fn info_from_weight(w: Weight) -> DispatchInfo {
+	// pays_fee: Pays::Yes -- class: DispatchClass::Normal
+	DispatchInfo {
+		weight: w,
+		..Default::default()
+	}
+}
+
+pub fn last_event() -> Event {
+	System::events().pop().expect("Event expected").event
+}
+
+pub fn root_origin() -> <Runtime as frame_system::Config>::Origin {
+	<Runtime as frame_system::Config>::Origin::root()
 }

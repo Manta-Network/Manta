@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 #![allow(non_upper_case_globals)]
-use manta_primitives::Balance;
+use manta_primitives::types::Balance;
 
 pub const KMA: Balance = 1_000_000_000_000; // 12 decimal
 pub const cKMA: Balance = KMA / 100; // 10 decimal, cent-MA

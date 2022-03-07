@@ -40,7 +40,7 @@ pub mod pallet {
 	use codec::Codec;
 	use frame_support::{pallet_prelude::*, transactional, PalletId};
 	use frame_system::pallet_prelude::*;
-	use manta_primitives::{AssetIdLocationGetter, UnitsToWeightRatio};
+	use manta_primitives::assets::{AssetIdLocationGetter, UnitsToWeightRatio};
 	use scale_info::TypeInfo;
 	use sp_runtime::{
 		traits::{AccountIdConversion, AtLeast32BitUnsigned, CheckedAdd, One},

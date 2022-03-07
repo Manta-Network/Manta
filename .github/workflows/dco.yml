@@ -8,7 +8,7 @@ name: "Developer Certificate of Origin"
 on: [pull_request]
 jobs:
   commits_check_job:
-    name: "Commits Check"
+    name: "Validate presence of DCO information"
     runs-on: ubuntu-latest
     steps:
       -

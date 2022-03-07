@@ -34,7 +34,8 @@ use sp_runtime::{
 use sp_std::{convert::TryFrom, prelude::*};
 
 use manta_primitives::{
-	AssetIdLocationConvert, AssetLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset,
+	assets::{AssetIdLocationConvert, AssetLocation},
+	xcm::{FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
 };
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
@@ -52,7 +53,7 @@ use xcm_builder::{
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::Get;
 
-pub use manta_primitives::{AssetId, AssetRegistarMetadata, AssetStorageMetadata};
+pub use manta_primitives::{types::AssetId, assets::{AssetRegistarMetadata, AssetStorageMetadata}};
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 
@@ -218,7 +219,7 @@ parameter_types! {
 	pub XcmFeesAccount: AccountId = AssetManager::account_id();
 }
 
-pub type XcmFeesToAccount = manta_primitives::XcmFeesToAccount<
+pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
 	Assets,
 	ConvertedConcreteAssetId<
 		AssetId,
@@ -574,7 +575,7 @@ impl orml_xtokens::Config for Runtime {
 	type Event = Event;
 	type Balance = Balance;
 	type CurrencyId = CurrencyId;
-	type AccountIdToMultiLocation = manta_primitives::AccountIdToMultiLocation<AccountId>;
+	type AccountIdToMultiLocation = manta_primitives::xcm::AccountIdToMultiLocation<AccountId>;
 	type CurrencyIdConvert =
 		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>>;
 	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
