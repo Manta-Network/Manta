@@ -18,7 +18,7 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime, match_type, parameter_types,
 	traits::{ConstU32, Everything, Nothing},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
@@ -44,16 +44,20 @@ use polkadot_parachain::primitives::{
 };
 use xcm::{latest::prelude::*, Version as XcmVersion, VersionedXcm};
 use xcm_builder::{
-	AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
+	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
 	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
 	FungiblesAdapter, LocationInverter, ParentIsDefault, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation,
+	SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::Get;
 
-pub use manta_primitives::{types::AssetId, assets::{AssetRegistarMetadata, AssetStorageMetadata}};
+pub use manta_primitives::{
+	assets::{AssetRegistarMetadata, AssetStorageMetadata},
+	types::AssetId,
+};
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 
@@ -212,7 +216,34 @@ pub type FungiblesTransactor = FungiblesAdapter<
 >;
 
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
-pub type Barrier = AllowUnpaidExecutionFrom<Everything>;
+// pub type Barrier = AllowUnpaidExecutionFrom<Everything>;
+match_type! {
+	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
+		MultiLocation { parents: 1, interior: Here } |
+		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
+	};
+}
+match_type! {
+	pub type ParentOrSiblings: impl Contains<MultiLocation> = {
+		MultiLocation { parents: 1, interior: Here } |
+		MultiLocation { parents: 1, interior: X1(_) }
+	};
+}
+
+pub type Barrier = (
+	TakeWeightCredit,
+	AllowTopLevelPaidExecutionFrom<Everything>,
+	// // Parent and its exec plurality get free execution
+	// AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+	AllowUnpaidExecutionFrom<Everything>,
+	// Expected responses are OK.
+	// Allows `Pending` or `VersionNotifier` query responses.
+	AllowKnownQueryResponses<PolkadotXcm>,
+	// Subscriptions for version tracking are OK.
+	// Allows execution of `SubscribeVersion` or `UnsubscribeVersion` instruction,
+	// from parent or sibling chains.
+	AllowSubscriptionsFrom<ParentOrSiblings>,
+);
 
 parameter_types! {
 	/// Xcm fees will go to the asset manager (we don't implement treasury yet)
