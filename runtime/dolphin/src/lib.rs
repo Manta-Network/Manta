@@ -752,7 +752,6 @@ pub type XcmOriginToCallOrigin = (
 
 parameter_types! {
 	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-	// see https://github.com/paritytech/cumulus/blob/master/polkadot-parachains/statemine/src/lib.rs#L551
 	pub UnitWeightCost: Weight = 1_000_000_000;
 	// Used in native traders
 	// This might be able to skipped.
@@ -793,7 +792,10 @@ match_type! {
 }
 
 pub type Barrier = (
+	// Allows local origin messages which call weight_credit >= weight_limit.
 	TakeWeightCredit,
+	// Allows non-local origin messages, for example from from the xcmp queue,
+	// which have the ability to deposit assets and pay for their own execution.
 	AllowTopLevelPaidExecutionFrom<Everything>,
 	// Parent and its exec plurality get free execution
 	AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
@@ -1059,7 +1061,7 @@ construct_runtime!(
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
 
-		// Assets mana
+		// Assets management
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 51,
 		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>} = 52,
 	}
