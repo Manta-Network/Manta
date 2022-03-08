@@ -4,18 +4,22 @@
 ### Breaking changes
 
 ### Features
-- [\#383](https://github.com/Manta-Network/Manta/pull/383) Calamari & Manta support `cargo build --features=fast-runtime`, setting most configurable timers to 2 or 5 minutes (instead of days)
 
 ### Improvements
-
 ### Bug fixes
 
+## v3.1.5
 
+### Breaking changes
 ### Features
+- [\#383](https://github.com/Manta-Network/Manta/pull/383) Calamari & Manta support `cargo build --features=fast-runtime`, setting most configurable timers to 2 or 5 minutes (instead of days)
 - [\#419](https://github.com/Manta-Network/Manta/pull/419) Add asset manager and XCM support.
-
 ### Improvements
 - [\#411](https://github.com/Manta-Network/Manta/pull/411) Add a corner case about increasing/decreasing candidate bond in collator-selection.
+- [\#424](https://github.com/Manta-Network/Manta/pull/424) Bump upstream to v0.9.17.
+
+### Bug fixes
+- Fix parachain block time degradation: https://github.com/paritytech/polkadot/pull/4943.
 
 ## v3.1.4-1
 ### Breaking changes

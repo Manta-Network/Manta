@@ -52,7 +52,7 @@ use sp_core::{sr25519, H256};
 use sp_runtime::{
 	generic::DigestItem,
 	traits::{BlakeTwo256, Hash, Header as HeaderT, SignedExtension},
-	DispatchError, Percent,
+	DispatchError, ModuleError, Percent,
 };
 
 fn note_preimage(proposer: &AccountId, proposal_call: &Call) -> H256 {
@@ -150,11 +150,11 @@ fn assert_proposal_is_filtered(proposer: &AccountId, motion: &Call) {
 		last_event(),
 		calamari_runtime::Event::Council(pallet_collective::Event::Executed {
 			proposal_hash: council_motion_hash,
-			result: Err(DispatchError::Module {
+			result: Err(DispatchError::Module(ModuleError {
 				index: 0,
 				error: 5,
 				message: None
-			})
+			}))
 		})
 	);
 }

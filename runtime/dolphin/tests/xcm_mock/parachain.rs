@@ -46,14 +46,17 @@ use xcm::{latest::prelude::*, Version as XcmVersion, VersionedXcm};
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
 	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
-	FungiblesAdapter, LocationInverter, ParentIsDefault, SiblingParachainAsNative,
+	FungiblesAdapter, LocationInverter, ParentIsPreset, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
 	SovereignSignedViaLocation,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::Get;
 
-pub use manta_primitives::{types::AssetId, assets::{AssetRegistarMetadata, AssetStorageMetadata}};
+pub use manta_primitives::{
+	assets::{AssetRegistarMetadata, AssetStorageMetadata},
+	types::AssetId,
+};
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 
@@ -149,7 +152,7 @@ impl pallet_assets::Config for Runtime {
 /// `Transact` in order to determine the dispatch Origin.
 pub type LocationToAccountId = (
 	// The parent (Relay-chain) origin converts to the default `AccountId`.
-	ParentIsDefault<AccountId>,
+	ParentIsPreset<AccountId>,
 	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	AccountId32Aliases<RelayNetwork, AccountId>,
@@ -181,6 +184,8 @@ parameter_types! {
 	// We have to use `here()` because of reanchoring logic
 	pub ParaTokenPerSecond: (xcm::v1::AssetId, u128) = (Concrete(MultiLocation::here()), 1_000_000_000);
 	pub const MaxInstructions: u32 = 100;
+	// Set a default here, () doesn't mean default account anymore.
+	pub CheckingAccount: AccountId = [0u8; 32].into();
 }
 
 /// Transactor for native currency, i.e. implements `fungible` trait
@@ -208,7 +213,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	// No teleport support.
 	Nothing,
 	// No teleport tracking.
-	(),
+	CheckingAccount,
 >;
 
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
