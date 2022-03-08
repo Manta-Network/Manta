@@ -336,10 +336,8 @@ impl pallet_scheduler::Config for Runtime {
 }
 
 parameter_types! {
-	// Our NORMAL_DISPATCH_RATIO is 70% of the 5MB limit
-	// So anything more than 3.5MB doesn't make sense here
-	pub const PreimageMaxSize: u32 = 3584 * 1024;
-	pub const PreimageBaseDeposit: Balance = 1 * MANTA;
+	pub const PreimageMaxSize: u32 = 4096 * 1024;
+	pub const PreimageBaseDeposit: Balance = 10 * MANTA;
 	// One cent: $10,000 / MB
 	pub const PreimageByteDeposit: Balance = 1 * cMANTA;
 }

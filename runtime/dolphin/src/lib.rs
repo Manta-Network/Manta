@@ -496,8 +496,8 @@ impl pallet_membership::Config<TechnicalMembershipInstance> for Runtime {
 
 parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(1);
-	pub const ProposalBondMinimum: Balance = 50 * DOL;
-	pub const ProposalBondMaximum: Balance = 1000 * DOL;
+	pub const ProposalBondMinimum: Balance = 500 * DOL;
+	pub const ProposalBondMaximum: Balance = 10_000 * DOL;
 	pub const SpendPeriod: BlockNumber = 10 * MINUTES;
 	pub const Burn: Permill = Permill::from_percent(0);
 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
@@ -577,10 +577,8 @@ impl pallet_scheduler::Config for Runtime {
 }
 
 parameter_types! {
-	// Our NORMAL_DISPATCH_RATIO is 70% of the 5MB limit
-	// So anything more than 3.5MB doesn't make sense here
-	pub const PreimageMaxSize: u32 = 3584 * 1024;
-	pub const PreimageBaseDeposit: Balance = 1 * DOL;
+	pub const PreimageMaxSize: u32 = 4096 * 1024;
+	pub const PreimageBaseDeposit: Balance = 1_000 * DOL;
 }
 
 impl pallet_preimage::Config for Runtime {
