@@ -931,7 +931,7 @@ where
 }
 
 parameter_types! {
-	pub const BaseXcmWeight: Weight = 100;
+	pub const BaseXcmWeight: Weight = 100_000_000;
 	pub const MaxAssetsForTransfer: usize = 2;
 }
 
