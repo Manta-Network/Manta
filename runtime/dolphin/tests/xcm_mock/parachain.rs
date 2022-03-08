@@ -179,7 +179,7 @@ pub type XcmOriginToCallOrigin = (
 );
 
 parameter_types! {
-	pub const UnitWeightCost: Weight = 1;
+	pub const UnitWeightCost: Weight = 1_000_000_000;
 	// Used in native traders
 	// This might be able to skipped.
 	// We have to use `here()` because of reanchoring logic
@@ -216,34 +216,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 >;
 
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
-// pub type Barrier = AllowUnpaidExecutionFrom<Everything>;
-match_type! {
-	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
-		MultiLocation { parents: 1, interior: Here } |
-		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
-	};
-}
-match_type! {
-	pub type ParentOrSiblings: impl Contains<MultiLocation> = {
-		MultiLocation { parents: 1, interior: Here } |
-		MultiLocation { parents: 1, interior: X1(_) }
-	};
-}
-
-pub type Barrier = (
-	TakeWeightCredit,
-	AllowTopLevelPaidExecutionFrom<Everything>,
-	// // Parent and its exec plurality get free execution
-	// AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-	AllowUnpaidExecutionFrom<Everything>,
-	// Expected responses are OK.
-	// Allows `Pending` or `VersionNotifier` query responses.
-	AllowKnownQueryResponses<PolkadotXcm>,
-	// Subscriptions for version tracking are OK.
-	// Allows execution of `SubscribeVersion` or `UnsubscribeVersion` instruction,
-	// from parent or sibling chains.
-	AllowSubscriptionsFrom<ParentOrSiblings>,
-);
+pub type Barrier = AllowUnpaidExecutionFrom<Everything>;
 
 parameter_types! {
 	/// Xcm fees will go to the asset manager (we don't implement treasury yet)
@@ -597,7 +570,7 @@ where
 }
 
 parameter_types! {
-	pub const BaseXcmWeight: Weight = 100;
+	pub const BaseXcmWeight: Weight = 100_000_000;
 	pub const MaxAssetsForTransfer: usize = 2;
 }
 
