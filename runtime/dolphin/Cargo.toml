@@ -89,6 +89,8 @@ pallet-asset-manager = { path = '../../pallets/asset-manager', default-features 
 orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="4a66b29"}
 
 [dev-dependencies]
+serde_json = "1.0"
+reqwest = { version = "0.11", features = ["blocking"] }
 xcm-simulator = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.16"}
 polkadot-runtime-parachains = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.16" }
 
