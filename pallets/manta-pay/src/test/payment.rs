@@ -292,11 +292,11 @@ fn mint_should_work() {
 	let mut rng = thread_rng();
 	new_test_ext().execute_with(|| {
 		let asset_id = rng.gen();
-		let total_supply = rng.gen();
-		initialize_test(asset_id, total_supply);
+		let total_free_supply = rng.gen();
+		initialize_test(asset_id, total_free_supply + 1);
 		mint_tokens(
 			asset_id,
-			&value_distribution(5, total_supply, &mut rng),
+			&value_distribution(5, total_free_supply, &mut rng),
 			&mut rng,
 		);
 	});
