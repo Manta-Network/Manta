@@ -52,7 +52,7 @@ jobs:
         name: run docker image
         run: |
           sudo docker run -p 9944:9944 -p 9945:9945 -d mantanetwork/${{ matrix.runtime.name }}:latest --unsafe-ws-external -- --unsafe-ws-external > docker_id.log
-          sleep 30
+          sleep 60
       -
         name: Show log
         run: |
