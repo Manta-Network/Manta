@@ -39,16 +39,6 @@ where
 	T: Config,
 {
 	/// ```text
-	/// Storage: MantaPay TotalSupply (r:1 w:0)
-	/// Storage: MantaPay Balances (r:2 w:2)
-	/// ```
-	fn transfer() -> Weight {
-		(108_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
-	}
-
-	/// ```text
 	/// Storage: MantaPay Balances (r:1 w:1)
 	/// Storage: MantaPay UtxoSet (r:1 w:1)
 	/// Storage: MantaPay ShardTrees (r:1 w:1)

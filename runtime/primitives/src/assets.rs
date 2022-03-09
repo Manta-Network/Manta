@@ -18,6 +18,8 @@ use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_core::H160;
 use sp_std::{borrow::Borrow, marker::PhantomData, prelude::Vec};
+use frame_support::traits::tokens::{WithdrawConsequence, DepositConsequence};
+use crate::types::{AssetId, Balance};
 
 ///! Manta/Calamari/Dolphin Asset
 use xcm::{
@@ -133,4 +135,84 @@ where
 			.and_then(Into::into)
 			.ok_or(())
 	}
+}
+
+pub enum FungibleLedgerConsequence<Balance>{
+	/// Deposit couldn't happen due to the amount being too low. This is usually because the
+	/// account doesn't yet exist and the deposit wouldn't bring it to at least the minimum needed
+	/// for existance.
+	BelowMinimum,
+	/// Deposit cannot happen since the account cannot be created (usually because it's a consumer
+	/// and there exists no provider reference).
+	CannotCreate,
+	/// The asset is unknown. Usually because an `AssetId` has been presented which doesn't exist
+	/// on the system.
+	UnknownAsset,
+	/// An overflow would occur. This is practically unexpected, but could happen in test systems
+	/// with extremely small balance types or balances that approach the max value of the balance
+	/// type.
+	Overflow,
+	/// There has been an underflow in the system. This is indicative of a corrupt state and
+	/// likely unrecoverable.
+	Underflow,
+	/// Account continued in existence.
+	/// Not enough of the funds in the account are unavailable for withdrawal.
+	Frozen,
+	/// Account balance would reduce to zero, potentially destroying it. The parameter is the
+	/// amount of balance which is destroyed.
+	ReducedToZero(Balance),
+	/// Withdraw could not happen since the amount to be withdrawn is less than the total funds in
+	/// the account.
+	NoFunds,
+	/// The withdraw would mean the account dying when it needs to exist (usually because it is a
+	/// provider and there are consumer references on it).
+	WouldDie,
+	/// Internal error.
+	InternalError,
+	/// Success
+	Success,
+}
+
+impl From<DepositConsequence> for FungibleLedgerConsequence<Balance> {
+	fn from(dc: DepositConsequence) -> Self {
+		match dc {
+			DepositConsequence::BelowMinimum => FungibleLedgerConsequence::BelowMinimum,
+			DepositConsequence::CannotCreate => FungibleLedgerConsequence::CannotCreate,
+			DepositConsequence::Overflow => FungibleLedgerConsequence::Overflow,
+			DepositConsequence::Success => FungibleLedgerConsequence::Success,
+			DepositConsequence::UnknownAsset=> FungibleLedgerConsequence::UnknownAsset
+		}
+	}
+}
+
+impl From<WithdrawConsequence<Balance>> for FungibleLedgerConsequence<Balance> {
+	fn from(wc: WithdrawConsequence<Balance>) -> Self {
+		match wc {
+			WithdrawConsequence::Frozen => FungibleLedgerConsequence::Frozen,
+			WithdrawConsequence::NoFunds => FungibleLedgerConsequence::NoFunds,
+			WithdrawConsequence::Overflow => FungibleLedgerConsequence::Overflow,
+			WithdrawConsequence::Underflow => FungibleLedgerConsequence::Underflow,
+			WithdrawConsequence::ReducedToZero(balance) => FungibleLedgerConsequence::ReducedToZero(balance),
+			WithdrawConsequence::Success => FungibleLedgerConsequence::Success,
+			WithdrawConsequence::UnknownAsset => FungibleLedgerConsequence::UnknownAsset,
+			WithdrawConsequence::WouldDie => FungibleLedgerConsequence::WouldDie,
+		}
+	}
+}
+
+
+/// Unified interface for fungible ledger
+/// It unifies `fungible` and `fungibles`
+pub trait FungibleLedger<C>
+where C: frame_system::Config,
+{
+
+	/// check whether `asset_id`, `account` can increase certain balance
+	fn can_deposit(asset_id: AssetId, account: &C::AccountId, amount: Balance) -> Result<(), FungibleLedgerConsequence<Balance>>;
+
+	/// check whether `asset_id`, `account` can decrease certain balance
+	fn can_withdraw(asset_d: AssetId, account: &C::AccountId, amount: Balance) -> Result<(), FungibleLedgerConsequence<Balance>>;
+	
+	/// transfer asset
+	fn transfer(asset_id: AssetId, source: &C::AccountId, dest: &C::AccountId, amount: Balance) -> Result<(), FungibleLedgerConsequence<Balance>>;
 }

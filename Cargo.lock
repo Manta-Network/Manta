@@ -4829,7 +4829,6 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#5efedbad1f1638df930750fed1860353f1a04fe3"
 dependencies = [
  "derivative",
  "derive_more",
@@ -4870,7 +4869,6 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#5efedbad1f1638df930750fed1860353f1a04fe3"
 dependencies = [
  "derivative",
  "manta-util",
@@ -4880,7 +4878,6 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#5efedbad1f1638df930750fed1860353f1a04fe3"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -4908,7 +4905,9 @@ name = "manta-primitives"
 version = "3.1.4"
 dependencies = [
  "frame-support",
+ "frame-system",
  "log",
+ "manta-accounting",
  "parity-scale-codec",
  "scale-info",
  "smallvec",
@@ -5000,7 +4999,6 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#5efedbad1f1638df930750fed1860353f1a04fe3"
 
 [[package]]
 name = "maplit"
@@ -6135,8 +6133,11 @@ dependencies = [
  "manta-accounting",
  "manta-crypto",
  "manta-pay",
+ "manta-primitives",
  "manta-sdk",
  "manta-util",
+ "pallet-assets",
+ "pallet-balances",
  "parity-scale-codec",
  "rand 0.8.5",
  "scale-info",

@@ -58,8 +58,6 @@
 //!
 //! ### Dispatchable Functions
 //!
-//! * `transfer_asset` - Transfers an `amount` of units of fungible asset `id` from the balance of
-//!     the function caller's account (`origin`) to a `target` account.
 //! * `mint` - Converting an `amount` of units of fungible asset `id` from the caller
 //!     to a private UTXO. (The caller does not need to be the owner of this UTXO)
 //! * `private_transfer` - Transfer two input UTXOs into two output UTXOs. Require that 1) the input
@@ -72,11 +70,6 @@
 //!
 //! Please refer to the [`Call`](./enum.Call.html) enum and its associated variants for
 //! documentation on each function.
-//!
-//! ### Public Functions
-//!
-//! * `balance` - Get the asset balance of `who`.
-//! * `total_supply` - Get the total supply of an asset `id`.
 //!
 //! Please refer to the [`Module`](./struct.Module.html) struct for details on publicly available
 //! functions.
@@ -106,14 +99,14 @@
 extern crate alloc;
 
 use core::marker::PhantomData;
-use frame_support::{ensure, require_transactional};
+use frame_support::{require_transactional, PalletId};
 use manta_accounting::{
 	asset,
 	transfer::{
-		canonical::TransferShape, AccountBalance, InvalidSinkAccount, InvalidSourceAccount, Proof,
+		canonical::TransferShape, InvalidSinkAccount, InvalidSourceAccount, Proof,
 		ReceiverLedger, ReceiverPostError, ReceiverPostingKey, SenderLedger, SenderPostError,
 		SenderPostingKey, SinkPostingKey, SourcePostingKey, TransferLedger,
-		TransferLedgerSuperPostingKey, TransferPostError,
+		TransferLedgerSuperPostingKey, TransferPostError, LedgerInternalError,
 	},
 };
 use manta_crypto::{
@@ -122,6 +115,8 @@ use manta_crypto::{
 };
 use manta_pay::config;
 use manta_util::codec::Decode as _;
+use manta_primitives::types::{AssetId, Balance};
+use manta_primitives::assets::{FungibleLedger};
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use types::*;
@@ -140,263 +135,7 @@ pub mod weights;
 pub use pallet::*;
 
 /// Type Definitions for Protocol Structures
-pub mod types {
-	use super::*;
-
-	/// Asset Id Type
-	pub type AssetId = asset::AssetIdType;
-
-	/// Asset Value Type
-	pub type AssetValue = asset::AssetValueType;
-
-	/// Asset
-	#[derive(
-		Clone,
-		Copy,
-		Debug,
-		Decode,
-		Default,
-		Encode,
-		Eq,
-		Hash,
-		MaxEncodedLen,
-		Ord,
-		PartialEq,
-		PartialOrd,
-		TypeInfo,
-	)]
-	pub struct Asset {
-		/// Asset Id
-		pub id: AssetId,
-
-		/// Asset Value
-		pub value: AssetValue,
-	}
-
-	impl Asset {
-		/// Builds a new [`Asset`] from `id` and `value`.
-		#[inline]
-		pub fn new(id: AssetId, value: AssetValue) -> Self {
-			Self { id, value }
-		}
-	}
-
-	/// Encrypted Note
-	#[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
-	pub struct EncryptedNote {
-		/// Ciphertext
-		pub ciphertext: [u8; 36],
-
-		/// Ephemeral Public Key
-		pub ephemeral_public_key: config::PublicKey,
-	}
-
-	impl Default for EncryptedNote {
-		#[inline]
-		fn default() -> Self {
-			Self {
-				ciphertext: [0; 36],
-				ephemeral_public_key: Default::default(),
-			}
-		}
-	}
-
-	impl From<config::EncryptedNote> for EncryptedNote {
-		#[inline]
-		fn from(note: config::EncryptedNote) -> Self {
-			Self {
-				ciphertext: note.ciphertext.into(),
-				ephemeral_public_key: note.ephemeral_public_key,
-			}
-		}
-	}
-
-	impl From<EncryptedNote> for config::EncryptedNote {
-		#[inline]
-		fn from(note: EncryptedNote) -> Self {
-			Self {
-				ciphertext: note.ciphertext.into(),
-				ephemeral_public_key: note.ephemeral_public_key,
-			}
-		}
-	}
-
-	/// Sender Post
-	#[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
-	pub struct SenderPost {
-		/// UTXO Accumulator Output
-		pub utxo_accumulator_output: config::UtxoAccumulatorOutput,
-
-		/// Void Number
-		pub void_number: config::VoidNumber,
-	}
-
-	impl From<config::SenderPost> for SenderPost {
-		#[inline]
-		fn from(post: config::SenderPost) -> Self {
-			Self {
-				utxo_accumulator_output: post.utxo_accumulator_output,
-				void_number: post.void_number,
-			}
-		}
-	}
-
-	impl From<SenderPost> for config::SenderPost {
-		#[inline]
-		fn from(post: SenderPost) -> Self {
-			Self {
-				utxo_accumulator_output: post.utxo_accumulator_output,
-				void_number: post.void_number,
-			}
-		}
-	}
-
-	/// Receiver Post
-	#[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
-	pub struct ReceiverPost {
-		/// Unspent Transaction Output
-		pub utxo: config::Utxo,
-
-		/// Encrypted Note
-		pub note: EncryptedNote,
-	}
-
-	impl From<config::ReceiverPost> for ReceiverPost {
-		#[inline]
-		fn from(post: config::ReceiverPost) -> Self {
-			Self {
-				utxo: post.utxo,
-				note: post.note.into(),
-			}
-		}
-	}
-
-	impl From<ReceiverPost> for config::ReceiverPost {
-		#[inline]
-		fn from(post: ReceiverPost) -> Self {
-			Self {
-				utxo: post.utxo,
-				note: post.note.into(),
-			}
-		}
-	}
-
-	/// Transfer Post
-	#[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, TypeInfo)]
-	pub struct TransferPost {
-		/// Asset Id
-		pub asset_id: Option<AssetId>,
-
-		/// Sources
-		pub sources: Vec<AssetValue>,
-
-		/// Sender Posts
-		pub sender_posts: Vec<SenderPost>,
-
-		/// Receiver Posts
-		pub receiver_posts: Vec<ReceiverPost>,
-
-		/// Sinks
-		pub sinks: Vec<AssetValue>,
-
-		/// Validity Proof
-		pub validity_proof: config::Proof,
-	}
-
-	impl From<config::TransferPost> for TransferPost {
-		#[inline]
-		fn from(post: config::TransferPost) -> Self {
-			Self {
-				asset_id: post.asset_id.map(|id| id.0),
-				sources: post.sources.into_iter().map(|s| s.0).collect(),
-				sender_posts: post.sender_posts.into_iter().map(Into::into).collect(),
-				receiver_posts: post.receiver_posts.into_iter().map(Into::into).collect(),
-				sinks: post.sinks.into_iter().map(|s| s.0).collect(),
-				validity_proof: post.validity_proof,
-			}
-		}
-	}
-
-	impl From<TransferPost> for config::TransferPost {
-		#[inline]
-		fn from(post: TransferPost) -> Self {
-			Self {
-				asset_id: post.asset_id.map(asset::AssetId),
-				sources: post.sources.into_iter().map(asset::AssetValue).collect(),
-				sender_posts: post.sender_posts.into_iter().map(Into::into).collect(),
-				receiver_posts: post.receiver_posts.into_iter().map(Into::into).collect(),
-				sinks: post.sinks.into_iter().map(asset::AssetValue).collect(),
-				validity_proof: post.validity_proof,
-			}
-		}
-	}
-
-	/// Leaf Digest Type
-	pub type LeafDigest = merkle_tree::LeafDigest<config::MerkleTreeConfiguration>;
-
-	/// Inner Digest Type
-	pub type InnerDigest = merkle_tree::InnerDigest<config::MerkleTreeConfiguration>;
-
-	/// Merkle Tree Current Path
-	#[derive(Clone, Debug, Decode, Default, Encode, Eq, PartialEq, TypeInfo)]
-	pub struct CurrentPath {
-		/// Sibling Digest
-		pub sibling_digest: LeafDigest,
-
-		/// Leaf Index
-		pub leaf_index: u32,
-
-		/// Inner Path
-		pub inner_path: Vec<InnerDigest>,
-	}
-
-	impl MaxEncodedLen for CurrentPath {
-		#[inline]
-		fn max_encoded_len() -> usize {
-			0_usize
-				.saturating_add(LeafDigest::max_encoded_len())
-				.saturating_add(u32::max_encoded_len())
-				.saturating_add(
-					// NOTE: We know that these paths don't exceed the path length.
-					InnerDigest::max_encoded_len().saturating_mul(
-						manta_crypto::merkle_tree::path_length::<config::MerkleTreeConfiguration>(),
-					),
-				)
-		}
-	}
-
-	impl From<merkle_tree::CurrentPath<config::MerkleTreeConfiguration>> for CurrentPath {
-		#[inline]
-		fn from(path: merkle_tree::CurrentPath<config::MerkleTreeConfiguration>) -> Self {
-			Self {
-				sibling_digest: path.sibling_digest,
-				leaf_index: path.inner_path.leaf_index.0 as u32,
-				inner_path: path.inner_path.path,
-			}
-		}
-	}
-
-	impl From<CurrentPath> for merkle_tree::CurrentPath<config::MerkleTreeConfiguration> {
-		#[inline]
-		fn from(path: CurrentPath) -> Self {
-			Self::new(
-				path.sibling_digest,
-				(path.leaf_index as usize).into(),
-				path.inner_path,
-			)
-		}
-	}
-
-	/// UTXO Merkle Tree Path
-	#[derive(Clone, Debug, Decode, Default, Encode, Eq, MaxEncodedLen, PartialEq, TypeInfo)]
-	pub struct UtxoMerkleTreePath {
-		/// Current Leaf Digest
-		pub leaf_digest: Option<LeafDigest>,
-
-		/// Current Path
-		pub current_path: CurrentPath,
-	}
-}
+pub mod types;
 
 /// MantaPay Pallet
 #[frame_support::pallet]
@@ -404,13 +143,10 @@ pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use sp_runtime::traits::StaticLookup;
+	use sp_runtime::traits::AccountIdConversion;
 
 	/// Extrinsic Weight Info
 	pub trait WeightInfo {
-		/// Returns the [`Weight`] of the [`Pallet::transfer`] extrinsic.
-		fn transfer() -> Weight;
-
 		/// Returns the [`Weight`] of the [`Pallet::mint`] extrinsic.
 		fn mint() -> Weight;
 
@@ -432,123 +168,54 @@ pub mod pallet {
 		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
+		/// Fungible ledger
+		type FungibleLedger: FungibleLedger<Self>;
+
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+
+		/// Pallet ID
+		type PalletId: Get<PalletId>;
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
-	/// Public Balance State
-	#[pallet::storage]
-	pub(super) type Balances<T: Config> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		T::AccountId,
-		Blake2_128Concat,
-		AssetId,
-		AssetValue,
-		ValueQuery,
-	>;
-
-	/// Total Supply per AssetId
-	#[pallet::storage]
-	pub(super) type TotalSupply<T: Config> =
-		StorageMap<_, Blake2_128Concat, AssetId, AssetValue, ValueQuery>;
-
-	///
+	/// Shards of the merkle tree
 	#[pallet::storage]
 	pub(super) type Shards<T: Config> =
 		StorageDoubleMap<_, Identity, u8, Identity, u64, (config::Utxo, EncryptedNote), ValueQuery>;
 
-	///
+	/// Shard trees
 	#[pallet::storage]
 	pub(super) type ShardTrees<T: Config> =
 		StorageMap<_, Identity, u8, UtxoMerkleTreePath, ValueQuery>;
 
-	///
+	/// Outputs of Utxo accumulator
 	#[pallet::storage]
 	pub(super) type UtxoAccumulatorOutputs<T: Config> =
 		StorageMap<_, Identity, config::UtxoAccumulatorOutput, (), ValueQuery>;
 
-	///
+	/// Utxo set
 	#[pallet::storage]
 	pub(super) type UtxoSet<T: Config> = StorageMap<_, Identity, config::Utxo, (), ValueQuery>;
 
-	///
+	/// Void number set
 	#[pallet::storage]
 	pub(super) type VoidNumberSet<T: Config> =
 		StorageMap<_, Identity, config::VoidNumber, (), ValueQuery>;
 
-	///
+	/// Void number set insertion order
 	#[pallet::storage]
 	pub(super) type VoidNumberSetInsertionOrder<T: Config> =
 		StorageMap<_, Identity, u64, config::VoidNumber, ValueQuery>;
 
-	///
+	/// Void number set size
 	#[pallet::storage]
 	pub(super) type VoidNumberSetSize<T: Config> = StorageValue<_, u64, ValueQuery>;
 
-	/// Genesis Configuration
-	#[pallet::genesis_config]
-	pub struct GenesisConfig<T: Config> {
-		pub owner: T::AccountId,
-		pub assets: alloc::collections::btree_set::BTreeSet<(AssetId, AssetValue)>,
-	}
-
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		#[inline]
-		fn default() -> Self {
-			/* FIXME: `AccountId` does not implement default!
-			GenesisConfig {
-				owner: Default::default(),
-				assets: Default::default(),
-			}
-			*/
-			todo!()
-		}
-	}
-
-	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-		#[inline]
-		fn build(&self) {
-			for (id, value) in &self.assets {
-				Pallet::<T>::init_asset(&self.owner, *id, *value);
-			}
-		}
-	}
-
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Transfers public `asset` from `origin` to `target`.
-		#[pallet::weight(T::WeightInfo::transfer())]
-		#[require_transactional]
-		pub fn transfer(
-			origin: OriginFor<T>,
-			target: <T::Lookup as StaticLookup>::Source,
-			asset: Asset,
-		) -> DispatchResultWithPostInfo {
-			let origin = ensure_signed(origin)?;
-			let target = T::Lookup::lookup(target)?;
-			ensure!(
-				TotalSupply::<T>::contains_key(&asset.id),
-				Error::<T>::UninitializedSupply
-			);
-			let origin_balance = Balances::<T>::get(&origin, asset.id);
-			ensure!(asset.value > 0, Error::<T>::ZeroTransfer);
-			ensure!(origin_balance >= asset.value, Error::<T>::BalanceLow);
-			Balances::<T>::mutate(&origin, asset.id, |balance| *balance -= asset.value);
-			Balances::<T>::mutate(&target, asset.id, |balance| *balance += asset.value);
-			Self::deposit_event(Event::Transfer {
-				asset,
-				source: origin,
-				sink: target,
-			});
-			Ok(().into())
-		}
-
 		/// Mints some assets encoded in `post` to the `origin` account.
 		#[pallet::weight(T::WeightInfo::mint())]
 		#[require_transactional]
@@ -697,6 +364,21 @@ pub mod pallet {
 		///
 		/// The submitted proof did not pass validation, or errored during validation.
 		InvalidProof,
+
+		/// Ledger Internal Error
+		/// 
+		/// Internal error caused by ledger internals (Ideally should never happen).
+		LedgerInternalError,
+
+		/// Invalid Source Account
+		/// 
+		/// At least one of the source accounts is invalid.
+		InvalidSourceAccount,
+
+		/// Invalid Sink Account
+		/// 
+		/// At least one of the sink accounts in invalid.
+		InvalidSinkAccount,
 	}
 
 	impl<T> From<InvalidSourceAccount<T::AccountId>> for Error<T>
@@ -704,13 +386,8 @@ pub mod pallet {
 		T: Config,
 	{
 		#[inline]
-		fn from(err: InvalidSourceAccount<T::AccountId>) -> Self {
-			match err.balance {
-				AccountBalance::Known(_) => Self::BalanceLow,
-				AccountBalance::UnknownAccount => {
-					unreachable!("Accounts are checked before reaching this point.")
-				}
-			}
+		fn from(_: InvalidSourceAccount<T::AccountId>) -> Self {
+			Self::InvalidSourceAccount
 		}
 	}
 
@@ -719,9 +396,8 @@ pub mod pallet {
 		T: Config,
 	{
 		#[inline]
-		fn from(err: InvalidSinkAccount<T::AccountId>) -> Self {
-			let _ = err;
-			unimplemented!("Accounts are checked before reaching this point.")
+		fn from(_: InvalidSinkAccount<T::AccountId>) -> Self {
+			Self::InvalidSinkAccount
 		}
 	}
 
@@ -759,39 +435,27 @@ pub mod pallet {
 				TransferPostError::DuplicateSpend => Self::DuplicateSpend,
 				TransferPostError::DuplicateRegister => Self::DuplicateRegister,
 				TransferPostError::InvalidProof => Self::InvalidProof,
+				TransferPostError::LedgerInternalError => Self::LedgerInternalError,
 			}
 		}
 	}
-}
 
-impl<T> Pallet<T>
-where
-	T: Config,
-{
-	/// Initializes `asset_id` with a supply of `total`, giving control to `owner`.
-	#[inline]
-	fn init_asset(owner: &T::AccountId, asset_id: AssetId, total: AssetValue) {
-		TotalSupply::<T>::insert(asset_id, total);
-		Balances::<T>::insert(owner, asset_id, total);
+	impl<T> Pallet<T>
+	where
+		T: Config,
+	{
+		/// Returns the ledger implementation for this pallet.
+		#[inline]
+		fn ledger() -> Ledger<T> {
+			Ledger(PhantomData)
+		}
+
+		/// The account ID of AssetManager
+		pub fn account_id() -> T::AccountId {
+			T::PalletId::get().into_account()
+		}
 	}
 
-	/// Returns the balance of `account` for the asset with the given `id`.
-	#[inline]
-	pub fn balance(account: T::AccountId, id: AssetId) -> AssetValue {
-		Balances::<T>::get(account, id)
-	}
-
-	/// Returns the total supply of the asset with the given `id`.
-	#[inline]
-	pub fn total_supply(id: AssetId) -> AssetValue {
-		TotalSupply::<T>::get(id)
-	}
-
-	/// Returns the ledger implementation for this pallet.
-	#[inline]
-	fn ledger() -> Ledger<T> {
-		Ledger(PhantomData)
-	}
 }
 
 /// Preprocessed Event
@@ -999,34 +663,21 @@ where
 	#[inline]
 	fn check_source_accounts<I>(
 		&self,
-		asset_id: asset::AssetId,
+		asset_id: manta_accounting::asset::AssetId,
 		sources: I,
 	) -> Result<Vec<Self::ValidSourceAccount>, InvalidSourceAccount<Self::AccountId>>
 	where
 		I: Iterator<Item = (Self::AccountId, asset::AssetValue)>,
 	{
-		// NOTE: Existence of accounts is type-checked so we only need check account balances.
 		sources
 			.map(move |(account_id, withdraw)| {
-				match Balances::<T>::try_get(&account_id, asset_id.0) {
-					Ok(balance) => {
-						// FIXME: Check if balance would withdraw more than existential deposit.
-						if balance >= withdraw.0 {
-							Ok(WrapPair(account_id, withdraw))
-						} else {
-							Err(InvalidSourceAccount {
-								account_id,
-								balance: AccountBalance::Known(asset::AssetValue(balance)),
-								withdraw,
-							})
-						}
-					}
-					_ => Err(InvalidSourceAccount {
+				T::FungibleLedger::can_withdraw(asset_id.0, &account_id, withdraw.0)
+					.and_then(| _ | Ok(WrapPair(account_id.clone(), withdraw)) )
+					.map_err(| _ | InvalidSourceAccount {
 						account_id,
-						balance: AccountBalance::Known(asset::AssetValue(0)),
+						asset_id,
 						withdraw,
-					}),
-				}
+					})
 			})
 			.collect()
 	}
@@ -1034,6 +685,7 @@ where
 	#[inline]
 	fn check_sink_accounts<I>(
 		&self,
+		asset_id: manta_accounting::asset::AssetId,
 		sinks: I,
 	) -> Result<Vec<Self::ValidSinkAccount>, InvalidSinkAccount<Self::AccountId>>
 	where
@@ -1041,9 +693,15 @@ where
 	{
 		// NOTE: Existence of accounts is type-checked so we don't need to do anything here, just
 		//		 pass the data forward.
-		Ok(sinks
-			.map(move |(account_id, deposit)| WrapPair(account_id, deposit))
-			.collect())
+		sinks
+			.map(move |(account_id, deposit)| {
+				T::FungibleLedger::can_deposit(asset_id.0, &account_id, deposit.0)
+				.and_then( | _ | Ok(WrapPair(account_id.clone(), deposit)))
+				.map_err(| _ | InvalidSinkAccount {
+					account_id,
+					asset_id,
+					deposit})})
+			.collect()
 	}
 
 	#[inline]
@@ -1104,13 +762,20 @@ where
 		sinks: Vec<SinkPostingKey<config::Config, Self>>,
 		proof: Self::ValidProof,
 		super_key: &TransferLedgerSuperPostingKey<config::Config, Self>,
-	) {
+	) -> Result<(), manta_accounting::transfer::LedgerInternalError> {
 		let _ = (proof, super_key);
 		for WrapPair(account_id, withdraw) in sources {
-			Balances::<T>::mutate(&account_id, asset_id.0, |balance| *balance -= withdraw.0);
+			T::FungibleLedger::transfer(asset_id.0, 
+				&account_id, 
+				&pallet::Pallet::<T>::account_id(),  
+				withdraw.0).map_err(| _ | LedgerInternalError)?;
 		}
 		for WrapPair(account_id, deposit) in sinks {
-			Balances::<T>::mutate(&account_id, asset_id.0, |balance| *balance += deposit.0);
+			T::FungibleLedger::transfer(asset_id.0,
+				&pallet::Pallet::<T>::account_id(), 
+				&account_id, 
+				deposit.0).map_err(| _ | LedgerInternalError)?;
 		}
+		Ok(())
 	}
 }

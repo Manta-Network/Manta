@@ -54,3 +54,4 @@ pub const ASSET_STRING_LIMIT: u32 = 50;
 pub const STAKING_PALLET_ID: PalletId = PalletId(*b"PotStake");
 pub const TREASURY_PALLET_ID: PalletId = PalletId(*b"py/trsry");
 pub const ASSET_MANAGER_PALLET_ID: PalletId = PalletId(*b"asstmngr");
+pub const MANTA_PAY_PALLET_ID: PalletId = PalletId(*b"mantapay");

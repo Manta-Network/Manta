@@ -15,7 +15,7 @@
 // along with pallet-manta-pay.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-	mock::{new_test_ext, MantaPayPallet, Origin, Test},
+	mock::{new_test_ext, MantaPayPallet, Balances, Assets, Origin, Test},
 	Error,
 };
 use frame_support::{assert_noop, assert_ok};
@@ -260,8 +260,30 @@ where
 /// Initializes a test by allocating `value`-many assets of the given `id` to the default account.
 #[inline]
 fn initialize_test(id: AssetId, value: AssetValue) {
-	MantaPayPallet::init_asset(&1, id.0, value.0);
-	assert_eq!(MantaPayPallet::balance(1, id.0), value.0);
+	if id.0 == 0 {
+		assert_ok!(Balances::set_balance(Origin::root(), 1, value.0, 0));
+	} else {
+		assert_ok!(Assets::force_create(Origin::root(), 
+			id.0, 
+			MantaPayPallet::account_id(), 
+			true, 
+			1));
+		assert_ok!(Assets::force_asset_status(
+			Origin::root(),
+			id.0,
+			1u64.into(),
+			1u64.into(),
+			1u64.into(),
+			1u64.into(),
+			1,
+			true,
+			false,
+			));
+		assert_ok!(Assets::mint(Origin::signed(1u64.into()),
+			id.0,
+			1u64.into(),
+			value.0));
+	}
 }
 
 /// Tests multiple mints from some total supply.
