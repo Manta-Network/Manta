@@ -1246,7 +1246,7 @@ jobs:
       -
         name: run docker image
         run: |
-          sudo docker run -p 9944:9944 -p 9945:9945 -d ${{ matrix.runtime.name }} --unsafe-ws-external > docker_id.log
+          sudo docker run -p 9944:9944 -p 9945:9945 -d ${{ matrix.runtime.name }} --unsafe-ws-external -- --unsafe-ws-external > docker_id.log
           sleep 30
       -
         name: check syncing
