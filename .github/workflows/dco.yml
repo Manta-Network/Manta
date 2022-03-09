@@ -42,7 +42,7 @@ jobs:
               COMMAND : `git commit -s -S -m your_commit_message`
               '-s' = 'Signed-off-by'
               '-S' = 'Verify commit using gpg key'
-              If there is more than one commit in your pull request and your git client is modern enough (2.13+), rebase the required number of commits with --signoff
+              If there is more than one commit in your pull request and your git client is modern enough (2.13+), rebase the required number of commits with --signoff:
                `git rebase --signoff HEAD^^`
               Write ^ as many times as there are commits in your pull request. Then, force push:
                `git push -f origin <your branch here, probably "master">`
