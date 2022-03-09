@@ -47,6 +47,9 @@ lazy_static::lazy_static! {
 	static ref UTXO_ACCUMULATOR_MODEL: UtxoAccumulatorModel = load_utxo_accumulator_model();
 }
 
+pub const ED: u128 = 1u128;
+pub const ALICE: u64 = 1u64;
+
 /// Loads the [`MultiProvingContext`] from the SDK.
 #[inline]
 fn load_proving_context() -> MultiProvingContext {
@@ -146,9 +149,9 @@ where
 	R: CryptoRng + RngCore + ?Sized,
 {
 	let asset_id = rng.gen();
-	let total_balance = rng.gen();
-	let balances = value_distribution(count, total_balance, rng);
-	initialize_test(asset_id, total_balance);
+	let total_free_balance = rng.gen();
+	let balances = value_distribution(count, total_free_balance, rng);
+	initialize_test(asset_id, total_free_balance + ED);
 	let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
 	let mut posts = Vec::new();
 	for balance in balances {
@@ -207,9 +210,9 @@ where
 	R: CryptoRng + RngCore + ?Sized,
 {
 	let asset_id = rng.gen();
-	let total_balance = rng.gen();
-	let balances = value_distribution(count, total_balance, rng);
-	initialize_test(asset_id, total_balance);
+	let total_free_balance = rng.gen();
+	let balances = value_distribution(count, total_free_balance, rng);
+	initialize_test(asset_id, total_free_balance + ED);
 	let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
 	let mut posts = Vec::new();
 	for balance in balances {
@@ -267,21 +270,21 @@ fn initialize_test(id: AssetId, value: AssetValue) {
 			id.0, 
 			MantaPayPallet::account_id(), 
 			true, 
-			1));
+			ED));
 		assert_ok!(Assets::force_asset_status(
 			Origin::root(),
 			id.0,
-			1u64.into(),
-			1u64.into(),
-			1u64.into(),
-			1u64.into(),
-			1,
+			ALICE.into(),
+			ALICE.into(),
+			ALICE.into(),
+			ALICE.into(),
+			ED,
 			true,
 			false,
 			));
-		assert_ok!(Assets::mint(Origin::signed(1u64.into()),
+		assert_ok!(Assets::mint(Origin::signed(ALICE.into()),
 			id.0,
-			1u64.into(),
+			ALICE.into(),
 			value.0));
 	}
 }
@@ -293,7 +296,7 @@ fn mint_should_work() {
 	new_test_ext().execute_with(|| {
 		let asset_id = rng.gen();
 		let total_free_supply = rng.gen();
-		initialize_test(asset_id, total_free_supply + 1);
+		initialize_test(asset_id, total_free_supply + ED);
 		mint_tokens(
 			asset_id,
 			&value_distribution(5, total_free_supply, &mut rng),
@@ -311,7 +314,7 @@ fn overdrawn_mint_should_not_work() {
 		let total_supply = AssetValue::gen(&mut rng)
 			.checked_sub(AssetValue(1))
 			.unwrap_or_default();
-		initialize_test(asset_id, total_supply);
+		initialize_test(asset_id, total_supply + ED);
 		assert_noop!(
 			MantaPayPallet::mint(
 				Origin::signed(1),

@@ -72,18 +72,18 @@ scale-codec = { package = "parity-scale-codec", version = "2.3.1", default-featu
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 
 # manta dependencies
-manta-accounting = { path = "../../../manta-rs/manta-accounting", default-features = false }
-manta-crypto = { path = "../../../manta-rs/manta-crypto", default-features = false }
-manta-pay = { path = "../../../manta-rs/manta-pay", default-features = false, features = ["groth16", "scale"] }
+manta-accounting = { git = "https://github.com/manta-network/manta-rs", default-features = false }
+manta-crypto = { git = "https://github.com/manta-network/manta-rs", default-features = false }
+manta-pay = { git = "https://github.com/manta-network/manta-rs", default-features = false, features = ["groth16", "scale"] }
 manta-sdk = { git = "https://github.com/manta-network/sdk", default-features = false }
-manta-util = { path = "../../../manta-rs/manta-util",  default-features = false }
+manta-util = { git = "https://github.com/manta-network/manta-rs", default-features = false }
 manta-primitives = { path = "../../runtime/primitives", default-features = false}
 
 [dev-dependencies]
 bencher = "0.1.5"
 criterion = "0.3.4"
 lazy_static = "1.4.0"
-manta-accounting = { path = "../../../manta-rs/manta-accounting", features = ["test"] }
+manta-accounting = { git = "https://github.com/manta-network/manta-rs", features = ["test"] }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16"}
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16"}
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }

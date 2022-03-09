@@ -4829,6 +4829,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.4.0"
+source = "git+https://github.com/manta-network/manta-rs#82808e099a8e239d27425a4307d8b5ec361fae38"
 dependencies = [
  "derivative",
  "derive_more",
@@ -4869,6 +4870,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.4.0"
+source = "git+https://github.com/manta-network/manta-rs#82808e099a8e239d27425a4307d8b5ec361fae38"
 dependencies = [
  "derivative",
  "manta-util",
@@ -4878,6 +4880,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.4.0"
+source = "git+https://github.com/manta-network/manta-rs#82808e099a8e239d27425a4307d8b5ec361fae38"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -4999,6 +5002,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.4.0"
+source = "git+https://github.com/manta-network/manta-rs#82808e099a8e239d27425a4307d8b5ec361fae38"
 
 [[package]]
 name = "maplit"
