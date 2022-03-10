@@ -99,7 +99,7 @@
 extern crate alloc;
 
 use core::marker::PhantomData;
-use frame_support::{require_transactional, PalletId};
+use frame_support::{transactional, PalletId};
 use manta_accounting::{
 	asset,
 	transfer::{
@@ -218,7 +218,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Mints some assets encoded in `post` to the `origin` account.
 		#[pallet::weight(T::WeightInfo::mint())]
-		#[require_transactional]
+		#[transactional]
 		pub fn mint(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			let mut ledger = Self::ledger();
@@ -238,7 +238,7 @@ pub mod pallet {
 		/// In this transaction, `origin` is just signing the `post` and is not necessarily related
 		/// to any of the participants in the transaction itself.
 		#[pallet::weight(T::WeightInfo::private_transfer())]
-		#[require_transactional]
+		#[transactional]
 		pub fn private_transfer(
 			origin: OriginFor<T>,
 			post: TransferPost,
@@ -257,7 +257,7 @@ pub mod pallet {
 		/// Transforms some private assets into public ones using `post`, sending the public assets
 		/// to the `origin` account.
 		#[pallet::weight(T::WeightInfo::reclaim())]
-		#[require_transactional]
+		#[transactional]
 		pub fn reclaim(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			let mut ledger = Self::ledger();

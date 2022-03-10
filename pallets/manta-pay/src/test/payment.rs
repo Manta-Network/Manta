@@ -149,7 +149,9 @@ where
 	R: CryptoRng + RngCore + ?Sized,
 {
 	let asset_id = rng.gen();
-	let total_free_balance = rng.gen();
+	// FIXME: get rid of the division after parity fixes the pallet-asset bug
+	let double_balance: u128 = rng.gen();
+	let total_free_balance = AssetValue(double_balance/2);
 	let balances = value_distribution(count, total_free_balance, rng);
 	initialize_test(asset_id, total_free_balance + ED);
 	let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
@@ -210,7 +212,9 @@ where
 	R: CryptoRng + RngCore + ?Sized,
 {
 	let asset_id = rng.gen();
-	let total_free_balance = rng.gen();
+	// FIXME: This is a workaround due to the substrate asset bug
+	let double_balance: u128 = rng.gen();
+	let total_free_balance = AssetValue(double_balance/2);
 	let balances = value_distribution(count, total_free_balance, rng);
 	initialize_test(asset_id, total_free_balance + ED);
 	let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
@@ -282,6 +286,11 @@ fn initialize_test(id: AssetId, value: AssetValue) {
 			true,
 			false,
 			));
+		// asset the minimum balance for MantaPayPallet
+		assert_ok!(Assets::mint(Origin::signed(ALICE.into()),
+			id.0,
+			MantaPayPallet::account_id().into(),
+			ED));
 		assert_ok!(Assets::mint(Origin::signed(ALICE.into()),
 			id.0,
 			ALICE.into(),
@@ -295,7 +304,10 @@ fn mint_should_work() {
 	let mut rng = thread_rng();
 	new_test_ext().execute_with(|| {
 		let asset_id = rng.gen();
-		let total_free_supply = rng.gen();
+		// FIXME: get rid of divide by two after parity fix pallet-asset
+		// This is to work around the substrate bug
+		let double_supply: u128 = rng.gen();
+		let total_free_supply = AssetValue(double_supply/2);
 		initialize_test(asset_id, total_free_supply + ED);
 		mint_tokens(
 			asset_id,
@@ -311,7 +323,9 @@ fn overdrawn_mint_should_not_work() {
 	let mut rng = thread_rng();
 	new_test_ext().execute_with(|| {
 		let asset_id = rng.gen();
-		let total_supply = AssetValue::gen(&mut rng)
+		// FIXME: remove the division after parity fix the pallet-asset bug
+		let double_supply: u128 = rng.gen();
+		let total_supply = AssetValue(double_supply/2)
 			.checked_sub(AssetValue(1))
 			.unwrap_or_default();
 		initialize_test(asset_id, total_supply + ED);
@@ -320,7 +334,7 @@ fn overdrawn_mint_should_not_work() {
 				Origin::signed(1),
 				sample_mint(asset_id.with(total_supply + 1), &mut rng).into()
 			),
-			Error::<Test>::BalanceLow
+			Error::<Test>::InvalidSourceAccount
 		);
 	});
 }
@@ -332,7 +346,7 @@ fn mint_without_init_should_not_work() {
 	new_test_ext().execute_with(|| {
 		assert_noop!(
 			MantaPayPallet::mint(Origin::signed(1), sample_mint(rng.gen(), &mut rng).into()),
-			Error::<Test>::BalanceLow,
+			Error::<Test>::InvalidSourceAccount,
 		);
 	});
 }
