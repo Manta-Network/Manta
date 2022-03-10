@@ -248,9 +248,11 @@ impl Contains<Call> for BaseFilter {
 			| Call::Balances(_)
 			| Call::XTokens(_)
 			| Call::Utility(_) => true,
+			// Filter XCM pallets, we only allow transfer with XTokens.
+			// Filter Assets. Assets should only be accessed by AssetManager.
+			// AssetManager is also filtered because all of its extrinsics are callable only by Root,
+			// and Root calls skip this whole filter.
 			_ => false,
-			// Filter Session and CollatorSelection to prevent users from utility operation.
-			// Filter XCM pallet.
 		}
 	}
 }
@@ -593,7 +595,6 @@ parameter_types! {
 	pub const AssetDeposit: Balance = 0;
 	pub const AssetAccountDeposit: Balance = 0;
 	pub const ApprovalDeposit: Balance = 0;
-	pub const AssetsStringLimit: u32 = 50;
 	pub const MetadataDepositBase: Balance = 0;
 	pub const MetadataDepositPerByte: Balance = 0;
 }
@@ -609,7 +610,7 @@ impl pallet_assets::Config for Runtime {
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ApprovalDeposit = ApprovalDeposit;
-	type StringLimit = AssetsStringLimit;
+	type StringLimit = ConstU32<50>;
 	type Freezer = ();
 	type Extra = ();
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
@@ -882,8 +883,8 @@ impl pallet_xcm::Config for Runtime {
 	/// This shouldn't be reachable since `LocalOriginToLocation = ();`, but let's be on the safe side.
 	type XcmExecuteFilter = Nothing;
 	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
-	type XcmTeleportFilter = Everything;
-	type XcmReserveTransferFilter = Everything;
+	type XcmTeleportFilter = Nothing;
+	type XcmReserveTransferFilter = Nothing;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
@@ -945,7 +946,10 @@ impl orml_xtokens::Config for Runtime {
 		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>>;
 	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 	type SelfLocation = SelfReserve;
-	type Weigher = xcm_builder::FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+	// Take note that this pallet does not have the typical configurable WeightInfo.
+	// It uses the Weigher configuration to calculate weights for the user callable extrinsics on this chain,
+	// as well as weights for execution on the destination chain. Both based on the composed xcm messages.
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type BaseXcmWeight = BaseXcmWeight;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type MaxAssetsForTransfer = MaxAssetsForTransfer;
@@ -1062,8 +1066,8 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
 
 		// Assets management
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 51,
-		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>} = 52,
+		Assets: pallet_assets::{Pallet, Storage, Event<T>} = 45,
+		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>} = 46,
 	}
 );
 

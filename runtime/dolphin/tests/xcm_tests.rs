@@ -555,43 +555,16 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 	ParaB::execute_with(|| {
 		assert_ok!(parachain::AssetManager::register_asset(
 			parachain::Origin::root(),
-			AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
-				1,
-				X1(Parachain(2)),
-			))),
-			parachain::AssetRegistarMetadata {
-				name: b"ParaBToken".to_vec(),
-				symbol: b"ParaB".to_vec(),
-				decimals: 18,
-				evm_address: None,
-				min_balance: 1,
-				is_frozen: false,
-				is_sufficient: true,
-			}
-		));
-		assert_ok!(AssetManager::set_units_per_second(
-			parachain::Origin::root(),
-			0,
-			0u128
-		));
-		assert_eq!(
-			Some(0),
-			parachain::AssetManager::location_asset_id(AssetLocation(VersionedMultiLocation::V1(
-				MultiLocation::new(1, X1(Parachain(2)),)
-			)))
-		);
-		assert_ok!(parachain::AssetManager::register_asset(
-			parachain::Origin::root(),
 			source_location.clone(),
 			asset_metadata.clone()
 		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			1,
+			a_currency_id,
 			0u128
 		));
 		assert_eq!(
-			Some(1),
+			Some(a_currency_id),
 			parachain::AssetManager::location_asset_id(source_location)
 		);
 	});
@@ -624,7 +597,10 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 	// Make sure B received the token
 	ParaB::execute_with(|| {
 		// free execution, full amount received
-		assert_eq!(parachain::Assets::balance(1, &ALICE.into()), amount);
+		assert_eq!(
+			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			amount
+		);
 	});
 
 	let alice_on_a = MultiLocation {
@@ -642,7 +618,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 	ParaB::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(1),
+			parachain::CurrencyId::MantaCurrency(a_currency_id),
 			amount,
 			Box::new(VersionedMultiLocation::V1(alice_on_a)),
 			800000
