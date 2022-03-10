@@ -35,4 +35,4 @@ ADD $RELAY_GENESIS_URL $RELAY_GENESIS_PATH
 # Expose 5 ports by default
 EXPOSE 30333 30334 9933 9944 9615 9945
 
-ENTRYPOINT ["/usr/local/bin/manta", "--chain", "/usr/share/calamari.json"]
+ENTRYPOINT ["/usr/local/bin/manta", "--chain", "calamari"]
