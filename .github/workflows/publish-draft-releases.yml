@@ -105,20 +105,20 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo build --verbose
+          cargo build --release --verbose
       -
         name: stop sccache server
         run: sccache --stop-server || true
       -
         name: strip
         run: |
-          strip target/debug/manta
+          strip target/release/manta
       -
         name: upload
         uses: actions/upload-artifact@v2
         with:
           name: manta
-          path: target/debug/manta
+          path: target/release/manta
       -
         name: upload
         uses: actions/upload-artifact@v2
