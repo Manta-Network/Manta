@@ -245,7 +245,10 @@ impl Contains<Call> for BaseFilter {
 				| manta_collator_selection::Call::remove_collator{..}
 				| manta_collator_selection::Call::leave_intent{..})
 			| Call::Balances(_)
-			| Call::Utility(_) => true,
+			| Call::Treasury(_)
+			| Call::Utility(_)
+			| Call::AssetManager(_)
+			| Call::MantaPay(_) => true,
 			_ => false,
 			// Filter Session and CollatorSelection to prevent users from utility operation.
 			// Filter XCM pallet.
