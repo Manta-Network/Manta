@@ -112,13 +112,13 @@ jobs:
       -
         name: strip
         run: |
-          strip target/production/manta
+          strip target/debug/manta
       -
         name: upload
         uses: actions/upload-artifact@v2
         with:
           name: manta
-          path: target/production/manta
+          path: target/debug/manta
       -
         name: upload
         uses: actions/upload-artifact@v2
