@@ -39,6 +39,7 @@ std = [
 	"frame-benchmarking/std",
 	"frame-system/std",
 	"sp-runtime/std",
+	"sp-std/std",
 	"manta-util/std",
 	"manta-sdk/download",
 	"manta-primitives/std",
@@ -68,6 +69,7 @@ frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch =
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
 scale-codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 

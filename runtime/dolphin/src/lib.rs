@@ -42,7 +42,9 @@ use frame_support::{
 	construct_runtime, match_type, parameter_types,
 	traits::{
 		ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, Everything, Nothing,
-		PrivilegeCmp,
+		PrivilegeCmp, fungible::Inspect, 
+		fungibles::Inspect as AssetInspect, fungibles::Transfer as AssetTransfer, 
+		tokens::{DepositConsequence, WithdrawConsequence, ExistenceRequirement},
 	},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
@@ -61,7 +63,7 @@ pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
 use manta_primitives::{
-	assets::{AssetLocation, AssetRegistarMetadata, AssetStorageMetadata},
+	assets::{AssetLocation, AssetRegistarMetadata, AssetStorageMetadata, FungibleLedger, FungibleLedgerConsequence},
 	constants::{time::*, *},
 	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
@@ -913,6 +915,74 @@ impl pallet_asset_manager::Config for Runtime {
 	type PalletId = AssetManagerPalletId;
 }
 
+pub struct MantaFungibleLedger;
+impl FungibleLedger<Runtime> for MantaFungibleLedger{
+	fn can_deposit(asset_id: AssetId, 
+		account: &<Runtime as frame_system::Config>::AccountId, 
+		amount: Balance) -> Result<(), FungibleLedgerConsequence<Balance>>{
+			if asset_id == 0 { // we assume native asset with id 0
+				match Balances::can_deposit(account, amount){
+					DepositConsequence::Success => Ok(()),
+					other => Err(other.into())
+				}
+			} else {
+				match Assets::can_deposit(asset_id, account, amount) {
+					DepositConsequence::Success => Ok(()),
+					other => Err(other.into())
+				}
+			}
+	}
+
+	fn can_withdraw(asset_id: AssetId, 
+		account: &<Runtime as frame_system::Config>::AccountId, 
+		amount: Balance) -> Result<(), FungibleLedgerConsequence<Balance>>{
+			if asset_id == 0 { // we assume native asset with id 0
+				match Balances::can_withdraw(account, amount){
+					WithdrawConsequence::Success => Ok(()),
+					other => Err(other.into())
+				}
+			} else {
+				match Assets::can_withdraw(asset_id, account, amount){
+					WithdrawConsequence::Success => Ok(()),
+					other => Err(other.into())
+				}
+			}
+	}
+
+	fn transfer(asset_id: AssetId, 
+		source: &<Runtime as frame_system::Config>::AccountId, 
+		dest: &<Runtime as frame_system::Config>::AccountId,
+		amount: Balance) -> Result<(), FungibleLedgerConsequence<Balance>>{
+			if asset_id == 0 {
+				<Balances as Currency<<Runtime as frame_system::Config>::AccountId>>::transfer(source, 
+					dest, 
+					amount, 
+					ExistenceRequirement::KeepAlive)
+					.map_err(| _ | FungibleLedgerConsequence::InternalError)
+			} else {
+				<Assets as AssetTransfer<<Runtime as frame_system::Config>::AccountId>>::transfer(asset_id, 
+					source, 
+					dest, 
+					amount, 
+					true)
+					.and_then(| _ | Ok(()))
+					.map_err(| _ | FungibleLedgerConsequence::InternalError)
+			}
+		}
+}
+
+parameter_types!{
+	pub const MantaPayPalletId: PalletId = MANTA_PAY_PALLET_ID;
+}
+
+impl pallet_manta_pay::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
+	type FungibleLedger = MantaFungibleLedger;
+	type PalletId = MantaPayPalletId;
+}
+
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -969,6 +1039,7 @@ construct_runtime!(
 		// Asset and Private Payment
 		Assets: pallet_assets::{Pallet, Storage, Event<T>} = 45,
 		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>} = 46,
+		MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
 	}
 );
 

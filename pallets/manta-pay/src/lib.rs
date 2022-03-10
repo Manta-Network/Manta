@@ -119,6 +119,8 @@ use manta_primitives::types::{AssetId, Balance};
 use manta_primitives::assets::{FungibleLedger};
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
+use sp_std::vec;
+use sp_std::vec::Vec;
 use types::*;
 
 #[cfg(test)]
