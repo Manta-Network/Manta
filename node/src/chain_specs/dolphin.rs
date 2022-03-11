@@ -29,7 +29,7 @@ const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
 const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
 
 /// The default XCM version to set in genesis config.
-const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
+const SAFE_XCM_VERSION: u32 = 2;
 
 /// Generate the calamari session keys from individual elements.
 ///

@@ -720,9 +720,13 @@ pub type LocationToAccountId = (
 pub type LocalAssetTransactor = XcmCurrencyAdapter<
 	// Transacting native currency, i.e. MANTA, KMA, DOL
 	Balances,
+	// Used when the incoming asset is a fungible concrete asset matching the given location or name:
 	IsNativeConcrete<SelfReserve>,
+	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
 	LocationToAccountId,
+	// Our chain's account ID type (we can't get away without mentioning it explicitly):
 	AccountId,
+	// We don't track any teleports.
 	(),
 >;
 
@@ -933,7 +937,7 @@ where
 
 parameter_types! {
 	pub const BaseXcmWeight: Weight = 100_000_000;
-	pub const MaxAssetsForTransfer: usize = 2;
+	pub const MaxAssetsForTransfer: usize = 1;
 }
 
 // The XCM message wrapper wrapper

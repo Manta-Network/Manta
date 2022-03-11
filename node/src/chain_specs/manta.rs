@@ -27,7 +27,7 @@ const POLKADOT_RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
 const POLKADOT_RELAYCHAIN_MAIN_NET: &str = "polkadot";
 
 /// The default XCM version to set in genesis config.
-const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
+const SAFE_XCM_VERSION: u32 = 2;
 
 /// Generate the manta session keys from individual elements.
 ///
