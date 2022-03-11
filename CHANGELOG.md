@@ -5,6 +5,7 @@
 
 ### Features
 - [\#383](https://github.com/Manta-Network/Manta/pull/383) Calamari & Manta support `cargo build --features=fast-runtime`, setting most configurable timers to 2 or 5 minutes (instead of days)
+- [\#436](https://github.com/Manta-Network/Manta/pull/436) Dolphin XCM Integration
 
 ### Improvements
 
