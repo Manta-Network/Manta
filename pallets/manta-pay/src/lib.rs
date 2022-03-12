@@ -103,10 +103,10 @@ use frame_support::{transactional, PalletId};
 use manta_accounting::{
 	asset,
 	transfer::{
-		canonical::TransferShape, InvalidSinkAccount, InvalidSourceAccount, Proof,
-		ReceiverLedger, ReceiverPostError, ReceiverPostingKey, SenderLedger, SenderPostError,
-		SenderPostingKey, SinkPostingKey, SourcePostingKey, TransferLedger,
-		TransferLedgerSuperPostingKey, TransferPostError, LedgerInternalError,
+		canonical::TransferShape, InvalidSinkAccount, InvalidSourceAccount, LedgerInternalError,
+		Proof, ReceiverLedger, ReceiverPostError, ReceiverPostingKey, SenderLedger,
+		SenderPostError, SenderPostingKey, SinkPostingKey, SourcePostingKey, TransferLedger,
+		TransferLedgerSuperPostingKey, TransferPostError,
 	},
 };
 use manta_crypto::{
@@ -114,13 +114,14 @@ use manta_crypto::{
 	merkle_tree::{self, forest::Configuration as _},
 };
 use manta_pay::config;
+use manta_primitives::{
+	assets::FungibleLedger,
+	types::{AssetId, Balance},
+};
 use manta_util::codec::Decode as _;
-use manta_primitives::types::{AssetId, Balance};
-use manta_primitives::assets::{FungibleLedger};
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_std::vec;
-use sp_std::vec::Vec;
+use sp_std::{vec, vec::Vec};
 use types::*;
 
 #[cfg(test)]
@@ -368,17 +369,17 @@ pub mod pallet {
 		InvalidProof,
 
 		/// Ledger Internal Error
-		/// 
+		///
 		/// Internal error caused by ledger internals (Ideally should never happen).
 		LedgerInternalError,
 
 		/// Invalid Source Account
-		/// 
+		///
 		/// At least one of the source accounts is invalid.
 		InvalidSourceAccount,
 
 		/// Invalid Sink Account
-		/// 
+		///
 		/// At least one of the sink accounts in invalid.
 		InvalidSinkAccount,
 	}
@@ -457,7 +458,6 @@ pub mod pallet {
 			T::PalletId::get().into_account()
 		}
 	}
-
 }
 
 /// Preprocessed Event
@@ -674,8 +674,8 @@ where
 		sources
 			.map(move |(account_id, withdraw)| {
 				T::FungibleLedger::can_withdraw(asset_id.0, &account_id, withdraw.0)
-					.and_then(| _ | Ok(WrapPair(account_id.clone(), withdraw)) )
-					.map_err(| _ | InvalidSourceAccount {
+					.and_then(|_| Ok(WrapPair(account_id.clone(), withdraw)))
+					.map_err(|_| InvalidSourceAccount {
 						account_id,
 						asset_id,
 						withdraw,
@@ -698,11 +698,13 @@ where
 		sinks
 			.map(move |(account_id, deposit)| {
 				T::FungibleLedger::can_deposit(asset_id.0, &account_id, deposit.0)
-				.and_then( | _ | Ok(WrapPair(account_id.clone(), deposit)))
-				.map_err(| _ | InvalidSinkAccount {
-					account_id,
-					asset_id,
-					deposit})})
+					.and_then(|_| Ok(WrapPair(account_id.clone(), deposit)))
+					.map_err(|_| InvalidSinkAccount {
+						account_id,
+						asset_id,
+						deposit,
+					})
+			})
 			.collect()
 	}
 
@@ -767,16 +769,22 @@ where
 	) -> Result<(), manta_accounting::transfer::LedgerInternalError> {
 		let _ = (proof, super_key);
 		for WrapPair(account_id, withdraw) in sources {
-			T::FungibleLedger::transfer(asset_id.0, 
-				&account_id, 
-				&pallet::Pallet::<T>::account_id(),  
-				withdraw.0).map_err(| _ | LedgerInternalError)?;
+			T::FungibleLedger::transfer(
+				asset_id.0,
+				&account_id,
+				&pallet::Pallet::<T>::account_id(),
+				withdraw.0,
+			)
+			.map_err(|_| LedgerInternalError)?;
 		}
 		for WrapPair(account_id, deposit) in sinks {
-			T::FungibleLedger::transfer(asset_id.0,
-				&pallet::Pallet::<T>::account_id(), 
-				&account_id, 
-				deposit.0).map_err(| _ | LedgerInternalError)?;
+			T::FungibleLedger::transfer(
+				asset_id.0,
+				&pallet::Pallet::<T>::account_id(),
+				&account_id,
+				deposit.0,
+			)
+			.map_err(|_| LedgerInternalError)?;
 		}
 		Ok(())
 	}

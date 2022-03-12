@@ -15,7 +15,7 @@
 // along with pallet-manta-pay.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-	mock::{new_test_ext, MantaPayPallet, Balances, Assets, Origin, Test},
+	mock::{new_test_ext, Assets, Balances, MantaPayPallet, Origin, Test},
 	Error,
 };
 use frame_support::{assert_noop, assert_ok};
@@ -151,7 +151,7 @@ where
 	let asset_id = rng.gen();
 	// FIXME: get rid of the division after parity fixes the pallet-asset bug
 	let double_balance: u128 = rng.gen();
-	let total_free_balance = AssetValue(double_balance/2);
+	let total_free_balance = AssetValue(double_balance / 2);
 	let balances = value_distribution(count, total_free_balance, rng);
 	initialize_test(asset_id, total_free_balance + ED);
 	let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
@@ -214,7 +214,7 @@ where
 	let asset_id = rng.gen();
 	// FIXME: This is a workaround due to the substrate asset bug
 	let double_balance: u128 = rng.gen();
-	let total_free_balance = AssetValue(double_balance/2);
+	let total_free_balance = AssetValue(double_balance / 2);
 	let balances = value_distribution(count, total_free_balance, rng);
 	initialize_test(asset_id, total_free_balance + ED);
 	let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
@@ -270,11 +270,13 @@ fn initialize_test(id: AssetId, value: AssetValue) {
 	if id.0 == 0 {
 		assert_ok!(Balances::set_balance(Origin::root(), 1, value.0, 0));
 	} else {
-		assert_ok!(Assets::force_create(Origin::root(), 
-			id.0, 
-			MantaPayPallet::account_id(), 
-			true, 
-			ED));
+		assert_ok!(Assets::force_create(
+			Origin::root(),
+			id.0,
+			MantaPayPallet::account_id(),
+			true,
+			ED
+		));
 		assert_ok!(Assets::force_asset_status(
 			Origin::root(),
 			id.0,
@@ -285,16 +287,20 @@ fn initialize_test(id: AssetId, value: AssetValue) {
 			ED,
 			true,
 			false,
-			));
+		));
 		// asset the minimum balance for MantaPayPallet
-		assert_ok!(Assets::mint(Origin::signed(ALICE.into()),
+		assert_ok!(Assets::mint(
+			Origin::signed(ALICE.into()),
 			id.0,
 			MantaPayPallet::account_id().into(),
-			ED));
-		assert_ok!(Assets::mint(Origin::signed(ALICE.into()),
+			ED
+		));
+		assert_ok!(Assets::mint(
+			Origin::signed(ALICE.into()),
 			id.0,
 			ALICE.into(),
-			value.0));
+			value.0
+		));
 	}
 }
 
@@ -307,7 +313,7 @@ fn mint_should_work() {
 		// FIXME: get rid of divide by two after parity fix pallet-asset
 		// This is to work around the substrate bug
 		let double_supply: u128 = rng.gen();
-		let total_free_supply = AssetValue(double_supply/2);
+		let total_free_supply = AssetValue(double_supply / 2);
 		initialize_test(asset_id, total_free_supply + ED);
 		mint_tokens(
 			asset_id,
@@ -325,7 +331,7 @@ fn overdrawn_mint_should_not_work() {
 		let asset_id = rng.gen();
 		// FIXME: remove the division after parity fix the pallet-asset bug
 		let double_supply: u128 = rng.gen();
-		let total_supply = AssetValue(double_supply/2)
+		let total_supply = AssetValue(double_supply / 2)
 			.checked_sub(AssetValue(1))
 			.unwrap_or_default();
 		initialize_test(asset_id, total_supply + ED);

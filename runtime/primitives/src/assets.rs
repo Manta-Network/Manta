@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+use crate::types::{AssetId, Balance};
 use codec::{Decode, Encode};
+use frame_support::traits::tokens::{DepositConsequence, WithdrawConsequence};
 use scale_info::TypeInfo;
 use sp_core::H160;
 use sp_std::{borrow::Borrow, marker::PhantomData, prelude::Vec};
-use frame_support::traits::tokens::{WithdrawConsequence, DepositConsequence};
-use crate::types::{AssetId, Balance};
 
 ///! Manta/Calamari/Dolphin Asset
 use xcm::{
@@ -137,7 +137,7 @@ where
 	}
 }
 
-pub enum FungibleLedgerConsequence<Balance>{
+pub enum FungibleLedgerConsequence<Balance> {
 	/// Deposit couldn't happen due to the amount being too low. This is usually because the
 	/// account doesn't yet exist and the deposit wouldn't bring it to at least the minimum needed
 	/// for existance.
@@ -180,7 +180,7 @@ impl From<DepositConsequence> for FungibleLedgerConsequence<Balance> {
 			DepositConsequence::CannotCreate => FungibleLedgerConsequence::CannotCreate,
 			DepositConsequence::Overflow => FungibleLedgerConsequence::Overflow,
 			DepositConsequence::Success => FungibleLedgerConsequence::Success,
-			DepositConsequence::UnknownAsset=> FungibleLedgerConsequence::UnknownAsset
+			DepositConsequence::UnknownAsset => FungibleLedgerConsequence::UnknownAsset,
 		}
 	}
 }
@@ -192,7 +192,9 @@ impl From<WithdrawConsequence<Balance>> for FungibleLedgerConsequence<Balance> {
 			WithdrawConsequence::NoFunds => FungibleLedgerConsequence::NoFunds,
 			WithdrawConsequence::Overflow => FungibleLedgerConsequence::Overflow,
 			WithdrawConsequence::Underflow => FungibleLedgerConsequence::Underflow,
-			WithdrawConsequence::ReducedToZero(balance) => FungibleLedgerConsequence::ReducedToZero(balance),
+			WithdrawConsequence::ReducedToZero(balance) => {
+				FungibleLedgerConsequence::ReducedToZero(balance)
+			}
 			WithdrawConsequence::Success => FungibleLedgerConsequence::Success,
 			WithdrawConsequence::UnknownAsset => FungibleLedgerConsequence::UnknownAsset,
 			WithdrawConsequence::WouldDie => FungibleLedgerConsequence::WouldDie,
@@ -200,19 +202,31 @@ impl From<WithdrawConsequence<Balance>> for FungibleLedgerConsequence<Balance> {
 	}
 }
 
-
 /// Unified interface for fungible ledger
 /// It unifies `fungible` and `fungibles`
 pub trait FungibleLedger<C>
-where C: frame_system::Config,
+where
+	C: frame_system::Config,
 {
-
 	/// check whether `asset_id`, `account` can increase certain balance
-	fn can_deposit(asset_id: AssetId, account: &C::AccountId, amount: Balance) -> Result<(), FungibleLedgerConsequence<Balance>>;
+	fn can_deposit(
+		asset_id: AssetId,
+		account: &C::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence<Balance>>;
 
 	/// check whether `asset_id`, `account` can decrease certain balance
-	fn can_withdraw(asset_d: AssetId, account: &C::AccountId, amount: Balance) -> Result<(), FungibleLedgerConsequence<Balance>>;
-	
+	fn can_withdraw(
+		asset_d: AssetId,
+		account: &C::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence<Balance>>;
+
 	/// transfer asset
-	fn transfer(asset_id: AssetId, source: &C::AccountId, dest: &C::AccountId, amount: Balance) -> Result<(), FungibleLedgerConsequence<Balance>>;
+	fn transfer(
+		asset_id: AssetId,
+		source: &C::AccountId,
+		dest: &C::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence<Balance>>;
 }

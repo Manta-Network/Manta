@@ -120,7 +120,7 @@ parameter_types! {
 	pub const KsmLocation: MultiLocation = MultiLocation::parent();
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
 	pub Ancestry: MultiLocation = Parachain(MsgQueue::parachain_id().into()).into();
-	pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::get().into())));
+	pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
 }
 
 parameter_types! {
@@ -180,7 +180,7 @@ pub type XcmOriginToCallOrigin = (
 );
 
 parameter_types! {
-	pub const UnitWeightCost: Weight = 1;
+	pub const UnitWeightCost: Weight = 1_000_000_000;
 	// Used in native traders
 	// This might be able to skipped.
 	// We have to use `here()` because of reanchoring logic
@@ -576,8 +576,8 @@ where
 }
 
 parameter_types! {
-	pub const BaseXcmWeight: Weight = 100;
-	pub const MaxAssetsForTransfer: usize = 2;
+	pub const BaseXcmWeight: Weight = 100_000_000;
+	pub const MaxAssetsForTransfer: usize = 1;
 }
 
 // The XCM message wrapper wrapper

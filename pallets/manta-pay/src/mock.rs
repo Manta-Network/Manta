@@ -15,15 +15,21 @@
 // along with pallet-manta-pay.  If not, see <http://www.gnu.org/licenses/>.
 
 use frame_support::{
-	parameter_types, PalletId,
-	traits::{ConstU32, Everything, fungible::Inspect, 
-		fungibles::Inspect as AssetInspect, fungibles::Transfer as AssetTransfer, 
-		tokens::{DepositConsequence, WithdrawConsequence, ExistenceRequirement}, Currency},
+	parameter_types,
+	traits::{
+		fungible::Inspect,
+		fungibles::{Inspect as AssetInspect, Transfer as AssetTransfer},
+		tokens::{DepositConsequence, ExistenceRequirement, WithdrawConsequence},
+		ConstU32, Currency, Everything,
+	},
+	PalletId,
 };
 use frame_system::EnsureRoot;
-use manta_primitives::assets::{FungibleLedger, FungibleLedgerConsequence};
-use manta_primitives::types::{AssetId, Balance};
-use manta_primitives::constants::MANTA_PAY_PALLET_ID;
+use manta_primitives::{
+	assets::{FungibleLedger, FungibleLedgerConsequence},
+	constants::MANTA_PAY_PALLET_ID,
+	types::{AssetId, Balance},
+};
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
@@ -98,7 +104,6 @@ impl pallet_balances::Config for Test {
 	type ReserveIdentifier = [u8; 8];
 }
 
-
 parameter_types! {
 	pub const AssetDeposit: Balance = 0; // Does not really matter as this will be only called by root
 	pub const AssetAccountDeposit: Balance = 0;
@@ -126,62 +131,70 @@ impl pallet_assets::Config for Test {
 }
 
 pub struct MantaFungibleLedger;
-impl FungibleLedger<Test> for MantaFungibleLedger{
-	fn can_deposit(asset_id: AssetId, 
-		account: &<Test as frame_system::Config>::AccountId, 
-		amount: Balance) -> Result<(), FungibleLedgerConsequence<Balance>>{
-			if asset_id == 0 { // we assume native asset with id 0
-				match Balances::can_deposit(account, amount){
-					DepositConsequence::Success => Ok(()),
-					other => Err(other.into())
-				}
-			} else {
-				match Assets::can_deposit(asset_id, account, amount) {
-					DepositConsequence::Success => Ok(()),
-					other => Err(other.into())
-				}
+impl FungibleLedger<Test> for MantaFungibleLedger {
+	fn can_deposit(
+		asset_id: AssetId,
+		account: &<Test as frame_system::Config>::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence<Balance>> {
+		if asset_id == 0 {
+			// we assume native asset with id 0
+			match Balances::can_deposit(account, amount) {
+				DepositConsequence::Success => Ok(()),
+				other => Err(other.into()),
 			}
-	}
-
-	fn can_withdraw(asset_id: AssetId, 
-		account: &<Test as frame_system::Config>::AccountId, 
-		amount: Balance) -> Result<(), FungibleLedgerConsequence<Balance>>{
-			if asset_id == 0 { // we assume native asset with id 0
-				match Balances::can_withdraw(account, amount){
-					WithdrawConsequence::Success => Ok(()),
-					other => Err(other.into())
-				}
-			} else {
-				match Assets::can_withdraw(asset_id, account, amount){
-					WithdrawConsequence::Success => Ok(()),
-					other => Err(other.into())
-				}
-			}
-	}
-
-	fn transfer(asset_id: AssetId, 
-		source: &<Test as frame_system::Config>::AccountId, 
-		dest: &<Test as frame_system::Config>::AccountId,
-		amount: Balance) -> Result<(), FungibleLedgerConsequence<Balance>>{
-			if asset_id == 0 {
-				<Balances as Currency<<Test as frame_system::Config>::AccountId>>::transfer(source, 
-					dest, 
-					amount, 
-					ExistenceRequirement::KeepAlive)
-					.map_err(| _ | FungibleLedgerConsequence::InternalError)
-			} else {
-				<Assets as AssetTransfer<<Test as frame_system::Config>::AccountId>>::transfer(asset_id, 
-					source, 
-					dest, 
-					amount, 
-					true)
-					.and_then(| _ | Ok(()))
-					.map_err(| _ | FungibleLedgerConsequence::InternalError)
+		} else {
+			match Assets::can_deposit(asset_id, account, amount) {
+				DepositConsequence::Success => Ok(()),
+				other => Err(other.into()),
 			}
 		}
+	}
+
+	fn can_withdraw(
+		asset_id: AssetId,
+		account: &<Test as frame_system::Config>::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence<Balance>> {
+		if asset_id == 0 {
+			// we assume native asset with id 0
+			match Balances::can_withdraw(account, amount) {
+				WithdrawConsequence::Success => Ok(()),
+				other => Err(other.into()),
+			}
+		} else {
+			match Assets::can_withdraw(asset_id, account, amount) {
+				WithdrawConsequence::Success => Ok(()),
+				other => Err(other.into()),
+			}
+		}
+	}
+
+	fn transfer(
+		asset_id: AssetId,
+		source: &<Test as frame_system::Config>::AccountId,
+		dest: &<Test as frame_system::Config>::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence<Balance>> {
+		if asset_id == 0 {
+			<Balances as Currency<<Test as frame_system::Config>::AccountId>>::transfer(
+				source,
+				dest,
+				amount,
+				ExistenceRequirement::KeepAlive,
+			)
+			.map_err(|_| FungibleLedgerConsequence::InternalError)
+		} else {
+			<Assets as AssetTransfer<<Test as frame_system::Config>::AccountId>>::transfer(
+				asset_id, source, dest, amount, true,
+			)
+			.and_then(|_| Ok(()))
+			.map_err(|_| FungibleLedgerConsequence::InternalError)
+		}
+	}
 }
 
-parameter_types!{
+parameter_types! {
 	pub const MantaPayPalletId: PalletId = MANTA_PAY_PALLET_ID;
 }
 

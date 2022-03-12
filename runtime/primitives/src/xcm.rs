@@ -121,19 +121,46 @@ impl<
 		weight: Weight,
 		payment: xcm_executor::Assets,
 	) -> Result<xcm_executor::Assets, XcmError> {
-		let first_asset = payment
-			.fungible_assets_iter()
-			.next()
-			.ok_or(XcmError::TooExpensive)?;
+		log::debug!(
+			target: "FirstAssetTrader::buy_weight",
+			"weight: {:?}, payment: {:?}",
+			weight,
+			payment
+		);
+
+		let first_asset = payment.fungible_assets_iter().next().ok_or({
+			log::debug!(
+				target: "FirstAssetTrader::buy_weight",
+				"no assets in payment: {:?}",
+				payment,
+			);
+			XcmError::TooExpensive
+		})?;
 
 		// Check the first asset
 		match (first_asset.id, first_asset.fun) {
 			(xcmAssetId::Concrete(id), Fungibility::Fungible(_)) => {
 				let asset_loc: AssetLocation = id.clone().into();
-				let asset_id =
-					AssetIdInfoGetter::get_asset_id(&asset_loc).ok_or(XcmError::TooExpensive)?;
-				let units_per_second = AssetIdInfoGetter::get_units_per_second(asset_id)
-					.ok_or(XcmError::TooExpensive)?;
+
+				let asset_id = AssetIdInfoGetter::get_asset_id(&asset_loc).ok_or({
+					log::debug!(
+						target: "FirstAssetTrader::buy_weight",
+						"asset_id missing for asset_loc with id: {:?}",
+						id,
+					);
+					XcmError::TooExpensive
+				})?;
+
+				let units_per_second =
+					AssetIdInfoGetter::get_units_per_second(asset_id).ok_or({
+						log::debug!(
+							target: "FirstAssetTrader::buy_weight",
+							"units_per_second missing for asset with id: {:?}",
+							id,
+						);
+						XcmError::TooExpensive
+					})?;
+				log::info!("\n FirstAssetTrader::buy_weight didn't hit TooExpensive 1 \n");
 				let amount = units_per_second * (weight as u128) / (WEIGHT_PER_SECOND as u128);
 				// we don't need to proceed if amount is zero.
 				// This is very useful in tests.
@@ -144,9 +171,20 @@ impl<
 					fun: Fungibility::Fungible(amount),
 					id: xcmAssetId::Concrete(id.clone()),
 				};
-				let unused = payment
-					.checked_sub(required)
-					.map_err(|_| XcmError::TooExpensive)?;
+
+				log::debug!(
+					target: "FirstAssetTrader::buy_weight",
+					"payment: {:?}, required: {:?}",
+					payment,
+					required,
+				);
+				let unused = payment.checked_sub(required).map_err(|_| {
+					log::debug!(
+						target: "FirstAssetTrader::buy_weight",
+						"not enough required assets in payment",
+					);
+					XcmError::TooExpensive
+				})?;
 				self.weight = self.weight.saturating_add(weight);
 
 				// In case the asset matches the one the trader already stored before, add
@@ -175,7 +213,15 @@ impl<
 				};
 				Ok(unused)
 			}
-			_ => Err(XcmError::TooExpensive),
+			_ => {
+				log::debug!(
+					target: "FirstAssetTrader::buy_weight",
+					"no matching xcmAssetId for first_asset in payment: {:?}",
+					payment,
+				);
+
+				Err(XcmError::TooExpensive)
+			}
 		}
 	}
 
