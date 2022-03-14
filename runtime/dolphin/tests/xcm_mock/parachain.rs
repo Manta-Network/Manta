@@ -18,7 +18,7 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime, match_type, parameter_types,
 	traits::{ConstU32, Everything, Nothing},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
@@ -44,16 +44,20 @@ use polkadot_parachain::primitives::{
 };
 use xcm::{latest::prelude::*, Version as XcmVersion, VersionedXcm};
 use xcm_builder::{
-	AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
+	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
 	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
 	FungiblesAdapter, LocationInverter, ParentIsDefault, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation,
+	SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::Get;
 
-pub use manta_primitives::{types::AssetId, assets::{AssetRegistarMetadata, AssetStorageMetadata}};
+pub use manta_primitives::{
+	assets::{AssetRegistarMetadata, AssetStorageMetadata},
+	types::AssetId,
+};
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 
@@ -115,7 +119,7 @@ parameter_types! {
 	pub const KsmLocation: MultiLocation = MultiLocation::parent();
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
 	pub Ancestry: MultiLocation = Parachain(MsgQueue::parachain_id().into()).into();
-	pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::get().into())));
+	pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
 }
 
 parameter_types! {
@@ -175,7 +179,7 @@ pub type XcmOriginToCallOrigin = (
 );
 
 parameter_types! {
-	pub const UnitWeightCost: Weight = 1;
+	pub const UnitWeightCost: Weight = 1_000_000_000;
 	// Used in native traders
 	// This might be able to skipped.
 	// We have to use `here()` because of reanchoring logic
@@ -566,8 +570,8 @@ where
 }
 
 parameter_types! {
-	pub const BaseXcmWeight: Weight = 100;
-	pub const MaxAssetsForTransfer: usize = 2;
+	pub const BaseXcmWeight: Weight = 100_000_000;
+	pub const MaxAssetsForTransfer: usize = 1;
 }
 
 // The XCM message wrapper wrapper
