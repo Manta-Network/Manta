@@ -126,6 +126,7 @@ runtime-benchmarks = [
 	'pallet-membership/runtime-benchmarks',
 	'pallet-tx-pause/runtime-benchmarks',
 	'pallet-treasury/runtime-benchmarks',
+	'pallet-assets/runtime-benchmarks',
 ]
 std = [
 	'codec/std',
@@ -183,4 +184,5 @@ std = [
 	'manta-collator-selection/std',
 	'pallet-tx-pause/std',
 	'pallet-treasury/std',
+	'pallet-assets/std',
 ]
