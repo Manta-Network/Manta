@@ -4830,7 +4830,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#82808e099a8e239d27425a4307d8b5ec361fae38"
+source = "git+https://github.com/manta-network/manta-rs#dc68e8dce7d29c3e33561b4e20cdb7493d2663a7"
 dependencies = [
  "derivative",
  "derive_more",
@@ -4871,7 +4871,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#82808e099a8e239d27425a4307d8b5ec361fae38"
+source = "git+https://github.com/manta-network/manta-rs#dc68e8dce7d29c3e33561b4e20cdb7493d2663a7"
 dependencies = [
  "derivative",
  "manta-util",
@@ -4881,7 +4881,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#82808e099a8e239d27425a4307d8b5ec361fae38"
+source = "git+https://github.com/manta-network/manta-rs#dc68e8dce7d29c3e33561b4e20cdb7493d2663a7"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -5003,7 +5003,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#82808e099a8e239d27425a4307d8b5ec361fae38"
+source = "git+https://github.com/manta-network/manta-rs#dc68e8dce7d29c3e33561b4e20cdb7493d2663a7"
 
 [[package]]
 name = "maplit"
@@ -11676,8 +11676,8 @@ version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ee73e6e4924fe940354b8d4d98cad5231175d615cd855b758adc658c0aac6a0"
 dependencies = [
- "cfg-if 1.0.0",
- "rand 0.8.5",
+ "cfg-if 0.1.10",
+ "rand 0.7.3",
  "static_assertions",
 ]
 

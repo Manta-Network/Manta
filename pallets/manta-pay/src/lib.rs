@@ -103,7 +103,7 @@ use frame_support::{transactional, PalletId};
 use manta_accounting::{
 	asset,
 	transfer::{
-		canonical::TransferShape, InvalidSinkAccount, InvalidSourceAccount, LedgerInternalError,
+		canonical::TransferShape, InvalidSinkAccount, InvalidSourceAccount,
 		Proof, ReceiverLedger, ReceiverPostError, ReceiverPostingKey, SenderLedger,
 		SenderPostError, SenderPostingKey, SinkPostingKey, SourcePostingKey, TransferLedger,
 		TransferLedgerSuperPostingKey, TransferPostError,
@@ -115,7 +115,7 @@ use manta_crypto::{
 };
 use manta_pay::config;
 use manta_primitives::{
-	assets::FungibleLedger,
+	assets::{FungibleLedger, FungibleLedgerConsequence},
 	types::{AssetId, Balance},
 };
 use manta_util::codec::Decode as _;
@@ -371,7 +371,7 @@ pub mod pallet {
 		/// Ledger Internal Error
 		///
 		/// Internal error caused by ledger internals (Ideally should never happen).
-		LedgerInternalError,
+		LedgerUpdateError,
 
 		/// Invalid Source Account
 		///
@@ -423,12 +423,12 @@ pub mod pallet {
 		}
 	}
 
-	impl<T> From<TransferPostError<T::AccountId>> for Error<T>
+	impl<T, Balance> From<TransferPostError<T::AccountId, Balance>> for Error<T>
 	where
 		T: Config,
 	{
 		#[inline]
-		fn from(err: TransferPostError<T::AccountId>) -> Self {
+		fn from(err: TransferPostError<T::AccountId, Balance>) -> Self {
 			match err {
 				TransferPostError::InvalidShape => Self::InvalidShape,
 				TransferPostError::InvalidSourceAccount(err) => err.into(),
@@ -438,7 +438,7 @@ pub mod pallet {
 				TransferPostError::DuplicateSpend => Self::DuplicateSpend,
 				TransferPostError::DuplicateRegister => Self::DuplicateRegister,
 				TransferPostError::InvalidProof => Self::InvalidProof,
-				TransferPostError::LedgerInternalError => Self::LedgerInternalError,
+				TransferPostError::UpdateError(_) => Self::LedgerUpdateError,
 			}
 		}
 	}
@@ -656,6 +656,7 @@ where
 	T: Config,
 {
 	type AccountId = T::AccountId;
+	type UpdateError = FungibleLedgerConsequence<asset::AssetValueType>;
 	type Event = PreprocessedEvent<T>;
 	type ValidSourceAccount = WrapPair<Self::AccountId, asset::AssetValue>;
 	type ValidSinkAccount = WrapPair<Self::AccountId, asset::AssetValue>;
@@ -766,7 +767,7 @@ where
 		sinks: Vec<SinkPostingKey<config::Config, Self>>,
 		proof: Self::ValidProof,
 		super_key: &TransferLedgerSuperPostingKey<config::Config, Self>,
-	) -> Result<(), manta_accounting::transfer::LedgerInternalError> {
+	) -> Result<(), Self::UpdateError> {
 		let _ = (proof, super_key);
 		for WrapPair(account_id, withdraw) in sources {
 			T::FungibleLedger::transfer(
@@ -774,8 +775,7 @@ where
 				&account_id,
 				&pallet::Pallet::<T>::account_id(),
 				withdraw.0,
-			)
-			.map_err(|_| LedgerInternalError)?;
+			)?;
 		}
 		for WrapPair(account_id, deposit) in sinks {
 			T::FungibleLedger::transfer(
@@ -783,8 +783,7 @@ where
 				&pallet::Pallet::<T>::account_id(),
 				&account_id,
 				deposit.0,
-			)
-			.map_err(|_| LedgerInternalError)?;
+			)?;
 		}
 		Ok(())
 	}
