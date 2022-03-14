@@ -27,6 +27,55 @@ use pallet_balances::Error as BalancesError;
 use sp_arithmetic::Percent;
 use sp_runtime::{testing::UintAuthorityId, traits::BadOrigin};
 
+const ALICE: u64 = 1;
+const BOB: u64 = 2;
+const CHAD: u64 = 3;
+const DAVE: u64 = 4; // NOTE: As defined in mock, dave will author all blocks
+const EVE: u64 = 5;
+
+fn candidate_ids() -> Vec<u64> {
+	let ret = CollatorSelection::candidates()
+		.iter()
+		.map(|c| c.who.clone())
+		.collect::<Vec<_>>();
+	return ret;
+}
+fn set_all_validator_perf_to(n: u32) {
+	for v in Session::validators() {
+		BlocksPerCollatorThisSession::<Test>::insert(v, n);
+	}
+}
+fn setup_3_candidates() {
+	assert_ok!(CollatorSelection::set_desired_candidates(
+		Origin::signed(RootAccount::get()),
+		3
+	));
+	assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(
+		CHAD
+	)));
+	assert_ok!(Session::set_keys(
+		Origin::signed(CHAD),
+		UintAuthorityId(CHAD).into(),
+		vec![]
+	));
+	assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(
+		DAVE
+	)));
+	assert_ok!(Session::set_keys(
+		Origin::signed(DAVE),
+		UintAuthorityId(DAVE).into(),
+		vec![]
+	));
+	assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(
+		EVE
+	)));
+	assert_ok!(Session::set_keys(
+		Origin::signed(EVE),
+		UintAuthorityId(EVE).into(),
+		vec![]
+	));
+}
+
 #[test]
 fn basic_setup_works() {
 	new_test_ext().execute_with(|| {
@@ -394,114 +443,7 @@ fn session_management_works() {
 		assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 3]);
 	});
 }
-#[test]
-fn kick_algorithm_manta() {
-	new_test_ext().execute_with(|| {
-		// add collator candidates
-		assert_ok!(CollatorSelection::set_desired_candidates(
-			Origin::signed(RootAccount::get()),
-			5
-		));
-		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
-		assert_ok!(Session::set_keys(
-			Origin::signed(3),
-			UintAuthorityId(3).into(),
-			vec![]
-		));
-		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
-		assert_ok!(Session::set_keys(
-			Origin::signed(4),
-			UintAuthorityId(4).into(),
-			vec![]
-		));
-		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(5)));
-		assert_ok!(Session::set_keys(
-			Origin::signed(5),
-			UintAuthorityId(5).into(),
-			vec![]
-		));
 
-		// 80th percentile = 10, kick *below* 9, remove 3,5
-		BlocksPerCollatorThisSession::<Test>::insert(1u64, 10);
-		BlocksPerCollatorThisSession::<Test>::insert(2u64, 10);
-		BlocksPerCollatorThisSession::<Test>::insert(3u64, 4);
-		BlocksPerCollatorThisSession::<Test>::insert(4u64, 9);
-		BlocksPerCollatorThisSession::<Test>::insert(5u64, 0);
-		assert_eq!(
-			CollatorSelection::evict_bad_collators(CollatorSelection::candidates()),
-			vec![5, 3]
-		);
-
-		// readd them
-		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
-		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(5)));
-
-		// Don't try kicking invulnerables ( 1 and 2 ), percentile = 9, threshold is 8.1 => kick 8 and below
-		BlocksPerCollatorThisSession::<Test>::insert(1u64, 0);
-		BlocksPerCollatorThisSession::<Test>::insert(2u64, 10);
-		BlocksPerCollatorThisSession::<Test>::insert(3u64, 4);
-		BlocksPerCollatorThisSession::<Test>::insert(4u64, 9);
-		BlocksPerCollatorThisSession::<Test>::insert(5u64, 0);
-		assert_eq!(
-			CollatorSelection::evict_bad_collators(CollatorSelection::candidates()),
-			vec![5, 3]
-		);
-
-		// Test boundary conditions
-		let empty_vec = Vec::<<Test as frame_system::Config>::AccountId>::new();
-		// Kick anyone not at perfect performance
-		EvictionBaseline::<Test>::put(Percent::from_percent(100));
-		EvictionTolerance::<Test>::put(Percent::from_percent(0));
-		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
-		BlocksPerCollatorThisSession::<Test>::insert(3u64, 9);
-		BlocksPerCollatorThisSession::<Test>::insert(4u64, 10);
-		assert_eq!(
-			CollatorSelection::evict_bad_collators(CollatorSelection::candidates()),
-			vec![3]
-		);
-		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
-		// Allow any underperformance => eviction disabled
-		EvictionTolerance::<Test>::put(Percent::from_percent(100));
-		assert_eq!(
-			CollatorSelection::evict_bad_collators(CollatorSelection::candidates()),
-			empty_vec
-		);
-		// 0-th percentile = use worst collator as benchmark => eviction disabled
-		EvictionBaseline::<Test>::put(Percent::from_percent(0));
-		EvictionTolerance::<Test>::put(Percent::from_percent(0));
-		assert_eq!(
-			CollatorSelection::evict_bad_collators(CollatorSelection::candidates()),
-			empty_vec
-		);
-		// Same performance => no kick
-		EvictionBaseline::<Test>::put(Percent::from_percent(100));
-		EvictionTolerance::<Test>::put(Percent::from_percent(0));
-		BlocksPerCollatorThisSession::<Test>::insert(3u64, 10);
-		BlocksPerCollatorThisSession::<Test>::insert(4u64, 10);
-		assert_eq!(
-			CollatorSelection::evict_bad_collators(CollatorSelection::candidates()),
-			empty_vec
-		);
-		// Exactly on threshold => no kick
-		EvictionBaseline::<Test>::put(Percent::from_percent(100));
-		EvictionTolerance::<Test>::put(Percent::from_percent(10));
-		BlocksPerCollatorThisSession::<Test>::insert(3u64, 10);
-		BlocksPerCollatorThisSession::<Test>::insert(4u64, 9);
-		assert_eq!(
-			CollatorSelection::evict_bad_collators(CollatorSelection::candidates()),
-			empty_vec
-		);
-		// Rational threshold = 8.1, kick 8 and below
-		EvictionBaseline::<Test>::put(Percent::from_percent(100));
-		EvictionTolerance::<Test>::put(Percent::from_percent(10));
-		BlocksPerCollatorThisSession::<Test>::insert(3u64, 8);
-		BlocksPerCollatorThisSession::<Test>::insert(4u64, 10);
-		assert_eq!(
-			CollatorSelection::evict_bad_collators(CollatorSelection::candidates()),
-			vec![3]
-		);
-	});
-}
 #[test]
 fn kick_mechanism_parity() {
 	new_test_ext().execute_with(|| {
@@ -543,134 +485,229 @@ fn kick_mechanism_parity() {
 }
 
 #[test]
-fn kick_mechanism_manta() {
-	let candidate_ids = || {
-		CollatorSelection::candidates()
-			.iter()
-			.map(|c| c.who.clone())
-			.collect::<Vec<_>>()
-	};
-	let set_all_validator_perf_to = |n: u32| {
-		for v in Session::validators() {
-			BlocksPerCollatorThisSession::<Test>::insert(v, n);
-		}
-	};
+fn manta_kick_algorithm_normal_operation() {
+	new_test_ext().execute_with(|| {
+		// add collator candidates
+		setup_3_candidates();
+		assert_eq!(candidate_ids(), vec![CHAD, DAVE, EVE]);
 
+		// 80th percentile = 10, kick *below* 9, remove CHAD,EVE
+		BlocksPerCollatorThisSession::<Test>::insert(ALICE, 10);
+		BlocksPerCollatorThisSession::<Test>::insert(BOB, 10);
+		BlocksPerCollatorThisSession::<Test>::insert(CHAD, 4);
+		BlocksPerCollatorThisSession::<Test>::insert(DAVE, 9);
+		BlocksPerCollatorThisSession::<Test>::insert(EVE, 0);
+		assert_eq!(
+			CollatorSelection::evict_bad_collators(CollatorSelection::candidates()),
+			vec![EVE, CHAD]
+		);
+
+		// readd them
+		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(
+			CHAD
+		)));
+		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(
+			EVE
+		)));
+
+		// Don't try kicking invulnerables ( ALICE and BOB ), percentile = 9, threshold is 8.1 => kick 8 and below
+		BlocksPerCollatorThisSession::<Test>::insert(ALICE, 0);
+		BlocksPerCollatorThisSession::<Test>::insert(BOB, 10);
+		BlocksPerCollatorThisSession::<Test>::insert(CHAD, 4);
+		BlocksPerCollatorThisSession::<Test>::insert(DAVE, 9);
+		BlocksPerCollatorThisSession::<Test>::insert(EVE, 0);
+		assert_eq!(
+			CollatorSelection::evict_bad_collators(CollatorSelection::candidates()),
+			vec![EVE, CHAD]
+		);
+	});
+}
+
+#[test]
+fn manta_kick_algorithm_boundaries() {
+	new_test_ext().execute_with(|| {
+		// add collator candidates
+		setup_3_candidates();
+		assert_eq!(candidate_ids(), vec![CHAD, DAVE, EVE]);
+
+		let empty_vec = Vec::<<Test as frame_system::Config>::AccountId>::new();
+		// Kick anyone not at perfect performance
+		EvictionBaseline::<Test>::put(Percent::from_percent(100));
+		EvictionTolerance::<Test>::put(Percent::from_percent(0));
+
+		BlocksPerCollatorThisSession::<Test>::insert(CHAD, 9);
+		BlocksPerCollatorThisSession::<Test>::insert(DAVE, 11);
+		BlocksPerCollatorThisSession::<Test>::insert(EVE, 10);
+		assert_eq!(
+			CollatorSelection::evict_bad_collators(CollatorSelection::candidates()),
+			vec![CHAD, EVE]
+		);
+		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(
+			CHAD
+		)));
+		// Allow any underperformance => eviction disabled
+		EvictionTolerance::<Test>::put(Percent::from_percent(100));
+		assert_eq!(
+			CollatorSelection::evict_bad_collators(CollatorSelection::candidates()),
+			empty_vec
+		);
+		// 0-th percentile = use worst collator as benchmark => eviction disabled
+		EvictionBaseline::<Test>::put(Percent::from_percent(0));
+		EvictionTolerance::<Test>::put(Percent::from_percent(0));
+		assert_eq!(
+			CollatorSelection::evict_bad_collators(CollatorSelection::candidates()),
+			empty_vec
+		);
+		// Same performance => no kick
+		EvictionBaseline::<Test>::put(Percent::from_percent(100));
+		EvictionTolerance::<Test>::put(Percent::from_percent(0));
+		BlocksPerCollatorThisSession::<Test>::insert(CHAD, 10);
+		BlocksPerCollatorThisSession::<Test>::insert(DAVE, 10);
+		assert_eq!(
+			CollatorSelection::evict_bad_collators(CollatorSelection::candidates()),
+			empty_vec
+		);
+		// Exactly on threshold => no kick
+		EvictionBaseline::<Test>::put(Percent::from_percent(100));
+		EvictionTolerance::<Test>::put(Percent::from_percent(10));
+		BlocksPerCollatorThisSession::<Test>::insert(CHAD, 10);
+		BlocksPerCollatorThisSession::<Test>::insert(DAVE, 9);
+		assert_eq!(
+			CollatorSelection::evict_bad_collators(CollatorSelection::candidates()),
+			empty_vec
+		);
+		// Rational threshold = 8.1, kick 8 and below
+		EvictionBaseline::<Test>::put(Percent::from_percent(100));
+		EvictionTolerance::<Test>::put(Percent::from_percent(10));
+		BlocksPerCollatorThisSession::<Test>::insert(CHAD, 8);
+		BlocksPerCollatorThisSession::<Test>::insert(DAVE, 10);
+		assert_eq!(
+			CollatorSelection::evict_bad_collators(CollatorSelection::candidates()),
+			vec![CHAD]
+		);
+	});
+}
+
+#[test]
+fn manta_collator_onboarding_sequence() {
 	new_test_ext().execute_with(|| {
 		// add new collator candidates, they will become validators next session
 		// Sessions rotate every 10 blocks, so we kick on each x0-th block
-		assert_ok!(CollatorSelection::set_desired_candidates(
-			Origin::signed(RootAccount::get()),
-			5
-		));
-		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
-		assert_ok!(Session::set_keys(
-			Origin::signed(3),
-			UintAuthorityId(3).into(),
-			vec![]
-		));
-		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
-		assert_ok!(Session::set_keys(
-			Origin::signed(4),
-			UintAuthorityId(4).into(),
-			vec![]
-		));
-		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(5)));
-		assert_ok!(Session::set_keys(
-			Origin::signed(5),
-			UintAuthorityId(5).into(),
-			vec![]
-		));
-		assert_eq!(Session::validators(), vec![1, 2]);
-		assert_eq!(candidate_ids(), vec![3, 4, 5]);
+		setup_3_candidates();
+		assert_eq!(Session::validators(), vec![ALICE, BOB]);
+		assert_eq!(candidate_ids(), vec![CHAD, DAVE, EVE]);
 
-		// RAD: mock.rs specifies 4 as author of all blocks in find_author, 4 will produce all 10 blocks in a session
-		// RAD: other tests like authorship_event_handler depend on 4 producing blocks
-		initialize_to_block(19);
-		assert_eq!(Session::validators(), vec![1, 2]); // collator 2 must not have been kicked, invulnerable
-		assert_eq!(candidate_ids(), vec![3, 4, 5]);
+		// RAD: mock.rs specifies DAVE as author of all blocks in find_author, DAVE will produce all 10 blocks in a session
+		// RAD: other tests like authorship_event_handler depend on DAVE producing blocks
+		initialize_to_block(10);
+		assert_eq!(Session::validators(), vec![ALICE, BOB]); // collators ALICE and BOB must not have been kicked, invulnerable
+		assert_eq!(candidate_ids(), vec![CHAD, DAVE, EVE]); // collators CHAD,DAVE,EVE are not yet active
 
-		// TC1: Only invulnerables 1,2 underperform. Nobody gets kicked
+		initialize_to_block(20);
+		assert_eq!(Session::validators(), vec![ALICE, BOB, CHAD, DAVE, EVE]); // all collators online
+	});
+}
+
+#[test]
+fn manta_dont_kick_invulnerables() {
+	new_test_ext().execute_with(|| {
+		setup_3_candidates();
+		initialize_to_block(20);
+		assert_eq!(Session::validators(), vec![ALICE, BOB, CHAD, DAVE, EVE]);
+
 		initialize_to_block(29);
-		// NOTE: Validator 4 produces 10 blocks each session in testing
-		set_all_validator_perf_to(10);
-		BlocksPerCollatorThisSession::<Test>::insert(1u64, 10);
-		BlocksPerCollatorThisSession::<Test>::insert(2u64, 10);
-		assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]);
-		assert_eq!(candidate_ids(), vec![3, 4, 5]);
+		set_all_validator_perf_to(10); // NOTE: Validator DAVE produces 10 blocks each session in testing
+		BlocksPerCollatorThisSession::<Test>::insert(1u64, 0);
+		BlocksPerCollatorThisSession::<Test>::insert(2u64, 0);
+		assert_eq!(Session::validators(), vec![ALICE, BOB, CHAD, DAVE, EVE]);
+		assert_eq!(candidate_ids(), vec![CHAD, DAVE, EVE]);
+	});
+}
 
-		// TC2: 5 underperforms for one session, is kicked - recovers next session, but is still removed
+#[test]
+fn manta_remove_underperformer_even_if_it_recovers() {
+	new_test_ext().execute_with(|| {
+		setup_3_candidates();
+		initialize_to_block(20);
+		assert_eq!(Session::validators(), vec![ALICE, BOB, CHAD, DAVE, EVE]);
+
+		initialize_to_block(29);
+		set_all_validator_perf_to(10);
+		BlocksPerCollatorThisSession::<Test>::insert(EVE, 5);
+		assert_eq!(Session::validators(), vec![ALICE, BOB, CHAD, DAVE, EVE]);
+		assert_eq!(candidate_ids(), vec![CHAD, DAVE, EVE]);
 		initialize_to_block(39);
 		set_all_validator_perf_to(10);
-		BlocksPerCollatorThisSession::<Test>::insert(5u64, 5);
-		assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]);
-		assert_eq!(candidate_ids(), vec![3, 4, 5]);
+		assert_eq!(Session::validators(), vec![ALICE, BOB, CHAD, DAVE, EVE]);
+		assert_eq!(candidate_ids(), vec![CHAD, DAVE]); // EVE got removed from candidates
 		initialize_to_block(49);
 		set_all_validator_perf_to(10);
-		assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]);
-		assert_eq!(candidate_ids(), vec![3, 4]);
-		initialize_to_block(59);
-		set_all_validator_perf_to(10);
-		assert_eq!(Session::validators(), vec![1, 2, 3, 4]);
-		assert_eq!(candidate_ids(), vec![3, 4]);
-		// TC3: 5 underperforms for one session, is kicked and immediately readded - loses one session then onboards again
-		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(5)));
-		initialize_to_block(69);
-		set_all_validator_perf_to(10);
-		assert_eq!(Session::validators(), vec![1, 2, 3, 4]);
-		assert_eq!(candidate_ids(), vec![3, 4, 5]);
-		initialize_to_block(79);
-		set_all_validator_perf_to(10);
-		BlocksPerCollatorThisSession::<Test>::insert(5u64, 5);
-		assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]);
-		assert_eq!(candidate_ids(), vec![3, 4, 5]);
-		initialize_to_block(89);
-		set_all_validator_perf_to(10);
-		assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]);
-		assert_eq!(candidate_ids(), vec![3, 4]);
-		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(5)));
-		assert_eq!(candidate_ids(), vec![3, 4, 5]);
-		initialize_to_block(99);
-		set_all_validator_perf_to(10);
-		assert_eq!(Session::validators(), vec![1, 2, 3, 4]);
-		assert_eq!(candidate_ids(), vec![3, 4, 5]);
-		initialize_to_block(109);
-		assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]);
-		assert_eq!(candidate_ids(), vec![3, 4, 5]);
-
-		// TC4: Everybody underperforms (algorithm knows no target number, just relative performance), nobody gets kicked
-		set_all_validator_perf_to(6);
-		initialize_to_block(119);
-		assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]);
-		assert_eq!(candidate_ids(), vec![3, 4, 5]);
-
-		// TC5: 5 is on threshold, don't kick ( at 5 nodes, the 80th percentile is the second highest value of the set = 100, 10% threshold is 10 )
-		set_all_validator_perf_to(100);
-		BlocksPerCollatorThisSession::<Test>::insert(5u64, 90);
-		initialize_to_block(129);
-		set_all_validator_perf_to(100);
-		assert_eq!(candidate_ids(), vec![3, 4, 5]);
-
-		//  TC6: Collator is added as candidate and removed next session before becoming active
-		initialize_to_block(139);
-		set_all_validator_perf_to(100);
-		assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]);
-		assert_eq!(candidate_ids(), vec![3, 4, 5]);
-		initialize_to_block(149);
-		// Next session is already planned and session keys are queued here
-		assert_ok!(CollatorSelection::remove_collator(
-			Origin::signed(RootAccount::get()),
-			5
-		));
-		set_all_validator_perf_to(100);
-		assert_eq!(candidate_ids(), vec![3, 4]);
-		initialize_to_block(159);
-		set_all_validator_perf_to(100);
-		assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]); // 5 was queued already so it becomes a validator
-		initialize_to_block(169);
-		set_all_validator_perf_to(100);
-		assert_eq!(Session::validators(), vec![1, 2, 3, 4]); // and is removed next session
+		assert_eq!(Session::validators(), vec![ALICE, BOB, CHAD, DAVE]); // and from validators
+		assert_eq!(candidate_ids(), vec![CHAD, DAVE]);
 	});
+}
+
+#[test]
+fn manta_remove_underperformer_even_if_it_is_immediately_readded_as_candidate() {
+	// TC3: EVE underperforms for one session, is kicked and immediately readded - loses one session then onboards again
+	new_test_ext().execute_with(|| {
+		setup_3_candidates();
+		initialize_to_block(20);
+		assert_eq!(Session::validators(), vec![ALICE, BOB, CHAD, DAVE, EVE]);
+
+		initialize_to_block(29);
+		set_all_validator_perf_to(10);
+		BlocksPerCollatorThisSession::<Test>::insert(EVE, 0);
+		initialize_to_block(30);
+		assert_eq!(Session::validators(), vec![ALICE, BOB, CHAD, DAVE, EVE]);
+		assert_eq!(candidate_ids(), vec![CHAD, DAVE]); // EVE got kicked
+		assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(
+			EVE
+		))); // and is immediately readded
+		assert_eq!(candidate_ids(), vec![CHAD, DAVE, EVE]);
+		initialize_to_block(39);
+		set_all_validator_perf_to(10);
+		initialize_to_block(40);
+		assert_eq!(Session::validators(), vec![ALICE, BOB, CHAD, DAVE]); // is removed from validators
+		assert_eq!(candidate_ids(), vec![CHAD, DAVE, EVE]); // but not from candiadates
+		initialize_to_block(49);
+		set_all_validator_perf_to(10);
+		initialize_to_block(50);
+		assert_eq!(Session::validators(), vec![ALICE, BOB, CHAD, DAVE, EVE]); // and onboards again one session later
+		assert_eq!(candidate_ids(), vec![CHAD, DAVE, EVE]);
+	})
+}
+
+#[test]
+fn manta_dont_kick_uniform_underperformance() {
+	// TC4: Everybody underperforms (algorithm knows no target number, just relative performance), nobody gets kicked
+	new_test_ext().execute_with(|| {
+		setup_3_candidates();
+		initialize_to_block(20);
+		assert_eq!(Session::validators(), vec![ALICE, BOB, CHAD, DAVE, EVE]);
+
+		set_all_validator_perf_to(6);
+		initialize_to_block(30);
+		assert_eq!(Session::validators(), vec![ALICE, BOB, CHAD, DAVE, EVE]);
+		assert_eq!(candidate_ids(), vec![CHAD, DAVE, EVE]);
+	})
+}
+
+#[test]
+fn manta_dont_kick_collator_at_tolerance() {
+	// TC5: EVE is on threshold, don't kick ( at 5 nodes, the 80th percentile is the second highest value of the set = 100, 10% threshold is 10 )
+	new_test_ext().execute_with(|| {
+		setup_3_candidates();
+		initialize_to_block(20);
+		assert_eq!(Session::validators(), vec![ALICE, BOB, CHAD, DAVE, EVE]);
+
+		initialize_to_block(29);
+		set_all_validator_perf_to(100);
+		BlocksPerCollatorThisSession::<Test>::insert(EVE, 90);
+		initialize_to_block(39);
+		set_all_validator_perf_to(100);
+		assert_eq!(candidate_ids(), vec![CHAD, DAVE, EVE]);
+	})
 }
 #[test]
 #[should_panic = "duplicate invulnerables in genesis."]
