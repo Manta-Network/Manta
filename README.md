@@ -74,4 +74,4 @@ now you can watch the ci build your awesome feature and publish your draft relea
 
 ## Minimum supported rust compiler
 
-This project's MSRV is `rustc 1.57`
+This project's MSRV is `rustc 1.59`

@@ -12,6 +12,7 @@ members = [
 inherits = "release"
 codegen-units = 1
 lto = true
+strip = "symbols"
 
 [profile.release]
 panic = "unwind"
