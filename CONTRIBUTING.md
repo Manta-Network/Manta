@@ -1,6 +1,6 @@
 # Contributing to Manta Network
 
-First off, thanks for taking the time to contribute!
+:+1::tada: First off, thanks for taking the time to contribute! :tada::+1:
 
 The following is a set of guidelines for contributing to the Manta Network codebase. These are mostly guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
 
@@ -75,15 +75,11 @@ The process described here has several goals:
 Please follow these steps to have your contribution considered by the maintainers:
 
 1. Every commit needs to be signed-off with your name, email and [gpg key](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits):
-    `git config --global user.name your_name`
-    `git config --global user.email you_email`
-    COMMAND : `git commit -s -S -m your_commit_message`
-    `-s` = `Signed-off-by`
-    `-S` = `Verify commit using gpg key`
-    If there is more than one commit in your pull request and your git client is modern enough (2.13+), rebase the required number of commits with --signoff:
-    `git rebase --signoff HEAD~<number_of_commits>` Then, force push:
-    `git push -f origin <your_branch>`
-    
+    1.1. `git config --global user.name your_name`
+    1.2. `git config --global user.email you_email`
+    1.3. `git commit -s -S -m your_commit_message`
+        * `-s` = `Signed-off-by`
+        * `-S` = `Verify commit using gpg key`
 2. Follow all instructions in [the template](.github/PULL_REQUEST_TEMPLATE.md)
 3. After you submit your pull request, verify that all CI checks are passing <details><summary>What if CI checks are failing?</summary>If a CI check is failing, and you believe that the failure is unrelated to your change, please leave a comment on the pull request explaining why you believe the failure is unrelated. A maintainer will re-run the status check for you. If we conclude that the failure was a false positive, then we will open an issue to track that problem.</details>
 4. If you have a significant design decision to make please document it as an ehancement request first, so we can review it and provide feedback before any code is written.
