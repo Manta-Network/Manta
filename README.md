@@ -17,6 +17,12 @@ Disclaimer: The code currently hasn't been properly security audited (work in pr
 :point_right: Learn more about [Manta Network](https://manta.network). <br>
 :point_right: Check out our [technical documentation](https://docs.manta.network). <br>
 
+## Manta/Calamari/Dolphin
+This is the mono-repo for Manta/Calamari/Dolphin nodes. 
+* Manta: Manta's Polkadot parachain network
+* Calamari: Manta's canary network on Kusama
+* Dolphin: Manta's testnet 
+
 ## Build Manta/Calamari/Dolphin Node
 1. Setup environment
   ```bash
