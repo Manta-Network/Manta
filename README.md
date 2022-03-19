@@ -14,9 +14,8 @@ Manta is the privacy layer for Web 3. Manta's goal is to protect Web 3 users' fu
 
 Disclaimer: The code currently hasn't been properly security audited (work in progress), use it at your own risk. 
 
-:point_right: Learn more about [Manta Network](https://manta.network)
-
-:point_right: Check out our [technical documentation](https://docs.manta.network)
+:point_right: Learn more about [Manta Network](https://manta.network). <br>
+:point_right: Check out our [technical documentation](https://docs.manta.network). <br>
 
 ## Build Manta/Calamari/Dolphin Node
 1. Setup environment
