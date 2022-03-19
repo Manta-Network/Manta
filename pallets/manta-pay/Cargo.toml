@@ -79,7 +79,7 @@ manta-crypto = { git = "https://github.com/manta-network/manta-rs", default-feat
 manta-pay = { git = "https://github.com/manta-network/manta-rs", default-features = false, features = ["groth16", "scale"] }
 manta-sdk = { git = "https://github.com/manta-network/sdk", default-features = false }
 manta-util = { git = "https://github.com/manta-network/manta-rs", default-features = false }
-manta-primitives = { path = "../../runtime/primitives", default-features = false}
+manta-primitives = { path = "../../primitives", default-features = false}
 
 [dev-dependencies]
 bencher = "0.1.5"
