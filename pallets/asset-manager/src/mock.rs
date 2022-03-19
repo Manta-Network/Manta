@@ -25,9 +25,9 @@ use frame_support::{construct_runtime, parameter_types, traits::ConstU32};
 use frame_system as system;
 use frame_system::EnsureRoot;
 use manta_primitives::{
+	assets::{AssetLocation, AssetRegistarMetadata, AssetStorageMetadata},
 	constants::ASSET_STRING_LIMIT,
 	types::{AccountId, AssetId, Balance},
-	assets::{AssetLocation, AssetRegistarMetadata, AssetStorageMetadata},
 };
 use sp_core::H256;
 use sp_runtime::{

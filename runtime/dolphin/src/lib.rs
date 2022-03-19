@@ -235,14 +235,15 @@ impl Contains<Call> for BaseFilter {
 			// Treasury calls are filtered while it is accumulating funds.
 			//| Call::Treasury(_)
 			| Call::Scheduler(_)
-			// We open pallet-session because user has to set his own session keys before register as collator.
-			| Call::Session(_)
-			// Currently, We filter `register_as_candidate` due to this call is not ready for community.
+			| Call::Session(_) // User must be able to set their session key when applying for a collator
 			| Call::CollatorSelection(
 				manta_collator_selection::Call::set_invulnerables{..}
 				| manta_collator_selection::Call::set_desired_candidates{..}
 				| manta_collator_selection::Call::set_candidacy_bond{..}
+				| manta_collator_selection::Call::set_eviction_baseline{..}
+				| manta_collator_selection::Call::set_eviction_tolerance{..}
 				| manta_collator_selection::Call::register_candidate{..}
+				// Currently, we filter `register_as_candidate` as this call is not yet ready for community.
 				| manta_collator_selection::Call::remove_collator{..}
 				| manta_collator_selection::Call::leave_intent{..})
 			| Call::Balances(_)
@@ -1008,11 +1009,11 @@ impl manta_collator_selection::Config for Runtime {
 	type PotId = PotId;
 	type MaxCandidates = ConstU32<50>; // 50 candidates at most
 	type MaxInvulnerables = ConstU32<5>; // 5 invulnerables at most
-	type KickThreshold = Period; // should be a multiple of session or things will get inconsistent
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = manta_collator_selection::IdentityCollator;
+	type AccountIdOf = manta_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;
-	type WeightInfo = manta_collator_selection::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

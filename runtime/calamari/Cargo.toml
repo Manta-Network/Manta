@@ -17,6 +17,7 @@ smallvec = "1.6.1"
 
 # Substrate primitives
 sp-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
+sp-arithmetic = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
 sp-block-builder = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
 sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
 sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
@@ -80,7 +81,8 @@ pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-featu
 # Self dependencies
 manta-primitives = { path = '../primitives', default-features = false }
 calamari-vesting = { path = '../../pallets/vesting', default-features = false }
-manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
+# NOTE: collator selection had a breaking rework for dolphin, so this staples Calamari to the pre-change version until it is battle-tested on dolphin
+manta-collator-selection = { git = 'https://github.com/Manta-Network/Manta.git', rev = "bdfb86861011e333236b6a8607fc72018b338aff", default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 
 [package.metadata.docs.rs]

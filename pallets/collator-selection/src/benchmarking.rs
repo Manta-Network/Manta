@@ -29,6 +29,7 @@ use frame_support::{
 use frame_system::{EventRecord, RawOrigin};
 use pallet_authorship::EventHandler;
 use pallet_session::{self as session, SessionManager};
+use sp_arithmetic::Percent;
 use sp_std::prelude::*;
 
 pub type BalanceOf<T> =
@@ -148,6 +149,30 @@ benchmarks! {
 		assert_last_event::<T>(Event::NewCandidacyBond(bond).into());
 	}
 
+	set_eviction_baseline {
+		let percentile = 80u8;
+		let origin = T::UpdateOrigin::successful_origin();
+	}: {
+		assert_ok!(
+			<CollatorSelection<T>>::set_eviction_baseline(origin, percentile)
+		);
+	}
+	verify {
+		assert_last_event::<T>(Event::NewEvictionBaseline(percentile).into());
+	}
+
+	set_eviction_tolerance {
+		let percentage = 10u8;
+		let origin = T::UpdateOrigin::successful_origin();
+	}: {
+		assert_ok!(
+			<CollatorSelection<T>>::set_eviction_tolerance(origin, percentage)
+		);
+	}
+	verify {
+		assert_last_event::<T>(Event::NewEvictionTolerance(percentage).into());
+	}
+
 	// worse case is when we have all the max-candidate slots filled except one, and we fill that
 	// one.
 	register_as_candidate {
@@ -263,45 +288,40 @@ benchmarks! {
 
 	// worst case for new session.
 	new_session {
-		let r in 1 .. T::MaxCandidates::get();
 		let c in 1 .. T::MaxCandidates::get();
 
 		<CandidacyBond<T>>::put(T::Currency::minimum_balance());
+		<EvictionBaseline<T>>::put(Percent::from_percent(100));	// Consider all collators
+		<EvictionTolerance<T>>::put(Percent::from_percent(0));		// Kick anyone not at perfect performance
 		<DesiredCandidates<T>>::put(c);
 		frame_system::Pallet::<T>::set_block_number(0u32.into());
 
+		let p = <CollatorSelection<T>>::eviction_baseline();
 		register_validators::<T>(c);
 		register_candidates::<T>(c);
 
-		let new_block: T::BlockNumber = 1800u32.into();
-		let zero_block: T::BlockNumber = 0u32.into();
+		let new_block = 1800u32;
+		let zero_block = 0u32;
 		let candidates = <Candidates<T>>::get();
 
-		let non_removals = c.saturating_sub(r);
+		let underperformers = &candidates[0..candidates.len()-1];
+		let top_performer = &candidates[candidates.len()-1];
 
-		for i in 0..c {
-			<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), zero_block);
+		// worst case: everyone but one collator underperforms and must be removed
+		for up in underperformers{
+			<BlocksPerCollatorThisSession<T>>::insert(up.who.clone(), zero_block);
 		}
-
-		if non_removals > 0 {
-			for i in 0..non_removals {
-				<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), new_block);
-			}
-		} else {
-			for i in 0..c {
-				<LastAuthoredBlock<T>>::insert(candidates[i as usize].who.clone(), new_block);
-			}
-		}
+		<BlocksPerCollatorThisSession<T>>::insert(top_performer.who.clone(), new_block);
 
 		let pre_length = <Candidates<T>>::get().len();
 
-		frame_system::Pallet::<T>::set_block_number(new_block);
+		frame_system::Pallet::<T>::set_block_number(new_block.into());
 
 		assert!(<Candidates<T>>::get().len() == c as usize);
 	}: {
 		<CollatorSelection<T> as SessionManager<_>>::new_session(0)
 	} verify {
-		if c > r {
+		if c > 1 {
 			assert!(<Candidates<T>>::get().len() < pre_length);
 		} else {
 			assert!(<Candidates<T>>::get().len() == pre_length);
