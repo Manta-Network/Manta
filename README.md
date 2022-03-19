@@ -6,7 +6,7 @@
 ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/Manta-Network/Manta/Check%20Build/manta?style=flat-square)
 [![Twitter](https://img.shields.io/badge/-Twitter-5c5c5c?style=flat-square&logo=Twitter)](https://twitter.com/mantanetwork)
 [![Discord](https://img.shields.io/badge/Discord-gray?style=flat-square&logo=discord)](https://discord.gg/n4QFj4n5vg)
-[![Forum]https://img.shields.io/discourse/status?server=forum.manta.network&style=flat-square](https://forum.manta.network)
+[![Forum](https://img.shields.io/discourse/status?server=forum.manta.network&style=flat-square)](https://forum.manta.network)
 [![Telegram](https://img.shields.io/badge/Telegram-gray?style=flat-square&logo=telegram)](https://t.me/mantanetworkofficial)
 [![Medium](https://img.shields.io/badge/Medium-gray?style=flat-square&logo=medium)](https://mantanetwork.medium.com/)
 
