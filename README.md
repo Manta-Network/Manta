@@ -10,6 +10,8 @@
 [![Telegram](https://img.shields.io/badge/Telegram-gray?style=flat-square&logo=telegram)](https://t.me/mantanetworkofficial)
 [![Medium](https://img.shields.io/badge/Medium-gray?style=flat-square&logo=medium)](https://mantanetwork.medium.com/)
 
+<br>
+
 Manta is the privacy layer for Web 3. Manta's goal is to protect Web 3 users' fundamental privacy from the first principle.  
 
 Disclaimer: The code currently hasn't been properly security audited (work in progress), use it at your own risk. 
