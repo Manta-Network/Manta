@@ -169,12 +169,12 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
-	/// Shards of the merkle tree
+	/// Shards of the merkle tree of UTXOs
 	#[pallet::storage]
 	pub(super) type Shards<T: Config> =
 		StorageDoubleMap<_, Identity, u8, Identity, u64, (config::Utxo, EncryptedNote), ValueQuery>;
 
-	/// Shard trees
+	/// Shard merkle trees 
 	#[pallet::storage]
 	pub(super) type ShardTrees<T: Config> =
 		StorageMap<_, Identity, u8, UtxoMerkleTreePath, ValueQuery>;
@@ -184,7 +184,7 @@ pub mod pallet {
 	pub(super) type UtxoAccumulatorOutputs<T: Config> =
 		StorageMap<_, Identity, config::UtxoAccumulatorOutput, (), ValueQuery>;
 
-	/// Utxo set
+	/// Utxo set of MantaPay protocol
 	#[pallet::storage]
 	pub(super) type UtxoSet<T: Config> = StorageMap<_, Identity, config::Utxo, (), ValueQuery>;
 
@@ -194,11 +194,13 @@ pub mod pallet {
 		StorageMap<_, Identity, config::VoidNumber, (), ValueQuery>;
 
 	/// Void number set insertion order
+	/// Each element of the key is an `u64` insertion order number of void number.
 	#[pallet::storage]
 	pub(super) type VoidNumberSetInsertionOrder<T: Config> =
 		StorageMap<_, Identity, u64, config::VoidNumber, ValueQuery>;
-
-	/// Void number set size
+ 
+	/// The size of Void Number Set
+	/// FIXME: this should be removed.
 	#[pallet::storage]
 	pub(super) type VoidNumberSetSize<T: Config> = StorageValue<_, u64, ValueQuery>;
 
@@ -483,6 +485,7 @@ where
 		match self {
 			Self::Mint { asset, source } => Event::Mint { asset, source },
 			Self::PrivateTransfer => Event::PrivateTransfer {
+				// FIXME: get rid of unwrap eventually.
 				origin: origin.unwrap(),
 			},
 			Self::Reclaim { asset, sink } => Event::Reclaim { asset, sink },
@@ -491,6 +494,8 @@ where
 }
 
 /// Ledger
+/// FIXME: get rid of the phantom data here. And 
+/// move the ledger related traits to a seperate file.
 pub struct Ledger<T>(PhantomData<T>)
 where
 	T: Config;

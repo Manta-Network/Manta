@@ -256,7 +256,6 @@ impl Contains<Call> for BaseFilter {
 				| manta_collator_selection::Call::remove_collator{..}
 				| manta_collator_selection::Call::leave_intent{..})
 			| Call::Balances(_)
-			| Call::Treasury(_)
 			| Call::Utility(_)
 			| Call::MantaPay(_)
 			| Call::XTokens(_) => true,
