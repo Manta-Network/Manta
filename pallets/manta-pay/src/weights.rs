@@ -31,10 +31,22 @@ use frame_support::{
 };
 use frame_system::Config;
 
-/// Concrete Weight Functions
-pub struct WeightInfo<T>(PhantomData<T>);
+/// Weight functions needed for pallet_manta_pay.
+pub trait WeightInfo {
+	/// Returns the [`Weight`] of the [`Pallet::mint`] extrinsic.
+	fn mint() -> Weight;
 
-impl<T> crate::pallet::WeightInfo for WeightInfo<T>
+	/// Returns the [`Weight`] of the [`Pallet::private_transfer`] extrinsic.
+	fn private_transfer() -> Weight;
+
+	/// Returns the [`Weight`] of the [`Pallet::reclaim`] extrinsic.
+	fn reclaim() -> Weight;
+}
+
+/// Concrete Weight Functions
+pub struct SubstrateWeight<T>(PhantomData<T>);
+
+impl<T> WeightInfo for SubstrateWeight<T>
 where
 	T: Config,
 {

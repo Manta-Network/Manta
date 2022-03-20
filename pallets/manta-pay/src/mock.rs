@@ -200,7 +200,7 @@ parameter_types! {
 
 impl crate::Config for Test {
 	type Event = Event;
-	type WeightInfo = crate::weights::WeightInfo<Self>;
+	type WeightInfo = crate::weights::SubstrateWeight<Self>;
 	type FungibleLedger = MantaFungibleLedger;
 	type PalletId = MantaPayPalletId;
 }

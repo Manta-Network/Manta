@@ -1,17 +1,13 @@
 [package]
-name = "pallet-manta-pay"
-version = "0.4.0"
-edition = "2021"
-authors = ["Manta Network <contact@manta.network>"]
-readme = "README.md"
-license-file = "LICENSE"
-repository = "https://github.com/Manta-Network/pallet-manta-pay"
-homepage = "https://github.com/Manta-Network"
-documentation = "https://github.com/Manta-Network/pallet-manta-pay"
-categories = [""]
-keywords = [""]
-description = "Pallet to implement the MantaPay protocol."
-publish = false
+authors     = ['Manta Network']
+description = 'Pallet implementing the MantaPay protocol.'
+edition     = "2021"
+homepage    = 'https://manta.network'
+license     = 'GPL-3.0'
+name        = 'pallet-manta-pay'
+readme      = 'README.md'
+repository  = 'https://github.com/Manta-Network/Manta/'
+version     = '0.4.0'
 
 [package.metadata.docs.rs]
 # To build locally:

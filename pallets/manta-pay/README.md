@@ -1,7 +1,7 @@
 # pallet-manta-pay
 
 This is a pallet that enables MantaPay, a multi-asset, decentralized shielded payment protocol.
-The best way to use this repo is to invoke it with a `manta-runtime`,
+The best way to use this repo is to invoke it with a manta parachain node (with configuration of Manta/Calamari/Dolphin),
 available from [manta](https://github.com/Manta-Network/manta).
 
 __Disclaimer__: The code has not been properly reviewed or audited and is likely to have 

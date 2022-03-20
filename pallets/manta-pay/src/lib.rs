@@ -25,8 +25,6 @@
 //! The Assets module provides functionality for asset management of fungible asset classes
 //! with a fixed supply, including:
 //!
-//! * Asset Issuance
-//! * Asset Transfer
 //! * Private Asset Mint
 //! * Private Asset Transfer
 //! * Private Asset Reclaim
@@ -37,8 +35,6 @@
 //!
 //! ### Terminology
 //!
-//! * **Asset issuance:** The creation of the asset (note: this asset can only be created once)
-//! * **Asset transfer:** The action of transferring assets from one account to another.
 //! * **Private asset mint:** The action of converting certain number of `Asset`s into an UTXO
 //!     that holds same number of private assets.
 //! * **Private asset transfer:** The action of transferring certain number of private assets from
@@ -136,6 +132,7 @@ pub mod benchmark;
 pub mod weights;
 
 pub use pallet::*;
+pub use weights::WeightInfo;
 
 /// Type Definitions for Protocol Structures
 pub mod types;
@@ -147,18 +144,6 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::traits::AccountIdConversion;
-
-	/// Extrinsic Weight Info
-	pub trait WeightInfo {
-		/// Returns the [`Weight`] of the [`Pallet::mint`] extrinsic.
-		fn mint() -> Weight;
-
-		/// Returns the [`Weight`] of the [`Pallet::private_transfer`] extrinsic.
-		fn private_transfer() -> Weight;
-
-		/// Returns the [`Weight`] of the [`Pallet::reclaim`] extrinsic.
-		fn reclaim() -> Weight;
-	}
 
 	/// Pallet
 	#[pallet::pallet]
