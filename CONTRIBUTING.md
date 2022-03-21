@@ -21,7 +21,7 @@ Bugs are tracked as [GitHub issues](https://guides.github.com/features/issues/).
 Explain the problem and include additional details to help maintainers reproduce the problem:
 
 * **Use a clear and descriptive title** for the issue to identify the problem.
-* **Describe the exact network configuraiton** include parachain node version, relay chain node version and any tooling you may be using, such as polkadot-launch and its configurations.
+* **Describe the exact network configuration** include parachain node version, relay chain node version and any tooling you may be using, such as polkadot-launch and its configurations.
 * **Describe the exact steps which reproduce the problem** in as many details as possible. For example, start by explaining how you started the Manta node, e.g. which command exactly you used in the terminal, how you started the relay chain, etc.
 * **Provide specific examples to demonstrate the steps**. Include links to files or GitHub projects, or copy/pasteable snippets, which you use in those examples. If you're providing snippets in the issue, use [Markdown code blocks](https://help.github.com/articles/markdown-basics/#multiple-lines).
 * **Describe the behavior you observed after following the steps** and point out what exactly is the problem with that behavior.
@@ -38,8 +38,8 @@ Furthermore, provide more context by answering these questions:
 
 ### Always include details about your configuration and environment
 
-* **Are you working with the Manta/Calamari mainnets or have you depoloyed locally**
-* **Wich version of Manta/Calamari are you using?**
+* **Are you working with the Manta/Calamari mainnets or have you deployed locally**
+* **Which version of Manta/Calamari are you using?**
 * **What relay chain and version are you using?**
 * **What's the name and version of the OS you're using**?
 * **Are you running Manta/Calamari with Docker?** 
@@ -53,7 +53,7 @@ Before creating enhancement suggestions, please check the existing issues as you
 
 #### How Do I Submit A (Good) Enhancement Suggestion?
 
-Enhancement suggestions are tracked as [GitHub issues](https://guides.github.com/features/issues/).Create an issue on that repository and provide the following information:
+Enhancement suggestions are tracked as [GitHub issues](https://guides.github.com/features/issues/). Create an issue on that repository and provide the following information:
 
 * **Use a clear and descriptive title** for the issue to identify the suggestion.
 * **Provide a step-by-step description of the suggested enhancement** in as many details as possible.
@@ -84,7 +84,7 @@ Please follow these steps to have your contribution considered by the maintainer
 3. After you submit your pull request, verify that all CI checks are passing <details><summary>What if CI checks are failing?</summary>If a CI check is failing, and you believe that the failure is unrelated to your change, please leave a comment on the pull request explaining why you believe the failure is unrelated. A maintainer will re-run the status check for you. If we conclude that the failure was a false positive, then we will open an issue to track that problem.</details>
 4. If you have a significant design decision to make please document it as an ehancement request first, so we can review it and provide feedback before any code is written.
 
-While the prerequisites above must be satisfied prior to having your pull request reviewed, the reviewer(s) may ask you to complete additional design work, tests, or other changes before your pull request can be ultimately accepted.
+While the prerequisites above should be satisfied prior to having your pull request reviewed, the reviewer(s) may ask you to complete additional design work, tests, or other changes before your pull request can be ultimately accepted.
 
 ## Styleguides
 
