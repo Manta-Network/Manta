@@ -2,13 +2,7 @@
   "name": "Dolphin Parachain Testnet",
   "id": "dolphin_testnet",
   "chainType": "Live",
-  "bootNodes": [
-    "/dns/crispy.moonbase-relay.testnet.dolphin.red/tcp/30333/p2p/12D3KooWPkpsWoFfwRyvj9sSbiiHHN29K2YsTyNHBM71ASDEcwzk",
-   "/dns/crunchy.moonbase-relay.testnet.dolphin.red/tcp/30333/p2p/12D3KooWD2bfmEk43N16JCbTtdXgWfLejMiekuZq4TFEQC3PDCkV",
-   "/dns/hotdog.moonbase-relay.testnet.dolphin.red/tcp/30333/p2p/12D3KooWLp4Vfh4dF4DMynPWDoQdMYyJ8shDSmHSnLdJf2s2dDC8",
-   "/dns/tasty.moonbase-relay.testnet.dolphin.red/tcp/30333/p2p/12D3KooWRvaG5T6F31Fo55Fa1s8URBSKsqA2qvmWhgFJ8FWFcYrL",
-   "/dns/tender.moonbase-relay.testnet.dolphin.red/tcp/30333/p2p/12D3KooWJjRusQzpwN6hd6LeXRhCRPWA1RoisJuY1CVwP7V1diuz"
-  ],
+  "bootNodes": [],
   "telemetryEndpoints": [
     [
       "/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F",
