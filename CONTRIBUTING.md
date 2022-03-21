@@ -82,7 +82,7 @@ Please follow these steps to have your contribution considered by the maintainer
         * `-S` = `Verify commit using gpg key`
 2. Follow all instructions in [the template](.github/PULL_REQUEST_TEMPLATE.md)
 3. After you submit your pull request, verify that all CI checks are passing <details><summary>What if CI checks are failing?</summary>If a CI check is failing, and you believe that the failure is unrelated to your change, please leave a comment on the pull request explaining why you believe the failure is unrelated. A maintainer will re-run the status check for you. If we conclude that the failure was a false positive, then we will open an issue to track that problem.</details>
-4. If you have a significant design decision to make please document it as an ehancement request first, so we can review it and provide feedback before any code is written.
+4. If you have a significant design decision to make please document it as an enhancement request first, so we can review it and provide feedback before any code is written.
 
 While the prerequisites above should be satisfied prior to having your pull request reviewed, the reviewer(s) may ask you to complete additional design work, tests, or other changes before your pull request can be ultimately accepted.
 
