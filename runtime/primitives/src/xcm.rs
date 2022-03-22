@@ -160,7 +160,7 @@ impl<
 						);
 						XcmError::TooExpensive
 					})?;
-				log::info!("\n FirstAssetTrader::buy_weight didn't hit TooExpensive 1 \n");
+
 				let amount = units_per_second * (weight as u128) / (WEIGHT_PER_SECOND as u128);
 				// we don't need to proceed if amount is zero.
 				// This is very useful in tests.
