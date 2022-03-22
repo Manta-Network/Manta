@@ -99,10 +99,10 @@ use frame_support::{transactional, PalletId};
 use manta_accounting::{
 	asset,
 	transfer::{
-		canonical::TransferShape, InvalidSinkAccount, InvalidSourceAccount,
-		Proof, ReceiverLedger, ReceiverPostError, ReceiverPostingKey, SenderLedger,
-		SenderPostError, SenderPostingKey, SinkPostingKey, SourcePostingKey, TransferLedger,
-		TransferLedgerSuperPostingKey, TransferPostError,
+		canonical::TransferShape, InvalidSinkAccount, InvalidSourceAccount, Proof, ReceiverLedger,
+		ReceiverPostError, ReceiverPostingKey, SenderLedger, SenderPostError, SenderPostingKey,
+		SinkPostingKey, SourcePostingKey, TransferLedger, TransferLedgerSuperPostingKey,
+		TransferPostError,
 	},
 };
 use manta_crypto::{
@@ -174,7 +174,7 @@ pub mod pallet {
 	pub(super) type Shards<T: Config> =
 		StorageDoubleMap<_, Identity, u8, Identity, u64, (config::Utxo, EncryptedNote), ValueQuery>;
 
-	/// Shard merkle trees 
+	/// Shard merkle trees
 	#[pallet::storage]
 	pub(super) type ShardTrees<T: Config> =
 		StorageMap<_, Identity, u8, UtxoMerkleTreePath, ValueQuery>;
@@ -198,7 +198,7 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type VoidNumberSetInsertionOrder<T: Config> =
 		StorageMap<_, Identity, u64, config::VoidNumber, ValueQuery>;
- 
+
 	/// The size of Void Number Set
 	/// FIXME: this should be removed.
 	#[pallet::storage]
@@ -494,7 +494,7 @@ where
 }
 
 /// Ledger
-/// FIXME: get rid of the phantom data here. And 
+/// FIXME: get rid of the phantom data here. And
 /// move the ledger related traits to a seperate file.
 pub struct Ledger<T>(PhantomData<T>)
 where
