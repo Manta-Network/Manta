@@ -247,7 +247,13 @@ impl Contains<Call> for BaseFilter {
 				| manta_collator_selection::Call::remove_collator{..}
 				| manta_collator_selection::Call::leave_intent{..})
 			| Call::Balances(_)
-			| Call::XTokens(_)
+			// Everything except transfer() is filtered out until it is practically needed:
+			// orml_xtokens::Call::transfer_with_fee {..}
+			// orml_xtokens::Call::transfer_multiasset {..}
+			// orml_xtokens::Call::transfer_multiasset_with_fee {..}
+			// orml_xtokens::Call::transfer_multicurrencies  {..}
+			// orml_xtokens::Call::transfer_multiassets {..}
+			| Call::XTokens(orml_xtokens::Call::transfer {..})
 			| Call::Utility(_) => true,
 			// Filter XCM pallets, we only allow transfer with XTokens.
 			// Filter Assets. Assets should only be accessed by AssetManager.
