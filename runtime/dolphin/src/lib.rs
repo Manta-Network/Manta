@@ -186,7 +186,8 @@ impl Contains<Call> for BaseFilter {
 			Call::Timestamp(_) | Call::ParachainSystem(_) | Call::System(_)
 		) {
 			// always allow core call
-			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
+			// pallet-timestamp and parachainSystem could not be filtered because
+			// they are used in communication between relaychain and parachain.
 			return true;
 		}
 
