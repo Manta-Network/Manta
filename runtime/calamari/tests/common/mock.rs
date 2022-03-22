@@ -25,6 +25,7 @@ use manta_primitives::{
 	helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
 	types::{AccountId, AuraId, Balance},
 };
+use sp_arithmetic::Percent;
 use sp_core::sr25519;
 pub struct ExtBuilder {
 	balances: Vec<(AccountId, Balance)>,
@@ -86,6 +87,10 @@ impl ExtBuilder {
 
 		manta_collator_selection::GenesisConfig::<Runtime> {
 			invulnerables: self.invulnerables,
+			eviction_baseline: manta_collator_selection::GenesisConfig::<Runtime>::default()
+				.eviction_baseline,
+			eviction_tolerance: manta_collator_selection::GenesisConfig::<Runtime>::default()
+				.eviction_tolerance,
 			candidacy_bond: BOND_AMOUNT,
 			desired_candidates: self.desired_candidates,
 		}

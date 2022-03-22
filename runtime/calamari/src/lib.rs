@@ -237,6 +237,8 @@ impl Contains<Call> for BaseFilter {
 				manta_collator_selection::Call::set_invulnerables{..}
 				| manta_collator_selection::Call::set_desired_candidates{..}
 				| manta_collator_selection::Call::set_candidacy_bond{..}
+				| manta_collator_selection::Call::set_eviction_baseline{..}
+				| manta_collator_selection::Call::set_eviction_tolerance{..}
 				| manta_collator_selection::Call::register_candidate{..}
 				// Currently, we filter `register_as_candidate` as this call is not yet ready for community.
 				| manta_collator_selection::Call::remove_collator{..}
@@ -813,10 +815,9 @@ impl manta_collator_selection::Config for Runtime {
 	type PotId = PotId;
 	type MaxCandidates = ConstU32<50>; // 50 candidates at most
 	type MaxInvulnerables = ConstU32<5>; // 5 invulnerables at most
-	// should be a multiple of session or things will get inconsistent
-	type KickThreshold = Period;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = manta_collator_selection::IdentityCollator;
+	type AccountIdOf = manta_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;
 	type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
 }
