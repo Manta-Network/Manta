@@ -198,4 +198,5 @@ std = [
 	'pallet-treasury/std',
 	'pallet-assets/std',
 	'pallet-asset-manager/std',
+	'orml-xtokens/std'
 ]
