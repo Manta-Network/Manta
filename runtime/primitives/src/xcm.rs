@@ -278,7 +278,9 @@ impl<
 			Ok((asset_id, amount)) => {
 				if !amount.is_zero() {
 					Assets::mint_into(asset_id, &ReceiverAccount::get(), amount)
-						.map_err(|err| log::debug!("mint_into failed with {:?}", err))
+						.map_err(
+							|err| log::debug!(target: "manta-xcm", "mint_into failed with {:?}", err),
+						)
 						.ok();
 				}
 			}
