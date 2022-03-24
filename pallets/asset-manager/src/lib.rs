@@ -38,7 +38,7 @@ mod tests;
 pub mod pallet {
 
 	use codec::Codec;
-	use frame_support::{pallet_prelude::*, transactional, PalletId};
+	use frame_support::{pallet_prelude::*, traits::Contains, transactional, PalletId};
 	use frame_system::pallet_prelude::*;
 	use manta_primitives::assets::{AssetIdLocationGetter, UnitsToWeightRatio};
 	use scale_info::TypeInfo;
@@ -369,6 +369,12 @@ pub mod pallet {
 		/// The account ID of AssetManager
 		pub fn account_id() -> T::AccountId {
 			PALLET_ID.into_account()
+		}
+	}
+
+	impl<T: Config> Contains<T::AssetLocation> for Pallet<T> {
+		fn contains(location: &T::AssetLocation) -> bool {
+			LocationAssetId::<T>::contains_key(&location)
 		}
 	}
 }
