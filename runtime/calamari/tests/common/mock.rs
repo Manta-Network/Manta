@@ -25,7 +25,6 @@ use manta_primitives::{
 	helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
 	types::{AccountId, AuraId, Balance},
 };
-use sp_arithmetic::Percent;
 use sp_core::sr25519;
 pub struct ExtBuilder {
 	balances: Vec<(AccountId, Balance)>,
