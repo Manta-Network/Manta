@@ -42,7 +42,7 @@ use frame_support::{
 	construct_runtime, match_type, parameter_types,
 	traits::{
 		ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, Everything, Nothing,
-		PrivilegeCmp,
+		OnRuntimeUpgrade, PrivilegeCmp,
 	},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
@@ -116,7 +116,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 3141,
+	spec_version: 3142,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 4,
@@ -923,7 +923,23 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsReversedWithSystemFirst,
+	CollatorSelectionMigrationV2,
 >;
+
+pub struct CollatorSelectionMigrationV2;
+impl OnRuntimeUpgrade for CollatorSelectionMigrationV2 {
+	fn on_runtime_upgrade() -> Weight {
+		CollatorSelection::migrate_to_v2()
+	}
+	#[cfg(feature = "try-runtime")]
+	fn pre_upgrade() -> Result<(), &'static str> {
+		CollatorSelection::pre_migrate_to_v2()
+	}
+	#[cfg(feature = "try-runtime")]
+	fn post_upgrade() -> Result<(), &'static str> {
+		CollatorSelection::post_migrate_to_v2()
+	}
+}
 
 impl_runtime_apis! {
 	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
