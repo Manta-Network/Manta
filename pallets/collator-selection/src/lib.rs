@@ -669,7 +669,7 @@ pub mod pallet {
 				} else {
 				}
 
-				log::info!(" >>> Cleaned {dropcount} keys from LastAuthoredBlock");
+				log::info!(" >>> Cleaned {} keys from LastAuthoredBlock", dropcount);
 				// Return the weight consumed by the migration.
 				T::DbWeight::get().reads_writes(1, dropcount as Weight + 1)
 			} else {
