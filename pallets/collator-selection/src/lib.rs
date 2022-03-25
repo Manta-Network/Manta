@@ -72,6 +72,7 @@ mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+pub mod migrations;
 pub mod weights;
 
 #[frame_support::pallet]
@@ -79,7 +80,7 @@ pub mod pallet {
 	pub use crate::weights::WeightInfo;
 	use core::ops::Div;
 	use frame_support::{
-		dispatch::{DispatchResultWithPostInfo, GetStorageVersion},
+		dispatch::DispatchResultWithPostInfo,
 		inherent::Vec,
 		pallet_prelude::*,
 		sp_runtime::{
@@ -637,59 +638,6 @@ pub mod pallet {
 			for validator_id in validators {
 				let account_id = T::AccountIdOf::convert(validator_id.clone().into());
 				<BlocksPerCollatorThisSession<T>>::insert(account_id.clone(), 0u32);
-			}
-		}
-
-		pub fn migrate_to_v2() -> frame_support::weights::Weight {
-			use frame_support::migration::{
-				have_storage_value, remove_storage_prefix, storage_key_iter,
-			};
-			// Storage migrations should use storage versions for safety.
-			if Self::on_chain_storage_version() < 2 {
-				log::info!(" >>> Executing collator-selection V1->V2 migration!");
-
-				// Drain all keys from the old (now unused) map
-				let iter_map = storage_key_iter::<T::AccountId, T::BlockNumber, Twox64Concat>(
-					Self::name().as_bytes(),
-					b"LastAuthoredBlock",
-				)
-				.drain();
-				let mut dropcount = 0;
-				for _ in iter_map {
-					dropcount += 1;
-				}
-
-				// Update storage version.
-				StorageVersion::new(2).put::<Self>();
-
-				// Remove KickThreshold if customized
-				if have_storage_value(Self::name().as_bytes(), b"KickThreshold", &[]) {
-					remove_storage_prefix(Self::name().as_bytes(), b"KickThreshold", &[]);
-					log::info!(" >>> Removed KickThreshold");
-				} else {
-				}
-
-				log::info!(" >>> Cleaned {} keys from LastAuthoredBlock", dropcount);
-				// Return the weight consumed by the migration.
-				T::DbWeight::get().reads_writes(1, dropcount as Weight + 1)
-			} else {
-				log::debug!(" >>> collator-selection V1->V2 migration not needed!");
-				0
-			}
-		}
-		pub fn pre_migrate_to_v2() -> Result<(), &'static str> {
-			if Self::on_chain_storage_version() < 2 {
-				return Ok(());
-			} else {
-				return Result::Err("Version not upgradeable");
-			}
-		}
-
-		pub fn post_migrate_to_v2() -> Result<(), &'static str> {
-			if Self::on_chain_storage_version() == 2 {
-				return Ok(());
-			} else {
-				return Result::Err("Version not upgraded");
 			}
 		}
 	}
