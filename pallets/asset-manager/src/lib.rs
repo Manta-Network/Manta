@@ -207,12 +207,6 @@ pub mod pallet {
 	pub(super) type LocationAssetId<T: Config> =
 		StorageMap<_, Blake2_128Concat, T::AssetLocation, T::AssetId>;
 
-	/// AssetId to AssetRegistrar Map.
-	#[pallet::storage]
-	#[pallet::getter(fn asset_id_metadata)]
-	pub(super) type AssetIdMetadata<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::AssetId, T::AssetRegistrarMetadata>;
-
 	/// Get the next available AssetId.
 	#[pallet::storage]
 	#[pallet::getter(fn next_asset_id)]
@@ -257,7 +251,6 @@ pub mod pallet {
 			)
 			.map_err(|_| Error::<T>::ErrorCreatingAsset)?;
 			AssetIdLocation::<T>::insert(&asset_id, &location);
-			AssetIdMetadata::<T>::insert(&asset_id, &metadata);
 			LocationAssetId::<T>::insert(&location, &asset_id);
 			Self::deposit_event(Event::<T>::AssetRegistered {
 				asset_id,
@@ -320,7 +313,9 @@ pub mod pallet {
 				AssetIdLocation::<T>::contains_key(&asset_id),
 				Error::<T>::UpdateNonExistAsset
 			);
-			AssetIdMetadata::<T>::insert(&asset_id, &metadata);
+
+			T::AssetRegistrar::update_asset_metadata(asset_id, metadata.clone().into())?;
+
 			Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata });
 			Ok(())
 		}

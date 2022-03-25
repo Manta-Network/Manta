@@ -13,15 +13,12 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
-//
-// The pallet-tx-pause pallet is forked from Acala's transaction-pause module https://github.com/AcalaNetwork/Acala/tree/master/modules/transaction-pause
-// The original license is the following - SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 //! unit tests for asset-manager
 
 use crate::{self as asset_manager, AssetIdLocation, UnitsPerSecond};
 use asset_manager::mock::*;
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, traits::fungibles::InspectMetadata};
 use manta_primitives::assets::{AssetLocation, AssetRegistarMetadata};
 use sp_runtime::traits::BadOrigin;
 use xcm::{latest::prelude::*, VersionedMultiLocation};
@@ -33,7 +30,7 @@ fn basic_setup_should_work() {
 }
 
 #[test]
-fn wrong_modifer_origin_should_not_work() {
+fn wrong_modifier_origin_should_not_work() {
 	new_test_ext().execute_with(|| {
 		let asset_metadata = AssetRegistarMetadata {
 			name: b"Kusama".to_vec(),
@@ -122,17 +119,25 @@ fn register_asset_should_work() {
 
 #[test]
 fn update_asset() {
+	let original_name = b"Kusama".to_vec();
+	let original_symbol = b"KSM".to_vec();
+	let original_decimals = 12;
 	let asset_metadata = AssetRegistarMetadata {
-		name: b"Kusama".to_vec(),
-		symbol: b"KSM".to_vec(),
-		decimals: 12,
+		name: original_name,
+		symbol: original_symbol,
+		decimals: original_decimals,
 		min_balance: 1u128,
 		evm_address: None,
 		is_frozen: false,
 		is_sufficient: true,
 	};
 	let mut new_metadata = asset_metadata.clone();
-	new_metadata.is_frozen = true;
+	let new_name = b"NotKusama".to_vec();
+	let new_symbol = b"NotKSM".to_vec();
+	let new_decimals = original_decimals + 1;
+	new_metadata.name = new_name.clone();
+	new_metadata.symbol = new_symbol.clone();
+	new_metadata.decimals = new_decimals;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 	let new_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
@@ -155,6 +160,9 @@ fn update_asset() {
 			0,
 			new_metadata.clone()
 		));
+		assert_eq!(Assets::name(&0), new_name);
+		assert_eq!(Assets::symbol(&0), new_symbol);
+		assert_eq!(Assets::decimals(&0), new_decimals);
 		// Update the asset location
 		assert_ok!(AssetManager::update_asset_location(
 			Origin::root(),
