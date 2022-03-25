@@ -248,6 +248,7 @@ impl Contains<Call> for BaseFilter {
 				| manta_collator_selection::Call::leave_intent{..})
 			| Call::Balances(_)
 			| Call::XTokens(_)
+			| Call::Preimage(_)
 			| Call::Utility(_) => true,
 			// Filter XCM pallets, we only allow transfer with XTokens.
 			// Filter Assets. Assets should only be accessed by AssetManager.
@@ -962,7 +963,7 @@ impl orml_xtokens::Config for Runtime {
 
 parameter_types! {
 	// Rotate collator's spot each 6 hours.
-	pub const Period: u32 = 10 * MINUTES;
+	pub const Period: u32 = 6 * HOURS;
 	pub const Offset: u32 = 0;
 }
 
