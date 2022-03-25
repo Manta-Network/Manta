@@ -93,7 +93,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: manta
-          path: target/release/manta
+          path: target/production/manta
 
   run-benchmark:
     name: benchmark (${{ matrix.benchmark.pallet.name }} ${{ matrix.benchmark.extrinsic.name }})
@@ -207,6 +207,14 @@ jobs:
             pallet:
               id: manta_collator_selection
               name: manta_collator_selection
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_preimage
+            pallet:
+              id: pallet_preimage
+              name: pallet_preimage
             iterations: 20
     steps:
       -
