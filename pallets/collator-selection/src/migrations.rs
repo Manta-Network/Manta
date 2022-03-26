@@ -45,6 +45,7 @@ impl<T: Config> Pallet<T> {
 			}
 			log::info!(" >>> Cleaned {} keys from LastAuthoredBlock", dropcount);
 			remove_storage_prefix(Self::name().as_bytes(), b"LastAuthoredBlock", &[]);
+			log::info!(" >>> Removed LastAuthoredBlock from storage" );
 
 			// Update storage version.
 			StorageVersion::new(2).put::<Self>();
@@ -72,7 +73,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		if !have_storage_value(Self::name().as_bytes(), b"KickThreshold", &[]) {
-			return Err("KickThreshold does not exist");
+			log::warn!("Precheck: KickThreshold does not exist");
 		}
 
 		if storage_key_iter::<T::AccountId, T::BlockNumber, Twox64Concat>(
