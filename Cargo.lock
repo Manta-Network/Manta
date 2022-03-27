@@ -4938,6 +4938,7 @@ dependencies = [
 name = "manta-primitives"
 version = "3.1.4"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -6181,6 +6182,7 @@ dependencies = [
  "manta-primitives",
  "manta-sdk",
  "manta-util",
+ "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",
  "parity-scale-codec",

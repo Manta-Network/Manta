@@ -22,6 +22,7 @@ manta-accounting = { git = "https://github.com/manta-network/manta-rs", default-
 # Substrate primitives
 frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
 frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16", default-features = false, optional = true }
 sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
 sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
 sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
@@ -49,4 +50,10 @@ std = [
 	'xcm-executor/std',
 	'xcm-builder/std',
 	'xcm/std',
+]
+runtime-benchmarks = [
+	"frame-benchmarking",
+	'frame-support/runtime-benchmarks',
+	'frame-system/runtime-benchmarks',
+	'xcm-builder/runtime-benchmarks',
 ]

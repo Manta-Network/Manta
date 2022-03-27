@@ -26,14 +26,15 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use manta_primitives::{
-	assets::{FungibleLedger, FungibleLedgerConsequence},
-	constants::MANTA_PAY_PALLET_ID,
+	assets::{AssetConfig, AssetStorageMetadata, AssetRegistarMetadata, AssetLocation, AssetRegistrar, 
+		AssetMetadata, FungibleLedger, FungibleLedgerConsequence},
+	constants::{MANTA_PAY_PALLET_ID, ASSET_MANAGER_PALLET_ID},
 	types::{AssetId, Balance},
 };
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, IdentityLookup}, AccountId32,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -49,6 +50,7 @@ frame_support::construct_runtime!(
 		MantaPayPallet: crate::{Pallet, Call, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Storage, Event<T>},
+		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -70,7 +72,7 @@ impl frame_system::Config for Test {
 	type BlockNumber = BlockNumber;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type AccountId = u64;
+	type AccountId = AccountId32;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type Event = Event;
@@ -118,7 +120,7 @@ impl pallet_assets::Config for Test {
 	type Balance = Balance;
 	type AssetId = AssetId;
 	type Currency = Balances;
-	type ForceOrigin = EnsureRoot<u64>;
+	type ForceOrigin = EnsureRoot<AccountId32>;
 	type AssetDeposit = AssetDeposit;
 	type AssetAccountDeposit = AssetAccountDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
@@ -194,6 +196,77 @@ impl FungibleLedger<Test> for MantaFungibleLedger {
 	}
 }
 
+pub struct MantaAssetRegistrar;
+use frame_support::pallet_prelude::DispatchResult;
+impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
+	fn create_asset(
+		asset_id: AssetId,
+		min_balance: Balance,
+		metadata: AssetStorageMetadata,
+		is_sufficient: bool,
+	) -> DispatchResult {
+		Assets::force_create(
+			Origin::root(),
+			asset_id,
+			AssetManager::account_id(),
+			is_sufficient,
+			min_balance,
+		)?;
+
+		Assets::force_set_metadata(
+			Origin::root(),
+			asset_id,
+			metadata.name,
+			metadata.symbol,
+			metadata.decimals,
+			metadata.is_frozen,
+		)
+	}
+
+	fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
+		Assets::force_set_metadata(
+			Origin::root(),
+			asset_id,
+			metadata.name,
+			metadata.symbol,
+			metadata.decimals,
+			metadata.is_frozen,
+		)
+	}
+}
+
+impl AssetMetadata<MantaAssetConfig> for AssetRegistarMetadata<Balance> {
+	fn min_balance(&self) -> Balance {
+		self.min_balance
+	}
+
+	fn is_sufficient(&self) -> bool {
+		self.is_sufficient
+	}
+}
+
+#[derive(Clone, Eq, PartialEq)]
+pub struct MantaAssetConfig;
+impl AssetConfig for MantaAssetConfig{
+	type Balance = Balance;
+	type AssetId = AssetId;
+	type AssetRegistrarMetadata = AssetRegistarMetadata<Balance>;
+	type StorageMetadata = AssetStorageMetadata;
+	type AssetLocation = AssetLocation;
+	type AssetRegistrar = MantaAssetRegistrar;
+}
+
+parameter_types! {
+	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
+}
+
+impl pallet_asset_manager::Config for Test {
+	type Event = Event;
+	type AssetConfig = MantaAssetConfig;
+	type ModifierOrigin = EnsureRoot<AccountId32>;
+	type PalletId = AssetManagerPalletId;
+}
+
 parameter_types! {
 	pub const MantaPayPalletId: PalletId = MANTA_PAY_PALLET_ID;
 }
@@ -203,6 +276,7 @@ impl crate::Config for Test {
 	type WeightInfo = crate::weights::SubstrateWeight<Self>;
 	type FungibleLedger = MantaFungibleLedger;
 	type PalletId = MantaPayPalletId;
+	type AssetConfig = MantaAssetConfig;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

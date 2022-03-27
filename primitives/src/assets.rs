@@ -14,18 +14,93 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+///! Manta/Calamari/Dolphin Asset
+
 use crate::types::{AssetId, Balance};
-use codec::{Decode, Encode};
-use frame_support::traits::tokens::{DepositConsequence, WithdrawConsequence};
+use codec::{Decode, Encode, Codec};
+use frame_support::{Parameter, pallet_prelude::MaxEncodedLen, traits::tokens::{DepositConsequence, WithdrawConsequence}};
 use scale_info::TypeInfo;
 use sp_core::H160;
 use sp_std::{borrow::Borrow, marker::PhantomData, prelude::Vec};
+use sp_runtime::{traits::{Member, AtLeast32BitUnsigned, MaybeSerializeDeserialize}, DispatchResult};
 
-///! Manta/Calamari/Dolphin Asset
 use xcm::{
 	v1::{Junctions, MultiLocation},
 	VersionedMultiLocation,
 };
+
+/// The minimal interface of asset metadata
+pub trait AssetMetadata<T: AssetConfig> {
+	/// Returns the minimum balance to hold this asset
+	fn min_balance(&self) -> T::Balance;
+
+	/// Returns a boolean value indicating whether this asset needs an existential deposit
+	fn is_sufficient(&self) -> bool;
+}
+
+/// The registrar trait: defines the interface of creating an asset in the asset implementation layer.
+	/// We may revisit this interface design (e.g. add change asset interface). However, change StorageMetadata
+	/// should be rare.
+pub trait AssetRegistrar<T: AssetConfig> {
+	/// Create an new asset.
+	///
+	/// * `asset_id`: the asset id to be created
+	/// * `min_balance`: the minimum balance to hold this asset
+	/// * `metadata`: the metadata that the implementation layer stores
+	/// * `is_sufficient`: whether this asset can be used as reserve asset,
+	/// 	to the first approximation. More specifically, Whether a non-zero balance of this asset is deposit of sufficient
+	/// 	value to account for the state bloat associated with its balance storage. If set to
+	/// 	`true`, then non-zero balances may be stored without a `consumer` reference (and thus
+	/// 	an ED in the Balances pallet or whatever else is used to control user-account state
+	/// 	growth).
+	fn create_asset(
+		asset_id: T::AssetId,
+		min_balance: T::Balance,
+		metadata: T::StorageMetadata,
+		is_sufficient: bool,
+	) -> DispatchResult;
+
+	/// Update asset metadata by `AssetId`.
+	///
+	/// * `asset_id`: the asset id to be created.
+	/// * `metadata`: the metadata that the implementation layer stores.
+	fn update_asset_metadata(
+		asset_id: T::AssetId,
+		metadata: T::StorageMetadata,
+	) -> DispatchResult;
+}
+
+pub trait AssetConfig: 'static + Eq + Clone{
+	/// The asset id type, this have to be consistent with pallet-manta-pay
+	type AssetId: Member
+	+ Parameter
+	+ Default
+	+ Copy
+	+ AtLeast32BitUnsigned
+	+ MaybeSerializeDeserialize
+	+ MaxEncodedLen
+	+ TypeInfo;
+
+	/// The trait we use to register Assets
+	type AssetRegistrar: AssetRegistrar<Self>;
+
+	/// The units in which we record balances.
+	type Balance: Member + Parameter + AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen;
+
+	/// Metadata type that required in token storage: e.g. AssetMetadata in Pallet-Assets.
+	type StorageMetadata: Member + Parameter + Default;
+
+	/// The Asset Metadata type stored in this pallet.
+	type AssetRegistrarMetadata: Member
+	+ Parameter
+	+ Codec
+	+ Default
+	+ Into<Self::StorageMetadata>
+	+ AssetMetadata<Self>;
+
+	/// The AssetLocation type: could be just a thin wrapper of MultiLocation
+	type AssetLocation: Member + Parameter + Default + TypeInfo;
+}
 
 /// The metadata of a Manta Asset
 #[derive(Clone, Default, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]

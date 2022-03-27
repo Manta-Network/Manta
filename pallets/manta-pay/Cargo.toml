@@ -28,6 +28,7 @@ runtime-benchmarks = [
 	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
+	"manta-primitives/runtime-benchmarks",
 ]
 
 # Standard Library
@@ -86,3 +87,5 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16"}
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
 pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
+pallet-asset-manager = { path = "../asset-manager"}
+

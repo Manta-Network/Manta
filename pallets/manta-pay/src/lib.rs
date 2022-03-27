@@ -144,6 +144,7 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::traits::AccountIdConversion;
+	use manta_primitives::assets::AssetConfig;
 
 	/// Pallet
 	#[pallet::pallet]
@@ -155,6 +156,9 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+		/// Asset Configuration
+		type AssetConfig: AssetConfig;
 
 		/// Fungible ledger
 		type FungibleLedger: FungibleLedger<Self>;

@@ -48,7 +48,7 @@ lazy_static::lazy_static! {
 }
 
 pub const ED: u128 = 1u128;
-pub const ALICE: u64 = 1u64;
+pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
 
 /// Loads the [`MultiProvingContext`] from the SDK.
 #[inline]
@@ -136,7 +136,7 @@ where
 {
 	for value in values {
 		assert_ok!(MantaPayPallet::mint(
-			Origin::signed(1),
+			Origin::signed(ALICE),
 			sample_mint(value.with(id), rng).into()
 		));
 	}
@@ -166,7 +166,7 @@ where
 			rng,
 		)
 		.unwrap();
-		assert_ok!(MantaPayPallet::mint(Origin::signed(1), mint_0.into()));
+		assert_ok!(MantaPayPallet::mint(Origin::signed(ALICE), mint_0.into()));
 		let sender_0 = pre_sender_0
 			.insert_and_upgrade(&mut utxo_accumulator)
 			.expect("Just inserted so this should not fail.");
@@ -178,7 +178,7 @@ where
 			rng,
 		)
 		.unwrap();
-		assert_ok!(MantaPayPallet::mint(Origin::signed(1), mint_1.into()));
+		assert_ok!(MantaPayPallet::mint(Origin::signed(ALICE), mint_1.into()));
 		let sender_1 = pre_sender_1
 			.insert_and_upgrade(&mut utxo_accumulator)
 			.expect("Just inserted so this should not fail.");
@@ -195,7 +195,7 @@ where
 				)
 				.unwrap();
 		assert_ok!(MantaPayPallet::private_transfer(
-			Origin::signed(1),
+			Origin::signed(ALICE),
 			private_transfer.clone().into(),
 		));
 		pre_sender_0.insert_utxo(&mut utxo_accumulator);
@@ -229,7 +229,7 @@ where
 			rng,
 		)
 		.unwrap();
-		assert_ok!(MantaPayPallet::mint(Origin::signed(1), mint_0.into()));
+		assert_ok!(MantaPayPallet::mint(Origin::signed(ALICE), mint_0.into()));
 		let sender_0 = pre_sender_0
 			.insert_and_upgrade(&mut utxo_accumulator)
 			.expect("Just inserted so this should not fail.");
@@ -241,7 +241,7 @@ where
 			rng,
 		)
 		.unwrap();
-		assert_ok!(MantaPayPallet::mint(Origin::signed(1), mint_1.into()));
+		assert_ok!(MantaPayPallet::mint(Origin::signed(ALICE), mint_1.into()));
 		let sender_1 = pre_sender_1
 			.insert_and_upgrade(&mut utxo_accumulator)
 			.expect("Just inserted so this should not fail.");
@@ -255,7 +255,7 @@ where
 			)
 			.unwrap();
 		assert_ok!(MantaPayPallet::reclaim(
-			Origin::signed(1),
+			Origin::signed(ALICE),
 			reclaim.clone().into()
 		));
 		pre_sender.insert_utxo(&mut utxo_accumulator);
@@ -268,7 +268,7 @@ where
 #[inline]
 fn initialize_test(id: AssetId, value: AssetValue) {
 	if id.0 == 0 {
-		assert_ok!(Balances::set_balance(Origin::root(), 1, value.0, 0));
+		assert_ok!(Balances::set_balance(Origin::root(), ALICE, value.0, 0));
 	} else {
 		assert_ok!(Assets::force_create(
 			Origin::root(),
@@ -337,7 +337,7 @@ fn overdrawn_mint_should_not_work() {
 		initialize_test(asset_id, total_supply + ED);
 		assert_noop!(
 			MantaPayPallet::mint(
-				Origin::signed(1),
+				Origin::signed(ALICE),
 				sample_mint(asset_id.with(total_supply + 1), &mut rng).into()
 			),
 			Error::<Test>::InvalidSourceAccount
@@ -351,7 +351,7 @@ fn mint_without_init_should_not_work() {
 	let mut rng = thread_rng();
 	new_test_ext().execute_with(|| {
 		assert_noop!(
-			MantaPayPallet::mint(Origin::signed(1), sample_mint(rng.gen(), &mut rng).into()),
+			MantaPayPallet::mint(Origin::signed(ALICE), sample_mint(rng.gen(), &mut rng).into()),
 			Error::<Test>::InvalidSourceAccount,
 		);
 	});
@@ -366,11 +366,11 @@ fn mint_existing_coin_should_not_work() {
 		initialize_test(asset_id, AssetValue(32579));
 		let mint_post = sample_mint(asset_id.value(100), &mut rng);
 		assert_ok!(MantaPayPallet::mint(
-			Origin::signed(1),
+			Origin::signed(ALICE),
 			mint_post.clone().into()
 		));
 		assert_noop!(
-			MantaPayPallet::mint(Origin::signed(1), mint_post.into()),
+			MantaPayPallet::mint(Origin::signed(ALICE), mint_post.into()),
 			Error::<Test>::AssetRegistered
 		);
 	});
@@ -394,7 +394,7 @@ fn double_spend_in_private_transfer_should_not_work() {
 	new_test_ext().execute_with(|| {
 		for private_transfer in private_transfer_test(1, &mut thread_rng()) {
 			assert_noop!(
-				MantaPayPallet::private_transfer(Origin::signed(1), private_transfer.into()),
+				MantaPayPallet::private_transfer(Origin::signed(ALICE), private_transfer.into()),
 				Error::<Test>::AssetSpent,
 			);
 		}
@@ -419,7 +419,7 @@ fn double_spend_in_reclaim_should_not_work() {
 	new_test_ext().execute_with(|| {
 		for reclaim in reclaim_test(1, &mut thread_rng()) {
 			assert_noop!(
-				MantaPayPallet::reclaim(Origin::signed(1), reclaim.into()),
+				MantaPayPallet::reclaim(Origin::signed(ALICE), reclaim.into()),
 				Error::<Test>::AssetSpent,
 			);
 		}

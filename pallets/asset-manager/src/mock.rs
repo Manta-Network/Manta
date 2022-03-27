@@ -19,13 +19,12 @@
 
 //! Mock runtime for asset-manager
 
-use super::*;
 use crate as pallet_asset_manager;
 use frame_support::{construct_runtime, parameter_types, traits::ConstU32, PalletId};
 use frame_system as system;
 use frame_system::EnsureRoot;
 use manta_primitives::{
-	assets::{AssetLocation, AssetRegistarMetadata, AssetStorageMetadata},
+	assets::{AssetLocation, AssetRegistrar, AssetMetadata, AssetRegistarMetadata, AssetStorageMetadata, AssetConfig},
 	constants::ASSET_STRING_LIMIT,
 	types::{AccountId, AssetId, Balance},
 };
@@ -111,9 +110,9 @@ impl pallet_balances::Config for Runtime {
 	type ReserveIdentifier = [u8; 8];
 }
 
-pub struct AssetRegistrar;
+pub struct MantaAssetRegistrar;
 use frame_support::pallet_prelude::DispatchResult;
-impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
+impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
 	fn create_asset(
 		asset_id: AssetId,
 		min_balance: Balance,
@@ -150,7 +149,7 @@ impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
 	}
 }
 
-impl AssetMetadata<Runtime> for AssetRegistarMetadata<Balance> {
+impl AssetMetadata<MantaAssetConfig> for AssetRegistarMetadata<Balance> {
 	fn min_balance(&self) -> Balance {
 		self.min_balance
 	}
@@ -164,14 +163,21 @@ parameter_types! {
 	pub const AssetManagerPalletId: PalletId = PalletId(*b"asstmngr");
 }
 
-impl pallet_asset_manager::Config for Runtime {
-	type Event = Event;
+#[derive(Clone, Eq, PartialEq)]
+pub struct MantaAssetConfig;
+
+impl AssetConfig for MantaAssetConfig {
 	type Balance = Balance;
 	type AssetId = AssetId;
 	type AssetRegistrarMetadata = AssetRegistarMetadata<Balance>;
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
-	type AssetRegistrar = AssetRegistrar;
+	type AssetRegistrar = MantaAssetRegistrar;
+}
+
+impl pallet_asset_manager::Config for Runtime {
+	type Event = Event;
+	type AssetConfig = MantaAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
 	type PalletId = AssetManagerPalletId;
 }
