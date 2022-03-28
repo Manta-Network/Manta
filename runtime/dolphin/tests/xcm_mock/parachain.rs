@@ -47,14 +47,14 @@ use xcm::{latest::prelude::*, Version as XcmVersion, VersionedXcm};
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
 	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
-	FungiblesAdapter, LocationInverter, ParentIsDefault, SiblingParachainAsNative, 
+	FungiblesAdapter, LocationInverter, ParentIsDefault, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SovereignSignedViaLocation,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::Get;
 
 pub use manta_primitives::{
-	assets::{AssetConfig, AssetRegistrarMetadata, AssetRegistrar, AssetStorageMetadata},
+	assets::{AssetConfig, AssetRegistrar, AssetRegistrarMetadata, AssetStorageMetadata},
 	types::AssetId,
 };
 pub type AccountId = AccountId32;
