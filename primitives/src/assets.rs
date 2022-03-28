@@ -152,8 +152,7 @@ impl From<AssetRegistrarMetadata> for AssetStorageMetadata {
 #[derive(Clone, Eq, Debug, PartialEq, Encode, Decode, TypeInfo)]
 pub struct AssetLocation(pub VersionedMultiLocation);
 
-/// This cannot act as the default before v0.9.16 and need overwrite
-/// https://docs.google.com/document/d/1W8y00IcJb0JXPBF59aP4nm-c7DY8Ld02-yIAO7UxR80
+/// Default AssetLocation
 impl Default for AssetLocation {
 	fn default() -> Self {
 		AssetLocation(VersionedMultiLocation::V1(MultiLocation {

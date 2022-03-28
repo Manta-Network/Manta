@@ -33,13 +33,13 @@ use frame_system::Config;
 
 /// Weight functions needed for pallet_manta_pay.
 pub trait WeightInfo {
-	/// Returns the [`Weight`] of the [`Pallet::mint`] extrinsic.
+	/// Returns the [`Weight`] of the [`Pallet::to_private`] extrinsic.
 	fn to_private() -> Weight;
 
 	/// Returns the [`Weight`] of the [`Pallet::private_transfer`] extrinsic.
 	fn private_transfer() -> Weight;
 
-	/// Returns the [`Weight`] of the [`Pallet::reclaim`] extrinsic.
+	/// Returns the [`Weight`] of the [`Pallet::to_public`] extrinsic.
 	fn to_public() -> Weight;
 }
 

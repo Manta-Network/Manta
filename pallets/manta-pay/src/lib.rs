@@ -54,12 +54,12 @@
 //!
 //! ### Dispatchable Functions
 //!
-//! * `mint` - Converting an `amount` of units of fungible asset `id` from the caller
+//! * `to_private` - Converting an `amount` of units of fungible asset `id` from the caller
 //!     to a private UTXO. (The caller does not need to be the owner of this UTXO)
 //! * `private_transfer` - Transfer two input UTXOs into two output UTXOs. Require that 1) the input
 //!     UTXOs are already in the ledger and are not spend before 2) the sum of private assets in
 //!     input UTXOs matches that of the output UTXOs. The requirements are guaranteed via ZK proof.
-//! * `reclaim` - Transfer two input UTXOs into one output UTXOs, and convert the remaining assets
+//! * `to_public` - Transfer two input UTXOs into one output UTXOs, and convert the remaining assets
 //!     to the public assets. Require that 1) the input UTXOs are already in the ledger and are not
 //!     spend before; 2) the sum of private assets in input UTXOs matches that of the output UTXO +
 //!     the reclaimed amount. The requirements are guaranteed via ZK proof.
@@ -487,8 +487,6 @@ where
 }
 
 /// Ledger
-/// FIXME: get rid of the phantom data here. And
-/// move the ledger related traits to a seperate file.
 pub struct Ledger<T>(PhantomData<T>)
 where
 	T: Config;
