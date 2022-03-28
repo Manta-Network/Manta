@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use frame_support::PalletId;
 use crate::types::Balance;
+use frame_support::PalletId;
 
 // Calamari constants
 pub const CALAMARI_SS58PREFIX: u8 = 78;
@@ -57,4 +57,4 @@ pub const TREASURY_PALLET_ID: PalletId = PalletId(*b"py/trsry");
 pub const ASSET_MANAGER_PALLET_ID: PalletId = PalletId(*b"asstmngr");
 pub const MANTA_PAY_PALLET_ID: PalletId = PalletId(*b"mantapay");
 
-pub const DEFAULT_ASSET_ED : Balance = 1;
+pub const DEFAULT_ASSET_ED: Balance = 1;

@@ -24,7 +24,9 @@ use frame_support::{construct_runtime, parameter_types, traits::ConstU32, Pallet
 use frame_system as system;
 use frame_system::EnsureRoot;
 use manta_primitives::{
-	assets::{AssetLocation, AssetRegistrar, AssetRegistrarMetadata, AssetStorageMetadata, AssetConfig},
+	assets::{
+		AssetConfig, AssetLocation, AssetRegistrar, AssetRegistrarMetadata, AssetStorageMetadata,
+	},
 	constants::ASSET_STRING_LIMIT,
 	types::{AccountId, AssetId, Balance},
 };

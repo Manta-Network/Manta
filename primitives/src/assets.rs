@@ -15,14 +15,19 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 ///! Manta/Calamari/Dolphin Asset
-
-use crate::{types::{AssetId, Balance}, constants::DEFAULT_ASSET_ED};
-use codec::{Decode, Encode, Codec};
-use frame_support::{Parameter, traits::tokens::{DepositConsequence, WithdrawConsequence}};
+use crate::{
+	constants::DEFAULT_ASSET_ED,
+	types::{AssetId, Balance},
+};
+use codec::{Codec, Decode, Encode};
+use frame_support::{
+	traits::tokens::{DepositConsequence, WithdrawConsequence},
+	Parameter,
+};
 use scale_info::TypeInfo;
 use sp_core::H160;
-use sp_std::{borrow::Borrow, marker::PhantomData, prelude::Vec};
 use sp_runtime::{traits::Member, DispatchResult};
+use sp_std::{borrow::Borrow, marker::PhantomData, prelude::Vec};
 
 use xcm::{
 	v1::{Junctions, MultiLocation},
@@ -32,15 +37,15 @@ use xcm::{
 /// The minimal interface of asset metadata
 pub trait AssetMetadata {
 	/// Returns the minimum balance to hold this asset
-	fn min_balance(&self) ->Balance;
+	fn min_balance(&self) -> Balance;
 
 	/// Returns a boolean value indicating whether this asset needs an existential deposit
 	fn is_sufficient(&self) -> bool;
 }
 
 /// The registrar trait: defines the interface of creating an asset in the asset implementation layer.
-	/// We may revisit this interface design (e.g. add change asset interface). However, change StorageMetadata
-	/// should be rare.
+/// We may revisit this interface design (e.g. add change asset interface). However, change StorageMetadata
+/// should be rare.
 pub trait AssetRegistrar<T: AssetConfig> {
 	/// Create an new asset.
 	///
@@ -64,14 +69,10 @@ pub trait AssetRegistrar<T: AssetConfig> {
 	///
 	/// * `asset_id`: the asset id to be created.
 	/// * `metadata`: the metadata that the implementation layer stores.
-	fn update_asset_metadata(
-		asset_id: AssetId,
-		metadata: T::StorageMetadata,
-	) -> DispatchResult;
+	fn update_asset_metadata(asset_id: AssetId, metadata: T::StorageMetadata) -> DispatchResult;
 }
 
-pub trait AssetConfig: 'static + Eq + Clone{
-
+pub trait AssetConfig: 'static + Eq + Clone {
 	/// The trait we use to register Assets
 	type AssetRegistrar: AssetRegistrar<Self>;
 
@@ -79,11 +80,7 @@ pub trait AssetConfig: 'static + Eq + Clone{
 	type StorageMetadata: Member + Parameter + Default + From<Self::AssetRegistrarMetadata>;
 
 	/// The Asset Metadata type stored in this pallet.
-	type AssetRegistrarMetadata: Member
-	+ Parameter
-	+ Codec
-	+ Default
-	+ AssetMetadata;
+	type AssetRegistrarMetadata: Member + Parameter + Codec + Default + AssetMetadata;
 
 	/// The AssetLocation type: could be just a thin wrapper of MultiLocation
 	type AssetLocation: Member + Parameter + Default + TypeInfo;
@@ -321,5 +318,6 @@ where
 	fn mint(
 		asset_id: AssetId,
 		beneficiary: &C::AccountId,
-		amount: Balance) -> Result<(), FungibleLedgerConsequence<Balance>>;
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence<Balance>>;
 }

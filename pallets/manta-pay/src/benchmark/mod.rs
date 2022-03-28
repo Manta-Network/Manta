@@ -21,9 +21,11 @@ use crate::{
 	Asset, Call, Config, Event, Pallet, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
-use manta_primitives::assets::{AssetConfig, AssetRegistrar, FungibleLedger};
-use manta_primitives::types::{AssetId, Balance};
 use frame_system::RawOrigin;
+use manta_primitives::{
+	assets::{AssetConfig, AssetRegistrar, FungibleLedger},
+	types::{AssetId, Balance},
+};
 use scale_codec::Decode;
 
 mod precomputed_coins;
@@ -44,15 +46,17 @@ where
 /// Init assets for manta-pay
 #[inline]
 pub fn init_asset<T>(owner: &T::AccountId, id: AssetId, value: Balance)
-where 
+where
 	T: Config,
-{	let metadata= <T::AssetConfig as AssetConfig>::AssetRegistrarMetadata::default();
-	let storage_metadata : <T::AssetConfig as AssetConfig>::StorageMetadata = metadata.into(); 
-	<T::AssetConfig as AssetConfig>::AssetRegistrar::create_asset(id, ED, storage_metadata, true).unwrap();
+{
+	let metadata = <T::AssetConfig as AssetConfig>::AssetRegistrarMetadata::default();
+	let storage_metadata: <T::AssetConfig as AssetConfig>::StorageMetadata = metadata.into();
+	<T::AssetConfig as AssetConfig>::AssetRegistrar::create_asset(id, ED, storage_metadata, true)
+		.unwrap();
 	let pallet_account: T::AccountId = Pallet::<T>::account_id();
 	T::FungibleLedger::mint(id, &owner, value + ED).unwrap();
 	T::FungibleLedger::mint(id, &pallet_account, ED).unwrap();
-} 
+}
 
 benchmarks! {
 	mint {

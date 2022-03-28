@@ -26,15 +26,18 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use manta_primitives::{
-	assets::{AssetConfig, AssetStorageMetadata, AssetRegistrarMetadata, AssetLocation, AssetRegistrar, 
-		FungibleLedger, FungibleLedgerConsequence},
-	constants::{MANTA_PAY_PALLET_ID, ASSET_MANAGER_PALLET_ID},
+	assets::{
+		AssetConfig, AssetLocation, AssetRegistrar, AssetRegistrarMetadata, AssetStorageMetadata,
+		FungibleLedger, FungibleLedgerConsequence,
+	},
+	constants::{ASSET_MANAGER_PALLET_ID, MANTA_PAY_PALLET_ID},
 	types::{AssetId, Balance},
 };
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup}, AccountId32,
+	traits::{BlakeTwo256, IdentityLookup},
+	AccountId32,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -198,20 +201,25 @@ impl FungibleLedger<Test> for MantaFungibleLedger {
 	fn mint(
 		asset_id: AssetId,
 		beneficiary: &<Test as frame_system::Config>::AccountId,
-		amount: Balance
+		amount: Balance,
 	) -> Result<(), FungibleLedgerConsequence<Balance>> {
 		Self::can_deposit(asset_id, beneficiary, amount)?;
 		if asset_id == 0 {
-			let _ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(beneficiary, amount);
+			let _ =
+				<Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+					beneficiary,
+					amount,
+				);
 			Ok(())
 		} else {
 			Assets::mint(
-				Origin::signed(AssetManager::account_id()), 
-				asset_id, 
-				beneficiary.clone(), 
-				amount)
-				.and_then(|_| Ok(()))
-				.map_err(|_| FungibleLedgerConsequence::InternalError)
+				Origin::signed(AssetManager::account_id()),
+				asset_id,
+				beneficiary.clone(),
+				amount,
+			)
+			.and_then(|_| Ok(()))
+			.map_err(|_| FungibleLedgerConsequence::InternalError)
 		}
 	}
 }
@@ -243,15 +251,16 @@ impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
 		)?;
 
 		Assets::force_asset_status(
-			Origin::root(), 
-			asset_id, 
-			AssetManager::account_id(), 
-			AssetManager::account_id(), 
-			AssetManager::account_id(), 
-			AssetManager::account_id(), 
-			min_balance, 
-			is_sufficient, 
-			metadata.is_frozen)
+			Origin::root(),
+			asset_id,
+			AssetManager::account_id(),
+			AssetManager::account_id(),
+			AssetManager::account_id(),
+			AssetManager::account_id(),
+			min_balance,
+			is_sufficient,
+			metadata.is_frozen,
+		)
 	}
 
 	fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
@@ -268,7 +277,7 @@ impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct MantaAssetConfig;
-impl AssetConfig for MantaAssetConfig{
+impl AssetConfig for MantaAssetConfig {
 	type AssetRegistrarMetadata = AssetRegistrarMetadata;
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;

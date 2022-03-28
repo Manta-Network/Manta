@@ -55,7 +55,7 @@ use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::Get;
 
 pub use manta_primitives::{
-	assets::{AssetRegistarMetadata, AssetConfig, AssetRegistrar, AssetStorageMetadata},
+	assets::{AssetConfig, AssetRegistarMetadata, AssetRegistrar, AssetStorageMetadata},
 	types::AssetId,
 };
 pub type AccountId = AccountId32;
@@ -483,7 +483,6 @@ impl pallet_xcm::Config for Runtime {
 	type AdvertisedXcmVersion = XcmVersioner;
 }
 
-
 parameter_types! {
 	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
 }
@@ -515,15 +514,16 @@ impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
 		)?;
 
 		Assets::force_asset_status(
-			Origin::root(), 
-			asset_id, 
-			AssetManager::account_id(), 
-			AssetManager::account_id(), 
-			AssetManager::account_id(), 
-			AssetManager::account_id(), 
-			min_balance, 
-			is_sufficient, 
-			metadata.is_frozen)
+			Origin::root(),
+			asset_id,
+			AssetManager::account_id(),
+			AssetManager::account_id(),
+			AssetManager::account_id(),
+			AssetManager::account_id(),
+			min_balance,
+			is_sufficient,
+			metadata.is_frozen,
+		)
 	}
 
 	fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {

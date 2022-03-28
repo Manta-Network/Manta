@@ -39,24 +39,30 @@ pub mod pallet {
 
 	use frame_support::{pallet_prelude::*, transactional, PalletId};
 	use frame_system::pallet_prelude::*;
-	use manta_primitives::assets::{AssetIdLocationGetter, AssetRegistrar, AssetMetadata, UnitsToWeightRatio, AssetConfig};
-	use manta_primitives::types::AssetId;
-	use sp_runtime::{traits::{AccountIdConversion}, ArithmeticError};
+	use manta_primitives::{
+		assets::{
+			AssetConfig, AssetIdLocationGetter, AssetMetadata, AssetRegistrar, UnitsToWeightRatio,
+		},
+		types::AssetId,
+	};
+	use sp_runtime::{traits::AccountIdConversion, ArithmeticError};
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
-
 	/// Convert AssetId and AssetLocation
-	impl<T: Config> AssetIdLocationGetter<<T::AssetConfig as AssetConfig>::AssetLocation> for Pallet<T> {
+	impl<T: Config> AssetIdLocationGetter<<T::AssetConfig as AssetConfig>::AssetLocation>
+		for Pallet<T>
+	{
 		fn get_asset_id(loc: &<T::AssetConfig as AssetConfig>::AssetLocation) -> Option<AssetId> {
 			LocationAssetId::<T>::get(loc)
 		}
 
-		fn get_asset_location(id: AssetId) -> 
-			Option<<T::AssetConfig as AssetConfig>::AssetLocation> {
+		fn get_asset_location(
+			id: AssetId,
+		) -> Option<<T::AssetConfig as AssetConfig>::AssetLocation> {
 			AssetIdLocation::<T>::get(id)
 		}
 	}
@@ -128,37 +134,29 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn asset_id_location)]
 	pub(super) type AssetIdLocation<T: Config> =
-		StorageMap<_, 
-			Blake2_128Concat, 
-			AssetId,
-			<T::AssetConfig as AssetConfig>::AssetLocation>;
+		StorageMap<_, Blake2_128Concat, AssetId, <T::AssetConfig as AssetConfig>::AssetLocation>;
 
 	/// MultiLocation to AssetId Map.
 	/// This is mostly useful when receiving an asset from a foreign location.
 	#[pallet::storage]
 	#[pallet::getter(fn location_asset_id)]
 	pub(super) type LocationAssetId<T: Config> =
-		StorageMap<_, 
-			Blake2_128Concat,
-			<T::AssetConfig as AssetConfig>::AssetLocation, 
-			AssetId>;
+		StorageMap<_, Blake2_128Concat, <T::AssetConfig as AssetConfig>::AssetLocation, AssetId>;
 
 	/// AssetId to AssetRegistrar Map.
 	#[pallet::storage]
 	#[pallet::getter(fn asset_id_metadata)]
-	pub(super) type AssetIdMetadata<T: Config> =
-		StorageMap<_, 
-			Blake2_128Concat, 
-			AssetId, 
-			<T::AssetConfig as AssetConfig>::AssetRegistrarMetadata>;
+	pub(super) type AssetIdMetadata<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		AssetId,
+		<T::AssetConfig as AssetConfig>::AssetRegistrarMetadata,
+	>;
 
 	/// Get the next available AssetId.
 	#[pallet::storage]
 	#[pallet::getter(fn next_asset_id)]
-	pub type NextAssetId<T: Config> = 
-		StorageValue<_, 
-			AssetId, 
-			ValueQuery>;
+	pub type NextAssetId<T: Config> = StorageValue<_, AssetId, ValueQuery>;
 
 	/// XCM transfer cost for different asset.
 	#[pallet::storage]
@@ -299,12 +297,9 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Get and increment the `NextAssetID` by one.
 		fn get_next_asset_id() -> Result<AssetId, DispatchError> {
-			NextAssetId::<T>::try_mutate(|current| -> 
-				Result<AssetId, DispatchError> {
+			NextAssetId::<T>::try_mutate(|current| -> Result<AssetId, DispatchError> {
 				let id = *current;
-				*current = current
-					.checked_add(1u32)
-					.ok_or(ArithmeticError::Overflow)?;
+				*current = current.checked_add(1u32).ok_or(ArithmeticError::Overflow)?;
 				Ok(id)
 			})
 		}

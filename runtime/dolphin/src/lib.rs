@@ -61,8 +61,8 @@ use frame_system::{
 };
 use manta_primitives::{
 	assets::{
-		AssetIdLocationConvert, AssetRegistrar, AssetConfig, AssetLocation, AssetRegistarMetadata, AssetStorageMetadata,
-		FungibleLedger, FungibleLedgerConsequence,
+		AssetConfig, AssetIdLocationConvert, AssetLocation, AssetRegistarMetadata, AssetRegistrar,
+		AssetStorageMetadata, FungibleLedger, FungibleLedgerConsequence,
 	},
 	constants::{
 		time::*, ASSET_MANAGER_PALLET_ID, MANTA_PAY_PALLET_ID, STAKING_PALLET_ID,
@@ -997,15 +997,16 @@ impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
 		)?;
 
 		Assets::force_asset_status(
-			Origin::root(), 
-			asset_id, 
-			AssetManager::account_id().into(), 
-			AssetManager::account_id().into(), 
-			AssetManager::account_id().into(), 
-			AssetManager::account_id().into(), 
-			min_balance, 
-			is_sufficient, 
-			metadata.is_frozen)
+			Origin::root(),
+			asset_id,
+			AssetManager::account_id().into(),
+			AssetManager::account_id().into(),
+			AssetManager::account_id().into(),
+			AssetManager::account_id().into(),
+			min_balance,
+			is_sufficient,
+			metadata.is_frozen,
+		)
 	}
 
 	fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
@@ -1103,7 +1104,7 @@ impl FungibleLedger<Runtime> for MantaFungibleLedger {
 	fn mint(
 		asset_id: AssetId,
 		beneficiary: &<Runtime as frame_system::Config>::AccountId,
-		amount: Balance
+		amount: Balance,
 	) -> Result<(), FungibleLedgerConsequence<Balance>> {
 		Self::can_deposit(asset_id, beneficiary, amount)?;
 		if asset_id == 0 {
@@ -1111,12 +1112,13 @@ impl FungibleLedger<Runtime> for MantaFungibleLedger {
 			Ok(())
 		} else {
 			Assets::mint(
-				Origin::signed(AssetManager::account_id()), 
-				asset_id, 
-				beneficiary.clone().into(), 
-				amount)
-				.and_then(|_| Ok(()))
-				.map_err(|_| FungibleLedgerConsequence::InternalError)
+				Origin::signed(AssetManager::account_id()),
+				asset_id,
+				beneficiary.clone().into(),
+				amount,
+			)
+			.and_then(|_| Ok(()))
+			.map_err(|_| FungibleLedgerConsequence::InternalError)
 		}
 	}
 }

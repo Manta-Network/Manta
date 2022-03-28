@@ -19,7 +19,6 @@ use crate::{
 	Error,
 };
 use frame_support::{assert_noop, assert_ok};
-use manta_primitives::assets::{FungibleLedger, AssetRegistrar, AssetRegistrarMetadata};
 use manta_accounting::{
 	asset::{Asset, AssetId, AssetValue},
 	transfer::{self, test::value_distribution, SpendingKey},
@@ -34,6 +33,7 @@ use manta_pay::config::{
 	Parameters, PrivateTransfer, ProvingContext, Reclaim, TransferPost, UtxoAccumulatorModel,
 	UtxoCommitmentScheme, VoidNumberHashFunction,
 };
+use manta_primitives::assets::{AssetRegistrar, AssetRegistrarMetadata, FungibleLedger};
 use manta_util::codec::{Decode, IoReader};
 use rand::thread_rng;
 use std::fs::File;
@@ -269,9 +269,18 @@ where
 #[inline]
 fn initialize_test(id: AssetId, value: AssetValue) {
 	let metadata = AssetRegistrarMetadata::default();
-	assert_ok!(MantaAssetRegistrar::create_asset(id.0, ED, metadata.into(), true));
+	assert_ok!(MantaAssetRegistrar::create_asset(
+		id.0,
+		ED,
+		metadata.into(),
+		true
+	));
 	assert_ok!(MantaFungibleLedger::mint(id.0, &ALICE, value.0));
-	assert_ok!(MantaFungibleLedger::mint(id.0, &MantaPayPallet::account_id(), ED));
+	assert_ok!(MantaFungibleLedger::mint(
+		id.0,
+		&MantaPayPallet::account_id(),
+		ED
+	));
 }
 
 /// Tests multiple mints from some total supply.
@@ -321,7 +330,10 @@ fn mint_without_init_should_not_work() {
 	let mut rng = thread_rng();
 	new_test_ext().execute_with(|| {
 		assert_noop!(
-			MantaPayPallet::mint(Origin::signed(ALICE), sample_mint(rng.gen(), &mut rng).into()),
+			MantaPayPallet::mint(
+				Origin::signed(ALICE),
+				sample_mint(rng.gen(), &mut rng).into()
+			),
 			Error::<Test>::InvalidSourceAccount,
 		);
 	});
