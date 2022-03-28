@@ -43,6 +43,9 @@ use sp_version::RuntimeVersion;
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
 	traits::{
+		fungible::Inspect,
+		fungibles::{Inspect as AssetInspect, Transfer as AssetTransfer},
+		tokens::{DepositConsequence, ExistenceRequirement, WithdrawConsequence},
 		ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, Everything, Nothing,
 		PrivilegeCmp,
 	},
@@ -57,12 +60,17 @@ use frame_system::{
 	EnsureRoot,
 };
 use manta_primitives::{
-	assets::{AssetIdLocationConvert, AssetLocation, AssetRegistarMetadata, AssetStorageMetadata},
-	constants::time::*,
+	assets::{
+		AssetConfig, AssetIdLocationConvert, AssetLocation, AssetRegistrar, AssetRegistrarMetadata,
+		AssetStorageMetadata, FungibleLedger, FungibleLedgerConsequence,
+	},
+	constants::{
+		time::*, ASSET_MANAGER_PALLET_ID, MANTA_PAY_PALLET_ID, STAKING_PALLET_ID,
+		TREASURY_PALLET_ID,
+	},
 	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 	xcm::{AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
 };
-use pallet_asset_manager::AssetMetadata;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -247,8 +255,10 @@ impl Contains<Call> for BaseFilter {
 				| manta_collator_selection::Call::remove_collator{..}
 				| manta_collator_selection::Call::leave_intent{..})
 			| Call::Balances(_)
-			| Call::XTokens(_)
-			| Call::Utility(_) => true,
+			| Call::Preimage(_)
+			| Call::Utility(_)
+			| Call::MantaPay(_)
+			| Call::XTokens(_) => true,
 			// Filter XCM pallets, we only allow transfer with XTokens.
 			// Filter Assets. Assets should only be accessed by AssetManager.
 			// AssetManager is also filtered because all of its extrinsics are callable only by Root,
@@ -498,7 +508,7 @@ parameter_types! {
 	pub const ProposalBondMaximum: Balance = 10_000 * DOL;
 	pub const SpendPeriod: BlockNumber = 10 * MINUTES;
 	pub const Burn: Permill = Permill::from_percent(0);
-	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+	pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
 }
 
 type EnsureRootOrThreeFifthsCouncil = EnsureOneOf<
@@ -589,92 +599,6 @@ impl pallet_preimage::Config for Runtime {
 	// Their sum will be unreserved when the preimage is requested, i.e. when it is going to be used.
 	type BaseDeposit = PreimageBaseDeposit;
 	type ByteDeposit = PreimageByteDeposit;
-}
-
-parameter_types! {
-	// Does not really matter as this will be only called by root
-	pub const AssetDeposit: Balance = 0;
-	pub const AssetAccountDeposit: Balance = 0;
-	pub const ApprovalDeposit: Balance = 0;
-	pub const MetadataDepositBase: Balance = 0;
-	pub const MetadataDepositPerByte: Balance = 0;
-}
-
-impl pallet_assets::Config for Runtime {
-	type Event = Event;
-	type Balance = Balance;
-	type AssetId = AssetId;
-	type Currency = Balances;
-	type ForceOrigin = EnsureRoot<AccountId>;
-	type AssetDeposit = AssetDeposit;
-	type AssetAccountDeposit = AssetAccountDeposit;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ApprovalDeposit = ApprovalDeposit;
-	type StringLimit = ConstU32<50>;
-	type Freezer = ();
-	type Extra = ();
-	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
-}
-
-impl AssetMetadata<Runtime> for AssetRegistarMetadata<Balance> {
-	fn min_balance(&self) -> Balance {
-		self.min_balance
-	}
-
-	fn is_sufficient(&self) -> bool {
-		self.is_sufficient
-	}
-}
-
-pub struct AssetRegistrar;
-use frame_support::pallet_prelude::DispatchResult;
-impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
-	fn create_asset(
-		asset_id: AssetId,
-		min_balance: Balance,
-		metadata: AssetStorageMetadata,
-		is_sufficient: bool,
-	) -> DispatchResult {
-		Assets::force_create(
-			Origin::root(),
-			asset_id,
-			sp_runtime::MultiAddress::Id(AssetManager::account_id()),
-			is_sufficient,
-			min_balance,
-		)?;
-
-		Assets::force_set_metadata(
-			Origin::root(),
-			asset_id,
-			metadata.name,
-			metadata.symbol,
-			metadata.decimals,
-			metadata.is_frozen,
-		)
-	}
-
-	fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
-		Assets::force_set_metadata(
-			Origin::root(),
-			asset_id,
-			metadata.name,
-			metadata.symbol,
-			metadata.decimals,
-			metadata.is_frozen,
-		)
-	}
-}
-
-impl pallet_asset_manager::Config for Runtime {
-	type Event = Event;
-	type Balance = Balance;
-	type AssetId = AssetId;
-	type AssetRegistrarMetadata = AssetRegistarMetadata<Balance>;
-	type StorageMetadata = AssetStorageMetadata;
-	type AssetLocation = AssetLocation;
-	type AssetRegistrar = AssetRegistrar;
-	type ModifierOrigin = EnsureRoot<AccountId>;
 }
 
 parameter_types! {
@@ -772,7 +696,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	ConvertedConcreteAssetId<
 		AssetId,
 		Balance,
-		AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>,
+		AssetIdLocationConvert<AssetLocation, AssetManager>,
 		JustTry,
 	>,
 	// "default" implementation of converting a `MultiLocation` to an `AccountId`
@@ -824,7 +748,7 @@ pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
 	ConvertedConcreteAssetId<
 		AssetId,
 		Balance,
-		AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>,
+		AssetIdLocationConvert<AssetLocation, AssetManager>,
 		JustTry,
 	>,
 	AccountId,
@@ -948,7 +872,7 @@ impl orml_xtokens::Config for Runtime {
 	type CurrencyId = CurrencyId;
 	type AccountIdToMultiLocation = AccountIdToMultiLocation<AccountId>;
 	type CurrencyIdConvert =
-		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>>;
+		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
 	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 	type SelfLocation = SelfReserve;
 	// Take note that this pallet does not have the typical configurable WeightInfo.
@@ -962,7 +886,7 @@ impl orml_xtokens::Config for Runtime {
 
 parameter_types! {
 	// Rotate collator's spot each 6 hours.
-	pub const Period: u32 = 10 * MINUTES;
+	pub const Period: u32 = 6 * HOURS;
 	pub const Offset: u32 = 0;
 }
 
@@ -989,7 +913,7 @@ impl pallet_aura::Config for Runtime {
 
 parameter_types! {
 	// Pallet account for record rewards and give rewards to collator.
-	pub const PotId: PalletId = PalletId(*b"PotStake");
+	pub const PotId: PalletId = STAKING_PALLET_ID;
 }
 
 parameter_types! {
@@ -1014,6 +938,202 @@ impl manta_collator_selection::Config for Runtime {
 	type AccountIdOf = manta_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;
 	type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const AssetDeposit: Balance = 0; // Does not really matter as this will be only called by root
+	pub const AssetAccountDeposit: Balance = 0;
+	pub const ApprovalDeposit: Balance = 0;
+	pub const AssetsStringLimit: u32 = 50;
+	pub const MetadataDepositBase: Balance = 0;
+	pub const MetadataDepositPerByte: Balance = 0;
+}
+
+impl pallet_assets::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type AssetId = AssetId;
+	type Currency = Balances;
+	type ForceOrigin = EnsureRoot<AccountId>;
+	type AssetDeposit = AssetDeposit;
+	type AssetAccountDeposit = AssetAccountDeposit;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = AssetsStringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	// Pallet account for record rewards and give rewards to collator.
+	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
+}
+
+pub struct MantaAssetRegistrar;
+use frame_support::pallet_prelude::DispatchResult;
+impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
+	fn create_asset(
+		asset_id: AssetId,
+		min_balance: Balance,
+		metadata: AssetStorageMetadata,
+		is_sufficient: bool,
+	) -> DispatchResult {
+		Assets::force_create(
+			Origin::root(),
+			asset_id,
+			sp_runtime::MultiAddress::Id(AssetManager::account_id()),
+			is_sufficient,
+			min_balance,
+		)?;
+
+		Assets::force_set_metadata(
+			Origin::root(),
+			asset_id,
+			metadata.name,
+			metadata.symbol,
+			metadata.decimals,
+			metadata.is_frozen,
+		)?;
+
+		Assets::force_asset_status(
+			Origin::root(),
+			asset_id,
+			AssetManager::account_id().into(),
+			AssetManager::account_id().into(),
+			AssetManager::account_id().into(),
+			AssetManager::account_id().into(),
+			min_balance,
+			is_sufficient,
+			metadata.is_frozen,
+		)
+	}
+
+	fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
+		Assets::force_set_metadata(
+			Origin::root(),
+			asset_id,
+			metadata.name,
+			metadata.symbol,
+			metadata.decimals,
+			metadata.is_frozen,
+		)
+	}
+}
+
+#[derive(Clone, Eq, PartialEq)]
+pub struct MantaAssetConfig;
+
+impl AssetConfig for MantaAssetConfig {
+	type AssetRegistrarMetadata = AssetRegistrarMetadata;
+	type StorageMetadata = AssetStorageMetadata;
+	type AssetLocation = AssetLocation;
+	type AssetRegistrar = MantaAssetRegistrar;
+}
+
+impl pallet_asset_manager::Config for Runtime {
+	type Event = Event;
+	type AssetConfig = MantaAssetConfig;
+	type ModifierOrigin = EnsureRoot<AccountId>;
+	type PalletId = AssetManagerPalletId;
+}
+
+pub struct MantaFungibleLedger;
+impl FungibleLedger<Runtime> for MantaFungibleLedger {
+	fn can_deposit(
+		asset_id: AssetId,
+		account: &<Runtime as frame_system::Config>::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence<Balance>> {
+		if asset_id == 0 {
+			// we assume native asset with id 0
+			match Balances::can_deposit(account, amount) {
+				DepositConsequence::Success => Ok(()),
+				other => Err(other.into()),
+			}
+		} else {
+			match Assets::can_deposit(asset_id, account, amount) {
+				DepositConsequence::Success => Ok(()),
+				other => Err(other.into()),
+			}
+		}
+	}
+
+	fn can_withdraw(
+		asset_id: AssetId,
+		account: &<Runtime as frame_system::Config>::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence<Balance>> {
+		if asset_id == 0 {
+			// we assume native asset with id 0
+			match Balances::can_withdraw(account, amount) {
+				WithdrawConsequence::Success => Ok(()),
+				other => Err(other.into()),
+			}
+		} else {
+			match Assets::can_withdraw(asset_id, account, amount) {
+				WithdrawConsequence::Success => Ok(()),
+				other => Err(other.into()),
+			}
+		}
+	}
+
+	fn transfer(
+		asset_id: AssetId,
+		source: &<Runtime as frame_system::Config>::AccountId,
+		dest: &<Runtime as frame_system::Config>::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence<Balance>> {
+		if asset_id == 0 {
+			<Balances as Currency<<Runtime as frame_system::Config>::AccountId>>::transfer(
+				source,
+				dest,
+				amount,
+				ExistenceRequirement::KeepAlive,
+			)
+			.map_err(|_| FungibleLedgerConsequence::InternalError)
+		} else {
+			<Assets as AssetTransfer<<Runtime as frame_system::Config>::AccountId>>::transfer(
+				asset_id, source, dest, amount, true,
+			)
+			.and_then(|_| Ok(()))
+			.map_err(|_| FungibleLedgerConsequence::InternalError)
+		}
+	}
+
+	fn mint(
+		asset_id: AssetId,
+		beneficiary: &<Runtime as frame_system::Config>::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence<Balance>> {
+		Self::can_deposit(asset_id, beneficiary, amount)?;
+		if asset_id == 0 {
+			let _ = <Balances as Currency<<Runtime as frame_system::Config>::AccountId>>::deposit_creating(beneficiary, amount);
+			Ok(())
+		} else {
+			Assets::mint(
+				Origin::signed(AssetManager::account_id()),
+				asset_id,
+				beneficiary.clone().into(),
+				amount,
+			)
+			.and_then(|_| Ok(()))
+			.map_err(|_| FungibleLedgerConsequence::InternalError)
+		}
+	}
+}
+
+parameter_types! {
+	pub const MantaPayPalletId: PalletId = MANTA_PAY_PALLET_ID;
+}
+
+impl pallet_manta_pay::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
+	type AssetConfig = MantaAssetConfig;
+	type FungibleLedger = MantaFungibleLedger;
+	type PalletId = MantaPayPalletId;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -1070,9 +1190,10 @@ construct_runtime!(
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
 
-		// Assets management
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
+		// Asset and Private Payment
+		Assets: pallet_assets::{Pallet, Storage, Event<T>} = 45,
 		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>} = 46,
+		MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
 	}
 );
 
@@ -1254,6 +1375,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_session, SessionBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_tx_pause, TransactionPause);
 			list_benchmark!(list, extra, pallet_assets, Assets);
+			list_benchmark!(list, extra, pallet_manta_pay, MantaPay);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1303,6 +1425,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_tx_pause, TransactionPause);
 			add_benchmark!(params, batches, pallet_assets, Assets);
+			add_benchmark!(params, batches, pallet_manta_pay, MantaPay);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

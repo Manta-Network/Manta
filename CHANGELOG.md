@@ -4,6 +4,7 @@
 ### Breaking changes
 
 ### Features
+- [\#430](https://github.com/Manta-Network/Manta/pull/419) Add private payment to dolphin runtime.
 - [\#419](https://github.com/Manta-Network/Manta/pull/419) Add asset manager and XCM support.
 - [\#358](https://github.com/Manta-Network/Manta/pull/358) Underperforming collators are automatically removed from the collator set after each session
 - [\#383](https://github.com/Manta-Network/Manta/pull/383) Calamari & Manta support `cargo build --features=fast-runtime`, setting most configurable timers to 2 or 5 minutes (instead of days)
