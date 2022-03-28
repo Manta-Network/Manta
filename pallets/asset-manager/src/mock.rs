@@ -29,7 +29,7 @@ use manta_primitives::{
 	constants::ASSET_STRING_LIMIT,
 	types::{AccountId, AssetId, Balance},
 };
-use sp_core::H256;
+use sp_core::{H160, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
@@ -194,4 +194,24 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		.build_storage::<Runtime>()
 		.unwrap();
 	sp_io::TestExternalities::new(t)
+}
+
+pub(crate) fn create_asset_metadata(
+	name: &str,
+	symbol: &str,
+	decimals: u8,
+	min_balance: u128,
+	evm_address: Option<H160>,
+	is_frozen: bool,
+	is_sufficient: bool,
+) -> AssetRegistarMetadata<u128> {
+	AssetRegistarMetadata {
+		name: name.as_bytes().to_vec(),
+		symbol: symbol.as_bytes().to_vec(),
+		decimals,
+		min_balance,
+		evm_address,
+		is_frozen,
+		is_sufficient,
+	}
 }

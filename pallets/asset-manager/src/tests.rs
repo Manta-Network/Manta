@@ -21,8 +21,8 @@
 
 use crate::{self as asset_manager, AssetIdLocation, UnitsPerSecond};
 use asset_manager::mock::*;
-use frame_support::{assert_noop, assert_ok};
-use manta_primitives::assets::{AssetLocation, AssetRegistarMetadata};
+use frame_support::{assert_noop, assert_ok, traits::Contains};
+use manta_primitives::assets::AssetLocation;
 use sp_runtime::traits::BadOrigin;
 use xcm::{latest::prelude::*, VersionedMultiLocation};
 
@@ -35,15 +35,7 @@ fn basic_setup_should_work() {
 #[test]
 fn wrong_modifer_origin_should_not_work() {
 	new_test_ext().execute_with(|| {
-		let asset_metadata = AssetRegistarMetadata {
-			name: b"Kusama".to_vec(),
-			symbol: b"KSM".to_vec(),
-			decimals: 12,
-			min_balance: 1u128,
-			evm_address: None,
-			is_frozen: false,
-			is_sufficient: true,
-		};
+		let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1u128, None, false, true);
 		let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 		assert_noop!(
 			AssetManager::register_asset(
@@ -78,15 +70,7 @@ fn wrong_modifer_origin_should_not_work() {
 
 #[test]
 fn register_asset_should_work() {
-	let asset_metadata = AssetRegistarMetadata {
-		name: b"Kusama".to_vec(),
-		symbol: b"KSM".to_vec(),
-		decimals: 12,
-		min_balance: 1u128,
-		evm_address: None,
-		is_frozen: false,
-		is_sufficient: true,
-	};
+	let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1u128, None, false, true);
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 	let new_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
@@ -122,15 +106,7 @@ fn register_asset_should_work() {
 
 #[test]
 fn update_asset() {
-	let asset_metadata = AssetRegistarMetadata {
-		name: b"Kusama".to_vec(),
-		symbol: b"KSM".to_vec(),
-		decimals: 12,
-		min_balance: 1u128,
-		evm_address: None,
-		is_frozen: false,
-		is_sufficient: true,
-	};
+	let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1u128, None, false, false);
 	let mut new_metadata = asset_metadata.clone();
 	new_metadata.is_frozen = true;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
@@ -187,5 +163,52 @@ fn update_asset() {
 			AssetManager::update_asset_location(Origin::root(), 1, new_location),
 			crate::Error::<Runtime>::LocationAlreadyExists
 		);
+	})
+}
+
+#[test]
+fn filter_asset_location_should_work() {
+	let kusama_asset_metadata =
+		create_asset_metadata("Kusama", "KSM", 12, 1u128, None, false, false);
+	let kusama_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+
+	let manta_asset_metadata =
+		create_asset_metadata("Manta", "MANTA", 18, 1u128, None, false, false);
+	let mantan_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+		1,
+		X2(Parachain(2015), GeneralKey(b"MANTA".to_vec())),
+	)));
+	new_test_ext().execute_with(|| {
+		// Register relay chain native token
+		assert_ok!(AssetManager::register_asset(
+			Origin::root(),
+			kusama_location.clone(),
+			kusama_asset_metadata.clone()
+		));
+		assert_eq!(
+			AssetIdLocation::<Runtime>::get(0),
+			Some(kusama_location.clone())
+		);
+
+		// Register manta para chain native token
+		assert_ok!(AssetManager::register_asset(
+			Origin::root(),
+			mantan_location.clone(),
+			manta_asset_metadata.clone()
+		));
+		assert_eq!(
+			AssetIdLocation::<Runtime>::get(1),
+			Some(mantan_location.clone())
+		);
+
+		let new_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+			1,
+			X2(Parachain(1999), GeneralKey(b"UNKNOWN".to_vec())),
+		)));
+
+		// new location should be filtered
+		assert!(!crate::Pallet::<Runtime>::contains(&new_location));
+		assert!(crate::Pallet::<Runtime>::contains(&kusama_location));
+		assert!(crate::Pallet::<Runtime>::contains(&mantan_location));
 	})
 }
