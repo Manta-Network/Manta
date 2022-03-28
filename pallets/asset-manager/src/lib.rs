@@ -40,10 +40,8 @@ pub mod pallet {
 	use frame_support::{pallet_prelude::*, transactional, PalletId};
 	use frame_system::pallet_prelude::*;
 	use manta_primitives::assets::{AssetIdLocationGetter, AssetRegistrar, AssetMetadata, UnitsToWeightRatio, AssetConfig};
-	use sp_runtime::{
-		traits::{AccountIdConversion, CheckedAdd, One},
-		ArithmeticError,
-	};
+	use manta_primitives::types::AssetId;
+	use sp_runtime::{traits::{AccountIdConversion}, ArithmeticError};
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -52,23 +50,20 @@ pub mod pallet {
 
 
 	/// Convert AssetId and AssetLocation
-	impl<T: Config> AssetIdLocationGetter<
-		<T::AssetConfig as AssetConfig>::AssetId, 
-		<T::AssetConfig as AssetConfig>::AssetLocation> for Pallet<T> {
-		fn get_asset_id(loc: &<T::AssetConfig as AssetConfig>::AssetLocation) -> 
-			Option<<T::AssetConfig as AssetConfig>::AssetId> {
+	impl<T: Config> AssetIdLocationGetter<<T::AssetConfig as AssetConfig>::AssetLocation> for Pallet<T> {
+		fn get_asset_id(loc: &<T::AssetConfig as AssetConfig>::AssetLocation) -> Option<AssetId> {
 			LocationAssetId::<T>::get(loc)
 		}
 
-		fn get_asset_location(id: <T::AssetConfig as AssetConfig>::AssetId) -> 
+		fn get_asset_location(id: AssetId) -> 
 			Option<<T::AssetConfig as AssetConfig>::AssetLocation> {
 			AssetIdLocation::<T>::get(id)
 		}
 	}
 
 	/// Get unit per second from `AssetId`
-	impl<T: Config> UnitsToWeightRatio<<T::AssetConfig as AssetConfig>::AssetId> for Pallet<T> {
-		fn get_units_per_second(id: <T::AssetConfig as AssetConfig>::AssetId) -> Option<u128> {
+	impl<T: Config> UnitsToWeightRatio for Pallet<T> {
+		fn get_units_per_second(id: AssetId) -> Option<u128> {
 			UnitsPerSecond::<T>::get(id)
 		}
 	}
@@ -94,23 +89,23 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// A new asset registered.
 		AssetRegistered {
-			asset_id: <T::AssetConfig as AssetConfig>::AssetId,
+			asset_id: AssetId,
 			asset_address: <T::AssetConfig as AssetConfig>::AssetLocation,
 			metadata: <T::AssetConfig as AssetConfig>::AssetRegistrarMetadata,
 		},
 		/// An asset's location has been updated.
 		AssetLocationUpdated {
-			asset_id: <T::AssetConfig as AssetConfig>::AssetId,
+			asset_id: AssetId,
 			location: <T::AssetConfig as AssetConfig>::AssetLocation,
 		},
 		/// An asset;s metadata has been updated.
 		AssetMetadataUpdated {
-			asset_id: <T::AssetConfig as AssetConfig>::AssetId,
+			asset_id: AssetId,
 			metadata: <T::AssetConfig as AssetConfig>::AssetRegistrarMetadata,
 		},
 		/// Update units per second of an asset
 		UnitsPerSecondUpdated {
-			asset_id: <T::AssetConfig as AssetConfig>::AssetId,
+			asset_id: AssetId,
 			units_per_second: u128,
 		},
 	}
@@ -135,7 +130,7 @@ pub mod pallet {
 	pub(super) type AssetIdLocation<T: Config> =
 		StorageMap<_, 
 			Blake2_128Concat, 
-			<T::AssetConfig as AssetConfig>::AssetId,
+			AssetId,
 			<T::AssetConfig as AssetConfig>::AssetLocation>;
 
 	/// MultiLocation to AssetId Map.
@@ -146,7 +141,7 @@ pub mod pallet {
 		StorageMap<_, 
 			Blake2_128Concat,
 			<T::AssetConfig as AssetConfig>::AssetLocation, 
-			<T::AssetConfig as AssetConfig>::AssetId>;
+			AssetId>;
 
 	/// AssetId to AssetRegistrar Map.
 	#[pallet::storage]
@@ -154,7 +149,7 @@ pub mod pallet {
 	pub(super) type AssetIdMetadata<T: Config> =
 		StorageMap<_, 
 			Blake2_128Concat, 
-			<T::AssetConfig as AssetConfig>::AssetId, 
+			AssetId, 
 			<T::AssetConfig as AssetConfig>::AssetRegistrarMetadata>;
 
 	/// Get the next available AssetId.
@@ -162,16 +157,12 @@ pub mod pallet {
 	#[pallet::getter(fn next_asset_id)]
 	pub type NextAssetId<T: Config> = 
 		StorageValue<_, 
-			<T::AssetConfig as AssetConfig>::AssetId, 
+			AssetId, 
 			ValueQuery>;
 
 	/// XCM transfer cost for different asset.
 	#[pallet::storage]
-	pub type UnitsPerSecond<T: Config> = 
-		StorageMap<_, 
-			Blake2_128Concat, 
-			<T::AssetConfig as AssetConfig>::AssetId, 
-			u128>;
+	pub type UnitsPerSecond<T: Config> = StorageMap<_, Blake2_128Concat, AssetId, u128>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -230,7 +221,7 @@ pub mod pallet {
 		#[transactional]
 		pub fn update_asset_location(
 			origin: OriginFor<T>,
-			#[pallet::compact] asset_id: <T::AssetConfig as AssetConfig>::AssetId,
+			#[pallet::compact] asset_id: AssetId,
 			location: <T::AssetConfig as AssetConfig>::AssetLocation,
 		) -> DispatchResult {
 			// checks validity
@@ -263,7 +254,7 @@ pub mod pallet {
 		#[transactional]
 		pub fn update_asset_metadata(
 			origin: OriginFor<T>,
-			#[pallet::compact] asset_id: <T::AssetConfig as AssetConfig>::AssetId,
+			#[pallet::compact] asset_id: AssetId,
 			metadata: <T::AssetConfig as AssetConfig>::AssetRegistrarMetadata,
 		) -> DispatchResult {
 			T::ModifierOrigin::ensure_origin(origin)?;
@@ -288,7 +279,7 @@ pub mod pallet {
 		#[transactional]
 		pub fn set_units_per_second(
 			origin: OriginFor<T>,
-			#[pallet::compact] asset_id: <T::AssetConfig as AssetConfig>::AssetId,
+			#[pallet::compact] asset_id: AssetId,
 			#[pallet::compact] units_per_second: u128,
 		) -> DispatchResult {
 			T::ModifierOrigin::ensure_origin(origin)?;
@@ -307,12 +298,12 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 		/// Get and increment the `NextAssetID` by one.
-		fn get_next_asset_id() -> Result<<T::AssetConfig as AssetConfig>::AssetId, DispatchError> {
+		fn get_next_asset_id() -> Result<AssetId, DispatchError> {
 			NextAssetId::<T>::try_mutate(|current| -> 
-				Result<<T::AssetConfig as AssetConfig>::AssetId, DispatchError> {
+				Result<AssetId, DispatchError> {
 				let id = *current;
 				*current = current
-					.checked_add(&One::one())
+					.checked_add(1u32)
 					.ok_or(ArithmeticError::Overflow)?;
 				Ok(id)
 			})

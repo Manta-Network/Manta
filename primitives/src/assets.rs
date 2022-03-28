@@ -16,13 +16,13 @@
 
 ///! Manta/Calamari/Dolphin Asset
 
-use crate::types::{AssetId, Balance};
+use crate::{types::{AssetId, Balance}, constants::DEFAULT_ASSET_ED};
 use codec::{Decode, Encode, Codec};
-use frame_support::{Parameter, pallet_prelude::MaxEncodedLen, traits::tokens::{DepositConsequence, WithdrawConsequence}};
+use frame_support::{Parameter, traits::tokens::{DepositConsequence, WithdrawConsequence}};
 use scale_info::TypeInfo;
 use sp_core::H160;
 use sp_std::{borrow::Borrow, marker::PhantomData, prelude::Vec};
-use sp_runtime::{traits::{Member, AtLeast32BitUnsigned, MaybeSerializeDeserialize}, DispatchResult};
+use sp_runtime::{traits::Member, DispatchResult};
 
 use xcm::{
 	v1::{Junctions, MultiLocation},
@@ -30,9 +30,9 @@ use xcm::{
 };
 
 /// The minimal interface of asset metadata
-pub trait AssetMetadata<T: AssetConfig> {
+pub trait AssetMetadata {
 	/// Returns the minimum balance to hold this asset
-	fn min_balance(&self) -> T::Balance;
+	fn min_balance(&self) ->Balance;
 
 	/// Returns a boolean value indicating whether this asset needs an existential deposit
 	fn is_sufficient(&self) -> bool;
@@ -54,8 +54,8 @@ pub trait AssetRegistrar<T: AssetConfig> {
 	/// 	an ED in the Balances pallet or whatever else is used to control user-account state
 	/// 	growth).
 	fn create_asset(
-		asset_id: T::AssetId,
-		min_balance: T::Balance,
+		asset_id: AssetId,
+		min_balance: Balance,
 		metadata: T::StorageMetadata,
 		is_sufficient: bool,
 	) -> DispatchResult;
@@ -65,46 +65,33 @@ pub trait AssetRegistrar<T: AssetConfig> {
 	/// * `asset_id`: the asset id to be created.
 	/// * `metadata`: the metadata that the implementation layer stores.
 	fn update_asset_metadata(
-		asset_id: T::AssetId,
+		asset_id: AssetId,
 		metadata: T::StorageMetadata,
 	) -> DispatchResult;
 }
 
 pub trait AssetConfig: 'static + Eq + Clone{
-	/// The asset id type, this have to be consistent with pallet-manta-pay
-	type AssetId: Member
-	+ Parameter
-	+ Default
-	+ Copy
-	+ AtLeast32BitUnsigned
-	+ MaybeSerializeDeserialize
-	+ MaxEncodedLen
-	+ TypeInfo;
 
 	/// The trait we use to register Assets
 	type AssetRegistrar: AssetRegistrar<Self>;
 
-	/// The units in which we record balances.
-	type Balance: Member + Parameter + AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen;
-
 	/// Metadata type that required in token storage: e.g. AssetMetadata in Pallet-Assets.
-	type StorageMetadata: Member + Parameter + Default;
+	type StorageMetadata: Member + Parameter + Default + From<Self::AssetRegistrarMetadata>;
 
 	/// The Asset Metadata type stored in this pallet.
 	type AssetRegistrarMetadata: Member
 	+ Parameter
 	+ Codec
 	+ Default
-	+ Into<Self::StorageMetadata>
-	+ AssetMetadata<Self>;
+	+ AssetMetadata;
 
 	/// The AssetLocation type: could be just a thin wrapper of MultiLocation
 	type AssetLocation: Member + Parameter + Default + TypeInfo;
 }
 
 /// The metadata of a Manta Asset
-#[derive(Clone, Default, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
-pub struct AssetRegistarMetadata<Balance> {
+#[derive(Clone, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
+pub struct AssetRegistrarMetadata {
 	pub name: Vec<u8>,
 	pub symbol: Vec<u8>,
 	pub decimals: u8,
@@ -120,6 +107,30 @@ pub struct AssetRegistarMetadata<Balance> {
 	pub is_sufficient: bool,
 }
 
+impl Default for AssetRegistrarMetadata {
+	fn default() -> Self {
+		AssetRegistrarMetadata {
+			name: b"Dolphin".to_vec(),
+			symbol: b"DOL".to_vec(),
+			decimals: 12,
+			evm_address: None,
+			is_frozen: false,
+			min_balance: DEFAULT_ASSET_ED,
+			is_sufficient: true,
+		}
+	}
+}
+
+impl AssetMetadata for AssetRegistrarMetadata {
+	fn min_balance(&self) -> Balance {
+		self.min_balance
+	}
+
+	fn is_sufficient(&self) -> bool {
+		self.is_sufficient
+	}
+}
+
 /// Asset storage metadata
 /// Currently, `AssetStorageMetadata` is stored at `pallet-asset`.
 #[derive(Clone, Default, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
@@ -130,8 +141,8 @@ pub struct AssetStorageMetadata {
 	pub is_frozen: bool,
 }
 
-impl<Balance> From<AssetRegistarMetadata<Balance>> for AssetStorageMetadata {
-	fn from(source: AssetRegistarMetadata<Balance>) -> Self {
+impl From<AssetRegistrarMetadata> for AssetStorageMetadata {
+	fn from(source: AssetRegistrarMetadata) -> Self {
 		AssetStorageMetadata {
 			name: source.name,
 			symbol: source.symbol,
@@ -175,7 +186,7 @@ impl From<AssetLocation> for Option<MultiLocation> {
 }
 
 /// Defines the trait to obtain a generic AssetId
-pub trait AssetIdLocationGetter<AssetId, AssetLocation> {
+pub trait AssetIdLocationGetter<AssetLocation> {
 	// get AssetLocation from AssetId
 	fn get_asset_location(asset_id: AssetId) -> Option<AssetLocation>;
 
@@ -184,22 +195,22 @@ pub trait AssetIdLocationGetter<AssetId, AssetLocation> {
 }
 
 /// Defines the units per second charged given an `AssetId`.
-pub trait UnitsToWeightRatio<AssetId> {
+pub trait UnitsToWeightRatio {
 	/// Get units per second from asset id
 	fn get_units_per_second(asset_id: AssetId) -> Option<u128>;
 }
 
 /// Converter struct implementing `Convert`.
 /// This enforce the `AssetInfoGetter` implements `AssetIdLocationGetter`
-pub struct AssetIdLocationConvert<AssetId, AssetLocation, AssetInfoGetter>(
-	PhantomData<(AssetId, AssetLocation, AssetInfoGetter)>,
+pub struct AssetIdLocationConvert<AssetLocation, AssetInfoGetter>(
+	PhantomData<(AssetLocation, AssetInfoGetter)>,
 );
-impl<AssetId, AssetLocation, AssetInfoGetter> xcm_executor::traits::Convert<MultiLocation, AssetId>
-	for AssetIdLocationConvert<AssetId, AssetLocation, AssetInfoGetter>
+impl<AssetLocation, AssetInfoGetter> xcm_executor::traits::Convert<MultiLocation, AssetId>
+	for AssetIdLocationConvert<AssetLocation, AssetInfoGetter>
 where
 	AssetId: Clone,
 	AssetLocation: From<MultiLocation> + Into<Option<MultiLocation>> + Clone,
-	AssetInfoGetter: AssetIdLocationGetter<AssetId, AssetLocation>,
+	AssetInfoGetter: AssetIdLocationGetter<AssetLocation>,
 {
 	fn convert_ref(loc: impl Borrow<MultiLocation>) -> Result<AssetId, ()> {
 		AssetInfoGetter::get_asset_id(&loc.borrow().clone().into()).ok_or(())
@@ -212,6 +223,7 @@ where
 	}
 }
 
+#[derive(Debug)]
 pub enum FungibleLedgerConsequence<Balance> {
 	/// Deposit couldn't happen due to the amount being too low. This is usually because the
 	/// account doesn't yet exist and the deposit wouldn't bring it to at least the minimum needed
@@ -304,4 +316,10 @@ where
 		dest: &C::AccountId,
 		amount: Balance,
 	) -> Result<(), FungibleLedgerConsequence<Balance>>;
+
+	/// mint asset to a beneficiary
+	fn mint(
+		asset_id: AssetId,
+		beneficiary: &C::AccountId,
+		amount: Balance) -> Result<(), FungibleLedgerConsequence<Balance>>;
 }

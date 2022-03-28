@@ -18,19 +18,17 @@ use crate::{
 	benchmark::precomputed_coins::{
 		MINT, PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, RECLAIM, RECLAIM_INPUT,
 	},
-	Asset, Call, Config, Event, Pallet as MantaPay, TransferPost,
+	Asset, Call, Config, Event, Pallet, TransferPost,
 };
-use frame_support::traits::OriginTrait;
-use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
-use manta_primitives::assets::AssetConfig;
+use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use manta_primitives::assets::{AssetConfig, AssetRegistrar, FungibleLedger};
+use manta_primitives::types::{AssetId, Balance};
 use frame_system::RawOrigin;
 use scale_codec::Decode;
-use sp_runtime::traits::StaticLookup;
 
 mod precomputed_coins;
 
 pub const ED: u128 = 1u128;
-pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
 
 /// Asserts that the last event that has occured is the same as `event`.
 #[inline]
@@ -45,35 +43,22 @@ where
 
 /// Init assets for manta-pay
 #[inline]
-pub fn init_asset<T>(owner: &T::AccountId, id: T::AssetId, value: T::Balance)
+pub fn init_asset<T>(owner: &T::AccountId, id: AssetId, value: Balance)
 where 
-	T: AssetConfig,
-{
-	
+	T: Config,
+{	let metadata= <T::AssetConfig as AssetConfig>::AssetRegistrarMetadata::default();
+	let storage_metadata : <T::AssetConfig as AssetConfig>::StorageMetadata = metadata.into(); 
+	<T::AssetConfig as AssetConfig>::AssetRegistrar::create_asset(id, ED, storage_metadata, true).unwrap();
+	let pallet_account: T::AccountId = Pallet::<T>::account_id();
+	T::FungibleLedger::mint(id, &owner, value + ED).unwrap();
+	T::FungibleLedger::mint(id, &pallet_account, ED).unwrap();
 } 
 
 benchmarks! {
-	transfer {
-		let caller: T::AccountId = whitelisted_caller();
-		let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-		init_native_asset::<T>(&caller, AssetId(0), AssetValue(1_000));
-		let recipient: T::AccountId = account("recipient", 0, 0);
-		let recipient_lookup = T::Lookup::unlookup(recipient.clone());
-		let asset = Asset::new(0, 10);
-	}: transfer (
-		RawOrigin::Signed(caller.clone()),
-		recipient_lookup,
-		asset
-	) verify {
-		assert_last_event::<T, _>(Event::Transfer { asset, source: caller, sink: recipient.clone() });
-		// FIXME: add balance checking
-		// assert_eq!(Balances::<T>::get(recipient, asset.id), asset.value);
-	}
-
 	mint {
 		let caller: T::AccountId = whitelisted_caller();
 		let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-		init_native_asset::<T>(&caller, AssetId(0), AssetValue(1_000_000));
+		init_asset::<T>(&caller, 2u32, 1_000_000u128);
 		let mint_post = TransferPost::decode(&mut &*MINT).unwrap();
 		let asset = Asset::new(mint_post.asset_id.unwrap(), mint_post.sources[0]);
 	}: mint (
@@ -88,9 +73,9 @@ benchmarks! {
 	private_transfer {
 		let caller: T::AccountId = whitelisted_caller();
 		let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-		init_native_asset::<T>(&caller, AssetId(0), AssetValue(1_000_000));
+		init_asset::<T>(&caller, 2u32, 1_000_000u128);
 		for coin in PRIVATE_TRANSFER_INPUT {
-			MantaPay::<T>::mint(origin.clone(), TransferPost::decode(&mut &**coin).unwrap()).unwrap();
+			Pallet::<T>::mint(origin.clone(), TransferPost::decode(&mut &**coin).unwrap()).unwrap();
 		}
 		let private_transfer_post = TransferPost::decode(&mut &*PRIVATE_TRANSFER).unwrap();
 	}: private_transfer (
@@ -103,16 +88,16 @@ benchmarks! {
 	reclaim {
 		let caller: T::AccountId = whitelisted_caller();
 		let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-		init_native_asset::<T>(&caller, AssetId(0), AssetValue(1_000_000));
+		init_asset::<T>(&caller, 2u32, 1_000_000u128);
 		for coin in RECLAIM_INPUT {
-			MantaPay::<T>::mint(origin.clone(), TransferPost::decode(&mut &**coin).unwrap()).unwrap();
+			Pallet::<T>::mint(origin.clone(), TransferPost::decode(&mut &**coin).unwrap()).unwrap();
 		}
 		let reclaim_post = TransferPost::decode(&mut &*RECLAIM).unwrap();
 	}: reclaim (
 		RawOrigin::Signed(caller.clone()),
 		reclaim_post
 	) verify {
-		assert_last_event::<T, _>(Event::Reclaim { asset: Asset::new(0, 10_000), sink: caller });
+		assert_last_event::<T, _>(Event::Reclaim { asset: Asset::new(2, 10_000), sink: caller });
 	}
 }
 

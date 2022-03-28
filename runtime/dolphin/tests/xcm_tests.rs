@@ -426,18 +426,6 @@ fn send_para_a_custom_asset_to_para_b() {
 			source_location.clone(),
 			asset_metadata.clone()
 		));
-		// we have to do this in order to mint asset to alice on A
-		assert_ok!(parachain::Assets::force_asset_status(
-			parachain::Origin::root(),
-			0,
-			ALICE.into(),
-			ALICE.into(),
-			ALICE.into(),
-			ALICE.into(),
-			1,
-			true,
-			false,
-		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
 			a_currency_id,
@@ -480,7 +468,7 @@ fn send_para_a_custom_asset_to_para_b() {
 	ParaA::execute_with(|| {
 		// Force customized asset balance for Alice
 		assert_ok!(parachain::Assets::mint(
-			parachain::Origin::signed(ALICE.into()),
+			parachain::Origin::signed(AssetManager::account_id()),
 			0,
 			ALICE.into(),
 			INITIAL_BALANCE

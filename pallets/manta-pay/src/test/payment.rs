@@ -15,10 +15,11 @@
 // along with pallet-manta-pay.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-	mock::{new_test_ext, Assets, Balances, MantaPayPallet, Origin, Test},
+	mock::{new_test_ext, MantaAssetRegistrar, MantaFungibleLedger, MantaPayPallet, Origin, Test},
 	Error,
 };
 use frame_support::{assert_noop, assert_ok};
+use manta_primitives::assets::{FungibleLedger, AssetRegistrar, AssetRegistrarMetadata};
 use manta_accounting::{
 	asset::{Asset, AssetId, AssetValue},
 	transfer::{self, test::value_distribution, SpendingKey},
@@ -267,41 +268,10 @@ where
 /// Initializes a test by allocating `value`-many assets of the given `id` to the default account.
 #[inline]
 fn initialize_test(id: AssetId, value: AssetValue) {
-	if id.0 == 0 {
-		assert_ok!(Balances::set_balance(Origin::root(), ALICE, value.0, 0));
-	} else {
-		assert_ok!(Assets::force_create(
-			Origin::root(),
-			id.0,
-			MantaPayPallet::account_id(),
-			true,
-			ED
-		));
-		assert_ok!(Assets::force_asset_status(
-			Origin::root(),
-			id.0,
-			ALICE.into(),
-			ALICE.into(),
-			ALICE.into(),
-			ALICE.into(),
-			ED,
-			true,
-			false,
-		));
-		// asset the minimum balance for MantaPayPallet
-		assert_ok!(Assets::mint(
-			Origin::signed(ALICE.into()),
-			id.0,
-			MantaPayPallet::account_id().into(),
-			ED
-		));
-		assert_ok!(Assets::mint(
-			Origin::signed(ALICE.into()),
-			id.0,
-			ALICE.into(),
-			value.0
-		));
-	}
+	let metadata = AssetRegistrarMetadata::default();
+	assert_ok!(MantaAssetRegistrar::create_asset(id.0, ED, metadata.into(), true));
+	assert_ok!(MantaFungibleLedger::mint(id.0, &ALICE, value.0));
+	assert_ok!(MantaFungibleLedger::mint(id.0, &MantaPayPallet::account_id(), ED));
 }
 
 /// Tests multiple mints from some total supply.

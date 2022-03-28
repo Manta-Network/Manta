@@ -24,7 +24,7 @@ use frame_support::{construct_runtime, parameter_types, traits::ConstU32, Pallet
 use frame_system as system;
 use frame_system::EnsureRoot;
 use manta_primitives::{
-	assets::{AssetLocation, AssetRegistrar, AssetMetadata, AssetRegistarMetadata, AssetStorageMetadata, AssetConfig},
+	assets::{AssetLocation, AssetRegistrar, AssetRegistrarMetadata, AssetStorageMetadata, AssetConfig},
 	constants::ASSET_STRING_LIMIT,
 	types::{AccountId, AssetId, Balance},
 };
@@ -149,16 +149,6 @@ impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
 	}
 }
 
-impl AssetMetadata<MantaAssetConfig> for AssetRegistarMetadata<Balance> {
-	fn min_balance(&self) -> Balance {
-		self.min_balance
-	}
-
-	fn is_sufficient(&self) -> bool {
-		self.is_sufficient
-	}
-}
-
 parameter_types! {
 	pub const AssetManagerPalletId: PalletId = PalletId(*b"asstmngr");
 }
@@ -167,9 +157,7 @@ parameter_types! {
 pub struct MantaAssetConfig;
 
 impl AssetConfig for MantaAssetConfig {
-	type Balance = Balance;
-	type AssetId = AssetId;
-	type AssetRegistrarMetadata = AssetRegistarMetadata<Balance>;
+	type AssetRegistrarMetadata = AssetRegistrarMetadata;
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
 	type AssetRegistrar = MantaAssetRegistrar;

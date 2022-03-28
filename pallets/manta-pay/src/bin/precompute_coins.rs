@@ -324,13 +324,14 @@ fn main() -> Result<()> {
 	let mut rng = thread_rng();
 	let (proving_context, verifying_context, parameters, utxo_accumulator_model) =
 		load_parameters(directory.path())?;
+	let asset_id: u32 = 2;
 
 	let mint = sample_mint(
 		&proving_context.mint,
 		&verifying_context.mint,
 		&parameters,
 		&utxo_accumulator_model,
-		AssetId(0).value(100_000),
+		AssetId(asset_id).value(100_000),
 		&mut rng,
 	);
 	let (private_transfer_input, private_transfer) = sample_private_transfer(
@@ -338,8 +339,8 @@ fn main() -> Result<()> {
 		&verifying_context,
 		&parameters,
 		&utxo_accumulator_model,
-		AssetId(0).value(10_000),
-		AssetId(0).value(20_000),
+		AssetId(asset_id).value(10_000),
+		AssetId(asset_id).value(20_000),
 		&mut rng,
 	);
 	let (reclaim_input, reclaim) = sample_reclaim(
@@ -347,8 +348,8 @@ fn main() -> Result<()> {
 		&verifying_context,
 		&parameters,
 		&utxo_accumulator_model,
-		AssetId(0).value(10_000),
-		AssetId(0).value(20_000),
+		AssetId(asset_id).value(10_000),
+		AssetId(asset_id).value(20_000),
 		&mut rng,
 	);
 

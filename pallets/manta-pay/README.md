@@ -13,25 +13,10 @@ cargo doc --open
 ```
 
 ## Update pre-computed tokens
+1. delete `./src/benchmark/precomputed_coins.rs`
+2.
 ``` sh
-cargo run --release --bin precompute_coins --features=precompute-coins > ./src/benchmark/precomputed_coins.rs
+cargo run --release --features=precompute-coins --bin precompute_coins ./src/benchmark/precomputed_coins.rs
 ```
-Note: This is only needed when the zero-knowledge-proof circuit has been changed.
+Note: This is only needed when the zero-knowledge-proof circuit or asset id used has been changed.
 
-## Test coverage
-* install [grcov](https://github.com/mozilla/grcov):
-```
-cargo install grcov
-```
-* build and run test (extremely slow)
-``` sh
-export CARGO_INCREMENTAL=0
-export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
-export RUSTDOCFLAGS="-Cpanic=abort"
-cargo +nightly test
-```
-* generate the report 
-``` sh
-grcov . -s . --binary-path ./target/debug/ -t html --branch --ignore-not-existing -o ./target/debug/coverage/
-open target/debug/coverage/index.html
-```

@@ -26,8 +26,8 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use manta_primitives::{
-	assets::{AssetConfig, AssetStorageMetadata, AssetRegistarMetadata, AssetLocation, AssetRegistrar, 
-		AssetMetadata, FungibleLedger, FungibleLedgerConsequence},
+	assets::{AssetConfig, AssetStorageMetadata, AssetRegistrarMetadata, AssetLocation, AssetRegistrar, 
+		FungibleLedger, FungibleLedgerConsequence},
 	constants::{MANTA_PAY_PALLET_ID, ASSET_MANAGER_PALLET_ID},
 	types::{AssetId, Balance},
 };
@@ -194,6 +194,26 @@ impl FungibleLedger<Test> for MantaFungibleLedger {
 			.map_err(|_| FungibleLedgerConsequence::InternalError)
 		}
 	}
+
+	fn mint(
+		asset_id: AssetId,
+		beneficiary: &<Test as frame_system::Config>::AccountId,
+		amount: Balance
+	) -> Result<(), FungibleLedgerConsequence<Balance>> {
+		Self::can_deposit(asset_id, beneficiary, amount)?;
+		if asset_id == 0 {
+			let _ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(beneficiary, amount);
+			Ok(())
+		} else {
+			Assets::mint(
+				Origin::signed(AssetManager::account_id()), 
+				asset_id, 
+				beneficiary.clone(), 
+				amount)
+				.and_then(|_| Ok(()))
+				.map_err(|_| FungibleLedgerConsequence::InternalError)
+		}
+	}
 }
 
 pub struct MantaAssetRegistrar;
@@ -220,7 +240,18 @@ impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
 			metadata.symbol,
 			metadata.decimals,
 			metadata.is_frozen,
-		)
+		)?;
+
+		Assets::force_asset_status(
+			Origin::root(), 
+			asset_id, 
+			AssetManager::account_id(), 
+			AssetManager::account_id(), 
+			AssetManager::account_id(), 
+			AssetManager::account_id(), 
+			min_balance, 
+			is_sufficient, 
+			metadata.is_frozen)
 	}
 
 	fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
@@ -235,22 +266,10 @@ impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
 	}
 }
 
-impl AssetMetadata<MantaAssetConfig> for AssetRegistarMetadata<Balance> {
-	fn min_balance(&self) -> Balance {
-		self.min_balance
-	}
-
-	fn is_sufficient(&self) -> bool {
-		self.is_sufficient
-	}
-}
-
 #[derive(Clone, Eq, PartialEq)]
 pub struct MantaAssetConfig;
 impl AssetConfig for MantaAssetConfig{
-	type Balance = Balance;
-	type AssetId = AssetId;
-	type AssetRegistrarMetadata = AssetRegistarMetadata<Balance>;
+	type AssetRegistrarMetadata = AssetRegistrarMetadata;
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
 	type AssetRegistrar = MantaAssetRegistrar;
