@@ -55,7 +55,7 @@ use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::Get;
 
 pub use manta_primitives::{
-	assets::{AssetConfig, AssetRegistarMetadata, AssetRegistrar, AssetStorageMetadata},
+	assets::{AssetConfig, AssetRegistrarMetadata, AssetRegistrar, AssetStorageMetadata},
 	types::AssetId,
 };
 pub type AccountId = AccountId32;
@@ -542,7 +542,7 @@ impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
 pub struct MantaAssetConfig;
 
 impl AssetConfig for MantaAssetConfig {
-	type AssetRegistrarMetadata = AssetRegistarMetadata;
+	type AssetRegistrarMetadata = AssetRegistrarMetadata;
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
 	type AssetRegistrar = MantaAssetRegistrar;

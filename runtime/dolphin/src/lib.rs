@@ -255,6 +255,7 @@ impl Contains<Call> for BaseFilter {
 				| manta_collator_selection::Call::remove_collator{..}
 				| manta_collator_selection::Call::leave_intent{..})
 			| Call::Balances(_)
+			| Call::Preimage(_)
 			| Call::Utility(_)
 			| Call::MantaPay(_)
 			| Call::XTokens(_) => true,
@@ -885,7 +886,7 @@ impl orml_xtokens::Config for Runtime {
 
 parameter_types! {
 	// Rotate collator's spot each 6 hours.
-	pub const Period: u32 = 10 * MINUTES;
+	pub const Period: u32 = 6 * HOURS;
 	pub const Offset: u32 = 0;
 }
 

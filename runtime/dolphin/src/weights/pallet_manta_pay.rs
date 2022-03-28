@@ -42,10 +42,10 @@ impl<T: frame_system::Config> pallet_manta_pay::WeightInfo for SubstrateWeight<T
 	/// Storage: MantaPay UtxoSetOutputs (r:0 w:1)
 	/// Storage: MantaPay Shards (r:0 w:1)
 	/// ```
-	fn mint() -> Weight {
-		(103_351_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(5 as Weight))
+	fn to_private() -> Weight {
+		(36_400_000_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(6 as Weight))
+			.saturating_add(T::DbWeight::get().writes(7 as Weight))
 	}
 
 	/// ```text
@@ -58,7 +58,7 @@ impl<T: frame_system::Config> pallet_manta_pay::WeightInfo for SubstrateWeight<T
 	/// Storage: MantaPay Shards (r:0 w:2)
 	/// ```
 	fn private_transfer() -> Weight {
-		(145_263_000_000 as Weight)
+		(51_500_000_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(9 as Weight))
 			.saturating_add(T::DbWeight::get().writes(13 as Weight))
 	}
@@ -73,9 +73,9 @@ impl<T: frame_system::Config> pallet_manta_pay::WeightInfo for SubstrateWeight<T
 	/// Storage: MantaPay VoidNumberSetInsertionOrder (r:0 w:2)
 	/// Storage: MantaPay Shards (r:0 w:1)
 	/// ```
-	fn reclaim() -> Weight {
-		(122_321_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(8 as Weight))
-			.saturating_add(T::DbWeight::get().writes(10 as Weight))
+	fn to_public() -> Weight {
+		(44_100_000_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(10 as Weight))
+			.saturating_add(T::DbWeight::get().writes(12 as Weight))
 	}
 }
