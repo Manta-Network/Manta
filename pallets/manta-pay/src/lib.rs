@@ -211,9 +211,9 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Mints some assets encoded in `post` to the `origin` account.
-		#[pallet::weight(T::WeightInfo::mint())]
+		#[pallet::weight(T::WeightInfo::to_private())]
 		#[transactional]
-		pub fn mint(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
+		pub fn to_private(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			let mut ledger = Self::ledger();
 			Self::deposit_event(
@@ -250,9 +250,9 @@ pub mod pallet {
 
 		/// Transforms some private assets into public ones using `post`, sending the public assets
 		/// to the `origin` account.
-		#[pallet::weight(T::WeightInfo::reclaim())]
+		#[pallet::weight(T::WeightInfo::to_public())]
 		#[transactional]
-		pub fn reclaim(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
+		pub fn to_public(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			let mut ledger = Self::ledger();
 			Self::deposit_event(
@@ -282,7 +282,7 @@ pub mod pallet {
 		},
 
 		/// Mint Event
-		Mint {
+		ToPrivate {
 			/// Asset Minted
 			asset: Asset,
 
@@ -297,7 +297,7 @@ pub mod pallet {
 		},
 
 		/// Reclaim Event
-		Reclaim {
+		ToPublic {
 			/// Asset Reclaimed
 			asset: Asset,
 
@@ -487,12 +487,12 @@ where
 	#[inline]
 	pub fn convert(self, origin: Option<T::AccountId>) -> Event<T> {
 		match self {
-			Self::Mint { asset, source } => Event::Mint { asset, source },
+			Self::Mint { asset, source } => Event::ToPrivate { asset, source },
 			Self::PrivateTransfer => Event::PrivateTransfer {
 				// FIXME: get rid of unwrap eventually.
 				origin: origin.unwrap(),
 			},
-			Self::Reclaim { asset, sink } => Event::Reclaim { asset, sink },
+			Self::Reclaim { asset, sink } => Event::ToPublic { asset, sink },
 		}
 	}
 }

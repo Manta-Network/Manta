@@ -59,17 +59,17 @@ where
 }
 
 benchmarks! {
-	mint {
+	to_private {
 		let caller: T::AccountId = whitelisted_caller();
 		let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
 		init_asset::<T>(&caller, 2u32, 1_000_000u128);
 		let mint_post = TransferPost::decode(&mut &*MINT).unwrap();
 		let asset = Asset::new(mint_post.asset_id.unwrap(), mint_post.sources[0]);
-	}: mint (
+	}: to_private (
 		RawOrigin::Signed(caller.clone()),
 		mint_post
 	) verify {
-		assert_last_event::<T, _>(Event::Mint { asset, source: caller.clone() });
+		assert_last_event::<T, _>(Event::ToPrivate { asset, source: caller.clone() });
 		// FIXME: add balance checking
 		// assert_eq!(Balances::<T>::get(caller, asset.id), 1_000_000 - asset.value);
 	}
@@ -79,7 +79,7 @@ benchmarks! {
 		let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
 		init_asset::<T>(&caller, 2u32, 1_000_000u128);
 		for coin in PRIVATE_TRANSFER_INPUT {
-			Pallet::<T>::mint(origin.clone(), TransferPost::decode(&mut &**coin).unwrap()).unwrap();
+			Pallet::<T>::to_private(origin.clone(), TransferPost::decode(&mut &**coin).unwrap()).unwrap();
 		}
 		let private_transfer_post = TransferPost::decode(&mut &*PRIVATE_TRANSFER).unwrap();
 	}: private_transfer (
@@ -89,19 +89,19 @@ benchmarks! {
 		assert_last_event::<T, _>(Event::PrivateTransfer { origin: caller });
 	}
 
-	reclaim {
+	to_public {
 		let caller: T::AccountId = whitelisted_caller();
 		let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
 		init_asset::<T>(&caller, 2u32, 1_000_000u128);
 		for coin in RECLAIM_INPUT {
-			Pallet::<T>::mint(origin.clone(), TransferPost::decode(&mut &**coin).unwrap()).unwrap();
+			Pallet::<T>::to_private(origin.clone(), TransferPost::decode(&mut &**coin).unwrap()).unwrap();
 		}
 		let reclaim_post = TransferPost::decode(&mut &*RECLAIM).unwrap();
-	}: reclaim (
+	}: to_public (
 		RawOrigin::Signed(caller.clone()),
 		reclaim_post
 	) verify {
-		assert_last_event::<T, _>(Event::Reclaim { asset: Asset::new(2, 10_000), sink: caller });
+		assert_last_event::<T, _>(Event::ToPublic { asset: Asset::new(2, 10_000), sink: caller });
 	}
 }
 

@@ -136,7 +136,7 @@ where
 	R: CryptoRng + RngCore + ?Sized,
 {
 	for value in values {
-		assert_ok!(MantaPayPallet::mint(
+		assert_ok!(MantaPayPallet::to_private(
 			Origin::signed(ALICE),
 			sample_mint(value.with(id), rng).into()
 		));
@@ -167,7 +167,10 @@ where
 			rng,
 		)
 		.unwrap();
-		assert_ok!(MantaPayPallet::mint(Origin::signed(ALICE), mint_0.into()));
+		assert_ok!(MantaPayPallet::to_private(
+			Origin::signed(ALICE),
+			mint_0.into()
+		));
 		let sender_0 = pre_sender_0
 			.insert_and_upgrade(&mut utxo_accumulator)
 			.expect("Just inserted so this should not fail.");
@@ -179,7 +182,10 @@ where
 			rng,
 		)
 		.unwrap();
-		assert_ok!(MantaPayPallet::mint(Origin::signed(ALICE), mint_1.into()));
+		assert_ok!(MantaPayPallet::to_private(
+			Origin::signed(ALICE),
+			mint_1.into()
+		));
 		let sender_1 = pre_sender_1
 			.insert_and_upgrade(&mut utxo_accumulator)
 			.expect("Just inserted so this should not fail.");
@@ -230,7 +236,10 @@ where
 			rng,
 		)
 		.unwrap();
-		assert_ok!(MantaPayPallet::mint(Origin::signed(ALICE), mint_0.into()));
+		assert_ok!(MantaPayPallet::to_private(
+			Origin::signed(ALICE),
+			mint_0.into()
+		));
 		let sender_0 = pre_sender_0
 			.insert_and_upgrade(&mut utxo_accumulator)
 			.expect("Just inserted so this should not fail.");
@@ -242,7 +251,10 @@ where
 			rng,
 		)
 		.unwrap();
-		assert_ok!(MantaPayPallet::mint(Origin::signed(ALICE), mint_1.into()));
+		assert_ok!(MantaPayPallet::to_private(
+			Origin::signed(ALICE),
+			mint_1.into()
+		));
 		let sender_1 = pre_sender_1
 			.insert_and_upgrade(&mut utxo_accumulator)
 			.expect("Just inserted so this should not fail.");
@@ -255,7 +267,7 @@ where
 				rng,
 			)
 			.unwrap();
-		assert_ok!(MantaPayPallet::reclaim(
+		assert_ok!(MantaPayPallet::to_public(
 			Origin::signed(ALICE),
 			reclaim.clone().into()
 		));
@@ -315,7 +327,7 @@ fn overdrawn_mint_should_not_work() {
 			.unwrap_or_default();
 		initialize_test(asset_id, total_supply + ED);
 		assert_noop!(
-			MantaPayPallet::mint(
+			MantaPayPallet::to_private(
 				Origin::signed(ALICE),
 				sample_mint(asset_id.with(total_supply + 1), &mut rng).into()
 			),
@@ -330,7 +342,7 @@ fn mint_without_init_should_not_work() {
 	let mut rng = thread_rng();
 	new_test_ext().execute_with(|| {
 		assert_noop!(
-			MantaPayPallet::mint(
+			MantaPayPallet::to_private(
 				Origin::signed(ALICE),
 				sample_mint(rng.gen(), &mut rng).into()
 			),
@@ -347,12 +359,12 @@ fn mint_existing_coin_should_not_work() {
 		let asset_id = rng.gen();
 		initialize_test(asset_id, AssetValue(32579));
 		let mint_post = sample_mint(asset_id.value(100), &mut rng);
-		assert_ok!(MantaPayPallet::mint(
+		assert_ok!(MantaPayPallet::to_private(
 			Origin::signed(ALICE),
 			mint_post.clone().into()
 		));
 		assert_noop!(
-			MantaPayPallet::mint(Origin::signed(ALICE), mint_post.into()),
+			MantaPayPallet::to_private(Origin::signed(ALICE), mint_post.into()),
 			Error::<Test>::AssetRegistered
 		);
 	});
@@ -401,7 +413,7 @@ fn double_spend_in_reclaim_should_not_work() {
 	new_test_ext().execute_with(|| {
 		for reclaim in reclaim_test(1, &mut thread_rng()) {
 			assert_noop!(
-				MantaPayPallet::reclaim(Origin::signed(ALICE), reclaim.into()),
+				MantaPayPallet::to_public(Origin::signed(ALICE), reclaim.into()),
 				Error::<Test>::AssetSpent,
 			);
 		}

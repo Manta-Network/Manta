@@ -61,7 +61,7 @@ use frame_system::{
 };
 use manta_primitives::{
 	assets::{
-		AssetConfig, AssetIdLocationConvert, AssetLocation, AssetRegistarMetadata, AssetRegistrar,
+		AssetConfig, AssetIdLocationConvert, AssetLocation, AssetRegistrar, AssetRegistrarMetadata,
 		AssetStorageMetadata, FungibleLedger, FungibleLedgerConsequence,
 	},
 	constants::{
@@ -1025,7 +1025,7 @@ impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
 pub struct MantaAssetConfig;
 
 impl AssetConfig for MantaAssetConfig {
-	type AssetRegistrarMetadata = AssetRegistarMetadata;
+	type AssetRegistrarMetadata = AssetRegistrarMetadata;
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
 	type AssetRegistrar = MantaAssetRegistrar;
@@ -1375,7 +1375,6 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_tx_pause, TransactionPause);
 			list_benchmark!(list, extra, pallet_assets, Assets);
 			list_benchmark!(list, extra, pallet_manta_pay, MantaPay);
-			list_benchmark!(list, extra, pallet_asset_manager, AssetManager);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1426,7 +1425,6 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_tx_pause, TransactionPause);
 			add_benchmark!(params, batches, pallet_assets, Assets);
 			add_benchmark!(params, batches, pallet_manta_pay, MantaPay);
-			add_benchmark!(params, batches, pallet_asset_manager, AssetManager);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

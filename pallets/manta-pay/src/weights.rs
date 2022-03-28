@@ -34,13 +34,13 @@ use frame_system::Config;
 /// Weight functions needed for pallet_manta_pay.
 pub trait WeightInfo {
 	/// Returns the [`Weight`] of the [`Pallet::mint`] extrinsic.
-	fn mint() -> Weight;
+	fn to_private() -> Weight;
 
 	/// Returns the [`Weight`] of the [`Pallet::private_transfer`] extrinsic.
 	fn private_transfer() -> Weight;
 
 	/// Returns the [`Weight`] of the [`Pallet::reclaim`] extrinsic.
-	fn reclaim() -> Weight;
+	fn to_public() -> Weight;
 }
 
 /// Concrete Weight Functions
@@ -57,10 +57,10 @@ where
 	/// Storage: MantaPay UtxoSetOutputs (r:0 w:1)
 	/// Storage: MantaPay Shards (r:0 w:1)
 	/// ```
-	fn mint() -> Weight {
-		(103_351_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(5 as Weight))
+	fn to_private() -> Weight {
+		(36_400_000_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(6 as Weight))
+			.saturating_add(T::DbWeight::get().writes(7 as Weight))
 	}
 
 	/// ```text
@@ -73,7 +73,7 @@ where
 	/// Storage: MantaPay Shards (r:0 w:2)
 	/// ```
 	fn private_transfer() -> Weight {
-		(145_263_000_000 as Weight)
+		(51_500_000_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(9 as Weight))
 			.saturating_add(T::DbWeight::get().writes(13 as Weight))
 	}
@@ -88,9 +88,9 @@ where
 	/// Storage: MantaPay VoidNumberSetInsertionOrder (r:0 w:2)
 	/// Storage: MantaPay Shards (r:0 w:1)
 	/// ```
-	fn reclaim() -> Weight {
-		(122_321_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(8 as Weight))
-			.saturating_add(T::DbWeight::get().writes(10 as Weight))
+	fn to_public() -> Weight {
+		(44_100_000_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(10 as Weight))
+			.saturating_add(T::DbWeight::get().writes(12 as Weight))
 	}
 }
