@@ -141,7 +141,7 @@ impl FungibleLedger<Test> for MantaFungibleLedger {
 		asset_id: AssetId,
 		account: &<Test as frame_system::Config>::AccountId,
 		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence<Balance>> {
+	) -> Result<(), FungibleLedgerConsequence> {
 		if asset_id == 0 {
 			// we assume native asset with id 0
 			match Balances::can_deposit(account, amount) {
@@ -160,7 +160,7 @@ impl FungibleLedger<Test> for MantaFungibleLedger {
 		asset_id: AssetId,
 		account: &<Test as frame_system::Config>::AccountId,
 		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence<Balance>> {
+	) -> Result<(), FungibleLedgerConsequence> {
 		if asset_id == 0 {
 			// we assume native asset with id 0
 			match Balances::can_withdraw(account, amount) {
@@ -180,7 +180,7 @@ impl FungibleLedger<Test> for MantaFungibleLedger {
 		source: &<Test as frame_system::Config>::AccountId,
 		dest: &<Test as frame_system::Config>::AccountId,
 		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence<Balance>> {
+	) -> Result<(), FungibleLedgerConsequence> {
 		if asset_id == 0 {
 			<Balances as Currency<<Test as frame_system::Config>::AccountId>>::transfer(
 				source,
@@ -202,7 +202,7 @@ impl FungibleLedger<Test> for MantaFungibleLedger {
 		asset_id: AssetId,
 		beneficiary: &<Test as frame_system::Config>::AccountId,
 		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence<Balance>> {
+	) -> Result<(), FungibleLedgerConsequence> {
 		Self::can_deposit(asset_id, beneficiary, amount)?;
 		if asset_id == 0 {
 			let _ =

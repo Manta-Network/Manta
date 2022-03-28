@@ -120,6 +120,9 @@ use scale_info::TypeInfo;
 use sp_std::{vec, vec::Vec};
 use types::*;
 
+pub use pallet::*;
+pub use weights::WeightInfo;
+
 #[cfg(test)]
 mod mock;
 
@@ -130,11 +133,6 @@ mod test;
 pub mod benchmark;
 
 pub mod weights;
-
-pub use pallet::*;
-pub use weights::WeightInfo;
-
-/// Type Definitions for Protocol Structures
 pub mod types;
 
 /// MantaPay Pallet
@@ -210,7 +208,10 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Mints some assets encoded in `post` to the `origin` account.
+		/// Convert the asset encoded in `post` to private asset.
+		/// 
+		/// `origin`: the owner of the public asset. `origin` will pay the gas fee for the conversion as well.
+		/// `post`: encoded asset to be converted.
 		#[pallet::weight(T::WeightInfo::to_private())]
 		#[transactional]
 		pub fn to_private(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
@@ -269,18 +270,6 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Transfer Event
-		Transfer {
-			/// Asset Transfered
-			asset: Asset,
-
-			/// Source Account
-			source: T::AccountId,
-
-			/// Sink Account
-			sink: T::AccountId,
-		},
-
 		/// Mint Event
 		ToPrivate {
 			/// Asset Minted
@@ -456,8 +445,8 @@ pub enum PreprocessedEvent<T>
 where
 	T: Config,
 {
-	/// Mint Event
-	Mint {
+	/// To Private Event
+	ToPrivate {
 		/// Asset Minted
 		asset: Asset,
 
@@ -468,8 +457,8 @@ where
 	/// Private Transfer Event
 	PrivateTransfer,
 
-	/// Reclaim Event
-	Reclaim {
+	/// To Public Event
+	ToPublic {
 		/// Asset Reclaimed
 		asset: Asset,
 
@@ -487,12 +476,12 @@ where
 	#[inline]
 	pub fn convert(self, origin: Option<T::AccountId>) -> Event<T> {
 		match self {
-			Self::Mint { asset, source } => Event::ToPrivate { asset, source },
+			Self::ToPrivate { asset, source } => Event::ToPrivate { asset, source },
 			Self::PrivateTransfer => Event::PrivateTransfer {
 				// FIXME: get rid of unwrap eventually.
 				origin: origin.unwrap(),
 			},
-			Self::Reclaim { asset, sink } => Event::ToPublic { asset, sink },
+			Self::ToPublic { asset, sink } => Event::ToPublic { asset, sink },
 		}
 	}
 }
@@ -650,7 +639,7 @@ where
 	T: Config,
 {
 	type AccountId = T::AccountId;
-	type UpdateError = FungibleLedgerConsequence<asset::AssetValueType>;
+	type UpdateError = FungibleLedgerConsequence;
 	type Event = PreprocessedEvent<T>;
 	type ValidSourceAccount = WrapPair<Self::AccountId, asset::AssetValue>;
 	type ValidSinkAccount = WrapPair<Self::AccountId, asset::AssetValue>;
@@ -722,7 +711,7 @@ where
 		)? {
 			TransferShape::Mint => (
 				manta_sdk::pay::testnet::verifying::Mint::get().expect("Checksum did not match."),
-				PreprocessedEvent::<T>::Mint {
+				PreprocessedEvent::<T>::ToPrivate {
 					asset: Asset::new(asset_id.unwrap().0, (sources[0].1).0),
 					source: sources[0].0.clone(),
 				},
@@ -735,7 +724,7 @@ where
 			TransferShape::Reclaim => (
 				manta_sdk::pay::testnet::verifying::Reclaim::get()
 					.expect("Checksum did not match."),
-				PreprocessedEvent::<T>::Reclaim {
+				PreprocessedEvent::<T>::ToPublic {
 					asset: Asset::new(asset_id.unwrap().0, (sinks[0].1).0),
 					sink: sinks[0].0.clone(),
 				},

@@ -33,7 +33,9 @@ use manta_pay::config::{
 	Parameters, PrivateTransfer, ProvingContext, Reclaim, TransferPost, UtxoAccumulatorModel,
 	UtxoCommitmentScheme, VoidNumberHashFunction,
 };
-use manta_primitives::assets::{AssetRegistrar, AssetRegistrarMetadata, FungibleLedger};
+use manta_primitives::{
+	assets::{AssetRegistrar, AssetRegistrarMetadata, FungibleLedger},
+	constants::DEFAULT_ASSET_ED};
 use manta_util::codec::{Decode, IoReader};
 use rand::thread_rng;
 use std::fs::File;
@@ -48,7 +50,6 @@ lazy_static::lazy_static! {
 	static ref UTXO_ACCUMULATOR_MODEL: UtxoAccumulatorModel = load_utxo_accumulator_model();
 }
 
-pub const ED: u128 = 1u128;
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
 
 /// Loads the [`MultiProvingContext`] from the SDK.
@@ -154,7 +155,7 @@ where
 	let double_balance: u128 = rng.gen();
 	let total_free_balance = AssetValue(double_balance / 2);
 	let balances = value_distribution(count, total_free_balance, rng);
-	initialize_test(asset_id, total_free_balance + ED);
+	initialize_test(asset_id, total_free_balance + DEFAULT_ASSET_ED);
 	let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
 	let mut posts = Vec::new();
 	for balance in balances {
@@ -223,7 +224,7 @@ where
 	let double_balance: u128 = rng.gen();
 	let total_free_balance = AssetValue(double_balance / 2);
 	let balances = value_distribution(count, total_free_balance, rng);
-	initialize_test(asset_id, total_free_balance + ED);
+	initialize_test(asset_id, total_free_balance + DEFAULT_ASSET_ED);
 	let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
 	let mut posts = Vec::new();
 	for balance in balances {
@@ -283,7 +284,7 @@ fn initialize_test(id: AssetId, value: AssetValue) {
 	let metadata = AssetRegistrarMetadata::default();
 	assert_ok!(MantaAssetRegistrar::create_asset(
 		id.0,
-		ED,
+		DEFAULT_ASSET_ED,
 		metadata.into(),
 		true
 	));
@@ -291,7 +292,7 @@ fn initialize_test(id: AssetId, value: AssetValue) {
 	assert_ok!(MantaFungibleLedger::mint(
 		id.0,
 		&MantaPayPallet::account_id(),
-		ED
+		DEFAULT_ASSET_ED
 	));
 }
 
@@ -305,7 +306,7 @@ fn mint_should_work() {
 		// This is to work around the substrate bug
 		let double_supply: u128 = rng.gen();
 		let total_free_supply = AssetValue(double_supply / 2);
-		initialize_test(asset_id, total_free_supply + ED);
+		initialize_test(asset_id, total_free_supply + DEFAULT_ASSET_ED);
 		mint_tokens(
 			asset_id,
 			&value_distribution(5, total_free_supply, &mut rng),
@@ -325,7 +326,7 @@ fn overdrawn_mint_should_not_work() {
 		let total_supply = AssetValue(double_supply / 2)
 			.checked_sub(AssetValue(1))
 			.unwrap_or_default();
-		initialize_test(asset_id, total_supply + ED);
+		initialize_test(asset_id, total_supply + DEFAULT_ASSET_ED);
 		assert_noop!(
 			MantaPayPallet::to_private(
 				Origin::signed(ALICE),

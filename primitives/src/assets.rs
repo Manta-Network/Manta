@@ -221,7 +221,7 @@ where
 }
 
 #[derive(Debug)]
-pub enum FungibleLedgerConsequence<Balance> {
+pub enum FungibleLedgerConsequence {
 	/// Deposit couldn't happen due to the amount being too low. This is usually because the
 	/// account doesn't yet exist and the deposit wouldn't bring it to at least the minimum needed
 	/// for existance.
@@ -257,7 +257,7 @@ pub enum FungibleLedgerConsequence<Balance> {
 	Success,
 }
 
-impl From<DepositConsequence> for FungibleLedgerConsequence<Balance> {
+impl From<DepositConsequence> for FungibleLedgerConsequence {
 	fn from(dc: DepositConsequence) -> Self {
 		match dc {
 			DepositConsequence::BelowMinimum => FungibleLedgerConsequence::BelowMinimum,
@@ -269,7 +269,7 @@ impl From<DepositConsequence> for FungibleLedgerConsequence<Balance> {
 	}
 }
 
-impl From<WithdrawConsequence<Balance>> for FungibleLedgerConsequence<Balance> {
+impl From<WithdrawConsequence<Balance>> for FungibleLedgerConsequence {
 	fn from(wc: WithdrawConsequence<Balance>) -> Self {
 		match wc {
 			WithdrawConsequence::Frozen => FungibleLedgerConsequence::Frozen,
@@ -297,14 +297,14 @@ where
 		asset_id: AssetId,
 		account: &C::AccountId,
 		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence<Balance>>;
+	) -> Result<(), FungibleLedgerConsequence>;
 
 	/// check whether `asset_id`, `account` can decrease certain balance
 	fn can_withdraw(
-		asset_d: AssetId,
+		asset_id: AssetId,
 		account: &C::AccountId,
 		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence<Balance>>;
+	) -> Result<(), FungibleLedgerConsequence>;
 
 	/// transfer asset
 	fn transfer(
@@ -312,12 +312,12 @@ where
 		source: &C::AccountId,
 		dest: &C::AccountId,
 		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence<Balance>>;
+	) -> Result<(), FungibleLedgerConsequence>;
 
 	/// mint asset to a beneficiary
 	fn mint(
 		asset_id: AssetId,
 		beneficiary: &C::AccountId,
 		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence<Balance>>;
+	) -> Result<(), FungibleLedgerConsequence>;
 }

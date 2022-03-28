@@ -25,12 +25,11 @@ use frame_system::RawOrigin;
 use manta_primitives::{
 	assets::{AssetConfig, AssetRegistrar, FungibleLedger},
 	types::{AssetId, Balance},
+	constants::DEFAULT_ASSET_ED,
 };
 use scale_codec::Decode;
 
 mod precomputed_coins;
-
-pub const ED: u128 = 1u128;
 
 /// Asserts that the last event that has occured is the same as `event`.
 #[inline]
@@ -51,11 +50,11 @@ where
 {
 	let metadata = <T::AssetConfig as AssetConfig>::AssetRegistrarMetadata::default();
 	let storage_metadata: <T::AssetConfig as AssetConfig>::StorageMetadata = metadata.into();
-	<T::AssetConfig as AssetConfig>::AssetRegistrar::create_asset(id, ED, storage_metadata, true)
+	<T::AssetConfig as AssetConfig>::AssetRegistrar::create_asset(id, DEFAULT_ASSET_ED, storage_metadata, true)
 		.unwrap();
 	let pallet_account: T::AccountId = Pallet::<T>::account_id();
-	T::FungibleLedger::mint(id, &owner, value + ED).unwrap();
-	T::FungibleLedger::mint(id, &pallet_account, ED).unwrap();
+	T::FungibleLedger::mint(id, &owner, value + DEFAULT_ASSET_ED).unwrap();
+	T::FungibleLedger::mint(id, &pallet_account, DEFAULT_ASSET_ED).unwrap();
 }
 
 benchmarks! {
