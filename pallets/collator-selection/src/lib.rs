@@ -116,7 +116,7 @@ pub mod pallet {
 		}
 	}
 
-	const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]

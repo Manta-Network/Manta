@@ -929,15 +929,15 @@ pub type Executive = frame_executive::Executive<
 pub struct CollatorSelectionMigrationV2;
 impl OnRuntimeUpgrade for CollatorSelectionMigrationV2 {
 	fn on_runtime_upgrade() -> Weight {
-		CollatorSelection::migrate_to_v2()
+		CollatorSelection::migrate_v0_to_v1()
 	}
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<(), &'static str> {
-		CollatorSelection::pre_migrate_to_v2()
+		CollatorSelection::pre_migrate_v0_to_v1()
 	}
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade() -> Result<(), &'static str> {
-		CollatorSelection::post_migrate_to_v2()
+		CollatorSelection::post_migrate_v0_to_v1()
 	}
 }
 

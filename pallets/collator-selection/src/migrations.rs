@@ -25,13 +25,13 @@ use frame_support::{
 };
 ///  This migrates the pallet from the standard version by parity to our modified storage
 impl<T: Config> Pallet<T> {
-	pub fn migrate_to_v2() -> frame_support::weights::Weight {
+	pub fn migrate_v0_to_v1() -> frame_support::weights::Weight {
 		use frame_support::migration::{
 			have_storage_value, remove_storage_prefix, storage_key_iter,
 		};
 		// Storage migrations should use storage versions for safety.
-		if Self::on_chain_storage_version() < 2 {
-			log::info!(" >>> Executing collator-selection V1->V2 migration!");
+		if Self::on_chain_storage_version() < 1 {
+			log::info!("Executing collator-selection V0->V1 migration!");
 
 			// Drain all keys from the old (now unused) map
 			let iter_map = storage_key_iter::<T::AccountId, T::BlockNumber, Twox64Concat>(
@@ -45,10 +45,10 @@ impl<T: Config> Pallet<T> {
 			}
 			log::info!(" >>> Cleaned {} keys from LastAuthoredBlock", dropcount);
 			remove_storage_prefix(Self::name().as_bytes(), b"LastAuthoredBlock", &[]);
-			log::info!(" >>> Removed LastAuthoredBlock from storage" );
+			log::info!(" >>> Removed LastAuthoredBlock from storage");
 
 			// Update storage version.
-			StorageVersion::new(2).put::<Self>();
+			StorageVersion::new(1).put::<Self>();
 
 			// Remove KickThreshold if customized
 			if have_storage_value(Self::name().as_bytes(), b"KickThreshold", &[]) {
@@ -61,15 +61,15 @@ impl<T: Config> Pallet<T> {
 			// Return the weight consumed by the migration.
 			T::DbWeight::get().reads_writes(1, dropcount as Weight + 1)
 		} else {
-			log::debug!(" >>> collator-selection V1->V2 migration not needed!");
+			log::debug!("collator-selection V0->V1 migration not needed!");
 			0
 		}
 	}
-	pub fn pre_migrate_to_v2() -> Result<(), &'static str> {
+	pub fn pre_migrate_v0_to_v1() -> Result<(), &'static str> {
 		use frame_support::migration::{have_storage_value, storage_key_iter};
 		let chainver = Self::on_chain_storage_version();
-		if !(chainver < 2) {
-			return Err("Migration to V2 does not apply");
+		if !(chainver < 1) {
+			return Err("Migration to V1 does not apply");
 		}
 
 		if !have_storage_value(Self::name().as_bytes(), b"KickThreshold", &[]) {
@@ -87,9 +87,9 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	pub fn post_migrate_to_v2() -> Result<(), &'static str> {
+	pub fn post_migrate_v0_to_v1() -> Result<(), &'static str> {
 		use frame_support::migration::{have_storage_value, storage_key_iter};
-		if !(Self::on_chain_storage_version() == 2) {
+		if !(Self::on_chain_storage_version() == 1) {
 			return Err("storage version not upgraded");
 		}
 
@@ -97,12 +97,7 @@ impl<T: Config> Pallet<T> {
 			return Err("KickThreshold wasn't removed");
 		}
 
-		if storage_key_iter::<T::AccountId, T::BlockNumber, Twox64Concat>(
-			Self::name().as_bytes(),
-			b"LastAuthoredBlock",
-		)
-		.count() > 0
-		{
+		if have_storage_value(Self::name().as_bytes(), b"LastAuthoredBlock", &[]) {
 			return Err("LastAuthoredBlock wasn't removed");
 		}
 		Ok(())
