@@ -79,7 +79,7 @@ xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-fea
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.16" }
 
 # Self dependencies
-manta-primitives = { path = '../primitives', default-features = false }
+manta-primitives = { path = '../../primitives', default-features = false }
 calamari-vesting = { path = '../../pallets/vesting', default-features = false }
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }

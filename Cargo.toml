@@ -6,6 +6,7 @@ members = [
 	'runtime/manta',
 	'runtime/calamari',
 	'runtime/dolphin',
+	'primitives',
 ]
 
 [profile.production]

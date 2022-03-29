@@ -14,6 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+use crate::types::Balance;
+use frame_support::PalletId;
+
 // Calamari constants
 pub const CALAMARI_SS58PREFIX: u8 = 78;
 pub const CALAMARI_DECIMAL: u8 = 12;
@@ -47,3 +50,12 @@ pub mod time {
 }
 
 pub const ASSET_STRING_LIMIT: u32 = 50;
+
+// Identifiers of pallets
+pub const STAKING_PALLET_ID: PalletId = PalletId(*b"PotStake");
+pub const TREASURY_PALLET_ID: PalletId = PalletId(*b"py/trsry");
+pub const ASSET_MANAGER_PALLET_ID: PalletId = PalletId(*b"asstmngr");
+pub const MANTA_PAY_PALLET_ID: PalletId = PalletId(*b"mantapay");
+
+/// Default Asset Existential Deposit: Should only be used in TEST
+pub const DEFAULT_ASSET_ED: Balance = 1;
