@@ -4839,7 +4839,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#8689e771de49d28dd52eba7658ce78330f799244"
+source = "git+https://github.com/manta-network/manta-rs.git#8689e771de49d28dd52eba7658ce78330f799244"
 dependencies = [
  "derivative",
  "derive_more",
@@ -4901,7 +4901,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#8689e771de49d28dd52eba7658ce78330f799244"
+source = "git+https://github.com/manta-network/manta-rs.git#8689e771de49d28dd52eba7658ce78330f799244"
 dependencies = [
  "derivative",
  "manta-util",
@@ -4911,7 +4911,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#8689e771de49d28dd52eba7658ce78330f799244"
+source = "git+https://github.com/manta-network/manta-rs.git#8689e771de49d28dd52eba7658ce78330f799244"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -5022,7 +5022,7 @@ dependencies = [
 [[package]]
 name = "manta-sdk"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/sdk#d86146a03a5b9184fcdb0ec5d7c99f31ce2e92bf"
+source = "git+https://github.com/manta-network/sdk.git#d86146a03a5b9184fcdb0ec5d7c99f31ce2e92bf"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5034,7 +5034,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#8689e771de49d28dd52eba7658ce78330f799244"
+source = "git+https://github.com/manta-network/manta-rs.git#8689e771de49d28dd52eba7658ce78330f799244"
 
 [[package]]
 name = "maplit"
