@@ -71,11 +71,9 @@ impl<T: Config> Pallet<T> {
 		if !(chainver < 1) {
 			return Err("Migration to V1 does not apply");
 		}
-
 		if !have_storage_value(Self::name().as_bytes(), b"KickThreshold", &[]) {
 			log::warn!("Precheck: KickThreshold does not exist");
 		}
-
 		if storage_key_iter::<T::AccountId, T::BlockNumber, Twox64Concat>(
 			Self::name().as_bytes(),
 			b"LastAuthoredBlock",
@@ -92,12 +90,15 @@ impl<T: Config> Pallet<T> {
 		if !(Self::on_chain_storage_version() == 1) {
 			return Err("storage version not upgraded");
 		}
-
 		if have_storage_value(Self::name().as_bytes(), b"KickThreshold", &[]) {
 			return Err("KickThreshold wasn't removed");
 		}
-
-		if have_storage_value(Self::name().as_bytes(), b"LastAuthoredBlock", &[]) {
+		if storage_key_iter::<T::AccountId, T::BlockNumber, Twox64Concat>(
+			Self::name().as_bytes(),
+			b"LastAuthoredBlock",
+		)
+		.count() > 0
+		{
 			return Err("LastAuthoredBlock wasn't removed");
 		}
 		Ok(())
