@@ -21,6 +21,7 @@ pub mod manta_collator_selection;
 pub mod pallet_balances;
 pub mod pallet_collective;
 pub mod pallet_democracy;
+pub mod pallet_manta_pay;
 pub mod pallet_membership;
 pub mod pallet_multisig;
 pub mod pallet_scheduler;

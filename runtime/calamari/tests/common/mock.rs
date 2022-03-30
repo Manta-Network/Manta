@@ -86,6 +86,10 @@ impl ExtBuilder {
 
 		manta_collator_selection::GenesisConfig::<Runtime> {
 			invulnerables: self.invulnerables,
+			eviction_baseline: manta_collator_selection::GenesisConfig::<Runtime>::default()
+				.eviction_baseline,
+			eviction_tolerance: manta_collator_selection::GenesisConfig::<Runtime>::default()
+				.eviction_tolerance,
 			candidacy_bond: BOND_AMOUNT,
 			desired_candidates: self.desired_candidates,
 		}

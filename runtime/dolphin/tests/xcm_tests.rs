@@ -141,7 +141,7 @@ fn reserve_transfer_relaychain_to_parachain_a() {
 	let relay_asset_id: parachain::AssetId = 0;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -205,7 +205,7 @@ fn reserve_transfer_relaychain_to_parachain_a_then_back() {
 	let relay_asset_id: parachain::AssetId = 0;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -314,7 +314,7 @@ fn send_para_a_native_asset_to_para_b() {
 	let a_currency_id = 0u32;
 	let amount = 100u128;
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
@@ -400,7 +400,7 @@ fn send_para_a_native_asset_to_para_b() {
 fn send_para_a_custom_asset_to_para_b() {
 	let a_currency_id: u32 = 0;
 	let amount = 321;
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"ParaADoge".to_vec(),
 		symbol: b"Doge".to_vec(),
 		decimals: 18,
@@ -425,18 +425,6 @@ fn send_para_a_custom_asset_to_para_b() {
 			parachain::Origin::root(),
 			source_location.clone(),
 			asset_metadata.clone()
-		));
-		// we have to do this in order to mint asset to alice on A
-		assert_ok!(parachain::Assets::force_asset_status(
-			parachain::Origin::root(),
-			0,
-			ALICE.into(),
-			ALICE.into(),
-			ALICE.into(),
-			ALICE.into(),
-			1,
-			true,
-			false,
 		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
@@ -480,7 +468,7 @@ fn send_para_a_custom_asset_to_para_b() {
 	ParaA::execute_with(|| {
 		// Force customized asset balance for Alice
 		assert_ok!(parachain::Assets::mint(
-			parachain::Origin::signed(ALICE.into()),
+			parachain::Origin::signed(AssetManager::account_id()),
 			0,
 			ALICE.into(),
 			INITIAL_BALANCE
@@ -524,7 +512,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 	let fee_on_b_when_send_back = calculate_fee(ParaTokenPerSecond::get().1, weight);
 	assert!(fee_on_b_when_send_back < amount);
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
@@ -650,7 +638,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 	let fee_at_reserve = calculate_fee(ParaTokenPerSecond::get().1, weight);
 	assert!(amount >= fee_at_reserve * 2 as u128);
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
@@ -786,7 +774,7 @@ fn receive_relay_asset_with_trader() {
 
 	let relay_asset_id: parachain::AssetId = 0;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -863,7 +851,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 	let dest_weight = 800_000u64;
 	let fee = calculate_fee(units_per_second, dest_weight);
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
@@ -960,7 +948,7 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 	let dest_weight = 800_000u64;
 	let fee_at_b = calculate_fee(units_per_second_at_b, dest_weight);
 	let fee_at_a = calculate_fee(ParaTokenPerSecond::get().1, dest_weight);
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
@@ -1100,7 +1088,7 @@ fn receive_relay_with_insufficient_fee_payment() {
 
 	let relay_asset_id: parachain::AssetId = 0;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -1165,7 +1153,7 @@ fn receive_relay_should_fail_without_specifying_units_per_second() {
 
 	let relay_asset_id: parachain::AssetId = 0;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -1231,7 +1219,7 @@ fn send_para_a_asset_to_para_b_with_insufficient_fee() {
 	let fee = calculate_fee(units_per_second, dest_weight);
 	assert!(fee > amount);
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
@@ -1323,7 +1311,7 @@ fn send_para_a_asset_to_para_b_without_specifying_units_per_second() {
 	let amount = 567u128;
 	let dest_weight = 800_000u64;
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
@@ -1405,7 +1393,7 @@ fn receive_asset_with_is_sufficient_false() {
 	let new_account = [5u8; 32];
 	let relay_asset_id = 0u32;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -1498,7 +1486,7 @@ fn receive_asset_with_is_sufficient_true() {
 	let new_account = [5u8; 32];
 	let relay_asset_id = 0u32;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -1655,7 +1643,7 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
 
 	let relay_asset_id: parachain::AssetId = 0;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -1795,7 +1783,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 	)));
 	let a_currency_id = 0u32;
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
