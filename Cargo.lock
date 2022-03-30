@@ -1152,7 +1152,7 @@ dependencies = [
  "frame-try-runtime",
  "hex-literal",
  "log",
- "manta-collator-selection 3.1.4 (git+https://github.com/Manta-Network/Manta.git?rev=bdfb86861011e333236b6a8607fc72018b338aff)",
+ "manta-collator-selection",
  "manta-primitives",
  "pallet-aura",
  "pallet-authorship",
@@ -2356,7 +2356,7 @@ dependencies = [
  "frame-try-runtime",
  "hex-literal",
  "log",
- "manta-collator-selection 3.1.4",
+ "manta-collator-selection",
  "manta-primitives",
  "orml-xtokens",
  "pallet-asset-manager",
@@ -4876,26 +4876,6 @@ dependencies = [
  "sp-staking",
  "sp-std",
  "sp-tracing",
-]
-
-[[package]]
-name = "manta-collator-selection"
-version = "3.1.4"
-source = "git+https://github.com/Manta-Network/Manta.git?rev=bdfb86861011e333236b6a8607fc72018b338aff#bdfb86861011e333236b6a8607fc72018b338aff"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "pallet-authorship",
- "pallet-session",
- "parity-scale-codec",
- "rand 0.7.3",
- "scale-info",
- "serde",
- "sp-runtime",
- "sp-staking",
- "sp-std",
 ]
 
 [[package]]
