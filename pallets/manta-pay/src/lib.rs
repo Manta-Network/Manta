@@ -132,8 +132,8 @@ mod test;
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmark;
 
-pub mod weights;
 pub mod types;
+pub mod weights;
 
 /// MantaPay Pallet
 #[frame_support::pallet]
@@ -209,7 +209,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Convert the asset encoded in `post` to private asset.
-		/// 
+		///
 		/// `origin`: the owner of the public asset. `origin` will pay the gas fee for the conversion as well.
 		/// `post`: encoded asset to be converted.
 		#[pallet::weight(T::WeightInfo::to_private())]
@@ -218,7 +218,8 @@ pub mod pallet {
 			let origin = ensure_signed(origin)?;
 			let mut ledger = Self::ledger();
 			Self::deposit_event(
-				config::TransferPost::from(post)
+				config::TransferPost::try_from(post)
+					.map_err(|_| Error::<T>::InvalidSerializedForm)?
 					.post(vec![origin], vec![], &(), &mut ledger)
 					.map_err(Error::<T>::from)?
 					.convert(None),
@@ -241,7 +242,8 @@ pub mod pallet {
 			let origin = ensure_signed(origin)?;
 			let mut ledger = Self::ledger();
 			Self::deposit_event(
-				config::TransferPost::from(post)
+				config::TransferPost::try_from(post)
+					.map_err(|_| Error::<T>::InvalidSerializedForm)?
 					.post(vec![], vec![], &(), &mut ledger)
 					.map_err(Error::<T>::from)?
 					.convert(Some(origin)),
@@ -257,7 +259,8 @@ pub mod pallet {
 			let origin = ensure_signed(origin)?;
 			let mut ledger = Self::ledger();
 			Self::deposit_event(
-				config::TransferPost::from(post)
+				config::TransferPost::try_from(post)
+					.map_err(|_| Error::<T>::InvalidSerializedForm)?
 					.post(vec![], vec![origin], &(), &mut ledger)
 					.map_err(Error::<T>::from)?
 					.convert(None),
@@ -312,6 +315,11 @@ pub mod pallet {
 		///
 		/// Attempted to withdraw from balance which was smaller than the withdrawl amount.
 		BalanceLow,
+
+		/// Invalid Serialized Form
+		///
+		/// The transfer could not be interpreted because of an issue during deserialization.
+		InvalidSerializedForm,
 
 		/// Invalid Shape
 		///
@@ -656,7 +664,7 @@ where
 		sources
 			.map(move |(account_id, withdraw)| {
 				T::FungibleLedger::can_withdraw(asset_id.0, &account_id, withdraw.0)
-					.and_then(|_| Ok(WrapPair(account_id.clone(), withdraw)))
+					.map(|_| WrapPair(account_id.clone(), withdraw))
 					.map_err(|_| InvalidSourceAccount {
 						account_id,
 						asset_id,
@@ -680,7 +688,7 @@ where
 		sinks
 			.map(move |(account_id, deposit)| {
 				T::FungibleLedger::can_deposit(asset_id.0, &account_id, deposit.0)
-					.and_then(|_| Ok(WrapPair(account_id.clone(), deposit)))
+					.map(|_| WrapPair(account_id.clone(), deposit))
 					.map_err(|_| InvalidSinkAccount {
 						account_id,
 						asset_id,

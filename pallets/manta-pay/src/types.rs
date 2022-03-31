@@ -17,6 +17,7 @@
 //! Type definitions for pallet-manta-pay
 
 use super::*;
+use manta_util::into_array_unchecked;
 
 /// Asset
 #[derive(
@@ -169,7 +170,10 @@ pub struct TransferPost {
 	pub sinks: Vec<Balance>,
 
 	/// Validity Proof
-	pub validity_proof: config::Proof,
+	///
+	/// FIXME: This array is used here because the runtime is `panic`-ing during deserialization. We
+	///        need to discover the source of the issue and set this back to [`config::Proof`].
+	pub validity_proof: [u8; 192],
 }
 
 impl From<config::TransferPost> for TransferPost {
@@ -181,22 +185,25 @@ impl From<config::TransferPost> for TransferPost {
 			sender_posts: post.sender_posts.into_iter().map(Into::into).collect(),
 			receiver_posts: post.receiver_posts.into_iter().map(Into::into).collect(),
 			sinks: post.sinks.into_iter().map(|s| s.0).collect(),
-			validity_proof: post.validity_proof,
+			validity_proof: into_array_unchecked(post.validity_proof.encode()),
 		}
 	}
 }
 
-impl From<TransferPost> for config::TransferPost {
+impl TryFrom<TransferPost> for config::TransferPost {
+	type Error = ();
+
 	#[inline]
-	fn from(post: TransferPost) -> Self {
-		Self {
+	fn try_from(post: TransferPost) -> Result<Self, Self::Error> {
+		Ok(Self {
 			asset_id: post.asset_id.map(asset::AssetId),
 			sources: post.sources.into_iter().map(asset::AssetValue).collect(),
 			sender_posts: post.sender_posts.into_iter().map(Into::into).collect(),
 			receiver_posts: post.receiver_posts.into_iter().map(Into::into).collect(),
 			sinks: post.sinks.into_iter().map(asset::AssetValue).collect(),
-			validity_proof: post.validity_proof,
-		}
+			validity_proof: config::Proof::decode(&mut post.validity_proof.as_slice())
+				.map_err(|_| ())?,
+		})
 	}
 }
 
