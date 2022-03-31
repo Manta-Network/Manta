@@ -2,7 +2,13 @@
   "name": "Dolphin Parachain Testnet",
   "id": "dolphin_testnet",
   "chainType": "Live",
-  "bootNodes": [],
+  "bootNodes": [
+    "/dns/eddie.rococo.dolphin.engineering/tcp/30333/p2p/12D3KooWRPiKv8nJyNYYF4BXX318auddRVo9aUnBP7B1EPWNhEqF",
+    "/dns/kwaltz.rococo.dolphin.engineering/tcp/30333/p2p/12D3KooWApki85vevuLRLYGpcvVwbFibDDhZMD6VbDnxFN2F96Ga",
+    "/dns/prosser.rococo.dolphin.engineering/tcp/30333/p2p/12D3KooWMSS1M7C2x39gqbHQzag3mh5KkALcmyWFUfNnK1sZDMjF",
+    "/dns/roosta.rococo.dolphin.engineering/tcp/30333/p2p/12D3KooWFJwu9ZHXJn9ZiHWQ6Np2rGyobZtM6RhAsJ3eQjG6hU5i",
+    "/dns/zaphod.rococo.dolphin.engineering/tcp/30333/p2p/12D3KooWKgL2gERgp5749cWcdiAJaYZ1eHgYsMFq9663ixxjy6up"
+  ],
   "telemetryEndpoints": [
     [
       "/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F",
