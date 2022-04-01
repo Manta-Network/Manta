@@ -24,8 +24,8 @@ use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_call
 use frame_system::RawOrigin;
 use manta_primitives::{
 	assets::{AssetConfig, AssetRegistrar, FungibleLedger},
-	types::{AssetId, Balance},
 	constants::DEFAULT_ASSET_ED,
+	types::{AssetId, Balance},
 };
 use scale_codec::Decode;
 
@@ -50,11 +50,18 @@ where
 {
 	let metadata = <T::AssetConfig as AssetConfig>::AssetRegistrarMetadata::default();
 	let storage_metadata: <T::AssetConfig as AssetConfig>::StorageMetadata = metadata.into();
-	<T::AssetConfig as AssetConfig>::AssetRegistrar::create_asset(id, DEFAULT_ASSET_ED, storage_metadata, true)
-		.unwrap();
+	<T::AssetConfig as AssetConfig>::AssetRegistrar::create_asset(
+		id,
+		DEFAULT_ASSET_ED,
+		storage_metadata,
+		true,
+	)
+	.expect("Unable to create asset.");
 	let pallet_account: T::AccountId = Pallet::<T>::account_id();
-	T::FungibleLedger::mint(id, &owner, value + DEFAULT_ASSET_ED).unwrap();
-	T::FungibleLedger::mint(id, &pallet_account, DEFAULT_ASSET_ED).unwrap();
+	T::FungibleLedger::mint(id, owner, value + DEFAULT_ASSET_ED)
+		.expect("Unable to mint asset to its new owner.");
+	T::FungibleLedger::mint(id, &pallet_account, DEFAULT_ASSET_ED)
+		.expect("Unable to mint existential deposit to pallet account.");
 }
 
 benchmarks! {
@@ -68,7 +75,7 @@ benchmarks! {
 		RawOrigin::Signed(caller.clone()),
 		mint_post
 	) verify {
-		assert_last_event::<T, _>(Event::ToPrivate { asset, source: caller.clone() });
+		assert_last_event::<T, _>(Event::ToPrivate { asset, source: caller });
 		// FIXME: add balance checking
 		// assert_eq!(Balances::<T>::get(caller, asset.id), 1_000_000 - asset.value);
 	}

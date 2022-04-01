@@ -28,7 +28,6 @@ use scale_info::TypeInfo;
 use sp_core::H160;
 use sp_runtime::{traits::Member, DispatchResult};
 use sp_std::{borrow::Borrow, marker::PhantomData, prelude::Vec};
-
 use xcm::{
 	v1::{Junctions, MultiLocation},
 	VersionedMultiLocation,
@@ -53,11 +52,11 @@ pub trait AssetRegistrar<T: AssetConfig> {
 	/// * `min_balance`: the minimum balance to hold this asset
 	/// * `metadata`: the metadata that the implementation layer stores
 	/// * `is_sufficient`: whether this asset can be used as reserve asset,
-	/// 	to the first approximation. More specifically, Whether a non-zero balance of this asset is deposit of sufficient
-	/// 	value to account for the state bloat associated with its balance storage. If set to
-	/// 	`true`, then non-zero balances may be stored without a `consumer` reference (and thus
-	/// 	an ED in the Balances pallet or whatever else is used to control user-account state
-	/// 	growth).
+	///     to the first approximation. More specifically, Whether a non-zero balance of this asset is deposit of sufficient
+	///     value to account for the state bloat associated with its balance storage. If set to
+	///     `true`, then non-zero balances may be stored without a `consumer` reference (and thus
+	///     an ED in the Balances pallet or whatever else is used to control user-account state
+	///     growth).
 	fn create_asset(
 		asset_id: AssetId,
 		min_balance: Balance,
@@ -106,7 +105,7 @@ pub struct AssetRegistrarMetadata {
 
 impl Default for AssetRegistrarMetadata {
 	fn default() -> Self {
-		AssetRegistrarMetadata {
+		Self {
 			name: b"Dolphin".to_vec(),
 			symbol: b"DOL".to_vec(),
 			decimals: 12,
@@ -140,7 +139,7 @@ pub struct AssetStorageMetadata {
 
 impl From<AssetRegistrarMetadata> for AssetStorageMetadata {
 	fn from(source: AssetRegistrarMetadata) -> Self {
-		AssetStorageMetadata {
+		Self {
 			name: source.name,
 			symbol: source.symbol,
 			decimals: source.decimals,
@@ -152,27 +151,30 @@ impl From<AssetRegistrarMetadata> for AssetStorageMetadata {
 #[derive(Clone, Eq, Debug, PartialEq, Encode, Decode, TypeInfo)]
 pub struct AssetLocation(pub VersionedMultiLocation);
 
-/// Default AssetLocation
 impl Default for AssetLocation {
 	fn default() -> Self {
-		AssetLocation(VersionedMultiLocation::V1(MultiLocation {
+		Self(VersionedMultiLocation::V1(MultiLocation {
 			parents: 0,
 			interior: Junctions::Here,
 		}))
 	}
 }
 
-/// Convert a `MultiLocaiton` to an `AssetLocation`
-/// Note: This does not guaranttee the `AssetLocation` is registered (i.e. have an AssetId)
 impl From<MultiLocation> for AssetLocation {
+	/// Converts a [`MultiLocation`] into an [`AssetLocation`].
+	///
+	/// # Safety
+	///
+	/// This method does not guaranttee that the output [`AssetLocation`] is registered, i.e. has a
+	/// valid [`AssetId`].
 	fn from(location: MultiLocation) -> Self {
 		AssetLocation(VersionedMultiLocation::V1(location))
 	}
 }
 
-/// Convert an `AssetLocation` to a MultiLocation
-/// If Native, return none.
 impl From<AssetLocation> for Option<MultiLocation> {
+	/// Converts an [`AssetLocation`] into an optional [`MultiLocation`], returning `None` if it
+	/// represents a native asset.
 	fn from(location: AssetLocation) -> Self {
 		match location {
 			AssetLocation(VersionedMultiLocation::V1(location)) => Some(location),
@@ -204,7 +206,6 @@ pub struct AssetIdLocationConvert<AssetLocation, AssetInfoGetter>(
 impl<AssetLocation, AssetInfoGetter> xcm_executor::traits::Convert<MultiLocation, AssetId>
 	for AssetIdLocationConvert<AssetLocation, AssetInfoGetter>
 where
-	AssetId: Clone,
 	AssetLocation: From<MultiLocation> + Into<Option<MultiLocation>> + Clone,
 	AssetInfoGetter: AssetIdLocationGetter<AssetLocation>,
 {
@@ -213,7 +214,7 @@ where
 	}
 
 	fn reverse_ref(id: impl Borrow<AssetId>) -> Result<MultiLocation, ()> {
-		AssetInfoGetter::get_asset_location(id.borrow().clone())
+		AssetInfoGetter::get_asset_location(*id.borrow())
 			.and_then(Into::into)
 			.ok_or(())
 	}

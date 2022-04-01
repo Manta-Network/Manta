@@ -35,7 +35,8 @@ use manta_pay::config::{
 };
 use manta_primitives::{
 	assets::{AssetRegistrar, AssetRegistrarMetadata, FungibleLedger},
-	constants::DEFAULT_ASSET_ED};
+	constants::DEFAULT_ASSET_ED,
+};
 use manta_util::codec::{Decode, IoReader};
 use rand::thread_rng;
 use std::fs::File;

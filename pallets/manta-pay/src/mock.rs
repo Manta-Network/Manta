@@ -193,7 +193,7 @@ impl FungibleLedger<Test> for MantaFungibleLedger {
 			<Assets as AssetTransfer<<Test as frame_system::Config>::AccountId>>::transfer(
 				asset_id, source, dest, amount, true,
 			)
-			.and_then(|_| Ok(()))
+			.map(|_| ())
 			.map_err(|_| FungibleLedgerConsequence::InternalError)
 		}
 	}
@@ -218,7 +218,7 @@ impl FungibleLedger<Test> for MantaFungibleLedger {
 				beneficiary.clone(),
 				amount,
 			)
-			.and_then(|_| Ok(()))
+			.map(|_| ())
 			.map_err(|_| FungibleLedgerConsequence::InternalError)
 		}
 	}

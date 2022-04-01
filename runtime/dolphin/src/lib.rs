@@ -1191,7 +1191,7 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
 
 		// Asset and Private Payment
-		Assets: pallet_assets::{Pallet, Storage, Event<T>} = 45,
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
 		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>} = 46,
 		MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
 	}
