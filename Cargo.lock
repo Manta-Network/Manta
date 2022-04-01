@@ -4840,28 +4840,16 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=convert-to-async-api#c61271af6c79ed00b1e60289fa110da6c0535b6b"
+source = "git+https://github.com/manta-network/manta-rs.git#a91d908da79e7fee0a3215945a73c7bb28f94641"
 dependencies = [
  "derivative",
  "derive_more",
- "futures 0.3.21",
  "indexmap",
- "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=convert-to-async-api)",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=convert-to-async-api)",
+ "manta-crypto",
+ "manta-util",
  "parking_lot 0.12.0",
  "rand 0.8.5",
  "statrs",
-]
-
-[[package]]
-name = "manta-accounting"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#a91d908da79e7fee0a3215945a73c7bb28f94641"
-dependencies = [
- "derivative",
- "derive_more",
- "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs)",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs)",
 ]
 
 [[package]]
@@ -4894,27 +4882,17 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=convert-to-async-api#c61271af6c79ed00b1e60289fa110da6c0535b6b"
+source = "git+https://github.com/manta-network/manta-rs.git#a91d908da79e7fee0a3215945a73c7bb28f94641"
 dependencies = [
  "derivative",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=convert-to-async-api)",
- "rand_core 0.6.3",
-]
-
-[[package]]
-name = "manta-crypto"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#a91d908da79e7fee0a3215945a73c7bb28f94641"
-dependencies = [
- "derivative",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs)",
+ "manta-util",
  "rand_core 0.6.3",
 ]
 
 [[package]]
 name = "manta-pay"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=convert-to-async-api#c61271af6c79ed00b1e60289fa110da6c0535b6b"
+source = "git+https://github.com/manta-network/manta-rs.git#16e142f7917cc61e6066d6896f1a75aa45a0569d"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -4929,9 +4907,9 @@ dependencies = [
  "ark-std",
  "blake2 0.10.4",
  "derivative",
- "manta-accounting 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=convert-to-async-api)",
- "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=convert-to-async-api)",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=convert-to-async-api)",
+ "manta-accounting",
+ "manta-crypto",
+ "manta-util",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
  "scale-info",
@@ -4945,7 +4923,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "manta-accounting 0.4.0 (git+https://github.com/manta-network/manta-rs)",
+ "manta-accounting",
  "parity-scale-codec",
  "scale-info",
  "smallvec",
@@ -5037,12 +5015,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=convert-to-async-api#c61271af6c79ed00b1e60289fa110da6c0535b6b"
-
-[[package]]
-name = "manta-util"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#a91d908da79e7fee0a3215945a73c7bb28f94641"
+source = "git+https://github.com/manta-network/manta-rs.git#a91d908da79e7fee0a3215945a73c7bb28f94641"
 
 [[package]]
 name = "maplit"
@@ -6184,12 +6157,12 @@ dependencies = [
  "frame-system",
  "indoc",
  "lazy_static",
- "manta-accounting 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=convert-to-async-api)",
- "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=convert-to-async-api)",
+ "manta-accounting",
+ "manta-crypto",
  "manta-pay",
  "manta-primitives",
  "manta-sdk",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=convert-to-async-api)",
+ "manta-util",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",
