@@ -14,10 +14,29 @@
 // You should have received a copy of the GNU General Public License
 // along with pallet-manta-pay.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Type definitions for pallet-manta-pay
+//! Type Definitions for Manta Pay
 
 use super::*;
 use manta_util::into_array_unchecked;
+
+/// Encodes the SCALE encodable `value` into a byte array with the given length `N`.
+#[inline]
+fn encode<T, const N: usize>(value: T) -> [u8; N]
+where
+	T: Encode,
+{
+	into_array_unchecked(value.encode())
+}
+
+/// Decodes the `bytes` array of the given length `N` into the SCALE decodable type `T` returning a
+/// blanket error if decoding fails.
+#[inline]
+fn decode<T, const N: usize>(bytes: [u8; N]) -> Result<T, ()>
+where
+	T: Decode,
+{
+	T::decode(&mut bytes.as_slice()).map_err(|_| ())
+}
 
 /// Asset
 #[derive(
@@ -58,7 +77,7 @@ pub struct EncryptedNote {
 	pub ciphertext: [u8; 36],
 
 	/// Ephemeral Public Key
-	pub ephemeral_public_key: config::PublicKey,
+	pub ephemeral_public_key: [u8; 32],
 }
 
 impl Default for EncryptedNote {
@@ -66,7 +85,7 @@ impl Default for EncryptedNote {
 	fn default() -> Self {
 		Self {
 			ciphertext: [0; 36],
-			ephemeral_public_key: Default::default(),
+			ephemeral_public_key: [0; 32],
 		}
 	}
 }
@@ -76,18 +95,20 @@ impl From<config::EncryptedNote> for EncryptedNote {
 	fn from(note: config::EncryptedNote) -> Self {
 		Self {
 			ciphertext: note.ciphertext.into(),
-			ephemeral_public_key: note.ephemeral_public_key,
+			ephemeral_public_key: encode(note.ephemeral_public_key),
 		}
 	}
 }
 
-impl From<EncryptedNote> for config::EncryptedNote {
+impl TryFrom<EncryptedNote> for config::EncryptedNote {
+	type Error = ();
+
 	#[inline]
-	fn from(note: EncryptedNote) -> Self {
-		Self {
+	fn try_from(note: EncryptedNote) -> Result<Self, Self::Error> {
+		Ok(Self {
 			ciphertext: note.ciphertext.into(),
-			ephemeral_public_key: note.ephemeral_public_key,
-		}
+			ephemeral_public_key: decode(note.ephemeral_public_key)?,
+		})
 	}
 }
 
@@ -95,29 +116,31 @@ impl From<EncryptedNote> for config::EncryptedNote {
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct SenderPost {
 	/// UTXO Accumulator Output
-	pub utxo_accumulator_output: config::UtxoAccumulatorOutput,
+	pub utxo_accumulator_output: [u8; 32],
 
 	/// Void Number
-	pub void_number: config::VoidNumber,
+	pub void_number: [u8; 32],
 }
 
 impl From<config::SenderPost> for SenderPost {
 	#[inline]
 	fn from(post: config::SenderPost) -> Self {
 		Self {
-			utxo_accumulator_output: post.utxo_accumulator_output,
-			void_number: post.void_number,
+			utxo_accumulator_output: encode(post.utxo_accumulator_output),
+			void_number: encode(post.void_number),
 		}
 	}
 }
 
-impl From<SenderPost> for config::SenderPost {
+impl TryFrom<SenderPost> for config::SenderPost {
+	type Error = ();
+
 	#[inline]
-	fn from(post: SenderPost) -> Self {
-		Self {
-			utxo_accumulator_output: post.utxo_accumulator_output,
-			void_number: post.void_number,
-		}
+	fn try_from(post: SenderPost) -> Result<Self, Self::Error> {
+		Ok(Self {
+			utxo_accumulator_output: decode(post.utxo_accumulator_output)?,
+			void_number: decode(post.void_number)?,
+		})
 	}
 }
 
@@ -125,7 +148,7 @@ impl From<SenderPost> for config::SenderPost {
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct ReceiverPost {
 	/// Unspent Transaction Output
-	pub utxo: config::Utxo,
+	pub utxo: [u8; 32],
 
 	/// Encrypted Note
 	pub note: EncryptedNote,
@@ -135,19 +158,21 @@ impl From<config::ReceiverPost> for ReceiverPost {
 	#[inline]
 	fn from(post: config::ReceiverPost) -> Self {
 		Self {
-			utxo: post.utxo,
+			utxo: encode(post.utxo),
 			note: post.note.into(),
 		}
 	}
 }
 
-impl From<ReceiverPost> for config::ReceiverPost {
+impl TryFrom<ReceiverPost> for config::ReceiverPost {
+	type Error = ();
+
 	#[inline]
-	fn from(post: ReceiverPost) -> Self {
-		Self {
-			utxo: post.utxo,
-			note: post.note.into(),
-		}
+	fn try_from(post: ReceiverPost) -> Result<Self, Self::Error> {
+		Ok(Self {
+			utxo: decode(post.utxo)?,
+			note: post.note.try_into()?,
+		})
 	}
 }
 
@@ -170,9 +195,6 @@ pub struct TransferPost {
 	pub sinks: Vec<Balance>,
 
 	/// Validity Proof
-	///
-	/// FIXME: This array is used here because the runtime is `panic`-ing during deserialization. We
-	///        need to discover the source of the issue and set this back to [`config::Proof`].
 	pub validity_proof: [u8; 192],
 }
 
@@ -185,7 +207,7 @@ impl From<config::TransferPost> for TransferPost {
 			sender_posts: post.sender_posts.into_iter().map(Into::into).collect(),
 			receiver_posts: post.receiver_posts.into_iter().map(Into::into).collect(),
 			sinks: post.sinks.into_iter().map(|s| s.0).collect(),
-			validity_proof: into_array_unchecked(post.validity_proof.encode()),
+			validity_proof: encode(post.validity_proof),
 		}
 	}
 }
@@ -198,11 +220,18 @@ impl TryFrom<TransferPost> for config::TransferPost {
 		Ok(Self {
 			asset_id: post.asset_id.map(asset::AssetId),
 			sources: post.sources.into_iter().map(asset::AssetValue).collect(),
-			sender_posts: post.sender_posts.into_iter().map(Into::into).collect(),
-			receiver_posts: post.receiver_posts.into_iter().map(Into::into).collect(),
+			sender_posts: post
+				.sender_posts
+				.into_iter()
+				.map(TryInto::try_into)
+				.collect::<Result<_, _>>()?,
+			receiver_posts: post
+				.receiver_posts
+				.into_iter()
+				.map(TryInto::try_into)
+				.collect::<Result<_, _>>()?,
 			sinks: post.sinks.into_iter().map(asset::AssetValue).collect(),
-			validity_proof: config::Proof::decode(&mut post.validity_proof.as_slice())
-				.map_err(|_| ())?,
+			validity_proof: decode(post.validity_proof)?,
 		})
 	}
 }
