@@ -17,7 +17,7 @@
 use super::*;
 use crate::command::DOLPHIN_PARACHAIN_ID;
 
-use dolphin_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
+use dolphin_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, AssetManagerConfig, TechnicalCommitteeConfig};
 use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
@@ -203,6 +203,7 @@ fn dolphin_dev_genesis(
 			members: endowed_accounts.iter().take(1).cloned().collect(),
 			phantom: Default::default(),
 		},
+		asset_manager: Default::default(),
 		council_membership: Default::default(),
 		technical_membership: Default::default(),
 		aura_ext: Default::default(),
