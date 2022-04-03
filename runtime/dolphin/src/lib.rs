@@ -65,8 +65,8 @@ use manta_primitives::{
 		AssetStorageMetadata, FungibleLedger, FungibleLedgerConsequence,
 	},
 	constants::{
-		time::*, ASSET_MANAGER_PALLET_ID, MANTA_PAY_PALLET_ID, STAKING_PALLET_ID,
-		TREASURY_PALLET_ID, DOLPHIN_DECIMAL
+		time::*, ASSET_MANAGER_PALLET_ID, DOLPHIN_DECIMAL, MANTA_PAY_PALLET_ID, STAKING_PALLET_ID,
+		TREASURY_PALLET_ID,
 	},
 	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 	xcm::{AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
@@ -1050,7 +1050,6 @@ impl AssetConfig<Runtime> for MantaAssetConfig {
 	type AssetRegistrar = MantaAssetRegistrar;
 	type FungibleLedger = MantaFungibleLedger;
 }
-
 
 impl pallet_asset_manager::Config for Runtime {
 	type Event = Event;
