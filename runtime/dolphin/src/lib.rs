@@ -66,7 +66,7 @@ use manta_primitives::{
 	},
 	constants::{
 		time::*, ASSET_MANAGER_PALLET_ID, MANTA_PAY_PALLET_ID, STAKING_PALLET_ID,
-		TREASURY_PALLET_ID,
+		TREASURY_PALLET_ID, DOLPHIN_DECIMAL
 	},
 	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 	xcm::{AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
@@ -79,7 +79,7 @@ pub use sp_runtime::BuildStorage;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
-use xcm::latest::prelude::*;
+use xcm::{latest::prelude::*, VersionedMultiLocation};
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
@@ -966,14 +966,9 @@ impl pallet_assets::Config for Runtime {
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-	// Pallet account for record rewards and give rewards to collator.
-	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
-}
-
 pub struct MantaAssetRegistrar;
 use frame_support::pallet_prelude::DispatchResult;
-impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
+impl AssetRegistrar<Runtime, MantaAssetConfig> for MantaAssetRegistrar {
 	fn create_asset(
 		asset_id: AssetId,
 		min_balance: Balance,
@@ -1022,15 +1017,40 @@ impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
 	}
 }
 
+parameter_types! {
+	pub const DummyAssetId: AssetId = 0;
+	pub const NativeAssetId: AssetId = 1;
+	pub const StartNonNativeAssetId: AssetId = 8;
+	pub NativeAssetLocation: AssetLocation = AssetLocation(
+		VersionedMultiLocation::V1(SelfReserve::get()));
+	pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
+		name: b"Dolphin".to_vec(),
+		symbol: b"DOL".to_vec(),
+		decimals: DOLPHIN_DECIMAL,
+		min_balance: NativeTokenExistentialDeposit::get(),
+		evm_address: None,
+		is_frozen: false,
+		is_sufficient: true,
+	};
+	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
+}
+
 #[derive(Clone, Eq, PartialEq)]
 pub struct MantaAssetConfig;
 
-impl AssetConfig for MantaAssetConfig {
+impl AssetConfig<Runtime> for MantaAssetConfig {
+	type DummyAssetId = DummyAssetId;
+	type NativeAssetId = NativeAssetId;
+	type StartNonNativeAssetId = StartNonNativeAssetId;
 	type AssetRegistrarMetadata = AssetRegistrarMetadata;
+	type NativeAssetLocation = NativeAssetLocation;
+	type NativeAssetMetadata = NativeAssetMetadata;
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
 	type AssetRegistrar = MantaAssetRegistrar;
+	type FungibleLedger = MantaFungibleLedger;
 }
+
 
 impl pallet_asset_manager::Config for Runtime {
 	type Event = Event;
@@ -1041,12 +1061,23 @@ impl pallet_asset_manager::Config for Runtime {
 
 pub struct MantaFungibleLedger;
 impl FungibleLedger<Runtime> for MantaFungibleLedger {
+	fn is_valid(self: Self, asset_id: AssetId) -> Result<(), FungibleLedgerConsequence> {
+		if asset_id >= <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get()
+			|| asset_id == <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get()
+		{
+			Ok(())
+		} else {
+			Err(FungibleLedgerConsequence::InvalidAssetId)
+		}
+	}
+
 	fn can_deposit(
 		asset_id: AssetId,
 		account: &<Runtime as frame_system::Config>::AccountId,
 		amount: Balance,
 	) -> Result<(), FungibleLedgerConsequence> {
-		if asset_id == 0 {
+		Self.is_valid(asset_id)?;
+		if asset_id == <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get() {
 			// we assume native asset with id 0
 			match Balances::can_deposit(account, amount) {
 				DepositConsequence::Success => Ok(()),
@@ -1065,7 +1096,8 @@ impl FungibleLedger<Runtime> for MantaFungibleLedger {
 		account: &<Runtime as frame_system::Config>::AccountId,
 		amount: Balance,
 	) -> Result<(), FungibleLedgerConsequence> {
-		if asset_id == 0 {
+		Self.is_valid(asset_id)?;
+		if asset_id == <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get() {
 			// we assume native asset with id 0
 			match Balances::can_withdraw(account, amount) {
 				WithdrawConsequence::Success => Ok(()),
@@ -1085,7 +1117,8 @@ impl FungibleLedger<Runtime> for MantaFungibleLedger {
 		dest: &<Runtime as frame_system::Config>::AccountId,
 		amount: Balance,
 	) -> Result<(), FungibleLedgerConsequence> {
-		if asset_id == 0 {
+		Self.is_valid(asset_id)?;
+		if asset_id == <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get() {
 			<Balances as Currency<<Runtime as frame_system::Config>::AccountId>>::transfer(
 				source,
 				dest,
@@ -1097,7 +1130,7 @@ impl FungibleLedger<Runtime> for MantaFungibleLedger {
 			<Assets as AssetTransfer<<Runtime as frame_system::Config>::AccountId>>::transfer(
 				asset_id, source, dest, amount, true,
 			)
-			.and_then(|_| Ok(()))
+			.map(|_| ())
 			.map_err(|_| FungibleLedgerConsequence::InternalError)
 		}
 	}
@@ -1107,9 +1140,14 @@ impl FungibleLedger<Runtime> for MantaFungibleLedger {
 		beneficiary: &<Runtime as frame_system::Config>::AccountId,
 		amount: Balance,
 	) -> Result<(), FungibleLedgerConsequence> {
+		Self.is_valid(asset_id)?;
 		Self::can_deposit(asset_id, beneficiary, amount)?;
-		if asset_id == 0 {
-			let _ = <Balances as Currency<<Runtime as frame_system::Config>::AccountId>>::deposit_creating(beneficiary, amount);
+		if asset_id == <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get() {
+			let _ =
+				<Balances as Currency<<Runtime as frame_system::Config>::AccountId>>::deposit_creating(
+					beneficiary,
+					amount,
+				);
 			Ok(())
 		} else {
 			Assets::mint(
@@ -1118,7 +1156,7 @@ impl FungibleLedger<Runtime> for MantaFungibleLedger {
 				beneficiary.clone().into(),
 				amount,
 			)
-			.and_then(|_| Ok(()))
+			.map(|_| ())
 			.map_err(|_| FungibleLedgerConsequence::InternalError)
 		}
 	}
@@ -1132,7 +1170,6 @@ impl pallet_manta_pay::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
 	type AssetConfig = MantaAssetConfig;
-	type FungibleLedger = MantaFungibleLedger;
 	type PalletId = MantaPayPalletId;
 }
 

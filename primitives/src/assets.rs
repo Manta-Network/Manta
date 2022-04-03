@@ -21,6 +21,7 @@ use crate::{
 };
 use codec::{Codec, Decode, Encode};
 use frame_support::{
+	pallet_prelude::Get,
 	traits::tokens::{DepositConsequence, WithdrawConsequence},
 	Parameter,
 };
@@ -45,7 +46,7 @@ pub trait AssetMetadata {
 /// The registrar trait: defines the interface of creating an asset in the asset implementation layer.
 /// We may revisit this interface design (e.g. add change asset interface). However, change StorageMetadata
 /// should be rare.
-pub trait AssetRegistrar<T: AssetConfig> {
+pub trait AssetRegistrar<C: frame_system::Config, T: AssetConfig<C>> {
 	/// Create an new asset.
 	///
 	/// * `asset_id`: the asset id to be created
@@ -71,9 +72,28 @@ pub trait AssetRegistrar<T: AssetConfig> {
 	fn update_asset_metadata(asset_id: AssetId, metadata: T::StorageMetadata) -> DispatchResult;
 }
 
-pub trait AssetConfig: 'static + Eq + Clone {
-	/// The trait we use to register Assets
-	type AssetRegistrar: AssetRegistrar<Self>;
+pub trait AssetConfig<C>: 'static + Eq + Clone
+where
+	C: frame_system::Config,
+{
+	/// The AssetId that the non-native asset starts from.
+	/// A typical configuration is 8, so that asset 0 - 7 is reserved.
+	type StartNonNativeAssetId: Get<AssetId>;
+
+	/// Dummy Asset ID (used for transparent UTXO), a typical configuration is 0.
+	type DummyAssetId: Get<AssetId>;
+
+	/// The Native Asset Id, a typical configuration is 1.
+	type NativeAssetId: Get<AssetId>;
+
+	/// Native Asset Location
+	type NativeAssetLocation: Get<Self::AssetLocation>;
+
+	/// Native Asset Metadata
+	type NativeAssetMetadata: Get<Self::AssetRegistrarMetadata>;
+
+	/// The trait we use to register Assets and mint assets
+	type AssetRegistrar: AssetRegistrar<C, Self>;
 
 	/// Metadata type that required in token storage: e.g. AssetMetadata in Pallet-Assets.
 	type StorageMetadata: Member + Parameter + Default + From<Self::AssetRegistrarMetadata>;
@@ -83,6 +103,9 @@ pub trait AssetConfig: 'static + Eq + Clone {
 
 	/// The AssetLocation type: could be just a thin wrapper of MultiLocation
 	type AssetLocation: Member + Parameter + Default + TypeInfo;
+
+	/// The Fungible ledger implementation of this trait
+	type FungibleLedger: FungibleLedger<C>;
 }
 
 /// The metadata of a Manta Asset
@@ -253,6 +276,8 @@ pub enum FungibleLedgerConsequence {
 	WouldDie,
 	/// Internal error.
 	InternalError,
+	/// Invalid Asset id.
+	InvalidAssetId,
 	/// Success
 	Success,
 }
@@ -292,6 +317,9 @@ pub trait FungibleLedger<C>
 where
 	C: frame_system::Config,
 {
+	/// check if an asset id is valid
+	fn is_valid(self: Self, asset_id: AssetId) -> Result<(), FungibleLedgerConsequence>;
+
 	/// check whether `asset_id`, `account` can increase certain balance
 	fn can_deposit(
 		asset_id: AssetId,

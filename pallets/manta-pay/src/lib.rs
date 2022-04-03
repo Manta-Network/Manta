@@ -111,7 +111,7 @@ use manta_crypto::{
 };
 use manta_pay::config;
 use manta_primitives::{
-	assets::{FungibleLedger, FungibleLedgerConsequence},
+	assets::{AssetConfig, FungibleLedger, FungibleLedgerConsequence},
 	types::{AssetId, Balance},
 };
 use manta_util::codec::Decode as _;
@@ -141,7 +141,6 @@ pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use manta_primitives::assets::AssetConfig;
 	use sp_runtime::traits::AccountIdConversion;
 
 	/// Pallet
@@ -156,10 +155,7 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		/// Asset Configuration
-		type AssetConfig: AssetConfig;
-
-		/// Fungible ledger
-		type FungibleLedger: FungibleLedger<Self>;
+		type AssetConfig: AssetConfig<Self>;
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
@@ -663,13 +659,17 @@ where
 	{
 		sources
 			.map(move |(account_id, withdraw)| {
-				T::FungibleLedger::can_withdraw(asset_id.0, &account_id, withdraw.0)
-					.map(|_| WrapPair(account_id.clone(), withdraw))
-					.map_err(|_| InvalidSourceAccount {
-						account_id,
-						asset_id,
-						withdraw,
-					})
+				<T::AssetConfig as AssetConfig<T>>::FungibleLedger::can_withdraw(
+					asset_id.0,
+					&account_id,
+					withdraw.0,
+				)
+				.map(|_| WrapPair(account_id.clone(), withdraw))
+				.map_err(|_| InvalidSourceAccount {
+					account_id,
+					asset_id,
+					withdraw,
+				})
 			})
 			.collect()
 	}
@@ -687,13 +687,17 @@ where
 		//		 pass the data forward.
 		sinks
 			.map(move |(account_id, deposit)| {
-				T::FungibleLedger::can_deposit(asset_id.0, &account_id, deposit.0)
-					.map(|_| WrapPair(account_id.clone(), deposit))
-					.map_err(|_| InvalidSinkAccount {
-						account_id,
-						asset_id,
-						deposit,
-					})
+				<T::AssetConfig as AssetConfig<T>>::FungibleLedger::can_deposit(
+					asset_id.0,
+					&account_id,
+					deposit.0,
+				)
+				.map(|_| WrapPair(account_id.clone(), deposit))
+				.map_err(|_| InvalidSinkAccount {
+					account_id,
+					asset_id,
+					deposit,
+				})
 			})
 			.collect()
 	}
@@ -759,7 +763,7 @@ where
 	) -> Result<(), Self::UpdateError> {
 		let _ = (proof, super_key);
 		for WrapPair(account_id, withdraw) in sources {
-			T::FungibleLedger::transfer(
+			<T::AssetConfig as AssetConfig<T>>::FungibleLedger::transfer(
 				asset_id.0,
 				&account_id,
 				&pallet::Pallet::<T>::account_id(),
@@ -767,7 +771,7 @@ where
 			)?;
 		}
 		for WrapPair(account_id, deposit) in sinks {
-			T::FungibleLedger::transfer(
+			<T::AssetConfig as AssetConfig<T>>::FungibleLedger::transfer(
 				asset_id.0,
 				&pallet::Pallet::<T>::account_id(),
 				&account_id,
