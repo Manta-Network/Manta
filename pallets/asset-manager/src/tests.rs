@@ -19,7 +19,8 @@
 use crate::{self as asset_manager, AssetIdLocation, UnitsPerSecond};
 use asset_manager::mock::*;
 use frame_support::{assert_noop, assert_ok, traits::fungibles::InspectMetadata};
-use manta_primitives::assets::{AssetLocation, AssetRegistarMetadata};
+use manta_primitives::assets::{AssetLocation, AssetRegistrarMetadata};
+
 use sp_runtime::traits::BadOrigin;
 use xcm::{latest::prelude::*, VersionedMultiLocation};
 
@@ -32,7 +33,7 @@ fn basic_setup_should_work() {
 #[test]
 fn wrong_modifier_origin_should_not_work() {
 	new_test_ext().execute_with(|| {
-		let asset_metadata = AssetRegistarMetadata {
+		let asset_metadata = AssetRegistrarMetadata {
 			name: b"Kusama".to_vec(),
 			symbol: b"KSM".to_vec(),
 			decimals: 12,
@@ -75,7 +76,7 @@ fn wrong_modifier_origin_should_not_work() {
 
 #[test]
 fn register_asset_should_work() {
-	let asset_metadata = AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -119,10 +120,24 @@ fn register_asset_should_work() {
 
 #[test]
 fn update_asset() {
+	let native_asset_metadata = AssetRegistrarMetadata {
+		name: b"Calamari".to_vec(),
+		symbol: b"KMA".to_vec(),
+		decimals: 12,
+		min_balance: 1u128,
+		evm_address: None,
+		is_frozen: false,
+		is_sufficient: true,
+	};
+	let self_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+		1,
+		X1(Parachain(1)),
+	)));
+
 	let original_name = b"Kusama".to_vec();
 	let original_symbol = b"KSM".to_vec();
 	let original_decimals = 12;
-	let asset_metadata = AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: original_name,
 		symbol: original_symbol,
 		decimals: original_decimals,
@@ -144,6 +159,16 @@ fn update_asset() {
 		X2(Parachain(1), PalletInstance(PALLET_BALANCES_INDEX)),
 	)));
 	new_test_ext().execute_with(|| {
+		// Register the native token
+		assert_ok!(AssetManager::register_asset(
+			Origin::root(),
+			self_location.clone(),
+			native_asset_metadata.clone()
+		));
+		assert_eq!(
+			AssetIdLocation::<Runtime>::get(0),
+			Some(self_location.clone())
+		);
 		// Register relay chain native token
 		assert_ok!(AssetManager::register_asset(
 			Origin::root(),
@@ -151,46 +176,52 @@ fn update_asset() {
 			asset_metadata.clone()
 		));
 		assert_eq!(
-			AssetIdLocation::<Runtime>::get(0),
+			AssetIdLocation::<Runtime>::get(1),
 			Some(source_location.clone())
 		);
-		// Update the asset metadata
+		// Cannot update the 0th asset. Will be reserved for the native asset.
+		assert_noop!(
+			AssetManager::update_asset_metadata(Origin::root(), 0, new_metadata.clone(),),
+			crate::Error::<Runtime>::CannotUpdateNativeAssetMetadata
+		);
 		assert_ok!(AssetManager::update_asset_metadata(
 			Origin::root(),
-			0,
-			new_metadata.clone()
-		));
-		assert_eq!(Assets::name(&0), new_name);
-		assert_eq!(Assets::symbol(&0), new_symbol);
-		assert_eq!(Assets::decimals(&0), new_decimals);
+			1,
+			new_metadata.clone(),
+		),);
+		assert_eq!(Assets::name(&1), new_name);
+		assert_eq!(Assets::symbol(&1), new_symbol);
+		assert_eq!(Assets::decimals(&1), new_decimals);
 		// Update the asset location
 		assert_ok!(AssetManager::update_asset_location(
 			Origin::root(),
-			0,
+			1,
 			new_location.clone()
 		));
 		// Update asset units per seconds
 		assert_ok!(AssetManager::set_units_per_second(
 			Origin::root(),
-			0,
+			1,
 			125u128
 		));
-		assert_eq!(UnitsPerSecond::<Runtime>::get(0), Some(125));
+		assert_eq!(UnitsPerSecond::<Runtime>::get(1), Some(125));
 		// Update a non-exist asset should fail
 		assert_noop!(
-			AssetManager::update_asset_location(Origin::root(), 1, new_location.clone()),
+			AssetManager::update_asset_location(Origin::root(), 2, new_location.clone()),
 			crate::Error::<Runtime>::UpdateNonExistAsset
 		);
 		assert_noop!(
-			AssetManager::update_asset_metadata(Origin::root(), 1, new_metadata.clone()),
+			AssetManager::update_asset_metadata(Origin::root(), 2, new_metadata.clone()),
 			crate::Error::<Runtime>::UpdateNonExistAsset
 		);
-		// Update an asset to an existing location will fail
+		// Re-registering the original location and metadata should work,
+		// as we modified the previous asset.
 		assert_ok!(AssetManager::register_asset(
 			Origin::root(),
 			source_location.clone(),
 			asset_metadata.clone()
 		));
+		// But updating the asset to an existing location will fail.
 		assert_noop!(
 			AssetManager::update_asset_location(Origin::root(), 1, new_location),
 			crate::Error::<Runtime>::LocationAlreadyExists

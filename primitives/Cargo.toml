@@ -16,8 +16,13 @@ scale-info = { version = "1.0", default-features = false, features = [ "derive" 
 smallvec = "1.6.1"
 log = "0.4.14"
 
+# manta-rs dependencies
+manta-accounting = { git = "https://github.com/manta-network/manta-rs", default-features = false }
+
 # Substrate primitives
 frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
+frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16", default-features = false, optional = true }
 sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
 sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
 sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
@@ -35,13 +40,20 @@ std = [
 	'scale-info/std',
 	'sp-io/std',
 	'sp-std/std',
+	'manta-accounting/std',
 	'log/std',
 	'frame-support/std',
+	'frame-system/std',
 	'sp-consensus-aura/std',
 	'sp-core/std',
-	'sp-io/std',
 	'sp-runtime/std',
 	'xcm-executor/std',
 	'xcm-builder/std',
 	'xcm/std',
+]
+runtime-benchmarks = [
+	"frame-benchmarking",
+	'frame-support/runtime-benchmarks',
+	'frame-system/runtime-benchmarks',
+	'xcm-builder/runtime-benchmarks',
 ]
