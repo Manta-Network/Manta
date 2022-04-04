@@ -83,10 +83,9 @@ pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-featu
 orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="4a66b29"}
 
 # Self dependencies
-manta-primitives = { path = '../primitives', default-features = false }
+manta-primitives = { path = '../../primitives', default-features = false }
 calamari-vesting = { path = '../../pallets/vesting', default-features = false }
-# NOTE: collator selection had a breaking rework for dolphin, so this staples Calamari to the pre-change version until it is battle-tested on dolphin
-manta-collator-selection = { git = 'https://github.com/Manta-Network/Manta.git', rev = "bdfb86861011e333236b6a8607fc72018b338aff", default-features = false }
+manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
 

@@ -22,7 +22,7 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
 
-manta-primitives = { path = '../../runtime/primitives' }
+manta-primitives = { path = '../../primitives' }
 
 [features]
 default = ["std"]

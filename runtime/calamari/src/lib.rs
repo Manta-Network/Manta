@@ -44,7 +44,7 @@ use frame_support::{
 	construct_runtime, match_type, parameter_types,
 	traits::{
 		ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, Everything, Nothing,
-		PrivilegeCmp,
+		OnRuntimeUpgrade, PrivilegeCmp,
 	},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
@@ -57,13 +57,15 @@ use frame_system::{
 	EnsureRoot,
 };
 use manta_primitives::{
-	assets::{AssetIdLocationConvert, AssetLocation, AssetRegistarMetadata, AssetStorageMetadata},
-	constants::time::*,
+	assets::{
+		AssetConfig, AssetIdLocationConvert, AssetLocation, AssetRegistrar, AssetRegistrarMetadata,
+		AssetStorageMetadata,
+	},
+	constants::{time::*, ASSET_MANAGER_PALLET_ID},
 	prod_or_fast,
 	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 	xcm::{AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
 };
-use pallet_asset_manager::AssetMetadata;
 use sp_runtime::{Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
@@ -244,6 +246,8 @@ impl Contains<Call> for BaseFilter {
 				manta_collator_selection::Call::set_invulnerables{..}
 				| manta_collator_selection::Call::set_desired_candidates{..}
 				| manta_collator_selection::Call::set_candidacy_bond{..}
+				| manta_collator_selection::Call::set_eviction_baseline{..}
+				| manta_collator_selection::Call::set_eviction_tolerance{..}
 				| manta_collator_selection::Call::register_candidate{..}
 				// Currently, we filter `register_as_candidate` as this call is not yet ready for community.
 				| manta_collator_selection::Call::remove_collator{..}
@@ -623,19 +627,13 @@ impl pallet_assets::Config for Runtime {
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
-impl AssetMetadata<Runtime> for AssetRegistarMetadata<Balance> {
-	fn min_balance(&self) -> Balance {
-		self.min_balance
-	}
-
-	fn is_sufficient(&self) -> bool {
-		self.is_sufficient
-	}
+parameter_types! {
+	// Pallet account for record rewards and give rewards to collator.
+	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
 }
-
-pub struct AssetRegistrar;
+pub struct CalamariAssetRegistrar;
 use frame_support::pallet_prelude::DispatchResult;
-impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
+impl AssetRegistrar<CalamariAssetConfig> for CalamariAssetRegistrar {
 	fn create_asset(
 		asset_id: AssetId,
 		min_balance: Balance,
@@ -672,15 +670,21 @@ impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
 	}
 }
 
-impl pallet_asset_manager::Config for Runtime {
-	type Event = Event;
-	type Balance = Balance;
-	type AssetId = AssetId;
-	type AssetRegistrarMetadata = AssetRegistarMetadata<Balance>;
+#[derive(Clone, Eq, PartialEq)]
+pub struct CalamariAssetConfig;
+
+impl AssetConfig for CalamariAssetConfig {
+	type AssetRegistrarMetadata = AssetRegistrarMetadata;
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
-	type AssetRegistrar = AssetRegistrar;
+	type AssetRegistrar = CalamariAssetRegistrar;
+}
+
+impl pallet_asset_manager::Config for Runtime {
+	type Event = Event;
+	type AssetConfig = CalamariAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
+	type PalletId = AssetManagerPalletId;
 }
 
 parameter_types! {
@@ -778,7 +782,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	ConvertedConcreteAssetId<
 		AssetId,
 		Balance,
-		AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>,
+		AssetIdLocationConvert<AssetLocation, AssetManager>,
 		JustTry,
 	>,
 	// "default" implementation of converting a `MultiLocation` to an `AccountId`
@@ -830,7 +834,7 @@ pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
 	ConvertedConcreteAssetId<
 		AssetId,
 		Balance,
-		AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>,
+		AssetIdLocationConvert<AssetLocation, AssetManager>,
 		JustTry,
 	>,
 	AccountId,
@@ -954,7 +958,7 @@ impl orml_xtokens::Config for Runtime {
 	type CurrencyId = CurrencyId;
 	type AccountIdToMultiLocation = AccountIdToMultiLocation<AccountId>;
 	type CurrencyIdConvert =
-		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>>;
+		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
 	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 	type SelfLocation = SelfReserve;
 	// Take note that this pallet does not have the typical configurable WeightInfo.
@@ -1015,10 +1019,9 @@ impl manta_collator_selection::Config for Runtime {
 	type PotId = PotId;
 	type MaxCandidates = ConstU32<50>; // 50 candidates at most
 	type MaxInvulnerables = ConstU32<5>; // 5 invulnerables at most
-									 // should be a multiple of session or things will get inconsistent
-	type KickThreshold = Period;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = manta_collator_selection::IdentityCollator;
+	type AccountIdOf = manta_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;
 	type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
 }
@@ -1129,7 +1132,23 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsReversedWithSystemFirst,
+	CollatorSelectionMigrationV2,
 >;
+
+pub struct CollatorSelectionMigrationV2;
+impl OnRuntimeUpgrade for CollatorSelectionMigrationV2 {
+	fn on_runtime_upgrade() -> Weight {
+		CollatorSelection::migrate_v0_to_v1()
+	}
+	#[cfg(feature = "try-runtime")]
+	fn pre_upgrade() -> Result<(), &'static str> {
+		CollatorSelection::pre_migrate_v0_to_v1()
+	}
+	#[cfg(feature = "try-runtime")]
+	fn post_upgrade() -> Result<(), &'static str> {
+		CollatorSelection::post_migrate_v0_to_v1()
+	}
+}
 
 impl_runtime_apis! {
 	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {

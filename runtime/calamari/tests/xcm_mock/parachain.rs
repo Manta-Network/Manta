@@ -21,9 +21,9 @@ use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{ConstU32, Everything, Nothing},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
+	PalletId,
 };
 use frame_system::EnsureRoot;
-use pallet_asset_manager::AssetMetadata;
 use scale_info::TypeInfo;
 use sp_core::H256;
 use sp_runtime::{
@@ -35,6 +35,7 @@ use sp_std::{convert::TryFrom, prelude::*};
 
 use manta_primitives::{
 	assets::{AssetIdLocationConvert, AssetLocation},
+	constants::*,
 	xcm::{FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
 };
 use pallet_xcm::XcmPassthrough;
@@ -53,7 +54,7 @@ use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::Get;
 
 pub use manta_primitives::{
-	assets::{AssetRegistarMetadata, AssetStorageMetadata},
+	assets::{AssetConfig, AssetRegistrar, AssetRegistrarMetadata, AssetStorageMetadata},
 	types::AssetId,
 };
 pub type AccountId = AccountId32;
@@ -201,7 +202,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	ConvertedConcreteAssetId<
 		AssetId,
 		Balance,
-		AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>,
+		AssetIdLocationConvert<AssetLocation, AssetManager>,
 		JustTry,
 	>,
 	// "default" implementation of converting a `MultiLocation` to an `AccountId`
@@ -226,7 +227,7 @@ pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
 	ConvertedConcreteAssetId<
 		AssetId,
 		Balance,
-		AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>,
+		AssetIdLocationConvert<AssetLocation, AssetManager>,
 		JustTry,
 	>,
 	AccountId,
@@ -481,19 +482,13 @@ impl pallet_xcm::Config for Runtime {
 	type AdvertisedXcmVersion = XcmVersioner;
 }
 
-impl AssetMetadata<Runtime> for AssetRegistarMetadata<Balance> {
-	fn min_balance(&self) -> Balance {
-		self.min_balance
-	}
-
-	fn is_sufficient(&self) -> bool {
-		self.is_sufficient
-	}
+parameter_types! {
+	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
 }
 
-pub struct AssetRegistrar;
+pub struct MantaAssetRegistrar;
 use frame_support::pallet_prelude::DispatchResult;
-impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
+impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
 	fn create_asset(
 		asset_id: AssetId,
 		min_balance: Balance,
@@ -515,6 +510,18 @@ impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
 			metadata.symbol,
 			metadata.decimals,
 			metadata.is_frozen,
+		)?;
+
+		Assets::force_asset_status(
+			Origin::root(),
+			asset_id,
+			AssetManager::account_id(),
+			AssetManager::account_id(),
+			AssetManager::account_id(),
+			AssetManager::account_id(),
+			min_balance,
+			is_sufficient,
+			metadata.is_frozen,
 		)
 	}
 
@@ -529,15 +536,22 @@ impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
 		)
 	}
 }
-impl pallet_asset_manager::Config for Runtime {
-	type Event = Event;
-	type Balance = Balance;
-	type AssetId = AssetId;
-	type AssetRegistrarMetadata = AssetRegistarMetadata<Balance>;
+
+#[derive(Clone, Eq, PartialEq)]
+pub struct MantaAssetConfig;
+
+impl AssetConfig for MantaAssetConfig {
+	type AssetRegistrarMetadata = AssetRegistrarMetadata;
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
-	type AssetRegistrar = AssetRegistrar;
+	type AssetRegistrar = MantaAssetRegistrar;
+}
+
+impl pallet_asset_manager::Config for Runtime {
+	type Event = Event;
+	type AssetConfig = MantaAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
+	type PalletId = AssetManagerPalletId;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -579,7 +593,7 @@ impl orml_xtokens::Config for Runtime {
 	type CurrencyId = CurrencyId;
 	type AccountIdToMultiLocation = manta_primitives::xcm::AccountIdToMultiLocation<AccountId>;
 	type CurrencyIdConvert =
-		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>>;
+		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
 	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 	type SelfLocation = SelfReserve;
 	type Weigher = xcm_builder::FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
