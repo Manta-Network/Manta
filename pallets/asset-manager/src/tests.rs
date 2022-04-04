@@ -120,6 +120,22 @@ fn register_asset_should_work() {
 
 #[test]
 fn update_asset() {
+	let dummy_asset_id = 0;
+	let dummy_asset_metadata = AssetRegistrarMetadata {
+		name: b"Dummy".to_vec(),
+		symbol: b"DMY".to_vec(),
+		decimals: 12,
+		min_balance: 1u128,
+		evm_address: None,
+		is_frozen: false,
+		is_sufficient: true,
+	};
+	let dummy_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+		1,
+		X1(Parachain(0)),
+	)));
+
+	let native_asset_id = 1;
 	let native_asset_metadata = AssetRegistrarMetadata {
 		name: b"Calamari".to_vec(),
 		symbol: b"KMA".to_vec(),
@@ -134,6 +150,7 @@ fn update_asset() {
 		X1(Parachain(1)),
 	)));
 
+	let ksm_asset_id = 2;
 	let original_name = b"Kusama".to_vec();
 	let original_symbol = b"KSM".to_vec();
 	let original_decimals = 12;
@@ -159,6 +176,16 @@ fn update_asset() {
 		X2(Parachain(1), PalletInstance(PALLET_BALANCES_INDEX)),
 	)));
 	new_test_ext().execute_with(|| {
+		// Register the dummy asset
+		assert_ok!(AssetManager::register_asset(
+			Origin::root(),
+			dummy_location.clone(),
+			dummy_asset_metadata.clone()
+		));
+		assert_eq!(
+			AssetIdLocation::<Runtime>::get(dummy_asset_id),
+			Some(dummy_location.clone())
+		);
 		// Register the native token
 		assert_ok!(AssetManager::register_asset(
 			Origin::root(),
@@ -166,7 +193,7 @@ fn update_asset() {
 			native_asset_metadata.clone()
 		));
 		assert_eq!(
-			AssetIdLocation::<Runtime>::get(0),
+			AssetIdLocation::<Runtime>::get(native_asset_id),
 			Some(self_location.clone())
 		);
 		// Register relay chain native token
@@ -176,42 +203,55 @@ fn update_asset() {
 			asset_metadata.clone()
 		));
 		assert_eq!(
-			AssetIdLocation::<Runtime>::get(1),
+			AssetIdLocation::<Runtime>::get(ksm_asset_id),
 			Some(source_location.clone())
 		);
-		// Cannot update the 0th asset. Will be reserved for the native asset.
+		// Cannot update asset 1. Will be reserved for the native asset.
 		assert_noop!(
-			AssetManager::update_asset_metadata(Origin::root(), 0, new_metadata.clone(),),
+			AssetManager::update_asset_metadata(
+				Origin::root(),
+				native_asset_id,
+				new_metadata.clone(),
+			),
 			crate::Error::<Runtime>::CannotUpdateNativeAssetMetadata
 		);
 		assert_ok!(AssetManager::update_asset_metadata(
 			Origin::root(),
-			1,
+			ksm_asset_id,
 			new_metadata.clone(),
 		),);
-		assert_eq!(Assets::name(&1), new_name);
-		assert_eq!(Assets::symbol(&1), new_symbol);
-		assert_eq!(Assets::decimals(&1), new_decimals);
+		assert_eq!(Assets::name(&ksm_asset_id), new_name);
+		assert_eq!(Assets::symbol(&ksm_asset_id), new_symbol);
+		assert_eq!(Assets::decimals(&ksm_asset_id), new_decimals);
 		// Update the asset location
 		assert_ok!(AssetManager::update_asset_location(
 			Origin::root(),
-			1,
+			ksm_asset_id,
 			new_location.clone()
 		));
 		// Update asset units per seconds
 		assert_ok!(AssetManager::set_units_per_second(
 			Origin::root(),
-			1,
+			ksm_asset_id,
 			125u128
 		));
-		assert_eq!(UnitsPerSecond::<Runtime>::get(1), Some(125));
+		assert_eq!(UnitsPerSecond::<Runtime>::get(ksm_asset_id), Some(125));
+		let next_asset_id = 3;
 		// Update a non-exist asset should fail
 		assert_noop!(
-			AssetManager::update_asset_location(Origin::root(), 2, new_location.clone()),
+			AssetManager::update_asset_location(
+				Origin::root(),
+				next_asset_id,
+				new_location.clone()
+			),
 			crate::Error::<Runtime>::UpdateNonExistAsset
 		);
 		assert_noop!(
-			AssetManager::update_asset_metadata(Origin::root(), 2, new_metadata.clone()),
+			AssetManager::update_asset_metadata(
+				Origin::root(),
+				next_asset_id,
+				new_metadata.clone()
+			),
 			crate::Error::<Runtime>::UpdateNonExistAsset
 		);
 		// Re-registering the original location and metadata should work,
@@ -223,7 +263,7 @@ fn update_asset() {
 		));
 		// But updating the asset to an existing location will fail.
 		assert_noop!(
-			AssetManager::update_asset_location(Origin::root(), 1, new_location),
+			AssetManager::update_asset_location(Origin::root(), next_asset_id, new_location),
 			crate::Error::<Runtime>::LocationAlreadyExists
 		);
 	})

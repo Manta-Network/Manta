@@ -46,7 +46,7 @@ pub mod pallet {
 		types::AssetId,
 	};
 	use sp_runtime::{
-		traits::{AccountIdConversion, Zero},
+		traits::{AccountIdConversion, One},
 		ArithmeticError,
 	};
 
@@ -128,7 +128,7 @@ pub mod pallet {
 		ErrorCreatingAsset,
 		/// Update a non-exist asset
 		UpdateNonExistAsset,
-		/// Update a non-exist asset
+		/// Cannot update reserved assets metadata (0 and 1)
 		CannotUpdateNativeAssetMetadata,
 		/// Asset already registered.
 		AssetAlreadyRegistered,
@@ -262,7 +262,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			T::ModifierOrigin::ensure_origin(origin)?;
 			ensure!(
-				!asset_id.is_zero(),
+				!asset_id.is_one(),
 				Error::<T>::CannotUpdateNativeAssetMetadata
 			);
 			ensure!(
