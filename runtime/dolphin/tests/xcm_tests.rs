@@ -410,7 +410,7 @@ fn send_not_sufficient_asset_from_para_a_to_para_b() {
 	let dest_weight = 1600_000u64;
 	let fee_at_b = calculate_fee(units_per_second_at_b, dest_weight);
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
@@ -545,7 +545,7 @@ fn register_with_is_sufficient_false_and_zero_min_balance_should_fail() {
 		X1(Parachain(1)),
 	)));
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = parachain::AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
