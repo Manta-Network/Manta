@@ -22,7 +22,7 @@
 use crate::{self as asset_manager, AssetIdLocation, UnitsPerSecond};
 use asset_manager::mock::*;
 use frame_support::{assert_noop, assert_ok};
-use manta_primitives::assets::{AssetLocation, AssetRegistarMetadata};
+use manta_primitives::assets::{AssetLocation, AssetRegistrarMetadata};
 use sp_runtime::traits::BadOrigin;
 use xcm::{latest::prelude::*, VersionedMultiLocation};
 
@@ -35,7 +35,7 @@ fn basic_setup_should_work() {
 #[test]
 fn wrong_modifer_origin_should_not_work() {
 	new_test_ext().execute_with(|| {
-		let asset_metadata = AssetRegistarMetadata {
+		let asset_metadata = AssetRegistrarMetadata {
 			name: b"Kusama".to_vec(),
 			symbol: b"KSM".to_vec(),
 			decimals: 12,
@@ -78,7 +78,7 @@ fn wrong_modifer_origin_should_not_work() {
 
 #[test]
 fn register_asset_should_work() {
-	let asset_metadata = AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -122,7 +122,7 @@ fn register_asset_should_work() {
 
 #[test]
 fn update_asset() {
-	let asset_metadata = AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,

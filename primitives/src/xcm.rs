@@ -92,7 +92,7 @@ where
 pub struct FirstAssetTrader<
 	AssetId: Clone,
 	AssetLocation: From<MultiLocation> + Clone,
-	AssetIdInfoGetter: UnitsToWeightRatio<AssetId> + AssetIdLocationGetter<AssetId, AssetLocation>,
+	AssetIdInfoGetter: UnitsToWeightRatio + AssetIdLocationGetter<AssetLocation>,
 	R: TakeRevenue,
 > {
 	weight: Weight,
@@ -103,7 +103,7 @@ pub struct FirstAssetTrader<
 impl<
 		AssetId: Clone,
 		AssetLocation: From<MultiLocation> + Clone,
-		AssetIdInfoGetter: UnitsToWeightRatio<AssetId> + AssetIdLocationGetter<AssetId, AssetLocation>,
+		AssetIdInfoGetter: UnitsToWeightRatio + AssetIdLocationGetter<AssetLocation>,
 		R: TakeRevenue,
 	> WeightTrader for FirstAssetTrader<AssetId, AssetLocation, AssetIdInfoGetter, R>
 {
@@ -249,7 +249,7 @@ impl<
 impl<
 		AssetId: Clone,
 		AssetLocation: From<MultiLocation> + Clone,
-		AssetIdInfoGetter: UnitsToWeightRatio<AssetId> + AssetIdLocationGetter<AssetId, AssetLocation>,
+		AssetIdInfoGetter: UnitsToWeightRatio + AssetIdLocationGetter<AssetLocation>,
 		R: TakeRevenue,
 	> Drop for FirstAssetTrader<AssetId, AssetLocation, AssetIdInfoGetter, R>
 {

@@ -72,6 +72,7 @@ mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+pub mod migrations;
 pub mod weights;
 
 #[frame_support::pallet]
@@ -88,7 +89,7 @@ pub mod pallet {
 		},
 		traits::{
 			Currency, EnsureOrigin, ExistenceRequirement::KeepAlive, ReservableCurrency,
-			ValidatorRegistration, ValidatorSet,
+			StorageVersion, ValidatorRegistration, ValidatorSet,
 		},
 		weights::DispatchClass,
 		PalletId,
@@ -114,6 +115,8 @@ pub mod pallet {
 			t
 		}
 	}
+
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -171,6 +174,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
@@ -282,10 +286,10 @@ pub mod pallet {
 		NewInvulnerables(Vec<T::AccountId>),
 		NewDesiredCandidates(u32),
 		NewCandidacyBond(BalanceOf<T>),
-		NewEvictionBaseline(u8),
-		NewEvictionTolerance(u8),
 		CandidateAdded(T::AccountId, BalanceOf<T>),
 		CandidateRemoved(T::AccountId),
+		NewEvictionBaseline(u8),
+		NewEvictionTolerance(u8),
 	}
 
 	// Errors inform users that something went wrong.
@@ -365,34 +369,6 @@ pub mod pallet {
 			T::UpdateOrigin::ensure_origin(origin)?;
 			<CandidacyBond<T>>::put(&bond);
 			Self::deposit_event(Event::NewCandidacyBond(bond));
-			Ok(().into())
-		}
-
-		/// Set the collator performance percentile used as baseline for eviction
-		///
-		/// `percentile`: x-th percentile of collator performance to use as eviction baseline
-		#[pallet::weight(T::WeightInfo::set_eviction_baseline())]
-		pub fn set_eviction_baseline(
-			origin: OriginFor<T>,
-			percentile: u8,
-		) -> DispatchResultWithPostInfo {
-			T::UpdateOrigin::ensure_origin(origin)?;
-			<EvictionBaseline<T>>::put(Percent::from_percent(percentile)); // NOTE: from_percent saturates at 100
-			Self::deposit_event(Event::NewEvictionBaseline(percentile));
-			Ok(().into())
-		}
-
-		/// Set the tolerated underperformance percentage before evicting
-		///
-		/// `percentage`: x% of missed blocks under eviction_baseline to tolerate
-		#[pallet::weight(T::WeightInfo::set_eviction_tolerance())]
-		pub fn set_eviction_tolerance(
-			origin: OriginFor<T>,
-			percentage: u8,
-		) -> DispatchResultWithPostInfo {
-			T::UpdateOrigin::ensure_origin(origin)?;
-			<EvictionTolerance<T>>::put(Percent::from_percent(percentage)); // NOTE: from_percent saturates at 100
-			Self::deposit_event(Event::NewEvictionTolerance(percentage));
 			Ok(().into())
 		}
 
@@ -521,6 +497,34 @@ pub mod pallet {
 			let current_count = Self::try_remove_candidate(&collator)?;
 
 			Ok(Some(T::WeightInfo::remove_collator(current_count as u32)).into())
+		}
+
+		/// Set the collator performance percentile used as baseline for eviction
+		///
+		/// `percentile`: x-th percentile of collator performance to use as eviction baseline
+		#[pallet::weight(T::WeightInfo::set_eviction_baseline())]
+		pub fn set_eviction_baseline(
+			origin: OriginFor<T>,
+			percentile: u8,
+		) -> DispatchResultWithPostInfo {
+			T::UpdateOrigin::ensure_origin(origin)?;
+			<EvictionBaseline<T>>::put(Percent::from_percent(percentile)); // NOTE: from_percent saturates at 100
+			Self::deposit_event(Event::NewEvictionBaseline(percentile));
+			Ok(().into())
+		}
+
+		/// Set the tolerated underperformance percentage before evicting
+		///
+		/// `percentage`: x% of missed blocks under eviction_baseline to tolerate
+		#[pallet::weight(T::WeightInfo::set_eviction_tolerance())]
+		pub fn set_eviction_tolerance(
+			origin: OriginFor<T>,
+			percentage: u8,
+		) -> DispatchResultWithPostInfo {
+			T::UpdateOrigin::ensure_origin(origin)?;
+			<EvictionTolerance<T>>::put(Percent::from_percent(percentage)); // NOTE: from_percent saturates at 100
+			Self::deposit_event(Event::NewEvictionTolerance(percentage));
+			Ok(().into())
 		}
 	}
 

@@ -138,6 +138,8 @@ jobs:
       -
         name: init
         run: |
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install stable

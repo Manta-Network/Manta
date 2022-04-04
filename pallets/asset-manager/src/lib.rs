@@ -37,79 +37,39 @@ mod tests;
 #[frame_support::pallet]
 pub mod pallet {
 
-	use codec::Codec;
 	use frame_support::{pallet_prelude::*, transactional, PalletId};
 	use frame_system::pallet_prelude::*;
-	use manta_primitives::assets::{AssetIdLocationGetter, UnitsToWeightRatio};
-	use scale_info::TypeInfo;
-	use sp_runtime::{
-		traits::{AccountIdConversion, AtLeast32BitUnsigned, CheckedAdd, One},
-		ArithmeticError,
+	use manta_primitives::{
+		assets::{
+			AssetConfig, AssetIdLocationGetter, AssetMetadata, AssetRegistrar, UnitsToWeightRatio,
+		},
+		types::AssetId,
 	};
+	use sp_runtime::{traits::AccountIdConversion, ArithmeticError};
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
-	/// The AssetManagers's pallet id
-	pub const PALLET_ID: PalletId = PalletId(*b"asstmngr");
-
-	/// The registrar trait: defines the interface of creating an asset in the asset implementation layer.
-	/// We may revisit this interface design (e.g. add change asset interface). However, change StorageMetadata
-	/// should be rare.
-	pub trait AssetRegistrar<T: Config> {
-		/// Create an new asset.
-		///
-		/// * `asset_id`: the asset id to be created
-		/// * `min_balance`: the minimum balance to hold this asset
-		/// * `metadata`: the metadata that the implementation layer stores
-		/// * `is_sufficient`: whether this asset can be used as reserve asset,
-		/// 	to the first approximation. More specifically, Whether a non-zero balance of this asset is deposit of sufficient
-		/// 	value to account for the state bloat associated with its balance storage. If set to
-		/// 	`true`, then non-zero balances may be stored without a `consumer` reference (and thus
-		/// 	an ED in the Balances pallet or whatever else is used to control user-account state
-		/// 	growth).
-		fn create_asset(
-			asset_id: T::AssetId,
-			min_balance: T::Balance,
-			metadata: T::StorageMetadata,
-			is_sufficient: bool,
-		) -> DispatchResult;
-
-		/// Update asset metadata by `AssetId`.
-		///
-		/// * `asset_id`: the asset id to be created.
-		/// * `metadata`: the metadata that the implementation layer stores.
-		fn update_asset_metadata(
-			asset_id: T::AssetId,
-			metadata: T::StorageMetadata,
-		) -> DispatchResult;
-	}
-
-	/// The AssetMetadata trait:
-	pub trait AssetMetadata<T: Config> {
-		/// Returns the minimum balance to hold this asset
-		fn min_balance(&self) -> T::Balance;
-
-		/// Returns a boolean value indicating whether this asset needs an existential deposit
-		fn is_sufficient(&self) -> bool;
-	}
-
 	/// Convert AssetId and AssetLocation
-	impl<T: Config> AssetIdLocationGetter<T::AssetId, T::AssetLocation> for Pallet<T> {
-		fn get_asset_id(loc: &T::AssetLocation) -> Option<T::AssetId> {
+	impl<T: Config> AssetIdLocationGetter<<T::AssetConfig as AssetConfig>::AssetLocation>
+		for Pallet<T>
+	{
+		fn get_asset_id(loc: &<T::AssetConfig as AssetConfig>::AssetLocation) -> Option<AssetId> {
 			LocationAssetId::<T>::get(loc)
 		}
 
-		fn get_asset_location(id: T::AssetId) -> Option<T::AssetLocation> {
+		fn get_asset_location(
+			id: AssetId,
+		) -> Option<<T::AssetConfig as AssetConfig>::AssetLocation> {
 			AssetIdLocation::<T>::get(id)
 		}
 	}
 
 	/// Get unit per second from `AssetId`
-	impl<T: Config> UnitsToWeightRatio<T::AssetId> for Pallet<T> {
-		fn get_units_per_second(id: T::AssetId) -> Option<u128> {
+	impl<T: Config> UnitsToWeightRatio for Pallet<T> {
+		fn get_units_per_second(id: AssetId) -> Option<u128> {
 			UnitsPerSecond::<T>::get(id)
 		}
 	}
@@ -119,39 +79,15 @@ pub mod pallet {
 		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-		/// The asset id type, this have to be consistent with pallet-manta-pay
-		type AssetId: Member
-			+ Parameter
-			+ Default
-			+ Copy
-			+ AtLeast32BitUnsigned
-			+ MaybeSerializeDeserialize
-			+ MaxEncodedLen
-			+ TypeInfo;
-
-		/// The trait we use to register Assets
-		type AssetRegistrar: AssetRegistrar<Self>;
-
-		/// The units in which we record balances.
-		type Balance: Member + Parameter + AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen;
-
-		/// Metadata type that required in token storage: e.g. AssetMetadata in Pallet-Assets.
-		type StorageMetadata: Member + Parameter + Default;
-
-		/// The Asset Metadata type stored in this pallet.
-		type AssetRegistrarMetadata: Member
-			+ Parameter
-			+ Codec
-			+ Default
-			+ Into<Self::StorageMetadata>
-			+ AssetMetadata<Self>;
-
-		/// The AssetLocation type: could be just a thin wrapper of MultiLocation
-		type AssetLocation: Member + Parameter + Default + TypeInfo;
+		/// Asset configuration, e.g. AssetId, Balance, Metadata
+		type AssetConfig: AssetConfig;
 
 		/// The origin which may forcibly create or destroy an asset or otherwise alter privileged
 		/// attributes.
 		type ModifierOrigin: EnsureOrigin<Self::Origin>;
+
+		/// Pallet ID
+		type PalletId: Get<PalletId>;
 	}
 
 	#[pallet::event]
@@ -159,23 +95,23 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// A new asset registered.
 		AssetRegistered {
-			asset_id: T::AssetId,
-			asset_address: T::AssetLocation,
-			metadata: T::AssetRegistrarMetadata,
+			asset_id: AssetId,
+			asset_address: <T::AssetConfig as AssetConfig>::AssetLocation,
+			metadata: <T::AssetConfig as AssetConfig>::AssetRegistrarMetadata,
 		},
 		/// An asset's location has been updated.
 		AssetLocationUpdated {
-			asset_id: T::AssetId,
-			location: T::AssetLocation,
+			asset_id: AssetId,
+			location: <T::AssetConfig as AssetConfig>::AssetLocation,
 		},
 		/// An asset;s metadata has been updated.
 		AssetMetadataUpdated {
-			asset_id: T::AssetId,
-			metadata: T::AssetRegistrarMetadata,
+			asset_id: AssetId,
+			metadata: <T::AssetConfig as AssetConfig>::AssetRegistrarMetadata,
 		},
 		/// Update units per second of an asset
 		UnitsPerSecondUpdated {
-			asset_id: T::AssetId,
+			asset_id: AssetId,
 			units_per_second: u128,
 		},
 	}
@@ -198,29 +134,33 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn asset_id_location)]
 	pub(super) type AssetIdLocation<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::AssetId, T::AssetLocation>;
+		StorageMap<_, Blake2_128Concat, AssetId, <T::AssetConfig as AssetConfig>::AssetLocation>;
 
 	/// MultiLocation to AssetId Map.
 	/// This is mostly useful when receiving an asset from a foreign location.
 	#[pallet::storage]
 	#[pallet::getter(fn location_asset_id)]
 	pub(super) type LocationAssetId<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::AssetLocation, T::AssetId>;
+		StorageMap<_, Blake2_128Concat, <T::AssetConfig as AssetConfig>::AssetLocation, AssetId>;
 
 	/// AssetId to AssetRegistrar Map.
 	#[pallet::storage]
 	#[pallet::getter(fn asset_id_metadata)]
-	pub(super) type AssetIdMetadata<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::AssetId, T::AssetRegistrarMetadata>;
+	pub(super) type AssetIdMetadata<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		AssetId,
+		<T::AssetConfig as AssetConfig>::AssetRegistrarMetadata,
+	>;
 
 	/// Get the next available AssetId.
 	#[pallet::storage]
 	#[pallet::getter(fn next_asset_id)]
-	pub type NextAssetId<T: Config> = StorageValue<_, T::AssetId, ValueQuery>;
+	pub type NextAssetId<T: Config> = StorageValue<_, AssetId, ValueQuery>;
 
 	/// XCM transfer cost for different asset.
 	#[pallet::storage]
-	pub type UnitsPerSecond<T: Config> = StorageMap<_, Blake2_128Concat, T::AssetId, u128>;
+	pub type UnitsPerSecond<T: Config> = StorageMap<_, Blake2_128Concat, AssetId, u128>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -240,8 +180,8 @@ pub mod pallet {
 		#[transactional]
 		pub fn register_asset(
 			origin: OriginFor<T>,
-			location: T::AssetLocation,
-			metadata: T::AssetRegistrarMetadata,
+			location: <T::AssetConfig as AssetConfig>::AssetLocation,
+			metadata: <T::AssetConfig as AssetConfig>::AssetRegistrarMetadata,
 		) -> DispatchResult {
 			T::ModifierOrigin::ensure_origin(origin)?;
 			ensure!(
@@ -249,7 +189,7 @@ pub mod pallet {
 				Error::<T>::LocationAlreadyExists
 			);
 			let asset_id = Self::get_next_asset_id()?;
-			T::AssetRegistrar::create_asset(
+			<T::AssetConfig as AssetConfig>::AssetRegistrar::create_asset(
 				asset_id,
 				metadata.min_balance(),
 				metadata.clone().into(),
@@ -279,8 +219,8 @@ pub mod pallet {
 		#[transactional]
 		pub fn update_asset_location(
 			origin: OriginFor<T>,
-			#[pallet::compact] asset_id: T::AssetId,
-			location: T::AssetLocation,
+			#[pallet::compact] asset_id: AssetId,
+			location: <T::AssetConfig as AssetConfig>::AssetLocation,
 		) -> DispatchResult {
 			// checks validity
 			T::ModifierOrigin::ensure_origin(origin)?;
@@ -312,8 +252,8 @@ pub mod pallet {
 		#[transactional]
 		pub fn update_asset_metadata(
 			origin: OriginFor<T>,
-			#[pallet::compact] asset_id: T::AssetId,
-			metadata: T::AssetRegistrarMetadata,
+			#[pallet::compact] asset_id: AssetId,
+			metadata: <T::AssetConfig as AssetConfig>::AssetRegistrarMetadata,
 		) -> DispatchResult {
 			T::ModifierOrigin::ensure_origin(origin)?;
 			ensure!(
@@ -337,7 +277,7 @@ pub mod pallet {
 		#[transactional]
 		pub fn set_units_per_second(
 			origin: OriginFor<T>,
-			#[pallet::compact] asset_id: T::AssetId,
+			#[pallet::compact] asset_id: AssetId,
 			#[pallet::compact] units_per_second: u128,
 		) -> DispatchResult {
 			T::ModifierOrigin::ensure_origin(origin)?;
@@ -356,19 +296,17 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 		/// Get and increment the `NextAssetID` by one.
-		fn get_next_asset_id() -> Result<T::AssetId, DispatchError> {
-			NextAssetId::<T>::try_mutate(|current| -> Result<T::AssetId, DispatchError> {
+		fn get_next_asset_id() -> Result<AssetId, DispatchError> {
+			NextAssetId::<T>::try_mutate(|current| -> Result<AssetId, DispatchError> {
 				let id = *current;
-				*current = current
-					.checked_add(&One::one())
-					.ok_or(ArithmeticError::Overflow)?;
+				*current = current.checked_add(1u32).ok_or(ArithmeticError::Overflow)?;
 				Ok(id)
 			})
 		}
 
 		/// The account ID of AssetManager
 		pub fn account_id() -> T::AccountId {
-			PALLET_ID.into_account()
+			T::PalletId::get().into_account()
 		}
 	}
 }
