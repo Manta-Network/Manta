@@ -43,7 +43,7 @@ pub mod pallet {
 	use manta_primitives::assets::{AssetIdLocationGetter, UnitsToWeightRatio};
 	use scale_info::TypeInfo;
 	use sp_runtime::{
-		traits::{AccountIdConversion, AtLeast32BitUnsigned, CheckedAdd, One},
+		traits::{AccountIdConversion, AtLeast32BitUnsigned, CheckedAdd, One, Zero},
 		ArithmeticError,
 	};
 
@@ -189,6 +189,8 @@ pub mod pallet {
 		ErrorCreatingAsset,
 		/// Update a non-exist asset
 		UpdateNonExistAsset,
+		/// Update a non-exist asset
+		CannotUpdateNativeAssetMetadata,
 		/// Asset already registered.
 		AssetAlreadyRegistered,
 	}
@@ -207,6 +209,12 @@ pub mod pallet {
 	pub(super) type LocationAssetId<T: Config> =
 		StorageMap<_, Blake2_128Concat, T::AssetLocation, T::AssetId>;
 
+	/// AssetId to AssetRegistrar Map.
+	#[pallet::storage]
+	#[pallet::getter(fn asset_id_metadata)]
+	pub(super) type AssetIdMetadata<T: Config> =
+		StorageMap<_, Blake2_128Concat, T::AssetId, T::AssetRegistrarMetadata>;
+
 	/// Get the next available AssetId.
 	#[pallet::storage]
 	#[pallet::getter(fn next_asset_id)]
@@ -220,7 +228,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Register a new asset in the asset manager.
 		///
-		/// * `origin`: Caller of this extrinsic, the acess control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
 		/// * `location`: Location of the asset.
 		/// * `metadata`: Asset metadata.
 		/// * `min_balance`: Minimum balance to keep an account alive, used in conjunction with `is_sufficient`.
@@ -251,6 +259,7 @@ pub mod pallet {
 			)
 			.map_err(|_| Error::<T>::ErrorCreatingAsset)?;
 			AssetIdLocation::<T>::insert(&asset_id, &location);
+			AssetIdMetadata::<T>::insert(&asset_id, &metadata);
 			LocationAssetId::<T>::insert(&location, &asset_id);
 			Self::deposit_event(Event::<T>::AssetRegistered {
 				asset_id,
@@ -262,7 +271,7 @@ pub mod pallet {
 
 		/// Update an asset by its asset id in the asset manager.
 		///
-		/// * `origin`: Caller of this extrinsic, the acess control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `location`: `location` to update the asset location.
 		/// # <weight>
@@ -298,7 +307,7 @@ pub mod pallet {
 
 		/// Update an asset's metadata by its `asset_id`
 		///
-		/// * `origin`: Caller of this extrinsic, the acess control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `metadata`: new `metadata` to be associated with `asset_id`.
 		#[pallet::weight(50_000_000)]
@@ -310,19 +319,22 @@ pub mod pallet {
 		) -> DispatchResult {
 			T::ModifierOrigin::ensure_origin(origin)?;
 			ensure!(
+				!asset_id.is_zero(),
+				Error::<T>::CannotUpdateNativeAssetMetadata
+			);
+			ensure!(
 				AssetIdLocation::<T>::contains_key(&asset_id),
 				Error::<T>::UpdateNonExistAsset
 			);
-
 			T::AssetRegistrar::update_asset_metadata(asset_id, metadata.clone().into())?;
-
+			AssetIdMetadata::<T>::insert(&asset_id, &metadata);
 			Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata });
 			Ok(())
 		}
 
 		/// Update an asset by its asset id in the asset manager.
 		///
-		/// * `origin`: Caller of this extrinsic, the acess control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `units_per_second`: units per second for `asset_id`
 		/// # <weight>
