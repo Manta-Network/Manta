@@ -194,7 +194,8 @@ impl Contains<Call> for BaseFilter {
 			Call::Timestamp(_) | Call::ParachainSystem(_) | Call::System(_)
 		) {
 			// always allow core call
-			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
+			// pallet-timestamp and parachainSystem could not be filtered
+			// because they are used in communication between releychain and parachain.
 			return true;
 		}
 
@@ -255,10 +256,16 @@ impl Contains<Call> for BaseFilter {
 				| manta_collator_selection::Call::remove_collator{..}
 				| manta_collator_selection::Call::leave_intent{..})
 			| Call::Balances(_)
-			| Call::Preimage(_)
-			| Call::Utility(_)
+			// Everything except transfer() is filtered out until it is practically needed:
+			// orml_xtokens::Call::transfer_with_fee {..}
+			// orml_xtokens::Call::transfer_multiasset {..}
+			// orml_xtokens::Call::transfer_multiasset_with_fee {..}
+			// orml_xtokens::Call::transfer_multicurrencies  {..}
+			// orml_xtokens::Call::transfer_multiassets {..}
+			| Call::XTokens(orml_xtokens::Call::transfer {..})
 			| Call::MantaPay(_)
-			| Call::XTokens(_) => true,
+			| Call::Preimage(_)
+			| Call::Utility(_) => true,
 			// Filter XCM pallets, we only allow transfer with XTokens.
 			// Filter Assets. Assets should only be accessed by AssetManager.
 			// AssetManager is also filtered because all of its extrinsics are callable only by Root,
