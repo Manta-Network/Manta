@@ -42,7 +42,6 @@ jobs:
         uses: actions/checkout@v2
       -
         name: install sccache
-
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
           SCCACHE_VERSION: v0.2.15
@@ -111,16 +110,24 @@ jobs:
           echo "Date: $(date)" >> output.txt
           echo "Reference: $REF_URL" >> output.txt
           echo "Target version: $VERSION" >> output.txt
-          echo "-------------------------------------------" >> output.txt
+          echo "Chain: $CHAIN" >> output.txt
+          echo "----------------------------------------------------------------------" >> output.txt
+      - name: Pull polkadot-js-tools image
+        run: docker pull jacogr/polkadot-js-tools
       - name: Compare the metadata
         run: |
-          CMD="docker run --network host jacogr/polkadot-js-tools metadata $REF_URL ws://localhost:9944"
+          CMD="docker run --pull always --network host jacogr/polkadot-js-tools metadata $REF_URL ws://localhost:9944"
           echo -e "Running:\n$CMD"
           $CMD >> output.txt
           sed -z -i 's/\n\n/\n/g' output.txt
+          cat output.txt | egrep -n -i ''
+          chmod +x ./scripts/github/extrinsic-ordering-filter.sh
+          SUMMARY=$(./scripts/github/extrinsic-ordering-filter.sh output.txt)
+          echo -e $SUMMARY
+          echo -e $SUMMARY >> output.txt
       - name: Show result
-        run: cat output.txt
-
+        run: |
+          cat output.txt
       - name: Stop our local node
         run: pkill manta
 
