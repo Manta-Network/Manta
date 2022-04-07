@@ -1,6 +1,10 @@
+---
+# yamllint disable rule:line-length
+
 # This workflow checks whether `transaction_version` should be updated.
 
 name: Transaction Version Update Check
+# yamllint disable-line rule:truthy
 on:
   workflow_dispatch:
     inputs:
