@@ -54,7 +54,7 @@ fn basic_setup_should_work() {
 }
 
 #[test]
-fn wrong_modifer_origin_should_not_work() {
+fn wrong_modifier_origin_should_not_work() {
 	new_test_ext().execute_with(|| {
 		let asset_metadata = AssetRegistrarMetadata {
 			name: b"Kusama".to_vec(),

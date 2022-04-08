@@ -307,6 +307,7 @@ impl pallet_asset_manager::Config for Runtime {
 	type AssetConfig = MantaAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
 	type PalletId = AssetManagerPalletId;
+	type WeightInfo = ();
 }
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;

@@ -188,7 +188,7 @@ impl From<MultiLocation> for AssetLocation {
 	///
 	/// # Safety
 	///
-	/// This method does not guaranttee that the output [`AssetLocation`] is registered, i.e. has a
+	/// This method does not guarantee that the output [`AssetLocation`] is registered, i.e. has a
 	/// valid [`AssetId`].
 	fn from(location: MultiLocation) -> Self {
 		AssetLocation(VersionedMultiLocation::V1(location))
