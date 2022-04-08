@@ -19,7 +19,12 @@
 use codec::{Decode, Encode};
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU32, Everything, Nothing},
+	traits::{
+		fungible::Inspect,
+		fungibles::{Inspect as AssetInspect, Transfer as AssetTransfer},
+		tokens::{DepositConsequence, ExistenceRequirement, WithdrawConsequence},
+		ConstU32, Currency, Everything, Nothing,
+	},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 	PalletId,
 };
@@ -34,8 +39,12 @@ use sp_runtime::{
 use sp_std::{convert::TryFrom, prelude::*};
 
 use manta_primitives::{
-	assets::{AssetIdLocationConvert, AssetLocation},
+	assets::{
+		AssetConfig, AssetIdLocationConvert, AssetLocation, AssetRegistrar, AssetRegistrarMetadata,
+		AssetStorageMetadata, FungibleLedger, FungibleLedgerConsequence,
+	},
 	constants::*,
+	types::{AccountId, Balance},
 	xcm::{FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
 };
 use pallet_xcm::XcmPassthrough;
@@ -43,7 +52,7 @@ use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain::primitives::{
 	DmpMessageHandler, Id as ParaId, Sibling, XcmpMessageFormat, XcmpMessageHandler,
 };
-use xcm::{latest::prelude::*, Version as XcmVersion, VersionedXcm};
+use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, VersionedXcm};
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
 	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
@@ -52,13 +61,7 @@ use xcm_builder::{
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::Get;
-
-pub use manta_primitives::{
-	assets::{AssetConfig, AssetRegistrar, AssetRegistrarMetadata, AssetStorageMetadata},
-	types::AssetId,
-};
-pub type AccountId = AccountId32;
-pub type Balance = u128;
+pub type AssetId = manta_accounting::asset::AssetIdType;
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -481,14 +484,9 @@ impl pallet_xcm::Config for Runtime {
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 	type AdvertisedXcmVersion = XcmVersioner;
 }
-
-parameter_types! {
-	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
-}
-
 pub struct MantaAssetRegistrar;
 use frame_support::pallet_prelude::DispatchResult;
-impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
+impl AssetRegistrar<Runtime, MantaAssetConfig> for MantaAssetRegistrar {
 	fn create_asset(
 		asset_id: AssetId,
 		min_balance: Balance,
@@ -537,14 +535,141 @@ impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
 	}
 }
 
+parameter_types! {
+	pub const DummyAssetId: AssetId = 0;
+	pub const NativeAssetId: AssetId = 1;
+	pub const StartNonNativeAssetId: AssetId = 8;
+	pub NativeAssetLocation: AssetLocation = AssetLocation(
+		VersionedMultiLocation::V1(SelfReserve::get()));
+	pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
+		name: b"Dolphin".to_vec(),
+		symbol: b"DOL".to_vec(),
+		decimals: DOLPHIN_DECIMAL,
+		min_balance: 1,
+		evm_address: None,
+		is_frozen: false,
+		is_sufficient: true,
+	};
+	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
+}
+
+pub struct MantaFungibleLedger;
+impl FungibleLedger<Runtime> for MantaFungibleLedger {
+	fn is_valid(self: Self, asset_id: AssetId) -> Result<(), FungibleLedgerConsequence> {
+		if asset_id >= <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get()
+			|| asset_id == <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get()
+		{
+			Ok(())
+		} else {
+			Err(FungibleLedgerConsequence::InvalidAssetId)
+		}
+	}
+
+	fn can_deposit(
+		asset_id: AssetId,
+		account: &<Runtime as frame_system::Config>::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence> {
+		Self.is_valid(asset_id)?;
+		if asset_id == <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get() {
+			// we assume native asset with id 0
+			match Balances::can_deposit(account, amount) {
+				DepositConsequence::Success => Ok(()),
+				other => Err(other.into()),
+			}
+		} else {
+			match Assets::can_deposit(asset_id, account, amount) {
+				DepositConsequence::Success => Ok(()),
+				other => Err(other.into()),
+			}
+		}
+	}
+
+	fn can_withdraw(
+		asset_id: AssetId,
+		account: &<Runtime as frame_system::Config>::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence> {
+		Self.is_valid(asset_id)?;
+		if asset_id == <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get() {
+			// we assume native asset with id 0
+			match Balances::can_withdraw(account, amount) {
+				WithdrawConsequence::Success => Ok(()),
+				other => Err(other.into()),
+			}
+		} else {
+			match Assets::can_withdraw(asset_id, account, amount) {
+				WithdrawConsequence::Success => Ok(()),
+				other => Err(other.into()),
+			}
+		}
+	}
+
+	fn transfer(
+		asset_id: AssetId,
+		source: &<Runtime as frame_system::Config>::AccountId,
+		dest: &<Runtime as frame_system::Config>::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence> {
+		Self.is_valid(asset_id)?;
+		if asset_id == <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get() {
+			<Balances as Currency<<Runtime as frame_system::Config>::AccountId>>::transfer(
+				source,
+				dest,
+				amount,
+				ExistenceRequirement::KeepAlive,
+			)
+			.map_err(|_| FungibleLedgerConsequence::InternalError)
+		} else {
+			<Assets as AssetTransfer<<Runtime as frame_system::Config>::AccountId>>::transfer(
+				asset_id, source, dest, amount, true,
+			)
+			.map(|_| ())
+			.map_err(|_| FungibleLedgerConsequence::InternalError)
+		}
+	}
+
+	fn mint(
+		asset_id: AssetId,
+		beneficiary: &<Runtime as frame_system::Config>::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence> {
+		Self.is_valid(asset_id)?;
+		Self::can_deposit(asset_id, beneficiary, amount)?;
+		if asset_id == <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get() {
+			let _ =
+				<Balances as Currency<<Runtime as frame_system::Config>::AccountId>>::deposit_creating(
+					beneficiary,
+					amount,
+				);
+			Ok(())
+		} else {
+			Assets::mint(
+				Origin::signed(AssetManager::account_id()),
+				asset_id,
+				beneficiary.clone(),
+				amount,
+			)
+			.map(|_| ())
+			.map_err(|_| FungibleLedgerConsequence::InternalError)
+		}
+	}
+}
+
 #[derive(Clone, Eq, PartialEq)]
 pub struct MantaAssetConfig;
 
-impl AssetConfig for MantaAssetConfig {
+impl AssetConfig<Runtime> for MantaAssetConfig {
+	type DummyAssetId = DummyAssetId;
+	type NativeAssetId = NativeAssetId;
+	type StartNonNativeAssetId = StartNonNativeAssetId;
 	type AssetRegistrarMetadata = AssetRegistrarMetadata;
+	type NativeAssetLocation = NativeAssetLocation;
+	type NativeAssetMetadata = NativeAssetMetadata;
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
 	type AssetRegistrar = MantaAssetRegistrar;
+	type FungibleLedger = MantaFungibleLedger;
 }
 
 impl pallet_asset_manager::Config for Runtime {
@@ -552,6 +677,7 @@ impl pallet_asset_manager::Config for Runtime {
 	type AssetConfig = MantaAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
 	type PalletId = AssetManagerPalletId;
+	type WeightInfo = ();
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {

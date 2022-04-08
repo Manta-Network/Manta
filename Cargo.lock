@@ -2356,6 +2356,7 @@ dependencies = [
  "frame-try-runtime",
  "hex-literal",
  "log",
+ "manta-accounting",
  "manta-collator-selection",
  "manta-primitives",
  "orml-xtokens",

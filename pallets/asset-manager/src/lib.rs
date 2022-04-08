@@ -257,6 +257,8 @@ pub mod pallet {
 				asset_address: location,
 				metadata,
 			});
+			#[cfg(feature = "runtime-benchmarks")]
+			log::info!("\n register_asset ok with asset_id: {:?} \n", asset_id);
 			Ok(())
 		}
 
@@ -333,16 +335,25 @@ pub mod pallet {
 			#[pallet::compact] asset_id: AssetId,
 			#[pallet::compact] units_per_second: u128,
 		) -> DispatchResult {
+			#[cfg(feature = "runtime-benchmarks")]
+			log::info!("\n -1 set units/second for asset_id: {:?} \n", asset_id);
+
 			T::ModifierOrigin::ensure_origin(origin)?;
+			#[cfg(feature = "runtime-benchmarks")]
+			log::info!("\n 0 set units/second for asset_id: {:?} \n", asset_id);
 			ensure!(
 				AssetIdLocation::<T>::contains_key(&asset_id),
 				Error::<T>::UpdateNonExistAsset
 			);
+			#[cfg(feature = "runtime-benchmarks")]
+			log::info!("\n 1 set units/second for asset_id: {:?} \n", asset_id);
 			UnitsPerSecond::<T>::insert(&asset_id, &units_per_second);
 			Self::deposit_event(Event::<T>::UnitsPerSecondUpdated {
 				asset_id,
 				units_per_second,
 			});
+			#[cfg(feature = "runtime-benchmarks")]
+			log::info!("\n 2 set units/second for asset_id: {:?} \n", asset_id);
 			Ok(())
 		}
 
