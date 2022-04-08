@@ -102,7 +102,7 @@ where
 	type AssetRegistrarMetadata: Member + Parameter + Codec + Default + AssetMetadata;
 
 	/// The AssetLocation type: could be just a thin wrapper of MultiLocation
-	type AssetLocation: Member + Parameter + Default + TypeInfo;
+	type AssetLocation: Member + Parameter + Default + TypeInfo + From<MultiLocation>;
 
 	/// The Fungible ledger implementation of this trait
 	type FungibleLedger: FungibleLedger<C>;
@@ -188,9 +188,11 @@ impl From<MultiLocation> for AssetLocation {
 	///
 	/// # Safety
 	///
-	/// This method does not guaranttee that the output [`AssetLocation`] is registered, i.e. has a
+	/// This method does not guarantee that the output [`AssetLocation`] is registered, i.e. has a
 	/// valid [`AssetId`].
 	fn from(location: MultiLocation) -> Self {
+		#[cfg(feature = "runtime-benchmarks")]
+		log::info!("\n in from() {:?} \n", location.clone());
 		AssetLocation(VersionedMultiLocation::V1(location))
 	}
 }

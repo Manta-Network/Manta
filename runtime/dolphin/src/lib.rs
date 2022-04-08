@@ -1056,6 +1056,7 @@ impl pallet_asset_manager::Config for Runtime {
 	type AssetConfig = MantaAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
 	type PalletId = AssetManagerPalletId;
+	type WeightInfo = pallet_asset_manager::weights::SubstrateWeight<Runtime>;
 }
 
 pub struct MantaFungibleLedger;
@@ -1412,6 +1413,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_tx_pause, TransactionPause);
 			list_benchmark!(list, extra, pallet_assets, Assets);
 			list_benchmark!(list, extra, pallet_manta_pay, MantaPay);
+			list_benchmark!(list, extra, pallet_asset_manager, AssetManager);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1462,6 +1464,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_tx_pause, TransactionPause);
 			add_benchmark!(params, batches, pallet_assets, Assets);
 			add_benchmark!(params, batches, pallet_manta_pay, MantaPay);
+			add_benchmark!(params, batches, pallet_asset_manager, AssetManager);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
