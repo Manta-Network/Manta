@@ -169,7 +169,7 @@ fn update_asset() {
 			asset_metadata.clone()
 		));
 		assert_eq!(
-			AssetIdLocation::<Runtime>::get(0),
+			AssetIdLocation::<Runtime>::get(asset_id),
 			Some(source_location.clone())
 		);
 		// Update the asset metadata
@@ -193,11 +193,11 @@ fn update_asset() {
 		assert_eq!(UnitsPerSecond::<Runtime>::get(asset_id), Some(125));
 		// Update a non-exist asset should fail
 		assert_noop!(
-			AssetManager::update_asset_location(Origin::root(), 1, new_location.clone()),
+			AssetManager::update_asset_location(Origin::root(), asset_id + 1, new_location.clone()),
 			crate::Error::<Runtime>::UpdateNonExistAsset
 		);
 		assert_noop!(
-			AssetManager::update_asset_metadata(Origin::root(), 1, new_metadata.clone()),
+			AssetManager::update_asset_metadata(Origin::root(), asset_id + 1, new_metadata.clone()),
 			crate::Error::<Runtime>::UpdateNonExistAsset
 		);
 		// Update an asset to an existing location will fail

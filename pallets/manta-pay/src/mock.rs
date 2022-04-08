@@ -333,6 +333,7 @@ impl pallet_asset_manager::Config for Test {
 	type AssetConfig = MantaAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId32>;
 	type PalletId = AssetManagerPalletId;
+	type WeightInfo = ();
 }
 
 parameter_types! {
