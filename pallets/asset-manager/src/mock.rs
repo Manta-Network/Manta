@@ -169,7 +169,7 @@ impl AssetRegistrar<Runtime, MantaAssetConfig> for MantaAssetRegistrar {
 
 pub struct MantaFungibleLedger;
 impl FungibleLedger<Runtime> for MantaFungibleLedger {
-	fn is_valid(self: Self, asset_id: AssetId) -> Result<(), FungibleLedgerConsequence> {
+	fn is_valid(asset_id: AssetId) -> Result<(), FungibleLedgerConsequence> {
 		if asset_id >= <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get()
 			|| asset_id == <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get()
 		{
@@ -184,9 +184,8 @@ impl FungibleLedger<Runtime> for MantaFungibleLedger {
 		account: &<Runtime as frame_system::Config>::AccountId,
 		amount: Balance,
 	) -> Result<(), FungibleLedgerConsequence> {
-		Self.is_valid(asset_id)?;
+		Self::is_valid(asset_id)?;
 		if asset_id == <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get() {
-			// we assume native asset with id 0
 			match Balances::can_deposit(account, amount) {
 				DepositConsequence::Success => Ok(()),
 				other => Err(other.into()),
@@ -204,9 +203,8 @@ impl FungibleLedger<Runtime> for MantaFungibleLedger {
 		account: &<Runtime as frame_system::Config>::AccountId,
 		amount: Balance,
 	) -> Result<(), FungibleLedgerConsequence> {
-		Self.is_valid(asset_id)?;
+		Self::is_valid(asset_id)?;
 		if asset_id == <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get() {
-			// we assume native asset with id 0
 			match Balances::can_withdraw(account, amount) {
 				WithdrawConsequence::Success => Ok(()),
 				other => Err(other.into()),
@@ -225,7 +223,7 @@ impl FungibleLedger<Runtime> for MantaFungibleLedger {
 		dest: &<Runtime as frame_system::Config>::AccountId,
 		amount: Balance,
 	) -> Result<(), FungibleLedgerConsequence> {
-		Self.is_valid(asset_id)?;
+		Self::is_valid(asset_id)?;
 		if asset_id == <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get() {
 			<Balances as Currency<<Runtime as frame_system::Config>::AccountId>>::transfer(
 				source,
@@ -248,7 +246,7 @@ impl FungibleLedger<Runtime> for MantaFungibleLedger {
 		beneficiary: &<Runtime as frame_system::Config>::AccountId,
 		amount: Balance,
 	) -> Result<(), FungibleLedgerConsequence> {
-		Self.is_valid(asset_id)?;
+		Self::is_valid(asset_id)?;
 		Self::can_deposit(asset_id, beneficiary, amount)?;
 		if asset_id == <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get() {
 			let _ =

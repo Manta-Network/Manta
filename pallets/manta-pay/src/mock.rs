@@ -142,7 +142,7 @@ impl pallet_assets::Config for Test {
 
 pub struct MantaFungibleLedger;
 impl FungibleLedger<Test> for MantaFungibleLedger {
-	fn is_valid(self: Self, asset_id: AssetId) -> Result<(), FungibleLedgerConsequence> {
+	fn is_valid(asset_id: AssetId) -> Result<(), FungibleLedgerConsequence> {
 		if asset_id >= <MantaAssetConfig as AssetConfig<Test>>::StartNonNativeAssetId::get()
 			|| asset_id == <MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get()
 		{
@@ -157,7 +157,7 @@ impl FungibleLedger<Test> for MantaFungibleLedger {
 		account: &<Test as frame_system::Config>::AccountId,
 		amount: Balance,
 	) -> Result<(), FungibleLedgerConsequence> {
-		Self.is_valid(asset_id)?;
+		Self::is_valid(asset_id)?;
 		if asset_id == <MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get() {
 			// we assume native asset with id 0
 			match Balances::can_deposit(account, amount) {
@@ -177,7 +177,7 @@ impl FungibleLedger<Test> for MantaFungibleLedger {
 		account: &<Test as frame_system::Config>::AccountId,
 		amount: Balance,
 	) -> Result<(), FungibleLedgerConsequence> {
-		Self.is_valid(asset_id)?;
+		Self::is_valid(asset_id)?;
 		if asset_id == <MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get() {
 			// we assume native asset with id 0
 			match Balances::can_withdraw(account, amount) {
@@ -198,7 +198,7 @@ impl FungibleLedger<Test> for MantaFungibleLedger {
 		dest: &<Test as frame_system::Config>::AccountId,
 		amount: Balance,
 	) -> Result<(), FungibleLedgerConsequence> {
-		Self.is_valid(asset_id)?;
+		Self::is_valid(asset_id)?;
 		if asset_id == <MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get() {
 			<Balances as Currency<<Test as frame_system::Config>::AccountId>>::transfer(
 				source,
@@ -221,7 +221,7 @@ impl FungibleLedger<Test> for MantaFungibleLedger {
 		beneficiary: &<Test as frame_system::Config>::AccountId,
 		amount: Balance,
 	) -> Result<(), FungibleLedgerConsequence> {
-		Self.is_valid(asset_id)?;
+		Self::is_valid(asset_id)?;
 		Self::can_deposit(asset_id, beneficiary, amount)?;
 		if asset_id == <MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get() {
 			let _ =

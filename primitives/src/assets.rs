@@ -80,7 +80,7 @@ where
 	/// A typical configuration is 8, so that asset 0 - 7 is reserved.
 	type StartNonNativeAssetId: Get<AssetId>;
 
-	/// Dummy Asset ID (used for transparent UTXO), a typical configuration is 0.
+	/// Dummy Asset ID, a typical configuration is 0.
 	type DummyAssetId: Get<AssetId>;
 
 	/// The Native Asset Id, a typical configuration is 1.
@@ -318,7 +318,7 @@ where
 	C: frame_system::Config,
 {
 	/// check if an asset id is valid
-	fn is_valid(self: Self, asset_id: AssetId) -> Result<(), FungibleLedgerConsequence>;
+	fn is_valid(asset_id: AssetId) -> Result<(), FungibleLedgerConsequence>;
 
 	/// check whether `asset_id`, `account` can increase certain balance
 	fn can_deposit(
