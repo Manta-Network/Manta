@@ -49,6 +49,7 @@ use frame_support::{
 		ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, Everything, Nothing,
 		PrivilegeCmp,
 	},
+	pallet_prelude::DispatchResult,
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, Weight,
@@ -967,7 +968,6 @@ impl pallet_assets::Config for Runtime {
 }
 
 pub struct MantaAssetRegistrar;
-use frame_support::pallet_prelude::DispatchResult;
 impl AssetRegistrar<Runtime, MantaAssetConfig> for MantaAssetRegistrar {
 	fn create_asset(
 		asset_id: AssetId,

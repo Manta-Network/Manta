@@ -54,7 +54,7 @@ fn basic_setup_should_work() {
 }
 
 #[test]
-fn wrong_modifer_origin_should_not_work() {
+fn wrong_modifier_origin_should_not_work() {
 	new_test_ext().execute_with(|| {
 		let asset_metadata = AssetRegistrarMetadata {
 			name: b"Kusama".to_vec(),
@@ -193,11 +193,11 @@ fn update_asset() {
 		assert_eq!(UnitsPerSecond::<Runtime>::get(asset_id), Some(125));
 		// Update a non-exist asset should fail
 		assert_noop!(
-			AssetManager::update_asset_location(Origin::root(), asset_id + 1, new_location.clone()),
+			AssetManager::update_asset_location(Origin::root(), 2, new_location.clone()),
 			crate::Error::<Runtime>::UpdateNonExistAsset
 		);
 		assert_noop!(
-			AssetManager::update_asset_metadata(Origin::root(), asset_id + 1, new_metadata.clone()),
+			AssetManager::update_asset_metadata(Origin::root(), 2, new_metadata.clone()),
 			crate::Error::<Runtime>::UpdateNonExistAsset
 		);
 		// Update an asset to an existing location will fail

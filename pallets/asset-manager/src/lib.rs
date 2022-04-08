@@ -112,8 +112,8 @@ pub mod pallet {
 	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
 			Self {
-				start_id: 8u32,
-				_marker: PhantomData::<T>::default(),
+				start_id: <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(),
+				_marker: PhantomData,
 			}
 		}
 	}
@@ -174,7 +174,7 @@ pub mod pallet {
 		UpdateNonExistAsset,
 		/// Asset already registered.
 		AssetAlreadyRegistered,
-		/// Error on ming asset.
+		/// Error on minting asset.
 		MintError,
 	}
 
@@ -215,7 +215,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Register a new asset in the asset manager.
 		///
-		/// * `origin`: Caller of this extrinsic, the acess control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specfied by `ForceOrigin`.
 		/// * `location`: Location of the asset.
 		/// * `metadata`: Asset metadata.
 		/// * `min_balance`: Minimum balance to keep an account alive, used in conjunction with `is_sufficient`.
@@ -258,7 +258,7 @@ pub mod pallet {
 
 		/// Update an asset by its asset id in the asset manager.
 		///
-		/// * `origin`: Caller of this extrinsic, the acess control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specfied by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `location`: `location` to update the asset location.
 		/// # <weight>
@@ -294,7 +294,7 @@ pub mod pallet {
 
 		/// Update an asset's metadata by its `asset_id`
 		///
-		/// * `origin`: Caller of this extrinsic, the acess control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specfied by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `metadata`: new `metadata` to be associated with `asset_id`.
 		#[pallet::weight(50_000_000)]
@@ -316,7 +316,7 @@ pub mod pallet {
 
 		/// Update an asset by its asset id in the asset manager.
 		///
-		/// * `origin`: Caller of this extrinsic, the acess control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specfied by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `units_per_second`: units per second for `asset_id`
 		/// # <weight>
@@ -344,7 +344,7 @@ pub mod pallet {
 
 		/// Mint asset by its asset id to a beneficiary.
 		///
-		/// * `origin`: Caller of this extrinsic, the acess control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specfied by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `beneficiary`: Account to mint the asset.
 		/// * `amount`: Amount of asset being minted.
