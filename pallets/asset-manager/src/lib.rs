@@ -26,6 +26,12 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+pub mod weights;
+pub use crate::weights::WeightInfo;
+
 pub use pallet::*;
 
 #[cfg(test)]
@@ -91,6 +97,9 @@ pub mod pallet {
 
 		/// Pallet ID
 		type PalletId: Get<PalletId>;
+
+		/// Weight information for the extrinsics in this pallet.
+		type WeightInfo: crate::weights::WeightInfo;
 	}
 
 	#[pallet::genesis_config]
