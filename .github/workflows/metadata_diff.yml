@@ -12,6 +12,10 @@ on:
         description: The WebSocket url of the reference node
         default: wss://calamari.api.onfinality.io/public-ws
         required: true
+      chain:
+        description: The name of the chain under test. Usually, you would pass a local chain
+        default: calamari-local
+        required: true
 
 env:
   AWS_REGION: us-east-1
@@ -19,6 +23,8 @@ env:
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
+  CHAIN: ${{github.event.inputs.chain}}
+  REF_URL: ${{github.event.inputs.reference_url}}
 
 jobs:
 
