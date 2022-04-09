@@ -37,9 +37,6 @@ std = [
 	"frame-system/std",
 	"sp-std/std",
 	"manta-primitives/std",
-	"frame-benchmarking/std",
-	"xcm/std",
-	"manta-primitives/std",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
