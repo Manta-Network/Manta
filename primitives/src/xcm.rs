@@ -278,7 +278,10 @@ impl<
 			Ok((asset_id, amount)) => {
 				if !amount.is_zero() {
 					Assets::mint_into(asset_id, &ReceiverAccount::get(), amount)
-						.expect("`mint_into` cannot generally fail; qed");
+						.map_err(
+							|err| log::debug!(target: "manta-xcm", "mint_into failed with {:?}", err),
+						)
+						.ok();
 				}
 			}
 			Err(_) => log::debug!(
