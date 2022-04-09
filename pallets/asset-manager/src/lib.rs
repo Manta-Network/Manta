@@ -43,6 +43,7 @@ mod tests;
 #[frame_support::pallet]
 pub mod pallet {
 
+	use crate::weights::WeightInfo;
 	use frame_support::{pallet_prelude::*, transactional, PalletId};
 	use frame_system::pallet_prelude::*;
 	use manta_primitives::{
@@ -53,7 +54,6 @@ pub mod pallet {
 		types::{AssetId, Balance},
 	};
 	use sp_runtime::{traits::AccountIdConversion, ArithmeticError};
-	use crate::weights::WeightInfo;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -258,7 +258,7 @@ pub mod pallet {
 		/// * `origin`: Caller of this extrinsic, the access control is specfied by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `location`: `location` to update the asset location.
-		#[pallet::weight(T::WeightInfo::update_asset_location(1u32))]
+		#[pallet::weight(T::WeightInfo::update_asset_location())]
 		#[transactional]
 		pub fn update_asset_location(
 			origin: OriginFor<T>,
@@ -291,7 +291,7 @@ pub mod pallet {
 		/// * `origin`: Caller of this extrinsic, the access control is specfied by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `metadata`: new `metadata` to be associated with `asset_id`.
-		#[pallet::weight(T::WeightInfo::update_asset_metadata(1u32))]
+		#[pallet::weight(T::WeightInfo::update_asset_metadata())]
 		#[transactional]
 		pub fn update_asset_metadata(
 			origin: OriginFor<T>,
@@ -313,7 +313,7 @@ pub mod pallet {
 		/// * `origin`: Caller of this extrinsic, the access control is specfied by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `units_per_second`: units per second for `asset_id`
-		#[pallet::weight(T::WeightInfo::set_units_per_second(1u32))]
+		#[pallet::weight(T::WeightInfo::set_units_per_second())]
 		#[transactional]
 		pub fn set_units_per_second(
 			origin: OriginFor<T>,
@@ -339,7 +339,7 @@ pub mod pallet {
 		/// * `asset_id`: AssetId to be updated.
 		/// * `beneficiary`: Account to mint the asset.
 		/// * `amount`: Amount of asset being minted.
-		#[pallet::weight(T::WeightInfo::mint_asset(1u32))]
+		#[pallet::weight(T::WeightInfo::mint_asset())]
 		#[transactional]
 		pub fn mint_asset(
 			origin: OriginFor<T>,
