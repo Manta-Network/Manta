@@ -15,7 +15,7 @@
 // along with pallet-manta-pay.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-	mock::{new_test_ext, MantaAssetConfig, MantaAssetRegistrar, MantaFungibleLedger, MantaPayPallet, Origin, Test},
+	mock::{new_test_ext, MantaAssetConfig, MantaAssetRegistrar, MantaPayPallet, Origin, Test},
 	Error,
 };
 use frame_support::{assert_noop, assert_ok};
@@ -296,8 +296,8 @@ fn initialize_test(id: AssetId, value: AssetValue) {
 		metadata.into(),
 		true
 	));
-	assert_ok!(MantaFungibleLedger::mint(id.0, &ALICE, value.0));
-	assert_ok!(MantaFungibleLedger::mint(
+	assert_ok!(<<MantaAssetConfig as AssetConfig<Test>>::FungibleLedger as FungibleLedger<Test>>::mint(id.0, &ALICE, value.0));
+	assert_ok!(<<MantaAssetConfig as AssetConfig<Test>>::FungibleLedger as FungibleLedger<Test>>::mint(
 		id.0,
 		&MantaPayPallet::account_id(),
 		DEFAULT_ASSET_ED

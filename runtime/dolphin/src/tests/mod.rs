@@ -25,7 +25,7 @@ use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion}
 use xcm_mock::{parachain::PALLET_ASSET_INDEX, *};
 use xcm_simulator::TestExt;
 
-use crate::xcm_mock::parachain::{AssetManager, ParaTokenPerSecond};
+use crate::tests::xcm_mock::parachain::{AssetManager, ParaTokenPerSecond};
 
 // `reserved_transfer_asset` contains the following 4 instructions
 //  1. ReserveAssetDeposited(assets.clone()),
