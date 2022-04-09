@@ -16,19 +16,14 @@
 
 use frame_support::{
 	parameter_types,
-	traits::{
-		fungible::Inspect,
-		fungibles::{Inspect as AssetInspect, Transfer as AssetTransfer},
-		tokens::{DepositConsequence, ExistenceRequirement, WithdrawConsequence},
-		ConstU32, Currency, Everything,
-	},
+	traits::{ConstU32, Everything,},
 	PalletId,
 };
 use frame_system::EnsureRoot;
 use manta_primitives::{
 	assets::{
 		AssetConfig, AssetLocation, AssetRegistrar, AssetRegistrarMetadata, AssetStorageMetadata,
-		FungibleLedger, FungibleLedgerConsequence,
+		ConcreteFungibleLedger,
 	},
 	constants::{ASSET_MANAGER_PALLET_ID, MANTA_PAY_PALLET_ID},
 	types::{AssetId, Balance},
@@ -140,109 +135,6 @@ impl pallet_assets::Config for Test {
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Test>;
 }
 
-pub struct MantaFungibleLedger;
-impl FungibleLedger<Test> for MantaFungibleLedger {
-	fn is_valid(asset_id: AssetId) -> Result<(), FungibleLedgerConsequence> {
-		if asset_id >= <MantaAssetConfig as AssetConfig<Test>>::StartNonNativeAssetId::get()
-			|| asset_id == <MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get()
-		{
-			Ok(())
-		} else {
-			Err(FungibleLedgerConsequence::InvalidAssetId)
-		}
-	}
-
-	fn can_deposit(
-		asset_id: AssetId,
-		account: &<Test as frame_system::Config>::AccountId,
-		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence> {
-		Self::is_valid(asset_id)?;
-		if asset_id == <MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get() {
-			// we assume native asset with id 0
-			match Balances::can_deposit(account, amount) {
-				DepositConsequence::Success => Ok(()),
-				other => Err(other.into()),
-			}
-		} else {
-			match Assets::can_deposit(asset_id, account, amount) {
-				DepositConsequence::Success => Ok(()),
-				other => Err(other.into()),
-			}
-		}
-	}
-
-	fn can_withdraw(
-		asset_id: AssetId,
-		account: &<Test as frame_system::Config>::AccountId,
-		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence> {
-		Self::is_valid(asset_id)?;
-		if asset_id == <MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get() {
-			// we assume native asset with id 0
-			match Balances::can_withdraw(account, amount) {
-				WithdrawConsequence::Success => Ok(()),
-				other => Err(other.into()),
-			}
-		} else {
-			match Assets::can_withdraw(asset_id, account, amount) {
-				WithdrawConsequence::Success => Ok(()),
-				other => Err(other.into()),
-			}
-		}
-	}
-
-	fn transfer(
-		asset_id: AssetId,
-		source: &<Test as frame_system::Config>::AccountId,
-		dest: &<Test as frame_system::Config>::AccountId,
-		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence> {
-		Self::is_valid(asset_id)?;
-		if asset_id == <MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get() {
-			<Balances as Currency<<Test as frame_system::Config>::AccountId>>::transfer(
-				source,
-				dest,
-				amount,
-				ExistenceRequirement::KeepAlive,
-			)
-			.map_err(|_| FungibleLedgerConsequence::InternalError)
-		} else {
-			<Assets as AssetTransfer<<Test as frame_system::Config>::AccountId>>::transfer(
-				asset_id, source, dest, amount, true,
-			)
-			.map(|_| ())
-			.map_err(|_| FungibleLedgerConsequence::InternalError)
-		}
-	}
-
-	fn mint(
-		asset_id: AssetId,
-		beneficiary: &<Test as frame_system::Config>::AccountId,
-		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence> {
-		Self::is_valid(asset_id)?;
-		Self::can_deposit(asset_id, beneficiary, amount)?;
-		if asset_id == <MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get() {
-			let _ =
-				<Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
-					beneficiary,
-					amount,
-				);
-			Ok(())
-		} else {
-			Assets::mint(
-				Origin::signed(AssetManager::account_id()),
-				asset_id,
-				beneficiary.clone(),
-				amount,
-			)
-			.map(|_| ())
-			.map_err(|_| FungibleLedgerConsequence::InternalError)
-		}
-	}
-}
-
 pub struct MantaAssetRegistrar;
 use frame_support::pallet_prelude::DispatchResult;
 impl AssetRegistrar<Test, MantaAssetConfig> for MantaAssetRegistrar {
@@ -325,7 +217,7 @@ impl AssetConfig<Test> for MantaAssetConfig {
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
 	type AssetRegistrar = MantaAssetRegistrar;
-	type FungibleLedger = MantaFungibleLedger;
+	type FungibleLedger = ConcreteFungibleLedger<Test, MantaAssetConfig, Balances, Assets>;
 }
 
 impl pallet_asset_manager::Config for Test {
