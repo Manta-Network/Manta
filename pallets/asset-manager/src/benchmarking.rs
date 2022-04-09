@@ -127,21 +127,8 @@ benchmarks! {
 	}
 }
 
-#[cfg(test)]
-mod tests {
-	use crate::mock::Test;
-	use sp_io::TestExternalities;
-
-	pub fn new_test_ext() -> TestExternalities {
-		let t = frame_system::GenesisConfig::default()
-			.build_storage::<Test>()
-			.unwrap();
-		TestExternalities::new(t)
-	}
-}
-
 impl_benchmark_test_suite!(
 	Pallet,
-	crate::benchmarks::tests::new_test_ext(),
-	crate::mock::Test
+	crate::mock::new_test_ext(),
+	crate::mock::Runtime
 );

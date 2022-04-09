@@ -53,6 +53,7 @@ pub mod pallet {
 		types::{AssetId, Balance},
 	};
 	use sp_runtime::{traits::AccountIdConversion, ArithmeticError};
+	use crate::weights::WeightInfo;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -221,11 +222,7 @@ pub mod pallet {
 		/// * `min_balance`: Minimum balance to keep an account alive, used in conjunction with `is_sufficient`.
 		/// * `is_sufficient`: Whether this asset needs users to have an existential deposit to hold
 		///  this asset.
-		///
-		/// # <weight>
-		/// TODO: get actual weight
-		/// # </weight>
-		#[pallet::weight(50_000_000)]
+		#[pallet::weight(T::WeightInfo::register_asset())]
 		#[transactional]
 		pub fn register_asset(
 			origin: OriginFor<T>,
@@ -261,10 +258,7 @@ pub mod pallet {
 		/// * `origin`: Caller of this extrinsic, the access control is specfied by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `location`: `location` to update the asset location.
-		/// # <weight>
-		/// TODO: get actual weight
-		/// # </weight>
-		#[pallet::weight(50_000_000)]
+		#[pallet::weight(T::WeightInfo::update_asset_location(1u32))]
 		#[transactional]
 		pub fn update_asset_location(
 			origin: OriginFor<T>,
@@ -297,7 +291,7 @@ pub mod pallet {
 		/// * `origin`: Caller of this extrinsic, the access control is specfied by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `metadata`: new `metadata` to be associated with `asset_id`.
-		#[pallet::weight(50_000_000)]
+		#[pallet::weight(T::WeightInfo::update_asset_metadata(1u32))]
 		#[transactional]
 		pub fn update_asset_metadata(
 			origin: OriginFor<T>,
@@ -319,10 +313,7 @@ pub mod pallet {
 		/// * `origin`: Caller of this extrinsic, the access control is specfied by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `units_per_second`: units per second for `asset_id`
-		/// # <weight>
-		/// TODO: get actual weight
-		/// # </weight>
-		#[pallet::weight(50_000_000)]
+		#[pallet::weight(T::WeightInfo::set_units_per_second(1u32))]
 		#[transactional]
 		pub fn set_units_per_second(
 			origin: OriginFor<T>,
@@ -348,10 +339,7 @@ pub mod pallet {
 		/// * `asset_id`: AssetId to be updated.
 		/// * `beneficiary`: Account to mint the asset.
 		/// * `amount`: Amount of asset being minted.
-		/// # <weight>
-		/// TODO: get actual weight
-		/// # </weight>
-		#[pallet::weight(50_000_000)]
+		#[pallet::weight(T::WeightInfo::mint_asset(1u32))]
 		#[transactional]
 		pub fn mint_asset(
 			origin: OriginFor<T>,
