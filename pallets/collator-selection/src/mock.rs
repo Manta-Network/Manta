@@ -18,11 +18,14 @@ use super::*;
 use crate as collator_selection;
 use frame_support::{
 	ord_parameter_types, parameter_types,
-	traits::{FindAuthor, GenesisBuild, ValidatorRegistration},
+	traits::{
+		ConstU16, ConstU32, ConstU64, FindAuthor, GenesisBuild, ValidatorRegistration, ValidatorSet,
+	},
 	PalletId,
 };
-use frame_system as system;
+
 use frame_system::EnsureSignedBy;
+use sp_arithmetic::Percent;
 use sp_core::H256;
 use sp_runtime::{
 	testing::{Header, UintAuthorityId},
@@ -42,20 +45,15 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+		Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
+		CollatorSelection: collator_selection::{Pallet, Call, Storage, Event<T>},
 		Aura: pallet_aura::{Pallet, Storage, Config<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		CollatorSelection: collator_selection::{Pallet, Call, Storage, Event<T>},
-		Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
 	}
 );
 
-parameter_types! {
-	pub const BlockHashCount: u64 = 250;
-	pub const SS58Prefix: u8 = 78;
-}
-
-impl system::Config for Test {
+impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
@@ -70,31 +68,27 @@ impl system::Config for Test {
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type Event = Event;
-	type BlockHashCount = BlockHashCount;
+	type BlockHashCount = ConstU64<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
 	type AccountData = pallet_balances::AccountData<u64>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
-	type SS58Prefix = SS58Prefix;
+	type SS58Prefix = ConstU16<78>;
 	type OnSetCode = ();
-}
-
-parameter_types! {
-	pub const ExistentialDeposit: u64 = 5;
-	pub const MaxReserves: u32 = 50;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 impl pallet_balances::Config for Test {
 	type Balance = u64;
 	type Event = Event;
 	type DustRemoval = ();
-	type ExistentialDeposit = ExistentialDeposit;
+	type ExistentialDeposit = ConstU64<5>;
 	type AccountStore = System;
 	type WeightInfo = ();
 	type MaxLocks = ();
-	type MaxReserves = MaxReserves;
+	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = [u8; 8];
 }
 
@@ -115,20 +109,16 @@ impl pallet_authorship::Config for Test {
 	type EventHandler = CollatorSelection;
 }
 
-parameter_types! {
-	pub const MinimumPeriod: u64 = 1;
-}
-
 impl pallet_timestamp::Config for Test {
 	type Moment = u64;
 	type OnTimestampSet = Aura;
-	type MinimumPeriod = MinimumPeriod;
+	type MinimumPeriod = ConstU64<1>;
 	type WeightInfo = ();
 }
 
 impl pallet_aura::Config for Test {
 	type AuthorityId = sp_consensus_aura::sr25519::AuthorityId;
-	type MaxAuthorities = MaxAuthorities;
+	type MaxAuthorities = ConstU32<100_000>;
 	type DisabledValidators = ();
 }
 
@@ -188,9 +178,6 @@ ord_parameter_types! {
 
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
-	pub const MaxCandidates: u32 = 20;
-	pub const MaxInvulnerables: u32 = 20;
-	pub const MaxAuthorities: u32 = 100_000;
 }
 
 pub struct IsRegistered;
@@ -204,16 +191,27 @@ impl ValidatorRegistration<u64> for IsRegistered {
 	}
 }
 
+impl ValidatorSet<u64> for IsRegistered {
+	type ValidatorId = u64;
+	type ValidatorIdOf = IdentityCollator;
+	fn session_index() -> sp_staking::SessionIndex {
+		Session::current_index()
+	}
+	fn validators() -> Vec<Self::ValidatorId> {
+		Session::validators()
+	}
+}
+
 impl Config for Test {
 	type Event = Event;
 	type Currency = Balances;
 	type UpdateOrigin = EnsureSignedBy<RootAccount, u64>;
 	type PotId = PotId;
-	type MaxCandidates = MaxCandidates;
-	type MaxInvulnerables = MaxInvulnerables;
-	type KickThreshold = Period;
+	type MaxCandidates = ConstU32<20>;
+	type MaxInvulnerables = ConstU32<20>;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = IdentityCollator;
+	type AccountIdOf = IdentityCollator;
 	type ValidatorRegistration = IsRegistered;
 	type WeightInfo = ();
 }
@@ -243,6 +241,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let collator_selection = collator_selection::GenesisConfig::<Test> {
 		desired_candidates: 2,
 		candidacy_bond: 10,
+		eviction_baseline: Percent::from_percent(80),
+		eviction_tolerance: Percent::from_percent(10),
 		invulnerables,
 	};
 	let session = pallet_session::GenesisConfig::<Test> { keys };
@@ -257,6 +257,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 pub fn initialize_to_block(n: u64) {
 	for i in System::block_number() + 1..=n {
 		System::set_block_number(i);
-		<AllPallets as frame_support::traits::OnInitialize<u64>>::on_initialize(i);
+		<AllPalletsReversedWithSystemFirst as frame_support::traits::OnInitialize<u64>>::on_initialize(i);
 	}
 }

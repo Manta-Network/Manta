@@ -1,6 +1,47 @@
 # CHANGELOG
 
-## Pending
+## Unreleased
+### Breaking changes
+
+### Features
+- [\#430](https://github.com/Manta-Network/Manta/pull/419) Add private payment to dolphin runtime.
+- [\#419](https://github.com/Manta-Network/Manta/pull/419) Add asset manager and XCM support.
+- [\#358](https://github.com/Manta-Network/Manta/pull/358) Underperforming collators are automatically removed from the collator set after each session
+- [\#383](https://github.com/Manta-Network/Manta/pull/383) Calamari & Manta support `cargo build --features=fast-runtime`, setting most configurable timers to 2 or 5 minutes (instead of days)
+- [\#436](https://github.com/Manta-Network/Manta/pull/436) Dolphin XCM Integration
+- [\#416](https://github.com/Manta-Network/Manta/pull/416) Automatic Collator removal enabled for Calamari
+
+### Improvements
+- [\#411](https://github.com/Manta-Network/Manta/pull/411) Add a corner case about increasing/decreasing candidate bond in collator-selection.
+
+### Bug fixes
+
+## v3.1.4-1
+### Breaking changes
+
+### Features
+
+### Improvements
+- Bump spec version to **3141**.
+- [\#403](https://github.com/Manta-Network/Manta/pull/403) Remove pallet_scheduler v3 migration after 3140 runtime upgrade.
+- [\#407](https://github.com/Manta-Network/Manta/pull/407) Update substrate dependencies to fix some low hanging fruit in democracy pallet.
+
+### Bug fixes
+
+## v3.1.4
+### Breaking changes
+
+### Features
+
+### Improvements
+- Bump spec version to **3140**.
+- [\#377](https://github.com/Manta-Network/Manta/pull/377) Update upstream dependencies to v0.9.16.
+- [\#359](https://github.com/Manta-Network/Manta/pull/359) Update upstream dependencies to v0.9.15.
+- [\#337](https://github.com/Manta-Network/Manta/pull/337) Add a congested_chain_simulation test in Calamari.
+- [\#341](https://github.com/Manta-Network/Manta/pull/341) Create Release Checklist Issue Template.
+- [\#350](https://github.com/Manta-Network/Manta/pull/350) Setting minValidatorCount to a default value on runtime upgrade.
+
+### Bug fixes
 
 ## v3.1.2
 ### Breaking changes

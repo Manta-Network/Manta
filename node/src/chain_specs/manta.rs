@@ -18,12 +18,16 @@ use super::*;
 use crate::command::MANTA_PARACHAIN_ID;
 
 pub type MantaChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
+use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 const MANTA_PROTOCOL_ID: &str = "manta"; // for p2p network configuration
 const POLKADOT_RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";
 const POLKADOT_RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
 #[allow(dead_code)]
 const POLKADOT_RELAYCHAIN_MAIN_NET: &str = "polkadot";
+
+/// The default XCM version to set in genesis config.
+const SAFE_XCM_VERSION: u32 = 2;
 
 /// Generate the manta session keys from individual elements.
 ///
@@ -70,6 +74,7 @@ pub fn manta_development_config() -> MantaChainSpec {
 		vec![],
 		None,
 		Some(MANTA_PROTOCOL_ID),
+		None,
 		Some(properties),
 		Extensions {
 			relay_chain: POLKADOT_RELAYCHAIN_DEV_NET.into(),
@@ -118,6 +123,7 @@ pub fn manta_local_config() -> MantaChainSpec {
 		vec![],
 		None,
 		Some(MANTA_PROTOCOL_ID),
+		None,
 		Some(properties),
 		Extensions {
 			relay_chain: POLKADOT_RELAYCHAIN_LOCAL_NET.into(),
@@ -151,7 +157,9 @@ fn manta_dev_genesis(
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		aura: Default::default(),
-		sudo: manta_runtime::SudoConfig { key: root_key },
+		sudo: manta_runtime::SudoConfig {
+			key: Some(root_key),
+		},
 		parachain_info: manta_runtime::ParachainInfoConfig {
 			parachain_id: MANTA_PARACHAIN_ID.into(),
 		},
@@ -176,7 +184,7 @@ fn manta_dev_genesis(
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
 		polkadot_xcm: manta_runtime::PolkadotXcmConfig {
-			safe_xcm_version: Some(0),
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 	}
 }

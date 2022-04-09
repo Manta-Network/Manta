@@ -18,6 +18,7 @@ use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
 
 use calamari_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
+use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type CalamariChainSpec =
@@ -26,6 +27,9 @@ pub type CalamariChainSpec =
 const CALAMARI_PROTOCOL_ID: &str = "calamari"; // for p2p network configuration
 const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
 const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
+
+/// The default XCM version to set in genesis config.
+const SAFE_XCM_VERSION: u32 = 2;
 
 /// Generate the calamari session keys from individual elements.
 ///
@@ -74,6 +78,7 @@ pub fn calamari_development_config() -> CalamariChainSpec {
 		vec![],
 		None,
 		Some(CALAMARI_PROTOCOL_ID),
+		None,
 		Some(properties),
 		Extensions {
 			relay_chain: KUSAMA_RELAYCHAIN_DEV_NET.into(),
@@ -134,6 +139,7 @@ pub fn calamari_local_config() -> CalamariChainSpec {
 		vec![],
 		None,
 		Some(CALAMARI_PROTOCOL_ID),
+		None,
 		Some(properties),
 		Extensions {
 			relay_chain: KUSAMA_RELAYCHAIN_LOCAL_NET.into(),
@@ -167,7 +173,9 @@ fn calamari_dev_genesis(
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		aura: Default::default(),
-		sudo: calamari_runtime::SudoConfig { key: root_key },
+		sudo: calamari_runtime::SudoConfig {
+			key: Some(root_key),
+		},
 		parachain_info: calamari_runtime::ParachainInfoConfig {
 			parachain_id: CALAMARI_PARACHAIN_ID.into(),
 		},
@@ -203,7 +211,7 @@ fn calamari_dev_genesis(
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
 		polkadot_xcm: calamari_runtime::PolkadotXcmConfig {
-			safe_xcm_version: Some(0),
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 	}
 }

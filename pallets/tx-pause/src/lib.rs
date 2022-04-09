@@ -81,6 +81,7 @@ pub mod pallet {
 		StorageMap<_, Twox64Concat, (Vec<u8>, Vec<u8>), (), OptionQuery>;
 
 	#[pallet::pallet]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	#[pallet::hooks]

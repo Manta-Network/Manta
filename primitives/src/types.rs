@@ -14,15 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-#![allow(non_upper_case_globals)]
-#![allow(clippy::unnecessary_cast)]
-#![allow(clippy::upper_case_acronyms)]
-#![cfg_attr(not(feature = "std"), no_std)]
-
-pub mod constants;
-pub use constants::time;
-
 use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
+
+pub use manta_accounting::asset::{AssetIdType, AssetValueType};
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -39,7 +33,7 @@ pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::Account
 pub type AccountIndex = u32;
 
 /// Balance of an account.
-pub type Balance = u128;
+pub type Balance = AssetValueType;
 
 /// Index of a transaction in the chain.
 pub type Index = u32;
@@ -59,3 +53,6 @@ pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
 
 // Moment
 pub type Moment = u64;
+
+// AssetId
+pub type AssetId = AssetIdType;

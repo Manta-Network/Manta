@@ -39,7 +39,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Contains, Currency, Everything, Nothing},
+	traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, Everything, Nothing},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight,
@@ -48,10 +48,12 @@ use frame_support::{
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureOneOf, EnsureRoot,
+	EnsureRoot,
 };
 use manta_primitives::{
-	time::*, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
+	constants::time::*,
+	prod_or_fast,
+	types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use sp_runtime::Perbill;
 
@@ -110,10 +112,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("manta"),
 	impl_name: create_runtime_str!("manta"),
 	authoring_version: 1,
-	spec_version: 3120,
+	spec_version: 3141,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
+	state_version: 0,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -125,10 +128,10 @@ pub fn native_version() -> NativeVersion {
 	}
 }
 
-/// We assume that ~5% of the block weight is consumed by `on_initialize` handlers. This is
+/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers. This is
 /// used to limit the maximal weight of a single extrinsic.
 pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
-/// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used by
+/// We allow `Normal` extrinsics to fill up the block up to 70%, the rest can be used by
 /// Operational  extrinsics.
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(70);
 
@@ -220,6 +223,7 @@ impl frame_system::Config for Runtime {
 	type SystemWeightInfo = weights::frame_system::SubstrateWeight<Runtime>;
 	type SS58Prefix = SS58Prefix;
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -234,26 +238,20 @@ impl pallet_timestamp::Config for Runtime {
 	type WeightInfo = weights::pallet_timestamp::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-	pub const UncleGenerations: u32 = 0;
-}
-
 impl pallet_authorship::Config for Runtime {
 	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-	type UncleGenerations = UncleGenerations;
+	type UncleGenerations = ConstU32<0>;
 	type FilterUncle = ();
 	type EventHandler = (CollatorSelection,);
 }
 
 parameter_types! {
 	pub const NativeTokenExistentialDeposit: u128 = MANTA;
-	pub const MaxLocks: u32 = 50;
-	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
-	type MaxLocks = MaxLocks;
-	type MaxReserves = MaxReserves;
+	type MaxLocks = ConstU32<50>;
+	type MaxReserves = ConstU32<50>;
 	type ReserveIdentifier = [u8; 8];
 	type Balance = Balance;
 	type DustRemoval = ();
@@ -266,7 +264,6 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
 	pub const TransactionByteFee: Balance = mMANTA/10;
-	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -274,7 +271,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = WeightToFee;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
-	type OperationalFeeMultiplier = OperationalFeeMultiplier;
+	type OperationalFeeMultiplier = ConstU8<5>;
 }
 
 parameter_types! {
@@ -282,7 +279,6 @@ parameter_types! {
 	pub const DepositBase: Balance = deposit(1, 88);
 	// Additional storage item size of 32 bytes.
 	pub const DepositFactor: Balance = deposit(0, 32);
-	pub const MaxSignatories: u16 = 100;
 }
 
 impl pallet_multisig::Config for Runtime {
@@ -291,7 +287,7 @@ impl pallet_multisig::Config for Runtime {
 	type Currency = Balances;
 	type DepositBase = DepositBase;
 	type DepositFactor = DepositFactor;
-	type MaxSignatories = MaxSignatories;
+	type MaxSignatories = ConstU16<100>;
 	type WeightInfo = weights::pallet_multisig::SubstrateWeight<Runtime>;
 }
 
@@ -312,9 +308,7 @@ parameter_types! {
 	// dispatchables of less priority than schedule::HARD_DEADLINE.
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
 		RuntimeBlockWeights::get().max_block;
-	// The maximum number of scheduled calls in the queue for a single block.
-	// Not strictly enforced, but used for weight estimation.
-	pub const MaxScheduledPerBlock: u32 = 50;
+	pub const NoPreimagePostponement: Option<u32> = Some(10);
 }
 
 type ScheduleOrigin = EnsureRoot<AccountId>;
@@ -325,9 +319,30 @@ impl pallet_scheduler::Config for Runtime {
 	type Call = Call;
 	type MaximumWeight = MaximumSchedulerWeight;
 	type ScheduleOrigin = ScheduleOrigin;
-	type MaxScheduledPerBlock = MaxScheduledPerBlock;
+	type MaxScheduledPerBlock = ConstU32<50>; // 50 scheduled calls at most in the queue for a single block.
 	type WeightInfo = weights::pallet_scheduler::SubstrateWeight<Runtime>;
 	type OriginPrivilegeCmp = frame_support::traits::EqualPrivilegeOnly;
+	type PreimageProvider = Preimage;
+	type NoPreimagePostponement = NoPreimagePostponement;
+}
+
+parameter_types! {
+	// Our NORMAL_DISPATCH_RATIO is 70% of the 5MB limit
+	// So anything more than 3.5MB doesn't make sense here
+	pub const PreimageMaxSize: u32 = 3584 * 1024;
+	pub const PreimageBaseDeposit: Balance = 1 * MANTA;
+	// One cent: $10,000 / MB
+	pub const PreimageByteDeposit: Balance = 1 * cMANTA;
+}
+
+impl pallet_preimage::Config for Runtime {
+	type WeightInfo = weights::pallet_preimage::SubstrateWeight<Runtime>;
+	type Event = Event;
+	type Currency = Balances;
+	type ManagerOrigin = EnsureRoot<AccountId>;
+	type MaxSize = PreimageMaxSize;
+	type BaseDeposit = PreimageBaseDeposit;
+	type ByteDeposit = PreimageByteDeposit;
 }
 
 parameter_types! {
@@ -337,7 +352,7 @@ parameter_types! {
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
-	type OnValidationData = ();
+	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
 	type DmpMessageHandler = DmpQueue;
 	type ReservedDmpWeight = ReservedDmpWeight;
@@ -500,6 +515,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
+	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -509,9 +525,8 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 }
 
 parameter_types! {
-	pub const Period: u32 = 6 * HOURS;
+	pub Period: u32 = prod_or_fast!(7 * HOURS, 2 * MINUTES, "MANTA_PERIOD");
 	pub const Offset: u32 = 0;
-	pub const MaxAuthorities: u32 = 100_000;
 }
 
 impl pallet_session::Config for Runtime {
@@ -532,17 +547,12 @@ impl pallet_session::Config for Runtime {
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
-	type MaxAuthorities = MaxAuthorities;
+	type MaxAuthorities = ConstU32<100_000>;
 }
 
 parameter_types! {
 	// Pallet account for record rewards and give rewards to collator.
 	pub const PotId: PalletId = PalletId(*b"PotStake");
-	// How many collator candidates is allowed.
-	pub const MaxCandidates: u32 = 50;
-	pub const MinCandidates: u32 = 3;
-	// How many collators who cannot be slashed.
-	pub const MaxInvulnerables: u32 = 5;
 }
 
 parameter_types! {
@@ -550,22 +560,18 @@ parameter_types! {
 }
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = EnsureOneOf<
-	AccountId,
-	EnsureRoot<AccountId>,
-	EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>,
->;
+pub type CollatorSelectionUpdateOrigin =
+	EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
 
 impl pallet_collator_selection::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
 	type UpdateOrigin = CollatorSelectionUpdateOrigin;
 	type PotId = PotId;
-	type MaxCandidates = MaxCandidates;
-	type MinCandidates = MinCandidates;
-	type MaxInvulnerables = MaxInvulnerables;
-	// should be a multiple of session or things will get inconsistent
-	type KickThreshold = Period;
+	type MaxCandidates = ConstU32<50>; // 50 candidates at most
+	type MinCandidates = ConstU32<3>; // 3 candidates at least
+	type MaxInvulnerables = ConstU32<5>; // 5 invulnerables at most
+	type KickThreshold = Period; // should be a multiple of session or things will get inconsistent
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;
@@ -598,6 +604,8 @@ construct_runtime!(
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
 
+		// Preimage registrar.
+		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 28,
 		// System scheduler
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 29,
 
@@ -643,7 +651,7 @@ pub type Executive = frame_executive::Executive<
 	Block,
 	frame_system::ChainContext<Runtime>,
 	Runtime,
-	AllPallets,
+	AllPalletsReversedWithSystemFirst,
 >;
 
 impl_runtime_apis! {
@@ -748,8 +756,8 @@ impl_runtime_apis! {
 	}
 
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
-		fn collect_collation_info() -> cumulus_primitives_core::CollationInfo {
-			ParachainSystem::collect_collation_info()
+		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
+			ParachainSystem::collect_collation_info(header)
 		}
 	}
 
@@ -783,13 +791,14 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_balances, Balances);
 			list_benchmark!(list, extra, pallet_collator_selection, CollatorSelection);
 			list_benchmark!(list, extra, pallet_scheduler, Scheduler);
+			list_benchmark!(list, extra, pallet_preimage, Preimage);
 			list_benchmark!(list, extra, pallet_session, SessionBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_utility, Utility);
 			list_benchmark!(list, extra, pallet_multisig, Multisig);
 
 			list_benchmark!(list, extra, pallet_tx_pause, TransactionPause);
 
-			let storage_info = AllPalletsWithSystem::storage_info();
+			let storage_info = AllPalletsReversedWithSystemFirst::storage_info();
 
 			return (list, storage_info)
 		}
@@ -826,6 +835,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
 			add_benchmark!(params, batches, pallet_scheduler, Scheduler);
+			add_benchmark!(params, batches, pallet_preimage, Preimage);
 			add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_utility, Utility);
 			add_benchmark!(params, batches, pallet_multisig, Multisig);
