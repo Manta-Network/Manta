@@ -241,8 +241,8 @@ fn mint_asset() {
 		let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 		assert_ok!(AssetManager::register_asset(
 			Origin::root(),
-			source_location.clone(),
-			asset_metadata.clone()
+			source_location,
+			asset_metadata
 		));
 		assert_ok!(
 			<MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::mint(
