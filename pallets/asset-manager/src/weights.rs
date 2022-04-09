@@ -45,10 +45,10 @@ use sp_std::marker::PhantomData;
 /// Weight functions needed for pallet_tx_pause.
 pub trait WeightInfo {
 	fn register_asset() -> Weight;
-	fn set_units_per_second(x: u32,) -> Weight;
-	fn update_asset_location(x: u32,) -> Weight;
-	fn update_asset_metadata(x: u32,) -> Weight;
-	fn mint_asset(x: u32,) -> Weight;
+	fn set_units_per_second() -> Weight;
+	fn update_asset_location() -> Weight;
+	fn update_asset_metadata() -> Weight;
+	fn mint_asset() -> Weight;
 }
 
 /// Weight functions for `pallet_asset_manager`.
@@ -67,38 +67,30 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	// Storage: AssetManager AssetIdLocation (r:1 w:0)
 	// Storage: AssetManager UnitsPerSecond (r:0 w:1)
-	fn set_units_per_second(x: u32, ) -> Weight {
+	fn set_units_per_second() -> Weight {
 		(21_203_000 as Weight)
-			// Standard Error: 14_000
-			.saturating_add((227_000 as Weight).saturating_mul(x as Weight))
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: AssetManager AssetIdLocation (r:1 w:1)
 	// Storage: AssetManager LocationAssetId (r:1 w:2)
-	fn update_asset_location(x: u32, ) -> Weight {
+	fn update_asset_location() -> Weight {
 		(20_737_000 as Weight)
-			// Standard Error: 11_000
-			.saturating_add((241_000 as Weight).saturating_mul(x as Weight))
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 			.saturating_add(T::DbWeight::get().writes(3 as Weight))
 	}
 	// Storage: AssetManager AssetIdLocation (r:1 w:0)
 	// Storage: AssetManager AssetIdMetadata (r:0 w:1)
-	fn update_asset_metadata(x: u32, ) -> Weight {
+	fn update_asset_metadata() -> Weight {
 		(15_663_000 as Weight)
-			// Standard Error: 11_000
-			.saturating_add((149_000 as Weight).saturating_mul(x as Weight))
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: AssetManager AssetIdLocation (r:1 w:0)
 	// Storage: Assets Asset (r:1 w:1)
 	// Storage: Assets Account (r:1 w:1)
-	fn mint_asset(x: u32, ) -> Weight {
+	fn mint_asset() -> Weight {
 		(39_949_000 as Weight)
-			// Standard Error: 14_000
-			.saturating_add((139_000 as Weight).saturating_mul(x as Weight))
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
@@ -113,28 +105,29 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 
-	fn set_units_per_second(_x: u32, ) -> Weight {
+	fn set_units_per_second() -> Weight {
 		(42_450_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 
-	fn update_asset_location(_x: u32, ) -> Weight {
+	fn update_asset_location() -> Weight {
 		(42_000_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 
-	fn update_asset_metadata(_x: u32, ) -> Weight {
+	fn update_asset_metadata() -> Weight {
 		(42_450_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	
-	fn mint_asset(_x: u32, ) -> Weight {
+	fn mint_asset() -> Weight {
 		(42_450_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 }
+
 
