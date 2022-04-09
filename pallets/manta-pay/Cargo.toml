@@ -44,6 +44,7 @@ std = [
 precompute-coins = [
 	"anyhow",
 	"indoc",
+	"manta-accounting/test",
 	"manta-sdk/download",
 	"manta-util/std",
 	"rand",
@@ -84,7 +85,6 @@ sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkado
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
 pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
 pallet-asset-manager = { path = "../asset-manager"}
-manta-util = { git = "https://github.com/manta-network/manta-rs.git", features = ["std"] }
 manta-sdk = { git = "https://github.com/manta-network/sdk.git", features = ["download"] }
 tempfile = "3.3.0"
 rand = "0.8.4"
