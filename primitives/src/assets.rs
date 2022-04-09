@@ -21,7 +21,13 @@ use crate::{
 };
 use codec::{Codec, Decode, Encode};
 use frame_support::{
-	traits::tokens::{DepositConsequence, WithdrawConsequence},
+	pallet_prelude::Get,
+	traits::tokens::{
+		currency::Currency,
+		fungible::Inspect as FungibleInspect,
+		fungibles::{Inspect as FungiblesInspect, Mutate, Transfer},
+		DepositConsequence, ExistenceRequirement, WithdrawConsequence,
+	},
 	Parameter,
 };
 use scale_info::TypeInfo;
@@ -45,7 +51,7 @@ pub trait AssetMetadata {
 /// The registrar trait: defines the interface of creating an asset in the asset implementation layer.
 /// We may revisit this interface design (e.g. add change asset interface). However, change StorageMetadata
 /// should be rare.
-pub trait AssetRegistrar<T: AssetConfig> {
+pub trait AssetRegistrar<C: frame_system::Config, T: AssetConfig<C>> {
 	/// Create an new asset.
 	///
 	/// * `asset_id`: the asset id to be created
@@ -71,9 +77,28 @@ pub trait AssetRegistrar<T: AssetConfig> {
 	fn update_asset_metadata(asset_id: AssetId, metadata: T::StorageMetadata) -> DispatchResult;
 }
 
-pub trait AssetConfig: 'static + Eq + Clone {
-	/// The trait we use to register Assets
-	type AssetRegistrar: AssetRegistrar<Self>;
+pub trait AssetConfig<C>: 'static + Eq + Clone
+where
+	C: frame_system::Config,
+{
+	/// The AssetId that the non-native asset starts from.
+	/// A typical configuration is 8, so that asset 0 - 7 is reserved.
+	type StartNonNativeAssetId: Get<AssetId>;
+
+	/// Dummy Asset ID, a typical configuration is 0.
+	type DummyAssetId: Get<AssetId>;
+
+	/// The Native Asset Id, a typical configuration is 1.
+	type NativeAssetId: Get<AssetId>;
+
+	/// Native Asset Location
+	type NativeAssetLocation: Get<Self::AssetLocation>;
+
+	/// Native Asset Metadata
+	type NativeAssetMetadata: Get<Self::AssetRegistrarMetadata>;
+
+	/// The trait we use to register Assets and mint assets
+	type AssetRegistrar: AssetRegistrar<C, Self>;
 
 	/// Metadata type that required in token storage: e.g. AssetMetadata in Pallet-Assets.
 	type StorageMetadata: Member + Parameter + Default + From<Self::AssetRegistrarMetadata>;
@@ -83,6 +108,9 @@ pub trait AssetConfig: 'static + Eq + Clone {
 
 	/// The AssetLocation type: could be just a thin wrapper of MultiLocation
 	type AssetLocation: Member + Parameter + Default + TypeInfo;
+
+	/// The Fungible ledger implementation of this trait
+	type FungibleLedger: FungibleLedger<C>;
 }
 
 /// The metadata of a Manta Asset
@@ -165,7 +193,7 @@ impl From<MultiLocation> for AssetLocation {
 	///
 	/// # Safety
 	///
-	/// This method does not guaranttee that the output [`AssetLocation`] is registered, i.e. has a
+	/// This method does not guarantee that the output [`AssetLocation`] is registered, i.e. has a
 	/// valid [`AssetId`].
 	fn from(location: MultiLocation) -> Self {
 		AssetLocation(VersionedMultiLocation::V1(location))
@@ -253,6 +281,8 @@ pub enum FungibleLedgerConsequence {
 	WouldDie,
 	/// Internal error.
 	InternalError,
+	/// Invalid Asset id.
+	InvalidAssetId,
 	/// Success
 	Success,
 }
@@ -292,6 +322,9 @@ pub trait FungibleLedger<C>
 where
 	C: frame_system::Config,
 {
+	/// check if an asset id is valid
+	fn is_valid(asset_id: AssetId) -> Result<(), FungibleLedgerConsequence>;
+
 	/// check whether `asset_id`, `account` can increase certain balance
 	fn can_deposit(
 		asset_id: AssetId,
@@ -320,4 +353,107 @@ where
 		beneficiary: &C::AccountId,
 		amount: Balance,
 	) -> Result<(), FungibleLedgerConsequence>;
+}
+
+pub struct ConcreteFungibleLedger<FrameConfig, AssetConfig, NativeAsset, NonNativeAsset>(
+	PhantomData<(FrameConfig, AssetConfig, NativeAsset, NonNativeAsset)>,
+);
+impl<C, A, Native, NonNative> FungibleLedger<C> for ConcreteFungibleLedger<C, A, Native, NonNative>
+where
+	C: frame_system::Config,
+	A: AssetConfig<C>,
+	Native: FungibleInspect<C::AccountId, Balance = Balance>
+		+ Currency<C::AccountId, Balance = Balance>,
+	NonNative: FungiblesInspect<C::AccountId, AssetId = AssetId, Balance = Balance>
+		+ Mutate<C::AccountId, AssetId = AssetId, Balance = Balance>
+		+ Transfer<C::AccountId, AssetId = AssetId, Balance = Balance>,
+{
+	fn is_valid(asset_id: AssetId) -> Result<(), FungibleLedgerConsequence> {
+		if asset_id >= A::StartNonNativeAssetId::get() || asset_id == A::NativeAssetId::get() {
+			Ok(())
+		} else {
+			Err(FungibleLedgerConsequence::InvalidAssetId)
+		}
+	}
+
+	fn can_deposit(
+		asset_id: AssetId,
+		account: &C::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence> {
+		Self::is_valid(asset_id)?;
+		if asset_id == A::NativeAssetId::get() {
+			match <Native as FungibleInspect<C::AccountId>>::can_deposit(account, amount) {
+				DepositConsequence::Success => Ok(()),
+				other => Err(other.into()),
+			}
+		} else {
+			match <NonNative as FungiblesInspect<C::AccountId>>::can_deposit(
+				asset_id, account, amount,
+			) {
+				DepositConsequence::Success => Ok(()),
+				other => Err(other.into()),
+			}
+		}
+	}
+
+	fn can_withdraw(
+		asset_id: AssetId,
+		account: &C::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence> {
+		Self::is_valid(asset_id)?;
+		if asset_id == A::NativeAssetId::get() {
+			match <Native as FungibleInspect<C::AccountId>>::can_withdraw(account, amount) {
+				WithdrawConsequence::Success => Ok(()),
+				other => Err(other.into()),
+			}
+		} else {
+			match <NonNative as FungiblesInspect<C::AccountId>>::can_withdraw(
+				asset_id, account, amount,
+			) {
+				WithdrawConsequence::Success => Ok(()),
+				other => Err(other.into()),
+			}
+		}
+	}
+
+	fn transfer(
+		asset_id: AssetId,
+		source: &C::AccountId,
+		dest: &C::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence> {
+		Self::is_valid(asset_id)?;
+		if asset_id == A::NativeAssetId::get() {
+			<Native as Currency<C::AccountId>>::transfer(
+				source,
+				dest,
+				amount,
+				ExistenceRequirement::KeepAlive,
+			)
+			.map_err(|_| FungibleLedgerConsequence::InternalError)
+		} else {
+			<NonNative as Transfer<C::AccountId>>::transfer(asset_id, source, dest, amount, true)
+				.map(|_| ())
+				.map_err(|_| FungibleLedgerConsequence::InternalError)
+		}
+	}
+
+	fn mint(
+		asset_id: AssetId,
+		beneficiary: &C::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerConsequence> {
+		Self::is_valid(asset_id)?;
+		Self::can_deposit(asset_id, beneficiary, amount)?;
+		if asset_id == A::NativeAssetId::get() {
+			let _ = <Native as Currency<C::AccountId>>::deposit_creating(&beneficiary, amount);
+			Ok(())
+		} else {
+			<NonNative as Mutate<C::AccountId>>::mint_into(asset_id, &beneficiary, amount)
+				.map(|_| ())
+				.map_err(|_| FungibleLedgerConsequence::InternalError)
+		}
+	}
 }
