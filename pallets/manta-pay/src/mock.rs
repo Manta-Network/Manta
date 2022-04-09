@@ -16,7 +16,7 @@
 
 use frame_support::{
 	parameter_types,
-	traits::{ConstU32, Everything,},
+	traits::{ConstU32, Everything},
 	PalletId,
 };
 use frame_system::EnsureRoot;

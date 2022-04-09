@@ -52,7 +52,8 @@ lazy_static::lazy_static! {
 }
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
-pub const NATIVE_ASSET_ID: AssetId = AssetId(<MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get());
+pub const NATIVE_ASSET_ID: AssetId =
+	AssetId(<MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get());
 
 /// Loads the [`MultiProvingContext`] from the SDK.
 #[inline]
@@ -148,13 +149,17 @@ where
 
 /// Builds `count`-many [`PrivateTransfer`] tests.
 #[inline]
-fn private_transfer_test<R>(count: usize, asset_id_option: Option<AssetId>, rng: &mut R) -> Vec<TransferPost>
+fn private_transfer_test<R>(
+	count: usize,
+	asset_id_option: Option<AssetId>,
+	rng: &mut R,
+) -> Vec<TransferPost>
 where
 	R: CryptoRng + RngCore + ?Sized,
 {
 	let asset_id = match asset_id_option {
 		Some(id) => id,
-		None => rng.gen()
+		None => rng.gen(),
 	};
 	// FIXME: get rid of the division after parity fixes the pallet-asset bug
 	let double_balance: u128 = rng.gen();
@@ -226,7 +231,7 @@ where
 {
 	let asset_id = match id_option {
 		Some(id) => id,
-		None => rng.gen()
+		None => rng.gen(),
 	};
 	// FIXME: This is a workaround due to the substrate asset bug
 	let double_balance: u128 = rng.gen();
@@ -296,12 +301,18 @@ fn initialize_test(id: AssetId, value: AssetValue) {
 		metadata.into(),
 		true
 	));
-	assert_ok!(<<MantaAssetConfig as AssetConfig<Test>>::FungibleLedger as FungibleLedger<Test>>::mint(id.0, &ALICE, value.0));
-	assert_ok!(<<MantaAssetConfig as AssetConfig<Test>>::FungibleLedger as FungibleLedger<Test>>::mint(
-		id.0,
-		&MantaPayPallet::account_id(),
-		DEFAULT_ASSET_ED
-	));
+	assert_ok!(
+		<<MantaAssetConfig as AssetConfig<Test>>::FungibleLedger as FungibleLedger<Test>>::mint(
+			id.0, &ALICE, value.0
+		)
+	);
+	assert_ok!(
+		<<MantaAssetConfig as AssetConfig<Test>>::FungibleLedger as FungibleLedger<Test>>::mint(
+			id.0,
+			&MantaPayPallet::account_id(),
+			DEFAULT_ASSET_ED
+		)
+	);
 }
 
 /// Tests multiple to_private from some total supply.
@@ -324,7 +335,7 @@ fn to_private_should_work() {
 }
 
 #[test]
-fn native_asset_to_private_should_work(){
+fn native_asset_to_private_should_work() {
 	let mut rng = thread_rng();
 	new_test_ext().execute_with(|| {
 		// FIXME: get rid of divide by two after parity fix pallet-asset
@@ -432,13 +443,13 @@ fn double_spend_in_private_transfer_should_not_work() {
 /// Tests a [`Reclaim`] transaction.
 #[test]
 fn reclaim_should_work() {
-	new_test_ext().execute_with(|| reclaim_test(1, None,&mut thread_rng()));
+	new_test_ext().execute_with(|| reclaim_test(1, None, &mut thread_rng()));
 }
 
 /// Test a [`Reclaim`] of native currency
 #[test]
-fn reclaim_native_should_work(){
-	new_test_ext().execute_with(|| reclaim_test(1, Some(NATIVE_ASSET_ID),&mut thread_rng()));
+fn reclaim_native_should_work() {
+	new_test_ext().execute_with(|| reclaim_test(1, Some(NATIVE_ASSET_ID), &mut thread_rng()));
 }
 
 /// Tests multiple [`Reclaim`] transactions.

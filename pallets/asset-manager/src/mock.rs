@@ -20,11 +20,7 @@
 //! Mock runtime for asset-manager
 
 use crate as pallet_asset_manager;
-use frame_support::{
-	construct_runtime, parameter_types,
-	traits::ConstU32,
-	PalletId,
-};
+use frame_support::{construct_runtime, parameter_types, traits::ConstU32, PalletId};
 use frame_system as system;
 use frame_system::EnsureRoot;
 use manta_primitives::{

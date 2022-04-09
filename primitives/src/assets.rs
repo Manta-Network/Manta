@@ -22,12 +22,12 @@ use crate::{
 use codec::{Codec, Decode, Encode};
 use frame_support::{
 	pallet_prelude::Get,
-	traits::{tokens::{
-		fungible::Inspect as FungibleInspect, 
+	traits::tokens::{
+		currency::Currency,
+		fungible::Inspect as FungibleInspect,
 		fungibles::{Inspect as FungiblesInspect, Mutate, Transfer},
-		currency::Currency, 
-		ExistenceRequirement,
-		DepositConsequence, WithdrawConsequence}},
+		DepositConsequence, ExistenceRequirement, WithdrawConsequence,
+	},
 	Parameter,
 };
 use scale_info::TypeInfo;
@@ -355,26 +355,21 @@ where
 	) -> Result<(), FungibleLedgerConsequence>;
 }
 
-pub struct ConcreteFungibleLedger<
-	FrameConfig,
-	AssetConfig,
-	NativeAsset,
-	NonNativeAsset,>
-	(PhantomData<(FrameConfig, AssetConfig, NativeAsset, NonNativeAsset)>);
+pub struct ConcreteFungibleLedger<FrameConfig, AssetConfig, NativeAsset, NonNativeAsset>(
+	PhantomData<(FrameConfig, AssetConfig, NativeAsset, NonNativeAsset)>,
+);
 impl<C, A, Native, NonNative> FungibleLedger<C> for ConcreteFungibleLedger<C, A, Native, NonNative>
-where 
+where
 	C: frame_system::Config,
 	A: AssetConfig<C>,
-	Native: FungibleInspect<C::AccountId, Balance = Balance> + Currency<C::AccountId, Balance = Balance>,
-	NonNative: 
-		FungiblesInspect<C::AccountId, AssetId = AssetId, Balance = Balance> + 
-		Mutate<C::AccountId, AssetId = AssetId, Balance = Balance> +
-		Transfer<C::AccountId, AssetId = AssetId, Balance = Balance>,
+	Native: FungibleInspect<C::AccountId, Balance = Balance>
+		+ Currency<C::AccountId, Balance = Balance>,
+	NonNative: FungiblesInspect<C::AccountId, AssetId = AssetId, Balance = Balance>
+		+ Mutate<C::AccountId, AssetId = AssetId, Balance = Balance>
+		+ Transfer<C::AccountId, AssetId = AssetId, Balance = Balance>,
 {
-	fn is_valid(asset_id: AssetId) -> Result<(), FungibleLedgerConsequence>{
-		if asset_id >= A::StartNonNativeAssetId::get()
-			|| asset_id == A::NativeAssetId::get()
-		{
+	fn is_valid(asset_id: AssetId) -> Result<(), FungibleLedgerConsequence> {
+		if asset_id >= A::StartNonNativeAssetId::get() || asset_id == A::NativeAssetId::get() {
 			Ok(())
 		} else {
 			Err(FungibleLedgerConsequence::InvalidAssetId)
@@ -393,7 +388,9 @@ where
 				other => Err(other.into()),
 			}
 		} else {
-			match <NonNative as FungiblesInspect<C::AccountId>>::can_deposit(asset_id, account, amount) {
+			match <NonNative as FungiblesInspect<C::AccountId>>::can_deposit(
+				asset_id, account, amount,
+			) {
 				DepositConsequence::Success => Ok(()),
 				other => Err(other.into()),
 			}
@@ -412,7 +409,9 @@ where
 				other => Err(other.into()),
 			}
 		} else {
-			match <NonNative as FungiblesInspect<C::AccountId>>::can_withdraw(asset_id, account, amount) {
+			match <NonNative as FungiblesInspect<C::AccountId>>::can_withdraw(
+				asset_id, account, amount,
+			) {
 				WithdrawConsequence::Success => Ok(()),
 				other => Err(other.into()),
 			}
@@ -435,11 +434,9 @@ where
 			)
 			.map_err(|_| FungibleLedgerConsequence::InternalError)
 		} else {
-			<NonNative as Transfer<C::AccountId>>::transfer(
-				asset_id, source, dest, amount, true,
-			)
-			.map(|_| ())
-			.map_err(|_| FungibleLedgerConsequence::InternalError)
+			<NonNative as Transfer<C::AccountId>>::transfer(asset_id, source, dest, amount, true)
+				.map(|_| ())
+				.map_err(|_| FungibleLedgerConsequence::InternalError)
 		}
 	}
 
@@ -451,20 +448,12 @@ where
 		Self::is_valid(asset_id)?;
 		Self::can_deposit(asset_id, beneficiary, amount)?;
 		if asset_id == A::NativeAssetId::get() {
-			let _ =
-				<Native as Currency<C::AccountId>>::deposit_creating(
-					&beneficiary,
-					amount,
-				);
+			let _ = <Native as Currency<C::AccountId>>::deposit_creating(&beneficiary, amount);
 			Ok(())
 		} else {
-			<NonNative as Mutate<C::AccountId>>::mint_into(
-				asset_id,
-				&beneficiary,
-				amount,
-			)
-			.map(|_| ())
-			.map_err(|_| FungibleLedgerConsequence::InternalError)
+			<NonNative as Mutate<C::AccountId>>::mint_into(asset_id, &beneficiary, amount)
+				.map(|_| ())
+				.map_err(|_| FungibleLedgerConsequence::InternalError)
 		}
 	}
 }
