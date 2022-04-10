@@ -1,7 +1,7 @@
 {
   "name": "Dolphin Parachain Testnet",
   "id": "dolphin_testnet",
-  "chainType": "Live",
+  "chainType": "Local",
   "bootNodes": [
     "/dns/eddie.rococo.dolphin.engineering/tcp/30333/p2p/12D3KooWRPiKv8nJyNYYF4BXX318auddRVo9aUnBP7B1EPWNhEqF",
     "/dns/kwaltz.rococo.dolphin.engineering/tcp/30333/p2p/12D3KooWApki85vevuLRLYGpcvVwbFibDDhZMD6VbDnxFN2F96Ga",
