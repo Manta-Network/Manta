@@ -6174,6 +6174,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "tempfile",
+ "xcm",
 ]
 
 [[package]]
