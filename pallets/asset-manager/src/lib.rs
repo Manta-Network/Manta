@@ -113,7 +113,7 @@ pub mod pallet {
 	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
 			Self {
-				start_id: <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(),
+				start_id: <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(),
 				_marker: PhantomData,
 			}
 		}
