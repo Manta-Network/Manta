@@ -52,7 +52,7 @@ pub trait WeightInfo {
 
 /// Weights for pallet_asset_manager using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> pallet_asset_manager::WeightInfo for SubstrateWeight<T> {
+impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: AssetManager LocationAssetId (r:1 w:1)
 	// Storage: AssetManager NextAssetId (r:1 w:1)
 	// Storage: Assets Asset (r:1 w:1)
