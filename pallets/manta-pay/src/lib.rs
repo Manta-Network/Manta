@@ -94,6 +94,7 @@
 
 extern crate alloc;
 
+use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use frame_support::{transactional, PalletId};
 use manta_accounting::{
@@ -102,7 +103,7 @@ use manta_accounting::{
 		canonical::TransferShape, InvalidSinkAccount, InvalidSourceAccount, Proof, ReceiverLedger,
 		ReceiverPostError, ReceiverPostingKey, SenderLedger, SenderPostError, SenderPostingKey,
 		SinkPostingKey, SourcePostingKey, TransferLedger, TransferLedgerSuperPostingKey,
-		TransferPostError,
+		TransferPostError, TransferPostingKey,
 	},
 };
 use manta_crypto::{
@@ -111,13 +112,12 @@ use manta_crypto::{
 };
 use manta_pay::config;
 use manta_primitives::{
-	assets::{FungibleLedger, FungibleLedgerConsequence},
+	assets::{AssetConfig, FungibleLedger, FungibleLedgerConsequence},
 	types::{AssetId, Balance},
 };
 use manta_util::codec::Decode as _;
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_std::{vec, vec::Vec};
 use types::*;
 
 pub use pallet::*;
@@ -141,7 +141,6 @@ pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use manta_primitives::assets::AssetConfig;
 	use sp_runtime::traits::AccountIdConversion;
 
 	/// Pallet
@@ -156,10 +155,7 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		/// Asset Configuration
-		type AssetConfig: AssetConfig;
-
-		/// Fungible ledger
-		type FungibleLedger: FungibleLedger<Self>;
+		type AssetConfig: AssetConfig<Self>;
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
@@ -174,7 +170,7 @@ pub mod pallet {
 	/// Shards of the merkle tree of UTXOs
 	#[pallet::storage]
 	pub(super) type Shards<T: Config> =
-		StorageDoubleMap<_, Identity, u8, Identity, u64, (config::Utxo, EncryptedNote), ValueQuery>;
+		StorageDoubleMap<_, Identity, u8, Identity, u64, ([u8; 32], EncryptedNote), ValueQuery>;
 
 	/// Shard merkle trees
 	#[pallet::storage]
@@ -184,22 +180,21 @@ pub mod pallet {
 	/// Outputs of Utxo accumulator
 	#[pallet::storage]
 	pub(super) type UtxoAccumulatorOutputs<T: Config> =
-		StorageMap<_, Identity, config::UtxoAccumulatorOutput, (), ValueQuery>;
+		StorageMap<_, Identity, [u8; 32], (), ValueQuery>;
 
 	/// Utxo set of MantaPay protocol
 	#[pallet::storage]
-	pub(super) type UtxoSet<T: Config> = StorageMap<_, Identity, config::Utxo, (), ValueQuery>;
+	pub(super) type UtxoSet<T: Config> = StorageMap<_, Identity, [u8; 32], (), ValueQuery>;
 
 	/// Void number set
 	#[pallet::storage]
-	pub(super) type VoidNumberSet<T: Config> =
-		StorageMap<_, Identity, config::VoidNumber, (), ValueQuery>;
+	pub(super) type VoidNumberSet<T: Config> = StorageMap<_, Identity, [u8; 32], (), ValueQuery>;
 
 	/// Void number set insertion order
 	/// Each element of the key is an `u64` insertion order number of void number.
 	#[pallet::storage]
 	pub(super) type VoidNumberSetInsertionOrder<T: Config> =
-		StorageMap<_, Identity, u64, config::VoidNumber, ValueQuery>;
+		StorageMap<_, Identity, u64, [u8; 32], ValueQuery>;
 
 	/// The size of Void Number Set
 	/// FIXME: this should be removed.
@@ -356,9 +351,9 @@ pub mod pallet {
 		/// The submitted proof did not pass validation, or errored during validation.
 		InvalidProof,
 
-		/// Ledger Internal Error
+		/// Public Balances Update Error
 		///
-		/// Internal error caused by ledger internals (Ideally should never happen).
+		/// An error occured during the update of public balances.
 		LedgerUpdateError,
 
 		/// Invalid Source Account
@@ -531,7 +526,7 @@ where
 
 	#[inline]
 	fn is_unspent(&self, void_number: config::VoidNumber) -> Option<Self::ValidVoidNumber> {
-		if VoidNumberSet::<T>::contains_key(&void_number) {
+		if VoidNumberSet::<T>::contains_key(encode(&void_number)) {
 			None
 		} else {
 			Some(Wrap(void_number))
@@ -543,7 +538,7 @@ where
 		&self,
 		output: config::UtxoAccumulatorOutput,
 	) -> Option<Self::ValidUtxoAccumulatorOutput> {
-		if UtxoAccumulatorOutputs::<T>::contains_key(output) {
+		if UtxoAccumulatorOutputs::<T>::contains_key(encode(&output)) {
 			return Some(Wrap(output));
 		}
 		None
@@ -558,8 +553,9 @@ where
 		let index = VoidNumberSetSize::<T>::get();
 		let mut i = 0;
 		for (_, void_number) in iter {
-			VoidNumberSet::<T>::insert(void_number.0, ());
-			VoidNumberSetInsertionOrder::<T>::insert(index + i, void_number.0);
+			let void_number = encode(&void_number.0);
+			VoidNumberSet::<T>::insert(void_number, ());
+			VoidNumberSetInsertionOrder::<T>::insert(index + i, void_number);
 			i += 1;
 		}
 		if i != 0 {
@@ -577,7 +573,7 @@ where
 
 	#[inline]
 	fn is_not_registered(&self, utxo: config::Utxo) -> Option<Self::ValidUtxo> {
-		if UtxoSet::<T>::contains_key(&utxo) {
+		if UtxoSet::<T>::contains_key(encode(&utxo)) {
 			None
 		} else {
 			Some(Wrap(utxo))
@@ -628,13 +624,14 @@ where
 					.expect("If this errors, then we have run out of Merkle Tree capacity."),
 				);
 				let next_index = current_path.leaf_index().0 as u64;
+				let utxo = encode(&utxo);
 				UtxoSet::<T>::insert(utxo, ());
 				Shards::<T>::insert(shard_index, next_index, (utxo, EncryptedNote::from(note)));
 			}
 			tree.current_path = current_path.into();
 			if let Some(next_root) = next_root {
 				ShardTrees::<T>::insert(shard_index, tree);
-				UtxoAccumulatorOutputs::<T>::insert(next_root, ());
+				UtxoAccumulatorOutputs::<T>::insert(encode(&next_root), ());
 			}
 		}
 	}
@@ -655,7 +652,7 @@ where
 	#[inline]
 	fn check_source_accounts<I>(
 		&self,
-		asset_id: manta_accounting::asset::AssetId,
+		asset_id: asset::AssetId,
 		sources: I,
 	) -> Result<Vec<Self::ValidSourceAccount>, InvalidSourceAccount<Self::AccountId>>
 	where
@@ -663,13 +660,17 @@ where
 	{
 		sources
 			.map(move |(account_id, withdraw)| {
-				T::FungibleLedger::can_withdraw(asset_id.0, &account_id, withdraw.0)
-					.map(|_| WrapPair(account_id.clone(), withdraw))
-					.map_err(|_| InvalidSourceAccount {
-						account_id,
-						asset_id,
-						withdraw,
-					})
+				<T::AssetConfig as AssetConfig<T>>::FungibleLedger::can_withdraw(
+					asset_id.0,
+					&account_id,
+					withdraw.0,
+				)
+				.map(|_| WrapPair(account_id.clone(), withdraw))
+				.map_err(|_| InvalidSourceAccount {
+					account_id,
+					asset_id,
+					withdraw,
+				})
 			})
 			.collect()
 	}
@@ -677,7 +678,7 @@ where
 	#[inline]
 	fn check_sink_accounts<I>(
 		&self,
-		asset_id: manta_accounting::asset::AssetId,
+		asset_id: asset::AssetId,
 		sinks: I,
 	) -> Result<Vec<Self::ValidSinkAccount>, InvalidSinkAccount<Self::AccountId>>
 	where
@@ -687,13 +688,17 @@ where
 		//		 pass the data forward.
 		sinks
 			.map(move |(account_id, deposit)| {
-				T::FungibleLedger::can_deposit(asset_id.0, &account_id, deposit.0)
-					.map(|_| WrapPair(account_id.clone(), deposit))
-					.map_err(|_| InvalidSinkAccount {
-						account_id,
-						asset_id,
-						deposit,
-					})
+				<T::AssetConfig as AssetConfig<T>>::FungibleLedger::can_deposit(
+					asset_id.0,
+					&account_id,
+					deposit.0,
+				)
+				.map(|_| WrapPair(account_id.clone(), deposit))
+				.map_err(|_| InvalidSinkAccount {
+					account_id,
+					asset_id,
+					deposit,
+				})
 			})
 			.collect()
 	}
@@ -739,9 +744,7 @@ where
 		config::ProofSystem::verify(
 			&config::VerifyingContext::decode(&mut verifying_context)
 				.expect("Unable to decode the verifying context."),
-			&manta_accounting::transfer::TransferPostingKey::generate_proof_input(
-				asset_id, sources, senders, receivers, sinks,
-			),
+			&TransferPostingKey::generate_proof_input(asset_id, sources, senders, receivers, sinks),
 			&proof,
 		)
 		.ok()?
@@ -759,7 +762,7 @@ where
 	) -> Result<(), Self::UpdateError> {
 		let _ = (proof, super_key);
 		for WrapPair(account_id, withdraw) in sources {
-			T::FungibleLedger::transfer(
+			<T::AssetConfig as AssetConfig<T>>::FungibleLedger::transfer(
 				asset_id.0,
 				&account_id,
 				&pallet::Pallet::<T>::account_id(),
@@ -767,7 +770,7 @@ where
 			)?;
 		}
 		for WrapPair(account_id, deposit) in sinks {
-			T::FungibleLedger::transfer(
+			<T::AssetConfig as AssetConfig<T>>::FungibleLedger::transfer(
 				asset_id.0,
 				&pallet::Pallet::<T>::account_id(),
 				&account_id,

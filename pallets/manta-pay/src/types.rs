@@ -21,7 +21,7 @@ use manta_util::into_array_unchecked;
 
 /// Encodes the SCALE encodable `value` into a byte array with the given length `N`.
 #[inline]
-fn encode<T, const N: usize>(value: T) -> [u8; N]
+pub(crate) fn encode<T, const N: usize>(value: T) -> [u8; N]
 where
 	T: Encode,
 {
@@ -31,7 +31,7 @@ where
 /// Decodes the `bytes` array of the given length `N` into the SCALE decodable type `T` returning a
 /// blanket error if decoding fails.
 #[inline]
-fn decode<T, const N: usize>(bytes: [u8; N]) -> Result<T, ()>
+pub(crate) fn decode<T, const N: usize>(bytes: [u8; N]) -> Result<T, ()>
 where
 	T: Decode,
 {

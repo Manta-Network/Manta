@@ -20,3 +20,20 @@ cargo run --release --features=precompute-coins --bin precompute_coins ./src/ben
 ```
 Note: This is only needed when the zero-knowledge-proof circuit or asset id used has been changed.
 
+## Benchmark 
+1. Compile Manta runtime using `runtime-benchmarks` feature
+```sh
+cargo build --release --features=runtime-benchmarks
+```
+2. Benchmark manta-pay related extrinsics
+```sh
+./target/release/manta benchmark \
+--chain=dolphin-dev \
+--execution=Wasm \
+--wasm-execution=Compiled \
+--pallet=pallet_manta_pay \
+--extrinsic='*' \
+--steps=20 \
+--repeat=10 \
+--heap-pages=4096
+```
