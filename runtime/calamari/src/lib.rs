@@ -59,9 +59,9 @@ use frame_system::{
 use manta_primitives::{
 	assets::{
 		AssetConfig, AssetIdLocationConvert, AssetLocation, AssetRegistrar, AssetRegistrarMetadata,
-		AssetStorageMetadata,
+		AssetStorageMetadata, ConcreteFungibleLedger,
 	},
-	constants::{time::*, ASSET_MANAGER_PALLET_ID},
+	constants::{time::*, ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
 	prod_or_fast,
 	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 	xcm::{AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
@@ -75,7 +75,7 @@ pub use sp_runtime::BuildStorage;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
-use xcm::latest::prelude::*;
+use xcm::{latest::prelude::*, VersionedMultiLocation};
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
@@ -627,13 +627,9 @@ impl pallet_assets::Config for Runtime {
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-	// Pallet account for record rewards and give rewards to collator.
-	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
-}
 pub struct CalamariAssetRegistrar;
 use frame_support::pallet_prelude::DispatchResult;
-impl AssetRegistrar<CalamariAssetConfig> for CalamariAssetRegistrar {
+impl AssetRegistrar<Runtime, CalamariAssetConfig> for CalamariAssetRegistrar {
 	fn create_asset(
 		asset_id: AssetId,
 		min_balance: Balance,
@@ -670,14 +666,38 @@ impl AssetRegistrar<CalamariAssetConfig> for CalamariAssetRegistrar {
 	}
 }
 
+parameter_types! {
+	pub const DummyAssetId: AssetId = 0;
+	pub const NativeAssetId: AssetId = 1;
+	pub const StartNonNativeAssetId: AssetId = 8;
+	pub NativeAssetLocation: AssetLocation = AssetLocation(
+		VersionedMultiLocation::V1(SelfReserve::get()));
+	pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
+		name: b"Calamari".to_vec(),
+		symbol: b"KMA".to_vec(),
+		decimals: CALAMARI_DECIMAL,
+		min_balance: NativeTokenExistentialDeposit::get(),
+		evm_address: None,
+		is_frozen: false,
+		is_sufficient: true,
+	};
+	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
+}
+
 #[derive(Clone, Eq, PartialEq)]
 pub struct CalamariAssetConfig;
 
-impl AssetConfig for CalamariAssetConfig {
+impl AssetConfig<Runtime> for CalamariAssetConfig {
+	type DummyAssetId = DummyAssetId;
+	type NativeAssetId = NativeAssetId;
+	type StartNonNativeAssetId = StartNonNativeAssetId;
 	type AssetRegistrarMetadata = AssetRegistrarMetadata;
+	type NativeAssetLocation = NativeAssetLocation;
+	type NativeAssetMetadata = NativeAssetMetadata;
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
 	type AssetRegistrar = CalamariAssetRegistrar;
+	type FungibleLedger = ConcreteFungibleLedger<Runtime, CalamariAssetConfig, Balances, Assets>;
 }
 
 impl pallet_asset_manager::Config for Runtime {
@@ -685,6 +705,7 @@ impl pallet_asset_manager::Config for Runtime {
 	type AssetConfig = CalamariAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
 	type PalletId = AssetManagerPalletId;
+	type WeightInfo = pallet_asset_manager::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {

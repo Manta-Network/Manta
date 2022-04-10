@@ -33,17 +33,12 @@ use sp_runtime::{
 };
 use sp_std::{convert::TryFrom, prelude::*};
 
-use manta_primitives::{
-	assets::{AssetIdLocationConvert, AssetLocation},
-	constants::*,
-	xcm::{FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
-};
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain::primitives::{
 	DmpMessageHandler, Id as ParaId, Sibling, XcmpMessageFormat, XcmpMessageHandler,
 };
-use xcm::{latest::prelude::*, Version as XcmVersion, VersionedXcm};
+use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, VersionedXcm};
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
 	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
@@ -53,9 +48,14 @@ use xcm_builder::{
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::Get;
 
-pub use manta_primitives::{
-	assets::{AssetConfig, AssetRegistrar, AssetRegistrarMetadata, AssetStorageMetadata},
+use manta_primitives::{
+	assets::{
+		AssetConfig, AssetIdLocationConvert, AssetLocation, AssetRegistrar, AssetRegistrarMetadata,
+		AssetStorageMetadata, ConcreteFungibleLedger,
+	},
+	constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
 	types::AssetId,
+	xcm::{FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
 };
 pub type AccountId = AccountId32;
 pub type Balance = u128;
@@ -482,13 +482,9 @@ impl pallet_xcm::Config for Runtime {
 	type AdvertisedXcmVersion = XcmVersioner;
 }
 
-parameter_types! {
-	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
-}
-
-pub struct MantaAssetRegistrar;
+pub struct CalamariAssetRegistrar;
 use frame_support::pallet_prelude::DispatchResult;
-impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
+impl AssetRegistrar<Runtime, CalamariAssetConfig> for CalamariAssetRegistrar {
 	fn create_asset(
 		asset_id: AssetId,
 		min_balance: Balance,
@@ -510,18 +506,6 @@ impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
 			metadata.symbol,
 			metadata.decimals,
 			metadata.is_frozen,
-		)?;
-
-		Assets::force_asset_status(
-			Origin::root(),
-			asset_id,
-			AssetManager::account_id(),
-			AssetManager::account_id(),
-			AssetManager::account_id(),
-			AssetManager::account_id(),
-			min_balance,
-			is_sufficient,
-			metadata.is_frozen,
 		)
 	}
 
@@ -537,21 +521,46 @@ impl AssetRegistrar<MantaAssetConfig> for MantaAssetRegistrar {
 	}
 }
 
-#[derive(Clone, Eq, PartialEq)]
-pub struct MantaAssetConfig;
+parameter_types! {
+	pub const DummyAssetId: AssetId = 0;
+	pub const NativeAssetId: AssetId = 1;
+	pub const StartNonNativeAssetId: AssetId = 8;
+	pub NativeAssetLocation: AssetLocation = AssetLocation(
+		VersionedMultiLocation::V1(SelfReserve::get()));
+	pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
+		name: b"Calamari".to_vec(),
+		symbol: b"KMA".to_vec(),
+		decimals: CALAMARI_DECIMAL,
+		min_balance: 1,
+		evm_address: None,
+		is_frozen: false,
+		is_sufficient: true,
+	};
+	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
+}
 
-impl AssetConfig for MantaAssetConfig {
+#[derive(Clone, Eq, PartialEq)]
+pub struct CalamariAssetConfig;
+
+impl AssetConfig<Runtime> for CalamariAssetConfig {
+	type DummyAssetId = DummyAssetId;
+	type NativeAssetId = NativeAssetId;
+	type StartNonNativeAssetId = StartNonNativeAssetId;
 	type AssetRegistrarMetadata = AssetRegistrarMetadata;
+	type NativeAssetLocation = NativeAssetLocation;
+	type NativeAssetMetadata = NativeAssetMetadata;
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
-	type AssetRegistrar = MantaAssetRegistrar;
+	type AssetRegistrar = CalamariAssetRegistrar;
+	type FungibleLedger = ConcreteFungibleLedger<Runtime, CalamariAssetConfig, Balances, Assets>;
 }
 
 impl pallet_asset_manager::Config for Runtime {
 	type Event = Event;
-	type AssetConfig = MantaAssetConfig;
+	type AssetConfig = CalamariAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
 	type PalletId = AssetManagerPalletId;
+	type WeightInfo = ();
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
