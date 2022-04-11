@@ -40,11 +40,11 @@ benchmarks! {
 
 	}: _(RawOrigin::Root, location.clone(), metadata.clone())
 	verify {
-		assert_eq!(Pallet::<T>::asset_id_location(<T::AssetConfig as AssetConfig<T>>::NativeAssetId::get()), Some(location));
+		assert_eq!(Pallet::<T>::asset_id_location(<T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get()), Some(location));
 	}
 
 	set_units_per_second {
-		let start = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
+		let start = <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get();
 		let end = start + 1000;
 		for i in start..end {
 
@@ -68,7 +68,7 @@ benchmarks! {
 	}
 
 	update_asset_location {
-		let start = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
+		let start = <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get();
 		let end = start + 1000;
 		for i in start..end {
 
@@ -90,7 +90,7 @@ benchmarks! {
 	}
 
 	update_asset_metadata {
-		let start = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
+		let start = <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get();
 		let end = start + 1000;
 		for i in start..end {
 
@@ -111,7 +111,7 @@ benchmarks! {
 	}
 
 	mint_asset {
-		let start = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
+		let start = <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get();
 		let end = start + 1000;
 		for i in start..end {
 

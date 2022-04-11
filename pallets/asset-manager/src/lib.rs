@@ -113,7 +113,7 @@ pub mod pallet {
 	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
 			Self {
-				start_id: <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(),
+				start_id: <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(),
 				_marker: PhantomData,
 			}
 		}
@@ -173,6 +173,8 @@ pub mod pallet {
 		ErrorCreatingAsset,
 		/// Update a non-exist asset.
 		UpdateNonExistAsset,
+		/// Cannot update reserved assets metadata (0 and 1)
+		CannotUpdateNativeAssetMetadata,
 		/// Asset already registered.
 		AssetAlreadyRegistered,
 		/// Error on minting asset.
@@ -216,7 +218,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Register a new asset in the asset manager.
 		///
-		/// * `origin`: Caller of this extrinsic, the access control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
 		/// * `location`: Location of the asset.
 		/// * `metadata`: Asset metadata.
 		/// * `min_balance`: Minimum balance to keep an account alive, used in conjunction with `is_sufficient`.
@@ -255,7 +257,7 @@ pub mod pallet {
 
 		/// Update an asset by its asset id in the asset manager.
 		///
-		/// * `origin`: Caller of this extrinsic, the access control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `location`: `location` to update the asset location.
 		#[pallet::weight(T::WeightInfo::update_asset_location())]
@@ -288,7 +290,7 @@ pub mod pallet {
 
 		/// Update an asset's metadata by its `asset_id`
 		///
-		/// * `origin`: Caller of this extrinsic, the access control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `metadata`: new `metadata` to be associated with `asset_id`.
 		#[pallet::weight(T::WeightInfo::update_asset_metadata())]
@@ -300,9 +302,17 @@ pub mod pallet {
 		) -> DispatchResult {
 			T::ModifierOrigin::ensure_origin(origin)?;
 			ensure!(
+				asset_id != <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(),
+				Error::<T>::CannotUpdateNativeAssetMetadata
+			);
+			ensure!(
 				AssetIdLocation::<T>::contains_key(&asset_id),
 				Error::<T>::UpdateNonExistAsset
 			);
+			<T::AssetConfig as AssetConfig<T>>::AssetRegistrar::update_asset_metadata(
+				asset_id,
+				metadata.clone().into(),
+			)?;
 			AssetIdMetadata::<T>::insert(&asset_id, &metadata);
 			Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata });
 			Ok(())
@@ -310,7 +320,7 @@ pub mod pallet {
 
 		/// Update an asset by its asset id in the asset manager.
 		///
-		/// * `origin`: Caller of this extrinsic, the access control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `units_per_second`: units per second for `asset_id`
 		#[pallet::weight(T::WeightInfo::set_units_per_second())]
@@ -335,7 +345,7 @@ pub mod pallet {
 
 		/// Mint asset by its asset id to a beneficiary.
 		///
-		/// * `origin`: Caller of this extrinsic, the access control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `beneficiary`: Account to mint the asset.
 		/// * `amount`: Amount of asset being minted.
