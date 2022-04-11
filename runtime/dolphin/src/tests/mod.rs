@@ -1036,7 +1036,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 	ParaA::execute_with(|| {
 		assert_ok!(AssetManager::register_asset(
 			parachain::Origin::root(),
-			// This need to be changed starting from v0.9.16
+			// This need to be changed starting from v0.9.18
 			// need to use something like MultiLocation { parents: 0, interior: here} instead
 			source_location.clone(),
 			asset_metadata.clone()
@@ -1405,7 +1405,7 @@ fn send_para_a_asset_to_para_b_with_insufficient_fee() {
 	ParaA::execute_with(|| {
 		assert_ok!(AssetManager::register_asset(
 			parachain::Origin::root(),
-			// This need to be changed starting from v0.9.16
+			// This need to be changed starting from v0.9.18
 			// need to use something like MultiLocation { parents: 0, interior: here} instead
 			source_location.clone(),
 			asset_metadata.clone()
@@ -1497,7 +1497,7 @@ fn send_para_a_asset_to_para_b_without_specifying_units_per_second() {
 	ParaA::execute_with(|| {
 		assert_ok!(AssetManager::register_asset(
 			parachain::Origin::root(),
-			// This need to be changed starting from v0.9.16
+			// This need to be changed starting from v0.9.18
 			// need to use something like MultiLocation { parents: 0, interior: here} instead
 			source_location.clone(),
 			asset_metadata.clone()
@@ -1980,7 +1980,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 		// Register ParaA native asset in ParaA
 		assert_ok!(AssetManager::register_asset(
 			parachain::Origin::root(),
-			// This need to be changed starting from v0.9.16
+			// This need to be changed starting from v0.9.18
 			// need to use something like MultiLocation { parents: 0, interior: here} instead
 			source_location.clone(),
 			asset_metadata.clone()

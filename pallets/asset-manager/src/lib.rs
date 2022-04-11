@@ -44,7 +44,7 @@ mod tests;
 pub mod pallet {
 
 	use crate::weights::WeightInfo;
-	use frame_support::{pallet_prelude::*, transactional, PalletId};
+	use frame_support::{pallet_prelude::*, traits::Contains, transactional, PalletId};
 	use frame_system::pallet_prelude::*;
 	use manta_primitives::{
 		assets::{
@@ -53,6 +53,7 @@ pub mod pallet {
 		},
 		types::{AssetId, Balance},
 	};
+	use orml_traits::GetByKey;
 	use sp_runtime::{traits::AccountIdConversion, ArithmeticError};
 
 	#[pallet::pallet]
@@ -393,6 +394,18 @@ pub mod pallet {
 		/// The account ID of AssetManager
 		pub fn account_id() -> T::AccountId {
 			T::PalletId::get().into_account()
+		}
+	}
+
+	impl<T: Config> Contains<<T::AssetConfig as AssetConfig<T>>::AssetLocation> for Pallet<T> {
+		fn contains(location: &<T::AssetConfig as AssetConfig<T>>::AssetLocation) -> bool {
+			LocationAssetId::<T>::contains_key(&location)
+		}
+	}
+
+	impl<T: Config> GetByKey<<T::AssetConfig as AssetConfig<T>>::AssetLocation, u128> for Pallet<T> {
+		fn get(location: &<T::AssetConfig as AssetConfig<T>>::AssetLocation) -> u128 {
+			todo!();
 		}
 	}
 

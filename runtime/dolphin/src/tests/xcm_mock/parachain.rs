@@ -47,7 +47,7 @@ use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, Ver
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
 	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
-	FungiblesAdapter, LocationInverter, ParentIsDefault, SiblingParachainAsNative,
+	FungiblesAdapter, LocationInverter, ParentIsPreset, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SovereignSignedViaLocation,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
@@ -119,6 +119,7 @@ parameter_types! {
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
 	pub Ancestry: MultiLocation = Parachain(MsgQueue::parachain_id().into()).into();
 	pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
+	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
 parameter_types! {
@@ -152,7 +153,7 @@ impl pallet_assets::Config for Runtime {
 /// `Transact` in order to determine the dispatch Origin.
 pub type LocationToAccountId = (
 	// The parent (Relay-chain) origin converts to the default `AccountId`.
-	ParentIsDefault<AccountId>,
+	ParentIsPreset<AccountId>,
 	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	AccountId32Aliases<RelayNetwork, AccountId>,
@@ -211,7 +212,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	// No teleport support.
 	Nothing,
 	// No teleport tracking.
-	(),
+	CheckingAccount,
 >;
 
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
@@ -607,6 +608,12 @@ parameter_types! {
 	pub const MaxAssetsForTransfer: usize = 1;
 }
 
+orml_traits::parameter_type_with_key! {
+	pub ParachainMinFee: |_location: MultiLocation| -> u128 {
+		u128::MAX
+	};
+}
+
 // The XCM message wrapper wrapper
 impl orml_xtokens::Config for Runtime {
 	type Event = Event;
@@ -621,6 +628,9 @@ impl orml_xtokens::Config for Runtime {
 	type BaseXcmWeight = BaseXcmWeight;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type MaxAssetsForTransfer = MaxAssetsForTransfer;
+	type MinXcmFee = ParachainMinFee;
+	type MultiLocationsFilter = Everything;
+	type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
 }
 
 impl parachain_info::Config for Runtime {}

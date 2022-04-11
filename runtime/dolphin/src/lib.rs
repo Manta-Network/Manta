@@ -34,7 +34,6 @@ use sp_runtime::{
 	ApplyExtrinsicResult, Perbill, Permill,
 };
 
-use sp_core::u32_trait::{_1, _2, _3, _4, _5};
 use sp_std::{cmp::Ordering, prelude::*};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -83,7 +82,7 @@ use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
 	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
-	FungiblesAdapter, LocationInverter, ParentAsSuperuser, ParentIsDefault, RelayChainAsNative,
+	FungiblesAdapter, LocationInverter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SovereignSignedViaLocation, TakeWeightCredit,
 };
@@ -404,30 +403,30 @@ impl pallet_democracy::Config for Runtime {
 	type MinimumDeposit = MinimumDeposit;
 	/// A straight majority of the council can decide what their next motion is.
 	type ExternalOrigin =
-		pallet_collective::EnsureProportionAtLeast<_1, _2, AccountId, CouncilCollective>;
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>;
 	/// A super-majority can have the next scheduled referendum be a straight majority-carries vote.
 	type ExternalMajorityOrigin =
-		pallet_collective::EnsureProportionAtLeast<_3, _4, AccountId, CouncilCollective>;
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 4>;
 	/// A unanimous council can have the next scheduled referendum be a straight default-carries
 	/// (NTB) vote.
 	type ExternalDefaultOrigin =
-		pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>;
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>;
 	/// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
 	/// be tabled immediately and with a shorter voting/enactment period.
 	type FastTrackOrigin =
-		pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, TechnicalCollective>;
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>;
 	type InstantOrigin =
-		pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>;
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>;
 	type InstantAllowed = InstantAllowed;
 	type FastTrackVotingPeriod = FastTrackVotingPeriod;
 	// To cancel a proposal which has been passed, 2/3 of the council must agree to it.
 	type CancellationOrigin =
-		pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, CouncilCollective>;
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>;
 	// To cancel a proposal before it has been passed, the technical committee must be unanimous or
 	// Root must agree.
 	type CancelProposalOrigin = EnsureOneOf<
 		EnsureRoot<AccountId>,
-		pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>,
 	>;
 	type BlacklistOrigin = EnsureRoot<AccountId>;
 	// Any single technical committee member may veto a coming council proposal, however they can
@@ -464,7 +463,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 
 pub type EnsureRootOrThreeFourthsCouncil = EnsureOneOf<
 	EnsureRoot<AccountId>,
-	pallet_collective::EnsureProportionAtLeast<_3, _4, AccountId, CouncilCollective>,
+	pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 4>,
 >;
 
 type CouncilMembershipInstance = pallet_membership::Instance1;
@@ -522,12 +521,12 @@ parameter_types! {
 
 type EnsureRootOrThreeFifthsCouncil = EnsureOneOf<
 	EnsureRoot<AccountId>,
-	pallet_collective::EnsureProportionAtLeast<_3, _5, AccountId, CouncilCollective>,
+	pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
 >;
 
 type EnsureRootOrMoreThanHalfCouncil = EnsureOneOf<
 	EnsureRoot<AccountId>,
-	pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>,
+	pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
 >;
 
 impl pallet_treasury::Config for Runtime {
@@ -636,6 +635,7 @@ parameter_types! {
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
+	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -643,7 +643,7 @@ parameter_types! {
 /// `Transact` in order to determine the dispatch Origin.
 pub type LocationToAccountId = (
 	// The parent (Relay-chain) origin converts to the default `AccountId`.
-	ParentIsDefault<AccountId>,
+	ParentIsPreset<AccountId>,
 	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
@@ -714,7 +714,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	// No teleport support.
 	Nothing,
 	// No teleport tracking.
-	(),
+	CheckingAccount,
 >;
 
 match_type! {
@@ -839,6 +839,9 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+	type ControllerOrigin = EnsureRootOrMoreThanHalfCouncil;
+	type ControllerOriginConverter = XcmOriginToCallOrigin;
+	type WeightInfo = ();
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -874,6 +877,12 @@ parameter_types! {
 	pub const MaxAssetsForTransfer: usize = 1;
 }
 
+orml_traits::parameter_type_with_key! {
+	pub ParachainMinFee: |_location: MultiLocation| -> u128 {
+		u128::MAX
+	};
+}
+
 // The XCM message wrapper wrapper
 impl orml_xtokens::Config for Runtime {
 	type Event = Event;
@@ -891,6 +900,9 @@ impl orml_xtokens::Config for Runtime {
 	type BaseXcmWeight = BaseXcmWeight;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type MaxAssetsForTransfer = MaxAssetsForTransfer;
+	type MinXcmFee = ParachainMinFee;
+	type MultiLocationsFilter = Everything;
+	type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
 }
 
 parameter_types! {
@@ -932,7 +944,7 @@ parameter_types! {
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
 pub type CollatorSelectionUpdateOrigin = EnsureOneOf<
 	EnsureRoot<AccountId>,
-	pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>,
+	pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
 >;
 
 impl manta_collator_selection::Config for Runtime {
