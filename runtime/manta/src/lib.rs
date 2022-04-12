@@ -187,14 +187,7 @@ impl Contains<Call> for MantaFilter {
 			return false;
 		}
 
-		match call {
-			Call::Authorship(_) | Call::Sudo(_) | Call::Multisig(_) | Call::Balances(_) => true,
-			// Sudo also cannot be filtered because it is used in runtime upgrade.
-			_ => false,
-			// Filter Utility to prevent users from setting keys and selecting collator for parachain (couldn't use now).
-			// Filter Session and CollatorSelection to prevent users from utility operation.
-			// Filter XCM pallet.
-		}
+		matches!(call, Call::Authorship(_) | Call::Sudo(_) | Call::Multisig(_) | Call::Balances(_))
 	}
 }
 
