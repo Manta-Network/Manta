@@ -1154,6 +1154,9 @@ dependencies = [
  "log",
  "manta-collator-selection",
  "manta-primitives",
+ "orml-xtokens",
+ "pallet-asset-manager",
+ "pallet-assets",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -1174,9 +1177,11 @@ dependencies = [
  "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
+ "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-runtime-common",
+ "polkadot-runtime-parachains",
  "reqwest",
  "scale-info",
  "serde",
@@ -1199,6 +1204,7 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "xcm-simulator",
 ]
 
 [[package]]
