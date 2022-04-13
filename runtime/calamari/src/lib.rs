@@ -124,7 +124,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 3150,
+	spec_version: 3141,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 4,
@@ -1117,7 +1117,7 @@ construct_runtime!(
 
 		// Assets management
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
-		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>} = 46,
+		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
 
 		// Calamari stuff
 		CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
