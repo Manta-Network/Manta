@@ -128,6 +128,9 @@ jobs:
         name: execute try-runtime
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
+          yarn install
+          yarn
+          yarn build
           latest_hash=$(node get-latest-finalized-header-hash --address=wss://ws.calamari.systems:443)
           $HOME/.local/bin/manta try-runtime --chain calamari-dev on-runtime-upgrade live --at $latest_hash --uri wss://ws.calamari.systems:443
 
