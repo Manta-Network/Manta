@@ -1320,7 +1320,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_manta_pay, MantaPay);
 			list_benchmark!(list, extra, pallet_asset_manager, AssetManager);
 
-			let storage_info = AllPalletsWithSystem::storage_info();
+			let storage_info = AllPalletsReversedWithSystemFirst::storage_info();
 
 			return (list, storage_info)
 		}

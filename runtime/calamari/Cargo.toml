@@ -135,6 +135,7 @@ runtime-benchmarks = [
 	'pallet-treasury/runtime-benchmarks',
 	'pallet-preimage/runtime-benchmarks',
 	'pallet-assets/runtime-benchmarks',
+	'pallet-asset-manager/runtime-benchmarks',
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
