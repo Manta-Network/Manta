@@ -4846,28 +4846,17 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=fix/remove-trapdoor#603d1a062a75769cbdd171386f6c1070ccd3a473"
+source = "git+https://github.com/manta-network/manta-rs.git#c6567af7e017a37c20b0f099993deb9f3227279c"
 dependencies = [
  "derivative",
  "derive_more",
  "futures 0.3.21",
  "indexmap",
- "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=fix/remove-trapdoor)",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=fix/remove-trapdoor)",
+ "manta-crypto",
+ "manta-util",
  "parking_lot 0.12.0",
  "rand 0.8.5",
  "statrs",
-]
-
-[[package]]
-name = "manta-accounting"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#37e7bb1ee7959856ed6c2221de93b54607c74b7a"
-dependencies = [
- "derivative",
- "derive_more",
- "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
 ]
 
 [[package]]
@@ -4900,27 +4889,17 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=fix/remove-trapdoor#603d1a062a75769cbdd171386f6c1070ccd3a473"
+source = "git+https://github.com/manta-network/manta-rs.git#c6567af7e017a37c20b0f099993deb9f3227279c"
 dependencies = [
  "derivative",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=fix/remove-trapdoor)",
- "rand_core 0.6.3",
-]
-
-[[package]]
-name = "manta-crypto"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#37e7bb1ee7959856ed6c2221de93b54607c74b7a"
-dependencies = [
- "derivative",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
+ "manta-util",
  "rand_core 0.6.3",
 ]
 
 [[package]]
 name = "manta-pay"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=fix/remove-trapdoor#603d1a062a75769cbdd171386f6c1070ccd3a473"
+source = "git+https://github.com/manta-network/manta-rs.git#c6567af7e017a37c20b0f099993deb9f3227279c"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -4935,9 +4914,9 @@ dependencies = [
  "ark-std",
  "blake2 0.10.4",
  "derivative",
- "manta-accounting 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=fix/remove-trapdoor)",
- "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=fix/remove-trapdoor)",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=fix/remove-trapdoor)",
+ "manta-accounting",
+ "manta-crypto",
+ "manta-util",
  "parity-scale-codec 3.1.2",
  "rand_chacha 0.3.1",
  "scale-info 2.1.0",
@@ -4951,7 +4930,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "manta-accounting 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
+ "manta-accounting",
  "parity-scale-codec 2.3.1",
  "scale-info 1.0.0",
  "smallvec",
@@ -5031,7 +5010,7 @@ dependencies = [
 [[package]]
 name = "manta-sdk"
 version = "0.5.0"
-source = "git+https://github.com/manta-network/sdk.git?branch=add-zcash-powers-of-tau#259bb07fafbedd562fd1b792bf9f2adb78dee957"
+source = "git+https://github.com/manta-network/sdk.git#fef5dc1868f6dea4911c8bb03cb6b29399810063"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5043,12 +5022,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=fix/remove-trapdoor#603d1a062a75769cbdd171386f6c1070ccd3a473"
-
-[[package]]
-name = "manta-util"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#37e7bb1ee7959856ed6c2221de93b54607c74b7a"
+source = "git+https://github.com/manta-network/manta-rs.git#c6567af7e017a37c20b0f099993deb9f3227279c"
 
 [[package]]
 name = "maplit"
@@ -6199,18 +6173,18 @@ dependencies = [
  "frame-system",
  "indoc",
  "lazy_static",
- "manta-accounting 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=fix/remove-trapdoor)",
- "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=fix/remove-trapdoor)",
+ "manta-accounting",
+ "manta-crypto",
  "manta-pay",
  "manta-primitives",
  "manta-sdk",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=fix/remove-trapdoor)",
+ "manta-util",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",
- "parity-scale-codec 2.3.1",
+ "parity-scale-codec 3.1.2",
  "rand 0.8.5",
- "scale-info 1.0.0",
+ "scale-info 2.1.0",
  "sp-core",
  "sp-io",
  "sp-runtime",

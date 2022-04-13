@@ -448,10 +448,10 @@ where
 		Self::is_valid(asset_id)?;
 		Self::can_deposit(asset_id, beneficiary, amount)?;
 		if asset_id == A::NativeAssetId::get() {
-			let _ = <Native as Currency<C::AccountId>>::deposit_creating(&beneficiary, amount);
+			let _ = <Native as Currency<C::AccountId>>::deposit_creating(beneficiary, amount);
 			Ok(())
 		} else {
-			<NonNative as Mutate<C::AccountId>>::mint_into(asset_id, &beneficiary, amount)
+			<NonNative as Mutate<C::AccountId>>::mint_into(asset_id, beneficiary, amount)
 				.map(|_| ())
 				.map_err(|_| FungibleLedgerConsequence::InternalError)
 		}
