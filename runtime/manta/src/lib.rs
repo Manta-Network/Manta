@@ -51,7 +51,7 @@ use frame_system::{
 	EnsureRoot,
 };
 use manta_primitives::{
-	constants::time::*,
+	constants::{time::*, STAKING_PALLET_ID},
 	prod_or_fast,
 	types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
@@ -552,7 +552,7 @@ impl pallet_aura::Config for Runtime {
 
 parameter_types! {
 	// Pallet account for record rewards and give rewards to collator.
-	pub const PotId: PalletId = PalletId(*b"PotStake");
+	pub const PotId: PalletId = STAKING_PALLET_ID;
 }
 
 parameter_types! {
