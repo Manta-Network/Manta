@@ -87,7 +87,7 @@ jobs:
           CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
-          cargo build --profile release --verbose --features=runtime-benchmarks
+          cargo build --profile release --verbose --features=try-runtime
       -
         name: stop sccache server
         run: sccache --stop-server || true
