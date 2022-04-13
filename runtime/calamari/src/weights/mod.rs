@@ -19,6 +19,8 @@
 pub mod calamari_vesting;
 pub mod frame_system;
 pub mod manta_collator_selection;
+pub mod pallet_asset_manager;
+pub mod pallet_assets;
 pub mod pallet_balances;
 pub mod pallet_collective;
 pub mod pallet_democracy;

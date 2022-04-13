@@ -624,7 +624,7 @@ impl pallet_assets::Config for Runtime {
 	type StringLimit = ConstU32<50>;
 	type Freezer = ();
 	type Extra = ();
-	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
 }
 
 pub struct CalamariAssetRegistrar;
@@ -705,7 +705,7 @@ impl pallet_asset_manager::Config for Runtime {
 	type AssetConfig = CalamariAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
 	type PalletId = AssetManagerPalletId;
-	type WeightInfo = pallet_asset_manager::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_asset_manager::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
