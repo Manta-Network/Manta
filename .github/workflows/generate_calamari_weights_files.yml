@@ -224,6 +224,22 @@ jobs:
               id: pallet_preimage
               name: pallet_preimage
             iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_assets
+            pallet:
+              id: pallet_assets
+              name: pallet_assets
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_asset_manager
+            pallet:
+              id: pallet_asset_manager
+              name: pallet_asset_manager
+            iterations: 20
     steps:
       -
         uses: actions/download-artifact@v2

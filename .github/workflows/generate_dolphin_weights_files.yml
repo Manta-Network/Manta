@@ -219,10 +219,26 @@ jobs:
           -
             extrinsic:
               id: '*'
+              name: pallet_assets
+            pallet:
+              id: pallet_assets
+              name: pallet_assets
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
               name: pallet_asset_manager
             pallet:
               id: pallet_asset_manager
               name: pallet_asset_manager
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_manta_pay
+            pallet:
+              id: pallet_manta_pay
+              name: pallet_manta_pay
             iterations: 20
     steps:
       -
