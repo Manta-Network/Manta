@@ -79,30 +79,8 @@ jobs:
         name: stop sccache server
         run: sccache --stop-server || true
       -
-        name: upload
-        uses: actions/upload-artifact@v2
-        with:
-          name: manta
-          path: target/release/manta
-
-  run-try-runtime:
-    runs-on: ubuntu-20.04
-    name: try-runtime
-    needs:
-      - build-node
-    strategy:
-      matrix:
-        runtime:
-          -
-            name: calamari
-    steps:
-      -
-        uses: actions/download-artifact@v2
-        with:
-          name: manta
-      -
         run: |
-          mv manta $HOME/.local/bin/
+          mv target/release/manta $HOME/.local/bin/
           chmod +x $HOME/.local/bin/manta
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       -
