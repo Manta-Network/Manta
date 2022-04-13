@@ -90,7 +90,7 @@ fn load_proving_context() -> MultiProvingContext {
 #[inline]
 fn load_parameters() -> Parameters {
 	Parameters {
-		key_agreement: NoteEncryptionScheme::decode(
+		note_encryption_scheme: NoteEncryptionScheme::decode(
 			manta_sdk::pay::testnet::parameters::NoteEncryptionScheme::get()
 				.expect("Checksum did not match."),
 		)
@@ -100,7 +100,7 @@ fn load_parameters() -> Parameters {
 				.expect("Checksum did not match."),
 		)
 		.expect("Unable to decode UTXO_COMMITMENT_SCHEME parameters."),
-		void_number_hash: VoidNumberCommitmentScheme::decode(
+		void_number_commitment: VoidNumberCommitmentScheme::decode(
 			manta_sdk::pay::testnet::parameters::VoidNumberCommitmentScheme::get()
 				.expect("Checksum did not match."),
 		)
