@@ -1,0 +1,31 @@
+[Unit]
+Description=Dolphin Parachain Node
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/dolphin \
+    --chain /usr/share/substrate/dolphin.json \
+    --base-path /var/lib/substrate \
+    --port 33333 \
+    --ws-port 9344 \
+    --ws-max-connections 100 \
+    --rpc-port 9333 \
+    --rpc-cors all \
+    --rpc-methods safe \
+    --prometheus-port 9315 \
+    --state-cache-size 0 \
+    -- \
+    --chain /usr/share/substrate/rococo.json \
+    --port 33334 \
+    --ws-port 9345 \
+    --rpc-port 9334 \
+    --prometheus-port 9316 \
+    --telemetry-url 'wss://api.telemetry.manta.systems/submit/ 0'
+User=manta
+Group=manta
+Restart=always
+RestartSec=120
+
+[Install]
+WantedBy=multi-user.target
