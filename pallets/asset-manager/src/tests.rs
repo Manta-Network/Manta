@@ -13,27 +13,45 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
-//
-// The pallet-tx-pause pallet is forked from Acala's transaction-pause module https://github.com/AcalaNetwork/Acala/tree/master/modules/transaction-pause
-// The original license is the following - SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 //! unit tests for asset-manager
 
-use crate::{self as asset_manager, AssetIdLocation, UnitsPerSecond};
+use crate::{
+	self as asset_manager, AssetIdLocation, AssetIdMetadata, Error, LocationAssetId, UnitsPerSecond,
+};
 use asset_manager::mock::*;
-use frame_support::{assert_noop, assert_ok};
-use manta_primitives::assets::{AssetLocation, AssetRegistrarMetadata};
+use frame_support::{assert_noop, assert_ok, traits::fungibles::InspectMetadata};
+use manta_primitives::assets::{
+	AssetConfig, AssetLocation, AssetRegistrarMetadata, FungibleLedger,
+};
 use sp_runtime::traits::BadOrigin;
 use xcm::{latest::prelude::*, VersionedMultiLocation};
 
+pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
+
 #[test]
 fn basic_setup_should_work() {
-	new_test_ext()
-		.execute_with(|| assert!(AssetIdLocation::<Runtime>::iter_values().next().is_none()));
+	new_test_ext().execute_with(|| {
+		let asset_id = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
+		let asset_location = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetLocation::get();
+		let asset_metadata = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetMetadata::get();
+		assert_eq!(
+			AssetIdLocation::<Runtime>::get(asset_id),
+			Some(asset_location.clone())
+		);
+		assert_eq!(
+			AssetIdMetadata::<Runtime>::get(asset_id),
+			Some(asset_metadata)
+		);
+		assert_eq!(
+			LocationAssetId::<Runtime>::get(asset_location),
+			Some(asset_id)
+		);
+	});
 }
 
 #[test]
-fn wrong_modifer_origin_should_not_work() {
+fn wrong_modifier_origin_should_not_work() {
 	new_test_ext().execute_with(|| {
 		let asset_metadata = AssetRegistrarMetadata {
 			name: b"Kusama".to_vec(),
@@ -93,7 +111,8 @@ fn register_asset_should_work() {
 		X2(Parachain(1), PalletInstance(PALLET_BALANCES_INDEX)),
 	)));
 	new_test_ext().execute_with(|| {
-		let mut counter: u32 = 0;
+		let mut counter: u32 =
+			<MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get();
 		// Register relay chain native token
 		assert_ok!(AssetManager::register_asset(
 			Origin::root(),
@@ -108,7 +127,7 @@ fn register_asset_should_work() {
 		// Register twice will fail
 		assert_noop!(
 			AssetManager::register_asset(Origin::root(), source_location, asset_metadata.clone()),
-			crate::Error::<Runtime>::LocationAlreadyExists
+			Error::<Runtime>::LocationAlreadyExists
 		);
 		// Register a new asset
 		assert_ok!(AssetManager::register_asset(
@@ -122,17 +141,25 @@ fn register_asset_should_work() {
 
 #[test]
 fn update_asset() {
+	let original_name = b"Kusama".to_vec();
+	let original_symbol = b"KSM".to_vec();
+	let original_decimals = 12;
 	let asset_metadata = AssetRegistrarMetadata {
-		name: b"Kusama".to_vec(),
-		symbol: b"KSM".to_vec(),
-		decimals: 12,
+		name: original_name,
+		symbol: original_symbol,
+		decimals: original_decimals,
 		min_balance: 1u128,
 		evm_address: None,
 		is_frozen: false,
 		is_sufficient: true,
 	};
 	let mut new_metadata = asset_metadata.clone();
-	new_metadata.is_frozen = true;
+	let new_name = b"NotKusama".to_vec();
+	let new_symbol = b"NotKSM".to_vec();
+	let new_decimals = original_decimals + 1;
+	new_metadata.name = new_name.clone();
+	new_metadata.symbol = new_symbol.clone();
+	new_metadata.decimals = new_decimals;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 	let new_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
@@ -140,52 +167,117 @@ fn update_asset() {
 	)));
 	new_test_ext().execute_with(|| {
 		// Register relay chain native token
+		let asset_id = <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get();
 		assert_ok!(AssetManager::register_asset(
 			Origin::root(),
 			source_location.clone(),
 			asset_metadata.clone()
 		));
 		assert_eq!(
-			AssetIdLocation::<Runtime>::get(0),
+			AssetIdLocation::<Runtime>::get(asset_id),
 			Some(source_location.clone())
 		);
-		// Update the asset metadata
+		// Cannot update asset 1. Will be reserved for the native asset.
+		let native_asset_id = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
+		assert_noop!(
+			AssetManager::update_asset_metadata(
+				Origin::root(),
+				native_asset_id,
+				new_metadata.clone(),
+			),
+			Error::<Runtime>::CannotUpdateNativeAssetMetadata
+		);
 		assert_ok!(AssetManager::update_asset_metadata(
 			Origin::root(),
-			0,
-			new_metadata.clone()
-		));
+			asset_id,
+			new_metadata.clone(),
+		),);
+		assert_eq!(Assets::name(&asset_id), new_name);
+		assert_eq!(Assets::symbol(&asset_id), new_symbol);
+		assert_eq!(Assets::decimals(&asset_id), new_decimals);
 		// Update the asset location
 		assert_ok!(AssetManager::update_asset_location(
 			Origin::root(),
-			0,
+			asset_id,
 			new_location.clone()
 		));
 		// Update asset units per seconds
 		assert_ok!(AssetManager::set_units_per_second(
 			Origin::root(),
-			0,
+			asset_id,
 			125u128
 		));
-		assert_eq!(UnitsPerSecond::<Runtime>::get(0), Some(125));
+		assert_eq!(UnitsPerSecond::<Runtime>::get(asset_id), Some(125));
+		let next_asset_id = asset_id + 1;
 		// Update a non-exist asset should fail
 		assert_noop!(
-			AssetManager::update_asset_location(Origin::root(), 1, new_location.clone()),
-			crate::Error::<Runtime>::UpdateNonExistAsset
+			AssetManager::update_asset_location(
+				Origin::root(),
+				next_asset_id,
+				new_location.clone()
+			),
+			Error::<Runtime>::UpdateNonExistAsset
 		);
 		assert_noop!(
-			AssetManager::update_asset_metadata(Origin::root(), 1, new_metadata.clone()),
-			crate::Error::<Runtime>::UpdateNonExistAsset
+			AssetManager::update_asset_metadata(
+				Origin::root(),
+				next_asset_id,
+				new_metadata.clone()
+			),
+			Error::<Runtime>::UpdateNonExistAsset
 		);
-		// Update an asset to an existing location will fail
+		// Re-registering the original location and metadata should work,
+		// as we modified the previous asset.
 		assert_ok!(AssetManager::register_asset(
 			Origin::root(),
 			source_location.clone(),
 			asset_metadata.clone()
 		));
+		// But updating the asset to an existing location will fail.
 		assert_noop!(
-			AssetManager::update_asset_location(Origin::root(), 1, new_location),
-			crate::Error::<Runtime>::LocationAlreadyExists
+			AssetManager::update_asset_location(Origin::root(), next_asset_id, new_location),
+			Error::<Runtime>::LocationAlreadyExists
 		);
 	})
+}
+
+#[test]
+fn mint_asset() {
+	new_test_ext().execute_with(|| {
+		// mint native asset
+		let native_asset_id = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
+		assert_ok!(
+			<MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::mint(
+				native_asset_id,
+				&ALICE,
+				1000_000
+			)
+		);
+
+		// mint non-native asset
+		let non_native_asset_id =
+			<MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get();
+		let asset_metadata = AssetRegistrarMetadata {
+			name: b"Kusama".to_vec(),
+			symbol: b"KSM".to_vec(),
+			decimals: 12,
+			min_balance: 1u128,
+			evm_address: None,
+			is_frozen: false,
+			is_sufficient: true,
+		};
+		let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+		assert_ok!(AssetManager::register_asset(
+			Origin::root(),
+			source_location,
+			asset_metadata
+		));
+		assert_ok!(
+			<MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::mint(
+				non_native_asset_id,
+				&ALICE,
+				1000_000
+			)
+		);
+	});
 }

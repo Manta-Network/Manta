@@ -1154,6 +1154,9 @@ dependencies = [
  "log",
  "manta-collator-selection",
  "manta-primitives",
+ "orml-xtokens",
+ "pallet-asset-manager",
+ "pallet-assets",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -1174,9 +1177,11 @@ dependencies = [
  "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
+ "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-runtime-common",
+ "polkadot-runtime-parachains",
  "reqwest",
  "scale-info",
  "serde",
@@ -1199,6 +1204,7 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "xcm-simulator",
 ]
 
 [[package]]
@@ -4840,7 +4846,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#a91d908da79e7fee0a3215945a73c7bb28f94641"
+source = "git+https://github.com/manta-network/manta-rs.git#a91d908da79e7fee0a3215945a73c7bb28f94641"
 dependencies = [
  "derivative",
  "derive_more",
@@ -4882,7 +4888,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#a91d908da79e7fee0a3215945a73c7bb28f94641"
+source = "git+https://github.com/manta-network/manta-rs.git#a91d908da79e7fee0a3215945a73c7bb28f94641"
 dependencies = [
  "derivative",
  "manta-util",
@@ -4892,7 +4898,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#16e142f7917cc61e6066d6896f1a75aa45a0569d"
+source = "git+https://github.com/manta-network/manta-rs.git#16e142f7917cc61e6066d6896f1a75aa45a0569d"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -5015,7 +5021,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs#a91d908da79e7fee0a3215945a73c7bb28f94641"
+source = "git+https://github.com/manta-network/manta-rs.git#a91d908da79e7fee0a3215945a73c7bb28f94641"
 
 [[package]]
 name = "maplit"
@@ -6174,6 +6180,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "tempfile",
+ "xcm",
 ]
 
 [[package]]

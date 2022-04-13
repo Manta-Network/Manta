@@ -15,7 +15,7 @@
 // along with pallet-manta-pay.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-	mock::{new_test_ext, MantaAssetRegistrar, MantaFungibleLedger, MantaPayPallet, Origin, Test},
+	mock::{new_test_ext, MantaAssetConfig, MantaAssetRegistrar, MantaPayPallet, Origin, Test},
 	Error,
 };
 use frame_support::{assert_noop, assert_ok};
@@ -34,7 +34,7 @@ use manta_pay::config::{
 	UtxoCommitmentScheme, VoidNumberHashFunction,
 };
 use manta_primitives::{
-	assets::{AssetRegistrar, AssetRegistrarMetadata, FungibleLedger},
+	assets::{AssetConfig, AssetRegistrar, AssetRegistrarMetadata, FungibleLedger},
 	constants::DEFAULT_ASSET_ED,
 };
 use manta_util::codec::{Decode, IoReader};
@@ -52,6 +52,8 @@ lazy_static::lazy_static! {
 }
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
+pub const NATIVE_ASSET_ID: AssetId =
+	AssetId(<MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get());
 
 /// Loads the [`MultiProvingContext`] from the SDK.
 #[inline]
@@ -147,11 +149,18 @@ where
 
 /// Builds `count`-many [`PrivateTransfer`] tests.
 #[inline]
-fn private_transfer_test<R>(count: usize, rng: &mut R) -> Vec<TransferPost>
+fn private_transfer_test<R>(
+	count: usize,
+	asset_id_option: Option<AssetId>,
+	rng: &mut R,
+) -> Vec<TransferPost>
 where
 	R: CryptoRng + RngCore + ?Sized,
 {
-	let asset_id = rng.gen();
+	let asset_id = match asset_id_option {
+		Some(id) => id,
+		None => rng.gen(),
+	};
 	// FIXME: get rid of the division after parity fixes the pallet-asset bug
 	let double_balance: u128 = rng.gen();
 	let total_free_balance = AssetValue(double_balance / 2);
@@ -216,11 +225,14 @@ where
 
 /// Builds `count`-many [`Reclaim`] tests.
 #[inline]
-fn reclaim_test<R>(count: usize, rng: &mut R) -> Vec<TransferPost>
+fn reclaim_test<R>(count: usize, id_option: Option<AssetId>, rng: &mut R) -> Vec<TransferPost>
 where
 	R: CryptoRng + RngCore + ?Sized,
 {
-	let asset_id = rng.gen();
+	let asset_id = match id_option {
+		Some(id) => id,
+		None => rng.gen(),
+	};
 	// FIXME: This is a workaround due to the substrate asset bug
 	let double_balance: u128 = rng.gen();
 	let total_free_balance = AssetValue(double_balance / 2);
@@ -289,17 +301,23 @@ fn initialize_test(id: AssetId, value: AssetValue) {
 		metadata.into(),
 		true
 	));
-	assert_ok!(MantaFungibleLedger::mint(id.0, &ALICE, value.0));
-	assert_ok!(MantaFungibleLedger::mint(
-		id.0,
-		&MantaPayPallet::account_id(),
-		DEFAULT_ASSET_ED
-	));
+	assert_ok!(
+		<<MantaAssetConfig as AssetConfig<Test>>::FungibleLedger as FungibleLedger<Test>>::mint(
+			id.0, &ALICE, value.0
+		)
+	);
+	assert_ok!(
+		<<MantaAssetConfig as AssetConfig<Test>>::FungibleLedger as FungibleLedger<Test>>::mint(
+			id.0,
+			&MantaPayPallet::account_id(),
+			DEFAULT_ASSET_ED
+		)
+	);
 }
 
-/// Tests multiple mints from some total supply.
+/// Tests multiple to_private from some total supply.
 #[test]
-fn mint_should_work() {
+fn to_private_should_work() {
 	let mut rng = thread_rng();
 	new_test_ext().execute_with(|| {
 		let asset_id = rng.gen();
@@ -310,6 +328,23 @@ fn mint_should_work() {
 		initialize_test(asset_id, total_free_supply + DEFAULT_ASSET_ED);
 		mint_tokens(
 			asset_id,
+			&value_distribution(5, total_free_supply, &mut rng),
+			&mut rng,
+		);
+	});
+}
+
+#[test]
+fn native_asset_to_private_should_work() {
+	let mut rng = thread_rng();
+	new_test_ext().execute_with(|| {
+		// FIXME: get rid of divide by two after parity fix pallet-asset
+		// This is to work around the substrate bug
+		let double_supply: u128 = rng.gen();
+		let total_free_supply = AssetValue(double_supply / 2);
+		initialize_test(NATIVE_ASSET_ID, total_free_supply + DEFAULT_ASSET_ED);
+		mint_tokens(
+			NATIVE_ASSET_ID,
 			&value_distribution(5, total_free_supply, &mut rng),
 			&mut rng,
 		);
@@ -340,7 +375,7 @@ fn overdrawn_mint_should_not_work() {
 
 /// Tests a mint that would overdraw from a non-existent supply.
 #[test]
-fn mint_without_init_should_not_work() {
+fn to_private_without_init_should_not_work() {
 	let mut rng = thread_rng();
 	new_test_ext().execute_with(|| {
 		assert_noop!(
@@ -375,20 +410,28 @@ fn mint_existing_coin_should_not_work() {
 /// Tests a [`PrivateTransfer`] transaction.
 #[test]
 fn private_transfer_should_work() {
-	new_test_ext().execute_with(|| private_transfer_test(1, &mut thread_rng()));
+	new_test_ext().execute_with(|| private_transfer_test(1, None, &mut thread_rng()));
+}
+
+/// Test a [`PrivateTransfer`] transaction with native currency
+#[test]
+fn private_transfer_native_asset_shoud_work() {
+	new_test_ext().execute_with(|| {
+		private_transfer_test(1, Some(NATIVE_ASSET_ID), &mut thread_rng());
+	});
 }
 
 /// Tests multiple [`PrivateTransfer`] transactions.
 #[test]
 fn private_transfer_10_times_should_work() {
-	new_test_ext().execute_with(|| private_transfer_test(10, &mut thread_rng()));
+	new_test_ext().execute_with(|| private_transfer_test(10, None, &mut thread_rng()));
 }
 
 /// Tests that a double-spent [`PrivateTransfer`] will fail.
 #[test]
 fn double_spend_in_private_transfer_should_not_work() {
 	new_test_ext().execute_with(|| {
-		for private_transfer in private_transfer_test(1, &mut thread_rng()) {
+		for private_transfer in private_transfer_test(1, None, &mut thread_rng()) {
 			assert_noop!(
 				MantaPayPallet::private_transfer(Origin::signed(ALICE), private_transfer.into()),
 				Error::<Test>::AssetSpent,
@@ -400,20 +443,26 @@ fn double_spend_in_private_transfer_should_not_work() {
 /// Tests a [`Reclaim`] transaction.
 #[test]
 fn reclaim_should_work() {
-	new_test_ext().execute_with(|| reclaim_test(1, &mut thread_rng()));
+	new_test_ext().execute_with(|| reclaim_test(1, None, &mut thread_rng()));
+}
+
+/// Test a [`Reclaim`] of native currency
+#[test]
+fn reclaim_native_should_work() {
+	new_test_ext().execute_with(|| reclaim_test(1, Some(NATIVE_ASSET_ID), &mut thread_rng()));
 }
 
 /// Tests multiple [`Reclaim`] transactions.
 #[test]
 fn reclaim_10_times_should_work() {
-	new_test_ext().execute_with(|| reclaim_test(10, &mut thread_rng()));
+	new_test_ext().execute_with(|| reclaim_test(10, None, &mut thread_rng()));
 }
 
 /// Tests that a double-spent [`Reclaim`] will fail.
 #[test]
 fn double_spend_in_reclaim_should_not_work() {
 	new_test_ext().execute_with(|| {
-		for reclaim in reclaim_test(1, &mut thread_rng()) {
+		for reclaim in reclaim_test(1, None, &mut thread_rng()) {
 			assert_noop!(
 				MantaPayPallet::to_public(Origin::signed(ALICE), reclaim.into()),
 				Error::<Test>::AssetSpent,

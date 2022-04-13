@@ -324,7 +324,7 @@ fn main() -> Result<()> {
 	let mut rng = thread_rng();
 	let (proving_context, verifying_context, parameters, utxo_accumulator_model) =
 		load_parameters(directory.path())?;
-	let asset_id: u32 = 2;
+	let asset_id: u32 = 8;
 
 	let mint = sample_mint(
 		&proving_context.mint,

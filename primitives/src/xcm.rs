@@ -190,10 +190,10 @@ impl<
 				// In case the asset matches the one the trader already stored before, add
 				// to later refund
 
-				// Else we are always going to substract the weight if we can, but we latter do
+				// Else we are always going to subtract the weight if we can, but we latter do
 				// not refund it
 
-				// In short, we only refund on the asset the trader first succesfully was able
+				// In short, we only refund on the asset the trader first successfully was able
 				// to pay for an execution
 				let new_asset = match self.refund_cache.clone() {
 					Some((prev_id, prev_amount, units_per_second)) => {
@@ -285,7 +285,7 @@ impl<
 				}
 			}
 			Err(_) => log::debug!(
-				target: "xcm",
+				target: "manta-xcm",
 				"take revenue failed matching fungible"
 			),
 		}
