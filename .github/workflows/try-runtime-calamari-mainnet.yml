@@ -28,6 +28,8 @@ jobs:
       - start-node-builder
     runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
     steps:
+      - name: Install Yarn
+        run: npm install -g yarn
       -
         uses: actions/checkout@v2
       -
