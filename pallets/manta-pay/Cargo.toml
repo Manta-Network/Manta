@@ -64,8 +64,8 @@ frame-support = { git = "https://github.com/paritytech/substrate.git", branch = 
 frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16", default-features = false }
 sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16", default-features = false }
-scale-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
-scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
+scale-codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive", "max-encoded-len"] }
+scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 
 # manta dependencies
 manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", default-features = false }
