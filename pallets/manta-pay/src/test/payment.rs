@@ -29,9 +29,9 @@ use manta_crypto::{
 	rand::{CryptoRng, Rand, RngCore, Sample},
 };
 use manta_pay::config::{
-	FullParameters, KeyAgreementScheme, MerkleTreeConfiguration, Mint, MultiProvingContext,
+	FullParameters, MerkleTreeConfiguration, Mint, MultiProvingContext, NoteEncryptionScheme,
 	Parameters, PrivateTransfer, ProvingContext, Reclaim, TransferPost, UtxoAccumulatorModel,
-	UtxoCommitmentScheme, VoidNumberHashFunction,
+	UtxoCommitmentScheme, VoidNumberCommitmentScheme,
 };
 use manta_primitives::{
 	assets::{AssetConfig, AssetRegistrar, AssetRegistrarMetadata, FungibleLedger},
@@ -90,21 +90,21 @@ fn load_proving_context() -> MultiProvingContext {
 #[inline]
 fn load_parameters() -> Parameters {
 	Parameters {
-		key_agreement: KeyAgreementScheme::decode(
-			manta_sdk::pay::testnet::parameters::KeyAgreement::get()
+		note_encryption_scheme: NoteEncryptionScheme::decode(
+			manta_sdk::pay::testnet::parameters::NoteEncryptionScheme::get()
 				.expect("Checksum did not match."),
 		)
-		.expect("Unable to decode KEY_AGREEMENT parameters."),
+		.expect("Unable to decode NOTE_ENCRYPTION_SCHEME parameters."),
 		utxo_commitment: UtxoCommitmentScheme::decode(
 			manta_sdk::pay::testnet::parameters::UtxoCommitmentScheme::get()
 				.expect("Checksum did not match."),
 		)
 		.expect("Unable to decode UTXO_COMMITMENT_SCHEME parameters."),
-		void_number_hash: VoidNumberHashFunction::decode(
-			manta_sdk::pay::testnet::parameters::VoidNumberHashFunction::get()
+		void_number_commitment: VoidNumberCommitmentScheme::decode(
+			manta_sdk::pay::testnet::parameters::VoidNumberCommitmentScheme::get()
 				.expect("Checksum did not match."),
 		)
-		.expect("Unable to decode VOID_NUMBER_HASH_FUNCTION parameters."),
+		.expect("Unable to decode VOID_NUMBER_COMMITMENT_SCHEME parameters."),
 	}
 }
 

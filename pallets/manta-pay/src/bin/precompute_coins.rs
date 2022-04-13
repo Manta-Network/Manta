@@ -29,9 +29,10 @@ use manta_crypto::{
 	rand::{CryptoRng, Rand, RngCore, Sample},
 };
 use manta_pay::config::{
-	self, FullParameters, KeyAgreementScheme, MerkleTreeConfiguration, Mint, MultiProvingContext,
-	MultiVerifyingContext, Parameters, PrivateTransfer, ProofSystem, ProvingContext, Reclaim,
-	UtxoAccumulatorModel, UtxoCommitmentScheme, VerifyingContext, VoidNumberHashFunction,
+	self, FullParameters, MerkleTreeConfiguration, Mint, MultiProvingContext,
+	MultiVerifyingContext, NoteEncryptionScheme, Parameters, PrivateTransfer, ProofSystem,
+	ProvingContext, Reclaim, UtxoAccumulatorModel, UtxoCommitmentScheme, VerifyingContext,
+	VoidNumberCommitmentScheme,
 };
 use manta_util::codec::{Decode, IoReader};
 use pallet_manta_pay::types::TransferPost;
@@ -88,21 +89,21 @@ fn load_parameters(
 		.expect("Unable to decode RECLAIM verifying context."),
 	};
 	let parameters = Parameters {
-		key_agreement: KeyAgreementScheme::decode(
-			manta_sdk::pay::testnet::parameters::KeyAgreement::get()
+		note_encryption_scheme: NoteEncryptionScheme::decode(
+			manta_sdk::pay::testnet::parameters::NoteEncryptionScheme::get()
 				.expect("Checksum did not match."),
 		)
-		.expect("Unable to decode KEY_AGREEMENT parameters."),
+		.expect("Unable to decode NOTE_ENCRYPTION_SCHEME parameters."),
 		utxo_commitment: UtxoCommitmentScheme::decode(
 			manta_sdk::pay::testnet::parameters::UtxoCommitmentScheme::get()
 				.expect("Checksum did not match."),
 		)
 		.expect("Unable to decode UTXO_COMMITMENT_SCHEME parameters."),
-		void_number_hash: VoidNumberHashFunction::decode(
-			manta_sdk::pay::testnet::parameters::VoidNumberHashFunction::get()
+		void_number_commitment: VoidNumberCommitmentScheme::decode(
+			manta_sdk::pay::testnet::parameters::VoidNumberCommitmentScheme::get()
 				.expect("Checksum did not match."),
 		)
-		.expect("Unable to decode VOID_NUMBER_HASH_FUNCTION parameters."),
+		.expect("Unable to decode VOID_NUMBER_COMMITMENT_SCHEME parameters."),
 	};
 	Ok((
 		proving_context,
