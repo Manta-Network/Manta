@@ -89,7 +89,6 @@ try-runtime = [
 	'frame-executive/try-runtime',
 	'frame-try-runtime',
 ]
-
 runtime-benchmarks = [
 	'cumulus-pallet-session-benchmarking/runtime-benchmarks',
 	'hex-literal',
@@ -111,7 +110,6 @@ runtime-benchmarks = [
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
-
 std = [
 	'codec/std',
 	'serde',

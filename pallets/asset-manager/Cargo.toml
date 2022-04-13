@@ -7,10 +7,8 @@ homepage   = 'https://manta.network'
 license    = 'GPL-3.0'
 repository = 'https://github.com/Manta-Network/Manta/'
 
-
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.0.0', default-features = false }
-# scale-info has to be 1.0 for now
 scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18", default-features = false }
@@ -45,7 +43,6 @@ std = [
 try-runtime = [
 	"frame-support/try-runtime",
 ]
-
 runtime-benchmarks = [
 	'frame-benchmarking',
 	'frame-support/runtime-benchmarks',
