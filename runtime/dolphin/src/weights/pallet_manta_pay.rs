@@ -46,6 +46,7 @@ pub trait WeightInfo {
 	fn to_private() -> Weight;
 	fn private_transfer() -> Weight;
 	fn to_public() -> Weight;
+	fn public_transfer() -> Weight;
 }
 
 /// Weights for pallet_manta_pay using the Substrate node and recommended hardware.
@@ -89,6 +90,13 @@ impl<T: frame_system::Config> pallet_manta_pay::WeightInfo for SubstrateWeight<T
 			.saturating_add(T::DbWeight::get().reads(10 as Weight))
 			.saturating_add(T::DbWeight::get().writes(12 as Weight))
 	}
+	// Storage: Assets Asset (r:1 w:1)
+	// Storage: Assets Account (r:2 w:2)
+	fn public_transfer() -> Weight {
+		(34_745_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(3 as Weight))
+			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+	}	
 }
 
 // For backwards compatibility and tests
@@ -130,5 +138,12 @@ impl WeightInfo for () {
 		(103_005_197_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(10 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(12 as Weight))
+	}
+	// Storage: Assets Asset (r:1 w:1)
+	// Storage: Assets Account (r:2 w:2)
+	fn public_transfer() -> Weight {
+		(34_745_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
 	}
 }
