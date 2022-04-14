@@ -224,6 +224,14 @@ jobs:
               id: pallet_asset_manager
               name: pallet_asset_manager
             iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_manta_pay
+            pallet:
+              id: pallet_manta_pay
+              name: pallet_manta_pay
+            iterations: 20
     steps:
       -
         uses: actions/download-artifact@v2

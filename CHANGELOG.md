@@ -4,6 +4,7 @@
 ### Breaking changes
 
 ### Features
+- [\#484](https://github.com/Manta-Network/Manta/pull/484) Update to [latest MantaPay circuits](https://github.com/Manta-Network/manta-rs/pull/50)
 - [\#430](https://github.com/Manta-Network/Manta/pull/419) Add private payment to dolphin runtime.
 - [\#419](https://github.com/Manta-Network/Manta/pull/419) Add asset manager and XCM support.
 - [\#358](https://github.com/Manta-Network/Manta/pull/358) Underperforming collators are automatically removed from the collator set after each session
