@@ -72,7 +72,7 @@ jobs:
         run: |
           cd dev-tools/check-finalized-block
           yarn install
-          yarn build
+          yarn
           node index.js --para_address=ws://127.0.0.1:9944 --relay_address=ws://127.0.0.1:9945 --target_block=6
           echo $?
           if [ $? == 1 ]; then echo "Failed to finalize the target block - 6"; exit 1; fi
