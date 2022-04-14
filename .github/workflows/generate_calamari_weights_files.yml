@@ -289,6 +289,7 @@ jobs:
           aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
           aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
           aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
+          runner-arch: arm64
 
   stop-node-builder-current:
     needs:
@@ -307,5 +308,6 @@ jobs:
           aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
           runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
+          runner-arch: arm64
 
 # yamllint enable rule:line-length
