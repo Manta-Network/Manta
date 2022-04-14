@@ -291,8 +291,8 @@ jobs:
           aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
           aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
           aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-type: ${{ AWS_INSTANCE_ROOT_VOLUME_TYPE }}
-          aws-instance-root-volume-size: ${{ AWS_INSTANCE_ROOT_VOLUME_SIZE }}
+          aws-instance-root-volume-type: ${{ env.AWS_INSTANCE_ROOT_VOLUME_TYPE }}
+          aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
 
