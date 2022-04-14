@@ -73,29 +73,29 @@ impl Asset {
 /// Encrypted Note
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct EncryptedNote {
-	/// Ciphertext
-	pub ciphertext: [u8; 36],
-
 	/// Ephemeral Public Key
 	pub ephemeral_public_key: [u8; 32],
+
+	/// Ciphertext
+	pub ciphertext: [u8; 68],
 }
 
 impl Default for EncryptedNote {
 	#[inline]
 	fn default() -> Self {
 		Self {
-			ciphertext: [0; 36],
 			ephemeral_public_key: [0; 32],
+			ciphertext: [0; 68],
 		}
 	}
 }
 
 impl From<config::EncryptedNote> for EncryptedNote {
 	#[inline]
-	fn from(note: config::EncryptedNote) -> Self {
+	fn from(encrypted_note: config::EncryptedNote) -> Self {
 		Self {
-			ciphertext: note.ciphertext.into(),
-			ephemeral_public_key: encode(note.ephemeral_public_key),
+			ephemeral_public_key: encode(encrypted_note.ephemeral_public_key),
+			ciphertext: encrypted_note.ciphertext.into(),
 		}
 	}
 }
@@ -104,10 +104,10 @@ impl TryFrom<EncryptedNote> for config::EncryptedNote {
 	type Error = ();
 
 	#[inline]
-	fn try_from(note: EncryptedNote) -> Result<Self, Self::Error> {
+	fn try_from(encrypted_note: EncryptedNote) -> Result<Self, Self::Error> {
 		Ok(Self {
-			ciphertext: note.ciphertext.into(),
-			ephemeral_public_key: decode(note.ephemeral_public_key)?,
+			ephemeral_public_key: decode(encrypted_note.ephemeral_public_key)?,
+			ciphertext: encrypted_note.ciphertext.into(),
 		})
 	}
 }
@@ -151,7 +151,7 @@ pub struct ReceiverPost {
 	pub utxo: [u8; 32],
 
 	/// Encrypted Note
-	pub note: EncryptedNote,
+	pub encrypted_note: EncryptedNote,
 }
 
 impl From<config::ReceiverPost> for ReceiverPost {
@@ -159,7 +159,7 @@ impl From<config::ReceiverPost> for ReceiverPost {
 	fn from(post: config::ReceiverPost) -> Self {
 		Self {
 			utxo: encode(post.utxo),
-			note: post.note.into(),
+			encrypted_note: post.encrypted_note.into(),
 		}
 	}
 }
@@ -171,7 +171,7 @@ impl TryFrom<ReceiverPost> for config::ReceiverPost {
 	fn try_from(post: ReceiverPost) -> Result<Self, Self::Error> {
 		Ok(Self {
 			utxo: decode(post.utxo)?,
-			note: post.note.try_into()?,
+			encrypted_note: post.encrypted_note.try_into()?,
 		})
 	}
 }
