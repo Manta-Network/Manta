@@ -14,7 +14,9 @@ env:
   AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
   AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
   AWS_INSTANCE_TYPE: a1.metal
-  AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
+  AWS_INSTANCE_ROOT_VOLUME_SIZE: 64
+  AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-arm64-server-*
+  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
 
 jobs:
 
@@ -289,7 +291,6 @@ jobs:
           aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
           aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
           aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
-          runner-arch: arm64
 
   stop-node-builder-current:
     needs:
@@ -308,6 +309,5 @@ jobs:
           aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
           runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
-          runner-arch: arm64
 
 # yamllint enable rule:line-length
