@@ -13,8 +13,7 @@ env:
   AWS_REGION: us-east-1
   AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
   AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
-  AWS_INSTANCE_TYPE: m5zn.metal
-  AWS_INSTANCE_ROOT_VOLUME_TYPE: SSD
+  AWS_INSTANCE_TYPE: a1.metal
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 64
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
@@ -219,7 +218,6 @@ jobs:
           aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
           aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
           aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-type: ${{ env.AWS_INSTANCE_ROOT_VOLUME_TYPE }}
           aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
