@@ -13,7 +13,7 @@ env:
   AWS_REGION: us-east-1
   AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
   AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
-  AWS_INSTANCE_TYPE: r5dn.2xlarge
+  AWS_INSTANCE_TYPE: m5zn.metal
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
