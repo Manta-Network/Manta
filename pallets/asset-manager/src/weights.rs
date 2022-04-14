@@ -34,11 +34,14 @@
 // --template=.github/resources/frame-weight-template.hbs
 // --output=pallet_asset_manager.rs
 
-#![cfg_attr(rustfmt, rustfmt_skip)]
-#![allow(unused_parens)]
+#![allow(clippy::unnecessary_cast)]
 #![allow(unused_imports)]
+#![allow(unused_parens)]
 
-use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
+use frame_support::{
+	traits::Get,
+	weights::{constants::RocksDbWeight, Weight},
+};
 use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_asset_manager.
@@ -142,4 +145,3 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
 	}
 }
-
