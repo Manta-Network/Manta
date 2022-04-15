@@ -1,4 +1,4 @@
-// Copyright 2020-2021 Manta Network.
+// Copyright 2020-2022 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -84,7 +84,7 @@ pub mod pallet {
 		inherent::Vec,
 		pallet_prelude::*,
 		sp_runtime::{
-			traits::{AccountIdConversion, CheckedSub, Convert, Zero},
+			traits::{AccountIdConversion, CheckedSub, Convert, One, Zero},
 			RuntimeDebug,
 		},
 		traits::{
@@ -192,7 +192,7 @@ pub mod pallet {
 	pub(super) type BlockCount = u32;
 	#[pallet::type_value]
 	pub(super) fn StartingBlockCount() -> BlockCount {
-		0u32.into()
+		Zero::zero()
 	}
 	#[pallet::storage]
 	pub(super) type BlocksPerCollatorThisSession<T: Config> =
@@ -288,8 +288,8 @@ pub mod pallet {
 		NewCandidacyBond(BalanceOf<T>),
 		CandidateAdded(T::AccountId, BalanceOf<T>),
 		CandidateRemoved(T::AccountId),
-		NewEvictionBaseline(u8),
-		NewEvictionTolerance(u8),
+		NewEvictionBaseline(Percent),
+		NewEvictionTolerance(Percent),
 	}
 
 	// Errors inform users that something went wrong.
@@ -505,10 +505,10 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::set_eviction_baseline())]
 		pub fn set_eviction_baseline(
 			origin: OriginFor<T>,
-			percentile: u8,
+			percentile: Percent,
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
-			<EvictionBaseline<T>>::put(Percent::from_percent(percentile)); // NOTE: from_percent saturates at 100
+			<EvictionBaseline<T>>::put(percentile); // NOTE: from_percent saturates at 100
 			Self::deposit_event(Event::NewEvictionBaseline(percentile));
 			Ok(().into())
 		}
@@ -519,10 +519,10 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::set_eviction_tolerance())]
 		pub fn set_eviction_tolerance(
 			origin: OriginFor<T>,
-			percentage: u8,
+			percentage: Percent,
 		) -> DispatchResultWithPostInfo {
 			T::UpdateOrigin::ensure_origin(origin)?;
-			<EvictionTolerance<T>>::put(Percent::from_percent(percentage)); // NOTE: from_percent saturates at 100
+			<EvictionTolerance<T>>::put(percentage); // NOTE: from_percent saturates at 100
 			Self::deposit_event(Event::NewEvictionTolerance(percentage));
 			Ok(().into())
 		}
@@ -590,7 +590,7 @@ pub mod pallet {
 
 			// 2. get percentile by _exclusive_ nearest rank method https://en.wikipedia.org/wiki/Percentile#The_nearest-rank_method (rust percentile API is feature gated and unstable)
 			let ordinal_rank = percentile_for_kick.mul_ceil(collator_count);
-			let index_at_ordinal_rank = ordinal_rank.saturating_sub(1); // -1 to accomodate 0-index counting, should not saturate due to precondition check and round up multiplication
+			let index_at_ordinal_rank = ordinal_rank.saturating_sub(One::one()); // -1 to accomodate 0-index counting, should not saturate due to precondition check and round up multiplication
 
 			// 3. Block number at rank is the percentile and our kick performance benchmark
 			let blocks_created_at_baseline: BlockCount =
@@ -608,26 +608,27 @@ pub mod pallet {
 			);
 
 			// 5. Walk the percentile slice, call try_remove_candidate if a collator is under threshold
-			let mut removed_account_ids: Vec<T::AccountId> = Vec::new();
 			let kick_candidates = &collator_perf_this_session[..index_at_ordinal_rank]; // ordinal-rank exclusive, the collator at percentile is safe
-			kick_candidates.iter().for_each(|(acc_id,my_blocks_this_session)| {
+			let mut removed_account_ids: Vec<T::AccountId> = Vec::with_capacity(kick_candidates.len());
+			kick_candidates.iter().for_each(|(acc_id, my_blocks_this_session)| {
 				if *my_blocks_this_session < evict_below_blocks {
 					// If our validator is not also a candidate we're invulnerable or already kicked
-					if let Some(_) = candidates.iter().find(|&x|{x.who == *acc_id})
+					if let Some(_) = candidates.iter().find(|&x|{ x.who == *acc_id })
 					{
-						Self::try_remove_candidate(&acc_id)
+						Self::try_remove_candidate(acc_id)
 							.and_then(|_| {
 								removed_account_ids.push(acc_id.clone());
 								log::info!("Removed collator of account {:?} as it only produced {} blocks this session which is below acceptable threshold of {}", &acc_id, my_blocks_this_session,evict_below_blocks);
 								Ok(())
 							})
-							.unwrap_or_else(|why| -> () {
+							.unwrap_or_else(|why| {
 								log::warn!("Failed to remove candidate due to underperformance {:?}", why);
 								debug_assert!(false, "failed to remove candidate {:?}", why);
 							});
 					}
 				}
 			});
+			removed_account_ids.shrink_to_fit();
 			removed_account_ids
 		}
 
@@ -660,7 +661,7 @@ pub mod pallet {
 
 			// increment blocks this node authored
 			<BlocksPerCollatorThisSession<T>>::mutate(&author, |blocks| {
-				*blocks = blocks.saturating_add(1u32);
+				*blocks = blocks.saturating_add(One::one());
 			});
 
 			frame_system::Pallet::<T>::register_extra_weight_unchecked(
