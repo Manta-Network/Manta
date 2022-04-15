@@ -16,7 +16,7 @@
 
 use crate::{
 	mock::{new_test_ext, MantaAssetConfig, MantaAssetRegistrar, MantaPayPallet, Origin, Test},
-	Error,
+	Error, FungibleLedger,
 };
 use frame_support::{assert_noop, assert_ok};
 use manta_accounting::{
@@ -34,7 +34,7 @@ use manta_pay::config::{
 	UtxoCommitmentScheme, VoidNumberCommitmentScheme,
 };
 use manta_primitives::{
-	assets::{AssetConfig, AssetRegistrar, AssetRegistrarMetadata, FungibleLedger},
+	assets::{AssetConfig, AssetRegistrar, AssetRegistrarMetadata, FungibleLedger as _},
 	constants::DEFAULT_ASSET_ED,
 };
 use manta_util::codec::{Decode, IoReader};
@@ -301,18 +301,12 @@ fn initialize_test(id: AssetId, value: AssetValue) {
 		metadata.into(),
 		true
 	));
-	assert_ok!(
-		<<MantaAssetConfig as AssetConfig<Test>>::FungibleLedger as FungibleLedger<Test>>::mint(
-			id.0, &ALICE, value.0
-		)
-	);
-	assert_ok!(
-		<<MantaAssetConfig as AssetConfig<Test>>::FungibleLedger as FungibleLedger<Test>>::mint(
-			id.0,
-			&MantaPayPallet::account_id(),
-			DEFAULT_ASSET_ED
-		)
-	);
+	assert_ok!(FungibleLedger::<Test>::mint(id.0, &ALICE, value.0));
+	assert_ok!(FungibleLedger::<Test>::mint(
+		id.0,
+		&MantaPayPallet::account_id(),
+		DEFAULT_ASSET_ED
+	));
 }
 
 /// Tests multiple to_private from some total supply.

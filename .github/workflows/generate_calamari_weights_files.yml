@@ -223,6 +223,22 @@ jobs:
               id: pallet_preimage
               name: pallet_preimage
             iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_assets
+            pallet:
+              id: pallet_assets
+              name: pallet_assets
+            iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: pallet_asset_manager
+            pallet:
+              id: pallet_asset_manager
+              name: pallet_asset_manager
+            iterations: 20
     steps:
       -
         uses: actions/download-artifact@v2
@@ -272,8 +288,8 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
           aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}  # 32 vcpu, 64gb ram, $1.392 hourly
-          aws-instance-root-volume-size: 32
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
+          aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
 
