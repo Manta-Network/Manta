@@ -163,6 +163,11 @@ pub mod pallet {
 			beneficiary: T::AccountId,
 			amount: Balance,
 		},
+		/// Update min xcm fee of an asset
+		MinXcmFeeUpdated {
+			asset_id: AssetId,
+			min_xcm_fee: u128,
+		},
 	}
 
 	/// Error.
@@ -214,6 +219,11 @@ pub mod pallet {
 	/// XCM transfer cost for different asset.
 	#[pallet::storage]
 	pub type UnitsPerSecond<T: Config> = StorageMap<_, Blake2_128Concat, AssetId, u128>;
+
+	/// Minimum xcm execution fee paid on destination chain.
+	#[pallet::storage]
+	#[pallet::getter(fn get_min_xcm_fee)]
+	pub type MinXcmFee<T: Config> = StorageMap<_, Blake2_128Concat, AssetId, u128>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -379,6 +389,26 @@ pub mod pallet {
 			});
 			Ok(())
 		}
+
+		#[pallet::weight(T::WeightInfo::set_min_xcm_fee())]
+		#[transactional]
+		pub fn set_min_xcm_fee(
+			origin: OriginFor<T>,
+			#[pallet::compact] asset_id: AssetId,
+			#[pallet::compact] min_xcm_fee: u128,
+		) -> DispatchResult {
+			T::ModifierOrigin::ensure_origin(origin)?;
+			ensure!(
+				AssetIdLocation::<T>::contains_key(&asset_id),
+				Error::<T>::UpdateNonExistAsset
+			);
+			MinXcmFee::<T>::insert(&asset_id, &min_xcm_fee);
+			Self::deposit_event(Event::<T>::MinXcmFeeUpdated {
+				asset_id,
+				min_xcm_fee,
+			});
+			Ok(())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -405,7 +435,14 @@ pub mod pallet {
 
 	impl<T: Config> GetByKey<<T::AssetConfig as AssetConfig<T>>::AssetLocation, u128> for Pallet<T> {
 		fn get(location: &<T::AssetConfig as AssetConfig<T>>::AssetLocation) -> u128 {
-			todo!();
+			if let Some(asset_id) = LocationAssetId::<T>::get(location) {
+				match MinXcmFee::<T>::get(&asset_id) {
+					Some(min_fee) => min_fee,
+					None => u128::MAX,
+				}
+			} else {
+				u128::MAX
+			}
 		}
 	}
 
