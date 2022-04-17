@@ -9,10 +9,14 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION: us-east-1
+  AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
+  AWS_REGION: us-east-2
+  AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
+  AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
   AWS_INSTANCE_TYPE: a1.metal
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-arm64-server-*
+  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
 
 jobs:
 
