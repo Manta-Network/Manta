@@ -93,9 +93,6 @@ pub mod currency;
 pub mod fee;
 pub mod impls;
 
-#[cfg(test)]
-mod tests;
-
 use currency::*;
 use fee::WeightToFee;
 use impls::DealWithFees;
