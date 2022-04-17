@@ -13,7 +13,7 @@ env:
   AWS_REGION: us-east-2
   AWS_INSTANCE_TYPE: a1.metal
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
-  AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-arm64-server-*
+  AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/*arm64*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
 
 jobs:
