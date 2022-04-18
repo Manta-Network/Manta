@@ -32,9 +32,9 @@ jobs:
           file: docker/${{ matrix.runtime.name }}.Dockerfile
           tags: |
             mantanetwork/${{ matrix.runtime.name }}:latest
-            mantanetwork/${{ matrix.runtime.name }}:${{ github.event.release.tag_name }}
+            mantanetwork/${{ matrix.runtime.name }}:v3.1.5
           build-args: |
-            PARA_BINARY_REF=${{ github.event.release.tag_name }}
+            PARA_BINARY_REF=v3.1.5
 
   check-docker-hub-deploy:
     needs: docker-hub-deploy
