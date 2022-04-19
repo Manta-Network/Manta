@@ -1,12 +1,12 @@
 ---
 name: Calamari XCM testing and onboarding checklist.
-about: Perform tests in order to open HRMP channel with Calamari on Kusama!
+about: Perform cross chain transfer tests in order to open HRMP channel with Calamari!
 
 ---
 
-# Calamari XCM Onboarding And Testing Checklist
+# Calamari XCM Testing And Onboarding Checklist
 
-## Onboarding Process Overview:
+## Process Overview:
 
 - [ ] Test XCM between Calamari and your runtime locally with polkadot-launch.
 
@@ -20,7 +20,7 @@ about: Perform tests in order to open HRMP channel with Calamari on Kusama!
 
 - [ ] Complete XCM tests between parachains.
 
-- [ ] Next steps.
+- [ ] Next steps discussion.
 
 * Manta Team Contact:
     - Georgi (XCM Eng): @Ghz (Telegram)
@@ -28,10 +28,11 @@ about: Perform tests in order to open HRMP channel with Calamari on Kusama!
 
 ## Local XCM Integration
 
-- As a first step please run all of your tests on a local network.
-- For that you can download the latest manta binary from the Releases page
+- As a first step we insist that both teams first run all tests on a local network.
+- For that you can download the latest manta binary from the Releases page.
 - Then use polkadot-launch to launch a `calamari-local` or `calamari-dev` network for testing.
 - You will also need to launch a `rococo-local` relay chain using the latest release of Polkadot.
+- Please let us know if there's a specific branch of your codebase that we should test with.
 
 ## XCM Integration on Rococo
 
@@ -44,7 +45,7 @@ about: Perform tests in order to open HRMP channel with Calamari on Kusama!
 - Rococo [faucet guide](https://wiki.polkadot.network/docs/build-pdk#obtaining-roc)
 - Dolphin Faucet: (TODO by TJ)
 
-### Getting Started - Sync Node & Open Rococo Slot Request
+### Sync Node & Open Rococo Slot Request
 
 - To sync your node, you can use the following [relay chain spec](https://raw.githubusercontent.com/paritytech/polkadot/master/node/service/res/rococo.json) (note: relay chain is Rococo based, and will probably take a few hours to sync)
 - Register your parachain on Rococo. For that you will need to open a [Rococo Slot Request](https://github.com/paritytech/subport/issues) issue and follow the instructions.
@@ -60,7 +61,7 @@ about: Perform tests in order to open HRMP channel with Calamari on Kusama!
 ts-node calculateSovereignAddress.ts --paraid 2084
 
 ```
-
+- The result will be:
 ```
 Sovereign Account Address on Relay: 0x7061726124080000000000000000000000000000000000000000000000000000
 Sovereign Account Address on other Parachains (Generic): 0x7369626c24080000000000000000000000000000000000000000000000000000
@@ -68,13 +69,13 @@ Sovereign Account Address on Dolphin: 0x7369626c24080000000000000000000000000000
 
 ```
 
-- Once you’ve got your `Sovereign Account`’s address, please fund it using the Rococo faucet. If not, you won’t be able to create the HRMP channel as the transaction will fail due to insufficient fees. Let us know if you need additional funds.
+- Once you’ve got your `Sovereign Account`’s address, please fund it using the Rococo faucet. Otherwise you won’t be able to create the HRMP channel as the transaction will fail due to insufficient fees. Let us know if you need additional funds.
 
 ## Create HRMP Channel with Dolphin
 
 - Get the Relay Encoded Call Data to Open HRMP Channel. Once your parachain is onboard, you need to create the HRMP channel between your Parachain and Dolphin.
-The first step is to get an encoded call data from the relay chain, to open a channel with a target parachain. The extrinsic contains the target parachain ID, max number of messages, and max message size:
-- In PolkadotJS app, switch to the live Polkadot/Kusama network. Go to Developer -> [Javascript section](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-rpc.polkadot.io#/js). Run the following code, note to replace the demo recipient para id with your own:
+- The first step is to get an encoded call data from the relay chain. The extrinsic contains the target parachain ID, max number of messages, and max message size, described in the next bullet.
+- In PolkadotJS app, switch to the Rococo network. Go to Developer -> [Javascript section](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-rpc.polkadot.io#/js). Run the following code, note to replace the demo recipient para id with your own:
 
 ```
 const tx = api.tx.hrmp.hrmpInitOpenChannel(2084, 8, 1024);
@@ -82,9 +83,9 @@ console.log(tx.toHex());
 
 ```
 
-- The result will be like
+- The result will be like:
 
-`0x3c040x1700240800000800000000040000`, remove the leading hex `3c04`, and the encoded result is `0x1700240800000800000000040000`.
+`0x3c040x1700240800000800000000040000`, remove the leading hex `3c04`, and so the encoded result is `0x1700240800000800000000040000`.
 
 ### Send XCM to Relay Chain
 
@@ -144,7 +145,6 @@ console.log(tx.toHex());
     
     **Note**: The values used above are for reference to be used in this testing environment, do not use these values in production!
     
-
 ## Assets Registrations
 
 ### Registering your Asset on Dolphin
