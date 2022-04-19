@@ -214,6 +214,20 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type UnitsPerSecond<T: Config> = StorageMap<_, Blake2_128Concat, AssetId, u128>;
 
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_runtime_upgrade() -> Weight {
+			NextAssetId::<T>::set(<T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get());
+			let asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
+			let metadata = <T::AssetConfig as AssetConfig<T>>::NativeAssetMetadata::get();
+			let location = <T::AssetConfig as AssetConfig<T>>::NativeAssetLocation::get();
+			AssetIdLocation::<T>::insert(&asset_id, &location);
+			AssetIdMetadata::<T>::insert(&asset_id, &metadata);
+			LocationAssetId::<T>::insert(&location, &asset_id);
+			T::DbWeight::get().reads_writes(1, 4)
+		}
+	}
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Register a new asset in the asset manager.
