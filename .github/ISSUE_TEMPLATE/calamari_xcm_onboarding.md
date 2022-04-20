@@ -32,6 +32,7 @@ about: Perform cross chain transfer tests in order to open HRMP channel with Cal
 - For that you can download the latest manta binary from the Releases page.
 - Then use polkadot-launch to launch a `calamari-local` or `calamari-dev` network for testing.
 - You will also need to launch a `rococo-local` relay chain using the latest release of Polkadot.
+- Here's a reference polkadot-launch config for [calamari-dev](#Example-Polkadot-Launch-Config).
 - Please let us know if there's a specific branch of your codebase that we should test with.
 
 ## XCM Integration on Rococo
@@ -178,6 +179,84 @@ Decimals: 18
 ```
 
 - Note: Calamari MultiLocation is different!
+
+### Example Polkadot Launch Config
+
+```
+{
+	"relaychain": {
+		"bin": "./polkadot",
+		"chain": "rococo-local",
+		"nodes": [
+			{
+				"name": "alice",
+				"wsPort": 9944,
+				"port": 30444,
+				"flags": [
+					"--rpc-cors=all",
+					"--execution=wasm",
+					"--wasm-execution=compiled",
+				]
+			},
+			{
+				"name": "bob",
+				"wsPort": 9955,
+				"port": 30555,
+				"flags": [
+					"--rpc-cors=all",
+					"--execution=wasm",
+					"--wasm-execution=compiled",
+				]
+			},
+			{
+				"name": "charlie",
+				"wsPort": 9966,
+				"port": 30666,
+				"flags": [
+					"--rpc-cors=all",
+					"--execution=wasm",
+					"--wasm-execution=compiled",
+				]
+			}
+		],
+		"genesis": {
+			"runtime": {
+				"runtime_genesis_config": {
+					"configuration": {
+						"config": {
+							"validation_upgrade_frequency": 10,
+							"validation_upgrade_delay": 10
+						}
+					}
+				}
+			}
+		}
+	},
+	"parachains": [
+		{
+			"bin": "./manta",
+			"chain": "calamari-dev",
+			"nodes": [
+				{
+					"wsPort": 9801,
+					"port": 31201,
+					"name": "alice",
+					"flags": [
+						"--rpc-cors=all",
+						"--rpc-port=9971",
+						"--execution=wasm",
+						"--wasm-execution=compiled"
+					]
+				}
+			]
+		}
+	],
+	"hrmpChannels": [
+	],
+	"types": {},
+	"finalization": false
+}
+```
 
 ## Next Steps - Calamari & Manta
 
