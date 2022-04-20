@@ -224,7 +224,7 @@ pub mod pallet {
 			AssetIdLocation::<T>::insert(&asset_id, &location);
 			AssetIdMetadata::<T>::insert(&asset_id, &metadata);
 			LocationAssetId::<T>::insert(&location, &asset_id);
-			T::DbWeight::get().reads_writes(1, 4)
+			T::DbWeight::get().reads_writes(4, 4)
 		}
 	}
 
