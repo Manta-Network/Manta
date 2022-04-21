@@ -41,10 +41,10 @@ about: Perform cross chain transfer tests in order to open HRMP channel with Cal
 
 ### Rococo Ecosystem Data
 
-- Rococo [endpoint](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-rpc.polkadot.io#/explorer)
-- Dolphin [endpoint](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Feddie.rococo.dolphin.engineering#/explorer)
-- Rococo [faucet guide](https://wiki.polkadot.network/docs/build-pdk#obtaining-roc)
-- Dolphin Faucet: (TODO by TJ)
+- [Rococo endpoint](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-rpc.polkadot.io#/explorer)
+- [Dolphin endpoint](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Feddie.rococo.dolphin.engineering#/explorer)
+- [Rococo faucet guide](https://wiki.polkadot.network/docs/build-pdk#obtaining-roc)
+- [Dolphin faucet](https://discord.gg/UvXpxuyg)
 
 ### Sync Node & Open Rococo Slot Request
 
