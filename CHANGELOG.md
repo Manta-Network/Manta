@@ -9,6 +9,8 @@
 
 ### Bug fixes
 
+## SBP M3 review: this seems like a pretty big release, so only incrementing the revision number seems insufficient. You might want to consider adopting semantic versioning.
+
 ## v3.1.5
 ### Breaking changes
 

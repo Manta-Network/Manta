@@ -630,6 +630,9 @@ impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
+// SBP M3 review: you might want to move the XCM-related config to separate 
+// module (e.g. `xcm_config.rs`) for more clarity, easier maintenance .
+
 parameter_types! {
 	pub const KsmLocation: MultiLocation = MultiLocation::parent();
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
