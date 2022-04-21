@@ -44,7 +44,9 @@ mod tests;
 pub mod pallet {
 
 	use crate::weights::WeightInfo;
-	use frame_support::{pallet_prelude::*, transactional, PalletId};
+	use frame_support::{
+		migration::have_storage_value, pallet_prelude::*, transactional, PalletId, StorageHasher,
+	};
 	use frame_system::pallet_prelude::*;
 	use manta_primitives::{
 		assets::{
@@ -217,14 +219,69 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_runtime_upgrade() -> Weight {
-			NextAssetId::<T>::set(<T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get());
+			if have_storage_value(Self::name().as_bytes(), b"NextAssetId", &[]) {
+				log::warn!(" !!! Aborting, NextAssetId was already set.");
+				return T::DbWeight::get().reads_writes(1, 0);
+			}
+
 			let asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
 			let metadata = <T::AssetConfig as AssetConfig<T>>::NativeAssetMetadata::get();
 			let location = <T::AssetConfig as AssetConfig<T>>::NativeAssetLocation::get();
+			if have_storage_value(
+				Self::name().as_bytes(),
+				b"AssetIdLocation",
+				&Blake2_128Concat::hash(&asset_id.encode()),
+			) {
+				log::warn!(" !!! Aborting, AssetIdLocation was already set.");
+				return T::DbWeight::get().reads_writes(4, 0);
+			}
+
+			if have_storage_value(
+				Self::name().as_bytes(),
+				b"AssetIdMetadata",
+				&Blake2_128Concat::hash(&asset_id.encode()),
+			) {
+				log::warn!(" !!! Aborting, AssetIdMetadata was already set.");
+				return T::DbWeight::get().reads_writes(5, 0);
+			}
+
+			if have_storage_value(
+				Self::name().as_bytes(),
+				b"LocationAssetId",
+				&Blake2_128Concat::hash(&location.encode()),
+			) {
+				log::warn!(" !!! Aborting, LocationAssetId was already set.");
+				return T::DbWeight::get().reads_writes(6, 0);
+			}
+
+			let start_non_native_asset_id =
+				<T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get();
+			NextAssetId::<T>::set(start_non_native_asset_id);
+			log::info!(
+				" >>> NextAssetId set the value {}",
+				start_non_native_asset_id
+			);
+
 			AssetIdLocation::<T>::insert(&asset_id, &location);
+			log::info!(
+				" >>> AssetIdLocation inserted the key:value pair {}:{:?}",
+				asset_id,
+				location
+			);
 			AssetIdMetadata::<T>::insert(&asset_id, &metadata);
+			log::info!(
+				" >>> AssetIdMetadata inserted the key:value pair {}:{:?}",
+				asset_id,
+				metadata
+			);
 			LocationAssetId::<T>::insert(&location, &asset_id);
-			T::DbWeight::get().reads_writes(4, 4)
+			log::info!(
+				" >>> LocationAssetId inserted the key:value pair {:?}:{}",
+				location,
+				asset_id
+			);
+
+			T::DbWeight::get().reads_writes(7, 4)
 		}
 	}
 
