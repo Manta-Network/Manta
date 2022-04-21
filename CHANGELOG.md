@@ -7,6 +7,7 @@
 
 ### Improvements
 
+- [\#485](https://github.com/Manta-Network/Manta/pull/485) XCM Fees now accrue to the Treasury instead of AssetManager
 ### Bug fixes
 
 ## v3.1.5
