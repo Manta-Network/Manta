@@ -9,7 +9,7 @@ on:
   pull_request:
     branches: [manta]
   push:
-    branches: [manta]
+    branches: [ghzlatarev/check-tests-sccache]
 
 env:
   AWS_REGION: us-east-1
@@ -89,7 +89,7 @@ jobs:
           rustup target add wasm32-unknown-unknown --toolchain nightly
           rustup update
       -
-        name: Run Unit Tests
+        name: Check Build
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -97,7 +97,17 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo test --release --features=runtime-benchmarks,try-runtime -- --test-threads=2
+          cargo b
+      # -
+      #   name: Run Unit Tests
+      #   env:
+      #     RUST_BACKTRACE: full
+      #     RUSTC_WRAPPER: sccache
+      #     SCCACHE_CACHE_SIZE: 2G
+      #     SCCACHE_DIR: /home/runner/.cache/sccache
+      #   run: |
+      #     source ${HOME}/.cargo/env
+      #     cargo test --release --features=runtime-benchmarks,try-runtime -- --test-threads=2
       -
         name: stop sccache server
         run: sccache --stop-server || true
