@@ -72,7 +72,6 @@ jobs:
           rustup toolchain install nightly
           rustup default stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
-          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
           rustup update
       -
         name: build
@@ -217,8 +216,8 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
           aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}  # 32 vcpu, 64gb ram, $1.392 hourly
-          aws-instance-root-volume-size: 32
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
+          aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
 

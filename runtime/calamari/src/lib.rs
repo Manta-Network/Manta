@@ -124,7 +124,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 3141,
+	spec_version: 3150,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 4,
@@ -624,7 +624,7 @@ impl pallet_assets::Config for Runtime {
 	type StringLimit = ConstU32<50>;
 	type Freezer = ();
 	type Extra = ();
-	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
 }
 
 pub struct CalamariAssetRegistrar;
@@ -705,7 +705,7 @@ impl pallet_asset_manager::Config for Runtime {
 	type AssetConfig = CalamariAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
 	type PalletId = AssetManagerPalletId;
-	type WeightInfo = pallet_asset_manager::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_asset_manager::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -1117,7 +1117,7 @@ construct_runtime!(
 
 		// Assets management
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
-		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>} = 46,
+		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
 
 		// Calamari stuff
 		CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
@@ -1319,6 +1319,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_session, SessionBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_tx_pause, TransactionPause);
 			list_benchmark!(list, extra, pallet_assets, Assets);
+			list_benchmark!(list, extra, pallet_asset_manager, AssetManager);
 
 			let storage_info = AllPalletsReversedWithSystemFirst::storage_info();
 
@@ -1369,6 +1370,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_tx_pause, TransactionPause);
 			add_benchmark!(params, batches, pallet_assets, Assets);
+			add_benchmark!(params, batches, pallet_asset_manager, AssetManager);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

@@ -48,9 +48,9 @@ pub trait AssetMetadata {
 	fn is_sufficient(&self) -> bool;
 }
 
-/// The registrar trait: defines the interface of creating an asset in the asset implementation layer.
-/// We may revisit this interface design (e.g. add change asset interface). However, change StorageMetadata
-/// should be rare.
+/// The registrar trait: defines the interface of creating an asset in the asset implementation
+/// layer. We may revisit this interface design (e.g. add change asset interface). However, change
+/// in StorageMetadata should be rare.
 pub trait AssetRegistrar<C: frame_system::Config, T: AssetConfig<C>> {
 	/// Create an new asset.
 	///
@@ -58,11 +58,11 @@ pub trait AssetRegistrar<C: frame_system::Config, T: AssetConfig<C>> {
 	/// * `min_balance`: the minimum balance to hold this asset
 	/// * `metadata`: the metadata that the implementation layer stores
 	/// * `is_sufficient`: whether this asset can be used as reserve asset,
-	///     to the first approximation. More specifically, Whether a non-zero balance of this asset is deposit of sufficient
-	///     value to account for the state bloat associated with its balance storage. If set to
-	///     `true`, then non-zero balances may be stored without a `consumer` reference (and thus
-	///     an ED in the Balances pallet or whatever else is used to control user-account state
-	///     growth).
+	///     to the first approximation. More specifically, Whether a non-zero balance of this asset
+	///     is deposit of sufficient value to account for the state bloat associated with its
+	///     balance storage. If set to `true`, then non-zero balances may be stored without a
+	///     `consumer` reference (and thus an ED in the Balances pallet or whatever else is used to
+	///     control user-account state growth).
 	fn create_asset(
 		asset_id: AssetId,
 		min_balance: Balance,
@@ -176,6 +176,7 @@ impl From<AssetRegistrarMetadata> for AssetStorageMetadata {
 	}
 }
 
+/// Asset Location
 #[derive(Clone, Eq, Debug, PartialEq, Encode, Decode, TypeInfo)]
 pub struct AssetLocation(pub VersionedMultiLocation);
 
@@ -213,10 +214,10 @@ impl From<AssetLocation> for Option<MultiLocation> {
 
 /// Defines the trait to obtain a generic AssetId
 pub trait AssetIdLocationGetter<AssetLocation> {
-	// get AssetLocation from AssetId
+	/// Gets the [`AssetLocation`] from [`AssetId`].
 	fn get_asset_location(asset_id: AssetId) -> Option<AssetLocation>;
 
-	// get AssetId from AssetLocation
+	/// Gets the [`AssetId`] from [`AssetLocation`].
 	fn get_asset_id(loc: &AssetLocation) -> Option<AssetId>;
 }
 
@@ -248,116 +249,137 @@ where
 	}
 }
 
-#[derive(Debug)]
-pub enum FungibleLedgerConsequence {
+/// Fungible Ledger Error
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum FungibleLedgerError {
+	/// Invalid Asset Id
+	InvalidAssetId,
+
 	/// Deposit couldn't happen due to the amount being too low. This is usually because the
 	/// account doesn't yet exist and the deposit wouldn't bring it to at least the minimum needed
 	/// for existance.
 	BelowMinimum,
+
 	/// Deposit cannot happen since the account cannot be created (usually because it's a consumer
 	/// and there exists no provider reference).
 	CannotCreate,
+
 	/// The asset is unknown. Usually because an `AssetId` has been presented which doesn't exist
 	/// on the system.
 	UnknownAsset,
+
 	/// An overflow would occur. This is practically unexpected, but could happen in test systems
 	/// with extremely small balance types or balances that approach the max value of the balance
 	/// type.
 	Overflow,
+
 	/// There has been an underflow in the system. This is indicative of a corrupt state and
 	/// likely unrecoverable.
 	Underflow,
+
 	/// Account continued in existence.
 	/// Not enough of the funds in the account are unavailable for withdrawal.
 	Frozen,
+
 	/// Account balance would reduce to zero, potentially destroying it. The parameter is the
 	/// amount of balance which is destroyed.
 	ReducedToZero(Balance),
+
 	/// Withdraw could not happen since the amount to be withdrawn is less than the total funds in
 	/// the account.
 	NoFunds,
+
 	/// The withdraw would mean the account dying when it needs to exist (usually because it is a
 	/// provider and there are consumer references on it).
 	WouldDie,
-	/// Internal error.
-	InternalError,
-	/// Invalid Asset id.
-	InvalidAssetId,
-	/// Success
-	Success,
+
+	/// Unable to Mint an Asset
+	InvalidMint,
+
+	/// Unable to Transfer an Asset
+	InvalidTransfer,
 }
 
-impl From<DepositConsequence> for FungibleLedgerConsequence {
-	fn from(dc: DepositConsequence) -> Self {
-		match dc {
-			DepositConsequence::BelowMinimum => FungibleLedgerConsequence::BelowMinimum,
-			DepositConsequence::CannotCreate => FungibleLedgerConsequence::CannotCreate,
-			DepositConsequence::Overflow => FungibleLedgerConsequence::Overflow,
-			DepositConsequence::Success => FungibleLedgerConsequence::Success,
-			DepositConsequence::UnknownAsset => FungibleLedgerConsequence::UnknownAsset,
-		}
+impl FungibleLedgerError {
+	/// Converts a deposit `consequence` into a [`FungibleLedgerError`] or into `Ok(())` when the
+	/// value of `consequence` is [`Success`](DepositConsequence::Success).
+	#[inline]
+	pub fn from_deposit(consequence: DepositConsequence) -> Result<(), Self> {
+		Err(match consequence {
+			DepositConsequence::BelowMinimum => Self::BelowMinimum,
+			DepositConsequence::CannotCreate => Self::CannotCreate,
+			DepositConsequence::Overflow => Self::Overflow,
+			DepositConsequence::UnknownAsset => Self::UnknownAsset,
+			DepositConsequence::Success => return Ok(()),
+		})
+	}
+
+	/// Converts a withdraw `consequence` into a [`FungibleLedgerError`] or into `Ok(())` when the
+	/// value of `consequence` is [`Success`](WithdrawConsequence::Success).
+	#[inline]
+	pub fn from_withdraw(consequence: WithdrawConsequence<Balance>) -> Result<(), Self> {
+		Err(match consequence {
+			WithdrawConsequence::Frozen => Self::Frozen,
+			WithdrawConsequence::NoFunds => Self::NoFunds,
+			WithdrawConsequence::Overflow => Self::Overflow,
+			WithdrawConsequence::Underflow => Self::Underflow,
+			WithdrawConsequence::ReducedToZero(balance) => Self::ReducedToZero(balance),
+			WithdrawConsequence::UnknownAsset => Self::UnknownAsset,
+			WithdrawConsequence::WouldDie => Self::WouldDie,
+			WithdrawConsequence::Success => return Ok(()),
+		})
 	}
 }
 
-impl From<WithdrawConsequence<Balance>> for FungibleLedgerConsequence {
-	fn from(wc: WithdrawConsequence<Balance>) -> Self {
-		match wc {
-			WithdrawConsequence::Frozen => FungibleLedgerConsequence::Frozen,
-			WithdrawConsequence::NoFunds => FungibleLedgerConsequence::NoFunds,
-			WithdrawConsequence::Overflow => FungibleLedgerConsequence::Overflow,
-			WithdrawConsequence::Underflow => FungibleLedgerConsequence::Underflow,
-			WithdrawConsequence::ReducedToZero(balance) => {
-				FungibleLedgerConsequence::ReducedToZero(balance)
-			}
-			WithdrawConsequence::Success => FungibleLedgerConsequence::Success,
-			WithdrawConsequence::UnknownAsset => FungibleLedgerConsequence::UnknownAsset,
-			WithdrawConsequence::WouldDie => FungibleLedgerConsequence::WouldDie,
-		}
-	}
-}
-
-/// Unified interface for fungible ledger
-/// It unifies `fungible` and `fungibles`
+/// Unified Interface for Fungible Assets
+///
+/// This trait unifies the interface for the [`fungible`] and [`fungibles`] modules.
+///
+/// [`fungible`]: frame_support::traits::tokens::fungible
+/// [`fungibles`]: frame_support::traits::tokens::fungibles
 pub trait FungibleLedger<C>
 where
 	C: frame_system::Config,
 {
-	/// check if an asset id is valid
-	fn is_valid(asset_id: AssetId) -> Result<(), FungibleLedgerConsequence>;
+	/// Checks if an asset id is valid and returning and [`Error`](FungibleLedgerError) otherwise.
+	fn ensure_valid(asset_id: AssetId) -> Result<(), FungibleLedgerError>;
 
-	/// check whether `asset_id`, `account` can increase certain balance
+	/// Check whether `account` can increase its balance by `amount` in the given `asset_id`.
 	fn can_deposit(
 		asset_id: AssetId,
 		account: &C::AccountId,
 		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence>;
+	) -> Result<(), FungibleLedgerError>;
 
-	/// check whether `asset_id`, `account` can decrease certain balance
+	/// Check whether `account` can decrease its balance by `amount` in the given `asset_id`.
 	fn can_withdraw(
 		asset_id: AssetId,
 		account: &C::AccountId,
 		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence>;
+	) -> Result<(), FungibleLedgerError>;
 
-	/// transfer asset
-	fn transfer(
-		asset_id: AssetId,
-		source: &C::AccountId,
-		dest: &C::AccountId,
-		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence>;
-
-	/// mint asset to a beneficiary
+	/// Mints `amount` of an asset with the given `asset_id` to `beneficiary`.
 	fn mint(
 		asset_id: AssetId,
 		beneficiary: &C::AccountId,
 		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence>;
+	) -> Result<(), FungibleLedgerError>;
+
+	/// Performs a transfer from `source` to `destination` of
+	fn transfer(
+		asset_id: AssetId,
+		source: &C::AccountId,
+		destination: &C::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerError>;
 }
 
-pub struct ConcreteFungibleLedger<FrameConfig, AssetConfig, NativeAsset, NonNativeAsset>(
-	PhantomData<(FrameConfig, AssetConfig, NativeAsset, NonNativeAsset)>,
-);
+/// Concrete Fungible Ledger Implementation
+pub struct ConcreteFungibleLedger<C, A, Native, NonNative> {
+	///  Type Parameter Marker
+	__: PhantomData<(C, A, Native, NonNative)>,
+}
+
 impl<C, A, Native, NonNative> FungibleLedger<C> for ConcreteFungibleLedger<C, A, Native, NonNative>
 where
 	C: frame_system::Config,
@@ -368,92 +390,85 @@ where
 		+ Mutate<C::AccountId, AssetId = AssetId, Balance = Balance>
 		+ Transfer<C::AccountId, AssetId = AssetId, Balance = Balance>,
 {
-	fn is_valid(asset_id: AssetId) -> Result<(), FungibleLedgerConsequence> {
+	#[inline]
+	fn ensure_valid(asset_id: AssetId) -> Result<(), FungibleLedgerError> {
 		if asset_id >= A::StartNonNativeAssetId::get() || asset_id == A::NativeAssetId::get() {
 			Ok(())
 		} else {
-			Err(FungibleLedgerConsequence::InvalidAssetId)
+			Err(FungibleLedgerError::InvalidAssetId)
 		}
 	}
 
+	#[inline]
 	fn can_deposit(
 		asset_id: AssetId,
 		account: &C::AccountId,
 		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence> {
-		Self::is_valid(asset_id)?;
-		if asset_id == A::NativeAssetId::get() {
-			match <Native as FungibleInspect<C::AccountId>>::can_deposit(account, amount) {
-				DepositConsequence::Success => Ok(()),
-				other => Err(other.into()),
-			}
+	) -> Result<(), FungibleLedgerError> {
+		Self::ensure_valid(asset_id)?;
+		FungibleLedgerError::from_deposit(if asset_id == A::NativeAssetId::get() {
+			<Native as FungibleInspect<C::AccountId>>::can_deposit(account, amount)
 		} else {
-			match <NonNative as FungiblesInspect<C::AccountId>>::can_deposit(
-				asset_id, account, amount,
-			) {
-				DepositConsequence::Success => Ok(()),
-				other => Err(other.into()),
-			}
-		}
+			<NonNative as FungiblesInspect<C::AccountId>>::can_deposit(asset_id, account, amount)
+		})
 	}
 
+	#[inline]
 	fn can_withdraw(
 		asset_id: AssetId,
 		account: &C::AccountId,
 		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence> {
-		Self::is_valid(asset_id)?;
-		if asset_id == A::NativeAssetId::get() {
-			match <Native as FungibleInspect<C::AccountId>>::can_withdraw(account, amount) {
-				WithdrawConsequence::Success => Ok(()),
-				other => Err(other.into()),
-			}
+	) -> Result<(), FungibleLedgerError> {
+		Self::ensure_valid(asset_id)?;
+		FungibleLedgerError::from_withdraw(if asset_id == A::NativeAssetId::get() {
+			<Native as FungibleInspect<C::AccountId>>::can_withdraw(account, amount)
 		} else {
-			match <NonNative as FungiblesInspect<C::AccountId>>::can_withdraw(
-				asset_id, account, amount,
-			) {
-				WithdrawConsequence::Success => Ok(()),
-				other => Err(other.into()),
-			}
-		}
+			<NonNative as FungiblesInspect<C::AccountId>>::can_withdraw(asset_id, account, amount)
+		})
 	}
 
-	fn transfer(
-		asset_id: AssetId,
-		source: &C::AccountId,
-		dest: &C::AccountId,
-		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence> {
-		Self::is_valid(asset_id)?;
-		if asset_id == A::NativeAssetId::get() {
-			<Native as Currency<C::AccountId>>::transfer(
-				source,
-				dest,
-				amount,
-				ExistenceRequirement::KeepAlive,
-			)
-			.map_err(|_| FungibleLedgerConsequence::InternalError)
-		} else {
-			<NonNative as Transfer<C::AccountId>>::transfer(asset_id, source, dest, amount, true)
-				.map(|_| ())
-				.map_err(|_| FungibleLedgerConsequence::InternalError)
-		}
-	}
-
+	#[inline]
 	fn mint(
 		asset_id: AssetId,
 		beneficiary: &C::AccountId,
 		amount: Balance,
-	) -> Result<(), FungibleLedgerConsequence> {
-		Self::is_valid(asset_id)?;
+	) -> Result<(), FungibleLedgerError> {
+		Self::ensure_valid(asset_id)?;
 		Self::can_deposit(asset_id, beneficiary, amount)?;
 		if asset_id == A::NativeAssetId::get() {
-			let _ = <Native as Currency<C::AccountId>>::deposit_creating(&beneficiary, amount);
-			Ok(())
+			<Native as Currency<C::AccountId>>::deposit_creating(beneficiary, amount);
 		} else {
-			<NonNative as Mutate<C::AccountId>>::mint_into(asset_id, &beneficiary, amount)
-				.map(|_| ())
-				.map_err(|_| FungibleLedgerConsequence::InternalError)
+			<NonNative as Mutate<C::AccountId>>::mint_into(asset_id, beneficiary, amount)
+				.map_err(|_| FungibleLedgerError::InvalidMint)?;
 		}
+		Ok(())
+	}
+
+	#[inline]
+	fn transfer(
+		asset_id: AssetId,
+		source: &C::AccountId,
+		destination: &C::AccountId,
+		amount: Balance,
+	) -> Result<(), FungibleLedgerError> {
+		Self::ensure_valid(asset_id)?;
+		if asset_id == A::NativeAssetId::get() {
+			<Native as Currency<C::AccountId>>::transfer(
+				source,
+				destination,
+				amount,
+				ExistenceRequirement::KeepAlive,
+			)
+		} else {
+			<NonNative as Transfer<C::AccountId>>::transfer(
+				asset_id,
+				source,
+				destination,
+				amount,
+				true,
+			)
+			.map(|_| ())
+		}
+		.map_err(|_| FungibleLedgerError::InvalidTransfer)
 	}
 }

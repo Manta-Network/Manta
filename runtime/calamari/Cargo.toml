@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'calamari-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '3.1.4'
+version = '3.1.5'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive", "max-encoded-len"] }
@@ -135,6 +135,7 @@ runtime-benchmarks = [
 	'pallet-treasury/runtime-benchmarks',
 	'pallet-preimage/runtime-benchmarks',
 	'pallet-assets/runtime-benchmarks',
+	'pallet-asset-manager/runtime-benchmarks',
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []

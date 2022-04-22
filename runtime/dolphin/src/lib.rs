@@ -130,7 +130,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("dolphin"),
 	impl_name: create_runtime_str!("dolphin"),
 	authoring_version: 1,
-	spec_version: 3141,
+	spec_version: 3150,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -599,7 +599,7 @@ parameter_types! {
 }
 
 impl pallet_preimage::Config for Runtime {
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_preimage::SubstrateWeight<Runtime>;
 	type Event = Event;
 	type Currency = Balances;
 	type ManagerOrigin = EnsureRoot<AccountId>;
@@ -972,7 +972,7 @@ impl pallet_assets::Config for Runtime {
 	type StringLimit = AssetsStringLimit;
 	type Freezer = ();
 	type Extra = ();
-	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
 }
 
 pub struct MantaAssetRegistrar;
@@ -1064,7 +1064,7 @@ impl pallet_asset_manager::Config for Runtime {
 	type AssetConfig = MantaAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
 	type PalletId = AssetManagerPalletId;
-	type WeightInfo = pallet_asset_manager::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_asset_manager::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -1320,7 +1320,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_manta_pay, MantaPay);
 			list_benchmark!(list, extra, pallet_asset_manager, AssetManager);
 
-			let storage_info = AllPalletsWithSystem::storage_info();
+			let storage_info = AllPalletsReversedWithSystemFirst::storage_info();
 
 			return (list, storage_info)
 		}
