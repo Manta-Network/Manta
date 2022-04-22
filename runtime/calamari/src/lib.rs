@@ -62,10 +62,10 @@ use manta_primitives::{
 		AssetStorageMetadata, ConcreteFungibleLedger,
 	},
 	constants::{time::*, ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
-	prod_or_fast,
 	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 	xcm::{AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
 };
+use runtime_common::prod_or_fast;
 use sp_runtime::{Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]

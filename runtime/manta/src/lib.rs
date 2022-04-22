@@ -52,9 +52,9 @@ use frame_system::{
 };
 use manta_primitives::{
 	constants::time::*,
-	prod_or_fast,
 	types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
+use runtime_common::prod_or_fast;
 use sp_runtime::Perbill;
 
 #[cfg(any(feature = "std", test))]
