@@ -400,7 +400,6 @@ pub mod pallet {
 		pub fn set_genesis_configuration() -> Weight {
 			let mut weight: Weight = T::DbWeight::get().reads(1);
 			if have_storage_value(Self::name().as_bytes(), b"NextAssetId", &[]) {
-				weight = weight.saturating_add(T::DbWeight::get().reads(1));
 				log::warn!(" !!! Aborting, NextAssetId was already set.");
 				return weight;
 			}
