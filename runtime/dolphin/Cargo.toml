@@ -129,6 +129,8 @@ runtime-benchmarks = [
 	'pallet-manta-pay/runtime-benchmarks',
 	'pallet-asset-manager/runtime-benchmarks',
 ]
+# Set timing constants (e.g. session period) to faster versions to speed up testing.
+fast-runtime = []
 std = [
 	'codec/std',
 	'serde',
