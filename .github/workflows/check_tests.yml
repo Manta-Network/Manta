@@ -39,7 +39,7 @@ jobs:
           aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
           aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
       -
         uses: actions/checkout@v2
       -
