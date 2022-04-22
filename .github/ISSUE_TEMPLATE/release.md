@@ -49,6 +49,8 @@ The following checks can be performed after we have frozen our release candidate
 - [ ] Coordinate with marketing team for documentation updates and other relevant tasks.
 - [ ] Update changelog.
 
+Note: Do not publish draft releases from PR branches, because those branches will be deleted when the PR is merged.
+
 ### After Runtime Upgrade
 - [ ] Notify subscan team. Ensure subscan service can continue to scan calamari blocks.
 
