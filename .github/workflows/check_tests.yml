@@ -92,17 +92,17 @@ jobs:
         name: Check Build
         env:
           RUST_BACKTRACE: full
-          RUSTC_WRAPPER: sccache
+          RUSTC_WRAPPER: /home/runner/.cache/sccache
           SCCACHE_CACHE_SIZE: 128G
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          sccache cargo b
+          cargo b
       # -
       #   name: Run Unit Tests
       #   env:
       #     RUST_BACKTRACE: full
-      #     RUSTC_WRAPPER: sccache
+      #     RUSTC_WRAPPER: /home/runner/.cache/sccache
       #     SCCACHE_CACHE_SIZE: 2G
       #     SCCACHE_DIR: /home/runner/.cache/sccache
       #   run: |
