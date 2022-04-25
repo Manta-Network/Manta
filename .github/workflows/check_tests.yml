@@ -97,7 +97,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo b
+          sccache cargo b
       # -
       #   name: Run Unit Tests
       #   env:
