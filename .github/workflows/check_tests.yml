@@ -93,7 +93,7 @@ jobs:
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_CACHE_SIZE: 128G
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
