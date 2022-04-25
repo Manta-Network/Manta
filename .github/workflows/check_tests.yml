@@ -57,25 +57,6 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       -
-        name: cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-
-      -
-        name: cache sccache
-        uses: actions/cache@v2
-        continue-on-error: false
-        with:
-          path: /home/runner/.cache/sccache
-          key: sccache-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            sccache-
-      -
         name: start sccache server
         run: sccache --start-server
       -
@@ -106,7 +87,26 @@ jobs:
       #     SCCACHE_DIR: /home/runner/.cache/sccache
       #   run: |
       #     source ${HOME}/.cargo/env
-      #     cargo test --release --features=runtime-benchmarks,try-runtime -- --test-threads=2 
+      #     cargo test --release --features=runtime-benchmarks,try-runtime -- --test-threads=2
+      -
+        name: cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-
+      -
+        name: cache sccache
+        uses: actions/cache@v2
+        continue-on-error: false
+        with:
+          path: /home/runner/.cache/sccache
+          key: sccache-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            sccache-
       -
         name: stop sccache server
         run: sccache --stop-server || true
