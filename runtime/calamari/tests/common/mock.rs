@@ -17,11 +17,12 @@
 use crate::common::*;
 
 pub use calamari_runtime::{
-	currency::KMA, Call, CollatorSelection, Democracy, Runtime, Scheduler, Session, System,
-	TransactionPayment,
+	currency::KMA, CalamariAssetConfig, Call, CollatorSelection, Democracy, Runtime, Scheduler,
+	Session, System, TransactionPayment,
 };
 use frame_support::traits::{GenesisBuild, OnFinalize, OnInitialize};
 use manta_primitives::{
+	assets::AssetConfig,
 	helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
 	types::{AccountId, AuraId, Balance},
 };
@@ -33,6 +34,7 @@ pub struct ExtBuilder {
 	desired_candidates: u32,
 	safe_xcm_version: Option<u32>,
 }
+use sp_std::marker::PhantomData;
 
 impl Default for ExtBuilder {
 	fn default() -> ExtBuilder {
@@ -109,6 +111,13 @@ impl ExtBuilder {
 					)
 				})
 				.collect(),
+		}
+		.assimilate_storage(&mut t)
+		.unwrap();
+
+		pallet_asset_manager::GenesisConfig::<Runtime> {
+			start_id: <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+			_marker: PhantomData::<Runtime>::default(),
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();
