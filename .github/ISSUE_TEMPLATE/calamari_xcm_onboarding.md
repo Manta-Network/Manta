@@ -60,14 +60,12 @@ about: Perform cross chain transfer tests in order to open HRMP channel with Cal
 
 ```
 ts-node calculateSovereignAddress.ts --paraid 2084
-
 ```
 - The result will be:
 ```
 Sovereign Account Address on Relay: 0x7061726124080000000000000000000000000000000000000000000000000000
 Sovereign Account Address on other Parachains (Generic): 0x7369626c24080000000000000000000000000000000000000000000000000000
 Sovereign Account Address on Dolphin: 0x7369626c24080000000000000000000000000000
-
 ```
 
 - Once you’ve got your `Sovereign Account`’s address, please fund it using the Rococo faucet. Otherwise you won’t be able to create the HRMP channel as the transaction will fail due to insufficient fees. Let us know if you need additional funds.
@@ -81,7 +79,6 @@ Sovereign Account Address on Dolphin: 0x7369626c24080000000000000000000000000000
 ```
 const tx = api.tx.hrmp.hrmpInitOpenChannel(2084, 8, 1024);
 console.log(tx.toHex());
-
 ```
 
 - The result will be like:
@@ -132,7 +129,6 @@ Here's an example of the fully formed extrinsic:
 ```
 const tx = api.tx.hrmp.hrmpAcceptOpenChannel(2084);
 console.log(tx.toHex());
-
 ```
 
 - The result will be like:
