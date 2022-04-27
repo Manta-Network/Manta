@@ -5724,6 +5724,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "log",
  "manta-primitives",
  "pallet-assets",
  "pallet-balances",

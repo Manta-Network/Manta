@@ -1153,21 +1153,21 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsReversedWithSystemFirst,
-	CollatorSelectionMigrationV2,
+	SetAssetManagerGenesisConfiguration,
 >;
 
-pub struct CollatorSelectionMigrationV2;
-impl OnRuntimeUpgrade for CollatorSelectionMigrationV2 {
+pub struct SetAssetManagerGenesisConfiguration;
+impl OnRuntimeUpgrade for SetAssetManagerGenesisConfiguration {
 	fn on_runtime_upgrade() -> Weight {
-		CollatorSelection::migrate_v0_to_v1()
+		AssetManager::set_genesis_configuration()
 	}
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<(), &'static str> {
-		CollatorSelection::pre_migrate_v0_to_v1()
+		Ok(())
 	}
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade() -> Result<(), &'static str> {
-		CollatorSelection::post_migrate_v0_to_v1()
+		Ok(())
 	}
 }
 

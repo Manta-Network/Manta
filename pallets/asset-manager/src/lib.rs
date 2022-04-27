@@ -44,7 +44,9 @@ mod tests;
 pub mod pallet {
 
 	use crate::weights::WeightInfo;
-	use frame_support::{pallet_prelude::*, transactional, PalletId};
+	use frame_support::{
+		migration::have_storage_value, pallet_prelude::*, transactional, PalletId, StorageHasher,
+	};
 	use frame_system::pallet_prelude::*;
 	use manta_primitives::{
 		assets::{
@@ -393,6 +395,78 @@ pub mod pallet {
 		/// The account ID of AssetManager
 		pub fn account_id() -> T::AccountId {
 			T::PalletId::get().into_account()
+		}
+
+		pub fn set_genesis_configuration() -> Weight {
+			let mut weight: Weight = T::DbWeight::get().reads(1);
+			if have_storage_value(Self::name().as_bytes(), b"NextAssetId", &[]) {
+				log::warn!(" !!! Aborting, NextAssetId was already set.");
+				return weight;
+			}
+
+			weight = weight.saturating_add(T::DbWeight::get().reads(4));
+			let asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
+			let metadata = <T::AssetConfig as AssetConfig<T>>::NativeAssetMetadata::get();
+			let location = <T::AssetConfig as AssetConfig<T>>::NativeAssetLocation::get();
+			if have_storage_value(
+				Self::name().as_bytes(),
+				b"AssetIdLocation",
+				&Blake2_128Concat::hash(&asset_id.encode()),
+			) {
+				log::warn!(" !!! Aborting, AssetIdLocation was already set.");
+				return weight;
+			}
+
+			weight = weight.saturating_add(T::DbWeight::get().reads(1));
+			if have_storage_value(
+				Self::name().as_bytes(),
+				b"AssetIdMetadata",
+				&Blake2_128Concat::hash(&asset_id.encode()),
+			) {
+				log::warn!(" !!! Aborting, AssetIdMetadata was already set.");
+				return weight;
+			}
+
+			weight = weight.saturating_add(T::DbWeight::get().reads(1));
+			if have_storage_value(
+				Self::name().as_bytes(),
+				b"LocationAssetId",
+				&Blake2_128Concat::hash(&location.encode()),
+			) {
+				log::warn!(" !!! Aborting, LocationAssetId was already set.");
+				return weight;
+			}
+
+			weight = weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
+			let start_non_native_asset_id =
+				<T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get();
+			NextAssetId::<T>::set(start_non_native_asset_id);
+			log::info!(
+				" >>> NextAssetId set the value {}",
+				start_non_native_asset_id
+			);
+
+			weight = weight.saturating_add(T::DbWeight::get().reads_writes(0, 3));
+			AssetIdLocation::<T>::insert(&asset_id, &location);
+			log::info!(
+				" >>> AssetIdLocation inserted the key:value pair {}:{:?}",
+				asset_id,
+				location
+			);
+			AssetIdMetadata::<T>::insert(&asset_id, &metadata);
+			log::info!(
+				" >>> AssetIdMetadata inserted the key:value pair {}:{:?}",
+				asset_id,
+				metadata
+			);
+			LocationAssetId::<T>::insert(&location, &asset_id);
+			log::info!(
+				" >>> LocationAssetId inserted the key:value pair {:?}:{}",
+				location,
+				asset_id
+			);
+
+			weight
 		}
 	}
 
