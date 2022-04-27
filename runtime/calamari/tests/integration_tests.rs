@@ -1107,7 +1107,7 @@ fn concrete_fungible_ledger_transfers_work() {
 			),);
 
 			// Register and mint for testing.
-			// Switch to u128::MAX when we start using https://github.com/paritytech/substrate/pull/11241
+			// TODO:: Switch to u128::MAX when we start using https://github.com/paritytech/substrate/pull/11241
 			let amount = INITIAL_BALANCE;
 			assert_ok!(ConcreteFungibleLedger::<
 				Runtime,
@@ -1228,6 +1228,8 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
 		.with_balances(vec![(alice.clone(), INITIAL_BALANCE)])
 		.build()
 		.execute_with(|| {
+			// Native asset tests:
+
 			let new_account = get_account_id_from_seed::<sr25519::Public>("NewAccount");
 			assert_err!(
 				CalamariConcreteFungibleLedger::can_deposit(
@@ -1262,8 +1264,9 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
 				FungibleLedgerError::Overflow
 			);
 
+			// Non-native asset tests:
+
 			let min_balance = 10u128;
-			// non-native asset id
 			let asset_metadata = AssetRegistrarMetadata {
 				name: b"Kusama".to_vec(),
 				symbol: b"KSM".to_vec(),
@@ -1362,6 +1365,8 @@ fn concrete_fungible_ledger_can_withdraw_works() {
 		.with_balances(vec![(alice.clone(), INITIAL_BALANCE)])
 		.build()
 		.execute_with(|| {
+			// Native asset tests:
+
 			assert_err!(
 				CalamariConcreteFungibleLedger::can_withdraw(
 					<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
@@ -1389,7 +1394,8 @@ fn concrete_fungible_ledger_can_withdraw_works() {
 				FungibleLedgerError::NoFunds
 			);
 
-			// Underflow -> NoFunds -> ReducedToZero -> WouldDie -> Frozen
+			// Non-native asset tests:
+
 			let min_balance = 10u128;
 			let asset_metadata = AssetRegistrarMetadata {
 				name: b"Kusama".to_vec(),
