@@ -7,8 +7,22 @@
 
 ### Improvements
 
-- [\#485](https://github.com/Manta-Network/Manta/pull/485) XCM Fees now accrue to the Treasury instead of AssetManager
 ### Bug fixes
+
+## v3.1.5-1
+### Breaking changes
+
+### Features
+
+### Improvements
+- [\#475](https://github.com/Manta-Network/Manta/pull/475) New workflow for comparing runtime metadata before and after runtime upgrade.
+- [\#485](https://github.com/Manta-Network/Manta/pull/485) XCM Fees now accrue to the Treasury instead of AssetManager.
+- [\#509](https://github.com/Manta-Network/Manta/pull/509) OnRuntimeUpgrade hook for AssetManager to properly set initial configurations.
+- [\#510](https://github.com/Manta-Network/Manta/pull/510) Automate publishing of Dolphin release artifacts.
+- [\#513](https://github.com/Manta-Network/Manta/pull/513) Update the release issues template.
+
+### Bug fixes
+
 
 ## v3.1.5
 ### Breaking changes
