@@ -4931,7 +4931,6 @@ dependencies = [
  "frame-system",
  "log",
  "manta-accounting",
- "pallet-balances",
  "parity-scale-codec",
  "scale-info",
  "smallvec",

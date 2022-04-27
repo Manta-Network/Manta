@@ -979,7 +979,9 @@ fn concrete_fungible_ledger_transfers_work() {
 			let mut current_balance_alice = INITIAL_BALANCE;
 			let mut current_balance_charlie = INITIAL_BALANCE;
 
-			// Switch transfer amount
+			// Transfer tests for native assets:
+
+			// Try to transfer more than available
 			assert_err!(
 				CalamariConcreteFungibleLedger::transfer(
 					<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
@@ -996,6 +998,7 @@ fn concrete_fungible_ledger_transfers_work() {
 				current_balance_charlie
 			);
 
+			// Try to transfer and go below existential deposit
 			assert_err!(
 				CalamariConcreteFungibleLedger::transfer(
 					<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
@@ -1012,6 +1015,7 @@ fn concrete_fungible_ledger_transfers_work() {
 				current_balance_charlie
 			);
 
+			// A normal transfer should work
 			assert_ok!(ConcreteFungibleLedger::<
 				Runtime,
 				CalamariAssetConfig,
@@ -1031,6 +1035,7 @@ fn concrete_fungible_ledger_transfers_work() {
 				current_balance_charlie
 			);
 
+			// Should not be able to create new account with lower than ED balance
 			let new_account = get_account_id_from_seed::<sr25519::Public>("NewAccount");
 			assert_err!(
 				CalamariConcreteFungibleLedger::transfer(
@@ -1042,6 +1047,8 @@ fn concrete_fungible_ledger_transfers_work() {
 				// Because the new balance will be below ED
 				FungibleLedgerError::InvalidTransfer
 			);
+
+			// Should be able to create new account with enough balance
 			assert_ok!(ConcreteFungibleLedger::<
 				Runtime,
 				CalamariAssetConfig,
@@ -1060,6 +1067,7 @@ fn concrete_fungible_ledger_transfers_work() {
 				NativeTokenExistentialDeposit::get()
 			);
 
+			// Transfer all of your balance without dropping below ED should work
 			assert_ok!(ConcreteFungibleLedger::<
 				Runtime,
 				CalamariAssetConfig,
@@ -1069,7 +1077,6 @@ fn concrete_fungible_ledger_transfers_work() {
 				<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
 				&bob.clone(),
 				&alice.clone(),
-				// Transfer a large amount
 				INITIAL_BALANCE - NativeTokenExistentialDeposit::get(),
 			));
 			current_balance_alice += INITIAL_BALANCE - NativeTokenExistentialDeposit::get();
@@ -1079,8 +1086,9 @@ fn concrete_fungible_ledger_transfers_work() {
 				NativeTokenExistentialDeposit::get()
 			);
 
+			// Transfer tests for non-native assets:
+
 			let min_balance = 10u128;
-			// non-native asset id
 			let asset_metadata = AssetRegistrarMetadata {
 				name: b"Kusama".to_vec(),
 				symbol: b"KSM".to_vec(),
@@ -1097,7 +1105,9 @@ fn concrete_fungible_ledger_transfers_work() {
 				source_location.clone(),
 				asset_metadata.clone()
 			),);
-			// TODO: change u128::MAX when we start using https://github.com/paritytech/substrate/pull/11241
+
+			// Register and mint for testing.
+			// Switch to u128::MAX when we start using https://github.com/paritytech/substrate/pull/11241
 			let amount = INITIAL_BALANCE;
 			assert_ok!(ConcreteFungibleLedger::<
 				Runtime,
@@ -1117,12 +1127,12 @@ fn concrete_fungible_ledger_transfers_work() {
 				amount
 			);
 
+			// Transferring and falling below ED of the asset should not work.
 			assert_err!(
 				CalamariConcreteFungibleLedger::transfer(
 					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
 					&alice.clone(),
 					&bob.clone(),
-					// Fail because of ED
 					amount,
 				),
 				FungibleLedgerError::InvalidTransfer
@@ -1135,6 +1145,7 @@ fn concrete_fungible_ledger_transfers_work() {
 				amount
 			);
 
+			// Transferring to empty account without reaching ED of the asset should not work.
 			assert_err!(
 				CalamariConcreteFungibleLedger::transfer(
 					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
@@ -1153,6 +1164,7 @@ fn concrete_fungible_ledger_transfers_work() {
 				amount
 			);
 
+			// Transferring normal amounts should work.
 			assert_ok!(ConcreteFungibleLedger::<
 				Runtime,
 				CalamariAssetConfig,
@@ -1179,7 +1191,7 @@ fn concrete_fungible_ledger_transfers_work() {
 				transfer_amount
 			);
 
-			// Switch asset-id
+			// Transferring invalid asset ID should not work.
 			assert_err!(
 				CalamariConcreteFungibleLedger::transfer(
 					<CalamariAssetConfig as AssetConfig<Runtime>>::DummyAssetId::get(),
@@ -1195,6 +1207,7 @@ fn concrete_fungible_ledger_transfers_work() {
 				current_balance_charlie
 			);
 
+			// Transferring unregistered asset ID should not work.
 			assert_err!(
 				CalamariConcreteFungibleLedger::transfer(
 					u32::MAX,
