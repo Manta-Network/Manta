@@ -748,8 +748,7 @@ pub type Barrier = (
 );
 
 parameter_types! {
-	/// Xcm fees will go to the asset manager (we don't implement treasury yet)
-	pub XcmFeesAccount: AccountId = AssetManager::account_id();
+	pub XcmFeesAccount: AccountId = Treasury::account_id();
 }
 
 pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
