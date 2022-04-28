@@ -989,8 +989,14 @@ fn concrete_fungible_ledger_transfers_work() {
 					&charlie.clone(),
 					INITIAL_BALANCE + 1,
 				),
-				// Not enough funds
-				FungibleLedgerError::InvalidTransfer
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
+						Balances,
+					>()
+					.unwrap() as u8,
+					error: 2,
+					message: Some("InsufficientBalance")
+				})
 			);
 			assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
 			assert_eq!(
@@ -1006,8 +1012,14 @@ fn concrete_fungible_ledger_transfers_work() {
 					&charlie.clone(),
 					INITIAL_BALANCE,
 				),
-				// Because keep_alive is set to true
-				FungibleLedgerError::InvalidTransfer
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
+						Balances,
+					>()
+					.unwrap() as u8,
+					error: 4,
+					message: Some("KeepAlive")
+				})
 			);
 			assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
 			assert_eq!(
@@ -1044,8 +1056,14 @@ fn concrete_fungible_ledger_transfers_work() {
 					&new_account.clone(),
 					NativeTokenExistentialDeposit::get() - 1,
 				),
-				// Because the new balance will be below ED
-				FungibleLedgerError::InvalidTransfer
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
+						Balances,
+					>()
+					.unwrap() as u8,
+					error: 3,
+					message: Some("ExistentialDeposit")
+				})
 			);
 
 			// Should be able to create new account with enough balance
@@ -1135,7 +1153,14 @@ fn concrete_fungible_ledger_transfers_work() {
 					&bob.clone(),
 					amount,
 				),
-				FungibleLedgerError::InvalidTransfer
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
+						Assets,
+					>()
+					.unwrap() as u8,
+					error: 0,
+					message: Some("BalanceLow")
+				})
 			);
 			assert_eq!(
 				Assets::balance(
@@ -1145,16 +1170,16 @@ fn concrete_fungible_ledger_transfers_work() {
 				amount
 			);
 
-			// Transferring to empty account without reaching ED of the asset should not work.
 			assert_err!(
 				CalamariConcreteFungibleLedger::transfer(
 					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
 					&alice.clone(),
 					&bob.clone(),
-					// Fail because of ED
 					min_balance - 1,
 				),
-				FungibleLedgerError::InvalidTransfer
+				FungibleLedgerError::InvalidTransfer(DispatchError::Token(
+					sp_runtime::TokenError::BelowMinimum
+				))
 			);
 			assert_eq!(
 				Assets::balance(
@@ -1215,7 +1240,14 @@ fn concrete_fungible_ledger_transfers_work() {
 					&charlie.clone(),
 					transfer_amount,
 				),
-				FungibleLedgerError::InvalidTransfer
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
+						Assets,
+					>()
+					.unwrap() as u8,
+					error: 3,
+					message: Some("Unknown")
+				})
 			);
 		});
 }

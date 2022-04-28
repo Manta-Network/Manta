@@ -32,7 +32,7 @@ use frame_support::{
 };
 use scale_info::TypeInfo;
 use sp_core::H160;
-use sp_runtime::{traits::Member, DispatchResult};
+use sp_runtime::{traits::Member, DispatchError, DispatchResult};
 use sp_std::{borrow::Borrow, marker::PhantomData, prelude::Vec};
 use xcm::{
 	v1::{Junctions, MultiLocation},
@@ -250,14 +250,14 @@ where
 }
 
 /// Fungible Ledger Error
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FungibleLedgerError {
 	/// Invalid Asset Id
 	InvalidAssetId,
 
 	/// Deposit couldn't happen due to the amount being too low. This is usually because the
 	/// account doesn't yet exist and the deposit wouldn't bring it to at least the minimum needed
-	/// for existance.
+	/// for existence.
 	BelowMinimum,
 
 	/// Deposit cannot happen since the account cannot be created (usually because it's a consumer
@@ -294,10 +294,10 @@ pub enum FungibleLedgerError {
 	WouldDie,
 
 	/// Unable to Mint an Asset
-	InvalidMint,
+	InvalidMint(DispatchError),
 
 	/// Unable to Transfer an Asset
-	InvalidTransfer,
+	InvalidTransfer(DispatchError),
 }
 
 impl FungibleLedgerError {
@@ -439,7 +439,7 @@ where
 			<Native as Currency<C::AccountId>>::deposit_creating(beneficiary, amount);
 		} else {
 			<NonNative as Mutate<C::AccountId>>::mint_into(asset_id, beneficiary, amount)
-				.map_err(|_| FungibleLedgerError::InvalidMint)?;
+				.map_err(|e| FungibleLedgerError::InvalidMint(e))?;
 		}
 		Ok(())
 	}
@@ -469,6 +469,6 @@ where
 			)
 			.map(|_| ())
 		}
-		.map_err(|_| FungibleLedgerError::InvalidTransfer)
+		.map_err(|e| FungibleLedgerError::InvalidTransfer(e))
 	}
 }
