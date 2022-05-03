@@ -18,6 +18,7 @@
 
 use super::*;
 use manta_util::into_array_unchecked;
+use scale_codec::Error;
 
 /// Encodes the SCALE encodable `value` into a byte array with the given length `N`.
 #[inline]
@@ -31,11 +32,11 @@ where
 /// Decodes the `bytes` array of the given length `N` into the SCALE decodable type `T` returning a
 /// blanket error if decoding fails.
 #[inline]
-pub(crate) fn decode<T, const N: usize>(bytes: [u8; N]) -> Result<T, ()>
+pub(crate) fn decode<T, const N: usize>(bytes: [u8; N]) -> Result<T, Error>
 where
 	T: Decode,
 {
-	T::decode(&mut bytes.as_slice()).map_err(|_| ())
+	T::decode(&mut bytes.as_slice())
 }
 
 /// Asset
@@ -101,7 +102,7 @@ impl From<config::EncryptedNote> for EncryptedNote {
 }
 
 impl TryFrom<EncryptedNote> for config::EncryptedNote {
-	type Error = ();
+	type Error = Error;
 
 	#[inline]
 	fn try_from(encrypted_note: EncryptedNote) -> Result<Self, Self::Error> {
@@ -133,7 +134,7 @@ impl From<config::SenderPost> for SenderPost {
 }
 
 impl TryFrom<SenderPost> for config::SenderPost {
-	type Error = ();
+	type Error = Error;
 
 	#[inline]
 	fn try_from(post: SenderPost) -> Result<Self, Self::Error> {
@@ -165,7 +166,7 @@ impl From<config::ReceiverPost> for ReceiverPost {
 }
 
 impl TryFrom<ReceiverPost> for config::ReceiverPost {
-	type Error = ();
+	type Error = Error;
 
 	#[inline]
 	fn try_from(post: ReceiverPost) -> Result<Self, Self::Error> {
@@ -213,7 +214,7 @@ impl From<config::TransferPost> for TransferPost {
 }
 
 impl TryFrom<TransferPost> for config::TransferPost {
-	type Error = ();
+	type Error = Error;
 
 	#[inline]
 	fn try_from(post: TransferPost) -> Result<Self, Self::Error> {
