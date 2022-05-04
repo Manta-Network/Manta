@@ -101,10 +101,10 @@ console.log(tx.toHex());
         1. `WithdrawAsset { id: Concrete { parents: 0, interior: Here}, Fungible: 1000000000000 }`
         2. `BuyExecution { id: Concrete: {parents: 0, interior: Here}, Fungible: 1000000000000, weightLimit: Unlimited }`
         3. `Transact { originType: Native, requireWeightAtMost: 1000000000, call: XcmDoubleEncoded: { encoded: RelayEncodedCallData } }`
-		
-		**Note:** you need to provide the encoded call data obtained before
-		
-		4. `RefundSurplus`
+
+        **Note:** you need to provide the encoded call data obtained before
+
+        4. `RefundSurplus`
         5. `DepositAsset: { assets: Wild { Wild: All }, maxAssets: 1, beneficiary: { parents: 0, interior: X1 { X1: AccountId32 { network: Any, id: SovereignAccountonRelay } } } }`
     
     **Note:** The values used above are for reference to be used in this testing environment, do not use these values in production!
