@@ -61,7 +61,9 @@ use manta_primitives::{
 		AssetConfig, AssetIdLocationConvert, AssetLocation, AssetRegistrar, AssetRegistrarMetadata,
 		AssetStorageMetadata, ConcreteFungibleLedger,
 	},
-	constants::{time::*, ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
+	constants::{
+		time::*, ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL, STAKING_PALLET_ID, TREASURY_PALLET_ID,
+	},
 	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 	xcm::{AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
 };
@@ -124,7 +126,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 3150,
+	spec_version: 3151,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 4,
@@ -508,7 +510,7 @@ parameter_types! {
 	pub const ProposalBondMaximum: Balance = 10_000 * KMA;
 	pub SpendPeriod: BlockNumber = prod_or_fast!(6 * DAYS, 2 * MINUTES, "CALAMARI_SPENDPERIOD");
 	pub const Burn: Permill = Permill::from_percent(0);
-	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+	pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
 }
 
 type EnsureRootOrThreeFifthsCouncil = EnsureOneOf<
@@ -846,8 +848,7 @@ pub type Barrier = (
 );
 
 parameter_types! {
-	/// Xcm fees will go to the asset manager (we don't implement treasury yet)
-	pub XcmFeesAccount: AccountId = AssetManager::account_id();
+	pub XcmFeesAccount: AccountId = Treasury::account_id();
 }
 
 pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
@@ -1020,7 +1021,7 @@ impl pallet_aura::Config for Runtime {
 
 parameter_types! {
 	// Pallet account for record rewards and give rewards to collator.
-	pub const PotId: PalletId = PalletId(*b"PotStake");
+	pub const PotId: PalletId = STAKING_PALLET_ID;
 }
 
 parameter_types! {
@@ -1153,21 +1154,21 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsReversedWithSystemFirst,
-	CollatorSelectionMigrationV2,
+	SetAssetManagerGenesisConfiguration,
 >;
 
-pub struct CollatorSelectionMigrationV2;
-impl OnRuntimeUpgrade for CollatorSelectionMigrationV2 {
+pub struct SetAssetManagerGenesisConfiguration;
+impl OnRuntimeUpgrade for SetAssetManagerGenesisConfiguration {
 	fn on_runtime_upgrade() -> Weight {
-		CollatorSelection::migrate_v0_to_v1()
+		AssetManager::set_genesis_configuration()
 	}
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<(), &'static str> {
-		CollatorSelection::pre_migrate_v0_to_v1()
+		Ok(())
 	}
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade() -> Result<(), &'static str> {
-		CollatorSelection::post_migrate_v0_to_v1()
+		Ok(())
 	}
 }
 

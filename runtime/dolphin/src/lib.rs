@@ -128,7 +128,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("dolphin"),
 	impl_name: create_runtime_str!("dolphin"),
 	authoring_version: 1,
-	spec_version: 3150,
+	spec_version: 3151,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -746,8 +746,7 @@ pub type Barrier = (
 );
 
 parameter_types! {
-	/// Xcm fees will go to the asset manager (we don't implement treasury yet)
-	pub XcmFeesAccount: AccountId = AssetManager::account_id();
+	pub XcmFeesAccount: AccountId = Treasury::account_id();
 }
 
 pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
