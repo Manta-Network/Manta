@@ -101,9 +101,9 @@ console.log(tx.toHex());
         1. `WithdrawAsset { id: Concrete { parents: 0, interior: Here}, Fungible: 1000000000000 }`
         2. `BuyExecution { id: Concrete: {parents: 0, interior: Here}, Fungible: 1000000000000, weightLimit: Unlimited }`
         3. `Transact { originType: Native, requireWeightAtMost: 1000000000, call: XcmDoubleEncoded: { encoded: RelayEncodedCallData } }`
-        
+		
 		**Note:** you need to provide the encoded call data obtained before
-        
+		
 		4. `RefundSurplus`
         5. `DepositAsset: { assets: Wild { Wild: All }, maxAssets: 1, beneficiary: { parents: 0, interior: X1 { X1: AccountId32 { network: Any, id: SovereignAccountonRelay } } } }`
     
@@ -118,7 +118,7 @@ Here's an example of the fully formed extrinsic:
 
 ![https://i.imgur.com/3ONY21d.png](https://i.imgur.com/3ONY21d.png)
 
-## Accepting HRMP Channel with Calamari
+## Accepting HRMP Channel from Dolphin
 
 - Channels are one way. This means that if you open a channel with Dolphin, it will allow you only to send tokens from your parachain to Dolphin. There needs to be a channel that Dolphin will request to send back tokens, and you need to accept.
 - The process of accepting the channel is similar to the one for opening, meaning that you have to construct an encoded call data in the relay chain, and then get it executed via an XCM from your parachain.
