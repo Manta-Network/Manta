@@ -252,7 +252,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Public Transfer Event
 		Transfer {
-			/// Asset Transfered
+			/// Asset Transferred
 			asset: Asset,
 
 			/// Source Account
@@ -302,7 +302,7 @@ pub mod pallet {
 
 		/// Balance Low
 		///
-		/// Attempted to withdraw from balance which was smaller than the withdrawl amount.
+		/// Attempted to withdraw from balance which was smaller than the withdrawal amount.
 		BalanceLow,
 
 		/// Invalid Serialized Form
@@ -450,7 +450,7 @@ pub mod pallet {
 				FungibleLedgerError::ReducedToZero(_) => Self::PublicUpdateReducedToZero,
 				FungibleLedgerError::NoFunds => Self::PublicUpdateNoFunds,
 				FungibleLedgerError::WouldDie => Self::PublicUpdateWouldDie,
-				FungibleLedgerError::InvalidTransfer => Self::PublicUpdateInvalidTransfer,
+				FungibleLedgerError::InvalidTransfer(_e) => Self::PublicUpdateInvalidTransfer,
 				_ => Self::InternalLedgerError,
 			}
 		}

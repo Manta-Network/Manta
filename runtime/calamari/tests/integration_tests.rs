@@ -25,9 +25,10 @@ pub use calamari_runtime::{
 		FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY, TIPS_PERCENTAGE_TO_AUTHOR,
 		TIPS_PERCENTAGE_TO_TREASURY,
 	},
-	Authorship, Balances, CalamariVesting, Council, Democracy, EnactmentPeriod, LaunchPeriod,
-	NativeTokenExistentialDeposit, Origin, Period, PolkadotXcm, Runtime, Sudo, TechnicalCommittee,
-	Timestamp, Treasury, Utility, VotingPeriod,
+	AssetManager, Assets, Authorship, Balances, CalamariAssetConfig,
+	CalamariConcreteFungibleLedger, CalamariVesting, Council, Democracy, EnactmentPeriod,
+	LaunchPeriod, NativeTokenExistentialDeposit, Origin, Period, PolkadotXcm, Runtime, Sudo,
+	TechnicalCommittee, Timestamp, Treasury, Utility, VotingPeriod, XcmFeesAccount,
 };
 
 use frame_support::{
@@ -38,11 +39,22 @@ use frame_support::{
 	weights::constants::*,
 	StorageHasher, Twox128,
 };
-
 use manta_primitives::{
+	assets::{
+		AssetConfig, AssetLocation, AssetRegistrarMetadata, ConcreteFungibleLedger, FungibleLedger,
+		FungibleLedgerError,
+	},
 	constants::time::{DAYS, HOURS},
 	helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
 	types::{AccountId, Header},
+};
+use xcm::{
+	opaque::latest::{
+		Junction::{PalletInstance, Parachain},
+		Junctions::X2,
+		MultiLocation,
+	},
+	VersionedMultiLocation,
 };
 
 use pallet_transaction_payment::ChargeTransactionPayment;
@@ -366,7 +378,7 @@ fn balances_operations_should_work() {
 			assert_eq!(Balances::free_balance(alice.clone()), INITIAL_BALANCE);
 			assert_eq!(Balances::free_balance(charlie.clone()), INITIAL_BALANCE);
 
-			// Should not be able to trnasfer all with this call
+			// Should not be able to transfer all with this call
 			assert_err!(
 				Balances::transfer_keep_alive(
 					Origin::signed(alice.clone()),
@@ -740,7 +752,7 @@ fn batched_registration_of_collator_candidates_works() {
 #[test]
 fn sanity_check_weight_per_time_constants_are_as_expected() {
 	// These values comes from Substrate, we want to make sure that if it
-	// ever changes we don't accidently break Polkadot
+	// ever changes we don't accidentally break Polkadot
 	assert_eq!(WEIGHT_PER_SECOND, 1_000_000_000_000);
 	assert_eq!(WEIGHT_PER_MILLIS, WEIGHT_PER_SECOND / 1000);
 	assert_eq!(WEIGHT_PER_MICROS, WEIGHT_PER_MILLIS / 1000);
@@ -947,4 +959,556 @@ fn verify_pallet_indices() {
 	is_pallet_index::<calamari_runtime::Multisig>(41);
 	is_pallet_index::<calamari_runtime::Sudo>(42);
 	is_pallet_index::<calamari_runtime::CalamariVesting>(50);
+}
+
+#[test]
+fn concrete_fungible_ledger_transfers_work() {
+	let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+	let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
+	let charlie = get_account_id_from_seed::<sr25519::Public>("Charlie");
+
+	ExtBuilder::default()
+		.with_balances(vec![
+			(alice.clone(), INITIAL_BALANCE),
+			(bob.clone(), INITIAL_BALANCE),
+			(charlie.clone(), INITIAL_BALANCE),
+		])
+		.build()
+		.execute_with(|| {
+			let transfer_amount = 10 * KMA;
+			let mut current_balance_alice = INITIAL_BALANCE;
+			let mut current_balance_charlie = INITIAL_BALANCE;
+
+			// Transfer tests for native assets:
+
+			// Try to transfer more than available
+			assert_err!(
+				CalamariConcreteFungibleLedger::transfer(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
+					&alice.clone(),
+					&charlie.clone(),
+					INITIAL_BALANCE + 1,
+				),
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
+						Balances,
+					>()
+					.unwrap() as u8,
+					error: 2,
+					message: Some("InsufficientBalance")
+				})
+			);
+			assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
+			assert_eq!(
+				Balances::free_balance(charlie.clone()),
+				current_balance_charlie
+			);
+
+			// Try to transfer and go below existential deposit
+			assert_err!(
+				CalamariConcreteFungibleLedger::transfer(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
+					&alice.clone(),
+					&charlie.clone(),
+					INITIAL_BALANCE,
+				),
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
+						Balances,
+					>()
+					.unwrap() as u8,
+					error: 4,
+					message: Some("KeepAlive")
+				})
+			);
+			assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
+			assert_eq!(
+				Balances::free_balance(charlie.clone()),
+				current_balance_charlie
+			);
+
+			// A normal transfer should work
+			assert_ok!(ConcreteFungibleLedger::<
+				Runtime,
+				CalamariAssetConfig,
+				Balances,
+				Assets,
+			>::transfer(
+				<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
+				&alice.clone(),
+				&charlie.clone(),
+				transfer_amount,
+			));
+			current_balance_alice -= transfer_amount;
+			current_balance_charlie += transfer_amount;
+			assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
+			assert_eq!(
+				Balances::free_balance(charlie.clone()),
+				current_balance_charlie
+			);
+
+			// Should not be able to create new account with lower than ED balance
+			let new_account = get_account_id_from_seed::<sr25519::Public>("NewAccount");
+			assert_err!(
+				CalamariConcreteFungibleLedger::transfer(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
+					&alice.clone(),
+					&new_account.clone(),
+					NativeTokenExistentialDeposit::get() - 1,
+				),
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
+						Balances,
+					>()
+					.unwrap() as u8,
+					error: 3,
+					message: Some("ExistentialDeposit")
+				})
+			);
+
+			// Should be able to create new account with enough balance
+			assert_ok!(ConcreteFungibleLedger::<
+				Runtime,
+				CalamariAssetConfig,
+				Balances,
+				Assets,
+			>::transfer(
+				<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
+				&alice.clone(),
+				&new_account.clone(),
+				NativeTokenExistentialDeposit::get(),
+			));
+			current_balance_alice -= NativeTokenExistentialDeposit::get();
+			assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
+			assert_eq!(
+				Balances::free_balance(new_account.clone()),
+				NativeTokenExistentialDeposit::get()
+			);
+
+			// Transfer all of your balance without dropping below ED should work
+			assert_ok!(ConcreteFungibleLedger::<
+				Runtime,
+				CalamariAssetConfig,
+				Balances,
+				Assets,
+			>::transfer(
+				<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
+				&bob.clone(),
+				&alice.clone(),
+				INITIAL_BALANCE - NativeTokenExistentialDeposit::get(),
+			));
+			current_balance_alice += INITIAL_BALANCE - NativeTokenExistentialDeposit::get();
+			assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
+			assert_eq!(
+				Balances::free_balance(bob.clone()),
+				NativeTokenExistentialDeposit::get()
+			);
+
+			// Transfer tests for non-native assets:
+
+			let min_balance = 10u128;
+			let asset_metadata = AssetRegistrarMetadata {
+				name: b"Kusama".to_vec(),
+				symbol: b"KSM".to_vec(),
+				decimals: 12,
+				min_balance: min_balance,
+				evm_address: None,
+				is_frozen: false,
+				is_sufficient: true,
+			};
+			let source_location =
+				AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+			assert_ok!(AssetManager::register_asset(
+				root_origin(),
+				source_location.clone(),
+				asset_metadata.clone()
+			),);
+
+			// Register and mint for testing.
+			// TODO:: Switch to u128::MAX when we start using https://github.com/paritytech/substrate/pull/11241
+			let amount = INITIAL_BALANCE;
+			assert_ok!(ConcreteFungibleLedger::<
+				Runtime,
+				CalamariAssetConfig,
+				Balances,
+				Assets,
+			>::mint(
+				<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+				&alice.clone(),
+				amount,
+			),);
+			assert_eq!(
+				Assets::balance(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+					alice.clone()
+				),
+				amount
+			);
+
+			// Transferring and falling below ED of the asset should not work.
+			assert_err!(
+				CalamariConcreteFungibleLedger::transfer(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+					&alice.clone(),
+					&bob.clone(),
+					amount,
+				),
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
+						Assets,
+					>()
+					.unwrap() as u8,
+					error: 0,
+					message: Some("BalanceLow")
+				})
+			);
+			assert_eq!(
+				Assets::balance(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+					alice.clone()
+				),
+				amount
+			);
+
+			assert_err!(
+				CalamariConcreteFungibleLedger::transfer(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+					&alice.clone(),
+					&bob.clone(),
+					min_balance - 1,
+				),
+				FungibleLedgerError::InvalidTransfer(DispatchError::Token(
+					sp_runtime::TokenError::BelowMinimum
+				))
+			);
+			assert_eq!(
+				Assets::balance(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+					alice.clone()
+				),
+				amount
+			);
+
+			// Transferring normal amounts should work.
+			assert_ok!(ConcreteFungibleLedger::<
+				Runtime,
+				CalamariAssetConfig,
+				Balances,
+				Assets,
+			>::transfer(
+				<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+				&alice.clone(),
+				&bob.clone(),
+				transfer_amount,
+			),);
+			assert_eq!(
+				Assets::balance(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+					alice.clone()
+				),
+				INITIAL_BALANCE - transfer_amount
+			);
+			assert_eq!(
+				Assets::balance(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+					bob.clone()
+				),
+				transfer_amount
+			);
+
+			// Transferring invalid asset ID should not work.
+			assert_err!(
+				CalamariConcreteFungibleLedger::transfer(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::DummyAssetId::get(),
+					&alice.clone(),
+					&charlie.clone(),
+					transfer_amount,
+				),
+				FungibleLedgerError::InvalidAssetId
+			);
+			assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
+			assert_eq!(
+				Balances::free_balance(charlie.clone()),
+				current_balance_charlie
+			);
+
+			// Transferring unregistered asset ID should not work.
+			assert_err!(
+				CalamariConcreteFungibleLedger::transfer(
+					u32::MAX,
+					&alice.clone(),
+					&charlie.clone(),
+					transfer_amount,
+				),
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
+						Assets,
+					>()
+					.unwrap() as u8,
+					error: 3,
+					message: Some("Unknown")
+				})
+			);
+		});
+}
+
+#[test]
+fn concrete_fungible_ledger_can_deposit_and_mint_works() {
+	let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+
+	ExtBuilder::default()
+		.with_balances(vec![(alice.clone(), INITIAL_BALANCE)])
+		.build()
+		.execute_with(|| {
+			// Native asset tests:
+
+			let new_account = get_account_id_from_seed::<sr25519::Public>("NewAccount");
+			assert_err!(
+				CalamariConcreteFungibleLedger::can_deposit(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
+					&new_account.clone(),
+					NativeTokenExistentialDeposit::get() - 1,
+				),
+				FungibleLedgerError::BelowMinimum
+			);
+
+			let remaining_to_max = u128::MAX - Balances::total_issuance();
+			assert_ok!(ConcreteFungibleLedger::<
+				Runtime,
+				CalamariAssetConfig,
+				Balances,
+				Assets,
+			>::mint(
+				<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
+				&new_account.clone(),
+				remaining_to_max,
+			),);
+			assert_eq!(
+				Balances::free_balance(new_account.clone()),
+				remaining_to_max
+			);
+			assert_err!(
+				CalamariConcreteFungibleLedger::can_deposit(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
+					&new_account.clone(),
+					1,
+				),
+				FungibleLedgerError::Overflow
+			);
+
+			// Non-native asset tests:
+
+			let min_balance = 10u128;
+			let asset_metadata = AssetRegistrarMetadata {
+				name: b"Kusama".to_vec(),
+				symbol: b"KSM".to_vec(),
+				decimals: 12,
+				min_balance: min_balance,
+				evm_address: None,
+				is_frozen: false,
+				is_sufficient: true,
+			};
+			let source_location =
+				AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+			assert_ok!(AssetManager::register_asset(
+				root_origin(),
+				source_location.clone(),
+				asset_metadata.clone()
+			),);
+
+			assert_err!(
+				CalamariConcreteFungibleLedger::can_deposit(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+					&alice.clone(),
+					0,
+				),
+				FungibleLedgerError::BelowMinimum
+			);
+			assert_err!(
+				CalamariConcreteFungibleLedger::can_deposit(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get() + 1,
+					&alice.clone(),
+					11,
+				),
+				FungibleLedgerError::UnknownAsset
+			);
+			assert_ok!(ConcreteFungibleLedger::<
+				Runtime,
+				CalamariAssetConfig,
+				Balances,
+				Assets,
+			>::mint(
+				<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+				&alice.clone(),
+				u128::MAX,
+			),);
+			assert_eq!(
+				Assets::balance(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+					alice.clone()
+				),
+				u128::MAX
+			);
+			assert_err!(
+				CalamariConcreteFungibleLedger::can_deposit(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+					&alice.clone(),
+					1,
+				),
+				FungibleLedgerError::Overflow
+			);
+
+			let asset_metadata = AssetRegistrarMetadata {
+				name: b"Rococo".to_vec(),
+				symbol: b"Roc".to_vec(),
+				decimals: 12,
+				min_balance: min_balance,
+				evm_address: None,
+				is_frozen: false,
+				is_sufficient: false,
+			};
+
+			let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+				1,
+				X2(Parachain(1), PalletInstance(1)),
+			)));
+			assert_ok!(AssetManager::register_asset(
+				root_origin(),
+				source_location.clone(),
+				asset_metadata.clone()
+			),);
+			assert_err!(
+				CalamariConcreteFungibleLedger::can_deposit(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get() + 1,
+					&XcmFeesAccount::get(),
+					11,
+				),
+				FungibleLedgerError::CannotCreate
+			);
+		});
+}
+
+#[test]
+fn concrete_fungible_ledger_can_withdraw_works() {
+	let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+	let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
+
+	ExtBuilder::default()
+		.with_balances(vec![(alice.clone(), INITIAL_BALANCE)])
+		.build()
+		.execute_with(|| {
+			// Native asset tests:
+
+			assert_err!(
+				CalamariConcreteFungibleLedger::can_withdraw(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
+					&alice.clone(),
+					INITIAL_BALANCE + 1,
+				),
+				FungibleLedgerError::Underflow
+			);
+
+			assert_err!(
+				CalamariConcreteFungibleLedger::can_withdraw(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
+					&alice.clone(),
+					INITIAL_BALANCE,
+				),
+				FungibleLedgerError::WouldDie
+			);
+
+			assert_err!(
+				CalamariConcreteFungibleLedger::can_withdraw(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
+					&bob.clone(),
+					INITIAL_BALANCE,
+				),
+				FungibleLedgerError::NoFunds
+			);
+
+			// Non-native asset tests:
+
+			let min_balance = 10u128;
+			let asset_metadata = AssetRegistrarMetadata {
+				name: b"Kusama".to_vec(),
+				symbol: b"KSM".to_vec(),
+				decimals: 12,
+				min_balance: min_balance,
+				evm_address: None,
+				is_frozen: false,
+				is_sufficient: true,
+			};
+			let source_location =
+				AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+			assert_ok!(AssetManager::register_asset(
+				root_origin(),
+				source_location.clone(),
+				asset_metadata.clone()
+			),);
+
+			assert_ok!(ConcreteFungibleLedger::<
+				Runtime,
+				CalamariAssetConfig,
+				Balances,
+				Assets,
+			>::mint(
+				<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+				&alice.clone(),
+				INITIAL_BALANCE,
+			),);
+			assert_eq!(
+				Assets::balance(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+					alice.clone()
+				),
+				INITIAL_BALANCE
+			);
+
+			assert_err!(
+				CalamariConcreteFungibleLedger::can_withdraw(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+					&alice.clone(),
+					INITIAL_BALANCE + 1,
+				),
+				FungibleLedgerError::Underflow
+			);
+
+			assert_err!(
+				CalamariConcreteFungibleLedger::can_withdraw(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+					&alice.clone(),
+					INITIAL_BALANCE,
+				),
+				FungibleLedgerError::ReducedToZero(0)
+			);
+
+			assert_ok!(CalamariConcreteFungibleLedger::can_withdraw(
+				<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+				&alice.clone(),
+				INITIAL_BALANCE - min_balance,
+			),);
+
+			assert_err!(
+				CalamariConcreteFungibleLedger::can_withdraw(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+					&bob.clone(),
+					10,
+				),
+				FungibleLedgerError::NoFunds
+			);
+
+			assert_ok!(Assets::freeze(
+				Origin::signed(AssetManager::account_id()),
+				<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+				sp_runtime::MultiAddress::Id(alice.clone()),
+			));
+			assert_err!(
+				CalamariConcreteFungibleLedger::can_withdraw(
+					<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+					&alice.clone(),
+					10,
+				),
+				FungibleLedgerError::Frozen
+			);
+		});
 }
