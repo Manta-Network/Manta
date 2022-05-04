@@ -126,6 +126,9 @@ parameter_types! {
 	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
 }
 
+pub type DolphinConcreteFungibleLedger =
+	ConcreteFungibleLedger<Runtime, DolphinAssetConfig, Balances, Assets>;
+
 #[derive(Clone, Eq, PartialEq)]
 pub struct DolphinAssetConfig;
 
@@ -139,7 +142,7 @@ impl AssetConfig<Runtime> for DolphinAssetConfig {
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
 	type AssetRegistrar = MantaAssetRegistrar;
-	type FungibleLedger = ConcreteFungibleLedger<Runtime, DolphinAssetConfig, Balances, Assets>;
+	type FungibleLedger = DolphinConcreteFungibleLedger;
 }
 
 impl pallet_asset_manager::Config for Runtime {

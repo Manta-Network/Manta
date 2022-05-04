@@ -116,6 +116,9 @@ parameter_types! {
 	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
 }
 
+pub type CalamariConcreteFungibleLedger =
+	ConcreteFungibleLedger<Runtime, CalamariAssetConfig, Balances, Assets>;
+
 #[derive(Clone, Eq, PartialEq)]
 pub struct CalamariAssetConfig;
 
@@ -129,7 +132,7 @@ impl AssetConfig<Runtime> for CalamariAssetConfig {
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
 	type AssetRegistrar = CalamariAssetRegistrar;
-	type FungibleLedger = ConcreteFungibleLedger<Runtime, CalamariAssetConfig, Balances, Assets>;
+	type FungibleLedger = CalamariConcreteFungibleLedger;
 }
 
 impl pallet_asset_manager::Config for Runtime {
