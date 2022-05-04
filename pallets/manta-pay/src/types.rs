@@ -17,7 +17,10 @@
 //! Type Definitions for Manta Pay
 
 use super::*;
-use manta_util::into_array_unchecked;
+use manta_util::{
+	into_array_unchecked,
+	serde::{Deserialize, Serialize},
+};
 use scale_codec::Error;
 
 /// Encodes the SCALE encodable `value` into a byte array with the given length `N`.
@@ -38,6 +41,24 @@ where
 {
 	T::decode(&mut bytes.as_slice())
 }
+
+/// Group Type
+pub type Group = [u8; 32];
+
+/// UTXO Type
+pub type Utxo = [u8; 32];
+
+/// Void Number Type
+pub type VoidNumber = [u8; 32];
+
+/// UTXO Accumulator Output Type
+pub type UtxoAccumulatorOutput = [u8; 32];
+
+/// Ciphertext Type
+pub type Ciphertext = [u8; 68];
+
+/// Transfer Proof Type
+pub type Proof = [u8; 192];
 
 /// Asset
 #[derive(
@@ -72,13 +93,26 @@ impl Asset {
 }
 
 /// Encrypted Note
-#[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
+#[derive(
+	Clone,
+	Debug,
+	Decode,
+	Deserialize,
+	Encode,
+	Eq,
+	Hash,
+	MaxEncodedLen,
+	PartialEq,
+	Serialize,
+	TypeInfo,
+)]
+#[serde(crate = "manta_util::serde", deny_unknown_fields)]
 pub struct EncryptedNote {
 	/// Ephemeral Public Key
-	pub ephemeral_public_key: [u8; 32],
+	pub ephemeral_public_key: Group,
 
 	/// Ciphertext
-	pub ciphertext: [u8; 68],
+	pub ciphertext: Ciphertext,
 }
 
 impl Default for EncryptedNote {
@@ -117,10 +151,10 @@ impl TryFrom<EncryptedNote> for config::EncryptedNote {
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct SenderPost {
 	/// UTXO Accumulator Output
-	pub utxo_accumulator_output: [u8; 32],
+	pub utxo_accumulator_output: UtxoAccumulatorOutput,
 
 	/// Void Number
-	pub void_number: [u8; 32],
+	pub void_number: VoidNumber,
 }
 
 impl From<config::SenderPost> for SenderPost {
@@ -149,7 +183,7 @@ impl TryFrom<SenderPost> for config::SenderPost {
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct ReceiverPost {
 	/// Unspent Transaction Output
-	pub utxo: [u8; 32],
+	pub utxo: Utxo,
 
 	/// Encrypted Note
 	pub encrypted_note: EncryptedNote,
@@ -196,7 +230,7 @@ pub struct TransferPost {
 	pub sinks: Vec<Balance>,
 
 	/// Validity Proof
-	pub validity_proof: [u8; 192],
+	pub validity_proof: Proof,
 }
 
 impl From<config::TransferPost> for TransferPost {

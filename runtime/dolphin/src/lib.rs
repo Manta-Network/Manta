@@ -1276,6 +1276,14 @@ impl_runtime_apis! {
 		}
 	}
 
+	/* TODO:
+	impl pallet_manta_pay::rpc::MantaPayPullRuntimeApi for Runtime {
+		fn pull(checkpoint: Checkpoint) -> Result<PullResponse, scale_codec::Error> {
+			todo!()
+		}
+	}
+	*/
+
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
 		fn on_runtime_upgrade() -> (Weight, Weight) {

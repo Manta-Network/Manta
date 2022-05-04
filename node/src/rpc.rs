@@ -16,16 +16,17 @@
 
 //! Parachain-specific RPCs implementation.
 
-use std::sync::Arc;
-
+use alloc::sync::Arc;
+use frame_rpc_system::{FullSystem, SystemApi};
+use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
+use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
 use sc_client_api::AuxStore;
-pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
-use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
+pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 
 /// A type representing all RPC extensions.
 pub type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
@@ -55,24 +56,15 @@ where
 	C::Api: BlockBuilder<Block>,
 	P: TransactionPool + Sync + Send + 'static,
 {
-	use frame_rpc_system::{FullSystem, SystemApi};
-	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
-
-	let mut io = jsonrpc_core::IoHandler::default();
 	let FullDeps {
 		client,
 		pool,
 		deny_unsafe,
 	} = deps;
 
-	io.extend_with(SystemApi::to_delegate(FullSystem::new(
-		client.clone(),
-		pool,
-		deny_unsafe,
-	)));
-	io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(
-		client,
-	)));
-
+	let mut io = jsonrpc_core::IoHandler::default();
+	io.extend_with(FullSystem::new(client.clone(), pool, deny_unsafe).to_delegate());
+	io.extend_with(TransactionPayment::new(client).to_delegate());
+	io.extend_with(manta_pay::Pull::new(client).to_delegate());
 	io
 }
