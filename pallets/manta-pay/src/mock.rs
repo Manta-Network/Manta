@@ -15,6 +15,7 @@
 // along with pallet-manta-pay.  If not, see <http://www.gnu.org/licenses/>.
 
 use frame_support::{
+	pallet_prelude::DispatchResult,
 	parameter_types,
 	traits::{ConstU32, Everything},
 	PalletId,
@@ -136,7 +137,6 @@ impl pallet_assets::Config for Test {
 }
 
 pub struct MantaAssetRegistrar;
-use frame_support::pallet_prelude::DispatchResult;
 impl AssetRegistrar<Test, MantaAssetConfig> for MantaAssetRegistrar {
 	fn create_asset(
 		asset_id: AssetId,

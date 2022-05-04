@@ -15,8 +15,8 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-	xcm_config::SelfReserve, AssetManager, Assets, Balances, Event, NativeTokenExistentialDeposit,
-	Origin, Runtime,
+	weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
+	NativeTokenExistentialDeposit, Origin, Runtime,
 };
 
 use manta_primitives::{
@@ -55,7 +55,7 @@ impl pallet_assets::Config for Runtime {
 	type StringLimit = AssetsStringLimit;
 	type Freezer = ();
 	type Extra = ();
-	type WeightInfo = super::weights::pallet_assets::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
 }
 
 pub struct MantaAssetRegistrar;
@@ -147,7 +147,7 @@ impl pallet_asset_manager::Config for Runtime {
 	type AssetConfig = DolphinAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
 	type PalletId = AssetManagerPalletId;
-	type WeightInfo = super::weights::pallet_asset_manager::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_asset_manager::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -156,7 +156,7 @@ parameter_types! {
 
 impl pallet_manta_pay::Config for Runtime {
 	type Event = Event;
-	type WeightInfo = super::weights::pallet_manta_pay::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
 	type AssetConfig = DolphinAssetConfig;
 	type PalletId = MantaPayPalletId;
 }

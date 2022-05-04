@@ -15,8 +15,8 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-	xcm_config::SelfReserve, AssetManager, Assets, Balances, Event, NativeTokenExistentialDeposit,
-	Origin, Runtime,
+	weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
+	NativeTokenExistentialDeposit, Origin, Runtime,
 };
 
 use manta_primitives::{
@@ -28,7 +28,7 @@ use manta_primitives::{
 	types::{AccountId, AssetId, Balance},
 };
 
-use frame_support::{parameter_types, traits::ConstU32, PalletId};
+use frame_support::{pallet_prelude::DispatchResult, parameter_types, traits::ConstU32, PalletId};
 
 use frame_system::EnsureRoot;
 
@@ -57,11 +57,10 @@ impl pallet_assets::Config for Runtime {
 	type StringLimit = ConstU32<50>;
 	type Freezer = ();
 	type Extra = ();
-	type WeightInfo = super::weights::pallet_assets::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
 }
 
 pub struct CalamariAssetRegistrar;
-use frame_support::pallet_prelude::DispatchResult;
 impl AssetRegistrar<Runtime, CalamariAssetConfig> for CalamariAssetRegistrar {
 	fn create_asset(
 		asset_id: AssetId,
@@ -138,5 +137,5 @@ impl pallet_asset_manager::Config for Runtime {
 	type AssetConfig = CalamariAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
 	type PalletId = AssetManagerPalletId;
-	type WeightInfo = super::weights::pallet_asset_manager::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_asset_manager::SubstrateWeight<Runtime>;
 }
