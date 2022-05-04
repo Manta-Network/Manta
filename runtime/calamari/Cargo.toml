@@ -88,6 +88,8 @@ calamari-vesting = { path = '../../pallets/vesting', default-features = false }
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
+runtime-common = { path = '../common', default-features = false }
+
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -98,11 +100,6 @@ substrate-wasm-builder = { git = 'https://github.com/paritytech/substrate.git', 
 [dev-dependencies]
 serde_json = "1.0"
 reqwest = { version = "0.11", features = ["blocking"] }
-cumulus-primitives-parachain-inherent = { git = "https://github.com/paritytech/cumulus.git", branch = "polkadot-v0.9.16", default-features = false }
-cumulus-test-relay-sproof-builder = { git = "https://github.com/paritytech/cumulus.git", branch = "polkadot-v0.9.16", default-features = false }
-xcm-simulator = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.16"}
-polkadot-runtime-parachains = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.16" }
-polkadot-core-primitives = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.16" }
 
 [features]
 default = ['std']
@@ -178,6 +175,7 @@ std = [
 	'pallet-scheduler/std',
 	'pallet-membership/std',
 	'manta-primitives/std',
+	'runtime-common/std',
 	'parachain-info/std',
 	"cumulus-pallet-aura-ext/std",
 	'cumulus-pallet-parachain-system/std',

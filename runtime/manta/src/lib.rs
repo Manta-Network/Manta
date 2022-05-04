@@ -52,9 +52,9 @@ use frame_system::{
 };
 use manta_primitives::{
 	constants::{time::*, STAKING_PALLET_ID},
-	prod_or_fast,
 	types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
+use runtime_common::prod_or_fast;
 use sp_runtime::Perbill;
 
 #[cfg(any(feature = "std", test))]
@@ -178,7 +178,7 @@ impl Contains<Call> for MantaFilter {
 			Call::Timestamp(_) | Call::ParachainSystem(_) | Call::System(_)
 		) {
 			// always allow core call
-			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
+			// pallet-timestamp and parachainSystem could not be filtered because they are used in communication between releychain and parachain.
 			return true;
 		}
 

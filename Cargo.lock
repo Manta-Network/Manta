@@ -1139,10 +1139,8 @@ dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
- "cumulus-primitives-parachain-inherent",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "cumulus-test-relay-sproof-builder",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1177,12 +1175,11 @@ dependencies = [
  "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
- "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-runtime-common",
- "polkadot-runtime-parachains",
  "reqwest",
+ "runtime-common",
  "scale-info",
  "serde",
  "serde_json",
@@ -1204,7 +1201,6 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
- "xcm-simulator",
 ]
 
 [[package]]
@@ -2392,7 +2388,7 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-runtime-common",
- "polkadot-runtime-parachains",
+ "runtime-common",
  "scale-info",
  "serde",
  "smallvec",
@@ -2413,7 +2409,6 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
- "xcm-simulator",
 ]
 
 [[package]]
@@ -4986,6 +4981,7 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-runtime-common",
+ "runtime-common",
  "scale-info",
  "serde",
  "smallvec",
@@ -8852,6 +8848,43 @@ checksum = "ffc936cf8a7ea60c58f030fd36a612a48f440610214dc54bc36431f9ea0c3efb"
 dependencies = [
  "libc",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "runtime-common"
+version = "3.1.5"
+dependencies = [
+ "cumulus-pallet-xcm",
+ "cumulus-primitives-parachain-inherent",
+ "cumulus-test-relay-sproof-builder",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "manta-accounting",
+ "manta-primitives",
+ "orml-xtokens",
+ "pallet-asset-manager",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-utility",
+ "pallet-xcm",
+ "parachain-info",
+ "parity-scale-codec",
+ "polkadot-core-primitives",
+ "polkadot-parachain",
+ "polkadot-runtime-parachains",
+ "scale-info",
+ "smallvec",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
+ "xcm-simulator",
 ]
 
 [[package]]

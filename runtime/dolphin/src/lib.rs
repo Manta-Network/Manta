@@ -70,6 +70,7 @@ use manta_primitives::{
 	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 	xcm::{AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
 };
+use runtime_common::prod_or_fast;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -92,9 +93,6 @@ use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 pub mod currency;
 pub mod fee;
 pub mod impls;
-
-#[cfg(test)]
-mod tests;
 
 use currency::*;
 use fee::WeightToFee;
@@ -383,13 +381,13 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-	pub const LaunchPeriod: BlockNumber = 5 * MINUTES;
-	pub const VotingPeriod: BlockNumber = 5 * MINUTES;
-	pub const FastTrackVotingPeriod: BlockNumber = 5 * MINUTES;
+	pub LaunchPeriod: BlockNumber = prod_or_fast!(5 * MINUTES, 1 * MINUTES, "DOLPHIN_LAUNCHPERIOD");
+	pub VotingPeriod: BlockNumber = prod_or_fast!(5 * MINUTES, 1 * MINUTES, "DOLPHIN_VOTINGPERIOD");
+	pub FastTrackVotingPeriod: BlockNumber = prod_or_fast!(5 * MINUTES, 1 * MINUTES, "DOLPHIN_FASTTRACKVOTINGPERIOD");
 	pub const InstantAllowed: bool = true;
 	pub const MinimumDeposit: Balance = 20 * DOL;
-	pub const EnactmentPeriod: BlockNumber = 5 * MINUTES;
-	pub const CooloffPeriod: BlockNumber = 5 * MINUTES;
+	pub EnactmentPeriod: BlockNumber = prod_or_fast!(5 * MINUTES, 1 * MINUTES, "DOLPHIN_ENACTMENTPERIOD");
+	pub CooloffPeriod: BlockNumber = prod_or_fast!(5 * MINUTES, 1 * MINUTES, "DOLPHIN_COOLOFFPERIOD");
 	pub const PreimageByteDeposit: Balance = deposit(0, 1);
 }
 
@@ -515,7 +513,7 @@ parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(1);
 	pub const ProposalBondMinimum: Balance = 500 * DOL;
 	pub const ProposalBondMaximum: Balance = 10_000 * DOL;
-	pub const SpendPeriod: BlockNumber = 10 * MINUTES;
+	pub SpendPeriod: BlockNumber = prod_or_fast!(10 * MINUTES, 2 * MINUTES, "DOLPHIN_SPENDPERIOD");
 	pub const Burn: Permill = Permill::from_percent(0);
 	pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
 }
@@ -894,7 +892,7 @@ impl orml_xtokens::Config for Runtime {
 
 parameter_types! {
 	// Rotate collator's spot each 6 hours.
-	pub const Period: u32 = 6 * HOURS;
+	pub Period: u32 = prod_or_fast!(6 * HOURS, 2 * MINUTES, "DOLPHIN_PERIOD");
 	pub const Offset: u32 = 0;
 }
 

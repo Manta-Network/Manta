@@ -64,10 +64,10 @@ use manta_primitives::{
 	constants::{
 		time::*, ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL, STAKING_PALLET_ID, TREASURY_PALLET_ID,
 	},
-	prod_or_fast,
 	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 	xcm::{AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
 };
+use runtime_common::prod_or_fast;
 use sp_runtime::{Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
