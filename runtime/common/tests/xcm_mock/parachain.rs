@@ -18,7 +18,9 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime,
+	pallet_prelude::DispatchResult,
+	parameter_types,
 	traits::{ConstU32, Everything, Nothing},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 	PalletId,
@@ -483,7 +485,6 @@ impl pallet_xcm::Config for Runtime {
 }
 
 pub struct CalamariAssetRegistrar;
-use frame_support::pallet_prelude::DispatchResult;
 impl AssetRegistrar<Runtime, CalamariAssetConfig> for CalamariAssetRegistrar {
 	fn create_asset(
 		asset_id: AssetId,

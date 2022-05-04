@@ -20,15 +20,16 @@ mod common;
 use common::{info_from_weight, last_event, mock::*, root_origin, BOND_AMOUNT, INITIAL_BALANCE};
 
 pub use calamari_runtime::{
+	assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},
 	currency::KMA,
 	fee::{
 		FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY, TIPS_PERCENTAGE_TO_AUTHOR,
 		TIPS_PERCENTAGE_TO_TREASURY,
 	},
-	AssetManager, Assets, Authorship, Balances, CalamariAssetConfig,
-	CalamariConcreteFungibleLedger, CalamariVesting, Council, Democracy, EnactmentPeriod,
-	LaunchPeriod, NativeTokenExistentialDeposit, Origin, Period, PolkadotXcm, Runtime, Sudo,
-	TechnicalCommittee, Timestamp, Treasury, Utility, VotingPeriod, XcmFeesAccount,
+	xcm_config::XcmFeesAccount,
+	AssetManager, Assets, Authorship, Balances, CalamariVesting, Council, Democracy,
+	EnactmentPeriod, LaunchPeriod, NativeTokenExistentialDeposit, Origin, Period, PolkadotXcm,
+	Runtime, Sudo, TechnicalCommittee, Timestamp, Treasury, Utility, VotingPeriod,
 };
 
 use frame_support::{
@@ -41,8 +42,7 @@ use frame_support::{
 };
 use manta_primitives::{
 	assets::{
-		AssetConfig, AssetLocation, AssetRegistrarMetadata, ConcreteFungibleLedger, FungibleLedger,
-		FungibleLedgerError,
+		AssetConfig, AssetLocation, AssetRegistrarMetadata, FungibleLedger, FungibleLedgerError,
 	},
 	constants::time::{DAYS, HOURS},
 	helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
@@ -1028,12 +1028,7 @@ fn concrete_fungible_ledger_transfers_work() {
 			);
 
 			// A normal transfer should work
-			assert_ok!(ConcreteFungibleLedger::<
-				Runtime,
-				CalamariAssetConfig,
-				Balances,
-				Assets,
-			>::transfer(
+			assert_ok!(CalamariConcreteFungibleLedger::transfer(
 				<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
 				&alice.clone(),
 				&charlie.clone(),
@@ -1067,12 +1062,7 @@ fn concrete_fungible_ledger_transfers_work() {
 			);
 
 			// Should be able to create new account with enough balance
-			assert_ok!(ConcreteFungibleLedger::<
-				Runtime,
-				CalamariAssetConfig,
-				Balances,
-				Assets,
-			>::transfer(
+			assert_ok!(CalamariConcreteFungibleLedger::transfer(
 				<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
 				&alice.clone(),
 				&new_account.clone(),
@@ -1086,12 +1076,7 @@ fn concrete_fungible_ledger_transfers_work() {
 			);
 
 			// Transfer all of your balance without dropping below ED should work
-			assert_ok!(ConcreteFungibleLedger::<
-				Runtime,
-				CalamariAssetConfig,
-				Balances,
-				Assets,
-			>::transfer(
+			assert_ok!(CalamariConcreteFungibleLedger::transfer(
 				<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
 				&bob.clone(),
 				&alice.clone(),
@@ -1127,12 +1112,7 @@ fn concrete_fungible_ledger_transfers_work() {
 			// Register and mint for testing.
 			// TODO:: Switch to u128::MAX when we start using https://github.com/paritytech/substrate/pull/11241
 			let amount = INITIAL_BALANCE;
-			assert_ok!(ConcreteFungibleLedger::<
-				Runtime,
-				CalamariAssetConfig,
-				Balances,
-				Assets,
-			>::mint(
+			assert_ok!(CalamariConcreteFungibleLedger::mint(
 				<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
 				&alice.clone(),
 				amount,
@@ -1190,12 +1170,7 @@ fn concrete_fungible_ledger_transfers_work() {
 			);
 
 			// Transferring normal amounts should work.
-			assert_ok!(ConcreteFungibleLedger::<
-				Runtime,
-				CalamariAssetConfig,
-				Balances,
-				Assets,
-			>::transfer(
+			assert_ok!(CalamariConcreteFungibleLedger::transfer(
 				<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
 				&alice.clone(),
 				&bob.clone(),
@@ -1273,12 +1248,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
 			);
 
 			let remaining_to_max = u128::MAX - Balances::total_issuance();
-			assert_ok!(ConcreteFungibleLedger::<
-				Runtime,
-				CalamariAssetConfig,
-				Balances,
-				Assets,
-			>::mint(
+			assert_ok!(CalamariConcreteFungibleLedger::mint(
 				<CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
 				&new_account.clone(),
 				remaining_to_max,
@@ -1332,12 +1302,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
 				),
 				FungibleLedgerError::UnknownAsset
 			);
-			assert_ok!(ConcreteFungibleLedger::<
-				Runtime,
-				CalamariAssetConfig,
-				Balances,
-				Assets,
-			>::mint(
+			assert_ok!(CalamariConcreteFungibleLedger::mint(
 				<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
 				&alice.clone(),
 				u128::MAX,
@@ -1446,12 +1411,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
 				asset_metadata.clone()
 			),);
 
-			assert_ok!(ConcreteFungibleLedger::<
-				Runtime,
-				CalamariAssetConfig,
-				Balances,
-				Assets,
-			>::mint(
+			assert_ok!(CalamariConcreteFungibleLedger::mint(
 				<CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
 				&alice.clone(),
 				INITIAL_BALANCE,

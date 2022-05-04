@@ -17,8 +17,8 @@
 use crate::common::*;
 
 pub use calamari_runtime::{
-	currency::KMA, CalamariAssetConfig, Call, CollatorSelection, Democracy, Runtime, Scheduler,
-	Session, System, TransactionPayment,
+	assets_config::CalamariAssetConfig, currency::KMA, Call, CollatorSelection, Democracy, Runtime,
+	Scheduler, Session, System, TransactionPayment,
 };
 use frame_support::traits::{GenesisBuild, OnFinalize, OnInitialize};
 use manta_primitives::{
