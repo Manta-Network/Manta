@@ -30,7 +30,6 @@ rpc = [
 	"jsonrpc-derive",
 	"sp-api",
 	"sp-blockchain",
-	"sp-runtime",
 ]
 
 # Runtime Benchmarks
@@ -76,7 +75,7 @@ scale-codec = { package = "parity-scale-codec", version = "2.3.1", default-featu
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 sp-api = { git = 'https://github.com/paritytech/substrate.git', optional = true, branch = "polkadot-v0.9.16", default-features = false }
 sp-blockchain = { git = 'https://github.com/paritytech/substrate.git', optional = true, branch = "polkadot-v0.9.16", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", optional = true, branch = "polkadot-v0.9.16", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16", default-features = false }
 sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16", default-features = false }
 
 # JSON-RPC
