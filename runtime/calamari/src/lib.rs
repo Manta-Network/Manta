@@ -40,10 +40,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{
-		ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, OnRuntimeUpgrade,
-		PrivilegeCmp,
-	},
+	traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, PrivilegeCmp},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, Weight,
@@ -748,23 +745,8 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsReversedWithSystemFirst,
-	SetAssetManagerGenesisConfiguration,
+	(),
 >;
-
-pub struct SetAssetManagerGenesisConfiguration;
-impl OnRuntimeUpgrade for SetAssetManagerGenesisConfiguration {
-	fn on_runtime_upgrade() -> Weight {
-		AssetManager::set_genesis_configuration()
-	}
-	#[cfg(feature = "try-runtime")]
-	fn pre_upgrade() -> Result<(), &'static str> {
-		Ok(())
-	}
-	#[cfg(feature = "try-runtime")]
-	fn post_upgrade() -> Result<(), &'static str> {
-		Ok(())
-	}
-}
 
 impl_runtime_apis! {
 	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
