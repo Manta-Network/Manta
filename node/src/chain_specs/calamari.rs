@@ -16,7 +16,6 @@
 
 use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
-
 use calamari_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
 use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
@@ -38,7 +37,7 @@ pub fn calamari_session_keys(keys: AuraId) -> calamari_runtime::opaque::SessionK
 	calamari_runtime::opaque::SessionKeys { aura: keys }
 }
 
-// calamari chain specs
+/// Calamari chain specs
 pub fn calamari_properties() -> Properties {
 	let mut p = Properties::new();
 	p.insert("ss58format".into(), constants::CALAMARI_SS58PREFIX.into());

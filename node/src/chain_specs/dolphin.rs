@@ -16,7 +16,6 @@
 
 use super::*;
 use crate::command::DOLPHIN_PARACHAIN_ID;
-
 use dolphin_runtime::{
 	AssetManagerConfig, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
 };
@@ -40,7 +39,7 @@ pub fn dolphin_session_keys(keys: AuraId) -> dolphin_runtime::opaque::SessionKey
 	dolphin_runtime::opaque::SessionKeys { aura: keys }
 }
 
-// dolphin chain specs
+/// Dolphin chain specs.
 pub fn dolphin_properties() -> Properties {
 	let mut p = Properties::new();
 	p.insert("ss58format".into(), constants::CALAMARI_SS58PREFIX.into());

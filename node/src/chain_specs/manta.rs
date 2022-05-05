@@ -16,18 +16,18 @@
 
 use super::*;
 use crate::command::MANTA_PARACHAIN_ID;
-
-pub type MantaChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
 use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 const MANTA_PROTOCOL_ID: &str = "manta"; // for p2p network configuration
 const POLKADOT_RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";
 const POLKADOT_RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
-#[allow(dead_code)]
 const POLKADOT_RELAYCHAIN_MAIN_NET: &str = "polkadot";
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = 2;
+
+/// Manta Chain Specification Type
+pub type MantaChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
 
 /// Generate the manta session keys from individual elements.
 ///
@@ -36,7 +36,7 @@ pub fn manta_session_keys(keys: AuraId) -> manta_runtime::opaque::SessionKeys {
 	manta_runtime::opaque::SessionKeys { aura: keys }
 }
 
-/// Token
+/// Manta chain spec.
 pub fn manta_properties() -> Properties {
 	let mut p = Properties::new();
 	p.insert("ss58format".into(), constants::MANTA_SS58PREFIX.into());
@@ -45,7 +45,7 @@ pub fn manta_properties() -> Properties {
 	p
 }
 
-// manta chain spec
+/// Manta chain spec.
 pub fn manta_development_config() -> MantaChainSpec {
 	let properties = manta_properties();
 

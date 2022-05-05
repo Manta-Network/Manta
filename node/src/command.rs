@@ -19,12 +19,10 @@ use crate::{
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
 };
-
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::info;
-
 use manta_primitives::types::{AuraId, Header};
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
