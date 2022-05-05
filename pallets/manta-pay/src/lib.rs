@@ -90,9 +90,11 @@ mod mock;
 #[cfg(test)]
 mod test;
 
-pub mod rpc;
 pub mod types;
 pub mod weights;
+
+#[cfg(feature = "rpc")]
+pub mod rpc;
 
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmark;

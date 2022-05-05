@@ -23,6 +23,16 @@ required-features = ["precompute-coins"]
 # Default Features
 default = ["std"]
 
+# RPC Interface
+rpc = [
+	"jsonrpc-core",
+	"jsonrpc-core-client",
+	"jsonrpc-derive",
+	"sp-api",
+	"sp-blockchain",
+	"sp-runtime",
+]
+
 # Runtime Benchmarks
 runtime-benchmarks = [
 	"frame-benchmarking",
@@ -64,15 +74,15 @@ frame-support = { git = "https://github.com/paritytech/substrate.git", branch = 
 frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16", default-features = false }
 scale-codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
-sp-api = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16", default-features = false }
-sp-blockchain = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16", default-features = false }
+sp-api = { git = 'https://github.com/paritytech/substrate.git', optional = true, branch = "polkadot-v0.9.16", default-features = false }
+sp-blockchain = { git = 'https://github.com/paritytech/substrate.git', optional = true, branch = "polkadot-v0.9.16", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", optional = true, branch = "polkadot-v0.9.16", default-features = false }
 sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16", default-features = false }
 
 # JSON-RPC
-jsonrpc-core = "18.0.0"
-jsonrpc-core-client = "18.0.0"
-jsonrpc-derive = "18.0.0"
+jsonrpc-core = { version = "18.0.0", optional = true, default-features = false }
+jsonrpc-core-client = { version = "18.0.0", optional = true, default-features = false }
+jsonrpc-derive = { version = "18.0.0", optional = true, default-features = false }
 
 # manta dependencies
 manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/flexible-ledger-api", default-features = false }

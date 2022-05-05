@@ -51,9 +51,10 @@ where
 		+ Send
 		+ Sync
 		+ 'static,
-	C::Api: frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
-	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-	C::Api: BlockBuilder<Block>,
+	C::Api: BlockBuilder<Block>
+		+ frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+		+ manta_pay::rpc::MantaPayPullRuntimeApi<Block>,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	let FullDeps {
@@ -65,6 +66,6 @@ where
 	let mut io = jsonrpc_core::IoHandler::default();
 	io.extend_with(FullSystem::new(client.clone(), pool, deny_unsafe).to_delegate());
 	io.extend_with(TransactionPayment::new(client).to_delegate());
-	io.extend_with(manta_pay::Pull::new(client).to_delegate());
+	io.extend_with(manta_pay::rpc::Pull::new(client).to_delegate());
 	io
 }
