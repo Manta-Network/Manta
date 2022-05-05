@@ -17,11 +17,11 @@
 //! Type Definitions for Manta Pay
 
 use super::*;
-use manta_util::{
-	into_array_unchecked,
-	serde::{Deserialize, Serialize},
-};
+use manta_util::into_array_unchecked;
 use scale_codec::Error;
+
+#[cfg(feature = "rpc")]
+use manta_util::serde::{Deserialize, Serialize};
 
 /// Encodes the SCALE encodable `value` into a byte array with the given length `N`.
 #[inline]
@@ -93,26 +93,21 @@ impl Asset {
 }
 
 /// Encrypted Note
-#[derive(
-	Clone,
-	Debug,
-	Decode,
-	Deserialize,
-	Encode,
-	Eq,
-	Hash,
-	MaxEncodedLen,
-	PartialEq,
-	Serialize,
-	TypeInfo,
+#[cfg_attr(
+	feature = "rpc",
+	derive(Deserialize, Serialize),
+	serde(crate = "manta_util::serde", deny_unknown_fields)
 )]
-#[serde(crate = "manta_util::serde", deny_unknown_fields)]
+#[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct EncryptedNote {
 	/// Ephemeral Public Key
 	pub ephemeral_public_key: Group,
 
 	/// Ciphertext
-	#[serde(with = "manta_util::serde_with::As::<[manta_util::serde_with::Same; 68]>")]
+	#[cfg_attr(
+		feature = "rpc",
+		serde(with = "manta_util::serde_with::As::<[manta_util::serde_with::Same; 68]>")
+	)]
 	pub ciphertext: Ciphertext,
 }
 

@@ -85,7 +85,7 @@ manta-primitives = { path = '../../primitives', default-features = false }
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
-pallet-manta-pay = { path='../../pallets/manta-pay', default-features = false }
+pallet-manta-pay = { path='../../pallets/manta-pay', default-features = false, features = ["rpc"] }
 
 # Third party (vendored) dependencies
 orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="4a66b29"}
@@ -190,5 +190,6 @@ std = [
 	'pallet-treasury/std',
 	'pallet-assets/std',
 	'pallet-manta-pay/std',
+	'pallet-manta-pay/rpc',
 	'pallet-asset-manager/std',
 ]

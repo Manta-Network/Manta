@@ -4840,6 +4840,7 @@ dependencies = [
  "log",
  "manta-primitives",
  "manta-runtime",
+ "pallet-manta-pay",
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",
  "polkadot-cli",
@@ -4887,28 +4888,17 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api#475b0a4ec7fa5030ccfdd4e63c704088665ccd43"
+source = "git+https://github.com/manta-network/manta-rs.git#c1e46ad8155494d4c978f959f1e394690406443a"
 dependencies = [
  "derivative",
  "derive_more",
  "futures 0.3.21",
  "indexmap",
- "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api)",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api)",
+ "manta-crypto",
+ "manta-util",
  "parking_lot 0.12.0",
  "rand 0.8.5",
  "statrs",
-]
-
-[[package]]
-name = "manta-accounting"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#ec4470b3f25a7d2e6b8289e0c6f9b3c19be30571"
-dependencies = [
- "derivative",
- "derive_more",
- "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
 ]
 
 [[package]]
@@ -4941,27 +4931,17 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api#475b0a4ec7fa5030ccfdd4e63c704088665ccd43"
+source = "git+https://github.com/manta-network/manta-rs.git#c1e46ad8155494d4c978f959f1e394690406443a"
 dependencies = [
  "derivative",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api)",
- "rand_core 0.6.3",
-]
-
-[[package]]
-name = "manta-crypto"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#ec4470b3f25a7d2e6b8289e0c6f9b3c19be30571"
-dependencies = [
- "derivative",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
+ "manta-util",
  "rand_core 0.6.3",
 ]
 
 [[package]]
 name = "manta-pay"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api#475b0a4ec7fa5030ccfdd4e63c704088665ccd43"
+source = "git+https://github.com/manta-network/manta-rs.git#c1e46ad8155494d4c978f959f1e394690406443a"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -4976,9 +4956,9 @@ dependencies = [
  "ark-std",
  "blake2 0.10.4",
  "derivative",
- "manta-accounting 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api)",
- "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api)",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api)",
+ "manta-accounting",
+ "manta-crypto",
+ "manta-util",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
  "scale-info",
@@ -4992,7 +4972,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "manta-accounting 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
+ "manta-accounting",
  "parity-scale-codec",
  "scale-info",
  "smallvec",
@@ -5084,16 +5064,11 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api#475b0a4ec7fa5030ccfdd4e63c704088665ccd43"
+source = "git+https://github.com/manta-network/manta-rs.git#c1e46ad8155494d4c978f959f1e394690406443a"
 dependencies = [
  "serde",
  "serde_with",
 ]
-
-[[package]]
-name = "manta-util"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#ec4470b3f25a7d2e6b8289e0c6f9b3c19be30571"
 
 [[package]]
 name = "maplit"
@@ -6259,12 +6234,12 @@ dependencies = [
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "lazy_static",
- "manta-accounting 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api)",
- "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api)",
+ "manta-accounting",
+ "manta-crypto",
  "manta-pay",
  "manta-primitives",
  "manta-sdk",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api)",
+ "manta-util",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",

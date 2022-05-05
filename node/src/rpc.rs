@@ -62,7 +62,6 @@ where
 		pool,
 		deny_unsafe,
 	} = deps;
-
 	let mut io = jsonrpc_core::IoHandler::default();
 	io.extend_with(FullSystem::new(client.clone(), pool, deny_unsafe).to_delegate());
 	io.extend_with(TransactionPayment::new(client).to_delegate());

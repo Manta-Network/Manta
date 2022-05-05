@@ -1279,8 +1279,8 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl pallet_manta_pay::rpc::MantaPayPullRuntimeApi for Runtime {
-		fn pull(checkpoint: Checkpoint) -> PullResponse {
+	impl pallet_manta_pay::rpc::MantaPayPullRuntimeApi<Block> for Runtime {
+		fn pull(checkpoint: pallet_manta_pay::rpc::Checkpoint) -> pallet_manta_pay::rpc::PullResponse {
 			MantaPay::pull(checkpoint)
 		}
 	}
