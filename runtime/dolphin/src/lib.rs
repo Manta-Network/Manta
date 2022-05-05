@@ -26,19 +26,22 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{
+	crypto::KeyTypeId,
+	u32_trait::{_1, _2, _3, _4, _5},
+	OpaqueMetadata,
+};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, Perbill, Permill,
 };
-
-use sp_core::u32_trait::{_1, _2, _3, _4, _5};
 use sp_std::{cmp::Ordering, prelude::*};
+use sp_version::RuntimeVersion;
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
-use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, match_type,
@@ -1276,13 +1279,11 @@ impl_runtime_apis! {
 		}
 	}
 
-	/* TODO:
 	impl pallet_manta_pay::rpc::MantaPayPullRuntimeApi for Runtime {
-		fn pull(checkpoint: Checkpoint) -> Result<PullResponse, scale_codec::Error> {
-			todo!()
+		fn pull(checkpoint: Checkpoint) -> PullResponse {
+			MantaPay::pull(checkpoint)
 		}
 	}
-	*/
 
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {

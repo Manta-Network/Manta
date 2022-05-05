@@ -79,7 +79,7 @@ manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", bran
 manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/flexible-ledger-api", default-features = false }
 manta-pay = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/flexible-ledger-api", default-features = false, features = ["groth16", "scale", "serde"] }
 manta-sdk = { git = "https://github.com/manta-network/sdk.git", default-features = false }
-manta-util = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/flexible-ledger-api", default-features = false, features = ["serde"] }
+manta-util = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/flexible-ledger-api", default-features = false, features = ["serde", "serde_with"] }
 manta-primitives = { path = "../../primitives", default-features = false}
 
 [dev-dependencies]

@@ -4887,7 +4887,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api#15f69a6622d85cf2c941fafe2604435a19e51eea"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api#475b0a4ec7fa5030ccfdd4e63c704088665ccd43"
 dependencies = [
  "derivative",
  "derive_more",
@@ -4941,7 +4941,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api#15f69a6622d85cf2c941fafe2604435a19e51eea"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api#475b0a4ec7fa5030ccfdd4e63c704088665ccd43"
 dependencies = [
  "derivative",
  "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api)",
@@ -4961,7 +4961,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api#15f69a6622d85cf2c941fafe2604435a19e51eea"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api#475b0a4ec7fa5030ccfdd4e63c704088665ccd43"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -5084,7 +5084,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api#15f69a6622d85cf2c941fafe2604435a19e51eea"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/flexible-ledger-api#475b0a4ec7fa5030ccfdd4e63c704088665ccd43"
 dependencies = [
  "serde",
  "serde_with",

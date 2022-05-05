@@ -17,20 +17,16 @@
 //! MantaPay RPC Interfaces
 
 use crate::{
-	types::{decode, EncryptedNote, Utxo, VoidNumber},
+	types::{EncryptedNote, Utxo, VoidNumber},
 	Config, Pallet, Shards, VoidNumberSet,
 };
 use alloc::sync::Arc;
 use core::marker::PhantomData;
-use jsonrpc_core::{Error as RpcError, ErrorCode};
+use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
-use manta_accounting::wallet::ledger;
-use manta_pay::{
-	config,
-	signer::{Checkpoint, RawCheckpoint},
-};
+use manta_pay::signer::{Checkpoint, RawCheckpoint};
 use manta_util::serde::{Deserialize, Serialize};
-use scale_codec::{Decode, Encode, Error as CodecError};
+use scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
@@ -42,14 +38,14 @@ pub trait PullApi {
 	/// Returns the update required to be synchronized with the ledger starting from
 	/// `checkpoint`.
 	#[rpc(name = "manta_pay_pull")]
-	fn pull(&self, checkpoint: Checkpoint) -> jsonrpc_core::Result<PullResponse>;
+	fn pull(&self, checkpoint: Checkpoint) -> Result<PullResponse>;
 }
 
 /// Receiver Chunk Data Type
-pub type ReceiverChunk = Vec<(config::Utxo, config::EncryptedNote)>;
+pub type ReceiverChunk = Vec<(Utxo, EncryptedNote)>;
 
 /// Sender Chunk Data Type
-pub type SenderChunk = Vec<config::VoidNumber>;
+pub type SenderChunk = Vec<VoidNumber>;
 
 /// Ledger Source Pull Response
 #[derive(
@@ -88,15 +84,13 @@ where
 
 	/// Pulls receiver data from the ledger starting at the `receiver_index`.
 	#[inline]
-	fn pull_receivers(
-		receiver_index: &mut [usize; 256],
-	) -> Result<(bool, ReceiverChunk), CodecError> {
+	fn pull_receivers(receiver_index: &mut [usize; 256]) -> (bool, ReceiverChunk) {
 		let mut more_receivers = false;
 		let mut receivers = Vec::new();
 		for (i, index) in receiver_index.iter_mut().enumerate() {
-			more_receivers |= Self::pull_receivers_for_shard(i as u8, index, &mut receivers)?;
+			more_receivers |= Self::pull_receivers_for_shard(i as u8, index, &mut receivers);
 		}
-		Ok((more_receivers, receivers))
+		(more_receivers, receivers)
 	}
 
 	/// Pulls receiver data from the shard at `shard_index` starting at the `receiver_index`,
@@ -106,7 +100,7 @@ where
 		shard_index: u8,
 		receiver_index: &mut usize,
 		receivers: &mut ReceiverChunk,
-	) -> Result<bool, CodecError> {
+	) -> bool {
 		let mut iter = if *receiver_index == 0 {
 			Shards::<T>::iter_prefix(shard_index)
 		} else {
@@ -117,49 +111,49 @@ where
 			match iter.next() {
 				Some((_, (utxo, encrypted_note))) => {
 					*receiver_index += 1;
-					receivers.push((decode(utxo)?, encrypted_note));
+					receivers.push((utxo, encrypted_note));
 				}
-				_ => return Ok(false),
+				_ => return false,
 			}
 		}
-		Ok(iter.next().is_some())
+		iter.next().is_some()
 	}
 
 	/// Pulls sender data from the ledger starting at the `sender_index`.
 	#[inline]
-	fn pull_senders(sender_index: &mut usize) -> Result<(bool, SenderChunk), CodecError> {
+	fn pull_senders(sender_index: &mut usize) -> (bool, SenderChunk) {
 		let mut senders = Vec::new();
 		let mut iter = VoidNumberSet::<T>::iter().skip(*sender_index);
 		for _ in 0..Self::PULL_MAX_SENDER_UPDATE_SIZE {
 			match iter.next() {
 				Some((sender, _)) => {
 					*sender_index += 1;
-					senders.push(decode(sender)?);
+					senders.push(sender);
 				}
-				_ => return Ok((false, senders)),
+				_ => return (false, senders),
 			}
 		}
-		Ok((iter.next().is_some(), senders))
+		(iter.next().is_some(), senders)
 	}
 
 	/// Returns the update required to be synchronized with the ledger starting from
 	/// `checkpoint`.
 	#[inline]
-	pub fn pull(mut checkpoint: Checkpoint) -> Result<PullResponse, CodecError> {
-		let (more_receivers, receivers) = Self::pull_receivers(&mut checkpoint.receiver_index)?;
-		let (more_senders, senders) = Self::pull_senders(&mut checkpoint.sender_index)?;
-		Ok(PullResponse {
+	pub fn pull(mut checkpoint: Checkpoint) -> PullResponse {
+		let (more_receivers, receivers) = Self::pull_receivers(&mut checkpoint.receiver_index);
+		let (more_senders, senders) = Self::pull_senders(&mut checkpoint.sender_index);
+		PullResponse {
 			should_continue: more_receivers || more_senders,
 			checkpoint,
 			receivers,
 			senders,
-		})
+		}
 	}
 }
 
 sp_api::decl_runtime_apis! {
 	pub trait MantaPayPullRuntimeApi {
-		fn pull(checkpoint: RawCheckpoint) -> Result<PullResponse, CodecError>;
+		fn pull(checkpoint: RawCheckpoint) -> PullResponse;
 	}
 }
 
@@ -190,21 +184,13 @@ where
 	C::Api: MantaPayPullRuntimeApi<B>,
 {
 	#[inline]
-	fn pull(&self, checkpoint: Checkpoint) -> jsonrpc_core::Result<PullResponse> {
+	fn pull(&self, checkpoint: Checkpoint) -> Result<PullResponse> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		match api.pull(&at, checkpoint.into()) {
-			Ok(Ok(response)) => Ok(response),
-			Ok(Err(err)) => Err(RpcError {
-				code: ErrorCode::ServerError(1),
-				message: "Unable to compute state diff for pull".into(),
-				data: Some(err.to_string().into()),
-			}),
-			Err(err) => Err(RpcError {
-				code: ErrorCode::ServerError(2),
-				message: "Error during runtime API".into(),
-				data: Some(err.to_string().into()),
-			}),
-		}
+		api.pull(&at, checkpoint.into()).map_err(|err| Error {
+			code: ErrorCode::ServerError(1),
+			message: "Unable to compute state diff for pull".into(),
+			data: Some(err.to_string().into()),
+		})
 	}
 }

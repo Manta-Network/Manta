@@ -112,6 +112,7 @@ pub struct EncryptedNote {
 	pub ephemeral_public_key: Group,
 
 	/// Ciphertext
+	#[serde(with = "manta_util::serde_with::As::<[manta_util::serde_with::Same; 68]>")]
 	pub ciphertext: Ciphertext,
 }
 
