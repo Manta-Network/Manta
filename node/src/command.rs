@@ -16,6 +16,20 @@
 
 use crate::{
 	chain_specs,
+	chain_specs::{
+		calamari::{
+			calamari_config, calamari_development_config, calamari_local_config,
+			calamari_testnet_ci_config, calamari_testnet_config, CalamariChainSpec,
+		},
+		dolphin::{
+			dolphin_development_config, dolphin_local_config, dolphin_testnet_config,
+			DolphinChainSpec,
+		},
+		manta::{
+			manta_config, manta_development_config, manta_local_config, manta_testnet_ci_config,
+			manta_testnet_config, MantaChainSpec,
+		},
+	},
 	cli::{Cli, RelayChainCli, Subcommand},
 	service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
 };
