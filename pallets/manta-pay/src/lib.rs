@@ -71,7 +71,7 @@ use manta_crypto::{
 	constraint::ProofSystem,
 	merkle_tree::{self, forest::Configuration as _},
 };
-use manta_pay::{config, signer::Checkpoint};
+use manta_pay::config;
 use manta_primitives::{
 	assets::{AssetConfig, FungibleLedger as _, FungibleLedgerError},
 	types::{AssetId, Balance},
@@ -84,6 +84,7 @@ use types::*;
 #[cfg(feature = "serde")]
 use manta_util::serde::{Deserialize, Serialize};
 
+pub use manta_pay::signer::{Checkpoint, RawCheckpoint};
 pub use pallet::*;
 pub use weights::WeightInfo;
 

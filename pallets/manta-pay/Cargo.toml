@@ -29,13 +29,12 @@ rpc = [
 	"jsonrpc-core-client",
 	"jsonrpc-derive",
 	"serde",
-]
-
-# Runtime API
-runtime = [
 	"sp-api",
 	"sp-blockchain",
 ]
+
+# Runtime API
+runtime = ["sp-api"]
 
 # Runtime Benchmarks
 runtime-benchmarks = [
