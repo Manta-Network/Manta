@@ -19,6 +19,7 @@
 use alloc::sync::Arc;
 use frame_rpc_system::{FullSystem, SystemApi};
 use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
+use pallet_manta_pay::rpc::PullApi;
 use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
 use sc_client_api::AuxStore;
 use sc_transaction_pool_api::TransactionPool;
