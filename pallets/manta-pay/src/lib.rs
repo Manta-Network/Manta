@@ -165,6 +165,16 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type VoidNumberSet<T: Config> = StorageMap<_, Identity, VoidNumber, (), ValueQuery>;
 
+	/// Void Number Ordered by Insertion
+	#[pallet::storage]
+	pub(super) type InsertionOrderedVoidNumbers<T: Config> =
+		StorageMap<_, Identity, u64, VoidNumber, ValueQuery>;
+
+	/// The size of Void Number Set
+	/// FIXME: this should be removed.
+	#[pallet::storage]
+	pub(super) type VoidNumberSetSize<T: Config> = StorageValue<_, u64, ValueQuery>;
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Transforms some public assets into private ones using `post`, withdrawing the public
@@ -502,10 +512,10 @@ pub mod pallet {
 		#[inline]
 		fn pull_senders(sender_index: &mut usize) -> (bool, SenderChunk) {
 			let mut senders = Vec::new();
-			let mut iter = VoidNumberSet::<T>::iter().skip(*sender_index);
+			let mut iter = InsertionOrderedVoidNumbers::<T>::iter().skip(*sender_index);
 			for _ in 0..Self::PULL_MAX_SENDER_UPDATE_SIZE {
 				match iter.next() {
-					Some((sender, _)) => {
+					Some((_, sender)) => {
 						*sender_index += 1;
 						senders.push(sender);
 					}
@@ -696,8 +706,16 @@ where
 		I: IntoIterator<Item = (Self::ValidUtxoAccumulatorOutput, Self::ValidVoidNumber)>,
 	{
 		let _ = super_key;
+		let index = VoidNumberSetSize::<T>::get();
+		let mut i = 0;
 		for (_, void_number) in iter {
-			VoidNumberSet::<T>::insert(encode(&void_number.0), ());
+			let void_number = encode(&void_number.0);
+			VoidNumberSet::<T>::insert(void_number, ());
+			InsertionOrderedVoidNumbers::<T>::insert(index + i, void_number);
+			i += 1;
+		}
+		if i != 0 {
+			VoidNumberSetSize::<T>::set(index + i);
 		}
 	}
 }
