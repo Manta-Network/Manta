@@ -20,7 +20,7 @@ use crate::PullResponse;
 use manta_pay::signer::RawCheckpoint;
 
 sp_api::decl_runtime_apis! {
-	pub trait MantaPayPullRuntimeApi {
+	pub trait PullRuntimeApi {
 		fn pull(checkpoint: RawCheckpoint) -> PullResponse;
 	}
 }

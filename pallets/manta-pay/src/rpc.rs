@@ -16,7 +16,7 @@
 
 //! MantaPay RPC Interfaces
 
-use crate::{runtime::MantaPayPullRuntimeApi, PullResponse};
+use crate::{runtime::PullRuntimeApi, PullResponse};
 use alloc::sync::Arc;
 use core::marker::PhantomData;
 use jsonrpc_core::{Error, ErrorCode, Result};
@@ -59,7 +59,7 @@ impl<B, C> PullApi for Pull<B, C>
 where
 	B: Block,
 	C: 'static + ProvideRuntimeApi<B> + HeaderBackend<B>,
-	C::Api: MantaPayPullRuntimeApi<B>,
+	C::Api: PullRuntimeApi<B>,
 {
 	#[inline]
 	fn pull(&self, checkpoint: Checkpoint) -> Result<PullResponse> {

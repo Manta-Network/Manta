@@ -192,7 +192,7 @@ pub mod pallet {
 	pub(super) type BlockCount = u32;
 	#[pallet::type_value]
 	pub(super) fn StartingBlockCount() -> BlockCount {
-		0u32.into()
+		0u32
 	}
 	#[pallet::storage]
 	pub(super) type BlocksPerCollatorThisSession<T: Config> =
@@ -613,15 +613,13 @@ pub mod pallet {
 			kick_candidates.iter().for_each(|(acc_id,my_blocks_this_session)| {
 				if *my_blocks_this_session < evict_below_blocks {
 					// If our validator is not also a candidate we're invulnerable or already kicked
-					if let Some(_) = candidates.iter().find(|&x|{x.who == *acc_id})
-					{
-						Self::try_remove_candidate(&acc_id)
-							.and_then(|_| {
+					if candidates.iter().any(|x| x.who == *acc_id) {
+						Self::try_remove_candidate(acc_id)
+							.map(|_| {
 								removed_account_ids.push(acc_id.clone());
 								log::info!("Removed collator of account {:?} as it only produced {} blocks this session which is below acceptable threshold of {}", &acc_id, my_blocks_this_session,evict_below_blocks);
-								Ok(())
 							})
-							.unwrap_or_else(|why| -> () {
+							.unwrap_or_else(|why| {
 								log::warn!("Failed to remove candidate due to underperformance {:?}", why);
 								debug_assert!(false, "failed to remove candidate {:?}", why);
 							});

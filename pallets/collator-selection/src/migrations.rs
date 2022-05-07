@@ -23,7 +23,8 @@ use frame_support::{
 	traits::{Get, PalletInfoAccess, StorageVersion},
 	Twox64Concat,
 };
-///  This migrates the pallet from the standard version by parity to our modified storage
+
+/// This migrates the pallet from the standard version by parity to our modified storage.
 impl<T: Config> Pallet<T> {
 	pub fn migrate_v0_to_v1() -> frame_support::weights::Weight {
 		use frame_support::migration::{
@@ -68,7 +69,7 @@ impl<T: Config> Pallet<T> {
 	pub fn pre_migrate_v0_to_v1() -> Result<(), &'static str> {
 		use frame_support::migration::{have_storage_value, storage_key_iter};
 		let chainver = Self::on_chain_storage_version();
-		if !(chainver < 1) {
+		if chainver >= 1 {
 			return Err("Migration to V1 does not apply");
 		}
 		if !have_storage_value(Self::name().as_bytes(), b"KickThreshold", &[]) {
@@ -87,7 +88,7 @@ impl<T: Config> Pallet<T> {
 
 	pub fn post_migrate_v0_to_v1() -> Result<(), &'static str> {
 		use frame_support::migration::{have_storage_value, storage_key_iter};
-		if !(Self::on_chain_storage_version() == 1) {
+		if Self::on_chain_storage_version() != 1 {
 			return Err("storage version not upgraded");
 		}
 		if have_storage_value(Self::name().as_bytes(), b"KickThreshold", &[]) {

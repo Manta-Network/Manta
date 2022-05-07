@@ -130,7 +130,7 @@ benchmarks! {
 		let origin = T::UpdateOrigin::successful_origin();
 	}: {
 		assert_ok!(
-			<CollatorSelection<T>>::set_desired_candidates(origin, max.clone())
+			<CollatorSelection<T>>::set_desired_candidates(origin, max)
 		);
 	}
 	verify {
@@ -142,7 +142,7 @@ benchmarks! {
 		let origin = T::UpdateOrigin::successful_origin();
 	}: {
 		assert_ok!(
-			<CollatorSelection<T>>::set_candidacy_bond(origin, bond.clone())
+			<CollatorSelection<T>>::set_candidacy_bond(origin, bond)
 		);
 	}
 	verify {
@@ -186,7 +186,7 @@ benchmarks! {
 
 		let caller: T::AccountId = whitelisted_caller();
 		let bond: BalanceOf<T> = T::Currency::minimum_balance() * 2u32.into();
-		T::Currency::make_free_balance_be(&caller, bond.clone());
+		T::Currency::make_free_balance_be(&caller, bond);
 
 		<session::Pallet<T>>::set_keys(
 			RawOrigin::Signed(caller.clone()).into(),
@@ -249,7 +249,7 @@ benchmarks! {
 
 		let caller: T::AccountId = whitelisted_caller();
 		let bond: BalanceOf<T> = T::Currency::minimum_balance() * 2u32.into();
-		T::Currency::make_free_balance_be(&caller, bond.clone());
+		T::Currency::make_free_balance_be(&caller, bond);
 
 		<session::Pallet<T>>::set_keys(
 			RawOrigin::Signed(caller.clone()).into(),
