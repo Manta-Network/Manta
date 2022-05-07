@@ -19,6 +19,7 @@
 extern crate alloc;
 
 use super::*;
+use crate::Pallet;
 use core::{ops::Div, time::Duration};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::assert_ok;
@@ -132,7 +133,7 @@ benchmarks! {
 }
 
 impl_benchmark_test_suite!(
-	CalamariVesting,
+	Pallet,
 	crate::mock::ExtBuilder::default()
 		.existential_deposit(1)
 		.build(),
