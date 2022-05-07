@@ -19,8 +19,11 @@
 use alloc::sync::Arc;
 use core::marker::PhantomData;
 
-pub mod common;
-pub mod dolphin;
+mod common;
+mod dolphin;
+
+pub use common::Common;
+pub use dolphin::Dolphin;
 
 /// RPC Extension Type
 pub type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;

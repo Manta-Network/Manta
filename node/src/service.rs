@@ -544,10 +544,11 @@ where
 }
 
 /// Start a calamari/manta parachain node.
-pub async fn start_parachain_node<RuntimeApi, Executor, AuraId: AppKey>(
+pub async fn start_parachain_node<RuntimeApi, Executor, AuraId: AppKey, RPC>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	id: ParaId,
+	rpc: RPC,
 ) -> Result<(TaskManager, Arc<Client<RuntimeApi, Executor>>), Error>
 where
 	RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi, Executor>> + Send + Sync + 'static,
@@ -565,12 +566,18 @@ where
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 	<<AuraId as AppKey>::Pair as Pair>::Signature:
 		TryFrom<Vec<u8>> + std::hash::Hash + sp_runtime::traits::Member + Codec,
+	RPC: Fn(
+		Arc<Client<RuntimeApi, Executor>>,
+		Arc<TransactionPool<RuntimeApi, Executor>>,
+	) -> Box<
+		(dyn sc_service::RpcExtensionBuilder<Output = rpc::RpcExtension> + Send + 'static),
+	>,
 {
 	start_node_impl::<RuntimeApi, Executor, _, _, _>(
 		parachain_config,
 		polkadot_config,
 		id,
-		|client, transaction_pool| Box::new(rpc::Builder::new(client, transaction_pool)),
+		rpc,
 		parachain_build_import_queue::<_, _, AuraId>,
 		|client,
 		 prometheus_registry,

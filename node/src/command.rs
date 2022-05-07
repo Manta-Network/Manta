@@ -17,6 +17,7 @@
 use crate::{
 	chain_specs,
 	cli::{Cli, RelayChainCli, Subcommand},
+	rpc::{self, Builder},
 	service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
 };
 use codec::Encode;
@@ -436,7 +437,10 @@ pub fn run() -> Result<()> {
 						manta_runtime::RuntimeApi,
 						MantaRuntimeExecutor,
 						AuraId,
-					>(config, polkadot_config, id)
+						_,
+					>(config, polkadot_config, id, |c, p| {
+						Box::new(Builder::new(c, p))
+					})
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
@@ -445,7 +449,10 @@ pub fn run() -> Result<()> {
 						calamari_runtime::RuntimeApi,
 						CalamariRuntimeExecutor,
 						AuraId,
-					>(config, polkadot_config, id)
+						_,
+					>(config, polkadot_config, id, |c, p| {
+						Box::new(Builder::new(c, p))
+					})
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
@@ -454,7 +461,10 @@ pub fn run() -> Result<()> {
 						dolphin_runtime::RuntimeApi,
 						DolphinRuntimeExecutor,
 						AuraId,
-					>(config, polkadot_config, id)
+						_,
+					>(config, polkadot_config, id, |c, p| {
+						Box::new(Builder::<_, _, rpc::Dolphin>::new(c, p))
+					})
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
