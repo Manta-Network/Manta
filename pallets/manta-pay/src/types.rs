@@ -19,6 +19,8 @@
 use super::*;
 use manta_util::into_array_unchecked;
 
+pub(crate) const CIPHER_TEXT_LENGTH: usize = 68;
+
 /// Encodes the SCALE encodable `value` into a byte array with the given length `N`.
 #[inline]
 pub(crate) fn encode<T, const N: usize>(value: T) -> [u8; N]
@@ -77,7 +79,7 @@ pub struct EncryptedNote {
 	pub ephemeral_public_key: [u8; 32],
 
 	/// Ciphertext
-	pub ciphertext: [u8; 68],
+	pub ciphertext: [u8; CIPHER_TEXT_LENGTH],
 }
 
 impl Default for EncryptedNote {
@@ -85,7 +87,7 @@ impl Default for EncryptedNote {
 	fn default() -> Self {
 		Self {
 			ephemeral_public_key: [0; 32],
-			ciphertext: [0; 68],
+			ciphertext: [0; CIPHER_TEXT_LENGTH],
 		}
 	}
 }

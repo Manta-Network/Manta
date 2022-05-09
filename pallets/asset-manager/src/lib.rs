@@ -391,6 +391,11 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Set min xcm fee for assets.
+		///
+		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
+		/// * `asset_id`: AssetId to be haven min xcm fee.
+		/// * `min_xcm_fee`: Amount of min_xcm_fee.
 		#[pallet::weight(T::WeightInfo::set_min_xcm_fee())]
 		#[transactional]
 		pub fn set_min_xcm_fee(
