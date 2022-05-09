@@ -4,17 +4,64 @@
 ### Breaking changes
 
 ### Features
-- [\#430](https://github.com/Manta-Network/Manta/pull/419) Add private payment to dolphin runtime.
-- [\#419](https://github.com/Manta-Network/Manta/pull/419) Add asset manager and XCM support.
-- [\#358](https://github.com/Manta-Network/Manta/pull/358) Underperforming collators are automatically removed from the collator set after each session
-- [\#383](https://github.com/Manta-Network/Manta/pull/383) Calamari & Manta support `cargo build --features=fast-runtime`, setting most configurable timers to 2 or 5 minutes (instead of days)
-- [\#436](https://github.com/Manta-Network/Manta/pull/436) Dolphin XCM Integration
-- [\#416](https://github.com/Manta-Network/Manta/pull/416) Automatic Collator removal enabled for Calamari
 
 ### Improvements
-- [\#411](https://github.com/Manta-Network/Manta/pull/411) Add a corner case about increasing/decreasing candidate bond in collator-selection.
 
 ### Bug fixes
+
+## v3.1.5-1
+### Breaking changes
+
+### Features
+
+### Improvements
+- [\#475](https://github.com/Manta-Network/Manta/pull/475) New workflow for comparing runtime metadata before and after runtime upgrade.
+- [\#485](https://github.com/Manta-Network/Manta/pull/485) XCM Fees now accrue to the Treasury instead of AssetManager.
+- [\#509](https://github.com/Manta-Network/Manta/pull/509) OnRuntimeUpgrade hook for AssetManager to properly set initial configurations.
+- [\#510](https://github.com/Manta-Network/Manta/pull/510) Automate publishing of Dolphin release artifacts.
+- [\#513](https://github.com/Manta-Network/Manta/pull/513) Update the release issues template.
+
+### Bug fixes
+
+
+## v3.1.5
+### Breaking changes
+
+### Features
+- [\#484](https://github.com/Manta-Network/Manta/pull/484) Update to [latest MantaPay circuits](https://github.com/Manta-Network/manta-rs/pull/50)
+- [\#436](https://github.com/Manta-Network/Manta/pull/436) Dolphin XCM Integration
+- [\#430](https://github.com/Manta-Network/Manta/pull/430) Add private payment to dolphin runtime.
+- [\#419](https://github.com/Manta-Network/Manta/pull/419) Add asset manager and XCM support.
+- [\#416](https://github.com/Manta-Network/Manta/pull/416) Automatic Collator removal enabled for Calamari
+- [\#383](https://github.com/Manta-Network/Manta/pull/383) Calamari & Manta support `cargo build --features=fast-runtime`, setting most configurable timers to 2 or 5 minutes (instead of days)
+- [\#358](https://github.com/Manta-Network/Manta/pull/358) Underperforming collators are automatically removed from the collator set after each session
+
+### Improvements
+- [\#476](https://github.com/Manta-Network/Manta/pull/476) Set the version of feature resolver as 2.
+- [\#472](https://github.com/Manta-Network/Manta/pull/472) Improve asset manager.
+- [\#457](https://github.com/Manta-Network/Manta/pull/457) Add manual `try-runtime` CI workflow test against Calamari mainnet.
+- [\#455](https://github.com/Manta-Network/Manta/pull/455) Calamari: Integrate new collator eviction.
+- [\#447](https://github.com/Manta-Network/Manta/pull/447) Dolphin parachain testnet genesis.
+- [\#445](https://github.com/Manta-Network/Manta/pull/445) Clean up readme.
+- [\#441](https://github.com/Manta-Network/Manta/pull/441) Dolphin benchmarking workflow.
+- [\#439](https://github.com/Manta-Network/Manta/pull/439) Instructions for DCO.
+- [\#435](https://github.com/Manta-Network/Manta/pull/435) Expose 9945 for checking relaychain's block number on parachain.
+- [\#426](https://github.com/Manta-Network/Manta/pull/426) DCO for community PRs.
+- [\#411](https://github.com/Manta-Network/Manta/pull/411) Add a corner case about increasing/decreasing candidate bond in collator-selection.
+- [\#410](https://github.com/Manta-Network/Manta/pull/410) Add to-do item to update CHANGELOG.md.
+- [\#409](https://github.com/Manta-Network/Manta/pull/409) Update banner.
+- [\#406](https://github.com/Manta-Network/Manta/pull/406) Adjust treasury and preimage pallets' deposits.
+- [\#405](https://github.com/Manta-Network/Manta/pull/405) Migrate to new method of declaring constants.
+- [\#404](https://github.com/Manta-Network/Manta/pull/404) Reduce PreimageMaxSize to 3.5MB.
+- [\#401](https://github.com/Manta-Network/Manta/pull/401) Customize cargo profiles. Add production profile.
+- [\#393](https://github.com/Manta-Network/Manta/pull/393) CI runtime upgrade test and github templates improvements.
+- [\#373](https://github.com/Manta-Network/Manta/pull/373) Expose more ports in dockerfile.
+
+### Bug fixes
+- [\#470](https://github.com/Manta-Network/Manta/pull/470) Fix: move deserialization of manta-pay types into the extrinsic.
+- [\#467](https://github.com/Manta-Network/Manta/pull/467) Fix ssl compilation issue in CI.
+- [\#461](https://github.com/Manta-Network/Manta/pull/461) Fix AssetManager's `update_asset_metadata` to update the underlying assets storage.
+- [\#421](https://github.com/Manta-Network/Manta/pull/421) Fix CI integration test false negatives.
 
 ## v3.1.4-1
 ### Breaking changes
@@ -48,7 +95,7 @@
 
 ### Features
 - [\#311](https://github.com/Manta-Network/Manta/pull/311) Enable LTO for native binary build.
-- [\#312](https://github.com/Manta-Network/Manta/pull/312) Enable collaor-selection.
+- [\#312](https://github.com/Manta-Network/Manta/pull/312) Enable collator-selection.
 - [\#313](https://github.com/Manta-Network/Manta/pull/313) Add treasury to Calamari runtime.
 
 ### Improvements

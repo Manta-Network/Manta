@@ -84,8 +84,8 @@ impl Default for EncryptedNote {
 	#[inline]
 	fn default() -> Self {
 		Self {
-			ciphertext: [0; 68],
 			ephemeral_public_key: [0; 32],
+			ciphertext: [0; 68],
 		}
 	}
 }
@@ -106,8 +106,8 @@ impl TryFrom<EncryptedNote> for config::EncryptedNote {
 	#[inline]
 	fn try_from(encrypted_note: EncryptedNote) -> Result<Self, Self::Error> {
 		Ok(Self {
-			ciphertext: encrypted_note.ciphertext.into(),
 			ephemeral_public_key: decode(encrypted_note.ephemeral_public_key)?,
+			ciphertext: encrypted_note.ciphertext.into(),
 		})
 	}
 }

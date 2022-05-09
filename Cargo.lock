@@ -1165,7 +1165,7 @@ checksum = "c1db59621ec70f09c5e9b597b220c7a2b43611f4710dc03ceb8748637775692c"
 
 [[package]]
 name = "calamari-runtime"
-version = "3.1.4"
+version = "3.1.5"
 dependencies = [
  "calamari-vesting",
  "cumulus-pallet-aura-ext",
@@ -1175,10 +1175,8 @@ dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
- "cumulus-primitives-parachain-inherent",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "cumulus-test-relay-sproof-builder",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1214,12 +1212,11 @@ dependencies = [
  "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
- "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-runtime-common",
- "polkadot-runtime-parachains",
  "reqwest",
+ "runtime-common",
  "scale-info",
  "serde",
  "serde_json",
@@ -1241,12 +1238,11 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
- "xcm-simulator",
 ]
 
 [[package]]
 name = "calamari-vesting"
-version = "3.1.4"
+version = "3.1.5"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -2456,7 +2452,7 @@ dependencies = [
 
 [[package]]
 name = "dolphin-runtime"
-version = "3.1.4"
+version = "3.1.5"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -2507,7 +2503,7 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-runtime-common",
- "polkadot-runtime-parachains",
+ "runtime-common",
  "scale-info",
  "serde",
  "smallvec",
@@ -2528,7 +2524,6 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
- "xcm-simulator",
 ]
 
 [[package]]
@@ -3410,9 +3405,9 @@ dependencies = [
 
 [[package]]
 name = "gloo-timers"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d12a7f4e95cfe710f1d624fb1210b7d961a5fb05c4fd942f4feab06e61f590e"
+checksum = "5fb7d06c1c8cc2a29bee7ec961009a0b2caa0793ee4900c2ffb348734ba1c8f9"
 dependencies = [
  "futures-channel",
  "futures-core",
@@ -5176,7 +5171,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "3.1.4"
+version = "3.1.5"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -5263,7 +5258,7 @@ dependencies = [
 
 [[package]]
 name = "manta-collator-selection"
-version = "3.1.4"
+version = "3.1.5"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5326,7 +5321,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "3.1.4"
+version = "3.1.5"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5348,7 +5343,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "3.1.4"
+version = "3.1.5"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -5388,6 +5383,7 @@ dependencies = [
  "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-runtime-common",
+ "runtime-common",
  "scale-info",
  "serde",
  "smallvec",
@@ -6130,11 +6126,12 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-manager"
-version = "3.1.4"
+version = "3.1.5"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "log",
  "manta-primitives",
  "orml-traits",
  "pallet-assets",
@@ -7011,7 +7008,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "3.1.4"
+version = "3.1.5"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -9242,6 +9239,47 @@ checksum = "ffc936cf8a7ea60c58f030fd36a612a48f440610214dc54bc36431f9ea0c3efb"
 dependencies = [
  "libc",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "runtime-common"
+version = "3.1.5"
+dependencies = [
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
+ "cumulus-primitives-parachain-inherent",
+ "cumulus-test-relay-sproof-builder",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "manta-accounting",
+ "manta-primitives",
+ "orml-traits",
+ "orml-xtokens",
+ "pallet-asset-manager",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-utility",
+ "pallet-xcm",
+ "parachain-info",
+ "parity-scale-codec",
+ "polkadot-core-primitives",
+ "polkadot-parachain",
+ "polkadot-runtime-parachains",
+ "scale-info",
+ "smallvec",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
+ "xcm-simulator",
 ]
 
 [[package]]

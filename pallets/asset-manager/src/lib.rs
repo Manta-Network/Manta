@@ -55,6 +55,7 @@ pub mod pallet {
 	};
 	use orml_traits::GetByKey;
 	use sp_runtime::{traits::AccountIdConversion, ArithmeticError};
+	use xcm::latest::prelude::*;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -427,14 +428,43 @@ pub mod pallet {
 		}
 	}
 
-	impl<T: Config> Contains<<T::AssetConfig as AssetConfig<T>>::AssetLocation> for Pallet<T> {
-		fn contains(location: &<T::AssetConfig as AssetConfig<T>>::AssetLocation) -> bool {
-			LocationAssetId::<T>::contains_key(&location)
+	impl<T: Config> Contains<MultiLocation> for Pallet<T> {
+		fn contains(location: &MultiLocation) -> bool {
+			let MultiLocation { parents, interior } = location;
+
+			match interior {
+				// this branch means sending tokens to relaychain.
+				Junctions::X1(Junction::AccountId32 { .. }) | Junctions::Here => {
+					let _location = MultiLocation::parent();
+					let location =
+						<T::AssetConfig as AssetConfig<T>>::AssetLocation::from(_location);
+					LocationAssetId::<T>::contains_key(location)
+				}
+				// sending tokens to parachain.
+				Junctions::X2(Junction::Parachain(para_id), Junction::AccountId32 { .. }) => {
+					let _location =
+						MultiLocation::new(*parents, Junctions::X1(Junction::Parachain(*para_id)));
+					let location =
+						<T::AssetConfig as AssetConfig<T>>::AssetLocation::from(_location);
+					LocationAssetId::<T>::iter().any(|(_location, _)| _location == location)
+				}
+				Junctions::X3(Junction::Parachain(para_id), ..) => {
+					let _location =
+						MultiLocation::new(*parents, Junctions::X1(Junction::Parachain(*para_id)));
+					let location =
+						<T::AssetConfig as AssetConfig<T>>::AssetLocation::from(_location);
+					LocationAssetId::<T>::iter().any(|(_location, _)| _location == location)
+				}
+				// Currently, we don't support X3, X4, ...
+				_ => false,
+			}
 		}
 	}
 
-	impl<T: Config> GetByKey<<T::AssetConfig as AssetConfig<T>>::AssetLocation, u128> for Pallet<T> {
-		fn get(location: &<T::AssetConfig as AssetConfig<T>>::AssetLocation) -> u128 {
+	impl<T: Config> GetByKey<MultiLocation, u128> for Pallet<T> {
+		fn get(location: &MultiLocation) -> u128 {
+			let location =
+				<T::AssetConfig as AssetConfig<T>>::AssetLocation::from(location.clone());
 			if let Some(asset_id) = LocationAssetId::<T>::get(location) {
 				match MinXcmFee::<T>::get(&asset_id) {
 					Some(min_fee) => min_fee,

@@ -268,7 +268,7 @@ fn filter_asset_location_should_work() {
 		create_asset_metadata("Manta", "MANTA", 18, 1u128, None, false, false);
 	let manta_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
-		X2(Parachain(2015), GeneralKey(b"MANTA".to_vec())),
+		X1(Parachain(2015)),
 	)));
 	new_test_ext().execute_with(|| {
 		// Register relay chain native token
@@ -296,15 +296,16 @@ fn filter_asset_location_should_work() {
 			Some(manta_location.clone())
 		);
 
-		let new_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
-			1,
-			X2(Parachain(1999), GeneralKey(b"UNKNOWN".to_vec())),
-		)));
+		let new_location: Option<MultiLocation> = AssetLocation(VersionedMultiLocation::V1(
+			MultiLocation::new(1, X2(Parachain(1999), GeneralKey(b"UNKNOWN".to_vec()))),
+		))
+		.into();
 
 		// new location should be filtered
-		assert!(!crate::Pallet::<Runtime>::contains(&new_location));
-		assert!(crate::Pallet::<Runtime>::contains(&kusama_location));
-		assert!(crate::Pallet::<Runtime>::contains(&manta_location));
+		assert!(!crate::Pallet::<Runtime>::contains(&new_location.unwrap()));
+		assert!(crate::Pallet::<Runtime>::contains(
+			&Into::<Option<MultiLocation>>::into(kusama_location).unwrap()
+		));
 	})
 }
 
@@ -358,6 +359,11 @@ fn set_min_xcm_fee_should_work() {
 			X2(Parachain(2084), GeneralKey(b"KMA".to_vec())),
 		)));
 
-		assert_eq!(crate::Pallet::<Runtime>::get(&calamari_location), u128::MAX);
+		assert_eq!(
+			crate::Pallet::<Runtime>::get(
+				&Into::<Option<MultiLocation>>::into(calamari_location).unwrap()
+			),
+			u128::MAX
+		);
 	})
 }
