@@ -460,7 +460,7 @@ pub mod pallet {
 						<T::AssetConfig as AssetConfig<T>>::AssetLocation::from(_location);
 					LocationAssetId::<T>::iter().any(|(_location, _)| _location == location)
 				}
-				// Currently, we don't support X3, X4, ...
+				// Currently, we don't support X4, X5...
 				_ => false,
 			}
 		}
