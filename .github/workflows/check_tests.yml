@@ -87,7 +87,6 @@ jobs:
           rustup toolchain install nightly
           rustup default stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
-          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
           rustup update
       -
         name: Run Unit Tests
@@ -98,7 +97,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo test --features=runtime-benchmarks,try-runtime
+          cargo test --release --features=runtime-benchmarks,try-runtime -- --test-threads=2
       -
         name: stop sccache server
         run: sccache --stop-server || true

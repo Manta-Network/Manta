@@ -18,77 +18,38 @@
 //!
 //! MantaPay is a Multi-Asset Shielded Payment protocol.
 //!
-//! _NB_: The design is similar though not the same with MASP (Multi-Asset Shielded Pool).
-//!
 //! ## Overview
 //!
-//! The Assets module provides functionality for asset management of fungible asset classes
-//! with a fixed supply, including:
+//! The Assets module provides functionality for asset management of fungible asset classes with
+//! a fixed supply, including:
 //!
-//! * Private Asset Mint
-//! * Private Asset Transfer
-//! * Private Asset Reclaim
+//! * To Private Asset Conversion (see [`to_private`])
+//! * To Public Asset Conversion (see [`to_public`])
+//! * Private Asset Transfer (see [`private_transfer`]
+//! * Public Asset Transfer (see [`public_transfer`])
 //!
-//! To use it in your runtime, you need to implement the assets [`Config`](./config.Config.html).
+//! To use it in your runtime, you need to implement the assets [`Config`].
 //!
-//! The supported dispatchable functions are documented in the [`Call`](./enum.Call.html) enum.
-//!
-//! ### Terminology
-//!
-//! * **Private asset mint:** The action of converting certain number of `Asset`s into an UTXO
-//!     that holds same number of private assets.
-//! * **Private asset transfer:** The action of transferring certain number of private assets from
-//!     two UTXOs to another two UTXOs.
-//! * **Private asset reclaim:** The action of transferring certain number of private assets from
-//!     two UTXOs to another UTXO, and converting the remaining private assets back to public
-//!     assets.
-//!
-//! The assets system in Manta is designed to make the following possible:
-//!
-//! * Issue a public asset to its creator's account.
-//! * Move public assets between accounts.
-//! * Converting public assets to private assets, and vice versa.
-//! * Move private assets between accounts (in UTXO model).
+//! The supported dispatchable functions are documented in the [`Call`] enum.
 //!
 //! ## Interface
 //!
 //! ### Dispatchable Functions
 //!
-//! * `to_private` - Converting an `amount` of units of fungible asset `id` from the caller
-//!     to a private UTXO. (The caller does not need to be the owner of this UTXO)
-//! * `private_transfer` - Transfer two input UTXOs into two output UTXOs. Require that 1) the input
-//!     UTXOs are already in the ledger and are not spend before 2) the sum of private assets in
-//!     input UTXOs matches that of the output UTXOs. The requirements are guaranteed via ZK proof.
-//! * `to_public` - Transfer two input UTXOs into one output UTXOs, and convert the remaining assets
-//!     to the public assets. Require that 1) the input UTXOs are already in the ledger and are not
-//!     spend before; 2) the sum of private assets in input UTXOs matches that of the output UTXO +
-//!     the reclaimed amount. The requirements are guaranteed via ZK proof.
+//! * [`to_public`]: Converts a public asset into a private one.
+//! * [`to_private`]: Converts a private asset back into a public one.
+//! * [`private_transfer`]: Transfers assets between two private accounts.
+//! * [`public_transfer`]: Transfers assets between two public accounts.
 //!
-//! Please refer to the [`Call`](./enum.Call.html) enum and its associated variants for
-//! documentation on each function.
+//! Please refer to the [`Call`] enum and its associated variants for documentation on each
+//! function.
 //!
-//! Please refer to the [`Module`](./struct.Module.html) struct for details on publicly available
-//! functions.
+//! Please refer to the [`Module`] struct for details on publicly available functions.
 //!
-//! ## Usage
-//!
-//! The following example shows how to use the Assets module in your runtime by exposing public
-//! functions to:
-//!
-//! * Initiate the fungible asset for a token distribution event (airdrop).
-//! * Query the fungible asset holding balance of an account.
-//! * Query the total supply of a fungible asset that has been issued.
-//! * Query the total number of private fungible asset that has been minted and not reclaimed.
-//!
-//! ### Prerequisites
-//!
-//! Import the Assets module and types and derive your runtime's configuration traits from the
-//! Assets module trait.
-//!
-//! ## Related Modules
-//!
-//! * [`System`](../frame_system/index.html)
-//! * [`Support`](../frame_support/index.html)
+//! [`to_private`]: Pallet::to_private
+//! [`to_public`]: Pallet::to_public
+//! [`private_transfer`]: Pallet::private_transfer
+//! [`public_transfer`]: Pallet::public_transfer
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -112,7 +73,7 @@ use manta_crypto::{
 };
 use manta_pay::config;
 use manta_primitives::{
-	assets::{AssetConfig, FungibleLedger, FungibleLedgerConsequence},
+	assets::{AssetConfig, FungibleLedger as _, FungibleLedgerError},
 	types::{AssetId, Balance},
 };
 use manta_util::codec::Decode as _;
@@ -164,6 +125,10 @@ pub mod pallet {
 		type PalletId: Get<PalletId>;
 	}
 
+	/// Fungible Ledger Implementation for [`Config`]
+	pub(crate) type FungibleLedger<T> =
+		<<T as Config>::AssetConfig as AssetConfig<T>>::FungibleLedger;
+
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
@@ -203,10 +168,8 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Convert the asset encoded in `post` to private asset.
-		///
-		/// `origin`: the owner of the public asset. `origin` will pay the gas fee for the conversion as well.
-		/// `post`: encoded asset to be converted.
+		/// Transforms some public assets into private ones using `post`, withdrawing the public
+		/// assets from the `origin` account.
 		#[pallet::weight(T::WeightInfo::to_private())]
 		#[transactional]
 		pub fn to_private(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
@@ -216,6 +179,23 @@ pub mod pallet {
 				config::TransferPost::try_from(post)
 					.map_err(|_| Error::<T>::InvalidSerializedForm)?
 					.post(vec![origin], vec![], &(), &mut ledger)
+					.map_err(Error::<T>::from)?
+					.convert(None),
+			);
+			Ok(().into())
+		}
+
+		/// Transforms some private assets into public ones using `post`, depositing the public
+		/// assets in the `origin` account.
+		#[pallet::weight(T::WeightInfo::to_public())]
+		#[transactional]
+		pub fn to_public(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
+			let origin = ensure_signed(origin)?;
+			let mut ledger = Self::ledger();
+			Self::deposit_event(
+				config::TransferPost::try_from(post)
+					.map_err(|_| Error::<T>::InvalidSerializedForm)?
+					.post(vec![], vec![origin], &(), &mut ledger)
 					.map_err(Error::<T>::from)?
 					.convert(None),
 			);
@@ -246,20 +226,22 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		/// Transforms some private assets into public ones using `post`, sending the public assets
-		/// to the `origin` account.
-		#[pallet::weight(T::WeightInfo::to_public())]
+		/// Transfers public `asset` from `origin` to the `sink` account.
+		#[pallet::weight(T::WeightInfo::public_transfer())]
 		#[transactional]
-		pub fn to_public(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
+		pub fn public_transfer(
+			origin: OriginFor<T>,
+			asset: Asset,
+			sink: T::AccountId,
+		) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			let mut ledger = Self::ledger();
-			Self::deposit_event(
-				config::TransferPost::try_from(post)
-					.map_err(|_| Error::<T>::InvalidSerializedForm)?
-					.post(vec![], vec![origin], &(), &mut ledger)
-					.map_err(Error::<T>::from)?
-					.convert(None),
-			);
+			FungibleLedger::<T>::transfer(asset.id, &origin, &sink, asset.value)
+				.map_err(Error::<T>::from)?;
+			Self::deposit_event(Event::Transfer {
+				asset,
+				source: origin,
+				sink,
+			});
 			Ok(().into())
 		}
 	}
@@ -268,9 +250,21 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Mint Event
+		/// Public Transfer Event
+		Transfer {
+			/// Asset Transferred
+			asset: Asset,
+
+			/// Source Account
+			source: T::AccountId,
+
+			/// Sink Account
+			sink: T::AccountId,
+		},
+
+		/// To Private Event
 		ToPrivate {
-			/// Asset Minted
+			/// Asset Converted
 			asset: Asset,
 
 			/// Source Account
@@ -283,9 +277,9 @@ pub mod pallet {
 			origin: T::AccountId,
 		},
 
-		/// Reclaim Event
+		/// To Public Event
 		ToPublic {
-			/// Asset Reclaimed
+			/// Asset Converted
 			asset: Asset,
 
 			/// Sink Account
@@ -308,7 +302,7 @@ pub mod pallet {
 
 		/// Balance Low
 		///
-		/// Attempted to withdraw from balance which was smaller than the withdrawl amount.
+		/// Attempted to withdraw from balance which was smaller than the withdrawal amount.
 		BalanceLow,
 
 		/// Invalid Serialized Form
@@ -351,11 +345,6 @@ pub mod pallet {
 		/// The submitted proof did not pass validation, or errored during validation.
 		InvalidProof,
 
-		/// Public Balances Update Error
-		///
-		/// An error occured during the update of public balances.
-		LedgerUpdateError,
-
 		/// Invalid Source Account
 		///
 		/// At least one of the source accounts is invalid.
@@ -365,6 +354,44 @@ pub mod pallet {
 		///
 		/// At least one of the sink accounts in invalid.
 		InvalidSinkAccount,
+
+		/// [`InvalidAssetId`](FungibleLedgerError::InvalidAssetId) from [`FungibleLedgerError`]
+		PublicUpdateInvalidAssetId,
+
+		/// [`BelowMinimum`](FungibleLedgerError::BelowMinimum) from [`FungibleLedgerError`]
+		PublicUpdateBelowMinimum,
+
+		/// [`CannotCreate`](FungibleLedgerError::CannotCreate) from [`FungibleLedgerError`]
+		PublicUpdateCannotCreate,
+
+		/// [`UnknownAsset`](FungibleLedgerError::UnknownAsset) from [`FungibleLedgerError`]
+		PublicUpdateUnknownAsset,
+
+		/// [`Overflow`](FungibleLedgerError::Overflow) from [`FungibleLedgerError`]
+		PublicUpdateOverflow,
+
+		/// [`Underflow`](FungibleLedgerError::Underflow) from [`FungibleLedgerError`]
+		PublicUpdateUnderflow,
+
+		/// [`Frozen`](FungibleLedgerError::Frozen) from [`FungibleLedgerError`]
+		PublicUpdateFrozen,
+
+		/// [`ReducedToZero`](FungibleLedgerError::ReducedToZero) from [`FungibleLedgerError`]
+		PublicUpdateReducedToZero,
+
+		/// [`NoFunds`](FungibleLedgerError::NoFunds) from [`FungibleLedgerError`]
+		PublicUpdateNoFunds,
+
+		/// [`WouldDie`](FungibleLedgerError::WouldDie) from [`FungibleLedgerError`]
+		PublicUpdateWouldDie,
+
+		/// [`InvalidTransfer`](FungibleLedgerError::InvalidTransfer) from [`FungibleLedgerError`]
+		PublicUpdateInvalidTransfer,
+
+		/// Internal Ledger Error
+		///
+		/// This is caused by some internal error in the ledger and should never occur.
+		InternalLedgerError,
 	}
 
 	impl<T> From<InvalidSourceAccount<T::AccountId>> for Error<T>
@@ -406,12 +433,35 @@ pub mod pallet {
 		}
 	}
 
-	impl<T, Balance> From<TransferPostError<T::AccountId, Balance>> for Error<T>
+	impl<T> From<FungibleLedgerError> for Error<T>
 	where
 		T: Config,
 	{
 		#[inline]
-		fn from(err: TransferPostError<T::AccountId, Balance>) -> Self {
+		fn from(err: FungibleLedgerError) -> Self {
+			match err {
+				FungibleLedgerError::InvalidAssetId => Self::PublicUpdateInvalidAssetId,
+				FungibleLedgerError::BelowMinimum => Self::PublicUpdateBelowMinimum,
+				FungibleLedgerError::CannotCreate => Self::PublicUpdateCannotCreate,
+				FungibleLedgerError::UnknownAsset => Self::PublicUpdateUnknownAsset,
+				FungibleLedgerError::Overflow => Self::PublicUpdateOverflow,
+				FungibleLedgerError::Underflow => Self::PublicUpdateUnderflow,
+				FungibleLedgerError::Frozen => Self::PublicUpdateFrozen,
+				FungibleLedgerError::ReducedToZero(_) => Self::PublicUpdateReducedToZero,
+				FungibleLedgerError::NoFunds => Self::PublicUpdateNoFunds,
+				FungibleLedgerError::WouldDie => Self::PublicUpdateWouldDie,
+				FungibleLedgerError::InvalidTransfer(_e) => Self::PublicUpdateInvalidTransfer,
+				_ => Self::InternalLedgerError,
+			}
+		}
+	}
+
+	impl<T> From<TransferPostError<T::AccountId, FungibleLedgerError>> for Error<T>
+	where
+		T: Config,
+	{
+		#[inline]
+		fn from(err: TransferPostError<T::AccountId, FungibleLedgerError>) -> Self {
 			match err {
 				TransferPostError::InvalidShape => Self::InvalidShape,
 				TransferPostError::InvalidSourceAccount(err) => err.into(),
@@ -421,7 +471,7 @@ pub mod pallet {
 				TransferPostError::DuplicateSpend => Self::DuplicateSpend,
 				TransferPostError::DuplicateRegister => Self::DuplicateRegister,
 				TransferPostError::InvalidProof => Self::InvalidProof,
-				TransferPostError::UpdateError(_) => Self::LedgerUpdateError,
+				TransferPostError::UpdateError(err) => err.into(),
 			}
 		}
 	}
@@ -444,7 +494,7 @@ pub mod pallet {
 }
 
 /// Preprocessed Event
-pub enum PreprocessedEvent<T>
+enum PreprocessedEvent<T>
 where
 	T: Config,
 {
@@ -477,7 +527,7 @@ where
 	/// Converts a [`PreprocessedEvent`] with into an [`Event`] using the given `origin` for
 	/// [`PreprocessedEvent::PrivateTransfer`].
 	#[inline]
-	pub fn convert(self, origin: Option<T::AccountId>) -> Event<T> {
+	fn convert(self, origin: Option<T::AccountId>) -> Event<T> {
 		match self {
 			Self::ToPrivate { asset, source } => Event::ToPrivate { asset, source },
 			Self::PrivateTransfer => Event::PrivateTransfer {
@@ -490,7 +540,7 @@ where
 }
 
 /// Ledger
-pub struct Ledger<T>(PhantomData<T>)
+struct Ledger<T>(PhantomData<T>)
 where
 	T: Config;
 
@@ -642,7 +692,7 @@ where
 	T: Config,
 {
 	type AccountId = T::AccountId;
-	type UpdateError = FungibleLedgerConsequence;
+	type UpdateError = FungibleLedgerError;
 	type Event = PreprocessedEvent<T>;
 	type ValidSourceAccount = WrapPair<Self::AccountId, asset::AssetValue>;
 	type ValidSinkAccount = WrapPair<Self::AccountId, asset::AssetValue>;
@@ -660,17 +710,13 @@ where
 	{
 		sources
 			.map(move |(account_id, withdraw)| {
-				<T::AssetConfig as AssetConfig<T>>::FungibleLedger::can_withdraw(
-					asset_id.0,
-					&account_id,
-					withdraw.0,
-				)
-				.map(|_| WrapPair(account_id.clone(), withdraw))
-				.map_err(|_| InvalidSourceAccount {
-					account_id,
-					asset_id,
-					withdraw,
-				})
+				FungibleLedger::<T>::can_withdraw(asset_id.0, &account_id, withdraw.0)
+					.map(|_| WrapPair(account_id.clone(), withdraw))
+					.map_err(|_| InvalidSourceAccount {
+						account_id,
+						asset_id,
+						withdraw,
+					})
 			})
 			.collect()
 	}
@@ -688,17 +734,13 @@ where
 		//		 pass the data forward.
 		sinks
 			.map(move |(account_id, deposit)| {
-				<T::AssetConfig as AssetConfig<T>>::FungibleLedger::can_deposit(
-					asset_id.0,
-					&account_id,
-					deposit.0,
-				)
-				.map(|_| WrapPair(account_id.clone(), deposit))
-				.map_err(|_| InvalidSinkAccount {
-					account_id,
-					asset_id,
-					deposit,
-				})
+				FungibleLedger::<T>::can_deposit(asset_id.0, &account_id, deposit.0)
+					.map(|_| WrapPair(account_id.clone(), deposit))
+					.map_err(|_| InvalidSinkAccount {
+						account_id,
+						asset_id,
+						deposit,
+					})
 			})
 			.collect()
 	}
@@ -762,17 +804,17 @@ where
 	) -> Result<(), Self::UpdateError> {
 		let _ = (proof, super_key);
 		for WrapPair(account_id, withdraw) in sources {
-			<T::AssetConfig as AssetConfig<T>>::FungibleLedger::transfer(
+			FungibleLedger::<T>::transfer(
 				asset_id.0,
 				&account_id,
-				&pallet::Pallet::<T>::account_id(),
+				&Pallet::<T>::account_id(),
 				withdraw.0,
 			)?;
 		}
 		for WrapPair(account_id, deposit) in sinks {
-			<T::AssetConfig as AssetConfig<T>>::FungibleLedger::transfer(
+			FungibleLedger::<T>::transfer(
 				asset_id.0,
-				&pallet::Pallet::<T>::account_id(),
+				&Pallet::<T>::account_id(),
 				&account_id,
 				deposit.0,
 			)?;

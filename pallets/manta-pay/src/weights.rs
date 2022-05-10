@@ -36,11 +36,14 @@ pub trait WeightInfo {
 	/// Returns the [`Weight`] of the [`Pallet::to_private`] extrinsic.
 	fn to_private() -> Weight;
 
+	/// Returns the [`Weight`] of the [`Pallet::to_public`] extrinsic.
+	fn to_public() -> Weight;
+
 	/// Returns the [`Weight`] of the [`Pallet::private_transfer`] extrinsic.
 	fn private_transfer() -> Weight;
 
-	/// Returns the [`Weight`] of the [`Pallet::to_public`] extrinsic.
-	fn to_public() -> Weight;
+	/// Returns the [`Weight`] of the [`Pallet::public_transfer`] extrinsic.
+	fn public_transfer() -> Weight;
 }
 
 /// Concrete Weight Functions
@@ -64,6 +67,22 @@ where
 	}
 
 	/// ```text
+	/// Storage: MantaPay UtxoSetOutputs (r:2 w:1)
+	/// Storage: MantaPay VoidNumberSet (r:2 w:2)
+	/// Storage: MantaPay UtxoSet (r:1 w:1)
+	/// Storage: MantaPay VoidNumberSetSize (r:1 w:1)
+	/// Storage: MantaPay ShardTrees (r:1 w:1)
+	/// Storage: MantaPay Balances (r:1 w:1)
+	/// Storage: MantaPay VoidNumberSetInsertionOrder (r:0 w:2)
+	/// Storage: MantaPay Shards (r:0 w:1)
+	/// ```
+	fn to_public() -> Weight {
+		(44_100_000_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(10 as Weight))
+			.saturating_add(T::DbWeight::get().writes(12 as Weight))
+	}
+
+	/// ```text
 	/// Storage: MantaPay UtxoSetOutputs (r:2 w:2)
 	/// Storage: MantaPay VoidNumberSet (r:2 w:2)
 	/// Storage: MantaPay UtxoSet (r:2 w:2)
@@ -78,19 +97,8 @@ where
 			.saturating_add(T::DbWeight::get().writes(13 as Weight))
 	}
 
-	/// ```text
-	/// Storage: MantaPay UtxoSetOutputs (r:2 w:1)
-	/// Storage: MantaPay VoidNumberSet (r:2 w:2)
-	/// Storage: MantaPay UtxoSet (r:1 w:1)
-	/// Storage: MantaPay VoidNumberSetSize (r:1 w:1)
-	/// Storage: MantaPay ShardTrees (r:1 w:1)
-	/// Storage: MantaPay Balances (r:1 w:1)
-	/// Storage: MantaPay VoidNumberSetInsertionOrder (r:0 w:2)
-	/// Storage: MantaPay Shards (r:0 w:1)
-	/// ```
-	fn to_public() -> Weight {
-		(44_100_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(10 as Weight))
-			.saturating_add(T::DbWeight::get().writes(12 as Weight))
+	/// FIXME: PLACEHOLDER WEIGHT
+	fn public_transfer() -> Weight {
+		(100_000_000_000 as Weight)
 	}
 }

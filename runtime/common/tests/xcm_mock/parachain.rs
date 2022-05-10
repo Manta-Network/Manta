@@ -18,7 +18,9 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime,
+	pallet_prelude::DispatchResult,
+	parameter_types,
 	traits::{ConstU32, Everything, Nothing},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 	PalletId,
@@ -33,11 +35,6 @@ use sp_runtime::{
 };
 use sp_std::{convert::TryFrom, prelude::*};
 
-use manta_primitives::{
-	assets::{AssetIdLocationConvert, AssetLocation, ConcreteFungibleLedger},
-	constants::*,
-	xcm::{FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
-};
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain::primitives::{
@@ -53,9 +50,14 @@ use xcm_builder::{
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::Get;
 
-pub use manta_primitives::{
-	assets::{AssetConfig, AssetRegistrar, AssetRegistrarMetadata, AssetStorageMetadata},
+use manta_primitives::{
+	assets::{
+		AssetConfig, AssetIdLocationConvert, AssetLocation, AssetRegistrar, AssetRegistrarMetadata,
+		AssetStorageMetadata, ConcreteFungibleLedger,
+	},
+	constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
 	types::AssetId,
+	xcm::{FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
 };
 pub type AccountId = AccountId32;
 pub type Balance = u128;
@@ -482,9 +484,8 @@ impl pallet_xcm::Config for Runtime {
 	type AdvertisedXcmVersion = XcmVersioner;
 }
 
-pub struct MantaAssetRegistrar;
-use frame_support::pallet_prelude::DispatchResult;
-impl AssetRegistrar<Runtime, MantaAssetConfig> for MantaAssetRegistrar {
+pub struct CalamariAssetRegistrar;
+impl AssetRegistrar<Runtime, CalamariAssetConfig> for CalamariAssetRegistrar {
 	fn create_asset(
 		asset_id: AssetId,
 		min_balance: Balance,
@@ -506,18 +507,6 @@ impl AssetRegistrar<Runtime, MantaAssetConfig> for MantaAssetRegistrar {
 			metadata.symbol,
 			metadata.decimals,
 			metadata.is_frozen,
-		)?;
-
-		Assets::force_asset_status(
-			Origin::root(),
-			asset_id,
-			AssetManager::account_id(),
-			AssetManager::account_id(),
-			AssetManager::account_id(),
-			AssetManager::account_id(),
-			min_balance,
-			is_sufficient,
-			metadata.is_frozen,
 		)
 	}
 
@@ -538,12 +527,12 @@ parameter_types! {
 	pub const NativeAssetId: AssetId = 1;
 	pub const StartNonNativeAssetId: AssetId = 8;
 	pub NativeAssetLocation: AssetLocation = AssetLocation(
-		VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
+		VersionedMultiLocation::V1(SelfReserve::get()));
 	pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
-		name: b"Dolphin".to_vec(),
-		symbol: b"DOL".to_vec(),
-		decimals: 18,
-		min_balance: 1u128,
+		name: b"Calamari".to_vec(),
+		symbol: b"KMA".to_vec(),
+		decimals: CALAMARI_DECIMAL,
+		min_balance: 1,
 		evm_address: None,
 		is_frozen: false,
 		is_sufficient: true,
@@ -552,24 +541,24 @@ parameter_types! {
 }
 
 #[derive(Clone, Eq, PartialEq)]
-pub struct MantaAssetConfig;
+pub struct CalamariAssetConfig;
 
-impl AssetConfig<Runtime> for MantaAssetConfig {
-	type AssetRegistrarMetadata = AssetRegistrarMetadata;
-	type StorageMetadata = AssetStorageMetadata;
-	type AssetLocation = AssetLocation;
-	type AssetRegistrar = MantaAssetRegistrar;
+impl AssetConfig<Runtime> for CalamariAssetConfig {
 	type DummyAssetId = DummyAssetId;
 	type NativeAssetId = NativeAssetId;
 	type StartNonNativeAssetId = StartNonNativeAssetId;
+	type AssetRegistrarMetadata = AssetRegistrarMetadata;
 	type NativeAssetLocation = NativeAssetLocation;
 	type NativeAssetMetadata = NativeAssetMetadata;
-	type FungibleLedger = ConcreteFungibleLedger<Runtime, MantaAssetConfig, Balances, Assets>;
+	type StorageMetadata = AssetStorageMetadata;
+	type AssetLocation = AssetLocation;
+	type AssetRegistrar = CalamariAssetRegistrar;
+	type FungibleLedger = ConcreteFungibleLedger<Runtime, CalamariAssetConfig, Balances, Assets>;
 }
 
 impl pallet_asset_manager::Config for Runtime {
 	type Event = Event;
-	type AssetConfig = MantaAssetConfig;
+	type AssetConfig = CalamariAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
 	type PalletId = AssetManagerPalletId;
 	type WeightInfo = ();

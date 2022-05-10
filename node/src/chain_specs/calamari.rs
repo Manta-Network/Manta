@@ -208,6 +208,7 @@ fn calamari_dev_genesis(
 		},
 		council_membership: Default::default(),
 		technical_membership: Default::default(),
+		asset_manager: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
 		polkadot_xcm: calamari_runtime::PolkadotXcmConfig {

@@ -16,7 +16,7 @@
 
 use crate::{
 	mock::{new_test_ext, MantaAssetConfig, MantaAssetRegistrar, MantaPayPallet, Origin, Test},
-	Error,
+	Error, FungibleLedger,
 };
 use frame_support::{assert_noop, assert_ok};
 use manta_accounting::{
@@ -29,12 +29,12 @@ use manta_crypto::{
 	rand::{CryptoRng, Rand, RngCore, Sample},
 };
 use manta_pay::config::{
-	FullParameters, KeyAgreementScheme, MerkleTreeConfiguration, Mint, MultiProvingContext,
+	FullParameters, MerkleTreeConfiguration, Mint, MultiProvingContext, NoteEncryptionScheme,
 	Parameters, PrivateTransfer, ProvingContext, Reclaim, TransferPost, UtxoAccumulatorModel,
-	UtxoCommitmentScheme, VoidNumberHashFunction,
+	UtxoCommitmentScheme, VoidNumberCommitmentScheme,
 };
 use manta_primitives::{
-	assets::{AssetConfig, AssetRegistrar, AssetRegistrarMetadata, FungibleLedger},
+	assets::{AssetConfig, AssetRegistrar, AssetRegistrarMetadata, FungibleLedger as _},
 	constants::DEFAULT_ASSET_ED,
 };
 use manta_util::codec::{Decode, IoReader};
@@ -90,21 +90,21 @@ fn load_proving_context() -> MultiProvingContext {
 #[inline]
 fn load_parameters() -> Parameters {
 	Parameters {
-		key_agreement: KeyAgreementScheme::decode(
-			manta_sdk::pay::testnet::parameters::KeyAgreement::get()
+		note_encryption_scheme: NoteEncryptionScheme::decode(
+			manta_sdk::pay::testnet::parameters::NoteEncryptionScheme::get()
 				.expect("Checksum did not match."),
 		)
-		.expect("Unable to decode KEY_AGREEMENT parameters."),
+		.expect("Unable to decode NOTE_ENCRYPTION_SCHEME parameters."),
 		utxo_commitment: UtxoCommitmentScheme::decode(
 			manta_sdk::pay::testnet::parameters::UtxoCommitmentScheme::get()
 				.expect("Checksum did not match."),
 		)
 		.expect("Unable to decode UTXO_COMMITMENT_SCHEME parameters."),
-		void_number_hash: VoidNumberHashFunction::decode(
-			manta_sdk::pay::testnet::parameters::VoidNumberHashFunction::get()
+		void_number_commitment: VoidNumberCommitmentScheme::decode(
+			manta_sdk::pay::testnet::parameters::VoidNumberCommitmentScheme::get()
 				.expect("Checksum did not match."),
 		)
-		.expect("Unable to decode VOID_NUMBER_HASH_FUNCTION parameters."),
+		.expect("Unable to decode VOID_NUMBER_COMMITMENT_SCHEME parameters."),
 	}
 }
 
@@ -301,18 +301,12 @@ fn initialize_test(id: AssetId, value: AssetValue) {
 		metadata.into(),
 		true
 	));
-	assert_ok!(
-		<<MantaAssetConfig as AssetConfig<Test>>::FungibleLedger as FungibleLedger<Test>>::mint(
-			id.0, &ALICE, value.0
-		)
-	);
-	assert_ok!(
-		<<MantaAssetConfig as AssetConfig<Test>>::FungibleLedger as FungibleLedger<Test>>::mint(
-			id.0,
-			&MantaPayPallet::account_id(),
-			DEFAULT_ASSET_ED
-		)
-	);
+	assert_ok!(FungibleLedger::<Test>::mint(id.0, &ALICE, value.0));
+	assert_ok!(FungibleLedger::<Test>::mint(
+		id.0,
+		&MantaPayPallet::account_id(),
+		DEFAULT_ASSET_ED
+	));
 }
 
 /// Tests multiple to_private from some total supply.

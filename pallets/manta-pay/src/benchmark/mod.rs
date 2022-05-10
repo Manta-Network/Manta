@@ -75,9 +75,27 @@ benchmarks! {
 		RawOrigin::Signed(caller.clone()),
 		mint_post
 	) verify {
-		assert_last_event::<T, _>(Event::ToPrivate { asset, source: caller });
 		// FIXME: add balance checking
-		// assert_eq!(Balances::<T>::get(caller, asset.id), 1_000_000 - asset.value);
+		assert_last_event::<T, _>(Event::ToPrivate { asset, source: caller });
+	}
+
+	to_public {
+		let caller: T::AccountId = whitelisted_caller();
+		let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+		init_asset::<T>(&caller, 8u32, 1_000_000u128);
+		for coin in RECLAIM_INPUT {
+			Pallet::<T>::to_private(
+				origin.clone(),
+				TransferPost::decode(&mut &**coin).unwrap()
+			).unwrap();
+		}
+		let reclaim_post = TransferPost::decode(&mut &*RECLAIM).unwrap();
+	}: to_public (
+		RawOrigin::Signed(caller.clone()),
+		reclaim_post
+	) verify {
+		// FIXME: add balance checking
+		assert_last_event::<T, _>(Event::ToPublic { asset: Asset::new(8, 10_000), sink: caller });
 	}
 
 	private_transfer {
@@ -85,7 +103,10 @@ benchmarks! {
 		let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
 		init_asset::<T>(&caller, 8u32, 1_000_000u128);
 		for coin in PRIVATE_TRANSFER_INPUT {
-			Pallet::<T>::to_private(origin.clone(), TransferPost::decode(&mut &**coin).unwrap()).unwrap();
+			Pallet::<T>::to_private(
+				origin.clone(),
+				TransferPost::decode(&mut &**coin).unwrap(),
+			).unwrap();
 		}
 		let private_transfer_post = TransferPost::decode(&mut &*PRIVATE_TRANSFER).unwrap();
 	}: private_transfer (
@@ -95,19 +116,19 @@ benchmarks! {
 		assert_last_event::<T, _>(Event::PrivateTransfer { origin: caller });
 	}
 
-	to_public {
+	public_transfer {
 		let caller: T::AccountId = whitelisted_caller();
 		let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
 		init_asset::<T>(&caller, 8u32, 1_000_000u128);
-		for coin in RECLAIM_INPUT {
-			Pallet::<T>::to_private(origin.clone(), TransferPost::decode(&mut &**coin).unwrap()).unwrap();
-		}
-		let reclaim_post = TransferPost::decode(&mut &*RECLAIM).unwrap();
-	}: to_public (
+		let asset = Asset::new(8, 100);
+		let sink = Pallet::<T>::account_id();
+	}: public_transfer (
 		RawOrigin::Signed(caller.clone()),
-		reclaim_post
+		asset,
+		sink.clone()
 	) verify {
-		assert_last_event::<T, _>(Event::ToPublic { asset: Asset::new(8, 10_000), sink: caller });
+		// FIXME: add balance checking
+		assert_last_event::<T, _>(Event::Transfer { asset, source: caller.clone(), sink, });
 	}
 }
 

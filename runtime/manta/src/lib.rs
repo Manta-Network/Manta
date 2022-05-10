@@ -51,10 +51,10 @@ use frame_system::{
 	EnsureRoot,
 };
 use manta_primitives::{
-	constants::time::*,
-	prod_or_fast,
+	constants::{time::*, STAKING_PALLET_ID},
 	types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
+use runtime_common::prod_or_fast;
 use sp_runtime::Perbill;
 
 #[cfg(any(feature = "std", test))]
@@ -112,7 +112,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("manta"),
 	impl_name: create_runtime_str!("manta"),
 	authoring_version: 1,
-	spec_version: 3150,
+	spec_version: 3151,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -178,7 +178,7 @@ impl Contains<Call> for MantaFilter {
 			Call::Timestamp(_) | Call::ParachainSystem(_) | Call::System(_)
 		) {
 			// always allow core call
-			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
+			// pallet-timestamp and parachainSystem could not be filtered because they are used in communication between releychain and parachain.
 			return true;
 		}
 
@@ -552,7 +552,7 @@ impl pallet_aura::Config for Runtime {
 
 parameter_types! {
 	// Pallet account for record rewards and give rewards to collator.
-	pub const PotId: PalletId = PalletId(*b"PotStake");
+	pub const PotId: PalletId = STAKING_PALLET_ID;
 }
 
 parameter_types! {

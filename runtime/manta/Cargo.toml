@@ -76,6 +76,7 @@ pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-featu
 # Self dependencies
 manta-primitives = { path = '../../primitives', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
+runtime-common = { path = '../common', default-features = false }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -146,6 +147,7 @@ std = [
 	'pallet-xcm/std',
 	'pallet-transaction-payment/std',
 	'manta-primitives/std',
+	'runtime-common/std',
 	'parachain-info/std',
 	"cumulus-pallet-aura-ext/std",
 	'cumulus-pallet-parachain-system/std',

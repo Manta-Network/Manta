@@ -19,6 +19,7 @@ sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkad
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16", default-features = false, optional = true }
 xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.16", optional = true }
 manta-primitives = { path = "../../primitives", default-features = false }
+log = { version = "0.4.0", default-features = false }
 
 [dev-dependencies]
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
@@ -37,6 +38,7 @@ std = [
 	"frame-system/std",
 	"sp-std/std",
 	"manta-primitives/std",
+	'log/std',
 ]
 try-runtime = [
 	"frame-support/try-runtime",
