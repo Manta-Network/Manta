@@ -18,6 +18,7 @@ Before we can merge this PR, please make sure that all the following items have 
 checked off. If any of the checklist items are not applicable, please leave them but
 write a little note why.
 
+- [ ] If the pr is for none-code change, please submit this it with the message containing a key word like`[skip ci]`, `[skip actions[`, or `[no ci]`.
 - [ ] Linked to Github issue with discussion and accepted design OR have an explanation in the PR that describes this work.
 - [ ] Wrote unit tests.
 - [ ] Updated relevant documentation in the code.
