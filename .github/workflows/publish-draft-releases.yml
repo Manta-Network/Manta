@@ -10,7 +10,7 @@ on:
     branches: [manta]
     paths:
       - '**.rs'
-      - '**.totml'
+      - '**.toml'
       - '**.yml'
       - '**.lock'
       - '**.py'
@@ -21,7 +21,7 @@ on:
     branches: [manta]
     paths:
       - '**.rs'
-      - '**.totml'
+      - '**.toml'
       - '**.yml'
       - '**.lock'
       - '**.py'
