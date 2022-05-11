@@ -8,8 +8,26 @@ name: Run Tests
 on:
   pull_request:
     branches: [manta]
+    paths:
+      - '**.rs'
+      - '**.totml'
+      - '**.yml'
+      - '**.lock'
+      - '**.py'
+      - '**.rb'
+      - '**.sh'
+      - '**.Dockerfile'
   push:
     branches: [manta]
+    paths:
+      - '**.rs'
+      - '**.totml'
+      - '**.yml'
+      - '**.lock'
+      - '**.py'
+      - '**.rb'
+      - '**.sh'
+      - '**.Dockerfile'
 
 env:
   AWS_REGION: us-east-1

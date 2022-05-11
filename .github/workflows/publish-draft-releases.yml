@@ -8,8 +8,26 @@ name: publish draft releases
 on:
   pull_request:
     branches: [manta]
+    paths:
+      - '**.rs'
+      - '**.totml'
+      - '**.yml'
+      - '**.lock'
+      - '**.py'
+      - '**.rb'
+      - '**.sh'
+      - '**.Dockerfile'
   push:
     branches: [manta]
+    paths:
+      - '**.rs'
+      - '**.totml'
+      - '**.yml'
+      - '**.lock'
+      - '**.py'
+      - '**.rb'
+      - '**.sh'
+      - '**.Dockerfile'
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 
