@@ -37,7 +37,7 @@ about: Perform cross chain transfer tests in order to open HRMP channel with Cal
 
 ## XCM Integration on Rococo
 
-- The next step of the Calamari integration is to integrate with our parachain (Dolphin) on the official Rococo relay chain. As part of this integration, you’ll need to register an HRMP channel with Dolphin. On the Rococo ecosystem we can also test integration with a number of other parachains, as most Kusama chains have also deployed on Rococo.
+- The next step of the Calamari integration is to integrate with our parachain (Dolphin) on the official Rococo relay chain. As part of this integration, you’ll need to register an HRMP channel with Dolphin. On the Rococo ecosystem you can also test integrations with a number of other parachains, as most Kusama chains have also deployed on Rococo.
 
 ### Rococo Ecosystem Data
 
@@ -63,11 +63,11 @@ ts-node calculateSovereignAddress.ts --paraid 2084
 - The result will be:
 ```
 Sovereign Account Address on Relay: 0x7061726124080000000000000000000000000000000000000000000000000000
-Sovereign Account Address on other Parachains (Generic): 0x7369626c24080000000000000000000000000000000000000000000000000000
-Sovereign Account Address on Dolphin: 0x7369626c24080000000000000000000000000000
 ```
 
-- Once you’ve got your `Sovereign Account`’s address, please fund it using the [Rococo faucet](https://wiki.polkadot.network/docs/build-pdk#obtaining-roc). Otherwise you won’t be able to create the HRMP channel as the transaction will fail due to insufficient fees. Let us know if you need additional funds.
+- Once you’ve got your `Sovereign Account`’s address, please fund it using the [Rococo faucet](https://wiki.polkadot.network/docs/build-pdk#obtaining-roc). The sovereign account will be used to execute some transactions  on the relay chain on behalf of your parachain and will need to reserve some funds for those transactions. Specifically funds will be needed for:
+1. `Transact` instruction and encoded inner calls to HRMP pallet to open/accept HRMP channels.
+2. Reserves for the HRMP channels, which are chain specific configurations, and can be checked with `configuration.activeConfig()` - `hrmpSenderDeposit` and `hrmpRecipientDeposit` 
 
 ## Create HRMP Channel with Dolphin
 ### Get the Relay Encoded Call Data to Open HRMP Channel.
@@ -77,13 +77,18 @@ Sovereign Account Address on Dolphin: 0x7369626c24080000000000000000000000000000
 - In PolkadotJS app, switch to the Rococo network and go to Developer -> [Javascript section](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-rpc.polkadot.io#/js). Then run the following code, and replace the demo recipient para id with your own:
 
 ```
-const tx = api.tx.hrmp.hrmpInitOpenChannel(2084, 8, 1024);
+const tx = api.tx.hrmp.hrmpInitOpenChannel(receiverParaId, hrmpChannelMaxCapacity, hrmpChannelMaxMessageSize);
 console.log(tx.toHex());
 ```
 
-- The result will be like:
+- With arguments `2084, 9, 1024` respectively the result will be:
 
-`0x3c040x1700240800000800000000040000`, remove the leading hex `3c04`, and so the encoded result is `0x1700240800000800000000040000`.
+`0x3c041700240800000800000000040000`, remove the leading hex `3c04`, and so the final encoded result is:
+ ```
+ 0x1700240800000800000000040000
+ ```
+
+ **Note:** that `hrmpChannelMaxCapacity` and `hrmpChannelMaxMessageSize` need to be in the range of the relay chain's configuration and can be checked with `configuration.activeConfig()`
 
 ### Send XCM to Relay Chain
 
@@ -91,7 +96,8 @@ console.log(tx.toHex());
     1. Withdraw asset: take funds out of the Sovereign Account of the origin parachain (in the relay chain) to a holding state
     2. Buy execution: buys execution time from the relay chain, to execute the XCM message
     3. Transact: provides the call data to be executed
-    4. Deposit asset (optional): refunds the leftover funds after the execution. If this is not provided, no refunds will be carried out
+    4. Refund surplus: refunds any surplus weight from step 2.
+    5. Deposit asset (optional): refunds the leftover funds after the execution. If this is not provided, no refunds will be carried out
 - Therefore, to build/send this XCM, you need to:
     1. Polkadot.js Apps in your parachain -> extrinsics
     2. Set the following parameters: polkadotXcm -> send
@@ -108,6 +114,10 @@ console.log(tx.toHex());
         5. `DepositAsset: { assets: Wild { Wild: All }, maxAssets: 1, beneficiary: { parents: 0, interior: X1 { X1: AccountId32 { network: Any, id: SovereignAccountonRelay } } } }`
     
     **Note:** The values used above are for reference to be used in this testing environment, do not use these values in production!
+
+	**Note:** to watch out for having enough funds for the `WithdrawAsset` instruction and to reserve in the encoded HRMP calls.
+    
+	**Note:** to ensure the `Transact`'s `requireWeightAtMost` is appropriate for the encoded call, especially if you are batching multiple HRMP extrinsics for example.
     
 - Once this message is sent, the relay chain should execute the content and the request to open the channel with Dolphin
 - **Please let us know once you’ve requested opening the channel because the request needs to be accepted by Dolphin.**
@@ -134,7 +144,10 @@ console.log(tx.toHex());
 
 - The result will be like:
 
-`0x1c04170124080000`, remove the leading hex `1c04`, and the encoded result is `0x170124080000`.
+`0x1c04170124080000`, remove the leading hex `1c04`, and the final encoded result is:
+```
+0x170124080000
+```
 
 ### Send XCM to Relay Chain
 
@@ -154,14 +167,17 @@ Transact { originType: Native, requireWeightAtMost: 1000000000, call: XcmDoubleE
     2. `Asset Name`
     3. `Asset symbol`
     4. `Number of decimals`
-- Please write this information as a comment in this issue.
-- We will confirm once the asset is registered. We will also set an arbitrary UnitsPerSecond, which is the number of tokens charged per second of execution of the XCM message.
+	5. `Min balance`
+	6. `Self sufficient`
+- Please write this information as a comment in this issue and we will confirm once the asset is registered.
 - After the asset is successfully registered, you can try transferring tokens from your parachain to Dolphin.
 - For testing, please also provide your Parachain WS Endpoint so we can connect to it. Lastly, we would need some funds to the following account:
     
     `5CacAW3K4gq3Ufv2dAqUFYWKoqJcQaFu346ahesmt4sua7Xx`
     
 - If you need DOL tokens (the native token for Dolphin) to use your parachain's asset, you can get some from our Discord Bot - We can also provide you with some if you give us your address
+
+- We will also set an arbitrary `UnitsPerSecond` value, which is the number of tokens charged per second of execution of the XCM message. This can be arbitrary on the testnet, but on Calamari we're targeting a $0.1 cost for transfers.
 
 ### Registering Calamari’s Token on your Parachain
 
@@ -175,9 +191,29 @@ Transact { originType: Native, requireWeightAtMost: 1000000000, call: XcmDoubleE
 Name: Dolphin
 Symbol: DOL
 Decimals: 18
+Min Balance: 1
+Self sufficient: true
 ```
 
-- Note: Calamari MultiLocation is different!
+- Note: Calamari MultiLocation ad metadata are different!
+
+## Complete cross chain transfer tests on Dolphin
+
+* The following items must have been completed and fully tested in the Rococo Ecosystem with Dolphin before proceeding with an XCM integration on Calamari (and Manta in the future):
+    1. Bi-directional HRMP channels between Dolphin and your parachain
+    2. Bi-directional asset registration (DOL token and the token of your parachain)
+    3. Both teams must have successfully tested asset transfers through Polkadot.js Apps
+
+* We would advise to test at least the following scenarios:
+	1. Transferring a parachain's native token to another parachain and back.
+	2. Transferring a non-native token from one parachain to another and back.
+
+## Next Steps - Calamari & Manta
+
+Once everything is successful we can plan for:
+* Cross marketing initiatives between our teams.
+* Product integrations if relevant.
+* Governance proposals to open HRMP channels and register assets.
 
 ### Example Polkadot Launch Config
 
@@ -256,12 +292,3 @@ Decimals: 18
 	"finalization": false
 }
 ```
-
-## Next Steps - Calamari & Manta
-
-* The following items must have been completed and fully tested in the Rococo Ecosystem with Dolphin before proceeding with an XCM integration on Calamari (and Manta in the future):
-
-    1. Bi-directional HRMP channels between Dolphin and your parachain
-    2. Bi-directional asset registration (DOL token and the token of your parachain)
-    3. Both teams must have successfully tested asset transfers through Polkadot.js Apps
-* Once everything is successful we can plan governance proposals to open HRMP channels and asset registrations on the Kusama parachains, as well as additional marketing initiatives if relevant.
