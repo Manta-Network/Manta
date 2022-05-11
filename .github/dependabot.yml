@@ -18,4 +18,4 @@ updates:
       - dependency-name: "orml-*"
       - dependency-name: "xcm*"
     schedule:
-      interval: "daily"
+      interval: "weekly"
