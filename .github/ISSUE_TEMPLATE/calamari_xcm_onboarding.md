@@ -115,9 +115,9 @@ console.log(tx.toHex());
     
     **Note:** The values used above are for reference to be used in this testing environment, do not use these values in production!
 
-	**Note:** to watch out for having enough funds for the `WithdrawAsset` instruction and to reserve in the encoded HRMP calls.
-    
-	**Note:** to ensure the `Transact`'s `requireWeightAtMost` is appropriate for the encoded call, especially if you are batching multiple HRMP extrinsics for example.
+    **Note:** Verify you have enough funds to execute the `WithdrawAsset` instruction **and** to reserve the required amount encoded in the HRMP calls.
+
+    **Note:** Ensure the `Transact`'s `requireWeightAtMost` is appropriate for the encoded call, especially if you are batching multiple HRMP extrinsics.
     
 - Once this message is sent, the relay chain should execute the content and the request to open the channel with Dolphin
 - **Please let us know once you’ve requested opening the channel because the request needs to be accepted by Dolphin.**
@@ -195,7 +195,7 @@ Min Balance: 1
 Self sufficient: true
 ```
 
-- Note: Calamari MultiLocation ad metadata are different!
+- Note: Calamari MultiLocation and metadata are different!
 
 ## Complete cross chain transfer tests on Dolphin
 
