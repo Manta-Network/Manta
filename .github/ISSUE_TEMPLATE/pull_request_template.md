@@ -6,8 +6,8 @@ v    If a checkbox is n/a - please still include it but + a little note why
 
 ## Description
 
-<!-- Add a description of the changes that this PR introduces and the files that
-are the most critical to review.
+<!-- Add a description of the changes that this PR introduces and the files that are the most critical to review.
+Please commit refactors and minor intermediate (doc) changes on your PR with the `[no ci]` keyword to skip meaningless runs of the full CI pipeline.
 -->
 
 closes: #XXXX
@@ -18,7 +18,6 @@ Before we can merge this PR, please make sure that all the following items have 
 checked off. If any of the checklist items are not applicable, please leave them but
 write a little note why.
 
-- [ ] If the pr is for none-code change, please submit this it with the message containing a key word like`[skip ci]`, `[skip actions]`, or `[no ci]`.
 - [ ] Linked to Github issue with discussion and accepted design OR have an explanation in the PR that describes this work.
 - [ ] Wrote unit tests.
 - [ ] Updated relevant documentation in the code.
