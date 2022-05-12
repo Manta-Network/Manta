@@ -150,7 +150,7 @@ benchmarks! {
 	}
 
 	set_eviction_baseline {
-		let percentile = 80u8;
+		let percentile = Percent::from_percent(80u8);
 		let origin = T::UpdateOrigin::successful_origin();
 	}: {
 		assert_ok!(
@@ -162,7 +162,7 @@ benchmarks! {
 	}
 
 	set_eviction_tolerance {
-		let percentage = 10u8;
+		let percentage = Percent::from_percent(10u8);
 		let origin = T::UpdateOrigin::successful_origin();
 	}: {
 		assert_ok!(
