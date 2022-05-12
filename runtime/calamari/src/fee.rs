@@ -132,6 +132,7 @@ mod multiplier_tests {
 			.max_total
 			.unwrap() - 10;
 
+		// remark extrinsic is chosen arbitrarily for benchmark as a small, constant size TX.
 		let remark = Call::System(frame_system::Call::<Runtime>::remark_with_event {
 			remark: vec![1, 2, 3],
 		});
