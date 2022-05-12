@@ -7,8 +7,9 @@ about: Perform cross chain transfer tests in order to open HRMP channel with Cal
 # ⛓ Calamari XCM Testing And Onboarding Checklist
 
 ## Process Overview:
+- [ ] Open channel for communication.
 
-- [ ] Test XCM between Calamari and your runtime locally with polkadot-launch.
+- [ ] Test XCM between parachains locally with polkadot-launch.
 
 - [ ] Become a parachain on Rococo.
 
@@ -26,6 +27,12 @@ about: Perform cross chain transfer tests in order to open HRMP channel with Cal
     - Georgi (XCM Eng): @Ghz (Telegram)
     - Shumo (Co-founder, Tech.): @xstec (Telegram)
 
+## Open communication channel
+
+- Ideally we should create a channel for direct messaging between or teams.
+- We can communicate on Discord, Element or Telegram.
+- Please fill out this [form](https://forms.gle/SPitZjuiir6fVkrn8) and someone from our team will contact you to setup the chat room.
+
 ## Local XCM Integration
 
 - As a first step we insist that both teams first run all tests on a local network.
@@ -33,6 +40,7 @@ about: Perform cross chain transfer tests in order to open HRMP channel with Cal
 - Then use polkadot-launch to launch a `calamari-local` or `calamari-dev` network for testing.
 - You will also need to launch a `rococo-local` relay chain using the latest release of Polkadot.
 - Here's a reference polkadot-launch config for [calamari-dev](#Example-Polkadot-Launch-Config).
+- You can add HRMP channels directly in the config.
 - Please let us know if there's a specific branch of your codebase that we should test with.
 
 ## XCM Integration on Rococo
