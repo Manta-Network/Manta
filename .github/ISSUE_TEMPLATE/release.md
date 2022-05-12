@@ -119,9 +119,10 @@ release-time. To initialize a benchmark run for each production runtime
 
 ### Security Audit
 
-Before each release, we should do `Security Audit`
+Before release, run a `Security Audit`
 
 * Go to [Security Audit](https://github.com/Manta-Network/Manta/actions/workflows/audit.yml).
 * Open `Run workflow` drop-down menu.
 * Choose your branch and run the workflow.
-* Finnaly, an audit report will be generated.
+* An audit report will be generated.
+* Address any reported findings before release. If it cannot be fixed, please file an issue.
