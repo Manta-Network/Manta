@@ -18,7 +18,7 @@ log = "0.4.13"
 codec = { package = 'parity-scale-codec', version = '2.3.1' }
 cfg-if = "1.0.0"
 structopt = "0.3.8"
-serde = { version = "1.0.119", features = ["derive"] }
+serde = { version = "1.0.137", features = ["derive"] }
 hex-literal = "0.3.3"
 async-trait = "0.1.42"
 futures = "0.3.14"
