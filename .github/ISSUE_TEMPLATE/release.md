@@ -116,3 +116,13 @@ release-time. To initialize a benchmark run for each production runtime
 * Commit the changes to your branch and push to the remote branch for review.
 * The weights should be (Currently manually) checked to make sure there are no
     big outliers (i.e., twice or half the weight).
+
+### Security Audit
+
+Before release, run a `Security Audit`
+
+* Go to [Security Audit](https://github.com/Manta-Network/Manta/actions/workflows/audit.yml).
+* Open `Run workflow` drop-down menu.
+* Choose your branch and run the workflow.
+* An audit report will be generated.
+* Address any reported findings before release. If it cannot be fixed, please file an issue.
