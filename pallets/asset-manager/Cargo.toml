@@ -8,25 +8,25 @@ license    = 'GPL-3.0'
 repository = 'https://github.com/Manta-Network/Manta/'
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = '3.0.0', default-features = false }
-scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18", default-features = false }
-frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18", default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18", default-features = false }
-frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18", default-features = false, optional = true }
-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
+codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.20", default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.20", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.20", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.20", default-features = false }
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.20", default-features = false, optional = true }
+xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.20" }
 manta-primitives = { path = "../../primitives", default-features = false }
 log = { version = "0.4.0", default-features = false }
 
 # 3rd party dependencies
-orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="7e2f985" }
+orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="8f0a4ee" }
 
 [dev-dependencies]
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
-pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
-pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.20" }
+pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.20" }
+pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.20" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.20" }
 
 [features]
 default = ["std"]
