@@ -1937,7 +1937,7 @@ fn less_than_min_xcm_fee_should_not_work() {
 		None,
 	);
 	// Register relaychain native asset in ParaA
-	let _relay_asset_id_on_b = register_assets_on_parachain::<ParaB>(
+	let relay_asset_id_on_b = register_assets_on_parachain::<ParaB>(
 		&relay_source_location,
 		&relay_asset_metadata,
 		Some(0u128),
@@ -1945,23 +1945,23 @@ fn less_than_min_xcm_fee_should_not_work() {
 	);
 
 	// Initlize some tokens for alice
-	ParaA::execute_with(|| {
+	assert_ok!(ParaA::execute_with(|| {
 		parachain::Assets::mint(
-			parachain::Origin::signed(ALICE.into()),
+			parachain::Origin::signed(parachain::AssetManager::account_id()),
 			b_currency_id_on_a,
 			ALICE.into(),
 			1000,
 		)
-	});
+	}));
 
-	ParaB::execute_with(|| {
+	assert_ok!(ParaB::execute_with(|| {
 		parachain::Assets::mint(
-			parachain::Origin::signed(ALICE.into()),
-			b_currency_id_on_a,
+			parachain::Origin::signed(parachain::AssetManager::account_id()),
+			relay_asset_id_on_b,
 			para_account_id(para_a_id).into(),
 			1000,
 		)
-	});
+	}));
 
 	Relay::execute_with(|| {
 		let _ = pallet_balances::Pallet::<relay_chain::Runtime>::deposit_creating(
