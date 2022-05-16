@@ -80,6 +80,17 @@ xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', default-feat
 xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.20" }
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.20" }
 
+# Frontier/EVM dependencies
+fp-rpc = { git = "https://github.com/Manta-Network/frontier.git", default-features = false, branch = "jamie/v0.9.20" }
+fp-self-contained = { git = "https://github.com/Manta-Network/frontier.git", default-features = false, branch = "jamie/v0.9.20" }
+pallet-base-fee = { git = "https://github.com/Manta-Network/frontier.git", default-features = false, branch = "jamie/v0.9.20" }
+pallet-dynamic-fee = { git = "https://github.com/Manta-Network/frontier.git", default-features = false, branch = "jamie/v0.9.20" }
+pallet-ethereum = { git = "https://github.com/Manta-Network/frontier.git", default-features = false, branch = "jamie/v0.9.20" }
+pallet-evm = { git = "https://github.com/Manta-Network/frontier.git", default-features = false, branch = "jamie/v0.9.20" }
+pallet-evm-precompile-modexp = { git = "https://github.com/Manta-Network/frontier.git", default-features = false, branch = "jamie/v0.9.20" }
+pallet-evm-precompile-sha3fips = { git = "https://github.com/Manta-Network/frontier.git", default-features = false, branch = "jamie/v0.9.20" }
+pallet-evm-precompile-simple = { git = "https://github.com/Manta-Network/frontier.git", default-features = false, branch = "jamie/v0.9.20" }
+
 # Self dependencies
 manta-primitives = { path = '../../primitives', default-features = false }
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
@@ -193,4 +204,12 @@ std = [
 	'pallet-assets/std',
 	'pallet-manta-pay/std',
 	'pallet-asset-manager/std',
+	"fp-rpc/std",
+	"fp-self-contained/std",
+	"pallet-base-fee/std",
+	"pallet-dynamic-fee/std",
+	"pallet-ethereum/std",
+	"pallet-evm/std",
+	"pallet-evm-precompile-simple/std",
+	"pallet-evm-precompile-sha3fips/std",
 ]

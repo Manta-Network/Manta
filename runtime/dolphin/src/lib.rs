@@ -65,6 +65,7 @@ use xcm::latest::prelude::*;
 
 pub mod assets_config;
 pub mod currency;
+pub mod evm;
 pub mod fee;
 pub mod impls;
 pub mod xcm_config;
@@ -697,6 +698,12 @@ construct_runtime!(
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
 		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
 		MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
+
+		// Frontier/EVM
+		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, Origin} = 50,
+		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 51,
+		DynamicFee: pallet_dynamic_fee::{Pallet, Call, Storage, Config, Inherent} = 52,
+		BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event} = 53,
 	}
 );
 
