@@ -142,7 +142,8 @@ mod multiplier_tests {
 		let max_number_of_remarks_per_block = (block_weight / remark_weight) as u128;
 		let per_byte = <Runtime as pallet_transaction_payment::Config>::TransactionByteFee::get();
 		// length fee. this is not adjusted.
-		let len_fee = max_number_of_remarks_per_block * per_byte.saturating_mul(len as u128);
+		let len_fee =
+			max_number_of_remarks_per_block.saturating_mul(per_byte.saturating_mul(len as u128));
 
 		let base_fee = max_number_of_remarks_per_block
 			* <Runtime as pallet_transaction_payment::Config>::WeightToFee::calc(
