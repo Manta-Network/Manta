@@ -897,6 +897,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_tx_pause, TransactionPause);
 			list_benchmark!(list, extra, pallet_assets, Assets);
 			list_benchmark!(list, extra, pallet_asset_manager, AssetManager);
+			list_benchmark!(list, extra, cumulus_pallet_xcmp_queue, XcmpQueue);
 
 			let storage_info = AllPalletsReversedWithSystemFirst::storage_info();
 
@@ -948,6 +949,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_tx_pause, TransactionPause);
 			add_benchmark!(params, batches, pallet_assets, Assets);
 			add_benchmark!(params, batches, pallet_asset_manager, AssetManager);
+			add_benchmark!(params, batches, cumulus_pallet_xcmp_queue, XcmpQueue);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
