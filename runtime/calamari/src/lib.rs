@@ -70,6 +70,7 @@ pub mod assets_config;
 pub mod currency;
 pub mod fee;
 pub mod impls;
+pub mod migrations;
 pub mod xcm_config;
 
 use currency::*;
@@ -738,7 +739,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsReversedWithSystemFirst,
-	(),
+	crate::migrations::sudo::RemoveSudo<Runtime>,
 >;
 
 impl_runtime_apis! {
