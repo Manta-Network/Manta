@@ -45,17 +45,8 @@ jobs:
     steps:
       - name: Setup Nodejs and npm
         uses: actions/setup-node@v2
-        with:
-          node-version: "14"
       - name: Install Yarn
         run: npm install -g yarn
-      - name: Setup Nodejs with yarn caching
-        uses: actions/setup-node@v2
-        with:
-          node-version: "14"
-          cache: yarn
-      - name: Install dependencies
-        run: yarn
       -
         run: |
           wget https://github.com/Manta-Network/Manta/releases/download/v3.1.5/manta
