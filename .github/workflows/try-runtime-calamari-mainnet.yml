@@ -43,6 +43,8 @@ jobs:
           -
             name: calamari
     steps:
+      - name: Install Yarn
+        run: npm install -g yarn
       -
         run: |
           wget https://github.com/Manta-Network/Manta/releases/download/v3.1.5/manta
