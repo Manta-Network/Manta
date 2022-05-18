@@ -82,7 +82,6 @@ jobs:
   stop-node-builder-current:
     needs:
       - start-node-builder
-      - build-node
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
