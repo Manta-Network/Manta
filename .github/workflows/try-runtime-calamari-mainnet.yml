@@ -43,6 +43,10 @@ jobs:
           -
             name: calamari
     steps:
+      - name: Setup Nodejs and npm
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
       - name: Install Yarn
         run: npm install -g yarn
       -
