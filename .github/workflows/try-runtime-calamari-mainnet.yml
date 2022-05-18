@@ -25,7 +25,7 @@ jobs:
 
   run-try-runtime:
     name: try-runtime
-    runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         runtime:
