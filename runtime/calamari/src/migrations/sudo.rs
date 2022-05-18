@@ -24,8 +24,9 @@ use frame_support::{
 pub struct RemoveSudo<T>(PhantomData<T>);
 impl<T: frame_system::Config> OnRuntimeUpgrade for RemoveSudo<T> {
 	fn on_runtime_upgrade() -> Weight {
-		if have_storage_value(b"Sudo", b"", b"") {
-			remove_storage_prefix(b"Sudo", b"", b"");
+		if have_storage_value(b"Sudo", b"Key", b"") {
+			remove_storage_prefix(b"Sudo", b"Key", b"");
+			log::info!(target: "OnRuntimeUpgrade", "✅ Sudo key has been removed.");
 			T::DbWeight::get()
 				.reads(1 as Weight)
 				.saturating_add(T::DbWeight::get().writes(1 as Weight))
@@ -36,10 +37,8 @@ impl<T: frame_system::Config> OnRuntimeUpgrade for RemoveSudo<T> {
 
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<(), &'static str> {
-		if have_storage_value(b"Sudo", b"", b"") {
-			let sudo_key = frame_support::migration::storage_iter::<T::AccountId>(b"Sudo", b"")
-				.collect::<Vec<_>>();
-			log::info!(target, "OnRuntimeUpgrade", "Here's sudo key: ", sudo_key);
+		if have_storage_value(b"Sudo", b"Key", b"") {
+			log::info!(target: "OnRuntimeUpgrade", "✅ Sudo key will be removed soon.");
 			Ok(())
 		} else {
 			Err("Sudo doesn't exist.")
@@ -48,7 +47,7 @@ impl<T: frame_system::Config> OnRuntimeUpgrade for RemoveSudo<T> {
 
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade() -> Result<(), &'static str> {
-		if !have_storage_value(b"Sudo", b"", b"") {
+		if have_storage_value(b"Sudo", b"Key", b"") {
 			Err("Failed to remove sudo module.")
 		} else {
 			Ok(())
