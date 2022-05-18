@@ -23,10 +23,19 @@ env:
 
 jobs:
 
+  build-node:
+    needs:
+      - start-node-builder
+    runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
+    steps:
+      -
+        uses: actions/checkout@v2
+
   run-try-runtime:
     name: try-runtime
     needs:
       - start-node-builder
+      - build-node
     runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
     strategy:
       matrix:
@@ -82,6 +91,7 @@ jobs:
   stop-node-builder-current:
     needs:
       - start-node-builder
+      - build-node
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
