@@ -46,6 +46,7 @@ jobs:
       -
         run: |
           wget https://github.com/Manta-Network/Manta/releases/download/v3.1.5/manta
+          mkdir -p $HOME/.local/bin
           mv manta $HOME/.local/bin/
           chmod +x $HOME/.local/bin/manta
           echo "$HOME/.local/bin" >> $GITHUB_PATH
