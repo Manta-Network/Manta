@@ -48,6 +48,8 @@ jobs:
           aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
+      -
+        uses: actions/checkout@v2
       - name: Download
         run: |
           wget https://github.com/Manta-Network/Manta/releases/download/v3.1.5/manta
@@ -58,7 +60,7 @@ jobs:
           ./manta --chain=$CHAIN -- --chain kusama &
       - name: Prepare output
         run: |
-          VERSION=$(./target/debug/manta --version)
+          VERSION=$(./manta --version)
           echo "Metadata comparison:" >> output.txt
           echo "Date: $(date)" >> output.txt
           echo "Reference: $REF_URL" >> output.txt
