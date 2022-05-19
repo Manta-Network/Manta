@@ -1,0 +1,66 @@
+---
+
+# yamllint disable rule:line-length
+
+# The try-runtime tool expects your local chain's runtime version to match
+# the version of the chain that you're testing against. In this case Calamari mainnet.
+# That's why this CI workflow has a manual trigger.
+name: Try-runtime check against latest Calamari mainnet state
+
+# yamllint disable-line rule:truthy
+on:
+  workflow_dispatch:
+    inputs:
+      prod_url:
+        description: The WebSocket url of the reference node
+        default: wss://ws.calamari.systems:443
+        required: true
+
+env:
+  PROD_URL: ${{github.event.inputs.prod_url}}
+
+jobs:
+
+  run-try-runtime:
+    name: try-runtime
+    runs-on: ubuntu-20.04
+    steps:
+      -
+        uses: actions/checkout@v2
+      -
+        name: init
+        run: |
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup toolchain install nightly
+          rustup default stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          rustup update
+      -
+        name: build
+        run: |
+          source ${HOME}/.cargo/env
+          cargo build --features=try-runtime
+      -
+        name: move bin
+        run: |
+          mkdir -p $HOME/.local/bin
+          mv target/debug/manta $HOME/.local/bin/
+          chmod +x $HOME/.local/bin/manta
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      -
+        uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Dev-Tools
+          path: dev-tools-calamari
+      -
+        name: execute try-runtime
+        run: |
+          cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
+          yarn install
+          yarn
+          latest_hash=$(node get-latest-block-hash --address=$PROD_URL)
+          $HOME/.local/bin/manta try-runtime --chain calamari-dev on-runtime-upgrade live --at $latest_hash --uri $PROD_URL
+
+# yamllint enable rule:line-length
