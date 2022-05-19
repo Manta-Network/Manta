@@ -114,7 +114,7 @@ jobs:
           target/debug/manta --chain=$CHAIN &
       - name: Prepare output
         run: |
-          VERSION=$(./manta --version)
+          VERSION=$(./target/debug/manta --version)
           echo "Metadata comparison:" >> output.txt
           echo "Date: $(date)" >> output.txt
           echo "Reference: $REF_URL" >> output.txt

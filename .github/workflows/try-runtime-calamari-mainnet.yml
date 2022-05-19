@@ -33,7 +33,7 @@ jobs:
         name: build
         run: |
           source ${HOME}/.cargo/env
-          cargo build --profile test --verbose --features=try-runtime
+          cargo build --features=try-runtime
       -
         name: move bin
         run: |
