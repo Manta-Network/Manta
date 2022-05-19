@@ -33,11 +33,7 @@ jobs:
         name: build
         run: |
           source ${HOME}/.cargo/env
-          cargo build --profile debug --verbose --features=try-runtime
-          mkdir -p $HOME/.local/bin
-          mv manta $HOME/.local/bin/
-          chmod +x $HOME/.local/bin/manta
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          cargo build --profile test --verbose --features=try-runtime
       -
         name: move bin
         run: |
