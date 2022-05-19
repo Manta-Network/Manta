@@ -14,7 +14,7 @@ on:
         required: true
       chain:
         description: The name of the chain under test. Calamari, Manta or Dolphin.
-        default: calamari-local
+        default: calamari
         required: true
 
 env:
