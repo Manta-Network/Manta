@@ -11,16 +11,6 @@ name: Execute try-runtime with latest Calamari mainnet state
 on:
   workflow_dispatch:
 
-env:
-  AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
-  AWS_REGION: us-east-1
-  AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
-  AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
-  AWS_INSTANCE_TYPE: c5a.8xlarge
-  AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
-  AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
-
 jobs:
 
   run-try-runtime:
@@ -28,10 +18,27 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       -
+        uses: actions/checkout@v2
+      -
+        name: init
         run: |
-          wget https://github.com/Manta-Network/Manta/releases/download/v3.1.5/manta
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup toolchain install nightly
+          rustup default stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          rustup update
+      -
+        name: build
+        run: |
+          source ${HOME}/.cargo/env
+          cargo build --features=try-runtime
+      -
+        name: move bin
+        run: |
           mkdir -p $HOME/.local/bin
-          mv manta $HOME/.local/bin/
+          mv target/debug/manta $HOME/.local/bin/
           chmod +x $HOME/.local/bin/manta
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       -
@@ -45,8 +52,7 @@ jobs:
           cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
           yarn install
           yarn
-          latest_hash=$(node get-latest-finalized-header-hash --address=wss://ws.calamari.systems:443)
-          echo $latest_hash
+          latest_hash=$(node get-latest-block-hash --address=wss://ws.calamari.systems:443)
           $HOME/.local/bin/manta try-runtime --chain calamari-dev on-runtime-upgrade live --at $latest_hash --uri wss://ws.calamari.systems:443
 
 # yamllint enable rule:line-length
