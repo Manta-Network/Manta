@@ -13,7 +13,7 @@ on:
         default: wss://ws.calamari.systems/
         required: true
       chain:
-        description: The name of the chain under test. Usually, you would pass a local chain
+        description: The name of the chain under test. Calamari, Manta or Dolphin.
         default: calamari-local
         required: true
 
