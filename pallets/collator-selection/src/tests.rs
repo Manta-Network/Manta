@@ -159,7 +159,7 @@ fn set_eviction_baseline() {
 		// can set
 		assert_ok!(CollatorSelection::set_eviction_baseline(
 			Origin::signed(RootAccount::get()),
-			100
+			Percent::from_percent(100)
 		));
 		assert_eq!(
 			CollatorSelection::eviction_baseline(),
@@ -169,7 +169,7 @@ fn set_eviction_baseline() {
 		// saturates to 100
 		assert_ok!(CollatorSelection::set_eviction_baseline(
 			Origin::signed(RootAccount::get()),
-			101
+			Percent::from_percent(101)
 		));
 		assert_eq!(
 			CollatorSelection::eviction_baseline(),
@@ -178,7 +178,7 @@ fn set_eviction_baseline() {
 
 		// rejects bad origin.
 		assert_noop!(
-			CollatorSelection::set_eviction_baseline(Origin::signed(1), 8),
+			CollatorSelection::set_eviction_baseline(Origin::signed(1), Percent::from_percent(8)),
 			BadOrigin
 		);
 	});
@@ -196,7 +196,7 @@ fn set_eviction_tolerance() {
 		// can set
 		assert_ok!(CollatorSelection::set_eviction_tolerance(
 			Origin::signed(RootAccount::get()),
-			5
+			Percent::from_percent(5)
 		));
 		assert_eq!(
 			CollatorSelection::eviction_tolerance(),
@@ -206,7 +206,7 @@ fn set_eviction_tolerance() {
 		// saturates to 100
 		assert_ok!(CollatorSelection::set_eviction_tolerance(
 			Origin::signed(RootAccount::get()),
-			101
+			Percent::from_percent(101)
 		));
 		assert_eq!(
 			CollatorSelection::eviction_tolerance(),
@@ -215,7 +215,7 @@ fn set_eviction_tolerance() {
 
 		// rejects bad origin.
 		assert_noop!(
-			CollatorSelection::set_eviction_tolerance(Origin::signed(1), 8),
+			CollatorSelection::set_eviction_tolerance(Origin::signed(1), Percent::from_percent(8)),
 			BadOrigin
 		);
 	});

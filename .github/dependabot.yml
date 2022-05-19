@@ -1,0 +1,21 @@
+---
+
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    labels: ["Priority: Medium"]
+    # We update upstream manually.
+    ignore:
+      - dependency-name: "substrate-*"
+      - dependency-name: "sc-*"
+      - dependency-name: "sp-*"
+      - dependency-name: "frame-*"
+      - dependency-name: "pallet-*"
+      - dependency-name: "cumulus-*"
+      - dependency-name: "parachain-*"
+      - dependency-name: "manta-*"
+      - dependency-name: "orml-*"
+      - dependency-name: "xcm*"
+    schedule:
+      interval: "weekly"

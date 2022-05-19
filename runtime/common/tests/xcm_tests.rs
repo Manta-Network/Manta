@@ -1921,10 +1921,11 @@ fn less_than_min_xcm_fee_should_not_work() {
 	);
 	// set min xcm fee on ParaA
 	let min_xcm_fee = 40;
+	let fee_amount: u128 = 200;
 	ParaA::execute_with(|| {
 		assert_ok!(AssetManager::set_min_xcm_fee(
 			parachain::Origin::root(),
-			relay_asset_id_on_a,
+			b_currency_id_on_a,
 			min_xcm_fee,
 		));
 	});
@@ -1937,7 +1938,7 @@ fn less_than_min_xcm_fee_should_not_work() {
 		None,
 	);
 	// Register relaychain native asset in ParaA
-	let relay_asset_id_on_b = register_assets_on_parachain::<ParaB>(
+	let _relay_asset_id_on_b = register_assets_on_parachain::<ParaB>(
 		&relay_source_location,
 		&relay_asset_metadata,
 		Some(0u128),
@@ -1953,22 +1954,14 @@ fn less_than_min_xcm_fee_should_not_work() {
 			1000,
 		)
 	}));
-
-	assert_ok!(ParaB::execute_with(|| {
+	assert_ok!(ParaA::execute_with(|| {
 		parachain::Assets::mint(
 			parachain::Origin::signed(parachain::AssetManager::account_id()),
-			relay_asset_id_on_b,
-			para_account_id(para_a_id).into(),
+			relay_asset_id_on_a,
+			ALICE.into(),
 			1000,
 		)
 	}));
-
-	Relay::execute_with(|| {
-		let _ = pallet_balances::Pallet::<relay_chain::Runtime>::deposit_creating(
-			&para_account_id(para_a_id),
-			1_000,
-		);
-	});
 
 	let dest = MultiLocation {
 		parents: 1,
@@ -2001,5 +1994,25 @@ fn less_than_min_xcm_fee_should_not_work() {
 			),
 			orml_xtokens::Error::<parachain::Runtime>::FeeNotEnough
 		);
+	});
+
+	// fee is bigger than min-xcm-fee should work
+	ParaA::execute_with(|| {
+		assert_ok!(parachain::XTokens::transfer_multicurrencies(
+			Some(ALICE).into(),
+			vec![
+				(
+					parachain::CurrencyId::MantaCurrency(b_currency_id_on_a),
+					450
+				),
+				(
+					parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a),
+					fee_amount
+				)
+			],
+			1,
+			Box::new(VersionedMultiLocation::V1(dest.clone())),
+			40,
+		));
 	});
 }

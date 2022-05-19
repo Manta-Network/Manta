@@ -56,8 +56,12 @@ impl WeightToFeePolynomial for WeightToFee {
 
 #[cfg(test)]
 mod multiplier_tests {
-	use crate::{Runtime, RuntimeBlockWeights as BlockWeights, System, TransactionPayment, KMA};
+	use crate::{
+		Call, Runtime, RuntimeBlockWeights as BlockWeights, System, TransactionPayment, KMA,
+	};
+	use codec::Encode;
 	use frame_support::weights::{DispatchClass, Weight, WeightToFeePolynomial};
+	use frame_system::WeightInfo;
 	use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 	use polkadot_runtime_common::{AdjustmentVariable, MinimumMultiplier, TargetBlockFullness};
 	use sp_runtime::{
@@ -106,7 +110,7 @@ mod multiplier_tests {
 	// Consider the daily cost to fully congest our network to be defined as:
 	// `target_daily_congestion_cost_usd = inclusion_fee * blocks_per_day * kma_price`
 	// Where:
-	// `inclusion_fee = fee_adjustment * (weight_to_fee_coeff * (block_weight ^ degree)) + base_fee + length_fee`
+	// `inclusion_fee = fee_adjustment * (weight_to_fee_coeff * (block_weight ^ degree)) + base_fee + (weight_to_fee_coeff * length_fee)`
 	// Where:
 	// `fee_adjustment` and `weight_to_fee_coeff` are configurable in a runtime via `FeeMultiplierUpdate` and `WeightToFee`
 	// `fee_adjustment` is also variable depending on previous block's fullness
@@ -128,9 +132,23 @@ mod multiplier_tests {
 			.max_total
 			.unwrap() - 10;
 
-		let base_fee = <Runtime as pallet_transaction_payment::Config>::WeightToFee::calc(
-			&frame_support::weights::constants::ExtrinsicBaseWeight::get(),
-		);
+		// remark extrinsic is chosen arbitrarily for benchmark as a small, constant size TX.
+		let remark = Call::System(frame_system::Call::<Runtime>::remark_with_event {
+			remark: vec![1, 2, 3],
+		});
+		let len: u32 = remark.clone().encode().len() as u32;
+		let remark_weight: Weight =
+			<Runtime as frame_system::Config>::SystemWeightInfo::remark(len);
+		let max_number_of_remarks_per_block = (block_weight / remark_weight) as u128;
+		let per_byte = <Runtime as pallet_transaction_payment::Config>::TransactionByteFee::get();
+		// length fee. this is not adjusted.
+		let len_fee =
+			max_number_of_remarks_per_block.saturating_mul(per_byte.saturating_mul(len as u128));
+
+		let base_fee = max_number_of_remarks_per_block
+			* <Runtime as pallet_transaction_payment::Config>::WeightToFee::calc(
+				&frame_support::weights::constants::ExtrinsicBaseWeight::get(),
+			);
 
 		run_with_system_weight(block_weight, || {
 			// initial value configured on module
@@ -150,11 +168,12 @@ mod multiplier_tests {
 				let fee = <Runtime as pallet_transaction_payment::Config>::WeightToFee::calc(
 					&block_weight,
 				);
-				// base_fee is not adjusted
-				let adjusted_fee = fee_adjustment.saturating_mul_acc_int(fee) + base_fee;
+
+				// base_fee and len_fee are not adjusted
+				let adjusted_fee = fee_adjustment.saturating_mul_acc_int(fee) + base_fee + len_fee;
 				accumulated_fee += adjusted_fee;
 				println!(
-					"Iteration {}, New fee_adjustment = {:?}. Adjusted Fee: {} KMA, Total Fee: {} KMA, Dollar Vlaue: {}",
+					"Iteration {}, New fee_adjustment = {:?}. Adjusted Fee: {} KMA, Total Fee: {} KMA, Dollar Value: {}",
 					iteration,
 					fee_adjustment,
 					adjusted_fee / KMA,
