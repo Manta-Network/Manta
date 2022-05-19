@@ -6,8 +6,8 @@ v    If a checkbox is n/a - please still include it but + a little note why
 
 ## Description
 
-<!-- Add a description of the changes that this PR introduces and the files that
-are the most critical to review.
+<!-- Add a description of the changes that this PR introduces and the files that are the most critical to review.
+Please commit refactors and minor intermediate (doc) changes on your PR with the `[no ci]` keyword to skip meaningless runs of the full CI pipeline.
 -->
 
 closes: #XXXX
