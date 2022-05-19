@@ -46,7 +46,7 @@ jobs:
           yarn install
           yarn
           latest_hash=$(node get-latest-finalized-header-hash --address=wss://ws.calamari.systems:443)
-          echo latest_hash
+          echo $latest_hash
           $HOME/.local/bin/manta try-runtime --chain calamari-dev on-runtime-upgrade live --at $latest_hash --uri wss://ws.calamari.systems:443
 
 # yamllint enable rule:line-length
