@@ -1152,6 +1152,7 @@ dependencies = [
  "log",
  "manta-collator-selection",
  "manta-primitives",
+ "orml-xcm-support",
  "orml-xtokens",
  "pallet-asset-manager",
  "pallet-assets",

@@ -15,23 +15,25 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-	AssetManager, Assets, Balances, Call, DmpQueue, Event, Origin, ParachainInfo, ParachainSystem,
-	PolkadotXcm, Runtime, Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
+	assets_config::CalamariConcreteFungibleLedger, AssetManager, Assets, Balances, Call, DmpQueue,
+	Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, Treasury, XcmpQueue,
+	MAXIMUM_BLOCK_WEIGHT,
 };
 
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 
-use sp_std::prelude::*;
+use sp_core::crypto::ByteArray;
+use sp_std::{marker::PhantomData, prelude::*, result};
 
 use frame_support::{
 	match_type, parameter_types,
-	traits::{Everything, Nothing},
+	traits::{fungibles, Contains, Everything, Get, Nothing},
 	weights::Weight,
 };
 use frame_system::EnsureRoot;
 use manta_primitives::{
-	assets::{AssetIdLocationConvert, AssetLocation},
+	assets::{AssetIdLocationConvert, AssetLocation, ConcreteFungibleLedger, FungibleLedger},
 	types::{AccountId, AssetId, Balance},
 	xcm::{AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
 };
@@ -43,7 +45,8 @@ pub use sp_runtime::BuildStorage;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 
-use xcm::latest::prelude::*;
+use orml_xcm_support::MultiCurrencyAdapter;
+use xcm::latest::{prelude::*, Result};
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
@@ -52,7 +55,10 @@ use xcm_builder::{
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SovereignSignedViaLocation, TakeWeightCredit,
 };
-use xcm_executor::{traits::JustTry, Config, XcmExecutor};
+use xcm_executor::{
+	traits::{Convert, JustTry, MatchesFungible, MatchesFungibles, TransactAsset},
+	Config, XcmExecutor,
+};
 
 parameter_types! {
 	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
@@ -160,6 +166,88 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	// No teleport tracking.
 	(),
 >;
+
+pub struct MultiAssetAdapter<
+	Currency,
+	CurrencyMatcher,
+	Assets,
+	AssetsMatcher,
+	AccountIdConverter,
+	AccountId,
+	CheckedAccount,
+	CheckAsset,
+	TryConcreteFungibleLEdger,
+>(
+	PhantomData<(
+		Currency,
+		CurrencyMatcher,
+		Assets,
+		AssetsMatcher,
+		AccountIdConverter,
+		AccountId,
+		CheckedAccount,
+		CheckAsset,
+		TryConcreteFungibleLEdger,
+	)>,
+);
+
+impl<
+		CurrencyMatcher: MatchesFungible<Currency::Balance>,
+		AccountIdConverter: Convert<MultiLocation, AccountId>,
+		Currency: frame_support::traits::Currency<AccountId>,
+		AccountId: Clone, // can't get away without it since Currency is generic over it.
+		CheckedAccount: Get<Option<AccountId>>,
+		Assets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId>,
+		AssetsMatcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
+		CheckAsset: Contains<Assets::AssetId>,
+	> TransactAsset
+	for MultiAssetAdapter<
+		Currency,
+		CurrencyMatcher,
+		Assets,
+		AssetsMatcher,
+		AccountIdConverter,
+		AccountId,
+		CheckedAccount,
+		CheckAsset,
+	>
+{
+	fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> Result {
+		let who = AccountIdConverter::convert_ref(location).unwrap();
+		let mut asset_id = AssetId::default();
+		let mut amount = 0;
+		match (
+			CurrencyMatcher::matches_fungible(&asset),
+			AssetsMatcher::matches_fungibles(&asset),
+		) {
+			// native asset
+			(Some(amount), _) => {
+				amount = amount;
+			}
+			// assets asset
+			(Some(_), result::Result::Ok((asset_id, amount))) => {
+				amount = amount;
+				asset_id = asset_id;
+			}
+			// unknown asset
+			_ => (),
+		}
+
+		CalamariConcreteFungibleLedger::deposit(
+			asset_id, // &sp_runtime::AccountId32::new(who.as_slice()),
+			&who, amount,
+		);
+
+		Ok(())
+	}
+
+	fn withdraw_asset(
+		asset: &MultiAsset,
+		location: &MultiLocation,
+	) -> result::Result<xcm_executor::Assets, XcmError> {
+		Ok(xcm_executor::Assets::default())
+	}
+}
 
 match_type! {
 	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
