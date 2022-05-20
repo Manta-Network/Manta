@@ -174,8 +174,6 @@ pub struct MultiAssetAdapter<
 	AssetsMatcher,
 	AccountIdConverter,
 	AccountId,
-	CheckedAccount,
-	CheckAsset,
 >(
 	PhantomData<(
 		Currency,
@@ -184,8 +182,6 @@ pub struct MultiAssetAdapter<
 		AssetsMatcher,
 		AccountIdConverter,
 		AccountId,
-		CheckedAccount,
-		CheckAsset,
 	)>,
 );
 
@@ -194,10 +190,8 @@ impl<
 		AccountIdConverter: Convert<MultiLocation, AccountId>,
 		Currency: frame_support::traits::Currency<AccountId>,
 		AccountId: Clone, // can't get away without it since Currency is generic over it.
-		CheckedAccount: Get<Option<AccountId>>,
 		Assets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId>,
 		AssetsMatcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
-		CheckAsset: Contains<Assets::AssetId>,
 	> TransactAsset
 	for MultiAssetAdapter<
 		Currency,
@@ -206,8 +200,6 @@ impl<
 		AssetsMatcher,
 		AccountIdConverter,
 		AccountId,
-		CheckedAccount,
-		CheckAsset,
 	>
 {
 	fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> Result {
