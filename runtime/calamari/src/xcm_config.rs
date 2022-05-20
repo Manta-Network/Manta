@@ -174,6 +174,8 @@ pub struct MultiAssetAdapter<
 	AssetsMatcher,
 	AccountIdConverter,
 	AccountId,
+	Runtime,
+	FungibleLedgerTraitBound,
 >(
 	PhantomData<(
 		Currency,
@@ -182,6 +184,8 @@ pub struct MultiAssetAdapter<
 		AssetsMatcher,
 		AccountIdConverter,
 		AccountId,
+		Runtime,
+		FungibleLedgerTraitBound,
 	)>,
 );
 
@@ -192,6 +196,8 @@ impl<
 		AccountId: Clone, // can't get away without it since Currency is generic over it.
 		Assets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId>,
 		AssetsMatcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
+		Runtime: frame_system::Config<AccountId = AccountId>,
+		FungibleLedgerTraitBound: FungibleLedger<Runtime>,
 	> TransactAsset
 	for MultiAssetAdapter<
 		Currency,
@@ -200,6 +206,8 @@ impl<
 		AssetsMatcher,
 		AccountIdConverter,
 		AccountId,
+		Runtime,
+		FungibleLedgerTraitBound,
 	>
 {
 	fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> Result {
@@ -211,11 +219,11 @@ impl<
 			AssetsMatcher::matches_fungibles(&asset),
 		) {
 			// native asset
-			(Some(amount), _) => {
+			(Some(mut amount), _) => {
 				amount = amount;
 			}
 			// assets asset
-			(Some(_), result::Result::Ok((asset_id, amount))) => {
+			(Some(_), result::Result::Ok((mut asset_id, mut amount))) => {
 				amount = amount;
 				asset_id = asset_id;
 			}
@@ -223,7 +231,7 @@ impl<
 			_ => (),
 		}
 
-		CalamariConcreteFungibleLedger::deposit(
+		FungibleLedgerTraitBound::deposit(
 			asset_id, // &sp_runtime::AccountId32::new(who.as_slice()),
 			&who, amount,
 		);
