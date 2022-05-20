@@ -160,7 +160,10 @@ parameter_types! {
 
 impl pallet_tx_pause::Config for Runtime {
 	type Event = Event;
-	type UpdateOrigin = EnsureRoot<AccountId>;
+	type UpdateOrigin = EnsureOneOf<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, TechnicalCollective>,
+	>;
 	type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
