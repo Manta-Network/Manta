@@ -16,20 +16,18 @@
 
 use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
-
 use calamari_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
 use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type CalamariChainSpec =
-	sc_service::GenericChainSpec<calamari_runtime::GenesisConfig, Extensions>;
+pub type CalamariChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
-const CALAMARI_PROTOCOL_ID: &str = "calamari"; // for p2p network configuration
-const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
-const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
+pub const CALAMARI_PROTOCOL_ID: &str = "calamari"; // for p2p network configuration
+pub const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
+pub const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
 
 /// The default XCM version to set in genesis config.
-const SAFE_XCM_VERSION: u32 = 2;
+pub const SAFE_XCM_VERSION: u32 = 2;
 
 /// Generate the calamari session keys from individual elements.
 ///
@@ -38,7 +36,7 @@ pub fn calamari_session_keys(keys: AuraId) -> calamari_runtime::opaque::SessionK
 	calamari_runtime::opaque::SessionKeys { aura: keys }
 }
 
-// calamari chain specs
+/// Returns the Calamari chain properties.
 pub fn calamari_properties() -> Properties {
 	let mut p = Properties::new();
 	p.insert("ss58format".into(), constants::CALAMARI_SS58PREFIX.into());
@@ -50,9 +48,8 @@ pub fn calamari_properties() -> Properties {
 	p
 }
 
+/// Returns the Calamari development chain spec.
 pub fn calamari_development_config() -> CalamariChainSpec {
-	let properties = calamari_properties();
-
 	CalamariChainSpec::from_genesis(
 		// Name
 		"Calamari Parachain Development",
@@ -79,7 +76,7 @@ pub fn calamari_development_config() -> CalamariChainSpec {
 		None,
 		Some(CALAMARI_PROTOCOL_ID),
 		None,
-		Some(properties),
+		Some(calamari_properties()),
 		Extensions {
 			relay_chain: KUSAMA_RELAYCHAIN_DEV_NET.into(),
 			para_id: CALAMARI_PARACHAIN_ID,
@@ -87,9 +84,8 @@ pub fn calamari_development_config() -> CalamariChainSpec {
 	)
 }
 
+/// Returns the Calamari local chain spec.
 pub fn calamari_local_config() -> CalamariChainSpec {
-	let properties = calamari_properties();
-
 	CalamariChainSpec::from_genesis(
 		// Name
 		"Calamari Parachain Local",
@@ -140,7 +136,7 @@ pub fn calamari_local_config() -> CalamariChainSpec {
 		None,
 		Some(CALAMARI_PROTOCOL_ID),
 		None,
-		Some(properties),
+		Some(calamari_properties()),
 		Extensions {
 			relay_chain: KUSAMA_RELAYCHAIN_LOCAL_NET.into(),
 			para_id: CALAMARI_PARACHAIN_ID,
@@ -148,12 +144,13 @@ pub fn calamari_local_config() -> CalamariChainSpec {
 	)
 }
 
+/// Returns the Calamari development genesis.
 fn calamari_dev_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
-) -> calamari_runtime::GenesisConfig {
-	calamari_runtime::GenesisConfig {
+) -> GenesisConfig {
+	GenesisConfig {
 		system: calamari_runtime::SystemConfig {
 			code: calamari_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
@@ -217,6 +214,7 @@ fn calamari_dev_genesis(
 	}
 }
 
+/// Returns the Calamari testnet configuration.
 pub fn calamari_testnet_config() -> Result<CalamariChainSpec, String> {
 	let mut spec = CalamariChainSpec::from_json_bytes(
 		&include_bytes!("../../../genesis/calamari-testnet-genesis.json")[..],
@@ -225,14 +223,14 @@ pub fn calamari_testnet_config() -> Result<CalamariChainSpec, String> {
 	Ok(spec)
 }
 
-// Calamari testnet for ci jobs
+/// Returns the Calamari testnet configuration for CI jobs.
 pub fn calamari_testnet_ci_config() -> Result<CalamariChainSpec, String> {
 	CalamariChainSpec::from_json_bytes(
 		&include_bytes!("../../../genesis/calamari-testnet-ci-genesis.json")[..],
 	)
 }
 
-// Calamari mainnet
+/// Returns the Calamari mainnet configuration.
 pub fn calamari_config() -> Result<CalamariChainSpec, String> {
 	CalamariChainSpec::from_json_bytes(
 		&include_bytes!("../../../genesis/calamari-genesis.json")[..],
