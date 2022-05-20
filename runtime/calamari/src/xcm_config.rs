@@ -176,7 +176,6 @@ pub struct MultiAssetAdapter<
 	AccountId,
 	CheckedAccount,
 	CheckAsset,
-	TryConcreteFungibleLEdger,
 >(
 	PhantomData<(
 		Currency,
@@ -187,7 +186,6 @@ pub struct MultiAssetAdapter<
 		AccountId,
 		CheckedAccount,
 		CheckAsset,
-		TryConcreteFungibleLEdger,
 	)>,
 );
 
