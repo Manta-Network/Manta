@@ -21,7 +21,7 @@ use frame_rpc_system::{FullSystem, SystemApi};
 use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
 use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
 use sc_client_api::AuxStore;
-use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
+use sc_rpc::DenyUnsafe;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;

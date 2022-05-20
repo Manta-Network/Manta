@@ -34,7 +34,7 @@ use cumulus_primitives_core::{
 use cumulus_relay_chain_interface::RelayChainInterface;
 use cumulus_relay_chain_local::build_relay_chain_interface;
 use futures::lock::Mutex;
-use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
+use manta_primitives::types::{AccountId, Balance, Hash, Header, Index as Nonce};
 use polkadot_service::NativeExecutionDispatch;
 use sc_client_api::ExecutorProvider;
 use sc_consensus::{
@@ -56,6 +56,8 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Header as HeaderT},
 };
 use substrate_prometheus_endpoint::Registry;
+
+pub use manta_primitives::types::Block;
 
 /// Native Manta Parachain executor instance.
 pub struct MantaRuntimeExecutor;
