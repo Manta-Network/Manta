@@ -33,7 +33,9 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use manta_primitives::{
-	assets::{AssetIdLocationConvert, AssetLocation, ConcreteFungibleLedger, FungibleLedger},
+	assets::{
+		AssetConfig, AssetIdLocationConvert, AssetLocation, ConcreteFungibleLedger, FungibleLedger,
+	},
 	types::{AccountId, AssetId, Balance},
 	xcm::{AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
 };
@@ -176,6 +178,7 @@ pub struct MultiAssetAdapter<
 	AccountId,
 	Runtime,
 	FungibleLedgerTraitBound,
+	AssetConfigBound,
 >(
 	PhantomData<(
 		Currency,
@@ -186,18 +189,20 @@ pub struct MultiAssetAdapter<
 		AccountId,
 		Runtime,
 		FungibleLedgerTraitBound,
+		AssetConfigBound,
 	)>,
 );
 
 impl<
-		CurrencyMatcher: MatchesFungible<Currency::Balance>,
+		CurrencyMatcher: MatchesFungible<Balance>,
 		AccountIdConverter: Convert<MultiLocation, AccountId>,
 		Currency: frame_support::traits::Currency<AccountId>,
 		AccountId: Clone, // can't get away without it since Currency is generic over it.
 		Assets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId>,
-		AssetsMatcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
+		AssetsMatcher: MatchesFungibles<AssetId, Balance>,
 		Runtime: frame_system::Config<AccountId = AccountId>,
 		FungibleLedgerTraitBound: FungibleLedger<Runtime>,
+		AssetConfigBound: AssetConfig<Runtime>,
 	> TransactAsset
 	for MultiAssetAdapter<
 		Currency,
@@ -208,33 +213,26 @@ impl<
 		AccountId,
 		Runtime,
 		FungibleLedgerTraitBound,
+		AssetConfigBound,
 	>
 {
 	fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> Result {
 		let who = AccountIdConverter::convert_ref(location).unwrap();
-		let mut asset_id = AssetId::default();
-		let mut amount = 0;
-		match (
+		// let mut asset_id = AssetId::default();
+		// let mut amount = 0;
+		let (asset_id, amount) = match (
 			CurrencyMatcher::matches_fungible(&asset),
 			AssetsMatcher::matches_fungibles(&asset),
 		) {
 			// native asset
-			(Some(mut amount), _) => {
-				amount = amount;
-			}
+			(Some(amount), _) => (AssetConfigBound::NativeAssetId::get(), amount),
 			// assets asset
-			(Some(_), result::Result::Ok((mut asset_id, mut amount))) => {
-				amount = amount;
-				asset_id = asset_id;
-			}
+			(_, result::Result::Ok((asset_id, amount))) => (u32::from(asset_id), amount),
 			// unknown asset
-			_ => (),
-		}
+			_ => (0, 0),
+		};
 
-		FungibleLedgerTraitBound::deposit(
-			asset_id, // &sp_runtime::AccountId32::new(who.as_slice()),
-			&who, amount,
-		);
+		FungibleLedgerTraitBound::deposit(asset_id, &who, amount);
 
 		Ok(())
 	}
