@@ -174,16 +174,16 @@ pub struct MultiAssetAdapter<
 	NativeMatcher,
 	AccountIdConverter,
 	AssetsMatcher,
-	MultiAssetFungibleLedger,
-	MultiAssetAssetConfig,
+	MultiAdapterFungibleLedger,
+	MultiAdapterAssetConfig,
 >(
 	PhantomData<(
 		Runtime,
 		NativeMatcher,
 		AccountIdConverter,
 		AssetsMatcher,
-		MultiAssetFungibleLedger,
-		MultiAssetAssetConfig,
+		MultiAdapterFungibleLedger,
+		MultiAdapterAssetConfig,
 	)>,
 );
 
@@ -192,16 +192,16 @@ impl<
 		NativeMatcher: MatchesFungible<Balance>,
 		AccountIdConverter: Convert<MultiLocation, Runtime::AccountId>,
 		AssetsMatcher: MatchesFungibles<AssetId, Balance>,
-		MultiAssetFungibleLedger: FungibleLedger<Runtime>,
-		MultiAssetAssetConfig: AssetConfig<Runtime>,
+		MultiAdapterFungibleLedger: FungibleLedger<Runtime>,
+		MultiAdapterAssetConfig: AssetConfig<Runtime>,
 	> TransactAsset
 	for MultiAssetAdapter<
 		Runtime,
 		NativeMatcher,
 		AccountIdConverter,
 		AssetsMatcher,
-		MultiAssetFungibleLedger,
-		MultiAssetAssetConfig,
+		MultiAdapterFungibleLedger,
+		MultiAdapterAssetConfig,
 	>
 {
 	fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> Result {
@@ -214,14 +214,14 @@ impl<
 			AssetsMatcher::matches_fungibles(&asset),
 		) {
 			// native asset
-			(Some(amount), _) => (MultiAssetAssetConfig::NativeAssetId::get(), amount),
+			(Some(amount), _) => (MultiAdapterAssetConfig::NativeAssetId::get(), amount),
 			// assets asset
 			(_, result::Result::Ok((asset_id, amount))) => (asset_id, amount),
 			// unknown asset
 			_ => return Err(xcm::v2::Error::FailedToTransactAsset("Unknown Asset")),
 		};
 
-		MultiAssetFungibleLedger::mint(asset_id, &who, amount)
+		MultiAdapterFungibleLedger::mint(asset_id, &who, amount)
 			.map_err(|_| xcm::v2::Error::FailedToTransactAsset("Failed Mint"))?;
 
 		Ok(())
