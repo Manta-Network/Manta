@@ -170,7 +170,6 @@ pub type FungiblesTransactor = FungiblesAdapter<
 >;
 
 pub struct MultiAssetAdapter<
-	Balance,
 	Runtime,
 	Native,
 	NativeMatcher,
@@ -181,7 +180,6 @@ pub struct MultiAssetAdapter<
 	AssetConfigBound,
 >(
 	PhantomData<(
-		Balance,
 		Runtime,
 		Native,
 		NativeMatcher,
@@ -195,17 +193,14 @@ pub struct MultiAssetAdapter<
 
 impl<
 		Runtime: frame_system::Config,
-		Balance: Clone,
 		Native: frame_support::traits::Currency<Runtime::AccountId>,
 		NativeMatcher: MatchesFungible<Balance>,
 		AccountIdConverter: Convert<MultiLocation, Runtime::AccountId>,
 		Assets: fungibles::Mutate<Runtime::AccountId> + fungibles::Transfer<Runtime::AccountId>,
-		AssetsMatcher: MatchesFungibles<Assets::AssetId, Balance>,
-		FungibleLedgerTraitBound: FungibleLedger<Runtime>,
+		AssetsMatcher: MatchesFungibles<AssetId, Balance>,
 		AssetConfigBound: AssetConfig<Runtime>,
 	> TransactAsset
 	for MultiAssetAdapter<
-		Balance,
 		Runtime,
 		Native,
 		NativeMatcher,
@@ -218,25 +213,21 @@ impl<
 {
 	fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> Result {
 		let who = AccountIdConverter::convert_ref(location).unwrap();
-		// let mut asset_id = AssetId::default();
-		// let mut amount = 0;
+
 		let (asset_id, amount) = match (
 			NativeMatcher::matches_fungible(&asset),
 			AssetsMatcher::matches_fungibles(&asset),
 		) {
 			// native asset
-			(Some(amount), _) => (
-				AssetConfigBound::NativeAssetId::get(),
-				//Assets::AssetId::default(),
-				amount,
-			),
+			(Some(amount), _) => (AssetConfigBound::NativeAssetId::get(), amount),
 			// assets asset
 			(_, result::Result::Ok((asset_id, amount))) => (asset_id, amount),
 			// unknown asset
-			_ => (0, 0),
+			_ => return Err(xcm::v2::Error::FailedToTransactAsset("some error")),
 		};
 
-		FungibleLedgerTraitBound::deposit(asset_id, &who, amount);
+		FungibleLedgerTraitBound::mint(asset_id, &who, amount)
+			.map_err(|e| FungibleLedgerError::InvalidMint(e))?;
 
 		Ok(())
 	}
