@@ -171,20 +171,16 @@ pub type FungiblesTransactor = FungiblesAdapter<
 
 pub struct MultiAssetAdapter<
 	Runtime,
-	Native,
 	NativeMatcher,
 	AccountIdConverter,
-	Assets,
 	AssetsMatcher,
 	FungibleLedgerTraitBound,
 	AssetConfigBound,
 >(
 	PhantomData<(
 		Runtime,
-		Native,
 		NativeMatcher,
 		AccountIdConverter,
-		Assets,
 		AssetsMatcher,
 		FungibleLedgerTraitBound,
 		AssetConfigBound,
@@ -193,45 +189,40 @@ pub struct MultiAssetAdapter<
 
 impl<
 		Runtime: frame_system::Config,
-		Native: frame_support::traits::Currency<Runtime::AccountId>,
 		NativeMatcher: MatchesFungible<Balance>,
 		AccountIdConverter: Convert<MultiLocation, Runtime::AccountId>,
-		Assets: fungibles::Mutate<Runtime::AccountId> + fungibles::Transfer<Runtime::AccountId>,
 		AssetsMatcher: MatchesFungibles<AssetId, Balance>,
 		FungibleLedgerTraitBound: FungibleLedger<Runtime>,
 		AssetConfigBound: AssetConfig<Runtime>,
 	> TransactAsset
 	for MultiAssetAdapter<
 		Runtime,
-		Native,
 		NativeMatcher,
 		AccountIdConverter,
-		Assets,
 		AssetsMatcher,
 		FungibleLedgerTraitBound,
 		AssetConfigBound,
 	>
 {
 	fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> Result {
-		let who = AccountIdConverter::convert_ref(location).unwrap();
+		let who = AccountIdConverter::convert_ref(location).map_err(|_| {
+			xcm::v2::Error::FailedToTransactAsset("Failed Location to AccountId Conversion")
+		})?;
 
 		let (asset_id, amount) = match (
 			NativeMatcher::matches_fungible(&asset),
 			AssetsMatcher::matches_fungibles(&asset),
 		) {
 			// native asset
-			(Some(amount), _) => (
-				AssetConfigBound::NativeAssetId::get(),
-				//Assets::AssetId::default(),
-				amount,
-			),
+			(Some(amount), _) => (AssetConfigBound::NativeAssetId::get(), amount),
 			// assets asset
 			(_, result::Result::Ok((asset_id, amount))) => (asset_id, amount),
 			// unknown asset
-			_ => return Err(xcm::v2::Error::FailedToTransactAsset("some error")),
+			_ => return Err(xcm::v2::Error::FailedToTransactAsset("Unknown Asset")),
 		};
 
-		FungibleLedgerTraitBound::deposit(asset_id, &who, amount);
+		FungibleLedgerTraitBound::mint(asset_id, &who, amount)
+			.map_err(|_| xcm::v2::Error::FailedToTransactAsset("Failed Mint"))?;
 
 		Ok(())
 	}

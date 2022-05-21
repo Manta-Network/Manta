@@ -383,13 +383,6 @@ where
 	) -> Result<(), FungibleLedgerError>;
 
 	/// Performs a transfer from `source` to `destination` of
-	fn deposit(
-		asset_id: AssetId,
-		who: &C::AccountId,
-		amount: Balance,
-	) -> Result<(), FungibleLedgerError>;
-
-	/// Performs a transfer from `source` to `destination` of
 	fn withdraw(
 		asset_id: AssetId,
 		who: &C::AccountId,
@@ -493,23 +486,6 @@ where
 			.map(|_| ())
 		}
 		.map_err(|e| FungibleLedgerError::InvalidTransfer(e))
-	}
-
-	#[inline]
-	fn deposit(
-		asset_id: AssetId,
-		who: &C::AccountId,
-		amount: Balance,
-	) -> Result<(), FungibleLedgerError> {
-		Self::ensure_valid(asset_id)?;
-		Self::can_deposit(asset_id, who, amount)?;
-		if asset_id == A::NativeAssetId::get() {
-			<Native as Currency<C::AccountId>>::deposit_creating(who, amount);
-		} else {
-			<NonNative as Mutate<C::AccountId>>::mint_into(asset_id, who, amount)
-				.map_err(|e| FungibleLedgerError::InvalidMint(e))?;
-		}
-		Ok(())
 	}
 
 	#[inline]
