@@ -198,6 +198,7 @@ impl<
 		AccountIdConverter: Convert<MultiLocation, Runtime::AccountId>,
 		Assets: fungibles::Mutate<Runtime::AccountId> + fungibles::Transfer<Runtime::AccountId>,
 		AssetsMatcher: MatchesFungibles<AssetId, Balance>,
+		FungibleLedgerTraitBound: FungibleLedger<Runtime>,
 		AssetConfigBound: AssetConfig<Runtime>,
 	> TransactAsset
 	for MultiAssetAdapter<
@@ -219,15 +220,18 @@ impl<
 			AssetsMatcher::matches_fungibles(&asset),
 		) {
 			// native asset
-			(Some(amount), _) => (AssetConfigBound::NativeAssetId::get(), amount),
+			(Some(amount), _) => (
+				AssetConfigBound::NativeAssetId::get(),
+				//Assets::AssetId::default(),
+				amount,
+			),
 			// assets asset
 			(_, result::Result::Ok((asset_id, amount))) => (asset_id, amount),
 			// unknown asset
 			_ => return Err(xcm::v2::Error::FailedToTransactAsset("some error")),
 		};
 
-		FungibleLedgerTraitBound::mint(asset_id, &who, amount)
-			.map_err(|e| FungibleLedgerError::InvalidMint(e))?;
+		FungibleLedgerTraitBound::deposit(asset_id, &who, amount);
 
 		Ok(())
 	}
