@@ -15,9 +15,9 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-	assets_config::CalamariConcreteFungibleLedger, AssetManager, Assets, Balances, Call, DmpQueue,
-	Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, Treasury, XcmpQueue,
-	MAXIMUM_BLOCK_WEIGHT,
+	assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},
+	AssetManager, Assets, Balances, Call, DmpQueue, Event, Origin, ParachainInfo, ParachainSystem,
+	PolkadotXcm, Runtime, Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
 
 use codec::{Decode, Encode};
@@ -235,6 +235,21 @@ impl<
 	}
 }
 
+/// Transactor for currency in pallet-assets, i.e. implements `fungibles` trait
+pub type MultiTransactor = MultiAssetAdapter<
+	Runtime,
+	IsNativeConcrete<SelfReserve>,
+	LocationToAccountId,
+	ConvertedConcreteAssetId<
+		AssetId,
+		Balance,
+		AssetIdLocationConvert<AssetLocation, AssetManager>,
+		JustTry,
+	>,
+	CalamariConcreteFungibleLedger,
+	CalamariAssetConfig,
+>;
+
 match_type! {
 	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
@@ -288,7 +303,7 @@ impl Config for XcmExecutorConfig {
 	// Defines how to Withdraw and Deposit instruction work
 	// Under the hood, substrate framework will do pattern matching in macro,
 	// as a result, the order of the following tuple matters.
-	type AssetTransactor = (LocalAssetTransactor, FungiblesTransactor);
+	type AssetTransactor = MultiTransactor;
 	type OriginConverter = XcmOriginToCallOrigin;
 	// Combinations of (Location, Asset) pairs which we trust as reserves.
 	type IsReserve = MultiNativeAsset;
