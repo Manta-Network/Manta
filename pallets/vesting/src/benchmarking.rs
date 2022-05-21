@@ -53,7 +53,7 @@ fn init_setup<
 	let existential_deposit = <T as pallet_balances::Config<I>>::ExistentialDeposit::get();
 	let amount = existential_deposit.saturating_mul(ED_MULTIPLIER.into());
 	let source_caller = T::Lookup::unlookup(caller.clone());
-	let _ = pallet_balances::Pallet::<T, I>::make_free_balance_be(&caller, amount);
+	let _ = pallet_balances::Pallet::<T, I>::make_free_balance_be(caller, amount);
 
 	assert_ok!(pallet_balances::Pallet::<T, I>::set_balance(
 		RawOrigin::Root.into(),
@@ -96,7 +96,7 @@ benchmarks! {
 		init_setup::<T, ()>(&caller);
 		let existential_deposit = <T as pallet_balances::Config<()>>::ExistentialDeposit::get();
 		let unvested = existential_deposit.saturating_mul(ED_MULTIPLIER.div(10u32).into()).saturated_into::<u128>().try_into().ok().unwrap();
-		assert_ok!(crate::Pallet::<T>::vested_transfer(RawOrigin::Signed(caller.clone()).into(), source_recipient, unvested));
+		assert_ok!(crate::Pallet::<T>::vested_transfer(RawOrigin::Signed(caller).into(), source_recipient, unvested));
 		assert!(crate::Pallet::<T>::vesting_balance(&recipient).is_some());
 
 		let now = Duration::from_secs(1660694400)

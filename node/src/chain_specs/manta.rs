@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Manta Chain Spec
+
 use super::*;
 use crate::command::MANTA_PARACHAIN_ID;
 use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
@@ -22,9 +24,16 @@ use manta_runtime::GenesisConfig;
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type MantaChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
-pub const MANTA_PROTOCOL_ID: &str = "manta"; // for p2p network configuration
+/// Manta Protocol ID for p2p Network Configuration
+pub const MANTA_PROTOCOL_ID: &str = "manta";
+
+/// Polkadot Relaychain Local Network
 pub const POLKADOT_RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";
+
+/// Polkadot Relaychain Development Network
 pub const POLKADOT_RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
+
+/// Polkadot Relaychain Main Network
 pub const POLKADOT_RELAYCHAIN_MAIN_NET: &str = "polkadot";
 
 /// The default XCM version to set in genesis config.

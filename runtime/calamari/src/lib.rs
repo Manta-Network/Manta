@@ -18,26 +18,14 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]
+#![allow(clippy::identity_op)]
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
-	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult,
-};
-
-use sp_core::u32_trait::{_1, _2, _3, _4, _5};
-use sp_std::{cmp::Ordering, prelude::*};
-#[cfg(feature = "std")]
-use sp_version::NativeVersion;
-use sp_version::RuntimeVersion;
-
+use currency::*;
+use fee::WeightToFee;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, PrivilegeCmp},
@@ -51,30 +39,40 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
+use impls::DealWithFees;
 use manta_primitives::{
 	constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
 	types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
+use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 use runtime_common::prod_or_fast;
-use sp_runtime::{Perbill, Permill};
+use sp_api::impl_runtime_apis;
+use sp_core::{
+	crypto::KeyTypeId,
+	u32_trait::{_1, _2, _3, _4, _5},
+	OpaqueMetadata,
+};
+use sp_runtime::{
+	create_runtime_str, generic, impl_opaque_keys,
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+	transaction_validity::{TransactionSource, TransactionValidity},
+	ApplyExtrinsicResult, Perbill, Permill,
+};
+use sp_std::{cmp::Ordering, prelude::*};
+use sp_version::RuntimeVersion;
+use xcm::latest::prelude::*;
+
+#[cfg(feature = "std")]
+use sp_version::NativeVersion;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-
-// Polkadot imports
-
-use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
-use xcm::latest::prelude::*;
 
 pub mod assets_config;
 pub mod currency;
 pub mod fee;
 pub mod impls;
 pub mod xcm_config;
-
-use currency::*;
-use fee::WeightToFee;
-use impls::DealWithFees;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -163,96 +161,100 @@ impl pallet_tx_pause::Config for Runtime {
 	type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
-// Don't allow permission-less asset creation.
+/// Don't allow permission-less asset creation.
 pub struct BaseFilter;
+
 impl Contains<Call> for BaseFilter {
 	fn contains(call: &Call) -> bool {
+		// Always allow core call but pallet-timestamp and parachainSystem could not be filtered
+		// because they are used in communication between releychain and parachain.
 		if matches!(
 			call,
 			Call::Timestamp(_) | Call::ParachainSystem(_) | Call::System(_)
 		) {
-			// always allow core call
-			// pallet-timestamp and parachainSystem could not be filtered because
-			// they are used in communication between relaychain and parachain.
 			return true;
 		}
 
+		// No paused call allowed.
 		if pallet_tx_pause::PausedTransactionFilter::<Runtime>::contains(call) {
-			// no paused call
 			return false;
 		}
 
-		match call {
+		// Filter out XCM pallets.
+		matches!(
+			call,
 			| Call::Authorship(_)
 			// Sudo also cannot be filtered because it is used in runtime upgrade.
 			| Call::Sudo(_)
 			| Call::Multisig(_)
-			// For now disallow public proposal workflows, treasury workflows,
-			// as well as external_propose and external_propose_majority.
-			// The following are filtered out:
-			// pallet_democracy::Call::propose(_)
-			// pallet_democracy::Call::second(_, _)
-			// pallet_democracy::Call::cancel_proposal(_)
-			// pallet_democracy::Call::clear_public_proposals()
-			// pallet_democracy::Call::external_propose(_)
-			// pallet_democracy::Call::external_propose_majority(_)
-			| Call::Democracy(pallet_democracy::Call::vote {..}
-								| pallet_democracy::Call::emergency_cancel {..}
-								| pallet_democracy::Call::external_propose_default {..}
-								| pallet_democracy::Call::fast_track  {..}
-								| pallet_democracy::Call::veto_external {..}
-								| pallet_democracy::Call::cancel_referendum {..}
-								| pallet_democracy::Call::cancel_queued {..}
-								| pallet_democracy::Call::delegate {..}
-								| pallet_democracy::Call::undelegate {..}
-								| pallet_democracy::Call::note_preimage {..}
-								| pallet_democracy::Call::note_preimage_operational {..}
-								| pallet_democracy::Call::note_imminent_preimage {..}
-								| pallet_democracy::Call::note_imminent_preimage_operational {..}
-								| pallet_democracy::Call::reap_preimage {..}
-								| pallet_democracy::Call::unlock {..}
-								| pallet_democracy::Call::remove_vote {..}
-								| pallet_democracy::Call::remove_other_vote {..}
-								| pallet_democracy::Call::enact_proposal {..}
-								| pallet_democracy::Call::blacklist {..})
+			// For now disallow public proposal workflows, treasury workflows, as well as
+			// `external_propose` and external_propose_majority. The following are filtered out:
+			| Call::Democracy(
+				| pallet_democracy::Call::blacklist {..}
+				// | pallet_democracy::Call::cancel_proposal(_)
+				| pallet_democracy::Call::cancel_queued {..}
+				| pallet_democracy::Call::cancel_referendum {..}
+				// | pallet_democracy::Call::clear_public_proposals()
+				| pallet_democracy::Call::delegate {..}
+				| pallet_democracy::Call::emergency_cancel {..}
+				| pallet_democracy::Call::enact_proposal {..}
+				// | pallet_democracy::Call::external_propose(_)
+				| pallet_democracy::Call::external_propose_default {..}
+				// | pallet_democracy::Call::external_propose_majority(_)
+				| pallet_democracy::Call::fast_track  {..}
+				| pallet_democracy::Call::note_imminent_preimage {..}
+				| pallet_democracy::Call::note_imminent_preimage_operational {..}
+				| pallet_democracy::Call::note_preimage {..}
+				| pallet_democracy::Call::note_preimage_operational {..}
+				// | pallet_democracy::Call::propose(_)
+				| pallet_democracy::Call::reap_preimage {..}
+				| pallet_democracy::Call::remove_other_vote {..}
+				| pallet_democracy::Call::remove_vote {..}
+				// | pallet_democracy::Call::second(_, _)
+				| pallet_democracy::Call::undelegate {..}
+				| pallet_democracy::Call::unlock {..}
+				| pallet_democracy::Call::veto_external {..}
+				| pallet_democracy::Call::vote {..}
+			)
 			| Call::Council(_)
 			| Call::TechnicalCommittee(_)
 			| Call::CouncilMembership(_)
 			| Call::TechnicalMembership(_)
 			// Treasury calls are filtered while it is accumulating funds.
-			//| Call::Treasury(_)
+			// | Call::Treasury(_)
 			| Call::Scheduler(_)
 			| Call::CalamariVesting(_)
-			| Call::Session(_) // User must be able to set their session key when applying for a collator
+			// User must be able to set their session key when applying for a collator.
+			| Call::Session(_)
+			// Currently, we filter `register_as_candidate` as this call is not yet ready for
+			// community.
 			| Call::CollatorSelection(
-				manta_collator_selection::Call::set_invulnerables{..}
+				| manta_collator_selection::Call::set_invulnerables{..}
 				| manta_collator_selection::Call::set_desired_candidates{..}
 				| manta_collator_selection::Call::set_candidacy_bond{..}
 				| manta_collator_selection::Call::set_eviction_baseline{..}
 				| manta_collator_selection::Call::set_eviction_tolerance{..}
 				| manta_collator_selection::Call::register_candidate{..}
-				// Currently, we filter `register_as_candidate` as this call is not yet ready for community.
 				| manta_collator_selection::Call::remove_collator{..}
 				| manta_collator_selection::Call::leave_intent{..})
 			| Call::Balances(_)
 			| Call::Preimage(_)
-			// Everything except transfer() is filtered out until it is practically needed:
-			// orml_xtokens::Call::transfer_with_fee {..}
-			// orml_xtokens::Call::transfer_multiasset {..}
-			// orml_xtokens::Call::transfer_multiasset_with_fee {..}
-			// orml_xtokens::Call::transfer_multicurrencies  {..}
-			// orml_xtokens::Call::transfer_multiassets {..}
-			| Call::XTokens(orml_xtokens::Call::transfer {..})
-			| Call::Utility(_) => true,
-			| Call::XcmpQueue(_) | Call::PolkadotXcm(_) | Call::DmpQueue(_) // Filter callables from XCM pallets
-			| _ => false
-		}
+			// Everything except `transfer` is filtered out until it is practically needed.
+			| Call::XTokens(
+				// | orml_xtokens::Call::transfer_multiasset {..}
+				// | orml_xtokens::Call::transfer_multiasset_with_fee {..}
+				// | orml_xtokens::Call::transfer_multiassets {..}
+				// | orml_xtokens::Call::transfer_multicurrencies  {..}
+				| orml_xtokens::Call::transfer {..}
+				// | orml_xtokens::Call::transfer_with_fee {..}
+			)
+			| Call::Utility(_),
+		)
 	}
 }
 
-// Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
-	type BaseCallFilter = BaseFilter; // Let filter activate.
+	type BaseCallFilter = BaseFilter;
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;
 	type AccountId = AccountId;
@@ -900,7 +902,7 @@ impl_runtime_apis! {
 
 			let storage_info = AllPalletsReversedWithSystemFirst::storage_info();
 
-			return (list, storage_info)
+			(list, storage_info)
 		}
 
 		fn dispatch_benchmark(

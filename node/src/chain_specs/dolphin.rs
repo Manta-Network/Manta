@@ -14,22 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Dolphin Chain Spec
+
 use super::*;
 use crate::command::DOLPHIN_PARACHAIN_ID;
-use dolphin_runtime::{
-	AssetManagerConfig, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
-};
+use dolphin_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
 use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type DolphinChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
-pub const DOLPHIN_PROTOCOL_ID: &str = "dolphin"; // for p2p network configuration
+/// Dolphin Protocol ID for p2p Network Configuration
+pub const DOLPHIN_PROTOCOL_ID: &str = "dolphin";
+
+/// Kusama Relaychain Local Network
 pub const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
+
+/// Kusama Relaychain Development Network
 pub const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
 
 /// The default XCM version to set in genesis config.
-const SAFE_XCM_VERSION: u32 = 2;
+pub const SAFE_XCM_VERSION: u32 = 2;
 
 /// Generate the dolphin session keys from individual elements.
 ///

@@ -18,25 +18,14 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]
+#![allow(clippy::identity_op)]
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
-	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult,
-};
-
-use sp_std::prelude::*;
-#[cfg(feature = "std")]
-use sp_version::NativeVersion;
-use sp_version::RuntimeVersion;
-
+use currency::*;
+use fee::WeightToFee;
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
 	traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, Everything, Nothing},
@@ -50,20 +39,25 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
+use impls::DealWithFees;
 use manta_primitives::{
 	constants::{time::*, STAKING_PALLET_ID},
 	types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
-use runtime_common::prod_or_fast;
-use sp_runtime::Perbill;
-
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-
-// Polkadot imports
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
+use runtime_common::prod_or_fast;
+use sp_api::impl_runtime_apis;
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_runtime::{
+	create_runtime_str, generic, impl_opaque_keys,
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+	transaction_validity::{TransactionSource, TransactionValidity},
+	ApplyExtrinsicResult, Perbill,
+};
+use sp_std::prelude::*;
+use sp_version::RuntimeVersion;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -74,13 +68,15 @@ use xcm_builder::{
 };
 use xcm_executor::{Config, XcmExecutor};
 
+#[cfg(feature = "std")]
+use sp_version::NativeVersion;
+
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
+
 pub mod currency;
 pub mod fee;
 pub mod impls;
-
-use currency::*;
-use fee::WeightToFee;
-use impls::DealWithFees;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -169,38 +165,40 @@ impl pallet_tx_pause::Config for Runtime {
 	type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
-// Don't allow permission-less asset creation.
+/// Don't allow permission-less asset creation.
 pub struct MantaFilter;
+
 impl Contains<Call> for MantaFilter {
 	fn contains(call: &Call) -> bool {
+		// Always allow core call but pallet-timestamp and parachainSystem could not be filtered
+		// because they are used in communication between releychain and parachain.
 		if matches!(
 			call,
-			Call::Timestamp(_) | Call::ParachainSystem(_) | Call::System(_)
+			Call::ParachainSystem(_) | Call::System(_) | Call::Timestamp(_)
 		) {
-			// always allow core call
-			// pallet-timestamp and parachainSystem could not be filtered because they are used in communication between releychain and parachain.
 			return true;
 		}
 
+		// No paused call allowed.
 		if pallet_tx_pause::PausedTransactionFilter::<Runtime>::contains(call) {
-			// no paused call
 			return false;
 		}
 
-		match call {
-			Call::Authorship(_) | Call::Sudo(_) | Call::Multisig(_) | Call::Balances(_) => true,
-			// Sudo also cannot be filtered because it is used in runtime upgrade.
-			_ => false,
-			// Filter Utility to prevent users from setting keys and selecting collator for parachain (couldn't use now).
-			// Filter Session and CollatorSelection to prevent users from utility operation.
-			// Filter XCM pallet.
-		}
+		// The following filtering rules are used:
+		//   - Sudo also cannot be filtered because it is used in runtime upgrade.
+		//	 - Filter Utility to prevent users from setting keys and selecting collator for
+		//	   parachain (couldn't use now).
+		//	 - Filter Session and CollatorSelection to prevent users from utility operation.
+		//	 - Filter XCM pallet.
+		matches!(
+			call,
+			Call::Authorship(_) | Call::Balances(_) | Call::Multisig(_) | Call::Sudo(_)
+		)
 	}
 }
 
-// Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
-	type BaseCallFilter = MantaFilter; // Customized Filter for Manta
+	type BaseCallFilter = MantaFilter;
 	type BlockWeights = RuntimeBlockWeights;
 	type BlockLength = RuntimeBlockLength;
 	type AccountId = AccountId;
@@ -795,23 +793,20 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_session, SessionBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_utility, Utility);
 			list_benchmark!(list, extra, pallet_multisig, Multisig);
-
 			list_benchmark!(list, extra, pallet_tx_pause, TransactionPause);
 
 			let storage_info = AllPalletsReversedWithSystemFirst::storage_info();
-
-			return (list, storage_info)
+			(list, storage_info)
 		}
 
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
 			use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
-
 			use frame_system_benchmarking::Pallet as SystemBench;
-			impl frame_system_benchmarking::Config for Runtime {}
-
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
+
+			impl frame_system_benchmarking::Config for Runtime {}
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
 			let whitelist: Vec<TrackedStorageKey> = vec![

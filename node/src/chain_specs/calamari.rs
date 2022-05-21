@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Calamari Chain Spec
+
 use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
 use calamari_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
@@ -22,8 +24,13 @@ use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type CalamariChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
-pub const CALAMARI_PROTOCOL_ID: &str = "calamari"; // for p2p network configuration
+/// Calamari Protocol ID for p2p Network Configuration
+pub const CALAMARI_PROTOCOL_ID: &str = "calamari";
+
+/// Kusama Relaychain Local Network
 pub const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
+
+/// Kusama Relaychain Development Network
 pub const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
 
 /// The default XCM version to set in genesis config.

@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Node CLI
+
 use crate::chain_specs;
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -102,6 +104,7 @@ pub struct ExportGenesisWasmCommand {
 	pub chain: Option<String>,
 }
 
+/// Node CLI
 #[derive(Debug, StructOpt)]
 #[structopt(settings = &[
 	structopt::clap::AppSettings::GlobalVersion,
@@ -109,9 +112,11 @@ pub struct ExportGenesisWasmCommand {
 	structopt::clap::AppSettings::SubcommandsNegateReqs,
 ])]
 pub struct Cli {
+	/// CLI Subcommand
 	#[structopt(subcommand)]
 	pub subcommand: Option<Subcommand>,
 
+	/// Cumulus Client Run CLI
 	#[structopt(flatten)]
 	pub run: cumulus_client_cli::RunCmd,
 
@@ -120,6 +125,7 @@ pub struct Cli {
 	pub relaychain_args: Vec<String>,
 }
 
+/// Relay Chain CLI
 #[derive(Debug)]
 pub struct RelayChainCli {
 	/// The actual relay chain cli object.
