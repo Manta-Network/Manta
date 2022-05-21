@@ -81,6 +81,15 @@ pub trait AssetConfig<C>: 'static + Eq + Clone
 where
 	C: frame_system::Config,
 {
+	// type AssetId: Member
+	// 	+ Parameter
+	// 	+ Default
+	// 	+ Copy
+	// 	//+ HasCompact
+	// 	//+ MaybeSerializeDeserialize
+	// 	//+ MaxEncodedLen
+	// 	+ TypeInfo;
+
 	/// The AssetId that the non-native asset starts from.
 	/// A typical configuration is 8, so that asset 0 - 7 is reserved.
 	type StartNonNativeAssetId: Get<AssetId>;

@@ -170,48 +170,48 @@ pub type FungiblesTransactor = FungiblesAdapter<
 >;
 
 pub struct MultiAssetAdapter<
-	Currency,
-	CurrencyMatcher,
+	Balance,
+	Runtime,
+	Native,
+	NativeMatcher,
+	AccountIdConverter,
 	Assets,
 	AssetsMatcher,
-	AccountIdConverter,
-	AccountId,
-	Runtime,
 	FungibleLedgerTraitBound,
 	AssetConfigBound,
 >(
 	PhantomData<(
-		Currency,
-		CurrencyMatcher,
+		Balance,
+		Runtime,
+		Native,
+		NativeMatcher,
+		AccountIdConverter,
 		Assets,
 		AssetsMatcher,
-		AccountIdConverter,
-		AccountId,
-		Runtime,
 		FungibleLedgerTraitBound,
 		AssetConfigBound,
 	)>,
 );
 
 impl<
-		CurrencyMatcher: MatchesFungible<Balance>,
-		AccountIdConverter: Convert<MultiLocation, AccountId>,
-		Currency: frame_support::traits::Currency<AccountId>,
-		AccountId: Clone, // can't get away without it since Currency is generic over it.
-		Assets: fungibles::Mutate<AccountId> + fungibles::Transfer<AccountId>,
-		AssetsMatcher: MatchesFungibles<AssetId, Balance>,
-		Runtime: frame_system::Config<AccountId = AccountId>,
+		Runtime: frame_system::Config,
+		Balance: Clone,
+		Native: frame_support::traits::Currency<Runtime::AccountId>,
+		NativeMatcher: MatchesFungible<Balance>,
+		AccountIdConverter: Convert<MultiLocation, Runtime::AccountId>,
+		Assets: fungibles::Mutate<Runtime::AccountId> + fungibles::Transfer<Runtime::AccountId>,
+		AssetsMatcher: MatchesFungibles<Assets::AssetId, Balance>,
 		FungibleLedgerTraitBound: FungibleLedger<Runtime>,
 		AssetConfigBound: AssetConfig<Runtime>,
 	> TransactAsset
 	for MultiAssetAdapter<
-		Currency,
-		CurrencyMatcher,
+		Balance,
+		Runtime,
+		Native,
+		NativeMatcher,
+		AccountIdConverter,
 		Assets,
 		AssetsMatcher,
-		AccountIdConverter,
-		AccountId,
-		Runtime,
 		FungibleLedgerTraitBound,
 		AssetConfigBound,
 	>
@@ -221,13 +221,17 @@ impl<
 		// let mut asset_id = AssetId::default();
 		// let mut amount = 0;
 		let (asset_id, amount) = match (
-			CurrencyMatcher::matches_fungible(&asset),
+			NativeMatcher::matches_fungible(&asset),
 			AssetsMatcher::matches_fungibles(&asset),
 		) {
 			// native asset
-			(Some(amount), _) => (AssetConfigBound::NativeAssetId::get(), amount),
+			(Some(amount), _) => (
+				AssetConfigBound::NativeAssetId::get(),
+				//Assets::AssetId::default(),
+				amount,
+			),
 			// assets asset
-			(_, result::Result::Ok((asset_id, amount))) => (u32::from(asset_id), amount),
+			(_, result::Result::Ok((asset_id, amount))) => (asset_id, amount),
 			// unknown asset
 			_ => (0, 0),
 		};
