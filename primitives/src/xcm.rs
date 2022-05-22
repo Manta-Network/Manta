@@ -14,8 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+use super::{
+	assets::{AssetConfig, FungibleLedger},
+	types::{AssetId, Balance},
+};
+
 use sp_runtime::traits::{CheckedConversion, Convert, Zero};
-use sp_std::marker::PhantomData;
+use sp_std::{marker::PhantomData, result};
 
 use frame_support::{
 	pallet_prelude::Get,
@@ -25,7 +30,7 @@ use frame_support::{
 
 use crate::assets::{AssetIdLocationGetter, UnitsToWeightRatio};
 use xcm::{
-	latest::{prelude::Concrete, Error as XcmError},
+	latest::{prelude::Concrete, Error as XcmError, Result as XcmResult},
 	v1::{
 		AssetId as xcmAssetId, Fungibility,
 		Fungibility::*,
@@ -35,7 +40,10 @@ use xcm::{
 	},
 };
 use xcm_builder::TakeRevenue;
-use xcm_executor::traits::{FilterAssetLocation, MatchesFungible, MatchesFungibles, WeightTrader};
+use xcm_executor::traits::{
+	Convert as XcmConvert, FilterAssetLocation, MatchesFungible, MatchesFungibles, TransactAsset,
+	WeightTrader,
+};
 
 pub trait Reserve {
 	/// Returns assets reserve location.
@@ -310,5 +318,103 @@ where
 			}
 		}
 		None
+	}
+}
+
+pub struct MultiAssetAdapter<
+	Runtime,
+	NativeMatcher,
+	AccountIdConverter,
+	AssetsMatcher,
+	MultiAdapterFungibleLedger,
+	MultiAdapterAssetConfig,
+>(
+	PhantomData<(
+		Runtime,
+		NativeMatcher,
+		AccountIdConverter,
+		AssetsMatcher,
+		MultiAdapterFungibleLedger,
+		MultiAdapterAssetConfig,
+	)>,
+);
+
+impl<
+		Runtime: frame_system::Config,
+		NativeMatcher: MatchesFungible<Balance>,
+		AccountIdConverter: XcmConvert<MultiLocation, Runtime::AccountId>,
+		AssetsMatcher: MatchesFungibles<AssetId, Balance>,
+		MultiAdapterFungibleLedger: FungibleLedger<Runtime>,
+		MultiAdapterAssetConfig: AssetConfig<Runtime>,
+	>
+	MultiAssetAdapter<
+		Runtime,
+		NativeMatcher,
+		AccountIdConverter,
+		AssetsMatcher,
+		MultiAdapterFungibleLedger,
+		MultiAdapterAssetConfig,
+	>
+{
+	fn match_asset_and_location(
+		asset: &MultiAsset,
+		location: &MultiLocation,
+	) -> result::Result<(AssetId, Balance, Runtime::AccountId), XcmError> {
+		let who = AccountIdConverter::convert_ref(location).map_err(|_| {
+			xcm::v2::Error::FailedToTransactAsset("Failed Location to AccountId Conversion")
+		})?;
+
+		let (asset_id, amount) = match (
+			NativeMatcher::matches_fungible(&asset),
+			AssetsMatcher::matches_fungibles(&asset),
+		) {
+			// native asset
+			(Some(amount), _) => (MultiAdapterAssetConfig::NativeAssetId::get(), amount),
+			// assets asset
+			(_, result::Result::Ok((asset_id, amount))) => (asset_id, amount),
+			// unknown asset
+			_ => return Err(xcm::v2::Error::FailedToTransactAsset("Unknown Asset")),
+		};
+
+		Ok((asset_id, amount, who))
+	}
+}
+
+impl<
+		Runtime: frame_system::Config,
+		NativeMatcher: MatchesFungible<Balance>,
+		AccountIdConverter: XcmConvert<MultiLocation, Runtime::AccountId>,
+		AssetsMatcher: MatchesFungibles<AssetId, Balance>,
+		MultiAdapterFungibleLedger: FungibleLedger<Runtime>,
+		MultiAdapterAssetConfig: AssetConfig<Runtime>,
+	> TransactAsset
+	for MultiAssetAdapter<
+		Runtime,
+		NativeMatcher,
+		AccountIdConverter,
+		AssetsMatcher,
+		MultiAdapterFungibleLedger,
+		MultiAdapterAssetConfig,
+	>
+{
+	fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> XcmResult {
+		let (asset_id, amount, who) = Self::match_asset_and_location(asset, location)?;
+
+		MultiAdapterFungibleLedger::mint(asset_id, &who, amount)
+			.map_err(|_| xcm::v2::Error::FailedToTransactAsset("Failed Mint"))?;
+
+		Ok(())
+	}
+
+	fn withdraw_asset(
+		asset: &MultiAsset,
+		location: &MultiLocation,
+	) -> result::Result<xcm_executor::Assets, XcmError> {
+		let (asset_id, amount, who) = Self::match_asset_and_location(asset, location)?;
+
+		MultiAdapterFungibleLedger::burn(asset_id, &who, amount)
+			.map_err(|_| xcm::v2::Error::FailedToTransactAsset("Failed Burn"))?;
+
+		Ok(asset.clone().into())
 	}
 }

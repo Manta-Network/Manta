@@ -16,28 +16,28 @@
 
 use super::{
 	assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},
-	AssetManager, Assets, Balances, Call, DmpQueue, Event, Origin, ParachainInfo, ParachainSystem,
+	AssetManager, Assets, Call, DmpQueue, Event, Origin, ParachainInfo, ParachainSystem,
 	PolkadotXcm, Runtime, Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
 
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 
-use sp_core::crypto::ByteArray;
-use sp_std::{marker::PhantomData, prelude::*, result};
+use sp_std::prelude::*;
 
 use frame_support::{
 	match_type, parameter_types,
-	traits::{fungibles, Contains, Everything, Get, Nothing},
+	traits::{Everything, Nothing},
 	weights::Weight,
 };
 use frame_system::EnsureRoot;
 use manta_primitives::{
-	assets::{
-		AssetConfig, AssetIdLocationConvert, AssetLocation, ConcreteFungibleLedger, FungibleLedger,
-	},
+	assets::{AssetIdLocationConvert, AssetLocation},
 	types::{AccountId, AssetId, Balance},
-	xcm::{AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
+	xcm::{
+		AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
+		MultiNativeAsset,
+	},
 };
 
 #[cfg(any(feature = "std", test))]
@@ -47,20 +47,15 @@ pub use sp_runtime::BuildStorage;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 
-use orml_xcm_support::MultiCurrencyAdapter;
-use xcm::latest::{prelude::*, Result};
+use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
-	FungiblesAdapter, LocationInverter, ParentAsSuperuser, ParentIsDefault, RelayChainAsNative,
-	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-	SovereignSignedViaLocation, TakeWeightCredit,
+	EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
+	ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	SignedAccountId32AsNative, SovereignSignedViaLocation, TakeWeightCredit,
 };
-use xcm_executor::{
-	traits::{Convert, JustTry, MatchesFungible, MatchesFungibles, TransactAsset},
-	Config, XcmExecutor,
-};
+use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
 parameter_types! {
 	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
@@ -102,20 +97,6 @@ pub type LocationToAccountId = (
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
-/// Transactor for native currency, i.e. implements `fungible` trait
-pub type LocalAssetTransactor = XcmCurrencyAdapter<
-	// Transacting native currency, i.e. MANTA, KMA, DOL
-	Balances,
-	// Used when the incoming asset is a fungible concrete asset matching the given location or name:
-	IsNativeConcrete<SelfReserve>,
-	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
-	LocationToAccountId,
-	// Our chain's account ID type (we can't get away without mentioning it explicitly):
-	AccountId,
-	// We don't track any teleports.
-	(),
->;
-
 /// This is the type to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`.
 /// It uses some Rust magic macro to do the pattern matching sequentially.
@@ -152,91 +133,7 @@ parameter_types! {
 }
 
 /// Transactor for currency in pallet-assets, i.e. implements `fungibles` trait
-pub type FungiblesTransactor = FungiblesAdapter<
-	Assets,
-	ConvertedConcreteAssetId<
-		AssetId,
-		Balance,
-		AssetIdLocationConvert<AssetLocation, AssetManager>,
-		JustTry,
-	>,
-	// "default" implementation of converting a `MultiLocation` to an `AccountId`
-	LocationToAccountId,
-	AccountId,
-	// No teleport support.
-	Nothing,
-	// No teleport tracking.
-	(),
->;
-
-pub struct MultiAssetAdapter<
-	Runtime,
-	NativeMatcher,
-	AccountIdConverter,
-	AssetsMatcher,
-	MultiAdapterFungibleLedger,
-	MultiAdapterAssetConfig,
->(
-	PhantomData<(
-		Runtime,
-		NativeMatcher,
-		AccountIdConverter,
-		AssetsMatcher,
-		MultiAdapterFungibleLedger,
-		MultiAdapterAssetConfig,
-	)>,
-);
-
-impl<
-		Runtime: frame_system::Config,
-		NativeMatcher: MatchesFungible<Balance>,
-		AccountIdConverter: Convert<MultiLocation, Runtime::AccountId>,
-		AssetsMatcher: MatchesFungibles<AssetId, Balance>,
-		MultiAdapterFungibleLedger: FungibleLedger<Runtime>,
-		MultiAdapterAssetConfig: AssetConfig<Runtime>,
-	> TransactAsset
-	for MultiAssetAdapter<
-		Runtime,
-		NativeMatcher,
-		AccountIdConverter,
-		AssetsMatcher,
-		MultiAdapterFungibleLedger,
-		MultiAdapterAssetConfig,
-	>
-{
-	fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> Result {
-		let who = AccountIdConverter::convert_ref(location).map_err(|_| {
-			xcm::v2::Error::FailedToTransactAsset("Failed Location to AccountId Conversion")
-		})?;
-
-		let (asset_id, amount) = match (
-			NativeMatcher::matches_fungible(&asset),
-			AssetsMatcher::matches_fungibles(&asset),
-		) {
-			// native asset
-			(Some(amount), _) => (MultiAdapterAssetConfig::NativeAssetId::get(), amount),
-			// assets asset
-			(_, result::Result::Ok((asset_id, amount))) => (asset_id, amount),
-			// unknown asset
-			_ => return Err(xcm::v2::Error::FailedToTransactAsset("Unknown Asset")),
-		};
-
-		MultiAdapterFungibleLedger::mint(asset_id, &who, amount)
-			.map_err(|_| xcm::v2::Error::FailedToTransactAsset("Failed Mint"))?;
-
-		Ok(())
-	}
-
-	fn withdraw_asset(
-		asset: &MultiAsset,
-		location: &MultiLocation,
-	) -> result::Result<xcm_executor::Assets, XcmError> {
-		Ok(xcm_executor::Assets::default())
-	}
-}
-
-/// Transactor for currency in pallet-assets, i.e. implements `fungibles` trait
-pub type MultiTransactor = MultiAssetAdapter<
+pub type MultiAssetTransactor = MultiAssetAdapter<
 	Runtime,
 	IsNativeConcrete<SelfReserve>,
 	LocationToAccountId,
@@ -301,9 +198,7 @@ impl Config for XcmExecutorConfig {
 	type Call = Call;
 	type XcmSender = XcmRouter;
 	// Defines how to Withdraw and Deposit instruction work
-	// Under the hood, substrate framework will do pattern matching in macro,
-	// as a result, the order of the following tuple matters.
-	type AssetTransactor = MultiTransactor;
+	type AssetTransactor = MultiAssetTransactor;
 	type OriginConverter = XcmOriginToCallOrigin;
 	// Combinations of (Location, Asset) pairs which we trust as reserves.
 	type IsReserve = MultiNativeAsset;

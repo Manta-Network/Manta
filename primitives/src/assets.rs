@@ -305,6 +305,9 @@ pub enum FungibleLedgerError {
 	/// Unable to Mint an Asset
 	InvalidMint(DispatchError),
 
+	/// Unable to Burn an Asset
+	InvalidBurn(DispatchError),
+
 	/// Unable to Transfer an Asset
 	InvalidTransfer(DispatchError),
 }
@@ -382,8 +385,8 @@ where
 		amount: Balance,
 	) -> Result<(), FungibleLedgerError>;
 
-	/// Performs a transfer from `source` to `destination` of
-	fn withdraw(
+	/// Performs a burn from `who` for `amount` of `asset_id`
+	fn burn(
 		asset_id: AssetId,
 		who: &C::AccountId,
 		amount: Balance,
@@ -489,7 +492,7 @@ where
 	}
 
 	#[inline]
-	fn withdraw(
+	fn burn(
 		asset_id: AssetId,
 		who: &C::AccountId,
 		amount: Balance,
@@ -502,10 +505,11 @@ where
 				amount,
 				WithdrawReasons::TRANSFER,
 				ExistenceRequirement::KeepAlive,
-			);
+			)
+			.map_err(|e| FungibleLedgerError::InvalidBurn(e))?;
 		} else {
 			<NonNative as Mutate<C::AccountId>>::burn_from(asset_id, who, amount)
-				.map_err(|e| FungibleLedgerError::InvalidMint(e))?;
+				.map_err(|e| FungibleLedgerError::InvalidBurn(e))?;
 		}
 		Ok(())
 	}
