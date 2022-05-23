@@ -18,12 +18,14 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-	construct_runtime, match_type, parameter_types,
+	construct_runtime,
+	pallet_prelude::DispatchResult,
+	parameter_types,
 	traits::{ConstU32, Everything, Nothing},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
+	PalletId,
 };
 use frame_system::EnsureRoot;
-use pallet_asset_manager::AssetMetadata;
 use scale_info::TypeInfo;
 use sp_core::H256;
 use sp_runtime::{
@@ -33,30 +35,29 @@ use sp_runtime::{
 };
 use sp_std::{convert::TryFrom, prelude::*};
 
-use manta_primitives::{
-	assets::{AssetIdLocationConvert, AssetLocation},
-	xcm::{FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
-};
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain::primitives::{
 	DmpMessageHandler, Id as ParaId, Sibling, XcmpMessageFormat, XcmpMessageHandler,
 };
-use xcm::{latest::prelude::*, Version as XcmVersion, VersionedXcm};
+use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, VersionedXcm};
 use xcm_builder::{
-	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
+	AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
 	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
 	FungiblesAdapter, LocationInverter, ParentIsDefault, SiblingParachainAsNative,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, TakeWeightCredit,
+	SiblingParachainConvertsVia, SignedAccountId32AsNative, SovereignSignedViaLocation,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::Get;
 
-pub use manta_primitives::{
-	assets::{AssetRegistarMetadata, AssetStorageMetadata},
+use manta_primitives::{
+	assets::{
+		AssetConfig, AssetIdLocationConvert, AssetLocation, AssetRegistrar, AssetRegistrarMetadata,
+		AssetStorageMetadata, ConcreteFungibleLedger,
+	},
+	constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
 	types::AssetId,
+	xcm::{FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
 };
 pub type AccountId = AccountId32;
 pub type Balance = u128;
@@ -183,7 +184,7 @@ parameter_types! {
 	// Used in native traders
 	// This might be able to skipped.
 	// We have to use `here()` because of reanchoring logic
-	pub ParaTokenPerSecond: (xcm::v1::AssetId, u128) = (Concrete(MultiLocation::here()), 1_000_000_000);
+	pub ParaTokenPerSecond: (xcm::v2::AssetId, u128) = (Concrete(MultiLocation::here()), 1_000_000_000);
 	pub const MaxInstructions: u32 = 100;
 }
 
@@ -203,7 +204,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	ConvertedConcreteAssetId<
 		AssetId,
 		Balance,
-		AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>,
+		AssetIdLocationConvert<AssetLocation, AssetManager>,
 		JustTry,
 	>,
 	// "default" implementation of converting a `MultiLocation` to an `AccountId`
@@ -228,7 +229,7 @@ pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
 	ConvertedConcreteAssetId<
 		AssetId,
 		Balance,
-		AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>,
+		AssetIdLocationConvert<AssetLocation, AssetManager>,
 		JustTry,
 	>,
 	AccountId,
@@ -463,18 +464,18 @@ impl mock_version_changer::Config for Runtime {
 	type Event = Event;
 }
 
-pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, RelayNetwork>;
+pub type LocalOriginToLocation = ();
 
 impl pallet_xcm::Config for Runtime {
 	type Event = Event;
 	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
 	type XcmRouter = XcmRouter;
 	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-	type XcmExecuteFilter = Everything;
+	type XcmExecuteFilter = Nothing;
 	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 	// Do not allow teleports
 	type XcmTeleportFilter = Nothing;
-	type XcmReserveTransferFilter = Everything;
+	type XcmReserveTransferFilter = Nothing;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Origin = Origin;
@@ -483,19 +484,8 @@ impl pallet_xcm::Config for Runtime {
 	type AdvertisedXcmVersion = XcmVersioner;
 }
 
-impl AssetMetadata<Runtime> for AssetRegistarMetadata<Balance> {
-	fn min_balance(&self) -> Balance {
-		self.min_balance
-	}
-
-	fn is_sufficient(&self) -> bool {
-		self.is_sufficient
-	}
-}
-
-pub struct AssetRegistrar;
-use frame_support::pallet_prelude::DispatchResult;
-impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
+pub struct CalamariAssetRegistrar;
+impl AssetRegistrar<Runtime, CalamariAssetConfig> for CalamariAssetRegistrar {
 	fn create_asset(
 		asset_id: AssetId,
 		min_balance: Balance,
@@ -531,15 +521,47 @@ impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
 		)
 	}
 }
-impl pallet_asset_manager::Config for Runtime {
-	type Event = Event;
-	type Balance = Balance;
-	type AssetId = AssetId;
-	type AssetRegistrarMetadata = AssetRegistarMetadata<Balance>;
+
+parameter_types! {
+	pub const DummyAssetId: AssetId = 0;
+	pub const NativeAssetId: AssetId = 1;
+	pub const StartNonNativeAssetId: AssetId = 8;
+	pub NativeAssetLocation: AssetLocation = AssetLocation(
+		VersionedMultiLocation::V1(SelfReserve::get()));
+	pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
+		name: b"Calamari".to_vec(),
+		symbol: b"KMA".to_vec(),
+		decimals: CALAMARI_DECIMAL,
+		min_balance: 1,
+		evm_address: None,
+		is_frozen: false,
+		is_sufficient: true,
+	};
+	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
+}
+
+#[derive(Clone, Eq, PartialEq)]
+pub struct CalamariAssetConfig;
+
+impl AssetConfig<Runtime> for CalamariAssetConfig {
+	type DummyAssetId = DummyAssetId;
+	type NativeAssetId = NativeAssetId;
+	type StartNonNativeAssetId = StartNonNativeAssetId;
+	type AssetRegistrarMetadata = AssetRegistrarMetadata;
+	type NativeAssetLocation = NativeAssetLocation;
+	type NativeAssetMetadata = NativeAssetMetadata;
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
-	type AssetRegistrar = AssetRegistrar;
+	type AssetRegistrar = CalamariAssetRegistrar;
+	type FungibleLedger = ConcreteFungibleLedger<Runtime, CalamariAssetConfig, Balances, Assets>;
+}
+
+impl pallet_asset_manager::Config for Runtime {
+	type Event = Event;
+	type AssetConfig = CalamariAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
+	type PalletId = AssetManagerPalletId;
+	type WeightInfo = ();
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -581,7 +603,7 @@ impl orml_xtokens::Config for Runtime {
 	type CurrencyId = CurrencyId;
 	type AccountIdToMultiLocation = manta_primitives::xcm::AccountIdToMultiLocation<AccountId>;
 	type CurrencyIdConvert =
-		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>>;
+		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
 	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 	type SelfLocation = SelfReserve;
 	type Weigher = xcm_builder::FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;

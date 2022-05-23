@@ -19,8 +19,11 @@
 mod xcm_mock;
 
 use codec::Encode;
-use frame_support::{assert_ok, weights::constants::WEIGHT_PER_SECOND};
-use manta_primitives::assets::AssetLocation;
+use frame_support::{assert_err, assert_ok, weights::constants::WEIGHT_PER_SECOND};
+use manta_primitives::{
+	assets::{AssetLocation, AssetRegistrarMetadata},
+	types::AssetId,
+};
 use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
 use xcm_mock::{parachain::PALLET_ASSET_INDEX, *};
 use xcm_simulator::TestExt;
@@ -138,10 +141,10 @@ fn xcmp() {
 fn reserve_transfer_relaychain_to_parachain_a() {
 	MockNet::reset();
 
-	let relay_asset_id: parachain::AssetId = 0;
+	let relay_asset_id: AssetId = 0;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -202,10 +205,10 @@ fn reserve_transfer_relaychain_to_parachain_a() {
 fn reserve_transfer_relaychain_to_parachain_a_then_back() {
 	MockNet::reset();
 
-	let relay_asset_id: parachain::AssetId = 0;
+	let relay_asset_id: AssetId = 0;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -304,7 +307,7 @@ fn reserve_transfer_relaychain_to_parachain_a_then_back() {
 fn send_para_a_native_asset_to_para_b() {
 	MockNet::reset();
 
-	// We use an opinioned source location here:
+	// We use an opinionated source location here:
 	// Ideally, we could use `here()`, however, we always prefer to use the location from
 	// `root` when possible.
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
@@ -314,7 +317,7 @@ fn send_para_a_native_asset_to_para_b() {
 	let a_currency_id = 0u32;
 	let amount = 100u128;
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
@@ -397,10 +400,181 @@ fn send_para_a_native_asset_to_para_b() {
 }
 
 #[test]
+fn send_not_sufficient_asset_from_para_a_to_para_b() {
+	MockNet::reset();
+
+	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+		1,
+		X1(Parachain(1)),
+	)));
+	let a_currency_id = 0u32;
+	let amount = 8888u128;
+	let units_per_second_at_b = 1_250_000u128;
+	let dest_weight = 1600_000u64;
+	let fee_at_b = calculate_fee(units_per_second_at_b, dest_weight);
+
+	let asset_metadata = AssetRegistrarMetadata {
+		name: b"ParaAToken".to_vec(),
+		symbol: b"ParaA".to_vec(),
+		decimals: 18,
+		evm_address: None,
+		min_balance: 1,
+		is_frozen: false,
+		is_sufficient: false,
+	};
+
+	// Register ParaA native asset in ParaA
+	ParaA::execute_with(|| {
+		assert_ok!(AssetManager::register_asset(
+			parachain::Origin::root(),
+			source_location.clone(),
+			asset_metadata.clone()
+		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(),
+			a_currency_id,
+			0u128
+		));
+		assert_eq!(
+			Some(a_currency_id),
+			parachain::AssetManager::location_asset_id(source_location.clone())
+		);
+	});
+
+	// Register ParaA native asset in ParaB
+	ParaB::execute_with(|| {
+		assert_ok!(AssetManager::register_asset(
+			parachain::Origin::root(),
+			source_location.clone(),
+			asset_metadata.clone()
+		));
+		assert_ok!(AssetManager::set_units_per_second(
+			parachain::Origin::root(),
+			a_currency_id,
+			units_per_second_at_b
+		));
+		assert_eq!(
+			Some(a_currency_id),
+			parachain::AssetManager::location_asset_id(source_location.clone())
+		);
+	});
+
+	let dest = MultiLocation {
+		parents: 1,
+		interior: X2(
+			Parachain(2),
+			AccountId32 {
+				network: NetworkId::Any,
+				id: ALICE.into(),
+			},
+		),
+	};
+
+	assert!(amount >= fee_at_b);
+	// Transfer ParaA balance to B
+	ParaA::execute_with(|| {
+		assert_ok!(parachain::XTokens::transfer(
+			parachain::Origin::signed(ALICE.into()),
+			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			amount,
+			Box::new(VersionedMultiLocation::V1(dest.clone())),
+			dest_weight
+		));
+		assert_eq!(
+			parachain::Balances::free_balance(&ALICE.into()),
+			INITIAL_BALANCE - amount
+		)
+	});
+
+	ParaB::execute_with(|| {
+		// The total supply should not include the paid fee,
+		// because the XcmFeesAccount had 0 providers with is_sufficient set to false,
+		// so the mint_into() operation for the refund amount failed.
+		assert_eq!(
+			parachain::Assets::total_supply(a_currency_id),
+			amount - fee_at_b
+		);
+		assert_eq!(
+			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			amount - fee_at_b
+		);
+	});
+
+	// Setting the balance will in effect create the account
+	// incrementing its providers counter to from 0 to 1
+	ParaB::execute_with(|| {
+		assert_ok!(pallet_balances::Pallet::<parachain::Runtime>::set_balance(
+			parachain::Origin::root(),
+			parachain::AssetManager::account_id(),
+			1000000000000000,
+			1000000000000000
+		));
+	});
+
+	ParaA::execute_with(|| {
+		assert_ok!(parachain::XTokens::transfer(
+			parachain::Origin::signed(ALICE.into()),
+			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			amount,
+			Box::new(VersionedMultiLocation::V1(dest.clone())),
+			dest_weight
+		));
+		assert_eq!(
+			parachain::Balances::free_balance(&ALICE.into()),
+			INITIAL_BALANCE - amount * 2
+		)
+	});
+
+	ParaB::execute_with(|| {
+		// This time we expect the total supply to be the full amount
+		// as the refund will be deposited to the XcmFeesAccount
+		assert_eq!(
+			parachain::Assets::total_supply(a_currency_id),
+			(amount - fee_at_b) + amount
+		);
+		assert_eq!(
+			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			(amount - fee_at_b) * 2
+		);
+	});
+}
+
+#[test]
+fn register_with_is_sufficient_false_and_zero_min_balance_should_fail() {
+	MockNet::reset();
+
+	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+		1,
+		X1(Parachain(1)),
+	)));
+
+	let asset_metadata = AssetRegistrarMetadata {
+		name: b"ParaAToken".to_vec(),
+		symbol: b"ParaA".to_vec(),
+		decimals: 18,
+		evm_address: None,
+		min_balance: 0,
+		is_frozen: false,
+		is_sufficient: false,
+	};
+
+	ParaB::execute_with(|| {
+		assert_err!(
+			AssetManager::register_asset(
+				parachain::Origin::root(),
+				source_location.clone(),
+				asset_metadata.clone()
+			),
+			pallet_asset_manager::Error::<parachain::Runtime>::ErrorCreatingAsset
+		);
+	});
+}
+
+#[test]
 fn send_para_a_custom_asset_to_para_b() {
 	let a_currency_id: u32 = 0;
 	let amount = 321;
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"ParaADoge".to_vec(),
 		symbol: b"Doge".to_vec(),
 		decimals: 18,
@@ -524,7 +698,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 	let fee_on_b_when_send_back = calculate_fee(ParaTokenPerSecond::get().1, weight);
 	assert!(fee_on_b_when_send_back < amount);
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
@@ -650,7 +824,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 	let fee_at_reserve = calculate_fee(ParaTokenPerSecond::get().1, weight);
 	assert!(amount >= fee_at_reserve * 2 as u128);
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
@@ -784,9 +958,9 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 fn receive_relay_asset_with_trader() {
 	MockNet::reset();
 
-	let relay_asset_id: parachain::AssetId = 0;
+	let relay_asset_id: AssetId = 0;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -863,7 +1037,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 	let dest_weight = 800_000u64;
 	let fee = calculate_fee(units_per_second, dest_weight);
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
@@ -960,7 +1134,7 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 	let dest_weight = 800_000u64;
 	let fee_at_b = calculate_fee(units_per_second_at_b, dest_weight);
 	let fee_at_a = calculate_fee(ParaTokenPerSecond::get().1, dest_weight);
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
@@ -1053,6 +1227,7 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 	});
 
 	ParaB::execute_with(|| {
+		assert_eq!(parachain::Assets::total_supply(a_currency_id), amount);
 		amount = amount - fee_at_b;
 		assert_eq!(
 			parachain::Assets::balance(a_currency_id, &ALICE.into()),
@@ -1098,9 +1273,9 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 fn receive_relay_with_insufficient_fee_payment() {
 	MockNet::reset();
 
-	let relay_asset_id: parachain::AssetId = 0;
+	let relay_asset_id: AssetId = 0;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -1151,7 +1326,7 @@ fn receive_relay_with_insufficient_fee_payment() {
 	ParaA::execute_with(|| {
 		// ALICE gets nothing
 		assert_eq!(parachain::Assets::balance(relay_asset_id, &ALICE.into()), 0);
-		// Asset manager gets nothing, all balance stucks
+		// Asset manager gets nothing, all balance stuck
 		assert_eq!(
 			parachain::Assets::balance(relay_asset_id, AssetManager::account_id()),
 			0
@@ -1163,9 +1338,9 @@ fn receive_relay_with_insufficient_fee_payment() {
 fn receive_relay_should_fail_without_specifying_units_per_second() {
 	MockNet::reset();
 
-	let relay_asset_id: parachain::AssetId = 0;
+	let relay_asset_id: AssetId = 0;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -1207,7 +1382,7 @@ fn receive_relay_should_fail_without_specifying_units_per_second() {
 	ParaA::execute_with(|| {
 		// ALICE gets nothing
 		assert_eq!(parachain::Assets::balance(relay_asset_id, &ALICE.into()), 0);
-		// Asset manager gets nothing, all balance stucks
+		// Asset manager gets nothing, all balance stuck
 		assert_eq!(
 			parachain::Assets::balance(relay_asset_id, AssetManager::account_id()),
 			0
@@ -1231,7 +1406,7 @@ fn send_para_a_asset_to_para_b_with_insufficient_fee() {
 	let fee = calculate_fee(units_per_second, dest_weight);
 	assert!(fee > amount);
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
@@ -1323,7 +1498,7 @@ fn send_para_a_asset_to_para_b_without_specifying_units_per_second() {
 	let amount = 567u128;
 	let dest_weight = 800_000u64;
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,
@@ -1405,7 +1580,7 @@ fn receive_asset_with_is_sufficient_false() {
 	let new_account = [5u8; 32];
 	let relay_asset_id = 0u32;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -1498,7 +1673,7 @@ fn receive_asset_with_is_sufficient_true() {
 	let new_account = [5u8; 32];
 	let relay_asset_id = 0u32;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -1653,9 +1828,9 @@ fn query_holding() {
 fn test_versioning_on_runtime_upgrade_with_relay() {
 	MockNet::reset();
 
-	let relay_asset_id: parachain::AssetId = 0;
+	let relay_asset_id: AssetId = 0;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
@@ -1795,7 +1970,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 	)));
 	let a_currency_id = 0u32;
 
-	let asset_metadata = parachain::AssetRegistarMetadata {
+	let asset_metadata = AssetRegistrarMetadata {
 		name: b"ParaAToken".to_vec(),
 		symbol: b"ParaA".to_vec(),
 		decimals: 18,

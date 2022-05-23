@@ -92,7 +92,7 @@ where
 pub struct FirstAssetTrader<
 	AssetId: Clone,
 	AssetLocation: From<MultiLocation> + Clone,
-	AssetIdInfoGetter: UnitsToWeightRatio<AssetId> + AssetIdLocationGetter<AssetId, AssetLocation>,
+	AssetIdInfoGetter: UnitsToWeightRatio + AssetIdLocationGetter<AssetLocation>,
 	R: TakeRevenue,
 > {
 	weight: Weight,
@@ -103,7 +103,7 @@ pub struct FirstAssetTrader<
 impl<
 		AssetId: Clone,
 		AssetLocation: From<MultiLocation> + Clone,
-		AssetIdInfoGetter: UnitsToWeightRatio<AssetId> + AssetIdLocationGetter<AssetId, AssetLocation>,
+		AssetIdInfoGetter: UnitsToWeightRatio + AssetIdLocationGetter<AssetLocation>,
 		R: TakeRevenue,
 	> WeightTrader for FirstAssetTrader<AssetId, AssetLocation, AssetIdInfoGetter, R>
 {
@@ -160,7 +160,7 @@ impl<
 						);
 						XcmError::TooExpensive
 					})?;
-				log::info!("\n FirstAssetTrader::buy_weight didn't hit TooExpensive 1 \n");
+
 				let amount = units_per_second * (weight as u128) / (WEIGHT_PER_SECOND as u128);
 				// we don't need to proceed if amount is zero.
 				// This is very useful in tests.
@@ -190,10 +190,10 @@ impl<
 				// In case the asset matches the one the trader already stored before, add
 				// to later refund
 
-				// Else we are always going to substract the weight if we can, but we latter do
+				// Else we are always going to subtract the weight if we can, but we latter do
 				// not refund it
 
-				// In short, we only refund on the asset the trader first succesfully was able
+				// In short, we only refund on the asset the trader first successfully was able
 				// to pay for an execution
 				let new_asset = match self.refund_cache.clone() {
 					Some((prev_id, prev_amount, units_per_second)) => {
@@ -249,7 +249,7 @@ impl<
 impl<
 		AssetId: Clone,
 		AssetLocation: From<MultiLocation> + Clone,
-		AssetIdInfoGetter: UnitsToWeightRatio<AssetId> + AssetIdLocationGetter<AssetId, AssetLocation>,
+		AssetIdInfoGetter: UnitsToWeightRatio + AssetIdLocationGetter<AssetLocation>,
 		R: TakeRevenue,
 	> Drop for FirstAssetTrader<AssetId, AssetLocation, AssetIdInfoGetter, R>
 {
@@ -278,11 +278,14 @@ impl<
 			Ok((asset_id, amount)) => {
 				if !amount.is_zero() {
 					Assets::mint_into(asset_id, &ReceiverAccount::get(), amount)
-						.expect("`mint_into` cannot generally fail; qed");
+						.map_err(
+							|err| log::debug!(target: "manta-xcm", "mint_into failed with {:?}", err),
+						)
+						.ok();
 				}
 			}
 			Err(_) => log::debug!(
-				target: "xcm",
+				target: "manta-xcm",
 				"take revenue failed matching fungible"
 			),
 		}

@@ -19,20 +19,30 @@
 
 //! Mock runtime for asset-manager
 
-use super::*;
 use crate as pallet_asset_manager;
-use frame_support::{construct_runtime, parameter_types, traits::ConstU32};
+use frame_support::{
+	construct_runtime, pallet_prelude::DispatchResult, parameter_types, traits::ConstU32, PalletId,
+};
 use frame_system as system;
 use frame_system::EnsureRoot;
 use manta_primitives::{
-	constants::ASSET_STRING_LIMIT,
+	assets::{
+		AssetConfig, AssetLocation, AssetRegistrar, AssetRegistrarMetadata, AssetStorageMetadata,
+		ConcreteFungibleLedger,
+	},
+	constants::{ASSET_MANAGER_PALLET_ID, ASSET_STRING_LIMIT},
 	types::{AccountId, AssetId, Balance},
-	assets::{AssetLocation, AssetRegistarMetadata, AssetStorageMetadata},
 };
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
+};
+use sp_std::marker::PhantomData;
+use xcm::{
+	prelude::{Parachain, X1},
+	v1::MultiLocation,
+	VersionedMultiLocation,
 };
 
 parameter_types! {
@@ -111,9 +121,8 @@ impl pallet_balances::Config for Runtime {
 	type ReserveIdentifier = [u8; 8];
 }
 
-pub struct AssetRegistrar;
-use frame_support::pallet_prelude::DispatchResult;
-impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
+pub struct MantaAssetRegistrar;
+impl AssetRegistrar<Runtime, MantaAssetConfig> for MantaAssetRegistrar {
 	fn create_asset(
 		asset_id: AssetId,
 		min_balance: Balance,
@@ -150,25 +159,46 @@ impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
 	}
 }
 
-impl AssetMetadata<Runtime> for AssetRegistarMetadata<Balance> {
-	fn min_balance(&self) -> Balance {
-		self.min_balance
-	}
+parameter_types! {
+	pub const DummyAssetId: AssetId = 0;
+	pub const NativeAssetId: AssetId = 1;
+	pub const StartNonNativeAssetId: AssetId = 8;
+	pub NativeAssetLocation: AssetLocation = AssetLocation(
+		VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
+	pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
+		name: b"Dolphin".to_vec(),
+		symbol: b"DOL".to_vec(),
+		decimals: 18,
+		min_balance: 1u128,
+		evm_address: None,
+		is_frozen: false,
+		is_sufficient: true,
+	};
+	pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
+}
 
-	fn is_sufficient(&self) -> bool {
-		self.is_sufficient
-	}
+#[derive(Clone, Eq, PartialEq)]
+pub struct MantaAssetConfig;
+
+impl AssetConfig<Runtime> for MantaAssetConfig {
+	type DummyAssetId = DummyAssetId;
+	type NativeAssetId = NativeAssetId;
+	type StartNonNativeAssetId = StartNonNativeAssetId;
+	type AssetRegistrarMetadata = AssetRegistrarMetadata;
+	type NativeAssetLocation = NativeAssetLocation;
+	type NativeAssetMetadata = NativeAssetMetadata;
+	type StorageMetadata = AssetStorageMetadata;
+	type AssetLocation = AssetLocation;
+	type AssetRegistrar = MantaAssetRegistrar;
+	type FungibleLedger = ConcreteFungibleLedger<Runtime, MantaAssetConfig, Balances, Assets>;
 }
 
 impl pallet_asset_manager::Config for Runtime {
 	type Event = Event;
-	type Balance = Balance;
-	type AssetId = AssetId;
-	type AssetRegistrarMetadata = AssetRegistarMetadata<Balance>;
-	type StorageMetadata = AssetStorageMetadata;
-	type AssetLocation = AssetLocation;
-	type AssetRegistrar = AssetRegistrar;
+	type AssetConfig = MantaAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
+	type PalletId = AssetManagerPalletId;
+	type WeightInfo = ();
 }
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
@@ -190,8 +220,14 @@ construct_runtime!(
 pub const PALLET_BALANCES_INDEX: u8 = 3;
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = frame_system::GenesisConfig::default()
+	let mut t = frame_system::GenesisConfig::default()
 		.build_storage::<Runtime>()
 		.unwrap();
+	pallet_asset_manager::GenesisConfig::<Runtime> {
+		start_id: <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+		_marker: PhantomData::<Runtime>::default(),
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
 	sp_io::TestExternalities::new(t)
 }

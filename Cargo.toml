@@ -1,11 +1,14 @@
 
 [workspace]
+resolver = "2"
 members = [
 	'node',
 	'pallets/*',
 	'runtime/manta',
 	'runtime/calamari',
 	'runtime/dolphin',
+	'runtime/common',
+	'primitives',
 ]
 
 [profile.production]

@@ -13,8 +13,8 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  AWS_INSTANCE_TYPE: c5a.8xlarge  # 32 vcpu, 64gb ram, $1.392 hourly
-  AWS_INSTANCE_ROOT_VOLUME_SIZE: 64
+  AWS_INSTANCE_TYPE: c5a.8xlarge
+  AWS_INSTANCE_ROOT_VOLUME_SIZE: 256
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
 
@@ -87,7 +87,6 @@ jobs:
           rustup toolchain install nightly
           rustup default stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
-          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
           rustup update
       -
         name: Run Unit Tests
@@ -98,7 +97,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo test --features=runtime-benchmarks,try-runtime
+          cargo test --release --features=runtime-benchmarks,try-runtime -- --test-threads=2
       -
         name: stop sccache server
         run: sccache --stop-server || true

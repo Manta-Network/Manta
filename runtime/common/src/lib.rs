@@ -19,14 +19,6 @@
 #![allow(clippy::upper_case_acronyms)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub mod assets;
-pub mod constants;
-pub mod types;
-pub mod xcm;
-
-#[cfg(feature = "std")]
-pub mod helpers;
-
 // From https://github.com/paritytech/polkadot/pull/4332/files?diff=unified&w=1 @ runtime/common/src/lib.rs
 /// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value
 /// or to an environment variable or testing value (in case the `fast-runtime` feature is selected).
@@ -35,9 +27,9 @@ pub mod helpers;
 /// Usage:
 /// ```Rust
 /// parameter_types! {
-/// 	// Note that the env variable version parameter cannot be const.
-/// 	pub LaunchPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 1, "KSM_LAUNCH_PERIOD");
-/// 	pub const VotingPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 1 * MINUTES);
+///     // Note that the env variable version parameter cannot be const.
+///     pub LaunchPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 1, "KSM_LAUNCH_PERIOD");
+///     pub const VotingPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 1 * MINUTES);
 /// }
 #[macro_export]
 macro_rules! prod_or_fast {

@@ -23,8 +23,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use codec::{Decode, Encode};
-use scale_info::TypeInfo;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -41,11 +39,8 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use frame_support::{
-	construct_runtime, match_type, parameter_types,
-	traits::{
-		ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, Everything, Nothing,
-		PrivilegeCmp,
-	},
+	construct_runtime, parameter_types,
+	traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, PrivilegeCmp},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, Weight,
@@ -57,34 +52,24 @@ use frame_system::{
 	EnsureRoot,
 };
 use manta_primitives::{
-	assets::{AssetIdLocationConvert, AssetLocation, AssetRegistarMetadata, AssetStorageMetadata},
-	constants::time::*,
-	types::{AccountId, AssetId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
-	xcm::{AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
+	constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
+	types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
-use pallet_asset_manager::AssetMetadata;
+use runtime_common::prod_or_fast;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
-use pallet_xcm::XcmPassthrough;
-use polkadot_parachain::primitives::Sibling;
+
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 use xcm::latest::prelude::*;
-use xcm_builder::{
-	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
-	FungiblesAdapter, LocationInverter, ParentAsSuperuser, ParentIsDefault, RelayChainAsNative,
-	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-	SovereignSignedViaLocation, TakeWeightCredit,
-};
-use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
+pub mod assets_config;
 pub mod currency;
 pub mod fee;
 pub mod impls;
+pub mod xcm_config;
 
 use currency::*;
 use fee::WeightToFee;
@@ -120,7 +105,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("dolphin"),
 	impl_name: create_runtime_str!("dolphin"),
 	authoring_version: 1,
-	spec_version: 3141,
+	spec_version: 3151,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -186,7 +171,8 @@ impl Contains<Call> for BaseFilter {
 			Call::Timestamp(_) | Call::ParachainSystem(_) | Call::System(_)
 		) {
 			// always allow core call
-			// pallet-timestamp and parachainSystem could not be filtered because they are used in commuication between releychain and parachain.
+			// pallet-timestamp and parachainSystem could not be filtered because
+			// they are used in communication between relaychain and parachain.
 			return true;
 		}
 
@@ -235,18 +221,27 @@ impl Contains<Call> for BaseFilter {
 			// Treasury calls are filtered while it is accumulating funds.
 			//| Call::Treasury(_)
 			| Call::Scheduler(_)
-			// We open pallet-session because user has to set his own session keys before register as collator.
-			| Call::Session(_)
-			// Currently, We filter `register_as_candidate` due to this call is not ready for community.
+			| Call::Session(_) // User must be able to set their session key when applying for a collator
 			| Call::CollatorSelection(
 				manta_collator_selection::Call::set_invulnerables{..}
 				| manta_collator_selection::Call::set_desired_candidates{..}
 				| manta_collator_selection::Call::set_candidacy_bond{..}
+				| manta_collator_selection::Call::set_eviction_baseline{..}
+				| manta_collator_selection::Call::set_eviction_tolerance{..}
 				| manta_collator_selection::Call::register_candidate{..}
+				// Currently, we filter `register_as_candidate` as this call is not yet ready for community.
 				| manta_collator_selection::Call::remove_collator{..}
 				| manta_collator_selection::Call::leave_intent{..})
 			| Call::Balances(_)
-			| Call::XTokens(_)
+			// Everything except transfer() is filtered out until it is practically needed:
+			// orml_xtokens::Call::transfer_with_fee {..}
+			// orml_xtokens::Call::transfer_multiasset {..}
+			// orml_xtokens::Call::transfer_multiasset_with_fee {..}
+			// orml_xtokens::Call::transfer_multicurrencies  {..}
+			// orml_xtokens::Call::transfer_multiassets {..}
+			| Call::XTokens(orml_xtokens::Call::transfer {..})
+			| Call::MantaPay(_)
+			| Call::Preimage(_)
 			| Call::Utility(_) => true,
 			// Filter XCM pallets, we only allow transfer with XTokens.
 			// Filter Assets. Assets should only be accessed by AssetManager.
@@ -363,13 +358,13 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-	pub const LaunchPeriod: BlockNumber = 5 * MINUTES;
-	pub const VotingPeriod: BlockNumber = 5 * MINUTES;
-	pub const FastTrackVotingPeriod: BlockNumber = 5 * MINUTES;
+	pub LaunchPeriod: BlockNumber = prod_or_fast!(5 * MINUTES, 1 * MINUTES, "DOLPHIN_LAUNCHPERIOD");
+	pub VotingPeriod: BlockNumber = prod_or_fast!(5 * MINUTES, 1 * MINUTES, "DOLPHIN_VOTINGPERIOD");
+	pub FastTrackVotingPeriod: BlockNumber = prod_or_fast!(5 * MINUTES, 1 * MINUTES, "DOLPHIN_FASTTRACKVOTINGPERIOD");
 	pub const InstantAllowed: bool = true;
 	pub const MinimumDeposit: Balance = 20 * DOL;
-	pub const EnactmentPeriod: BlockNumber = 5 * MINUTES;
-	pub const CooloffPeriod: BlockNumber = 5 * MINUTES;
+	pub EnactmentPeriod: BlockNumber = prod_or_fast!(5 * MINUTES, 1 * MINUTES, "DOLPHIN_ENACTMENTPERIOD");
+	pub CooloffPeriod: BlockNumber = prod_or_fast!(5 * MINUTES, 1 * MINUTES, "DOLPHIN_COOLOFFPERIOD");
 	pub const PreimageByteDeposit: Balance = deposit(0, 1);
 }
 
@@ -495,9 +490,9 @@ parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(1);
 	pub const ProposalBondMinimum: Balance = 500 * DOL;
 	pub const ProposalBondMaximum: Balance = 10_000 * DOL;
-	pub const SpendPeriod: BlockNumber = 10 * MINUTES;
+	pub SpendPeriod: BlockNumber = prod_or_fast!(10 * MINUTES, 2 * MINUTES, "DOLPHIN_SPENDPERIOD");
 	pub const Burn: Permill = Permill::from_percent(0);
-	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+	pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
 }
 
 type EnsureRootOrThreeFifthsCouncil = EnsureOneOf<
@@ -579,7 +574,7 @@ parameter_types! {
 }
 
 impl pallet_preimage::Config for Runtime {
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_preimage::SubstrateWeight<Runtime>;
 	type Event = Event;
 	type Currency = Balances;
 	type ManagerOrigin = EnsureRoot<AccountId>;
@@ -591,377 +586,8 @@ impl pallet_preimage::Config for Runtime {
 }
 
 parameter_types! {
-	// Does not really matter as this will be only called by root
-	pub const AssetDeposit: Balance = 0;
-	pub const AssetAccountDeposit: Balance = 0;
-	pub const ApprovalDeposit: Balance = 0;
-	pub const MetadataDepositBase: Balance = 0;
-	pub const MetadataDepositPerByte: Balance = 0;
-}
-
-impl pallet_assets::Config for Runtime {
-	type Event = Event;
-	type Balance = Balance;
-	type AssetId = AssetId;
-	type Currency = Balances;
-	type ForceOrigin = EnsureRoot<AccountId>;
-	type AssetDeposit = AssetDeposit;
-	type AssetAccountDeposit = AssetAccountDeposit;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ApprovalDeposit = ApprovalDeposit;
-	type StringLimit = ConstU32<50>;
-	type Freezer = ();
-	type Extra = ();
-	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
-}
-
-impl AssetMetadata<Runtime> for AssetRegistarMetadata<Balance> {
-	fn min_balance(&self) -> Balance {
-		self.min_balance
-	}
-
-	fn is_sufficient(&self) -> bool {
-		self.is_sufficient
-	}
-}
-
-pub struct AssetRegistrar;
-use frame_support::pallet_prelude::DispatchResult;
-impl pallet_asset_manager::AssetRegistrar<Runtime> for AssetRegistrar {
-	fn create_asset(
-		asset_id: AssetId,
-		min_balance: Balance,
-		metadata: AssetStorageMetadata,
-		is_sufficient: bool,
-	) -> DispatchResult {
-		Assets::force_create(
-			Origin::root(),
-			asset_id,
-			sp_runtime::MultiAddress::Id(AssetManager::account_id()),
-			is_sufficient,
-			min_balance,
-		)?;
-
-		Assets::force_set_metadata(
-			Origin::root(),
-			asset_id,
-			metadata.name,
-			metadata.symbol,
-			metadata.decimals,
-			metadata.is_frozen,
-		)
-	}
-
-	fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
-		Assets::force_set_metadata(
-			Origin::root(),
-			asset_id,
-			metadata.name,
-			metadata.symbol,
-			metadata.decimals,
-			metadata.is_frozen,
-		)
-	}
-}
-
-impl pallet_asset_manager::Config for Runtime {
-	type Event = Event;
-	type Balance = Balance;
-	type AssetId = AssetId;
-	type AssetRegistrarMetadata = AssetRegistarMetadata<Balance>;
-	type StorageMetadata = AssetStorageMetadata;
-	type AssetLocation = AssetLocation;
-	type AssetRegistrar = AssetRegistrar;
-	type ModifierOrigin = EnsureRoot<AccountId>;
-}
-
-parameter_types! {
-	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
-	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
-}
-
-impl cumulus_pallet_parachain_system::Config for Runtime {
-	type Event = Event;
-	type SelfParaId = parachain_info::Pallet<Runtime>;
-	type DmpMessageHandler = DmpQueue;
-	type ReservedDmpWeight = ReservedDmpWeight;
-	type OutboundXcmpMessageSource = XcmpQueue;
-	type XcmpMessageHandler = XcmpQueue;
-	type ReservedXcmpWeight = ReservedXcmpWeight;
-	type OnSystemEvent = ();
-}
-
-impl parachain_info::Config for Runtime {}
-
-impl cumulus_pallet_aura_ext::Config for Runtime {}
-
-parameter_types! {
-	pub const KsmLocation: MultiLocation = MultiLocation::parent();
-	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
-	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
-	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-	pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
-}
-
-/// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
-/// when determining ownership of accounts for asset transacting and when attempting to use XCM
-/// `Transact` in order to determine the dispatch Origin.
-pub type LocationToAccountId = (
-	// The parent (Relay-chain) origin converts to the default `AccountId`.
-	ParentIsDefault<AccountId>,
-	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
-	SiblingParachainConvertsVia<Sibling, AccountId>,
-	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
-	AccountId32Aliases<RelayNetwork, AccountId>,
-);
-
-/// Transactor for native currency, i.e. implements `fungible` trait
-pub type LocalAssetTransactor = XcmCurrencyAdapter<
-	// Transacting native currency, i.e. MANTA, KMA, DOL
-	Balances,
-	// Used when the incoming asset is a fungible concrete asset matching the given location or name:
-	IsNativeConcrete<SelfReserve>,
-	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
-	LocationToAccountId,
-	// Our chain's account ID type (we can't get away without mentioning it explicitly):
-	AccountId,
-	// We don't track any teleports.
-	(),
->;
-
-/// This is the type to convert an (incoming) XCM origin into a local `Origin` instance,
-/// ready for dispatching a transaction with Xcm's `Transact`.
-/// It uses some Rust magic macro to do the pattern matching sequentially.
-/// There is an `OriginKind` which can biases the kind of local `Origin` it will become.
-pub type XcmOriginToCallOrigin = (
-	// Sovereign account converter; this attempts to derive an `AccountId` from the origin location
-	// using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
-	// foreign chains who want to have a local sovereign account on this chain which they control.
-	SovereignSignedViaLocation<LocationToAccountId, Origin>,
-	// Native converter for Relay-chain (Parent) location; will converts to a `Relay` origin when
-	// recognised.
-	RelayChainAsNative<RelayChainOrigin, Origin>,
-	// Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
-	// recognised.
-	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, Origin>,
-	// Superuser converter for the Relay-chain (Parent) location. This will allow it to issue a
-	// transaction from the Root origin.
-	ParentAsSuperuser<Origin>,
-	// If the incoming XCM origin is of type `AccountId32` and the Network is Network::Any
-	// or `RelayNetwork`, convert it to a Native 32 byte account.
-	SignedAccountId32AsNative<RelayNetwork, Origin>,
-	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
-	XcmPassthrough<Origin>,
-);
-
-parameter_types! {
-	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-	pub UnitWeightCost: Weight = 1_000_000_000;
-	// Used in native traders
-	// This might be able to skipped.
-	// We have to use `here()` because of reanchoring logic
-	pub ParaTokenPerSecond: (xcm::v2::AssetId, u128) = (Concrete(MultiLocation::here()), 1_000_000_000);
-	pub const MaxInstructions: u32 = 100;
-}
-
-/// Transactor for currency in pallet-assets, i.e. implements `fungibles` trait
-pub type FungiblesTransactor = FungiblesAdapter<
-	Assets,
-	ConvertedConcreteAssetId<
-		AssetId,
-		Balance,
-		AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>,
-		JustTry,
-	>,
-	// "default" implementation of converting a `MultiLocation` to an `AccountId`
-	LocationToAccountId,
-	AccountId,
-	// No teleport support.
-	Nothing,
-	// No teleport tracking.
-	(),
->;
-
-match_type! {
-	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
-		MultiLocation { parents: 1, interior: Here } |
-		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
-	};
-}
-match_type! {
-	pub type ParentOrSiblings: impl Contains<MultiLocation> = {
-		MultiLocation { parents: 1, interior: Here } |
-		MultiLocation { parents: 1, interior: X1(_) }
-	};
-}
-
-pub type Barrier = (
-	// Allows local origin messages which call weight_credit >= weight_limit.
-	TakeWeightCredit,
-	// Allows non-local origin messages, for example from from the xcmp queue,
-	// which have the ability to deposit assets and pay for their own execution.
-	AllowTopLevelPaidExecutionFrom<Everything>,
-	// Parent and its exec plurality get free execution
-	AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-	// Expected responses are OK.
-	// Allows `Pending` or `VersionNotifier` query responses.
-	AllowKnownQueryResponses<PolkadotXcm>,
-	// Subscriptions for version tracking are OK.
-	// Allows execution of `SubscribeVersion` or `UnsubscribeVersion` instruction,
-	// from parent or sibling chains.
-	AllowSubscriptionsFrom<ParentOrSiblings>,
-);
-
-parameter_types! {
-	/// Xcm fees will go to the asset manager (we don't implement treasury yet)
-	pub XcmFeesAccount: AccountId = AssetManager::account_id();
-}
-
-pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
-	Assets,
-	ConvertedConcreteAssetId<
-		AssetId,
-		Balance,
-		AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>,
-		JustTry,
-	>,
-	AccountId,
-	XcmFeesAccount,
->;
-
-pub struct XcmExecutorConfig;
-impl Config for XcmExecutorConfig {
-	type Call = Call;
-	type XcmSender = XcmRouter;
-	// Defines how to Withdraw and Deposit instruction work
-	// Under the hood, substrate framework will do pattern matching in macro,
-	// as a result, the order of the following tuple matters.
-	type AssetTransactor = (LocalAssetTransactor, FungiblesTransactor);
-	type OriginConverter = XcmOriginToCallOrigin;
-	// Combinations of (Location, Asset) pairs which we trust as reserves.
-	type IsReserve = MultiNativeAsset;
-	type IsTeleporter = ();
-	type LocationInverter = LocationInverter<Ancestry>;
-	type Barrier = Barrier;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-	// Trader is the means to purchasing weight credit for XCM execution.
-	// We define two traders:
-	// The first one will charge parachain's native currency, who's `MultiLocation`
-	// is defined in `SelfReserve`.
-	// The second one will charge the first asset in the MultiAssets with pre-defined rate
-	// i.e. units_per_second in `AssetManager`
-	type Trader = (
-		FixedRateOfFungible<ParaTokenPerSecond, ()>,
-		FirstAssetTrader<AssetId, AssetLocation, AssetManager, XcmFeesToAccount>,
-	);
-	type ResponseHandler = PolkadotXcm;
-	type AssetTrap = PolkadotXcm;
-	type AssetClaims = PolkadotXcm;
-	// This is needed for the version change notifier work
-	type SubscriptionService = PolkadotXcm;
-}
-
-/// No one is allowed to dispatch XCM sends/executions.
-pub type LocalOriginToLocation = ();
-
-/// The means for routing XCM messages which are not for local execution into the right message
-/// queues.
-pub type XcmRouter = (
-	// Two routers - use UMP to communicate with the relay chain:
-	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm>,
-	// ..and XCMP to communicate with the sibling chains.
-	XcmpQueue,
-);
-
-impl pallet_xcm::Config for Runtime {
-	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
-
-	type Origin = Origin;
-	type Call = Call;
-	type Event = Event;
-	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-	type XcmRouter = XcmRouter;
-	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-	/// This means that no location will pass XcmExecuteFilter, so a dispatched `execute` message will be filtered.
-	/// This shouldn't be reachable since `LocalOriginToLocation = ();`, but let's be on the safe side.
-	type XcmExecuteFilter = Nothing;
-	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
-	type XcmTeleportFilter = Nothing;
-	type XcmReserveTransferFilter = Nothing;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-	type LocationInverter = LocationInverter<Ancestry>;
-	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
-}
-
-impl cumulus_pallet_xcm::Config for Runtime {
-	type Event = Event;
-	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
-}
-
-impl cumulus_pallet_xcmp_queue::Config for Runtime {
-	type Event = Event;
-	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
-	type ChannelInfo = ParachainSystem;
-	type VersionWrapper = PolkadotXcm;
-	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-}
-
-impl cumulus_pallet_dmp_queue::Config for Runtime {
-	type Event = Event;
-	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
-	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-}
-
-// We wrap AssetId for XToken
-#[derive(Clone, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
-pub enum CurrencyId {
-	MantaCurrency(AssetId),
-}
-
-pub struct CurrencyIdtoMultiLocation<AssetXConverter>(sp_std::marker::PhantomData<AssetXConverter>);
-impl<AssetXConverter> sp_runtime::traits::Convert<CurrencyId, Option<MultiLocation>>
-	for CurrencyIdtoMultiLocation<AssetXConverter>
-where
-	AssetXConverter: xcm_executor::traits::Convert<MultiLocation, AssetId>,
-{
-	fn convert(currency: CurrencyId) -> Option<MultiLocation> {
-		match currency {
-			CurrencyId::MantaCurrency(asset_id) => match AssetXConverter::reverse_ref(&asset_id) {
-				Ok(location) => Some(location),
-				Err(_) => None,
-			},
-		}
-	}
-}
-
-parameter_types! {
-	pub const BaseXcmWeight: Weight = 100_000_000;
-	pub const MaxAssetsForTransfer: usize = 1;
-}
-
-// The XCM message wrapper wrapper
-impl orml_xtokens::Config for Runtime {
-	type Event = Event;
-	type Balance = Balance;
-	type CurrencyId = CurrencyId;
-	type AccountIdToMultiLocation = AccountIdToMultiLocation<AccountId>;
-	type CurrencyIdConvert =
-		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetId, AssetLocation, AssetManager>>;
-	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
-	type SelfLocation = SelfReserve;
-	// Take note that this pallet does not have the typical configurable WeightInfo.
-	// It uses the Weigher configuration to calculate weights for the user callable extrinsics on this chain,
-	// as well as weights for execution on the destination chain. Both based on the composed xcm messages.
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-	type BaseXcmWeight = BaseXcmWeight;
-	type LocationInverter = LocationInverter<Ancestry>;
-	type MaxAssetsForTransfer = MaxAssetsForTransfer;
-}
-
-parameter_types! {
 	// Rotate collator's spot each 6 hours.
-	pub const Period: u32 = 10 * MINUTES;
+	pub Period: u32 = prod_or_fast!(6 * HOURS, 2 * MINUTES, "DOLPHIN_PERIOD");
 	pub const Offset: u32 = 0;
 }
 
@@ -988,7 +614,7 @@ impl pallet_aura::Config for Runtime {
 
 parameter_types! {
 	// Pallet account for record rewards and give rewards to collator.
-	pub const PotId: PalletId = PalletId(*b"PotStake");
+	pub const PotId: PalletId = STAKING_PALLET_ID;
 }
 
 parameter_types! {
@@ -1008,11 +634,11 @@ impl manta_collator_selection::Config for Runtime {
 	type PotId = PotId;
 	type MaxCandidates = ConstU32<50>; // 50 candidates at most
 	type MaxInvulnerables = ConstU32<5>; // 5 invulnerables at most
-	type KickThreshold = Period; // should be a multiple of session or things will get inconsistent
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ValidatorIdOf = manta_collator_selection::IdentityCollator;
+	type AccountIdOf = manta_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;
-	type WeightInfo = manta_collator_selection::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -1069,9 +695,10 @@ construct_runtime!(
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
 
-		// Assets management
-		Assets: pallet_assets::{Pallet, Storage, Event<T>} = 45,
-		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>} = 46,
+		// Asset and Private Payment
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
+		AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
+		MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
 	}
 );
 
@@ -1253,8 +880,10 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_session, SessionBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_tx_pause, TransactionPause);
 			list_benchmark!(list, extra, pallet_assets, Assets);
+			list_benchmark!(list, extra, pallet_manta_pay, MantaPay);
+			list_benchmark!(list, extra, pallet_asset_manager, AssetManager);
 
-			let storage_info = AllPalletsWithSystem::storage_info();
+			let storage_info = AllPalletsReversedWithSystemFirst::storage_info();
 
 			return (list, storage_info)
 		}
@@ -1302,6 +931,8 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_tx_pause, TransactionPause);
 			add_benchmark!(params, batches, pallet_assets, Assets);
+			add_benchmark!(params, batches, pallet_manta_pay, MantaPay);
+			add_benchmark!(params, batches, pallet_asset_manager, AssetManager);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

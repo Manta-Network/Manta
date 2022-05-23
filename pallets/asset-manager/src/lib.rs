@@ -26,6 +26,12 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+pub mod weights;
+pub use crate::weights::WeightInfo;
+
 pub use pallet::*;
 
 #[cfg(test)]
@@ -37,79 +43,43 @@ mod tests;
 #[frame_support::pallet]
 pub mod pallet {
 
-	use codec::Codec;
+	use crate::weights::WeightInfo;
 	use frame_support::{pallet_prelude::*, transactional, PalletId};
 	use frame_system::pallet_prelude::*;
-	use manta_primitives::assets::{AssetIdLocationGetter, UnitsToWeightRatio};
-	use scale_info::TypeInfo;
-	use sp_runtime::{
-		traits::{AccountIdConversion, AtLeast32BitUnsigned, CheckedAdd, One},
-		ArithmeticError,
+	use manta_primitives::{
+		assets::{
+			AssetConfig, AssetIdLocationGetter, AssetMetadata, AssetRegistrar, FungibleLedger,
+			UnitsToWeightRatio,
+		},
+		types::{AssetId, Balance},
 	};
+	use sp_runtime::{traits::AccountIdConversion, ArithmeticError};
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
-	/// The AssetManagers's pallet id
-	pub const PALLET_ID: PalletId = PalletId(*b"asstmngr");
-
-	/// The registrar trait: defines the interface of creating an asset in the asset implementation layer.
-	/// We may revisit this interface design (e.g. add change asset interface). However, change StorageMetadata
-	/// should be rare.
-	pub trait AssetRegistrar<T: Config> {
-		/// Create an new asset.
-		///
-		/// * `asset_id`: the asset id to be created
-		/// * `min_balance`: the minimum balance to hold this asset
-		/// * `metadata`: the metadata that the implementation layer stores
-		/// * `is_sufficient`: whether this asset can be used as reserve asset,
-		/// 	to the first approximation. More specifically, Whether a non-zero balance of this asset is deposit of sufficient
-		/// 	value to account for the state bloat associated with its balance storage. If set to
-		/// 	`true`, then non-zero balances may be stored without a `consumer` reference (and thus
-		/// 	an ED in the Balances pallet or whatever else is used to control user-account state
-		/// 	growth).
-		fn create_asset(
-			asset_id: T::AssetId,
-			min_balance: T::Balance,
-			metadata: T::StorageMetadata,
-			is_sufficient: bool,
-		) -> DispatchResult;
-
-		/// Update asset metadata by `AssetId`.
-		///
-		/// * `asset_id`: the asset id to be created.
-		/// * `metadata`: the metadata that the implementation layer stores.
-		fn update_asset_metadata(
-			asset_id: T::AssetId,
-			metadata: T::StorageMetadata,
-		) -> DispatchResult;
-	}
-
-	/// The AssetMetadata trait:
-	pub trait AssetMetadata<T: Config> {
-		/// Returns the minimum balance to hold this asset
-		fn min_balance(&self) -> T::Balance;
-
-		/// Returns a boolean value indicating whether this asset needs an existential deposit
-		fn is_sufficient(&self) -> bool;
-	}
-
 	/// Convert AssetId and AssetLocation
-	impl<T: Config> AssetIdLocationGetter<T::AssetId, T::AssetLocation> for Pallet<T> {
-		fn get_asset_id(loc: &T::AssetLocation) -> Option<T::AssetId> {
+	impl<T: Config> AssetIdLocationGetter<<T::AssetConfig as AssetConfig<T>>::AssetLocation>
+		for Pallet<T>
+	{
+		fn get_asset_id(
+			loc: &<T::AssetConfig as AssetConfig<T>>::AssetLocation,
+		) -> Option<AssetId> {
 			LocationAssetId::<T>::get(loc)
 		}
 
-		fn get_asset_location(id: T::AssetId) -> Option<T::AssetLocation> {
+		fn get_asset_location(
+			id: AssetId,
+		) -> Option<<T::AssetConfig as AssetConfig<T>>::AssetLocation> {
 			AssetIdLocation::<T>::get(id)
 		}
 	}
 
 	/// Get unit per second from `AssetId`
-	impl<T: Config> UnitsToWeightRatio<T::AssetId> for Pallet<T> {
-		fn get_units_per_second(id: T::AssetId) -> Option<u128> {
+	impl<T: Config> UnitsToWeightRatio for Pallet<T> {
+		fn get_units_per_second(id: AssetId) -> Option<u128> {
 			UnitsPerSecond::<T>::get(id)
 		}
 	}
@@ -119,39 +89,47 @@ pub mod pallet {
 		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-		/// The asset id type, this have to be consistent with pallet-manta-pay
-		type AssetId: Member
-			+ Parameter
-			+ Default
-			+ Copy
-			+ AtLeast32BitUnsigned
-			+ MaybeSerializeDeserialize
-			+ MaxEncodedLen
-			+ TypeInfo;
-
-		/// The trait we use to register Assets
-		type AssetRegistrar: AssetRegistrar<Self>;
-
-		/// The units in which we record balances.
-		type Balance: Member + Parameter + AtLeast32BitUnsigned + Default + Copy + MaxEncodedLen;
-
-		/// Metadata type that required in token storage: e.g. AssetMetadata in Pallet-Assets.
-		type StorageMetadata: Member + Parameter + Default;
-
-		/// The Asset Metadata type stored in this pallet.
-		type AssetRegistrarMetadata: Member
-			+ Parameter
-			+ Codec
-			+ Default
-			+ Into<Self::StorageMetadata>
-			+ AssetMetadata<Self>;
-
-		/// The AssetLocation type: could be just a thin wrapper of MultiLocation
-		type AssetLocation: Member + Parameter + Default + TypeInfo;
+		/// Asset configuration, e.g. AssetId, Balance, Metadata
+		type AssetConfig: AssetConfig<Self>;
 
 		/// The origin which may forcibly create or destroy an asset or otherwise alter privileged
 		/// attributes.
 		type ModifierOrigin: EnsureOrigin<Self::Origin>;
+
+		/// Pallet ID
+		type PalletId: Get<PalletId>;
+
+		/// Weight information for the extrinsics in this pallet.
+		type WeightInfo: crate::weights::WeightInfo;
+	}
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config> {
+		pub start_id: AssetId,
+		pub _marker: PhantomData<T>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config> Default for GenesisConfig<T> {
+		fn default() -> Self {
+			Self {
+				start_id: <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(),
+				_marker: PhantomData,
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+		fn build(&self) {
+			NextAssetId::<T>::set(self.start_id);
+			let asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
+			let metadata = <T::AssetConfig as AssetConfig<T>>::NativeAssetMetadata::get();
+			let location = <T::AssetConfig as AssetConfig<T>>::NativeAssetLocation::get();
+			AssetIdLocation::<T>::insert(&asset_id, &location);
+			AssetIdMetadata::<T>::insert(&asset_id, &metadata);
+			LocationAssetId::<T>::insert(&location, &asset_id);
+		}
 	}
 
 	#[pallet::event]
@@ -159,24 +137,30 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// A new asset registered.
 		AssetRegistered {
-			asset_id: T::AssetId,
-			asset_address: T::AssetLocation,
-			metadata: T::AssetRegistrarMetadata,
+			asset_id: AssetId,
+			asset_address: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
+			metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistrarMetadata,
 		},
 		/// An asset's location has been updated.
 		AssetLocationUpdated {
-			asset_id: T::AssetId,
-			location: T::AssetLocation,
+			asset_id: AssetId,
+			location: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
 		},
 		/// An asset;s metadata has been updated.
 		AssetMetadataUpdated {
-			asset_id: T::AssetId,
-			metadata: T::AssetRegistrarMetadata,
+			asset_id: AssetId,
+			metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistrarMetadata,
 		},
 		/// Update units per second of an asset
 		UnitsPerSecondUpdated {
-			asset_id: T::AssetId,
+			asset_id: AssetId,
 			units_per_second: u128,
+		},
+		/// Asset minted.
+		AssetMinted {
+			asset_id: AssetId,
+			beneficiary: T::AccountId,
+			amount: Balance,
 		},
 	}
 
@@ -187,10 +171,14 @@ pub mod pallet {
 		LocationAlreadyExists,
 		/// Error creating asset, e.g. error returned from the implementation layer.
 		ErrorCreatingAsset,
-		/// Update a non-exist asset
+		/// Update a non-exist asset.
 		UpdateNonExistAsset,
+		/// Cannot update reserved assets metadata (0 and 1)
+		CannotUpdateNativeAssetMetadata,
 		/// Asset already registered.
 		AssetAlreadyRegistered,
+		/// Error on minting asset.
+		MintError,
 	}
 
 	/// AssetId to MultiLocation Map.
@@ -198,50 +186,50 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn asset_id_location)]
 	pub(super) type AssetIdLocation<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::AssetId, T::AssetLocation>;
+		StorageMap<_, Blake2_128Concat, AssetId, <T::AssetConfig as AssetConfig<T>>::AssetLocation>;
 
 	/// MultiLocation to AssetId Map.
 	/// This is mostly useful when receiving an asset from a foreign location.
 	#[pallet::storage]
 	#[pallet::getter(fn location_asset_id)]
 	pub(super) type LocationAssetId<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::AssetLocation, T::AssetId>;
+		StorageMap<_, Blake2_128Concat, <T::AssetConfig as AssetConfig<T>>::AssetLocation, AssetId>;
 
 	/// AssetId to AssetRegistrar Map.
 	#[pallet::storage]
 	#[pallet::getter(fn asset_id_metadata)]
-	pub(super) type AssetIdMetadata<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::AssetId, T::AssetRegistrarMetadata>;
+	pub(super) type AssetIdMetadata<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		AssetId,
+		<T::AssetConfig as AssetConfig<T>>::AssetRegistrarMetadata,
+	>;
 
 	/// Get the next available AssetId.
 	#[pallet::storage]
 	#[pallet::getter(fn next_asset_id)]
-	pub type NextAssetId<T: Config> = StorageValue<_, T::AssetId, ValueQuery>;
+	pub type NextAssetId<T: Config> = StorageValue<_, AssetId, ValueQuery>;
 
 	/// XCM transfer cost for different asset.
 	#[pallet::storage]
-	pub type UnitsPerSecond<T: Config> = StorageMap<_, Blake2_128Concat, T::AssetId, u128>;
+	pub type UnitsPerSecond<T: Config> = StorageMap<_, Blake2_128Concat, AssetId, u128>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Register a new asset in the asset manager.
 		///
-		/// * `origin`: Caller of this extrinsic, the acess control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
 		/// * `location`: Location of the asset.
 		/// * `metadata`: Asset metadata.
 		/// * `min_balance`: Minimum balance to keep an account alive, used in conjunction with `is_sufficient`.
 		/// * `is_sufficient`: Whether this asset needs users to have an existential deposit to hold
 		///  this asset.
-		///
-		/// # <weight>
-		/// TODO: get actual weight
-		/// # </weight>
-		#[pallet::weight(50_000_000)]
+		#[pallet::weight(T::WeightInfo::register_asset())]
 		#[transactional]
 		pub fn register_asset(
 			origin: OriginFor<T>,
-			location: T::AssetLocation,
-			metadata: T::AssetRegistrarMetadata,
+			location: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
+			metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistrarMetadata,
 		) -> DispatchResult {
 			T::ModifierOrigin::ensure_origin(origin)?;
 			ensure!(
@@ -249,7 +237,7 @@ pub mod pallet {
 				Error::<T>::LocationAlreadyExists
 			);
 			let asset_id = Self::get_next_asset_id()?;
-			T::AssetRegistrar::create_asset(
+			<T::AssetConfig as AssetConfig<T>>::AssetRegistrar::create_asset(
 				asset_id,
 				metadata.min_balance(),
 				metadata.clone().into(),
@@ -269,18 +257,15 @@ pub mod pallet {
 
 		/// Update an asset by its asset id in the asset manager.
 		///
-		/// * `origin`: Caller of this extrinsic, the acess control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `location`: `location` to update the asset location.
-		/// # <weight>
-		/// TODO: get actual weight
-		/// # </weight>
-		#[pallet::weight(50_000_000)]
+		#[pallet::weight(T::WeightInfo::update_asset_location())]
 		#[transactional]
 		pub fn update_asset_location(
 			origin: OriginFor<T>,
-			#[pallet::compact] asset_id: T::AssetId,
-			location: T::AssetLocation,
+			#[pallet::compact] asset_id: AssetId,
+			location: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
 		) -> DispatchResult {
 			// checks validity
 			T::ModifierOrigin::ensure_origin(origin)?;
@@ -305,21 +290,29 @@ pub mod pallet {
 
 		/// Update an asset's metadata by its `asset_id`
 		///
-		/// * `origin`: Caller of this extrinsic, the acess control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `metadata`: new `metadata` to be associated with `asset_id`.
-		#[pallet::weight(50_000_000)]
+		#[pallet::weight(T::WeightInfo::update_asset_metadata())]
 		#[transactional]
 		pub fn update_asset_metadata(
 			origin: OriginFor<T>,
-			#[pallet::compact] asset_id: T::AssetId,
-			metadata: T::AssetRegistrarMetadata,
+			#[pallet::compact] asset_id: AssetId,
+			metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistrarMetadata,
 		) -> DispatchResult {
 			T::ModifierOrigin::ensure_origin(origin)?;
+			ensure!(
+				asset_id != <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(),
+				Error::<T>::CannotUpdateNativeAssetMetadata
+			);
 			ensure!(
 				AssetIdLocation::<T>::contains_key(&asset_id),
 				Error::<T>::UpdateNonExistAsset
 			);
+			<T::AssetConfig as AssetConfig<T>>::AssetRegistrar::update_asset_metadata(
+				asset_id,
+				metadata.clone().into(),
+			)?;
 			AssetIdMetadata::<T>::insert(&asset_id, &metadata);
 			Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata });
 			Ok(())
@@ -327,17 +320,14 @@ pub mod pallet {
 
 		/// Update an asset by its asset id in the asset manager.
 		///
-		/// * `origin`: Caller of this extrinsic, the acess control is specfied by `ForceOrigin`.
+		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
 		/// * `asset_id`: AssetId to be updated.
 		/// * `units_per_second`: units per second for `asset_id`
-		/// # <weight>
-		/// TODO: get actual weight
-		/// # </weight>
-		#[pallet::weight(50_000_000)]
+		#[pallet::weight(T::WeightInfo::set_units_per_second())]
 		#[transactional]
 		pub fn set_units_per_second(
 			origin: OriginFor<T>,
-			#[pallet::compact] asset_id: T::AssetId,
+			#[pallet::compact] asset_id: AssetId,
 			#[pallet::compact] units_per_second: u128,
 		) -> DispatchResult {
 			T::ModifierOrigin::ensure_origin(origin)?;
@@ -352,23 +342,74 @@ pub mod pallet {
 			});
 			Ok(())
 		}
+
+		/// Mint asset by its asset id to a beneficiary.
+		///
+		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
+		/// * `asset_id`: AssetId to be updated.
+		/// * `beneficiary`: Account to mint the asset.
+		/// * `amount`: Amount of asset being minted.
+		#[pallet::weight(T::WeightInfo::mint_asset())]
+		#[transactional]
+		pub fn mint_asset(
+			origin: OriginFor<T>,
+			#[pallet::compact] asset_id: AssetId,
+			beneficiary: T::AccountId,
+			amount: Balance,
+		) -> DispatchResult {
+			T::ModifierOrigin::ensure_origin(origin)?;
+			ensure!(
+				AssetIdLocation::<T>::contains_key(&asset_id),
+				Error::<T>::UpdateNonExistAsset
+			);
+			ensure!(
+				<T::AssetConfig as AssetConfig<T>>::FungibleLedger::mint(
+					asset_id,
+					&beneficiary,
+					amount
+				)
+				.is_ok(),
+				Error::<T>::MintError
+			);
+			Self::deposit_event(Event::<T>::AssetMinted {
+				asset_id,
+				beneficiary,
+				amount,
+			});
+			Ok(())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
 		/// Get and increment the `NextAssetID` by one.
-		fn get_next_asset_id() -> Result<T::AssetId, DispatchError> {
-			NextAssetId::<T>::try_mutate(|current| -> Result<T::AssetId, DispatchError> {
+		fn get_next_asset_id() -> Result<AssetId, DispatchError> {
+			NextAssetId::<T>::try_mutate(|current| -> Result<AssetId, DispatchError> {
 				let id = *current;
-				*current = current
-					.checked_add(&One::one())
-					.ok_or(ArithmeticError::Overflow)?;
+				*current = current.checked_add(1u32).ok_or(ArithmeticError::Overflow)?;
 				Ok(id)
 			})
 		}
 
 		/// The account ID of AssetManager
 		pub fn account_id() -> T::AccountId {
-			PALLET_ID.into_account()
+			T::PalletId::get().into_account()
+		}
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config> GenesisConfig<T> {
+		/// Direct implementation of `GenesisBuild::build_storage`.
+		///
+		/// Kept in order not to break dependency.
+		pub fn build_storage(&self) -> Result<sp_runtime::Storage, String> {
+			<Self as GenesisBuild<T>>::build_storage(self)
+		}
+
+		/// Direct implementation of `GenesisBuild::assimilate_storage`.
+		///
+		/// Kept in order not to break dependency.
+		pub fn assimilate_storage(&self, storage: &mut sp_runtime::Storage) -> Result<(), String> {
+			<Self as GenesisBuild<T>>::assimilate_storage(self, storage)
 		}
 	}
 }

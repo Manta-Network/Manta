@@ -8,7 +8,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'manta'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '3.1.4'
+version = '3.1.5'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -18,7 +18,7 @@ log = "0.4.13"
 codec = { package = 'parity-scale-codec', version = '2.3.1' }
 cfg-if = "1.0.0"
 structopt = "0.3.8"
-serde = { version = "1.0.119", features = ["derive"] }
+serde = { version = "1.0.137", features = ["derive"] }
 hex-literal = "0.3.3"
 async-trait = "0.1.42"
 futures = "0.3.14"
@@ -30,9 +30,9 @@ try-runtime-cli = { git = "https://github.com/paritytech/substrate.git", branch 
 
 # RPC related dependencies
 jsonrpc-core = "18.0.0"
-frame-rpc-system = { package = "substrate-frame-rpc-system", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+frame-rpc-system = { package = "substrate-frame-rpc-system", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
 pallet-transaction-payment-rpc = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
-sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
 
 # Substrate client dependencies
 sc-basic-authorship = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
@@ -42,7 +42,7 @@ sc-consensus = { git = 'https://github.com/paritytech/substrate.git', branch = "
 sc-executor = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
 sc-client-api = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
 sc-keystore = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
-sc-network = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
 sc-rpc = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
 sc-rpc-api = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
 sc-service = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
@@ -58,14 +58,14 @@ sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', branc
 sp-blockchain = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
 sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
 sp-inherents = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
-sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sp-keystore = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
 sp-offchain = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
 sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
 sp-session = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
 sp-timestamp = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
 sp-transaction-pool = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
 
 # Cumulus dependencies
 cumulus-client-cli = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.16" }
@@ -90,7 +90,7 @@ xcm = { git = "https://github.com/paritytech/polkadot.git", branch = "release-v0
 calamari-runtime = { path = '../runtime/calamari' }
 manta-runtime = { path = '../runtime/manta' }
 dolphin-runtime = { path = '../runtime/dolphin' }
-manta-primitives = { path = '../runtime/primitives' }
+manta-primitives = { path = '../primitives' }
 
 [build-dependencies]
 substrate-build-script-utils = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16" }

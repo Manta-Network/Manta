@@ -17,7 +17,9 @@
 use super::*;
 use crate::command::DOLPHIN_PARACHAIN_ID;
 
-use dolphin_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
+use dolphin_runtime::{
+	AssetManagerConfig, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
+};
 use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
@@ -31,14 +33,14 @@ const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = 2;
 
-/// Generate the calamari session keys from individual elements.
+/// Generate the dolphin session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
 pub fn dolphin_session_keys(keys: AuraId) -> dolphin_runtime::opaque::SessionKeys {
 	dolphin_runtime::opaque::SessionKeys { aura: keys }
 }
 
-// calamari chain specs
+// dolphin chain specs
 pub fn dolphin_properties() -> Properties {
 	let mut p = Properties::new();
 	p.insert("ss58format".into(), constants::CALAMARI_SS58PREFIX.into());
@@ -203,6 +205,7 @@ fn dolphin_dev_genesis(
 			members: endowed_accounts.iter().take(1).cloned().collect(),
 			phantom: Default::default(),
 		},
+		asset_manager: Default::default(),
 		council_membership: Default::default(),
 		technical_membership: Default::default(),
 		aura_ext: Default::default(),
@@ -215,7 +218,7 @@ fn dolphin_dev_genesis(
 
 pub fn dolphin_testnet_config() -> Result<DolphinChainSpec, String> {
 	let mut spec = DolphinChainSpec::from_json_bytes(
-		&include_bytes!("../../../genesis/dolphin-testnet.json")[..],
+		&include_bytes!("../../../genesis/dolphin-testnet-genesis.json")[..],
 	)?;
 	spec.extensions_mut().para_id = DOLPHIN_PARACHAIN_ID;
 	Ok(spec)
