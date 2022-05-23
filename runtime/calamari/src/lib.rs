@@ -162,7 +162,7 @@ impl pallet_tx_pause::Config for Runtime {
 	type Event = Event;
 	type UpdateOrigin = EnsureOneOf<
 		EnsureRoot<AccountId>,
-		pallet_collective::EnsureProportionAtLeast<_3, _5, AccountId, TechnicalCollective>,
+		pallet_collective::EnsureProportionAtLeast<_1, _2, AccountId, TechnicalCollective>,
 	>;
 	type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
