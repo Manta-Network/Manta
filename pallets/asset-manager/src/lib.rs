@@ -461,10 +461,6 @@ pub mod pallet {
 	/// Check the multilocation is supported by calamari/manta.
 	impl<T: Config> Contains<MultiLocation> for Pallet<T> {
 		fn contains(location: &MultiLocation) -> bool {
-			if location.parent_count() != 1 {
-				return false;
-			}
-
 			if let Some(striped_location) = Self::extract_multilocation(location) {
 				LocationAssetId::<T>::contains_key(striped_location)
 			} else {
