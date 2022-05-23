@@ -448,19 +448,7 @@ pub mod pallet {
 					// MultiLocation::new(*parents, Junctions::X1(Junction::Parachain(*para_id)))
 					interior.clone().split_last().0.into_exterior(*parents)
 				}
-				// Send tokens to specified pallet on sibling chain.
-				Junctions::X3(
-					Junction::Parachain(_para_id),
-					Junction::PalletInstance(_pallet_idx),
-					Junction::AccountId32 { .. },
-				) => interior.clone().split_last().0.into_exterior(*parents),
-				// Send tokens with specified token symbol to sibling chain.
-				Junctions::X3(
-					Junction::Parachain(_para_id),
-					Junction::GeneralKey(_key),
-					Junction::AccountId32 { .. },
-				) => interior.clone().split_last().0.into_exterior(*parents),
-				// For now, we don't support X4 or longer Junctions
+				// For now, we don't support X3 or longer Junctions
 				_ => return None,
 			};
 

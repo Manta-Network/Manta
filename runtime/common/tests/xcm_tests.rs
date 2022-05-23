@@ -1821,19 +1821,12 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 fn filtered_multilocation_should_not_work() {
 	let para_a_id = 1;
 	let para_b_id = 2;
-	let para_c_id = 3;
 	let para_a_source_location = create_asset_location(1, para_a_id);
 	let para_b_source_location = create_asset_location(1, para_b_id);
-	let para_c_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
-		1,
-		X2(Parachain(para_c_id), PalletInstance(PALLET_ASSET_INDEX)),
-	)));
 	let para_a_asset_metadata =
 		create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
 	let para_b_asset_metadata =
 		create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
-	let para_c_asset_metadata =
-		create_asset_metadata("ParaCToken", "ParaC", 18, 1, None, false, true);
 
 	// Register ParaA native asset in ParaA
 	let a_currency_id = register_assets_on_parachain::<ParaA>(
@@ -1846,13 +1839,6 @@ fn filtered_multilocation_should_not_work() {
 	let _ = register_assets_on_parachain::<ParaA>(
 		&para_b_source_location,
 		&para_b_asset_metadata,
-		Some(0u128),
-		None,
-	);
-	// register ParaC native asset on ParaA
-	let c_currency_id = register_assets_on_parachain::<ParaA>(
-		&para_c_source_location,
-		&para_c_asset_metadata,
 		Some(0u128),
 		None,
 	);
@@ -1889,145 +1875,6 @@ fn filtered_multilocation_should_not_work() {
 			),
 			orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
 		);
-	});
-
-	// Cover the scenario where the length of Junctions is bigger than 3.
-
-	// Wrong parents should not work.
-	let wrong_parents_dest = MultiLocation {
-		parents: 2,
-		interior: X2(
-			Parachain(3),
-			AccountId32 {
-				network: NetworkId::Any,
-				id: ALICE.into(),
-			},
-		),
-	};
-	ParaA::execute_with(|| {
-		// free execution, full amount received
-		assert_noop!(
-			parachain::XTokens::transfer(
-				parachain::Origin::signed(ALICE.into()),
-				parachain::CurrencyId::MantaCurrency(a_currency_id),
-				100,
-				Box::new(VersionedMultiLocation::V1(wrong_parents_dest)),
-				80
-			),
-			orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
-		);
-	});
-	// Wrong PalletInstance should not work.
-	let wrong_pallet_idx_dest = MultiLocation {
-		parents: 1,
-		interior: X3(
-			Parachain(3),
-			PalletInstance(PALLET_ASSET_INDEX + 1),
-			AccountId32 {
-				network: NetworkId::Any,
-				id: ALICE.into(),
-			},
-		),
-	};
-	ParaA::execute_with(|| {
-		// free execution, full amount received
-		assert_noop!(
-			parachain::XTokens::transfer(
-				parachain::Origin::signed(ALICE.into()),
-				parachain::CurrencyId::MantaCurrency(a_currency_id),
-				100,
-				Box::new(VersionedMultiLocation::V1(wrong_pallet_idx_dest)),
-				80
-			),
-			orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
-		);
-	});
-	// Correct PalletInstance should work.
-	let right_pallet_idx_dest = MultiLocation {
-		parents: 1,
-		interior: X3(
-			Parachain(3),
-			PalletInstance(PALLET_ASSET_INDEX),
-			AccountId32 {
-				network: NetworkId::Any,
-				id: ALICE.into(),
-			},
-		),
-	};
-	ParaA::execute_with(|| {
-		// free execution, full amount received
-		assert_ok!(parachain::XTokens::transfer(
-			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(a_currency_id),
-			100,
-			Box::new(VersionedMultiLocation::V1(right_pallet_idx_dest)),
-			80
-		));
-	});
-
-	// Update current multilocation to general key location.
-	let para_c_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
-		1,
-		X2(Parachain(para_c_id), GeneralKey(vec![0x00u8, 0x83])),
-	)));
-	ParaA::execute_with(|| {
-		assert_ok!(parachain::AssetManager::update_asset_location(
-			parachain::Origin::root(),
-			c_currency_id,
-			para_c_source_location.clone(),
-		));
-		assert_eq!(
-			parachain::AssetManager::asset_id_location(c_currency_id)
-				.map(|location| para_c_source_location == location),
-			Some(true),
-		);
-	});
-	// Wrong GeneralKey should not work.
-	let wrong_general_key_dest = MultiLocation {
-		parents: 1,
-		interior: X3(
-			Parachain(3),
-			GeneralKey(vec![0x10u8, 0x20]),
-			AccountId32 {
-				network: NetworkId::Any,
-				id: ALICE.into(),
-			},
-		),
-	};
-	ParaA::execute_with(|| {
-		// free execution, full amount received
-		assert_noop!(
-			parachain::XTokens::transfer(
-				parachain::Origin::signed(ALICE.into()),
-				parachain::CurrencyId::MantaCurrency(a_currency_id),
-				100,
-				Box::new(VersionedMultiLocation::V1(wrong_general_key_dest)),
-				80
-			),
-			orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
-		);
-	});
-	// Correct GeneralKey should work.
-	let correct_general_key_dest = MultiLocation {
-		parents: 1,
-		interior: X3(
-			Parachain(3),
-			GeneralKey(vec![0x00u8, 0x83]),
-			AccountId32 {
-				network: NetworkId::Any,
-				id: ALICE.into(),
-			},
-		),
-	};
-	ParaA::execute_with(|| {
-		// free execution, full amount received
-		assert_ok!(parachain::XTokens::transfer(
-			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(a_currency_id),
-			100,
-			Box::new(VersionedMultiLocation::V1(correct_general_key_dest)),
-			80
-		));
 	});
 }
 
