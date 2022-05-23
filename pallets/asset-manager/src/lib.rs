@@ -431,41 +431,61 @@ pub mod pallet {
 		pub fn account_id() -> T::AccountId {
 			T::PalletId::get().into_account()
 		}
+
+		/// Strip AccountId from the multilocation.
+		pub(crate) fn extract_multilocation(
+			location: &MultiLocation,
+		) -> Option<<T::AssetConfig as AssetConfig<T>>::AssetLocation> {
+			let MultiLocation { parents, interior } = location;
+			// Currently, we only support X3 at most.
+			let striped_location = match interior {
+				// Send tokens back to relaychain.
+				Junctions::X1(Junction::AccountId32 { .. }) | Junctions::Here => {
+					MultiLocation::parent()
+				}
+				// Send native tokens to sibling chain.
+				Junctions::X2(Junction::Parachain(_para_id), Junction::AccountId32 { .. }) => {
+					// MultiLocation::new(*parents, Junctions::X1(Junction::Parachain(*para_id)))
+					interior.clone().split_last().0.into_exterior(*parents)
+				}
+				// Send tokens to specified pallet on sibling chain.
+				Junctions::X3(
+					Junction::Parachain(_para_id),
+					Junction::PalletInstance(_pallet_idx),
+					Junction::AccountId32 { .. },
+				) => interior.clone().split_last().0.into_exterior(*parents),
+				// Send tokens with specified token symbol to sibling chain.
+				Junctions::X3(
+					Junction::Parachain(_para_id),
+					Junction::GeneralKey(_key),
+					Junction::AccountId32 { .. },
+				) => interior.clone().split_last().0.into_exterior(*parents),
+				// For now, we don't support X4 or longer Junctions
+				_ => return None,
+			};
+
+			Some(<T::AssetConfig as AssetConfig<T>>::AssetLocation::from(
+				striped_location,
+			))
+		}
 	}
 
+	/// Check the multilocation is supported by calamari/manta.
 	impl<T: Config> Contains<MultiLocation> for Pallet<T> {
 		fn contains(location: &MultiLocation) -> bool {
-			let MultiLocation { parents, interior } = location;
+			if location.parent_count() != 1 {
+				return false;
+			}
 
-			match interior {
-				// this branch means sending tokens to relaychain.
-				Junctions::X1(Junction::AccountId32 { .. }) | Junctions::Here => {
-					let _location = MultiLocation::parent();
-					let location =
-						<T::AssetConfig as AssetConfig<T>>::AssetLocation::from(_location);
-					LocationAssetId::<T>::contains_key(location)
-				}
-				// sending tokens to parachain.
-				Junctions::X2(Junction::Parachain(para_id), Junction::AccountId32 { .. }) => {
-					let _location =
-						MultiLocation::new(*parents, Junctions::X1(Junction::Parachain(*para_id)));
-					let location =
-						<T::AssetConfig as AssetConfig<T>>::AssetLocation::from(_location);
-					LocationAssetId::<T>::iter().any(|(_location, _)| _location == location)
-				}
-				Junctions::X3(Junction::Parachain(para_id), ..) => {
-					let _location =
-						MultiLocation::new(*parents, Junctions::X1(Junction::Parachain(*para_id)));
-					let location =
-						<T::AssetConfig as AssetConfig<T>>::AssetLocation::from(_location);
-					LocationAssetId::<T>::iter().any(|(_location, _)| _location == location)
-				}
-				// Currently, we don't support X4, X5...
-				_ => false,
+			if let Some(striped_location) = Self::extract_multilocation(location) {
+				LocationAssetId::<T>::contains_key(striped_location)
+			} else {
+				false
 			}
 		}
 	}
 
+	/// Get min-xcm-fee by multilocation.
 	impl<T: Config> GetByKey<MultiLocation, u128> for Pallet<T> {
 		fn get(location: &MultiLocation) -> u128 {
 			let location =
