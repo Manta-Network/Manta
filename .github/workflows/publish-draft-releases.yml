@@ -69,7 +69,7 @@ jobs:
       -
         name: build runtime
         id: srtool-build
-        uses: chevdor/srtool-actions@v0.3.0
+        uses: chevdor/srtool-actions@v0.4.0
         with:
           image: paritytech/srtool
           chain: ${{ matrix.runtime.name }}
