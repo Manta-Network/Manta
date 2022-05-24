@@ -21,11 +21,14 @@ mod xcm_mock;
 use codec::Encode;
 use frame_support::{assert_err, assert_ok, weights::constants::WEIGHT_PER_SECOND};
 use manta_primitives::{
-	assets::{AssetLocation, AssetRegistrarMetadata},
+	assets::{AssetConfig, AssetLocation, AssetRegistrarMetadata},
 	types::AssetId,
 };
 use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
-use xcm_mock::{parachain::PALLET_ASSET_INDEX, *};
+use xcm_mock::{
+	parachain::{ParachainAssetConfig, PALLET_ASSET_INDEX},
+	*,
+};
 use xcm_simulator::TestExt;
 
 use crate::xcm_mock::parachain::{AssetManager, ParaTokenPerSecond};
@@ -138,98 +141,36 @@ fn xcmp() {
 }
 
 #[test]
-fn reserve_transfer_relaychain_to_parachain_a() {
+fn reserve_transfer_relay_asset_from_relay_chain_to_parachain_a_then_back() {
 	MockNet::reset();
 
-	let relay_asset_id: AssetId = 0;
-	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-
-	let asset_metadata = AssetRegistrarMetadata {
+	let relay_asset_id: AssetId =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
+	let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+	let units_per_sec = 0;
+	let relay_asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
 		symbol: b"KSM".to_vec(),
 		decimals: 12,
-		min_balance: 1u128,
+		min_balance: 1,
 		evm_address: None,
 		is_frozen: false,
 		is_sufficient: true,
 	};
+	let weight_at_most = 40000;
 
 	// Register relay chain asset in parachain A
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::AssetManager::register_asset(
 			parachain::Origin::root(),
-			source_location,
-			asset_metadata
-		));
-		// we don't charge anything during test
-		assert_ok!(parachain::AssetManager::set_units_per_second(
-			parachain::Origin::root(),
-			relay_asset_id,
-			0u128
-		));
-	});
-
-	let withdraw_amount = 123;
-
-	Relay::execute_with(|| {
-		assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
-			relay_chain::Origin::signed(ALICE),
-			Box::new(X1(Parachain(1)).into().into()),
-			Box::new(
-				X1(AccountId32 {
-					network: Any,
-					id: ALICE.into()
-				})
-				.into()
-				.into()
-			),
-			Box::new((Here, withdraw_amount).into()),
-			0,
-		));
-		assert_eq!(
-			relay_chain::Balances::free_balance(&para_account_id(1)),
-			INITIAL_BALANCE + withdraw_amount
-		);
-	});
-
-	ParaA::execute_with(|| {
-		// free execution, full amount received
-		assert_eq!(
-			pallet_assets::Pallet::<parachain::Runtime>::balance(relay_asset_id, &ALICE.into()),
-			withdraw_amount
-		);
-	});
-}
-
-#[test]
-fn reserve_transfer_relaychain_to_parachain_a_then_back() {
-	MockNet::reset();
-
-	let relay_asset_id: AssetId = 0;
-	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-
-	let asset_metadata = AssetRegistrarMetadata {
-		name: b"Kusama".to_vec(),
-		symbol: b"KSM".to_vec(),
-		decimals: 12,
-		min_balance: 1u128,
-		evm_address: None,
-		is_frozen: false,
-		is_sufficient: true,
-	};
-
-	// Register relay chain asset in parachain A
-	ParaA::execute_with(|| {
-		assert_ok!(parachain::AssetManager::register_asset(
-			parachain::Origin::root(),
-			source_location,
-			asset_metadata
+			relay_source_location,
+			relay_asset_metadata
 		));
 		// we don't charge anything
 		assert_ok!(parachain::AssetManager::set_units_per_second(
 			parachain::Origin::root(),
 			relay_asset_id,
-			0u128
+			units_per_sec
 		));
 	});
 
@@ -238,7 +179,7 @@ fn reserve_transfer_relaychain_to_parachain_a_then_back() {
 	Relay::execute_with(|| {
 		assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
 			relay_chain::Origin::signed(ALICE),
-			Box::new(X1(Parachain(1)).into().into()),
+			Box::new(X1(Parachain(PARA_A_ID)).into().into()),
 			Box::new(
 				X1(AccountId32 {
 					network: Any,
@@ -285,7 +226,7 @@ fn reserve_transfer_relaychain_to_parachain_a_then_back() {
 			parachain::CurrencyId::MantaCurrency(relay_asset_id),
 			amount,
 			Box::new(VersionedMultiLocation::V1(dest)),
-			40000
+			weight_at_most
 		));
 	});
 
@@ -310,57 +251,49 @@ fn send_para_a_native_asset_to_para_b() {
 	// We use an opinionated source location here:
 	// Ideally, we could use `here()`, however, we always prefer to use the location from
 	// `root` when possible.
-	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+	let a_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
-		X1(Parachain(1)),
+		X1(Parachain(PARA_A_ID)),
 	)));
-	let a_currency_id = 0u32;
-	let amount = 100u128;
+	let a_asset_id_on_a =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get();
+	let a_asset_id_on_b =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
 
-	let asset_metadata = AssetRegistrarMetadata {
-		name: b"ParaAToken".to_vec(),
-		symbol: b"ParaA".to_vec(),
-		decimals: 18,
-		evm_address: None,
-		min_balance: 1,
-		is_frozen: false,
-		is_sufficient: false,
-	};
+	let amount = 100u128;
+	let units_per_sec = 0;
+	let a_asset_metadata =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetMetadata::get();
 
 	// Register ParaA native asset in ParaB
 	ParaB::execute_with(|| {
 		assert_ok!(AssetManager::register_asset(
 			parachain::Origin::root(),
-			source_location.clone(),
-			asset_metadata.clone()
+			a_source_location.clone(),
+			a_asset_metadata.clone()
 		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
-			0u128
+			a_asset_id_on_b,
+			units_per_sec
 		));
 		assert_eq!(
-			Some(a_currency_id),
-			AssetManager::location_asset_id(source_location.clone())
+			Some(a_asset_id_on_b),
+			AssetManager::location_asset_id(a_source_location.clone())
 		);
 	});
 
 	// Register ParaA native asset in ParaA
 	ParaA::execute_with(|| {
-		assert_ok!(AssetManager::register_asset(
-			parachain::Origin::root(),
-			source_location.clone(),
-			asset_metadata
-		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
-			0u128
+			a_asset_id_on_a,
+			units_per_sec
 		));
-		assert_eq!(
-			Some(a_currency_id),
-			AssetManager::location_asset_id(source_location)
-		);
+		// assert_eq!(
+		// 	Some(a_asset_id_on_a),
+		// 	AssetManager::location_asset_id(source_location)
+		// );
 	});
 
 	let dest = MultiLocation {
@@ -378,7 +311,7 @@ fn send_para_a_native_asset_to_para_b() {
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
 			amount,
 			Box::new(VersionedMultiLocation::V1(dest)),
 			800000
@@ -393,51 +326,44 @@ fn send_para_a_native_asset_to_para_b() {
 	ParaB::execute_with(|| {
 		// free execution, full amount received
 		assert_eq!(
-			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			parachain::Assets::balance(a_asset_id_on_b, &ALICE.into()),
 			amount
 		);
 	});
 }
 
 #[test]
-fn send_not_sufficient_asset_from_para_a_to_para_b() {
+fn send_insufficient_asset_from_para_a_to_para_b() {
 	MockNet::reset();
 
-	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+	let a_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
-		X1(Parachain(1)),
+		X1(Parachain(PARA_A_ID)),
 	)));
-	let a_currency_id = 0u32;
+	let a_asset_id_on_a =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get();
+	let a_asset_id_on_b =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
+
 	let amount = 8888u128;
 	let units_per_second_at_b = 1_250_000u128;
 	let dest_weight = 1600_000u64;
 	let fee_at_b = calculate_fee(units_per_second_at_b, dest_weight);
 
-	let asset_metadata = AssetRegistrarMetadata {
-		name: b"ParaAToken".to_vec(),
-		symbol: b"ParaA".to_vec(),
-		decimals: 18,
-		evm_address: None,
-		min_balance: 1,
-		is_frozen: false,
-		is_sufficient: false,
-	};
+	let mut a_asset_metadata_on_b =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetMetadata::get();
+	a_asset_metadata_on_b.is_sufficient = false;
 
 	// Register ParaA native asset in ParaA
 	ParaA::execute_with(|| {
-		assert_ok!(AssetManager::register_asset(
-			parachain::Origin::root(),
-			source_location.clone(),
-			asset_metadata.clone()
-		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
+			a_asset_id_on_a,
 			0u128
 		));
 		assert_eq!(
-			Some(a_currency_id),
-			parachain::AssetManager::location_asset_id(source_location.clone())
+			Some(a_asset_id_on_a),
+			parachain::AssetManager::location_asset_id(a_source_location.clone())
 		);
 	});
 
@@ -445,24 +371,24 @@ fn send_not_sufficient_asset_from_para_a_to_para_b() {
 	ParaB::execute_with(|| {
 		assert_ok!(AssetManager::register_asset(
 			parachain::Origin::root(),
-			source_location.clone(),
-			asset_metadata.clone()
+			a_source_location.clone(),
+			a_asset_metadata_on_b.clone()
 		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
+			a_asset_id_on_b,
 			units_per_second_at_b
 		));
 		assert_eq!(
-			Some(a_currency_id),
-			parachain::AssetManager::location_asset_id(source_location.clone())
+			Some(a_asset_id_on_b),
+			parachain::AssetManager::location_asset_id(a_source_location.clone())
 		);
 	});
 
 	let dest = MultiLocation {
 		parents: 1,
 		interior: X2(
-			Parachain(2),
+			Parachain(PARA_B_ID),
 			AccountId32 {
 				network: NetworkId::Any,
 				id: ALICE.into(),
@@ -475,7 +401,7 @@ fn send_not_sufficient_asset_from_para_a_to_para_b() {
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
 			amount,
 			Box::new(VersionedMultiLocation::V1(dest.clone())),
 			dest_weight
@@ -491,11 +417,11 @@ fn send_not_sufficient_asset_from_para_a_to_para_b() {
 		// because the XcmFeesAccount had 0 providers with is_sufficient set to false,
 		// so the mint_into() operation for the refund amount failed.
 		assert_eq!(
-			parachain::Assets::total_supply(a_currency_id),
+			parachain::Assets::total_supply(a_asset_id_on_b),
 			amount - fee_at_b
 		);
 		assert_eq!(
-			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			parachain::Assets::balance(a_asset_id_on_b, &ALICE.into()),
 			amount - fee_at_b
 		);
 	});
@@ -514,7 +440,7 @@ fn send_not_sufficient_asset_from_para_a_to_para_b() {
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
 			amount,
 			Box::new(VersionedMultiLocation::V1(dest.clone())),
 			dest_weight
@@ -529,41 +455,36 @@ fn send_not_sufficient_asset_from_para_a_to_para_b() {
 		// This time we expect the total supply to be the full amount
 		// as the refund will be deposited to the XcmFeesAccount
 		assert_eq!(
-			parachain::Assets::total_supply(a_currency_id),
+			parachain::Assets::total_supply(a_asset_id_on_b),
 			(amount - fee_at_b) + amount
 		);
 		assert_eq!(
-			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			parachain::Assets::balance(a_asset_id_on_b, &ALICE.into()),
 			(amount - fee_at_b) * 2
 		);
 	});
 }
 
 #[test]
-fn register_with_is_sufficient_false_and_zero_min_balance_should_fail() {
+fn register_insufficient_with_zero_min_balance_should_fail() {
 	MockNet::reset();
 
-	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+	let a_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
-		X1(Parachain(1)),
+		X1(Parachain(PARA_A_ID)),
 	)));
 
-	let asset_metadata = AssetRegistrarMetadata {
-		name: b"ParaAToken".to_vec(),
-		symbol: b"ParaA".to_vec(),
-		decimals: 18,
-		evm_address: None,
-		min_balance: 0,
-		is_frozen: false,
-		is_sufficient: false,
-	};
+	let mut a_asset_metadata_on_b =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetMetadata::get();
+	a_asset_metadata_on_b.min_balance = 0;
+	a_asset_metadata_on_b.is_sufficient = false;
 
 	ParaB::execute_with(|| {
 		assert_err!(
 			AssetManager::register_asset(
 				parachain::Origin::root(),
-				source_location.clone(),
-				asset_metadata.clone()
+				a_source_location.clone(),
+				a_asset_metadata_on_b.clone()
 			),
 			pallet_asset_manager::Error::<parachain::Runtime>::ErrorCreatingAsset
 		);
@@ -572,22 +493,17 @@ fn register_with_is_sufficient_false_and_zero_min_balance_should_fail() {
 
 #[test]
 fn send_para_a_custom_asset_to_para_b() {
-	let a_currency_id: u32 = 0;
+	let asset_id: u32 =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
 	let amount = 321;
-	let asset_metadata = AssetRegistrarMetadata {
-		name: b"ParaADoge".to_vec(),
-		symbol: b"Doge".to_vec(),
-		decimals: 18,
-		evm_address: None,
-		min_balance: 1,
-		is_frozen: false,
-		is_sufficient: true,
-	};
-
+	let asset_metadata =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetMetadata::get();
+	let units_per_sec = 0;
+	let weight_at_most = 800000;
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
 		X3(
-			Parachain(1),
+			Parachain(PARA_A_ID),
 			PalletInstance(PALLET_ASSET_INDEX),
 			GeneralIndex(0),
 		),
@@ -603,7 +519,7 @@ fn send_para_a_custom_asset_to_para_b() {
 		// we have to do this in order to mint asset to alice on A
 		assert_ok!(parachain::Assets::force_asset_status(
 			parachain::Origin::root(),
-			0,
+			asset_id,
 			ALICE.into(),
 			ALICE.into(),
 			ALICE.into(),
@@ -614,11 +530,11 @@ fn send_para_a_custom_asset_to_para_b() {
 		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
-			0u128
+			asset_id,
+			units_per_sec
 		));
 		assert_eq!(
-			Some(a_currency_id),
+			Some(asset_id),
 			parachain::AssetManager::location_asset_id(source_location.clone())
 		);
 	});
@@ -631,11 +547,11 @@ fn send_para_a_custom_asset_to_para_b() {
 		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
-			0u128
+			asset_id,
+			units_per_sec
 		));
 		assert_eq!(
-			Some(a_currency_id),
+			Some(asset_id),
 			parachain::AssetManager::location_asset_id(source_location)
 		);
 	});
@@ -643,7 +559,7 @@ fn send_para_a_custom_asset_to_para_b() {
 	let alice_on_b = MultiLocation {
 		parents: 1,
 		interior: X2(
-			Parachain(2),
+			Parachain(PARA_B_ID),
 			AccountId32 {
 				network: NetworkId::Any,
 				id: ALICE.into(),
@@ -655,19 +571,19 @@ fn send_para_a_custom_asset_to_para_b() {
 		// Force customized asset balance for Alice
 		assert_ok!(parachain::Assets::mint(
 			parachain::Origin::signed(ALICE.into()),
-			0,
+			asset_id,
 			ALICE.into(),
 			INITIAL_BALANCE
 		));
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			parachain::CurrencyId::MantaCurrency(asset_id),
 			amount,
 			Box::new(VersionedMultiLocation::V1(alice_on_b)),
-			800000
+			weight_at_most
 		));
 		assert_eq!(
-			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			parachain::Assets::balance(asset_id, &ALICE.into()),
 			INITIAL_BALANCE - amount
 		)
 	});
@@ -675,10 +591,7 @@ fn send_para_a_custom_asset_to_para_b() {
 	// Make sure B received the token
 	ParaB::execute_with(|| {
 		// free execution, full amount received
-		assert_eq!(
-			parachain::Assets::balance(a_currency_id, &ALICE.into()),
-			amount
-		);
+		assert_eq!(parachain::Assets::balance(asset_id, &ALICE.into()), amount);
 	});
 }
 
@@ -689,39 +602,30 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 	// para a native asset location
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
-		X1(Parachain(1)),
+		X1(Parachain(PARA_A_ID)),
 	)));
 	// a's currency id in para a, para b, and para c
-	let a_currency_id = 0u32;
+	let a_asset_id_on_a =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get();
+	let a_asset_id_on_b =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
 	let amount = 5000u128;
 	let weight = 800000u64;
 	let fee_on_b_when_send_back = calculate_fee(ParaTokenPerSecond::get().1, weight);
 	assert!(fee_on_b_when_send_back < amount);
-
-	let asset_metadata = AssetRegistrarMetadata {
-		name: b"ParaAToken".to_vec(),
-		symbol: b"ParaA".to_vec(),
-		decimals: 18,
-		evm_address: None,
-		min_balance: 1,
-		is_frozen: false,
-		is_sufficient: true,
-	};
+	let units_per_sec = 0;
+	let asset_metadata =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetMetadata::get();
 
 	// register a_currency in ParaA, ParaB
 	ParaA::execute_with(|| {
-		assert_ok!(parachain::AssetManager::register_asset(
-			parachain::Origin::root(),
-			source_location.clone(),
-			asset_metadata.clone()
-		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
-			0u128
+			a_asset_id_on_a,
+			units_per_sec
 		));
 		assert_eq!(
-			Some(a_currency_id),
+			Some(a_asset_id_on_a),
 			parachain::AssetManager::location_asset_id(source_location.clone())
 		);
 	});
@@ -734,11 +638,11 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
-			0u128
+			a_asset_id_on_b,
+			units_per_sec
 		));
 		assert_eq!(
-			Some(a_currency_id),
+			Some(a_asset_id_on_b),
 			parachain::AssetManager::location_asset_id(source_location)
 		);
 	});
@@ -746,7 +650,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 	let alice_on_b = MultiLocation {
 		parents: 1,
 		interior: X2(
-			Parachain(2),
+			Parachain(PARA_B_ID),
 			AccountId32 {
 				network: NetworkId::Any,
 				id: ALICE.into(),
@@ -757,7 +661,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
 			amount,
 			Box::new(VersionedMultiLocation::V1(alice_on_b)),
 			800000
@@ -772,7 +676,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 	ParaB::execute_with(|| {
 		// free execution, full amount received
 		assert_eq!(
-			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			parachain::Assets::balance(a_asset_id_on_b, &ALICE.into()),
 			amount
 		);
 	});
@@ -780,7 +684,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 	let alice_on_a = MultiLocation {
 		parents: 1,
 		interior: X2(
-			Parachain(1),
+			Parachain(PARA_A_ID),
 			AccountId32 {
 				network: NetworkId::Any,
 				id: ALICE.into(),
@@ -792,12 +696,15 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 	ParaB::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			parachain::CurrencyId::MantaCurrency(a_asset_id_on_b),
 			amount,
 			Box::new(VersionedMultiLocation::V1(alice_on_a)),
 			800000
 		));
-		assert_eq!(parachain::Assets::balance(a_currency_id, &ALICE.into()), 0);
+		assert_eq!(
+			parachain::Assets::balance(a_asset_id_on_b, &ALICE.into()),
+			0
+		);
 	});
 
 	// make sure that a received the token
@@ -816,39 +723,32 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 	// para a asset location
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
-		X1(Parachain(1)),
+		X1(Parachain(PARA_A_ID)),
 	)));
-	let a_currency_id = 0u32;
+	let a_asset_id_on_a =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get();
+	let a_asset_id_on_b =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
+	let a_asset_id_on_c =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
 	let amount = 8888u128;
 	let weight = 800_000u64;
 	let fee_at_reserve = calculate_fee(ParaTokenPerSecond::get().1, weight);
 	assert!(amount >= fee_at_reserve * 2 as u128);
 
-	let asset_metadata = AssetRegistrarMetadata {
-		name: b"ParaAToken".to_vec(),
-		symbol: b"ParaA".to_vec(),
-		decimals: 18,
-		evm_address: None,
-		min_balance: 1,
-		is_frozen: false,
-		is_sufficient: false,
-	};
+	let mut a_asset_metadata_insufficient =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetMetadata::get();
+	a_asset_metadata_insufficient.is_sufficient = false;
 
 	// register a_currency in ParaA, ParaB and ParaC
 	ParaA::execute_with(|| {
-		assert_ok!(parachain::AssetManager::register_asset(
-			parachain::Origin::root(),
-			// we need to change this on/after v0.9.16
-			source_location.clone(),
-			asset_metadata.clone()
-		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
+			a_asset_id_on_a,
 			0u128
 		));
 		assert_eq!(
-			Some(a_currency_id),
+			Some(a_asset_id_on_a),
 			parachain::AssetManager::location_asset_id(source_location.clone())
 		);
 	});
@@ -857,15 +757,15 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 		assert_ok!(parachain::AssetManager::register_asset(
 			parachain::Origin::root(),
 			source_location.clone(),
-			asset_metadata.clone()
+			a_asset_metadata_insufficient.clone()
 		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
+			a_asset_id_on_b,
 			0u128
 		));
 		assert_eq!(
-			Some(a_currency_id),
+			Some(a_asset_id_on_b),
 			parachain::AssetManager::location_asset_id(source_location.clone())
 		);
 	});
@@ -874,15 +774,15 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 		assert_ok!(parachain::AssetManager::register_asset(
 			parachain::Origin::root(),
 			source_location.clone(),
-			asset_metadata.clone()
+			a_asset_metadata_insufficient.clone()
 		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
+			a_asset_id_on_c,
 			0u128
 		));
 		assert_eq!(
-			Some(a_currency_id),
+			Some(a_asset_id_on_c),
 			parachain::AssetManager::location_asset_id(source_location.clone())
 		);
 	});
@@ -891,7 +791,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 	let alice_on_b = MultiLocation {
 		parents: 1,
 		interior: X2(
-			Parachain(2),
+			Parachain(PARA_B_ID),
 			AccountId32 {
 				network: NetworkId::Any,
 				id: ALICE.into(),
@@ -902,7 +802,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
 			amount,
 			Box::new(VersionedMultiLocation::V1(alice_on_b.clone())),
 			800000
@@ -916,7 +816,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 	ParaB::execute_with(|| {
 		// free execution, full amount received
 		assert_eq!(
-			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			parachain::Assets::balance(a_asset_id_on_b, &ALICE.into()),
 			amount
 		);
 	});
@@ -925,7 +825,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 	let alice_on_c = MultiLocation {
 		parents: 1,
 		interior: X2(
-			Parachain(3),
+			Parachain(PARA_C_ID),
 			AccountId32 {
 				network: NetworkId::Any,
 				id: ALICE.into(),
@@ -936,29 +836,33 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 	ParaB::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			parachain::CurrencyId::MantaCurrency(a_asset_id_on_b),
 			amount,
 			Box::new(VersionedMultiLocation::V1(alice_on_c)),
 			weight,
 		));
-		assert_eq!(parachain::Assets::balance(a_currency_id, &ALICE.into()), 0);
+		assert_eq!(
+			parachain::Assets::balance(a_asset_id_on_b, &ALICE.into()),
+			0
+		);
 	});
 
 	// Make sure C received the token
 	ParaC::execute_with(|| {
 		// free execution, full amount received
 		assert_eq!(
-			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			parachain::Assets::balance(a_asset_id_on_c, &ALICE.into()),
 			amount - fee_at_reserve
 		);
 	});
 }
 
 #[test]
-fn receive_relay_asset_with_trader() {
+fn receive_relay_asset_with_trader_on_parachain() {
 	MockNet::reset();
 
-	let relay_asset_id: AssetId = 0;
+	let relay_asset_id: AssetId =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 	let asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
@@ -974,6 +878,7 @@ fn receive_relay_asset_with_trader() {
 	let units_per_second = 1_000_000_000u128;
 	let fee = calculate_fee(units_per_second, RESERVE_TRANSFER_WEIGHT);
 	assert!(fee > 0);
+	let weight_at_most = 0;
 
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::AssetManager::register_asset(
@@ -1000,7 +905,7 @@ fn receive_relay_asset_with_trader() {
 			Box::new(X1(Parachain(1)).into().into()),
 			Box::new(VersionedMultiLocation::V1(dest).clone().into()),
 			Box::new((Here, amount).into()),
-			0,
+			weight_at_most,
 		));
 		assert_eq!(
 			relay_chain::Balances::free_balance(&para_account_id(1)),
@@ -1029,40 +934,24 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 	// para a balance location
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
-		X1(Parachain(1)),
+		X1(Parachain(PARA_A_ID)),
 	)));
-	let a_currency_id = 0u32;
+	let a_asset_id_on_a: u32 =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get();
+	let a_asset_id_on_b: u32 =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
 	let amount = 222u128;
 	let units_per_second = 1_250_000u128;
 	let dest_weight = 800_000u64;
 	let fee = calculate_fee(units_per_second, dest_weight);
 
-	let asset_metadata = AssetRegistrarMetadata {
-		name: b"ParaAToken".to_vec(),
-		symbol: b"ParaA".to_vec(),
-		decimals: 18,
-		evm_address: None,
-		min_balance: 1,
-		is_frozen: false,
-		is_sufficient: true,
-	};
+	let asset_metadata =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetMetadata::get();
 
 	// Register ParaA native asset in ParaA
 	ParaA::execute_with(|| {
-		assert_ok!(AssetManager::register_asset(
-			parachain::Origin::root(),
-			// This need to be changed starting from v0.9.16
-			// need to use something like MultiLocation { parents: 0, interior: here} instead
-			source_location.clone(),
-			asset_metadata.clone()
-		));
-		assert_ok!(AssetManager::set_units_per_second(
-			parachain::Origin::root(),
-			a_currency_id,
-			0u128
-		));
 		assert_eq!(
-			Some(a_currency_id),
+			Some(a_asset_id_on_a),
 			AssetManager::location_asset_id(source_location.clone())
 		);
 	});
@@ -1075,11 +964,11 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
+			a_asset_id_on_b,
 			units_per_second
 		));
 		assert_eq!(
-			Some(a_currency_id),
+			Some(a_asset_id_on_b),
 			AssetManager::location_asset_id(source_location.clone())
 		);
 	});
@@ -1087,7 +976,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 	let dest = MultiLocation {
 		parents: 1,
 		interior: X2(
-			Parachain(2),
+			Parachain(PARA_B_ID),
 			AccountId32 {
 				network: NetworkId::Any,
 				id: ALICE.into(),
@@ -1099,7 +988,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer_with_fee(
 			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
 			amount,
 			1,
 			Box::new(VersionedMultiLocation::V1(dest)),
@@ -1113,7 +1002,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 
 	ParaB::execute_with(|| {
 		assert_eq!(
-			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			parachain::Assets::balance(a_asset_id_on_b, &ALICE.into()),
 			amount
 		);
 	});
@@ -1126,40 +1015,44 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 	// para a balance location
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
-		X1(Parachain(1)),
+		X1(Parachain(PARA_A_ID)),
 	)));
-	let a_currency_id = 0u32;
+	// let source_location =
+	// 	<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetLocation::get();
+	let a_asset_id_on_a: u32 =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get();
+	let a_asset_id_on_b: u32 =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
+	let a_asset_id_on_c: u32 =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
 	let mut amount = 8888u128;
-	let units_per_second_at_b = 1_250_000u128;
+	let units_per_second = 1_250_000u128;
 	let dest_weight = 800_000u64;
-	let fee_at_b = calculate_fee(units_per_second_at_b, dest_weight);
+	let fee_at_b = calculate_fee(units_per_second, dest_weight);
 	let fee_at_a = calculate_fee(ParaTokenPerSecond::get().1, dest_weight);
-	let asset_metadata = AssetRegistrarMetadata {
-		name: b"ParaAToken".to_vec(),
-		symbol: b"ParaA".to_vec(),
-		decimals: 18,
-		evm_address: None,
-		min_balance: 1,
-		is_frozen: false,
-		is_sufficient: true,
-	};
+	let asset_metadata =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetMetadata::get();
+	// AssetRegistrarMetadata {
+	// 	name: b"ParaAToken".to_vec(),
+	// 	symbol: b"ParaA".to_vec(),
+	// 	decimals: 18,
+	// 	evm_address: None,
+	// 	min_balance: 1,
+	// 	is_frozen: false,
+	// 	is_sufficient: true,
+	// };
 
 	// register a_currency in ParaA, ParaB and ParaC
 
 	// we don't charge any fee in A
 	ParaA::execute_with(|| {
-		assert_ok!(parachain::AssetManager::register_asset(
-			parachain::Origin::root(),
-			source_location.clone(),
-			asset_metadata.clone()
-		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
+			a_asset_id_on_a,
 			0u128
 		));
 		assert_eq!(
-			Some(a_currency_id),
+			Some(a_asset_id_on_a),
 			parachain::AssetManager::location_asset_id(source_location.clone())
 		);
 	});
@@ -1173,11 +1066,11 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
-			units_per_second_at_b
+			a_asset_id_on_b,
+			units_per_second
 		));
 		assert_eq!(
-			Some(a_currency_id),
+			Some(a_asset_id_on_b),
 			parachain::AssetManager::location_asset_id(source_location.clone())
 		);
 	});
@@ -1190,11 +1083,11 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
-			units_per_second_at_b
+			a_asset_id_on_c,
+			units_per_second
 		));
 		assert_eq!(
-			Some(a_currency_id),
+			Some(a_asset_id_on_c),
 			parachain::AssetManager::location_asset_id(source_location.clone())
 		);
 	});
@@ -1215,7 +1108,7 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
 			amount,
 			Box::new(VersionedMultiLocation::V1(alice_on_b.clone())),
 			dest_weight
@@ -1227,10 +1120,10 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 	});
 
 	ParaB::execute_with(|| {
-		assert_eq!(parachain::Assets::total_supply(a_currency_id), amount);
+		assert_eq!(parachain::Assets::total_supply(a_asset_id_on_b), amount);
 		amount = amount - fee_at_b;
 		assert_eq!(
-			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			parachain::Assets::balance(a_asset_id_on_b, &ALICE.into()),
 			amount
 		);
 	});
@@ -1251,29 +1144,33 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 	ParaB::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			parachain::CurrencyId::MantaCurrency(a_asset_id_on_b),
 			amount,
 			Box::new(VersionedMultiLocation::V1(alice_on_c)),
 			dest_weight
 		));
-		assert_eq!(parachain::Assets::balance(a_currency_id, &ALICE.into()), 0);
+		assert_eq!(
+			parachain::Assets::balance(a_asset_id_on_b, &ALICE.into()),
+			0
+		);
 	});
 
 	// Make sure C received the token
 	ParaC::execute_with(|| {
 		amount = amount - fee_at_b - fee_at_a;
 		assert_eq!(
-			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			parachain::Assets::balance(a_asset_id_on_c, &ALICE.into()),
 			amount
 		);
 	});
 }
 
 #[test]
-fn receive_relay_with_insufficient_fee_payment() {
+fn receive_relay_asset_on_parachain_with_insufficient_fee_payment_should_fail() {
 	MockNet::reset();
 
-	let relay_asset_id: AssetId = 0;
+	let relay_asset_id: AssetId =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 	let asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
@@ -1289,6 +1186,7 @@ fn receive_relay_with_insufficient_fee_payment() {
 	let units_per_second = 20_000_000_000u128;
 	let fee = calculate_fee(units_per_second, RESERVE_TRANSFER_WEIGHT);
 	assert!(fee > amount);
+	let weight_at_most = 0;
 
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::AssetManager::register_asset(
@@ -1315,7 +1213,7 @@ fn receive_relay_with_insufficient_fee_payment() {
 			Box::new(X1(Parachain(1)).into().into()),
 			Box::new(VersionedMultiLocation::V1(dest).clone().into()),
 			Box::new((Here, amount).into()),
-			0,
+			weight_at_most,
 		));
 		assert_eq!(
 			relay_chain::Balances::free_balance(&para_account_id(1)),
@@ -1397,41 +1295,30 @@ fn send_para_a_asset_to_para_b_with_insufficient_fee() {
 	// para a balance location
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
-		X1(Parachain(1)),
+		X1(Parachain(PARA_A_ID)),
 	)));
-	let a_currency_id = 0u32;
+	let a_asset_id_on_a =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get();
+	let a_asset_id_on_b =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
 	let amount = 15u128;
 	let units_per_second = 20_000_000u128;
 	let dest_weight = 800_000u64;
 	let fee = calculate_fee(units_per_second, dest_weight);
 	assert!(fee > amount);
 
-	let asset_metadata = AssetRegistrarMetadata {
-		name: b"ParaAToken".to_vec(),
-		symbol: b"ParaA".to_vec(),
-		decimals: 18,
-		evm_address: None,
-		min_balance: 1,
-		is_frozen: false,
-		is_sufficient: true,
-	};
+	let asset_metadata =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetMetadata::get();
 
 	// Register ParaA native asset in ParaA
 	ParaA::execute_with(|| {
-		assert_ok!(AssetManager::register_asset(
-			parachain::Origin::root(),
-			// This need to be changed starting from v0.9.16
-			// need to use something like MultiLocation { parents: 0, interior: here} instead
-			source_location.clone(),
-			asset_metadata.clone()
-		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
+			a_asset_id_on_a,
 			0u128
 		));
 		assert_eq!(
-			Some(a_currency_id),
+			Some(a_asset_id_on_a),
 			AssetManager::location_asset_id(source_location.clone())
 		);
 	});
@@ -1444,11 +1331,11 @@ fn send_para_a_asset_to_para_b_with_insufficient_fee() {
 		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
+			a_asset_id_on_b,
 			units_per_second
 		));
 		assert_eq!(
-			Some(a_currency_id),
+			Some(a_asset_id_on_b),
 			AssetManager::location_asset_id(source_location.clone())
 		);
 	});
@@ -1468,7 +1355,7 @@ fn send_para_a_asset_to_para_b_with_insufficient_fee() {
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
 			amount,
 			Box::new(VersionedMultiLocation::V1(dest)),
 			dest_weight,
@@ -1481,7 +1368,10 @@ fn send_para_a_asset_to_para_b_with_insufficient_fee() {
 
 	// Alice on B should receive nothing since the fee is insufficient
 	ParaB::execute_with(|| {
-		assert_eq!(parachain::Assets::balance(a_currency_id, &ALICE.into()), 0);
+		assert_eq!(
+			parachain::Assets::balance(a_asset_id_on_b, &ALICE.into()),
+			0
+		);
 	});
 }
 
@@ -1492,40 +1382,29 @@ fn send_para_a_asset_to_para_b_without_specifying_units_per_second() {
 	// para a balance location
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
-		X1(Parachain(1)),
+		X1(Parachain(PARA_A_ID)),
 	)));
-	let a_currency_id = 0u32;
+	let a_asset_id_on_a =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get();
+	let a_asset_id_on_b =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
 	let amount = 567u128;
 	let dest_weight = 800_000u64;
 
-	let asset_metadata = AssetRegistrarMetadata {
-		name: b"ParaAToken".to_vec(),
-		symbol: b"ParaA".to_vec(),
-		decimals: 18,
-		evm_address: None,
-		min_balance: 1,
-		is_frozen: false,
-		is_sufficient: true,
-	};
+	let asset_metadata =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetMetadata::get();
 
 	// Register ParaA native asset in ParaA
 	ParaA::execute_with(|| {
-		assert_ok!(AssetManager::register_asset(
-			parachain::Origin::root(),
-			// This need to be changed starting from v0.9.16
-			// need to use something like MultiLocation { parents: 0, interior: here} instead
-			source_location.clone(),
-			asset_metadata.clone()
-		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
+			a_asset_id_on_a,
 			0u128
 		));
-		assert_eq!(
-			Some(a_currency_id),
-			AssetManager::location_asset_id(source_location.clone())
-		);
+		// assert_eq!(
+		// 	Some(a_asset_id_on_a),
+		// 	AssetManager::location_asset_id(source_location.clone())
+		// );
 	});
 
 	// We don't specify units_per_second on B
@@ -1536,7 +1415,7 @@ fn send_para_a_asset_to_para_b_without_specifying_units_per_second() {
 			asset_metadata.clone()
 		));
 		assert_eq!(
-			Some(a_currency_id),
+			Some(a_asset_id_on_b),
 			AssetManager::location_asset_id(source_location.clone())
 		);
 	});
@@ -1544,7 +1423,7 @@ fn send_para_a_asset_to_para_b_without_specifying_units_per_second() {
 	let dest = MultiLocation {
 		parents: 1,
 		interior: X2(
-			Parachain(2),
+			Parachain(PARA_B_ID),
 			AccountId32 {
 				network: NetworkId::Any,
 				id: ALICE.into(),
@@ -1556,7 +1435,7 @@ fn send_para_a_asset_to_para_b_without_specifying_units_per_second() {
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
 			amount,
 			Box::new(VersionedMultiLocation::V1(dest)),
 			dest_weight,
@@ -1569,16 +1448,20 @@ fn send_para_a_asset_to_para_b_without_specifying_units_per_second() {
 
 	// Alice on B should receive nothing since we didn't specify the unit per second
 	ParaB::execute_with(|| {
-		assert_eq!(parachain::Assets::balance(a_currency_id, &ALICE.into()), 0);
+		assert_eq!(
+			parachain::Assets::balance(a_asset_id_on_b, &ALICE.into()),
+			0
+		);
 	});
 }
 
 #[test]
-fn receive_asset_with_is_sufficient_false() {
+fn receive_insufficient_relay_asset_on_parachain() {
 	MockNet::reset();
 
 	let new_account = [5u8; 32];
-	let relay_asset_id = 0u32;
+	let relay_asset_id =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 	let asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
@@ -1590,6 +1473,7 @@ fn receive_asset_with_is_sufficient_false() {
 		is_sufficient: false,
 	};
 	let amount = 123u128;
+	let units_per_sec = 0u128;
 
 	// register relay asset in parachain A
 	ParaA::execute_with(|| {
@@ -1602,7 +1486,7 @@ fn receive_asset_with_is_sufficient_false() {
 		assert_ok!(parachain::AssetManager::set_units_per_second(
 			parachain::Origin::root(),
 			relay_asset_id,
-			0u128
+			units_per_sec
 		));
 	});
 
@@ -1634,12 +1518,13 @@ fn receive_asset_with_is_sufficient_false() {
 		);
 	});
 
+	let fresh_account_amount = 100;
 	// Send native token to fresh_account
 	ParaA::execute_with(|| {
 		assert_ok!(parachain::Balances::transfer(
 			parachain::Origin::signed(ALICE.into()),
 			new_account.into(),
-			100
+			fresh_account_amount
 		));
 	});
 
@@ -1659,19 +1544,20 @@ fn receive_asset_with_is_sufficient_false() {
 
 	// parachain should not have received assets
 	ParaA::execute_with(|| {
-		println!(
-			"fresh account bal: {}",
-			parachain::Assets::balance(relay_asset_id, &new_account.into())
+		assert_eq!(
+			parachain::Balances::free_balance(&new_account.into()),
+			fresh_account_amount
 		);
 	});
 }
 
 #[test]
-fn receive_asset_with_is_sufficient_true() {
+fn receive_sufficient_relay_asset_on_parachain() {
 	MockNet::reset();
 
 	let new_account = [5u8; 32];
-	let relay_asset_id = 0u32;
+	let relay_asset_id =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 	let asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
@@ -1683,6 +1569,7 @@ fn receive_asset_with_is_sufficient_true() {
 		is_sufficient: true,
 	};
 	let amount = 123u128;
+	let units_per_sec = 0;
 
 	// register relay asset in parachain A
 	ParaA::execute_with(|| {
@@ -1695,7 +1582,7 @@ fn receive_asset_with_is_sufficient_true() {
 		assert_ok!(parachain::AssetManager::set_units_per_second(
 			parachain::Origin::root(),
 			relay_asset_id,
-			0u128
+			units_per_sec
 		));
 	});
 
@@ -1828,7 +1715,8 @@ fn query_holding() {
 fn test_versioning_on_runtime_upgrade_with_relay() {
 	MockNet::reset();
 
-	let relay_asset_id: AssetId = 0;
+	let relay_asset_id_on_a =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 	let asset_metadata = AssetRegistrarMetadata {
 		name: b"Kusama".to_vec(),
@@ -1851,7 +1739,7 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
 		// we don't charge anything during test
 		assert_ok!(parachain::AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			relay_asset_id,
+			relay_asset_id_on_a,
 			0u128
 		));
 	});
@@ -1885,14 +1773,14 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
 		// more specifically, this will trigger `note_unknown_version` to put the
 		// version to `VersionDiscoveryQueue` on relay-chain's pallet-xcm
 		assert_ok!(<RelayChainPalletXcm as WrapVersion>::wrap_version(
-			&Parachain(1).into(),
+			&Parachain(PARA_A_ID).into(),
 			mock_message
 		));
 
 		// Transfer assets. Since it is an unknown destination, it will query for version
 		assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
 			relay_chain::Origin::signed(ALICE),
-			Box::new(Parachain(1).into().into()),
+			Box::new(Parachain(PARA_A_ID).into().into()),
 			Box::new(VersionedMultiLocation::V1(dest).clone().into()),
 			Box::new((Here, 123).into()),
 			0,
@@ -1909,7 +1797,7 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
 		pallet_xcm::Event::SupportedVersionChanged(
 			MultiLocation {
 				parents: 0,
-				interior: X1(Parachain(1)),
+				interior: X1(Parachain(PARA_A_ID)),
 			},
 			1,
 		)
@@ -1947,7 +1835,7 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
 		pallet_xcm::Event::SupportedVersionChanged(
 			MultiLocation {
 				parents: 0,
-				interior: X1(Parachain(1)),
+				interior: X1(Parachain(PARA_A_ID)),
 			},
 			2,
 		)
@@ -1966,19 +1854,14 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 	// para a balance location
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
-		X1(Parachain(1)),
+		X1(Parachain(PARA_A_ID)),
 	)));
-	let a_currency_id = 0u32;
-
-	let asset_metadata = AssetRegistrarMetadata {
-		name: b"ParaAToken".to_vec(),
-		symbol: b"ParaA".to_vec(),
-		decimals: 18,
-		evm_address: None,
-		min_balance: 1,
-		is_frozen: false,
-		is_sufficient: true,
-	};
+	let a_asset_id_on_a =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get();
+	let a_asset_id_on_b =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
+	let asset_metadata =
+		<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetMetadata::get();
 	let response = Response::Version(2);
 
 	// This is irrelevant, nothing will be done with this message,
@@ -1992,21 +1875,13 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 	ParaA::execute_with(|| {
 		// advertised version
 		parachain::XcmVersioner::set_version(2);
-		// Register ParaA native asset in ParaA
-		assert_ok!(AssetManager::register_asset(
-			parachain::Origin::root(),
-			// This need to be changed starting from v0.9.16
-			// need to use something like MultiLocation { parents: 0, interior: here} instead
-			source_location.clone(),
-			asset_metadata.clone()
-		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
+			a_asset_id_on_a,
 			0u128
 		));
 		assert_eq!(
-			Some(a_currency_id),
+			Some(a_asset_id_on_a),
 			AssetManager::location_asset_id(source_location.clone())
 		);
 	});
@@ -2022,7 +1897,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 		));
 		assert_ok!(AssetManager::set_units_per_second(
 			parachain::Origin::root(),
-			a_currency_id,
+			a_asset_id_on_a,
 			0u128
 		));
 	});
@@ -2048,7 +1923,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 	let expected_supported_version: parachain::Event = pallet_xcm::Event::SupportedVersionChanged(
 		MultiLocation {
 			parents: 1,
-			interior: X1(Parachain(2)),
+			interior: X1(Parachain(PARA_B_ID)),
 		},
 		0,
 	)
@@ -2063,7 +1938,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 	let dest = MultiLocation {
 		parents: 1,
 		interior: X2(
-			Parachain(2),
+			Parachain(PARA_B_ID),
 			AccountId32 {
 				network: NetworkId::Any,
 				id: ALICE.into(),
@@ -2075,7 +1950,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 		// free execution, full amount received
 		assert_ok!(parachain::XTokens::transfer(
 			parachain::Origin::signed(ALICE.into()),
-			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
 			100,
 			Box::new(VersionedMultiLocation::V1(dest)),
 			80
@@ -2090,7 +1965,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 	ParaB::execute_with(|| {
 		// free execution, full amount received
 		assert_eq!(
-			parachain::Assets::balance(a_currency_id, &ALICE.into()),
+			parachain::Assets::balance(a_asset_id_on_b, &ALICE.into()),
 			100
 		);
 	});
@@ -2098,7 +1973,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 	let expected_version_notified: parachain::Event = pallet_xcm::Event::VersionChangeNotified(
 		MultiLocation {
 			parents: 1,
-			interior: X1(Parachain(1)),
+			interior: X1(Parachain(PARA_A_ID)),
 		},
 		2,
 	)
@@ -2122,7 +1997,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 		pallet_xcm::Event::SupportedVersionChanged(
 			MultiLocation {
 				parents: 1,
-				interior: X1(Parachain(2)),
+				interior: X1(Parachain(PARA_B_ID)),
 			},
 			2,
 		)

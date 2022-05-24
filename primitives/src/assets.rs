@@ -335,10 +335,9 @@ impl FungibleLedgerError {
 			WithdrawConsequence::NoFunds => Self::NoFunds,
 			WithdrawConsequence::Overflow => Self::Overflow,
 			WithdrawConsequence::Underflow => Self::Underflow,
-			WithdrawConsequence::ReducedToZero(balance) => Self::ReducedToZero(balance),
 			WithdrawConsequence::UnknownAsset => Self::UnknownAsset,
 			WithdrawConsequence::WouldDie => Self::WouldDie,
-			WithdrawConsequence::Success => return Ok(()),
+			WithdrawConsequence::Success | WithdrawConsequence::ReducedToZero(_) => return Ok(()),
 		})
 	}
 }
@@ -504,7 +503,7 @@ where
 				who,
 				amount,
 				WithdrawReasons::TRANSFER,
-				ExistenceRequirement::KeepAlive,
+				ExistenceRequirement::AllowDeath,
 			)
 			.map_err(|e| FungibleLedgerError::InvalidBurn(e))?;
 		} else {

@@ -199,8 +199,8 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
 		AssetIdLocationConvert<AssetLocation, AssetManager>,
 		JustTry,
 	>,
-	ConcreteFungibleLedger<Runtime, CalamariAssetConfig, Balances, Assets>,
-	CalamariAssetConfig,
+	ConcreteFungibleLedger<Runtime, ParachainAssetConfig, Balances, Assets>,
+	ParachainAssetConfig,
 >;
 
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
@@ -472,7 +472,7 @@ impl pallet_xcm::Config for Runtime {
 }
 
 pub struct CalamariAssetRegistrar;
-impl AssetRegistrar<Runtime, CalamariAssetConfig> for CalamariAssetRegistrar {
+impl AssetRegistrar<Runtime, ParachainAssetConfig> for CalamariAssetRegistrar {
 	fn create_asset(
 		asset_id: AssetId,
 		min_balance: Balance,
@@ -516,8 +516,8 @@ parameter_types! {
 	pub NativeAssetLocation: AssetLocation = AssetLocation(
 		VersionedMultiLocation::V1(SelfReserve::get()));
 	pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
-		name: b"Calamari".to_vec(),
-		symbol: b"KMA".to_vec(),
+		name: b"ParaAToken".to_vec(),
+		symbol: b"ParaA".to_vec(),
 		decimals: CALAMARI_DECIMAL,
 		min_balance: 1,
 		evm_address: None,
@@ -528,9 +528,9 @@ parameter_types! {
 }
 
 #[derive(Clone, Eq, PartialEq)]
-pub struct CalamariAssetConfig;
+pub struct ParachainAssetConfig;
 
-impl AssetConfig<Runtime> for CalamariAssetConfig {
+impl AssetConfig<Runtime> for ParachainAssetConfig {
 	type DummyAssetId = DummyAssetId;
 	type NativeAssetId = NativeAssetId;
 	type StartNonNativeAssetId = StartNonNativeAssetId;
@@ -540,12 +540,12 @@ impl AssetConfig<Runtime> for CalamariAssetConfig {
 	type StorageMetadata = AssetStorageMetadata;
 	type AssetLocation = AssetLocation;
 	type AssetRegistrar = CalamariAssetRegistrar;
-	type FungibleLedger = ConcreteFungibleLedger<Runtime, CalamariAssetConfig, Balances, Assets>;
+	type FungibleLedger = ConcreteFungibleLedger<Runtime, ParachainAssetConfig, Balances, Assets>;
 }
 
 impl pallet_asset_manager::Config for Runtime {
 	type Event = Event;
-	type AssetConfig = CalamariAssetConfig;
+	type AssetConfig = ParachainAssetConfig;
 	type ModifierOrigin = EnsureRoot<AccountId>;
 	type PalletId = AssetManagerPalletId;
 	type WeightInfo = ();

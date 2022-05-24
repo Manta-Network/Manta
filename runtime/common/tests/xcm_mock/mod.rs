@@ -17,19 +17,25 @@
 pub mod parachain;
 pub mod relay_chain;
 
+use super::ParachainAssetConfig;
 use frame_support::traits::GenesisBuild;
+use manta_primitives::assets::AssetConfig;
 use polkadot_parachain::primitives::Id as ParaId;
 use sp_runtime::traits::AccountIdConversion;
+use sp_std::marker::PhantomData;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
 pub const INITIAL_BALANCE: u128 = 10_000_000_000_000_000;
+pub const PARA_A_ID: u32 = 1;
+pub const PARA_B_ID: u32 = 2;
+pub const PARA_C_ID: u32 = 3;
 
 decl_test_parachain! {
 	pub struct ParaA {
 		Runtime = parachain::Runtime,
 		XcmpMessageHandler = parachain::MsgQueue,
 		DmpMessageHandler = parachain::MsgQueue,
-		new_ext = para_ext(1),
+		new_ext = para_ext(PARA_A_ID),
 	}
 }
 
@@ -38,7 +44,7 @@ decl_test_parachain! {
 		Runtime = parachain::Runtime,
 		XcmpMessageHandler = parachain::MsgQueue,
 		DmpMessageHandler = parachain::MsgQueue,
-		new_ext = para_ext(2),
+		new_ext = para_ext(PARA_B_ID),
 	}
 }
 
@@ -47,7 +53,7 @@ decl_test_parachain! {
 		Runtime = parachain::Runtime,
 		XcmpMessageHandler = parachain::MsgQueue,
 		DmpMessageHandler = parachain::MsgQueue,
-		new_ext = para_ext(3),
+		new_ext = para_ext(PARA_C_ID),
 	}
 }
 
@@ -94,6 +100,13 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
 		&parachain_info_config,
 		&mut t,
 	)
+	.unwrap();
+
+	pallet_asset_manager::GenesisConfig::<Runtime> {
+		start_id: <ParachainAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+		_marker: PhantomData::<Runtime>::default(),
+	}
+	.assimilate_storage(&mut t)
 	.unwrap();
 
 	let mut ext = sp_io::TestExternalities::new(t);
