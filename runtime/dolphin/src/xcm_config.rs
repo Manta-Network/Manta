@@ -132,17 +132,24 @@ parameter_types! {
 	pub const MaxInstructions: u32 = 100;
 }
 
+/// Transactor for the native asset which implements `fungible` trait, as well as
+/// Transactor for assets in pallet-assets, i.e. implements `fungibles` trait
 pub type MultiAssetTransactor = MultiAssetAdapter<
 	Runtime,
+	// Used when the incoming asset is a fungible concrete asset matching the given location or name:
 	IsNativeConcrete<SelfReserve>,
+	// "default" implementation of converting a `MultiLocation` to an `AccountId`
 	LocationToAccountId,
+	// Used to match incoming assets which are not the native asset.
 	ConvertedConcreteAssetId<
 		AssetId,
 		Balance,
 		AssetIdLocationConvert<AssetLocation, AssetManager>,
 		JustTry,
 	>,
+	// Precondition checks and actual implementations of mint and burn logic.
 	DolphinConcreteFungibleLedger,
+	// Used to find the query the native asset id of the chain.
 	DolphinAssetConfig,
 >;
 
