@@ -443,7 +443,6 @@ pub mod pallet {
 				Junctions::X1(Junction::AccountId32 { .. }) => MultiLocation::parent(),
 				// Send native tokens to sibling chain.
 				Junctions::X2(Junction::Parachain(_para_id), Junction::AccountId32 { .. }) => {
-					// MultiLocation::new(*parents, Junctions::X1(Junction::Parachain(*para_id)))
 					interior.clone().split_last().0.into_exterior(*parents)
 				}
 				// For now, we don't support X3 or longer Junctions
