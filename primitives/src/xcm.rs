@@ -323,9 +323,9 @@ where
 
 pub struct MultiAssetAdapter<
 	Runtime,
-	NativeMatcher,
 	AccountIdConverter,
-	AssetsMatcher,
+	NativeMatcher,
+	NonNativeMatcher,
 	MultiAdapterFungibleLedger,
 	MultiAdapterAssetConfig,
 >(
@@ -333,7 +333,7 @@ pub struct MultiAssetAdapter<
 		Runtime,
 		NativeMatcher,
 		AccountIdConverter,
-		AssetsMatcher,
+		NonNativeMatcher,
 		MultiAdapterFungibleLedger,
 		MultiAdapterAssetConfig,
 	)>,
@@ -341,58 +341,17 @@ pub struct MultiAssetAdapter<
 
 impl<
 		Runtime: frame_system::Config,
-		NativeMatcher: MatchesFungible<Balance>,
 		AccountIdConverter: XcmConvert<MultiLocation, Runtime::AccountId>,
-		AssetsMatcher: MatchesFungibles<AssetId, Balance>,
-		MultiAdapterFungibleLedger: FungibleLedger<Runtime>,
-		MultiAdapterAssetConfig: AssetConfig<Runtime>,
-	>
-	MultiAssetAdapter<
-		Runtime,
-		NativeMatcher,
-		AccountIdConverter,
-		AssetsMatcher,
-		MultiAdapterFungibleLedger,
-		MultiAdapterAssetConfig,
-	>
-{
-	fn match_asset_and_location(
-		asset: &MultiAsset,
-		location: &MultiLocation,
-	) -> result::Result<(AssetId, Balance, Runtime::AccountId), XcmError> {
-		let who = AccountIdConverter::convert_ref(location).map_err(|_| {
-			XcmError::FailedToTransactAsset("Failed Location to AccountId Conversion")
-		})?;
-
-		let (asset_id, amount) = match (
-			NativeMatcher::matches_fungible(&asset),
-			AssetsMatcher::matches_fungibles(&asset),
-		) {
-			// native asset
-			(Some(amount), _) => (MultiAdapterAssetConfig::NativeAssetId::get(), amount),
-			// assets asset
-			(_, result::Result::Ok((asset_id, amount))) => (asset_id, amount),
-			// unknown asset
-			_ => return Err(XcmError::FailedToTransactAsset("Unknown Asset")),
-		};
-
-		Ok((asset_id, amount, who))
-	}
-}
-
-impl<
-		Runtime: frame_system::Config,
 		NativeMatcher: MatchesFungible<Balance>,
-		AccountIdConverter: XcmConvert<MultiLocation, Runtime::AccountId>,
-		AssetsMatcher: MatchesFungibles<AssetId, Balance>,
+		NonNativeMatcher: MatchesFungibles<AssetId, Balance>,
 		MultiAdapterFungibleLedger: FungibleLedger<Runtime>,
 		MultiAdapterAssetConfig: AssetConfig<Runtime>,
 	> TransactAsset
 	for MultiAssetAdapter<
 		Runtime,
-		NativeMatcher,
 		AccountIdConverter,
-		AssetsMatcher,
+		NativeMatcher,
+		NonNativeMatcher,
 		MultiAdapterFungibleLedger,
 		MultiAdapterAssetConfig,
 	>
@@ -416,5 +375,46 @@ impl<
 			.map_err(|_| XcmError::FailedToTransactAsset("Failed Burn"))?;
 
 		Ok(asset.clone().into())
+	}
+}
+
+impl<
+		Runtime: frame_system::Config,
+		AccountIdConverter: XcmConvert<MultiLocation, Runtime::AccountId>,
+		NativeMatcher: MatchesFungible<Balance>,
+		NonNativeMatcher: MatchesFungibles<AssetId, Balance>,
+		MultiAdapterFungibleLedger: FungibleLedger<Runtime>,
+		MultiAdapterAssetConfig: AssetConfig<Runtime>,
+	>
+	MultiAssetAdapter<
+		Runtime,
+		AccountIdConverter,
+		NativeMatcher,
+		NonNativeMatcher,
+		MultiAdapterFungibleLedger,
+		MultiAdapterAssetConfig,
+	>
+{
+	fn match_asset_and_location(
+		asset: &MultiAsset,
+		location: &MultiLocation,
+	) -> result::Result<(AssetId, Balance, Runtime::AccountId), XcmError> {
+		let who = AccountIdConverter::convert_ref(location).map_err(|_| {
+			XcmError::FailedToTransactAsset("Failed Location to AccountId Conversion")
+		})?;
+
+		let (asset_id, amount) = match (
+			NativeMatcher::matches_fungible(&asset),
+			NonNativeMatcher::matches_fungibles(&asset),
+		) {
+			// native asset
+			(Some(amount), _) => (MultiAdapterAssetConfig::NativeAssetId::get(), amount),
+			// assets asset
+			(_, result::Result::Ok((asset_id, amount))) => (asset_id, amount),
+			// unknown asset
+			_ => return Err(XcmError::FailedToTransactAsset("Unknown Asset")),
+		};
+
+		Ok((asset_id, amount, who))
 	}
 }

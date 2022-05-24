@@ -6,6 +6,7 @@
 ### Features
 
 ### Improvements
+- [\#563](https://github.com/Manta-Network/Manta/pull/563) Re-implement the `TransactAsset` trait with the unified interface of `FungibleLedger` trait, and AssetConfig trait.
 
 ### Bug fixes
 

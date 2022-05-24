@@ -281,10 +281,6 @@ pub enum FungibleLedgerError {
 	/// Not enough of the funds in the account are unavailable for withdrawal.
 	Frozen,
 
-	/// Account balance would reduce to zero, potentially destroying it. The parameter is the
-	/// amount of balance which is destroyed.
-	ReducedToZero(Balance),
-
 	/// Withdraw could not happen since the amount to be withdrawn is less than the total funds in
 	/// the account.
 	NoFunds,

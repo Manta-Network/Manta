@@ -192,10 +192,10 @@ parameter_types! {
 /// Transactor for assets in pallet-assets, i.e. implements `fungibles` trait
 pub type MultiAssetTransactor = MultiAssetAdapter<
 	Runtime,
-	// Used when the incoming asset is a fungible concrete asset matching the given location or name:
-	IsNativeConcrete<SelfReserve>,
 	// "default" implementation of converting a `MultiLocation` to an `AccountId`
 	LocationToAccountId,
+	// Used when the incoming asset is a fungible concrete asset matching the given location or name:
+	IsNativeConcrete<SelfReserve>,
 	// Used to match incoming assets which are not the native asset.
 	ConvertedConcreteAssetId<
 		AssetId,
