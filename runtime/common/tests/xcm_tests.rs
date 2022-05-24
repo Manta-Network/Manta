@@ -1864,13 +1864,79 @@ fn filtered_multilocation_should_not_work() {
 
 	// Sending xcm to parachain 5 should not work
 	ParaA::execute_with(|| {
-		// free execution, full amount received
 		assert_noop!(
 			parachain::XTokens::transfer(
 				parachain::Origin::signed(ALICE.into()),
 				parachain::CurrencyId::MantaCurrency(a_currency_id),
 				100,
 				Box::new(VersionedMultiLocation::V1(dest)),
+				80
+			),
+			orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
+		);
+	});
+
+	let x3_dest = MultiLocation {
+		parents: 1,
+		interior: X3(
+			Parachain(2),
+			PalletInstance(PALLET_ASSET_INDEX),
+			AccountId32 {
+				network: NetworkId::Any,
+				id: ALICE.into(),
+			},
+		),
+	};
+	// We don't support X3 or more longer Junctions.
+	ParaA::execute_with(|| {
+		assert_noop!(
+			parachain::XTokens::transfer(
+				parachain::Origin::signed(ALICE.into()),
+				parachain::CurrencyId::MantaCurrency(a_currency_id),
+				100,
+				Box::new(VersionedMultiLocation::V1(x3_dest)),
+				80
+			),
+			orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
+		);
+	});
+
+	let parents_as_2_dest = MultiLocation {
+		parents: 2,
+		interior: X2(
+			Parachain(2),
+			AccountId32 {
+				network: NetworkId::Any,
+				id: ALICE.into(),
+			},
+		),
+	};
+	// Wrong parents should not work.
+	ParaA::execute_with(|| {
+		assert_noop!(
+			parachain::XTokens::transfer(
+				parachain::Origin::signed(ALICE.into()),
+				parachain::CurrencyId::MantaCurrency(a_currency_id),
+				100,
+				Box::new(VersionedMultiLocation::V1(parents_as_2_dest)),
+				80
+			),
+			orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
+		);
+	});
+
+	let here_dest = MultiLocation {
+		parents: 1,
+		interior: Here,
+	};
+	// The destination with no receiver should not work.
+	ParaA::execute_with(|| {
+		assert_noop!(
+			parachain::XTokens::transfer(
+				parachain::Origin::signed(ALICE.into()),
+				parachain::CurrencyId::MantaCurrency(a_currency_id),
+				100,
+				Box::new(VersionedMultiLocation::V1(here_dest)),
 				80
 			),
 			orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
@@ -1917,6 +1983,7 @@ fn less_than_min_xcm_fee_should_not_work() {
 		None,
 	);
 	// set min xcm fee on ParaA
+	let amount = 450;
 	let min_xcm_fee = 40;
 	let fee_amount: u128 = 200;
 	ParaA::execute_with(|| {
@@ -1971,6 +2038,11 @@ fn less_than_min_xcm_fee_should_not_work() {
 		),
 	};
 
+	// Minimum xcm execution fee paid on destination chain.
+	// Current only support `ToReserve` with relay-chain asset as fee. other case
+	// like `NonReserve` or `SelfReserve` with relay-chain fee is not support.
+	// And our `MaxAssetsForTransfer` for xtokens is 1,
+	// so `transfer_multicurrencies` is not supported on calamari
 	ParaA::execute_with(|| {
 		assert_noop!(
 			parachain::XTokens::transfer_multicurrencies(
@@ -1978,7 +2050,7 @@ fn less_than_min_xcm_fee_should_not_work() {
 				vec![
 					(
 						parachain::CurrencyId::MantaCurrency(b_currency_id_on_a),
-						450
+						amount
 					),
 					(
 						parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a),
@@ -2000,7 +2072,7 @@ fn less_than_min_xcm_fee_should_not_work() {
 			vec![
 				(
 					parachain::CurrencyId::MantaCurrency(b_currency_id_on_a),
-					450
+					amount
 				),
 				(
 					parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a),

@@ -697,7 +697,6 @@ where
 		));
 
 		if let Some((owner, min_balance, is_sufficient, is_frozen)) = mint_asset {
-			// let (owner, min_balance, is_sufficient, is_frozen) = asset_status
 			assert_ok!(self::Assets::force_asset_status(
 				self::Origin::root(),
 				currency_id,

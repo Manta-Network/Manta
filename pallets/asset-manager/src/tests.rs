@@ -264,11 +264,12 @@ fn filter_asset_location_should_work() {
 		create_asset_metadata("Kusama", "KSM", 12, 1u128, None, false, false);
 	let kusama_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 
+	let para_id = 2015;
 	let manta_asset_metadata =
 		create_asset_metadata("Manta", "MANTA", 18, 1u128, None, false, false);
 	let manta_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
-		X1(Parachain(2015)),
+		X1(Parachain(para_id)),
 	)));
 	new_test_ext().execute_with(|| {
 		// Register relay chain native token
@@ -296,16 +297,44 @@ fn filter_asset_location_should_work() {
 			Some(manta_location.clone())
 		);
 
-		let new_location: Option<MultiLocation> = AssetLocation(VersionedMultiLocation::V1(
-			MultiLocation::new(1, X2(Parachain(1999), GeneralKey(b"UNKNOWN".to_vec()))),
-		))
-		.into();
+		// correct location should work
+		let relay_dest = MultiLocation {
+			parents: 1,
+			interior: X1(AccountId32 {
+				network: NetworkId::Any,
+				id: ALICE.into(),
+			}),
+		};
+		let para_dest = MultiLocation {
+			parents: 1,
+			interior: X2(
+				Parachain(para_id),
+				AccountId32 {
+					network: NetworkId::Any,
+					id: ALICE.into(),
+				},
+			),
+		};
+		assert!(crate::Pallet::<Runtime>::contains(&para_dest));
+		assert!(crate::Pallet::<Runtime>::contains(&relay_dest));
 
 		// new location should be filtered
-		assert!(!crate::Pallet::<Runtime>::contains(&new_location.unwrap()));
-		assert!(crate::Pallet::<Runtime>::contains(
-			&Into::<Option<MultiLocation>>::into(kusama_location).unwrap()
-		));
+		let wrong_relay_dest = MultiLocation {
+			parents: 1,
+			interior: Here,
+		};
+		let wrong_para_dest = MultiLocation {
+			parents: 1,
+			interior: X2(
+				Parachain(para_id + 1),
+				AccountId32 {
+					network: NetworkId::Any,
+					id: ALICE.into(),
+				},
+			),
+		};
+		assert!(!crate::Pallet::<Runtime>::contains(&wrong_relay_dest));
+		assert!(!crate::Pallet::<Runtime>::contains(&wrong_para_dest));
 	})
 }
 
@@ -353,7 +382,8 @@ fn set_min_xcm_fee_should_work() {
 			Some(min_xcm_fee)
 		);
 
-		// return max xcm fee if it's not set
+		// u128::MAX will be returned if min-xcm-fee is not set,
+		// that means your crosschain transaction will fail due to no one can pay u128::MAX.
 		let calamari_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 			1,
 			X2(Parachain(2084), GeneralKey(b"KMA".to_vec())),
