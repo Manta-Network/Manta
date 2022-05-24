@@ -357,6 +357,12 @@ impl<
 	>
 {
 	fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> XcmResult {
+		log::trace!(
+			target: "xcm::multi_asset_adapter",
+			"deposit_asset asset: {:?}, location: {:?}",
+			asset, location,
+		);
+
 		let (asset_id, amount, who) = Self::match_asset_and_location(asset, location)?;
 
 		MultiAdapterFungibleLedger::mint(asset_id, &who, amount)
@@ -369,6 +375,12 @@ impl<
 		asset: &MultiAsset,
 		location: &MultiLocation,
 	) -> result::Result<xcm_executor::Assets, XcmError> {
+		log::trace!(
+			target: "xcm::multi_asset_adapter",
+			"withdraw_asset asset: {:?}, location: {:?}",
+			asset, location,
+		);
+
 		let (asset_id, amount, who) = Self::match_asset_and_location(asset, location)?;
 
 		MultiAdapterFungibleLedger::burn(asset_id, &who, amount)
