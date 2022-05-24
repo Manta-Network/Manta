@@ -1901,6 +1901,27 @@ fn filtered_multilocation_should_not_work() {
 		);
 	});
 
+	let parents_as_2_relay_dest = MultiLocation {
+		parents: 2,
+		interior: X1(AccountId32 {
+			network: NetworkId::Any,
+			id: ALICE.into(),
+		}),
+	};
+	// relaychain dest with wrong parents should not work.
+	ParaA::execute_with(|| {
+		assert_noop!(
+			parachain::XTokens::transfer(
+				parachain::Origin::signed(ALICE.into()),
+				parachain::CurrencyId::MantaCurrency(a_currency_id),
+				100,
+				Box::new(VersionedMultiLocation::V1(parents_as_2_relay_dest)),
+				80
+			),
+			orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
+		);
+	});
+
 	let parents_as_2_dest = MultiLocation {
 		parents: 2,
 		interior: X2(

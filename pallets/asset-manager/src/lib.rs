@@ -440,10 +440,12 @@ pub mod pallet {
 			// Currently, we only support X3 at most.
 			let striped_location = match interior {
 				// Send tokens back to relaychain.
-				Junctions::X1(Junction::AccountId32 { .. }) => MultiLocation::parent(),
+				Junctions::X1(Junction::AccountId32 { .. }) => {
+					MultiLocation::new(*parents, Junctions::Here)
+				}
 				// Send native tokens to sibling chain.
-				Junctions::X2(Junction::Parachain(_para_id), Junction::AccountId32 { .. }) => {
-					interior.clone().split_last().0.into_exterior(*parents)
+				Junctions::X2(Junction::Parachain(para_id), Junction::AccountId32 { .. }) => {
+					MultiLocation::new(*parents, X1(Parachain(*para_id)))
 				}
 				// For now, we don't support X3 or longer Junctions
 				_ => return None,
