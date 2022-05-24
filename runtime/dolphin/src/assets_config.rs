@@ -133,7 +133,6 @@ pub type DolphinConcreteFungibleLedger =
 pub struct DolphinAssetConfig;
 
 impl AssetConfig<Runtime> for DolphinAssetConfig {
-	//type AssetId = AssetId;
 	type DummyAssetId = DummyAssetId;
 	type NativeAssetId = NativeAssetId;
 	type StartNonNativeAssetId = StartNonNativeAssetId;

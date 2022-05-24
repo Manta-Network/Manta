@@ -361,7 +361,7 @@ impl<
 		location: &MultiLocation,
 	) -> result::Result<(AssetId, Balance, Runtime::AccountId), XcmError> {
 		let who = AccountIdConverter::convert_ref(location).map_err(|_| {
-			xcm::v2::Error::FailedToTransactAsset("Failed Location to AccountId Conversion")
+			XcmError::FailedToTransactAsset("Failed Location to AccountId Conversion")
 		})?;
 
 		let (asset_id, amount) = match (
@@ -373,7 +373,7 @@ impl<
 			// assets asset
 			(_, result::Result::Ok((asset_id, amount))) => (asset_id, amount),
 			// unknown asset
-			_ => return Err(xcm::v2::Error::FailedToTransactAsset("Unknown Asset")),
+			_ => return Err(XcmError::FailedToTransactAsset("Unknown Asset")),
 		};
 
 		Ok((asset_id, amount, who))
@@ -401,7 +401,7 @@ impl<
 		let (asset_id, amount, who) = Self::match_asset_and_location(asset, location)?;
 
 		MultiAdapterFungibleLedger::mint(asset_id, &who, amount)
-			.map_err(|_| xcm::v2::Error::FailedToTransactAsset("Failed Mint"))?;
+			.map_err(|_| XcmError::FailedToTransactAsset("Failed Mint"))?;
 
 		Ok(())
 	}
@@ -413,7 +413,7 @@ impl<
 		let (asset_id, amount, who) = Self::match_asset_and_location(asset, location)?;
 
 		MultiAdapterFungibleLedger::burn(asset_id, &who, amount)
-			.map_err(|_| xcm::v2::Error::FailedToTransactAsset("Failed Burn"))?;
+			.map_err(|_| XcmError::FailedToTransactAsset("Failed Burn"))?;
 
 		Ok(asset.clone().into())
 	}

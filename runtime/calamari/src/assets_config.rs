@@ -123,7 +123,6 @@ pub type CalamariConcreteFungibleLedger =
 pub struct CalamariAssetConfig;
 
 impl AssetConfig<Runtime> for CalamariAssetConfig {
-	//type AssetId = AssetId;
 	type DummyAssetId = DummyAssetId;
 	type NativeAssetId = NativeAssetId;
 	type StartNonNativeAssetId = StartNonNativeAssetId;
