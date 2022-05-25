@@ -2003,17 +2003,6 @@ fn less_than_min_xcm_fee_should_not_work() {
 		Some(0u128),
 		None,
 	);
-	// set min xcm fee on ParaA
-	let amount = 450;
-	let min_xcm_fee = 40;
-	let fee_amount: u128 = 200;
-	ParaA::execute_with(|| {
-		assert_ok!(AssetManager::set_min_xcm_fee(
-			parachain::Origin::root(),
-			b_currency_id_on_a,
-			min_xcm_fee,
-		));
-	});
 
 	// register ParaA native asset on ParaB
 	let _ = register_assets_on_parachain::<ParaB>(
@@ -2059,11 +2048,47 @@ fn less_than_min_xcm_fee_should_not_work() {
 		),
 	};
 
+	let amount = 450;
+	let fee_amount: u128 = 200;
 	// Minimum xcm execution fee paid on destination chain.
 	// Current only support `ToReserve` with relay-chain asset as fee. other case
 	// like `NonReserve` or `SelfReserve` with relay-chain fee is not support.
 	// And our `MaxAssetsForTransfer` for xtokens is 1,
-	// so `transfer_multicurrencies` is not supported on calamari
+	// so `transfer_multicurrencies` is not supported on calamari.
+	// If min-xcm-fee is not set, no one can pay xcm fee(u129::MAX).
+	ParaA::execute_with(|| {
+		assert_noop!(
+			parachain::XTokens::transfer_multicurrencies(
+				Some(ALICE).into(),
+				vec![
+					(
+						parachain::CurrencyId::MantaCurrency(b_currency_id_on_a),
+						amount
+					),
+					(
+						parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a),
+						fee_amount
+					)
+				],
+				1,
+				Box::new(VersionedMultiLocation::V1(dest.clone())),
+				40,
+			),
+			orml_xtokens::Error::<parachain::Runtime>::FeeNotEnough
+		);
+	});
+
+	// set min xcm fee on ParaA
+	let min_xcm_fee = 40;
+	ParaA::execute_with(|| {
+		assert_ok!(AssetManager::set_min_xcm_fee(
+			parachain::Origin::root(),
+			b_currency_id_on_a,
+			min_xcm_fee,
+		));
+	});
+
+	// fee is bigger than min-xcm-fee should work(39 < 40).
 	ParaA::execute_with(|| {
 		assert_noop!(
 			parachain::XTokens::transfer_multicurrencies(
