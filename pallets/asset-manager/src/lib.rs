@@ -169,7 +169,7 @@ pub mod pallet {
 		},
 		/// Update min xcm fee of an asset
 		MinXcmFeeUpdated {
-			multicaltion: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
+			multilocation: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
 			min_xcm_fee: u128,
 		},
 	}
@@ -419,23 +419,23 @@ pub mod pallet {
 		/// Set min xcm fee for assets.
 		///
 		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
-		/// * `asset_id`: AssetId to be haven min xcm fee.
+		/// * `multilocation`: Multilocation to be haven min xcm fee.
 		/// * `min_xcm_fee`: Amount of min_xcm_fee.
 		#[pallet::weight(T::WeightInfo::set_min_xcm_fee())]
 		#[transactional]
 		pub fn set_min_xcm_fee(
 			origin: OriginFor<T>,
-			multicaltion: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
+			multilocation: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
 			#[pallet::compact] min_xcm_fee: u128,
 		) -> DispatchResult {
 			T::ModifierOrigin::ensure_origin(origin)?;
 			ensure!(
-				LocationAssetId::<T>::contains_key(&multicaltion),
+				LocationAssetId::<T>::contains_key(&multilocation),
 				Error::<T>::UpdateNonExistAsset
 			);
-			MinXcmFee::<T>::insert(&multicaltion, &min_xcm_fee);
+			MinXcmFee::<T>::insert(&multilocation, &min_xcm_fee);
 			Self::deposit_event(Event::<T>::MinXcmFeeUpdated {
-				multicaltion,
+				multilocation,
 				min_xcm_fee,
 			});
 			Ok(())
@@ -457,7 +457,7 @@ pub mod pallet {
 			T::PalletId::get().into_account()
 		}
 
-		/// Get para id from multilocation
+		/// Get para id from asset location
 		pub(crate) fn get_para_id_from_multilocation(
 			location: Option<&MultiLocation>,
 		) -> Option<ParaId> {
@@ -465,9 +465,6 @@ pub mod pallet {
 				match interior {
 					// We have some locations like (1, X1(Parachain)).
 					Junctions::X1(Junction::Parachain(para_id)) => Some(*para_id),
-					Junctions::X2(Junction::Parachain(para_id), Junction::AccountId32 { .. }) => {
-						Some(*para_id)
-					}
 					// We have some locations like (1, X2(Parachain, GeneralKey)).
 					Junctions::X2(Junction::Parachain(para_id), Junction::GeneralKey { .. }) => {
 						Some(*para_id)
@@ -493,16 +490,15 @@ pub mod pallet {
 				return false;
 			}
 
-			// If multilocation is relachain location
-			if let Junctions::X1(Junction::AccountId32 { .. }) = location.interior {
-				return true;
-			}
-
-			// If multilocation is parachain location
-			if let Some(para_id) = Self::get_para_id_from_multilocation(Some(location)) {
-				AllowedDestParaIds::<T>::contains_key(para_id)
-			} else {
-				false
+			match location.interior {
+				// Send tokens back to relaychain.
+				Junctions::X1(Junction::AccountId32 { .. }) => true,
+				// Send tokens to sibling chain.
+				Junctions::X2(Junction::Parachain(para_id), Junction::AccountId32 { .. }) => {
+					AllowedDestParaIds::<T>::contains_key(para_id)
+				}
+				// We don't support X3 or longer Junctions.
+				_ => false,
 			}
 		}
 	}

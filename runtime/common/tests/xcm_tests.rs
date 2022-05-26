@@ -1963,6 +1963,45 @@ fn filtered_multilocation_should_not_work() {
 			orml_xtokens::Error::<parachain::Runtime>::NotSupportedMultiLocation,
 		);
 	});
+
+	// Correct relaychain location should work, (1, Here)
+	let relay_dest = MultiLocation {
+		parents: 1,
+		interior: X1(AccountId32 {
+			network: NetworkId::Any,
+			id: ALICE.into(),
+		}),
+	};
+	ParaA::execute_with(|| {
+		assert_ok!(parachain::XTokens::transfer(
+			parachain::Origin::signed(ALICE.into()),
+			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			100,
+			Box::new(VersionedMultiLocation::V1(relay_dest)),
+			80
+		));
+	});
+
+	// Correct sibling location should work
+	let sibling_chain_dest = MultiLocation {
+		parents: 1,
+		interior: X2(
+			Parachain(2),
+			AccountId32 {
+				network: NetworkId::Any,
+				id: ALICE.into(),
+			},
+		),
+	};
+	ParaA::execute_with(|| {
+		assert_ok!(parachain::XTokens::transfer(
+			parachain::Origin::signed(ALICE.into()),
+			parachain::CurrencyId::MantaCurrency(a_currency_id),
+			100,
+			Box::new(VersionedMultiLocation::V1(sibling_chain_dest)),
+			80
+		));
+	});
 }
 
 #[test]
