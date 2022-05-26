@@ -106,7 +106,7 @@ jobs:
         run: |
           source ${HOME}/.cargo/env
           cargo build --release --features=try-runtime
-          chmod +x target/release/manta
+          chmod a+x target/release/manta
       -
         name: move bin
         run: |
