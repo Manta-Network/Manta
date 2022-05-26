@@ -1,0 +1,19 @@
+{
+  "name": "manta-tests",
+  "version": "1.0.0",
+  "description": "Functional Tests for Manta",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@polkadot/api": "^7.10.1",
+    "@polkadot/types": "^7.10.1",
+    "@types/yargs": "^17.0.0",
+    "ts-node": "^10.8.0",
+    "typescript": "4.6.4"
+  }
+}

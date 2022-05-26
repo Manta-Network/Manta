@@ -31,7 +31,7 @@ use sp_runtime::{generic::BlockId, traits::Block};
 pub trait PullApi {
 	/// Returns the update required to be synchronized with the ledger starting from
 	/// `checkpoint`.
-	#[rpc(name = "manta_pay_pull")]
+	#[rpc(name = "mantaPay_pull")]
 	fn pull(&self, checkpoint: Checkpoint) -> Result<PullResponse>;
 }
 
