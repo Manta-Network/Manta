@@ -37,8 +37,6 @@ async function main(){
         }});
     const junk = await (api.rpc as any).mantapay.pull({receiver_index: new Array(256).fill(0), sender_index: 0});
     console.log(junk);
-    //const now = await api.rpc.mantaPay.pull();
-    //console.log(now);
 }
 
 main().catch(console.error).finally(() => process.exit());
