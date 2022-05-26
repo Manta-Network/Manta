@@ -111,7 +111,7 @@ jobs:
         name: move bin
         run: |
           mkdir -p $HOME/.local/bin
-          mv target/debug/manta $HOME/.local/bin/
+          mv target/release/manta $HOME/.local/bin/
           chmod +x $HOME/.local/bin/manta
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       # - name: Fetch binary
