@@ -2083,7 +2083,7 @@ fn less_than_min_xcm_fee_should_not_work() {
 	ParaA::execute_with(|| {
 		assert_ok!(AssetManager::set_min_xcm_fee(
 			parachain::Origin::root(),
-			b_currency_id_on_a,
+			para_b_source_location,
 			min_xcm_fee,
 		));
 	});

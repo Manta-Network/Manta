@@ -90,11 +90,12 @@ fn wrong_modifier_origin_should_not_work() {
 
 #[test]
 fn register_asset_should_work() {
+	let para_id = 1;
 	let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1u128, None, false, true);
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 	let new_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
-		X2(Parachain(1), PalletInstance(PALLET_BALANCES_INDEX)),
+		X2(Parachain(para_id), PalletInstance(PALLET_BALANCES_INDEX)),
 	)));
 	new_test_ext().execute_with(|| {
 		let mut counter: u32 =
@@ -109,6 +110,8 @@ fn register_asset_should_work() {
 			AssetIdLocation::<Runtime>::get(counter),
 			Some(source_location.clone())
 		);
+		// relaychain has no para id.
+		assert!(!crate::AllowedDestParaIds::<Runtime>::contains_key(para_id));
 		counter += 1;
 		// Register twice will fail
 		assert_noop!(
@@ -122,6 +125,8 @@ fn register_asset_should_work() {
 			asset_metadata.clone()
 		));
 		assert_eq!(AssetIdLocation::<Runtime>::get(counter), Some(new_location));
+		// check para ids
+		assert!(crate::AllowedDestParaIds::<Runtime>::contains_key(para_id));
 	})
 }
 
@@ -318,7 +323,7 @@ fn filter_asset_location_should_work() {
 		assert!(crate::Pallet::<Runtime>::contains(&para_dest));
 		assert!(crate::Pallet::<Runtime>::contains(&relay_dest));
 
-		// new location should be filtered
+		// wrong location should be filtered
 		let wrong_relay_dest = MultiLocation {
 			parents: 1,
 			interior: Here,
@@ -365,7 +370,7 @@ fn set_min_xcm_fee_should_work() {
 		assert_noop!(
 			AssetManager::set_min_xcm_fee(
 				Origin::signed([2u8; 32].into()),
-				manta_asset_id,
+				manta_location.clone(),
 				min_xcm_fee,
 			),
 			BadOrigin
@@ -374,11 +379,11 @@ fn set_min_xcm_fee_should_work() {
 		// only sudo can set it.
 		assert_ok!(AssetManager::set_min_xcm_fee(
 			Origin::root(),
-			manta_asset_id,
+			manta_location.clone(),
 			min_xcm_fee,
 		));
 		assert_eq!(
-			crate::MinXcmFee::<Runtime>::get(&manta_asset_id),
+			crate::MinXcmFee::<Runtime>::get(&manta_location),
 			Some(min_xcm_fee)
 		);
 

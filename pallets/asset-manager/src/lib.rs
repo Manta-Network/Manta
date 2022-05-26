@@ -57,6 +57,9 @@ pub mod pallet {
 	use sp_runtime::{traits::AccountIdConversion, ArithmeticError};
 	use xcm::latest::prelude::*;
 
+	/// Alias for the junction Parachain(#[codec(compact)] u32),
+	pub(crate) type ParaId = u32;
+
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
@@ -166,7 +169,7 @@ pub mod pallet {
 		},
 		/// Update min xcm fee of an asset
 		MinXcmFeeUpdated {
-			asset_id: AssetId,
+			multicaltion: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
 			min_xcm_fee: u128,
 		},
 	}
@@ -224,7 +227,13 @@ pub mod pallet {
 	/// Minimum xcm execution fee paid on destination chain.
 	#[pallet::storage]
 	#[pallet::getter(fn get_min_xcm_fee)]
-	pub type MinXcmFee<T: Config> = StorageMap<_, Blake2_128Concat, AssetId, u128>;
+	pub type MinXcmFee<T: Config> =
+		StorageMap<_, Blake2_128Concat, <T::AssetConfig as AssetConfig<T>>::AssetLocation, u128>;
+
+	/// Store all AllowedDestParaIds we support.
+	#[pallet::storage]
+	#[pallet::getter(fn get_para_id)]
+	pub type AllowedDestParaIds<T: Config> = StorageMap<_, Blake2_128Concat, AssetId, ()>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -259,6 +268,14 @@ pub mod pallet {
 			AssetIdLocation::<T>::insert(&asset_id, &location);
 			AssetIdMetadata::<T>::insert(&asset_id, &metadata);
 			LocationAssetId::<T>::insert(&location, &asset_id);
+
+			// extract para id from multilocation and store it.
+			if let Some(para_id) =
+				Self::get_para_id_from_multilocation(location.clone().into().as_ref())
+			{
+				AllowedDestParaIds::<T>::insert(para_id, ());
+			}
+
 			Self::deposit_event(Event::<T>::AssetRegistered {
 				asset_id,
 				asset_address: location,
@@ -295,6 +312,14 @@ pub mod pallet {
 			LocationAssetId::<T>::remove(&old_location);
 			LocationAssetId::<T>::insert(&location, &asset_id);
 			AssetIdLocation::<T>::insert(&asset_id, &location);
+
+			// extract para id from multilocation and store it.
+			if let Some(para_id) =
+				Self::get_para_id_from_multilocation(location.clone().into().as_ref())
+			{
+				AllowedDestParaIds::<T>::insert(para_id, ());
+			}
+
 			// deposit event.
 			Self::deposit_event(Event::<T>::AssetLocationUpdated { asset_id, location });
 			Ok(())
@@ -400,17 +425,17 @@ pub mod pallet {
 		#[transactional]
 		pub fn set_min_xcm_fee(
 			origin: OriginFor<T>,
-			#[pallet::compact] asset_id: AssetId,
+			multicaltion: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
 			#[pallet::compact] min_xcm_fee: u128,
 		) -> DispatchResult {
 			T::ModifierOrigin::ensure_origin(origin)?;
 			ensure!(
-				AssetIdLocation::<T>::contains_key(&asset_id),
+				LocationAssetId::<T>::contains_key(&multicaltion),
 				Error::<T>::UpdateNonExistAsset
 			);
-			MinXcmFee::<T>::insert(&asset_id, &min_xcm_fee);
+			MinXcmFee::<T>::insert(&multicaltion, &min_xcm_fee);
 			Self::deposit_event(Event::<T>::MinXcmFeeUpdated {
-				asset_id,
+				multicaltion,
 				min_xcm_fee,
 			});
 			Ok(())
@@ -432,36 +457,50 @@ pub mod pallet {
 			T::PalletId::get().into_account()
 		}
 
-		/// Strip AccountId from the multilocation.
-		pub(crate) fn extract_multilocation(
-			location: &MultiLocation,
-		) -> Option<<T::AssetConfig as AssetConfig<T>>::AssetLocation> {
-			let MultiLocation { parents, interior } = location;
-			// Currently, we only support X3 at most.
-			let striped_location = match interior {
-				// Send tokens back to relaychain.
-				Junctions::X1(Junction::AccountId32 { .. }) => {
-					MultiLocation::new(*parents, Junctions::Here)
+		/// Get para id from multilocation
+		pub(crate) fn get_para_id_from_multilocation(
+			location: Option<&MultiLocation>,
+		) -> Option<ParaId> {
+			if let Some(MultiLocation { interior, .. }) = location {
+				match interior {
+					// We have some locations like (1, X1(Parachain)).
+					Junctions::X1(Junction::Parachain(para_id)) => Some(*para_id),
+					Junctions::X2(Junction::Parachain(para_id), Junction::AccountId32 { .. }) => {
+						Some(*para_id)
+					}
+					// We have some locations like (1, X2(Parachain, GeneralKey)).
+					Junctions::X2(Junction::Parachain(para_id), Junction::GeneralKey { .. }) => {
+						Some(*para_id)
+					}
+					// We have some locations like (1, X2(Parachain, PalletInstance)).
+					Junctions::X2(
+						Junction::Parachain(para_id),
+						Junction::PalletInstance { .. },
+					) => Some(*para_id),
+					_ => None,
 				}
-				// Send native tokens to sibling chain.
-				Junctions::X2(Junction::Parachain(para_id), Junction::AccountId32 { .. }) => {
-					MultiLocation::new(*parents, X1(Parachain(*para_id)))
-				}
-				// For now, we don't support X3 or longer Junctions
-				_ => return None,
-			};
-
-			Some(<T::AssetConfig as AssetConfig<T>>::AssetLocation::from(
-				striped_location,
-			))
+			} else {
+				None
+			}
 		}
 	}
 
 	/// Check the multilocation is supported by calamari/manta.
 	impl<T: Config> Contains<MultiLocation> for Pallet<T> {
 		fn contains(location: &MultiLocation) -> bool {
-			if let Some(striped_location) = Self::extract_multilocation(location) {
-				LocationAssetId::<T>::contains_key(striped_location)
+			// check parents
+			if location.parents != 1 {
+				return false;
+			}
+
+			// If multilocation is relachain location
+			if let Junctions::X1(Junction::AccountId32 { .. }) = location.interior {
+				return true;
+			}
+
+			// If multilocation is parachain location
+			if let Some(para_id) = Self::get_para_id_from_multilocation(Some(location)) {
+				AllowedDestParaIds::<T>::contains_key(para_id)
 			} else {
 				false
 			}
@@ -473,14 +512,32 @@ pub mod pallet {
 		fn get(location: &MultiLocation) -> u128 {
 			let location =
 				<T::AssetConfig as AssetConfig<T>>::AssetLocation::from(location.clone());
-			if let Some(asset_id) = LocationAssetId::<T>::get(location) {
-				match MinXcmFee::<T>::get(&asset_id) {
-					Some(min_fee) => min_fee,
-					None => u128::MAX,
-				}
-			} else {
-				u128::MAX
+			match MinXcmFee::<T>::get(&location) {
+				Some(min_fee) => min_fee,
+				None => u128::MAX,
 			}
+		}
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_runtime_upgrade() -> Weight {
+			let mut reads: Weight = 0;
+			let mut writes: Weight = 0;
+			LocationAssetId::<T>::iter().for_each(|(location, _asset_id)| {
+				reads += 1;
+				if let Some(para_id) =
+					Self::get_para_id_from_multilocation(location.into().as_ref())
+				{
+					if para_id != 2084 {
+						AllowedDestParaIds::<T>::insert(para_id, ());
+						writes += 1;
+					}
+				}
+			});
+			T::DbWeight::get()
+				.reads(reads)
+				.saturating_add(T::DbWeight::get().writes(writes))
 		}
 	}
 
