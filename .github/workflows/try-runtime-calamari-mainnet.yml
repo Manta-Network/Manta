@@ -96,48 +96,40 @@ jobs:
           rustup default stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
           rustup update
-      # -
-      #   name: Build Binary
-      #   env:
-      #     RUST_BACKTRACE: full
-      #     RUSTC_WRAPPER: sccache
-      #     SCCACHE_CACHE_SIZE: 2G
-      #     SCCACHE_DIR: /home/runner/.cache/sccache
-      #   run: |
-      #     source ${HOME}/.cargo/env
-      #     cargo build --release --features=try-runtime
-      #     chmod +x target/release/manta
-      # -
-      #   name: move bin
-      #   run: |
-      #     mkdir -p $HOME/.local/bin
-      #     mv target/debug/manta $HOME/.local/bin/
-      #     chmod +x $HOME/.local/bin/manta
-      #     echo "$HOME/.local/bin" >> $GITHUB_PATH
-      - name: Fetch binary
+      -
+        name: Build Binary
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
-          wget https://github.com/Manta-Network/Manta/releases/download/v3.1.5/manta
-          chmod a+x manta
+          source ${HOME}/.cargo/env
+          cargo build --release --features=try-runtime
+          chmod +x target/release/manta
       -
         name: move bin
         run: |
           mkdir -p $HOME/.local/bin
-          mv manta $HOME/.local/bin/
+          mv target/debug/manta $HOME/.local/bin/
           chmod +x $HOME/.local/bin/manta
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+      # - name: Fetch binary
+      #   run: |
+      #     wget https://github.com/Manta-Network/Manta/releases/download/v3.1.5/manta
+      #     chmod a+x manta
+      # -
+      #   name: move bin
+      #   run: |
+      #     mkdir -p $HOME/.local/bin
+      #     mv manta $HOME/.local/bin/
+      #     chmod +x $HOME/.local/bin/manta
+      #     echo "$HOME/.local/bin" >> $GITHUB_PATH
       -
         uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
           path: dev-tools-calamari
-      # -
-      #   name: execute try-runtime
-      #   run: |
-      #     cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
-      #     yarn install
-      #     yarn
-      #     latest_hash=$(node get-latest-block-hash --address=$PROD_URL)
-      #     $HOME/.local/bin/manta try-runtime --chain calamari-dev on-runtime-upgrade live --at $latest_hash --uri $PROD_URL
       -
         name: execute try-runtime
         run: |
@@ -145,6 +137,14 @@ jobs:
           yarn install
           yarn
           latest_hash=$(node get-latest-block-hash --address=$PROD_URL)
+          $HOME/.local/bin/manta try-runtime --chain calamari-dev on-runtime-upgrade live --at $latest_hash --uri $PROD_URL
+      # -
+      #   name: execute try-runtime
+      #   run: |
+      #     cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
+      #     yarn install
+      #     yarn
+      #     latest_hash=$(node get-latest-block-hash --address=$PROD_URL)
       -
         name: stop sccache server
         run: sccache --stop-server || true
