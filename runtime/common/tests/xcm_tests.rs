@@ -2012,6 +2012,7 @@ fn less_than_min_xcm_fee_should_not_work() {
 	let para_b_id = 2;
 	let para_a_source_location = create_asset_location(1, para_a_id);
 	let para_b_source_location = create_asset_location(1, para_b_id);
+	let para_b_as_reserve_chain = create_asset_location(1, para_b_id);
 
 	let para_a_asset_metadata =
 		create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
@@ -2122,7 +2123,7 @@ fn less_than_min_xcm_fee_should_not_work() {
 	ParaA::execute_with(|| {
 		assert_ok!(AssetManager::set_min_xcm_fee(
 			parachain::Origin::root(),
-			para_b_source_location,
+			para_b_as_reserve_chain,
 			min_xcm_fee,
 		));
 	});

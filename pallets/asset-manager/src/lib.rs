@@ -169,7 +169,7 @@ pub mod pallet {
 		},
 		/// Update min xcm fee of an asset
 		MinXcmFeeUpdated {
-			multilocation: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
+			reserve_chain: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
 			min_xcm_fee: u128,
 		},
 	}
@@ -230,10 +230,10 @@ pub mod pallet {
 	pub type MinXcmFee<T: Config> =
 		StorageMap<_, Blake2_128Concat, <T::AssetConfig as AssetConfig<T>>::AssetLocation, u128>;
 
-	/// Store all AllowedDestParaIds we support.
+	/// Store all AllowedDestParaIds we support except relaychain.
 	#[pallet::storage]
 	#[pallet::getter(fn get_para_id)]
-	pub type AllowedDestParaIds<T: Config> = StorageMap<_, Blake2_128Concat, AssetId, ()>;
+	pub type AllowedDestParaIds<T: Config> = StorageMap<_, Blake2_128Concat, ParaId, ()>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -423,26 +423,22 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Set min xcm fee for assets.
+		/// Set min xcm fee for reserve chain's asset.
 		///
 		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
-		/// * `multilocation`: Multilocation to be haven min xcm fee.
+		/// * `reserve_chain`: Multilocation to be haven min xcm fee.
 		/// * `min_xcm_fee`: Amount of min_xcm_fee.
 		#[pallet::weight(T::WeightInfo::set_min_xcm_fee())]
 		#[transactional]
 		pub fn set_min_xcm_fee(
 			origin: OriginFor<T>,
-			multilocation: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
+			reserve_chain: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
 			#[pallet::compact] min_xcm_fee: u128,
 		) -> DispatchResult {
 			T::ModifierOrigin::ensure_origin(origin)?;
-			ensure!(
-				LocationAssetId::<T>::contains_key(&multilocation),
-				Error::<T>::UpdateNonExistAsset
-			);
-			MinXcmFee::<T>::insert(&multilocation, &min_xcm_fee);
+			MinXcmFee::<T>::insert(&reserve_chain, &min_xcm_fee);
 			Self::deposit_event(Event::<T>::MinXcmFeeUpdated {
-				multilocation,
+				reserve_chain,
 				min_xcm_fee,
 			});
 			Ok(())
