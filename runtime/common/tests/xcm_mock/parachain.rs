@@ -18,7 +18,7 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-	construct_runtime,
+	construct_runtime, match_type,
 	pallet_prelude::DispatchResult,
 	parameter_types,
 	traits::{ConstU32, Everything, Nothing},
@@ -42,10 +42,11 @@ use polkadot_parachain::primitives::{
 };
 use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, VersionedXcm};
 use xcm_builder::{
-	AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId, EnsureXcmOrigin,
-	FixedRateOfFungible, FixedWeightBounds, LocationInverter, ParentIsDefault,
+	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
+	EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, LocationInverter, ParentIsDefault,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-	SovereignSignedViaLocation,
+	SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::Get;
@@ -210,7 +211,35 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
 >;
 
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
-pub type Barrier = AllowUnpaidExecutionFrom<Everything>;
+
+match_type! {
+	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
+		MultiLocation { parents: 1, interior: Here } |
+		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
+	};
+}
+match_type! {
+	pub type ParentOrSiblings: impl Contains<MultiLocation> = {
+		MultiLocation { parents: 1, interior: Here } |
+		MultiLocation { parents: 1, interior: X1(_) }
+	};
+}
+pub type Barrier = (
+	// Allows local origin messages which call weight_credit >= weight_limit.
+	TakeWeightCredit,
+	// Allows non-local origin messages, for example from from the xcmp queue,
+	// which have the ability to deposit assets and pay for their own execution.
+	AllowTopLevelPaidExecutionFrom<Everything>,
+	// Parent and its exec plurality get free execution
+	AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+	// Expected responses are OK.
+	// Allows `Pending` or `VersionNotifier` query responses.
+	AllowKnownQueryResponses<PolkadotXcm>,
+	// Subscriptions for version tracking are OK.
+	// Allows execution of `SubscribeVersion` or `UnsubscribeVersion` instruction,
+	// from parent or sibling chains.
+	AllowSubscriptionsFrom<ParentOrSiblings>,
+);
 
 parameter_types! {
 	/// Xcm fees will go to the asset manager (we don't implement treasury yet)
