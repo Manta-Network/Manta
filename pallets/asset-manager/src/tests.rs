@@ -132,6 +132,7 @@ fn register_asset_should_work() {
 
 #[test]
 fn update_asset() {
+	let para_id = 1;
 	let original_decimals = 12;
 	let asset_metadata = create_asset_metadata(
 		"Kusama",
@@ -152,7 +153,7 @@ fn update_asset() {
 	let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 	let new_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
 		1,
-		X2(Parachain(1), PalletInstance(PALLET_BALANCES_INDEX)),
+		X2(Parachain(para_id), PalletInstance(PALLET_BALANCES_INDEX)),
 	)));
 	new_test_ext().execute_with(|| {
 		// Register relay chain native token
@@ -227,6 +228,29 @@ fn update_asset() {
 			AssetManager::update_asset_location(Origin::root(), next_asset_id, new_location),
 			Error::<Runtime>::LocationAlreadyExists
 		);
+
+		// If the existing asset location has been changed para id, the old para id should be
+		// deleted from `AllowedDestParaIds` and new one should be inserted.
+		let new_para_id = para_id + 1;
+		let new_location_2 = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+			1,
+			X2(
+				Parachain(new_para_id),
+				PalletInstance(PALLET_BALANCES_INDEX),
+			),
+		)));
+		assert!(crate::AllowedDestParaIds::<Runtime>::contains_key(para_id));
+
+		assert_ok!(AssetManager::update_asset_location(
+			Origin::root(),
+			asset_id,
+			new_location_2,
+		));
+		// Old para id should be deleted.
+		assert!(!crate::AllowedDestParaIds::<Runtime>::contains_key(para_id));
+		assert!(crate::AllowedDestParaIds::<Runtime>::contains_key(
+			new_para_id
+		));
 	})
 }
 

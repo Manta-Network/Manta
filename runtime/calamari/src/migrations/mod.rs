@@ -14,12 +14,4 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Manta/Calamari Parachain CLI
-
-#![allow(missing_docs)]
-
-pub mod chain_specs;
-pub mod cli;
-pub mod command;
-pub mod rpc;
-pub mod service;
+pub mod sudo;

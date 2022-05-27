@@ -151,9 +151,9 @@ benchmarks! {
 		let min_xcm_fee = 10;
 		Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
 
-	}: _(RawOrigin::Root, end, min_xcm_fee)
+	}: _(RawOrigin::Root, location.clone(), min_xcm_fee)
 	verify {
-		assert_eq!(Pallet::<T>::get_min_xcm_fee(end), Some(min_xcm_fee));
+		assert_eq!(Pallet::<T>::get_min_xcm_fee(location), Some(min_xcm_fee));
 	}
 }
 

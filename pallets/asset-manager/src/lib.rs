@@ -313,7 +313,14 @@ pub mod pallet {
 			LocationAssetId::<T>::insert(&location, &asset_id);
 			AssetIdLocation::<T>::insert(&asset_id, &location);
 
-			// extract para id from multilocation and store it.
+			// extract para id from old multilocation and delete it.
+			if let Some(old_para_id) =
+				Self::get_para_id_from_multilocation(old_location.into().as_ref())
+			{
+				AllowedDestParaIds::<T>::remove(old_para_id);
+			}
+
+			// extract para id from new multilocation and store it.
 			if let Some(para_id) =
 				Self::get_para_id_from_multilocation(location.clone().into().as_ref())
 			{
@@ -465,15 +472,10 @@ pub mod pallet {
 				match interior {
 					// We have some locations like (1, X1(Parachain)).
 					Junctions::X1(Junction::Parachain(para_id)) => Some(*para_id),
-					// We have some locations like (1, X2(Parachain, GeneralKey)).
-					Junctions::X2(Junction::Parachain(para_id), Junction::GeneralKey { .. }) => {
-						Some(*para_id)
-					}
-					// We have some locations like (1, X2(Parachain, PalletInstance)).
-					Junctions::X2(
-						Junction::Parachain(para_id),
-						Junction::PalletInstance { .. },
-					) => Some(*para_id),
+					// We have some locations like (1, X2(Parachain, GeneralKey))
+					// and (1, X2(Parachain, PalletInstance)).
+					Junctions::X2(Junction::Parachain(para_id), ..) => Some(*para_id),
+					// Currently we don't have any Junctions whose length is bigger than 2.
 					_ => None,
 				}
 			} else {
