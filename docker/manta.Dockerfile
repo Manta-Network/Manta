@@ -10,7 +10,7 @@ ARG PARA_BINARY_PATH=/usr/local/bin/parachain
 ARG PARA_GENESIS_URL=https://raw.githubusercontent.com/Manta-Network/Manta/$PARA_GENESIS_REF/genesis/manta-genesis.json
 ARG PARA_GENESIS_PATH=/usr/share/manta.json
 
-ARG RELAY_GENESIS_URL=https://raw.githubusercontent.com/paritytech/polkadot/master/node/service/res/polkadot.json
+ARG RELAY_GENESIS_URL=https://raw.githubusercontent.com/paritytech/polkadot/master/node/service/chain-specs/polkadot.json
 ARG RELAY_GENESIS_PATH=/usr/share/polkadot.json
 
 ARG SUBSTRATE_BASE_PATH=/var/lib/substrate

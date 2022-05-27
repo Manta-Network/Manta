@@ -70,6 +70,7 @@ pub mod assets_config;
 pub mod currency;
 pub mod fee;
 pub mod impls;
+pub mod migrations;
 pub mod xcm_config;
 
 use currency::*;
@@ -159,7 +160,10 @@ parameter_types! {
 
 impl pallet_tx_pause::Config for Runtime {
 	type Event = Event;
-	type UpdateOrigin = EnsureRoot<AccountId>;
+	type UpdateOrigin = EnsureOneOf<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, TechnicalCollective>,
+	>;
 	type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
@@ -184,8 +188,6 @@ impl Contains<Call> for BaseFilter {
 
 		match call {
 			| Call::Authorship(_)
-			// Sudo also cannot be filtered because it is used in runtime upgrade.
-			| Call::Sudo(_)
 			| Call::Multisig(_)
 			// For now disallow public proposal workflows, treasury workflows,
 			// as well as external_propose and external_propose_majority.
@@ -348,11 +350,6 @@ impl pallet_utility::Config for Runtime {
 	type Call = Call;
 	type PalletsOrigin = OriginCaller;
 	type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;
-}
-
-impl pallet_sudo::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
 }
 
 parameter_types! {
@@ -705,7 +702,7 @@ construct_runtime!(
 		// Handy utilities.
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
-		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
+		// 42 was occupied by pallet-sudo, we should discuss it if another pallet takes 42 in the future.
 
 		// Assets management
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
@@ -745,7 +742,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsReversedWithSystemFirst,
-	(),
+	crate::migrations::sudo::RemoveSudo<Runtime>,
 >;
 
 impl_runtime_apis! {
