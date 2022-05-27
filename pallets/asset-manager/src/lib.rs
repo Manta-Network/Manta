@@ -423,7 +423,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Set min xcm fee for reserve chain's assets.
+		/// Set min xcm fee for asset/s on their reserve chain.
 		///
 		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
 		/// * `reserve_chain`: Multilocation to be haven min xcm fee.
