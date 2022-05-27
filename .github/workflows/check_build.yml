@@ -9,7 +9,7 @@ on:
   pull_request:
     branches: [manta]
   push:
-    branches: [ghzlatarev/revert-ci-hard-coded-value]
+    branches: [manta]
 
 env:
   AWS_REGION: us-east-1
