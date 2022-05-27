@@ -2011,7 +2011,10 @@ fn less_than_min_xcm_fee_should_not_work() {
 	let para_a_id = 1;
 	let para_b_id = 2;
 	let para_a_source_location = create_asset_location(1, para_a_id);
-	let para_b_source_location = create_asset_location(1, para_b_id);
+	let para_b_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+		1,
+		X2(Parachain(para_b_id), GeneralKey(b"ParaBToken".to_vec())),
+	)));
 	let para_b_as_reserve_chain = create_asset_location(1, para_b_id);
 
 	let para_a_asset_metadata =
