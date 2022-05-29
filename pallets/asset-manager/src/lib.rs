@@ -54,11 +54,15 @@ pub mod pallet {
 		types::{AssetId, Balance},
 	};
 	use orml_traits::GetByKey;
-	use sp_runtime::{traits::AccountIdConversion, ArithmeticError};
+	use sp_runtime::{
+		traits::{AccountIdConversion, One},
+		ArithmeticError,
+	};
 	use xcm::latest::prelude::*;
 
 	/// Alias for the junction Parachain(#[codec(compact)] u32),
 	pub(crate) type ParaId = u32;
+	pub(crate) type AssetCount = u32;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -189,6 +193,8 @@ pub mod pallet {
 		AssetAlreadyRegistered,
 		/// Error on minting asset.
 		MintError,
+		/// Fail to update para id.
+		UpdateParaIdError,
 	}
 
 	/// AssetId to MultiLocation Map.
@@ -230,10 +236,10 @@ pub mod pallet {
 	pub type MinXcmFee<T: Config> =
 		StorageMap<_, Blake2_128Concat, <T::AssetConfig as AssetConfig<T>>::AssetLocation, u128>;
 
-	/// Store all AllowedDestParaIds we support except relaychain.
+	/// The count of associated assets for each para id except relaychain.
 	#[pallet::storage]
 	#[pallet::getter(fn get_para_id)]
-	pub type AllowedDestParaIds<T: Config> = StorageMap<_, Blake2_128Concat, ParaId, ()>;
+	pub type AllowedDestParaIds<T: Config> = StorageMap<_, Blake2_128Concat, ParaId, AssetCount>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -269,11 +275,12 @@ pub mod pallet {
 			AssetIdMetadata::<T>::insert(&asset_id, &metadata);
 			LocationAssetId::<T>::insert(&location, &asset_id);
 
-			// extract para id from multilocation and store it.
+			// If it's a new para id, which will be inserted with AssetCount as 1.
+			// If not, AssetCount will increased by 1.
 			if let Some(para_id) =
 				Self::get_para_id_from_multilocation(location.clone().into().as_ref())
 			{
-				AllowedDestParaIds::<T>::insert(para_id, ());
+				Self::update_count_of_associated_assets(para_id)?;
 			}
 
 			Self::deposit_event(Event::<T>::AssetRegistered {
@@ -313,18 +320,31 @@ pub mod pallet {
 			LocationAssetId::<T>::insert(&location, &asset_id);
 			AssetIdLocation::<T>::insert(&asset_id, &location);
 
-			// extract para id from old multilocation and delete it.
+			// 1. If the new location has new para id, insert the new para id,
+			// the old para id will be deleted if AssetCount <= 1, or decreased by 1.
+			// 2. If the new location doesn't contain a new para id, do nothing to AssetCount
 			if let Some(old_para_id) =
 				Self::get_para_id_from_multilocation(old_location.into().as_ref())
 			{
-				AllowedDestParaIds::<T>::remove(old_para_id);
+				if AllowedDestParaIds::<T>::get(old_para_id) <= Some(<AssetCount as One>::one()) {
+					AllowedDestParaIds::<T>::remove(old_para_id);
+				} else {
+					AllowedDestParaIds::<T>::try_mutate(old_para_id, |cnt| -> DispatchResult {
+						let new_cnt = cnt
+							.map(|c| c - <AssetCount as One>::one())
+							.ok_or(Error::<T>::UpdateParaIdError)?;
+						*cnt = Some(new_cnt);
+						Ok(())
+					})?;
+				}
 			}
 
-			// extract para id from new multilocation and store it.
+			// If it's a new para id, which will be inserted with AssetCount as 1.
+			// If not, AssetCount will increased by 1.
 			if let Some(para_id) =
 				Self::get_para_id_from_multilocation(location.clone().into().as_ref())
 			{
-				AllowedDestParaIds::<T>::insert(para_id, ());
+				Self::update_count_of_associated_assets(para_id)?;
 			}
 
 			// deposit event.
@@ -478,6 +498,24 @@ pub mod pallet {
 				None
 			}
 		}
+
+		/// Update the count of associated assets for the para id.
+		pub(crate) fn update_count_of_associated_assets(para_id: ParaId) -> DispatchResult {
+			// If it's a new para id, which will be inserted with AssetCount as 1.
+			// If not, AssetCount will increased by 1.
+			if AllowedDestParaIds::<T>::contains_key(para_id) {
+				AllowedDestParaIds::<T>::try_mutate(para_id, |cnt| -> DispatchResult {
+					let new_cnt = cnt
+						.map(|c| c + <AssetCount as One>::one())
+						.ok_or(Error::<T>::UpdateParaIdError)?;
+					*cnt = Some(new_cnt);
+					Ok(())
+				})
+			} else {
+				AllowedDestParaIds::<T>::insert(para_id, <AssetCount as One>::one());
+				Ok(())
+			}
+		}
 	}
 
 	/// Check the multilocation is supported by calamari/manta.
@@ -524,8 +562,9 @@ pub mod pallet {
 					Self::get_para_id_from_multilocation(location.into().as_ref())
 				{
 					if para_id != 2084 {
-						AllowedDestParaIds::<T>::insert(para_id, ());
-						writes += 1;
+						Self::update_count_of_associated_assets(para_id);
+						reads += 1; // There's one read in method update_count_of_associated_assets.
+						writes += 1; // There's one write in method update_count_of_associated_assets.
 					}
 				}
 			});

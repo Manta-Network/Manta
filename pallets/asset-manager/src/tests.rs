@@ -255,6 +255,103 @@ fn update_asset() {
 }
 
 #[test]
+fn check_para_id_info_when_update_asset_location() {
+	new_test_ext().execute_with(|| {
+		let manta_para_id = 2015;
+		let manta_asset_metadata =
+			create_asset_metadata("Manta", "MANTA", 18, 1u128, None, false, false);
+		let mut manta_native_location = AssetLocation(VersionedMultiLocation::V1(
+			MultiLocation::new(1, X1(Parachain(manta_para_id))),
+		));
+
+		// regitering manta native asset should work.
+		assert_ok!(AssetManager::register_asset(
+			Origin::root(),
+			manta_native_location,
+			manta_asset_metadata
+		));
+		let manta_asset_id = crate::NextAssetId::<Runtime>::get() - 1;
+		// check para id
+		assert!(crate::AllowedDestParaIds::<Runtime>::contains_key(
+			manta_para_id
+		));
+		assert_eq!(
+			crate::AllowedDestParaIds::<Runtime>::get(manta_para_id),
+			Some(1)
+		);
+
+		// create a non manta asset.
+		let manta_non_native_asset_metadata =
+			create_asset_metadata("Manta", "eMANTA", 18, 1u128, None, false, false);
+		let mut manta_non_native_location =
+			AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+				1,
+				X2(Parachain(manta_para_id), GeneralKey(b"eMANTA".to_vec())),
+			)));
+		// regitering manta non native asset should work.
+		assert_ok!(AssetManager::register_asset(
+			Origin::root(),
+			manta_non_native_location,
+			manta_non_native_asset_metadata
+		));
+		let manta_non_native_asset_id = crate::NextAssetId::<Runtime>::get() - 1;
+		// ParaId=manta_para_id should have 2 assets.
+		assert_eq!(
+			crate::AllowedDestParaIds::<Runtime>::get(manta_para_id),
+			Some(2)
+		);
+
+		// Update new para id for manta native location
+		let new_para_id = manta_para_id + 1;
+		manta_native_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+			1,
+			X2(Parachain(new_para_id), GeneralKey(b"MANTA".to_vec())),
+		)));
+		assert_ok!(AssetManager::update_asset_location(
+			Origin::root(),
+			manta_asset_id,
+			manta_native_location,
+		));
+		// ParaId=manta_para_id should have 1 asset.
+		assert_eq!(
+			crate::AllowedDestParaIds::<Runtime>::get(manta_para_id),
+			Some(1)
+		);
+		// ParaId=new_para_id should have 1 asset.
+		assert_eq!(
+			crate::AllowedDestParaIds::<Runtime>::get(new_para_id),
+			Some(1)
+		);
+
+		// Update para id for manta_non_native_location
+		let new_para_id_again = new_para_id + 1;
+		manta_non_native_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+			1,
+			X2(Parachain(new_para_id_again), GeneralKey(b"eMANTA".to_vec())),
+		)));
+		assert_ok!(AssetManager::update_asset_location(
+			Origin::root(),
+			manta_non_native_asset_id,
+			manta_non_native_location,
+		));
+		// ParaId=manta_para_id should deleted.
+		assert!(!crate::AllowedDestParaIds::<Runtime>::contains_key(
+			manta_para_id
+		));
+		// ParaId=new_para_id_again should have 1 asset.
+		assert_eq!(
+			crate::AllowedDestParaIds::<Runtime>::get(new_para_id_again),
+			Some(1)
+		);
+		// ParaId=new_para_id should have 1 asset.
+		assert_eq!(
+			crate::AllowedDestParaIds::<Runtime>::get(new_para_id),
+			Some(1)
+		);
+	});
+}
+
+#[test]
 fn mint_asset() {
 	new_test_ext().execute_with(|| {
 		// mint native asset
