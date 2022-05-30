@@ -40,6 +40,7 @@ use manta_primitives::{
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
+use orml_traits::location::AbsoluteReserveProvider;
 // Polkadot imports
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
@@ -341,5 +342,5 @@ impl orml_xtokens::Config for Runtime {
 	type MaxAssetsForTransfer = MaxAssetsForTransfer;
 	type MinXcmFee = AssetManager;
 	type MultiLocationsFilter = AssetManager;
-	type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
+	type ReserveProvider = AbsoluteReserveProvider;
 }
