@@ -562,7 +562,7 @@ pub mod pallet {
 					Self::get_para_id_from_multilocation(location.into().as_ref())
 				{
 					if para_id != 2084 {
-						Self::update_count_of_associated_assets(para_id);
+						let _res = Self::update_count_of_associated_assets(para_id);
 						reads += 1; // There's one read in method update_count_of_associated_assets.
 						writes += 1; // There's one write in method update_count_of_associated_assets.
 					}
