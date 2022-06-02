@@ -45,8 +45,8 @@ jobs:
         runtime:
           -
             name: calamari
-          # -
-          #   name: manta
+            # -
+            #   name: manta
     steps:
       -
         name: run docker image
