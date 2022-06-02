@@ -245,9 +245,7 @@ macro_rules! construct_async_run {
 }
 
 /// Parse command line arguments into service configuration.
-pub fn run() -> Result<()> {
-	let cli = Cli::from_args();
-
+pub fn run_with(cli: Cli) -> Result<()> {
 	match &cli.subcommand {
 		Some(Subcommand::BuildSpec(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
@@ -467,6 +465,11 @@ pub fn run() -> Result<()> {
 			})
 		}
 	}
+}
+
+/// Parse command line arguments into service configuration.
+pub fn run() -> Result<()> {
+	run_with(Cli::from_args())
 }
 
 impl DefaultConfigurationValues for RelayChainCli {
