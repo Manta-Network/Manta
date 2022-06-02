@@ -280,7 +280,7 @@ pub mod pallet {
 			if let Some(para_id) =
 				Self::get_para_id_from_multilocation(location.clone().into().as_ref())
 			{
-				Self::update_count_of_associated_assets(para_id)?;
+				Self::increase_count_of_associated_assets(para_id)?;
 			}
 
 			Self::deposit_event(Event::<T>::AssetRegistered {
@@ -344,7 +344,7 @@ pub mod pallet {
 			if let Some(para_id) =
 				Self::get_para_id_from_multilocation(location.clone().into().as_ref())
 			{
-				Self::update_count_of_associated_assets(para_id)?;
+				Self::increase_count_of_associated_assets(para_id)?;
 			}
 
 			// deposit event.
@@ -564,9 +564,9 @@ pub mod pallet {
 					Self::get_para_id_from_multilocation(location.into().as_ref())
 				{
 					if para_id != 2084 {
-						Self::update_count_of_associated_assets(para_id);
-						reads += 1; // There's one read in method update_count_of_associated_assets.
-						writes += 1; // There's one write in method update_count_of_associated_assets.
+						Self::increase_count_of_associated_assets(para_id);
+						reads += 1; // There's one read in method increase_count_of_associated_assets.
+						writes += 1; // There's one write in method increase_count_of_associated_assets.
 					}
 				}
 			});
