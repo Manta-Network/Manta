@@ -486,12 +486,14 @@ pub mod pallet {
 		) -> Option<ParaId> {
 			if let Some(MultiLocation { interior, .. }) = location {
 				match interior {
-					// We have some locations like (1, X1(Parachain)).
-					Junctions::X1(Junction::Parachain(para_id)) => Some(*para_id),
-					// We have some locations like (1, X2(Parachain, GeneralKey))
-					// and (1, X2(Parachain, PalletInstance)).
-					Junctions::X2(Junction::Parachain(para_id), ..) => Some(*para_id),
-					// Currently we don't have any Junctions whose length is bigger than 2.
+					Junctions::X1(Junction::Parachain(para_id))
+					| Junctions::X2(Junction::Parachain(para_id), ..)
+					| Junctions::X3(Junction::Parachain(para_id), ..)
+					| Junctions::X4(Junction::Parachain(para_id), ..)
+					| Junctions::X5(Junction::Parachain(para_id), ..)
+					| Junctions::X6(Junction::Parachain(para_id), ..)
+					| Junctions::X7(Junction::Parachain(para_id), ..)
+					| Junctions::X8(Junction::Parachain(para_id), ..) => Some(*para_id),
 					_ => None,
 				}
 			} else {
@@ -499,16 +501,16 @@ pub mod pallet {
 			}
 		}
 
-		/// Update the count of associated assets for the para id.
-		pub(crate) fn update_count_of_associated_assets(para_id: ParaId) -> DispatchResult {
+		/// Increases the count of associated assets for the para id.
+		pub(crate) fn increase_count_of_associated_assets(para_id: ParaId) -> DispatchResult {
 			// If it's a new para id, which will be inserted with AssetCount as 1.
 			// If not, AssetCount will increased by 1.
 			if AllowedDestParaIds::<T>::contains_key(para_id) {
-				AllowedDestParaIds::<T>::try_mutate(para_id, |cnt| -> DispatchResult {
-					let new_cnt = cnt
+				AllowedDestParaIds::<T>::try_mutate(para_id, |count| -> DispatchResult {
+					let new_count = count
 						.map(|c| c + <AssetCount as One>::one())
 						.ok_or(Error::<T>::UpdateParaIdError)?;
-					*cnt = Some(new_cnt);
+					*count = Some(new_count);
 					Ok(())
 				})
 			} else {
