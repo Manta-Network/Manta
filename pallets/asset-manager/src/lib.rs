@@ -44,7 +44,7 @@ mod tests;
 pub mod pallet {
 
 	use crate::weights::WeightInfo;
-	use frame_support::{pallet_prelude::*, transactional, PalletId};
+	use frame_support::{pallet_prelude::*, traits::Contains, transactional, PalletId};
 	use frame_system::pallet_prelude::*;
 	use manta_primitives::{
 		assets::{
@@ -53,7 +53,16 @@ pub mod pallet {
 		},
 		types::{AssetId, Balance},
 	};
-	use sp_runtime::{traits::AccountIdConversion, ArithmeticError};
+	use orml_traits::GetByKey;
+	use sp_runtime::{
+		traits::{AccountIdConversion, One},
+		ArithmeticError,
+	};
+	use xcm::latest::prelude::*;
+
+	/// Alias for the junction Parachain(#[codec(compact)] u32),
+	pub(crate) type ParaId = u32;
+	pub(crate) type AssetCount = u32;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -162,6 +171,11 @@ pub mod pallet {
 			beneficiary: T::AccountId,
 			amount: Balance,
 		},
+		/// Update min xcm fee of an asset
+		MinXcmFeeUpdated {
+			reserve_chain: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
+			min_xcm_fee: u128,
+		},
 	}
 
 	/// Error.
@@ -179,6 +193,8 @@ pub mod pallet {
 		AssetAlreadyRegistered,
 		/// Error on minting asset.
 		MintError,
+		/// Fail to update para id.
+		UpdateParaIdError,
 	}
 
 	/// AssetId to MultiLocation Map.
@@ -214,6 +230,17 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type UnitsPerSecond<T: Config> = StorageMap<_, Blake2_128Concat, AssetId, u128>;
 
+	/// Minimum xcm execution fee paid on destination chain.
+	#[pallet::storage]
+	#[pallet::getter(fn get_min_xcm_fee)]
+	pub type MinXcmFee<T: Config> =
+		StorageMap<_, Blake2_128Concat, <T::AssetConfig as AssetConfig<T>>::AssetLocation, u128>;
+
+	/// The count of associated assets for each para id except relaychain.
+	#[pallet::storage]
+	#[pallet::getter(fn get_para_id)]
+	pub type AllowedDestParaIds<T: Config> = StorageMap<_, Blake2_128Concat, ParaId, AssetCount>;
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Register a new asset in the asset manager.
@@ -247,6 +274,15 @@ pub mod pallet {
 			AssetIdLocation::<T>::insert(&asset_id, &location);
 			AssetIdMetadata::<T>::insert(&asset_id, &metadata);
 			LocationAssetId::<T>::insert(&location, &asset_id);
+
+			// If it's a new para id, which will be inserted with AssetCount as 1.
+			// If not, AssetCount will increased by 1.
+			if let Some(para_id) =
+				Self::get_para_id_from_multilocation(location.clone().into().as_ref())
+			{
+				Self::increase_count_of_associated_assets(para_id)?;
+			}
+
 			Self::deposit_event(Event::<T>::AssetRegistered {
 				asset_id,
 				asset_address: location,
@@ -283,6 +319,34 @@ pub mod pallet {
 			LocationAssetId::<T>::remove(&old_location);
 			LocationAssetId::<T>::insert(&location, &asset_id);
 			AssetIdLocation::<T>::insert(&asset_id, &location);
+
+			// 1. If the new location has new para id, insert the new para id,
+			// the old para id will be deleted if AssetCount <= 1, or decreased by 1.
+			// 2. If the new location doesn't contain a new para id, do nothing to AssetCount
+			if let Some(old_para_id) =
+				Self::get_para_id_from_multilocation(old_location.into().as_ref())
+			{
+				if AllowedDestParaIds::<T>::get(old_para_id) <= Some(<AssetCount as One>::one()) {
+					AllowedDestParaIds::<T>::remove(old_para_id);
+				} else {
+					AllowedDestParaIds::<T>::try_mutate(old_para_id, |cnt| -> DispatchResult {
+						let new_cnt = cnt
+							.map(|c| c - <AssetCount as One>::one())
+							.ok_or(Error::<T>::UpdateParaIdError)?;
+						*cnt = Some(new_cnt);
+						Ok(())
+					})?;
+				}
+			}
+
+			// If it's a new para id, which will be inserted with AssetCount as 1.
+			// If not, AssetCount will increased by 1.
+			if let Some(para_id) =
+				Self::get_para_id_from_multilocation(location.clone().into().as_ref())
+			{
+				Self::increase_count_of_associated_assets(para_id)?;
+			}
+
 			// deposit event.
 			Self::deposit_event(Event::<T>::AssetLocationUpdated { asset_id, location });
 			Ok(())
@@ -378,6 +442,27 @@ pub mod pallet {
 			});
 			Ok(())
 		}
+
+		/// Set min xcm fee for asset/s on their reserve chain.
+		///
+		/// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
+		/// * `reserve_chain`: Multilocation to be haven min xcm fee.
+		/// * `min_xcm_fee`: Amount of min_xcm_fee.
+		#[pallet::weight(T::WeightInfo::set_min_xcm_fee())]
+		#[transactional]
+		pub fn set_min_xcm_fee(
+			origin: OriginFor<T>,
+			reserve_chain: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
+			#[pallet::compact] min_xcm_fee: u128,
+		) -> DispatchResult {
+			T::ModifierOrigin::ensure_origin(origin)?;
+			MinXcmFee::<T>::insert(&reserve_chain, &min_xcm_fee);
+			Self::deposit_event(Event::<T>::MinXcmFeeUpdated {
+				reserve_chain,
+				min_xcm_fee,
+			});
+			Ok(())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -393,6 +478,101 @@ pub mod pallet {
 		/// The account ID of AssetManager
 		pub fn account_id() -> T::AccountId {
 			T::PalletId::get().into_account()
+		}
+
+		/// Get para id from asset location
+		pub(crate) fn get_para_id_from_multilocation(
+			location: Option<&MultiLocation>,
+		) -> Option<ParaId> {
+			if let Some(MultiLocation { interior, .. }) = location {
+				match interior {
+					Junctions::X1(Junction::Parachain(para_id))
+					| Junctions::X2(Junction::Parachain(para_id), ..)
+					| Junctions::X3(Junction::Parachain(para_id), ..)
+					| Junctions::X4(Junction::Parachain(para_id), ..)
+					| Junctions::X5(Junction::Parachain(para_id), ..)
+					| Junctions::X6(Junction::Parachain(para_id), ..)
+					| Junctions::X7(Junction::Parachain(para_id), ..)
+					| Junctions::X8(Junction::Parachain(para_id), ..) => Some(*para_id),
+					_ => None,
+				}
+			} else {
+				None
+			}
+		}
+
+		/// Increases the count of associated assets for the para id.
+		pub(crate) fn increase_count_of_associated_assets(para_id: ParaId) -> DispatchResult {
+			// If it's a new para id, which will be inserted with AssetCount as 1.
+			// If not, AssetCount will increased by 1.
+			if AllowedDestParaIds::<T>::contains_key(para_id) {
+				AllowedDestParaIds::<T>::try_mutate(para_id, |count| -> DispatchResult {
+					let new_count = count
+						.map(|c| c + <AssetCount as One>::one())
+						.ok_or(Error::<T>::UpdateParaIdError)?;
+					*count = Some(new_count);
+					Ok(())
+				})
+			} else {
+				AllowedDestParaIds::<T>::insert(para_id, <AssetCount as One>::one());
+				Ok(())
+			}
+		}
+	}
+
+	/// Check the multilocation is supported by calamari/manta.
+	impl<T: Config> Contains<MultiLocation> for Pallet<T> {
+		fn contains(location: &MultiLocation) -> bool {
+			// check parents
+			if location.parents != 1 {
+				return false;
+			}
+
+			match location.interior {
+				// Send tokens back to relaychain.
+				Junctions::X1(Junction::AccountId32 { .. }) => true,
+				// Send tokens to sibling chain.
+				Junctions::X2(Junction::Parachain(para_id), Junction::AccountId32 { .. }) => {
+					AllowedDestParaIds::<T>::contains_key(para_id)
+				}
+				// We don't support X3 or longer Junctions.
+				_ => false,
+			}
+		}
+	}
+
+	/// Get min-xcm-fee by multilocation.
+	impl<T: Config> GetByKey<MultiLocation, u128> for Pallet<T> {
+		fn get(location: &MultiLocation) -> u128 {
+			let location =
+				<T::AssetConfig as AssetConfig<T>>::AssetLocation::from(location.clone());
+			match MinXcmFee::<T>::get(&location) {
+				Some(min_fee) => min_fee,
+				None => u128::MAX,
+			}
+		}
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_runtime_upgrade() -> Weight {
+			let mut reads: Weight = 0;
+			let mut writes: Weight = 0;
+			LocationAssetId::<T>::iter().for_each(|(location, _asset_id)| {
+				reads += 1;
+				if let Some(para_id) =
+					Self::get_para_id_from_multilocation(location.into().as_ref())
+				{
+					if para_id != 2084 {
+						Self::increase_count_of_associated_assets(para_id);
+						reads += 1; // There's one read in method increase_count_of_associated_assets.
+						writes += 1; // There's one write in method increase_count_of_associated_assets.
+					}
+				}
+			});
+			T::DbWeight::get()
+				.reads(reads)
+				.saturating_add(T::DbWeight::get().writes(writes))
 		}
 	}
 

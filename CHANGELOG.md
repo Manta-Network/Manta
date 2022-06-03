@@ -6,6 +6,7 @@
 ### Features
 
 ### Improvements
+[\#481](https://github.com/Manta-Network/Manta/pull/481) Update upstream dependencies to v0.9.18.
 
 ### Bug fixes
 

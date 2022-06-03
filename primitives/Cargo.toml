@@ -11,26 +11,26 @@ repository = 'https://github.com/Manta-Network/Manta/'
 targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false }
-scale-info = { version = "1.0", default-features = false, features = [ "derive" ] }
-smallvec = "1.6.1"
-log = "0.4.14"
+codec = { package = "parity-scale-codec", version = '3.0.0', default-features = false }
+scale-info = { version = "2.0.0", default-features = false, features = [ "derive" ] }
+smallvec = "1.8.0"
+log = "0.4.16"
 
 # manta-rs dependencies
 manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", default-features = false }
 
 # Substrate primitives
-frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
-frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
-frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.16", default-features = false, optional = true }
-sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
-sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
-sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
-sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
-sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.16" }
-xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.16"}
-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.16" }
-xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.16"}
+frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
+frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18", default-features = false, optional = true }
+sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
+sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
+sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
+sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
+xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
+xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
+xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
 
 [features]
 default = ["std"]

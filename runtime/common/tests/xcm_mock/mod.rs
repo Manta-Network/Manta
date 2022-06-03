@@ -27,7 +27,7 @@ pub const INITIAL_BALANCE: u128 = 10_000_000_000_000_000;
 decl_test_parachain! {
 	pub struct ParaA {
 		Runtime = parachain::Runtime,
-		XcmpMessageHandler = parachain::MsgQueue,
+		XcmpMessageHandler = parachain::XcmpQueue,
 		DmpMessageHandler = parachain::MsgQueue,
 		new_ext = para_ext(1),
 	}
@@ -36,7 +36,7 @@ decl_test_parachain! {
 decl_test_parachain! {
 	pub struct ParaB {
 		Runtime = parachain::Runtime,
-		XcmpMessageHandler = parachain::MsgQueue,
+		XcmpMessageHandler = parachain::XcmpQueue,
 		DmpMessageHandler = parachain::MsgQueue,
 		new_ext = para_ext(2),
 	}
@@ -45,7 +45,7 @@ decl_test_parachain! {
 decl_test_parachain! {
 	pub struct ParaC {
 		Runtime = parachain::Runtime,
-		XcmpMessageHandler = parachain::MsgQueue,
+		XcmpMessageHandler = parachain::XcmpQueue,
 		DmpMessageHandler = parachain::MsgQueue,
 		new_ext = para_ext(3),
 	}

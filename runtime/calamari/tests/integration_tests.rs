@@ -64,7 +64,7 @@ use sp_core::{sr25519, H256};
 use sp_runtime::{
 	generic::DigestItem,
 	traits::{BlakeTwo256, Hash, Header as HeaderT, SignedExtension},
-	DispatchError, Percent,
+	DispatchError, ModuleError, Percent,
 };
 
 fn note_preimage(proposer: &AccountId, proposal_call: &Call) -> H256 {
@@ -162,11 +162,11 @@ fn assert_proposal_is_filtered(proposer: &AccountId, motion: &Call) {
 		last_event(),
 		calamari_runtime::Event::Council(pallet_collective::Event::Executed {
 			proposal_hash: council_motion_hash,
-			result: Err(DispatchError::Module {
+			result: Err(DispatchError::Module(ModuleError {
 				index: 0,
 				error: 5,
 				message: None
-			})
+			}))
 		})
 	);
 }
@@ -993,14 +993,14 @@ fn concrete_fungible_ledger_transfers_work() {
 					&charlie.clone(),
 					INITIAL_BALANCE + 1,
 				),
-				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
 					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
 						Balances,
 					>()
 					.unwrap() as u8,
 					error: 2,
 					message: Some("InsufficientBalance")
-				})
+				}))
 			);
 			assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
 			assert_eq!(
@@ -1016,14 +1016,14 @@ fn concrete_fungible_ledger_transfers_work() {
 					&charlie.clone(),
 					INITIAL_BALANCE,
 				),
-				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
 					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
 						Balances,
 					>()
 					.unwrap() as u8,
 					error: 4,
 					message: Some("KeepAlive")
-				})
+				}))
 			);
 			assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
 			assert_eq!(
@@ -1055,14 +1055,14 @@ fn concrete_fungible_ledger_transfers_work() {
 					&new_account.clone(),
 					NativeTokenExistentialDeposit::get() - 1,
 				),
-				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
 					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
 						Balances,
 					>()
 					.unwrap() as u8,
 					error: 3,
 					message: Some("ExistentialDeposit")
-				})
+				}))
 			);
 
 			// Should be able to create new account with enough balance
@@ -1137,14 +1137,14 @@ fn concrete_fungible_ledger_transfers_work() {
 					&bob.clone(),
 					amount,
 				),
-				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
 					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
 						Assets,
 					>()
 					.unwrap() as u8,
 					error: 0,
 					message: Some("BalanceLow")
-				})
+				}))
 			);
 			assert_eq!(
 				Assets::balance(
@@ -1219,14 +1219,14 @@ fn concrete_fungible_ledger_transfers_work() {
 					&charlie.clone(),
 					transfer_amount,
 				),
-				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
 					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
 						Assets,
 					>()
 					.unwrap() as u8,
 					error: 3,
 					message: Some("Unknown")
-				})
+				}))
 			);
 		});
 }

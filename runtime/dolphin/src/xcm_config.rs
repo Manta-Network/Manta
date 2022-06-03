@@ -15,8 +15,9 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-	AssetManager, Assets, Balances, Call, DmpQueue, Event, Origin, ParachainInfo, ParachainSystem,
-	PolkadotXcm, Runtime, Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
+	AssetManager, Assets, Balances, Call, DmpQueue, EnsureRootOrMoreThanHalfCouncil, Event, Origin,
+	ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, Treasury, XcmpQueue,
+	MAXIMUM_BLOCK_WEIGHT,
 };
 
 use codec::{Decode, Encode};
@@ -48,7 +49,7 @@ use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
 	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
 	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
-	FungiblesAdapter, LocationInverter, ParentAsSuperuser, ParentIsDefault, RelayChainAsNative,
+	FungiblesAdapter, LocationInverter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
 	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
 	SovereignSignedViaLocation, TakeWeightCredit,
 };
@@ -80,6 +81,7 @@ parameter_types! {
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
+	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -87,7 +89,7 @@ parameter_types! {
 /// `Transact` in order to determine the dispatch Origin.
 pub type LocationToAccountId = (
 	// The parent (Relay-chain) origin converts to the default `AccountId`.
-	ParentIsDefault<AccountId>,
+	ParentIsPreset<AccountId>,
 	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
@@ -158,7 +160,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	// No teleport support.
 	Nothing,
 	// No teleport tracking.
-	(),
+	CheckingAccount,
 >;
 
 match_type! {
@@ -282,6 +284,9 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = PolkadotXcm;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+	type ControllerOrigin = EnsureRootOrMoreThanHalfCouncil;
+	type ControllerOriginConverter = XcmOriginToCallOrigin;
+	type WeightInfo = ();
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -334,4 +339,7 @@ impl orml_xtokens::Config for Runtime {
 	type BaseXcmWeight = BaseXcmWeight;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type MaxAssetsForTransfer = MaxAssetsForTransfer;
+	type MinXcmFee = AssetManager;
+	type MultiLocationsFilter = AssetManager;
+	type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
 }

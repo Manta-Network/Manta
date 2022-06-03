@@ -48,6 +48,7 @@ pub trait WeightInfo {
 	fn update_asset_location() -> Weight;
 	fn update_asset_metadata() -> Weight;
 	fn mint_asset() -> Weight;
+	fn set_min_xcm_fee() -> Weight;
 }
 
 /// Weights for pallet_asset_manager using the Substrate node and recommended hardware.
@@ -95,6 +96,13 @@ impl<T: frame_system::Config> pallet_asset_manager::WeightInfo for SubstrateWeig
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
+	// Storage: AssetManager AssetIdLocation (r:1 w:0)
+	// Storage: AssetManager MinXcmFee (r:0 w:1)
+	fn set_min_xcm_fee() -> Weight {
+		(31_000_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+	}
 }
 
 // For backwards compatibility and tests
@@ -140,5 +148,12 @@ impl WeightInfo for () {
 		(75_498_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
+	}
+	// Storage: AssetManager AssetIdLocation (r:1 w:0)
+	// Storage: AssetManager MinXcmFee (r:0 w:1)
+	fn set_min_xcm_fee() -> Weight {
+		(31_000_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 }
