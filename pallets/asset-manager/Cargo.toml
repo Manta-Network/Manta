@@ -17,7 +17,7 @@ sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkad
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18", default-features = false, optional = true }
 xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
 manta-primitives = { path = "../../primitives", default-features = false }
-log = { version = "0.4.0", default-features = false }
+log = { version = "0.4.17", default-features = false }
 
 # 3rd party dependencies
 orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="7e2f985" }

@@ -14,7 +14,7 @@ targets = ['x86_64-unknown-linux-gnu']
 codec = { package = "parity-scale-codec", version = '3.0.0', default-features = false }
 scale-info = { version = "2.0.0", default-features = false, features = [ "derive" ] }
 smallvec = "1.8.0"
-log = "0.4.16"
+log = "0.4.17"
 
 # manta-rs dependencies
 manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", default-features = false }
