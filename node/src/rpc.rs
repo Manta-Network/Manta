@@ -28,7 +28,7 @@ use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
 
 /// A type representing all RPC extensions.
-pub type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
+pub type RpcExtension = jsonrpsee::RpcModule<()>;
 
 /// Full client dependencies
 pub struct FullDeps<C, P> {
@@ -41,7 +41,9 @@ pub struct FullDeps<C, P> {
 }
 
 /// Instantiate all RPC extensions.
-pub fn create_full<C, P>(deps: FullDeps<C, P>) -> RpcExtension
+pub fn create_full<C, P>(
+	deps: FullDeps<C, P>,
+) -> Result<RpcExtension, Box<dyn std::error::Error + Send + Sync>>
 where
 	C: ProvideRuntimeApi<Block>
 		+ HeaderBackend<Block>
@@ -55,24 +57,18 @@ where
 	C::Api: BlockBuilder<Block>,
 	P: TransactionPool + Sync + Send + 'static,
 {
-	use frame_rpc_system::{FullSystem, SystemApi};
-	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
+	use frame_rpc_system::{SystemApiServer, SystemRpc};
+	use pallet_transaction_payment_rpc::{TransactionPaymentApiServer, TransactionPaymentRpc};
 
-	let mut io = jsonrpc_core::IoHandler::default();
+	let mut module = RpcExtension::new(());
 	let FullDeps {
 		client,
 		pool,
 		deny_unsafe,
 	} = deps;
 
-	io.extend_with(SystemApi::to_delegate(FullSystem::new(
-		client.clone(),
-		pool,
-		deny_unsafe,
-	)));
-	io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(
-		client,
-	)));
+	module.merge(SystemRpc::new(client.clone(), pool, deny_unsafe).into_rpc())?;
+	module.merge(TransactionPaymentRpc::new(client).into_rpc())?;
 
-	io
+	Ok(module)
 }

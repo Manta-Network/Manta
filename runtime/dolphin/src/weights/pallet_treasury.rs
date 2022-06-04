@@ -46,6 +46,7 @@ pub trait WeightInfo {
 	fn propose_spend() -> Weight;
 	fn reject_proposal() -> Weight;
 	fn approve_proposal(p: u32, ) -> Weight;
+	fn remove_approval() -> Weight;
 	fn on_initialize_proposals(p: u32, ) -> Weight;
 }
 
@@ -73,6 +74,12 @@ impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T>
 			// Standard Error: 1_000
 			.saturating_add((76_000 as Weight).saturating_mul(p as Weight))
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
+	// Storage: Treasury Approvals (r:1 w:1)
+	fn remove_approval() -> Weight {
+		(3_867_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: System Account (r:1 w:0)
@@ -112,6 +119,12 @@ impl WeightInfo for () {
 			// Standard Error: 1_000
 			.saturating_add((76_000 as Weight).saturating_mul(p as Weight))
 			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+	}
+	// Storage: Treasury Approvals (r:1 w:1)
+	fn remove_approval() -> Weight {
+		(3_867_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	// Storage: System Account (r:1 w:0)

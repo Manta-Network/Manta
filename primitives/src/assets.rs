@@ -354,6 +354,7 @@ where
 		asset_id: AssetId,
 		account: &C::AccountId,
 		amount: Balance,
+		mint: bool,
 	) -> Result<(), FungibleLedgerError>;
 
 	/// Check whether `account` can decrease its balance by `amount` in the given `asset_id`.
@@ -409,12 +410,15 @@ where
 		asset_id: AssetId,
 		account: &C::AccountId,
 		amount: Balance,
+		mint: bool,
 	) -> Result<(), FungibleLedgerError> {
 		Self::ensure_valid(asset_id)?;
 		FungibleLedgerError::from_deposit(if asset_id == A::NativeAssetId::get() {
-			<Native as FungibleInspect<C::AccountId>>::can_deposit(account, amount)
+			<Native as FungibleInspect<C::AccountId>>::can_deposit(account, amount, mint)
 		} else {
-			<NonNative as FungiblesInspect<C::AccountId>>::can_deposit(asset_id, account, amount)
+			<NonNative as FungiblesInspect<C::AccountId>>::can_deposit(
+				asset_id, account, amount, mint,
+			)
 		})
 	}
 
@@ -439,7 +443,7 @@ where
 		amount: Balance,
 	) -> Result<(), FungibleLedgerError> {
 		Self::ensure_valid(asset_id)?;
-		Self::can_deposit(asset_id, beneficiary, amount)?;
+		Self::can_deposit(asset_id, beneficiary, amount, true)?;
 		if asset_id == A::NativeAssetId::get() {
 			<Native as Currency<C::AccountId>>::deposit_creating(beneficiary, amount);
 		} else {
