@@ -131,6 +131,30 @@ benchmarks! {
 	verify {
 		assert_last_event::<T>(Event::AssetMinted { asset_id: end, beneficiary, amount }.into());
 	}
+
+	set_min_xcm_fee {
+		let start = <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get();
+		let end = start + 1000;
+		for i in start..end {
+
+			let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
+			let location = <T::AssetConfig as AssetConfig<T>>::AssetLocation::from(location.clone());
+			let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistrarMetadata::default();
+
+			Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
+			Pallet::<T>::set_units_per_second(RawOrigin::Root.into(), i, 0)?;
+		}
+
+		// does not really matter what we register, as long as it is different than the previous
+		let location = <T::AssetConfig as AssetConfig<T>>::AssetLocation::default();
+		let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistrarMetadata::default();
+		let min_xcm_fee = 10;
+		Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
+
+	}: _(RawOrigin::Root, location.clone(), min_xcm_fee)
+	verify {
+		assert_eq!(Pallet::<T>::get_min_xcm_fee(location), Some(min_xcm_fee));
+	}
 }
 
 impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Runtime);

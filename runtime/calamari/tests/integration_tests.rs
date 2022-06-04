@@ -29,7 +29,7 @@ pub use calamari_runtime::{
 	xcm_config::XcmFeesAccount,
 	AssetManager, Assets, Authorship, Balances, CalamariVesting, Council, Democracy,
 	EnactmentPeriod, LaunchPeriod, NativeTokenExistentialDeposit, Origin, Period, PolkadotXcm,
-	Runtime, Sudo, TechnicalCommittee, Timestamp, Treasury, Utility, VotingPeriod,
+	Runtime, TechnicalCommittee, Timestamp, Treasury, Utility, VotingPeriod,
 };
 
 use frame_support::{
@@ -64,7 +64,7 @@ use sp_core::{sr25519, H256};
 use sp_runtime::{
 	generic::DigestItem,
 	traits::{BlakeTwo256, Hash, Header as HeaderT, SignedExtension},
-	DispatchError, Percent,
+	DispatchError, ModuleError, Percent,
 };
 
 fn note_preimage(proposer: &AccountId, proposal_call: &Call) -> H256 {
@@ -162,11 +162,11 @@ fn assert_proposal_is_filtered(proposer: &AccountId, motion: &Call) {
 		last_event(),
 		calamari_runtime::Event::Council(pallet_collective::Event::Executed {
 			proposal_hash: council_motion_hash,
-			result: Err(DispatchError::Module {
+			result: Err(DispatchError::Module(ModuleError {
 				index: 0,
 				error: 5,
 				message: None
-			})
+			}))
 		})
 	);
 }
@@ -828,7 +828,6 @@ fn verify_pallet_prefixes() {
 	is_pallet_prefix::<calamari_runtime::DmpQueue>("DmpQueue");
 	is_pallet_prefix::<calamari_runtime::Utility>("Utility");
 	is_pallet_prefix::<calamari_runtime::Multisig>("Multisig");
-	is_pallet_prefix::<calamari_runtime::Sudo>("Sudo");
 	is_pallet_prefix::<calamari_runtime::CalamariVesting>("CalamariVesting");
 
 	let prefix = |pallet_name, storage_name| {
@@ -896,16 +895,6 @@ fn verify_pallet_prefixes() {
 			}
 		]
 	);
-	assert_eq!(
-		<calamari_runtime::Sudo as StorageInfoTrait>::storage_info(),
-		vec![StorageInfo {
-			pallet_name: b"Sudo".to_vec(),
-			storage_name: b"Key".to_vec(),
-			prefix: prefix(b"Sudo", b"Key"),
-			max_values: Some(1),
-			max_size: Some(32),
-		}]
-	);
 }
 
 #[test]
@@ -950,15 +939,30 @@ fn verify_pallet_indices() {
 	is_pallet_index::<calamari_runtime::Aura>(23);
 	is_pallet_index::<calamari_runtime::AuraExt>(24);
 	is_pallet_index::<calamari_runtime::Treasury>(26);
+	is_pallet_index::<calamari_runtime::Preimage>(28);
 	is_pallet_index::<calamari_runtime::Scheduler>(29);
 	is_pallet_index::<calamari_runtime::XcmpQueue>(30);
 	is_pallet_index::<calamari_runtime::PolkadotXcm>(31);
 	is_pallet_index::<calamari_runtime::CumulusXcm>(32);
 	is_pallet_index::<calamari_runtime::DmpQueue>(33);
+	is_pallet_index::<calamari_runtime::XTokens>(34);
 	is_pallet_index::<calamari_runtime::Utility>(40);
 	is_pallet_index::<calamari_runtime::Multisig>(41);
-	is_pallet_index::<calamari_runtime::Sudo>(42);
+	is_pallet_index::<calamari_runtime::Assets>(45);
+	is_pallet_index::<calamari_runtime::AssetManager>(46);
 	is_pallet_index::<calamari_runtime::CalamariVesting>(50);
+
+	// Check removed pallets.
+	ExtBuilder::default().build().execute_with(|| {
+		use frame_support::metadata::{v14::META_RESERVED, RuntimeMetadata};
+
+		let runtime_metadata = calamari_runtime::Runtime::metadata();
+		assert_eq!(runtime_metadata.0, META_RESERVED);
+		if let RuntimeMetadata::V14(v14) = runtime_metadata.1 {
+			// Ensure sudo=42 has been removed, no one is taking this index.
+			assert!(v14.pallets.iter().any(|pallet| pallet.index != 42));
+		}
+	});
 }
 
 #[test]
@@ -989,14 +993,14 @@ fn concrete_fungible_ledger_transfers_work() {
 					&charlie.clone(),
 					INITIAL_BALANCE + 1,
 				),
-				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
 					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
 						Balances,
 					>()
 					.unwrap() as u8,
 					error: 2,
 					message: Some("InsufficientBalance")
-				})
+				}))
 			);
 			assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
 			assert_eq!(
@@ -1012,14 +1016,14 @@ fn concrete_fungible_ledger_transfers_work() {
 					&charlie.clone(),
 					INITIAL_BALANCE,
 				),
-				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
 					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
 						Balances,
 					>()
 					.unwrap() as u8,
 					error: 4,
 					message: Some("KeepAlive")
-				})
+				}))
 			);
 			assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
 			assert_eq!(
@@ -1051,14 +1055,14 @@ fn concrete_fungible_ledger_transfers_work() {
 					&new_account.clone(),
 					NativeTokenExistentialDeposit::get() - 1,
 				),
-				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
 					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
 						Balances,
 					>()
 					.unwrap() as u8,
 					error: 3,
 					message: Some("ExistentialDeposit")
-				})
+				}))
 			);
 
 			// Should be able to create new account with enough balance
@@ -1133,14 +1137,14 @@ fn concrete_fungible_ledger_transfers_work() {
 					&bob.clone(),
 					amount,
 				),
-				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
 					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
 						Assets,
 					>()
 					.unwrap() as u8,
 					error: 0,
 					message: Some("BalanceLow")
-				})
+				}))
 			);
 			assert_eq!(
 				Assets::balance(
@@ -1215,14 +1219,14 @@ fn concrete_fungible_ledger_transfers_work() {
 					&charlie.clone(),
 					transfer_amount,
 				),
-				FungibleLedgerError::InvalidTransfer(DispatchError::Module {
+				FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
 					index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
 						Assets,
 					>()
 					.unwrap() as u8,
 					error: 3,
 					message: Some("Unknown")
-				})
+				}))
 			);
 		});
 }

@@ -5,34 +5,54 @@
 # The try-runtime tool expects your local chain's runtime version to match
 # the version of the chain that you're testing against. In this case Calamari mainnet.
 # That's why this CI workflow has a manual trigger.
-name: Execute try-runtime with latest Calamari mainnet state
+name: Try-runtime check against latest Calamari mainnet state
 
 # yamllint disable-line rule:truthy
 on:
   workflow_dispatch:
+    inputs:
+      prod_url:
+        description: The WebSocket url of the reference node
+        default: wss://ws.calamari.systems:443
+        required: true
 
 env:
   AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
   AWS_REGION: us-east-1
   AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
   AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
-  AWS_INSTANCE_TYPE: r5dn.2xlarge
+  AWS_INSTANCE_TYPE: c5a.8xlarge
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
+  PROD_URL: ${{github.event.inputs.prod_url}}
 
 jobs:
 
-  build-node:
-    needs:
-      - start-node-builder
-    runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
+  start-checks:
+    runs-on: ubuntu-20.04
+    outputs:
+      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
     steps:
+      -
+        id: start-self-hosted-runner
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
+          aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
+          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
       -
         uses: actions/checkout@v2
       -
         name: install sccache
-
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
           SCCACHE_VERSION: v0.2.15
@@ -77,45 +97,21 @@ jobs:
           rustup target add wasm32-unknown-unknown --toolchain nightly
           rustup update
       -
-        name: build
+        name: Build Binary
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
           SCCACHE_CACHE_SIZE: 2G
           SCCACHE_DIR: /home/runner/.cache/sccache
-          CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
-          cargo build --profile release --verbose --features=try-runtime
+          cargo build --release --features=try-runtime
+          chmod a+x target/release/manta
       -
-        name: stop sccache server
-        run: sccache --stop-server || true
-      -
-        name: upload
-        uses: actions/upload-artifact@v2
-        with:
-          name: manta
-          path: target/release/manta
-
-  run-try-runtime:
-    name: try-runtime
-    needs:
-      - start-node-builder
-      - build-node
-    runs-on: ${{ needs.start-node-builder.outputs.runner-label }}
-    strategy:
-      matrix:
-        runtime:
-          -
-            name: calamari
-    steps:
-      -
-        uses: actions/download-artifact@v2
-        with:
-          name: manta
-      -
+        name: move bin
         run: |
-          mv manta $HOME/.local/bin/
+          mkdir -p $HOME/.local/bin
+          mv target/release/manta $HOME/.local/bin/
           chmod +x $HOME/.local/bin/manta
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       -
@@ -129,38 +125,15 @@ jobs:
           cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
           yarn install
           yarn
-          yarn build
-          latest_hash=$(node get-latest-finalized-header-hash --address=wss://ws.calamari.systems:443)
-          $HOME/.local/bin/manta try-runtime --chain calamari-dev on-runtime-upgrade live --at $latest_hash --uri wss://ws.calamari.systems:443
-
-  start-node-builder:
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
+          latest_hash=$(node get-latest-block-hash --address=$PROD_URL)
+          $HOME/.local/bin/manta try-runtime --chain calamari-dev on-runtime-upgrade live --at $latest_hash --uri $PROD_URL
       -
-        id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
-          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: 32
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
+        name: stop sccache server
+        run: sccache --stop-server || true
 
-  stop-node-builder-current:
+  stop-checks:
     needs:
-      - start-node-builder
-      - build-node
+      - start-checks
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
@@ -171,8 +144,8 @@ jobs:
           github-token: ${{ secrets.GH_SHR_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-node-builder.outputs.aws-region }}
-          runner-label: ${{ needs.start-node-builder.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-node-builder.outputs.aws-instance-id }}
+          aws-region: ${{ needs.start-checks.outputs.aws-region }}
+          runner-label: ${{ needs.start-checks.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-checks.outputs.aws-instance-id }}
 
 # yamllint enable rule:line-length

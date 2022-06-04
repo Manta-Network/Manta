@@ -90,7 +90,7 @@ jobs:
           rustup update
       -
         name: Run yamllint
-        uses: actionshub/yamllint@a1c374bfd564c2afe5e842a3c35ef17575a16ab0
+        uses: actionshub/yamllint@main
       -
         name: Check Clippy & Formatting
         env:

@@ -16,6 +16,10 @@
 
 //! Manta/Calamari Parachain CLI
 
-fn main() -> sc_cli::Result<()> {
-	manta::command::run()
-}
+#![allow(missing_docs)]
+
+pub mod chain_specs;
+pub mod cli;
+pub mod command;
+pub mod rpc;
+pub mod service;

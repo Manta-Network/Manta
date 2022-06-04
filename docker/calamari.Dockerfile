@@ -10,7 +10,7 @@ ARG PARA_BINARY_PATH=/usr/local/bin/manta
 ARG PARA_GENESIS_URL=https://raw.githubusercontent.com/Manta-Network/Manta/$PARA_GENESIS_REF/genesis/calamari-genesis.json
 ARG PARA_GENESIS_PATH=/usr/share/calamari.json
 
-ARG RELAY_GENESIS_URL=https://raw.githubusercontent.com/paritytech/polkadot/master/node/service/res/kusama.json
+ARG RELAY_GENESIS_URL=https://raw.githubusercontent.com/paritytech/polkadot/master/node/service/chain-specs/kusama.json
 ARG RELAY_GENESIS_PATH=/usr/share/kusama.json
 
 # Install deps

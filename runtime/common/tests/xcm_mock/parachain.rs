@@ -18,22 +18,20 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-	construct_runtime,
-	pallet_prelude::DispatchResult,
-	parameter_types,
+	assert_ok, construct_runtime, parameter_types,
 	traits::{ConstU32, Everything, Nothing},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 	PalletId,
 };
 use frame_system::EnsureRoot;
 use scale_info::TypeInfo;
-use sp_core::H256;
+use sp_core::{H160, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{Hash, IdentityLookup},
 	AccountId32,
 };
-use sp_std::{convert::TryFrom, prelude::*};
+use sp_std::prelude::*;
 
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
@@ -44,11 +42,11 @@ use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, Ver
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
 	CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
-	FungiblesAdapter, LocationInverter, ParentIsDefault, SiblingParachainAsNative,
+	FungiblesAdapter, LocationInverter, ParentIsPreset, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SovereignSignedViaLocation,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
-use xcm_simulator::Get;
+use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
 
 use manta_primitives::{
 	assets::{
@@ -89,7 +87,7 @@ impl frame_system::Config for Runtime {
 	type BaseCallFilter = Everything;
 	type SystemWeightInfo = ();
 	type SS58Prefix = ();
-	type OnSetCode = ();
+	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
 	type MaxConsumers = ConstU32<16>;
 }
 
@@ -119,8 +117,9 @@ parameter_types! {
 parameter_types! {
 	pub const KsmLocation: MultiLocation = MultiLocation::parent();
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
-	pub Ancestry: MultiLocation = Parachain(MsgQueue::parachain_id().into()).into();
+	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
+	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
 parameter_types! {
@@ -154,7 +153,7 @@ impl pallet_assets::Config for Runtime {
 /// `Transact` in order to determine the dispatch Origin.
 pub type LocationToAccountId = (
 	// The parent (Relay-chain) origin converts to the default `AccountId`.
-	ParentIsDefault<AccountId>,
+	ParentIsPreset<AccountId>,
 	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	AccountId32Aliases<RelayNetwork, AccountId>,
@@ -213,10 +212,10 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	// No teleport support.
 	Nothing,
 	// No teleport tracking.
-	(),
+	CheckingAccount,
 >;
 
-pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
+pub type XcmRouter = super::ParachainXcmRouter<ParachainInfo>;
 pub type Barrier = AllowUnpaidExecutionFrom<Everything>;
 
 parameter_types! {
@@ -268,48 +267,15 @@ impl Config for XcmExecutorConfig {
 	type SubscriptionService = PolkadotXcm;
 }
 
-// Pallet to provide the version, used to test runtime upgrade version changes
-#[frame_support::pallet]
-pub mod mock_version_changer {
-	use super::*;
-	use frame_support::pallet_prelude::*;
-
-	#[pallet::config]
-	pub trait Config: frame_system::Config {
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-	}
-
-	#[pallet::call]
-	impl<T: Config> Pallet<T> {}
-
-	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
-	pub struct Pallet<T>(_);
-
-	#[pallet::storage]
-	#[pallet::getter(fn current_version)]
-	pub(super) type CurrentVersion<T: Config> = StorageValue<_, XcmVersion, ValueQuery>;
-
-	impl<T: Config> Get<XcmVersion> for Pallet<T> {
-		fn get() -> XcmVersion {
-			Self::current_version()
-		}
-	}
-
-	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event<T: Config> {
-		// XCMP
-		/// Some XCM was executed OK.
-		VersionChanged(XcmVersion),
-	}
-
-	impl<T: Config> Pallet<T> {
-		pub fn set_version(version: XcmVersion) {
-			CurrentVersion::<T>::put(version);
-			Self::deposit_event(Event::VersionChanged(version));
-		}
-	}
+impl cumulus_pallet_xcmp_queue::Config for Runtime {
+	type Event = Event;
+	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
+	type ChannelInfo = ParachainSystem;
+	type VersionWrapper = PolkadotXcm;
+	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+	type ControllerOrigin = EnsureRoot<AccountId>;
+	type ControllerOriginConverter = XcmOriginToCallOrigin;
+	type WeightInfo = ();
 }
 
 #[frame_support::pallet]
@@ -460,8 +426,15 @@ impl mock_msg_queue::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 }
 
-impl mock_version_changer::Config for Runtime {
+impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
+	type SelfParaId = parachain_info::Pallet<Runtime>;
+	type DmpMessageHandler = MsgQueue;
+	type ReservedDmpWeight = ReservedDmpWeight;
+	type OutboundXcmpMessageSource = XcmpQueue;
+	type XcmpMessageHandler = XcmpQueue;
+	type ReservedXcmpWeight = ReservedXcmpWeight;
+	type OnSystemEvent = ();
 }
 
 pub type LocalOriginToLocation = ();
@@ -481,10 +454,21 @@ impl pallet_xcm::Config for Runtime {
 	type Origin = Origin;
 	type Call = Call;
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
-	type AdvertisedXcmVersion = XcmVersioner;
+	type AdvertisedXcmVersion = CurrentXcmVersion;
+}
+
+parameter_types! {
+	/// An implementation of `Get<u32>` which just returns the latest XCM version which we can
+	/// support.
+	pub static CurrentXcmVersion: u32 = 0;
+}
+
+pub(crate) fn set_current_xcm_version(version: XcmVersion) {
+	CurrentXcmVersion::set(version);
 }
 
 pub struct CalamariAssetRegistrar;
+use frame_support::pallet_prelude::DispatchResult;
 impl AssetRegistrar<Runtime, CalamariAssetConfig> for CalamariAssetRegistrar {
 	fn create_asset(
 		asset_id: AssetId,
@@ -593,7 +577,7 @@ where
 
 parameter_types! {
 	pub const BaseXcmWeight: Weight = 100_000_000;
-	pub const MaxAssetsForTransfer: usize = 1;
+	pub const MaxAssetsForTransfer: usize = 2;
 }
 
 // The XCM message wrapper wrapper
@@ -610,6 +594,9 @@ impl orml_xtokens::Config for Runtime {
 	type BaseXcmWeight = BaseXcmWeight;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type MaxAssetsForTransfer = MaxAssetsForTransfer;
+	type MinXcmFee = AssetManager;
+	type MultiLocationsFilter = AssetManager;
+	type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -633,8 +620,9 @@ construct_runtime!(
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 5,
 		XTokens: orml_xtokens::{Pallet, Call, Event<T>, Storage} = 6,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 7,
-		XcmVersioner: mock_version_changer::{Pallet, Storage, Event<T>} = 8,
-		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 9,
+		ParachainInfo: parachain_info::{Pallet, Storage, Config} = 8,
+		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 9,
+		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned} = 10,
 	}
 );
 
@@ -661,4 +649,79 @@ pub(crate) fn para_roll_to(n: u64) {
 		Balances::on_initialize(System::block_number());
 		PolkadotXcm::on_initialize(System::block_number());
 	}
+}
+
+pub(crate) fn create_asset_metadata(
+	name: &str,
+	symbol: &str,
+	decimals: u8,
+	min_balance: u128,
+	evm_address: Option<H160>,
+	is_frozen: bool,
+	is_sufficient: bool,
+) -> AssetRegistrarMetadata {
+	AssetRegistrarMetadata {
+		name: name.as_bytes().to_vec(),
+		symbol: symbol.as_bytes().to_vec(),
+		decimals,
+		min_balance,
+		evm_address,
+		is_frozen,
+		is_sufficient,
+	}
+}
+
+pub(crate) fn create_asset_location(parents: u8, para_id: u32) -> AssetLocation {
+	AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+		parents,
+		X1(Parachain(para_id)),
+	)))
+}
+
+pub(crate) fn register_assets_on_parachain<P>(
+	source_location: &AssetLocation,
+	asset_metadata: &AssetRegistrarMetadata,
+	units_per_second: Option<u128>,
+	mint_asset: Option<(AccountId, Balance, bool, bool)>,
+) -> AssetId
+where
+	P: XcmpMessageHandlerT + DmpMessageHandlerT + TestExt,
+{
+	let mut currency_id = 0u32;
+	P::execute_with(|| {
+		currency_id = AssetManager::next_asset_id();
+		assert_ok!(AssetManager::register_asset(
+			self::Origin::root(),
+			source_location.clone(),
+			asset_metadata.clone()
+		));
+
+		if let Some((owner, min_balance, is_sufficient, is_frozen)) = mint_asset {
+			assert_ok!(self::Assets::force_asset_status(
+				self::Origin::root(),
+				currency_id,
+				owner.clone().into(),
+				owner.clone().into(),
+				owner.clone().into(),
+				owner.into(),
+				min_balance,
+				is_sufficient,
+				is_frozen,
+			));
+		}
+
+		if let Some(ups) = units_per_second {
+			assert_ok!(AssetManager::set_units_per_second(
+				self::Origin::root(),
+				currency_id,
+				ups,
+			));
+		}
+
+		assert_eq!(
+			Some(currency_id),
+			AssetManager::location_asset_id(source_location.clone())
+		);
+	});
+	currency_id
 }
