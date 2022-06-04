@@ -191,6 +191,9 @@ fn calamari_dev_genesis(
 				})
 				.collect(),
 		},
+		sudo: calamari_runtime::SudoConfig {
+			key: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
+		},
 		democracy: DemocracyConfig::default(),
 		council: CouncilConfig {
 			members: endowed_accounts.iter().take(1).cloned().collect(),

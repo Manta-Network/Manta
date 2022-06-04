@@ -104,7 +104,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("calamari"),
 	impl_name: create_runtime_str!("calamari"),
 	authoring_version: 1,
-	spec_version: 3151,
+	spec_version: 3152,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 4,
@@ -186,6 +186,7 @@ impl Contains<Call> for BaseFilter {
 		match call {
 			| Call::Authorship(_)
 			| Call::Multisig(_)
+			| Call::Sudo(_)
 			// For now disallow public proposal workflows, treasury workflows,
 			// as well as external_propose and external_propose_majority.
 			// The following are filtered out:
@@ -408,6 +409,11 @@ impl pallet_democracy::Config for Runtime {
 	type MaxVotes = ConstU32<100>;
 	type WeightInfo = weights::pallet_democracy::SubstrateWeight<Runtime>;
 	type MaxProposals = ConstU32<100>;
+}
+
+impl pallet_sudo::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
 }
 
 parameter_types! {
@@ -699,6 +705,7 @@ construct_runtime!(
 		Utility: pallet_utility::{Pallet, Call, Event} = 40,
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
 		// 42 was occupied by pallet-sudo, we should discuss it if another pallet takes 42 in the future.
+		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
 
 		// Assets management
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
@@ -738,7 +745,8 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsReversedWithSystemFirst,
-	crate::migrations::sudo::RemoveSudo<Runtime>,
+	//crate::migrations::sudo::RemoveSudo<Runtime>,
+	(),
 >;
 
 impl_runtime_apis! {

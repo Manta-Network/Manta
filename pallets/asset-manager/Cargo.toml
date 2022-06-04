@@ -20,7 +20,8 @@ manta-primitives = { path = "../../primitives", default-features = false }
 log = { version = "0.4.0", default-features = false }
 
 # 3rd party dependencies
-orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="7e2f985" }
+#orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="7e2f985" }
+orml-traits  = { path = '../../../open-runtime-module-library/traits', default-features = false }
 
 [dev-dependencies]
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }

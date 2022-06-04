@@ -163,6 +163,11 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	CheckingAccount,
 >;
 
+impl orml_xcm::Config for Runtime {
+	type Event = Event;
+	type SovereignOrigin = EnsureRoot<AccountId>;
+}
+
 match_type! {
 	pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
 		MultiLocation { parents: 1, interior: Here } |
@@ -331,6 +336,7 @@ impl orml_xtokens::Config for Runtime {
 	type CurrencyIdConvert =
 		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
 	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
+	type XcmSender = XcmRouter;
 	type SelfLocation = SelfReserve;
 	// Take note that this pallet does not have the typical configurable WeightInfo.
 	// It uses the Weigher configuration to calculate weights for the user callable extrinsics on this chain,

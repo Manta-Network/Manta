@@ -13,6 +13,7 @@ repository = 'https://github.com/Manta-Network/Manta/'
 # 3rd dependencies
 codec = { package = "parity-scale-codec", version = "3.0" }
 scale-info = { version = "2.0", features = [ "derive" ] }
+smallvec = "1.8.0"
 
 # Substrate dependencies
 frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
@@ -27,6 +28,7 @@ pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = 
 
 # Polkadot dependencies
 polkadot-core-primitives = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
+polkadot-runtime-common = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
 polkadot-runtime-parachains = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
 polkadot-parachain = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
@@ -45,8 +47,11 @@ cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', 
 cumulus-pallet-xcmp-queue = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.18" }
 
 # Orml dependencies
-orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", rev="7e2f985" }
-orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", rev="7e2f985" }
+#orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="7e2f985" }
+orml-traits  = { path = '../../../open-runtime-module-library/traits' }
+#orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", rev="7e2f985" }
+orml-xtokens  = { path = '../../../open-runtime-module-library/xtokens' }
+orml-xcm = { path = '../../../open-runtime-module-library/xcm', default-features = false }
 
 # Self dependencies
 pallet-asset-manager = { path = '../../pallets/asset-manager' }

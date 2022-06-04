@@ -56,6 +56,7 @@ pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", defaul
 pallet-membership = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.18" }
 pallet-treasury = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.18" }
 pallet-assets = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.18" }
+pallet-sudo = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
 
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.18" }
@@ -79,8 +80,10 @@ xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-fea
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
 
 # Third party (vendored) dependencies
-orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="7e2f985" }
-orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="7e2f985" }
+#orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="7e2f985" }
+orml-traits  = { path = '../../../open-runtime-module-library/traits', default-features = false }
+# orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="7e2f985" }
+orml-xtokens = { path = '../../../open-runtime-module-library/xtokens', default-features = false }
 
 # Self dependencies
 manta-primitives = { path = '../../primitives', default-features = false }

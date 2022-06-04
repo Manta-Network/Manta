@@ -19,13 +19,17 @@
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{ConstU32, Everything, Nothing},
-	weights::Weight,
+	weights::{
+		IdentityFee, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
+	},
 };
 use sp_core::H256;
-use sp_runtime::{testing::Header, traits::IdentityLookup, AccountId32};
+use sp_runtime::{testing::Header, traits::IdentityLookup, AccountId32, Perbill};
 
 use polkadot_parachain::primitives::Id as ParaId;
+use polkadot_runtime_common::{ExtrinsicBaseWeight, ToAuthor};
 use polkadot_runtime_parachains::{configuration, origin, shared, ump};
+use smallvec::smallvec;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -33,7 +37,7 @@ use xcm_builder::{
 	ChildParachainConvertsVia, ChildSystemParachainAsSuperuser,
 	CurrencyAdapter as XcmCurrencyAdapter, FixedRateOfFungible, FixedWeightBounds, IsConcrete,
 	LocationInverter, SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation,
-	TakeWeightCredit,
+	TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{Config, XcmExecutor};
 pub type AccountId = AccountId32;
@@ -126,6 +130,7 @@ type LocalOriginConverter = (
 
 parameter_types! {
 	pub const BaseXcmWeight: Weight = 1_000;
+	//pub const BaseXcmWeight: Weight = 10;
 	pub KsmPerSecond: (AssetId, u128) = (Concrete(KsmLocation::get()), 1);
 	pub const MaxInstructions: u32 = 100;
 }
@@ -141,6 +146,26 @@ pub type Barrier = (
 	// The following is purely for testing ump
 	AllowUnpaidExecutionFrom<Everything>,
 );
+//pub type Barrier = (TakeWeightCredit, AllowTopLevelPaidExecutionFrom<Everything>);
+
+pub struct WeightToFee;
+impl WeightToFeePolynomial for WeightToFee {
+	type Balance = Balance;
+	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+		// in Kusama, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 CENT:
+
+		//let p = super::currency::CENTS;
+		let p = 1_000_000_000_000 / 30_000;
+
+		let q = 10 * Balance::from(ExtrinsicBaseWeight::get());
+		smallvec![WeightToFeeCoefficient {
+			degree: 1,
+			negative: false,
+			coeff_frac: Perbill::from_rational(p % q, q),
+			coeff_integer: p / q,
+		}]
+	}
+}
 
 pub struct XcmExecutorConfig;
 impl Config for XcmExecutorConfig {
@@ -153,7 +178,10 @@ impl Config for XcmExecutorConfig {
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<BaseXcmWeight, Call, MaxInstructions>;
+	//type Weigher = FixedWeightBounds<ConstU64<10>, Call, ConstU32<100>>;
 	type Trader = FixedRateOfFungible<KsmPerSecond, ()>;
+	//type Trader = UsingComponents<WeightToFee, KsmLocation, AccountId, Balances, ()>;
+	//type Trader = UsingComponents<IdentityFee<Balance>, KsmLocation, AccountId, Balances, ()>;
 	type ResponseHandler = XcmPallet;
 	type AssetTrap = XcmPallet;
 	type AssetClaims = XcmPallet;

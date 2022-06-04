@@ -81,7 +81,7 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
 		Some(properties),
 		Extensions {
 			relay_chain: "".into(),
-			para_id: DOLPHIN_PARACHAIN_ID,
+			para_id: 2085,
 		},
 	)
 }
@@ -142,7 +142,7 @@ pub fn dolphin_local_config() -> DolphinChainSpec {
 		Some(properties),
 		Extensions {
 			relay_chain: "".into(),
-			para_id: DOLPHIN_PARACHAIN_ID,
+			para_id: 2085,
 		},
 	)
 }
@@ -176,7 +176,7 @@ fn dolphin_dev_genesis(
 			key: Some(root_key),
 		},
 		parachain_info: dolphin_runtime::ParachainInfoConfig {
-			parachain_id: DOLPHIN_PARACHAIN_ID.into(),
+			parachain_id: 2085.into(),
 		},
 		collator_selection: dolphin_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
@@ -220,6 +220,6 @@ pub fn dolphin_testnet_config() -> Result<DolphinChainSpec, String> {
 	let mut spec = DolphinChainSpec::from_json_bytes(
 		&include_bytes!("../../../genesis/dolphin-testnet-genesis.json")[..],
 	)?;
-	spec.extensions_mut().para_id = DOLPHIN_PARACHAIN_ID;
+	spec.extensions_mut().para_id = 2085;
 	Ok(spec)
 }

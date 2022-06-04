@@ -184,7 +184,7 @@ pub type Barrier = (
 	// which have the ability to deposit assets and pay for their own execution.
 	AllowTopLevelPaidExecutionFrom<Everything>,
 	// Parent and its exec plurality get free execution
-	AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+	AllowUnpaidExecutionFrom<Everything>,
 	// Expected responses are OK.
 	// Allows `Pending` or `VersionNotifier` query responses.
 	AllowKnownQueryResponses<PolkadotXcm>,
@@ -332,6 +332,7 @@ impl orml_xtokens::Config for Runtime {
 	type CurrencyIdConvert =
 		CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
 	type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
+	type XcmSender = XcmRouter;
 	type SelfLocation = SelfReserve;
 	// Take note that this pallet does not have the typical configurable WeightInfo.
 	// It uses the Weigher configuration to calculate weights for the user callable extrinsics on this chain,

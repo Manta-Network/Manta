@@ -89,8 +89,11 @@ pallet-manta-pay = { path='../../pallets/manta-pay', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 
 # Third party (vendored) dependencies
-orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="7e2f985" }
-orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="7e2f985" }
+#orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="7e2f985" }
+orml-traits  = { path = '../../../open-runtime-module-library/traits', default-features = false }
+# orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev="7e2f985" }
+orml-xtokens = { path = '../../../open-runtime-module-library/xtokens', default-features = false }
+orml-xcm = { path = '../../../open-runtime-module-library/xcm', default-features = false }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']

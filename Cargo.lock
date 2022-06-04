@@ -1202,6 +1202,7 @@ dependencies = [
  "pallet-preimage",
  "pallet-scheduler",
  "pallet-session",
+ "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
@@ -2474,6 +2475,7 @@ dependencies = [
  "manta-collator-selection",
  "manta-primitives",
  "orml-traits",
+ "orml-xcm",
  "orml-xtokens",
  "pallet-asset-manager",
  "pallet-assets",
@@ -6042,7 +6044,6 @@ dependencies = [
 [[package]]
 name = "orml-traits"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?rev=7e2f985#7e2f985d8ed49fe0d243e7ec8eb864cd9cc91d2a"
 dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
@@ -6060,7 +6061,6 @@ dependencies = [
 [[package]]
 name = "orml-utilities"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?rev=7e2f985#7e2f985d8ed49fe0d243e7ec8eb864cd9cc91d2a"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -6072,9 +6072,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "orml-xcm"
+version = "0.4.1-dev"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-xcm",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
 name = "orml-xcm-support"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?rev=7e2f985#7e2f985d8ed49fe0d243e7ec8eb864cd9cc91d2a"
 dependencies = [
  "frame-support",
  "orml-traits",
@@ -6088,7 +6100,6 @@ dependencies = [
 [[package]]
 name = "orml-xtokens"
 version = "0.4.1-dev"
-source = "git+https://github.com/manta-network/open-runtime-module-library.git?rev=7e2f985#7e2f985d8ed49fe0d243e7ec8eb864cd9cc91d2a"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
@@ -9254,6 +9265,7 @@ dependencies = [
  "frame-system",
  "manta-primitives",
  "orml-traits",
+ "orml-xcm",
  "orml-xtokens",
  "pallet-asset-manager",
  "pallet-assets",
@@ -9264,8 +9276,10 @@ dependencies = [
  "parity-scale-codec",
  "polkadot-core-primitives",
  "polkadot-parachain",
+ "polkadot-runtime-common",
  "polkadot-runtime-parachains",
  "scale-info",
+ "smallvec",
  "sp-core",
  "sp-io",
  "sp-runtime",

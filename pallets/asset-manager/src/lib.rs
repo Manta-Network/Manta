@@ -487,10 +487,17 @@ pub mod pallet {
 			if let Some(MultiLocation { interior, .. }) = location {
 				match interior {
 					// We have some locations like (1, X1(Parachain)).
-					Junctions::X1(Junction::Parachain(para_id)) => Some(*para_id),
+					Junctions::X1(Junction::Parachain(para_id))
+					|
 					// We have some locations like (1, X2(Parachain, GeneralKey))
 					// and (1, X2(Parachain, PalletInstance)).
-					Junctions::X2(Junction::Parachain(para_id), ..) => Some(*para_id),
+					Junctions::X2(Junction::Parachain(para_id), ..)
+					| Junctions::X3(Junction::Parachain(para_id), ..)
+					| Junctions::X4(Junction::Parachain(para_id), ..)
+					| Junctions::X5(Junction::Parachain(para_id), ..)
+					| Junctions::X6(Junction::Parachain(para_id), ..)
+					| Junctions::X7(Junction::Parachain(para_id), ..)
+					| Junctions::X8(Junction::Parachain(para_id), ..) => Some(*para_id),
 					// Currently we don't have any Junctions whose length is bigger than 2.
 					_ => None,
 				}
