@@ -235,9 +235,8 @@ impl Contains<Call> for BaseFilter {
 			// orml_xtokens::Call::transfer_with_fee {..}
 			// orml_xtokens::Call::transfer_multiasset {..}
 			// orml_xtokens::Call::transfer_multiasset_with_fee {..}
-			// orml_xtokens::Call::transfer_multicurrencies  {..}
 			// orml_xtokens::Call::transfer_multiassets {..}
-			| Call::XTokens(orml_xtokens::Call::transfer {..})
+			| Call::XTokens(orml_xtokens::Call::transfer {..} | orml_xtokens::Call::transfer_multicurrencies  {..})
 			| Call::MantaPay(_)
 			| Call::Preimage(_)
 			| Call::Utility(_) => true,
