@@ -95,7 +95,7 @@ pub mod pallet {
 			let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
 			Self::find_author(pre_runtime_digests).map(|author_account| {
 				// Store the author so we can confirm eligibility after the inherents have executed
-				<Author<T>>::put(&author_account);
+				<Author<T>>::put(&author_account); // RAD: This is added with no verification, so collators can impersonate others
 
 				//TODO, should we reuse the same trait that Pallet Authorship uses?
 				// Notify any other pallets that are listening (eg rewards) about the author

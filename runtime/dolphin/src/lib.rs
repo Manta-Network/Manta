@@ -23,6 +23,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use nimbus_primitives::{AccountLookup,NimbusId};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -39,7 +40,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, PrivilegeCmp},
+	traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, PrivilegeCmp, ValidatorRegistration},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, Weight,
@@ -88,11 +89,18 @@ pub mod opaque {
 	pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 	/// Opaque block identifier type.
 	pub type BlockId = generic::BlockId<Block>;
-	impl_opaque_keys! {
-		pub struct SessionKeys {
-			pub aura: Aura,
-		}
-	}
+	// impl_opaque_keys! { // RAD: How do we migrate Aura session keys to nimbus ones?
+	// 	pub struct SessionKeys {
+	// 		pub aura: Aura,
+	// 	}
+	// }
+    impl_opaque_keys! {
+        pub struct SessionKeys {
+            //TODO this was called author_inherent in the old runtime.
+            // Can I just rename it like this?
+            pub nimbus: AuthorInherent,
+        }
+    }
 }
 
 // Weights used in the runtime.
@@ -300,7 +308,6 @@ impl pallet_authorship::Config for Runtime {
 parameter_types! {
 	pub const NativeTokenExistentialDeposit: u128 = 10 * cDOL; // 0.1 DOL
 }
-
 impl pallet_balances::Config for Runtime {
 	type MaxLocks = ConstU32<50>;
 	type MaxReserves = ConstU32<50>;
@@ -520,6 +527,26 @@ impl pallet_treasury::Config for Runtime {
 	type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
 	type SpendFunds = ();
 }
+    struct TestConverter;
+    impl<T: Config> AccountLookup<T::AccountId> for TestConverter{
+        fn lookup_account(author: &NimbusId) -> Option<T::AccountId> {
+            // Mapping::<T>::get(&author)
+            // assuming NimbusId === ValidatorId === AuraKeys, then
+            (T::Config as Session::Config).validators().iter().find(|vkey|{vkey == author}).and_then(|vkey|{vkey.into::<T::AccountId>()})
+        }
+    }
+
+    impl pallet_aura_style_filter::Config for Runtime {
+        type PotentialAuthors = TestConverter;
+    }
+
+    impl pallet_author_inherent::Config for Runtime {
+        // We start a new slot each time we see a new relay block.
+        type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
+        type AccountLookup = TestConverter;
+        type EventHandler = ();
+        type CanAuthor = AuraAuthorFilter; // RAD: The main difference to the template node
+    }
 
 parameter_types! {
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
@@ -658,6 +685,12 @@ construct_runtime!(
 		// Monetary stuff.
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+
+		// Nimbus support. The order of these are important and shall not change.
+		AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 50,
+		// AuthorFilter: pallet_author_slot_filter::{Pallet, Storage, Event, Config} = 51,
+		// PotentialAuthorSet: pallet_account_set::{Pallet, Storage, Config<T>} = 52,
+		AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage, Config<T>} = 53,
 
 		// Governance stuff.
 		Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>} = 14,
@@ -838,6 +871,28 @@ impl_runtime_apis! {
 		}
 	}
 
+
+    impl nimbus_primitives::NimbusApi<Block> for Runtime {
+		fn can_author(author: NimbusId, slot: u32, parent_header: &<Block as BlockT>::Header) -> bool {
+			// This runtime uses an entropy source that is updated during block initialization
+			// Therefore we need to initialize it to match the state it will be in when the
+			// next block is being executed.
+			// System::reset_events();
+			// System::initialize(&(parent_header.number + 1), &parent_header.hash(), &parent_header.digest);
+			// <Self as pallet_author_slot_filter::Config>::RandomnessSource::on_initialize(System::block_number());
+
+			// And now the actual prediction call
+			<AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &slot)
+		}
+	}
+
+	// We also implement the olf AuthorFilterAPI to meet the trait bounds on the client side.
+	impl nimbus_primitives::AuthorFilterAPI<Block, NimbusId> for Runtime {
+		fn can_author(_: NimbusId, _: u32, _: &<Block as BlockT>::Header) -> bool {
+			panic!("AuthorFilterAPI is no longer supported. Please update your client.")
+		}
+	}
+
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
 		fn on_runtime_upgrade() -> (Weight, Weight) {
@@ -962,6 +1017,6 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 
 cumulus_pallet_parachain_system::register_validate_block! {
 	Runtime = Runtime,
-	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
+    BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
 	CheckInherents = CheckInherents,
 }

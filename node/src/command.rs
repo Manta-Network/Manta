@@ -354,6 +354,12 @@ pub fn run_with(cli: Cli) -> Result<()> {
 					.into())
 			}
 		}
+		Some(Subcommand::RunInstantSeal(run_cmd)) => {
+			let runner = cli.create_runner(run_cmd)?;
+			runner.run_node_until_exit(|config| async move {
+				crate::service::start_instant_seal_node(config).map_err(sc_cli::Error::Service)
+			})
+		}
 		#[cfg(feature = "try-runtime")]
 		Some(Subcommand::TryRuntime(cmd)) => {
 			// grab the task manager.
