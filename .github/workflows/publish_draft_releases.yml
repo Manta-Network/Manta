@@ -69,7 +69,7 @@ jobs:
       -
         name: build runtime
         id: srtool-build
-        uses: chevdor/srtool-actions@v0.3.0
+        uses: chevdor/srtool-actions@v0.4.0
         with:
           image: paritytech/srtool
           chain: ${{ matrix.runtime.name }}
@@ -232,7 +232,7 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch and chmod polkadot
         run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.16/polkadot
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.18/polkadot
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       -
@@ -441,7 +441,7 @@ jobs:
       -
         name: fetch and chmod polkadot
         run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.16/polkadot
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.18/polkadot
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       -
@@ -1089,8 +1089,8 @@ jobs:
         runtime:
           -
             name: calamari
-          # -
-          #   name: manta
+            # -
+            #   name: manta
     steps:
       -
         uses: actions/checkout@v2

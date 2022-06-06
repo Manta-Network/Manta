@@ -14,8 +14,4 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Manta/Calamari Parachain CLI
-
-fn main() -> sc_cli::Result<()> {
-	manta::command::run()
-}
+pub mod sudo;

@@ -19,6 +19,12 @@
 use super::*;
 use manta_util::into_array_unchecked;
 
+pub(crate) const CIPHER_TEXT_LENGTH: usize = 68;
+pub(crate) const EPHEMERAL_PUBLIC_KEY_LENGTH: usize = 32;
+pub(crate) const UTXO_ACCUMULATOR_OUTPUT_LENGTH: usize = 32;
+pub(crate) const UTXO_LENGTH: usize = 32;
+pub(crate) const VOID_NUMBER_LENGTH: usize = 32;
+
 /// Encodes the SCALE encodable `value` into a byte array with the given length `N`.
 #[inline]
 pub(crate) fn encode<T, const N: usize>(value: T) -> [u8; N]
@@ -74,18 +80,18 @@ impl Asset {
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct EncryptedNote {
 	/// Ephemeral Public Key
-	pub ephemeral_public_key: [u8; 32],
+	pub ephemeral_public_key: [u8; EPHEMERAL_PUBLIC_KEY_LENGTH],
 
 	/// Ciphertext
-	pub ciphertext: [u8; 68],
+	pub ciphertext: [u8; CIPHER_TEXT_LENGTH],
 }
 
 impl Default for EncryptedNote {
 	#[inline]
 	fn default() -> Self {
 		Self {
-			ephemeral_public_key: [0; 32],
-			ciphertext: [0; 68],
+			ephemeral_public_key: [0; EPHEMERAL_PUBLIC_KEY_LENGTH],
+			ciphertext: [0; CIPHER_TEXT_LENGTH],
 		}
 	}
 }
@@ -116,10 +122,10 @@ impl TryFrom<EncryptedNote> for config::EncryptedNote {
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct SenderPost {
 	/// UTXO Accumulator Output
-	pub utxo_accumulator_output: [u8; 32],
+	pub utxo_accumulator_output: [u8; UTXO_ACCUMULATOR_OUTPUT_LENGTH],
 
 	/// Void Number
-	pub void_number: [u8; 32],
+	pub void_number: [u8; VOID_NUMBER_LENGTH],
 }
 
 impl From<config::SenderPost> for SenderPost {
@@ -148,7 +154,7 @@ impl TryFrom<SenderPost> for config::SenderPost {
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct ReceiverPost {
 	/// Unspent Transaction Output
-	pub utxo: [u8; 32],
+	pub utxo: [u8; UTXO_LENGTH],
 
 	/// Encrypted Note
 	pub encrypted_note: EncryptedNote,

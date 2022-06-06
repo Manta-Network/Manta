@@ -245,9 +245,7 @@ macro_rules! construct_async_run {
 }
 
 /// Parse command line arguments into service configuration.
-pub fn run() -> Result<()> {
-	let cli = Cli::from_args();
-
+pub fn run_with(cli: Cli) -> Result<()> {
 	match &cli.subcommand {
 		Some(Subcommand::BuildSpec(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
@@ -390,6 +388,7 @@ pub fn run() -> Result<()> {
 			.into()),
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
+			let collator_options = cli.run.collator_options();
 
 			runner.run_node_until_exit(|config| async move {
 				let para_id = crate::chain_specs::Extensions::try_get(&*config.chain_spec)
@@ -438,7 +437,7 @@ pub fn run() -> Result<()> {
 						manta_runtime::RuntimeApi,
 						MantaRuntimeExecutor,
 						AuraId,
-					>(config, polkadot_config, id)
+					>(config, polkadot_config, collator_options, id)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
@@ -447,7 +446,7 @@ pub fn run() -> Result<()> {
 						calamari_runtime::RuntimeApi,
 						CalamariRuntimeExecutor,
 						AuraId,
-					>(config, polkadot_config, id)
+					>(config, polkadot_config, collator_options, id)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
@@ -456,7 +455,7 @@ pub fn run() -> Result<()> {
 						dolphin_runtime::RuntimeApi,
 						DolphinRuntimeExecutor,
 						AuraId,
-					>(config, polkadot_config, id)
+					>(config, polkadot_config, collator_options, id)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
@@ -466,6 +465,11 @@ pub fn run() -> Result<()> {
 			})
 		}
 	}
+}
+
+/// Parse command line arguments into service configuration.
+pub fn run() -> Result<()> {
+	run_with(Cli::from_args())
 }
 
 impl DefaultConfigurationValues for RelayChainCli {

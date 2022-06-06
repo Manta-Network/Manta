@@ -189,6 +189,7 @@ impl ump::Config for Runtime {
 	type UmpSink = ump::XcmSink<XcmExecutor<XcmExecutorConfig>, Runtime>;
 	type FirstMessageFactorPercent = FirstMessageFactorPercent;
 	type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
+	type WeightInfo = polkadot_runtime_parachains::ump::TestWeightInfo;
 }
 
 impl origin::Config for Runtime {}

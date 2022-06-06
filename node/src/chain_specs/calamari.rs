@@ -66,7 +66,6 @@ pub fn calamari_development_config() -> CalamariChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_collator_keys_from_seed("Alice"),
 				)],
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -121,7 +120,6 @@ pub fn calamari_local_config() -> CalamariChainSpec {
 						get_collator_keys_from_seed("Eve"),
 					),
 				],
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -150,7 +148,6 @@ pub fn calamari_local_config() -> CalamariChainSpec {
 
 fn calamari_dev_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
-	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
 ) -> calamari_runtime::GenesisConfig {
 	calamari_runtime::GenesisConfig {
@@ -173,9 +170,6 @@ fn calamari_dev_genesis(
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		aura: Default::default(),
-		sudo: calamari_runtime::SudoConfig {
-			key: Some(root_key),
-		},
 		parachain_info: calamari_runtime::ParachainInfoConfig {
 			parachain_id: CALAMARI_PARACHAIN_ID.into(),
 		},

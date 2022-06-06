@@ -56,7 +56,7 @@ about: Perform cross chain transfer tests in order to open HRMP channel with Cal
 
 ### Sync Node & Open Rococo Slot Request
 
-- To sync your node, you can use the following [relay chain spec](https://raw.githubusercontent.com/paritytech/polkadot/master/node/service/res/rococo.json) (note: relay chain is Rococo based, and will probably take a few hours to sync)
+- To sync your node, you can use the following [relay chain spec](https://raw.githubusercontent.com/paritytech/polkadot/master/node/service/chain-specs/rococo.json) (note: relay chain is Rococo based, and will probably take a few hours to sync)
 - Register your parachain on Rococo. For that you will need to open a [Rococo Slot Request](https://github.com/paritytech/subport/issues) issue and follow the instructions.
 
 ## Calculate and Fund your Parachain's Sovereign Account
