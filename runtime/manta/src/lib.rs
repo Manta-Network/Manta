@@ -666,7 +666,7 @@ mod benches {
 	frame_benchmarking::define_benchmarks!(
 		// Substrate pallets
 		[pallet_balances, Balances]
-		[ppallet_multisig, Multisig]
+		[pallet_multisig, Multisig]
 		[frame_system, SystemBench::<Runtime>]
 		[pallet_timestamp, Timestamp]
 		[pallet_utility, Utility]
