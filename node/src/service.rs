@@ -17,6 +17,7 @@
 use crate::rpc;
 use codec::Codec;
 use core::marker::PhantomData;
+use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::{
 	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
@@ -30,8 +31,15 @@ use cumulus_primitives_core::{
 	relay_chain::v1::{Hash as PHash, PersistedValidationData},
 	ParaId,
 };
-use cumulus_relay_chain_interface::RelayChainInterface;
-use cumulus_relay_chain_local::build_relay_chain_interface;
+use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
+use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
+use polkadot_service::{CollatorPair, NativeExecutionDispatch};
+
+use crate::rpc;
+pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
+
+use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use futures::lock::Mutex;
 use polkadot_service::NativeExecutionDispatch;
 use sc_client_api::ExecutorProvider;
@@ -43,9 +51,8 @@ use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
 use sc_service::{Configuration, Error, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
-use sp_api::{ApiExt, ConstructRuntimeApi, Metadata, ProvideRuntimeApi};
-use sp_block_builder::BlockBuilder;
-use sp_consensus::{CacheKeyId, SlotData};
+use sp_api::{ApiExt, ConstructRuntimeApi};
+use sp_consensus::CacheKeyId;
 use sp_consensus_aura::AuraApi;
 use sp_core::crypto::Pair;
 use sp_keystore::SyncCryptoStorePtr;
@@ -206,6 +213,30 @@ where
 	})
 }
 
+async fn build_relay_chain_interface(
+	polkadot_config: Configuration,
+	parachain_config: &Configuration,
+	telemetry_worker_handle: Option<TelemetryWorkerHandle>,
+	task_manager: &mut TaskManager,
+	collator_options: CollatorOptions,
+) -> RelayChainResult<(
+	Arc<(dyn RelayChainInterface + 'static)>,
+	Option<CollatorPair>,
+)> {
+	match collator_options.relay_chain_rpc_url {
+		Some(relay_chain_url) => Ok((
+			Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>,
+			None,
+		)),
+		None => build_inprocess_relay_chain(
+			polkadot_config,
+			parachain_config,
+			telemetry_worker_handle,
+			task_manager,
+		),
+	}
+}
+
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
@@ -213,6 +244,7 @@ where
 async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
+	collator_options: CollatorOptions,
 	id: ParaId,
 	rpc_extensions_builder: RB,
 	build_import_queue: BIQ,
@@ -266,12 +298,18 @@ where
 	let (mut telemetry, telemetry_worker_handle) = params.other;
 
 	let mut task_manager = params.task_manager;
-	let (relay_chain_interface, collator_key) =
-		build_relay_chain_interface(polkadot_config, telemetry_worker_handle, &mut task_manager)
-			.map_err(|e| match e {
-				polkadot_service::Error::Sub(x) => x,
-				s => format!("{}", s).into(),
-			})?;
+	let (relay_chain_interface, collator_key) = build_relay_chain_interface(
+		polkadot_config,
+		&parachain_config,
+		telemetry_worker_handle,
+		&mut task_manager,
+		collator_options.clone(),
+	)
+	.await
+	.map_err(|e| match e {
+		RelayChainError::ServiceError(polkadot_service::Error::Sub(x)) => x,
+		s => s.to_string().into(),
+	})?;
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -337,7 +375,7 @@ where
 			spawner,
 			parachain_consensus,
 			import_queue,
-			collator_key,
+			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
 			relay_chain_slot_duration,
 		})
 		.await?;
@@ -350,7 +388,10 @@ where
 			relay_chain_interface,
 			relay_chain_slot_duration,
 			import_queue,
-		})?;
+			collator_options,
+		};
+
+		start_full_node(params)?;
 	}
 
 	start_network.start_network();
@@ -506,9 +547,9 @@ where
 				let time = sp_timestamp::InherentDataProvider::from_system_time();
 
 				let slot =
-					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 						*time,
-						slot_duration.slot_duration(),
+						slot_duration,
 					);
 
 				Ok((time, slot))
@@ -547,6 +588,7 @@ where
 pub async fn start_parachain_node<RuntimeApi, Executor, AuraId: AppKey, RPC>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
+	collator_options: CollatorOptions,
 	id: ParaId,
 	rpc: RPC,
 ) -> Result<(TaskManager, Arc<Client<RuntimeApi, Executor>>), Error>
@@ -576,6 +618,7 @@ where
 	start_node_impl::<RuntimeApi, Executor, _, _, _>(
 		parachain_config,
 		polkadot_config,
+		collator_options,
 		id,
 		rpc,
 		parachain_build_import_queue::<_, _, AuraId>,
@@ -625,9 +668,9 @@ where
 										sp_timestamp::InherentDataProvider::from_system_time();
 
 									let slot =
-									sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+									sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 										*time,
-										slot_duration.slot_duration(),
+										slot_duration,
 									);
 
 									let parachain_inherent =
@@ -686,9 +729,9 @@ where
 										sp_timestamp::InherentDataProvider::from_system_time();
 
 									let slot =
-								sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+								sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 									*time,
-									slot_duration.slot_duration(),
+									slot_duration,
 								);
 
 									let parachain_inherent =

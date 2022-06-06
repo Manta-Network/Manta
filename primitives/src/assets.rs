@@ -107,7 +107,12 @@ where
 	type AssetRegistrarMetadata: Member + Parameter + Codec + Default + AssetMetadata;
 
 	/// The AssetLocation type: could be just a thin wrapper of MultiLocation
-	type AssetLocation: Member + Parameter + Default + TypeInfo;
+	type AssetLocation: Member
+		+ Parameter
+		+ Default
+		+ TypeInfo
+		+ From<MultiLocation>
+		+ Into<Option<MultiLocation>>;
 
 	/// The Fungible ledger implementation of this trait
 	type FungibleLedger: FungibleLedger<C>;
