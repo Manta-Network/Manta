@@ -154,10 +154,10 @@ impl TryFrom<EncryptedNote> for config::EncryptedNote {
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct SenderPost {
 	/// UTXO Accumulator Output
-	pub utxo_accumulator_output: [u8; UTXO_ACCUMULATOR_OUTPUT_LENGTH],
+	pub utxo_accumulator_output: UtxoAccumulatorOutput,
 
 	/// Void Number
-	pub void_number: [u8; VOID_NUMBER_LENGTH],
+	pub void_number: VoidNumber,
 }
 
 impl From<config::SenderPost> for SenderPost {
@@ -186,7 +186,7 @@ impl TryFrom<SenderPost> for config::SenderPost {
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct ReceiverPost {
 	/// Unspent Transaction Output
-	pub utxo: [u8; UTXO_LENGTH],
+	pub utxo: Utxo,
 
 	/// Encrypted Note
 	pub encrypted_note: EncryptedNote,
