@@ -113,7 +113,9 @@ pub struct EncryptedNote {
 	/// Ciphertext
 	#[cfg_attr(
 		feature = "rpc",
-		serde(with = "manta_util::serde_with::As::<[manta_util::serde_with::Same; CIPHER_TEXT_LENGTH]>")
+		serde(
+			with = "manta_util::serde_with::As::<[manta_util::serde_with::Same; CIPHER_TEXT_LENGTH]>"
+		)
 	)]
 	pub ciphertext: Ciphertext,
 }

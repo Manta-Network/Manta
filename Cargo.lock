@@ -551,9 +551,9 @@ checksum = "065374052e7df7ee4047b1160cca5e1467a12351a40b3da123c870ba0b8eda2a"
 
 [[package]]
 name = "attohttpc"
-version = "0.18.0"
+version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e69e13a99a7e6e070bb114f7ff381e58c7ccc188630121fc4c2fe4bcf24cd072"
+checksum = "262c3f7f5d61249d8c00e5546e2685cd15ebeeb1bc0f3cc5449350a1cb07319e"
 dependencies = [
  "flate2",
  "http",
@@ -5449,7 +5449,7 @@ dependencies = [
 [[package]]
 name = "manta-sdk"
 version = "0.5.0"
-source = "git+https://github.com/manta-network/sdk.git#fef5dc1868f6dea4911c8bb03cb6b29399810063"
+source = "git+https://github.com/manta-network/sdk.git#4695cffb2cbb65f9a2efc24d54c11c801785b006"
 dependencies = [
  "anyhow",
  "attohttpc",

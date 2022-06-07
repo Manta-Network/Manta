@@ -64,7 +64,6 @@ use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
 
-
 /// Native Manta Parachain executor instance.
 pub struct MantaRuntimeExecutor;
 impl sc_executor::NativeExecutionDispatch for MantaRuntimeExecutor {
