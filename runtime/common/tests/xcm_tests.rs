@@ -2190,6 +2190,7 @@ fn transfer_multicurrencies_should_work_scenarios() {
 		1,
 		X1(Parachain(para_b_id)),
 	)));
+	let units_per_sec = 0;
 
 	let para_a_asset_metadata =
 		create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
@@ -2203,21 +2204,21 @@ fn transfer_multicurrencies_should_work_scenarios() {
 	let _ = register_assets_on_parachain::<ParaA>(
 		&para_a_source_location,
 		&para_a_asset_metadata,
-		Some(0u128),
+		Some(units_per_sec),
 		None,
 	);
 	// Register relaychain native asset in ParaA
 	let relay_asset_id_on_a = register_assets_on_parachain::<ParaA>(
 		&relay_source_location,
 		&relay_asset_metadata,
-		Some(0u128),
+		Some(units_per_sec),
 		None,
 	);
 	// register ParaB native asset on ParaA
 	let b_asset_id_on_a = register_assets_on_parachain::<ParaA>(
 		&para_b_source_location,
 		&para_b_asset_metadata,
-		Some(0u128),
+		Some(units_per_sec),
 		None,
 	);
 
@@ -2225,21 +2226,21 @@ fn transfer_multicurrencies_should_work_scenarios() {
 	let b_asset_id_on_b = register_assets_on_parachain::<ParaB>(
 		&para_b_source_location,
 		&para_b_asset_metadata,
-		Some(0u128),
+		Some(units_per_sec),
 		None,
 	);
 	// register ParaA native asset on ParaB
 	let _ = register_assets_on_parachain::<ParaB>(
 		&para_a_source_location,
 		&para_a_asset_metadata,
-		Some(0u128),
+		Some(units_per_sec),
 		None,
 	);
 	// Register relaychain native asset in ParaB
 	let relay_asset_id_on_b = register_assets_on_parachain::<ParaB>(
 		&relay_source_location,
 		&relay_asset_metadata,
-		Some(0u128),
+		Some(units_per_sec),
 		None,
 	);
 
@@ -2250,7 +2251,7 @@ fn transfer_multicurrencies_should_work_scenarios() {
 			parachain::Origin::signed(parachain::AssetManager::account_id()),
 			relay_asset_id_on_a,
 			ALICE.into(),
-			10000000,
+			relay_asset_amount_minted_on_a,
 		)
 	}));
 
@@ -2267,7 +2268,7 @@ fn transfer_multicurrencies_should_work_scenarios() {
 
 	// Send some ParaB tokens from Alice on B to Alice on A
 	let amount_to_a = 10000000;
-	let weight = 4000000000;
+	let weight = 40;
 	ParaB::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			Some(ALICE).into(),
@@ -2314,7 +2315,7 @@ fn transfer_multicurrencies_should_work_scenarios() {
 			],
 			1,
 			Box::new(VersionedMultiLocation::V1(dest.clone())),
-			40,
+			weight,
 		));
 
 		assert_eq!(
@@ -2398,72 +2399,73 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 
 	let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 	let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
+	let units_per_sec = 0;
 
-	let a_currency_id_on_a = register_assets_on_parachain::<ParaA>(
+	let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
 		&para_a_source_location,
 		&para_a_asset_metadata,
-		Some(0u128),
+		Some(units_per_sec),
 		None,
 	);
 	let relay_asset_id_on_a = register_assets_on_parachain::<ParaA>(
 		&relay_source_location,
 		&relay_asset_metadata,
-		Some(0u128),
+		Some(units_per_sec),
 		None,
 	);
-	let b_currency_id_on_a = register_assets_on_parachain::<ParaA>(
+	let b_asset_id_on_a = register_assets_on_parachain::<ParaA>(
 		&para_b_source_location,
 		&para_b_asset_metadata,
-		Some(0u128),
+		Some(units_per_sec),
 		None,
 	);
-	let c_currency_id_on_a = register_assets_on_parachain::<ParaA>(
+	let c_asset_id_on_a = register_assets_on_parachain::<ParaA>(
 		&para_c_source_location,
 		&para_c_asset_metadata,
-		Some(0u128),
+		Some(units_per_sec),
 		None,
 	);
 
-	let b_currency_id_on_b = register_assets_on_parachain::<ParaB>(
+	let b_asset_id_on_b = register_assets_on_parachain::<ParaB>(
 		&para_b_source_location,
 		&para_b_asset_metadata,
-		Some(0u128),
+		Some(units_per_sec),
 		None,
 	);
 	let _ = register_assets_on_parachain::<ParaB>(
 		&para_a_source_location,
 		&para_a_asset_metadata,
-		Some(0u128),
+		Some(units_per_sec),
 		None,
 	);
 	let relay_asset_id_on_b = register_assets_on_parachain::<ParaB>(
 		&relay_source_location,
 		&relay_asset_metadata,
-		Some(0u128),
+		Some(units_per_sec),
 		None,
 	);
 
-	let c_currency_id_on_c = register_assets_on_parachain::<ParaC>(
+	let c_asset_id_on_c = register_assets_on_parachain::<ParaC>(
 		&para_c_source_location,
 		&para_c_asset_metadata,
-		Some(0u128),
+		Some(units_per_sec),
 		None,
 	);
 	let _ = register_assets_on_parachain::<ParaC>(
 		&para_a_source_location,
 		&para_a_asset_metadata,
-		Some(0u128),
+		Some(units_per_sec),
 		None,
 	);
 	let _ = register_assets_on_parachain::<ParaC>(
 		&relay_source_location,
 		&relay_asset_metadata,
-		Some(0u128),
+		Some(units_per_sec),
 		None,
 	);
 
 	let amount = 1000;
-	// Initialize some tokens for alice
+	let weight = 40;
 	assert_ok!(ParaA::execute_with(|| {
 		parachain::Assets::mint(
 			parachain::Origin::signed(parachain::AssetManager::account_id()),
@@ -2486,19 +2488,19 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 	ParaC::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			Some(ALICE).into(),
-			parachain::CurrencyId::MantaCurrency(c_currency_id_on_c),
+			parachain::CurrencyId::MantaCurrency(c_asset_id_on_c),
 			amount,
 			Box::new(VersionedMultiLocation::V1(dest.clone())),
-			4000000000,
+			weight,
 		));
 	});
 	ParaB::execute_with(|| {
 		assert_ok!(parachain::XTokens::transfer(
 			Some(ALICE).into(),
-			parachain::CurrencyId::MantaCurrency(b_currency_id_on_b),
+			parachain::CurrencyId::MantaCurrency(b_asset_id_on_b),
 			amount,
 			Box::new(VersionedMultiLocation::V1(dest)),
-			4000000000,
+			weight,
 		));
 	});
 
@@ -2514,10 +2516,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 	};
 
 	let fee_amount: u128 = 50;
-	// set min xcm fee on ParaA
-	//let min_xcm_fee = 40;
 	let min_xcm_fee = 10;
-
 	ParaA::execute_with(|| {
 		assert_ok!(AssetManager::set_min_xcm_fee(
 			parachain::Origin::root(),
@@ -2535,11 +2534,11 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 				Some(ALICE).into(),
 				vec![
 					(
-						parachain::CurrencyId::MantaCurrency(b_currency_id_on_a),
+						parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
 						amount
 					),
 					(
-						parachain::CurrencyId::MantaCurrency(c_currency_id_on_a),
+						parachain::CurrencyId::MantaCurrency(c_asset_id_on_a),
 						fee_amount
 					),
 					(
@@ -2549,7 +2548,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 				],
 				2,
 				Box::new(VersionedMultiLocation::V1(dest.clone())),
-				40,
+				weight,
 			),
 			orml_xtokens::Error::<parachain::Runtime>::DistinctReserveForAssetAndFee
 		);
@@ -2559,7 +2558,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 				Some(ALICE).into(),
 				vec![
 					(
-						parachain::CurrencyId::MantaCurrency(b_currency_id_on_a),
+						parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
 						amount
 					),
 					(
@@ -2567,13 +2566,13 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 						fee_amount
 					),
 					(
-						parachain::CurrencyId::MantaCurrency(c_currency_id_on_a),
+						parachain::CurrencyId::MantaCurrency(c_asset_id_on_a),
 						fee_amount
 					)
 				],
 				2,
 				Box::new(VersionedMultiLocation::V1(dest.clone())),
-				40,
+				weight,
 			),
 			orml_xtokens::Error::<parachain::Runtime>::DistinctReserveForAssetAndFee
 		);
@@ -2583,7 +2582,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 				Some(ALICE).into(),
 				vec![
 					(
-						parachain::CurrencyId::MantaCurrency(b_currency_id_on_a),
+						parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
 						amount
 					),
 					(
@@ -2591,17 +2590,17 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 						fee_amount
 					),
 					(
-						parachain::CurrencyId::MantaCurrency(c_currency_id_on_a),
+						parachain::CurrencyId::MantaCurrency(c_asset_id_on_a),
 						fee_amount
 					),
 					(
-						parachain::CurrencyId::MantaCurrency(a_currency_id_on_a),
+						parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
 						fee_amount
 					)
 				],
 				2,
 				Box::new(VersionedMultiLocation::V1(dest.clone())),
-				40,
+				weight,
 			),
 			orml_xtokens::Error::<parachain::Runtime>::TooManyAssetsBeingSent
 		);
@@ -2611,7 +2610,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 				Some(ALICE).into(),
 				vec![
 					(
-						parachain::CurrencyId::MantaCurrency(b_currency_id_on_a),
+						parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
 						amount
 					),
 					(
@@ -2621,7 +2620,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 				],
 				2,
 				Box::new(VersionedMultiLocation::V1(dest.clone())),
-				40,
+				weight,
 			),
 			orml_xtokens::Error::<parachain::Runtime>::AssetIndexNonExistent
 		);
@@ -2631,14 +2630,14 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 				Some(ALICE).into(),
 				vec![
 					(
-						parachain::CurrencyId::MantaCurrency(b_currency_id_on_a),
+						parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
 						amount
 					),
 					(parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a), 0)
 				],
 				1,
 				Box::new(VersionedMultiLocation::V1(dest.clone())),
-				40,
+				weight,
 			),
 			orml_xtokens::Error::<parachain::Runtime>::ZeroAmount
 		);
@@ -2647,7 +2646,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 			parachain::XTokens::transfer_multicurrencies(
 				Some(ALICE).into(),
 				vec![
-					(parachain::CurrencyId::MantaCurrency(b_currency_id_on_a), 0),
+					(parachain::CurrencyId::MantaCurrency(b_asset_id_on_a), 0),
 					(
 						parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a),
 						fee_amount
@@ -2655,7 +2654,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 				],
 				1,
 				Box::new(VersionedMultiLocation::V1(dest.clone())),
-				40,
+				weight,
 			),
 			orml_xtokens::Error::<parachain::Runtime>::ZeroAmount
 		);
@@ -2672,10 +2671,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 			min_xcm_fee,
 		));
 
-		assert_eq!(
-			parachain::Assets::balance(b_currency_id_on_a, &ALICE),
-			amount
-		);
+		assert_eq!(parachain::Assets::balance(b_asset_id_on_a, &ALICE), amount);
 		assert_eq!(
 			parachain::Assets::balance(relay_asset_id_on_a, &ALICE),
 			amount
@@ -2685,7 +2681,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 			Some(ALICE).into(),
 			vec![
 				(
-					parachain::CurrencyId::MantaCurrency(b_currency_id_on_a),
+					parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
 					amount_back_to_b
 				),
 				(
@@ -2695,7 +2691,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 			],
 			1,
 			Box::new(VersionedMultiLocation::V1(dest.clone())),
-			40,
+			weight,
 		));
 
 		assert_eq!(
@@ -2704,7 +2700,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 		);
 
 		assert_eq!(
-			parachain::Assets::balance(b_currency_id_on_a, &ALICE),
+			parachain::Assets::balance(b_asset_id_on_a, &ALICE),
 			amount - amount_back_to_b
 		);
 	});
