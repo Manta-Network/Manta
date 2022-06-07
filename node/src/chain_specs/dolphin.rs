@@ -270,7 +270,7 @@ pub fn dolphin_testnet_config() -> DolphinChainSpec {
 		"Dolphin Parachain Temp",
 		// ID
 		"dolphin_temp",
-		ChainType::Local,
+		ChainType::Live,
 		move || dolphin_testnet_genesis(initial_authorities.clone(), root_key.clone()),
 		vec![],
 		Some(
