@@ -5284,14 +5284,25 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#e779189021bfe91fbc7060c1ae97e2855734535c"
+source = "git+https://github.com/manta-network/manta-rs.git?rev=d21b0af#d21b0afa6954f5f39e559ea2339f5a31f940008a"
+dependencies = [
+ "derivative",
+ "derive_more",
+ "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git?rev=d21b0af)",
+ "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?rev=d21b0af)",
+]
+
+[[package]]
+name = "manta-accounting"
+version = "0.4.0"
+source = "git+https://github.com/manta-network/manta-rs.git#ebf935276c4bb172d23d6748e0b9d11a48d409b7"
 dependencies = [
  "derivative",
  "derive_more",
  "futures 0.3.21",
  "indexmap",
- "manta-crypto",
- "manta-util",
+ "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
+ "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
  "parking_lot 0.12.0",
  "statrs",
 ]
@@ -5326,10 +5337,20 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#e779189021bfe91fbc7060c1ae97e2855734535c"
+source = "git+https://github.com/manta-network/manta-rs.git?rev=d21b0af#d21b0afa6954f5f39e559ea2339f5a31f940008a"
 dependencies = [
  "derivative",
- "manta-util",
+ "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?rev=d21b0af)",
+ "rand_core 0.6.3",
+]
+
+[[package]]
+name = "manta-crypto"
+version = "0.4.0"
+source = "git+https://github.com/manta-network/manta-rs.git#ebf935276c4bb172d23d6748e0b9d11a48d409b7"
+dependencies = [
+ "derivative",
+ "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
  "rand 0.8.5",
  "rand_core 0.6.3",
 ]
@@ -5337,7 +5358,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#e779189021bfe91fbc7060c1ae97e2855734535c"
+source = "git+https://github.com/manta-network/manta-rs.git#ebf935276c4bb172d23d6748e0b9d11a48d409b7"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -5352,9 +5373,9 @@ dependencies = [
  "ark-std",
  "blake2 0.10.4",
  "derivative",
- "manta-accounting",
- "manta-crypto",
- "manta-util",
+ "manta-accounting 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
+ "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
+ "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
  "scale-info",
@@ -5368,7 +5389,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "manta-accounting",
+ "manta-accounting 0.4.0 (git+https://github.com/manta-network/manta-rs.git?rev=d21b0af)",
  "parity-scale-codec",
  "scale-info",
  "smallvec",
@@ -5461,7 +5482,12 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#e779189021bfe91fbc7060c1ae97e2855734535c"
+source = "git+https://github.com/manta-network/manta-rs.git?rev=d21b0af#d21b0afa6954f5f39e559ea2339f5a31f940008a"
+
+[[package]]
+name = "manta-util"
+version = "0.4.0"
+source = "git+https://github.com/manta-network/manta-rs.git#ebf935276c4bb172d23d6748e0b9d11a48d409b7"
 dependencies = [
  "serde",
  "serde_with",
@@ -6629,12 +6655,12 @@ dependencies = [
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "lazy_static",
- "manta-accounting",
- "manta-crypto",
+ "manta-accounting 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
+ "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
  "manta-pay",
  "manta-primitives",
  "manta-sdk",
- "manta-util",
+ "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",

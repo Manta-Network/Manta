@@ -118,3 +118,4 @@ manta-sdk = { git = "https://github.com/manta-network/sdk.git", features = ["dow
 rand = "0.8.4"
 tempfile = "3.3.0"
 xcm = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
+manta-util = { git = "https://github.com/manta-network/manta-rs.git", features = ["std"]}
