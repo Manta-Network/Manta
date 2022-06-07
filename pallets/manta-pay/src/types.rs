@@ -108,10 +108,14 @@ impl Asset {
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct EncryptedNote {
 	/// Ephemeral Public Key
-	pub ephemeral_public_key: [u8; EPHEMERAL_PUBLIC_KEY_LENGTH],
+	pub ephemeral_public_key: Group,
 
 	/// Ciphertext
-	pub ciphertext: [u8; CIPHER_TEXT_LENGTH],
+	#[cfg_attr(
+		feature = "rpc",
+		serde(with = "manta_util::serde_with::As::<[manta_util::serde_with::Same; CIPHER_TEXT_LENGTH]>")
+	)]
+	pub ciphertext: Ciphertext,
 }
 
 impl Default for EncryptedNote {

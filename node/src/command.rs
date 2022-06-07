@@ -436,7 +436,10 @@ pub fn run_with(cli: Cli) -> Result<()> {
 						manta_runtime::RuntimeApi,
 						MantaRuntimeExecutor,
 						AuraId,
-					>(config, polkadot_config, collator_options, id)
+						_,
+					>(config, polkadot_config, collator_options, id, |c, p| {
+						Box::new(Builder::new(c, p))
+					})
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
@@ -445,7 +448,10 @@ pub fn run_with(cli: Cli) -> Result<()> {
 						calamari_runtime::RuntimeApi,
 						CalamariRuntimeExecutor,
 						AuraId,
-					>(config, polkadot_config, collator_options, id)
+						_,
+					>(config, polkadot_config, collator_options, id, |c, p| {
+						Box::new(Builder::new(c, p))
+					})
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
@@ -454,7 +460,10 @@ pub fn run_with(cli: Cli) -> Result<()> {
 						dolphin_runtime::RuntimeApi,
 						DolphinRuntimeExecutor,
 						AuraId,
-					>(config, polkadot_config, collator_options, id)
+						_,
+					>(config, polkadot_config, collator_options, id, |c, p| {
+						Box::new(Builder::<_, _, rpc::Dolphin>::new(c, p))
+					})
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)

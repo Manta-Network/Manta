@@ -36,12 +36,9 @@ use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayC
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 use polkadot_service::{CollatorPair, NativeExecutionDispatch};
 
-use crate::rpc;
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
 
-use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use futures::lock::Mutex;
-use polkadot_service::NativeExecutionDispatch;
 use sc_client_api::ExecutorProvider;
 use sc_consensus::{
 	import_queue::{BasicQueue, Verifier as VerifierT},
@@ -67,7 +64,6 @@ use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
 
-pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
 
 /// Native Manta Parachain executor instance.
 pub struct MantaRuntimeExecutor;
@@ -144,11 +140,11 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
 where
 	RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi, Executor>> + Send + Sync + 'static,
 	RuntimeApi::RuntimeApi: TaggedTransactionQueue<Block>
-		+ Metadata<Block>
+		+ sp_api::Metadata<Block>
 		+ SessionKeys<Block>
 		+ ApiExt<Block, StateBackend = StateBackend>
 		+ OffchainWorkerApi<Block>
-		+ BlockBuilder<Block>,
+		+ sp_block_builder::BlockBuilder<Block>,
 	StateBackend: sp_api::StateBackend<BlakeTwo256>,
 	Executor: NativeExecutionDispatch + 'static,
 	BIQ: FnOnce(
@@ -253,11 +249,11 @@ async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
 where
 	RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi, Executor>> + Send + Sync + 'static,
 	RuntimeApi::RuntimeApi: TaggedTransactionQueue<Block>
-		+ Metadata<Block>
+		+ sp_api::Metadata<Block>
 		+ SessionKeys<Block>
 		+ ApiExt<Block, StateBackend = StateBackend>
 		+ OffchainWorkerApi<Block>
-		+ BlockBuilder<Block>
+		+ sp_block_builder::BlockBuilder<Block>
 		+ cumulus_primitives_core::CollectCollationInfo<Block>
 		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
 		+ frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
@@ -389,9 +385,7 @@ where
 			relay_chain_slot_duration,
 			import_queue,
 			collator_options,
-		};
-
-		start_full_node(params)?;
+		})?;
 	}
 
 	start_network.start_network();
@@ -439,7 +433,7 @@ impl<Client, AuraId> Clone for WaitForAuraConsensus<Client, AuraId> {
 #[async_trait::async_trait]
 impl<Client, AuraId> ParachainConsensus<Block> for WaitForAuraConsensus<Client, AuraId>
 where
-	Client: ProvideRuntimeApi<Block> + Send + Sync,
+	Client: sp_api::ProvideRuntimeApi<Block> + Send + Sync,
 	Client::Api: AuraApi<Block, AuraId>,
 	AuraId: Send + Codec + Sync,
 {
@@ -482,7 +476,7 @@ struct Verifier<Client, AuraId> {
 #[async_trait::async_trait]
 impl<Client, AuraId> VerifierT<Block> for Verifier<Client, AuraId>
 where
-	Client: ProvideRuntimeApi<Block> + Send + Sync,
+	Client: sp_api::ProvideRuntimeApi<Block> + Send + Sync,
 	Client::Api: AuraApi<Block, AuraId>,
 	AuraId: Send + Sync + Codec,
 {
@@ -521,11 +515,11 @@ pub fn parachain_build_import_queue<RuntimeApi, Executor, AuraId: AppKey>(
 where
 	RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi, Executor>> + Send + Sync + 'static,
 	RuntimeApi::RuntimeApi: TaggedTransactionQueue<Block>
-		+ Metadata<Block>
+		+ sp_api::Metadata<Block>
 		+ SessionKeys<Block>
 		+ ApiExt<Block, StateBackend = StateBackend>
 		+ OffchainWorkerApi<Block>
-		+ BlockBuilder<Block>
+		+ sp_block_builder::BlockBuilder<Block>
 		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>,
 	StateBackend: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
@@ -595,11 +589,11 @@ pub async fn start_parachain_node<RuntimeApi, Executor, AuraId: AppKey, RPC>(
 where
 	RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi, Executor>> + Send + Sync + 'static,
 	RuntimeApi::RuntimeApi: TaggedTransactionQueue<Block>
-		+ Metadata<Block>
+		+ sp_api::Metadata<Block>
 		+ SessionKeys<Block>
 		+ ApiExt<Block, StateBackend = StateBackend>
 		+ OffchainWorkerApi<Block>
-		+ BlockBuilder<Block>
+		+ sp_block_builder::BlockBuilder<Block>
 		+ cumulus_primitives_core::CollectCollationInfo<Block>
 		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>
 		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
