@@ -83,7 +83,6 @@ pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-featu
 # Nimbus Dependencies
 nimbus-primitives = { path = "../../nimbus-primitives", default-features = false }
 pallet-author-inherent = { path = "../../pallets/author-inherent", default-features = false }
-pallet-author-slot-filter = { path = "../../pallets/author-slot-filter", default-features = false }
 pallet-aura-style-filter = { path = "../../pallets/aura-style-filter", default-features = false }
 
 # Self dependencies
@@ -109,7 +108,6 @@ default = ['std']
 try-runtime = [
 	'frame-executive/try-runtime',
 	'frame-try-runtime',
-	"pallet-author-slot-filter/try-runtime",
 ] #TODO: try-runtime for the other pallets
 runtime-benchmarks = [
 	'cumulus-pallet-session-benchmarking/runtime-benchmarks',
@@ -188,7 +186,6 @@ std = [
 	"cumulus-primitives-utility/std",
 	"nimbus-primitives/std",
 	"pallet-author-inherent/std",
-	"pallet-author-slot-filter/std",
 	"pallet-aura-style-filter/std",
 	'xcm/std',
 	'xcm-builder/std',

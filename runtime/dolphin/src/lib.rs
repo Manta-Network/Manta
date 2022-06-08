@@ -688,8 +688,6 @@ construct_runtime!(
 
 		// Nimbus support. The order of these are important and shall not change.
 		AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 50,
-		// AuthorFilter: pallet_author_slot_filter::{Pallet, Storage, Event, Config} = 51,
-		// PotentialAuthorSet: pallet_account_set::{Pallet, Storage, Config<T>} = 52,
 		AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage, Config<T>} = 53,
 
 		// Governance stuff.
