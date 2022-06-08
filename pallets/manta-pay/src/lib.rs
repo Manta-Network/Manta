@@ -171,7 +171,6 @@ pub mod pallet {
 		StorageMap<_, Identity, u64, VoidNumber, ValueQuery>;
 
 	/// The size of Void Number Set
-	/// FIXME: this should be removed.
 	#[pallet::storage]
 	pub(super) type VoidNumberSetSize<T: Config> = StorageValue<_, u64, ValueQuery>;
 
