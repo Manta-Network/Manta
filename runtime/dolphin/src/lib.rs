@@ -871,7 +871,7 @@ impl_runtime_apis! {
 
 	impl pallet_manta_pay::runtime::PullRuntimeApi<Block> for Runtime {
 		fn pull(checkpoint: pallet_manta_pay::RawCheckpoint) -> pallet_manta_pay::PullResponse {
-			MantaPay::pull(checkpoint.into())
+			MantaPay::pull_ledger_diff(checkpoint.into())
 		}
 	}
 

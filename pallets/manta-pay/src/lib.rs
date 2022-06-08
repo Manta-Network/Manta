@@ -167,7 +167,7 @@ pub mod pallet {
 
 	/// Void Number Ordered by Insertion
 	#[pallet::storage]
-	pub(super) type InsertionOrderedVoidNumbers<T: Config> =
+	pub(super) type VoidNumberSetInsertionOrder<T: Config> =
 		StorageMap<_, Identity, u64, VoidNumber, ValueQuery>;
 
 	/// The size of Void Number Set
@@ -512,7 +512,7 @@ pub mod pallet {
 		#[inline]
 		fn pull_senders(sender_index: &mut usize) -> (bool, SenderChunk) {
 			let mut senders = Vec::new();
-			let mut iter = InsertionOrderedVoidNumbers::<T>::iter().skip(*sender_index);
+			let mut iter = VoidNumberSetInsertionOrder::<T>::iter().skip(*sender_index);
 			for _ in 0..Self::PULL_MAX_SENDER_UPDATE_SIZE {
 				match iter.next() {
 					Some((_, sender)) => {
@@ -525,10 +525,14 @@ pub mod pallet {
 			(iter.next().is_some(), senders)
 		}
 
-		/// Returns the update required to be synchronized with the ledger starting from
-		/// `checkpoint`.
+		/// Returns the diff of ledger state of mantaPay since `checkpoint`.
+		/// `PullResponse` contains:
+		/// * `should_continue`: a boolean flag to indicate if there is more to pull
+		/// * `checkpoint`: updated checkpoint
+		/// * `receivers`: receivers diff
+		/// * `senders`: senders diff
 		#[inline]
-		pub fn pull(mut checkpoint: Checkpoint) -> PullResponse {
+		pub fn pull_ledger_diff(mut checkpoint: Checkpoint) -> PullResponse {
 			let (more_receivers, receivers) = Self::pull_receivers(&mut checkpoint.receiver_index);
 			let (more_senders, senders) = Self::pull_senders(&mut checkpoint.sender_index);
 			PullResponse {
@@ -711,7 +715,7 @@ where
 		for (_, void_number) in iter {
 			let void_number = encode(&void_number.0);
 			VoidNumberSet::<T>::insert(void_number, ());
-			InsertionOrderedVoidNumbers::<T>::insert(index + i, void_number);
+			VoidNumberSetInsertionOrder::<T>::insert(index + i, void_number);
 			i += 1;
 		}
 		if i != 0 {

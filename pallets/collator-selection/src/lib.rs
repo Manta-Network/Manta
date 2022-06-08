@@ -616,9 +616,10 @@ pub mod pallet {
 					// If our validator is not also a candidate we're invulnerable or already kicked
 					if candidates.iter().any(|x| x.who == *acc_id) {
 						Self::try_remove_candidate(acc_id)
-							.map(|_| {
+							.and_then(|_| {
 								removed_account_ids.push(acc_id.clone());
 								log::info!("Removed collator of account {:?} as it only produced {} blocks this session which is below acceptable threshold of {}", &acc_id, my_blocks_this_session,evict_below_blocks);
+								Ok(())
 							})
 							.unwrap_or_else(|why| {
 								log::warn!("Failed to remove candidate due to underperformance {:?}", why);
