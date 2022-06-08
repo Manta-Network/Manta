@@ -21,7 +21,7 @@ use frame_rpc_system::AccountNonceApi;
 use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
 use pallet_manta_pay::{
 	rpc::{Pull, PullApi},
-	runtime::PullRuntimeApi,
+	runtime::PullLedgerDiffApi,
 };
 use pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi;
 use sc_client_api::HeaderBackend;
@@ -39,7 +39,7 @@ where
 	C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
 	C::Api: BlockBuilder<Block>
 		+ AccountNonceApi<Block, AccountId, Nonce>
-		+ PullRuntimeApi<Block>
+		+ PullLedgerDiffApi<Block>
 		+ TransactionPaymentRuntimeApi<Block, Balance>,
 	P: 'static + TransactionPool,
 {

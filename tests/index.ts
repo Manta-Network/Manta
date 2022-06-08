@@ -23,7 +23,7 @@ async function main(){
         },
         rpc: {
             mantaPay: {
-                pull: {
+                pull_ledger_diff: {
                     description: 'pull from mantaPay',
                     params: [
                         {
@@ -35,7 +35,7 @@ async function main(){
                 }
             }
         }});
-    const payload = await (api.rpc as any).mantaPay.pull({receiver_index: new Array(256).fill(0), sender_index: 0});
+    const payload = await (api.rpc as any).mantaPay.pull_ledger_diff({receiver_index: new Array(256).fill(0), sender_index: 0});
     console.log(payload);
 }
 

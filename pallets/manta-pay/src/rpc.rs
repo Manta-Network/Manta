@@ -16,7 +16,7 @@
 
 //! MantaPay RPC Interfaces
 
-use crate::{runtime::PullRuntimeApi, PullResponse};
+use crate::{runtime::PullLedgerDiffApi, PullResponse};
 use alloc::sync::Arc;
 use core::marker::PhantomData;
 use jsonrpc_core::{Error, ErrorCode, Result};
@@ -31,8 +31,8 @@ use sp_runtime::{generic::BlockId, traits::Block};
 pub trait PullApi {
 	/// Returns the update required to be synchronized with the ledger starting from
 	/// `checkpoint`.
-	#[rpc(name = "mantaPay_pull")]
-	fn pull(&self, checkpoint: Checkpoint) -> Result<PullResponse>;
+	#[rpc(name = "mantaPay_pull_ledger_diff")]
+	fn pull_ledger_diff(&self, checkpoint: Checkpoint) -> Result<PullResponse>;
 }
 
 /// Pull RPC API Implementation
@@ -59,13 +59,13 @@ impl<B, C> PullApi for Pull<B, C>
 where
 	B: Block,
 	C: 'static + ProvideRuntimeApi<B> + HeaderBackend<B>,
-	C::Api: PullRuntimeApi<B>,
+	C::Api: PullLedgerDiffApi<B>,
 {
 	#[inline]
-	fn pull(&self, checkpoint: Checkpoint) -> Result<PullResponse> {
+	fn pull_ledger_diff(&self, checkpoint: Checkpoint) -> Result<PullResponse> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		api.pull(&at, checkpoint.into()).map_err(|err| Error {
+		api.pull_ledger_diff(&at, checkpoint.into()).map_err(|err| Error {
 			code: ErrorCode::ServerError(1),
 			message: "Unable to compute state diff for pull".into(),
 			data: Some(err.to_string().into()),
