@@ -22,7 +22,7 @@ async function main(){
             }
         },
         rpc: {
-            mantapay: {
+            mantaPay: {
                 pull: {
                     description: 'pull from mantaPay',
                     params: [
@@ -35,8 +35,8 @@ async function main(){
                 }
             }
         }});
-    const junk = await (api.rpc as any).mantapay.pull({receiver_index: new Array(256).fill(0), sender_index: 0});
-    console.log(junk);
+    const payload = await (api.rpc as any).mantaPay.pull({receiver_index: new Array(256).fill(0), sender_index: 0});
+    console.log(payload);
 }
 
 main().catch(console.error).finally(() => process.exit());
