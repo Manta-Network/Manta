@@ -31,11 +31,11 @@ use sp_runtime::{
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, Perbill, Permill,
 };
-
 use sp_std::{cmp::Ordering, prelude::*};
+use sp_version::RuntimeVersion;
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
-use sp_version::RuntimeVersion;
 
 use frame_support::{
 	construct_runtime, parameter_types,
@@ -866,6 +866,12 @@ impl_runtime_apis! {
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
 			ParachainSystem::collect_collation_info(header)
+		}
+	}
+
+	impl pallet_manta_pay::runtime::PullLedgerDiffApi<Block> for Runtime {
+		fn pull_ledger_diff(checkpoint: pallet_manta_pay::RawCheckpoint) -> pallet_manta_pay::PullResponse {
+			MantaPay::pull_ledger_diff(checkpoint.into())
 		}
 	}
 

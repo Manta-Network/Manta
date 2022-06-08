@@ -4,6 +4,7 @@
 ### Breaking changes
 
 ### Features
+- [\#529](https://github.com/Manta-Network/Manta/pull/529) Add RPC for MantaPay to synchronize with latest ledger state
 
 ### Improvements
 [\#481](https://github.com/Manta-Network/Manta/pull/481) Update upstream dependencies to v0.9.18.
