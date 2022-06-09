@@ -70,6 +70,11 @@ cumulus-pallet-xcmp-queue = { git = 'https://github.com/paritytech/cumulus.git',
 cumulus-pallet-xcm = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.18" }
 parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.18" }
 
+# Nimbus Dependencies
+nimbus-primitives = { git = "https://github.com/purestake/nimbus.git", rev="aad7cef98e429eb4dcdbd88c0601223e4ab806a2", default-features = false }
+pallet-author-inherent = { git = "https://github.com/purestake/nimbus.git", rev="aad7cef98e429eb4dcdbd88c0601223e4ab806a2", default-features = false }
+pallet-aura-style-filter = { git = "https://github.com/purestake/nimbus.git", rev="aad7cef98e429eb4dcdbd88c0601223e4ab806a2", default-features = false }
+
 # Polkadot dependencies
 polkadot-primitives = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
 polkadot-core-primitives = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
@@ -79,11 +84,6 @@ xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = f
 xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
 xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
-
-# Nimbus Dependencies
-nimbus-primitives = { path = "../../nimbus-primitives", default-features = false }
-pallet-author-inherent = { path = "../../pallets/author-inherent", default-features = false }
-pallet-aura-style-filter = { path = "../../pallets/aura-style-filter", default-features = false }
 
 # Self dependencies
 manta-primitives = { path = '../../primitives', default-features = false }
