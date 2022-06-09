@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+use crate::rpc;
 use codec::Codec;
 use core::marker::PhantomData;
 use cumulus_client_cli::CollatorOptions;
@@ -21,6 +22,7 @@ use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, Slo
 use cumulus_client_consensus_common::{
 	ParachainBlockImport, ParachainCandidate, ParachainConsensus,
 };
+use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
 	prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
@@ -34,10 +36,8 @@ use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayC
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 use polkadot_service::{CollatorPair, NativeExecutionDispatch};
 
-use crate::rpc;
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
 
-use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use futures::lock::Mutex;
 use sc_client_api::ExecutorProvider;
 use sc_consensus::{
@@ -46,22 +46,25 @@ use sc_consensus::{
 };
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
-use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
+use sc_service::{Configuration, Error, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::{ApiExt, ConstructRuntimeApi};
 use sp_consensus::CacheKeyId;
 use sp_consensus_aura::AuraApi;
 use sp_core::crypto::Pair;
 use sp_keystore::SyncCryptoStorePtr;
+use sp_offchain::OffchainWorkerApi;
 use sp_runtime::{
 	app_crypto::AppKey,
 	generic::BlockId,
 	traits::{BlakeTwo256, Header as HeaderT},
 };
+use sp_session::SessionKeys;
+use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
 
-// Native Manta Parachain executor instance.
+/// Native Manta Parachain executor instance.
 pub struct MantaRuntimeExecutor;
 impl sc_executor::NativeExecutionDispatch for MantaRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
@@ -75,7 +78,7 @@ impl sc_executor::NativeExecutionDispatch for MantaRuntimeExecutor {
 	}
 }
 
-// Native Calamari Parachain executor instance.
+/// Native Calamari Parachain executor instance.
 pub struct CalamariRuntimeExecutor;
 impl sc_executor::NativeExecutionDispatch for CalamariRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
@@ -89,7 +92,7 @@ impl sc_executor::NativeExecutionDispatch for CalamariRuntimeExecutor {
 	}
 }
 
-// Native Dolphin Parachain executor instance.
+/// Native Dolphin Parachain executor instance.
 pub struct DolphinRuntimeExecutor;
 impl sc_executor::NativeExecutionDispatch for DolphinRuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
@@ -103,6 +106,28 @@ impl sc_executor::NativeExecutionDispatch for DolphinRuntimeExecutor {
 	}
 }
 
+/// Full Client Implementation Type
+pub type Client<R, E> = TFullClient<Block, R, NativeElseWasmExecutor<E>>;
+
+/// Default Import Queue Type
+pub type ImportQueue<R, E> = sc_consensus::DefaultImportQueue<Block, Client<R, E>>;
+
+/// Full Transaction Pool Type
+pub type TransactionPool<R, E> = sc_transaction_pool::FullPool<Block, Client<R, E>>;
+
+/// Components Needed for Chain Ops Subcommands
+pub type PartialComponents<R, E> = sc_service::PartialComponents<
+	Client<R, E>,
+	TFullBackend<Block>,
+	(),
+	ImportQueue<R, E>,
+	TransactionPool<R, E>,
+	(Option<Telemetry>, Option<TelemetryWorkerHandle>),
+>;
+
+/// State Backend Type
+pub type StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>;
+
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
@@ -110,50 +135,23 @@ impl sc_executor::NativeExecutionDispatch for DolphinRuntimeExecutor {
 pub fn new_partial<RuntimeApi, Executor, BIQ>(
 	config: &Configuration,
 	build_import_queue: BIQ,
-) -> Result<
-	PartialComponents<
-		TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-		TFullBackend<Block>,
-		(),
-		sc_consensus::DefaultImportQueue<
-			Block,
-			TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-		>,
-		sc_transaction_pool::FullPool<
-			Block,
-			TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-		>,
-		(Option<Telemetry>, Option<TelemetryWorkerHandle>),
-	>,
-	sc_service::Error,
->
+) -> Result<PartialComponents<RuntimeApi, Executor>, Error>
 where
-	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
-		+ Send
-		+ Sync
-		+ 'static,
-	RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
+	RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi, Executor>> + Send + Sync + 'static,
+	RuntimeApi::RuntimeApi: TaggedTransactionQueue<Block>
 		+ sp_api::Metadata<Block>
-		+ sp_session::SessionKeys<Block>
-		+ sp_api::ApiExt<
-			Block,
-			StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
-		> + sp_offchain::OffchainWorkerApi<Block>
+		+ SessionKeys<Block>
+		+ ApiExt<Block, StateBackend = StateBackend>
+		+ OffchainWorkerApi<Block>
 		+ sp_block_builder::BlockBuilder<Block>,
-	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
+	StateBackend: sp_api::StateBackend<BlakeTwo256>,
 	Executor: NativeExecutionDispatch + 'static,
 	BIQ: FnOnce(
-		Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+		Arc<Client<RuntimeApi, Executor>>,
 		&Configuration,
 		Option<TelemetryHandle>,
 		&TaskManager,
-	) -> Result<
-		sc_consensus::DefaultImportQueue<
-			Block,
-			TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-		>,
-		sc_service::Error,
-	>,
+	) -> Result<ImportQueue<RuntimeApi, Executor>, Error>,
 {
 	let telemetry = config
 		.telemetry_endpoints
@@ -165,14 +163,12 @@ where
 			Ok((worker, telemetry))
 		})
 		.transpose()?;
-
 	let executor = sc_executor::NativeElseWasmExecutor::<Executor>::new(
 		config.wasm_method,
 		config.default_heap_pages,
 		config.max_runtime_instances,
 		config.runtime_cache_size,
 	);
-
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, _>(
 			config,
@@ -180,16 +176,13 @@ where
 			executor,
 		)?;
 	let client = Arc::new(client);
-
 	let telemetry_worker_handle = telemetry.as_ref().map(|(worker, _)| worker.handle());
-
 	let telemetry = telemetry.map(|(worker, telemetry)| {
 		task_manager
 			.spawn_handle()
 			.spawn("telemetry", None, worker.run());
 		telemetry
 	});
-
 	let transaction_pool = sc_transaction_pool::BasicPool::new_full(
 		config.transaction_pool.clone(),
 		config.role.is_authority().into(),
@@ -197,15 +190,13 @@ where
 		task_manager.spawn_essential_handle(),
 		client.clone(),
 	);
-
 	let import_queue = build_import_queue(
 		client.clone(),
 		config,
 		telemetry.as_ref().map(|telemetry| telemetry.handle()),
 		&task_manager,
 	)?;
-
-	let params = PartialComponents {
+	Ok(PartialComponents {
 		backend,
 		client,
 		import_queue,
@@ -214,9 +205,7 @@ where
 		transaction_pool,
 		select_chain: (),
 		other: (telemetry, telemetry_worker_handle),
-	};
-
-	Ok(params)
+	})
 }
 
 async fn build_relay_chain_interface(
@@ -252,64 +241,47 @@ async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
 	id: ParaId,
-	_rpc_ext_builder: RB,
+	rpc_extensions_builder: RB,
 	build_import_queue: BIQ,
 	build_consensus: BIC,
-) -> sc_service::error::Result<(
-	TaskManager,
-	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-)>
+) -> Result<(TaskManager, Arc<Client<RuntimeApi, Executor>>), Error>
 where
-	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
-		+ Send
-		+ Sync
-		+ 'static,
-	RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
+	RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi, Executor>> + Send + Sync + 'static,
+	RuntimeApi::RuntimeApi: TaggedTransactionQueue<Block>
 		+ sp_api::Metadata<Block>
-		+ sp_session::SessionKeys<Block>
-		+ sp_api::ApiExt<
-			Block,
-			StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
-		> + sp_offchain::OffchainWorkerApi<Block>
+		+ SessionKeys<Block>
+		+ ApiExt<Block, StateBackend = StateBackend>
+		+ OffchainWorkerApi<Block>
 		+ sp_block_builder::BlockBuilder<Block>
 		+ cumulus_primitives_core::CollectCollationInfo<Block>
 		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
 		+ frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
-	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
+	StateBackend: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 	RB: Fn(
-			Arc<TFullClient<Block, RuntimeApi, Executor>>,
-		) -> Result<jsonrpc_core::IoHandler<sc_rpc::Metadata>, sc_service::Error>
-		+ Send
-		+ 'static,
+		Arc<Client<RuntimeApi, Executor>>,
+		Arc<TransactionPool<RuntimeApi, Executor>>,
+	) -> Box<
+		(dyn sc_service::RpcExtensionBuilder<Output = rpc::RpcExtension> + Send + 'static),
+	>,
 	BIQ: FnOnce(
-			Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+			Arc<Client<RuntimeApi, Executor>>,
 			&Configuration,
 			Option<TelemetryHandle>,
 			&TaskManager,
-		) -> Result<
-			sc_consensus::DefaultImportQueue<
-				Block,
-				TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-			>,
-			sc_service::Error,
-		> + 'static,
+		) -> Result<ImportQueue<RuntimeApi, Executor>, Error>
+		+ 'static,
 	BIC: FnOnce(
-		Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+		Arc<Client<RuntimeApi, Executor>>,
 		Option<&Registry>,
 		Option<TelemetryHandle>,
 		&TaskManager,
 		Arc<dyn RelayChainInterface>,
-		Arc<
-			sc_transaction_pool::FullPool<
-				Block,
-				TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-			>,
-		>,
+		Arc<TransactionPool<RuntimeApi, Executor>>,
 		Arc<NetworkService<Block, Hash>>,
 		SyncCryptoStorePtr,
 		bool,
-	) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
+	) -> Result<Box<dyn ParachainConsensus<Block>>, Error>,
 {
 	if matches!(parachain_config.role, Role::Light) {
 		return Err("Light client not supported!".into());
@@ -356,23 +328,8 @@ where
 			warp_sync: None,
 		})?;
 
-	let rpc_extensions_builder = {
-		let client = client.clone();
-		let transaction_pool = transaction_pool.clone();
-
-		Box::new(move |deny_unsafe, _| {
-			let deps = rpc::FullDeps {
-				client: client.clone(),
-				pool: transaction_pool.clone(),
-				deny_unsafe,
-			};
-
-			Ok(rpc::create_full(deps))
-		})
-	};
-
 	sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-		rpc_extensions_builder,
+		rpc_extensions_builder: rpc_extensions_builder(client.clone(), transaction_pool.clone()),
 		client: client.clone(),
 		transaction_pool: transaction_pool.clone(),
 		task_manager: &mut task_manager,
@@ -402,10 +359,8 @@ where
 			params.keystore_container.sync_keystore(),
 			force_authoring,
 		)?;
-
 		let spawner = task_manager.spawn_handle();
-
-		let params = StartCollatorParams {
+		start_collator(StartCollatorParams {
 			para_id: id,
 			block_status: client.clone(),
 			announce_block,
@@ -417,11 +372,10 @@ where
 			import_queue,
 			collator_key: collator_key.expect("Command line arguments do not allow this. qed"),
 			relay_chain_slot_duration,
-		};
-
-		start_collator(params).await?;
+		})
+		.await?;
 	} else {
-		let params = StartFullNodeParams {
+		start_full_node(StartFullNodeParams {
 			client: client.clone(),
 			announce_block,
 			task_manager: &mut task_manager,
@@ -430,13 +384,10 @@ where
 			relay_chain_slot_duration,
 			import_queue,
 			collator_options,
-		};
-
-		start_full_node(params)?;
+		})?;
 	}
 
 	start_network.start_network();
-
 	Ok((task_manager, client))
 }
 
@@ -555,32 +506,21 @@ where
 
 /// Build the import queue for the calamari/manta runtime.
 pub fn parachain_build_import_queue<RuntimeApi, Executor, AuraId: AppKey>(
-	client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+	client: Arc<Client<RuntimeApi, Executor>>,
 	config: &Configuration,
 	telemetry_handle: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
-) -> Result<
-	sc_consensus::DefaultImportQueue<
-		Block,
-		TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-	>,
-	sc_service::Error,
->
+) -> Result<ImportQueue<RuntimeApi, Executor>, Error>
 where
-	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
-		+ Send
-		+ Sync
-		+ 'static,
-	RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
+	RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi, Executor>> + Send + Sync + 'static,
+	RuntimeApi::RuntimeApi: TaggedTransactionQueue<Block>
 		+ sp_api::Metadata<Block>
-		+ sp_session::SessionKeys<Block>
-		+ sp_api::ApiExt<
-			Block,
-			StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
-		> + sp_offchain::OffchainWorkerApi<Block>
+		+ SessionKeys<Block>
+		+ ApiExt<Block, StateBackend = StateBackend>
+		+ OffchainWorkerApi<Block>
 		+ sp_block_builder::BlockBuilder<Block>
 		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>,
-	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
+	StateBackend: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 	<<AuraId as AppKey>::Pair as Pair>::Signature:
 		TryFrom<Vec<u8>> + std::hash::Hash + sp_runtime::traits::Member + Codec,
@@ -589,7 +529,6 @@ where
 
 	let aura_verifier = move || {
 		let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
-
 		Box::new(cumulus_client_consensus_aura::build_verifier::<
 			<AuraId as AppKey>::Pair,
 			_,
@@ -617,7 +556,7 @@ where
 
 	let relay_chain_verifier = Box::new(RelayChainVerifier::new(client.clone(), |_, _| async {
 		Ok(())
-	})) as Box<_>;
+	}));
 
 	let verifier = Verifier {
 		client: client.clone(),
@@ -639,43 +578,42 @@ where
 }
 
 /// Start a calamari/manta parachain node.
-pub async fn start_parachain_node<RuntimeApi, Executor, AuraId: AppKey>(
+pub async fn start_parachain_node<RuntimeApi, Executor, AuraId: AppKey, RPC>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
 	id: ParaId,
-) -> sc_service::error::Result<(
-	TaskManager,
-	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-)>
+	rpc: RPC,
+) -> Result<(TaskManager, Arc<Client<RuntimeApi, Executor>>), Error>
 where
-	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
-		+ Send
-		+ Sync
-		+ 'static,
-	RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
+	RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi, Executor>> + Send + Sync + 'static,
+	RuntimeApi::RuntimeApi: TaggedTransactionQueue<Block>
 		+ sp_api::Metadata<Block>
-		+ sp_session::SessionKeys<Block>
-		+ sp_api::ApiExt<
-			Block,
-			StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
-		> + sp_offchain::OffchainWorkerApi<Block>
+		+ SessionKeys<Block>
+		+ ApiExt<Block, StateBackend = StateBackend>
+		+ OffchainWorkerApi<Block>
 		+ sp_block_builder::BlockBuilder<Block>
 		+ cumulus_primitives_core::CollectCollationInfo<Block>
 		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>
 		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
 		+ frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
-	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
+	StateBackend: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 	<<AuraId as AppKey>::Pair as Pair>::Signature:
 		TryFrom<Vec<u8>> + std::hash::Hash + sp_runtime::traits::Member + Codec,
+	RPC: Fn(
+		Arc<Client<RuntimeApi, Executor>>,
+		Arc<TransactionPool<RuntimeApi, Executor>>,
+	) -> Box<
+		(dyn sc_service::RpcExtensionBuilder<Output = rpc::RpcExtension> + Send + 'static),
+	>,
 {
 	start_node_impl::<RuntimeApi, Executor, _, _, _>(
 		parachain_config,
 		polkadot_config,
 		collator_options,
 		id,
-		|_| Ok(Default::default()),
+		rpc,
 		parachain_build_import_queue::<_, _, AuraId>,
 		|client,
 		 prometheus_registry,

@@ -461,6 +461,22 @@ fn filter_asset_location_should_work() {
 		};
 		assert!(!crate::Pallet::<Runtime>::contains(&wrong_relay_dest));
 		assert!(!crate::Pallet::<Runtime>::contains(&wrong_para_dest));
+
+		// AccountKey20 based location should work
+		let eve = [1u8; 20]; // evm based account
+		let para_dest_with_evm_account = MultiLocation {
+			parents: 1,
+			interior: X2(
+				Parachain(para_id),
+				AccountKey20 {
+					network: NetworkId::Any,
+					key: eve.into(),
+				},
+			),
+		};
+		assert!(crate::Pallet::<Runtime>::contains(
+			&para_dest_with_evm_account
+		));
 	})
 }
 

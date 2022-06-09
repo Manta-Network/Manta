@@ -551,9 +551,9 @@ checksum = "065374052e7df7ee4047b1160cca5e1467a12351a40b3da123c870ba0b8eda2a"
 
 [[package]]
 name = "attohttpc"
-version = "0.18.0"
+version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e69e13a99a7e6e070bb114f7ff381e58c7ccc188630121fc4c2fe4bcf24cd072"
+checksum = "262c3f7f5d61249d8c00e5546e2685cd15ebeeb1bc0f3cc5449350a1cb07319e"
 dependencies = [
  "flate2",
  "http",
@@ -2312,6 +2312,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "darling"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a01d95850c592940db9b8194bc39f4bc0e89dee5c4265e4b1807c34a9aba453c"
+dependencies = [
+ "darling_core",
+ "darling_macro",
+]
+
+[[package]]
+name = "darling_core"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "859d65a907b6852c9361e3185c862aae7fafd2887876799fa55f5f99dc40d610"
+dependencies = [
+ "fnv",
+ "ident_case",
+ "proc-macro2",
+ "quote",
+ "strsim",
+ "syn",
+]
+
+[[package]]
+name = "darling_macro"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c972679f83bdf9c42bd905396b6c3588a843a17f0f16dfcfa3e2c5d57441835"
+dependencies = [
+ "darling_core",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "data-encoding"
 version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3691,6 +3726,12 @@ dependencies = [
  "tokio",
  "tokio-native-tls",
 ]
+
+[[package]]
+name = "ident_case"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
 
 [[package]]
 name = "idna"
@@ -5197,6 +5238,7 @@ dependencies = [
  "log",
  "manta-primitives",
  "manta-runtime",
+ "pallet-manta-pay",
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",
  "polkadot-cli",
@@ -5243,7 +5285,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#c6567af7e017a37c20b0f099993deb9f3227279c"
+source = "git+https://github.com/manta-network/manta-rs.git#ebf935276c4bb172d23d6748e0b9d11a48d409b7"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5252,7 +5294,6 @@ dependencies = [
  "manta-crypto",
  "manta-util",
  "parking_lot 0.12.0",
- "rand 0.8.5",
  "statrs",
 ]
 
@@ -5286,17 +5327,18 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#c6567af7e017a37c20b0f099993deb9f3227279c"
+source = "git+https://github.com/manta-network/manta-rs.git#ebf935276c4bb172d23d6748e0b9d11a48d409b7"
 dependencies = [
  "derivative",
  "manta-util",
+ "rand 0.8.5",
  "rand_core 0.6.3",
 ]
 
 [[package]]
 name = "manta-pay"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#c6567af7e017a37c20b0f099993deb9f3227279c"
+source = "git+https://github.com/manta-network/manta-rs.git#ebf935276c4bb172d23d6748e0b9d11a48d409b7"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -5408,7 +5450,7 @@ dependencies = [
 [[package]]
 name = "manta-sdk"
 version = "0.5.0"
-source = "git+https://github.com/manta-network/sdk.git#fef5dc1868f6dea4911c8bb03cb6b29399810063"
+source = "git+https://github.com/manta-network/sdk.git#4695cffb2cbb65f9a2efc24d54c11c801785b006"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5420,7 +5462,11 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#c6567af7e017a37c20b0f099993deb9f3227279c"
+source = "git+https://github.com/manta-network/manta-rs.git#ebf935276c4bb172d23d6748e0b9d11a48d409b7"
+dependencies = [
+ "serde",
+ "serde_with",
+]
 
 [[package]]
 name = "maplit"
@@ -6580,6 +6626,9 @@ dependencies = [
  "frame-support",
  "frame-system",
  "indoc",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
  "lazy_static",
  "manta-accounting",
  "manta-crypto",
@@ -6593,6 +6642,8 @@ dependencies = [
  "parity-scale-codec",
  "rand 0.8.5",
  "scale-info",
+ "sp-api",
+ "sp-blockchain",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -10368,9 +10419,9 @@ dependencies = [
 
 [[package]]
 name = "scale-info"
-version = "2.1.0"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21fe4ca2b2295d5519b364579162b8e18f4902f6c9e8a975e7d05e7ef63622f5"
+checksum = "c46be926081c9f4dd5dd9b6f1d3e3229f2360bc6502dd8836f84a93b7c75e99a"
 dependencies = [
  "bitvec",
  "cfg-if 1.0.0",
@@ -10382,9 +10433,9 @@ dependencies = [
 
 [[package]]
 name = "scale-info-derive"
-version = "2.1.0"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e767e52f2d5b2e71e86b1c82976bf4c3acdef88d72af7fa3498cef31cd9708cb"
+checksum = "50e334bb10a245e28e5fd755cabcafd96cfcd167c99ae63a46924ca8d8703a3c"
 dependencies = [
  "proc-macro-crate 1.1.3",
  "proc-macro2",
@@ -10617,6 +10668,28 @@ dependencies = [
  "itoa 1.0.1",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "serde_with"
+version = "1.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "678b5a069e50bf00ecd22d0cd8ddf7c236f68581b03db652061ed5eb13a312ff"
+dependencies = [
+ "serde",
+ "serde_with_macros",
+]
+
+[[package]]
+name = "serde_with_macros"
+version = "1.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e182d6ec6f05393cc0e5ed1bf81ad6db3a8feedf8ee515ecdd369809bcce8082"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -12261,9 +12334,9 @@ version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ee73e6e4924fe940354b8d4d98cad5231175d615cd855b758adc658c0aac6a0"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.3",
- "rand 0.8.5",
+ "rand 0.7.3",
  "static_assertions",
 ]
 

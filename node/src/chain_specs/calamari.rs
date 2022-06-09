@@ -16,8 +16,7 @@
 
 use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
-
-use calamari_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
+use calamari_runtime::{CouncilConfig, DemocracyConfig, TechnicalCommitteeConfig};
 use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.

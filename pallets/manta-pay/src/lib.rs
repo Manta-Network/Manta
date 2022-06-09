@@ -81,6 +81,10 @@ use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use types::*;
 
+#[cfg(feature = "serde")]
+use manta_util::serde::{Deserialize, Serialize};
+
+pub use manta_pay::signer::{Checkpoint, RawCheckpoint};
 pub use pallet::*;
 pub use weights::WeightInfo;
 
@@ -90,11 +94,17 @@ mod mock;
 #[cfg(test)]
 mod test;
 
+pub mod types;
+pub mod weights;
+
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmark;
 
-pub mod types;
-pub mod weights;
+#[cfg(feature = "rpc")]
+pub mod rpc;
+
+#[cfg(feature = "runtime")]
+pub mod runtime;
 
 /// MantaPay Pallet
 #[frame_support::pallet]
@@ -132,37 +142,35 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
-	/// Shards of the merkle tree of UTXOs
+	/// UTXOs and Encrypted Notes Grouped by Shard
 	#[pallet::storage]
 	pub(super) type Shards<T: Config> =
-		StorageDoubleMap<_, Identity, u8, Identity, u64, ([u8; 32], EncryptedNote), ValueQuery>;
+		StorageDoubleMap<_, Identity, u8, Identity, u64, (Utxo, EncryptedNote), ValueQuery>;
 
-	/// Shard merkle trees
+	/// Shard Merkle Tree Paths
 	#[pallet::storage]
 	pub(super) type ShardTrees<T: Config> =
 		StorageMap<_, Identity, u8, UtxoMerkleTreePath, ValueQuery>;
 
-	/// Outputs of Utxo accumulator
+	/// Outputs of Utxo Accumulator
 	#[pallet::storage]
 	pub(super) type UtxoAccumulatorOutputs<T: Config> =
-		StorageMap<_, Identity, [u8; 32], (), ValueQuery>;
+		StorageMap<_, Identity, UtxoAccumulatorOutput, (), ValueQuery>;
 
-	/// Utxo set of MantaPay protocol
+	/// UTXO Set
 	#[pallet::storage]
-	pub(super) type UtxoSet<T: Config> = StorageMap<_, Identity, [u8; 32], (), ValueQuery>;
+	pub(super) type UtxoSet<T: Config> = StorageMap<_, Identity, Utxo, (), ValueQuery>;
 
-	/// Void number set
+	/// Void Number Set
 	#[pallet::storage]
-	pub(super) type VoidNumberSet<T: Config> = StorageMap<_, Identity, [u8; 32], (), ValueQuery>;
+	pub(super) type VoidNumberSet<T: Config> = StorageMap<_, Identity, VoidNumber, (), ValueQuery>;
 
-	/// Void number set insertion order
-	/// Each element of the key is an `u64` insertion order number of void number.
+	/// Void Number Ordered by Insertion
 	#[pallet::storage]
 	pub(super) type VoidNumberSetInsertionOrder<T: Config> =
-		StorageMap<_, Identity, u64, [u8; 32], ValueQuery>;
+		StorageMap<_, Identity, u64, VoidNumber, ValueQuery>;
 
 	/// The size of Void Number Set
-	/// FIXME: this should be removed.
 	#[pallet::storage]
 	pub(super) type VoidNumberSetSize<T: Config> = StorageValue<_, u64, ValueQuery>;
 
@@ -174,15 +182,7 @@ pub mod pallet {
 		#[transactional]
 		pub fn to_private(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			let mut ledger = Self::ledger();
-			Self::deposit_event(
-				config::TransferPost::try_from(post)
-					.map_err(|_| Error::<T>::InvalidSerializedForm)?
-					.post(vec![origin], vec![], &(), &mut ledger)
-					.map_err(Error::<T>::from)?
-					.convert(None),
-			);
-			Ok(().into())
+			Self::post_transaction(None, vec![origin], vec![], post)
 		}
 
 		/// Transforms some private assets into public ones using `post`, depositing the public
@@ -191,15 +191,7 @@ pub mod pallet {
 		#[transactional]
 		pub fn to_public(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			let mut ledger = Self::ledger();
-			Self::deposit_event(
-				config::TransferPost::try_from(post)
-					.map_err(|_| Error::<T>::InvalidSerializedForm)?
-					.post(vec![], vec![origin], &(), &mut ledger)
-					.map_err(Error::<T>::from)?
-					.convert(None),
-			);
-			Ok(().into())
+			Self::post_transaction(None, vec![], vec![origin], post)
 		}
 
 		/// Transfers private assets encoded in `post`.
@@ -215,15 +207,7 @@ pub mod pallet {
 			post: TransferPost,
 		) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			let mut ledger = Self::ledger();
-			Self::deposit_event(
-				config::TransferPost::try_from(post)
-					.map_err(|_| Error::<T>::InvalidSerializedForm)?
-					.post(vec![], vec![], &(), &mut ledger)
-					.map_err(Error::<T>::from)?
-					.convert(Some(origin)),
-			);
-			Ok(().into())
+			Self::post_transaction(Some(origin), vec![], vec![], post)
 		}
 
 		/// Transfers public `asset` from `origin` to the `sink` account.
@@ -480,17 +464,142 @@ pub mod pallet {
 	where
 		T: Config,
 	{
-		/// Returns the ledger implementation for this pallet.
+		/// Maximum Number of Updates per Shard
+		const PULL_MAX_PER_SHARD_UPDATE_SIZE: usize = 128;
+
+		/// Maximum Size of Sender Data Update
+		const PULL_MAX_SENDER_UPDATE_SIZE: usize = 1024;
+
+		/// Pulls receiver data from the ledger starting at the `receiver_index`.
 		#[inline]
-		fn ledger() -> Ledger<T> {
-			Ledger(PhantomData)
+		fn pull_receivers(receiver_index: &mut [usize; 256]) -> (bool, ReceiverChunk) {
+			let mut more_receivers = false;
+			let mut receivers = Vec::new();
+			for (i, index) in receiver_index.iter_mut().enumerate() {
+				more_receivers |= Self::pull_receivers_for_shard(i as u8, index, &mut receivers);
+			}
+			(more_receivers, receivers)
 		}
 
-		/// The account ID of AssetManager
+		/// Pulls receiver data from the shard at `shard_index` starting at the `receiver_index`,
+		/// pushing the results back to `receivers`.
+		#[inline]
+		fn pull_receivers_for_shard(
+			shard_index: u8,
+			receiver_index: &mut usize,
+			receivers: &mut ReceiverChunk,
+		) -> bool {
+			let mut iter = if *receiver_index == 0 {
+				Shards::<T>::iter_prefix(shard_index)
+			} else {
+				let raw_key = Shards::<T>::hashed_key_for(shard_index, *receiver_index as u64 - 1);
+				Shards::<T>::iter_prefix_from(shard_index, raw_key)
+			};
+			for _ in 0..Self::PULL_MAX_PER_SHARD_UPDATE_SIZE {
+				match iter.next() {
+					Some((_, (utxo, encrypted_note))) => {
+						*receiver_index += 1;
+						receivers.push((utxo, encrypted_note));
+					}
+					_ => return false,
+				}
+			}
+			iter.next().is_some()
+		}
+
+		/// Pulls sender data from the ledger starting at the `sender_index`.
+		#[inline]
+		fn pull_senders(sender_index: &mut usize) -> (bool, SenderChunk) {
+			let mut senders = Vec::new();
+			let mut iter = VoidNumberSetInsertionOrder::<T>::iter().skip(*sender_index);
+			for _ in 0..Self::PULL_MAX_SENDER_UPDATE_SIZE {
+				match iter.next() {
+					Some((_, sender)) => {
+						*sender_index += 1;
+						senders.push(sender);
+					}
+					_ => return (false, senders),
+				}
+			}
+			(iter.next().is_some(), senders)
+		}
+
+		/// Returns the diff of ledger state of mantaPay since `checkpoint`.
+		/// `PullResponse` contains:
+		/// * `should_continue`: a boolean flag to indicate if there is more to pull
+		/// * `checkpoint`: updated checkpoint
+		/// * `receivers`: receivers diff
+		/// * `senders`: senders diff
+		#[inline]
+		pub fn pull_ledger_diff(mut checkpoint: Checkpoint) -> PullResponse {
+			let (more_receivers, receivers) = Self::pull_receivers(&mut checkpoint.receiver_index);
+			let (more_senders, senders) = Self::pull_senders(&mut checkpoint.sender_index);
+			PullResponse {
+				should_continue: more_receivers || more_senders,
+				checkpoint,
+				receivers,
+				senders,
+			}
+		}
+
+		/// Returns the account ID of this pallet.
+		#[inline]
 		pub fn account_id() -> T::AccountId {
 			T::PalletId::get().into_account()
 		}
+
+		/// Posts the transaction encoded in `post` to the ledger, using `sources` and `sinks` as
+		/// the public deposit and public withdraw accounts respectively.
+		#[inline]
+		fn post_transaction(
+			origin: Option<T::AccountId>,
+			sources: Vec<T::AccountId>,
+			sinks: Vec<T::AccountId>,
+			post: TransferPost,
+		) -> DispatchResultWithPostInfo {
+			Self::deposit_event(
+				config::TransferPost::try_from(post)
+					.map_err(|_| Error::<T>::InvalidSerializedForm)?
+					.post(sources, sinks, &(), &mut Ledger(PhantomData))
+					.map_err(Error::<T>::from)?
+					.convert(origin),
+			);
+			Ok(().into())
+		}
 	}
+}
+
+/// Receiver Chunk Data Type
+pub type ReceiverChunk = Vec<(Utxo, EncryptedNote)>;
+
+/// Sender Chunk Data Type
+pub type SenderChunk = Vec<VoidNumber>;
+
+/// Ledger Source Pull Response
+#[cfg_attr(
+	feature = "serde",
+	derive(Deserialize, Serialize),
+	serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, PartialEq, TypeInfo)]
+pub struct PullResponse {
+	/// Pull Continuation Flag
+	///
+	/// The `should_continue` flag is set to `true` if the client should request more data from the
+	/// ledger to finish the pull.
+	pub should_continue: bool,
+
+	/// Ledger Checkpoint
+	///
+	/// If the `should_continue` flag is set to `true` then `checkpoint` is the next [`Checkpoint`]
+	/// to request data from the ledger. Otherwise, it represents the current ledger state.
+	pub checkpoint: Checkpoint,
+
+	/// Ledger Receiver Chunk
+	pub receivers: ReceiverChunk,
+
+	/// Ledger Sender Chunk
+	pub senders: SenderChunk,
 }
 
 /// Preprocessed Event

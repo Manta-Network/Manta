@@ -532,7 +532,8 @@ pub mod pallet {
 				// Send tokens back to relaychain.
 				Junctions::X1(Junction::AccountId32 { .. }) => true,
 				// Send tokens to sibling chain.
-				Junctions::X2(Junction::Parachain(para_id), Junction::AccountId32 { .. }) => {
+				Junctions::X2(Junction::Parachain(para_id), Junction::AccountId32 { .. })
+				| Junctions::X2(Junction::Parachain(para_id), Junction::AccountKey20 { .. }) => {
 					AllowedDestParaIds::<T>::contains_key(para_id)
 				}
 				// We don't support X3 or longer Junctions.
@@ -564,7 +565,7 @@ pub mod pallet {
 					Self::get_para_id_from_multilocation(location.into().as_ref())
 				{
 					if para_id != 2084 {
-						Self::increase_count_of_associated_assets(para_id);
+						let _ = Self::increase_count_of_associated_assets(para_id);
 						reads += 1; // There's one read in method increase_count_of_associated_assets.
 						writes += 1; // There's one write in method increase_count_of_associated_assets.
 					}

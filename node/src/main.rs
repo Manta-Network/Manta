@@ -16,6 +16,16 @@
 
 //! Manta/Calamari Parachain CLI
 
+#![warn(missing_docs)]
+
+extern crate alloc;
+
+mod chain_specs;
+mod cli;
+mod command;
+mod rpc;
+mod service;
+
 fn main() -> sc_cli::Result<()> {
-	manta::command::run()
+	command::run()
 }

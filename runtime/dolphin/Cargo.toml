@@ -85,7 +85,7 @@ manta-primitives = { path = '../../primitives', default-features = false }
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
-pallet-manta-pay = { path='../../pallets/manta-pay', default-features = false }
+pallet-manta-pay = { path='../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 runtime-common = { path = '../common', default-features = false }
 
 # Third party (vendored) dependencies
