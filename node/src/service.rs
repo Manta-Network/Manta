@@ -33,7 +33,6 @@ use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 use polkadot_service::{CollatorPair, NativeExecutionDispatch};
-use sc_consensus_manual_seal::{run_instant_seal, InstantSealParams};
 
 use crate::rpc;
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
@@ -47,7 +46,7 @@ use sc_consensus::{
 };
 
 use nimbus_consensus::{
-	BuildNimbusConsensusParams, NimbusConsensus, NimbusManualSealConsensusDataProvider,
+	BuildNimbusConsensusParams, NimbusConsensus
 };
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
@@ -114,7 +113,7 @@ impl sc_executor::NativeExecutionDispatch for DolphinRuntimeExecutor {
 /// be able to perform chain operations.
 pub fn new_partial<RuntimeApi, Executor>(
 	config: &Configuration,
-	parachain: bool,
+	dev_service: bool,
 ) -> Result<
 	PartialComponents<
 		TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
@@ -183,9 +182,6 @@ where
 		telemetry
 	});
 
-	// Although this will not be used by the parachain collator, it will be used by the instant seal
-	// And sovereign nodes, so we create it anyway.
-	let select_chain = sc_consensus::LongestChain::new(backend.clone()); // TODO: Undo this change if ManualSeal turns out to be useless and remove it from CLI
 	let transaction_pool = sc_transaction_pool::BasicPool::new_full(
 		config.transaction_pool.clone(),
 		config.role.is_authority().into(),
@@ -204,7 +200,7 @@ where
 		},
 		&task_manager.spawn_essential_handle(),
 		config.prometheus_registry().clone(), // TODO: Check impact of this change on telemetry
-		parachain,
+		!dev_service,
 	)?;
 
 	let params = PartialComponents {
@@ -306,7 +302,7 @@ where
 
 	let parachain_config = prepare_node_config(parachain_config);
 
-	let params = new_partial::<RuntimeApi, Executor>(&parachain_config, true)?; // RAD: true = always run as parachain
+	let params = new_partial::<RuntimeApi, Executor>(&parachain_config, false)?; // RAD: false = always run as parachain
 	let (mut telemetry, telemetry_worker_handle) = params.other;
 
 	let mut task_manager = params.task_manager;
@@ -524,135 +520,4 @@ where // TODO: is this where block necessary? template RT doesn't have it
 		},
 	)
 	.await
-}
-
-/// Builds a new service for a full client. TODO: Hardcoded to dolphin RT, remove this until EOF when no longer needed
-pub fn start_instant_seal_node(config: Configuration) -> Result<TaskManager, sc_service::Error> {
-	let sc_service::PartialComponents {
-		client,
-		backend,
-		mut task_manager,
-		import_queue,
-		keystore_container,
-		select_chain: (),
-		transaction_pool,
-		other: (mut telemetry, _),
-	} = new_partial::<RuntimeApi, DolphinRuntimeExecutor>(&config, false)?;
-
-	let (network, system_rpc_tx, network_starter) =
-		sc_service::build_network(sc_service::BuildNetworkParams {
-			config: &config,
-			client: client.clone(),
-			transaction_pool: transaction_pool.clone(),
-			spawn_handle: task_manager.spawn_handle(),
-			import_queue,
-			block_announce_validator_builder: None,
-			warp_sync: None,
-		})?;
-
-	if config.offchain_worker.enabled {
-		sc_service::build_offchain_workers(
-			&config,
-			task_manager.spawn_handle(),
-			client.clone(),
-			network.clone(),
-		);
-	}
-
-	let is_authority = config.role.is_authority();
-	let prometheus_registry = config.prometheus_registry().cloned();
-
-	let rpc_extensions_builder = {
-		let client = client.clone();
-		let transaction_pool = transaction_pool.clone();
-
-		Box::new(move |deny_unsafe, _| {
-			let deps = crate::rpc::FullDeps {
-				client: client.clone(),
-				pool: transaction_pool.clone(),
-				deny_unsafe,
-			};
-
-			Ok(crate::rpc::create_full(deps))
-		})
-	};
-
-	sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-		network,
-		client: client.clone(),
-		keystore: keystore_container.sync_keystore(),
-		task_manager: &mut task_manager,
-		transaction_pool: transaction_pool.clone(),
-		rpc_extensions_builder,
-		backend,
-		system_rpc_tx,
-		config,
-		telemetry: telemetry.as_mut(),
-	})?;
-
-	if is_authority {
-		let proposer = sc_basic_authorship::ProposerFactory::new(
-			task_manager.spawn_handle(),
-			client.clone(),
-			transaction_pool.clone(),
-			prometheus_registry.as_ref(),
-			telemetry.as_ref().map(|t| t.handle()),
-		);
-
-		let client_set_aside_for_cidp = client.clone();
-
-		// Create channels for mocked XCM messages.
-		let (_downward_xcm_sender, downward_xcm_receiver) = flume::bounded::<Vec<u8>>(100);
-		let (_hrmp_xcm_sender, hrmp_xcm_receiver) = flume::bounded::<(ParaId, Vec<u8>)>(100);
-
-		let authorship_future = run_instant_seal(InstantSealParams {
-			block_import: client.clone(),
-			env: proposer,
-			client: client.clone(),
-			pool: transaction_pool.clone(),
-			select_chain,
-			consensus_data_provider: Some(Box::new(NimbusManualSealConsensusDataProvider {
-				keystore: keystore_container.sync_keystore(),
-				client: client.clone(),
-			})),
-			create_inherent_data_providers: move |block, _extra_args| {
-				let downward_xcm_receiver = downward_xcm_receiver.clone();
-				let hrmp_xcm_receiver = hrmp_xcm_receiver.clone();
-
-				let client_for_xcm = client_set_aside_for_cidp.clone();
-
-				async move {
-					let time = sp_timestamp::InherentDataProvider::from_system_time();
-
-					// The nimbus runtime is shared among all nodes including the parachain node.
-					// Because this is not a parachain context, we need to mock the parachain inherent data provider.
-					//TODO might need to go back and get the block number like how I do in Moonbeam
-					let mocked_parachain = MockValidationDataInherentDataProvider {
-						current_para_block: 0,
-						relay_offset: 0,
-						relay_blocks_per_para_block: 0,
-						xcm_config: MockXcmConfig::new(
-							&*client_for_xcm,
-							block,
-							Default::default(),
-							Default::default(),
-						),
-						raw_downward_messages: downward_xcm_receiver.drain().collect(),
-						raw_horizontal_messages: hrmp_xcm_receiver.drain().collect(),
-					};
-
-					Ok((time, mocked_parachain))
-				}
-			},
-		});
-
-		task_manager.spawn_essential_handle().spawn_blocking(
-			"instant-seal",
-			None,
-			authorship_future,
-		);
-	};
-
-	network_starter.start_network();
-	Ok(task_manager)
 }
