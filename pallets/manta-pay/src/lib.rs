@@ -472,10 +472,10 @@ pub mod pallet {
 
 		/// Pulls receiver data from the ledger starting at the `receiver_index`.
 		#[inline]
-		fn pull_receivers(receiver_index: &mut [usize; 256]) -> (bool, ReceiverChunk) {
+		fn pull_receivers(receiver_index: [usize; 256]) -> (bool, ReceiverChunk) {
 			let mut more_receivers = false;
 			let mut receivers = Vec::new();
-			for (i, index) in receiver_index.iter_mut().enumerate() {
+			for (i, index) in receiver_index.into_iter().enumerate() {
 				more_receivers |= Self::pull_receivers_for_shard(i as u8, index, &mut receivers);
 			}
 			(more_receivers, receivers)
@@ -486,21 +486,18 @@ pub mod pallet {
 		#[inline]
 		fn pull_receivers_for_shard(
 			shard_index: u8,
-			receiver_index: &mut usize,
+			receiver_index: usize,
 			receivers: &mut ReceiverChunk,
 		) -> bool {
-			let mut iter = if *receiver_index == 0 {
+			let mut iter = if receiver_index == 0 {
 				Shards::<T>::iter_prefix(shard_index)
 			} else {
-				let raw_key = Shards::<T>::hashed_key_for(shard_index, *receiver_index as u64 - 1);
+				let raw_key = Shards::<T>::hashed_key_for(shard_index, receiver_index as u64 - 1);
 				Shards::<T>::iter_prefix_from(shard_index, raw_key)
 			};
 			for _ in 0..Self::PULL_MAX_PER_SHARD_UPDATE_SIZE {
 				match iter.next() {
-					Some((_, (utxo, encrypted_note))) => {
-						*receiver_index += 1;
-						receivers.push((utxo, encrypted_note));
-					}
+					Some((_, next)) => receivers.push(next),
 					_ => return false,
 				}
 			}
@@ -509,34 +506,25 @@ pub mod pallet {
 
 		/// Pulls sender data from the ledger starting at the `sender_index`.
 		#[inline]
-		fn pull_senders(sender_index: &mut usize) -> (bool, SenderChunk) {
+		fn pull_senders(sender_index: usize) -> (bool, SenderChunk) {
 			let mut senders = Vec::new();
-			let mut iter = VoidNumberSetInsertionOrder::<T>::iter().skip(*sender_index);
+			let mut iter = VoidNumberSetInsertionOrder::<T>::iter().skip(sender_index);
 			for _ in 0..Self::PULL_MAX_SENDER_UPDATE_SIZE {
 				match iter.next() {
-					Some((_, sender)) => {
-						*sender_index += 1;
-						senders.push(sender);
-					}
+					Some((_, next)) => senders.push(next),
 					_ => return (false, senders),
 				}
 			}
 			(iter.next().is_some(), senders)
 		}
 
-		/// Returns the diff of ledger state of mantaPay since `checkpoint`.
-		/// `PullResponse` contains:
-		/// * `should_continue`: a boolean flag to indicate if there is more to pull
-		/// * `checkpoint`: updated checkpoint
-		/// * `receivers`: receivers diff
-		/// * `senders`: senders diff
+		/// Returns the diff of ledger state since the given `checkpoint`.
 		#[inline]
-		pub fn pull_ledger_diff(mut checkpoint: Checkpoint) -> PullResponse {
-			let (more_receivers, receivers) = Self::pull_receivers(&mut checkpoint.receiver_index);
-			let (more_senders, senders) = Self::pull_senders(&mut checkpoint.sender_index);
+		pub fn pull_ledger_diff(checkpoint: Checkpoint) -> PullResponse {
+			let (more_receivers, receivers) = Self::pull_receivers(*checkpoint.receiver_index);
+			let (more_senders, senders) = Self::pull_senders(checkpoint.sender_index);
 			PullResponse {
 				should_continue: more_receivers || more_senders,
-				checkpoint,
 				receivers,
 				senders,
 			}
@@ -588,12 +576,6 @@ pub struct PullResponse {
 	/// The `should_continue` flag is set to `true` if the client should request more data from the
 	/// ledger to finish the pull.
 	pub should_continue: bool,
-
-	/// Ledger Checkpoint
-	///
-	/// If the `should_continue` flag is set to `true` then `checkpoint` is the next [`Checkpoint`]
-	/// to request data from the ledger. Otherwise, it represents the current ledger state.
-	pub checkpoint: Checkpoint,
 
 	/// Ledger Receiver Chunk
 	pub receivers: ReceiverChunk,
