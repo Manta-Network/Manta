@@ -25,7 +25,7 @@ use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::info;
 
-use manta_primitives::types::{AuraId, Header};
+use manta_primitives::types::{Header};
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
@@ -213,27 +213,27 @@ macro_rules! construct_async_run {
 		let runner = $cli.create_runner($cmd)?;
 			if runner.config().chain_spec.is_manta() {
 				runner.async_run(|$config| {
-					let $components = new_partial::<manta_runtime::RuntimeApi, MantaRuntimeExecutor, _>(
+					let $components = new_partial::<manta_runtime::RuntimeApi, MantaRuntimeExecutor>(
 						&$config,
-						crate::service::parachain_build_import_queue::<_, _, AuraId>,
+						false,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
 			} else if runner.config().chain_spec.is_calamari() {
 				runner.async_run(|$config| {
-					let $components = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor, _>(
+					let $components = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor>(
 						&$config,
-						crate::service::parachain_build_import_queue::<_, _, AuraId>,
+						false,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
 				})
 			} else if runner.config().chain_spec.is_dolphin() {
 				runner.async_run(|$config| {
-					let $components = new_partial::<dolphin_runtime::RuntimeApi, DolphinRuntimeExecutor, _>(
+					let $components = new_partial::<dolphin_runtime::RuntimeApi, DolphinRuntimeExecutor>(
 						&$config,
-						crate::service::parachain_build_import_queue::<_, _, AuraId>,
+						false,
 					)?;
 					let task_manager = $components.task_manager;
 					{ $( $code )* }.map(|v| (v, task_manager))
@@ -436,7 +436,6 @@ pub fn run_with(cli: Cli) -> Result<()> {
 					crate::service::start_parachain_node::<
 						manta_runtime::RuntimeApi,
 						MantaRuntimeExecutor,
-						AuraId,
 					>(config, polkadot_config, collator_options, id)
 					.await
 					.map(|r| r.0)
@@ -445,7 +444,6 @@ pub fn run_with(cli: Cli) -> Result<()> {
 					crate::service::start_parachain_node::<
 						calamari_runtime::RuntimeApi,
 						CalamariRuntimeExecutor,
-						AuraId,
 					>(config, polkadot_config, collator_options, id)
 					.await
 					.map(|r| r.0)
@@ -454,7 +452,6 @@ pub fn run_with(cli: Cli) -> Result<()> {
 					crate::service::start_parachain_node::<
 						dolphin_runtime::RuntimeApi,
 						DolphinRuntimeExecutor,
-						AuraId,
 					>(config, polkadot_config, collator_options, id)
 					.await
 					.map(|r| r.0)

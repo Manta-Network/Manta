@@ -324,7 +324,7 @@ where
 	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
 
 	let force_authoring = parachain_config.force_authoring;
-	let validator = parachain_config.role.is_authority();
+	let collator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let transaction_pool = params.transaction_pool.clone();
 	let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
@@ -375,7 +375,7 @@ where
 	};
 
 	let relay_chain_slot_duration = core::time::Duration::from_secs(6);
-	if validator {
+	if collator {
 		let parachain_consensus = build_consensus(
 			client.clone(),
 			prometheus_registry.as_ref(),
@@ -426,7 +426,7 @@ where
 }
 
 /// Start a calamari/manta parachain node.
-pub async fn start_parachain_node<RuntimeApi, Executor, AuraId: AppKey>(
+pub async fn start_parachain_node<RuntimeApi, Executor>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
@@ -435,7 +435,7 @@ pub async fn start_parachain_node<RuntimeApi, Executor, AuraId: AppKey>(
 	TaskManager,
 	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
 )>
-where // TODO: is this where block necessary? template RT doesn't have it
+where
 	RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
 		+ Send
 		+ Sync
@@ -449,29 +449,28 @@ where // TODO: is this where block necessary? template RT doesn't have it
 		> + sp_offchain::OffchainWorkerApi<Block>
 		+ sp_block_builder::BlockBuilder<Block>
 		+ cumulus_primitives_core::CollectCollationInfo<Block>
-		+ sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>
 		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
 		+ frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
-	<<AuraId as AppKey>::Pair as Pair>::Signature:
-		TryFrom<Vec<u8>> + std::hash::Hash + sp_runtime::traits::Member + Codec,
 {
-	start_node_impl::<RuntimeApi, Executor, _, _, _>(
+	start_node_impl::<RuntimeApi, Executor, _, _>(
 		parachain_config,
 		polkadot_config,
 		collator_options,
 		id,
 		|_| Ok(Default::default()),
-		|client,
-		 prometheus_registry,
-		 telemetry,
-		 task_manager,
-		 relay_chain_interface,
-		 transaction_pool,
-		 sync_oracle,
-		 keystore,
-		 force_authoring| {
+        |
+            client,
+            prometheus_registry,
+            telemetry,
+            task_manager,
+            relay_chain_interface,
+            transaction_pool,
+            sync_oracle,
+            keystore,
+            force_authoring
+        |{
 			let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
 				task_manager.spawn_handle(),
 				client.clone(),
@@ -480,15 +479,8 @@ where // TODO: is this where block necessary? template RT doesn't have it
 				telemetry.clone(),
 			);
 
-			Ok(NimbusConsensus::build(BuildNimbusConsensusParams {
-				para_id: id,
-				proposer_factory,
-				block_import: client.clone(),
-				parachain_client: client.clone(),
-				keystore,
-				skip_prediction: force_authoring,
-				create_inherent_data_providers: move |_,
-				                                      (
+			let provider = move |_,
+				(
 					relay_parent,
 					validation_data,
 					author_id,
@@ -515,7 +507,16 @@ where // TODO: is this where block necessary? template RT doesn't have it
 
 						Ok((time, parachain_inherent, author))
 					}
-				},
+				};
+
+			Ok(NimbusConsensus::build(BuildNimbusConsensusParams {
+				para_id: id,
+				proposer_factory,
+				block_import: client.clone(),
+				parachain_client: client.clone(),
+				keystore,
+				skip_prediction: force_authoring,
+				create_inherent_data_providers: provider,
 			}))
 		},
 	)
