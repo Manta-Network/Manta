@@ -5278,28 +5278,17 @@ dependencies = [
 
 [[package]]
 name = "manta-accounting"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/simplify-sync#ad20b843c2092dd6fa0744c286526d0a5d44dc3b"
+version = "0.5.0"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.0#df042ff97cc24c3b4b7e223e56297bcb2b77791f"
 dependencies = [
  "derivative",
  "derive_more",
  "futures 0.3.21",
  "indexmap",
- "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/simplify-sync)",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/simplify-sync)",
+ "manta-crypto",
+ "manta-util",
  "parking_lot 0.12.1",
  "statrs",
-]
-
-[[package]]
-name = "manta-accounting"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#ebf935276c4bb172d23d6748e0b9d11a48d409b7"
-dependencies = [
- "derivative",
- "derive_more",
- "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
 ]
 
 [[package]]
@@ -5331,29 +5320,19 @@ dependencies = [
 
 [[package]]
 name = "manta-crypto"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/simplify-sync#ad20b843c2092dd6fa0744c286526d0a5d44dc3b"
+version = "0.5.0"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.0#df042ff97cc24c3b4b7e223e56297bcb2b77791f"
 dependencies = [
  "derivative",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/simplify-sync)",
+ "manta-util",
  "rand 0.8.5",
  "rand_core 0.6.3",
 ]
 
 [[package]]
-name = "manta-crypto"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#ebf935276c4bb172d23d6748e0b9d11a48d409b7"
-dependencies = [
- "derivative",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
- "rand_core 0.6.3",
-]
-
-[[package]]
 name = "manta-pay"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/simplify-sync#ad20b843c2092dd6fa0744c286526d0a5d44dc3b"
+version = "0.5.0"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.0#df042ff97cc24c3b4b7e223e56297bcb2b77791f"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -5368,9 +5347,9 @@ dependencies = [
  "ark-std",
  "blake2 0.10.4",
  "derivative",
- "manta-accounting 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/simplify-sync)",
- "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/simplify-sync)",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/simplify-sync)",
+ "manta-accounting",
+ "manta-crypto",
+ "manta-util",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
  "scale-info",
@@ -5384,7 +5363,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "manta-accounting 0.4.0 (git+https://github.com/manta-network/manta-rs.git)",
+ "manta-accounting",
  "parity-scale-codec",
  "scale-info",
  "smallvec",
@@ -5476,17 +5455,12 @@ dependencies = [
 
 [[package]]
 name = "manta-util"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/simplify-sync#ad20b843c2092dd6fa0744c286526d0a5d44dc3b"
+version = "0.5.0"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.0#df042ff97cc24c3b4b7e223e56297bcb2b77791f"
 dependencies = [
  "serde",
  "serde_with",
 ]
-
-[[package]]
-name = "manta-util"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#ebf935276c4bb172d23d6748e0b9d11a48d409b7"
 
 [[package]]
 name = "maplit"
@@ -6638,12 +6612,12 @@ dependencies = [
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "lazy_static",
- "manta-accounting 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/simplify-sync)",
- "manta-crypto 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/simplify-sync)",
+ "manta-accounting",
+ "manta-crypto",
  "manta-pay",
  "manta-primitives",
  "manta-sdk",
- "manta-util 0.4.0 (git+https://github.com/manta-network/manta-rs.git?branch=feat/simplify-sync)",
+ "manta-util",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",
