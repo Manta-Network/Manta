@@ -1,2 +1,2 @@
-hard_tabs=true
-imports_granularity="Crate"
+imports_granularity = "Crate"
+license_template_path = "FILE_TEMPLATE"

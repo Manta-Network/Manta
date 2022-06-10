@@ -1,0 +1,15 @@
+version: 0.1
+cli:
+  version: 0.13.0-beta
+lint:
+  enabled:
+    - actionlint@1.6.13
+    - clippy@SYSTEM
+    - gitleaks@8.8.7
+    # - hadolint@2.10.0
+    # - markdownlint@0.31.1
+    # - prettier@2.6.2
+    - rustfmt@nightly
+    # - shellcheck@0.8.0
+    # - shfmt@3.5.0
+    - taplo@release-cli-0.6.3
