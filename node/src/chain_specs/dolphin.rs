@@ -230,40 +230,40 @@ pub fn dolphin_testnet_config() -> DolphinChainSpec {
 	// (controller_account, aura_id)
 	let initial_authorities: Vec<(AccountId, AuraId)> = vec![
 		(
-			// account id: dmvSXhJWeJEKTZT8CCUieJDaNjNFC4ZFqfUm4Lx1z7J7oFzBf
-			hex!["4294b2a716cea91dd008d694d264feeaf9f0baf9c0b8cbe3e107515947ed440d"].into(),
-			hex!["10814b2b41bf39155ef7b38bb2431056894ba71acc35cf0101c999fd69f9c357"]
+			// account id: dmuXsDLj4oAVr81s5cDGF8Q7G7WxCh1TFMULdhsrGQLzfUWv9
+			hex!["fc54607744a44b252d4f3ea13fdabf00a15aff220ea0cecd1ca83baf9d96a34f"].into(),
+			hex!["10eb9ee3a4beaad720b6f193384aba954ea5df7dc8d8c19b8a7a8a2ac9a35d21"]
 				.unchecked_into(),
 		),
 		(
-			// account id: dmxvZaMQir24EPxvFiCzkhDZaiScPB7ZWpHXUv5x8uct2A3du
-			hex!["b06e5d852078f64ab74af9b31add10e36d0438b847bc925fbacbf1e14963e379"].into(),
-			hex!["f2ac4141fee9f9ba42e830f39f00f316e45d280db1464a9148702ab7c4fcde52"]
+			// account id: dmuQh7dKho8ZzSu16iGR18skWqm28FeqyFjpRYbiKNm5M8vY9
+			hex!["0a08c73e1955d586cbc9cf22aad2c278b7ccc68aee2b40ddcd680c7ab92e6a60"].into(),
+			hex!["96d512717c2d5b232bacb3bb164b18ca9ee77c4ee8c73a0e43e6c89b7dbf2562"]
 				.unchecked_into(),
 		),
 		(
-			// account id: dmud2BmjLyMtbAX2FaVTUtvmutoCKvR3GbARLc4crzGvVMCwu
-			hex!["1e58d3c3900c7ce6c6d82152becb45bf7bd3453fb2d267e5f72ca51285bca173"].into(),
-			hex!["f6284f9446db8f895c6cf02d0d6de6e67885a1e55c880ccac640ff4bc076df68"]
+			// account id: dmudPU6mEcENzH1fvePtBaQYvwRY4rdm2wE3M1zBu4MXXbAHT
+			hex!["064284a5fffe704ca7fb2ec32bc0b1164aaceba0d8ae7e3c191724c8255f787e"].into(),
+			hex!["90c1fc7a8efdde12ab3003cb7c0eaa171ae794497f8a456d4ec01923edf1c327"]
 				.unchecked_into(),
 		),
 		(
-			// account id: dmx4vuA3PnQmraqJqeJaKRydUjP1AW4wMVTPLQWgZSpDyQUrp
-			hex!["8a93e0f756448030dcb3018d25d75c7bf97a2e2ff15d02fd1f55bf3f2104fb5b"].into(),
-			hex!["741101a186479f4f28aa40fc78f02d7307ed3574e829aed76fdede5876e46a43"]
+			// account id: dmukcPL97Mr5g3kg8ct6kiXciZV2n7Vnd6ZPpa7ogUhgWuZ1i
+			hex!["f6cbc80ab3d92c97029a32da5f9f986fc4d0d697d7b4ddb0028f415459f73433"].into(),
+			hex!["3072406e3387cca8e889671f3dbfbce600958c3cf614f8e2eb1f8ad8b19c4615"]
 				.unchecked_into(),
 		),
 		(
-			// account id: dmtwRyEeNyRW3KApnTxjHahWCjN5b9gDjdvxpizHt6E9zYkXj
-			hex!["0027131c176c0d19a2a5cc475ecc657f936085912b846839319249e700f37e79"].into(),
-			hex!["8ebf03bda1702d719f428bc0a4c7cfca010c44a48ef79752490818c901548d20"]
+			// account id: dmyWaw9MZ2AwHqQvULhGDyeXvLGkEXfrHApAHsaB9GBASwUtz
+			hex!["2229a7740efa90b3449b3fb4ed927d82cc3e8a369cae7eda79ff47a29cea8d11"].into(),
+			hex!["42d4506d4eac8d5be3cd11dcd9038971691690d0725be9e9fb4e468249d79b7c"]
 				.unchecked_into(),
 		),
 	];
 
-	// root account: dmyBqgFxMPZs1wKz8vFjv7nD4RBu4HeYhZTsGxSDU1wXQV15R
+	// root account: dmwSWSApwV9LdbVbEkWAkg1HznrHMNDn6yA8VEQ7UgfFcqqkY
 	let root_key: AccountId =
-		hex!["bc153ffd4c96de7496df009c6f4ecde6f95bf67b60e0c1025a7552d0b6926e04"].into();
+		hex!["82a9cd66c8959be784dd5129ef00eb9d919909a90fc9319ce5e2fb89b713c73c"].into();
 
 	DolphinChainSpec::from_genesis(
 		// Name
