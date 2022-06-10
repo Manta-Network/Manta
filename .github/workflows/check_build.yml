@@ -9,7 +9,7 @@ on:
   pull_request:
     branches: [manta]
   push:
-    branches: [manta]
+    branches: [ghzlatarev/check-linter]
 
 env:
   AWS_REGION: us-east-1
@@ -100,8 +100,8 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          SKIP_WASM_BUILD=1 cargo clippy
           SKIP_WASM_BUILD=1 cargo fmt
+          SKIP_WASM_BUILD=1 cargo clippy
       -
         name: Check Build
         env:
