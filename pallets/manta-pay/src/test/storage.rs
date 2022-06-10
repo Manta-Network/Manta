@@ -15,7 +15,7 @@
 // along with pallet-manta-pay.  If not, see <http://www.gnu.org/licenses/>.
 
 use frame_support::{
-	pallet_prelude::ValueQuery, storage::types::StorageDoubleMap, traits::StorageInstance, Identity,
+    pallet_prelude::ValueQuery, storage::types::StorageDoubleMap, traits::StorageInstance, Identity,
 };
 use sp_io::TestExternalities;
 
@@ -23,12 +23,12 @@ use sp_io::TestExternalities;
 struct Prefix;
 
 impl StorageInstance for Prefix {
-	const STORAGE_PREFIX: &'static str = "foo";
+    const STORAGE_PREFIX: &'static str = "foo";
 
-	#[inline]
-	fn pallet_prefix() -> &'static str {
-		"test"
-	}
+    #[inline]
+    fn pallet_prefix() -> &'static str {
+        "test"
+    }
 }
 
 ///
@@ -37,38 +37,38 @@ type DoubleMap = StorageDoubleMap<Prefix, Identity, u16, Identity, u32, u64, Val
 ///
 #[test]
 fn double_map_iterator_test() {
-	TestExternalities::default().execute_with(|| {
-		for i in 0..4 {
-			DoubleMap::insert(0_u16, i as u32, i as u64);
-		}
-		for i in 0..5 {
-			DoubleMap::insert(1_u16, i as u32, i as u64)
-		}
-		assert_eq!(
-			DoubleMap::iter().collect::<Vec<_>>(),
-			vec![
-				(0, 0, 0),
-				(0, 1, 1),
-				(0, 2, 2),
-				(0, 3, 3),
-				(1, 0, 0),
-				(1, 1, 1),
-				(1, 2, 2),
-				(1, 3, 3),
-				(1, 4, 4)
-			]
-		);
-		assert_eq!(
-			DoubleMap::iter_prefix(0_u16).collect::<Vec<_>>(),
-			vec![(0, 0), (1, 1), (2, 2), (3, 3)]
-		);
-		assert_eq!(
-			DoubleMap::iter_prefix_values(1_u16).collect::<Vec<_>>(),
-			vec![0, 1, 2, 3, 4]
-		);
-		assert_eq!(
-			DoubleMap::iter_prefix_from(1, DoubleMap::hashed_key_for(1, 2)).collect::<Vec<_>>(),
-			vec![(3, 3), (4, 4)]
-		);
-	})
+    TestExternalities::default().execute_with(|| {
+        for i in 0..4 {
+            DoubleMap::insert(0_u16, i as u32, i as u64);
+        }
+        for i in 0..5 {
+            DoubleMap::insert(1_u16, i as u32, i as u64)
+        }
+        assert_eq!(
+            DoubleMap::iter().collect::<Vec<_>>(),
+            vec![
+                (0, 0, 0),
+                (0, 1, 1),
+                (0, 2, 2),
+                (0, 3, 3),
+                (1, 0, 0),
+                (1, 1, 1),
+                (1, 2, 2),
+                (1, 3, 3),
+                (1, 4, 4)
+            ]
+        );
+        assert_eq!(
+            DoubleMap::iter_prefix(0_u16).collect::<Vec<_>>(),
+            vec![(0, 0), (1, 1), (2, 2), (3, 3)]
+        );
+        assert_eq!(
+            DoubleMap::iter_prefix_values(1_u16).collect::<Vec<_>>(),
+            vec![0, 1, 2, 3, 4]
+        );
+        assert_eq!(
+            DoubleMap::iter_prefix_from(1, DoubleMap::hashed_key_for(1, 2)).collect::<Vec<_>>(),
+            vec![(3, 3), (4, 4)]
+        );
+    })
 }

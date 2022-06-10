@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use frame_support::weights::{
-	WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
+    WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 };
 use manta_primitives::types::Balance;
 use smallvec::smallvec;
@@ -36,14 +36,14 @@ pub const TARGET_BLOCK_FULLNESS: Perbill = Perbill::from_percent(25);
 ///   - Setting it to `1` will cause the literal `#[weight = x]` values to be charged.
 pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
-	type Balance = Balance;
-	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		// Refer to Calamari's congested_chain_simulation() test for how to come up with the coefficient.
-		smallvec![WeightToFeeCoefficient {
-			coeff_integer: 5000u32.into(),
-			coeff_frac: Perbill::zero(),
-			negative: false,
-			degree: 1,
-		}]
-	}
+    type Balance = Balance;
+    fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+        // Refer to Calamari's congested_chain_simulation() test for how to come up with the coefficient.
+        smallvec![WeightToFeeCoefficient {
+            coeff_integer: 5000u32.into(),
+            coeff_frac: Perbill::zero(),
+            negative: false,
+            degree: 1,
+        }]
+    }
 }
