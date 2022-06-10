@@ -626,7 +626,7 @@ pub mod pallet {
                 );
                 Ok(())
             } else {
-                return Err("Failed to executed storage migration for asset-manager.");
+                Err("Failed to executed storage migration for asset-manager.")
             }
         }
     }

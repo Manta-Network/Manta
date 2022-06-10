@@ -136,7 +136,7 @@ benchmarks! {
         let location = <T::AssetConfig as AssetConfig<T>>::AssetLocation::default();
         let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistrarMetadata::default();
         let min_xcm_fee = 10;
-        Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
+        Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata)?;
 
     }: _(RawOrigin::Root, location.clone(), min_xcm_fee)
     verify {

@@ -360,7 +360,7 @@ fn mint_asset() {
             <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::mint(
                 native_asset_id,
                 &ALICE,
-                1000_000
+                1_000_000
             )
         );
 
@@ -378,7 +378,7 @@ fn mint_asset() {
             <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::mint(
                 non_native_asset_id,
                 &ALICE,
-                1000_000
+                1_000_000
             )
         );
     });
@@ -470,7 +470,7 @@ fn filter_asset_location_should_work() {
                 Parachain(para_id),
                 AccountKey20 {
                     network: NetworkId::Any,
-                    key: eve.into(),
+                    key: eve,
                 },
             ),
         };

@@ -616,7 +616,7 @@ pub mod pallet {
 				if *my_blocks_this_session < evict_below_blocks {
 					// If our validator is not also a candidate we're invulnerable or already kicked
 					if candidates.iter().any(|x| x.who == *acc_id) {
-						Self::try_remove_candidate(acc_id)
+                        #[allow(clippy::bind_instead_of_map)] Self::try_remove_candidate(acc_id)
 							.and_then(|_| {
 								removed_account_ids.push(acc_id.clone());
 								log::info!("Removed collator of account {:?} as it only produced {} blocks this session which is below acceptable threshold of {}", &acc_id, my_blocks_this_session,evict_below_blocks);

@@ -34,11 +34,10 @@ const DAVE: u64 = 4; // NOTE: As defined in mock, dave will author all blocks
 const EVE: u64 = 5;
 
 fn candidate_ids() -> Vec<u64> {
-    let ret = CollatorSelection::candidates()
+    CollatorSelection::candidates()
         .iter()
-        .map(|c| c.who.clone())
-        .collect::<Vec<_>>();
-    return ret;
+        .map(|c| c.who)
+        .collect::<Vec<_>>()
 }
 fn set_all_validator_perf_to(n: u32) {
     for v in Session::validators() {
@@ -99,7 +98,7 @@ fn it_should_set_invulnerables() {
 
         // cannot set with non-root.
         assert_noop!(
-            CollatorSelection::set_invulnerables(Origin::signed(1), new_set.clone()),
+            CollatorSelection::set_invulnerables(Origin::signed(1), new_set),
             BadOrigin
         );
     });

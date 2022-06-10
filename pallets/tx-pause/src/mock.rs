@@ -43,12 +43,7 @@ mod tx_pause {
 pub struct BaseFilter;
 impl Contains<Call> for BaseFilter {
     fn contains(call: &Call) -> bool {
-        if tx_pause::PausedTransactionFilter::<Runtime>::contains(call) {
-            // no paused call
-            return false;
-        }
-
-        return true;
+        !tx_pause::PausedTransactionFilter::<Runtime>::contains(call) // filter paused calls
     }
 }
 
