@@ -2,7 +2,7 @@
 
 # yamllint disable rule:line-length
 
-name: Check Build
+name: Run Tests
 
 # yamllint disable-line rule:truthy
 on:
@@ -13,14 +13,14 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  AWS_INSTANCE_TYPE: c5a.8xlarge  # 32 vcpu, 64gb ram, $1.392 hourly
-  AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
+  AWS_INSTANCE_TYPE: c5a.8xlarge
+  AWS_INSTANCE_ROOT_VOLUME_SIZE: 256
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
 
 jobs:
 
-  start-checks:
+  start-unit-test-checks:
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -85,14 +85,11 @@ jobs:
           source ${HOME}/.cargo/env
           rustup toolchain install stable
           rustup toolchain install nightly
+          rustup default stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
           rustup update
-          rustup default nightly
       -
-        name: Run yamllint
-        uses: actionshub/yamllint@main
-      -
-        name: Check Clippy & Formatting
+        name: Run Unit Tests
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -100,26 +97,14 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo fmt --all -- --check
-          cargo clippy --all-targets --all-features -- -D warnings
-      -
-        name: Check Build
-        env:
-          RUST_BACKTRACE: full
-          RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 2G
-          SCCACHE_DIR: /home/runner/.cache/sccache
-        run: |
-          source ${HOME}/.cargo/env
-          cargo check --no-default-features
-          cargo check --all-features
+          cargo test --release --features=runtime-benchmarks,try-runtime -- --test-threads=2
       -
         name: stop sccache server
         run: sccache --stop-server || true
 
-  stop-checks:
+  stop-unit-test-checks:
     needs:
-      - start-checks
+      - start-unit-test-checks
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
@@ -130,6 +115,6 @@ jobs:
           github-token: ${{ secrets.GH_SHR_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-checks.outputs.aws-region }}
-          runner-label: ${{ needs.start-checks.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-checks.outputs.aws-instance-id }}
+          aws-region: ${{ needs.start-unit-test-checks.outputs.aws-region }}
+          runner-label: ${{ needs.start-unit-test-checks.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-unit-test-checks.outputs.aws-instance-id }}
