@@ -96,18 +96,18 @@ jsonrpc-core-client = { version = "18.0.0", optional = true, default-features = 
 jsonrpc-derive = { version = "18.0.0", optional = true, default-features = false }
 
 # manta dependencies
-manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", default-features = false }
-manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", default-features = false }
-manta-pay = { git = "https://github.com/manta-network/manta-rs.git", default-features = false, features = ["groth16", "scale"] }
+manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.0", default-features = false }
+manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.0", default-features = false }
+manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.0", default-features = false, features = ["groth16", "scale"] }
 manta-sdk = { git = "https://github.com/manta-network/sdk.git", default-features = false }
-manta-util = { git = "https://github.com/manta-network/manta-rs.git", default-features = false }
+manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.0", default-features = false }
 manta-primitives = { path = "../../primitives", default-features = false }
 
 [dev-dependencies]
 bencher = "0.1.5"
 criterion = "0.3.4"
 lazy_static = "1.4.0"
-manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", features = ["test"] }
+manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.0", features = ["test"] }
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18"}
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
@@ -117,4 +117,4 @@ manta-sdk = { git = "https://github.com/manta-network/sdk.git", features = ["dow
 rand = "0.8.4"
 tempfile = "3.3.0"
 xcm = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
-manta-util = { git = "https://github.com/manta-network/manta-rs.git", features = ["std"]}
+manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.0", features = ["std"] }

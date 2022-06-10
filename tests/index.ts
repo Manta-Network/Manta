@@ -16,7 +16,6 @@ async function main(){
             },
             PullResponse: {
                 should_continue: 'bool',
-                checkpoint: 'Checkpoint',
                 receivers: 'Vec<([u8; 32], EncryptedNote)>',
                 senders: 'Vec<[u8; 32]>',
             }
