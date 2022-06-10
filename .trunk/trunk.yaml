@@ -2,6 +2,13 @@ version: 0.1
 cli:
   version: 0.13.0-beta
 lint:
+  definitions:
+    - name: rustfmt
+      # cache_results: false # alternative to adding FILE_TEMPLATE to affects_cache below
+      affects_cache:
+        - FILE_TEMPLATE
+        - Cargo.toml
+        - Cargo.lock
   enabled:
     - actionlint@1.6.13
     - clippy@SYSTEM
