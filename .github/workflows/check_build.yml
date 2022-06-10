@@ -100,7 +100,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo fmt --all -- --check
+          cargo fmt
           cargo clippy
       -
         name: Check Build
