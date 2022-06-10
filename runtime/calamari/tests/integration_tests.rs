@@ -72,7 +72,7 @@ fn note_preimage(proposer: &AccountId, proposal_call: &Call) -> H256 {
     let preimage_hash = BlakeTwo256::hash(&preimage[..]);
     assert_ok!(Democracy::note_preimage(
         Origin::signed(proposer.clone()),
-        preimage.clone()
+        preimage
     ));
     preimage_hash
 }
@@ -85,14 +85,14 @@ fn propose_council_motion(council_motion: &Call, proposer: &AccountId) -> H256 {
         Box::new(council_motion.clone()),
         council_motion_len
     ));
-    let council_motion_hash = BlakeTwo256::hash_of(&council_motion);
-    council_motion_hash
+
+    BlakeTwo256::hash_of(&council_motion)
 }
 
 fn start_governance_assertions(proposer: &AccountId) -> H256 {
     // Setup the preimage and preimage hash
     let preimage_hash = note_preimage(
-        &proposer,
+        proposer,
         &Call::System(frame_system::Call::remark { remark: vec![0] }),
     );
 
@@ -115,7 +115,7 @@ fn start_governance_assertions(proposer: &AccountId) -> H256 {
     let council_motion = Call::Democracy(pallet_democracy::Call::external_propose_default {
         proposal_hash: preimage_hash,
     });
-    let council_motion_hash = propose_council_motion(&council_motion, &proposer);
+    let council_motion_hash = propose_council_motion(&council_motion, proposer);
 
     assert_eq!(
         last_event(),
@@ -156,7 +156,7 @@ fn end_governance_assertions(referendum_index: u32, end_of_referendum: u32, enac
 }
 
 fn assert_proposal_is_filtered(proposer: &AccountId, motion: &Call) {
-    let council_motion_hash = propose_council_motion(&motion, &proposer);
+    let council_motion_hash = propose_council_motion(motion, proposer);
 
     assert_eq!(
         last_event(),
@@ -242,7 +242,7 @@ fn fast_track_governance_works() {
         // Voting and delay periods of 5 blocks so this should be enacted on block 11
         let tech_committee_motion = Call::Democracy(pallet_democracy::Call::fast_track {
             proposal_hash: preimage_hash,
-            voting_period: voting_period,
+            voting_period,
             delay: enactment_period,
         });
         let tech_committee_motion_len: u32 =
@@ -486,7 +486,7 @@ fn reward_fees_to_block_author_and_treasury() {
                 .pre_dispatch(&bob, &call, &info, len)
                 .unwrap();
 
-            let res = call.clone().dispatch(Origin::signed(bob));
+            let res = call.dispatch(Origin::signed(bob));
 
             let post_info = match res {
                 Ok(info) => info,
@@ -578,7 +578,7 @@ fn session_and_collator_selection_work() {
             };
 
             // Bob is a candidate but only Alice is queued as a collator in this session.
-            assert_eq!(CollatorSelection::candidates(), vec![candidate.clone()]);
+            assert_eq!(CollatorSelection::candidates(), vec![candidate]);
             assert_eq!(
                 Session::queued_keys(),
                 vec![(
@@ -1052,7 +1052,7 @@ fn concrete_fungible_ledger_transfers_work() {
                 CalamariConcreteFungibleLedger::transfer(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
                     &alice.clone(),
-                    &new_account.clone(),
+                    &new_account,
                     NativeTokenExistentialDeposit::get() - 1,
                 ),
                 FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
@@ -1069,13 +1069,13 @@ fn concrete_fungible_ledger_transfers_work() {
             assert_ok!(CalamariConcreteFungibleLedger::transfer(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
                 &alice.clone(),
-                &new_account.clone(),
+                &new_account,
                 NativeTokenExistentialDeposit::get(),
             ));
             current_balance_alice -= NativeTokenExistentialDeposit::get();
             assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
             assert_eq!(
-                Balances::free_balance(new_account.clone()),
+                Balances::free_balance(new_account),
                 NativeTokenExistentialDeposit::get()
             );
 
@@ -1100,7 +1100,7 @@ fn concrete_fungible_ledger_transfers_work() {
                 name: b"Kusama".to_vec(),
                 symbol: b"KSM".to_vec(),
                 decimals: 12,
-                min_balance: min_balance,
+                min_balance,
                 evm_address: None,
                 is_frozen: false,
                 is_sufficient: true,
@@ -1109,8 +1109,8 @@ fn concrete_fungible_ledger_transfers_work() {
                 AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
             assert_ok!(AssetManager::register_asset(
                 root_origin(),
-                source_location.clone(),
-                asset_metadata.clone()
+                source_location,
+                asset_metadata
             ),);
 
             // Register and mint for testing.
@@ -1245,7 +1245,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
             assert_err!(
                 CalamariConcreteFungibleLedger::can_deposit(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                    &new_account.clone(),
+                    &new_account,
                     NativeTokenExistentialDeposit::get() - 1,
                 ),
                 FungibleLedgerError::BelowMinimum
@@ -1254,7 +1254,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
             let remaining_to_max = u128::MAX - Balances::total_issuance();
             assert_ok!(CalamariConcreteFungibleLedger::mint(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                &new_account.clone(),
+                &new_account,
                 remaining_to_max,
             ),);
             assert_eq!(
@@ -1264,7 +1264,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
             assert_err!(
                 CalamariConcreteFungibleLedger::can_deposit(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                    &new_account.clone(),
+                    &new_account,
                     1,
                 ),
                 FungibleLedgerError::Overflow
@@ -1277,7 +1277,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                 name: b"Kusama".to_vec(),
                 symbol: b"KSM".to_vec(),
                 decimals: 12,
-                min_balance: min_balance,
+                min_balance,
                 evm_address: None,
                 is_frozen: false,
                 is_sufficient: true,
@@ -1286,8 +1286,8 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                 AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
             assert_ok!(AssetManager::register_asset(
                 root_origin(),
-                source_location.clone(),
-                asset_metadata.clone()
+                source_location,
+                asset_metadata
             ),);
 
             assert_err!(
@@ -1331,7 +1331,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                 name: b"Rococo".to_vec(),
                 symbol: b"Roc".to_vec(),
                 decimals: 12,
-                min_balance: min_balance,
+                min_balance,
                 evm_address: None,
                 is_frozen: false,
                 is_sufficient: false,
@@ -1343,8 +1343,8 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
             )));
             assert_ok!(AssetManager::register_asset(
                 root_origin(),
-                source_location.clone(),
-                asset_metadata.clone()
+                source_location,
+                asset_metadata
             ),);
             assert_err!(
                 CalamariConcreteFungibleLedger::can_deposit(
@@ -1402,7 +1402,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
                 name: b"Kusama".to_vec(),
                 symbol: b"KSM".to_vec(),
                 decimals: 12,
-                min_balance: min_balance,
+                min_balance,
                 evm_address: None,
                 is_frozen: false,
                 is_sufficient: true,
@@ -1411,8 +1411,8 @@ fn concrete_fungible_ledger_can_withdraw_works() {
                 AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
             assert_ok!(AssetManager::register_asset(
                 root_origin(),
-                source_location.clone(),
-                asset_metadata.clone()
+                source_location,
+                asset_metadata
             ),);
 
             assert_ok!(CalamariConcreteFungibleLedger::mint(

@@ -71,7 +71,7 @@ mod multiplier_tests {
 
     fn run_with_system_weight<F>(w: Weight, mut assertions: F)
     where
-        F: FnMut() -> (),
+        F: FnMut(),
     {
         let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
             .build_storage::<Runtime>()
@@ -137,7 +137,7 @@ mod multiplier_tests {
         let remark = Call::System(frame_system::Call::<Runtime>::remark_with_event {
             remark: vec![1, 2, 3],
         });
-        let len: u32 = remark.clone().encode().len() as u32;
+        let len: u32 = remark.encode().len() as u32;
         let remark_weight: Weight =
             <Runtime as frame_system::Config>::SystemWeightInfo::remark(len);
         let max_number_of_remarks_per_block = (block_weight / remark_weight) as u128;

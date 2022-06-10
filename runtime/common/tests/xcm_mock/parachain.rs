@@ -353,7 +353,7 @@ pub mod mock_msg_queue {
                 Ok(xcm) => {
                     let location = (1, Parachain(sender.into()));
                     match T::XcmExecutor::execute_xcm(location, xcm, max_weight) {
-                        Outcome::Error(e) => (Err(e.clone()), Event::Fail(Some(hash), e)),
+                        Outcome::Error(e) => (Err(e), Event::Fail(Some(hash), e)),
                         Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
                         // As far as the caller is concerned, this was dispatched without error, so
                         // we just report the weight used.
@@ -380,7 +380,7 @@ pub mod mock_msg_queue {
                 let _ = XcmpMessageFormat::decode(&mut data_ref)
                     .expect("Simulator encodes with versioned xcm format; qed");
 
-                let mut remaining_fragments = &data_ref[..];
+                let mut remaining_fragments = data_ref;
                 while !remaining_fragments.is_empty() {
                     if let Ok(xcm) = VersionedXcm::<T::Call>::decode(&mut remaining_fragments) {
                         let _ = Self::handle_xcmp_message(sender, sent_at, xcm, max_weight);
@@ -630,7 +630,7 @@ pub(crate) fn para_events() -> Vec<Event> {
     System::events()
         .into_iter()
         .map(|r| r.event)
-        .filter_map(|e| Some(e))
+        .filter_map(Some)
         .collect::<Vec<_>>()
 }
 
@@ -700,10 +700,10 @@ where
             assert_ok!(self::Assets::force_asset_status(
                 self::Origin::root(),
                 currency_id,
-                owner.clone().into(),
-                owner.clone().into(),
-                owner.clone().into(),
-                owner.into(),
+                owner.clone(),
+                owner.clone(),
+                owner.clone(),
+                owner,
                 min_balance,
                 is_sufficient,
                 is_frozen,

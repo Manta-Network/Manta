@@ -903,7 +903,7 @@ impl_runtime_apis! {
 
             let storage_info = AllPalletsReversedWithSystemFirst::storage_info();
 
-            return (list, storage_info)
+            (list, storage_info)
         }
 
         fn dispatch_benchmark(
