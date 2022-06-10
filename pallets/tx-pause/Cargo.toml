@@ -1,41 +1,41 @@
 [package]
-authors    = ['Manta Network']
-name       = "pallet-tx-pause"
-version    = '3.2.0'
-edition    = "2021"
-homepage   = 'https://manta.network'
-license    = 'GPL-3.0'
+authors = ['Manta Network']
+edition = "2021"
+homepage = 'https://manta.network'
+license = 'GPL-3.0'
+name = "pallet-tx-pause"
 repository = 'https://github.com/Manta-Network/Manta/'
+version = '3.2.0'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.0.0', default-features = false }
-scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18", default-features = false }
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18", default-features = false, optional = true }
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18", default-features = false }
+scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18", default-features = false }
-frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18", default-features = false, optional = true }
 
 [dev-dependencies]
+manta-primitives = { path = '../../primitives' }
+pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
-pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
-manta-primitives = { path = '../../primitives' }
 
 [features]
 default = ["std"]
+runtime-benchmarks = [
+  "frame-benchmarking",
+  'frame-support/runtime-benchmarks',
+  'frame-system/runtime-benchmarks',
+]
 std = [
-	"scale-info/std",
-	"sp-runtime/std",
-	"frame-support/std",
-	"frame-system/std",
-	"sp-std/std",
+  "scale-info/std",
+  "sp-runtime/std",
+  "frame-support/std",
+  "frame-system/std",
+  "sp-std/std",
 ]
 try-runtime = [
-	"frame-support/try-runtime",
-]
-runtime-benchmarks = [
-	"frame-benchmarking",
-	'frame-support/runtime-benchmarks',
-	'frame-system/runtime-benchmarks',
+  "frame-support/try-runtime",
 ]

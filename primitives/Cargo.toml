@@ -1,59 +1,59 @@
 [package]
 authors = ['Manta Network']
-name = "manta-primitives"
-version = '3.2.0'
 edition = "2021"
 homepage = 'https://manta.network'
 license = 'GPL-3.0'
+name = "manta-primitives"
 repository = 'https://github.com/Manta-Network/Manta/'
+version = '3.2.0'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.0.0', default-features = false }
-scale-info = { version = "2.0.0", default-features = false, features = [ "derive" ] }
-smallvec = "1.8.0"
 log = "0.4.16"
+scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
+smallvec = "1.8.0"
 
 # manta-rs dependencies
 manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.0", default-features = false }
 
 # Substrate primitives
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18", default-features = false, optional = true }
 frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
 frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
-frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18", default-features = false, optional = true }
 sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
 sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
-sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
 sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
 sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
-xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
 xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
 xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
+xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
 
 [features]
 default = ["std"]
-std = [
-	'codec/std',
-	'sp-consensus-aura/std',
-	'scale-info/std',
-	'sp-io/std',
-	'sp-std/std',
-	'manta-accounting/std',
-	'log/std',
-	'frame-support/std',
-	'frame-system/std',
-	'sp-consensus-aura/std',
-	'sp-core/std',
-	'sp-runtime/std',
-	'xcm-executor/std',
-	'xcm-builder/std',
-	'xcm/std',
-]
 runtime-benchmarks = [
-	"frame-benchmarking",
-	'frame-support/runtime-benchmarks',
-	'frame-system/runtime-benchmarks',
-	'xcm-builder/runtime-benchmarks',
+  "frame-benchmarking",
+  'frame-support/runtime-benchmarks',
+  'frame-system/runtime-benchmarks',
+  'xcm-builder/runtime-benchmarks',
+]
+std = [
+  'codec/std',
+  'sp-consensus-aura/std',
+  'scale-info/std',
+  'sp-io/std',
+  'sp-std/std',
+  'manta-accounting/std',
+  'log/std',
+  'frame-support/std',
+  'frame-system/std',
+  'sp-consensus-aura/std',
+  'sp-core/std',
+  'sp-runtime/std',
+  'xcm-executor/std',
+  'xcm-builder/std',
+  'xcm/std',
 ]
