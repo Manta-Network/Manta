@@ -576,7 +576,9 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 	let para_a_id = 1;
 	let para_b_id = 2;
 	let para_a_source_location = create_asset_location(1, para_a_id);
+	let para_a_native_source_location = create_asset_location(0, para_a_id);
 	let para_b_source_location = create_asset_location(1, para_b_id);
+	let para_b_native_source_location = create_asset_location(0, para_b_id);
 	// a's currency id in para a, para b, and para c
 	let amount = 5000u128;
 	let weight = 800000u64;
@@ -590,7 +592,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
 
 	// register ParaA native asset on ParaA
 	let a_currency_id = register_assets_on_parachain::<ParaA>(
-		&para_a_source_location,
+		&para_a_native_source_location,
 		&para_a_asset_metadata,
 		Some(0u128),
 		None,

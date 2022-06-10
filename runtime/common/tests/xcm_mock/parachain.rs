@@ -24,6 +24,7 @@ use frame_support::{
 	PalletId,
 };
 use frame_system::EnsureRoot;
+use orml_traits::location::{AbsoluteReserveProvider, RelativeReserveProvider, Reserve};
 use scale_info::TypeInfo;
 use sp_core::{H160, H256};
 use sp_runtime::{
@@ -31,7 +32,7 @@ use sp_runtime::{
 	traits::{Hash, IdentityLookup},
 	AccountId32,
 };
-use sp_std::prelude::*;
+use sp_std::{marker::PhantomData, prelude::*};
 
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
@@ -118,7 +119,8 @@ parameter_types! {
 	pub const KsmLocation: MultiLocation = MultiLocation::parent();
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-	pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
+	pub AbsoluteSelfLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
+	pub SelfReserve: MultiLocation = MultiLocation::new(0, Here);
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
@@ -580,6 +582,28 @@ parameter_types! {
 	pub const MaxAssetsForTransfer: usize = 2;
 }
 
+/// This struct offers uses RelativeReserveProvider to output relative views of multilocations
+/// However, additionally accepts a MultiLocation that aims at representing the chain part
+/// (parent: 1, Parachain(paraId)) of the absolute representation of our chain.
+/// If a token reserve matches against this absolute view, we return  Some(MultiLocation::here())
+/// This helps users by preventing errors when they try to transfer a token through xtokens
+/// to our chain (either inserting the relative or the absolute value).
+pub struct AbsoluteAndRelativeReserve<AbsoluteMultiLocation>(PhantomData<AbsoluteMultiLocation>);
+impl<AbsoluteMultiLocation> Reserve for AbsoluteAndRelativeReserve<AbsoluteMultiLocation>
+where
+	AbsoluteMultiLocation: Get<MultiLocation>,
+{
+	fn reserve(asset: &MultiAsset) -> Option<MultiLocation> {
+		RelativeReserveProvider::reserve(asset).map(|relative_reserve| {
+			if relative_reserve == AbsoluteMultiLocation::get() {
+				MultiLocation::here()
+			} else {
+				relative_reserve
+			}
+		})
+	}
+}
+
 // The XCM message wrapper wrapper
 impl orml_xtokens::Config for Runtime {
 	type Event = Event;
@@ -596,7 +620,7 @@ impl orml_xtokens::Config for Runtime {
 	type MaxAssetsForTransfer = MaxAssetsForTransfer;
 	type MinXcmFee = AssetManager;
 	type MultiLocationsFilter = AssetManager;
-	type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
+	type ReserveProvider = AbsoluteAndRelativeReserve<AbsoluteSelfLocation>;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -672,10 +696,14 @@ pub(crate) fn create_asset_metadata(
 }
 
 pub(crate) fn create_asset_location(parents: u8, para_id: u32) -> AssetLocation {
-	AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
-		parents,
-		X1(Parachain(para_id)),
-	)))
+	if parents == 0 {
+		AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(0, Here)))
+	} else {
+		AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+			parents,
+			X1(Parachain(para_id)),
+		)))
+	}
 }
 
 pub(crate) fn register_assets_on_parachain<P>(
