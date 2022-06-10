@@ -22,7 +22,6 @@ serde = { version = "1.0.137", features = ["derive"] }
 hex-literal = "0.3.4"
 async-trait = "0.1.52"
 futures = "0.3.21"
-hex = "0.4.3"
 
 # Substrate frames
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }

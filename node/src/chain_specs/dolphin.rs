@@ -231,32 +231,37 @@ pub fn dolphin_testnet_config() -> DolphinChainSpec {
 	let initial_authorities: Vec<(AccountId, AuraId)> = vec![
 		(
 			// account id: dmuXsDLj4oAVr81s5cDGF8Q7G7WxCh1TFMULdhsrGQLzfUWv9
-			hex!["fc54607744a44b252d4f3ea13fdabf00a15aff220ea0cecd1ca83baf9d96a34f"].into(),
-			hex!["10eb9ee3a4beaad720b6f193384aba954ea5df7dc8d8c19b8a7a8a2ac9a35d21"]
+			hex_literal::hex!["fc54607744a44b252d4f3ea13fdabf00a15aff220ea0cecd1ca83baf9d96a34f"]
+				.into(),
+			hex_literal::hex!["10eb9ee3a4beaad720b6f193384aba954ea5df7dc8d8c19b8a7a8a2ac9a35d21"]
 				.unchecked_into(),
 		),
 		(
 			// account id: dmuQh7dKho8ZzSu16iGR18skWqm28FeqyFjpRYbiKNm5M8vY9
-			hex!["0a08c73e1955d586cbc9cf22aad2c278b7ccc68aee2b40ddcd680c7ab92e6a60"].into(),
-			hex!["96d512717c2d5b232bacb3bb164b18ca9ee77c4ee8c73a0e43e6c89b7dbf2562"]
+			hex_literal::hex!["0a08c73e1955d586cbc9cf22aad2c278b7ccc68aee2b40ddcd680c7ab92e6a60"]
+				.into(),
+			hex_literal::hex!["96d512717c2d5b232bacb3bb164b18ca9ee77c4ee8c73a0e43e6c89b7dbf2562"]
 				.unchecked_into(),
 		),
 		(
 			// account id: dmudPU6mEcENzH1fvePtBaQYvwRY4rdm2wE3M1zBu4MXXbAHT
-			hex!["064284a5fffe704ca7fb2ec32bc0b1164aaceba0d8ae7e3c191724c8255f787e"].into(),
-			hex!["90c1fc7a8efdde12ab3003cb7c0eaa171ae794497f8a456d4ec01923edf1c327"]
+			hex_literal::hex!["064284a5fffe704ca7fb2ec32bc0b1164aaceba0d8ae7e3c191724c8255f787e"]
+				.into(),
+			hex_literal::hex!["90c1fc7a8efdde12ab3003cb7c0eaa171ae794497f8a456d4ec01923edf1c327"]
 				.unchecked_into(),
 		),
 		(
 			// account id: dmukcPL97Mr5g3kg8ct6kiXciZV2n7Vnd6ZPpa7ogUhgWuZ1i
-			hex!["f6cbc80ab3d92c97029a32da5f9f986fc4d0d697d7b4ddb0028f415459f73433"].into(),
-			hex!["3072406e3387cca8e889671f3dbfbce600958c3cf614f8e2eb1f8ad8b19c4615"]
+			hex_literal::hex!["f6cbc80ab3d92c97029a32da5f9f986fc4d0d697d7b4ddb0028f415459f73433"]
+				.into(),
+			hex_literal::hex!["3072406e3387cca8e889671f3dbfbce600958c3cf614f8e2eb1f8ad8b19c4615"]
 				.unchecked_into(),
 		),
 		(
 			// account id: dmyWaw9MZ2AwHqQvULhGDyeXvLGkEXfrHApAHsaB9GBASwUtz
-			hex!["2229a7740efa90b3449b3fb4ed927d82cc3e8a369cae7eda79ff47a29cea8d11"].into(),
-			hex!["42d4506d4eac8d5be3cd11dcd9038971691690d0725be9e9fb4e468249d79b7c"]
+			hex_literal::hex!["2229a7740efa90b3449b3fb4ed927d82cc3e8a369cae7eda79ff47a29cea8d11"]
+				.into(),
+			hex_literal::hex!["42d4506d4eac8d5be3cd11dcd9038971691690d0725be9e9fb4e468249d79b7c"]
 				.unchecked_into(),
 		),
 	];
