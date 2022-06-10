@@ -100,8 +100,8 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          SKIP_WASM_BUILD=1 cargo fmt --all -- --check
-          SKIP_WASM_BUILD=1 cargo clippy
+          cargo fmt --all -- --check
+          cargo clippy
       -
         name: Check Build
         env:
