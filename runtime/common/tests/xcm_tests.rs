@@ -40,7 +40,7 @@ use crate::xcm_mock::parachain::{
 //  2. ClearOrigin,
 //  3. BuyExecution { fees, weight_limit: Limited(0) },
 //  4. DepositAsset { assets: Wild(All), max_assets, beneficiary },
-//  each instruction's weight is 1_000_000_000, thus, the total weight is 4_000
+//  each instruction's weight is 1_000, thus, the total weight is 4_000
 const RESERVE_TRANSFER_WEIGHT: u64 = 4_000;
 
 fn calculate_fee(units_per_seconds: u128, weight: u64) -> u128 {
@@ -850,7 +850,7 @@ fn receive_relay_asset_with_trader_on_parachain() {
 		// ALICE gets amount - fee
 		assert_eq!(
 			parachain::Assets::balance(relay_asset_id_on_a, &ALICE.into()),
-			amount - fee //0
+			amount - fee
 		);
 		// Fee sink gets fee
 		assert_eq!(

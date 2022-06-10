@@ -407,11 +407,15 @@ impl<
 		MultiAdapterAssetConfig,
 	>
 {
+	/// Matches the incoming `asset` to an `asset_id` and `amount` on this chain.
+	/// Matches the incoming `location` to a `receiver` account on this chain.
+	/// Uses the matcher implementation of both native and non-native assets.
+	/// Returns the `asset_id`, `amount` and `receiver` if all three were matched.
 	fn match_asset_and_location(
 		asset: &MultiAsset,
 		location: &MultiLocation,
 	) -> result::Result<(AssetId, Balance, Runtime::AccountId), XcmError> {
-		let who = AccountIdConverter::convert_ref(location).map_err(|_| {
+		let receiver = AccountIdConverter::convert_ref(location).map_err(|_| {
 			XcmError::FailedToTransactAsset("Failed Location to AccountId Conversion")
 		})?;
 
@@ -427,6 +431,6 @@ impl<
 			_ => return Err(XcmError::FailedToTransactAsset("Unknown Asset")),
 		};
 
-		Ok((asset_id, amount, who))
+		Ok((asset_id, amount, receiver))
 	}
 }
