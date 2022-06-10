@@ -449,7 +449,7 @@ where
 			<Native as Currency<C::AccountId>>::deposit_creating(beneficiary, amount);
 		} else {
 			<NonNative as Mutate<C::AccountId>>::mint_into(asset_id, beneficiary, amount)
-				.map_err(|e| FungibleLedgerError::InvalidMint(e))?;
+				.map_err(FungibleLedgerError::InvalidMint)?;
 		}
 		Ok(())
 	}
@@ -479,7 +479,7 @@ where
 			)
 			.map(|_| ())
 		}
-		.map_err(|e| FungibleLedgerError::InvalidTransfer(e))
+		.map_err(FungibleLedgerError::InvalidTransfer)
 	}
 
 	#[inline]

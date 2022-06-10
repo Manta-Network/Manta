@@ -18,12 +18,17 @@
 
 use super::*;
 use manta_util::into_array_unchecked;
+use scale_codec::Error;
+
+#[cfg(feature = "rpc")]
+use manta_util::serde::{Deserialize, Serialize};
 
 pub(crate) const CIPHER_TEXT_LENGTH: usize = 68;
 pub(crate) const EPHEMERAL_PUBLIC_KEY_LENGTH: usize = 32;
 pub(crate) const UTXO_ACCUMULATOR_OUTPUT_LENGTH: usize = 32;
 pub(crate) const UTXO_LENGTH: usize = 32;
 pub(crate) const VOID_NUMBER_LENGTH: usize = 32;
+pub(crate) const PROOF_LENGTH: usize = 192;
 
 /// Encodes the SCALE encodable `value` into a byte array with the given length `N`.
 #[inline]
@@ -37,12 +42,30 @@ where
 /// Decodes the `bytes` array of the given length `N` into the SCALE decodable type `T` returning a
 /// blanket error if decoding fails.
 #[inline]
-pub(crate) fn decode<T, const N: usize>(bytes: [u8; N]) -> Result<T, ()>
+pub(crate) fn decode<T, const N: usize>(bytes: [u8; N]) -> Result<T, Error>
 where
 	T: Decode,
 {
-	T::decode(&mut bytes.as_slice()).map_err(|_| ())
+	T::decode(&mut bytes.as_slice())
 }
+
+/// Group Type
+pub type Group = [u8; EPHEMERAL_PUBLIC_KEY_LENGTH];
+
+/// UTXO Type
+pub type Utxo = [u8; UTXO_LENGTH];
+
+/// Void Number Type
+pub type VoidNumber = [u8; VOID_NUMBER_LENGTH];
+
+/// UTXO Accumulator Output Type
+pub type UtxoAccumulatorOutput = [u8; UTXO_ACCUMULATOR_OUTPUT_LENGTH];
+
+/// Ciphertext Type
+pub type Ciphertext = [u8; CIPHER_TEXT_LENGTH];
+
+/// Transfer Proof Type
+pub type Proof = [u8; PROOF_LENGTH];
 
 /// Asset
 #[derive(
@@ -77,13 +100,24 @@ impl Asset {
 }
 
 /// Encrypted Note
+#[cfg_attr(
+	feature = "rpc",
+	derive(Deserialize, Serialize),
+	serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct EncryptedNote {
 	/// Ephemeral Public Key
-	pub ephemeral_public_key: [u8; EPHEMERAL_PUBLIC_KEY_LENGTH],
+	pub ephemeral_public_key: Group,
 
 	/// Ciphertext
-	pub ciphertext: [u8; CIPHER_TEXT_LENGTH],
+	#[cfg_attr(
+		feature = "rpc",
+		serde(
+			with = "manta_util::serde_with::As::<[manta_util::serde_with::Same; CIPHER_TEXT_LENGTH]>"
+		)
+	)]
+	pub ciphertext: Ciphertext,
 }
 
 impl Default for EncryptedNote {
@@ -107,7 +141,7 @@ impl From<config::EncryptedNote> for EncryptedNote {
 }
 
 impl TryFrom<EncryptedNote> for config::EncryptedNote {
-	type Error = ();
+	type Error = Error;
 
 	#[inline]
 	fn try_from(encrypted_note: EncryptedNote) -> Result<Self, Self::Error> {
@@ -122,10 +156,10 @@ impl TryFrom<EncryptedNote> for config::EncryptedNote {
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct SenderPost {
 	/// UTXO Accumulator Output
-	pub utxo_accumulator_output: [u8; UTXO_ACCUMULATOR_OUTPUT_LENGTH],
+	pub utxo_accumulator_output: UtxoAccumulatorOutput,
 
 	/// Void Number
-	pub void_number: [u8; VOID_NUMBER_LENGTH],
+	pub void_number: VoidNumber,
 }
 
 impl From<config::SenderPost> for SenderPost {
@@ -139,7 +173,7 @@ impl From<config::SenderPost> for SenderPost {
 }
 
 impl TryFrom<SenderPost> for config::SenderPost {
-	type Error = ();
+	type Error = Error;
 
 	#[inline]
 	fn try_from(post: SenderPost) -> Result<Self, Self::Error> {
@@ -154,7 +188,7 @@ impl TryFrom<SenderPost> for config::SenderPost {
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct ReceiverPost {
 	/// Unspent Transaction Output
-	pub utxo: [u8; UTXO_LENGTH],
+	pub utxo: Utxo,
 
 	/// Encrypted Note
 	pub encrypted_note: EncryptedNote,
@@ -171,7 +205,7 @@ impl From<config::ReceiverPost> for ReceiverPost {
 }
 
 impl TryFrom<ReceiverPost> for config::ReceiverPost {
-	type Error = ();
+	type Error = Error;
 
 	#[inline]
 	fn try_from(post: ReceiverPost) -> Result<Self, Self::Error> {
@@ -201,7 +235,7 @@ pub struct TransferPost {
 	pub sinks: Vec<Balance>,
 
 	/// Validity Proof
-	pub validity_proof: [u8; 192],
+	pub validity_proof: Proof,
 }
 
 impl From<config::TransferPost> for TransferPost {
@@ -219,7 +253,7 @@ impl From<config::TransferPost> for TransferPost {
 }
 
 impl TryFrom<TransferPost> for config::TransferPost {
-	type Error = ();
+	type Error = Error;
 
 	#[inline]
 	fn try_from(post: TransferPost) -> Result<Self, Self::Error> {

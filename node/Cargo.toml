@@ -9,6 +9,7 @@ license = 'GPL-3.0'
 name = 'manta'
 repository = 'https://github.com/Manta-Network/Manta/'
 version = '3.1.5'
+default-run = "manta"
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -89,9 +90,10 @@ xcm = { git = "https://github.com/paritytech/polkadot.git", branch = "release-v0
 
 # Self dependencies
 calamari-runtime = { path = '../runtime/calamari' }
-manta-runtime = { path = '../runtime/manta' }
 dolphin-runtime = { path = '../runtime/dolphin' }
 manta-primitives = { path = '../primitives' }
+manta-runtime = { path = '../runtime/manta' }
+pallet-manta-pay = { path = '../pallets/manta-pay', features = ["rpc", "runtime"] }
 
 [build-dependencies]
 substrate-build-script-utils = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
