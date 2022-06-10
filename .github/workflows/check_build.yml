@@ -85,9 +85,9 @@ jobs:
           source ${HOME}/.cargo/env
           rustup toolchain install stable
           rustup toolchain install nightly
-          rustup default stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
           rustup update
+          rustup default nightly
       -
         name: Run yamllint
         uses: actionshub/yamllint@main
@@ -100,8 +100,8 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          SKIP_WASM_BUILD=1 cargo clippy
-          SKIP_WASM_BUILD=1 cargo fmt
+          cargo fmt --all -- --check
+          cargo clippy --all-targets --all-features -- -D warnings
       -
         name: Check Build
         env:
