@@ -16,6 +16,7 @@
 
 //! Calamari Parachain runtime.
 
+#![allow(clippy::identity_op)] // keep e.g. 1 * DAYS for legibility
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]
 
@@ -183,18 +184,39 @@ impl Contains<Call> for BaseFilter {
             return false;
         }
 
+        #[allow(clippy::match_like_matches_macro)]
+        // keep CallFilter with explicit true/false for documentation
         match call {
-			| Call::Authorship(_)
-			| Call::Multisig(_)
+            // Explicitly DISALLOWED calls
+			| Call::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
+			| Call::AssetManager(_) // AssetManager is also filtered because all of its extrinsics
+			                        // are callable only by Root, and Root calls skip this whole filter.
+            // Currently, we filter `register_as_candidate` as this call is not yet ready for community.
+			| Call::CollatorSelection( manta_collator_selection::Call::register_as_candidate{..})
 			// For now disallow public proposal workflows, treasury workflows,
 			// as well as external_propose and external_propose_majority.
 			// The following are filtered out:
-			// pallet_democracy::Call::propose(_)
-			// pallet_democracy::Call::second(_, _)
-			// pallet_democracy::Call::cancel_proposal(_)
-			// pallet_democracy::Call::clear_public_proposals()
-			// pallet_democracy::Call::external_propose(_)
-			// pallet_democracy::Call::external_propose_majority(_)
+			| Call::Democracy(
+                                pallet_democracy::Call::propose {..}
+                                | pallet_democracy::Call::second {..}
+                                | pallet_democracy::Call::cancel_proposal {..}
+                                | pallet_democracy::Call::clear_public_proposals {..}
+                                | pallet_democracy::Call::external_propose {..}
+                                | pallet_democracy::Call::external_propose_majority {..})
+			| Call::Treasury(_) // Treasury calls are filtered while it is accumulating funds.
+			// Everything except transfer() is filtered out until it is practically needed:
+			| Call::XTokens(
+                                orml_xtokens::Call::transfer_with_fee {..}
+                                | orml_xtokens::Call::transfer_multiasset {..}
+                                | orml_xtokens::Call::transfer_multiasset_with_fee {..}
+                                | orml_xtokens::Call::transfer_multicurrencies {..}
+                                | orml_xtokens::Call::transfer_multiassets {..})
+            // Filter callables from XCM pallets, we use XTokens exclusively
+			| Call::XcmpQueue(_) | Call::PolkadotXcm(_) | Call::DmpQueue(_) => false,
+
+            // Explicitly ALLOWED calls
+			| Call::Authorship(_)
+			| Call::Multisig(_)
 			| Call::Democracy(pallet_democracy::Call::vote {..}
 								| pallet_democracy::Call::emergency_cancel {..}
 								| pallet_democracy::Call::external_propose_default {..}
@@ -218,8 +240,6 @@ impl Contains<Call> for BaseFilter {
 			| Call::TechnicalCommittee(_)
 			| Call::CouncilMembership(_)
 			| Call::TechnicalMembership(_)
-			// Treasury calls are filtered while it is accumulating funds.
-			//| Call::Treasury(_)
 			| Call::Scheduler(_)
 			| Call::CalamariVesting(_)
 			| Call::Session(_) // User must be able to set their session key when applying for a collator
@@ -230,20 +250,14 @@ impl Contains<Call> for BaseFilter {
 				| manta_collator_selection::Call::set_eviction_baseline{..}
 				| manta_collator_selection::Call::set_eviction_tolerance{..}
 				| manta_collator_selection::Call::register_candidate{..}
-				// Currently, we filter `register_as_candidate` as this call is not yet ready for community.
 				| manta_collator_selection::Call::remove_collator{..}
 				| manta_collator_selection::Call::leave_intent{..})
 			| Call::Balances(_)
 			| Call::Preimage(_)
-			// Everything except transfer() is filtered out until it is practically needed:
-			// orml_xtokens::Call::transfer_with_fee {..}
-			// orml_xtokens::Call::transfer_multiasset {..}
-			// orml_xtokens::Call::transfer_multiasset_with_fee {..}
-			// orml_xtokens::Call::transfer_multicurrencies  {..}
-			// orml_xtokens::Call::transfer_multiassets {..}
 			| Call::XTokens(orml_xtokens::Call::transfer {..})
 			| Call::Utility(_) => true,
-			| Call::XcmpQueue(_) | Call::PolkadotXcm(_) | Call::DmpQueue(_) // Filter callables from XCM pallets
+
+            // DISALLOW anything else
 			| _ => false
 		}
     }

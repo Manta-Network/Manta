@@ -16,6 +16,7 @@
 
 //! Manta Parachain runtime.
 
+#![allow(clippy::identity_op)] // keep e.g. 1 * DAYS for legibility
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]
 
@@ -187,13 +188,26 @@ impl Contains<Call> for MantaFilter {
             return false;
         }
 
+        #[allow(clippy::match_like_matches_macro)]
+        // keep CallFilter with explicit true/false for documentation
         match call {
-            Call::Authorship(_) | Call::Sudo(_) | Call::Multisig(_) | Call::Balances(_) => true,
-            // Sudo also cannot be filtered because it is used in runtime upgrade.
-            _ => false,
+            // Explicitly DISALLOWED calls
             // Filter Utility to prevent users from setting keys and selecting collator for parachain (couldn't use now).
+            Call::Utility(_)
             // Filter Session and CollatorSelection to prevent users from utility operation.
-            // Filter XCM pallet.
+            | Call::Session(_)
+            | Call::CollatorSelection(_)
+			| Call::XcmpQueue(_) | Call::PolkadotXcm(_) | Call::DmpQueue(_) => false, // Filter XCM pallets
+
+            // Explicitly ALLOWED calls
+            | Call::Authorship(_)
+            // Sudo also cannot be filtered because it is used in runtime upgrade.
+            | Call::Sudo(_)
+            | Call::Multisig(_)
+            | Call::Balances(_) => true,
+
+            // DISALLOW anything else
+            _ => false,
         }
     }
 }
