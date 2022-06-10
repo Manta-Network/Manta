@@ -23,5 +23,5 @@ pub const mMANTA: Balance = MANTA / 1_000; // 15 decimal, milli-MA
 pub const uMANTA: Balance = MANTA / 1_000_000; // 12 decimal, micro-MA
 
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
-	items as Balance * 15 * mMANTA + (bytes as Balance) * 6 * mMANTA // TODO: revisit the storage cost here
+    items as Balance * 15 * mMANTA + (bytes as Balance) * 6 * mMANTA // TODO: revisit the storage cost here
 }

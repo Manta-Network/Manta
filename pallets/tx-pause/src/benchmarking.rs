@@ -27,40 +27,40 @@ use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 use frame_system::{EventRecord, RawOrigin};
 
 pub fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
-	let events = frame_system::Pallet::<T>::events();
-	let system_event: <T as frame_system::Config>::Event = generic_event.into();
-	let EventRecord { event, .. } = &events[events.len() - 1];
-	assert_eq!(event, &system_event);
+    let events = frame_system::Pallet::<T>::events();
+    let system_event: <T as frame_system::Config>::Event = generic_event.into();
+    let EventRecord { event, .. } = &events[events.len() - 1];
+    assert_eq!(event, &system_event);
 }
 
 benchmarks! {
-	// Benchmark `pause_transaction` extrinsic:
-	pause_transaction {
-		let pallet_name = b"Balances".to_vec();
-		let function_name =  b"transfer".to_vec();
-	}: pause_transaction(RawOrigin::Root, pallet_name.clone(), function_name.clone())
-	verify {
-		assert_last_event::<T>(
-			Event::TransactionPaused(pallet_name.clone(), function_name).into()
-		);
-	}
+    // Benchmark `pause_transaction` extrinsic:
+    pause_transaction {
+        let pallet_name = b"Balances".to_vec();
+        let function_name =  b"transfer".to_vec();
+    }: pause_transaction(RawOrigin::Root, pallet_name.clone(), function_name.clone())
+    verify {
+        assert_last_event::<T>(
+            Event::TransactionPaused(pallet_name.clone(), function_name).into()
+        );
+    }
 
-	// Benchmark `unpause_transaction` extrinsic:
-	unpause_transaction {
-		let origin: T::Origin = T::Origin::from(RawOrigin::Root);
-		let pallet_name = b"Balances".to_vec();
-		let function_name =  b"transfer".to_vec();
-		TransactionPause::<T>::pause_transaction(origin, pallet_name.clone(), function_name.clone())?;
-	}: unpause_transaction(RawOrigin::Root, pallet_name.clone(), function_name.clone())
-	verify {
-		assert_last_event::<T>(
-			Event::TransactionUnpaused(pallet_name, function_name).into()
-		);
-	}
+    // Benchmark `unpause_transaction` extrinsic:
+    unpause_transaction {
+        let origin: T::Origin = T::Origin::from(RawOrigin::Root);
+        let pallet_name = b"Balances".to_vec();
+        let function_name =  b"transfer".to_vec();
+        TransactionPause::<T>::pause_transaction(origin, pallet_name.clone(), function_name.clone())?;
+    }: unpause_transaction(RawOrigin::Root, pallet_name.clone(), function_name.clone())
+    verify {
+        assert_last_event::<T>(
+            Event::TransactionUnpaused(pallet_name, function_name).into()
+        );
+    }
 }
 
 impl_benchmark_test_suite!(
-	TransactionPause,
-	crate::mock::ExtBuilder::default().build(),
-	crate::mock::Runtime,
+    TransactionPause,
+    crate::mock::ExtBuilder::default().build(),
+    crate::mock::Runtime,
 );

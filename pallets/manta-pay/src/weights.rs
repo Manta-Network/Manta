@@ -26,24 +26,24 @@
 
 use core::marker::PhantomData;
 use frame_support::{
-	traits::Get,
-	weights::{constants::RocksDbWeight, Weight},
+    traits::Get,
+    weights::{constants::RocksDbWeight, Weight},
 };
 use frame_system::Config;
 
 /// Weight functions needed for pallet_manta_pay.
 pub trait WeightInfo {
-	/// Returns the [`Weight`] of the [`Pallet::to_private`] extrinsic.
-	fn to_private() -> Weight;
+    /// Returns the [`Weight`] of the [`Pallet::to_private`] extrinsic.
+    fn to_private() -> Weight;
 
-	/// Returns the [`Weight`] of the [`Pallet::to_public`] extrinsic.
-	fn to_public() -> Weight;
+    /// Returns the [`Weight`] of the [`Pallet::to_public`] extrinsic.
+    fn to_public() -> Weight;
 
-	/// Returns the [`Weight`] of the [`Pallet::private_transfer`] extrinsic.
-	fn private_transfer() -> Weight;
+    /// Returns the [`Weight`] of the [`Pallet::private_transfer`] extrinsic.
+    fn private_transfer() -> Weight;
 
-	/// Returns the [`Weight`] of the [`Pallet::public_transfer`] extrinsic.
-	fn public_transfer() -> Weight;
+    /// Returns the [`Weight`] of the [`Pallet::public_transfer`] extrinsic.
+    fn public_transfer() -> Weight;
 }
 
 /// Concrete Weight Functions
@@ -51,54 +51,54 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 
 impl<T> WeightInfo for SubstrateWeight<T>
 where
-	T: Config,
+    T: Config,
 {
-	/// ```text
-	/// Storage: MantaPay Balances (r:1 w:1)
-	/// Storage: MantaPay UtxoSet (r:1 w:1)
-	/// Storage: MantaPay ShardTrees (r:1 w:1)
-	/// Storage: MantaPay UtxoSetOutputs (r:0 w:1)
-	/// Storage: MantaPay Shards (r:0 w:1)
-	/// ```
-	fn to_private() -> Weight {
-		(36_400_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(6 as Weight))
-			.saturating_add(T::DbWeight::get().writes(7 as Weight))
-	}
+    /// ```text
+    /// Storage: MantaPay Balances (r:1 w:1)
+    /// Storage: MantaPay UtxoSet (r:1 w:1)
+    /// Storage: MantaPay ShardTrees (r:1 w:1)
+    /// Storage: MantaPay UtxoSetOutputs (r:0 w:1)
+    /// Storage: MantaPay Shards (r:0 w:1)
+    /// ```
+    fn to_private() -> Weight {
+        (36_400_000_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(6 as Weight))
+            .saturating_add(T::DbWeight::get().writes(7 as Weight))
+    }
 
-	/// ```text
-	/// Storage: MantaPay UtxoSetOutputs (r:2 w:1)
-	/// Storage: MantaPay VoidNumberSet (r:2 w:2)
-	/// Storage: MantaPay UtxoSet (r:1 w:1)
-	/// Storage: MantaPay VoidNumberSetSize (r:1 w:1)
-	/// Storage: MantaPay ShardTrees (r:1 w:1)
-	/// Storage: MantaPay Balances (r:1 w:1)
-	/// Storage: MantaPay VoidNumberSetInsertionOrder (r:0 w:2)
-	/// Storage: MantaPay Shards (r:0 w:1)
-	/// ```
-	fn to_public() -> Weight {
-		(44_100_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(10 as Weight))
-			.saturating_add(T::DbWeight::get().writes(12 as Weight))
-	}
+    /// ```text
+    /// Storage: MantaPay UtxoSetOutputs (r:2 w:1)
+    /// Storage: MantaPay VoidNumberSet (r:2 w:2)
+    /// Storage: MantaPay UtxoSet (r:1 w:1)
+    /// Storage: MantaPay VoidNumberSetSize (r:1 w:1)
+    /// Storage: MantaPay ShardTrees (r:1 w:1)
+    /// Storage: MantaPay Balances (r:1 w:1)
+    /// Storage: MantaPay VoidNumberSetInsertionOrder (r:0 w:2)
+    /// Storage: MantaPay Shards (r:0 w:1)
+    /// ```
+    fn to_public() -> Weight {
+        (44_100_000_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(10 as Weight))
+            .saturating_add(T::DbWeight::get().writes(12 as Weight))
+    }
 
-	/// ```text
-	/// Storage: MantaPay UtxoSetOutputs (r:2 w:2)
-	/// Storage: MantaPay VoidNumberSet (r:2 w:2)
-	/// Storage: MantaPay UtxoSet (r:2 w:2)
-	/// Storage: MantaPay VoidNumberSetSize (r:1 w:1)
-	/// Storage: MantaPay ShardTrees (r:2 w:2)
-	/// Storage: MantaPay VoidNumberSetInsertionOrder (r:0 w:2)
-	/// Storage: MantaPay Shards (r:0 w:2)
-	/// ```
-	fn private_transfer() -> Weight {
-		(51_500_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(9 as Weight))
-			.saturating_add(T::DbWeight::get().writes(13 as Weight))
-	}
+    /// ```text
+    /// Storage: MantaPay UtxoSetOutputs (r:2 w:2)
+    /// Storage: MantaPay VoidNumberSet (r:2 w:2)
+    /// Storage: MantaPay UtxoSet (r:2 w:2)
+    /// Storage: MantaPay VoidNumberSetSize (r:1 w:1)
+    /// Storage: MantaPay ShardTrees (r:2 w:2)
+    /// Storage: MantaPay VoidNumberSetInsertionOrder (r:0 w:2)
+    /// Storage: MantaPay Shards (r:0 w:2)
+    /// ```
+    fn private_transfer() -> Weight {
+        (51_500_000_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(9 as Weight))
+            .saturating_add(T::DbWeight::get().writes(13 as Weight))
+    }
 
-	/// FIXME: PLACEHOLDER WEIGHT
-	fn public_transfer() -> Weight {
-		(100_000_000_000 as Weight)
-	}
+    /// FIXME: PLACEHOLDER WEIGHT
+    fn public_transfer() -> Weight {
+        (100_000_000_000 as Weight)
+    }
 }
