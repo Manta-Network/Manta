@@ -21,6 +21,7 @@ use dolphin_runtime::{
 	AssetManagerConfig, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
 };
 use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
+use sp_core::crypto::UncheckedInto;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type DolphinChainSpec =
