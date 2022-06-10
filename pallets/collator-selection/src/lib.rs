@@ -609,12 +609,12 @@ pub mod pallet {
 
 			// 5. Walk the percentile slice, call try_remove_candidate if a collator is under threshold
 			let kick_candidates = &collator_perf_this_session[..index_at_ordinal_rank]; // ordinal-rank exclusive, the collator at percentile is safe
-			let mut removed_account_ids: Vec<T::AccountId> = Vec::with_capacity(kick_candidates.len());
+			let mut removed_account_ids: Vec<T::AccountId> =
+				Vec::with_capacity(kick_candidates.len());
 			kick_candidates.iter().for_each(|(acc_id, my_blocks_this_session)| {
 				if *my_blocks_this_session < evict_below_blocks {
 					// If our validator is not also a candidate we're invulnerable or already kicked
-					if let Some(_) = candidates.iter().find(|&x|{ x.who == *acc_id })
-					{
+					if candidates.iter().any(|x| x.who == *acc_id) {
 						Self::try_remove_candidate(acc_id)
 							.and_then(|_| {
 								removed_account_ids.push(acc_id.clone());

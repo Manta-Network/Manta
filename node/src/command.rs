@@ -17,14 +17,13 @@
 use crate::{
 	chain_specs,
 	cli::{Cli, RelayChainCli, Subcommand},
+	rpc::{self, Builder},
 	service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
 };
-
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::info;
-
 use manta_primitives::types::{AuraId, Header};
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
@@ -199,9 +198,9 @@ impl SubstrateCli for RelayChainCli {
 	}
 }
 
+#[allow(clippy::borrowed_box)]
 fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Vec<u8>> {
 	let mut storage = chain_spec.build_storage()?;
-
 	storage
 		.top
 		.remove(sp_core::storage::well_known_keys::CODE)
@@ -245,9 +244,7 @@ macro_rules! construct_async_run {
 }
 
 /// Parse command line arguments into service configuration.
-pub fn run() -> Result<()> {
-	let cli = Cli::from_args();
-
+pub fn run_with(cli: Cli) -> Result<()> {
 	match &cli.subcommand {
 		Some(Subcommand::BuildSpec(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
@@ -390,11 +387,12 @@ pub fn run() -> Result<()> {
 			.into()),
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
+			let collator_options = cli.run.collator_options();
 
 			runner.run_node_until_exit(|config| async move {
 				let para_id = crate::chain_specs::Extensions::try_get(&*config.chain_spec)
 					.map(|e| e.para_id)
-					.ok_or_else(|| "Could not find parachain extension in chain-spec.")?;
+					.ok_or("Could not find parachain extension in chain-spec.")?;
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,
@@ -438,7 +436,10 @@ pub fn run() -> Result<()> {
 						manta_runtime::RuntimeApi,
 						MantaRuntimeExecutor,
 						AuraId,
-					>(config, polkadot_config, id)
+						_,
+					>(config, polkadot_config, collator_options, id, |c, p| {
+						Box::new(Builder::new(c, p))
+					})
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
@@ -447,7 +448,10 @@ pub fn run() -> Result<()> {
 						calamari_runtime::RuntimeApi,
 						CalamariRuntimeExecutor,
 						AuraId,
-					>(config, polkadot_config, id)
+						_,
+					>(config, polkadot_config, collator_options, id, |c, p| {
+						Box::new(Builder::new(c, p))
+					})
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
@@ -456,7 +460,10 @@ pub fn run() -> Result<()> {
 						dolphin_runtime::RuntimeApi,
 						DolphinRuntimeExecutor,
 						AuraId,
-					>(config, polkadot_config, id)
+						_,
+					>(config, polkadot_config, collator_options, id, |c, p| {
+						Box::new(Builder::<_, _, rpc::Dolphin>::new(c, p))
+					})
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
@@ -466,6 +473,11 @@ pub fn run() -> Result<()> {
 			})
 		}
 	}
+}
+
+/// Parse command line arguments into service configuration.
+pub fn run() -> Result<()> {
+	run_with(Cli::from_args())
 }
 
 impl DefaultConfigurationValues for RelayChainCli {

@@ -23,7 +23,8 @@ use frame_support::{
 	traits::{Get, PalletInfoAccess, StorageVersion},
 	Twox64Concat,
 };
-///  This migrates the pallet from the standard version by parity to our modified storage
+
+/// This migrates the pallet from the standard version by parity to our modified storage.
 impl<T: Config> Pallet<T> {
 	pub fn migrate_v0_to_v1() -> frame_support::weights::Weight {
 		use frame_support::migration::{

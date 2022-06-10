@@ -14,29 +14,25 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-#![allow(unused_imports)]
 #![allow(dead_code)]
-use cumulus_primitives_core::ParaId;
-use hex_literal::hex;
+
 use manta_primitives::{
 	constants,
-	types::{AccountId, AuraId, Balance, Signature},
+	types::{AccountId, AuraId, Balance},
 };
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, Properties};
 use serde::{Deserialize, Serialize};
-use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_core::sr25519;
 
 pub mod calamari;
-pub use self::calamari::*;
-pub use calamari_runtime::currency::KMA;
-pub mod manta;
-pub use self::manta::*;
-pub use manta_runtime::currency::MANTA;
 pub mod dolphin;
-pub use self::dolphin::*;
+pub mod manta;
+
+pub use self::{calamari::*, dolphin::*, manta::*};
+pub use calamari_runtime::currency::KMA;
 pub use dolphin_runtime::currency::DOL;
+pub use manta_runtime::currency::MANTA;
 
 const CALAMARI_ENDOWMENT: Balance = 1_000_000_000 * KMA; // 10 endowment so that total supply is 10B
 

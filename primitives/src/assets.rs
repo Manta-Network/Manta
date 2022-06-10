@@ -107,7 +107,12 @@ where
 	type AssetRegistrarMetadata: Member + Parameter + Codec + Default + AssetMetadata;
 
 	/// The AssetLocation type: could be just a thin wrapper of MultiLocation
-	type AssetLocation: Member + Parameter + Default + TypeInfo;
+	type AssetLocation: Member
+		+ Parameter
+		+ Default
+		+ TypeInfo
+		+ From<MultiLocation>
+		+ Into<Option<MultiLocation>>;
 
 	/// The Fungible ledger implementation of this trait
 	type FungibleLedger: FungibleLedger<C>;
@@ -444,7 +449,7 @@ where
 			<Native as Currency<C::AccountId>>::deposit_creating(beneficiary, amount);
 		} else {
 			<NonNative as Mutate<C::AccountId>>::mint_into(asset_id, beneficiary, amount)
-				.map_err(|e| FungibleLedgerError::InvalidMint(e))?;
+				.map_err(FungibleLedgerError::InvalidMint)?;
 		}
 		Ok(())
 	}
@@ -474,7 +479,7 @@ where
 			)
 			.map(|_| ())
 		}
-		.map_err(|e| FungibleLedgerError::InvalidTransfer(e))
+		.map_err(FungibleLedgerError::InvalidTransfer)
 	}
 
 	#[inline]
