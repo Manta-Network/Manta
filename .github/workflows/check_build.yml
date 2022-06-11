@@ -83,11 +83,11 @@ jobs:
         run: |
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
-          rustup toolchain install stable
           rustup toolchain install nightly
           rustup target add wasm32-unknown-unknown --toolchain nightly
-          rustup update
           rustup default nightly
+          rustup update
+          cargo install taplo-cli
       -
         name: Run yamllint
         uses: actionshub/yamllint@main
@@ -101,7 +101,6 @@ jobs:
         run: |
           source ${HOME}/.cargo/env
           cargo fmt --all -- --check
-          cargo install taplo-cli
           $HOME/.cargo/bin/taplo fmt --check
           $HOME/.cargo/bin/taplo lint
       -
