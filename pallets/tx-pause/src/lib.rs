@@ -26,7 +26,7 @@ mod benchmarking;
 use frame_support::{
     dispatch::{CallMetadata, GetCallMetadata},
     pallet_prelude::*,
-    traits::{Contains,PalletInfoAccess},
+    traits::{Contains, PalletInfoAccess},
     transactional,
 };
 use frame_system::pallet_prelude::*;
