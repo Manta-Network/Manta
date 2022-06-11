@@ -103,8 +103,8 @@ jobs:
           cargo fmt --all -- --check
           SKIP_WASM_BUILD=1  cargo clippy --all-targets --all-features -- -D warnings
           cargo install taplo-cli
-          taplo-cli fmt --check
-          taplo-cli lint
+          $HOME/.cargo/bin/taplo fmt --check
+          $HOME/.cargo/bin/taplo lint
       -
         name: Check Build
         env:
