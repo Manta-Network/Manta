@@ -15,6 +15,8 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 #![allow(dead_code)]
+// Tolerate clippy warning originating in ChainSpecGroup, which is a dependency
+#![allow(clippy::derive_partial_eq_without_eq)]
 
 use manta_primitives::{
     constants,
@@ -45,8 +47,10 @@ const STAGING_TELEMETRY_URL: &str = "wss://api.telemetry.manta.systems/submit/";
 // A generic chain spec
 pub type ChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
 
-/// The extensions for the [`ChainSpec`].
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
+// /// The extensions for the [`ChainSpec`].
+#[derive(
+    Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension,
+)]
 #[serde(deny_unknown_fields)]
 pub struct Extensions {
     /// The relay chain of the Parachain.

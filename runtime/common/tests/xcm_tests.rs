@@ -333,10 +333,7 @@ fn send_para_a_native_asset_to_para_b() {
     // Make sure B received the token
     ParaB::execute_with(|| {
         // free execution, full amount received
-        assert_eq!(
-            parachain::Assets::balance(a_currency_id, &ALICE),
-            amount
-        );
+        assert_eq!(parachain::Assets::balance(a_currency_id, &ALICE), amount);
     });
 }
 
@@ -638,10 +635,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
     // Make sure B received the token
     ParaB::execute_with(|| {
         // free execution, full amount received
-        assert_eq!(
-            parachain::Assets::balance(a_currency_id, &ALICE),
-            amount
-        );
+        assert_eq!(parachain::Assets::balance(a_currency_id, &ALICE), amount);
     });
 
     let alice_on_a = MultiLocation {
@@ -767,10 +761,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 
     ParaB::execute_with(|| {
         // free execution, full amount received
-        assert_eq!(
-            parachain::Assets::balance(a_currency_id, &ALICE),
-            amount
-        );
+        assert_eq!(parachain::Assets::balance(a_currency_id, &ALICE), amount);
     });
 
     // B send C para A asset
@@ -932,10 +923,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
     });
 
     ParaB::execute_with(|| {
-        assert_eq!(
-            parachain::Assets::balance(a_currency_id, &ALICE),
-            amount
-        );
+        assert_eq!(parachain::Assets::balance(a_currency_id, &ALICE), amount);
     });
 }
 
@@ -1061,10 +1049,7 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
             Box::new(VersionedMultiLocation::V1(alice_on_c)),
             dest_weight
         ));
-        assert_eq!(
-            parachain::Assets::balance(a_currency_id_on_b, &ALICE),
-            0
-        );
+        assert_eq!(parachain::Assets::balance(a_currency_id_on_b, &ALICE), 0);
     });
 
     // Make sure C received the token
@@ -1771,10 +1756,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 
     ParaB::execute_with(|| {
         // free execution, full amount received
-        assert_eq!(
-            parachain::Assets::balance(a_currency_id, &ALICE),
-            100
-        );
+        assert_eq!(parachain::Assets::balance(a_currency_id, &ALICE), 100);
     });
 
     let expected_version_notified: parachain::Event = pallet_xcm::Event::VersionChangeNotified(

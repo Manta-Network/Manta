@@ -16,6 +16,8 @@
 
 //! Calamari Parachain Integration Tests.
 
+#![allow(clippy::identity_op)] // keep e.g. 1 * DAYS for legibility
+
 mod common;
 use common::{info_from_weight, last_event, mock::*, root_origin, BOND_AMOUNT, INITIAL_BALANCE};
 
