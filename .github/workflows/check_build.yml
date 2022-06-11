@@ -114,7 +114,6 @@ jobs:
         run: |
           source ${HOME}/.cargo/env
           SKIP_WASM_BUILD=1 cargo check --no-default-features
-          SKIP_WASM_BUILD=1 cargo check --all-features
           SKIP_WASM_BUILD=1 cargo clippy --all-targets --all-features -- -D warnings
       -
         name: stop sccache server
