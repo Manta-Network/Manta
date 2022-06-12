@@ -631,11 +631,6 @@ impl pallet_session::Config for Runtime {
 	type WeightInfo = weights::pallet_session::SubstrateWeight<Runtime>;
 }
 
-impl pallet_aura::Config for Runtime {
-	type AuthorityId = AuraId;
-	type DisabledValidators = ();
-	type MaxAuthorities = ConstU32<100_000>;
-}
 
 parameter_types! {
 	// Pallet account for record rewards and give rewards to collator.
@@ -704,8 +699,8 @@ construct_runtime!(
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
 		CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
-		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
-		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
+        // This used to be pallet_aura with idx = 23, // TODO: Write check that these are not reused
+        // This used to be cumulus_pallet_aura_ext with idx = 24,
 
 		// Treasury
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,
