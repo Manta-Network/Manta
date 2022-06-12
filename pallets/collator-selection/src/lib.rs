@@ -99,6 +99,8 @@ pub mod pallet {
 	use sp_arithmetic::Percent;
 	use sp_staking::SessionIndex;
 
+    use nimbus_primitives::CanAuthor;
+
 	type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
 
@@ -161,6 +163,11 @@ pub mod pallet {
 
 		/// The weight information of this pallet.
 		type WeightInfo: WeightInfo;
+
+        /// The final word on whether the reported author can author at this height.
+		/// If the pallet that implements this trait depends on an inherent, that inherent **must**
+		/// be included before this one. //TODO: Check the meaning of this.
+		type CanAuthor: CanAuthor<Self::AccountId>;
 	}
 
 	/// Basic information about a collation candidate.
@@ -641,6 +648,19 @@ pub mod pallet {
 				let account_id = T::AccountIdOf::convert(validator_id.clone().into());
 				<BlocksPerCollatorThisSession<T>>::insert(account_id.clone(), 0u32);
 			}
+		}
+	}
+
+    /// Implements authoring filter for nimbus consensus pipeline
+	impl<T: Config> nimbus_primitives::CanAuthor<T::AccountId> for Pallet<T> {
+		fn can_author(account: &T::AccountId, slot: &u32) -> bool {
+			let validator_key = T::ValidatorIdOf::convert(account.clone());
+            if validator_key.is_none() ||
+            !T::ValidatorRegistration::is_registered(&validator_key.expect("we checked against none before. qed"))
+            {
+               return false;
+            }
+            T::CanAuthor::can_author(&account, slot) // filter passed, hand execution to the next pipeline step
 		}
 	}
 

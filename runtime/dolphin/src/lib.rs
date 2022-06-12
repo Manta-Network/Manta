@@ -545,7 +545,7 @@ impl pallet_treasury::Config for Runtime {
         type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
         type AccountLookup = TestConverter;
         type EventHandler = ();
-        type CanAuthor = AuraAuthorFilter; // RAD: The main difference to the template node
+        type CanAuthor = CollatorSelection;
     }
 
 parameter_types! {
@@ -664,6 +664,7 @@ impl manta_collator_selection::Config for Runtime {
 	type AccountIdOf = manta_collator_selection::IdentityCollator;
 	type ValidatorRegistration = Session;
 	type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
+    type CanAuthor = AuraAuthorFilter; // NOTE: End of the nimbus filter pipeline (Aura filter has no CanAuthor trait
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -697,7 +698,9 @@ construct_runtime!(
 		TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 17,
 		TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 
-		// Collator support. the order of these 5 are important and shall not change.
+		// Collator support. the order of these is important and shall not change.
+        AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 50, // TODO: Number is likely wrong. Doublecheck inclusion order. Session likely must be included after a_inherent
+        AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage, Config<T>} = 53,
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
 		CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
@@ -763,16 +766,6 @@ pub type Executive = frame_executive::Executive<
 >;
 
 impl_runtime_apis! {
-	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
-		fn slot_duration() -> sp_consensus_aura::SlotDuration {
-			sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
-		}
-
-		fn authorities() -> Vec<AuraId> {
-			Aura::authorities().into_inner()
-		}
-	}
-
 	impl sp_api::Core<Block> for Runtime {
 		fn version() -> RuntimeVersion {
 			VERSION

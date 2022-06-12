@@ -27,8 +27,8 @@ frame-support      = { git = 'https://github.com/paritytech/substrate.git', defa
 frame-system       = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
 pallet-authorship  = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
 pallet-session     = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
-
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18", optional = true }
+nimbus-primitives = { git = "https://github.com/purestake/nimbus.git", rev="aad7cef98e429eb4dcdbd88c0601223e4ab806a2", default-features = false }
 
 [dev-dependencies]
 sp-core           = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
