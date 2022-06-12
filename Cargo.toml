@@ -9,6 +9,8 @@ members = [
 	'runtime/dolphin',
 	'runtime/common',
 	'primitives',
+	'nimbus-primitives',
+	'nimbus-consensus',
 ]
 
 [profile.production]

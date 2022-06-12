@@ -1,0 +1,39 @@
+[package]
+name = "nimbus-consensus"
+description = "Client-side worker for the Nimbus family of consensus algorithms"
+edition = "2021"
+version = "0.9.0"
+[dependencies]
+# Substrate deps
+sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
+sc-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
+sc-consensus-manual-seal = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
+sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
+sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
+sp-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
+sp-inherents = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
+sp-keystore = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
+
+# Polkadot dependencies
+polkadot-client = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.18", default-features = false }
+
+# Cumulus dependencies
+cumulus-client-consensus-common = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.18" }
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.18" }
+cumulus-primitives-parachain-inherent = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.18" }
+
+# Nimbus Dependencies
+nimbus-primitives = { path = "../nimbus-primitives" }
+
+# Other deps
+async-trait = "0.1.42"
+codec = { package = "parity-scale-codec", version = "3.0.0", features = [ "derive" ] }
+futures = { version = "0.3.8", features = [ "compat" ] }
+log = "0.4"
+parking_lot = "0.12"
+tracing = "0.1.22"
