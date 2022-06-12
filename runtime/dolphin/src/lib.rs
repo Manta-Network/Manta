@@ -682,9 +682,6 @@ construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
 
-		// Nimbus support. The order of these are important and shall not change.
-		AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 50,
-		AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage, Config<T>} = 53,
 
 		// Governance stuff.
 		Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>} = 14,
@@ -864,15 +861,42 @@ impl_runtime_apis! {
 			// Therefore we need to initialize it to match the state it will be in when the
 			// next block is being executed.
 			// System::reset_events();
-			// System::initialize(&(parent_header.number + 1), &parent_header.hash(), &parent_header.digest);
+			System::initialize(&(parent_header.number + 1), &parent_header.hash(), &parent_header.digest);
 			// <Self as pallet_author_slot_filter::Config>::RandomnessSource::on_initialize(System::block_number());
+
+            // TODO: Moonbeam code with parachain_staking
+			// 		// Because the staking solution calculates the next staking set at the beginning
+			// 		// of the first block in the new round, the only way to accurately predict the
+			// 		// authors is to compute the selection during prediction.
+			// 		if parachain_staking::Pallet::<Self>::round().should_update(block_number) {
+			// 			// get author account id
+			// 			use nimbus_primitives::AccountLookup;
+			// 			let author_account_id = if let Some(account) =
+			// 				pallet_author_mapping::Pallet::<Self>::lookup_account(&author) {
+			// 				account
+			// 			} else {
+			// 				// return false if author mapping not registered like in can_author impl
+			// 				return false
+			// 			};
+			// 			// predict eligibility post-selection by computing selection results now
+			// 			let (eligible, _) =
+			// 				pallet_author_slot_filter::compute_pseudo_random_subset::<Self>(
+			// 					parachain_staking::Pallet::<Self>::compute_top_candidates(),
+			// 					&slot
+			// 				);
+			// 			eligible.contains(&author_account_id)
+			// 		} else {
+			// 			AuthorInherent::can_author(&author, &slot)
+			// 		}
+			// 	}
+			// }
 
 			// And now the actual prediction call
 			<AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &slot)
 		}
 	}
 
-	// We also implement the olf AuthorFilterAPI to meet the trait bounds on the client side.
+	// We also implement the old AuthorFilterAPI to meet the trait bounds on the client side.
 	impl nimbus_primitives::AuthorFilterAPI<Block, NimbusId> for Runtime {
 		fn can_author(_: NimbusId, _: u32, _: &<Block as BlockT>::Header) -> bool {
 			panic!("AuthorFilterAPI is no longer supported. Please update your client.")

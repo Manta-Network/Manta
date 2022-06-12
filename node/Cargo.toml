@@ -80,6 +80,8 @@ cumulus-relay-chain-rpc-interface = { git = 'https://github.com/paritytech/cumul
 
 # Nimbus dependencies
 nimbus-primitives = { git = "https://github.com/purestake/nimbus.git", rev="aad7cef98e429eb4dcdbd88c0601223e4ab806a2", default-features = false }
+nimbus-consensus = { git = "https://github.com/purestake/nimbus.git", rev="aad7cef98e429eb4dcdbd88c0601223e4ab806a2", default-features = false }
+
 pallet-author-inherent = { git = "https://github.com/purestake/nimbus.git", rev="aad7cef98e429eb4dcdbd88c0601223e4ab806a2", default-features = false }
 
 # Polkadot dependencies
