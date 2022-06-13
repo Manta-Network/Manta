@@ -263,7 +263,7 @@ pub fn dolphin_testnet_config() -> DolphinChainSpec {
 	];
 
 	let root_key: AccountId =
-		hex_literal::hex!["82a9cd66c8959be784dd5129ef00eb9d919909a90fc9319ce5e2fb89b713c73c"]
+		hex_literal::hex!["10b718efa05bd8d534435c7317a6e854fd4bc3b13f7779b1470414371b149c3c"]
 			.into();
 
 	DolphinChainSpec::from_genesis(
