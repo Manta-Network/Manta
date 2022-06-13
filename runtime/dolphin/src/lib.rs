@@ -53,7 +53,7 @@ use frame_system::{
 };
 use manta_primitives::{
 	constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
-	types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
+	types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use runtime_common::prod_or_fast;
 
@@ -299,7 +299,7 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 impl pallet_authorship::Config for Runtime {
-	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
+	type FindAuthor = AuthorInherent;
 	type UncleGenerations = ConstU32<0>;
 	type FilterUncle = ();
 	type EventHandler = (CollatorSelection,);
