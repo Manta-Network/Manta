@@ -248,18 +248,6 @@ pub fn dolphin_testnet_config() -> DolphinChainSpec {
 			hex_literal::hex!["90c1fc7a8efdde12ab3003cb7c0eaa171ae794497f8a456d4ec01923edf1c327"]
 				.unchecked_into(),
 		),
-		(
-			hex_literal::hex!["f6cbc80ab3d92c97029a32da5f9f986fc4d0d697d7b4ddb0028f415459f73433"]
-				.into(),
-			hex_literal::hex!["3072406e3387cca8e889671f3dbfbce600958c3cf614f8e2eb1f8ad8b19c4615"]
-				.unchecked_into(),
-		),
-		(
-			hex_literal::hex!["2229a7740efa90b3449b3fb4ed927d82cc3e8a369cae7eda79ff47a29cea8d11"]
-				.into(),
-			hex_literal::hex!["42d4506d4eac8d5be3cd11dcd9038971691690d0725be9e9fb4e468249d79b7c"]
-				.unchecked_into(),
-		),
 	];
 
 	let root_key: AccountId =
