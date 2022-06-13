@@ -30,8 +30,8 @@ The following checks can be performed after we have frozen our release candidate
 - [ ] Complete the following [manual QA workflow](https://hackmd.io/TbFmorG2RnOPmLuFcg9JOQ?view).
 - [ ] Verify Polkadot JS API are up to date with the latest
     runtime changes.
-- [ ] Execute runtime upgrade to Como and verify network stability.
 - [ ] Execute runtime upgrade to Baikal and verify network stability.
+- [ ] Execute runtime upgrade to Rococo and verify network stability.
 - [ ] Prepare a governance post and submit to our forum with description and motivation for changes.
 
 ### Client Releases
