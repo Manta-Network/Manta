@@ -286,7 +286,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type ControllerOrigin = EnsureRootOrMoreThanHalfCouncil;
 	type ControllerOriginConverter = XcmOriginToCallOrigin;
-	type WeightInfo = ();
+	type WeightInfo = crate::weights::cumulus_pallet_xcmp_queue::SubstrateWeight<Runtime>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {

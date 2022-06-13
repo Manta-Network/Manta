@@ -4,10 +4,12 @@
 ### Breaking changes
 
 ### Features
+- [\#529](https://github.com/Manta-Network/Manta/pull/529) Add RPC for MantaPay to synchronize with latest ledger state
 
 ### Improvements
-[\#481](https://github.com/Manta-Network/Manta/pull/481) Update upstream dependencies to v0.9.18.
-[\#576](https://github.com/Manta-Network/Manta/pull/576) Unfilter xtokens.transfer_multicurrencies and bump MaxAssetsForTransfer to 2.
+- [\#481](https://github.com/Manta-Network/Manta/pull/481) Update upstream dependencies to v0.9.18.
+- [\#576](https://github.com/Manta-Network/Manta/pull/576) Unfilter xtokens.transfer_multicurrencies and bump MaxAssetsForTransfer to 2.
+- [\#583](https://github.com/Manta-Network/Manta/pull/583) Remove checkpoint from RPC API when synchronizing with MantaPay
 
 ### Bug fixes
 
