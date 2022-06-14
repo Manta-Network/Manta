@@ -20,8 +20,7 @@ use dolphin_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCo
 use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type DolphinChainSpec =
-	sc_service::GenericChainSpec<GenesisConfig, Extensions>;
+pub type DolphinChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
 const DOLPHIN_PROTOCOL_ID: &str = "dolphin"; // for p2p network configuration
 const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";

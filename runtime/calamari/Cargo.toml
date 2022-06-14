@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'calamari-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '3.1.5'
+version = '3.2.0'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.0.0', default-features = false, features = ["derive", "max-encoded-len"] }
@@ -105,7 +105,24 @@ default = ['std']
 try-runtime = [
 	'frame-executive/try-runtime',
 	'frame-try-runtime',
+	'frame-system/try-runtime',
+	'pallet-aura/try-runtime',
+	'pallet-authorship/try-runtime',
+	'pallet-balances/try-runtime',
+	'pallet-preimage/try-runtime',
+	'pallet-multisig/try-runtime',
+	'pallet-session/try-runtime',
+	'pallet-timestamp/try-runtime',
+	'pallet-transaction-payment/try-runtime',
+	'pallet-utility/try-runtime',
+	'pallet-collective/try-runtime',
+	'pallet-democracy/try-runtime',
 	'pallet-scheduler/try-runtime',
+	'pallet-membership/try-runtime',
+	'pallet-treasury/try-runtime',
+	'pallet-assets/try-runtime',
+	'pallet-tx-pause/try-runtime',
+	'pallet-asset-manager/try-runtime',
 ]
 runtime-benchmarks = [
 	'cumulus-pallet-session-benchmarking/runtime-benchmarks',
