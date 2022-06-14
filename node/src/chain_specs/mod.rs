@@ -47,7 +47,7 @@ const STAGING_TELEMETRY_URL: &str = "wss://api.telemetry.manta.systems/submit/";
 // A generic chain spec
 pub type ChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
 
-// /// The extensions for the [`ChainSpec`].
+/// The extensions for the [`ChainSpec`].
 #[derive(
     Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension,
 )]
