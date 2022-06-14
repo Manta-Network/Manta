@@ -217,15 +217,15 @@ fn dolphin_dev_genesis(
 	}
 }
 
-// pub fn dolphin_testnet_config() -> Result<DolphinChainSpec, String> {
-// 	let mut spec = DolphinChainSpec::from_json_bytes(
-// 		&include_bytes!("../../../genesis/dolphin-testnet-genesis.json")[..],
-// 	)?;
-// 	spec.extensions_mut().para_id = DOLPHIN_PARACHAIN_ID;
-// 	Ok(spec)
-// }
+pub fn dolphin_testnet_config() -> Result<DolphinChainSpec, String> {
+	let mut spec = DolphinChainSpec::from_json_bytes(
+		&include_bytes!("../../../genesis/dolphin-testnet-genesis.json")[..],
+	)?;
+	spec.extensions_mut().para_id = DOLPHIN_PARACHAIN_ID;
+	Ok(spec)
+}
 
-pub fn dolphin_testnet_config() -> DolphinChainSpec {
+pub fn dolphin_temp_config() -> DolphinChainSpec {
 	let properties = dolphin_properties();
 
 	// (controller_account, aura_id)
@@ -260,7 +260,7 @@ pub fn dolphin_testnet_config() -> DolphinChainSpec {
 		// ID
 		"dolphin_temp",
 		ChainType::Live,
-		move || dolphin_testnet_genesis(initial_authorities.clone(), root_key.clone()),
+		move || dolphin_temp_genesis(initial_authorities.clone(), root_key.clone()),
 		vec![],
 		Some(
 			sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
@@ -276,7 +276,7 @@ pub fn dolphin_testnet_config() -> DolphinChainSpec {
 	)
 }
 
-fn dolphin_testnet_genesis(
+fn dolphin_temp_genesis(
 	initial_authorities: Vec<(AccountId, AuraId)>,
 	root_key: AccountId,
 ) -> dolphin_runtime::GenesisConfig {
