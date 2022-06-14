@@ -90,7 +90,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 		"dolphin-dev" => Ok(Box::new(chain_specs::dolphin_development_config())),
 		"dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config())),
 		"dolphin-testnet" => Ok(Box::new(chain_specs::dolphin_testnet_config()?)),
-		"dolphin-2122" => Ok(Box::new(chain_specs::dolphin_2122_config()?)),
+		"dolphin-2122" => Ok(Box::new(chain_specs::dolphin_2122_config())),
 		path => {
 			let chain_spec = chain_specs::ChainSpec::from_json_file(path.into())?;
 			if chain_spec.is_manta() {
