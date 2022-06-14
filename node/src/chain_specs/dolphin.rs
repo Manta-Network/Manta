@@ -225,9 +225,9 @@ pub fn dolphin_testnet_config() -> Result<DolphinChainSpec, String> {
 	Ok(spec)
 }
 
-pub fn dolphin_temp_config() -> Result<DolphinChainSpec, String> {
+pub fn dolphin_2122_config() -> Result<DolphinChainSpec, String> {
 	let mut spec = DolphinChainSpec::from_json_bytes(
-		&include_bytes!("../../../genesis/dolphin-temp-2122-genesis.json")[..],
+		&include_bytes!("../../../genesis/dolphin-2122-genesis.json")[..],
 	)?;
 	spec.extensions_mut().para_id = DOLPHIN_PARACHAIN_ID;
 	Ok(spec)
