@@ -288,13 +288,14 @@ fn dolphin_temp_genesis(
 	initial_authorities: Vec<(AccountId, AuraId)>,
 	root_key: AccountId,
 ) -> dolphin_runtime::GenesisConfig {
-	let endowment = 5_000_000_000 * DOL;
+	let sudo_endowment = 5_000_000_000 * DOL;
+	let collator_endowment = 400_000 * DOL;
 	let mut initial_balances: Vec<(AccountId, Balance)> = initial_authorities
 		.iter()
 		.cloned()
-		.map(|x| (x.0, endowment))
+		.map(|x| (x.0, collator_endowment))
 		.collect();
-	initial_balances.push((root_key.clone(), endowment));
+	initial_balances.push((root_key.clone(), sudo_endowment));
 
 	dolphin_runtime::GenesisConfig {
 		system: dolphin_runtime::SystemConfig {
