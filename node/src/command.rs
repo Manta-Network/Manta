@@ -38,7 +38,7 @@ use std::{io::Write, net::SocketAddr};
 pub use sc_cli::Error;
 
 /// Result Type Alias with default [`Error`] Type
-pub type Result<T = (), E = Error> = Result<T, E>;
+pub type Result<T = (), E = Error> = core::result::Result<T, E>;
 
 /// Block Type
 pub type Block = generic::Block<Header, OpaqueExtrinsic>;
