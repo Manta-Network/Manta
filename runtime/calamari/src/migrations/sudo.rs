@@ -26,7 +26,9 @@ impl<T: frame_system::Config> OnRuntimeUpgrade for RemoveSudo<T> {
 	fn on_runtime_upgrade() -> Weight {
 		if have_storage_value(b"Sudo", b"Key", b"") {
 			remove_storage_prefix(b"Sudo", b"Key", b"");
+			remove_storage_prefix(b"Sudo", b":__STORAGE_VERSION__:", b"");
 			log::info!(target: "OnRuntimeUpgrade", "✅ Sudo key has been removed.");
+			log::info!(target: "OnRuntimeUpgrade", "✅ The pallet version has been removed.");
 			T::DbWeight::get()
 				.reads(1 as Weight)
 				.saturating_add(T::DbWeight::get().writes(1 as Weight))
@@ -39,6 +41,7 @@ impl<T: frame_system::Config> OnRuntimeUpgrade for RemoveSudo<T> {
 	fn pre_upgrade() -> Result<(), &'static str> {
 		if have_storage_value(b"Sudo", b"Key", b"") {
 			log::info!(target: "OnRuntimeUpgrade", "✅ Sudo key will be removed soon.");
+			log::info!(target: "OnRuntimeUpgrade", "✅ The pallet version will be removed soon.");
 			Ok(())
 		} else {
 			Err("Sudo doesn't exist.")

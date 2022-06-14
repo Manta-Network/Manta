@@ -65,10 +65,11 @@ where
 	fn pull_ledger_diff(&self, checkpoint: Checkpoint) -> Result<PullResponse> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		api.pull_ledger_diff(&at, checkpoint.into()).map_err(|err| Error {
-			code: ErrorCode::ServerError(1),
-			message: "Unable to compute state diff for pull".into(),
-			data: Some(err.to_string().into()),
-		})
+		api.pull_ledger_diff(&at, checkpoint.into())
+			.map_err(|err| Error {
+				code: ErrorCode::ServerError(1),
+				message: "Unable to compute state diff for pull".into(),
+				data: Some(err.to_string().into()),
+			})
 	}
 }

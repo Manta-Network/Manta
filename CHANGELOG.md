@@ -1,16 +1,30 @@
 # CHANGELOG
 
-## Unreleased
+## v3.2.0
 ### Breaking changes
 
 ### Features
-- [\#529](https://github.com/Manta-Network/Manta/pull/529) Add RPC for MantaPay to synchronize with latest ledger state
+- [Dolphin] [\#529](https://github.com/Manta-Network/Manta/pull/529) Add RPC for MantaPay to synchronize with latest ledger state
 
 ### Improvements
-- [\#583](https://github.com/Manta-Network/Manta/pull/583) Remove checkpoint from RPC API when synchronizing with MantaPay
 - [\#481](https://github.com/Manta-Network/Manta/pull/481) Update upstream dependencies to v0.9.18.
+- [\#491](https://github.com/Manta-Network/Manta/pull/491) Revamp collator-selection.
+- [\#493](https://github.com/Manta-Network/Manta/pull/493) Dedupe mock-xcm tests (part 1).
+- [\#505](https://github.com/Manta-Network/Manta/pull/505) Proper bare-metal instances for benchmarking workflows.
+- [\#507](https://github.com/Manta-Network/Manta/pull/507) Add issue template for Calamari xcm onboarding of other parachains.
+- [\#519](https://github.com/Manta-Network/Manta/pull/519) Concrete fungible ledger integration tests.
+- [\#523](https://github.com/Manta-Network/Manta/pull/523) Move xcm and assets related runtime configurations to own files.
+- [\#531](https://github.com/Manta-Network/Manta/pull/531) Clean up AssetManager migration code.
+- [\#541](https://github.com/Manta-Network/Manta/pull/541) Skip build on too tiny change.
+- [\#542](https://github.com/Manta-Network/Manta/pull/542) Update xcm integrations template issue.
+- [Calamari] [\#550](https://github.com/Manta-Network/Manta/pull/550) Remove sudo pallet from calamari runtime.
+- [\#560](https://github.com/Manta-Network/Manta/pull/560) Bump srtool to v0.4.0.
+- [Dolphin] [\#583](https://github.com/Manta-Network/Manta/pull/583) Remove checkpoint from RPC API when synchronizing with MantaPay.
 
 ### Bug fixes
+- [\#558](https://github.com/Manta-Network/Manta/pull/558) Fix try runtime and metadata diff ci workflows.
+- [\#567](https://github.com/Manta-Network/Manta/pull/567) Fix file structure of relay chian specs.
+- [\#570](https://github.com/Manta-Network/Manta/pull/570) Revert hard-coded branch of yamllint github action.
 
 ## v3.1.5-1
 ### Breaking changes
