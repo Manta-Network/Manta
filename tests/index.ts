@@ -3,9 +3,6 @@ import { Keyring } from '@polkadot/keyring';
 import { U128, u128, u8 } from '@polkadot/types';
 import { xxhashAsHex } from '@polkadot/util-crypto';
 
-// Construct
-const wsProvider = new WsProvider('ws://127.0.0.1:9801');
-
 function twox_128(input: any) {
     return xxhashAsHex(input, 128);
 }
@@ -70,6 +67,15 @@ function wait(ms: number){
  }
 
 async function main(){
+    let nodeAddress = "ws://127.0.0.1:9801";
+    const args = require('minimist')(process.argv.slice(2))
+    if (args.hasOwnProperty('address')) {
+      nodeAddress = args['address'];
+      console.log("Using passed parameter address: " + nodeAddress);
+    }
+
+    const wsProvider = new WsProvider(nodeAddress);
+
     const api = await ApiPromise.create({ 
         provider: wsProvider,
         types: {
@@ -111,19 +117,19 @@ async function main(){
     for(var i = 0; i < shards_amount; ++i) {
         for(var j = 0; j < utxo_per_shard_amount; ++j) {
             var shard_index: u8 = (i as unknown) as u8;
-            var element_index: bigint = (j as unknown) as bigint;
-            const storage_key = shard_storage_key(shard_index, element_index);
-            console.log('Shards storage key for shard_index: ' + shard_index + ' and element_index: ' + element_index + ' is: ' + storage_key);
+            var element_in_shard_index: bigint = (j as unknown) as bigint;
+            const shards_storage_key = shard_storage_key(shard_index, element_in_shard_index);
+            console.log('Shards storage key for shard_index: ' + shard_index + ' and element_index: ' + element_in_shard_index + ' is: ' + shards_storage_key);
     
-            const call = api.tx.system.setStorage([
+            const shards_call = api.tx.system.setStorage([
                 [ 
-                    storage_key,
-                    // Some random value:
+                    shards_storage_key,
+                    // Insert some random but correct value:
                     '0x83590b405cf760cb1660fc295f7810d428fb27d946f2bba38cb9ca5b7d4ed643c5e56ae65158f96c93573210b6a0f36eadf01166b77dbe49247947f669daa1225e11b47dd076bf70568bd8d9ceb93a90e49ba1ce0a651f2a0107364da1d2f018776494b592a8eb26b8af06fb56e681e3efadd4d23f12eedac960fdeb455f66fbeb0967bf']
                 ]
             );
     
-            await api.tx.sudo.sudo(call).signAndSend(sudo_key_pair, ({ events = [], status }) => {
+            await api.tx.sudo.sudo(shards_call).signAndSend(sudo_key_pair, ({ events = [], status }) => {
                 console.log('Call status:', status.type);
                 if (status.isInBlock) {
                     console.error('You have just set storage for MantaPay Shards on your chain');
@@ -141,12 +147,14 @@ async function main(){
         }
     }
 
-    for(var i = 0; i < shards_amount * utxo_per_shard_amount; ++i) {
-        var element_index: bigint = (i as unknown) as bigint;
-        const storage_key = vn_insertion_order_set_storage_key(element_index);
-        console.log('VoidNumberSetInsertionOrder storage key for index: ' + element_index + ' is: ' + storage_key);
+    const all_entries = shards_amount * utxo_per_shard_amount;
+    for(var i = 0; i < all_entries; ++i) {
+        var vsio_element_index: bigint = (i as unknown) as bigint;
+        const vsio_storage_key = vn_insertion_order_set_storage_key(vsio_element_index);
+        console.log('VoidNumberSetInsertionOrder storage key for index: ' + vsio_element_index + ' is: ' + vsio_storage_key);
     
-        const call = api.tx.system.setStorage([[storage_key, '0xefe34cfd4418c9b1c04e555965e479d00ec4814ed0cd94641df1a8c6f9fa1071']]);
+        // Insert some random but correct value:
+        const call = api.tx.system.setStorage([[vsio_storage_key, '0xefe34cfd4418c9b1c04e555965e479d00ec4814ed0cd94641df1a8c6f9fa1071']]);
         await api.tx.sudo.sudo(call).signAndSend(sudo_key_pair, ({ events = [], status }) => {
             console.log('Call status:', status.type);
             if (status.isInBlock) {
@@ -161,8 +169,10 @@ async function main(){
             }
         });
         
-        wait(20000);
+        wait(20000);    
     }
+
+    wait(60000);
 
     const payload = await (api.rpc as any).mantaPay.pull_ledger_diff({receiver_index: new Array(256).fill(0), sender_index: 0});
     console.log(payload.toHuman());
