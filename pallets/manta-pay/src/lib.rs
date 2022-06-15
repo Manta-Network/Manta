@@ -721,61 +721,61 @@ where
         }
     }
 
-    #[inline]
-    fn register_all<I>(&mut self, iter: I, super_key: &Self::SuperPostingKey)
-    where
-        I: IntoIterator<Item = (Self::ValidUtxo, config::EncryptedNote)>,
-    {
-        let _ = super_key;
-        let parameters = config::UtxoAccumulatorModel::decode(
-            manta_sdk::pay::testnet::parameters::UtxoAccumulatorModel::get()
-                .expect("Checksum did not match."),
-        )
-        .expect("Unable to decode the Merkle Tree Parameters.");
-        let mut shard_indices = iter
-            .into_iter()
-            .map(move |(utxo, note)| {
-                (
-                    config::MerkleTreeConfiguration::tree_index(&utxo.0),
-                    utxo.0,
-                    note,
-                )
-            })
-            .collect::<Vec<_>>();
-        shard_indices.sort_by_key(|(s, _, _)| *s);
-        let mut shard_insertions = Vec::<(_, Vec<_>)>::new();
-        for (shard_index, utxo, note) in shard_indices {
-            match shard_insertions.last_mut() {
-                Some((index, pairs)) if shard_index == *index => pairs.push((utxo, note)),
-                _ => shard_insertions.push((shard_index, vec![(utxo, note)])),
-            }
-        }
-        for (shard_index, insertions) in shard_insertions {
-            let mut tree = ShardTrees::<T>::get(shard_index);
-            let mut next_root = Option::<config::UtxoAccumulatorOutput>::None;
-            let mut current_path = core::mem::take(&mut tree.current_path).into();
-            for (utxo, note) in insertions {
-                next_root = Some(
-                    merkle_tree::single_path::raw::insert(
-                        &parameters,
-                        &mut tree.leaf_digest,
-                        &mut current_path,
-                        utxo,
-                    )
-                    .expect("If this errors, then we have run out of Merkle Tree capacity."),
-                );
-                let next_index = current_path.leaf_index().0 as u64;
-                let utxo = encode(&utxo);
-                UtxoSet::<T>::insert(utxo, ());
-                Shards::<T>::insert(shard_index, next_index, (utxo, EncryptedNote::from(note)));
-            }
-            tree.current_path = current_path.into();
-            if let Some(next_root) = next_root {
-                ShardTrees::<T>::insert(shard_index, tree);
-                UtxoAccumulatorOutputs::<T>::insert(encode(&next_root), ());
-            }
-        }
-    }
+	#[inline]
+	fn register_all<I>(&mut self, iter: I, super_key: &Self::SuperPostingKey)
+	where
+		I: IntoIterator<Item = (Self::ValidUtxo, config::EncryptedNote)>,
+	{
+		let _ = super_key;
+		let parameters = config::UtxoAccumulatorModel::decode(
+			manta_parameters::pay::testnet::parameters::UtxoAccumulatorModel::get()
+				.expect("Checksum did not match."),
+		)
+		.expect("Unable to decode the Merkle Tree Parameters.");
+		let mut shard_indices = iter
+			.into_iter()
+			.map(move |(utxo, note)| {
+				(
+					config::MerkleTreeConfiguration::tree_index(&utxo.0),
+					utxo.0,
+					note,
+				)
+			})
+			.collect::<Vec<_>>();
+		shard_indices.sort_by_key(|(s, _, _)| *s);
+		let mut shard_insertions = Vec::<(_, Vec<_>)>::new();
+		for (shard_index, utxo, note) in shard_indices {
+			match shard_insertions.last_mut() {
+				Some((index, pairs)) if shard_index == *index => pairs.push((utxo, note)),
+				_ => shard_insertions.push((shard_index, vec![(utxo, note)])),
+			}
+		}
+		for (shard_index, insertions) in shard_insertions {
+			let mut tree = ShardTrees::<T>::get(shard_index);
+			let mut next_root = Option::<config::UtxoAccumulatorOutput>::None;
+			let mut current_path = core::mem::take(&mut tree.current_path).into();
+			for (utxo, note) in insertions {
+				next_root = Some(
+					merkle_tree::single_path::raw::insert(
+						&parameters,
+						&mut tree.leaf_digest,
+						&mut current_path,
+						utxo,
+					)
+					.expect("If this errors, then we have run out of Merkle Tree capacity."),
+				);
+				let next_index = current_path.leaf_index().0 as u64;
+				let utxo = encode(&utxo);
+				UtxoSet::<T>::insert(utxo, ());
+				Shards::<T>::insert(shard_index, next_index, (utxo, EncryptedNote::from(note)));
+			}
+			tree.current_path = current_path.into();
+			if let Some(next_root) = next_root {
+				ShardTrees::<T>::insert(shard_index, tree);
+				UtxoAccumulatorOutputs::<T>::insert(encode(&next_root), ());
+			}
+		}
+	}
 }
 
 impl<T> TransferLedger<config::Config> for Ledger<T>
@@ -836,53 +836,54 @@ where
             .collect()
     }
 
-    #[inline]
-    fn is_valid(
-        &self,
-        asset_id: Option<asset::AssetId>,
-        sources: &[SourcePostingKey<config::Config, Self>],
-        senders: &[SenderPostingKey<config::Config, Self>],
-        receivers: &[ReceiverPostingKey<config::Config, Self>],
-        sinks: &[SinkPostingKey<config::Config, Self>],
-        proof: Proof<config::Config>,
-    ) -> Option<(Self::ValidProof, Self::Event)> {
-        let (mut verifying_context, event) = match TransferShape::select(
-            asset_id.is_some(),
-            sources.len(),
-            senders.len(),
-            receivers.len(),
-            sinks.len(),
-        )? {
-            TransferShape::Mint => (
-                manta_sdk::pay::testnet::verifying::Mint::get().expect("Checksum did not match."),
-                PreprocessedEvent::<T>::ToPrivate {
-                    asset: Asset::new(asset_id.unwrap().0, (sources[0].1).0),
-                    source: sources[0].0.clone(),
-                },
-            ),
-            TransferShape::PrivateTransfer => (
-                manta_sdk::pay::testnet::verifying::PrivateTransfer::get()
-                    .expect("Checksum did not match."),
-                PreprocessedEvent::<T>::PrivateTransfer,
-            ),
-            TransferShape::Reclaim => (
-                manta_sdk::pay::testnet::verifying::Reclaim::get()
-                    .expect("Checksum did not match."),
-                PreprocessedEvent::<T>::ToPublic {
-                    asset: Asset::new(asset_id.unwrap().0, (sinks[0].1).0),
-                    sink: sinks[0].0.clone(),
-                },
-            ),
-        };
-        config::ProofSystem::verify(
-            &config::VerifyingContext::decode(&mut verifying_context)
-                .expect("Unable to decode the verifying context."),
-            &TransferPostingKey::generate_proof_input(asset_id, sources, senders, receivers, sinks),
-            &proof,
-        )
-        .ok()?
-        .then(move || (Wrap(()), event))
-    }
+	#[inline]
+	fn is_valid(
+		&self,
+		asset_id: Option<asset::AssetId>,
+		sources: &[SourcePostingKey<config::Config, Self>],
+		senders: &[SenderPostingKey<config::Config, Self>],
+		receivers: &[ReceiverPostingKey<config::Config, Self>],
+		sinks: &[SinkPostingKey<config::Config, Self>],
+		proof: Proof<config::Config>,
+	) -> Option<(Self::ValidProof, Self::Event)> {
+		let (mut verifying_context, event) = match TransferShape::select(
+			asset_id.is_some(),
+			sources.len(),
+			senders.len(),
+			receivers.len(),
+			sinks.len(),
+		)? {
+			TransferShape::Mint => (
+				manta_parameters::pay::testnet::verifying::Mint::get()
+					.expect("Checksum did not match."),
+				PreprocessedEvent::<T>::ToPrivate {
+					asset: Asset::new(asset_id.unwrap().0, (sources[0].1).0),
+					source: sources[0].0.clone(),
+				},
+			),
+			TransferShape::PrivateTransfer => (
+				manta_parameters::pay::testnet::verifying::PrivateTransfer::get()
+					.expect("Checksum did not match."),
+				PreprocessedEvent::<T>::PrivateTransfer,
+			),
+			TransferShape::Reclaim => (
+				manta_parameters::pay::testnet::verifying::Reclaim::get()
+					.expect("Checksum did not match."),
+				PreprocessedEvent::<T>::ToPublic {
+					asset: Asset::new(asset_id.unwrap().0, (sinks[0].1).0),
+					sink: sinks[0].0.clone(),
+				},
+			),
+		};
+		config::ProofSystem::verify(
+			&config::VerifyingContext::decode(&mut verifying_context)
+				.expect("Unable to decode the verifying context."),
+			&TransferPostingKey::generate_proof_input(asset_id, sources, senders, receivers, sinks),
+			&proof,
+		)
+		.ok()?
+		.then(move || (Wrap(()), event))
+	}
 
     #[inline]
     fn update_public_balances(

@@ -58,64 +58,64 @@ pub const NATIVE_ASSET_ID: AssetId =
 /// Loads the [`MultiProvingContext`] from the SDK.
 #[inline]
 fn load_proving_context() -> MultiProvingContext {
-    let directory = tempfile::tempdir().expect("Unable to create temporary directory.");
-    let path = directory.path();
-    let mint_path = path.join("mint.dat");
-    manta_sdk::pay::testnet::proving::Mint::download(&mint_path)
-        .expect("Unable to download MINT proving context.");
-    let private_transfer_path = path.join("private-transfer.dat");
-    manta_sdk::pay::testnet::proving::PrivateTransfer::download(&private_transfer_path)
-        .expect("Unable to download PRIVATE_TRANSFER proving context.");
-    let reclaim_path = path.join("reclaim.dat");
-    manta_sdk::pay::testnet::proving::Reclaim::download(&reclaim_path)
-        .expect("Unable to download RECLAIM proving context.");
-    MultiProvingContext {
-        mint: ProvingContext::decode(IoReader(
-            File::open(mint_path).expect("Unable to open MINT proving context file."),
-        ))
-        .expect("Unable to decode MINT proving context."),
-        private_transfer: ProvingContext::decode(IoReader(
-            File::open(private_transfer_path)
-                .expect("Unable to open PRIVATE_TRANSFER proving context file."),
-        ))
-        .expect("Unable to decode PRIVATE_TRANSFER proving context."),
-        reclaim: ProvingContext::decode(IoReader(
-            File::open(reclaim_path).expect("Unable to open RECLAIM proving context file."),
-        ))
-        .expect("Unable to decode RECLAIM proving context."),
-    }
+	let directory = tempfile::tempdir().expect("Unable to create temporary directory.");
+	let path = directory.path();
+	let mint_path = path.join("mint.dat");
+	manta_parameters::pay::testnet::proving::Mint::download(&mint_path)
+		.expect("Unable to download MINT proving context.");
+	let private_transfer_path = path.join("private-transfer.dat");
+	manta_parameters::pay::testnet::proving::PrivateTransfer::download(&private_transfer_path)
+		.expect("Unable to download PRIVATE_TRANSFER proving context.");
+	let reclaim_path = path.join("reclaim.dat");
+	manta_parameters::pay::testnet::proving::Reclaim::download(&reclaim_path)
+		.expect("Unable to download RECLAIM proving context.");
+	MultiProvingContext {
+		mint: ProvingContext::decode(IoReader(
+			File::open(mint_path).expect("Unable to open MINT proving context file."),
+		))
+		.expect("Unable to decode MINT proving context."),
+		private_transfer: ProvingContext::decode(IoReader(
+			File::open(private_transfer_path)
+				.expect("Unable to open PRIVATE_TRANSFER proving context file."),
+		))
+		.expect("Unable to decode PRIVATE_TRANSFER proving context."),
+		reclaim: ProvingContext::decode(IoReader(
+			File::open(reclaim_path).expect("Unable to open RECLAIM proving context file."),
+		))
+		.expect("Unable to decode RECLAIM proving context."),
+	}
 }
 
 /// Loads the [`Parameters`] from the SDK.
 #[inline]
 fn load_parameters() -> Parameters {
-    Parameters {
-        note_encryption_scheme: NoteEncryptionScheme::decode(
-            manta_sdk::pay::testnet::parameters::NoteEncryptionScheme::get()
-                .expect("Checksum did not match."),
-        )
-        .expect("Unable to decode NOTE_ENCRYPTION_SCHEME parameters."),
-        utxo_commitment: UtxoCommitmentScheme::decode(
-            manta_sdk::pay::testnet::parameters::UtxoCommitmentScheme::get()
-                .expect("Checksum did not match."),
-        )
-        .expect("Unable to decode UTXO_COMMITMENT_SCHEME parameters."),
-        void_number_commitment: VoidNumberCommitmentScheme::decode(
-            manta_sdk::pay::testnet::parameters::VoidNumberCommitmentScheme::get()
-                .expect("Checksum did not match."),
-        )
-        .expect("Unable to decode VOID_NUMBER_COMMITMENT_SCHEME parameters."),
-    }
+	Parameters {
+		note_encryption_scheme: NoteEncryptionScheme::decode(
+			manta_parameters::pay::testnet::parameters::NoteEncryptionScheme::get()
+				.expect("Checksum did not match."),
+		)
+		.expect("Unable to decode NOTE_ENCRYPTION_SCHEME parameters."),
+		utxo_commitment: UtxoCommitmentScheme::decode(
+			manta_parameters::pay::testnet::parameters::UtxoCommitmentScheme::get()
+				.expect("Checksum did not match."),
+		)
+		.expect("Unable to decode UTXO_COMMITMENT_SCHEME parameters."),
+		void_number_commitment: VoidNumberCommitmentScheme::decode(
+			manta_parameters::pay::testnet::parameters::VoidNumberCommitmentScheme::get()
+				.expect("Checksum did not match."),
+		)
+		.expect("Unable to decode VOID_NUMBER_COMMITMENT_SCHEME parameters."),
+	}
 }
 
 /// Loads the [`UtxoAccumulatorModel`] from the SDK.
 #[inline]
 fn load_utxo_accumulator_model() -> UtxoAccumulatorModel {
-    UtxoAccumulatorModel::decode(
-        manta_sdk::pay::testnet::parameters::UtxoAccumulatorModel::get()
-            .expect("Checksum did not match."),
-    )
-    .expect("Unable to decode UTXO_ACCUMULATOR_MODEL.")
+	UtxoAccumulatorModel::decode(
+		manta_parameters::pay::testnet::parameters::UtxoAccumulatorModel::get()
+			.expect("Checksum did not match."),
+	)
+	.expect("Unable to decode UTXO_ACCUMULATOR_MODEL.")
 }
 
 /// Samples a [`Mint`] transaction of `asset` with a random secret.
