@@ -2,6 +2,7 @@
 
 name: Auto Assign Issues to Projects
 
+# yamllint disable-line rule:truthy
 on:
   issues:
     types: opened
