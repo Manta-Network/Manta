@@ -65,6 +65,7 @@ precompute-coins = [
 	"anyhow",
 	"indoc",
 	"manta-accounting/test",
+	"manta-pay/download",
 	"manta-pay/test",
 	"manta-util/std",
 	"rand",

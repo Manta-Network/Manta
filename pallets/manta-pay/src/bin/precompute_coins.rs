@@ -29,21 +29,21 @@ use manta_crypto::{
     rand::{CryptoRng, Rand, RngCore, Sample},
 };
 use manta_pay::{
-	config::{
-		self, FullParameters, MerkleTreeConfiguration, Mint, MultiProvingContext,
-		MultiVerifyingContext, Parameters, PrivateTransfer, ProofSystem, ProvingContext, Reclaim,
-		UtxoAccumulatorModel, VerifyingContext,
-	},
-	parameters::load_parameters,
+    config::{
+        self, FullParameters, MerkleTreeConfiguration, Mint, MultiProvingContext,
+        MultiVerifyingContext, Parameters, PrivateTransfer, ProofSystem, ProvingContext, Reclaim,
+        UtxoAccumulatorModel, VerifyingContext,
+    },
+    parameters::load_parameters,
 };
 use pallet_manta_pay::types::TransferPost;
 use rand::thread_rng;
 use scale_codec::Encode;
 use std::{
-	env,
-	fs::{self, OpenOptions},
-	io::Write,
-	path::PathBuf,
+    env,
+    fs::{self, OpenOptions},
+    io::Write,
+    path::PathBuf,
 };
 
 /// UTXO Accumulator for Building Circuits
@@ -255,10 +255,10 @@ fn main() -> Result<()> {
     let directory = tempfile::tempdir().expect("Unable to generate temporary test directory.");
     println!("[INFO] Temporary Directory: {:?}", directory);
 
-	let mut rng = thread_rng();
-	let (proving_context, verifying_context, parameters, utxo_accumulator_model) =
-		load_parameters(directory.path()).expect("Unable to load parameters.");
-	let asset_id: u32 = 8;
+    let mut rng = thread_rng();
+    let (proving_context, verifying_context, parameters, utxo_accumulator_model) =
+        load_parameters(directory.path()).expect("Unable to load parameters.");
+    let asset_id: u32 = 8;
 
     let mint = sample_mint(
         &proving_context.mint,
