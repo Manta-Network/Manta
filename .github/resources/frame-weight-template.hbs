@@ -1,16 +1,16 @@
 // Copyright 2020-2022 Manta Network.
 // This file is part of Manta.
-
+//
 // Manta is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-
+//
 // Manta is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-
+//
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -34,76 +34,76 @@ use sp_std::marker::PhantomData;
 
 /// Weight functions needed for {{pallet}}.
 pub trait WeightInfo {
-	{{#each benchmarks as |benchmark|}}
-	fn {{benchmark.name~}}
-	(
-		{{~#each benchmark.components as |c| ~}}
-		{{c.name}}: u32, {{/each~}}
-	) -> Weight;
-	{{/each}}
+    {{#each benchmarks as |benchmark|}}
+    fn {{benchmark.name~}}
+    (
+        {{~#each benchmark.components as |c| ~}}
+        {{c.name}}: u32, {{/each~}}
+    ) -> Weight;
+    {{/each}}
 }
 
 /// Weights for {{pallet}} using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> {{pallet}}::WeightInfo for SubstrateWeight<T> {
-	{{#each benchmarks as |benchmark|}}
-	{{#each benchmark.comments as |comment|}}
-	// {{comment}}
-	{{/each}}
-	fn {{benchmark.name~}}
-	(
-		{{~#each benchmark.components as |c| ~}}
-		{{~#if (not c.is_used)}}_{{/if}}{{c.name}}: u32, {{/each~}}
-	) -> Weight {
-		({{underscore benchmark.base_weight}} as Weight)
-			{{#each benchmark.component_weight as |cw|}}
-			// Standard Error: {{underscore cw.error}}
-			.saturating_add(({{underscore cw.slope}} as Weight).saturating_mul({{cw.name}} as Weight))
-			{{/each}}
-			{{#if (ne benchmark.base_reads "0")}}
-			.saturating_add(T::DbWeight::get().reads({{benchmark.base_reads}} as Weight))
-			{{/if}}
-			{{#each benchmark.component_reads as |cr|}}
-			.saturating_add(T::DbWeight::get().reads(({{cr.slope}} as Weight).saturating_mul({{cr.name}} as Weight)))
-			{{/each}}
-			{{#if (ne benchmark.base_writes "0")}}
-			.saturating_add(T::DbWeight::get().writes({{benchmark.base_writes}} as Weight))
-			{{/if}}
-			{{#each benchmark.component_writes as |cw|}}
-			.saturating_add(T::DbWeight::get().writes(({{cw.slope}} as Weight).saturating_mul({{cw.name}} as Weight)))
-			{{/each}}
-	}
-	{{/each}}
+    {{#each benchmarks as |benchmark|}}
+    {{#each benchmark.comments as |comment|}}
+    // {{comment}}
+    {{/each}}
+    fn {{benchmark.name~}}
+    (
+        {{~#each benchmark.components as |c| ~}}
+        {{~#if (not c.is_used)}}_{{/if}}{{c.name}}: u32, {{/each~}}
+    ) -> Weight {
+        ({{underscore benchmark.base_weight}} as Weight)
+            {{#each benchmark.component_weight as |cw|}}
+            // Standard Error: {{underscore cw.error}}
+            .saturating_add(({{underscore cw.slope}} as Weight).saturating_mul({{cw.name}} as Weight))
+            {{/each}}
+            {{#if (ne benchmark.base_reads "0")}}
+            .saturating_add(T::DbWeight::get().reads({{benchmark.base_reads}} as Weight))
+            {{/if}}
+            {{#each benchmark.component_reads as |cr|}}
+            .saturating_add(T::DbWeight::get().reads(({{cr.slope}} as Weight).saturating_mul({{cr.name}} as Weight)))
+            {{/each}}
+            {{#if (ne benchmark.base_writes "0")}}
+            .saturating_add(T::DbWeight::get().writes({{benchmark.base_writes}} as Weight))
+            {{/if}}
+            {{#each benchmark.component_writes as |cw|}}
+            .saturating_add(T::DbWeight::get().writes(({{cw.slope}} as Weight).saturating_mul({{cw.name}} as Weight)))
+            {{/each}}
+    }
+    {{/each}}
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-	{{#each benchmarks as |benchmark|}}
-	{{#each benchmark.comments as |comment|}}
-	// {{comment}}
-	{{/each}}
-	fn {{benchmark.name~}}
-	(
-		{{~#each benchmark.components as |c| ~}}
-		{{~#if (not c.is_used)}}_{{/if}}{{c.name}}: u32, {{/each~}}
-	) -> Weight {
-		({{underscore benchmark.base_weight}} as Weight)
-			{{#each benchmark.component_weight as |cw|}}
-			// Standard Error: {{underscore cw.error}}
-			.saturating_add(({{underscore cw.slope}} as Weight).saturating_mul({{cw.name}} as Weight))
-			{{/each}}
-			{{#if (ne benchmark.base_reads "0")}}
-			.saturating_add(RocksDbWeight::get().reads({{benchmark.base_reads}} as Weight))
-			{{/if}}
-			{{#each benchmark.component_reads as |cr|}}
-			.saturating_add(RocksDbWeight::get().reads(({{cr.slope}} as Weight).saturating_mul({{cr.name}} as Weight)))
-			{{/each}}
-			{{#if (ne benchmark.base_writes "0")}}
-			.saturating_add(RocksDbWeight::get().writes({{benchmark.base_writes}} as Weight))
-			{{/if}}
-			{{#each benchmark.component_writes as |cw|}}
-			.saturating_add(RocksDbWeight::get().writes(({{cw.slope}} as Weight).saturating_mul({{cw.name}} as Weight)))
-			{{/each}}
-	}
-	{{/each}}
+    {{#each benchmarks as |benchmark|}}
+    {{#each benchmark.comments as |comment|}}
+    // {{comment}}
+    {{/each}}
+    fn {{benchmark.name~}}
+    (
+        {{~#each benchmark.components as |c| ~}}
+        {{~#if (not c.is_used)}}_{{/if}}{{c.name}}: u32, {{/each~}}
+    ) -> Weight {
+        ({{underscore benchmark.base_weight}} as Weight)
+            {{#each benchmark.component_weight as |cw|}}
+            // Standard Error: {{underscore cw.error}}
+            .saturating_add(({{underscore cw.slope}} as Weight).saturating_mul({{cw.name}} as Weight))
+            {{/each}}
+            {{#if (ne benchmark.base_reads "0")}}
+            .saturating_add(RocksDbWeight::get().reads({{benchmark.base_reads}} as Weight))
+            {{/if}}
+            {{#each benchmark.component_reads as |cr|}}
+            .saturating_add(RocksDbWeight::get().reads(({{cr.slope}} as Weight).saturating_mul({{cr.name}} as Weight)))
+            {{/each}}
+            {{#if (ne benchmark.base_writes "0")}}
+            .saturating_add(RocksDbWeight::get().writes({{benchmark.base_writes}} as Weight))
+            {{/if}}
+            {{#each benchmark.component_writes as |cw|}}
+            .saturating_add(RocksDbWeight::get().writes(({{cw.slope}} as Weight).saturating_mul({{cw.name}} as Weight)))
+            {{/each}}
+    }
+    {{/each}}
 }
