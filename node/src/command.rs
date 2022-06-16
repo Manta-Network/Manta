@@ -122,9 +122,9 @@ impl SubstrateCli for Cli {
     fn description() -> String {
         format!(
             "Manta/Calamari/Dolphin Collator\n\nThe command-line arguments provided first will be \
-		passed to the parachain node, while the arguments provided after -- will be passed \
-		to the relaychain node.\n\n\
-		{} [parachain-args] -- [relaychain-args]",
+        passed to the parachain node, while the arguments provided after -- will be passed \
+        to the relaychain node.\n\n\
+        {} [parachain-args] -- [relaychain-args]",
             Self::executable_name()
         )
     }
@@ -170,9 +170,9 @@ impl SubstrateCli for RelayChainCli {
     fn description() -> String {
         format!(
             "Manta/Calamari/Dolphin collator\n\nThe command-line arguments provided first will be \
-		passed to the parachain node, while the arguments provided after -- will be passed \
-		to the relaychain node.\n\n\
-		{} [parachain-args] -- [relaychain-args]",
+        passed to the parachain node, while the arguments provided after -- will be passed \
+        to the relaychain node.\n\n\
+        {} [parachain-args] -- [relaychain-args]",
             Self::executable_name()
         )
     }
@@ -208,39 +208,39 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 }
 
 macro_rules! construct_async_run {
-	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
-		let runner = $cli.create_runner($cmd)?;
-			if runner.config().chain_spec.is_manta() {
-				runner.async_run(|$config| {
-					let $components = new_partial::<manta_runtime::RuntimeApi, MantaRuntimeExecutor, _>(
-						&$config,
-						crate::service::parachain_build_import_queue::<_, _, AuraId>,
-					)?;
-					let task_manager = $components.task_manager;
-					{ $( $code )* }.map(|v| (v, task_manager))
-				})
-			} else if runner.config().chain_spec.is_calamari() {
-				runner.async_run(|$config| {
-					let $components = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor, _>(
-						&$config,
-						crate::service::parachain_build_import_queue::<_, _, AuraId>,
-					)?;
-					let task_manager = $components.task_manager;
-					{ $( $code )* }.map(|v| (v, task_manager))
-				})
-			} else if runner.config().chain_spec.is_dolphin() {
-				runner.async_run(|$config| {
-					let $components = new_partial::<dolphin_runtime::RuntimeApi, DolphinRuntimeExecutor, _>(
-						&$config,
-						crate::service::parachain_build_import_queue::<_, _, AuraId>,
-					)?;
-					let task_manager = $components.task_manager;
-					{ $( $code )* }.map(|v| (v, task_manager))
-				})
-			} else {
-				panic!("wrong chain spec, must be one of manta, calamari, or dolphin chain specs");
-			}
-	}}
+    (|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
+        let runner = $cli.create_runner($cmd)?;
+            if runner.config().chain_spec.is_manta() {
+                runner.async_run(|$config| {
+                    let $components = new_partial::<manta_runtime::RuntimeApi, MantaRuntimeExecutor, _>(
+                        &$config,
+                        crate::service::parachain_build_import_queue::<_, _, AuraId>,
+                    )?;
+                    let task_manager = $components.task_manager;
+                    { $( $code )* }.map(|v| (v, task_manager))
+                })
+            } else if runner.config().chain_spec.is_calamari() {
+                runner.async_run(|$config| {
+                    let $components = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor, _>(
+                        &$config,
+                        crate::service::parachain_build_import_queue::<_, _, AuraId>,
+                    )?;
+                    let task_manager = $components.task_manager;
+                    { $( $code )* }.map(|v| (v, task_manager))
+                })
+            } else if runner.config().chain_spec.is_dolphin() {
+                runner.async_run(|$config| {
+                    let $components = new_partial::<dolphin_runtime::RuntimeApi, DolphinRuntimeExecutor, _>(
+                        &$config,
+                        crate::service::parachain_build_import_queue::<_, _, AuraId>,
+                    )?;
+                    let task_manager = $components.task_manager;
+                    { $( $code )* }.map(|v| (v, task_manager))
+                })
+            } else {
+                panic!("wrong chain spec, must be one of manta, calamari, or dolphin chain specs");
+            }
+    }}
 }
 
 /// Parse command line arguments into service configuration.
@@ -349,7 +349,7 @@ pub fn run_with(cli: Cli) -> Result<()> {
                 runner.sync_run(|config| cmd.run::<Block, DolphinRuntimeExecutor>(config))
             } else {
                 Err("Benchmarking wasn't enabled when building the node. \
-				You can enable it with `--features runtime-benchmarks`."
+                You can enable it with `--features runtime-benchmarks`."
                     .into())
             }
         }
@@ -383,7 +383,7 @@ pub fn run_with(cli: Cli) -> Result<()> {
         }
         #[cfg(not(feature = "try-runtime"))]
         Some(Subcommand::TryRuntime) => Err("Try-runtime wasn't enabled when building the node. \
-		You can enable it with `--features try-runtime`."
+        You can enable it with `--features try-runtime`."
             .into()),
         None => {
             let runner = cli.create_runner(&cli.run.normalize())?;

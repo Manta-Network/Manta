@@ -488,15 +488,15 @@ fn invalid_schedule_should_not_be_updated() {
 fn check_vesting_schedule() {
     type Timestamp = (i32, u32, u32, u32, u32, u32);
     #[rustfmt::skip]
-	let default_schedule: [(Percent,Timestamp, &'static str); 6] = [
-		// (Percentage, (timestamp), date)
-		(Percent::from_percent(45), (2021, 12, 10, 0, 0, 0), "2021-12-10 00:00:00"),
-		(Percent::from_percent(11), (2022, 1, 5, 0, 0, 0), "2022-01-05 00:00:00"),
-		(Percent::from_percent(11), (2022, 3, 2, 0, 0, 0), "2022-03-02 00:00:00"),
-		(Percent::from_percent(11), (2022, 4, 27, 0, 0, 0), "2022-04-27 00:00:00"),
-		(Percent::from_percent(11), (2022, 6, 22, 0, 0, 0), "2022-06-22 00:00:00"),
-		(Percent::from_percent(11), (2022, 8, 17, 0, 0, 0), "2022-08-17 00:00:00"),
-	];
+    let default_schedule: [(Percent,Timestamp, &'static str); 6] = [
+        // (Percentage, (timestamp), date)
+        (Percent::from_percent(45), (2021, 12, 10, 0, 0, 0), "2021-12-10 00:00:00"),
+        (Percent::from_percent(11), (2022, 1, 5, 0, 0, 0), "2022-01-05 00:00:00"),
+        (Percent::from_percent(11), (2022, 3, 2, 0, 0, 0), "2022-03-02 00:00:00"),
+        (Percent::from_percent(11), (2022, 4, 27, 0, 0, 0), "2022-04-27 00:00:00"),
+        (Percent::from_percent(11), (2022, 6, 22, 0, 0, 0), "2022-06-22 00:00:00"),
+        (Percent::from_percent(11), (2022, 8, 17, 0, 0, 0), "2022-08-17 00:00:00"),
+    ];
 
     ExtBuilder::default()
         .existential_deposit(1)

@@ -43,91 +43,91 @@ use sp_std::marker::PhantomData;
 
 /// Weight functions needed for frame_system.
 pub trait WeightInfo {
-	fn remark(b: u32, ) -> Weight;
-	fn remark_with_event(b: u32, ) -> Weight;
-	fn set_heap_pages() -> Weight;
-	fn set_storage(i: u32, ) -> Weight;
-	fn kill_storage(i: u32, ) -> Weight;
-	fn kill_prefix(p: u32, ) -> Weight;
+    fn remark(b: u32, ) -> Weight;
+    fn remark_with_event(b: u32, ) -> Weight;
+    fn set_heap_pages() -> Weight;
+    fn set_storage(i: u32, ) -> Weight;
+    fn kill_storage(i: u32, ) -> Weight;
+    fn kill_prefix(p: u32, ) -> Weight;
 }
 
 /// Weights for frame_system using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> frame_system::WeightInfo for SubstrateWeight<T> {
-	fn remark(_b: u32, ) -> Weight {
-		(1_672_000 as Weight)
-	}
-	fn remark_with_event(b: u32, ) -> Weight {
-		(0 as Weight)
-			// Standard Error: 0
-			.saturating_add((2_000 as Weight).saturating_mul(b as Weight))
-	}
-	// Storage: System Digest (r:1 w:1)
-	// Storage: unknown [0x3a686561707061676573] (r:0 w:1)
-	fn set_heap_pages() -> Weight {
-		(2_834_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
-	}
-	// Storage: Skipped Metadata (r:0 w:0)
-	fn set_storage(i: u32, ) -> Weight {
-		(0 as Weight)
-			// Standard Error: 0
-			.saturating_add((493_000 as Weight).saturating_mul(i as Weight))
-			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(i as Weight)))
-	}
-	// Storage: Skipped Metadata (r:0 w:0)
-	fn kill_storage(i: u32, ) -> Weight {
-		(1_098_000 as Weight)
-			// Standard Error: 0
-			.saturating_add((351_000 as Weight).saturating_mul(i as Weight))
-			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(i as Weight)))
-	}
-	// Storage: Skipped Metadata (r:0 w:0)
-	fn kill_prefix(p: u32, ) -> Weight {
-		(0 as Weight)
-			// Standard Error: 1_000
-			.saturating_add((822_000 as Weight).saturating_mul(p as Weight))
-			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(p as Weight)))
-	}
+    fn remark(_b: u32, ) -> Weight {
+        (1_672_000 as Weight)
+    }
+    fn remark_with_event(b: u32, ) -> Weight {
+        (0 as Weight)
+            // Standard Error: 0
+            .saturating_add((2_000 as Weight).saturating_mul(b as Weight))
+    }
+    // Storage: System Digest (r:1 w:1)
+    // Storage: unknown [0x3a686561707061676573] (r:0 w:1)
+    fn set_heap_pages() -> Weight {
+        (2_834_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(1 as Weight))
+            .saturating_add(T::DbWeight::get().writes(2 as Weight))
+    }
+    // Storage: Skipped Metadata (r:0 w:0)
+    fn set_storage(i: u32, ) -> Weight {
+        (0 as Weight)
+            // Standard Error: 0
+            .saturating_add((493_000 as Weight).saturating_mul(i as Weight))
+            .saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(i as Weight)))
+    }
+    // Storage: Skipped Metadata (r:0 w:0)
+    fn kill_storage(i: u32, ) -> Weight {
+        (1_098_000 as Weight)
+            // Standard Error: 0
+            .saturating_add((351_000 as Weight).saturating_mul(i as Weight))
+            .saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(i as Weight)))
+    }
+    // Storage: Skipped Metadata (r:0 w:0)
+    fn kill_prefix(p: u32, ) -> Weight {
+        (0 as Weight)
+            // Standard Error: 1_000
+            .saturating_add((822_000 as Weight).saturating_mul(p as Weight))
+            .saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(p as Weight)))
+    }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-	fn remark(_b: u32, ) -> Weight {
-		(1_672_000 as Weight)
-	}
-	fn remark_with_event(b: u32, ) -> Weight {
-		(0 as Weight)
-			// Standard Error: 0
-			.saturating_add((2_000 as Weight).saturating_mul(b as Weight))
-	}
-	// Storage: System Digest (r:1 w:1)
-	// Storage: unknown [0x3a686561707061676573] (r:0 w:1)
-	fn set_heap_pages() -> Weight {
-		(2_834_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
-	}
-	// Storage: Skipped Metadata (r:0 w:0)
-	fn set_storage(i: u32, ) -> Weight {
-		(0 as Weight)
-			// Standard Error: 0
-			.saturating_add((493_000 as Weight).saturating_mul(i as Weight))
-			.saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(i as Weight)))
-	}
-	// Storage: Skipped Metadata (r:0 w:0)
-	fn kill_storage(i: u32, ) -> Weight {
-		(1_098_000 as Weight)
-			// Standard Error: 0
-			.saturating_add((351_000 as Weight).saturating_mul(i as Weight))
-			.saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(i as Weight)))
-	}
-	// Storage: Skipped Metadata (r:0 w:0)
-	fn kill_prefix(p: u32, ) -> Weight {
-		(0 as Weight)
-			// Standard Error: 1_000
-			.saturating_add((822_000 as Weight).saturating_mul(p as Weight))
-			.saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(p as Weight)))
-	}
+    fn remark(_b: u32, ) -> Weight {
+        (1_672_000 as Weight)
+    }
+    fn remark_with_event(b: u32, ) -> Weight {
+        (0 as Weight)
+            // Standard Error: 0
+            .saturating_add((2_000 as Weight).saturating_mul(b as Weight))
+    }
+    // Storage: System Digest (r:1 w:1)
+    // Storage: unknown [0x3a686561707061676573] (r:0 w:1)
+    fn set_heap_pages() -> Weight {
+        (2_834_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
+    }
+    // Storage: Skipped Metadata (r:0 w:0)
+    fn set_storage(i: u32, ) -> Weight {
+        (0 as Weight)
+            // Standard Error: 0
+            .saturating_add((493_000 as Weight).saturating_mul(i as Weight))
+            .saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(i as Weight)))
+    }
+    // Storage: Skipped Metadata (r:0 w:0)
+    fn kill_storage(i: u32, ) -> Weight {
+        (1_098_000 as Weight)
+            // Standard Error: 0
+            .saturating_add((351_000 as Weight).saturating_mul(i as Weight))
+            .saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(i as Weight)))
+    }
+    // Storage: Skipped Metadata (r:0 w:0)
+    fn kill_prefix(p: u32, ) -> Weight {
+        (0 as Weight)
+            // Standard Error: 1_000
+            .saturating_add((822_000 as Weight).saturating_mul(p as Weight))
+            .saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(p as Weight)))
+    }
 }

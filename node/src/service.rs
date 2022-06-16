@@ -541,10 +541,10 @@ where
                     let time = sp_timestamp::InherentDataProvider::from_system_time();
 
                     let slot =
-					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-						*time,
-						slot_duration,
-					);
+                    sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                        *time,
+                        slot_duration,
+                    );
 
                     Ok((time, slot))
                 },
@@ -653,20 +653,20 @@ where
                                 let relay_chain_for_aura = relay_chain_for_aura.clone();
                                 async move {
                                     let parachain_inherent =
-							cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
-								relay_parent,
-								&relay_chain_for_aura,
-								&validation_data,
-								id,
-							).await;
+                            cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+                                relay_parent,
+                                &relay_chain_for_aura,
+                                &validation_data,
+                                id,
+                            ).await;
                                     let time =
                                         sp_timestamp::InherentDataProvider::from_system_time();
 
                                     let slot =
-									sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-										*time,
-										slot_duration,
-									);
+                                    sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                                        *time,
+                                        slot_duration,
+                                    );
 
                                     let parachain_inherent =
                                         parachain_inherent.ok_or_else(|| {
@@ -714,20 +714,20 @@ where
                                 let relay_chain_interface = relay_chain_interface.clone();
                                 async move {
                                     let parachain_inherent =
-									cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
-										relay_parent,
-										&relay_chain_interface,
-										&validation_data,
-										id,
-									).await;
+                                    cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+                                        relay_parent,
+                                        &relay_chain_interface,
+                                        &validation_data,
+                                        id,
+                                    ).await;
                                     let time =
                                         sp_timestamp::InherentDataProvider::from_system_time();
 
                                     let slot =
-								sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-									*time,
-									slot_duration,
-								);
+                                sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                                    *time,
+                                    slot_duration,
+                                );
 
                                     let parachain_inherent =
                                         parachain_inherent.ok_or_else(|| {

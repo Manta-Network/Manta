@@ -197,7 +197,7 @@ impl Contains<Call> for MantaFilter {
             // Filter Session and CollatorSelection to prevent users from utility operation.
             | Call::Session(_)
             | Call::CollatorSelection(_)
-			| Call::XcmpQueue(_) | Call::PolkadotXcm(_) | Call::DmpQueue(_) => false, // Filter XCM pallets
+            | Call::XcmpQueue(_) | Call::PolkadotXcm(_) | Call::DmpQueue(_) => false, // Filter XCM pallets
 
             // Explicitly ALLOWED calls
             | Call::Authorship(_)

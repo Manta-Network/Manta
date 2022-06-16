@@ -291,8 +291,8 @@ benchmarks! {
         let c in 1 .. T::MaxCandidates::get();
 
         <CandidacyBond<T>>::put(T::Currency::minimum_balance());
-        <EvictionBaseline<T>>::put(Percent::from_percent(100));	// Consider all collators
-        <EvictionTolerance<T>>::put(Percent::from_percent(0));		// Kick anyone not at perfect performance
+        <EvictionBaseline<T>>::put(Percent::from_percent(100));    // Consider all collators
+        <EvictionTolerance<T>>::put(Percent::from_percent(0));        // Kick anyone not at perfect performance
         <DesiredCandidates<T>>::put(c);
         frame_system::Pallet::<T>::set_block_number(0u32.into());
 

@@ -187,78 +187,78 @@ impl Contains<Call> for BaseFilter {
         // keep CallFilter with explicit true/false for documentation
         match call {
             // Explicitly DISALLOWED calls
-			| Call::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
-			| Call::AssetManager(_) // AssetManager is also filtered because all of its extrinsics
-			                        // are callable only by Root, and Root calls skip this whole filter.
+            | Call::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
+            | Call::AssetManager(_) // AssetManager is also filtered because all of its extrinsics
+                                    // are callable only by Root, and Root calls skip this whole filter.
             // Currently, we filter `register_as_candidate` as this call is not yet ready for community.
-			| Call::CollatorSelection( manta_collator_selection::Call::register_as_candidate{..})
-			// For now disallow public proposal workflows, treasury workflows,
-			// as well as external_propose and external_propose_majority.
-			// The following are filtered out:
-			| Call::Democracy(
+            | Call::CollatorSelection( manta_collator_selection::Call::register_as_candidate{..})
+            // For now disallow public proposal workflows, treasury workflows,
+            // as well as external_propose and external_propose_majority.
+            // The following are filtered out:
+            | Call::Democracy(
                                 pallet_democracy::Call::propose {..}
                                 | pallet_democracy::Call::second {..}
                                 | pallet_democracy::Call::cancel_proposal {..}
                                 | pallet_democracy::Call::clear_public_proposals {..}
                                 | pallet_democracy::Call::external_propose {..}
                                 | pallet_democracy::Call::external_propose_majority {..})
-			| Call::Treasury(_) // Treasury calls are filtered while it is accumulating funds.
-			// Everything except transfer() is filtered out until it is practically needed:
-			| Call::XTokens(
+            | Call::Treasury(_) // Treasury calls are filtered while it is accumulating funds.
+            // Everything except transfer() is filtered out until it is practically needed:
+            | Call::XTokens(
                                 orml_xtokens::Call::transfer_with_fee {..}
                                 | orml_xtokens::Call::transfer_multiasset {..}
                                 | orml_xtokens::Call::transfer_multiasset_with_fee {..}
                                 | orml_xtokens::Call::transfer_multicurrencies {..}
                                 | orml_xtokens::Call::transfer_multiassets {..})
             // Filter callables from XCM pallets, we use XTokens exclusively
-			| Call::XcmpQueue(_) | Call::PolkadotXcm(_) | Call::DmpQueue(_) => false,
+            | Call::XcmpQueue(_) | Call::PolkadotXcm(_) | Call::DmpQueue(_) => false,
 
             // Explicitly ALLOWED calls
-			| Call::Authorship(_)
-			| Call::Multisig(_)
-			| Call::Democracy(pallet_democracy::Call::vote {..}
-								| pallet_democracy::Call::emergency_cancel {..}
-								| pallet_democracy::Call::external_propose_default {..}
-								| pallet_democracy::Call::fast_track  {..}
-								| pallet_democracy::Call::veto_external {..}
-								| pallet_democracy::Call::cancel_referendum {..}
-								| pallet_democracy::Call::cancel_queued {..}
-								| pallet_democracy::Call::delegate {..}
-								| pallet_democracy::Call::undelegate {..}
-								| pallet_democracy::Call::note_preimage {..}
-								| pallet_democracy::Call::note_preimage_operational {..}
-								| pallet_democracy::Call::note_imminent_preimage {..}
-								| pallet_democracy::Call::note_imminent_preimage_operational {..}
-								| pallet_democracy::Call::reap_preimage {..}
-								| pallet_democracy::Call::unlock {..}
-								| pallet_democracy::Call::remove_vote {..}
-								| pallet_democracy::Call::remove_other_vote {..}
-								| pallet_democracy::Call::enact_proposal {..}
-								| pallet_democracy::Call::blacklist {..})
-			| Call::Council(_)
-			| Call::TechnicalCommittee(_)
-			| Call::CouncilMembership(_)
-			| Call::TechnicalMembership(_)
-			| Call::Scheduler(_)
-			| Call::CalamariVesting(_)
-			| Call::Session(_) // User must be able to set their session key when applying for a collator
-			| Call::CollatorSelection(
-				manta_collator_selection::Call::set_invulnerables{..}
-				| manta_collator_selection::Call::set_desired_candidates{..}
-				| manta_collator_selection::Call::set_candidacy_bond{..}
-				| manta_collator_selection::Call::set_eviction_baseline{..}
-				| manta_collator_selection::Call::set_eviction_tolerance{..}
-				| manta_collator_selection::Call::register_candidate{..}
-				| manta_collator_selection::Call::remove_collator{..}
-				| manta_collator_selection::Call::leave_intent{..})
-			| Call::Balances(_)
-			| Call::Preimage(_)
-			| Call::XTokens(orml_xtokens::Call::transfer {..})
-			| Call::Utility(_) => true,
+            | Call::Authorship(_)
+            | Call::Multisig(_)
+            | Call::Democracy(pallet_democracy::Call::vote {..}
+                                | pallet_democracy::Call::emergency_cancel {..}
+                                | pallet_democracy::Call::external_propose_default {..}
+                                | pallet_democracy::Call::fast_track  {..}
+                                | pallet_democracy::Call::veto_external {..}
+                                | pallet_democracy::Call::cancel_referendum {..}
+                                | pallet_democracy::Call::cancel_queued {..}
+                                | pallet_democracy::Call::delegate {..}
+                                | pallet_democracy::Call::undelegate {..}
+                                | pallet_democracy::Call::note_preimage {..}
+                                | pallet_democracy::Call::note_preimage_operational {..}
+                                | pallet_democracy::Call::note_imminent_preimage {..}
+                                | pallet_democracy::Call::note_imminent_preimage_operational {..}
+                                | pallet_democracy::Call::reap_preimage {..}
+                                | pallet_democracy::Call::unlock {..}
+                                | pallet_democracy::Call::remove_vote {..}
+                                | pallet_democracy::Call::remove_other_vote {..}
+                                | pallet_democracy::Call::enact_proposal {..}
+                                | pallet_democracy::Call::blacklist {..})
+            | Call::Council(_)
+            | Call::TechnicalCommittee(_)
+            | Call::CouncilMembership(_)
+            | Call::TechnicalMembership(_)
+            | Call::Scheduler(_)
+            | Call::CalamariVesting(_)
+            | Call::Session(_) // User must be able to set their session key when applying for a collator
+            | Call::CollatorSelection(
+                manta_collator_selection::Call::set_invulnerables{..}
+                | manta_collator_selection::Call::set_desired_candidates{..}
+                | manta_collator_selection::Call::set_candidacy_bond{..}
+                | manta_collator_selection::Call::set_eviction_baseline{..}
+                | manta_collator_selection::Call::set_eviction_tolerance{..}
+                | manta_collator_selection::Call::register_candidate{..}
+                | manta_collator_selection::Call::remove_collator{..}
+                | manta_collator_selection::Call::leave_intent{..})
+            | Call::Balances(_)
+            | Call::Preimage(_)
+            | Call::XTokens(orml_xtokens::Call::transfer {..})
+            | Call::Utility(_) => true,
 
             // DISALLOW anything else
-			| _ => false
-		}
+            | _ => false
+        }
     }
 }
 

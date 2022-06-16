@@ -86,11 +86,11 @@ mod multiplier_tests {
     // update based on runtime impl.
     fn runtime_multiplier_update(fm: Multiplier) -> Multiplier {
         TargetedFeeAdjustment::<
-			Runtime,
-			TargetBlockFullness,
-			AdjustmentVariable,
-			MinimumMultiplier,
-		>::convert(fm)
+            Runtime,
+            TargetBlockFullness,
+            AdjustmentVariable,
+            MinimumMultiplier,
+        >::convert(fm)
     }
 
     fn fetch_kma_price() -> Result<f32, &'static str> {
@@ -174,13 +174,13 @@ mod multiplier_tests {
                 let adjusted_fee = fee_adjustment.saturating_mul_acc_int(fee) + base_fee + len_fee;
                 accumulated_fee += adjusted_fee;
                 println!(
-					"Iteration {}, New fee_adjustment = {:?}. Adjusted Fee: {} KMA, Total Fee: {} KMA, Dollar Value: {}",
-					iteration,
-					fee_adjustment,
-					adjusted_fee / KMA,
-					accumulated_fee / KMA,
-					(accumulated_fee / KMA) as f32 * kma_price,
-				);
+                    "Iteration {}, New fee_adjustment = {:?}. Adjusted Fee: {} KMA, Total Fee: {} KMA, Dollar Value: {}",
+                    iteration,
+                    fee_adjustment,
+                    adjusted_fee / KMA,
+                    accumulated_fee / KMA,
+                    (accumulated_fee / KMA) as f32 * kma_price,
+                );
             }
 
             if accumulated_fee < target_daily_congestion_cost_kma {
