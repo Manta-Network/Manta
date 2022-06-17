@@ -3,7 +3,7 @@ Functional Tests for Manta
 
 Get data from `mantaPay_pull` rpc methods:
 ```bash
-yarn ts-node index.ts --address=some_address
+yarn ts-node manta_pay_rpc.ts --address=some_address
 ```
 The `address` is optional, with default `ws://127.0.0.1:9801`
 
