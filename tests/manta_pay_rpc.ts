@@ -86,7 +86,7 @@ async function insert_void_numbers(
    return start_index + amount;
 }
 
-async function test_order_and_performance(api:ApiPromise) {
+async function check_full_sync_order_and_performance(api:ApiPromise) {
     const before_rpc = performance.now();
 
     var should_pull = true;
@@ -126,7 +126,7 @@ async function test_order_and_performance(api:ApiPromise) {
     }
 
     const after_rpc = performance.now();
-    console.log("rpc time: %i ms", after_rpc - before_rpc);
+    console.log("full rpc sync time: %i ms", after_rpc - before_rpc);
 }
 
 async function setup_storage(api:ApiPromise) {
@@ -154,6 +154,15 @@ async function setup_storage(api:ApiPromise) {
         await delay(TX_DELAY_TIME);
     }
     console.log(">>>> Complete inserting void numbers");
+}
+
+async function check_single_pull_performance(api:ApiPromise) {
+    const before_rpc = performance.now();
+    var receiver_checkpoint = new Array<number>(SHARD_NUMBER);
+    receiver_checkpoint.fill(0);
+    let payload = await (api.rpc as any).mantaPay.pull_ledger_diff({receiver_index: new Array<number>(SHARD_NUMBER).fill(0), sender_index: 0});
+    const after_rpc = performance.now();
+    console.log("single rpc sync time: %i ms", after_rpc - before_rpc);
 }
 
 async function main(){
@@ -199,8 +208,9 @@ async function main(){
         }});
 
     
-    await setup_storage(api);
-    await test_order_and_performance(api);
+    //await setup_storage(api);
+    await check_single_pull_performance(api);
+    await check_full_sync_order_and_performance(api);
 
     console.log("Success!");
 }
