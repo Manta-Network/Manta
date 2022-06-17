@@ -465,7 +465,7 @@ pub mod pallet {
 		T: Config,
 	{
 		/// Maximum Number of Updates per Shard
-		const PULL_MAX_PER_SHARD_UPDATE_SIZE: usize = 128;
+		const PULL_MAX_PER_SHARD_UPDATE_SIZE: usize = 4;
 
 		/// Maximum Size of Sender Data Update
 		const PULL_MAX_SENDER_UPDATE_SIZE: usize = 1024;
