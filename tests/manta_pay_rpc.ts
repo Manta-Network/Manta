@@ -6,7 +6,8 @@ import { single_map_storage_key, double_map_storage_key, delay, HashType} from '
 
 // number of shards at MantaPay
 const SHARD_NUMBER: number = 256;
-const SENDERS_LIMIT: number = 1024;
+const PULL_MAX_SENDER_UPDATE_SIZE: number = 1024;
+const PULL_MAX_PER_SHARD_UPDATE_SIZE: number = 128;
 
 // delay time: 40 sec to be safe
 const TX_DELAY_TIME = 40000;
@@ -71,8 +72,8 @@ async function insert_utxos(
 // insert a certain amount of void numbers
 async function insert_void_numbers(
     api:ApiPromise, keyring: KeyringPair, amount: number, start_index: number): Promise<number>{
-    if (amount % SENDERS_LIMIT != 0) {
-        throw "Senders amount must be a multiple of SENDERS_LIMIT(1024)";
+    if (amount % PULL_MAX_SENDER_UPDATE_SIZE != 0) {
+        throw "Senders amount must be a multiple of PULL_MAX_SENDER_UPDATE_SIZE(1024)";
     }
 
    var data = [];
@@ -104,16 +105,11 @@ async function test_order_and_performance(api:ApiPromise) {
         
         for(var receiver_index = 0; receiver_index < receivers[1].length; receiver_index++) {
             let [ephemeral_public_key, cipher_text] = receivers[1][receiver_index][1];
-            let shard_index = ~~(receiver_index / 4); // integer division
-            let utxo_index = receiver_checkpoint[shard_index] + (receiver_index % 4);
+            let shard_index = ~~(receiver_index / PULL_MAX_PER_SHARD_UPDATE_SIZE); // integer division
+            let utxo_index = receiver_checkpoint[shard_index] + (receiver_index % PULL_MAX_PER_SHARD_UPDATE_SIZE);
             let supposed_next = (shard_index + utxo_index) % 256;
             let actual_next = cipher_text[1][0];
             if(cipher_text[1][0] != supposed_next) {
-                console.log("Failed!");
-                console.log("shard_index: " + shard_index);
-                console.log("utxo_index: " + utxo_index);
-                console.log("supposed_next: " + supposed_next);
-                console.log("actual_next: " + actual_next);
                 throw "UTXOs not in expected order";
             }
         }
@@ -121,15 +117,12 @@ async function test_order_and_performance(api:ApiPromise) {
         for(var sender_index = sender_checkpoint; sender_index < senders[1].length; sender_index++) {
             let supposed_next = sender_index % 256;
             if(senders[1][sender_index][0] != supposed_next) {
-                console.log("Failed!");
-                console.log("supposed_next: " + supposed_next);
-                console.log("actual_next: " + senders[1][sender_index]);
                 throw "Void numbers not in expected order";
             }
         }
 
-        receiver_checkpoint = next_checkpoint(4, receiver_checkpoint);
-        sender_checkpoint += SENDERS_LIMIT;
+        receiver_checkpoint = next_checkpoint(PULL_MAX_PER_SHARD_UPDATE_SIZE, receiver_checkpoint);
+        sender_checkpoint += PULL_MAX_SENDER_UPDATE_SIZE;
     }
 
     const after_rpc = performance.now();
@@ -154,10 +147,10 @@ async function setup_storage(api:ApiPromise) {
     }
     console.log(">>>> Complete inserting UTXOs")
 
-    const vn_amount = SENDERS_LIMIT * batch_number; // Same amount as UTXOs
+    const vn_amount = PULL_MAX_SENDER_UPDATE_SIZE * batch_number; // Same amount as UTXOs
     for(var batch_idx = 0; batch_idx < batch_number; ++batch_idx) {
-        console.log(">>>> Inserting void numbers: %i in total, batch: %i ", SENDERS_LIMIT, batch_idx);
-        await insert_void_numbers(api, sudo_key_pair, SENDERS_LIMIT, batch_idx * SENDERS_LIMIT);
+        console.log(">>>> Inserting void numbers: %i in total, batch: %i ", PULL_MAX_SENDER_UPDATE_SIZE, batch_idx);
+        await insert_void_numbers(api, sudo_key_pair, PULL_MAX_SENDER_UPDATE_SIZE, batch_idx * PULL_MAX_SENDER_UPDATE_SIZE);
         await delay(TX_DELAY_TIME);
     }
     console.log(">>>> Complete inserting void numbers");
