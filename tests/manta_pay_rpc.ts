@@ -156,7 +156,7 @@ async function setup_storage(api:ApiPromise) {
     console.log(">>>> Complete inserting void numbers");
 }
 
-async function check_single_pull_performance(api:ApiPromise) {
+async function check_single_rpc_performance(api:ApiPromise) {
     const before_rpc = performance.now();
     var receiver_checkpoint = new Array<number>(SHARD_NUMBER);
     receiver_checkpoint.fill(0);
@@ -208,8 +208,8 @@ async function main(){
         }});
 
     
-    //await setup_storage(api);
-    await check_single_pull_performance(api);
+    await setup_storage(api);
+    await check_single_rpc_performance(api);
     await check_full_sync_order_and_performance(api);
 
     console.log("Success!");
