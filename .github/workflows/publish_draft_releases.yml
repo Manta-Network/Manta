@@ -383,7 +383,8 @@ jobs:
           cd ${{ github.workspace }}/manta-pc-launch
           pm2 stop measure-block-time-${{ matrix.runtime.chain-spec }}
           pm2 stop manta-pc-launch
-          pm2 stop test-runtime-upgrade-${{ matrix.runtime.chain-spec }}
+          pm2 stop test-previous-runtime-upgrade-${{ matrix.runtime.chain-spec }}
+          pm2 stop test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         uses: actions/upload-artifact@v2
