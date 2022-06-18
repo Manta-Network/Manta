@@ -355,7 +355,7 @@ jobs:
             --error ${{ github.workspace }}/test-previous-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log \
             --no-autorestart
           sleep 120
-          cp ${{ github.workspace }}/${{ github.workspace }}/${{ matrix.runtime.name }}_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools/runtime-upgrade-test/calamari.wasm
+          cp ${{ github.workspace }}/${{ matrix.runtime.name }}_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools/runtime-upgrade-test/calamari.wasm
           pm2 start index.js \
             --name test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }} \
             --output ${{ github.workspace }}/test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log \
