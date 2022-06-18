@@ -1,22 +1,18 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
 import { KeyringPair } from '@polkadot/keyring/types';
-import { u8aToHex, hexToU8a, u8aToBigInt }from '@polkadot/util';
-import { single_map_storage_key, double_map_storage_key, delay, HashType} from './test-util';
+import { u8aToHex }from '@polkadot/util';
+import { single_map_storage_key, double_map_storage_key, delay, emojis, HashType} from './test-util';
 
 // number of shards at MantaPay
 const SHARD_NUMBER: number = 256;
 const PULL_MAX_SENDER_UPDATE_SIZE: number = 1024;
 const PULL_MAX_PER_SHARD_UPDATE_SIZE: number = 128;
 
-// delay time: 40 sec to be safe
-const TX_DELAY_TIME = 40000;
-const performance = require('perf_hooks').performance;
-
 // generate utxo deterministically using shard_idx and utxo_idx
 function generate_utxo(shard_idx: number, utxo_idx: number): Uint8Array {
     const utxo = new Uint8Array(32+32+68);
-    utxo.fill((shard_idx + utxo_idx) % 256);
+    utxo.fill((shard_idx + utxo_idx + 5) % 256);
     return utxo;
 }
 
@@ -27,6 +23,7 @@ function generate_void_number(index: number): Uint8Array {
     return void_number;
 }
 
+// move checkpoint to next 
 function next_checkpoint(
     per_shard_amount: number, 
     checkpoint: Array<number> ): Array<number>
@@ -43,18 +40,8 @@ function next_checkpoint(
     return new_checkpoint;
 }
 
-// insert certain amount utxos per shard, return a checkpoint 
-async function insert_utxos(
-    api: ApiPromise, 
-    keyring: KeyringPair,
-    per_shard_amount: number, 
-    checkpoint: Array<number> ): Promise<Array<number>>
-{
-    if (checkpoint.length !== SHARD_NUMBER) {
-        throw "Checkpoint of wrong size";
-    }
-
-    // generate utxo data
+// generate a batch of utxo insertions from a checkpoint
+function generate_utxo_data(per_shard_amount: number, checkpoint: Array<number>){
     var data = [];
     for(var shard_idx = 0; shard_idx < SHARD_NUMBER; ++ shard_idx) {
         for(var utxo_idx  = checkpoint[shard_idx]; utxo_idx < per_shard_amount; ++ utxo_idx) {
@@ -64,29 +51,101 @@ async function insert_utxos(
             data.push([shards_storage_key, value_str]);
         }
     }
-    let call_data = api.tx.system.setStorage(data);
-    await api.tx.sudo.sudo(call_data).signAndSend(keyring, ({ events = [], status }) => {});
-    return next_checkpoint(per_shard_amount, checkpoint);
+    const new_checkpoint = next_checkpoint(per_shard_amount, checkpoint); 
+    return {data: data, checkpoint: new_checkpoint};
 }
 
-// insert a certain amount of void numbers
-async function insert_void_numbers(
-    api:ApiPromise, keyring: KeyringPair, amount: number, start_index: number): Promise<number>{
-    if (amount % PULL_MAX_SENDER_UPDATE_SIZE != 0) {
-        throw "Senders amount must be a multiple of PULL_MAX_SENDER_UPDATE_SIZE(1024)";
+// insert certain amount utxos per shard
+// return successfully inserted batch number
+async function insert_utxos(
+    api: ApiPromise, 
+    keyring: KeyringPair,
+    batch_number: number,
+    per_shard_amount: number, 
+    init_checkpoint: Array<number>,
+    max_wait_time_sec: number ): Promise<number>
+{
+    if (init_checkpoint.length !== SHARD_NUMBER) {
+        throw "Checkpoint of wrong size";
     }
 
-   var data = [];
-   for(var sender_idx = start_index; sender_idx < start_index + amount; ++sender_idx) {
-        const vn_storage_key = single_map_storage_key("MantaPay", "VoidNumberSetInsertionOrder", sender_idx, 64, HashType.Identity);
-        data.push([vn_storage_key, u8aToHex(generate_void_number(sender_idx))]);
-   }
-   let call_data = api.tx.system.setStorage(data);
-   await api.tx.sudo.sudo(call_data).signAndSend(keyring, ({ events = [], status }) => {});
-   return start_index + amount;
+    var success_batch: number = 0;
+    var cur_checkpoint = init_checkpoint;
+    for (var batch_idx = 0; batch_idx < batch_number; batch_idx ++){
+        var {data, checkpoint} = generate_utxo_data(per_shard_amount, cur_checkpoint);
+        cur_checkpoint = checkpoint;
+        let call_data = api.tx.system.setStorage(data);
+        // https://substrate.stackexchange.com/questions/1776/how-to-use-polkadot-api-to-send-multiple-transactions-simultaneously
+        const unsub = await api.tx.sudo.sudo(call_data).signAndSend(keyring, {nonce: -1}, ({ events = [], status }) => {
+           if (status.isFinalized) {
+                success_batch ++;
+                console.log("%s %i batch utxos insertion finalized.", emojis.write, success_batch);
+                unsub();
+            }
+        });
+    }
+    
+    // wait all txs finalized
+    for(var i =0; i < max_wait_time_sec; i ++){
+        await delay(1000);
+        if (success_batch === batch_number) {
+            console.log("total wait: %i sec.", i + 1);
+            return success_batch;
+        }
+    }
+    return success_batch;
 }
 
-async function check_full_sync_order_and_performance(api:ApiPromise) {
+// generate void number data
+function generate_vn_data(
+    start_index: number,
+    amount_per_batch: number): String[][] {
+    var data = [];    
+    for (var idx = start_index; idx < start_index + amount_per_batch; idx ++){
+        const vn_storage_key = single_map_storage_key(
+            "MantaPay", "VoidNumberSetInsertionOrder", idx, 64, HashType.Identity);
+        data.push([vn_storage_key, u8aToHex(generate_void_number(idx))]);
+    }
+    return data;
+}
+
+// insert certain amount of void numbers in batches
+// returns number of success batch
+async function insert_void_numbers(
+    api:ApiPromise, 
+    keyring: KeyringPair, 
+    amount_per_batch: number,
+    batch_number: number, 
+    start_index: number,
+    max_wait_time_sec: number): Promise<number>{
+
+    var success_batch = 0;
+    var sender_idx = start_index; 
+    for(var batch_idx = 0; batch_idx < batch_number; batch_idx ++) {
+        console.log("start vn batch %i", batch_idx);
+        const data = generate_vn_data(sender_idx, amount_per_batch);
+        let call_data = api.tx.system.setStorage(data);
+        const unsub = await api.tx.sudo.sudo(call_data).signAndSend(keyring, {nonce: -1}, ({ events = [], status }) => {
+            if (status.isFinalized) {
+                success_batch ++;
+                console.log("%s %i batchs void number insertion finalized.", emojis.write, success_batch);
+                unsub();
+            }
+        });
+        sender_idx += amount_per_batch;
+    }
+    // wait all txs finalized
+    for(var i =0; i < max_wait_time_sec; i++){
+        await delay(1000);
+        if (success_batch === batch_number) { 
+            console.log("total wait: %i sec.", i + 1); 
+            return success_batch;
+        }
+    }
+    return success_batch;
+}
+
+async function full_sync_performance(api:ApiPromise) {
     const before_rpc = performance.now();
 
     var should_pull = true;
@@ -133,40 +192,43 @@ async function setup_storage(api:ApiPromise) {
     const keyring = new Keyring({ type: 'sr25519' });
     const sudo_key_pair = keyring.addFromMnemonic('bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice');
     
-    const batch_number = 32;
-    const batch_amount = 16;
+    const utxo_big_batch_number = 1;
+    const utxo_batch_number = 16;
+    const utxo_per_shard = 16;
+    const vn_batch_number = 2;
+    const vn_batch_size = 1024;
     
-    console.log(">>>> Inserting UTXOs: %i per shard, %i batches", batch_amount, batch_number);
+   
     var receiver_checkpoint = new Array<number>(SHARD_NUMBER);
-    receiver_checkpoint.fill(0);
-    for(var batch_idx = 0; batch_idx < batch_number; batch_idx ++){
-        receiver_checkpoint = await insert_utxos(api, sudo_key_pair, batch_amount, receiver_checkpoint);
-        console.log(receiver_checkpoint);
-        console.log(">>>> batch %i done.", batch_idx);
-        await delay(TX_DELAY_TIME);
+    var check_idx = 0;
+    console.log(">>>>>>>>> UTXO INSERT START >>>>>>>>");
+    for (var big_batch_idx = 0; big_batch_idx < utxo_big_batch_number; big_batch_idx ++) {
+        console.log(">>>> Inserting %i big batch UTXOs", big_batch_idx + 1);
+        receiver_checkpoint.fill(check_idx);
+        const utxo_batch_done = await insert_utxos(api, sudo_key_pair, utxo_batch_number, utxo_per_shard, receiver_checkpoint, 1000);
+        check_idx += utxo_batch_done * utxo_per_shard;
+        console.log(">>>> Complete %i big batch with %i UTXOs", big_batch_idx + 1 , utxo_batch_done * utxo_per_shard * SHARD_NUMBER);
     }
-    console.log(">>>> Complete inserting UTXOs")
+    console.log(">>>>>>>>> UTXO INSERT DONE >>>>>>>>");
 
-    const vn_amount = PULL_MAX_SENDER_UPDATE_SIZE * batch_number; // Same amount as UTXOs
-    for(var batch_idx = 0; batch_idx < batch_number; ++batch_idx) {
-        console.log(">>>> Inserting void numbers: %i in total, batch: %i ", PULL_MAX_SENDER_UPDATE_SIZE, batch_idx);
-        await insert_void_numbers(api, sudo_key_pair, PULL_MAX_SENDER_UPDATE_SIZE, batch_idx * PULL_MAX_SENDER_UPDATE_SIZE);
-        await delay(TX_DELAY_TIME);
-    }
-    console.log(">>>> Complete inserting void numbers");
+    console.log(">>>> Inserting void numbers: %i per batch, %i batchs", vn_batch_size, vn_batch_number);
+    const vn_batch_done = await insert_void_numbers(api, sudo_key_pair, vn_batch_size, vn_batch_number, 0, 1000);
+    console.log(">>>> Complete inserting %i void numbers", vn_batch_done * vn_batch_size);
 }
 
-async function check_single_rpc_performance(api:ApiPromise) {
+async function single_rpc_performance(api:ApiPromise) {
     const before_rpc = performance.now();
     var receiver_checkpoint = new Array<number>(SHARD_NUMBER);
     receiver_checkpoint.fill(0);
-    let payload = await (api.rpc as any).mantaPay.pull_ledger_diff({receiver_index: new Array<number>(SHARD_NUMBER).fill(0), sender_index: 0});
+    const data = await (api.rpc as any).mantaPay.pull_ledger_diff({receiver_index: new Array<number>(SHARD_NUMBER).fill(0), sender_index: 0});
     const after_rpc = performance.now();
+    console.log("ledger diff receiver size: %i", data.receivers.length);
+    console.log("ledger diff void number size: %i", data.senders.length);
     console.log("single rpc sync time: %i ms", after_rpc - before_rpc);
 }
 
 async function main(){
-    let nodeAddress = "ws://127.0.0.1:9801";
+    let nodeAddress = "ws://127.0.0.1:9800";
     const args = require('minimist')(process.argv.slice(2))
     if (args.hasOwnProperty('address')) {
       nodeAddress = args['address'];
@@ -208,9 +270,16 @@ async function main(){
         }});
 
     
-    await setup_storage(api);
-    await check_single_rpc_performance(api);
-    await check_full_sync_order_and_performance(api);
+    //await setup_storage(api);
+    await single_rpc_performance(api);
+    var before = performance.now();
+    let shards = await (api.query as any).mantaPay.shards.entries();
+    let vns = await (api.query as any).mantaPay.voidNumberSetInsertionOrder.entries();
+    var after = performance.now();
+    console.log("shard size: %i", shards.length);
+    console.log("vn size: %i", vns.length);
+    console.log("entires time: %i ms", after - before);
+    //await check_full_sync_order_and_performance(api);
 
     console.log("Success!");
 }

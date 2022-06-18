@@ -11,6 +11,13 @@ export async function delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
 }
 
+// emojis
+export const emojis = {
+    post: String.fromCodePoint(0x1F4EE),
+    pending: String.fromCodePoint(0x1F69A),
+    write: String.fromCodePoint(0x1F4DD),
+}
+
 function twox_128(data: HexString | Buffer | Uint8Array | string): Uint8Array {
     return xxhashAsU8a(data, 128);
 }
