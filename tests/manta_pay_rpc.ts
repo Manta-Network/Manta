@@ -12,7 +12,10 @@ const PULL_MAX_PER_SHARD_UPDATE_SIZE: number = 128;
 // generate utxo deterministically using shard_idx and utxo_idx
 function generate_utxo(shard_idx: number, utxo_idx: number): Uint8Array {
     const utxo = new Uint8Array(32+32+68);
-    utxo.fill((shard_idx + utxo_idx + 5) % 256);
+    let mod = (shard_idx + utxo_idx) % 256;
+    // we need to avoid fill all 0s, since all 0s means empty
+    var element = ( mod === 0 ? 42 : mod );
+    utxo.fill(element);
     return utxo;
 }
 
@@ -44,7 +47,7 @@ function next_checkpoint(
 function generate_utxo_data(per_shard_amount: number, checkpoint: Array<number>){
     var data = [];
     for(var shard_idx = 0; shard_idx < SHARD_NUMBER; ++ shard_idx) {
-        for(var utxo_idx  = checkpoint[shard_idx]; utxo_idx < per_shard_amount; ++ utxo_idx) {
+        for(var utxo_idx  = checkpoint[shard_idx]; utxo_idx < checkpoint[shard_idx] + per_shard_amount; ++ utxo_idx) {
             const shards_storage_key = double_map_storage_key(
                 "MantaPay", "Shards", shard_idx, 8, HashType.Identity, utxo_idx, 64, HashType.Identity);
             let value_str = u8aToHex(generate_utxo(shard_idx, utxo_idx));
@@ -188,25 +191,24 @@ async function full_sync_performance(api:ApiPromise) {
     console.log("full rpc sync time: %i ms", after_rpc - before_rpc);
 }
 
-async function setup_storage(api:ApiPromise) {
+async function setup_storage(api:ApiPromise, init_utxo_idx: number) {
     const keyring = new Keyring({ type: 'sr25519' });
     const sudo_key_pair = keyring.addFromMnemonic('bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice');
     
     const utxo_big_batch_number = 1;
-    const utxo_batch_number = 16;
+    const utxo_batch_number = 4;
     const utxo_per_shard = 16;
-    const vn_batch_number = 2;
+    const vn_batch_number = 1;
     const vn_batch_size = 1024;
     
-   
     var receiver_checkpoint = new Array<number>(SHARD_NUMBER);
-    var check_idx = 0;
+    var check_idx = init_utxo_idx;
     console.log(">>>>>>>>> UTXO INSERT START >>>>>>>>");
     for (var big_batch_idx = 0; big_batch_idx < utxo_big_batch_number; big_batch_idx ++) {
         console.log(">>>> Inserting %i big batch UTXOs", big_batch_idx + 1);
         receiver_checkpoint.fill(check_idx);
+        console.log("starting utxo idx: %i", receiver_checkpoint[0]);
         const utxo_batch_done = await insert_utxos(api, sudo_key_pair, utxo_batch_number, utxo_per_shard, receiver_checkpoint, 1000);
-        check_idx += utxo_batch_done * utxo_per_shard;
         console.log(">>>> Complete %i big batch with %i UTXOs", big_batch_idx + 1 , utxo_batch_done * utxo_per_shard * SHARD_NUMBER);
     }
     console.log(">>>>>>>>> UTXO INSERT DONE >>>>>>>>");
@@ -269,19 +271,22 @@ async function main(){
             }
         }});
 
-    
-    //await setup_storage(api);
-    await single_rpc_performance(api);
+    //await setup_storage(api, 64);
+    //const block_hash = await api.rpc.chain.getBlockHash()
+    //let shards: any[][] = await (api.query as any).mantaPay.shards.entriesAt(block_hash);
+    //console.log("shards size: %i", shards.length);
+    //await single_rpc_performance(api);
+    const block_hash = await api.rpc.chain.getBlockHash();
     var before = performance.now();
-    let shards = await (api.query as any).mantaPay.shards.entries();
-    let vns = await (api.query as any).mantaPay.voidNumberSetInsertionOrder.entries();
+    let shards = await ((await api.at(block_hash)).query as any).mantaPay.shards.entries();
+    //let vns = await (api.query as any).mantaPay.voidNumberSetInsertionOrder.entries();
     var after = performance.now();
     console.log("shard size: %i", shards.length);
-    console.log("vn size: %i", vns.length);
+    //console.log("vn size: %i", vns.length);
     console.log("entires time: %i ms", after - before);
     //await check_full_sync_order_and_performance(api);
 
-    console.log("Success!");
+    //console.log("Success!");
 }
 
 main().catch(console.error).finally(() => process.exit());
