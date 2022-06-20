@@ -2366,6 +2366,9 @@ fn transfer_multicurrencies_should_work_scenarios() {
     });
 }
 
+/// Checks only must-fail cases related to transfer_multicurrencies
+/// First part tests cases on the sender side.
+/// Second part tests cases on the receiver side.
 #[test]
 fn transfer_multicurrencies_should_fail_scenarios() {
     MockNet::reset();
