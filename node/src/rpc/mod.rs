@@ -30,30 +30,30 @@ pub type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
 
 /// RPC Extension Builder
 pub struct Builder<C, P, M = common::Common> {
-	/// Client
-	client: Arc<C>,
+    /// Client
+    client: Arc<C>,
 
-	/// Transaction Poool
-	transaction_pool: Arc<P>,
+    /// Transaction Poool
+    transaction_pool: Arc<P>,
 
-	/// Runtime Marker
-	__: PhantomData<M>,
+    /// Runtime Marker
+    __: PhantomData<M>,
 }
 
 impl<C, P, M> Builder<C, P, M> {
-	/// Builds a new RPC Extension [`Builder`] from `client` and `transaction_pool`.
-	#[inline]
-	pub fn new(client: Arc<C>, transaction_pool: Arc<P>) -> Self {
-		Self {
-			client,
-			transaction_pool,
-			__: PhantomData,
-		}
-	}
+    /// Builds a new RPC Extension [`Builder`] from `client` and `transaction_pool`.
+    #[inline]
+    pub fn new(client: Arc<C>, transaction_pool: Arc<P>) -> Self {
+        Self {
+            client,
+            transaction_pool,
+            __: PhantomData,
+        }
+    }
 
-	/// Converts `self` into a [`Builder`] with the `T` marker.
-	#[inline]
-	pub fn using<T>(&self) -> Builder<C, P, T> {
-		Builder::new(self.client.clone(), self.transaction_pool.clone())
-	}
+    /// Converts `self` into a [`Builder`] with the `T` marker.
+    #[inline]
+    pub fn using<T>(&self) -> Builder<C, P, T> {
+        Builder::new(self.client.clone(), self.transaction_pool.clone())
+    }
 }
