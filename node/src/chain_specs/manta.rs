@@ -14,19 +14,25 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Manta Chain Specifications
+
 use super::*;
 use crate::command::MANTA_PARACHAIN_ID;
 use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
-const MANTA_PROTOCOL_ID: &str = "manta"; // for p2p network configuration
-const POLKADOT_RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";
-const POLKADOT_RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
-#[allow(dead_code)]
-const POLKADOT_RELAYCHAIN_MAIN_NET: &str = "polkadot";
+/// Manta Protocol Identifier
+pub const MANTA_PROTOCOL_ID: &str = "manta";
+
+/// Polkadot Relaychain Local Network Identifier
+pub const POLKADOT_RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";
+
+/// Polkadot Relaychain Development Network Identifier
+pub const POLKADOT_RELAYCHAIN_DEV_NET: &str = "polkadot-dev";
 
 /// The default XCM version to set in genesis config.
-const SAFE_XCM_VERSION: u32 = 2;
+pub const SAFE_XCM_VERSION: u32 = 2;
 
+/// Manta Chain Specification
 pub type MantaChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
 
 /// Generate the manta session keys from individual elements.
@@ -36,7 +42,7 @@ pub fn manta_session_keys(keys: AuraId) -> manta_runtime::opaque::SessionKeys {
     manta_runtime::opaque::SessionKeys { aura: keys }
 }
 
-/// Token
+/// Returns the [`Properties`] for the Manta parachain.
 pub fn manta_properties() -> Properties {
     let mut p = Properties::new();
     p.insert("ss58format".into(), constants::MANTA_SS58PREFIX.into());
@@ -45,18 +51,14 @@ pub fn manta_properties() -> Properties {
     p
 }
 
-// manta chain spec
+/// Returns the Manta development chainspec.
 pub fn manta_development_config() -> MantaChainSpec {
-    let properties = manta_properties();
     MantaChainSpec::from_genesis(
-        // Name
         "Manta Parachain Development",
-        // ID
         "manta_dev",
         ChainType::Local,
         move || {
             manta_dev_genesis(
-                // initial collators.
                 vec![(
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
                     get_collator_keys_from_seed("Alice"),
@@ -74,7 +76,7 @@ pub fn manta_development_config() -> MantaChainSpec {
         None,
         Some(MANTA_PROTOCOL_ID),
         None,
-        Some(properties),
+        Some(manta_properties()),
         Extensions {
             relay_chain: POLKADOT_RELAYCHAIN_DEV_NET.into(),
             para_id: MANTA_PARACHAIN_ID,
@@ -82,17 +84,14 @@ pub fn manta_development_config() -> MantaChainSpec {
     )
 }
 
+/// Returns the Manta local chainspec.
 pub fn manta_local_config() -> MantaChainSpec {
-    let properties = manta_properties();
     MantaChainSpec::from_genesis(
-        // Name
         "Manta Parachain Local",
-        // ID
         "manta_local",
         ChainType::Local,
         move || {
             manta_dev_genesis(
-                // initial collators.
                 vec![
                     (
                         get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -122,7 +121,7 @@ pub fn manta_local_config() -> MantaChainSpec {
         None,
         Some(MANTA_PROTOCOL_ID),
         None,
-        Some(properties),
+        Some(manta_properties()),
         Extensions {
             relay_chain: POLKADOT_RELAYCHAIN_LOCAL_NET.into(),
             para_id: MANTA_PARACHAIN_ID,
@@ -187,6 +186,7 @@ fn manta_dev_genesis(
     }
 }
 
+/// Returns the Manta testnet chainspec.
 pub fn manta_testnet_config() -> Result<MantaChainSpec, String> {
     let mut spec = MantaChainSpec::from_json_bytes(
         &include_bytes!("../../../genesis/manta-testnet-genesis.json")[..],
@@ -195,14 +195,16 @@ pub fn manta_testnet_config() -> Result<MantaChainSpec, String> {
     Ok(spec)
 }
 
-pub fn manta_config() -> Result<MantaChainSpec, String> {
-    MantaChainSpec::from_json_bytes(&include_bytes!("../../../genesis/manta-genesis.json")[..])
-}
-
+/// Returns the Manta testnet for CI chainspec.
 pub fn manta_testnet_ci_config() -> Result<MantaChainSpec, String> {
     let mut spec = MantaChainSpec::from_json_bytes(
         &include_bytes!("../../../genesis/manta-testnet-ci-genesis.json")[..],
     )?;
     spec.extensions_mut().para_id = MANTA_PARACHAIN_ID;
     Ok(spec)
+}
+
+/// Returns the Manta mainnet chainspec.
+pub fn manta_config() -> Result<MantaChainSpec, String> {
+    MantaChainSpec::from_json_bytes(&include_bytes!("../../../genesis/manta-genesis.json")[..])
 }

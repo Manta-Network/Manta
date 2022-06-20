@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Chain-Specific Command Line Interfaces
+
 use crate::{
     chain_specs,
     cli::{Cli, RelayChainCli, Subcommand},
