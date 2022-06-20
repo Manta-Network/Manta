@@ -23,5 +23,5 @@ pub const mDOL: Balance = DOL / 1_000; //15 decimal, milli-DOL
 pub const uDOL: Balance = DOL / 1_000_000; // 12 decimal, micro-DOL
 
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
-	items as Balance * 15 * mDOL + (bytes as Balance) * 6 * mDOL // TODO: revisit the storage cost here
+    items as Balance * 15 * mDOL + (bytes as Balance) * 6 * mDOL // TODO: revisit the storage cost here
 }

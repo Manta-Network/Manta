@@ -43,39 +43,39 @@ use sp_std::marker::PhantomData;
 
 /// Weight functions needed for cumulus_pallet_xcmp_queue.
 pub trait WeightInfo {
-	fn set_config_with_u32() -> Weight;
-	fn set_config_with_weight() -> Weight;
+    fn set_config_with_u32() -> Weight;
+    fn set_config_with_weight() -> Weight;
 }
 
 /// Weights for cumulus_pallet_xcmp_queue using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> cumulus_pallet_xcmp_queue::WeightInfo for SubstrateWeight<T> {
-	// Storage: XcmpQueue QueueConfig (r:1 w:1)
-	fn set_config_with_u32() -> Weight {
-		(3_155_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
-	}
-	// Storage: XcmpQueue QueueConfig (r:1 w:1)
-	fn set_config_with_weight() -> Weight {
-		(3_231_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
-	}
+    // Storage: XcmpQueue QueueConfig (r:1 w:1)
+    fn set_config_with_u32() -> Weight {
+        (3_155_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(1 as Weight))
+            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    }
+    // Storage: XcmpQueue QueueConfig (r:1 w:1)
+    fn set_config_with_weight() -> Weight {
+        (3_231_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(1 as Weight))
+            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-	// Storage: XcmpQueue QueueConfig (r:1 w:1)
-	fn set_config_with_u32() -> Weight {
-		(3_155_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
-	}
-	// Storage: XcmpQueue QueueConfig (r:1 w:1)
-	fn set_config_with_weight() -> Weight {
-		(3_231_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
-	}
+    // Storage: XcmpQueue QueueConfig (r:1 w:1)
+    fn set_config_with_u32() -> Weight {
+        (3_155_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    }
+    // Storage: XcmpQueue QueueConfig (r:1 w:1)
+    fn set_config_with_weight() -> Weight {
+        (3_231_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    }
 }
