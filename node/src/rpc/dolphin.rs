@@ -20,8 +20,8 @@ use crate::rpc::{common::Common, Builder, RpcExtension};
 use frame_rpc_system::AccountNonceApi;
 use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
 use pallet_manta_pay::{
-	rpc::{Pull, PullApi},
-	runtime::PullLedgerDiffApi,
+    rpc::{Pull, PullApi},
+    runtime::PullLedgerDiffApi,
 };
 use pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi;
 use sc_client_api::HeaderBackend;
@@ -36,23 +36,23 @@ pub struct Dolphin;
 
 impl<C, P> RpcExtensionBuilder for Builder<C, P, Dolphin>
 where
-	C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-	C::Api: BlockBuilder<Block>
-		+ AccountNonceApi<Block, AccountId, Nonce>
-		+ PullLedgerDiffApi<Block>
-		+ TransactionPaymentRuntimeApi<Block, Balance>,
-	P: 'static + TransactionPool,
+    C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
+    C::Api: BlockBuilder<Block>
+        + AccountNonceApi<Block, AccountId, Nonce>
+        + PullLedgerDiffApi<Block>
+        + TransactionPaymentRuntimeApi<Block, Balance>,
+    P: 'static + TransactionPool,
 {
-	type Output = RpcExtension;
+    type Output = RpcExtension;
 
-	#[inline]
-	fn build(
-		&self,
-		deny: DenyUnsafe,
-		subscription_executor: SubscriptionTaskExecutor,
-	) -> Result<Self::Output, Error> {
-		let mut io = self.using::<Common>().build(deny, subscription_executor)?;
-		io.extend_with(Pull::new(self.client.clone()).to_delegate());
-		Ok(io)
-	}
+    #[inline]
+    fn build(
+        &self,
+        deny: DenyUnsafe,
+        subscription_executor: SubscriptionTaskExecutor,
+    ) -> Result<Self::Output, Error> {
+        let mut io = self.using::<Common>().build(deny, subscription_executor)?;
+        io.extend_with(Pull::new(self.client.clone()).to_delegate());
+        Ok(io)
+    }
 }

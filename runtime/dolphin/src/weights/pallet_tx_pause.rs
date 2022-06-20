@@ -43,39 +43,39 @@ use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_tx_pause.
 pub trait WeightInfo {
-	fn pause_transaction() -> Weight;
-	fn unpause_transaction() -> Weight;
+    fn pause_transaction() -> Weight;
+    fn unpause_transaction() -> Weight;
 }
 
 /// Weights for pallet_tx_pause using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_tx_pause::WeightInfo for SubstrateWeight<T> {
-	// Storage: TransactionPause PausedTransactions (r:1 w:1)
-	fn pause_transaction() -> Weight {
-		(12_241_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
-	}
-	// Storage: TransactionPause PausedTransactions (r:1 w:1)
-	fn unpause_transaction() -> Weight {
-		(13_232_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
-	}
+    // Storage: TransactionPause PausedTransactions (r:1 w:1)
+    fn pause_transaction() -> Weight {
+        (12_241_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(1 as Weight))
+            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    }
+    // Storage: TransactionPause PausedTransactions (r:1 w:1)
+    fn unpause_transaction() -> Weight {
+        (13_232_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(1 as Weight))
+            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-	// Storage: TransactionPause PausedTransactions (r:1 w:1)
-	fn pause_transaction() -> Weight {
-		(12_241_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
-	}
-	// Storage: TransactionPause PausedTransactions (r:1 w:1)
-	fn unpause_transaction() -> Weight {
-		(13_232_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
-	}
+    // Storage: TransactionPause PausedTransactions (r:1 w:1)
+    fn pause_transaction() -> Weight {
+        (12_241_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    }
+    // Storage: TransactionPause PausedTransactions (r:1 w:1)
+    fn unpause_transaction() -> Weight {
+        (13_232_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    }
 }

@@ -83,16 +83,16 @@ jobs:
         run: |
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
-          rustup toolchain install stable
           rustup toolchain install nightly
-          rustup default stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
+          rustup default nightly
           rustup update
+          cargo install taplo-cli
       -
         name: Run yamllint
         uses: actionshub/yamllint@main
       -
-        name: Check Clippy & Formatting
+        name: Check Formatting
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -100,8 +100,9 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          SKIP_WASM_BUILD=1 cargo clippy
-          SKIP_WASM_BUILD=1 cargo fmt
+          cargo fmt --all -- --check
+          $HOME/.cargo/bin/taplo fmt --check
+          $HOME/.cargo/bin/taplo lint
       -
         name: Check Build
         env:
@@ -111,8 +112,8 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo check --no-default-features
-          cargo check --all-features
+          SKIP_WASM_BUILD=1 cargo check --no-default-features
+          SKIP_WASM_BUILD=1 cargo clippy --all-targets --all-features -- -D warnings
       -
         name: stop sccache server
         run: sccache --stop-server || true

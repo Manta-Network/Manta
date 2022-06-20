@@ -1,56 +1,56 @@
 [package]
 authors = ['Manta Network']
-name = "runtime-common"
-version = '3.2.0'
 edition = "2021"
 homepage = 'https://manta.network'
 license = 'GPL-3.0'
+name = "runtime-common"
 repository = 'https://github.com/Manta-Network/Manta/'
+version = '3.2.0'
 
 [dependencies]
 
 [dev-dependencies]
 # 3rd dependencies
 codec = { package = "parity-scale-codec", version = "3.0" }
-scale-info = { version = "2.0", features = [ "derive" ] }
+scale-info = { version = "2.0", features = ["derive"] }
 
 # Substrate dependencies
 frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
 frame-system = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
-sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
-sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
-sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
-sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
+pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
 pallet-utility = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
-pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
+sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
+sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
+sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
 
 # Polkadot dependencies
-polkadot-core-primitives = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
-polkadot-runtime-parachains = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
-polkadot-parachain = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
+polkadot-core-primitives = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
+polkadot-parachain = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
+polkadot-runtime-parachains = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
 xcm = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
-xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18"}
-xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18"}
-xcm-simulator = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18"}
+xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
+xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
+xcm-simulator = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.18" }
 
 # Cumulus dependencies
-parachain-info = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.18" }
+cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.18" }
+cumulus-pallet-parachain-system = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.18" }
 cumulus-pallet-xcm = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.18" }
+cumulus-pallet-xcmp-queue = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.18" }
 cumulus-primitives-parachain-inherent = { git = "https://github.com/paritytech/cumulus.git", branch = "polkadot-v0.9.18" }
 cumulus-test-relay-sproof-builder = { git = "https://github.com/paritytech/cumulus.git", branch = "polkadot-v0.9.18" }
-cumulus-pallet-parachain-system = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.18" }
-cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.18" }
-cumulus-pallet-xcmp-queue = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.18" }
+parachain-info = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.18" }
 
 # Orml dependencies
-orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", rev="7e2f985" }
-orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", rev="7e2f985" }
+orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", rev = "7e2f985" }
+orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", rev = "7e2f985" }
 
 # Self dependencies
-pallet-asset-manager = { path = '../../pallets/asset-manager' }
 manta-primitives = { path = '../../primitives' }
+pallet-asset-manager = { path = '../../pallets/asset-manager' }
 
 [features]
 default = ["std"]
