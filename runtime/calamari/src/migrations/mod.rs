@@ -15,3 +15,4 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 pub mod sudo;
+pub mod versions;
