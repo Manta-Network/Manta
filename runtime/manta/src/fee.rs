@@ -16,8 +16,8 @@
 
 use crate::currency;
 use frame_support::weights::{
-	constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-	WeightToFeePolynomial,
+    constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
+    WeightToFeePolynomial,
 };
 use manta_primitives::types::Balance;
 use smallvec::smallvec;
@@ -38,18 +38,18 @@ pub const TARGET_BLOCK_FULLNESS: Perbill = Perbill::from_percent(25);
 ///   - Setting it to `1` will cause the literal `#[weight = x]` values to be charged.
 pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
-	type Balance = Balance;
-	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		// in Polkadot, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 CENT:
-		// in Manta Parachain, we map to 1/10 of that, or 1/100 CENT
-		// TODO, revisit here to figure out why use this polynomial
-		let p = currency::cMANTA;
-		let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
-		smallvec![WeightToFeeCoefficient {
-			degree: 1,
-			negative: false,
-			coeff_frac: Perbill::from_rational(p % q, q),
-			coeff_integer: p / q,
-		}]
-	}
+    type Balance = Balance;
+    fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+        // in Polkadot, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 CENT:
+        // in Manta Parachain, we map to 1/10 of that, or 1/100 CENT
+        // TODO, revisit here to figure out why use this polynomial
+        let p = currency::cMANTA;
+        let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
+        smallvec![WeightToFeeCoefficient {
+            degree: 1,
+            negative: false,
+            coeff_frac: Perbill::from_rational(p % q, q),
+            coeff_integer: p / q,
+        }]
+    }
 }

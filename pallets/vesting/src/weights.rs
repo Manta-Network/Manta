@@ -44,70 +44,70 @@ use sp_std::marker::PhantomData;
 
 /// Weight functions needed for calamari_vesting.
 pub trait WeightInfo {
-	fn update_vesting_schedule() -> Weight;
-	fn vest() -> Weight;
-	fn vested_transfer() -> Weight;
+    fn update_vesting_schedule() -> Weight;
+    fn vest() -> Weight;
+    fn vested_transfer() -> Weight;
 }
 
 /// Weights for calamari_vesting using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-	// Storage: CalamariVesting VestingSchedule (r:1 w:1)
-	// Storage: Timestamp Now (r:1 w:0)
-	fn update_vesting_schedule() -> Weight {
-		(47_829_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
-	}
-	// Storage: Timestamp Now (r:1 w:0)
-	// Storage: CalamariVesting VestingSchedule (r:1 w:0)
-	// Storage: CalamariVesting VestingBalances (r:1 w:1)
-	// Storage: Balances Locks (r:1 w:1)
-	// Storage: System Account (r:1 w:1)
-	fn vest() -> Weight {
-		(110_048_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(5 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
-	}
-	// Storage: CalamariVesting VestingBalances (r:1 w:1)
-	// Storage: System Account (r:1 w:1)
-	// Storage: Timestamp Now (r:1 w:0)
-	// Storage: CalamariVesting VestingSchedule (r:1 w:0)
-	// Storage: Balances Locks (r:1 w:1)
-	fn vested_transfer() -> Weight {
-		(216_897_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(5 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
-	}
+    // Storage: CalamariVesting VestingSchedule (r:1 w:1)
+    // Storage: Timestamp Now (r:1 w:0)
+    fn update_vesting_schedule() -> Weight {
+        (47_829_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(2 as Weight))
+            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    }
+    // Storage: Timestamp Now (r:1 w:0)
+    // Storage: CalamariVesting VestingSchedule (r:1 w:0)
+    // Storage: CalamariVesting VestingBalances (r:1 w:1)
+    // Storage: Balances Locks (r:1 w:1)
+    // Storage: System Account (r:1 w:1)
+    fn vest() -> Weight {
+        (110_048_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(5 as Weight))
+            .saturating_add(T::DbWeight::get().writes(3 as Weight))
+    }
+    // Storage: CalamariVesting VestingBalances (r:1 w:1)
+    // Storage: System Account (r:1 w:1)
+    // Storage: Timestamp Now (r:1 w:0)
+    // Storage: CalamariVesting VestingSchedule (r:1 w:0)
+    // Storage: Balances Locks (r:1 w:1)
+    fn vested_transfer() -> Weight {
+        (216_897_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(5 as Weight))
+            .saturating_add(T::DbWeight::get().writes(3 as Weight))
+    }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-	// Storage: CalamariVesting VestingSchedule (r:1 w:1)
-	// Storage: Timestamp Now (r:1 w:0)
-	fn update_vesting_schedule() -> Weight {
-		(47_829_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
-	}
-	// Storage: Timestamp Now (r:1 w:0)
-	// Storage: CalamariVesting VestingSchedule (r:1 w:0)
-	// Storage: CalamariVesting VestingBalances (r:1 w:1)
-	// Storage: Balances Locks (r:1 w:1)
-	// Storage: System Account (r:1 w:1)
-	fn vest() -> Weight {
-		(110_048_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
-	}
-	// Storage: CalamariVesting VestingBalances (r:1 w:1)
-	// Storage: System Account (r:1 w:1)
-	// Storage: Timestamp Now (r:1 w:0)
-	// Storage: CalamariVesting VestingSchedule (r:1 w:0)
-	// Storage: Balances Locks (r:1 w:1)
-	fn vested_transfer() -> Weight {
-		(216_897_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
-	}
+    // Storage: CalamariVesting VestingSchedule (r:1 w:1)
+    // Storage: Timestamp Now (r:1 w:0)
+    fn update_vesting_schedule() -> Weight {
+        (47_829_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    }
+    // Storage: Timestamp Now (r:1 w:0)
+    // Storage: CalamariVesting VestingSchedule (r:1 w:0)
+    // Storage: CalamariVesting VestingBalances (r:1 w:1)
+    // Storage: Balances Locks (r:1 w:1)
+    // Storage: System Account (r:1 w:1)
+    fn vest() -> Weight {
+        (110_048_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(5 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(3 as Weight))
+    }
+    // Storage: CalamariVesting VestingBalances (r:1 w:1)
+    // Storage: System Account (r:1 w:1)
+    // Storage: Timestamp Now (r:1 w:0)
+    // Storage: CalamariVesting VestingSchedule (r:1 w:0)
+    // Storage: Balances Locks (r:1 w:1)
+    fn vested_transfer() -> Weight {
+        (216_897_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(5 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(3 as Weight))
+    }
 }

@@ -1,18 +1,18 @@
 [workspace]
-resolver = "2"
 members = [
-	'node',
-	'pallets/*',
-	'runtime/manta',
-	'runtime/calamari',
-	'runtime/dolphin',
-	'runtime/common',
-	'primitives',
+  'node',
+  'pallets/*',
+  'runtime/manta',
+  'runtime/calamari',
+  'runtime/dolphin',
+  'runtime/common',
+  'primitives',
 ]
+resolver = "2"
 
 [profile.production]
-inherits = "release"
 codegen-units = 1
+inherits = "release"
 lto = true
 
 [profile.release]
