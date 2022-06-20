@@ -27,8 +27,8 @@ use log::info;
 use manta_primitives::types::{AuraId, Header};
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
-	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
-	NetworkParams, RuntimeVersion, SharedParams, SubstrateCli,
+    ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
+    NetworkParams, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
@@ -83,130 +83,130 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 }
 
 fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
-	match id {
-		// manta chainspec
-		"manta-dev" => Ok(Box::new(chain_specs::manta_development_config())),
-		"manta-local" => Ok(Box::new(chain_specs::manta_local_config())),
-		"manta-testnet" => Ok(Box::new(chain_specs::manta_testnet_config()?)),
-		"manta-testnet-ci" => Ok(Box::new(chain_specs::manta_testnet_ci_config()?)),
-		"manta" => Ok(Box::new(chain_specs::manta_config()?)),
-		// calamari chainspec
-		"calamari-dev" => Ok(Box::new(chain_specs::calamari_development_config())),
-		"calamari-local" => Ok(Box::new(chain_specs::calamari_local_config())),
-		"calamari-testnet" => Ok(Box::new(chain_specs::calamari_testnet_config()?)),
-		"calamari-testnet-ci" => Ok(Box::new(chain_specs::calamari_testnet_ci_config()?)),
-		"calamari" => Ok(Box::new(chain_specs::calamari_config()?)),
-		// dolphin chainspec
-		"dolphin-dev" => Ok(Box::new(chain_specs::dolphin_development_config())),
-		"dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config())),
-		"dolphin-testnet" => Ok(Box::new(chain_specs::dolphin_testnet_config()?)),
-		path => {
-			let chain_spec = chain_specs::ChainSpec::from_json_file(path.into())?;
-			if chain_spec.is_manta() {
-				Ok(Box::new(chain_specs::MantaChainSpec::from_json_file(
-					path.into(),
-				)?))
-			} else if chain_spec.is_calamari() {
-				Ok(Box::new(chain_specs::CalamariChainSpec::from_json_file(
-					path.into(),
-				)?))
-			} else if chain_spec.is_dolphin() {
-				Ok(Box::new(chain_specs::DolphinChainSpec::from_json_file(
-					path.into(),
-				)?))
-			} else {
-				Err("Please input a file name starting with manta, calamari, or dolphin.".into())
-			}
-		}
-	}
+    match id {
+        // manta chainspec
+        "manta-dev" => Ok(Box::new(chain_specs::manta_development_config())),
+        "manta-local" => Ok(Box::new(chain_specs::manta_local_config())),
+        "manta-testnet" => Ok(Box::new(chain_specs::manta_testnet_config()?)),
+        "manta-testnet-ci" => Ok(Box::new(chain_specs::manta_testnet_ci_config()?)),
+        "manta" => Ok(Box::new(chain_specs::manta_config()?)),
+        // calamari chainspec
+        "calamari-dev" => Ok(Box::new(chain_specs::calamari_development_config())),
+        "calamari-local" => Ok(Box::new(chain_specs::calamari_local_config())),
+        "calamari-testnet" => Ok(Box::new(chain_specs::calamari_testnet_config()?)),
+        "calamari-testnet-ci" => Ok(Box::new(chain_specs::calamari_testnet_ci_config()?)),
+        "calamari" => Ok(Box::new(chain_specs::calamari_config()?)),
+        // dolphin chainspec
+        "dolphin-dev" => Ok(Box::new(chain_specs::dolphin_development_config())),
+        "dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config())),
+        "dolphin-testnet" => Ok(Box::new(chain_specs::dolphin_testnet_config()?)),
+        path => {
+            let chain_spec = chain_specs::ChainSpec::from_json_file(path.into())?;
+            if chain_spec.is_manta() {
+                Ok(Box::new(chain_specs::MantaChainSpec::from_json_file(
+                    path.into(),
+                )?))
+            } else if chain_spec.is_calamari() {
+                Ok(Box::new(chain_specs::CalamariChainSpec::from_json_file(
+                    path.into(),
+                )?))
+            } else if chain_spec.is_dolphin() {
+                Ok(Box::new(chain_specs::DolphinChainSpec::from_json_file(
+                    path.into(),
+                )?))
+            } else {
+                Err("Please input a file name starting with manta, calamari, or dolphin.".into())
+            }
+        }
+    }
 }
 
 impl SubstrateCli for Cli {
-	fn impl_name() -> String {
-		"Manta/Calamari/Dolphin Collator".into()
-	}
+    fn impl_name() -> String {
+        "Manta/Calamari/Dolphin Collator".into()
+    }
 
-	fn impl_version() -> String {
-		env!("SUBSTRATE_CLI_IMPL_VERSION").into()
-	}
+    fn impl_version() -> String {
+        env!("SUBSTRATE_CLI_IMPL_VERSION").into()
+    }
 
-	fn description() -> String {
-		format!(
-			"Manta/Calamari/Dolphin Collator\n\nThe command-line arguments provided first will be \
+    fn description() -> String {
+        format!(
+            "Manta/Calamari/Dolphin Collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		{} [parachain-args] -- [relaychain-args]",
-			Self::executable_name()
-		)
-	}
+            Self::executable_name()
+        )
+    }
 
-	fn author() -> String {
-		env!("CARGO_PKG_AUTHORS").into()
-	}
+    fn author() -> String {
+        env!("CARGO_PKG_AUTHORS").into()
+    }
 
-	fn support_url() -> String {
-		"https://github.com/Manta-Network/Manta/issues/new".into()
-	}
+    fn support_url() -> String {
+        "https://github.com/Manta-Network/Manta/issues/new".into()
+    }
 
-	fn copyright_start_year() -> i32 {
-		2020
-	}
+    fn copyright_start_year() -> i32 {
+        2020
+    }
 
-	fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
-		load_spec(id)
-	}
+    fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
+        load_spec(id)
+    }
 
-	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		if chain_spec.is_manta() {
-			&manta_runtime::VERSION
-		} else if chain_spec.is_calamari() {
-			&calamari_runtime::VERSION
-		} else if chain_spec.is_dolphin() {
-			&dolphin_runtime::VERSION
-		} else {
-			panic!("invalid chain spec! should be one of manta, calamari, or dolphin chain specs")
-		}
-	}
+    fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+        if chain_spec.is_manta() {
+            &manta_runtime::VERSION
+        } else if chain_spec.is_calamari() {
+            &calamari_runtime::VERSION
+        } else if chain_spec.is_dolphin() {
+            &dolphin_runtime::VERSION
+        } else {
+            panic!("invalid chain spec! should be one of manta, calamari, or dolphin chain specs")
+        }
+    }
 }
 
 impl SubstrateCli for RelayChainCli {
-	fn impl_name() -> String {
-		"Manta/Calamari/Dolphin Collator".into()
-	}
+    fn impl_name() -> String {
+        "Manta/Calamari/Dolphin Collator".into()
+    }
 
-	fn impl_version() -> String {
-		env!("SUBSTRATE_CLI_IMPL_VERSION").into()
-	}
+    fn impl_version() -> String {
+        env!("SUBSTRATE_CLI_IMPL_VERSION").into()
+    }
 
-	fn description() -> String {
-		format!(
-			"Manta/Calamari/Dolphin collator\n\nThe command-line arguments provided first will be \
+    fn description() -> String {
+        format!(
+            "Manta/Calamari/Dolphin collator\n\nThe command-line arguments provided first will be \
 		passed to the parachain node, while the arguments provided after -- will be passed \
 		to the relaychain node.\n\n\
 		{} [parachain-args] -- [relaychain-args]",
-			Self::executable_name()
-		)
-	}
+            Self::executable_name()
+        )
+    }
 
-	fn author() -> String {
-		env!("CARGO_PKG_AUTHORS").into()
-	}
+    fn author() -> String {
+        env!("CARGO_PKG_AUTHORS").into()
+    }
 
-	fn support_url() -> String {
-		"https://github.com/Manta-Network/Manta/issues/new".into()
-	}
+    fn support_url() -> String {
+        "https://github.com/Manta-Network/Manta/issues/new".into()
+    }
 
-	fn copyright_start_year() -> i32 {
-		2020
-	}
+    fn copyright_start_year() -> i32 {
+        2020
+    }
 
-	fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
-		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
-	}
+    fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
+        polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
+    }
 
-	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		polkadot_cli::Cli::native_runtime_version(chain_spec)
-	}
+    fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+        polkadot_cli::Cli::native_runtime_version(chain_spec)
+    }
 }
 
 #[allow(clippy::borrowed_box)]
@@ -256,234 +256,234 @@ macro_rules! construct_async_run {
 
 /// Parse command line arguments into service configuration.
 pub fn run_with(cli: Cli) -> Result {
-	match &cli.subcommand {
-		Some(Subcommand::BuildSpec(cmd)) => {
-			let runner = cli.create_runner(cmd)?;
-			runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
-		}
-		Some(Subcommand::CheckBlock(cmd)) => {
-			construct_async_run!(|components, cli, cmd, config| {
-				Ok(cmd.run(components.client, components.import_queue))
-			})
-		}
-		Some(Subcommand::ExportBlocks(cmd)) => {
-			construct_async_run!(|components, cli, cmd, config| {
-				Ok(cmd.run(components.client, config.database))
-			})
-		}
-		Some(Subcommand::ExportState(cmd)) => {
-			construct_async_run!(|components, cli, cmd, config| {
-				Ok(cmd.run(components.client, config.chain_spec))
-			})
-		}
-		Some(Subcommand::ImportBlocks(cmd)) => {
-			construct_async_run!(|components, cli, cmd, config| {
-				Ok(cmd.run(components.client, components.import_queue))
-			})
-		}
-		Some(Subcommand::PurgeChain(cmd)) => {
-			let runner = cli.create_runner(cmd)?;
+    match &cli.subcommand {
+        Some(Subcommand::BuildSpec(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
+        }
+        Some(Subcommand::CheckBlock(cmd)) => {
+            construct_async_run!(|components, cli, cmd, config| {
+                Ok(cmd.run(components.client, components.import_queue))
+            })
+        }
+        Some(Subcommand::ExportBlocks(cmd)) => {
+            construct_async_run!(|components, cli, cmd, config| {
+                Ok(cmd.run(components.client, config.database))
+            })
+        }
+        Some(Subcommand::ExportState(cmd)) => {
+            construct_async_run!(|components, cli, cmd, config| {
+                Ok(cmd.run(components.client, config.chain_spec))
+            })
+        }
+        Some(Subcommand::ImportBlocks(cmd)) => {
+            construct_async_run!(|components, cli, cmd, config| {
+                Ok(cmd.run(components.client, components.import_queue))
+            })
+        }
+        Some(Subcommand::PurgeChain(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
 
-			runner.sync_run(|config| {
-				let polkadot_cli = RelayChainCli::new(
-					&config,
-					[RelayChainCli::executable_name()]
-						.iter()
-						.chain(cli.relaychain_args.iter()),
-				);
+            runner.sync_run(|config| {
+                let polkadot_cli = RelayChainCli::new(
+                    &config,
+                    [RelayChainCli::executable_name()]
+                        .iter()
+                        .chain(cli.relaychain_args.iter()),
+                );
 
-				let polkadot_config = SubstrateCli::create_configuration(
-					&polkadot_cli,
-					&polkadot_cli,
-					config.tokio_handle.clone(),
-				)
-				.map_err(|err| format!("Relay chain argument error: {}", err))?;
+                let polkadot_config = SubstrateCli::create_configuration(
+                    &polkadot_cli,
+                    &polkadot_cli,
+                    config.tokio_handle.clone(),
+                )
+                .map_err(|err| format!("Relay chain argument error: {}", err))?;
 
-				cmd.run(config, polkadot_config)
-			})
-		}
-		Some(Subcommand::Revert(cmd)) => construct_async_run!(|components, cli, cmd, config| {
-			Ok(cmd.run(components.client, components.backend))
-		}),
-		Some(Subcommand::ExportGenesisState(params)) => {
-			let mut builder = sc_cli::LoggerBuilder::new("");
-			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
-			let _ = builder.init();
+                cmd.run(config, polkadot_config)
+            })
+        }
+        Some(Subcommand::Revert(cmd)) => construct_async_run!(|components, cli, cmd, config| {
+            Ok(cmd.run(components.client, components.backend))
+        }),
+        Some(Subcommand::ExportGenesisState(params)) => {
+            let mut builder = sc_cli::LoggerBuilder::new("");
+            builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
+            let _ = builder.init();
 
-			let spec = load_spec(&params.chain.clone().unwrap_or_default())?;
-			let state_version = Cli::native_runtime_version(&spec).state_version();
+            let spec = load_spec(&params.chain.clone().unwrap_or_default())?;
+            let state_version = Cli::native_runtime_version(&spec).state_version();
 
-			let block: crate::service::Block = generate_genesis_block(&spec, state_version)?;
-			let raw_header = block.header().encode();
-			let output_buf = if params.raw {
-				raw_header
-			} else {
-				format!("0x{:?}", HexDisplay::from(&block.header().encode())).into_bytes()
-			};
+            let block: crate::service::Block = generate_genesis_block(&spec, state_version)?;
+            let raw_header = block.header().encode();
+            let output_buf = if params.raw {
+                raw_header
+            } else {
+                format!("0x{:?}", HexDisplay::from(&block.header().encode())).into_bytes()
+            };
 
-			if let Some(output) = &params.output {
-				std::fs::write(output, output_buf)?;
-			} else {
-				std::io::stdout().write_all(&output_buf)?;
-			}
+            if let Some(output) = &params.output {
+                std::fs::write(output, output_buf)?;
+            } else {
+                std::io::stdout().write_all(&output_buf)?;
+            }
 
-			Ok(())
-		}
-		Some(Subcommand::ExportGenesisWasm(params)) => {
-			let mut builder = sc_cli::LoggerBuilder::new("");
-			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
-			let _ = builder.init();
+            Ok(())
+        }
+        Some(Subcommand::ExportGenesisWasm(params)) => {
+            let mut builder = sc_cli::LoggerBuilder::new("");
+            builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
+            let _ = builder.init();
 
-			let raw_wasm_blob =
-				extract_genesis_wasm(&cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
-			let output_buf = if params.raw {
-				raw_wasm_blob
-			} else {
-				format!("0x{:?}", HexDisplay::from(&raw_wasm_blob)).into_bytes()
-			};
+            let raw_wasm_blob =
+                extract_genesis_wasm(&cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
+            let output_buf = if params.raw {
+                raw_wasm_blob
+            } else {
+                format!("0x{:?}", HexDisplay::from(&raw_wasm_blob)).into_bytes()
+            };
 
-			if let Some(output) = &params.output {
-				std::fs::write(output, output_buf)?;
-			} else {
-				std::io::stdout().write_all(&output_buf)?;
-			}
+            if let Some(output) = &params.output {
+                std::fs::write(output, output_buf)?;
+            } else {
+                std::io::stdout().write_all(&output_buf)?;
+            }
 
-			Ok(())
-		}
-		Some(Subcommand::Benchmark(cmd)) => {
-			let runner = cli.create_runner(cmd)?;
-			if runner.config().chain_spec.is_manta() {
-				runner.sync_run(|config| cmd.run::<Block, MantaRuntimeExecutor>(config))
-			} else if runner.config().chain_spec.is_calamari() {
-				runner.sync_run(|config| cmd.run::<Block, CalamariRuntimeExecutor>(config))
-			} else if runner.config().chain_spec.is_dolphin() {
-				runner.sync_run(|config| cmd.run::<Block, DolphinRuntimeExecutor>(config))
-			} else {
-				Err("Benchmarking wasn't enabled when building the node. \
+            Ok(())
+        }
+        Some(Subcommand::Benchmark(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            if runner.config().chain_spec.is_manta() {
+                runner.sync_run(|config| cmd.run::<Block, MantaRuntimeExecutor>(config))
+            } else if runner.config().chain_spec.is_calamari() {
+                runner.sync_run(|config| cmd.run::<Block, CalamariRuntimeExecutor>(config))
+            } else if runner.config().chain_spec.is_dolphin() {
+                runner.sync_run(|config| cmd.run::<Block, DolphinRuntimeExecutor>(config))
+            } else {
+                Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
-					.into())
-			}
-		}
-		#[cfg(feature = "try-runtime")]
-		Some(Subcommand::TryRuntime(cmd)) => {
-			// grab the task manager.
-			let runner = cli.create_runner(cmd)?;
-			let registry = &runner
-				.config()
-				.prometheus_config
-				.as_ref()
-				.map(|cfg| &cfg.registry);
-			let task_manager =
-				sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
-					.map_err(|e| format!("Error: {:?}", e))?;
+                    .into())
+            }
+        }
+        #[cfg(feature = "try-runtime")]
+        Some(Subcommand::TryRuntime(cmd)) => {
+            // grab the task manager.
+            let runner = cli.create_runner(cmd)?;
+            let registry = &runner
+                .config()
+                .prometheus_config
+                .as_ref()
+                .map(|cfg| &cfg.registry);
+            let task_manager =
+                sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
+                    .map_err(|e| format!("Error: {:?}", e))?;
 
-			if runner.config().chain_spec.is_manta() {
-				runner.async_run(|config| {
-					Ok((cmd.run::<Block, MantaRuntimeExecutor>(config), task_manager))
-				})
-			} else if runner.config().chain_spec.is_calamari() {
-				runner.async_run(|config| {
-					Ok((
-						cmd.run::<Block, CalamariRuntimeExecutor>(config),
-						task_manager,
-					))
-				})
-			} else {
-				Err("Chain doesn't support try-runtime".into())
-			}
-		}
-		#[cfg(not(feature = "try-runtime"))]
-		Some(Subcommand::TryRuntime) => Err("Try-runtime wasn't enabled when building the node. \
+            if runner.config().chain_spec.is_manta() {
+                runner.async_run(|config| {
+                    Ok((cmd.run::<Block, MantaRuntimeExecutor>(config), task_manager))
+                })
+            } else if runner.config().chain_spec.is_calamari() {
+                runner.async_run(|config| {
+                    Ok((
+                        cmd.run::<Block, CalamariRuntimeExecutor>(config),
+                        task_manager,
+                    ))
+                })
+            } else {
+                Err("Chain doesn't support try-runtime".into())
+            }
+        }
+        #[cfg(not(feature = "try-runtime"))]
+        Some(Subcommand::TryRuntime) => Err("Try-runtime wasn't enabled when building the node. \
 		You can enable it with `--features try-runtime`."
-			.into()),
-		None => {
-			let runner = cli.create_runner(&cli.run.normalize())?;
-			let collator_options = cli.run.collator_options();
+            .into()),
+        None => {
+            let runner = cli.create_runner(&cli.run.normalize())?;
+            let collator_options = cli.run.collator_options();
 
-			runner.run_node_until_exit(|config| async move {
-				let para_id = crate::chain_specs::Extensions::try_get(&*config.chain_spec)
-					.map(|e| e.para_id)
-					.ok_or("Could not find parachain extension in chain-spec.")?;
+            runner.run_node_until_exit(|config| async move {
+                let para_id = crate::chain_specs::Extensions::try_get(&*config.chain_spec)
+                    .map(|e| e.para_id)
+                    .ok_or("Could not find parachain extension in chain-spec.")?;
 
-				let polkadot_cli = RelayChainCli::new(
-					&config,
-					[RelayChainCli::executable_name()]
-						.iter()
-						.chain(cli.relaychain_args.iter()),
-				);
+                let polkadot_cli = RelayChainCli::new(
+                    &config,
+                    [RelayChainCli::executable_name()]
+                        .iter()
+                        .chain(cli.relaychain_args.iter()),
+                );
 
-				let id = ParaId::from(para_id);
+                let id = ParaId::from(para_id);
 
-				let parachain_account =
-					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
+                let parachain_account =
+                    AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
 
-				let state_version =
-					RelayChainCli::native_runtime_version(&config.chain_spec).state_version();
+                let state_version =
+                    RelayChainCli::native_runtime_version(&config.chain_spec).state_version();
 
-				let block: crate::service::Block =
-					generate_genesis_block(&config.chain_spec, state_version)
-						.map_err(|e| format!("{:?}", e))?;
-				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
+                let block: crate::service::Block =
+                    generate_genesis_block(&config.chain_spec, state_version)
+                        .map_err(|e| format!("{:?}", e))?;
+                let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
-				let tokio_handle = config.tokio_handle.clone();
-				let polkadot_config =
-					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
-						.map_err(|err| format!("Relay chain argument error: {}", err))?;
+                let tokio_handle = config.tokio_handle.clone();
+                let polkadot_config =
+                    SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
+                        .map_err(|err| format!("Relay chain argument error: {}", err))?;
 
-				info!("Parachain id: {:?}", id);
-				info!("Parachain Account: {}", parachain_account);
-				info!("Parachain genesis state: {}", genesis_state);
-				info!(
-					"Is collating: {}",
-					if config.role.is_authority() {
-						"yes"
-					} else {
-						"no"
-					}
-				);
+                info!("Parachain id: {:?}", id);
+                info!("Parachain Account: {}", parachain_account);
+                info!("Parachain genesis state: {}", genesis_state);
+                info!(
+                    "Is collating: {}",
+                    if config.role.is_authority() {
+                        "yes"
+                    } else {
+                        "no"
+                    }
+                );
 
-				if config.chain_spec.is_manta() {
-					crate::service::start_parachain_node::<
-						manta_runtime::RuntimeApi,
-						MantaRuntimeExecutor,
-						AuraId,
-						_,
-					>(config, polkadot_config, collator_options, id, |c, p| {
-						Box::new(Builder::new(c, p))
-					})
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into)
-				} else if config.chain_spec.is_calamari() {
-					crate::service::start_parachain_node::<
-						calamari_runtime::RuntimeApi,
-						CalamariRuntimeExecutor,
-						AuraId,
-						_,
-					>(config, polkadot_config, collator_options, id, |c, p| {
-						Box::new(Builder::new(c, p))
-					})
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into)
-				} else if config.chain_spec.is_dolphin() {
-					crate::service::start_parachain_node::<
-						dolphin_runtime::RuntimeApi,
-						DolphinRuntimeExecutor,
-						AuraId,
-						_,
-					>(config, polkadot_config, collator_options, id, |c, p| {
-						Box::new(Builder::<_, _, rpc::Dolphin>::new(c, p))
-					})
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into)
-				} else {
-					Err("chain spec error: must be one of manta or calamari chain specs".into())
-				}
-			})
-		}
-	}
+                if config.chain_spec.is_manta() {
+                    crate::service::start_parachain_node::<
+                        manta_runtime::RuntimeApi,
+                        MantaRuntimeExecutor,
+                        AuraId,
+                        _,
+                    >(config, polkadot_config, collator_options, id, |c, p| {
+                        Box::new(Builder::new(c, p))
+                    })
+                    .await
+                    .map(|r| r.0)
+                    .map_err(Into::into)
+                } else if config.chain_spec.is_calamari() {
+                    crate::service::start_parachain_node::<
+                        calamari_runtime::RuntimeApi,
+                        CalamariRuntimeExecutor,
+                        AuraId,
+                        _,
+                    >(config, polkadot_config, collator_options, id, |c, p| {
+                        Box::new(Builder::new(c, p))
+                    })
+                    .await
+                    .map(|r| r.0)
+                    .map_err(Into::into)
+                } else if config.chain_spec.is_dolphin() {
+                    crate::service::start_parachain_node::<
+                        dolphin_runtime::RuntimeApi,
+                        DolphinRuntimeExecutor,
+                        AuraId,
+                        _,
+                    >(config, polkadot_config, collator_options, id, |c, p| {
+                        Box::new(Builder::<_, _, rpc::Dolphin>::new(c, p))
+                    })
+                    .await
+                    .map(|r| r.0)
+                    .map_err(Into::into)
+                } else {
+                    Err("chain spec error: must be one of manta or calamari chain specs".into())
+                }
+            })
+        }
+    }
 }
 
 /// Parse command line arguments into service configuration.

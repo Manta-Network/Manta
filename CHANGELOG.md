@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## Unreleased
+### Breaking changes
+
+### Features
+
+### Improvements
+- [\#607](https://github.com/Manta-Network/Manta/pull/607) Turn node client code into library for CLI project
+
+### Bug fixes
+
 ## v3.2.0
 ### Breaking changes
 
@@ -39,7 +49,6 @@
 - [\#513](https://github.com/Manta-Network/Manta/pull/513) Update the release issues template.
 
 ### Bug fixes
-
 
 ## v3.1.5
 ### Breaking changes
