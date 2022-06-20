@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## Unreleased
+### Breaking changes
+
+### Features
+
+### Improvements
+- [Dolphin] [\#619](https://github.com/Manta-Network/Manta/pull/619) Add CI runtime upgrade test for Dolphin and improve test scenario.
+
+### Bug fixes
+
 ## v3.2.0
 ### Breaking changes
 
