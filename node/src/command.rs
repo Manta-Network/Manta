@@ -1,4 +1,4 @@
-// Copyright 2019-2022 Manta Network.
+// Copyright 2020-2022 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -15,10 +15,10 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-	chain_specs,
-	cli::{Cli, RelayChainCli, Subcommand},
-	rpc::{self, Builder},
-	service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
+    chain_specs,
+    cli::{Cli, RelayChainCli, Subcommand},
+    rpc::{self, Builder},
+    service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
 };
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
@@ -53,33 +53,33 @@ pub const CALAMARI_PARACHAIN_ID: u32 = 2084;
 pub const DOLPHIN_PARACHAIN_ID: u32 = 2084;
 
 trait IdentifyChain {
-	fn is_manta(&self) -> bool;
-	fn is_calamari(&self) -> bool;
-	fn is_dolphin(&self) -> bool;
+    fn is_manta(&self) -> bool;
+    fn is_calamari(&self) -> bool;
+    fn is_dolphin(&self) -> bool;
 }
 
 impl IdentifyChain for dyn sc_service::ChainSpec {
-	fn is_manta(&self) -> bool {
-		self.id().starts_with("manta")
-	}
-	fn is_calamari(&self) -> bool {
-		self.id().starts_with("calamari")
-	}
-	fn is_dolphin(&self) -> bool {
-		self.id().starts_with("dolphin")
-	}
+    fn is_manta(&self) -> bool {
+        self.id().starts_with("manta")
+    }
+    fn is_calamari(&self) -> bool {
+        self.id().starts_with("calamari")
+    }
+    fn is_dolphin(&self) -> bool {
+        self.id().starts_with("dolphin")
+    }
 }
 
 impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
-	fn is_manta(&self) -> bool {
-		<dyn sc_service::ChainSpec>::is_manta(self)
-	}
-	fn is_calamari(&self) -> bool {
-		<dyn sc_service::ChainSpec>::is_calamari(self)
-	}
-	fn is_dolphin(&self) -> bool {
-		<dyn sc_service::ChainSpec>::is_dolphin(self)
-	}
+    fn is_manta(&self) -> bool {
+        <dyn sc_service::ChainSpec>::is_manta(self)
+    }
+    fn is_calamari(&self) -> bool {
+        <dyn sc_service::ChainSpec>::is_calamari(self)
+    }
+    fn is_dolphin(&self) -> bool {
+        <dyn sc_service::ChainSpec>::is_dolphin(self)
+    }
 }
 
 fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
@@ -211,47 +211,47 @@ impl SubstrateCli for RelayChainCli {
 
 #[allow(clippy::borrowed_box)]
 fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Vec<u8>> {
-	let mut storage = chain_spec.build_storage()?;
-	storage
-		.top
-		.remove(sp_core::storage::well_known_keys::CODE)
-		.ok_or_else(|| "Could not find wasm file in genesis state!".into())
+    let mut storage = chain_spec.build_storage()?;
+    storage
+        .top
+        .remove(sp_core::storage::well_known_keys::CODE)
+        .ok_or_else(|| "Could not find wasm file in genesis state!".into())
 }
 
 macro_rules! construct_async_run {
-	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
-		let runner = $cli.create_runner($cmd)?;
-			if runner.config().chain_spec.is_manta() {
-				runner.async_run(|$config| {
-					let $components = new_partial::<manta_runtime::RuntimeApi, MantaRuntimeExecutor, _>(
-						&$config,
-						crate::service::parachain_build_import_queue::<_, _, AuraId>,
-					)?;
-					let task_manager = $components.task_manager;
-					{ $( $code )* }.map(|v| (v, task_manager))
-				})
-			} else if runner.config().chain_spec.is_calamari() {
-				runner.async_run(|$config| {
-					let $components = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor, _>(
-						&$config,
-						crate::service::parachain_build_import_queue::<_, _, AuraId>,
-					)?;
-					let task_manager = $components.task_manager;
-					{ $( $code )* }.map(|v| (v, task_manager))
-				})
-			} else if runner.config().chain_spec.is_dolphin() {
-				runner.async_run(|$config| {
-					let $components = new_partial::<dolphin_runtime::RuntimeApi, DolphinRuntimeExecutor, _>(
-						&$config,
-						crate::service::parachain_build_import_queue::<_, _, AuraId>,
-					)?;
-					let task_manager = $components.task_manager;
-					{ $( $code )* }.map(|v| (v, task_manager))
-				})
-			} else {
-				panic!("wrong chain spec, must be one of manta, calamari, or dolphin chain specs");
-			}
-	}}
+    (|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
+        let runner = $cli.create_runner($cmd)?;
+            if runner.config().chain_spec.is_manta() {
+                runner.async_run(|$config| {
+                    let $components = new_partial::<manta_runtime::RuntimeApi, MantaRuntimeExecutor, _>(
+                        &$config,
+                        crate::service::parachain_build_import_queue::<_, _, AuraId>,
+                    )?;
+                    let task_manager = $components.task_manager;
+                    { $( $code )* }.map(|v| (v, task_manager))
+                })
+            } else if runner.config().chain_spec.is_calamari() {
+                runner.async_run(|$config| {
+                    let $components = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor, _>(
+                        &$config,
+                        crate::service::parachain_build_import_queue::<_, _, AuraId>,
+                    )?;
+                    let task_manager = $components.task_manager;
+                    { $( $code )* }.map(|v| (v, task_manager))
+                })
+            } else if runner.config().chain_spec.is_dolphin() {
+                runner.async_run(|$config| {
+                    let $components = new_partial::<dolphin_runtime::RuntimeApi, DolphinRuntimeExecutor, _>(
+                        &$config,
+                        crate::service::parachain_build_import_queue::<_, _, AuraId>,
+                    )?;
+                    let task_manager = $components.task_manager;
+                    { $( $code )* }.map(|v| (v, task_manager))
+                })
+            } else {
+                panic!("wrong chain spec, must be one of manta, calamari, or dolphin chain specs");
+            }
+    }}
 }
 
 /// Parse command line arguments into service configuration.
@@ -488,144 +488,144 @@ pub fn run_with(cli: Cli) -> Result {
 
 /// Parse command line arguments into service configuration.
 pub fn run() -> Result {
-	run_with(Cli::from_args())
+    run_with(Cli::from_args())
 }
 
 impl DefaultConfigurationValues for RelayChainCli {
-	fn p2p_listen_port() -> u16 {
-		30334
-	}
+    fn p2p_listen_port() -> u16 {
+        30334
+    }
 
-	fn rpc_ws_listen_port() -> u16 {
-		9945
-	}
+    fn rpc_ws_listen_port() -> u16 {
+        9945
+    }
 
-	fn rpc_http_listen_port() -> u16 {
-		9934
-	}
+    fn rpc_http_listen_port() -> u16 {
+        9934
+    }
 
-	fn prometheus_listen_port() -> u16 {
-		9616
-	}
+    fn prometheus_listen_port() -> u16 {
+        9616
+    }
 }
 
 impl CliConfiguration<Self> for RelayChainCli {
-	fn shared_params(&self) -> &SharedParams {
-		self.base.base.shared_params()
-	}
+    fn shared_params(&self) -> &SharedParams {
+        self.base.base.shared_params()
+    }
 
-	fn import_params(&self) -> Option<&ImportParams> {
-		self.base.base.import_params()
-	}
+    fn import_params(&self) -> Option<&ImportParams> {
+        self.base.base.import_params()
+    }
 
-	fn network_params(&self) -> Option<&NetworkParams> {
-		self.base.base.network_params()
-	}
+    fn network_params(&self) -> Option<&NetworkParams> {
+        self.base.base.network_params()
+    }
 
-	fn keystore_params(&self) -> Option<&KeystoreParams> {
-		self.base.base.keystore_params()
-	}
+    fn keystore_params(&self) -> Option<&KeystoreParams> {
+        self.base.base.keystore_params()
+    }
 
-	fn base_path(&self) -> Result<Option<BasePath>> {
-		Ok(self
-			.shared_params()
-			.base_path()
-			.or_else(|| self.base_path.clone().map(Into::into)))
-	}
+    fn base_path(&self) -> Result<Option<BasePath>> {
+        Ok(self
+            .shared_params()
+            .base_path()
+            .or_else(|| self.base_path.clone().map(Into::into)))
+    }
 
-	fn rpc_http(&self, default_listen_port: u16) -> Result<Option<SocketAddr>> {
-		self.base.base.rpc_http(default_listen_port)
-	}
+    fn rpc_http(&self, default_listen_port: u16) -> Result<Option<SocketAddr>> {
+        self.base.base.rpc_http(default_listen_port)
+    }
 
-	fn rpc_ipc(&self) -> Result<Option<String>> {
-		self.base.base.rpc_ipc()
-	}
+    fn rpc_ipc(&self) -> Result<Option<String>> {
+        self.base.base.rpc_ipc()
+    }
 
-	fn rpc_ws(&self, default_listen_port: u16) -> Result<Option<SocketAddr>> {
-		self.base.base.rpc_ws(default_listen_port)
-	}
+    fn rpc_ws(&self, default_listen_port: u16) -> Result<Option<SocketAddr>> {
+        self.base.base.rpc_ws(default_listen_port)
+    }
 
-	fn prometheus_config(
-		&self,
-		default_listen_port: u16,
-		chain_spec: &Box<dyn ChainSpec>,
-	) -> Result<Option<PrometheusConfig>> {
-		self.base
-			.base
-			.prometheus_config(default_listen_port, chain_spec)
-	}
+    fn prometheus_config(
+        &self,
+        default_listen_port: u16,
+        chain_spec: &Box<dyn ChainSpec>,
+    ) -> Result<Option<PrometheusConfig>> {
+        self.base
+            .base
+            .prometheus_config(default_listen_port, chain_spec)
+    }
 
-	fn init<F>(
-		&self,
-		_support_url: &String,
-		_impl_version: &String,
-		_logger_hook: F,
-		_config: &sc_service::Configuration,
-	) -> Result<()>
-	where
-		F: FnOnce(&mut sc_cli::LoggerBuilder, &sc_service::Configuration),
-	{
-		unreachable!("PolkadotCli is never initialized; qed");
-	}
+    fn init<F>(
+        &self,
+        _support_url: &String,
+        _impl_version: &String,
+        _logger_hook: F,
+        _config: &sc_service::Configuration,
+    ) -> Result<()>
+    where
+        F: FnOnce(&mut sc_cli::LoggerBuilder, &sc_service::Configuration),
+    {
+        unreachable!("PolkadotCli is never initialized; qed");
+    }
 
-	fn chain_id(&self, is_dev: bool) -> Result<String> {
-		let chain_id = self.base.base.chain_id(is_dev)?;
+    fn chain_id(&self, is_dev: bool) -> Result<String> {
+        let chain_id = self.base.base.chain_id(is_dev)?;
 
-		Ok(if chain_id.is_empty() {
-			self.chain_id.clone().unwrap_or_default()
-		} else {
-			chain_id
-		})
-	}
+        Ok(if chain_id.is_empty() {
+            self.chain_id.clone().unwrap_or_default()
+        } else {
+            chain_id
+        })
+    }
 
-	fn role(&self, is_dev: bool) -> Result<sc_service::Role> {
-		self.base.base.role(is_dev)
-	}
+    fn role(&self, is_dev: bool) -> Result<sc_service::Role> {
+        self.base.base.role(is_dev)
+    }
 
-	fn transaction_pool(&self) -> Result<sc_service::config::TransactionPoolOptions> {
-		self.base.base.transaction_pool()
-	}
+    fn transaction_pool(&self) -> Result<sc_service::config::TransactionPoolOptions> {
+        self.base.base.transaction_pool()
+    }
 
-	fn state_cache_child_ratio(&self) -> Result<Option<usize>> {
-		self.base.base.state_cache_child_ratio()
-	}
+    fn state_cache_child_ratio(&self) -> Result<Option<usize>> {
+        self.base.base.state_cache_child_ratio()
+    }
 
-	fn rpc_methods(&self) -> Result<sc_service::config::RpcMethods> {
-		self.base.base.rpc_methods()
-	}
+    fn rpc_methods(&self) -> Result<sc_service::config::RpcMethods> {
+        self.base.base.rpc_methods()
+    }
 
-	fn rpc_ws_max_connections(&self) -> Result<Option<usize>> {
-		self.base.base.rpc_ws_max_connections()
-	}
+    fn rpc_ws_max_connections(&self) -> Result<Option<usize>> {
+        self.base.base.rpc_ws_max_connections()
+    }
 
-	fn rpc_cors(&self, is_dev: bool) -> Result<Option<Vec<String>>> {
-		self.base.base.rpc_cors(is_dev)
-	}
+    fn rpc_cors(&self, is_dev: bool) -> Result<Option<Vec<String>>> {
+        self.base.base.rpc_cors(is_dev)
+    }
 
-	fn default_heap_pages(&self) -> Result<Option<u64>> {
-		self.base.base.default_heap_pages()
-	}
+    fn default_heap_pages(&self) -> Result<Option<u64>> {
+        self.base.base.default_heap_pages()
+    }
 
-	fn force_authoring(&self) -> Result<bool> {
-		self.base.base.force_authoring()
-	}
+    fn force_authoring(&self) -> Result<bool> {
+        self.base.base.force_authoring()
+    }
 
-	fn disable_grandpa(&self) -> Result<bool> {
-		self.base.base.disable_grandpa()
-	}
+    fn disable_grandpa(&self) -> Result<bool> {
+        self.base.base.disable_grandpa()
+    }
 
-	fn max_runtime_instances(&self) -> Result<Option<usize>> {
-		self.base.base.max_runtime_instances()
-	}
+    fn max_runtime_instances(&self) -> Result<Option<usize>> {
+        self.base.base.max_runtime_instances()
+    }
 
-	fn announce_block(&self) -> Result<bool> {
-		self.base.base.announce_block()
-	}
+    fn announce_block(&self) -> Result<bool> {
+        self.base.base.announce_block()
+    }
 
-	fn telemetry_endpoints(
-		&self,
-		chain_spec: &Box<dyn ChainSpec>,
-	) -> Result<Option<sc_telemetry::TelemetryEndpoints>> {
-		self.base.base.telemetry_endpoints(chain_spec)
-	}
+    fn telemetry_endpoints(
+        &self,
+        chain_spec: &Box<dyn ChainSpec>,
+    ) -> Result<Option<sc_telemetry::TelemetryEndpoints>> {
+        self.base.base.telemetry_endpoints(chain_spec)
+    }
 }

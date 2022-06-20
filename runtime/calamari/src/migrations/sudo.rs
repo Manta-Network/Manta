@@ -16,44 +16,44 @@
 
 use core::marker::PhantomData;
 use frame_support::{
-	migration::{have_storage_value, remove_storage_prefix},
-	pallet_prelude::Weight,
-	traits::{Get, OnRuntimeUpgrade},
+    migration::{have_storage_value, remove_storage_prefix},
+    pallet_prelude::Weight,
+    traits::{Get, OnRuntimeUpgrade},
 };
 
 pub struct RemoveSudo<T>(PhantomData<T>);
 impl<T: frame_system::Config> OnRuntimeUpgrade for RemoveSudo<T> {
-	fn on_runtime_upgrade() -> Weight {
-		if have_storage_value(b"Sudo", b"Key", b"") {
-			remove_storage_prefix(b"Sudo", b"Key", b"");
-			remove_storage_prefix(b"Sudo", b":__STORAGE_VERSION__:", b"");
-			log::info!(target: "OnRuntimeUpgrade", "✅ Sudo key has been removed.");
-			log::info!(target: "OnRuntimeUpgrade", "✅ The pallet version has been removed.");
-			T::DbWeight::get()
-				.reads(1 as Weight)
-				.saturating_add(T::DbWeight::get().writes(1 as Weight))
-		} else {
-			T::DbWeight::get().reads(1 as Weight)
-		}
-	}
+    fn on_runtime_upgrade() -> Weight {
+        if have_storage_value(b"Sudo", b"Key", b"") {
+            remove_storage_prefix(b"Sudo", b"Key", b"");
+            remove_storage_prefix(b"Sudo", b":__STORAGE_VERSION__:", b"");
+            log::info!(target: "OnRuntimeUpgrade", "✅ Sudo key has been removed.");
+            log::info!(target: "OnRuntimeUpgrade", "✅ The pallet version has been removed.");
+            T::DbWeight::get()
+                .reads(1 as Weight)
+                .saturating_add(T::DbWeight::get().writes(1 as Weight))
+        } else {
+            T::DbWeight::get().reads(1 as Weight)
+        }
+    }
 
-	#[cfg(feature = "try-runtime")]
-	fn pre_upgrade() -> Result<(), &'static str> {
-		if have_storage_value(b"Sudo", b"Key", b"") {
-			log::info!(target: "OnRuntimeUpgrade", "✅ Sudo key will be removed soon.");
-			log::info!(target: "OnRuntimeUpgrade", "✅ The pallet version will be removed soon.");
-			Ok(())
-		} else {
-			Err("Sudo doesn't exist.")
-		}
-	}
+    #[cfg(feature = "try-runtime")]
+    fn pre_upgrade() -> Result<(), &'static str> {
+        if have_storage_value(b"Sudo", b"Key", b"") {
+            log::info!(target: "OnRuntimeUpgrade", "✅ Sudo key will be removed soon.");
+            log::info!(target: "OnRuntimeUpgrade", "✅ The pallet version will be removed soon.");
+            Ok(())
+        } else {
+            Err("Sudo doesn't exist.")
+        }
+    }
 
-	#[cfg(feature = "try-runtime")]
-	fn post_upgrade() -> Result<(), &'static str> {
-		if have_storage_value(b"Sudo", b"Key", b"") {
-			Err("Failed to remove sudo module.")
-		} else {
-			Ok(())
-		}
-	}
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade() -> Result<(), &'static str> {
+        if have_storage_value(b"Sudo", b"Key", b"") {
+            Err("Failed to remove sudo module.")
+        } else {
+            Ok(())
+        }
+    }
 }

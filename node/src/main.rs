@@ -20,5 +20,5 @@ use manta::command::{run, Result};
 
 #[inline]
 fn main() -> Result {
-	run()
+    run()
 }
