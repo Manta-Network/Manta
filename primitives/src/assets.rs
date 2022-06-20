@@ -497,10 +497,10 @@ where
                 WithdrawReasons::TRANSFER,
                 ExistenceRequirement::AllowDeath,
             )
-            .map_err(|e| FungibleLedgerError::InvalidBurn(e))?;
+            .map_err(FungibleLedgerError::InvalidBurn)?;
         } else {
             <NonNative as Mutate<C::AccountId>>::burn_from(asset_id, who, amount)
-                .map_err(|e| FungibleLedgerError::InvalidBurn(e))?;
+                .map_err(FungibleLedgerError::InvalidBurn)?;
         }
         Ok(())
     }

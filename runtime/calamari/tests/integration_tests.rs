@@ -1404,7 +1404,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
                 name: b"Kusama".to_vec(),
                 symbol: b"KSM".to_vec(),
                 decimals: 12,
-                min_balance: min_balance,
+                min_balance,
                 evm_address: None,
                 is_frozen: false,
                 is_sufficient: true,
@@ -1413,8 +1413,8 @@ fn concrete_fungible_ledger_can_withdraw_works() {
                 AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
             assert_ok!(AssetManager::register_asset(
                 root_origin(),
-                source_location.clone(),
-                asset_metadata.clone()
+                source_location,
+                asset_metadata
             ),);
 
             assert_ok!(CalamariConcreteFungibleLedger::mint(

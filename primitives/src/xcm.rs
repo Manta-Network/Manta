@@ -420,8 +420,8 @@ impl<
         })?;
 
         let (asset_id, amount) = match (
-            NativeMatcher::matches_fungible(&asset),
-            NonNativeMatcher::matches_fungibles(&asset),
+            NativeMatcher::matches_fungible(asset),
+            NonNativeMatcher::matches_fungibles(asset),
         ) {
             // native asset
             (Some(amount), _) => (MultiAdapterAssetConfig::NativeAssetId::get(), amount),
