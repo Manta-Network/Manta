@@ -20,50 +20,34 @@ use anyhow::Result;
 use indoc::indoc;
 use manta_accounting::{
     asset::{Asset, AssetId},
-    transfer::{self, SpendingKey},
+    transfer::{self, test::assert_valid_proof, SpendingKey},
 };
 use manta_crypto::{
     accumulator::Accumulator,
-    constraint::ProofSystem as _,
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
-    rand::{CryptoRng, Rand, RngCore, Sample},
+    rand::{CryptoRng, Rand, RngCore, Sample, SeedableRng},
 };
 use manta_pay::{
     config::{
-        self, FullParameters, MerkleTreeConfiguration, Mint, MultiProvingContext,
-        MultiVerifyingContext, Parameters, PrivateTransfer, ProofSystem, ProvingContext, Reclaim,
-        UtxoAccumulatorModel, VerifyingContext,
+        FullParameters, MerkleTreeConfiguration, Mint, MultiProvingContext, MultiVerifyingContext,
+        Parameters, PrivateTransfer, ProvingContext, Reclaim, UtxoAccumulatorModel,
+        VerifyingContext,
     },
     parameters::load_parameters,
 };
 use pallet_manta_pay::types::TransferPost;
-use rand::thread_rng;
+use rand_chacha::ChaCha20Rng;
 use scale_codec::Encode;
 use std::{
-	env,
-	fs::{self, OpenOptions},
-	io::Write,
-	path::PathBuf,
+    env,
+    fs::{self, OpenOptions},
+    io::Write,
+    path::PathBuf,
 };
 
 /// UTXO Accumulator for Building Circuits
 type UtxoAccumulator =
     TreeArrayMerkleForest<MerkleTreeConfiguration, Full<MerkleTreeConfiguration>, 256>;
-
-/// Asserts that `post` represents a valid `Transfer` verifying against `verifying_context`.
-#[inline]
-fn assert_valid_proof(verifying_context: &VerifyingContext, post: &config::TransferPost) {
-    assert!(
-        ProofSystem::verify(
-            verifying_context,
-            &post.generate_proof_input(),
-            &post.validity_proof,
-        )
-        .expect("Unable to verify proof."),
-        "Invalid proof: {:?}.",
-        post
-    );
-}
 
 /// Samples a [`Mint`] transaction.
 #[inline]
@@ -255,7 +239,7 @@ fn main() -> Result<()> {
     let directory = tempfile::tempdir().expect("Unable to generate temporary test directory.");
     println!("[INFO] Temporary Directory: {:?}", directory);
 
-    let mut rng = thread_rng();
+    let mut rng = ChaCha20Rng::from_seed([0; 32]);
     let (proving_context, verifying_context, parameters, utxo_accumulator_model) =
         load_parameters(directory.path()).expect("Unable to load parameters.");
     let asset_id: u32 = 8;
