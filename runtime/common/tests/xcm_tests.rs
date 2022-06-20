@@ -2306,7 +2306,12 @@ fn transfer_multicurrencies_should_work_scenarios() {
         );
         assert_eq!(
             // notice that total supply between the two chains is:
-            // (relay_asset_amount_minted_on_a - fee_amount) + (fee_amount - min_xcm_fee)
+            // `(relay_asset_amount_minted_on_a - fee_amount) + (fee_amount - min_xcm_fee)`
+            // `relay_asset_amount_minted_on_a - fee_amount` is still on ParaA
+            // `fee_amount - min_xcm_fee` is on ParaB.
+            // Total out to `relay_asset_amount_minted_on_a - min_xcm_fee` meaning one `min_xcm_fee` is destroyed
+            // This is a design choice by ORML to make these kinds of transfer
+            // Practically some of tokens held as reserve on the reserve chain, will become unwithdrawable.
             parachain::Assets::total_supply(relay_asset_id_on_a),
             relay_asset_amount_minted_on_a - fee_amount
         );
@@ -2532,30 +2537,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
                 Box::new(VersionedMultiLocation::V1(dest.clone())),
                 weight,
             ),
-            orml_xtokens::Error::<parachain::Runtime>::DistinctReserveForAssetAndFee
-        );
-
-        assert_err!(
-            parachain::XTokens::transfer_multicurrencies(
-                Some(ALICE).into(),
-                vec![
-                    (
-                        parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
-                        amount
-                    ),
-                    (
-                        parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a),
-                        fee_amount
-                    ),
-                    (
-                        parachain::CurrencyId::MantaCurrency(c_asset_id_on_a),
-                        fee_amount
-                    )
-                ],
-                2,
-                Box::new(VersionedMultiLocation::V1(dest.clone())),
-                weight,
-            ),
+            // Assets and fee must have the same reserve
             orml_xtokens::Error::<parachain::Runtime>::DistinctReserveForAssetAndFee
         );
 
@@ -2584,6 +2566,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
                 Box::new(VersionedMultiLocation::V1(dest.clone())),
                 weight,
             ),
+            // MaxAssetsForTransfer is set to 3 in the mock
             orml_xtokens::Error::<parachain::Runtime>::TooManyAssetsBeingSent
         );
 
@@ -2621,6 +2604,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
                 Box::new(VersionedMultiLocation::V1(dest.clone())),
                 weight,
             ),
+            // 0 fees should not work
             orml_xtokens::Error::<parachain::Runtime>::ZeroAmount
         );
 
@@ -2638,6 +2622,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
                 Box::new(VersionedMultiLocation::V1(dest.clone())),
                 weight,
             ),
+            // 0 assets should not work
             orml_xtokens::Error::<parachain::Runtime>::ZeroAmount
         );
     });
