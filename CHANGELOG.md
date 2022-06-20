@@ -2,18 +2,14 @@
 
 
 ## [Unreleased]
-### Added
+### Breaking changes
 
-### Changed
-- [\#622](https://github.com/Manta-Network/Manta/pull/622) Update parameter path from `sdk` to `manta-parameters`
+### Features
 
-### Deprecated
+### Improvements
+- [\#609](https://github.com/Manta-Network/Manta/pull/609) Update parameter path from `sdk` to `manta-parameters`
 
-### Removed
-
-### Fixed
-
-### Security
+### Bug fixes
 
 ## v3.2.0
 ### Breaking changes
