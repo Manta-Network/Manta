@@ -26,17 +26,17 @@ pub const INITIAL_BALANCE: Balance = 1_000_000_000_000 * KMA;
 
 /// create a transaction info struct from weight. Handy to avoid building the whole struct.
 pub fn info_from_weight(w: Weight) -> DispatchInfo {
-	// pays_fee: Pays::Yes -- class: DispatchClass::Normal
-	DispatchInfo {
-		weight: w,
-		..Default::default()
-	}
+    // pays_fee: Pays::Yes -- class: DispatchClass::Normal
+    DispatchInfo {
+        weight: w,
+        ..Default::default()
+    }
 }
 
 pub fn last_event() -> Event {
-	System::events().pop().expect("Event expected").event
+    System::events().pop().expect("Event expected").event
 }
 
 pub fn root_origin() -> <Runtime as frame_system::Config>::Origin {
-	<Runtime as frame_system::Config>::Origin::root()
+    <Runtime as frame_system::Config>::Origin::root()
 }
