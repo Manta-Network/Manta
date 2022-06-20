@@ -205,7 +205,7 @@ jobs:
             name: manta
             chain-spec: manta-testnet-ci
           -
-            name: manta
+            name: dolphin
             chain-spec: dolphin-testnet-ci
     steps:
       -
