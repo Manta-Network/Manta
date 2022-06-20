@@ -254,6 +254,7 @@ impl Contains<Call> for BaseFilter {
             | Call::MantaPay(_)
             | Call::Preimage(_)
             | Call::Utility(_) => true,
+
             // DISALLOW anything else
             _ => false,
         }
