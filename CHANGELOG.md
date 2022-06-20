@@ -5,7 +5,7 @@
 ### Added
 
 ### Changed
-- [\#???](https://github.com/Manta-Network/Manta/pull/609) Update parameter path from `sdk` to `manta-parameters`
+- [\#622](https://github.com/Manta-Network/Manta/pull/622) Update parameter path from `sdk` to `manta-parameters`
 
 ### Deprecated
 
