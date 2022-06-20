@@ -1846,6 +1846,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-client-consensus-aura"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.18#b1e91afb7421309b203d7627b736d9bcf58260eb"
+dependencies = [
+ "async-trait",
+ "cumulus-client-consensus-common",
+ "cumulus-primitives-core",
+ "futures 0.3.21",
+ "parity-scale-codec",
+ "sc-client-api",
+ "sc-consensus",
+ "sc-consensus-aura",
+ "sc-consensus-slots",
+ "sc-telemetry",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-inherents",
+ "sp-keystore",
+ "sp-runtime",
+ "substrate-prometheus-endpoint",
+ "tracing",
+]
+
+[[package]]
 name = "cumulus-client-consensus-common"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.18#b1e91afb7421309b203d7627b736d9bcf58260eb"
@@ -2448,6 +2477,7 @@ dependencies = [
  "orml-xtokens",
  "pallet-asset-manager",
  "pallet-assets",
+ "pallet-aura",
  "pallet-aura-style-filter",
  "pallet-author-inherent",
  "pallet-authorship",
@@ -2481,6 +2511,7 @@ dependencies = [
  "sp-api",
  "sp-arithmetic",
  "sp-block-builder",
+ "sp-consensus-aura",
  "sp-core",
  "sp-inherents",
  "sp-io",
@@ -2844,6 +2875,19 @@ dependencies = [
  "libc",
  "libz-sys",
  "miniz_oxide 0.5.1",
+]
+
+[[package]]
+name = "flume"
+version = "0.10.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1ceeb589a3157cac0ab8cc585feb749bd2cea5cb55a6ee802ad72d9fd38303da"
+dependencies = [
+ "futures-core",
+ "futures-sink",
+ "nanorand",
+ "pin-project 1.0.10",
+ "spin 0.9.3",
 ]
 
 [[package]]
@@ -3329,8 +3373,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9be70c98951c83b8d2f8f60d7065fa6d5146873094452a1008da8c2f1e4205ad"
 dependencies = [
  "cfg-if 1.0.0",
+ "js-sys",
  "libc",
  "wasi 0.10.0+wasi-snapshot-preview1",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -5148,6 +5194,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "clap 3.1.8",
  "cumulus-client-cli",
+ "cumulus-client-consensus-aura",
  "cumulus-client-consensus-common",
  "cumulus-client-consensus-relay-chain",
  "cumulus-client-network",
@@ -5158,6 +5205,7 @@ dependencies = [
  "cumulus-relay-chain-interface",
  "cumulus-relay-chain-rpc-interface",
  "dolphin-runtime",
+ "flume",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "futures 0.3.21",
@@ -5195,6 +5243,7 @@ dependencies = [
  "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
+ "sp-consensus-aura",
  "sp-core",
  "sp-inherents",
  "sp-io",
@@ -5756,6 +5805,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "10a8690bf09abf659851e58cd666c3d37ac6af07c2bd7a9e332cfba471715775"
 dependencies = [
  "rand 0.8.5",
+]
+
+[[package]]
+name = "nanorand"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a51313c5820b0b02bd422f4b44776fbf47961755c74ce64afc73bfad10226c3"
+dependencies = [
+ "getrandom 0.2.6",
 ]
 
 [[package]]
@@ -9183,7 +9241,7 @@ dependencies = [
  "cc",
  "libc",
  "once_cell",
- "spin",
+ "spin 0.5.2",
  "untrusted",
  "web-sys",
  "winapi 0.3.9",
@@ -11647,6 +11705,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
+name = "spin"
+version = "0.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c530c2b0d0bf8b69304b39fe2001993e267461948b890cd037d8ad4293fa1a0d"
+dependencies = [
+ "lock_api",
+]
+
+[[package]]
 name = "spki"
 version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -12352,7 +12419,7 @@ version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ee73e6e4924fe940354b8d4d98cad5231175d615cd855b758adc658c0aac6a0"
 dependencies = [
- "cfg-if 0.1.10",
+ "cfg-if 1.0.0",
  "digest 0.10.3",
  "rand 0.8.5",
  "static_assertions",

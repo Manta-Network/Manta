@@ -53,7 +53,7 @@ use frame_system::{
 };
 use manta_primitives::{
 	constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
-	types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
+	types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use runtime_common::prod_or_fast;
 
@@ -75,6 +75,8 @@ use fee::WeightToFee;
 use impls::DealWithFees;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
+// pub type NimbusId = AuraId;
+
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -89,18 +91,18 @@ pub mod opaque {
 	pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 	/// Opaque block identifier type.
 	pub type BlockId = generic::BlockId<Block>;
-	// impl_opaque_keys! { // RAD: How do we migrate Aura session keys to nimbus ones?
-	// 	pub struct SessionKeys {
-	// 		pub aura: Aura,
-	// 	}
-	// }
-    impl_opaque_keys! {
-        pub struct SessionKeys {
-            //TODO this was called author_inherent in the old runtime.
-            // Can I just rename it like this?
-            pub nimbus: AuthorInherent,
-        }
-    }
+	impl_opaque_keys! { // RAD: How do we migrate Aura session keys to nimbus ones?
+		pub struct SessionKeys {
+			pub aura: Aura,
+		}
+	}
+    // impl_opaque_keys! {
+    //     pub struct SessionKeys {
+    //         //TODO this was called author_inherent in the old runtime.
+    //         // Can I just rename it like this?
+    //         pub nimbus: AuthorInherent,
+    //     }
+    // }
 }
 
 // Weights used in the runtime.
@@ -257,6 +259,16 @@ impl Contains<Call> for BaseFilter {
 		}
 	}
 }
+
+// pub struct TestConverter<T>{_A:PhantomData<T>}
+
+// impl<T: Config> AccountLookup<AccountId> for TestConverter<T>{
+//     fn lookup_account(author: &NimbusId) -> Option<AccountId> {
+//         // Mapping::<T>::get(&author)
+//         // assuming NimbusId === ValidatorId === AuraKeys, then
+//         (T::Config as pallet_session::Pallet<Runtime>::Config).validators().iter().find(|vkey|{vkey == author}).and_then(|vkey|{vkey.into::<AccountId>()})
+//     }
+// }
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
@@ -527,25 +539,19 @@ impl pallet_treasury::Config for Runtime {
 	type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
 	type SpendFunds = ();
 }
-    struct TestConverter;
-    impl<T: Config> AccountLookup<T::AccountId> for TestConverter{
-        fn lookup_account(author: &NimbusId) -> Option<T::AccountId> {
-            // Mapping::<T>::get(&author)
-            // assuming NimbusId === ValidatorId === AuraKeys, then
-            (T::Config as Session::Config).validators().iter().find(|vkey|{vkey == author}).and_then(|vkey|{vkey.into::<T::AccountId>()})
-        }
-    }
-
     impl pallet_aura_style_filter::Config for Runtime {
-        type PotentialAuthors = TestConverter;
+        // type PotentialAuthors = TestConverter<Self>;
+        type PotentialAuthors = ();
     }
 
     impl pallet_author_inherent::Config for Runtime {
         // We start a new slot each time we see a new relay block.
         type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
-        type AccountLookup = TestConverter;
+        // type AccountLookup = TestConverter<Self>;
+        type AccountLookup = ();
         type EventHandler = ();
         type CanAuthor = CollatorSelection;
+        // type NimbusId = AccountId;
     }
 
 parameter_types! {
@@ -631,6 +637,11 @@ impl pallet_session::Config for Runtime {
 	type WeightInfo = weights::pallet_session::SubstrateWeight<Runtime>;
 }
 
+impl pallet_aura::Config for Runtime {
+	type AuthorityId = AuraId;
+	type DisabledValidators = ();
+	type MaxAuthorities = ConstU32<100_000>;
+}
 
 parameter_types! {
 	// Pallet account for record rewards and give rewards to collator.
@@ -692,10 +703,11 @@ construct_runtime!(
 
 		// Collator support. the order of these is important and shall not change.
         AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 50, // TODO: Number is likely wrong. Doublecheck inclusion order. Session likely must be included after a_inherent
-        AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage, Config<T>} = 53,
+        AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage} = 53,
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
 		CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
+		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
         // This used to be pallet_aura with idx = 23, // TODO: Write check that these are not reused
         // This used to be cumulus_pallet_aura_ext with idx = 24,
 
@@ -758,6 +770,16 @@ pub type Executive = frame_executive::Executive<
 >;
 
 impl_runtime_apis! {
+    impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
+		fn slot_duration() -> sp_consensus_aura::SlotDuration {
+			sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
+		}
+
+		fn authorities() -> Vec<AuraId> {
+			Aura::authorities().into_inner()
+		}
+	}
+
 	impl sp_api::Core<Block> for Runtime {
 		fn version() -> RuntimeVersion {
 			VERSION
@@ -854,45 +876,13 @@ impl_runtime_apis! {
 		}
 	}
 
-
     impl nimbus_primitives::NimbusApi<Block> for Runtime {
-		fn can_author(author: NimbusId, slot: u32, parent_header: &<Block as BlockT>::Header) -> bool {
-			// This runtime uses an entropy source that is updated during block initialization
-			// Therefore we need to initialize it to match the state it will be in when the
-			// next block is being executed.
-			// System::reset_events();
+		// fn can_author(author: NimbusId, slot: u32, parent_header: &<Block as BlockT>::Header) -> bool {
+		fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool{
 			System::initialize(&(parent_header.number + 1), &parent_header.hash(), &parent_header.digest);
-			// <Self as pallet_author_slot_filter::Config>::RandomnessSource::on_initialize(System::block_number());
-
-            // TODO: Moonbeam code with parachain_staking
-			// 		// Because the staking solution calculates the next staking set at the beginning
-			// 		// of the first block in the new round, the only way to accurately predict the
-			// 		// authors is to compute the selection during prediction.
-			// 		if parachain_staking::Pallet::<Self>::round().should_update(block_number) {
-			// 			// get author account id
-			// 			use nimbus_primitives::AccountLookup;
-			// 			let author_account_id = if let Some(account) =
-			// 				pallet_author_mapping::Pallet::<Self>::lookup_account(&author) {
-			// 				account
-			// 			} else {
-			// 				// return false if author mapping not registered like in can_author impl
-			// 				return false
-			// 			};
-			// 			// predict eligibility post-selection by computing selection results now
-			// 			let (eligible, _) =
-			// 				pallet_author_slot_filter::compute_pseudo_random_subset::<Self>(
-			// 					parachain_staking::Pallet::<Self>::compute_top_candidates(),
-			// 					&slot
-			// 				);
-			// 			eligible.contains(&author_account_id)
-			// 		} else {
-			// 			AuthorInherent::can_author(&author, &slot)
-			// 		}
-			// 	}
-			// }
 
 			// And now the actual prediction call
-			<AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &slot)
+			<AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
 		}
 	}
 
