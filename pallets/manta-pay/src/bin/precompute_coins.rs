@@ -28,96 +28,27 @@ use manta_crypto::{
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
     rand::{CryptoRng, Rand, RngCore, Sample},
 };
-use manta_pay::config::{
-    self, FullParameters, MerkleTreeConfiguration, Mint, MultiProvingContext,
-    MultiVerifyingContext, NoteEncryptionScheme, Parameters, PrivateTransfer, ProofSystem,
-    ProvingContext, Reclaim, UtxoAccumulatorModel, UtxoCommitmentScheme, VerifyingContext,
-    VoidNumberCommitmentScheme,
+use manta_pay::{
+	config::{
+		self, FullParameters, MerkleTreeConfiguration, Mint, MultiProvingContext,
+		MultiVerifyingContext, Parameters, PrivateTransfer, ProofSystem, ProvingContext, Reclaim,
+		UtxoAccumulatorModel, VerifyingContext,
+	},
+	parameters::load_parameters,
 };
-use manta_util::codec::{Decode, IoReader};
 use pallet_manta_pay::types::TransferPost;
 use rand::thread_rng;
 use scale_codec::Encode;
 use std::{
-    env,
-    fs::{self, File, OpenOptions},
-    io::Write,
-    path::{Path, PathBuf},
+	env,
+	fs::{self, OpenOptions},
+	io::Write,
+	path::PathBuf,
 };
 
 /// UTXO Accumulator for Building Circuits
 type UtxoAccumulator =
     TreeArrayMerkleForest<MerkleTreeConfiguration, Full<MerkleTreeConfiguration>, 256>;
-
-/// Loads parameters from the SDK, using `directory` as a temporary directory to store files.
-#[inline]
-fn load_parameters(
-    directory: &Path,
-) -> Result<(
-    MultiProvingContext,
-    MultiVerifyingContext,
-    Parameters,
-    UtxoAccumulatorModel,
-)> {
-	let mint_path = directory.join("mint.dat");
-	manta_parameters::pay::testnet::proving::Mint::download(&mint_path)?;
-	let private_transfer_path = directory.join("private-transfer.dat");
-	manta_parameters::pay::testnet::proving::PrivateTransfer::download(&private_transfer_path)?;
-	let reclaim_path = directory.join("reclaim.dat");
-	manta_parameters::pay::testnet::proving::Reclaim::download(&reclaim_path)?;
-	let proving_context = MultiProvingContext {
-		mint: ProvingContext::decode(IoReader(File::open(mint_path)?))
-			.expect("Unable to decode MINT proving context."),
-		private_transfer: ProvingContext::decode(IoReader(File::open(private_transfer_path)?))
-			.expect("Unable to decode PRIVATE_TRANSFER proving context."),
-		reclaim: ProvingContext::decode(IoReader(File::open(reclaim_path)?))
-			.expect("Unable to decode RECLAIM proving context."),
-	};
-	let verifying_context = MultiVerifyingContext {
-		mint: VerifyingContext::decode(
-			manta_parameters::pay::testnet::verifying::Mint::get()
-				.expect("Checksum did not match."),
-		)
-		.expect("Unable to decode MINT verifying context."),
-		private_transfer: VerifyingContext::decode(
-			manta_parameters::pay::testnet::verifying::PrivateTransfer::get()
-				.expect("Checksum did not match."),
-		)
-		.expect("Unable to decode PRIVATE_TRANSFER verifying context."),
-		reclaim: VerifyingContext::decode(
-			manta_parameters::pay::testnet::verifying::Reclaim::get()
-				.expect("Checksum did not match."),
-		)
-		.expect("Unable to decode RECLAIM verifying context."),
-	};
-	let parameters = Parameters {
-		note_encryption_scheme: NoteEncryptionScheme::decode(
-			manta_parameters::pay::testnet::parameters::NoteEncryptionScheme::get()
-				.expect("Checksum did not match."),
-		)
-		.expect("Unable to decode NOTE_ENCRYPTION_SCHEME parameters."),
-		utxo_commitment: UtxoCommitmentScheme::decode(
-			manta_parameters::pay::testnet::parameters::UtxoCommitmentScheme::get()
-				.expect("Checksum did not match."),
-		)
-		.expect("Unable to decode UTXO_COMMITMENT_SCHEME parameters."),
-		void_number_commitment: VoidNumberCommitmentScheme::decode(
-			manta_parameters::pay::testnet::parameters::VoidNumberCommitmentScheme::get()
-				.expect("Checksum did not match."),
-		)
-		.expect("Unable to decode VOID_NUMBER_COMMITMENT_SCHEME parameters."),
-	};
-	Ok((
-		proving_context,
-		verifying_context,
-		parameters,
-		UtxoAccumulatorModel::decode(
-			manta_parameters::pay::testnet::parameters::UtxoAccumulatorModel::get()
-				.expect("Checksum did not match."),
-		)
-		.expect("Unable to decode UTXO_ACCUMULATOR_MODEL."),
-	))
-}
 
 /// Asserts that `post` represents a valid `Transfer` verifying against `verifying_context`.
 #[inline]
@@ -324,10 +255,10 @@ fn main() -> Result<()> {
     let directory = tempfile::tempdir().expect("Unable to generate temporary test directory.");
     println!("[INFO] Temporary Directory: {:?}", directory);
 
-    let mut rng = thread_rng();
-    let (proving_context, verifying_context, parameters, utxo_accumulator_model) =
-        load_parameters(directory.path())?;
-    let asset_id: u32 = 8;
+	let mut rng = thread_rng();
+	let (proving_context, verifying_context, parameters, utxo_accumulator_model) =
+		load_parameters(directory.path()).expect("Unable to load parameters.");
+	let asset_id: u32 = 8;
 
     let mint = sample_mint(
         &proving_context.mint,

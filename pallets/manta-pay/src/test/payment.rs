@@ -55,7 +55,7 @@ pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32
 pub const NATIVE_ASSET_ID: AssetId =
     AssetId(<MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get());
 
-/// Loads the [`MultiProvingContext`] from the SDK.
+/// Loads the [`MultiProvingContext`].
 #[inline]
 fn load_proving_context() -> MultiProvingContext {
 	let directory = tempfile::tempdir().expect("Unable to create temporary directory.");
@@ -86,7 +86,7 @@ fn load_proving_context() -> MultiProvingContext {
 	}
 }
 
-/// Loads the [`Parameters`] from the SDK.
+/// Loads the [`Parameters`].
 #[inline]
 fn load_parameters() -> Parameters {
 	Parameters {
@@ -108,7 +108,7 @@ fn load_parameters() -> Parameters {
 	}
 }
 
-/// Loads the [`UtxoAccumulatorModel`] from the SDK.
+/// Loads the [`UtxoAccumulatorModel`].
 #[inline]
 fn load_utxo_accumulator_model() -> UtxoAccumulatorModel {
 	UtxoAccumulatorModel::decode(
