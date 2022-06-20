@@ -390,13 +390,13 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: runtime-upgrade-test-for-${{ matrix.runtime.chain-spec }}-stdout.log
-          path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log
+          path: ${{ github.workspace }}/test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         uses: actions/upload-artifact@v2
         with:
           name: runtime-upgrade-test-for-${{ matrix.runtime.chain-spec }}-stderr.log
-          path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log
+          path: ${{ github.workspace }}/test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: parse ${{ matrix.runtime.name }} block times
