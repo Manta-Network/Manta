@@ -1,5 +1,20 @@
 # CHANGELOG
 
+
+## [Unreleased]
+### Added
+
+### Changed
+- [\#???](https://github.com/Manta-Network/Manta/pull/609) Update parameter path from `sdk` to `manta-parameters`
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
 ## v3.2.0
 ### Breaking changes
 
