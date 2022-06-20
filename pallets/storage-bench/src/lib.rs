@@ -17,22 +17,15 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::unused_unit)]
 
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
-
 use frame_support::{
-	dispatch::{CallMetadata, GetCallMetadata},
-	pallet_prelude::*,
-	traits::{Contains, PalletInfoAccess},
-	transactional,
+    dispatch::{CallMetadata, GetCallMetadata},
+    pallet_prelude::*,
+    traits::{Contains, PalletInfoAccess},
+    transactional,
 };
 use frame_system::pallet_prelude::*;
 use sp_runtime::DispatchResult;
 use sp_std::{prelude::*, vec::Vec};
-
-mod mock;
-mod tests;
-pub mod weights;
 
 pub use pallet::*;
 pub use weights::WeightInfo;
@@ -47,234 +40,279 @@ pub(crate) const PROOF_LENGTH: usize = 192;
 /// Group Type
 pub type Group = [u8; EPHEMERAL_PUBLIC_KEY_LENGTH];
 
- /// UTXO Type
- pub type Utxo = [u8; UTXO_LENGTH];
+/// UTXO Type
+pub type Utxo = [u8; UTXO_LENGTH];
 
- /// Void Number Type
- pub type VoidNumber = [u8; VOID_NUMBER_LENGTH];
- 
- /// UTXO Accumulator Output Type
- pub type UtxoAccumulatorOutput = [u8; UTXO_ACCUMULATOR_OUTPUT_LENGTH];
- 
- /// Ciphertext Type
- pub type Ciphertext = [u8; CIPHER_TEXT_LENGTH];
- 
- /// Transfer Proof Type
- pub type Proof = [u8; PROOF_LENGTH];
+/// Void Number Type
+pub type VoidNumber = [u8; VOID_NUMBER_LENGTH];
 
- /// Encrypted Note
+/// UTXO Accumulator Output Type
+pub type UtxoAccumulatorOutput = [u8; UTXO_ACCUMULATOR_OUTPUT_LENGTH];
+
+/// Ciphertext Type
+pub type Ciphertext = [u8; CIPHER_TEXT_LENGTH];
+
+/// Transfer Proof Type
+pub type Proof = [u8; PROOF_LENGTH];
+
+/// Encrypted Note
 #[cfg_attr(
-	feature = "rpc",
-	derive(Deserialize, Serialize),
-	serde(crate = "manta_util::serde", deny_unknown_fields)
+    feature = "rpc",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
 )]
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct EncryptedNote {
-	/// Ephemeral Public Key
-	pub ephemeral_public_key: Group,
+    /// Ephemeral Public Key
+    pub ephemeral_public_key: Group,
 
-	/// Ciphertext
-	#[cfg_attr(
-		feature = "rpc",
-		serde(
-			with = "manta_util::serde_with::As::<[manta_util::serde_with::Same; CIPHER_TEXT_LENGTH]>"
-		)
-	)]
-	pub ciphertext: Ciphertext,
+    /// Ciphertext
+    #[cfg_attr(
+        feature = "rpc",
+        serde(
+            with = "manta_util::serde_with::As::<[manta_util::serde_with::Same; CIPHER_TEXT_LENGTH]>"
+        )
+    )]
+    pub ciphertext: Ciphertext,
 }
- 
+
 #[frame_support::pallet]
 pub mod pallet {
-	use super::*;
+    use super::*;
 
-	#[pallet::config]
-	pub trait Config: frame_system::Config {
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+    #[pallet::config]
+    pub trait Config: frame_system::Config {
+        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-		/// The origin which may set filter.
-		type UpdateOrigin: EnsureOrigin<Self::Origin>;
+        /// The origin which may set filter.
+        type UpdateOrigin: EnsureOrigin<Self::Origin>;
 
-		/// Weight information for the extrinsics in this pallet.
-		type WeightInfo: WeightInfo;
-	}
+        /// Weight information for the extrinsics in this pallet.
+        type WeightInfo: WeightInfo;
+    }
 
-	#[pallet::error]
-	pub enum Error<T> {
-		/// can not pause
-		CannotPause,
-		/// invalid character encoding
-		InvalidCharacter,
-	}
-
-	#[pallet::event]
-	#[pallet::generate_deposit(fn deposit_event)]
-	pub enum Event<T: Config> {
-		/// read a shard element: (UTXO, EncryptedNote)
-		ShardElementRead(Utxo, EncryptedNote),
-		/// write a shard element: (UTXO, EncryptedNote)
-		ShardElementWritten(Utxo, EncryptedNote),
+    #[pallet::event]
+    #[pallet::generate_deposit(fn deposit_event)]
+    pub enum Event<T: Config> {
+        /// read a shard element: (UTXO, EncryptedNote)
+        ShardElementRead(Utxo, EncryptedNote),
+        /// read a range of shard element
+        ShardElementBatchRead(u64),
+        /// write a shard element: (UTXO, EncryptedNote)
+        ShardElementWritten(Utxo, EncryptedNote),
         /// read a void number
-        VoidNumberRead(VoidNumber);
+        VoidNumberRead(VoidNumber),
         /// write a void number
-        VoidNumberWritten(VoidNumber);
-	}
+        VoidNumberWritten(VoidNumber),
+    }
 
-	#[pallet::storage]
-	pub type ShardsIdentityIdentity<T: Config> =
+    // Errors inform users that something went wrong.
+    #[pallet::error]
+    pub enum Error<T> {
+        /// pull a null storage item
+        NullStorageItem,
+    }
+
+    #[pallet::storage]
+    pub type ShardsIdentityIdentity<T: Config> =
         StorageDoubleMap<_, Identity, u8, Identity, u64, (Utxo, EncryptedNote), ValueQuery>;
 
     #[pallet::storage]
     pub type ShardsIdentityIdentityIndices<T: Config> =
         StorageMap<_, Twox64Concat, u8, u64, ValueQuery>;
-    
+
     #[pallet::storage]
     pub type ShardsTwoxIdentity<T: Config> =
         StorageDoubleMap<_, Twox64Concat, u8, Identity, u64, (Utxo, EncryptedNote), ValueQuery>;
-    
+
     #[pallet::storage]
-    pub type ShardsTwoxIdentityIndices<T: Config> = 
+    pub type ShardsTwoxIdentityIndices<T: Config> =
         StorageMap<_, Twox64Concat, u8, u64, ValueQuery>;
 
     #[pallet::storage]
     pub type ShardsTwoxTwox<T: Config> =
         StorageDoubleMap<_, Twox64Concat, u8, Twox64Concat, u64, (Utxo, EncryptedNote), ValueQuery>;
-    
+
     #[pallet::storage]
-    pub type ShardsTwoxTwoxIndices<T: Config> = 
-        StorageMap<_, Twox64Concat, u8, u64, ValueQuery>;
-    
-    /// Void Number Set
-	#[pallet::storage]
-	pub(super) type VoidNumberSetIdentity<T: Config> = StorageMap<_, Identity, VoidNumber, (), ValueQuery>;
+    pub type ShardsTwoxTwoxIndices<T: Config> = StorageMap<_, Twox64Concat, u8, u64, ValueQuery>;
 
     /// Void Number Set
-	#[pallet::storage]
-	pub(super) type VoidNumberSetTwox<T: Config> = StorageMap<_, Twox64Concat, VoidNumber, (), ValueQuery>;
+    #[pallet::storage]
+    pub(super) type VoidNumberSetIdentity<T: Config> =
+        StorageMap<_, Identity, VoidNumber, (), ValueQuery>;
+
+    /// Void Number Set
+    #[pallet::storage]
+    pub(super) type VoidNumberSetTwox<T: Config> =
+        StorageMap<_, Twox64Concat, VoidNumber, (), ValueQuery>;
 
     #[pallet::pallet]
-	#[pallet::without_storage_info]
-	pub struct Pallet<T>(_);
+    #[pallet::without_storage_info]
+    pub struct Pallet<T>(_);
 
-	#[pallet::hooks]
-	impl<T: Config> Hooks<T::BlockNumber> for Pallet<T> {}
+    #[pallet::hooks]
+    impl<T: Config> Hooks<T::BlockNumber> for Pallet<T> {}
 
-	#[pallet::call]
-	impl<T: Config> Pallet<T> {
-		#[pallet::weight(500_000)]
-		#[transactional]
-		pub fn insert_shard_element_identity_identity(
-			origin: OriginFor<T>,
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
+        #[pallet::weight(500_000)]
+        #[transactional]
+        pub fn insert_shard_element_identity_identity(
+            origin: OriginFor<T>,
             shard_idx: u8,
-			utxo: Utxo,
+            utxo: Utxo,
             encrypted_note: EncryptedNote,
-		) -> DispatchResult {
-			T::UpdateOrigin::ensure_origin(origin)?;
+        ) -> DispatchResult {
+            T::UpdateOrigin::ensure_origin(origin)?;
             let utxo_idx = ShardsIdentityIdentityIndices::<T>::get(shard_idx);
             ShardsIdentityIdentity::<T>::insert(shard_idx, utxo_idx, (utxo, encrypted_note));
-            ShardsIdentityIdentityIndices::<T>::insert(shard_idx, utxo_idx + 1);
+            ShardsIdentityIdentityIndices::<T>::insert(shard_idx, Self::next_index(utxo_idx));
             Self::deposit_event(Event::ShardElementWritten(utxo, encrypted_note));
-			Ok(())
-		}
+            Ok(())
+        }
 
-		#[pallet::weight(500_000)]
-		#[transactional]
-		pub fn insert_shard_element_twox_identity(
-			origin: OriginFor<T>,
-			shard_idx: u8,
-			utxo: Utxo,
+        #[pallet::weight(500_000)]
+        #[transactional]
+        pub fn insert_shard_element_twox_identity(
+            origin: OriginFor<T>,
+            shard_idx: u8,
+            utxo: Utxo,
             encrypted_note: EncryptedNote,
-		) -> DispatchResult {
-			T::UpdateOrigin::ensure_origin(origin)?;
-			let utxo_idx = ShardsIdentityIdentityIndices::<T>::get(shard_idx);
+        ) -> DispatchResult {
+            T::UpdateOrigin::ensure_origin(origin)?;
+            let utxo_idx = ShardsIdentityIdentityIndices::<T>::get(shard_idx);
             ShardsTwoxIdentity::<T>::insert(shard_idx, utxo_idx, (utxo, encrypted_note));
-            ShardsTwoxIdentityIndices::<T>::insert(shard_idx, utxo_idx + 1);
+            ShardsTwoxIdentityIndices::<T>::insert(shard_idx, Self::next_index(utxo_idx));
             Self::deposit_event(Event::ShardElementWritten(utxo, encrypted_note));
-			Ok(())
-		}
+            Ok(())
+        }
 
         #[pallet::weight(500_000)]
-		#[transactional]
-		pub fn insert_shard_element_twox_twox(
-			origin: OriginFor<T>,
-			shard_idx: u8,
-			utxo: Utxo,
+        #[transactional]
+        pub fn insert_shard_element_twox_twox(
+            origin: OriginFor<T>,
+            shard_idx: u8,
+            utxo: Utxo,
             encrypted_note: EncryptedNote,
-		) -> DispatchResult {
-			T::UpdateOrigin::ensure_origin(origin)?;
-			let utxo_idx = ShardsIdentityIdentityIndices::<T>::get(shard_idx);
+        ) -> DispatchResult {
+            T::UpdateOrigin::ensure_origin(origin)?;
+            let utxo_idx = ShardsIdentityIdentityIndices::<T>::get(shard_idx);
             ShardsTwoxTwox::<T>::insert(shard_idx, utxo_idx, (utxo, encrypted_note));
-            ShardsTwoxTwox::<T>::insert(shard_idx, utxo_idx + 1);
+            ShardsTwoxTwox::<T>::insert(shard_idx, Self::next_index(utxo_idx));
             Self::deposit_event(Event::ShardElementWritten(utxo, encrypted_note));
-			Ok(())
-		}
+            Ok(())
+        }
 
         #[pallet::weight(500_000)]
-		#[transactional]
-		pub fn point_read_shard_element_identity_identity(
-			origin: OriginFor<T>,
+        #[transactional]
+        pub fn point_read_shard_element_identity_identity(
+            origin: OriginFor<T>,
             shard_idx: u8,
-			utxo_idx: u64,
-		) -> DispatchResult {
-			T::UpdateOrigin::ensure_origin(origin)?;
-            let (utxo, encrypted_Note) = ShardsIdentityIdentity::<T>::get(shard_idx, utxo_idx);
+            utxo_idx: u64,
+        ) -> DispatchResult {
+            T::UpdateOrigin::ensure_origin(origin)?;
+            let (utxo, encrypted_Note) =
+                ShardsIdentityIdentity::<T>::get(shard_idx, Self::encode(utxo_idx));
             Self::deposit_event(Event::ShardElementRead(utxo, encrypted_note));
-			Ok(())
-		}
+            Ok(())
+        }
 
         #[pallet::weight(500_000)]
-		#[transactional]
-		pub fn point_read_shard_element_twox_identity(
-			origin: OriginFor<T>,
+        #[transactional]
+        pub fn point_read_shard_element_twox_identity(
+            origin: OriginFor<T>,
             shard_idx: u8,
-			utxo_idx: u64,
-		) -> DispatchResult {
-			T::UpdateOrigin::ensure_origin(origin)?;
-            let (utxo, encrypted_Note) = ShardsTwoxIdentity::<T>::get(shard_idx, utxo_idx);
+            utxo_idx: u64,
+        ) -> DispatchResult {
+            T::UpdateOrigin::ensure_origin(origin)?;
+            let (utxo, encrypted_Note) =
+                ShardsTwoxIdentity::<T>::get(shard_idx, Self::encode(utxo_idx));
             Self::deposit_event(Event::ShardElementRead(utxo, encrypted_note));
-			Ok(())
-		}
+            Ok(())
+        }
 
         #[pallet::weight(500_000)]
-		#[transactional]
-		pub fn point_read_shard_element_twox_twox(
-			origin: OriginFor<T>,
+        #[transactional]
+        pub fn point_read_shard_element_twox_twox(
+            origin: OriginFor<T>,
             shard_idx: u8,
-			utxo_idx: u64,
-		) -> DispatchResult {
-			T::UpdateOrigin::ensure_origin(origin)?;
-            let (utxo, encrypted_Note) = ShardsTwoxTwox::<T>::get(shard_idx, utxo_idx);
+            utxo_idx: u64,
+        ) -> DispatchResult {
+            T::UpdateOrigin::ensure_origin(origin)?;
+            let (utxo, encrypted_Note) =
+                ShardsTwoxTwox::<T>::get(shard_idx, Self::encode(utxo_idx));
             Self::deposit_event(Event::ShardElementRead(utxo, encrypted_note));
-			Ok(())
-		}
+            Ok(())
+        }
 
         #[pallet::weight(500_000)]
-		#[transactional]
-		pub fn range_read_shard_element_identity_identity(
-			origin: OriginFor<T>,
+        #[transactional]
+        pub fn range_read_shard_element_identity_identity(
+            origin: OriginFor<T>,
             shard_idx: u8,
-			utxo_idx: u64,
-		) -> DispatchResult {
-			T::UpdateOrigin::ensure_origin(origin)?;
-            let (utxo, encrypted_Note) = ShardsTwoxTwox::<T>::get(shard_idx, utxo_idx);
-            Self::deposit_event(Event::ShardElementRead(utxo, encrypted_note));
-			Ok(())
-		}
+            utxo_idx: u64,
+            amount: u64,
+        ) -> DispatchResult {
+            T::UpdateOrigin::ensure_origin(origin)?;
+            let mut receivers = Vec::new();
+            let mut iter = if utxo_idx == 0 {
+                ShardsIdentityIdentity::<T>::iter_prefix(shard_idx)
+            } else {
+                let raw_key = ShardsIdentityIdentity::<T>::hashed_key_for(
+                    shard_idx,
+                    Self::encode(utxo_idx as u64 - 1),
+                );
+                ShardsIdentityIdentity::<T>::iter_prefix_from(shard_idx, raw_key)
+            };
+            for _ in 0..amount {
+                match iter.next() {
+                    Some((_, next)) => receivers.push(next),
+                    _ => return Error::<T>::NullStorageItem,
+                }
+            }
+            Self::deposit_event(Event::ShardElementBatchRead(amount));
+            Ok(())
+        }
 
         #[pallet::weight(500_000)]
-		#[transactional]
-		pub fn range_read_shard_element_twox_identity(
-			origin: OriginFor<T>,
+        #[transactional]
+        pub fn range_read_shard_element_twox_identity(
+            origin: OriginFor<T>,
             shard_idx: u8,
-			utxo_idx: u64,
-		) -> DispatchResult {
-			T::UpdateOrigin::ensure_origin(origin)?;
-            let (utxo, encrypted_Note) = ShardsTwoxTwox::<T>::get(shard_idx, utxo_idx);
-            Self::deposit_event(Event::ShardElementRead(utxo, encrypted_note));
-			Ok(())
-		}
+            utxo_idx: u64,
+            amount: u64,
+        ) -> DispatchResult {
+            T::UpdateOrigin::ensure_origin(origin)?;
+            let mut receivers = Vec::new();
+            let mut iter = if utxo_idx == 0 {
+                ShardsTwoxIdentity::<T>::iter_prefix(shard_idx)
+            } else {
+                let raw_key = ShardsTwoxIdentity::<T>::hashed_key_for(
+                    shard_idx,
+                    Self::encode(utxo_idx as u64 - 1),
+                );
+                ShardsTwoxIdentity::<T>::iter_prefix_from(shard_idx, raw_key)
+            };
+            for _ in 0..amount {
+                match iter.next() {
+                    Some((_, next)) => receivers.push(next),
+                    _ => return Error::<T>::NullStorageItem,
+                }
+            }
+            Self::deposit_event(Event::ShardElementBatchRead(amount));
+            Ok(())
+        }
+    }
 
-	}
+    impl<T: Config> Pallet<T> {
+        fn encode(n: u64) -> u64 {
+            let mut bytes = n.to_ne_bytes();
+            bytes.reverse();
+            u64::from_ne_bytes(bytes)
+        }
 
-    
+        fn next_index(index: u64) -> u64 {
+            encode(encode(index) + 1)
+        }
+    }
 }
-
