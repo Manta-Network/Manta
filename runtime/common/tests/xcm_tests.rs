@@ -2232,7 +2232,7 @@ fn transfer_multicurrencies_should_work_scenarios() {
         parachain::Assets::mint(
             parachain::Origin::signed(parachain::AssetManager::account_id()),
             relay_asset_id_on_a,
-            ALICE.into(),
+            ALICE,
             relay_asset_amount_minted_on_a,
         )
     }));
@@ -2452,7 +2452,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
         parachain::Assets::mint(
             parachain::Origin::signed(parachain::AssetManager::account_id()),
             relay_asset_id_on_a,
-            ALICE.into(),
+            ALICE,
             amount,
         )
     }));
