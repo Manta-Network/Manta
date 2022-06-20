@@ -9,7 +9,7 @@ on:
   pull_request:
     branches: [manta]
   push:
-    branches: [ghzlatarev/dolphin-ci-runntime-upgrade-test]
+    branches: [manta]]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 
@@ -235,7 +235,7 @@ jobs:
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch and chmod polkadot
         run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.18/polkadot
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.23/polkadot
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       -
