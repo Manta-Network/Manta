@@ -70,6 +70,7 @@ precompute-coins = [
 	"manta-util/std",
 	"rand",
 	"tempfile",
+	"manta-pay/test",
 ]
 
 [dependencies]

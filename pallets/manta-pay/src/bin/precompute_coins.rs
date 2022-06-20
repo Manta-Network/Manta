@@ -40,10 +40,10 @@ use pallet_manta_pay::types::TransferPost;
 use rand::thread_rng;
 use scale_codec::Encode;
 use std::{
-    env,
-    fs::{self, OpenOptions},
-    io::Write,
-    path::PathBuf,
+	env,
+	fs::{self, OpenOptions},
+	io::Write,
+	path::PathBuf,
 };
 
 /// UTXO Accumulator for Building Circuits
