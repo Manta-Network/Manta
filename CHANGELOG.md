@@ -1,15 +1,15 @@
 # CHANGELOG
 
-## Unreleased
+## [Unreleased]
 ### Breaking changes
 
 ### Features
 
 ### Improvements
 - [\#576](https://github.com/Manta-Network/Manta/pull/576) Unfilter xtokens.transfer_multicurrencies and bump MaxAssetsForTransfer to 2.
+- [\#609](https://github.com/Manta-Network/Manta/pull/609) Update parameter path from `sdk` to `manta-parameters`
 
 ### Bug fixes
-
 
 ## v3.2.0
 ### Breaking changes

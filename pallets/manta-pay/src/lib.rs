@@ -728,7 +728,7 @@ where
     {
         let _ = super_key;
         let parameters = config::UtxoAccumulatorModel::decode(
-            manta_sdk::pay::testnet::parameters::UtxoAccumulatorModel::get()
+            manta_parameters::pay::testnet::parameters::UtxoAccumulatorModel::get()
                 .expect("Checksum did not match."),
         )
         .expect("Unable to decode the Merkle Tree Parameters.");
@@ -854,19 +854,20 @@ where
             sinks.len(),
         )? {
             TransferShape::Mint => (
-                manta_sdk::pay::testnet::verifying::Mint::get().expect("Checksum did not match."),
+                manta_parameters::pay::testnet::verifying::Mint::get()
+                    .expect("Checksum did not match."),
                 PreprocessedEvent::<T>::ToPrivate {
                     asset: Asset::new(asset_id.unwrap().0, (sources[0].1).0),
                     source: sources[0].0.clone(),
                 },
             ),
             TransferShape::PrivateTransfer => (
-                manta_sdk::pay::testnet::verifying::PrivateTransfer::get()
+                manta_parameters::pay::testnet::verifying::PrivateTransfer::get()
                     .expect("Checksum did not match."),
                 PreprocessedEvent::<T>::PrivateTransfer,
             ),
             TransferShape::Reclaim => (
-                manta_sdk::pay::testnet::verifying::Reclaim::get()
+                manta_parameters::pay::testnet::verifying::Reclaim::get()
                     .expect("Checksum did not match."),
                 PreprocessedEvent::<T>::ToPublic {
                     asset: Asset::new(asset_id.unwrap().0, (sinks[0].1).0),
