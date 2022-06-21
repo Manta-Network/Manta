@@ -65,9 +65,10 @@ precompute-coins = [
   "anyhow",
   "indoc",
   "manta-accounting/test",
-  "manta-sdk/download",
+  "manta-pay/download",
+  "manta-pay/test",
   "manta-util/std",
-  "rand",
+  "rand_chacha",
   "tempfile",
 ]
 
@@ -75,7 +76,7 @@ precompute-coins = [
 # utils
 anyhow = { version = "1.0.55", optional = true }
 indoc = { version = "1.0.3", optional = true, default-features = false }
-rand = { version = "0.8.4", optional = true, default-features = false }
+rand_chacha = { version = "0.3.1", optional = true, default-features = false }
 tempfile = { version = "3.3.0", optional = true }
 
 # substrate dependencies
@@ -84,11 +85,10 @@ frame-support = { git = "https://github.com/paritytech/substrate.git", branch = 
 frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18", default-features = false }
 scale-codec = { package = "parity-scale-codec", version = '3.0.0', default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18", default-features = false }
-sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18", default-features = false }
-
 sp-api = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18", optional = true, default-features = false }
 sp-blockchain = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18", optional = true, default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18", default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18", default-features = false }
 
 # JSON-RPC
 jsonrpc-core = { version = "18.0.0", optional = true, default-features = false }
@@ -96,24 +96,24 @@ jsonrpc-core-client = { version = "18.0.0", optional = true, default-features = 
 jsonrpc-derive = { version = "18.0.0", optional = true, default-features = false }
 
 # manta dependencies
-manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.0", default-features = false }
-manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.0", default-features = false }
-manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.0", default-features = false, features = ["groth16", "scale"] }
+manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.1", default-features = false }
+manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.1", default-features = false }
+manta-parameters = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.1", default-features = false }
+manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.1", default-features = false, features = ["groth16", "scale"] }
 manta-primitives = { path = "../../primitives", default-features = false }
-manta-sdk = { git = "https://github.com/manta-network/sdk.git", default-features = false }
-manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.0", default-features = false }
+manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.1", default-features = false }
 
 [dev-dependencies]
 bencher = "0.1.5"
 criterion = "0.3.4"
 lazy_static = "1.4.0"
-manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.0", features = ["test"] }
-manta-sdk = { git = "https://github.com/manta-network/sdk.git", features = ["download"] }
-manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.0", features = ["std"] }
+manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.1", features = ["test"] }
+manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.1", features = ["getrandom"] }
+manta-parameters = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.1", features = ["download"] }
+manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.1", features = ["std"] }
 pallet-asset-manager = { path = "../asset-manager" }
 pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
-rand = "0.8.4"
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.18" }
 tempfile = "3.3.0"
