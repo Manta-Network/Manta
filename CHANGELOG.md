@@ -1,7 +1,15 @@
 # CHANGELOG
 
-
 ## [Unreleased]
+### Breaking changes
+
+### Features
+
+### Improvements
+
+### Bug fixes
+
+## v3.2.1
 ### Breaking changes
 
 ### Features
