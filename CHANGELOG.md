@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v3.2.1(Unreleased)
+### Breaking changes
+
+### Features
+
+### Improvements
+- [\#571](https://github.com/Manta-Network/Manta/pull/571) Update upstream dependencies to v0.9.22.
+
+### Bug fixes
+
 ## v3.2.0
 ### Breaking changes
 
