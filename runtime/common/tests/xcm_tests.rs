@@ -2305,12 +2305,12 @@ fn transfer_multicurrencies_should_work_scenarios() {
             relay_asset_amount_minted_on_a - fee_amount
         );
         assert_eq!(
-            // notice that total supply between the two chains is:
+            // Notice that total supply between the two chains is:
             // `(relay_asset_amount_minted_on_a - fee_amount) + (fee_amount - min_xcm_fee)`
             // `relay_asset_amount_minted_on_a - fee_amount` is still on ParaA
-            // `fee_amount - min_xcm_fee` is on ParaB.
-            // Total out to `relay_asset_amount_minted_on_a - min_xcm_fee` meaning one `min_xcm_fee` is destroyed
-            // This is a design choice by ORML to make these kinds of transfer
+            // `fee_amount - min_xcm_fee` is on ParaB. (min_xcm_fee is subtracted in the ORML code)
+            // The total comes out to `relay_asset_amount_minted_on_a - min_xcm_fee`, meaning one `min_xcm_fee` is destroyed
+            // This is a design choice by ORML to make these kinds of transfers possible.
             // Practically some of tokens held as reserve on the reserve chain, will become unwithdrawable.
             parachain::Assets::total_supply(relay_asset_id_on_a),
             relay_asset_amount_minted_on_a - fee_amount
@@ -2367,8 +2367,8 @@ fn transfer_multicurrencies_should_work_scenarios() {
 }
 
 /// Checks only must-fail cases related to transfer_multicurrencies
-/// First part tests cases on the sender side.
-/// Second part tests cases on the receiver side.
+/// First part is for testing cases on the sender side.
+/// Second part is for testing cases on the receiver side.
 #[test]
 fn transfer_multicurrencies_should_fail_scenarios() {
     MockNet::reset();
@@ -2505,6 +2505,8 @@ fn transfer_multicurrencies_should_fail_scenarios() {
         ),
     };
 
+    // Sender Side Tests:
+
     let fee_amount: u128 = 50;
     let min_xcm_fee = 10;
     ParaA::execute_with(|| {
@@ -2629,6 +2631,8 @@ fn transfer_multicurrencies_should_fail_scenarios() {
             orml_xtokens::Error::<parachain::Runtime>::ZeroAmount
         );
     });
+
+    // Receiver Side Tests:
 
     let amount_back_to_b = 100;
     let fee_amount: u128 = 50;
