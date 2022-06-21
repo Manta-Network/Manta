@@ -236,6 +236,14 @@ jobs:
               id: pallet_manta_pay
               name: pallet_manta_pay
             iterations: 20
+          -
+            extrinsic:
+              id: '*'
+              name: cumulus_pallet_xcmp_queue
+            pallet:
+              id: cumulus_pallet_xcmp_queue
+              name: cumulus_pallet_xcmp_queue
+            iterations: 20
     steps:
       -
         uses: actions/download-artifact@v2

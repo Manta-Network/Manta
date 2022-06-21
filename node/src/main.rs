@@ -15,7 +15,10 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Manta/Calamari Parachain CLI
+
 #![warn(missing_docs)]
+
+extern crate alloc;
 
 mod chain_specs;
 mod cli;
@@ -24,5 +27,5 @@ mod rpc;
 mod service;
 
 fn main() -> sc_cli::Result<()> {
-	command::run()
+    command::run()
 }
