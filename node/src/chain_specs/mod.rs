@@ -15,10 +15,12 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 #![allow(dead_code)]
+// Tolerate clippy warning originating in ChainSpecGroup, which is a dependency
+#![allow(clippy::derive_partial_eq_without_eq)]
 
 use manta_primitives::{
-	constants,
-	types::{AccountId, AuraId, Balance},
+    constants,
+    types::{AccountId, AuraId, Balance},
 };
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, Properties};
@@ -46,18 +48,20 @@ const STAGING_TELEMETRY_URL: &str = "wss://api.telemetry.manta.systems/submit/";
 pub type ChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
 
 /// The extensions for the [`ChainSpec`].
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension,
+)]
 #[serde(deny_unknown_fields)]
 pub struct Extensions {
-	/// The relay chain of the Parachain.
-	pub relay_chain: String,
-	/// The id of the Parachain.
-	pub para_id: u32,
+    /// The relay chain of the Parachain.
+    pub relay_chain: String,
+    /// The id of the Parachain.
+    pub para_id: u32,
 }
 
 impl Extensions {
-	/// Try to get the extension from the given `ChainSpec`.
-	pub fn try_get(chain_spec: &dyn sc_service::ChainSpec) -> Option<&Self> {
-		sc_chain_spec::get_extension(chain_spec.extensions())
-	}
+    /// Try to get the extension from the given `ChainSpec`.
+    pub fn try_get(chain_spec: &dyn sc_service::ChainSpec) -> Option<&Self> {
+        sc_chain_spec::get_extension(chain_spec.extensions())
+    }
 }

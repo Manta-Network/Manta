@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use frame_support::weights::{
-	WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
+    WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 };
 use manta_primitives::types::Balance;
 use smallvec::smallvec;
@@ -42,197 +42,199 @@ pub const TIPS_PERCENTAGE_TO_TREASURY: u8 = 0;
 ///   - Setting it to `1` will cause the literal `#[weight = x]` values to be charged.
 pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
-	type Balance = Balance;
-	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		// Refer to the congested_chain_simulation() test for how to come up with the coefficient.
-		smallvec![WeightToFeeCoefficient {
-			coeff_integer: 5000u32.into(),
-			coeff_frac: Perbill::zero(),
-			negative: false,
-			degree: 1,
-		}]
-	}
+    type Balance = Balance;
+    fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+        // Refer to the congested_chain_simulation() test for how to come up with the coefficient.
+        smallvec![WeightToFeeCoefficient {
+            coeff_integer: 5000u32.into(),
+            coeff_frac: Perbill::zero(),
+            negative: false,
+            degree: 1,
+        }]
+    }
 }
 
 #[cfg(test)]
 mod multiplier_tests {
-	use crate::{
-		Call, Runtime, RuntimeBlockWeights as BlockWeights, System, TransactionPayment, KMA,
-	};
-	use codec::Encode;
-	use frame_support::weights::{DispatchClass, Weight, WeightToFeePolynomial};
-	use frame_system::WeightInfo;
-	use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
-	use polkadot_runtime_common::{AdjustmentVariable, MinimumMultiplier, TargetBlockFullness};
-	use sp_runtime::{
-		traits::{Convert, One},
-		FixedPointNumber,
-	};
+    use crate::{
+        Call, Runtime, RuntimeBlockWeights as BlockWeights, System, TransactionPayment, KMA,
+    };
+    use codec::Encode;
+    use frame_support::weights::{DispatchClass, Weight, WeightToFeePolynomial};
+    use frame_system::WeightInfo;
+    use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
+    use polkadot_runtime_common::{AdjustmentVariable, MinimumMultiplier, TargetBlockFullness};
+    use sp_runtime::{
+        traits::{Convert, One},
+        FixedPointNumber,
+    };
 
-	fn run_with_system_weight<F>(w: Weight, mut assertions: F)
-	where
-		F: FnMut() -> (),
-	{
-		let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
-			.build_storage::<Runtime>()
-			.unwrap()
-			.into();
-		t.execute_with(|| {
-			System::set_block_consumed_resources(w, 0);
-			assertions()
-		});
-	}
+    fn run_with_system_weight<F>(w: Weight, mut assertions: F)
+    where
+        F: FnMut(),
+    {
+        let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
+            .build_storage::<Runtime>()
+            .unwrap()
+            .into();
+        t.execute_with(|| {
+            System::set_block_consumed_resources(w, 0);
+            assertions()
+        });
+    }
 
-	// update based on runtime impl.
-	fn runtime_multiplier_update(fm: Multiplier) -> Multiplier {
-		TargetedFeeAdjustment::<
-			Runtime,
-			TargetBlockFullness,
-			AdjustmentVariable,
-			MinimumMultiplier,
-		>::convert(fm)
-	}
+    // update based on runtime impl.
+    fn runtime_multiplier_update(fm: Multiplier) -> Multiplier {
+        TargetedFeeAdjustment::<
+            Runtime,
+            TargetBlockFullness,
+            AdjustmentVariable,
+            MinimumMultiplier,
+        >::convert(fm)
+    }
 
-	fn fetch_kma_price() -> Result<f32, &'static str> {
-		let body = reqwest::blocking::get(
-			"https://api.coingecko.com/api/v3/simple/price?ids=calamari-network&vs_currencies=usd",
-		)
-		.unwrap();
-		let json_reply: serde_json::Value = serde_json::from_reader(body).unwrap();
-		if let Some(price) = json_reply["calamari-network"]["usd"].as_f64() {
-			// CG API return: {"calamari-network":{"usd": 0.01092173}}
-			Ok(price as f32)
-		} else {
-			Err("KMA price not found in reply from Coingecko. API changed? Check https://www.coingecko.com/en/api/documentation")
-		}
-	}
+    fn fetch_kma_price() -> Result<f32, &'static str> {
+        let body = reqwest::blocking::get(
+            "https://api.coingecko.com/api/v3/simple/price?ids=calamari-network&vs_currencies=usd",
+        )
+        .unwrap();
+        let json_reply: serde_json::Value = serde_json::from_reader(body).unwrap();
+        if let Some(price) = json_reply["calamari-network"]["usd"].as_f64() {
+            // CG API return: {"calamari-network":{"usd": 0.01092173}}
+            Ok(price as f32)
+        } else {
+            Err("KMA price not found in reply from Coingecko. API changed? Check https://www.coingecko.com/en/api/documentation")
+        }
+    }
 
-	// Consider the daily cost to fully congest our network to be defined as:
-	// `target_daily_congestion_cost_usd = inclusion_fee * blocks_per_day * kma_price`
-	// Where:
-	// `inclusion_fee = fee_adjustment * (weight_to_fee_coeff * (block_weight ^ degree)) + base_fee + (weight_to_fee_coeff * length_fee)`
-	// Where:
-	// `fee_adjustment` and `weight_to_fee_coeff` are configurable in a runtime via `FeeMultiplierUpdate` and `WeightToFee`
-	// `fee_adjustment` is also variable depending on previous block's fullness
-	// We are also assuming `length_fee` is negligible for small TXs like a remark or a transfer.
-	// This test loops 1 day of parachain blocks (7200) and calculates accumulated fee if every block is almost full
-	#[test]
-	fn congested_chain_simulation() {
-		// Configure the target cost depending on the current state of the network.
-		let target_daily_congestion_cost_usd = 250000;
-		let kma_price = fetch_kma_price().unwrap();
-		println!("KMA/USD price as read from CoinGecko = {}", kma_price);
-		let target_daily_congestion_cost_kma =
-			(target_daily_congestion_cost_usd as f32 * kma_price * KMA as f32) as u128;
+    // Consider the daily cost to fully congest our network to be defined as:
+    // `target_daily_congestion_cost_usd = inclusion_fee * blocks_per_day * kma_price`
+    // Where:
+    // `inclusion_fee = fee_adjustment * (weight_to_fee_coeff * (block_weight ^ degree)) + base_fee + (weight_to_fee_coeff * length_fee)`
+    // Where:
+    // `fee_adjustment` and `weight_to_fee_coeff` are configurable in a runtime via `FeeMultiplierUpdate` and `WeightToFee`
+    // `fee_adjustment` is also variable depending on previous block's fullness
+    // We are also assuming `length_fee` is negligible for small TXs like a remark or a transfer.
+    // This test loops 1 day of parachain blocks (7200) and calculates accumulated fee if every block is almost full
+    #[test]
+    fn congested_chain_simulation() {
+        // Configure the target cost depending on the current state of the network.
+        let target_daily_congestion_cost_usd = 250000;
+        let kma_price = fetch_kma_price().unwrap();
+        println!("KMA/USD price as read from CoinGecko = {}", kma_price);
+        let target_daily_congestion_cost_kma =
+            (target_daily_congestion_cost_usd as f32 * kma_price * KMA as f32) as u128;
 
-		// `cargo test --package calamari-runtime --lib -- fee::multiplier_tests::congested_chain_simulation --exact --nocapture` to get some insight.
-		// almost full. The entire quota of normal transactions is taken.
-		let block_weight = BlockWeights::get()
-			.get(DispatchClass::Normal)
-			.max_total
-			.unwrap() - 10;
+        // `cargo test --package calamari-runtime --lib -- fee::multiplier_tests::congested_chain_simulation --exact --nocapture` to get some insight.
+        // almost full. The entire quota of normal transactions is taken.
+        let block_weight = BlockWeights::get()
+            .get(DispatchClass::Normal)
+            .max_total
+            .unwrap()
+            - 10;
 
-		// remark extrinsic is chosen arbitrarily for benchmark as a small, constant size TX.
-		let remark = Call::System(frame_system::Call::<Runtime>::remark_with_event {
-			remark: vec![1, 2, 3],
-		});
-		let len: u32 = remark.clone().encode().len() as u32;
-		let remark_weight: Weight =
-			<Runtime as frame_system::Config>::SystemWeightInfo::remark(len);
-		let max_number_of_remarks_per_block = (block_weight / remark_weight) as u128;
-		let per_byte = <Runtime as pallet_transaction_payment::Config>::TransactionByteFee::get();
-		// length fee. this is not adjusted.
-		let len_fee =
-			max_number_of_remarks_per_block.saturating_mul(per_byte.saturating_mul(len as u128));
+        // remark extrinsic is chosen arbitrarily for benchmark as a small, constant size TX.
+        let remark = Call::System(frame_system::Call::<Runtime>::remark_with_event {
+            remark: vec![1, 2, 3],
+        });
+        let len: u32 = remark.encode().len() as u32;
+        let remark_weight: Weight =
+            <Runtime as frame_system::Config>::SystemWeightInfo::remark(len);
+        let max_number_of_remarks_per_block = (block_weight / remark_weight) as u128;
+        let per_byte = <Runtime as pallet_transaction_payment::Config>::TransactionByteFee::get();
+        // length fee. this is not adjusted.
+        let len_fee =
+            max_number_of_remarks_per_block.saturating_mul(per_byte.saturating_mul(len as u128));
 
-		let base_fee = max_number_of_remarks_per_block
-			* <Runtime as pallet_transaction_payment::Config>::WeightToFee::calc(
-				&frame_support::weights::constants::ExtrinsicBaseWeight::get(),
-			);
+        let base_fee = max_number_of_remarks_per_block
+            * <Runtime as pallet_transaction_payment::Config>::WeightToFee::calc(
+                &frame_support::weights::constants::ExtrinsicBaseWeight::get(),
+            );
 
-		run_with_system_weight(block_weight, || {
-			// initial value configured on module
-			let mut fee_adjustment = Multiplier::one();
-			assert_eq!(fee_adjustment, TransactionPayment::next_fee_multiplier());
-			let mut accumulated_fee: u128 = 0;
-			// Simulates 1 day of parachain blocks (12 seconds each)
-			for iteration in 0..7200 {
-				let next = runtime_multiplier_update(fee_adjustment);
-				// if no change or less, panic. This should never happen in this case.
-				if fee_adjustment >= next {
-					println!("final fee_adjustment: {}", fee_adjustment);
-					println!("final next: {}", next);
-					panic!("The fee should ever increase");
-				}
-				fee_adjustment = next;
-				let fee = <Runtime as pallet_transaction_payment::Config>::WeightToFee::calc(
-					&block_weight,
-				);
+        run_with_system_weight(block_weight, || {
+            // initial value configured on module
+            let mut fee_adjustment = Multiplier::one();
+            assert_eq!(fee_adjustment, TransactionPayment::next_fee_multiplier());
+            let mut accumulated_fee: u128 = 0;
+            // Simulates 1 day of parachain blocks (12 seconds each)
+            for iteration in 0..7200 {
+                let next = runtime_multiplier_update(fee_adjustment);
+                // if no change or less, panic. This should never happen in this case.
+                if fee_adjustment >= next {
+                    println!("final fee_adjustment: {}", fee_adjustment);
+                    println!("final next: {}", next);
+                    panic!("The fee should ever increase");
+                }
+                fee_adjustment = next;
+                let fee = <Runtime as pallet_transaction_payment::Config>::WeightToFee::calc(
+                    &block_weight,
+                );
 
-				// base_fee and len_fee are not adjusted
-				let adjusted_fee = fee_adjustment.saturating_mul_acc_int(fee) + base_fee + len_fee;
-				accumulated_fee += adjusted_fee;
-				println!(
-					"Iteration {}, New fee_adjustment = {:?}. Adjusted Fee: {} KMA, Total Fee: {} KMA, Dollar Value: {}",
-					iteration,
-					fee_adjustment,
-					adjusted_fee / KMA,
-					accumulated_fee / KMA,
-					(accumulated_fee / KMA) as f32 * kma_price,
-				);
-			}
+                // base_fee and len_fee are not adjusted
+                let adjusted_fee = fee_adjustment.saturating_mul_acc_int(fee) + base_fee + len_fee;
+                accumulated_fee += adjusted_fee;
+                println!(
+                    "Iteration {}, New fee_adjustment = {:?}. Adjusted Fee: {} KMA, Total Fee: {} KMA, Dollar Value: {}",
+                    iteration,
+                    fee_adjustment,
+                    adjusted_fee / KMA,
+                    accumulated_fee / KMA,
+                    (accumulated_fee / KMA) as f32 * kma_price,
+                );
+            }
 
-			if accumulated_fee < target_daily_congestion_cost_kma {
-				panic!("The cost to fully congest our network should be over the target_daily_congestion_cost_kma after 1 day.");
-			}
-		});
-	}
+            if accumulated_fee < target_daily_congestion_cost_kma {
+                panic!("The cost to fully congest our network should be over the target_daily_congestion_cost_kma after 1 day.");
+            }
+        });
+    }
 
-	#[test]
-	fn multiplier_can_grow_from_zero() {
-		let minimum_multiplier = polkadot_runtime_common::MinimumMultiplier::get();
-		let target = polkadot_runtime_common::TargetBlockFullness::get()
-			* BlockWeights::get()
-				.get(DispatchClass::Normal)
-				.max_total
-				.unwrap();
-		// if the min is too small, then this will not change, and we are doomed forever.
-		// the weight is 1/100th bigger than target.
-		run_with_system_weight(target * 101 / 100, || {
-			let next = polkadot_runtime_common::SlowAdjustingFeeUpdate::<Runtime>::convert(
-				minimum_multiplier,
-			);
-			assert!(
-				next > minimum_multiplier,
-				"{:?} !>= {:?}",
-				next,
-				minimum_multiplier
-			);
-		})
-	}
+    #[test]
+    fn multiplier_can_grow_from_zero() {
+        let minimum_multiplier = polkadot_runtime_common::MinimumMultiplier::get();
+        let target = polkadot_runtime_common::TargetBlockFullness::get()
+            * BlockWeights::get()
+                .get(DispatchClass::Normal)
+                .max_total
+                .unwrap();
+        // if the min is too small, then this will not change, and we are doomed forever.
+        // the weight is 1/100th bigger than target.
+        run_with_system_weight(target * 101 / 100, || {
+            let next = polkadot_runtime_common::SlowAdjustingFeeUpdate::<Runtime>::convert(
+                minimum_multiplier,
+            );
+            assert!(
+                next > minimum_multiplier,
+                "{:?} !>= {:?}",
+                next,
+                minimum_multiplier
+            );
+        })
+    }
 
-	#[test]
-	#[ignore] // test runs for a very long time
-	fn multiplier_growth_simulator() {
-		// assume the multiplier is initially set to its minimum. We update it with values twice the
-		//target (target is 25%, thus 50%) and we see at which point it reaches 1.
-		let mut multiplier = polkadot_runtime_common::MinimumMultiplier::get();
-		let block_weight = polkadot_runtime_common::TargetBlockFullness::get()
-			* BlockWeights::get()
-				.get(DispatchClass::Normal)
-				.max_total
-				.unwrap() * 2;
-		let mut blocks = 0;
-		while multiplier <= Multiplier::one() {
-			run_with_system_weight(block_weight, || {
-				let next =
-					polkadot_runtime_common::SlowAdjustingFeeUpdate::<Runtime>::convert(multiplier);
-				// ensure that it is growing as well.
-				assert!(next > multiplier, "{:?} !>= {:?}", next, multiplier);
-				multiplier = next;
-			});
-			blocks += 1;
-			println!("block = {} multiplier {:?}", blocks, multiplier);
-		}
-	}
+    #[test]
+    #[ignore] // test runs for a very long time
+    fn multiplier_growth_simulator() {
+        // assume the multiplier is initially set to its minimum. We update it with values twice the
+        //target (target is 25%, thus 50%) and we see at which point it reaches 1.
+        let mut multiplier = polkadot_runtime_common::MinimumMultiplier::get();
+        let block_weight = polkadot_runtime_common::TargetBlockFullness::get()
+            * BlockWeights::get()
+                .get(DispatchClass::Normal)
+                .max_total
+                .unwrap()
+            * 2;
+        let mut blocks = 0;
+        while multiplier <= Multiplier::one() {
+            run_with_system_weight(block_weight, || {
+                let next =
+                    polkadot_runtime_common::SlowAdjustingFeeUpdate::<Runtime>::convert(multiplier);
+                // ensure that it is growing as well.
+                assert!(next > multiplier, "{:?} !>= {:?}", next, multiplier);
+                multiplier = next;
+            });
+            blocks += 1;
+            println!("block = {} multiplier {:?}", blocks, multiplier);
+        }
+    }
 }
