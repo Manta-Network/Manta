@@ -17,9 +17,9 @@
 use crate::{
 	chain_specs,
 	cli::{Cli, RelayChainCli, Subcommand},
+	rpc,
 	service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
 };
-
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
@@ -200,9 +200,9 @@ impl SubstrateCli for RelayChainCli {
 	}
 }
 
+#[allow(clippy::borrowed_box)]
 fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Vec<u8>> {
 	let mut storage = chain_spec.build_storage()?;
-
 	storage
 		.top
 		.remove(sp_core::storage::well_known_keys::CODE)
@@ -457,7 +457,7 @@ pub fn run_with(cli: Cli) -> Result<()> {
 
 				let para_id = crate::chain_specs::Extensions::try_get(&*config.chain_spec)
 					.map(|e| e.para_id)
-					.ok_or_else(|| "Could not find parachain extension in chain-spec.")?;
+					.ok_or("Could not find parachain extension in chain-spec.")?;
 
 				let polkadot_cli = RelayChainCli::new(
 					&config,
@@ -501,7 +501,15 @@ pub fn run_with(cli: Cli) -> Result<()> {
 						manta_runtime::RuntimeApi,
 						MantaRuntimeExecutor,
 						AuraId,
-					>(config, polkadot_config, collator_options, id, hwbench)
+						_,
+					>(
+						config,
+						polkadot_config,
+						collator_options,
+						id,
+						hwbench,
+						rpc::create_common_full,
+					)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
@@ -510,7 +518,15 @@ pub fn run_with(cli: Cli) -> Result<()> {
 						calamari_runtime::RuntimeApi,
 						CalamariRuntimeExecutor,
 						AuraId,
-					>(config, polkadot_config, collator_options, id, hwbench)
+						_,
+					>(
+						config,
+						polkadot_config,
+						collator_options,
+						id,
+						hwbench,
+						rpc::create_common_full,
+					)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)
@@ -519,7 +535,15 @@ pub fn run_with(cli: Cli) -> Result<()> {
 						dolphin_runtime::RuntimeApi,
 						DolphinRuntimeExecutor,
 						AuraId,
-					>(config, polkadot_config, collator_options, id, hwbench)
+						_,
+					>(
+						config,
+						polkadot_config,
+						collator_options,
+						id,
+						hwbench,
+						rpc::create_dolphin_full,
+					)
 					.await
 					.map(|r| r.0)
 					.map_err(Into::into)

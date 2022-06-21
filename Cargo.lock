@@ -1129,7 +1129,7 @@ checksum = "c1db59621ec70f09c5e9b597b220c7a2b43611f4710dc03ceb8748637775692c"
 
 [[package]]
 name = "calamari-runtime"
-version = "3.1.5"
+version = "3.2.0"
 dependencies = [
  "calamari-vesting",
  "cumulus-pallet-aura-ext",
@@ -1204,7 +1204,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-vesting"
-version = "3.1.5"
+version = "3.2.0"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -2108,6 +2108,7 @@ version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.22#ebdfbea0029dd3349ce0e9c758acc73acce04d18"
 dependencies = [
  "cumulus-primitives-core",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -2321,6 +2322,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "darling"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a01d95850c592940db9b8194bc39f4bc0e89dee5c4265e4b1807c34a9aba453c"
+dependencies = [
+ "darling_core",
+ "darling_macro",
+]
+
+[[package]]
+name = "darling_core"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "859d65a907b6852c9361e3185c862aae7fafd2887876799fa55f5f99dc40d610"
+dependencies = [
+ "fnv",
+ "ident_case",
+ "proc-macro2",
+ "quote",
+ "strsim",
+ "syn",
+]
+
+[[package]]
+name = "darling_macro"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c972679f83bdf9c42bd905396b6c3588a843a17f0f16dfcfa3e2c5d57441835"
+dependencies = [
+ "darling_core",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "data-encoding"
 version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2472,7 +2508,7 @@ dependencies = [
 
 [[package]]
 name = "dolphin-runtime"
-version = "3.1.5"
+version = "3.2.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -3709,6 +3745,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ident_case"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
+
+[[package]]
 name = "idna"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4930,7 +4972,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "3.1.5"
+version = "3.2.0"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -4956,6 +4998,7 @@ dependencies = [
  "log",
  "manta-primitives",
  "manta-runtime",
+ "pallet-manta-pay",
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",
  "polkadot-cli",
@@ -5002,8 +5045,8 @@ dependencies = [
 
 [[package]]
 name = "manta-accounting"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#e779189021bfe91fbc7060c1ae97e2855734535c"
+version = "0.5.0"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.0#df042ff97cc24c3b4b7e223e56297bcb2b77791f"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5017,7 +5060,7 @@ dependencies = [
 
 [[package]]
 name = "manta-collator-selection"
-version = "3.1.5"
+version = "3.2.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5044,8 +5087,8 @@ dependencies = [
 
 [[package]]
 name = "manta-crypto"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#e779189021bfe91fbc7060c1ae97e2855734535c"
+version = "0.5.0"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.0#df042ff97cc24c3b4b7e223e56297bcb2b77791f"
 dependencies = [
  "derivative",
  "manta-util",
@@ -5055,8 +5098,8 @@ dependencies = [
 
 [[package]]
 name = "manta-pay"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#e779189021bfe91fbc7060c1ae97e2855734535c"
+version = "0.5.0"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.0#df042ff97cc24c3b4b7e223e56297bcb2b77791f"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -5081,7 +5124,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "3.1.5"
+version = "3.2.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5103,7 +5146,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "3.1.5"
+version = "3.2.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -5178,8 +5221,12 @@ dependencies = [
 
 [[package]]
 name = "manta-util"
-version = "0.4.0"
-source = "git+https://github.com/manta-network/manta-rs.git#e779189021bfe91fbc7060c1ae97e2855734535c"
+version = "0.5.0"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.0#df042ff97cc24c3b4b7e223e56297bcb2b77791f"
+dependencies = [
+ "serde",
+ "serde_with",
+]
 
 [[package]]
 name = "maplit"
@@ -5870,7 +5917,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-manager"
-version = "3.1.5"
+version = "3.2.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6354,6 +6401,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "indoc",
+ "jsonrpsee",
  "lazy_static",
  "manta-accounting",
  "manta-crypto",
@@ -6367,6 +6415,8 @@ dependencies = [
  "parity-scale-codec",
  "rand 0.8.5",
  "scale-info",
+ "sp-api",
+ "sp-blockchain",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -6797,7 +6847,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "3.1.5"
+version = "3.2.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -9084,7 +9134,7 @@ dependencies = [
 
 [[package]]
 name = "runtime-common"
-version = "3.1.5"
+version = "3.2.0"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -10517,6 +10567,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_with"
+version = "1.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "678b5a069e50bf00ecd22d0cd8ddf7c236f68581b03db652061ed5eb13a312ff"
+dependencies = [
+ "serde",
+ "serde_with_macros",
+]
+
+[[package]]
+name = "serde_with_macros"
+version = "1.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e182d6ec6f05393cc0e5ed1bf81ad6db3a8feedf8ee515ecdd369809bcce8082"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "sha-1"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11921,9 +11993,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-macros"
-version = "1.7.0"
+version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b557f72f448c511a979e2564e55d74e6c4432fc96ff4f6241bc6bded342643b7"
+checksum = "9724f9a975fb987ef7a3cd9be0350edcbe130698af5b8f7a631e23d42d052484"
 dependencies = [
  "proc-macro2",
  "quote",
