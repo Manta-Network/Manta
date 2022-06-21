@@ -18,9 +18,7 @@
 #![allow(clippy::unused_unit)]
 
 use frame_support::{
-    dispatch::{CallMetadata, GetCallMetadata},
     pallet_prelude::*,
-    traits::{Contains, PalletInfoAccess},
     transactional,
 };
 use frame_system::pallet_prelude::*;
@@ -28,7 +26,6 @@ use sp_runtime::DispatchResult;
 use sp_std::{prelude::*, vec::Vec};
 
 pub use pallet::*;
-pub use weights::WeightInfo;
 
 pub(crate) const CIPHER_TEXT_LENGTH: usize = 68;
 pub(crate) const EPHEMERAL_PUBLIC_KEY_LENGTH: usize = 32;
@@ -76,6 +73,16 @@ pub struct EncryptedNote {
     pub ciphertext: Ciphertext,
 }
 
+impl Default for EncryptedNote {
+    #[inline]
+    fn default() -> Self {
+        Self {
+            ephemeral_public_key: [0; EPHEMERAL_PUBLIC_KEY_LENGTH],
+            ciphertext: [0; CIPHER_TEXT_LENGTH],
+        }
+    }
+}
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -86,9 +93,6 @@ pub mod pallet {
 
         /// The origin which may set filter.
         type UpdateOrigin: EnsureOrigin<Self::Origin>;
-
-        /// Weight information for the extrinsics in this pallet.
-        type WeightInfo: WeightInfo;
     }
 
     #[pallet::event]
@@ -165,8 +169,8 @@ pub mod pallet {
         ) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
             let utxo_idx = ShardsIdentityIdentityIndices::<T>::get(shard_idx);
-            ShardsIdentityIdentity::<T>::insert(shard_idx, utxo_idx, (utxo, encrypted_note));
-            ShardsIdentityIdentityIndices::<T>::insert(shard_idx, Self::next_index(utxo_idx));
+            ShardsIdentityIdentity::<T>::insert(shard_idx, Self::encode(utxo_idx), (utxo, encrypted_note.clone()));
+            ShardsIdentityIdentityIndices::<T>::insert(shard_idx, utxo_idx + 1);
             Self::deposit_event(Event::ShardElementWritten(utxo, encrypted_note));
             Ok(())
         }
@@ -181,8 +185,8 @@ pub mod pallet {
         ) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
             let utxo_idx = ShardsIdentityIdentityIndices::<T>::get(shard_idx);
-            ShardsTwoxIdentity::<T>::insert(shard_idx, utxo_idx, (utxo, encrypted_note));
-            ShardsTwoxIdentityIndices::<T>::insert(shard_idx, Self::next_index(utxo_idx));
+            ShardsTwoxIdentity::<T>::insert(shard_idx, Self::encode(utxo_idx), (utxo, encrypted_note.clone()));
+            ShardsTwoxIdentityIndices::<T>::insert(shard_idx, utxo_idx + 1);
             Self::deposit_event(Event::ShardElementWritten(utxo, encrypted_note));
             Ok(())
         }
@@ -197,8 +201,8 @@ pub mod pallet {
         ) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
             let utxo_idx = ShardsIdentityIdentityIndices::<T>::get(shard_idx);
-            ShardsTwoxTwox::<T>::insert(shard_idx, utxo_idx, (utxo, encrypted_note));
-            ShardsTwoxTwox::<T>::insert(shard_idx, Self::next_index(utxo_idx));
+            ShardsTwoxTwox::<T>::insert(shard_idx, Self::encode(utxo_idx), (utxo, encrypted_note.clone()));
+            ShardsTwoxIdentityIndices::<T>::insert(shard_idx, utxo_idx + 1);
             Self::deposit_event(Event::ShardElementWritten(utxo, encrypted_note));
             Ok(())
         }
@@ -211,7 +215,7 @@ pub mod pallet {
             utxo_idx: u64,
         ) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
-            let (utxo, encrypted_Note) =
+            let (utxo, encrypted_note) =
                 ShardsIdentityIdentity::<T>::get(shard_idx, Self::encode(utxo_idx));
             Self::deposit_event(Event::ShardElementRead(utxo, encrypted_note));
             Ok(())
@@ -225,7 +229,7 @@ pub mod pallet {
             utxo_idx: u64,
         ) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
-            let (utxo, encrypted_Note) =
+            let (utxo, encrypted_note) =
                 ShardsTwoxIdentity::<T>::get(shard_idx, Self::encode(utxo_idx));
             Self::deposit_event(Event::ShardElementRead(utxo, encrypted_note));
             Ok(())
@@ -239,14 +243,13 @@ pub mod pallet {
             utxo_idx: u64,
         ) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
-            let (utxo, encrypted_Note) =
+            let (utxo, encrypted_note) =
                 ShardsTwoxTwox::<T>::get(shard_idx, Self::encode(utxo_idx));
             Self::deposit_event(Event::ShardElementRead(utxo, encrypted_note));
             Ok(())
         }
 
         #[pallet::weight(500_000)]
-        #[transactional]
         pub fn range_read_shard_element_identity_identity(
             origin: OriginFor<T>,
             shard_idx: u8,
@@ -267,7 +270,7 @@ pub mod pallet {
             for _ in 0..amount {
                 match iter.next() {
                     Some((_, next)) => receivers.push(next),
-                    _ => return Error::<T>::NullStorageItem,
+                    _ => return Err(Error::<T>::NullStorageItem.into()),
                 }
             }
             Self::deposit_event(Event::ShardElementBatchRead(amount));
@@ -275,7 +278,6 @@ pub mod pallet {
         }
 
         #[pallet::weight(500_000)]
-        #[transactional]
         pub fn range_read_shard_element_twox_identity(
             origin: OriginFor<T>,
             shard_idx: u8,
@@ -296,7 +298,7 @@ pub mod pallet {
             for _ in 0..amount {
                 match iter.next() {
                     Some((_, next)) => receivers.push(next),
-                    _ => return Error::<T>::NullStorageItem,
+                    _ => return Err(Error::<T>::NullStorageItem.into()),
                 }
             }
             Self::deposit_event(Event::ShardElementBatchRead(amount));
@@ -309,10 +311,6 @@ pub mod pallet {
             let mut bytes = n.to_ne_bytes();
             bytes.reverse();
             u64::from_ne_bytes(bytes)
-        }
-
-        fn next_index(index: u64) -> u64 {
-            encode(encode(index) + 1)
-        }
+        }       
     }
 }
