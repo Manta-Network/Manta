@@ -26,8 +26,8 @@ use std::sync::Arc;
 
 use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
 use pallet_manta_pay::{
-	rpc::{Pull, PullApiServer},
-	runtime::PullLedgerDiffApi,
+    rpc::{Pull, PullApiServer},
+    runtime::PullLedgerDiffApi,
 };
 
 /// A type representing all RPC extensions.
@@ -35,86 +35,86 @@ pub type RpcExtension = jsonrpsee::RpcModule<()>;
 
 /// Full client dependencies
 pub struct FullDeps<C, P> {
-	/// The client instance to use.
-	pub client: Arc<C>,
-	/// Transaction pool instance.
-	pub pool: Arc<P>,
-	/// Whether to deny unsafe calls
-	pub deny_unsafe: DenyUnsafe,
+    /// The client instance to use.
+    pub client: Arc<C>,
+    /// Transaction pool instance.
+    pub pool: Arc<P>,
+    /// Whether to deny unsafe calls
+    pub deny_unsafe: DenyUnsafe,
 }
 
 /// Instantiate all RPC extensions for common nodes like calamari/manta.
 pub fn create_common_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
 where
-	C: ProvideRuntimeApi<Block>
-		+ HeaderBackend<Block>
-		+ AuxStore
-		+ HeaderMetadata<Block, Error = BlockChainError>
-		+ Send
-		+ Sync
-		+ 'static,
-	C::Api: frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
-	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-	C::Api: BlockBuilder<Block>,
-	P: TransactionPool + Sync + Send + 'static,
+    C: ProvideRuntimeApi<Block>
+        + HeaderBackend<Block>
+        + AuxStore
+        + HeaderMetadata<Block, Error = BlockChainError>
+        + Send
+        + Sync
+        + 'static,
+    C::Api: frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
+    C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+    C::Api: BlockBuilder<Block>,
+    P: TransactionPool + Sync + Send + 'static,
 {
-	use frame_rpc_system::{SystemApiServer, SystemRpc};
-	use pallet_transaction_payment_rpc::{TransactionPaymentApiServer, TransactionPaymentRpc};
+    use frame_rpc_system::{SystemApiServer, SystemRpc};
+    use pallet_transaction_payment_rpc::{TransactionPaymentApiServer, TransactionPaymentRpc};
 
-	let mut module = RpcExtension::new(());
-	let FullDeps {
-		client,
-		pool,
-		deny_unsafe,
-	} = deps;
+    let mut module = RpcExtension::new(());
+    let FullDeps {
+        client,
+        pool,
+        deny_unsafe,
+    } = deps;
 
-	module
-		.merge(SystemRpc::new(client.clone(), pool, deny_unsafe).into_rpc())
-		.map_err(|e| sc_service::Error::Other(e.to_string()))?;
-	module
-		.merge(TransactionPaymentRpc::new(client).into_rpc())
-		.map_err(|e| sc_service::Error::Other(e.to_string()))?;
+    module
+        .merge(SystemRpc::new(client.clone(), pool, deny_unsafe).into_rpc())
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+    module
+        .merge(TransactionPaymentRpc::new(client).into_rpc())
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
-	Ok(module)
+    Ok(module)
 }
 
 /// Instantiate all RPC extensions for dolphin.
 pub fn create_dolphin_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
 where
-	C: ProvideRuntimeApi<Block>
-		+ HeaderBackend<Block>
-		+ AuxStore
-		+ HeaderMetadata<Block, Error = BlockChainError>
-		+ Send
-		+ Sync
-		+ 'static,
-	C::Api: frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
-	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-	C::Api: BlockBuilder<Block>,
-	C::Api: PullLedgerDiffApi<Block>,
-	P: TransactionPool + Sync + Send + 'static,
+    C: ProvideRuntimeApi<Block>
+        + HeaderBackend<Block>
+        + AuxStore
+        + HeaderMetadata<Block, Error = BlockChainError>
+        + Send
+        + Sync
+        + 'static,
+    C::Api: frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
+    C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+    C::Api: BlockBuilder<Block>,
+    C::Api: PullLedgerDiffApi<Block>,
+    P: TransactionPool + Sync + Send + 'static,
 {
-	use frame_rpc_system::{SystemApiServer, SystemRpc};
-	use pallet_transaction_payment_rpc::{TransactionPaymentApiServer, TransactionPaymentRpc};
+    use frame_rpc_system::{SystemApiServer, SystemRpc};
+    use pallet_transaction_payment_rpc::{TransactionPaymentApiServer, TransactionPaymentRpc};
 
-	let mut module = RpcExtension::new(());
-	let FullDeps {
-		client,
-		pool,
-		deny_unsafe,
-	} = deps;
+    let mut module = RpcExtension::new(());
+    let FullDeps {
+        client,
+        pool,
+        deny_unsafe,
+    } = deps;
 
-	module
-		.merge(SystemRpc::new(client.clone(), pool, deny_unsafe).into_rpc())
-		.map_err(|e| sc_service::Error::Other(e.to_string()))?;
-	module
-		.merge(TransactionPaymentRpc::new(client.clone()).into_rpc())
-		.map_err(|e| sc_service::Error::Other(e.to_string()))?;
+    module
+        .merge(SystemRpc::new(client.clone(), pool, deny_unsafe).into_rpc())
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+    module
+        .merge(TransactionPaymentRpc::new(client.clone()).into_rpc())
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
-	let manta_pay_rpc: jsonrpsee::RpcModule<Pull<Block, C>> = Pull::new(client).into_rpc();
-	module
-		.merge(manta_pay_rpc)
-		.map_err(|e| sc_service::Error::Other(e.to_string()))?;
+    let manta_pay_rpc: jsonrpsee::RpcModule<Pull<Block, C>> = Pull::new(client).into_rpc();
+    module
+        .merge(manta_pay_rpc)
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
-	Ok(module)
+    Ok(module)
 }

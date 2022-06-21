@@ -15,10 +15,10 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-	chain_specs,
-	cli::{Cli, RelayChainCli, Subcommand},
-	rpc,
-	service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
+    chain_specs,
+    cli::{Cli, RelayChainCli, Subcommand},
+    rpc,
+    service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
 };
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
@@ -211,29 +211,29 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 
 /// Creates partial components for the runtimes that are supported by the benchmarks.
 macro_rules! construct_benchmark_partials {
-	($config:expr, |$partials:ident| $code:expr) => {
-		if $config.chain_spec.is_manta() {
-			let $partials = new_partial::<manta_runtime::RuntimeApi, MantaRuntimeExecutor, _>(
-				&$config,
-				crate::service::parachain_build_import_queue::<_, _, AuraId>,
-			)?;
-			$code
-		} else if $config.chain_spec.is_calamari() {
-			let $partials = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor, _>(
-				&$config,
-				crate::service::parachain_build_import_queue::<_, _, AuraId>,
-			)?;
-			$code
-		} else if $config.chain_spec.is_dolphin() {
-			let $partials = new_partial::<dolphin_runtime::RuntimeApi, DolphinRuntimeExecutor, _>(
-				&$config,
-				crate::service::parachain_build_import_queue::<_, _, AuraId>,
-			)?;
-			$code
-		} else {
-			Err("The chain is not supported".into())
-		}
-	};
+    ($config:expr, |$partials:ident| $code:expr) => {
+        if $config.chain_spec.is_manta() {
+            let $partials = new_partial::<manta_runtime::RuntimeApi, MantaRuntimeExecutor, _>(
+                &$config,
+                crate::service::parachain_build_import_queue::<_, _, AuraId>,
+            )?;
+            $code
+        } else if $config.chain_spec.is_calamari() {
+            let $partials = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor, _>(
+                &$config,
+                crate::service::parachain_build_import_queue::<_, _, AuraId>,
+            )?;
+            $code
+        } else if $config.chain_spec.is_dolphin() {
+            let $partials = new_partial::<dolphin_runtime::RuntimeApi, DolphinRuntimeExecutor, _>(
+                &$config,
+                crate::service::parachain_build_import_queue::<_, _, AuraId>,
+            )?;
+            $code
+        } else {
+            Err("The chain is not supported".into())
+        }
+    };
 }
 
 macro_rules! construct_async_run {
@@ -317,16 +317,16 @@ pub fn run_with(cli: Cli) -> Result<()> {
                 )
                 .map_err(|err| format!("Relay chain argument error: {}", err))?;
 
-				cmd.run(config, polkadot_config)
-			})
-		}
-		Some(Subcommand::Revert(cmd)) => construct_async_run!(|components, cli, cmd, config| {
-			Ok(cmd.run(components.client, components.backend, None))
-		}),
-		Some(Subcommand::ExportGenesisState(params)) => {
-			let mut builder = sc_cli::LoggerBuilder::new("");
-			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
-			let _ = builder.init();
+                cmd.run(config, polkadot_config)
+            })
+        }
+        Some(Subcommand::Revert(cmd)) => construct_async_run!(|components, cli, cmd, config| {
+            Ok(cmd.run(components.client, components.backend, None))
+        }),
+        Some(Subcommand::ExportGenesisState(params)) => {
+            let mut builder = sc_cli::LoggerBuilder::new("");
+            builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
+            let _ = builder.init();
 
             let spec = load_spec(&params.chain.clone().unwrap_or_default())?;
             let state_version = Cli::native_runtime_version(&spec).state_version();
@@ -366,61 +366,61 @@ pub fn run_with(cli: Cli) -> Result<()> {
                 std::io::stdout().write_all(&output_buf)?;
             }
 
-			Ok(())
-		}
-		Some(Subcommand::Benchmark(cmd)) => {
-			let runner = cli.create_runner(cmd)?;
+            Ok(())
+        }
+        Some(Subcommand::Benchmark(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
 
-			// Switch on the concrete benchmark sub-command-
-			match cmd {
-				BenchmarkCmd::Pallet(cmd) => {
-					if cfg!(feature = "runtime-benchmarks") {
-						runner.sync_run(|config| {
-							if config.chain_spec.is_manta() {
-								cmd.run::<Block, MantaRuntimeExecutor>(config)
-							} else if config.chain_spec.is_calamari() {
-								cmd.run::<Block, CalamariRuntimeExecutor>(config)
-							} else if config.chain_spec.is_dolphin() {
-								cmd.run::<Block, DolphinRuntimeExecutor>(config)
-							} else {
-								Err("Chain doesn't support benchmarking".into())
-							}
-						})
-					} else {
-						Err("Benchmarking wasn't enabled when building the node. \
+            // Switch on the concrete benchmark sub-command-
+            match cmd {
+                BenchmarkCmd::Pallet(cmd) => {
+                    if cfg!(feature = "runtime-benchmarks") {
+                        runner.sync_run(|config| {
+                            if config.chain_spec.is_manta() {
+                                cmd.run::<Block, MantaRuntimeExecutor>(config)
+                            } else if config.chain_spec.is_calamari() {
+                                cmd.run::<Block, CalamariRuntimeExecutor>(config)
+                            } else if config.chain_spec.is_dolphin() {
+                                cmd.run::<Block, DolphinRuntimeExecutor>(config)
+                            } else {
+                                Err("Chain doesn't support benchmarking".into())
+                            }
+                        })
+                    } else {
+                        Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
-							.into())
-					}
-				}
-				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
-					construct_benchmark_partials!(config, |partials| cmd.run(partials.client))
-				}),
-				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
-					construct_benchmark_partials!(config, |partials| {
-						let db = partials.backend.expose_db();
-						let storage = partials.backend.expose_storage();
+                            .into())
+                    }
+                }
+                BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
+                    construct_benchmark_partials!(config, |partials| cmd.run(partials.client))
+                }),
+                BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
+                    construct_benchmark_partials!(config, |partials| {
+                        let db = partials.backend.expose_db();
+                        let storage = partials.backend.expose_storage();
 
-						cmd.run(config, partials.client.clone(), db, storage)
-					})
-				}),
-				BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
-				BenchmarkCmd::Machine(cmd) => {
-					runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()))
-				}
-			}
-		}
-		#[cfg(feature = "try-runtime")]
-		Some(Subcommand::TryRuntime(cmd)) => {
-			// grab the task manager.
-			let runner = cli.create_runner(cmd)?;
-			let registry = &runner
-				.config()
-				.prometheus_config
-				.as_ref()
-				.map(|cfg| &cfg.registry);
-			let task_manager =
-				sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
-					.map_err(|e| format!("Error: {:?}", e))?;
+                        cmd.run(config, partials.client.clone(), db, storage)
+                    })
+                }),
+                BenchmarkCmd::Overhead(_) => Err("Unsupported benchmarking command".into()),
+                BenchmarkCmd::Machine(cmd) => {
+                    runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()))
+                }
+            }
+        }
+        #[cfg(feature = "try-runtime")]
+        Some(Subcommand::TryRuntime(cmd)) => {
+            // grab the task manager.
+            let runner = cli.create_runner(cmd)?;
+            let registry = &runner
+                .config()
+                .prometheus_config
+                .as_ref()
+                .map(|cfg| &cfg.registry);
+            let task_manager =
+                sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
+                    .map_err(|e| format!("Error: {:?}", e))?;
 
             if runner.config().chain_spec.is_manta() {
                 runner.async_run(|config| {
@@ -445,19 +445,19 @@ pub fn run_with(cli: Cli) -> Result<()> {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let collator_options = cli.run.collator_options();
 
-			runner.run_node_until_exit(|config| async move {
-				let hwbench = if !cli.no_hardware_benchmarks {
-					config.database.path().map(|database_path| {
-						let _ = std::fs::create_dir_all(&database_path);
-						sc_sysinfo::gather_hwbench(Some(database_path))
-					})
-				} else {
-					None
-				};
+            runner.run_node_until_exit(|config| async move {
+                let hwbench = if !cli.no_hardware_benchmarks {
+                    config.database.path().map(|database_path| {
+                        let _ = std::fs::create_dir_all(&database_path);
+                        sc_sysinfo::gather_hwbench(Some(database_path))
+                    })
+                } else {
+                    None
+                };
 
-				let para_id = crate::chain_specs::Extensions::try_get(&*config.chain_spec)
-					.map(|e| e.para_id)
-					.ok_or("Could not find parachain extension in chain-spec.")?;
+                let para_id = crate::chain_specs::Extensions::try_get(&*config.chain_spec)
+                    .map(|e| e.para_id)
+                    .ok_or("Could not find parachain extension in chain-spec.")?;
 
                 let polkadot_cli = RelayChainCli::new(
                     &config,
@@ -468,8 +468,8 @@ pub fn run_with(cli: Cli) -> Result<()> {
 
                 let id = ParaId::from(para_id);
 
-				let parachain_account =
-					AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account(&id);
+                let parachain_account =
+                    AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account(&id);
 
                 let state_version =
                     RelayChainCli::native_runtime_version(&config.chain_spec).state_version();
@@ -496,63 +496,63 @@ pub fn run_with(cli: Cli) -> Result<()> {
                     }
                 );
 
-				if config.chain_spec.is_manta() {
-					crate::service::start_parachain_node::<
-						manta_runtime::RuntimeApi,
-						MantaRuntimeExecutor,
-						AuraId,
-						_,
-					>(
-						config,
-						polkadot_config,
-						collator_options,
-						id,
-						hwbench,
-						rpc::create_common_full,
-					)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into)
-				} else if config.chain_spec.is_calamari() {
-					crate::service::start_parachain_node::<
-						calamari_runtime::RuntimeApi,
-						CalamariRuntimeExecutor,
-						AuraId,
-						_,
-					>(
-						config,
-						polkadot_config,
-						collator_options,
-						id,
-						hwbench,
-						rpc::create_common_full,
-					)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into)
-				} else if config.chain_spec.is_dolphin() {
-					crate::service::start_parachain_node::<
-						dolphin_runtime::RuntimeApi,
-						DolphinRuntimeExecutor,
-						AuraId,
-						_,
-					>(
-						config,
-						polkadot_config,
-						collator_options,
-						id,
-						hwbench,
-						rpc::create_dolphin_full,
-					)
-					.await
-					.map(|r| r.0)
-					.map_err(Into::into)
-				} else {
-					Err("chain spec error: must be one of manta or calamari chain specs".into())
-				}
-			})
-		}
-	}
+                if config.chain_spec.is_manta() {
+                    crate::service::start_parachain_node::<
+                        manta_runtime::RuntimeApi,
+                        MantaRuntimeExecutor,
+                        AuraId,
+                        _,
+                    >(
+                        config,
+                        polkadot_config,
+                        collator_options,
+                        id,
+                        hwbench,
+                        rpc::create_common_full,
+                    )
+                    .await
+                    .map(|r| r.0)
+                    .map_err(Into::into)
+                } else if config.chain_spec.is_calamari() {
+                    crate::service::start_parachain_node::<
+                        calamari_runtime::RuntimeApi,
+                        CalamariRuntimeExecutor,
+                        AuraId,
+                        _,
+                    >(
+                        config,
+                        polkadot_config,
+                        collator_options,
+                        id,
+                        hwbench,
+                        rpc::create_common_full,
+                    )
+                    .await
+                    .map(|r| r.0)
+                    .map_err(Into::into)
+                } else if config.chain_spec.is_dolphin() {
+                    crate::service::start_parachain_node::<
+                        dolphin_runtime::RuntimeApi,
+                        DolphinRuntimeExecutor,
+                        AuraId,
+                        _,
+                    >(
+                        config,
+                        polkadot_config,
+                        collator_options,
+                        id,
+                        hwbench,
+                        rpc::create_dolphin_full,
+                    )
+                    .await
+                    .map(|r| r.0)
+                    .map_err(Into::into)
+                } else {
+                    Err("chain spec error: must be one of manta or calamari chain specs".into())
+                }
+            })
+        }
+    }
 }
 
 /// Parse command line arguments into service configuration.
