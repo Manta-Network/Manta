@@ -27,6 +27,12 @@ use sp_std::{prelude::*, vec::Vec};
 
 pub use pallet::*;
 
+#[cfg(test)]
+mod mock;
+
+#[cfg(feature = "runtime-benchmarks")]
+pub mod benchmark;
+
 pub(crate) const CIPHER_TEXT_LENGTH: usize = 68;
 pub(crate) const EPHEMERAL_PUBLIC_KEY_LENGTH: usize = 32;
 pub(crate) const UTXO_ACCUMULATOR_OUTPUT_LENGTH: usize = 32;
