@@ -1,12 +1,14 @@
 # CHANGELOG
 
-## v3.2.1(Unreleased)
+
+## [Unreleased]
 ### Breaking changes
 
 ### Features
 
 ### Improvements
 - [\#571](https://github.com/Manta-Network/Manta/pull/571) Update upstream dependencies to v0.9.22.
+- [\#609](https://github.com/Manta-Network/Manta/pull/609) Update parameter path from `sdk` to `manta-parameters`.
 
 ### Bug fixes
 
