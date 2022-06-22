@@ -26,7 +26,7 @@ use manta_accounting::{
 use manta_crypto::{
     accumulator::Accumulator,
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
-    rand::{CryptoRng, Rand, RngCore, Sample},
+    rand::{CryptoRng, OsRng, Rand, RngCore, Sample},
 };
 use manta_pay::config::{
     FullParameters, MerkleTreeConfiguration, Mint, MultiProvingContext, NoteEncryptionScheme,
@@ -38,7 +38,6 @@ use manta_primitives::{
     constants::DEFAULT_ASSET_ED,
 };
 use manta_util::codec::{Decode, IoReader};
-use rand::thread_rng;
 use std::fs::File;
 
 /// UTXO Accumulator for Building Circuits
@@ -55,19 +54,19 @@ pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32
 pub const NATIVE_ASSET_ID: AssetId =
     AssetId(<MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get());
 
-/// Loads the [`MultiProvingContext`] from the SDK.
+/// Loads the [`MultiProvingContext`].
 #[inline]
 fn load_proving_context() -> MultiProvingContext {
     let directory = tempfile::tempdir().expect("Unable to create temporary directory.");
     let path = directory.path();
     let mint_path = path.join("mint.dat");
-    manta_sdk::pay::testnet::proving::Mint::download(&mint_path)
+    manta_parameters::pay::testnet::proving::Mint::download(&mint_path)
         .expect("Unable to download MINT proving context.");
     let private_transfer_path = path.join("private-transfer.dat");
-    manta_sdk::pay::testnet::proving::PrivateTransfer::download(&private_transfer_path)
+    manta_parameters::pay::testnet::proving::PrivateTransfer::download(&private_transfer_path)
         .expect("Unable to download PRIVATE_TRANSFER proving context.");
     let reclaim_path = path.join("reclaim.dat");
-    manta_sdk::pay::testnet::proving::Reclaim::download(&reclaim_path)
+    manta_parameters::pay::testnet::proving::Reclaim::download(&reclaim_path)
         .expect("Unable to download RECLAIM proving context.");
     MultiProvingContext {
         mint: ProvingContext::decode(IoReader(
@@ -86,33 +85,33 @@ fn load_proving_context() -> MultiProvingContext {
     }
 }
 
-/// Loads the [`Parameters`] from the SDK.
+/// Loads the [`Parameters`].
 #[inline]
 fn load_parameters() -> Parameters {
     Parameters {
         note_encryption_scheme: NoteEncryptionScheme::decode(
-            manta_sdk::pay::testnet::parameters::NoteEncryptionScheme::get()
+            manta_parameters::pay::testnet::parameters::NoteEncryptionScheme::get()
                 .expect("Checksum did not match."),
         )
         .expect("Unable to decode NOTE_ENCRYPTION_SCHEME parameters."),
         utxo_commitment: UtxoCommitmentScheme::decode(
-            manta_sdk::pay::testnet::parameters::UtxoCommitmentScheme::get()
+            manta_parameters::pay::testnet::parameters::UtxoCommitmentScheme::get()
                 .expect("Checksum did not match."),
         )
         .expect("Unable to decode UTXO_COMMITMENT_SCHEME parameters."),
         void_number_commitment: VoidNumberCommitmentScheme::decode(
-            manta_sdk::pay::testnet::parameters::VoidNumberCommitmentScheme::get()
+            manta_parameters::pay::testnet::parameters::VoidNumberCommitmentScheme::get()
                 .expect("Checksum did not match."),
         )
         .expect("Unable to decode VOID_NUMBER_COMMITMENT_SCHEME parameters."),
     }
 }
 
-/// Loads the [`UtxoAccumulatorModel`] from the SDK.
+/// Loads the [`UtxoAccumulatorModel`].
 #[inline]
 fn load_utxo_accumulator_model() -> UtxoAccumulatorModel {
     UtxoAccumulatorModel::decode(
-        manta_sdk::pay::testnet::parameters::UtxoAccumulatorModel::get()
+        manta_parameters::pay::testnet::parameters::UtxoAccumulatorModel::get()
             .expect("Checksum did not match."),
     )
     .expect("Unable to decode UTXO_ACCUMULATOR_MODEL.")
@@ -312,7 +311,7 @@ fn initialize_test(id: AssetId, value: AssetValue) {
 /// Tests multiple to_private from some total supply.
 #[test]
 fn to_private_should_work() {
-    let mut rng = thread_rng();
+    let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         let asset_id = rng.gen();
         // FIXME: get rid of divide by two after parity fix pallet-asset
@@ -330,7 +329,7 @@ fn to_private_should_work() {
 
 #[test]
 fn native_asset_to_private_should_work() {
-    let mut rng = thread_rng();
+    let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         // FIXME: get rid of divide by two after parity fix pallet-asset
         // This is to work around the substrate bug
@@ -348,7 +347,7 @@ fn native_asset_to_private_should_work() {
 /// Tests a mint that would overdraw the total supply.
 #[test]
 fn overdrawn_mint_should_not_work() {
-    let mut rng = thread_rng();
+    let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         let asset_id = rng.gen();
         // FIXME: remove the division after parity fix the pallet-asset bug
@@ -370,7 +369,7 @@ fn overdrawn_mint_should_not_work() {
 /// Tests a mint that would overdraw from a non-existent supply.
 #[test]
 fn to_private_without_init_should_not_work() {
-    let mut rng = thread_rng();
+    let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         assert_noop!(
             MantaPayPallet::to_private(
@@ -385,7 +384,7 @@ fn to_private_without_init_should_not_work() {
 /// Tests that a double-spent [`Mint`] will fail.
 #[test]
 fn mint_existing_coin_should_not_work() {
-    let mut rng = thread_rng();
+    let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         let asset_id = rng.gen();
         initialize_test(asset_id, AssetValue(32579));
@@ -404,28 +403,28 @@ fn mint_existing_coin_should_not_work() {
 /// Tests a [`PrivateTransfer`] transaction.
 #[test]
 fn private_transfer_should_work() {
-    new_test_ext().execute_with(|| private_transfer_test(1, None, &mut thread_rng()));
+    new_test_ext().execute_with(|| private_transfer_test(1, None, &mut OsRng));
 }
 
 /// Test a [`PrivateTransfer`] transaction with native currency
 #[test]
 fn private_transfer_native_asset_shoud_work() {
     new_test_ext().execute_with(|| {
-        private_transfer_test(1, Some(NATIVE_ASSET_ID), &mut thread_rng());
+        private_transfer_test(1, Some(NATIVE_ASSET_ID), &mut OsRng);
     });
 }
 
 /// Tests multiple [`PrivateTransfer`] transactions.
 #[test]
 fn private_transfer_10_times_should_work() {
-    new_test_ext().execute_with(|| private_transfer_test(10, None, &mut thread_rng()));
+    new_test_ext().execute_with(|| private_transfer_test(10, None, &mut OsRng));
 }
 
 /// Tests that a double-spent [`PrivateTransfer`] will fail.
 #[test]
 fn double_spend_in_private_transfer_should_not_work() {
     new_test_ext().execute_with(|| {
-        for private_transfer in private_transfer_test(1, None, &mut thread_rng()) {
+        for private_transfer in private_transfer_test(1, None, &mut OsRng) {
             assert_noop!(
                 MantaPayPallet::private_transfer(Origin::signed(ALICE), private_transfer.into()),
                 Error::<Test>::AssetSpent,
@@ -437,26 +436,26 @@ fn double_spend_in_private_transfer_should_not_work() {
 /// Tests a [`Reclaim`] transaction.
 #[test]
 fn reclaim_should_work() {
-    new_test_ext().execute_with(|| reclaim_test(1, None, &mut thread_rng()));
+    new_test_ext().execute_with(|| reclaim_test(1, None, &mut OsRng));
 }
 
 /// Test a [`Reclaim`] of native currency
 #[test]
 fn reclaim_native_should_work() {
-    new_test_ext().execute_with(|| reclaim_test(1, Some(NATIVE_ASSET_ID), &mut thread_rng()));
+    new_test_ext().execute_with(|| reclaim_test(1, Some(NATIVE_ASSET_ID), &mut OsRng));
 }
 
 /// Tests multiple [`Reclaim`] transactions.
 #[test]
 fn reclaim_10_times_should_work() {
-    new_test_ext().execute_with(|| reclaim_test(10, None, &mut thread_rng()));
+    new_test_ext().execute_with(|| reclaim_test(10, None, &mut OsRng));
 }
 
 /// Tests that a double-spent [`Reclaim`] will fail.
 #[test]
 fn double_spend_in_reclaim_should_not_work() {
     new_test_ext().execute_with(|| {
-        for reclaim in reclaim_test(1, None, &mut thread_rng()) {
+        for reclaim in reclaim_test(1, None, &mut OsRng) {
             assert_noop!(
                 MantaPayPallet::to_public(Origin::signed(ALICE), reclaim.into()),
                 Error::<Test>::AssetSpent,
