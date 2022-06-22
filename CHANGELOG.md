@@ -9,7 +9,7 @@
 ### Improvements
 - [\#449](https://github.com/Manta-Network/Manta/pull/449) Remove strip from CI, and add strip profile to production.
 - [\#609](https://github.com/Manta-Network/Manta/pull/609) Update parameter path from `sdk` to `manta-parameters`.
- [\#614](https://github.com/Manta-Network/Manta/pull/614) Remove `OnRuntimeUpgrade` from calamari-runtime.
+- [\#614](https://github.com/Manta-Network/Manta/pull/614) Remove `OnRuntimeUpgrade` from calamari-runtime.
 
 ### Bug fixes
 
