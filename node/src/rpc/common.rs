@@ -20,7 +20,7 @@ use crate::rpc::{Builder, RpcExtension};
 use frame_rpc_system::{AccountNonceApi, FullSystem, SystemApi};
 use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
 use pallet_transaction_payment_rpc::{
-	TransactionPayment, TransactionPaymentApi, TransactionPaymentRuntimeApi,
+    TransactionPayment, TransactionPaymentApi, TransactionPaymentRuntimeApi,
 };
 use sc_client_api::HeaderBackend;
 use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
@@ -34,21 +34,21 @@ pub struct Common;
 
 impl<C, P> RpcExtensionBuilder for Builder<C, P, Common>
 where
-	C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-	C::Api: BlockBuilder<Block>
-		+ AccountNonceApi<Block, AccountId, Nonce>
-		+ TransactionPaymentRuntimeApi<Block, Balance>,
-	P: 'static + TransactionPool,
+    C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
+    C::Api: BlockBuilder<Block>
+        + AccountNonceApi<Block, AccountId, Nonce>
+        + TransactionPaymentRuntimeApi<Block, Balance>,
+    P: 'static + TransactionPool,
 {
-	type Output = RpcExtension;
+    type Output = RpcExtension;
 
-	#[inline]
-	fn build(&self, deny: DenyUnsafe, _: SubscriptionTaskExecutor) -> Result<Self::Output, Error> {
-		let mut io = RpcExtension::default();
-		io.extend_with(
-			FullSystem::new(self.client.clone(), self.transaction_pool.clone(), deny).to_delegate(),
-		);
-		io.extend_with(TransactionPayment::new(self.client.clone()).to_delegate());
-		Ok(io)
-	}
+    #[inline]
+    fn build(&self, deny: DenyUnsafe, _: SubscriptionTaskExecutor) -> Result<Self::Output, Error> {
+        let mut io = RpcExtension::default();
+        io.extend_with(
+            FullSystem::new(self.client.clone(), self.transaction_pool.clone(), deny).to_delegate(),
+        );
+        io.extend_with(TransactionPayment::new(self.client.clone()).to_delegate());
+        Ok(io)
+    }
 }

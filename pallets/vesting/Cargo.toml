@@ -1,45 +1,45 @@
 [package]
-authors    = ['Manta Network']
-name       = "calamari-vesting"
-version    = '3.2.0'
-edition    = "2021"
-homepage   = 'https://manta.network'
-license    = 'GPL-3.0'
+authors = ['Manta Network']
+edition = "2021"
+homepage = 'https://manta.network'
+license = 'GPL-3.0'
+name = "calamari-vesting"
 repository = 'https://github.com/Manta-Network/Manta/'
+version = '3.2.0'
 
 [dependencies]
-codec              = { package = "parity-scale-codec", version = '3.0.0', default-features = false, features = ["derive", "max-encoded-len"] }
-scale-info         = { version = "2.0.0", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = '3.0.0', default-features = false, features = ["derive", "max-encoded-len"] }
+scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
 
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18", optional = true }
-pallet-timestamp   = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18", optional = true }
-pallet-balances    = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18", optional = true }
-frame-support      = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
-frame-system       = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
-sp-runtime         = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
-sp-std             = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
+frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
+frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
+pallet-balances = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18", optional = true }
+pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18", optional = true }
+sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
 
 [dev-dependencies]
-chrono             = "0.4"
-pallet-balances    = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
-pallet-timestamp   = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
-sp-core            = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
-sp-io              = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
+chrono = "0.4"
+pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
+pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
+sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
+sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }
 
 [features]
-default            = ["std"]
-std                = [
-	"codec/std",
-	"frame-support/std",
-	"frame-system/std",
-	"scale-info/std",
-	"sp-runtime/std",
-	"sp-std/std",
-]
+default = ["std"]
 runtime-benchmarks = [
-	"frame-benchmarking",
-	'frame-support/runtime-benchmarks',
-	'frame-system/runtime-benchmarks',
-	"pallet-timestamp/runtime-benchmarks",
-	"pallet-balances/runtime-benchmarks",
+  "frame-benchmarking",
+  'frame-support/runtime-benchmarks',
+  'frame-system/runtime-benchmarks',
+  "pallet-timestamp/runtime-benchmarks",
+  "pallet-balances/runtime-benchmarks",
+]
+std = [
+  "codec/std",
+  "frame-support/std",
+  "frame-system/std",
+  "scale-info/std",
+  "sp-runtime/std",
+  "sp-std/std",
 ]

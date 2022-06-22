@@ -43,33 +43,33 @@ use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_timestamp.
 pub trait WeightInfo {
-	fn set() -> Weight;
-	fn on_finalize() -> Weight;
+    fn set() -> Weight;
+    fn on_finalize() -> Weight;
 }
 
 /// Weights for pallet_timestamp using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_timestamp::WeightInfo for SubstrateWeight<T> {
-	// Storage: Timestamp Now (r:1 w:1)
-	fn set() -> Weight {
-		(4_764_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
-	}
-	fn on_finalize() -> Weight {
-		(2_779_000 as Weight)
-	}
+    // Storage: Timestamp Now (r:1 w:1)
+    fn set() -> Weight {
+        (4_764_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(1 as Weight))
+            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    }
+    fn on_finalize() -> Weight {
+        (2_779_000 as Weight)
+    }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-	// Storage: Timestamp Now (r:1 w:1)
-	fn set() -> Weight {
-		(4_764_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
-	}
-	fn on_finalize() -> Weight {
-		(2_779_000 as Weight)
-	}
+    // Storage: Timestamp Now (r:1 w:1)
+    fn set() -> Weight {
+        (4_764_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    }
+    fn on_finalize() -> Weight {
+        (2_779_000 as Weight)
+    }
 }
