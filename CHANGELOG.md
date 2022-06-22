@@ -1,11 +1,7 @@
 # CHANGELOG
 
-<<<<<<< HEAD
-## Unreleased
-=======
-
 ## [Unreleased]
->>>>>>> manta
+
 ### Breaking changes
 
 ### Features
