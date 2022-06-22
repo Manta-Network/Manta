@@ -163,10 +163,6 @@ jobs:
         name: stop sccache server
         run: sccache --stop-server || true
       -
-        name: strip
-        run: |
-          strip target/production/manta
-      -
         name: upload
         uses: actions/upload-artifact@v2
         with:
