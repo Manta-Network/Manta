@@ -348,7 +348,7 @@ pub mod pallet {
             ShardsIdentityIdentity::<T>::insert(
                 shard_idx,
                 encoded_utxo_idx,
-                (utxo, encrypted_note.clone()),
+                (utxo, encrypted_note),
             );
             ShardsIdentityIdentityIndices::<T>::insert(shard_idx, utxo_idx + 1);
             Ok(())
@@ -369,7 +369,7 @@ pub mod pallet {
             ShardsTwoxIdentity::<T>::insert(
                 shard_idx,
                 encoded_utxo_idx,
-                (utxo, encrypted_note.clone()),
+                (utxo, encrypted_note),
             );
             ShardsTwoxIdentityIndices::<T>::insert(shard_idx, utxo_idx + 1);
             Ok(())

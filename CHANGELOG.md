@@ -1,4 +1,14 @@
 # CHANGELOG
+## [Unreleased]
+### Breaking changes
+
+### Features
+- [\#616](https://github.com/Manta-Network/Manta/pull/616) Add `pallet-storage-bench` to microbenchmark storage performance.
+
+### Improvements
+
+
+### Bug fixes
 
 ## v3.2.0
 ### Breaking changes
