@@ -10,6 +10,18 @@
 
 ### Bug fixes
 
+
+## [Unreleased]
+### Breaking changes
+
+### Features
+
+### Improvements
+- [\#449](https://github.com/Manta-Network/Manta/pull/449) Remove strip from CI, and add strip profile to production.
+- [\#609](https://github.com/Manta-Network/Manta/pull/609) Update parameter path from `sdk` to `manta-parameters`.
+
+### Bug fixes
+
 ## v3.2.0
 ### Breaking changes
 
