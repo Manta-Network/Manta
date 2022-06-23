@@ -471,7 +471,10 @@ pub mod pallet {
 
         /// Pulls receiver data from the ledger starting at the `receiver_index`.
         #[inline]
-        fn pull_receivers(receiver_index: [usize; 256], max_update_request: u64) -> (bool, ReceiverChunk) {
+        fn pull_receivers(
+            receiver_index: [usize; 256],
+            max_update_request: u64,
+        ) -> (bool, ReceiverChunk) {
             let mut more_receivers = false;
             let mut receivers = Vec::new();
             let mut receivers_pulled: u64 = 0;
@@ -546,8 +549,13 @@ pub mod pallet {
 
         /// Returns the diff of ledger state since the given `checkpoint`.
         #[inline]
-        pub fn pull_ledger_diff(checkpoint: Checkpoint, max_receivers: u64, max_senders: u64) -> PullResponse {
-            let (more_receivers, receivers) = Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
+        pub fn pull_ledger_diff(
+            checkpoint: Checkpoint,
+            max_receivers: u64,
+            max_senders: u64,
+        ) -> PullResponse {
+            let (more_receivers, receivers) =
+                Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
             let (more_senders, senders) = Self::pull_senders(checkpoint.sender_index, max_senders);
             PullResponse {
                 should_continue: more_receivers || more_senders,
