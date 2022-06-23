@@ -17,10 +17,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::unused_unit)]
 
-use frame_support::{
-    pallet_prelude::*,
-    transactional,
-};
+use frame_support::{pallet_prelude::*, transactional};
 use frame_system::pallet_prelude::*;
 use sp_runtime::DispatchResult;
 use sp_std::{prelude::*, vec::Vec};
@@ -31,7 +28,7 @@ pub use pallet::*;
 mod mock;
 
 #[cfg(feature = "runtime-benchmarks")]
-pub mod benchmark;
+pub mod benchmarking;
 
 pub(crate) const CIPHER_TEXT_LENGTH: usize = 68;
 pub(crate) const EPHEMERAL_PUBLIC_KEY_LENGTH: usize = 32;
@@ -121,6 +118,8 @@ pub mod pallet {
     pub enum Error<T> {
         /// pull a null storage item
         NullStorageItem,
+        /// internal error
+        InternalError,
     }
 
     #[pallet::storage]
@@ -172,11 +171,15 @@ pub mod pallet {
             shard_idx: u8,
             utxo: Utxo,
             encrypted_note: EncryptedNote,
+            lex_encoding: bool,
         ) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
-            let utxo_idx = ShardsIdentityIdentityIndices::<T>::get(shard_idx);
-            ShardsIdentityIdentity::<T>::insert(shard_idx, Self::encode(utxo_idx), (utxo, encrypted_note.clone()));
-            ShardsIdentityIdentityIndices::<T>::insert(shard_idx, utxo_idx + 1);
+            Self::do_insert_shard_element_identity_identity(
+                shard_idx,
+                utxo,
+                encrypted_note.clone(),
+                lex_encoding,
+            )?;
             Self::deposit_event(Event::ShardElementWritten(utxo, encrypted_note));
             Ok(())
         }
@@ -188,11 +191,15 @@ pub mod pallet {
             shard_idx: u8,
             utxo: Utxo,
             encrypted_note: EncryptedNote,
+            lex_encoding: bool,
         ) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
-            let utxo_idx = ShardsIdentityIdentityIndices::<T>::get(shard_idx);
-            ShardsTwoxIdentity::<T>::insert(shard_idx, Self::encode(utxo_idx), (utxo, encrypted_note.clone()));
-            ShardsTwoxIdentityIndices::<T>::insert(shard_idx, utxo_idx + 1);
+            Self::do_insert_shard_element_twox_identity(
+                shard_idx,
+                utxo,
+                encrypted_note.clone(),
+                lex_encoding,
+            )?;
             Self::deposit_event(Event::ShardElementWritten(utxo, encrypted_note));
             Ok(())
         }
@@ -206,10 +213,7 @@ pub mod pallet {
             encrypted_note: EncryptedNote,
         ) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
-            let utxo_idx = ShardsIdentityIdentityIndices::<T>::get(shard_idx);
-            ShardsTwoxTwox::<T>::insert(shard_idx, Self::encode(utxo_idx), (utxo, encrypted_note.clone()));
-            ShardsTwoxIdentityIndices::<T>::insert(shard_idx, utxo_idx + 1);
-            Self::deposit_event(Event::ShardElementWritten(utxo, encrypted_note));
+            Self::do_insert_shard_element_twox_twox(shard_idx, utxo, encrypted_note)?;
             Ok(())
         }
 
@@ -219,10 +223,16 @@ pub mod pallet {
             origin: OriginFor<T>,
             shard_idx: u8,
             utxo_idx: u64,
+            lex_encoding: bool,
         ) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
+            let encoded_utxo_idx = if lex_encoding {
+                Self::encode(utxo_idx)
+            } else {
+                utxo_idx
+            };
             let (utxo, encrypted_note) =
-                ShardsIdentityIdentity::<T>::get(shard_idx, Self::encode(utxo_idx));
+                ShardsIdentityIdentity::<T>::get(shard_idx, encoded_utxo_idx);
             Self::deposit_event(Event::ShardElementRead(utxo, encrypted_note));
             Ok(())
         }
@@ -233,10 +243,15 @@ pub mod pallet {
             origin: OriginFor<T>,
             shard_idx: u8,
             utxo_idx: u64,
+            lex_encoding: bool,
         ) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
-            let (utxo, encrypted_note) =
-                ShardsTwoxIdentity::<T>::get(shard_idx, Self::encode(utxo_idx));
+            let encoded_utxo_idx = if lex_encoding {
+                Self::encode(utxo_idx)
+            } else {
+                utxo_idx
+            };
+            let (utxo, encrypted_note) = ShardsTwoxIdentity::<T>::get(shard_idx, encoded_utxo_idx);
             Self::deposit_event(Event::ShardElementRead(utxo, encrypted_note));
             Ok(())
         }
@@ -249,8 +264,7 @@ pub mod pallet {
             utxo_idx: u64,
         ) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
-            let (utxo, encrypted_note) =
-                ShardsTwoxTwox::<T>::get(shard_idx, Self::encode(utxo_idx));
+            let (utxo, encrypted_note) = ShardsTwoxTwox::<T>::get(shard_idx, utxo_idx);
             Self::deposit_event(Event::ShardElementRead(utxo, encrypted_note));
             Ok(())
         }
@@ -317,6 +331,60 @@ pub mod pallet {
             let mut bytes = n.to_ne_bytes();
             bytes.reverse();
             u64::from_ne_bytes(bytes)
-        }       
+        }
+
+        pub(crate) fn do_insert_shard_element_identity_identity(
+            shard_idx: u8,
+            utxo: Utxo,
+            encrypted_note: EncryptedNote,
+            lex_encoding: bool,
+        ) -> DispatchResult {
+            let utxo_idx = ShardsIdentityIdentityIndices::<T>::get(shard_idx);
+            let encoded_utxo_idx = if lex_encoding {
+                Self::encode(utxo_idx)
+            } else {
+                utxo_idx
+            };
+            ShardsIdentityIdentity::<T>::insert(
+                shard_idx,
+                encoded_utxo_idx,
+                (utxo, encrypted_note.clone()),
+            );
+            ShardsIdentityIdentityIndices::<T>::insert(shard_idx, utxo_idx + 1);
+            Ok(())
+        }
+
+        pub(crate) fn do_insert_shard_element_twox_identity(
+            shard_idx: u8,
+            utxo: Utxo,
+            encrypted_note: EncryptedNote,
+            lex_encoding: bool,
+        ) -> DispatchResult {
+            let utxo_idx = ShardsTwoxIdentityIndices::<T>::get(shard_idx);
+            let encoded_utxo_idx = if lex_encoding {
+                Self::encode(utxo_idx)
+            } else {
+                utxo_idx
+            };
+            ShardsTwoxIdentity::<T>::insert(
+                shard_idx,
+                encoded_utxo_idx,
+                (utxo, encrypted_note.clone()),
+            );
+            ShardsTwoxIdentityIndices::<T>::insert(shard_idx, utxo_idx + 1);
+            Ok(())
+        }
+
+        pub(crate) fn do_insert_shard_element_twox_twox(
+            shard_idx: u8,
+            utxo: Utxo,
+            encrypted_note: EncryptedNote,
+        ) -> DispatchResult {
+            let utxo_idx = ShardsTwoxTwoxIndices::<T>::get(shard_idx);
+            ShardsTwoxTwox::<T>::insert(shard_idx, utxo_idx, (utxo, encrypted_note.clone()));
+            ShardsTwoxIdentityIndices::<T>::insert(shard_idx, utxo_idx + 1);
+            Self::deposit_event(Event::ShardElementWritten(utxo, encrypted_note));
+            Ok(())
+        }
     }
 }

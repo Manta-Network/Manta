@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use frame_support::{
-    parameter_types, assert_ok,
+    assert_ok, parameter_types,
     traits::{ConstU32, ConstU64},
 };
 use frame_system::EnsureRoot;
@@ -46,7 +46,6 @@ frame_support::construct_runtime!(
         StorageBench: storage_bench::{Pallet, Call, Storage, Event<T>},
     }
 );
-
 
 parameter_types! {
     pub BlockWeights: frame_system::limits::BlockWeights =
@@ -119,8 +118,12 @@ impl ExtBuilder {
 }
 
 #[test]
-fn test_build(){
-    ExtBuilder::default().build().execute_with(||{
-        assert_ok!(StorageBench::point_read_shard_element_identity_identity(Origin::root(), 0, 0));
+fn test_build() {
+    ExtBuilder::default().build().execute_with(|| {
+        assert_ok!(StorageBench::point_read_shard_element_identity_identity(
+            Origin::root(),
+            0,
+            0
+        ));
     });
 }

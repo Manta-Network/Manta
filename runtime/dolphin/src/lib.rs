@@ -650,6 +650,11 @@ impl manta_collator_selection::Config for Runtime {
     type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
 }
 
+impl pallet_storage_benchmark::Config for Runtime {
+    type Event = Event;
+    type UpdateOrigin = EnsureRoot<AccountId>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -708,6 +713,9 @@ construct_runtime!(
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
+
+        // Benchmark
+        StorageBench: pallet_storage_benchmark::{Pallet, Call, Storage, Event<T>} = 48,
     }
 );
 
@@ -770,6 +778,7 @@ mod benches {
         [manta_collator_selection, CollatorSelection]
         [pallet_manta_pay, MantaPay]
         [pallet_asset_manager, AssetManager]
+        [pallet_storage_benchmark, StorageBench]
     );
 }
 
