@@ -3,21 +3,28 @@ root = true
 [*.rs]
 charset=utf-8
 end_of_line=lf
-indent_size=space
+indent_size=4
 indent_style=space
 insert_final_newline=true
 max_line_length=100
-tab_width=4
+trim_trailing_whitespace=true
+
+[*.toml]
+end_of_line=lf
+indent_size=2
+indent_style=space
+trim_trailing_whitespace=true
+
+[*.md]
+insert_final_newline=true
 trim_trailing_whitespace=true
 
 [*.yml]
 end_of_line=lf
 indent_size=2
 indent_style=space
-tab_width=8
 
 [*.sh]
 end_of_line=lf
 indent_size=2
 indent_style=space
-tab_width=8

@@ -15,43 +15,43 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-	fee::{
-		FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY, TIPS_PERCENTAGE_TO_AUTHOR,
-		TIPS_PERCENTAGE_TO_TREASURY,
-	},
-	Authorship, Balances, NegativeImbalance, Treasury,
+    fee::{
+        FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY, TIPS_PERCENTAGE_TO_AUTHOR,
+        TIPS_PERCENTAGE_TO_TREASURY,
+    },
+    Authorship, Balances, NegativeImbalance, Treasury,
 };
 use frame_support::traits::{Currency, Imbalance, OnUnbalanced};
 
 pub struct Author;
 impl OnUnbalanced<NegativeImbalance> for Author {
-	fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-		if let Some(author) = Authorship::author() {
-			Balances::resolve_creating(&author, amount);
-		}
-	}
+    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+        if let Some(author) = Authorship::author() {
+            Balances::resolve_creating(&author, amount);
+        }
+    }
 }
 
 pub struct DealWithFees;
 impl OnUnbalanced<NegativeImbalance> for DealWithFees {
-	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
-		if let Some(fees) = fees_then_tips.next() {
-			// for fees, 40% to treasury, 60% to author
-			let mut split = fees.ration(
-				FEES_PERCENTAGE_TO_TREASURY.into(),
-				FEES_PERCENTAGE_TO_AUTHOR.into(),
-			);
-			if let Some(tips) = fees_then_tips.next() {
-				// for tips, 100% to block author.
-				tips.ration_merge_into(
-					TIPS_PERCENTAGE_TO_TREASURY.into(),
-					TIPS_PERCENTAGE_TO_AUTHOR.into(),
-					&mut split,
-				);
-			}
+    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+        if let Some(fees) = fees_then_tips.next() {
+            // for fees, 40% to treasury, 60% to author
+            let mut split = fees.ration(
+                FEES_PERCENTAGE_TO_TREASURY.into(),
+                FEES_PERCENTAGE_TO_AUTHOR.into(),
+            );
+            if let Some(tips) = fees_then_tips.next() {
+                // for tips, 100% to block author.
+                tips.ration_merge_into(
+                    TIPS_PERCENTAGE_TO_TREASURY.into(),
+                    TIPS_PERCENTAGE_TO_AUTHOR.into(),
+                    &mut split,
+                );
+            }
 
-			Treasury::on_unbalanced(split.0);
-			Author::on_unbalanced(split.1);
-		}
-	}
+            Treasury::on_unbalanced(split.0);
+            Author::on_unbalanced(split.1);
+        }
+    }
 }
