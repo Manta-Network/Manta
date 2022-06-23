@@ -464,26 +464,33 @@ pub mod pallet {
         T: Config,
     {
         /// Maximum Number of Updates per Shard
-        const PULL_MAX_RECEIVER_UPDATE_SIZE: usize = 4096;
+        const PULL_MAX_RECEIVER_UPDATE_SIZE: u64 = 32768;
 
         /// Maximum Size of Sender Data Update
-        const PULL_MAX_SENDER_UPDATE_SIZE: usize = 4096;
+        const PULL_MAX_SENDER_UPDATE_SIZE: u64 = 32768;
 
         /// Pulls receiver data from the ledger starting at the `receiver_index`.
         #[inline]
-        fn pull_receivers(receiver_index: [usize; 256]) -> (bool, ReceiverChunk) {
+        fn pull_receivers(receiver_index: [usize; 256], max_update_request: u64) -> (bool, ReceiverChunk) {
             let mut more_receivers = false;
             let mut receivers = Vec::new();
-            let mut receivers_pulled: usize = 0;
+            let mut receivers_pulled: u64 = 0;
+            let max_update = if max_update_request > Self::PULL_MAX_RECEIVER_UPDATE_SIZE {
+                Self::PULL_MAX_RECEIVER_UPDATE_SIZE
+            } else {
+                max_update_request
+            };
+
             for (i, index) in receiver_index.into_iter().enumerate() {
                 more_receivers |= Self::pull_receivers_for_shard(
                     i as u8,
                     index,
+                    max_update,
                     &mut receivers,
                     &mut receivers_pulled,
                 );
                 // if max capacity is reached and there is more to pull, then we return
-                if receivers_pulled == Self::PULL_MAX_RECEIVER_UPDATE_SIZE && more_receivers {
+                if receivers_pulled == max_update && more_receivers {
                     break;
                 }
             }
@@ -496,15 +503,16 @@ pub mod pallet {
         fn pull_receivers_for_shard(
             shard_index: u8,
             receiver_index: usize,
+            max_update: u64,
             receivers: &mut ReceiverChunk,
-            receiver_pulled: &mut usize,
+            receiver_pulled: &mut u64,
         ) -> bool {
-            let max_receiver_index = receiver_index + Self::PULL_MAX_RECEIVER_UPDATE_SIZE;
-            for idx in receiver_index..max_receiver_index {
-                if *receiver_pulled == Self::PULL_MAX_RECEIVER_UPDATE_SIZE {
-                    return Shards::<T>::contains_key(shard_index, idx as u64);
+            let max_receiver_index = (receiver_index as u64) + max_update;
+            for idx in (receiver_index as u64)..max_receiver_index {
+                if *receiver_pulled == max_update {
+                    return Shards::<T>::contains_key(shard_index, idx);
                 }
-                match Shards::<T>::try_get(shard_index, idx as u64) {
+                match Shards::<T>::try_get(shard_index, idx) {
                     Ok(next) => {
                         *receiver_pulled += 1;
                         receivers.push(next);
@@ -512,16 +520,20 @@ pub mod pallet {
                     _ => return false,
                 }
             }
-            Shards::<T>::contains_key(shard_index, max_receiver_index as u64)
+            Shards::<T>::contains_key(shard_index, max_receiver_index)
         }
 
         /// Pulls sender data from the ledger starting at the `sender_index`.
         #[inline]
-        fn pull_senders(sender_index: usize) -> (bool, SenderChunk) {
+        fn pull_senders(sender_index: usize, max_update_request: u64) -> (bool, SenderChunk) {
             let mut senders = Vec::new();
-            let max_sender_index = sender_index + Self::PULL_MAX_SENDER_UPDATE_SIZE;
-            for idx in sender_index..max_sender_index {
-                match VoidNumberSetInsertionOrder::<T>::try_get(idx as u64) {
+            let max_sender_index = if max_update_request > Self::PULL_MAX_SENDER_UPDATE_SIZE {
+                (sender_index as u64) + Self::PULL_MAX_SENDER_UPDATE_SIZE
+            } else {
+                (sender_index as u64) + max_update_request
+            };
+            for idx in (sender_index as u64)..max_sender_index {
+                match VoidNumberSetInsertionOrder::<T>::try_get(idx) {
                     Ok(next) => senders.push(next),
                     _ => return (false, senders),
                 }
@@ -534,9 +546,9 @@ pub mod pallet {
 
         /// Returns the diff of ledger state since the given `checkpoint`.
         #[inline]
-        pub fn pull_ledger_diff(checkpoint: Checkpoint) -> PullResponse {
-            let (more_receivers, receivers) = Self::pull_receivers(*checkpoint.receiver_index);
-            let (more_senders, senders) = Self::pull_senders(checkpoint.sender_index);
+        pub fn pull_ledger_diff(checkpoint: Checkpoint, max_receivers: u64, max_senders: u64) -> PullResponse {
+            let (more_receivers, receivers) = Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
+            let (more_senders, senders) = Self::pull_senders(checkpoint.sender_index, max_senders);
             PullResponse {
                 should_continue: more_receivers || more_senders,
                 receivers,

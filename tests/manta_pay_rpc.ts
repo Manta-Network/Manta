@@ -49,7 +49,7 @@ function generate_utxo_data(per_shard_amount: number, checkpoint: Array<number>)
     for(var shard_idx = 0; shard_idx < SHARD_NUMBER; ++ shard_idx) {
         for(var utxo_idx  = checkpoint[shard_idx]; utxo_idx < checkpoint[shard_idx] + per_shard_amount; ++ utxo_idx) {
             const shards_storage_key = double_map_storage_key(
-                "MantaPay", "Shards", shard_idx, 8, HashType.Identity, utxo_idx, 64, HashType.Identity);
+                "MantaPay", "Shards", shard_idx, 8, HashType.TwoxConcat, utxo_idx, 64, HashType.TwoxConcat);
             let value_str = u8aToHex(generate_utxo(shard_idx, utxo_idx));
             data.push([shards_storage_key, value_str]);
         }
@@ -106,7 +106,7 @@ function generate_vn_data(
     var data = [];    
     for (var idx = start_index; idx < start_index + amount_per_batch; idx ++){
         const vn_storage_key = single_map_storage_key(
-            "MantaPay", "VoidNumberSetInsertionOrder", idx, 64, HashType.Identity);
+            "MantaPay", "VoidNumberSetInsertionOrder", idx, 64, HashType.TwoxConcat);
         data.push([vn_storage_key, u8aToHex(generate_void_number(idx))]);
     }
     return data;
@@ -195,11 +195,11 @@ async function setup_storage(api:ApiPromise, init_utxo_idx: number) {
     const keyring = new Keyring({ type: 'sr25519' });
     const sudo_key_pair = keyring.addFromMnemonic('bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice');
     
-    const utxo_big_batch_number = 1;
+    const utxo_big_batch_number = 2;
     const utxo_batch_number = 4;
     const utxo_per_shard = 16;
-    const vn_batch_number = 1;
-    const vn_batch_size = 1024;
+    const vn_batch_number = 8;
+    const vn_batch_size = 4096;
     
     var receiver_checkpoint = new Array<number>(SHARD_NUMBER);
     var check_idx = init_utxo_idx;
@@ -222,7 +222,9 @@ async function single_rpc_performance(api:ApiPromise) {
     const before_rpc = performance.now();
     var receiver_checkpoint = new Array<number>(SHARD_NUMBER);
     receiver_checkpoint.fill(0);
-    const data = await (api.rpc as any).mantaPay.pull_ledger_diff({receiver_index: new Array<number>(SHARD_NUMBER).fill(0), sender_index: 0});
+    const data = await (api.rpc as any).mantaPay.pull_ledger_diff(
+        {receiver_index: new Array<number>(SHARD_NUMBER).fill(0), sender_index: 0},
+        BigInt(16384), BigInt(16384));
     const after_rpc = performance.now();
     console.log("ledger diff receiver size: %i", data.receivers.length);
     console.log("ledger diff void number size: %i", data.senders.length);
@@ -264,18 +266,27 @@ async function main(){
                         {
                             name: 'checkpoint',
                             type: 'Checkpoint'
+                        },
+                        {
+                            name: 'max_receiver',
+                            type: 'u64'
+                        },
+                        {
+                            name: 'max_sender',
+                            type: 'u64'
                         }
+
                     ],
                     type: 'PullResponse'
                 }
             }
         }});
 
-    //await setup_storage(api, 64);
+    await setup_storage(api, 0);
     //const block_hash = await api.rpc.chain.getBlockHash()
     //let shards: any[][] = await (api.query as any).mantaPay.shards.entriesAt(block_hash);
     //console.log("shards size: %i", shards.length);
-    //await single_rpc_performance(api);
+    await single_rpc_performance(api);
     const block_hash = await api.rpc.chain.getBlockHash();
     var before = performance.now();
     let shards = await ((await api.at(block_hash)).query as any).mantaPay.shards.entries();

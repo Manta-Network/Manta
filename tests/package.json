@@ -13,8 +13,8 @@
     "@polkadot/api": "^7.15.1",
     "@polkadot/types": "^7.15.1",
     "@types/yargs": "^17.0.0",
+    "minimist": "^1.2.5",
     "ts-node": "^10.8.0",
-    "typescript": "4.6.4",
-    "minimist": "^1.2.5"
+    "typescript": "4.6.4"
   }
 }

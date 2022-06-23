@@ -3,7 +3,8 @@ import type { HexString } from '@polkadot/util/types';
 import { u8aToHex, u8aToBigInt, numberToU8a, nToU8a} from '@polkadot/util';
 
 export enum HashType {
-    Identity
+    Identity,
+    TwoxConcat
 };
 
 // delay sometime (usually used for wait a block confirmation)
@@ -30,14 +31,23 @@ export function single_map_storage_key(
     bitLength: number, 
     hash_type: HashType 
 ) : String {
-    if(hash_type !== HashType.Identity){
-        throw Error("HashType can only be Identity");
-    }
     let binary = new Uint8Array([
         ...twox_128(module_name), 
         ...twox_128(variable_name),
-        ...numberToU8a(key, bitLength).reverse()]);
+        ...hash_number(key, bitLength, hash_type)]);
     return u8aToHex(binary);
+}
+
+function hash_number(key: number, bit_length: number, hash_type: HashType): Uint8Array {
+    switch (hash_type) {
+        case HashType.Identity:
+            return numberToU8a(key, bit_length).reverse();
+        case HashType.TwoxConcat:
+            return new Uint8Array([
+                ...xxhashAsU8a(numberToU8a(key, bit_length).reverse(), 64),
+                ...numberToU8a(key, bit_length).reverse()
+            ])
+    }
 }
 
 // only support Identity hash type for now
@@ -51,14 +61,12 @@ export function double_map_storage_key(
     bitLength_2: number,
     hash_type_2: HashType
 ): String {
-    if(hash_type_1 !== HashType.Identity || hash_type_2 !== HashType.Identity){
-        throw Error("HashType can only be Identity");
-    }
+    
     let binary = new Uint8Array([
         ...twox_128(module_name),
         ...twox_128(variable_name),
-        ...numberToU8a(key_1, bitLength_1).reverse(),
-        ...numberToU8a(key_2, bitLength_2).reverse()
+        ...hash_number(key_1, bitLength_1, hash_type_1),
+        ...hash_number(key_2, bitLength_2, hash_type_2),
     ]);
     return u8aToHex(binary);
 }
