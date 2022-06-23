@@ -5279,17 +5279,6 @@ dependencies = [
 
 [[package]]
 name = "manta-accounting"
-version = "0.5.0"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.0#df042ff97cc24c3b4b7e223e56297bcb2b77791f"
-dependencies = [
- "derivative",
- "derive_more",
- "manta-crypto 0.5.0",
- "manta-util 0.5.0",
-]
-
-[[package]]
-name = "manta-accounting"
 version = "0.5.1"
 source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.1#ac8e929f45e169a4540e5fc591e09f9f5a6a939c"
 dependencies = [
@@ -5297,8 +5286,8 @@ dependencies = [
  "derive_more",
  "futures 0.3.21",
  "indexmap",
- "manta-crypto 0.5.1",
- "manta-util 0.5.1",
+ "manta-crypto",
+ "manta-util",
  "parking_lot 0.12.1",
  "statrs",
 ]
@@ -5332,21 +5321,11 @@ dependencies = [
 
 [[package]]
 name = "manta-crypto"
-version = "0.5.0"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.0#df042ff97cc24c3b4b7e223e56297bcb2b77791f"
-dependencies = [
- "derivative",
- "manta-util 0.5.0",
- "rand_core 0.6.3",
-]
-
-[[package]]
-name = "manta-crypto"
 version = "0.5.1"
 source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.1#ac8e929f45e169a4540e5fc591e09f9f5a6a939c"
 dependencies = [
  "derivative",
- "manta-util 0.5.1",
+ "manta-util",
  "rand 0.8.5",
  "rand_core 0.6.3",
 ]
@@ -5381,10 +5360,10 @@ dependencies = [
  "ark-std",
  "blake2 0.10.4",
  "derivative",
- "manta-accounting 0.5.1",
- "manta-crypto 0.5.1",
+ "manta-accounting",
+ "manta-crypto",
  "manta-parameters",
- "manta-util 0.5.1",
+ "manta-util",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
  "scale-info",
@@ -5399,7 +5378,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "manta-accounting 0.5.0",
+ "manta-accounting",
  "parity-scale-codec",
  "scale-info",
  "smallvec",
@@ -5476,11 +5455,6 @@ dependencies = [
  "xcm-builder",
  "xcm-executor",
 ]
-
-[[package]]
-name = "manta-util"
-version = "0.5.0"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.0#df042ff97cc24c3b4b7e223e56297bcb2b77791f"
 
 [[package]]
 name = "manta-util"
@@ -6641,12 +6615,12 @@ dependencies = [
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "lazy_static",
- "manta-accounting 0.5.1",
- "manta-crypto 0.5.1",
+ "manta-accounting",
+ "manta-crypto",
  "manta-parameters",
  "manta-pay",
  "manta-primitives",
- "manta-util 0.5.1",
+ "manta-util",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",
