@@ -18,7 +18,7 @@ env:
   AWS_REGION: us-east-1
   AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
   AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
-  AWS_INSTANCE_TYPE: c5a.8xlarge  # 32 vcpu, 64gb ram, $1.392 hourly
+  AWS_INSTANCE_TYPE: c5a.8xlarge
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
@@ -200,6 +200,9 @@ jobs:
           -
             name: manta
             chain-spec: manta-testnet-ci
+          -
+            name: dolphin
+            chain-spec: dolphin-testnet-ci
     steps:
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
@@ -316,6 +319,11 @@ jobs:
             --address=ws://127.0.0.1:9921
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
+        name: fetch previous ${{ matrix.runtime.name }}_runtime.compact.compressed.wasm
+        run: |
+          wget -cO - https://github.com/Manta-Network/Manta/releases/download/v3.1.5-1/${{ matrix.runtime.name }}-runtime-v3151.compact.compressed.wasm > ${{ github.workspace }}/${{ matrix.runtime.name }}_runtime_previous.compact.compressed.wasm
+      -
+        if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch new ${{ matrix.runtime.name }}_runtime.compact.compressed.wasm
         uses: actions/download-artifact@v2
         with:
@@ -332,15 +340,22 @@ jobs:
           curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "civil cigar remain hybrid glove symptom review what pole lock concert lamp", "0xb40aa6bd104d0260b60350c2fb30d4882437466d66135130b667799ea6c9f52b"],"id":1 }' localhost:9973
           curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "output evidence anger invest country opinion girl mouse direct double carbon usage", "0x4a3aa51469e802be6504422cd9dd03be638ac3f6dc3a7c0c85a6ace3e72f0048"],"id":1 }' localhost:9974
           curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "series disorder today argue interest pond flight guess asthma guilt road gadget", "0xa68feb4fe2ea3f8ff288af4254aad2284e1cd0da67cb9ea61c13632bad57eb40"],"id":1 }' localhost:9975
-          cp ${{ matrix.runtime.name }}_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools/runtime-upgrade-test/calamari.wasm
+          cp ${{ matrix.runtime.name }}_runtime_previous.compact.compressed.wasm ${{ github.workspace }}/dev-tools/runtime-upgrade-test/calamari.wasm
           cd ${{ github.workspace }}/dev-tools/runtime-upgrade-test
           yarn install
           yarn
           sleep 120
           pm2 start index.js \
-            --name test-runtime-upgrade-${{ matrix.runtime.chain-spec }} \
-            --output ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log \
-            --error ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log \
+            --name test-previous-runtime-upgrade-${{ matrix.runtime.chain-spec }} \
+            --output ${{ github.workspace }}/test-previous-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log \
+            --error ${{ github.workspace }}/test-previous-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log \
+            --no-autorestart
+          sleep 120
+          cp ${{ github.workspace }}/${{ matrix.runtime.name }}_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools/runtime-upgrade-test/calamari.wasm
+          pm2 start index.js \
+            --name test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }} \
+            --output ${{ github.workspace }}/test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log \
+            --error ${{ github.workspace }}/test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log \
             --no-autorestart
           cd ${{ github.workspace }}
           sleep 180
@@ -364,19 +379,20 @@ jobs:
           cd ${{ github.workspace }}/manta-pc-launch
           pm2 stop measure-block-time-${{ matrix.runtime.chain-spec }}
           pm2 stop manta-pc-launch
-          pm2 stop test-runtime-upgrade-${{ matrix.runtime.chain-spec }}
+          pm2 stop test-previous-runtime-upgrade-${{ matrix.runtime.chain-spec }}
+          pm2 stop test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         uses: actions/upload-artifact@v2
         with:
           name: runtime-upgrade-test-for-${{ matrix.runtime.chain-spec }}-stdout.log
-          path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log
+          path: ${{ github.workspace }}/test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         uses: actions/upload-artifact@v2
         with:
           name: runtime-upgrade-test-for-${{ matrix.runtime.chain-spec }}-stderr.log
-          path: ${{ github.workspace }}/test-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log
+          path: ${{ github.workspace }}/test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log
       -
         if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: parse ${{ matrix.runtime.name }} block times
