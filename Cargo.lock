@@ -5083,6 +5083,7 @@ dependencies = [
  "pallet-session",
  "pallet-timestamp",
  "parity-scale-codec",
+ "rand 0.8.5",
  "scale-info",
  "serde",
  "sp-arithmetic",
