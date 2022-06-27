@@ -3,6 +3,7 @@ import { Keyring } from '@polkadot/keyring';
 import { manta_pay_types, rpc_api } from './types';
 import { StoragePrepareConfig, setup_storage, manta_pay_config} from './manta_pay';
 import minimist, { ParsedArgs } from 'minimist';
+import { performance } from 'perf_hooks';
 
 async function single_rpc_performance(api:ApiPromise) {
     const before_rpc = performance.now();
