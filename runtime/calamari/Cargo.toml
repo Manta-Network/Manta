@@ -80,7 +80,6 @@ xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-fea
 
 # Third party (vendored) dependencies
 orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev = "7e2f985" }
-orml-xcm-support = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev = "7e2f985" }
 orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev = "7e2f985" }
 
 # Self dependencies
@@ -212,7 +211,6 @@ std = [
   'pallet-treasury/std',
   'pallet-assets/std',
   'pallet-asset-manager/std',
-  'orml-xcm-support/std',
   'orml-traits/std',
   'orml-xtokens/std',
 ]

@@ -357,7 +357,7 @@ impl<
     >
 {
     fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> XcmResult {
-        log::trace!(
+        log::debug!(
             target: "xcm::multi_asset_adapter",
             "deposit_asset asset: {:?}, location: {:?}",
             asset, location,
@@ -375,7 +375,7 @@ impl<
         asset: &MultiAsset,
         location: &MultiLocation,
     ) -> result::Result<xcm_executor::Assets, XcmError> {
-        log::trace!(
+        log::debug!(
             target: "xcm::multi_asset_adapter",
             "withdraw_asset asset: {:?}, location: {:?}",
             asset, location,
@@ -426,7 +426,7 @@ impl<
             // native asset
             (Some(amount), _) => (MultiAdapterAssetConfig::NativeAssetId::get(), amount),
             // assets asset
-            (_, result::Result::Ok((asset_id, amount))) => (asset_id, amount),
+            (_, Ok((asset_id, amount))) => (asset_id, amount),
             // unknown asset
             _ => return Err(XcmError::FailedToTransactAsset("Unknown Asset")),
         };

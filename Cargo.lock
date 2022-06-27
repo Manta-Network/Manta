@@ -1179,7 +1179,6 @@ dependencies = [
  "manta-collator-selection",
  "manta-primitives",
  "orml-traits",
- "orml-xcm-support",
  "orml-xtokens",
  "pallet-asset-manager",
  "pallet-assets",
