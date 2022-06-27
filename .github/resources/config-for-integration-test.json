@@ -53,6 +53,8 @@
             "port": 32331,
             "flags": [
               "--rpc-cors=all",
+              "--unsafe-ws-external",
+              "--unsafe-rpc-external",
               "--",
               "--execution=wasm"
             ]
@@ -63,6 +65,8 @@
             "port": 32332,
             "flags": [
               "--rpc-cors=all",
+              "--unsafe-ws-external",
+              "--unsafe-rpc-external",
               "--",
               "--execution=wasm"
             ]
@@ -73,6 +77,8 @@
             "port": 32333,
             "flags": [
               "--rpc-cors=all",
+              "--unsafe-ws-external",
+              "--unsafe-rpc-external",
               "--",
               "--execution=wasm"
             ]
