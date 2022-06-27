@@ -15,6 +15,8 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 #![allow(dead_code)]
+// Tolerate clippy warning originating in ChainSpecGroup, which is a dependency
+#![allow(clippy::derive_partial_eq_without_eq)]
 
 use manta_primitives::{
     constants,
