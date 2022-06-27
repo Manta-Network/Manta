@@ -522,11 +522,6 @@ pub mod pallet {
                 Ok(())
             }
         }
-
-        #[cfg(feature = "std")]
-        pub fn set_next_asset_id(asset_id: u32) {
-            NextAssetId::<T>::set(asset_id);
-        }
     }
 
     /// Check the multilocation is supported by calamari/manta.

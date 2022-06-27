@@ -35,6 +35,15 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
+use manta_primitives::{
+    assets::{
+        AssetConfig, AssetIdLocationConvert, AssetLocation, AssetRegistrar, AssetRegistrarMetadata,
+        AssetStorageMetadata, ConcreteFungibleLedger,
+    },
+    constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
+    types::AssetId,
+    xcm::{FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter, MultiNativeAsset},
+};
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain::primitives::{
@@ -49,16 +58,6 @@ use xcm_builder::{
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
-
-use manta_primitives::{
-    assets::{
-        AssetConfig, AssetIdLocationConvert, AssetLocation, AssetRegistrar, AssetRegistrarMetadata,
-        AssetStorageMetadata, ConcreteFungibleLedger,
-    },
-    constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
-    types::AssetId,
-    xcm::{FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter, MultiNativeAsset},
-};
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 
@@ -671,8 +670,26 @@ pub(crate) fn create_asset_location(parents: u8, para_id: u32) -> AssetLocation 
     )))
 }
 
+fn insert_dummy_data(
+    dummy_mult_loc: MultiLocation,
+    dummy_asset_metadata: &AssetRegistrarMetadata,
+    start_from: u32,
+    insert_until: u32,
+) {
+    let mut next_asset_id = start_from;
+    let mut next_dummy_mult_loc = dummy_mult_loc;
+    while next_asset_id < insert_until {
+        assert_ok!(AssetManager::register_asset(
+            self::Origin::root(),
+            AssetLocation::from(next_dummy_mult_loc.clone()),
+            dummy_asset_metadata.clone()
+        ));
+        next_dummy_mult_loc.parents += 1;
+        next_asset_id += 1;
+    }
+}
+
 pub(crate) fn register_assets_on_parachain<P>(
-    maybe_asset_id: Option<AssetId>,
     source_location: &AssetLocation,
     asset_metadata: &AssetRegistrarMetadata,
     units_per_second: Option<u128>,
@@ -682,11 +699,28 @@ where
     P: XcmpMessageHandlerT + DmpMessageHandlerT + TestExt,
 {
     let mut asset_id = 0;
+    let mut dummy_mult_loc = match source_location.0.clone() {
+        VersionedMultiLocation::V1(some_location) => some_location,
+        _ => MultiLocation::default(),
+    };
+    // Use some fake location as dummy
+    dummy_mult_loc.parents = 50;
+    let native_asset_id = <ParachainAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
+    let non_native_asset_id_start =
+        <ParachainAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get();
 
     P::execute_with(|| {
-        if let Some(asset_id) = maybe_asset_id {
-            assert!(asset_id >= AssetManager::next_asset_id());
-            AssetManager::set_next_asset_id(asset_id);
+        asset_id = AssetManager::next_asset_id();
+
+        if asset_id < native_asset_id {
+            insert_dummy_data(dummy_mult_loc, &asset_metadata, asset_id, native_asset_id);
+        } else if asset_id < non_native_asset_id_start {
+            insert_dummy_data(
+                dummy_mult_loc,
+                &asset_metadata,
+                asset_id,
+                non_native_asset_id_start,
+            );
         }
 
         asset_id = AssetManager::next_asset_id();

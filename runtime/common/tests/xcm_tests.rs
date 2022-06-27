@@ -22,12 +22,9 @@ mod xcm_mock;
 
 use codec::Encode;
 use frame_support::{assert_err, assert_noop, assert_ok, weights::constants::WEIGHT_PER_SECOND};
-use manta_primitives::assets::{AssetConfig, AssetLocation};
+use manta_primitives::assets::AssetLocation;
 use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
-use xcm_mock::{
-    parachain::{ParachainAssetConfig, PALLET_ASSET_INDEX},
-    *,
-};
+use xcm_mock::{parachain::PALLET_ASSET_INDEX, *};
 use xcm_simulator::TestExt;
 
 use crate::xcm_mock::parachain::{
@@ -146,16 +143,21 @@ fn xcmp() {
 fn reserve_transfer_relaychain_to_parachain_a_then_back() {
     MockNet::reset();
 
-    let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-    let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
+    let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
 
-    // Register relay chain asset in parachain A
+    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, None, false, true);
+
+    let _ = register_assets_on_parachain::<ParaA>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(0u128),
+        None,
+    );
     let relay_asset_id = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
-        &source_location,
-        &asset_metadata,
+        &relay_source_location,
+        &relay_asset_metadata,
         Some(0u128),
         None,
     );
@@ -244,31 +246,29 @@ fn send_para_a_native_asset_to_para_b() {
     let para_b_asset_metadata =
         create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, false);
 
-    // Register ParaA native asset in ParaB
-    let a_asset_id_on_b = register_assets_on_parachain::<ParaB>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
-        &para_a_source_location,
-        &para_a_asset_metadata,
-        Some(0u128),
-        None,
-    );
-
     // Register ParaA native asset in ParaA
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        Some(<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get()),
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
         None,
     );
     let _ = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_b_source_location,
         &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
+
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
+    let a_asset_id_on_b = register_assets_on_parachain::<ParaB>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
         Some(0u128),
         None,
     );
@@ -323,29 +323,26 @@ fn send_insufficient_asset_from_para_a_to_para_b() {
     let para_b_asset_metadata =
         create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, false);
 
-    // Register ParaA native asset in ParaA
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        Some(<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get()),
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
         None,
     );
     let _ = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_b_source_location,
         &para_b_asset_metadata,
         Some(0u128),
         None,
     );
 
-    // Register ParaA native asset in ParaB
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(units_per_second_at_b),
+        None,
+    );
     let a_asset_id_on_b = register_assets_on_parachain::<ParaB>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(units_per_second_at_b),
@@ -457,46 +454,52 @@ fn send_para_a_custom_asset_to_para_b() {
     let amount = 321;
     let weight_at_most = 800000;
 
-    let doge_asset_index =
-        <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get();
-    let para_a_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
+    let para_a_doge_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
         1,
         X3(
             Parachain(PARA_A_ID),
             PalletInstance(PALLET_ASSET_INDEX),
-            GeneralIndex(doge_asset_index as u128),
+            GeneralIndex(0 as u128),
         ),
     )));
+
     let para_b_source_location = create_asset_location(1, PARA_B_ID);
 
+    let para_a_asset_metadata =
+        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
     let para_a_doge_asset_metadata =
-        create_asset_metadata("ParaADoge", "Doge", 18, 1, None, false, true);
+        create_asset_metadata("ParaADogeToken", "ParaADoge", 18, 1, None, false, true);
     let para_b_asset_metadata =
         create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, false);
 
-    // register doge in ParaA, ParaB
-    let doge_currency_id_on_a = register_assets_on_parachain::<ParaA>(
-        Some(doge_asset_index),
+    let _ = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(0u128),
+        Some((ALICE, 1, true, false)),
+    );
+    let doge_currency_id_on_a = register_assets_on_parachain::<ParaA>(
+        &para_a_doge_location,
         &para_a_doge_asset_metadata,
         Some(0u128),
         Some((ALICE, 1, true, false)),
     );
-    // register ParaB native asset on ParaA
     let _ = register_assets_on_parachain::<ParaA>(
-        None,
         &para_b_source_location,
         &para_b_asset_metadata,
         Some(0u128),
         None,
     );
 
-    // register ParaA native asset on ParaB
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
     let doge_currency_id_on_b = register_assets_on_parachain::<ParaB>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
-        &para_a_source_location,
+        &para_a_doge_location,
         &para_a_doge_asset_metadata,
         Some(0u128),
         None,
@@ -561,29 +564,26 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
     let para_b_asset_metadata =
         create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
 
-    // register ParaA native asset on ParaA
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        Some(<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get()),
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
         None,
     );
-    // register ParaB native asset on ParaA
     let _ = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_b_source_location,
         &para_b_asset_metadata,
         Some(0u128),
         None,
     );
-    // register ParaA native asset on ParaB
+
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
     let a_asset_id_on_b = register_assets_on_parachain::<ParaB>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
@@ -673,50 +673,45 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
     let para_c_asset_metadata =
         create_asset_metadata("ParaCToken", "ParaC", 18, 1, None, false, false);
 
-    // register ParaA native asset on ParaA
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        Some(<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get()),
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
         None,
     );
-    // register ParaB native asset on ParaA
     let _ = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_b_source_location,
         &para_b_asset_metadata,
         Some(0u128),
         None,
     );
 
-    // register ParaA native asset on ParaB
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
     let a_asset_id_on_b = register_assets_on_parachain::<ParaB>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
         None,
     );
-
-    // register ParaC native asset on ParaB
     let _ = register_assets_on_parachain::<ParaB>(
-        None,
         &para_c_source_location,
         &para_c_asset_metadata,
         Some(0u128),
         None,
     );
 
-    // register ParaA native asset on ParaC
+    let _ = register_assets_on_parachain::<ParaC>(
+        &para_c_source_location,
+        &para_c_asset_metadata,
+        Some(0u128),
+        None,
+    );
     let a_asset_id_on_c = register_assets_on_parachain::<ParaC>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
@@ -791,8 +786,11 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
 fn receive_relay_asset_with_trader_on_parachain() {
     MockNet::reset();
 
-    let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-    let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
+    let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
+
+    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, None, false, true);
 
     let amount = 666u128;
     // We charge 10^9 as units per second on ParaA
@@ -800,13 +798,15 @@ fn receive_relay_asset_with_trader_on_parachain() {
     let fee = calculate_fee(units_per_second, RESERVE_TRANSFER_WEIGHT);
     assert!(fee > 0);
 
-    // Register relaychain native asset in ParaA
+    let _ = register_assets_on_parachain::<ParaA>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(units_per_second),
+        None,
+    );
     let relay_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
-        &source_location,
-        &asset_metadata,
+        &relay_source_location,
+        &relay_asset_metadata,
         Some(units_per_second),
         None,
     );
@@ -862,30 +862,26 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
     let para_b_asset_metadata =
         create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
 
-    // Register ParaA native asset in ParaA
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        Some(<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get()),
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
         None,
     );
-    // register ParaB native asset on ParaA
     let _ = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_b_source_location,
         &para_b_asset_metadata,
         Some(0u128),
         None,
     );
 
-    // register ParaA native asset on ParaB
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(units_per_second),
+        None,
+    );
     let a_asset_id_on_b = register_assets_on_parachain::<ParaB>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(units_per_second),
@@ -945,48 +941,45 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
     let para_c_asset_metadata =
         create_asset_metadata("ParaCToken", "ParaC", 18, 1, None, false, true);
 
-    // Register ParaA native asset in ParaA
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        Some(<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get()),
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
         None,
     );
-    // register ParaB native asset on ParaA
     let _ = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_b_source_location,
         &para_b_asset_metadata,
         Some(0u128),
         None,
     );
 
-    // We set units_per_seconds on ParaB to 1_250_000,
-    // register ParaA native asset on ParaB
     let _ = register_assets_on_parachain::<ParaB>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
+    let _ = register_assets_on_parachain::<ParaB>(
         &para_c_source_location,
         &para_c_asset_metadata,
         Some(units_per_second),
         None,
     );
     let a_asset_id_on_b = register_assets_on_parachain::<ParaB>(
-        None,
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(units_per_second),
         None,
     );
 
+    let _ = register_assets_on_parachain::<ParaC>(
+        &para_c_source_location,
+        &para_c_asset_metadata,
+        Some(units_per_second),
+        None,
+    );
     let a_asset_id_on_c = register_assets_on_parachain::<ParaC>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(units_per_second),
@@ -1061,8 +1054,11 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 fn receive_relay_asset_on_parachain_with_insufficient_fee_payment_should_fail() {
     MockNet::reset();
 
-    let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-    let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
+    let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
+
+    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, None, false, true);
 
     let amount = 20u128;
     // We charge 2 x 10^10 as units per second on ParaA
@@ -1070,13 +1066,15 @@ fn receive_relay_asset_on_parachain_with_insufficient_fee_payment_should_fail() 
     let fee = calculate_fee(units_per_second, RESERVE_TRANSFER_WEIGHT);
     assert!(fee > amount);
 
-    // Register relaychain native asset in ParaA
+    let _ = register_assets_on_parachain::<ParaA>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(units_per_second),
+        None,
+    );
     let relay_asset_id = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
-        &source_location,
-        &asset_metadata,
+        &relay_source_location,
+        &relay_asset_metadata,
         Some(units_per_second),
         None,
     );
@@ -1116,17 +1114,23 @@ fn receive_relay_asset_on_parachain_with_insufficient_fee_payment_should_fail() 
 fn receive_relay_should_fail_without_specifying_units_per_second() {
     MockNet::reset();
 
-    let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-    let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
+    let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
+
+    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, None, false, true);
+
     let amount = 333u128;
 
-    // Register relaychain native asset in ParaA
+    let _ = register_assets_on_parachain::<ParaA>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        None,
+        None,
+    );
     let relay_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
-        &source_location,
-        &asset_metadata,
+        &relay_source_location,
+        &relay_asset_metadata,
         None,
         None,
     );
@@ -1180,32 +1184,28 @@ fn send_para_a_asset_to_para_b_with_insufficient_fee() {
     let para_b_asset_metadata =
         create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
 
-    // Register ParaA native asset in ParaA
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        Some(<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get()),
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
         None,
     );
-    // register ParaB native asset on ParaA
     let _ = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_b_source_location,
         &para_b_asset_metadata,
         Some(0u128),
         None,
     );
 
-    // register ParaA native asset on ParaB
-    let a_asset_id_on_b = register_assets_on_parachain::<ParaB>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
+    let _ = register_assets_on_parachain::<ParaB>(
         &para_b_source_location,
         &para_b_asset_metadata,
+        Some(units_per_second),
+        None,
+    );
+    let a_asset_id_on_b = register_assets_on_parachain::<ParaB>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
         Some(units_per_second),
         None,
     );
@@ -1257,31 +1257,26 @@ fn send_para_a_asset_to_para_b_without_specifying_units_per_second() {
     let para_b_asset_metadata =
         create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
 
-    // Register ParaA native asset in ParaA
-    // Register ParaA native asset in ParaA
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        Some(<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get()),
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
         None,
     );
-    // register ParaB native asset on ParaA
     let _ = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_b_source_location,
         &para_b_asset_metadata,
         Some(0u128),
         None,
     );
 
-    // register ParaA native asset on ParaB
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
     let a_asset_id_on_b = register_assets_on_parachain::<ParaB>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_a_source_location,
         &para_a_asset_metadata,
         None,
@@ -1326,17 +1321,24 @@ fn receive_insufficient_relay_asset_on_parachain() {
 
     let new_account = [5u8; 32];
 
-    let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-    let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, false);
+    let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
+
+    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, false);
+    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, None, false, true);
+
     let amount = 123u128;
     let units_per_sec = 0u128;
 
+    let _ = register_assets_on_parachain::<ParaA>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(units_per_sec),
+        None,
+    );
     let relay_asset_id = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
-        &source_location,
-        &asset_metadata,
+        &relay_source_location,
+        &relay_asset_metadata,
         Some(units_per_sec),
         None,
     );
@@ -1408,17 +1410,24 @@ fn receive_sufficient_relay_asset_on_parachain() {
 
     let new_account = [5u8; 32];
 
-    let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-    let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
+    let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
+
+    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, None, false, true);
+
     let amount = 123u128;
     let units_per_sec = 0;
 
+    let _ = register_assets_on_parachain::<ParaA>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(units_per_sec),
+        None,
+    );
     let relay_asset_id = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
-        &source_location,
-        &asset_metadata,
+        &relay_source_location,
+        &relay_asset_metadata,
         Some(units_per_sec),
         None,
     );
@@ -1553,7 +1562,10 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
     MockNet::reset();
 
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
+
     let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, None, false, true);
 
     // register relay asset in parachain A (XCM version 1)
     ParaA::execute_with(|| {
@@ -1561,9 +1573,12 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
         parachain::set_current_xcm_version(1);
     });
     let _ = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(0u128),
+        None,
+    );
+    let _ = register_assets_on_parachain::<ParaA>(
         &relay_source_location,
         &relay_asset_metadata,
         Some(0u128),
@@ -1677,10 +1692,8 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
 fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
     MockNet::reset();
 
-    let para_a_id = 1;
-    let para_b_id = 2;
-    let para_a_source_location = create_asset_location(1, para_a_id);
-    let para_b_source_location = create_asset_location(1, para_b_id);
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
+    let para_b_source_location = create_asset_location(1, PARA_B_ID);
 
     let para_a_asset_metadata =
         create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
@@ -1701,20 +1714,13 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
         parachain::set_current_xcm_version(2);
     });
 
-    // Register ParaA native asset in ParaA
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        Some(<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get()),
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
         None,
     );
-
-    // register ParaB native asset on ParaA
     let _ = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_b_source_location,
         &para_b_asset_metadata,
         Some(0u128),
@@ -1726,11 +1732,13 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
         parachain::set_current_xcm_version(0);
     });
 
-    // register ParaA native asset on ParaB
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
     let a_asset_id_on_b = register_assets_on_parachain::<ParaB>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
@@ -1844,39 +1852,33 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 
 #[test]
 fn filtered_multilocation_should_not_work() {
-    let para_a_id = 1;
-    let para_b_id = 2;
-    let para_a_source_location = create_asset_location(1, para_a_id);
-    let para_b_source_location = create_asset_location(1, para_b_id);
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
+    let para_b_source_location = create_asset_location(1, PARA_B_ID);
     let para_a_asset_metadata =
         create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
     let para_b_asset_metadata =
         create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
 
-    // Register ParaA native asset in ParaA
-    let a_currency_id = register_assets_on_parachain::<ParaA>(
-        Some(<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get()),
+    let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
         None,
     );
-    // register ParaB native asset on ParaA
     let _ = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &para_b_source_location,
         &para_b_asset_metadata,
         Some(0u128),
         None,
     );
 
-    // register ParaA native asset on ParaB
     let _ = register_assets_on_parachain::<ParaB>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
+    let _ = register_assets_on_parachain::<ParaB>(
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
@@ -1899,7 +1901,7 @@ fn filtered_multilocation_should_not_work() {
         assert_noop!(
             parachain::XTokens::transfer(
                 parachain::Origin::signed(ALICE),
-                parachain::CurrencyId::MantaCurrency(a_currency_id),
+                parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                 100,
                 Box::new(VersionedMultiLocation::V1(dest)),
                 80
@@ -1924,7 +1926,7 @@ fn filtered_multilocation_should_not_work() {
         assert_noop!(
             parachain::XTokens::transfer(
                 parachain::Origin::signed(ALICE),
-                parachain::CurrencyId::MantaCurrency(a_currency_id),
+                parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                 100,
                 Box::new(VersionedMultiLocation::V1(x3_dest)),
                 80
@@ -1945,7 +1947,7 @@ fn filtered_multilocation_should_not_work() {
         assert_noop!(
             parachain::XTokens::transfer(
                 parachain::Origin::signed(ALICE),
-                parachain::CurrencyId::MantaCurrency(a_currency_id),
+                parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                 100,
                 Box::new(VersionedMultiLocation::V1(parents_as_2_relay_dest)),
                 80
@@ -1969,7 +1971,7 @@ fn filtered_multilocation_should_not_work() {
         assert_noop!(
             parachain::XTokens::transfer(
                 parachain::Origin::signed(ALICE),
-                parachain::CurrencyId::MantaCurrency(a_currency_id),
+                parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                 100,
                 Box::new(VersionedMultiLocation::V1(parents_as_2_dest)),
                 80
@@ -1987,7 +1989,7 @@ fn filtered_multilocation_should_not_work() {
         assert_noop!(
             parachain::XTokens::transfer(
                 parachain::Origin::signed(ALICE),
-                parachain::CurrencyId::MantaCurrency(a_currency_id),
+                parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                 100,
                 Box::new(VersionedMultiLocation::V1(here_dest)),
                 80
@@ -2007,7 +2009,7 @@ fn filtered_multilocation_should_not_work() {
     ParaA::execute_with(|| {
         assert_ok!(parachain::XTokens::transfer(
             parachain::Origin::signed(ALICE),
-            parachain::CurrencyId::MantaCurrency(a_currency_id),
+            parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             100,
             Box::new(VersionedMultiLocation::V1(relay_dest)),
             80
@@ -2028,7 +2030,7 @@ fn filtered_multilocation_should_not_work() {
     ParaA::execute_with(|| {
         assert_ok!(parachain::XTokens::transfer(
             parachain::Origin::signed(ALICE),
-            parachain::CurrencyId::MantaCurrency(a_currency_id),
+            parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             100,
             Box::new(VersionedMultiLocation::V1(sibling_chain_dest)),
             80
@@ -2055,46 +2057,38 @@ fn less_than_min_xcm_fee_should_not_work() {
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
 
-    // Register ParaA native asset in ParaA
-    let _a_currency_id_on_a = register_assets_on_parachain::<ParaA>(
-        Some(<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get()),
+    let _ = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
         None,
     );
-    // Register relaychain native asset in ParaA
     let relay_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
         &relay_source_location,
         &relay_asset_metadata,
         Some(0u128),
         None,
     );
-    // register ParaB native asset on ParaA
-    let b_currency_id_on_a = register_assets_on_parachain::<ParaA>(
-        None,
+    let b_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_b_source_location,
         &para_b_asset_metadata,
         Some(0u128),
         None,
     );
 
-    // register ParaA native asset on ParaB
     let _ = register_assets_on_parachain::<ParaB>(
-        Some(
-            <ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
-        ),
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
+    let _ = register_assets_on_parachain::<ParaB>(
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
         None,
     );
-    // Register relaychain native asset in ParaA
-    let _relay_asset_id_on_b = register_assets_on_parachain::<ParaB>(
-        None,
+    let _ = register_assets_on_parachain::<ParaB>(
         &relay_source_location,
         &relay_asset_metadata,
         Some(0u128),
@@ -2105,7 +2099,7 @@ fn less_than_min_xcm_fee_should_not_work() {
     assert_ok!(ParaA::execute_with(|| {
         parachain::Assets::mint(
             parachain::Origin::signed(parachain::AssetManager::account_id()),
-            b_currency_id_on_a,
+            b_asset_id_on_a,
             ALICE,
             1000,
         )
@@ -2144,7 +2138,7 @@ fn less_than_min_xcm_fee_should_not_work() {
                 Some(ALICE).into(),
                 vec![
                     (
-                        parachain::CurrencyId::MantaCurrency(b_currency_id_on_a),
+                        parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
                         amount
                     ),
                     (
@@ -2177,7 +2171,7 @@ fn less_than_min_xcm_fee_should_not_work() {
                 Some(ALICE).into(),
                 vec![
                     (
-                        parachain::CurrencyId::MantaCurrency(b_currency_id_on_a),
+                        parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
                         amount
                     ),
                     (
@@ -2199,7 +2193,7 @@ fn less_than_min_xcm_fee_should_not_work() {
             Some(ALICE).into(),
             vec![
                 (
-                    parachain::CurrencyId::MantaCurrency(b_currency_id_on_a),
+                    parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
                     amount
                 ),
                 (
