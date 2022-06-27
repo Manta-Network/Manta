@@ -24,7 +24,7 @@ use frame_support::{
 };
 
 pub struct AllowedDestParaIdsMigration<T>(PhantomData<T>);
-impl<T: frame_system::Config + GetStorageVersion + Config + PalletInfoAccess> OnRuntimeUpgrade
+impl<T: GetStorageVersion + Config + PalletInfoAccess> OnRuntimeUpgrade
     for AllowedDestParaIdsMigration<T>
 {
     fn on_runtime_upgrade() -> Weight {
@@ -64,7 +64,7 @@ impl<T: frame_system::Config + GetStorageVersion + Config + PalletInfoAccess> On
 
     #[cfg(feature = "try-runtime")]
     fn pre_upgrade() -> Result<(), &'static str> {
-        let storage_version = Self::on_chain_storage_version();
+        let storage_version = <T as GetStorageVersion>::on_chain_storage_version();
 
         if storage_version >= 1 {
             return Err("Storage version is >= 1, the migration won't be executed.");
@@ -75,7 +75,7 @@ impl<T: frame_system::Config + GetStorageVersion + Config + PalletInfoAccess> On
 
     #[cfg(feature = "try-runtime")]
     fn post_upgrade() -> Result<(), &'static str> {
-        let storage_version = Self::on_chain_storage_version();
+        let storage_version = <T as GetStorageVersion>::on_chain_storage_version();
 
         if storage_version < 1 {
             return Err("Storage version is >= 1, the migration won't be executed.");
