@@ -22,6 +22,7 @@ These checks should be performed on the codebase prior to freezing our release c
 - [ ] Verify [benchmarks](#benchmarks) have been updated for any modified
     runtime logic.
 - [ ] Check for any upstream storage migrations and perform tests with `try-runtime`, if any.
+- [ ] Update hard-coded URLs to polkadot/manta binaries/runtimes in `publish_draft_releases.yml` CI workflow.
 
 The following checks can be performed after we have frozen our release candidate:
 
