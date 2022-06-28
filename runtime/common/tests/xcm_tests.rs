@@ -125,6 +125,71 @@ fn dmp() {
 }
 
 #[test]
+fn dmp_transact_from_parent_should_pass_barrier() {
+	MockNet::reset();
+
+	let remark = parachain::Call::System(
+		frame_system::Call::<parachain::Runtime>::remark_with_event {
+			remark: vec![1, 2, 3],
+		},
+	);
+
+	Relay::execute_with(|| {
+		assert_ok!(RelayChainPalletXcm::send_xcm(
+			Here,
+			Parachain(1),
+			Xcm(vec![Transact {
+				origin_type: OriginKind::SovereignAccount,
+				require_weight_at_most: INITIAL_BALANCE as u64,
+				call: remark.encode().into(),
+			}]),
+		));
+	});
+	ParaA::execute_with(|| {
+		use parachain::{Event, System};
+		assert!(System::events()
+			.iter()
+			.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked { .. }))));
+	});
+}
+
+#[test]
+fn dmp_transact_from_parent_exec_plurality_should_pass_barrier() {
+	MockNet::reset();
+
+	let remark = parachain::Call::System(
+		frame_system::Call::<parachain::Runtime>::remark_with_event {
+			remark: vec![1, 2, 3],
+		},
+	);
+
+	let executive_plurality = xcm_simulator::MultiLocation {
+		parents: 0,
+		interior: X1(Plurality {
+			id: BodyId::Executive,
+			part: BodyPart::Fraction { nom: 1, denom: 1 },
+		}),
+	};
+	Relay::execute_with(|| {
+		assert_ok!(RelayChainPalletXcm::send_xcm(
+			executive_plurality.interior,
+			Parachain(1),
+			Xcm(vec![Transact {
+				origin_type: OriginKind::SovereignAccount,
+				require_weight_at_most: INITIAL_BALANCE as u64,
+				call: remark.encode().into(),
+			}]),
+		));
+	});
+	ParaA::execute_with(|| {
+		use parachain::{Event, System};
+		assert!(System::events()
+			.iter()
+			.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked { .. }))));
+	});
+}
+
+#[test]
 fn ump() {
 	MockNet::reset();
 
@@ -351,6 +416,94 @@ fn send_para_a_native_asset_to_para_b() {
 		assert_eq!(
 			parachain::Assets::balance(a_asset_id_on_b, &ALICE.into()),
 			amount
+		);
+	});
+}
+
+#[test]
+fn send_para_a_native_asset_to_para_b_barriers_should_work() {
+	MockNet::reset();
+
+	let para_a_source_location = create_asset_location(1, PARA_A_ID);
+	let para_b_source_location = create_asset_location(1, PARA_B_ID);
+
+	let amount = 10000000000000u128;
+	let units_per_sec = 125000000000;
+
+	let para_a_asset_metadata =
+		create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, false);
+	let para_b_asset_metadata =
+		create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, false);
+
+	let a_asset_id_on_b = register_assets_on_parachain::<ParaB>(
+		Some(
+			<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
+		),
+		&para_a_source_location,
+		&para_a_asset_metadata,
+		Some(units_per_sec),
+		None,
+	);
+
+	let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
+		Some(<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::NativeAssetId::get()),
+		&para_a_source_location,
+		&para_a_asset_metadata,
+		Some(units_per_sec),
+		None,
+	);
+	let _ = register_assets_on_parachain::<ParaA>(
+		Some(
+			<ParachainAssetConfig as AssetConfig<parachain::Runtime>>::StartNonNativeAssetId::get(),
+		),
+		&para_b_source_location,
+		&para_b_asset_metadata,
+		Some(units_per_sec),
+		None,
+	);
+
+	let dest = MultiLocation {
+		parents: 1,
+		interior: X2(
+			Parachain(PARA_B_ID),
+			AccountId32 {
+				network: NetworkId::Any,
+				id: ALICE.into(),
+			},
+		),
+	};
+
+	// AllowTopLevelPaidExecutionFrom<Everything> should fail with this weight
+	let weight = weight_of_four_xcm_instructions_on_para() - 1;
+	ParaA::execute_with(|| {
+		assert_ok!(parachain::XTokens::transfer(
+			parachain::Origin::signed(ALICE.into()),
+			parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
+			amount,
+			Box::new(VersionedMultiLocation::V1(dest)),
+			weight
+		));
+		assert_eq!(
+			parachain::Balances::free_balance(&ALICE.into()),
+			INITIAL_BALANCE - amount
+		)
+	});
+
+	// The `AllowTopLevelPaidExecutionFrom<Everything>` barrier implementation
+	// should not let the transfer through
+	ParaB::execute_with(|| {
+		use parachain::{Event, System};
+		assert!(System::events().iter().any(|r| matches!(
+			r.event,
+			Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail { .. })
+		)));
+	});
+
+	// Make sure B didn't receive the token
+	ParaB::execute_with(|| {
+		assert_eq!(
+			parachain::Assets::balance(a_asset_id_on_b, &ALICE.into()),
+			0
 		);
 	});
 }
@@ -1619,7 +1772,8 @@ fn query_holding() {
 		);
 	});
 
-	// Check that QueryResponse message was received
+	// Check that QueryResponse message was received.
+	// AllowKnownQueryResponses<PolkadotXcm> barrier impl should have let it through:
 	ParaA::execute_with(|| {
 		assert_eq!(
 			parachain::MsgQueue::received_dmp(),
