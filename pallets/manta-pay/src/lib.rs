@@ -463,16 +463,18 @@ pub mod pallet {
     where
         T: Config,
     {
-        /// Maximum Number of Updates per Shard
+        /// Maximum Number of Updates per Shard (based on benchmark result)
         const PULL_MAX_RECEIVER_UPDATE_SIZE: u64 = 32768;
 
-        /// Maximum Size of Sender Data Update
+        /// Maximum Size of Sender Data Update (based on benchmark result)
         const PULL_MAX_SENDER_UPDATE_SIZE: u64 = 32768;
 
-        /// Pulls receiver data from the ledger starting at the `receiver_index`.
+        /// Pulls receiver data from the ledger starting at the `receiver_indices`.
+        /// The pull algorithm is greedy. It tries to pull as many as possible from each shard
+        /// before moving to the next shard.
         #[inline]
         fn pull_receivers(
-            receiver_index: [usize; 256],
+            receiver_indices: [usize; 256],
             max_update_request: u64,
         ) -> (bool, ReceiverChunk) {
             let mut more_receivers = false;
@@ -484,10 +486,10 @@ pub mod pallet {
                 max_update_request
             };
 
-            for (i, index) in receiver_index.into_iter().enumerate() {
+            for (shard_index, utxo_index) in receiver_indices.into_iter().enumerate() {
                 more_receivers |= Self::pull_receivers_for_shard(
-                    i as u8,
-                    index,
+                    shard_index as u8,
+                    utxo_index,
                     max_update,
                     &mut receivers,
                     &mut receivers_pulled,
@@ -508,16 +510,16 @@ pub mod pallet {
             receiver_index: usize,
             max_update: u64,
             receivers: &mut ReceiverChunk,
-            receiver_pulled: &mut u64,
+            receivers_pulled: &mut u64,
         ) -> bool {
             let max_receiver_index = (receiver_index as u64) + max_update;
             for idx in (receiver_index as u64)..max_receiver_index {
-                if *receiver_pulled == max_update {
+                if *receivers_pulled == max_update {
                     return Shards::<T>::contains_key(shard_index, idx);
                 }
                 match Shards::<T>::try_get(shard_index, idx) {
                     Ok(next) => {
-                        *receiver_pulled += 1;
+                        *receivers_pulled += 1;
                         receivers.push(next);
                     }
                     _ => return false,
@@ -547,7 +549,7 @@ pub mod pallet {
             )
         }
 
-        /// Returns the diff of ledger state since the given `checkpoint`.
+        /// Returns the diff of ledger state since the given `checkpoint`, `max_receivers` and `max_senders`.
         #[inline]
         pub fn pull_ledger_diff(
             checkpoint: Checkpoint,

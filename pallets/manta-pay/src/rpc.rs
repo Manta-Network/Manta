@@ -30,7 +30,7 @@ use sp_runtime::{generic::BlockId, traits::Block};
 #[rpc(server)]
 pub trait PullApi {
     /// Returns the update required to be synchronized with the ledger starting from
-    /// `checkpoint`.
+    /// `checkpoint`, `max_receivers` and `max_senders`.
     #[rpc(name = "mantaPay_pull_ledger_diff")]
     fn pull_ledger_diff(
         &self,
