@@ -16,7 +16,7 @@ export const manta_pay_config = {
  * @param utxo_idx utxo_idx within shard
  * @returns a utxo of 32 + 32 + 68 bytes
  */
-function generate_utxo(shard_idx: number, utxo_idx: number): Uint8Array {
+export function generate_utxo(shard_idx: number, utxo_idx: number): Uint8Array {
     return new Uint8Array([
         ...numberToU8a(shard_idx, 32 * 8),
         ...numberToU8a(utxo_idx, 64 * 8),
@@ -29,7 +29,7 @@ function generate_utxo(shard_idx: number, utxo_idx: number): Uint8Array {
  * @param index index of void number.
  * @returns a 32 byte array.
  */
-function generate_void_number(index: number): Uint8Array {
+export function generate_void_number(index: number): Uint8Array {
     return numberToU8a(index, 32 * 8);
 }
 
