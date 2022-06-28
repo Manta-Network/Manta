@@ -703,7 +703,7 @@ where
         VersionedMultiLocation::V1(some_location) => some_location,
         _ => MultiLocation::default(),
     };
-    // Use some fake location as dummy
+    // Use some fake location as dummy to fill in gaps between Native and Non-Native assets
     dummy_mult_loc.parents = 50;
     let native_asset_id = <ParachainAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
     let non_native_asset_id_start =
@@ -713,11 +713,11 @@ where
         asset_id = AssetManager::next_asset_id();
 
         if asset_id < native_asset_id {
-            insert_dummy_data(dummy_mult_loc, &asset_metadata, asset_id, native_asset_id);
+            insert_dummy_data(dummy_mult_loc, asset_metadata, asset_id, native_asset_id);
         } else if asset_id < non_native_asset_id_start {
             insert_dummy_data(
                 dummy_mult_loc,
-                &asset_metadata,
+                asset_metadata,
                 asset_id,
                 non_native_asset_id_start,
             );

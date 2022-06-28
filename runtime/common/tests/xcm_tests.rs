@@ -460,7 +460,7 @@ fn send_para_a_custom_asset_to_para_b() {
         X3(
             Parachain(PARA_A_ID),
             PalletInstance(PALLET_ASSET_INDEX),
-            GeneralIndex(0 as u128),
+            GeneralIndex(0_u128),
         ),
     )));
 
