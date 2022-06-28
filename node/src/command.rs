@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Chain-Specific Command Line Interfaces
+
 use crate::{
     chain_specs,
     cli::{Cli, RelayChainCli, Subcommand},
@@ -28,17 +30,28 @@ use manta_primitives::types::{AuraId, Header};
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
-    NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
+    NetworkParams, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{generic, traits::Block as BlockT, OpaqueExtrinsic};
 use std::{io::Write, net::SocketAddr};
 
+pub use sc_cli::Error;
+
+/// Result Type Alias with default [`Error`] Type
+pub type Result<T = (), E = Error> = core::result::Result<T, E>;
+
+/// Block Type
 pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
+/// Manta Parachain ID
 pub const MANTA_PARACHAIN_ID: u32 = 2015;
+
+/// Calamari Parachain ID
 pub const CALAMARI_PARACHAIN_ID: u32 = 2084;
+
+/// Dolphin Parachain ID
 pub const DOLPHIN_PARACHAIN_ID: u32 = 2084;
 
 trait IdentifyChain {
@@ -71,7 +84,7 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
     }
 }
 
-fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
     match id {
         // manta chainspec
         "manta-dev" => Ok(Box::new(chain_specs::manta_development_config())),
@@ -123,9 +136,9 @@ impl SubstrateCli for Cli {
     fn description() -> String {
         format!(
             "Manta/Calamari/Dolphin Collator\n\nThe command-line arguments provided first will be \
-        passed to the parachain node, while the arguments provided after -- will be passed \
-        to the relaychain node.\n\n\
-        {} [parachain-args] -- [relaychain-args]",
+		passed to the parachain node, while the arguments provided after -- will be passed \
+		to the relaychain node.\n\n\
+		{} [parachain-args] -- [relaychain-args]",
             Self::executable_name()
         )
     }
@@ -142,7 +155,7 @@ impl SubstrateCli for Cli {
         2020
     }
 
-    fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+    fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         load_spec(id)
     }
 
@@ -171,9 +184,9 @@ impl SubstrateCli for RelayChainCli {
     fn description() -> String {
         format!(
             "Manta/Calamari/Dolphin collator\n\nThe command-line arguments provided first will be \
-        passed to the parachain node, while the arguments provided after -- will be passed \
-        to the relaychain node.\n\n\
-        {} [parachain-args] -- [relaychain-args]",
+		passed to the parachain node, while the arguments provided after -- will be passed \
+		to the relaychain node.\n\n\
+		{} [parachain-args] -- [relaychain-args]",
             Self::executable_name()
         )
     }
@@ -190,7 +203,7 @@ impl SubstrateCli for RelayChainCli {
         2020
     }
 
-    fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+    fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
     }
 
@@ -245,7 +258,7 @@ macro_rules! construct_async_run {
 }
 
 /// Parse command line arguments into service configuration.
-pub fn run_with(cli: Cli) -> Result<()> {
+pub fn run_with(cli: Cli) -> Result {
     match &cli.subcommand {
         Some(Subcommand::BuildSpec(cmd)) => {
             let runner = cli.create_runner(cmd)?;
@@ -350,7 +363,7 @@ pub fn run_with(cli: Cli) -> Result<()> {
                 runner.sync_run(|config| cmd.run::<Block, DolphinRuntimeExecutor>(config))
             } else {
                 Err("Benchmarking wasn't enabled when building the node. \
-                You can enable it with `--features runtime-benchmarks`."
+				You can enable it with `--features runtime-benchmarks`."
                     .into())
             }
         }
@@ -384,7 +397,7 @@ pub fn run_with(cli: Cli) -> Result<()> {
         }
         #[cfg(not(feature = "try-runtime"))]
         Some(Subcommand::TryRuntime) => Err("Try-runtime wasn't enabled when building the node. \
-        You can enable it with `--features try-runtime`."
+		You can enable it with `--features try-runtime`."
             .into()),
         None => {
             let runner = cli.create_runner(&cli.run.normalize())?;
@@ -477,7 +490,7 @@ pub fn run_with(cli: Cli) -> Result<()> {
 }
 
 /// Parse command line arguments into service configuration.
-pub fn run() -> Result<()> {
+pub fn run() -> Result {
     run_with(Cli::from_args())
 }
 
