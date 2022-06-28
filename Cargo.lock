@@ -2508,11 +2508,14 @@ dependencies = [
  "log",
  "manta-collator-selection",
  "manta-primitives",
+ "nimbus-primitives",
  "orml-traits",
  "orml-xtokens",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-aura",
+ "pallet-aura-style-filter",
+ "pallet-author-inherent",
  "pallet-authorship",
  "pallet-balances",
  "pallet-collective",
@@ -5863,6 +5866,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "nimbus-primitives"
+version = "0.9.0"
+source = "git+https://github.com/manta-network/nimbus.git?branch=manta-v0.9.18#009dfaa9f6f7eba47d232d776cb807dc24276d93"
+dependencies = [
+ "async-trait",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "nodrop"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6227,6 +6247,41 @@ dependencies = [
  "scale-info",
  "sp-application-crypto",
  "sp-consensus-aura",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-aura-style-filter"
+version = "0.9.0"
+source = "git+https://github.com/manta-network/nimbus.git?branch=manta-v0.9.18#009dfaa9f6f7eba47d232d776cb807dc24276d93"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "nimbus-primitives",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-author-inherent"
+version = "0.9.0"
+source = "git+https://github.com/manta-network/nimbus.git?branch=manta-v0.9.18#009dfaa9f6f7eba47d232d776cb807dc24276d93"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "nimbus-primitives",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-authorship",
+ "sp-inherents",
  "sp-runtime",
  "sp-std",
 ]

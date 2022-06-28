@@ -531,6 +531,13 @@ impl pallet_treasury::Config for Runtime {
     type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
     type SpendFunds = ();
 }
+impl pallet_author_inherent::Config for Runtime {
+        // We start a new slot each time we see a new relay block.
+        type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
+        type AccountLookup = ();
+        type EventHandler = ();
+        type CanAuthor = ();
+    }
 
 parameter_types! {
     pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
@@ -683,6 +690,7 @@ construct_runtime!(
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
         AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
+        AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 48, // TODO: check index
 
         // Treasury
         Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,
