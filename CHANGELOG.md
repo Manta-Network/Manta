@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Breaking changes
+-[\628](https://github.com/Manta-Network/Manta/pull/628) Improve RPC performance, add `max_receivers` and `max_senders` fields in the RPC request. 
 
 ### Features
 
