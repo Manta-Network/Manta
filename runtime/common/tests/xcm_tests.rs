@@ -200,7 +200,7 @@ fn xcmp_transact_from_sibling_parachain_blocked_by_barrier() {
         ));
     });
 
-    // The `AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>` barrier implementation
+    // The `AllowUnpaidExecutionFrom<ParentLocation>` barrier implementation
     // only allows Transact instructions sent by the relay chain's governance
     ParaB::execute_with(|| {
         use parachain::{Event, System};
