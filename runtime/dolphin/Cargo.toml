@@ -70,6 +70,11 @@ cumulus-pallet-xcmp-queue = { git = 'https://github.com/paritytech/cumulus.git',
 cumulus-pallet-xcm = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.18" }
 parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.18" }
 
+# Nimbus Dependencies
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch="manta-v0.9.18", default-features = false }
+pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", branch="manta-v0.9.18", default-features = false }
+pallet-aura-style-filter = { git = "https://github.com/manta-network/nimbus.git", branch="manta-v0.9.18", default-features = false }
+
 # Polkadot dependencies
 polkadot-primitives = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
 polkadot-core-primitives = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
@@ -103,7 +108,7 @@ default = ['std']
 try-runtime = [
 	'frame-executive/try-runtime',
 	'frame-try-runtime',
-]
+] #TODO: try-runtime for the other pallets
 runtime-benchmarks = [
 	'cumulus-pallet-session-benchmarking/runtime-benchmarks',
 	'hex-literal',
@@ -179,6 +184,9 @@ std = [
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-timestamp/std",
 	"cumulus-primitives-utility/std",
+	"nimbus-primitives/std",
+	"pallet-author-inherent/std",
+	"pallet-aura-style-filter/std",
 	'xcm/std',
 	'xcm-builder/std',
 	'xcm-executor/std',
