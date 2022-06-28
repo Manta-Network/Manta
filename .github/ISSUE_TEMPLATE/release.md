@@ -22,6 +22,7 @@ These checks should be performed on the codebase prior to freezing our release c
 - [ ] Verify [benchmarks](#benchmarks) have been updated for any modified
     runtime logic.
 - [ ] Check for any upstream storage migrations and perform tests with `try-runtime`, if any.
+- [ ] Update hard-coded URLs to polkadot/manta binaries/runtimes in `publish_draft_releases.yml` CI workflow.
 
 The following checks can be performed after we have frozen our release candidate:
 
@@ -30,8 +31,8 @@ The following checks can be performed after we have frozen our release candidate
 - [ ] Complete the following [manual QA workflow](https://hackmd.io/TbFmorG2RnOPmLuFcg9JOQ?view).
 - [ ] Verify Polkadot JS API are up to date with the latest
     runtime changes.
-- [ ] Execute runtime upgrade to Como and verify network stability.
 - [ ] Execute runtime upgrade to Baikal and verify network stability.
+- [ ] Execute runtime upgrade to Rococo and verify network stability.
 - [ ] Prepare a governance post and submit to our forum with description and motivation for changes.
 
 ### Client Releases
@@ -48,6 +49,7 @@ The following checks can be performed after we have frozen our release candidate
     draft-release
 - [ ] Coordinate with marketing team for documentation updates and other relevant tasks.
 - [ ] Update changelog.
+- [ ] If the release contains any changes that break/change functionality used in https://github.com/Manta-Network/sdk (e.g. RPC changes, see also [extrinsic ordering](#extrinsic-ordering)), raise a PR there and **block this release** until your PR has been merged and incorporated in a new SDK release.
 
 Note: Do not publish draft releases from PR branches, because those branches will be deleted when the PR is merged.
 
@@ -63,16 +65,16 @@ for at least 12 hours prior to publishing the release.
 
 ### Release notes
 
-The release notes should list:
+The release notes **MUST** contain:
 
 - The priority of the release (i.e., how quickly users should upgrade) - this is
     based on the max priority of any *client* changes.
+- The version of [Manta SDK](https://github.com/Manta-Network/sdk) that is compatible with this release
 - Which native runtimes and their versions are included
-- The proposal hashes of the runtimes as built with
-    [srtool](https://gitlab.com/chevdor/srtool)
-- Any changes in this release that are still awaiting audit
+- The proposal hashes of the runtimes as built with [srtool](https://gitlab.com/chevdor/srtool)
+- (After auditing starts:) Any changes in this release that are still awaiting audit
 
-The release notes may also list:
+The release notes **MAY** also list:
 
 - Free text at the beginning of the notes mentioning anything important
     regarding this release
