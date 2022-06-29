@@ -38,7 +38,9 @@ use frame_support::{
     assert_err, assert_ok,
     codec::Encode,
     dispatch::Dispatchable,
-    traits::{PalletInfo, StorageInfo, StorageInfoTrait, ValidatorSet},
+    traits::{
+        tokens::ExistenceRequirement, PalletInfo, StorageInfo, StorageInfoTrait, ValidatorSet,
+    },
     weights::constants::*,
     StorageHasher, Twox128,
 };
@@ -994,6 +996,7 @@ fn concrete_fungible_ledger_transfers_work() {
                     &alice.clone(),
                     &charlie.clone(),
                     INITIAL_BALANCE + 1,
+                    ExistenceRequirement::KeepAlive
                 ),
                 FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
                     index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
@@ -1017,6 +1020,7 @@ fn concrete_fungible_ledger_transfers_work() {
                     &alice.clone(),
                     &charlie.clone(),
                     INITIAL_BALANCE,
+                    ExistenceRequirement::KeepAlive
                 ),
                 FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
                     index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
@@ -1039,6 +1043,7 @@ fn concrete_fungible_ledger_transfers_work() {
                 &alice.clone(),
                 &charlie.clone(),
                 transfer_amount,
+                ExistenceRequirement::KeepAlive
             ));
             current_balance_alice -= transfer_amount;
             current_balance_charlie += transfer_amount;
@@ -1056,6 +1061,7 @@ fn concrete_fungible_ledger_transfers_work() {
                     &alice.clone(),
                     &new_account,
                     NativeTokenExistentialDeposit::get() - 1,
+                    ExistenceRequirement::KeepAlive
                 ),
                 FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
                     index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
@@ -1073,6 +1079,7 @@ fn concrete_fungible_ledger_transfers_work() {
                 &alice.clone(),
                 &new_account,
                 NativeTokenExistentialDeposit::get(),
+                ExistenceRequirement::KeepAlive
             ));
             current_balance_alice -= NativeTokenExistentialDeposit::get();
             assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
@@ -1087,6 +1094,7 @@ fn concrete_fungible_ledger_transfers_work() {
                 &bob.clone(),
                 &alice.clone(),
                 INITIAL_BALANCE - NativeTokenExistentialDeposit::get(),
+                ExistenceRequirement::KeepAlive
             ));
             current_balance_alice += INITIAL_BALANCE - NativeTokenExistentialDeposit::get();
             assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
@@ -1138,6 +1146,7 @@ fn concrete_fungible_ledger_transfers_work() {
                     &alice.clone(),
                     &bob.clone(),
                     amount,
+                    ExistenceRequirement::KeepAlive
                 ),
                 FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
                     index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
@@ -1162,6 +1171,7 @@ fn concrete_fungible_ledger_transfers_work() {
                     &alice.clone(),
                     &bob.clone(),
                     min_balance - 1,
+                    ExistenceRequirement::KeepAlive
                 ),
                 FungibleLedgerError::InvalidTransfer(DispatchError::Token(
                     sp_runtime::TokenError::BelowMinimum
@@ -1181,6 +1191,7 @@ fn concrete_fungible_ledger_transfers_work() {
                 &alice.clone(),
                 &bob.clone(),
                 transfer_amount,
+                ExistenceRequirement::KeepAlive
             ),);
             assert_eq!(
                 Assets::balance(
@@ -1204,6 +1215,7 @@ fn concrete_fungible_ledger_transfers_work() {
                     &alice.clone(),
                     &charlie.clone(),
                     transfer_amount,
+                    ExistenceRequirement::KeepAlive
                 ),
                 FungibleLedgerError::InvalidAssetId
             );
@@ -1220,6 +1232,7 @@ fn concrete_fungible_ledger_transfers_work() {
                     &alice.clone(),
                     &charlie.clone(),
                     transfer_amount,
+                    ExistenceRequirement::KeepAlive
                 ),
                 FungibleLedgerError::InvalidTransfer(DispatchError::Module(ModuleError {
                     index: <calamari_runtime::Runtime as frame_system::Config>::PalletInfo::index::<
@@ -1363,29 +1376,36 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
 fn concrete_fungible_ledger_can_withdraw_works() {
     let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
     let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
+    let charlie = get_account_id_from_seed::<sr25519::Public>("Charlie");
 
     ExtBuilder::default()
-        .with_balances(vec![(alice.clone(), INITIAL_BALANCE)])
+        .with_balances(vec![(charlie.clone(), INITIAL_BALANCE)])
         .build()
         .execute_with(|| {
+            let existential_deposit = NativeTokenExistentialDeposit::get();
+
             // Native asset tests:
 
             assert_err!(
                 CalamariConcreteFungibleLedger::can_withdraw(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                    &alice.clone(),
+                    &charlie.clone(),
                     INITIAL_BALANCE + 1,
+                    ExistenceRequirement::KeepAlive
                 ),
-                FungibleLedgerError::Underflow
+                // Underflow
+                FungibleLedgerError::CannotWithdrawMoreThan(INITIAL_BALANCE - existential_deposit)
             );
 
             assert_err!(
                 CalamariConcreteFungibleLedger::can_withdraw(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                    &alice.clone(),
+                    &charlie.clone(),
                     INITIAL_BALANCE,
+                    ExistenceRequirement::KeepAlive
                 ),
-                FungibleLedgerError::WouldDie
+                // WouldDie
+                FungibleLedgerError::CannotWithdrawMoreThan(INITIAL_BALANCE - existential_deposit)
             );
 
             assert_err!(
@@ -1393,8 +1413,10 @@ fn concrete_fungible_ledger_can_withdraw_works() {
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
                     &bob.clone(),
                     INITIAL_BALANCE,
+                    ExistenceRequirement::KeepAlive
                 ),
-                FungibleLedgerError::NoFunds
+                // NoFunds
+                FungibleLedgerError::CannotWithdrawMoreThan(0)
             );
 
             // Non-native asset tests:
@@ -1435,14 +1457,17 @@ fn concrete_fungible_ledger_can_withdraw_works() {
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     &alice.clone(),
                     INITIAL_BALANCE + 1,
+                    ExistenceRequirement::AllowDeath
                 ),
-                FungibleLedgerError::Underflow
+                // Underflow
+                FungibleLedgerError::CannotWithdrawMoreThan(INITIAL_BALANCE)
             );
 
             assert_ok!(CalamariConcreteFungibleLedger::can_withdraw(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &alice.clone(),
                 INITIAL_BALANCE,
+                ExistenceRequirement::AllowDeath
             ),);
 
             assert_err!(
@@ -1450,8 +1475,10 @@ fn concrete_fungible_ledger_can_withdraw_works() {
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     &bob.clone(),
                     10,
+                    ExistenceRequirement::AllowDeath
                 ),
-                FungibleLedgerError::NoFunds
+                // NoFunds
+                FungibleLedgerError::CannotWithdrawMoreThan(0)
             );
 
             assert_ok!(Assets::freeze(
@@ -1464,8 +1491,10 @@ fn concrete_fungible_ledger_can_withdraw_works() {
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     &alice.clone(),
                     10,
+                    ExistenceRequirement::AllowDeath
                 ),
-                FungibleLedgerError::Frozen
+                // Frozen
+                FungibleLedgerError::CannotWithdrawMoreThan(0)
             );
         });
 }
