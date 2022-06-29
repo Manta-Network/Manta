@@ -1,11 +1,6 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { Keyring } from '@polkadot/keyring';
 import { manta_pay_types, rpc_api } from './types';
 import { readFile, writeFile } from 'fs/promises';
-import { xxhashAsU8a } from '@polkadot/util-crypto';
-import { u8aToHex } from '@polkadot/util';
-import { StoragePrepareConfig, setup_storage, manta_pay_config} from './manta_pay';
-import minimist, { ParsedArgs } from 'minimist';
 
 const dolphin_config = {
     ws_address: "wss://ws.rococo.dolphin.engineering"
@@ -61,22 +56,6 @@ async function main(){
     console.log(manta_keys_read.void_number_set[0]);
     console.log(manta_keys_read.void_number_set_insertion_order.length);
     console.log(manta_keys_read.void_number_set_insertion_order[0]);
-
-    // let transformed_data = [];
-    // let test_data = new Uint8Array([193, 0, 0, 0, 0, 0, 0, 0, 0]);
-    // console.log(u8aToHex(transform_shard_utxo_keys(test_data)));
-    // data.forEach((entry)=>{
-    //     let old_storage_key_raw = entry[0].toU8a();
-    //     let new_storage_key_raw = new Uint8Array([
-    //         ...old_storage_key_raw.slice(0,32),
-    //         ...old_storage_key_raw.slice(32,)
-    //     ])
-    // });
-    // console.log(data[0][0]);
-    // console.log(data[0][0].toHuman());
-    // console.log(data[0][0].toU8a());
-    // console.log(data[0][0].toU8a().slice(32,));
-    // //console.log(data[0][1].toU8a());
 }
 
 main().catch(console.error).finally(() => process.exit());

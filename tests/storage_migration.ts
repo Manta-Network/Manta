@@ -2,9 +2,10 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
 import { manta_pay_types, rpc_api } from './types';
 import { xxhashAsU8a } from '@polkadot/util-crypto';
-import { u8aToHex } from '@polkadot/util';
+import { readFile, writeFile } from 'fs/promises';
+import { u8aToHex, hexToU8a } from '@polkadot/util';
 import { StoragePrepareConfig, setup_storage, manta_pay_config} from './manta_pay';
-import minimist, { ParsedArgs } from 'minimist';
+import { StorageData } from '@polkadot/types/interfaces';
 
 const dolphin_config = {
     ws_address: "wss://ws.rococo.dolphin.engineering"
@@ -38,10 +39,26 @@ async function main(){
         vn_batch_number: 2,
         vn_batch_size: 4096,
     }
-    // get storage keys 
-    let data = await api.query.mantaPay.shards.keys();
-    console.log(data);
-    // let transformed_data = [];
+
+    const manta_keys_read_raw = await readFile('./manta_pay_keys.json');
+    const manta_keys_read = JSON.parse(manta_keys_read_raw.toString());
+    const shards_raw = await readFile('./shards.json');
+    const shards = JSON.parse(shards_raw.toString());
+    console.log((shards[0] as Uint8Array).slice());
+    console.log(u8aToHex(shards[0] as Uint8Array));
+    // const shard_trees_raw = await readFile('./shards_trees.json');
+    // const shard_trees = JSON.parse(shard_trees_raw.toString());
+    // const void_number_set_insertion_order_raw = await readFile('./void_number_set_insertion_order.json');
+    // const void_number_set_insertion_order = JSON.parse(void_number_set_insertion_order_raw.toString());
+    //console.log("shards:");
+    //console.log(u8aToHex(shards[0]));
+    //console.log(u8aToHex(shards[(shards as Array<string>).length - 1]));
+    // console.log("shard_trees:");
+    // console.log(u8aToHex(shard_trees[0]));
+    // console.log(u8aToHex(shard_trees[(shard_trees as Array<string>).length - 1]));
+    // console.log("void_number_set_insertion_order:");
+    // console.log(u8aToHex(void_number_set_insertion_order[0]));
+    // console.log(u8aToHex(void_number_set_insertion_order[(void_number_set_insertion_order as Array<string>).length - 1]));
     // let test_data = new Uint8Array([193, 0, 0, 0, 0, 0, 0, 0, 0]);
     // console.log(u8aToHex(transform_shard_utxo_keys(test_data)));
     // data.forEach((entry)=>{
