@@ -1372,8 +1372,12 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
         });
 }
 
+// `can_reduce_by_amount` uses `reducible_amount` implementation in order to use the `keep_alive` argument.
+// Unfortunately that function does not return the reason for failure cases like `can_withdraw`.
+// The errors that would've been returned if `can_withdraw` was used instead of `reducible_amount`
+// are included as comments on top of each case for more clarity.
 #[test]
-fn concrete_fungible_ledger_can_withdraw_works() {
+fn concrete_fungible_ledger_can_reduce_by_amount_works() {
     let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
     let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
     let charlie = get_account_id_from_seed::<sr25519::Public>("Charlie");
@@ -1387,7 +1391,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
             // Native asset tests:
 
             assert_err!(
-                CalamariConcreteFungibleLedger::can_withdraw(
+                CalamariConcreteFungibleLedger::can_reduce_by_amount(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
                     &charlie.clone(),
                     INITIAL_BALANCE + 1,
@@ -1398,7 +1402,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
             );
 
             assert_err!(
-                CalamariConcreteFungibleLedger::can_withdraw(
+                CalamariConcreteFungibleLedger::can_reduce_by_amount(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
                     &charlie.clone(),
                     INITIAL_BALANCE,
@@ -1409,7 +1413,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
             );
 
             assert_err!(
-                CalamariConcreteFungibleLedger::can_withdraw(
+                CalamariConcreteFungibleLedger::can_reduce_by_amount(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
                     &bob.clone(),
                     INITIAL_BALANCE,
@@ -1453,7 +1457,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
             );
 
             assert_err!(
-                CalamariConcreteFungibleLedger::can_withdraw(
+                CalamariConcreteFungibleLedger::can_reduce_by_amount(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     &alice.clone(),
                     INITIAL_BALANCE + 1,
@@ -1463,7 +1467,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
                 FungibleLedgerError::CannotWithdrawMoreThan(INITIAL_BALANCE)
             );
 
-            assert_ok!(CalamariConcreteFungibleLedger::can_withdraw(
+            assert_ok!(CalamariConcreteFungibleLedger::can_reduce_by_amount(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &alice.clone(),
                 INITIAL_BALANCE,
@@ -1471,7 +1475,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
             ),);
 
             assert_err!(
-                CalamariConcreteFungibleLedger::can_withdraw(
+                CalamariConcreteFungibleLedger::can_reduce_by_amount(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     &bob.clone(),
                     10,
@@ -1487,7 +1491,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
                 sp_runtime::MultiAddress::Id(alice.clone()),
             ));
             assert_err!(
-                CalamariConcreteFungibleLedger::can_withdraw(
+                CalamariConcreteFungibleLedger::can_reduce_by_amount(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     &alice.clone(),
                     10,

@@ -799,7 +799,7 @@ where
     {
         sources
             .map(move |(account_id, withdraw)| {
-                FungibleLedger::<T>::can_withdraw(
+                FungibleLedger::<T>::can_reduce_by_amount(
                     asset_id.0,
                     &account_id,
                     withdraw.0,

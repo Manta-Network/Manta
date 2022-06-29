@@ -327,7 +327,7 @@ where
     ) -> Result<(), FungibleLedgerError>;
 
     /// Check whether `account` can decrease its balance by `amount` in the given `asset_id`.
-    fn can_withdraw(
+    fn can_reduce_by_amount(
         asset_id: AssetId,
         account: &C::AccountId,
         amount: Balance,
@@ -399,7 +399,7 @@ where
     }
 
     #[inline]
-    fn can_withdraw(
+    fn can_reduce_by_amount(
         asset_id: AssetId,
         account: &C::AccountId,
         amount: Balance,
@@ -485,7 +485,7 @@ where
         existence_requirement: ExistenceRequirement,
     ) -> Result<(), FungibleLedgerError> {
         Self::ensure_valid(asset_id)?;
-        Self::can_withdraw(asset_id, who, amount, existence_requirement)?;
+        Self::can_reduce_by_amount(asset_id, who, amount, existence_requirement)?;
         if asset_id == A::NativeAssetId::get() {
             <Native as Currency<C::AccountId>>::withdraw(
                 who,
@@ -495,8 +495,8 @@ where
             )
             .map_err(FungibleLedgerError::InvalidBurn)?;
         } else {
-            // `existence_requirement` is used in the `can_withdraw` checks
-            // so it doesn't matter that `burn_from` uses `allow_death` by default in its own impl
+            // `existence_requirement` is used in the `can_reduce_by_amount` checks
+            // so it doesn't matter that `burn_from` uses `allow_death` by default in own chosen implementation
             <NonNative as Mutate<C::AccountId>>::burn_from(asset_id, who, amount)
                 .map_err(FungibleLedgerError::InvalidBurn)?;
         }
