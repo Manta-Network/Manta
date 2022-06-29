@@ -430,7 +430,7 @@ fn send_para_a_native_asset_to_para_b_barriers_should_work() {
         ),
     };
 
-    // AllowTopLevelPaidExecutionFrom<Everything> should fail with this weight
+    // AllowTopLevelPaidExecutionFrom<Everything> should fail because weight is not enough
     let weight = weight_of_four_xcm_instructions_on_para() - 1;
     ParaA::execute_with(|| {
         assert_ok!(parachain::XTokens::transfer(
