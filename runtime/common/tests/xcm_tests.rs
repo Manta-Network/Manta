@@ -240,7 +240,7 @@ fn send_para_a_native_asset_to_para_b() {
 
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
     let para_b_source_location = create_asset_location(1, PARA_B_ID);
-    let amount = 100u128;
+    let amount = INITIAL_BALANCE;
 
     let para_a_asset_metadata =
         create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, false);
@@ -286,6 +286,7 @@ fn send_para_a_native_asset_to_para_b() {
     };
 
     // Transfer ParaA balance to B
+    // Also tests that a sender can send all of their balance
     ParaA::execute_with(|| {
         assert_ok!(parachain::XTokens::transfer(
             parachain::Origin::signed(ALICE),
