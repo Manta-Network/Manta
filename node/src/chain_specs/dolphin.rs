@@ -14,20 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Dolphin Chain Specifications
+
 use super::*;
 use crate::command::DOLPHIN_PARACHAIN_ID;
 use dolphin_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
 use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
-/// Specialized `ChainSpec` for the normal parachain runtime.
-pub type DolphinChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
+/// Dolphin Protocol Identifier
+pub const DOLPHIN_PROTOCOL_ID: &str = "dolphin";
 
-const DOLPHIN_PROTOCOL_ID: &str = "dolphin"; // for p2p network configuration
-const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
-const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
+/// Kusama Relaychain Local Network Identifier
+pub const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
+
+/// Kusama Relaychain Development Network Identifier
+pub const KUSAMA_RELAYCHAIN_DEV_NET: &str = "kusama-dev";
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = 2;
+
+/// Specialized `ChainSpec` for the normal parachain runtime.
+pub type DolphinChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
 /// Generate the dolphin session keys from individual elements.
 ///
@@ -36,7 +43,7 @@ pub fn dolphin_session_keys(keys: AuraId) -> dolphin_runtime::opaque::SessionKey
     dolphin_runtime::opaque::SessionKeys { aura: keys }
 }
 
-// dolphin chain specs
+/// Returns the [`Properties`] for the Dolphin parachain.
 pub fn dolphin_properties() -> Properties {
     let mut p = Properties::new();
     p.insert("ss58format".into(), constants::CALAMARI_SS58PREFIX.into());
@@ -45,18 +52,14 @@ pub fn dolphin_properties() -> Properties {
     p
 }
 
+/// Returns the Dolphin development chainspec.
 pub fn dolphin_development_config() -> DolphinChainSpec {
-    let properties = dolphin_properties();
-
     DolphinChainSpec::from_genesis(
-        // Name
         "Dolphin Parachain Development",
-        // ID
         "dolphin_dev",
         ChainType::Local,
         move || {
             dolphin_dev_genesis(
-                // initial collators.
                 vec![(
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
                     get_collator_keys_from_seed("Alice"),
@@ -74,7 +77,7 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
         None,
         Some(DOLPHIN_PROTOCOL_ID),
         None,
-        Some(properties),
+        Some(dolphin_properties()),
         Extensions {
             relay_chain: "".into(),
             para_id: DOLPHIN_PARACHAIN_ID,
@@ -82,18 +85,14 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
     )
 }
 
+/// Returns the Dolphin local chainspec.
 pub fn dolphin_local_config() -> DolphinChainSpec {
-    let properties = dolphin_properties();
-
     DolphinChainSpec::from_genesis(
-        // Name
         "Dolphin Parachain Local",
-        // ID
         "dolphin_local",
         ChainType::Local,
         move || {
             dolphin_dev_genesis(
-                // initial collators.
                 vec![
                     (
                         get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -135,7 +134,7 @@ pub fn dolphin_local_config() -> DolphinChainSpec {
         None,
         Some(DOLPHIN_PROTOCOL_ID),
         None,
-        Some(properties),
+        Some(dolphin_properties()),
         Extensions {
             relay_chain: "".into(),
             para_id: DOLPHIN_PARACHAIN_ID,
@@ -147,8 +146,8 @@ fn dolphin_dev_genesis(
     invulnerables: Vec<(AccountId, AuraId)>,
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
-) -> dolphin_runtime::GenesisConfig {
-    dolphin_runtime::GenesisConfig {
+) -> GenesisConfig {
+    GenesisConfig {
         system: dolphin_runtime::SystemConfig {
             code: dolphin_runtime::WASM_BINARY
                 .expect("WASM binary was not build, please build it!")
@@ -212,6 +211,7 @@ fn dolphin_dev_genesis(
     }
 }
 
+/// Returns the Dolphin testnet chainspec.
 pub fn dolphin_testnet_config() -> Result<DolphinChainSpec, String> {
     let mut spec = DolphinChainSpec::from_json_bytes(
         &include_bytes!("../../../genesis/dolphin-testnet-genesis.json")[..],
