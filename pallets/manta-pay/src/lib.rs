@@ -803,7 +803,7 @@ where
                     asset_id.0,
                     &account_id,
                     withdraw.0,
-                    ExistenceRequirement::AllowDeath,
+                    ExistenceRequirement::KeepAlive,
                 )
                 .map(|_| WrapPair(account_id.clone(), withdraw))
                 .map_err(|_| InvalidSourceAccount {
