@@ -577,7 +577,7 @@ where
 
 parameter_types! {
     pub const BaseXcmWeight: Weight = 100_000_000;
-    pub const MaxAssetsForTransfer: usize = 2;
+    pub const MaxAssetsForTransfer: usize = 3;
 }
 
 // The XCM message wrapper wrapper
