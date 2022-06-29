@@ -320,7 +320,7 @@ where
 
 parameter_types! {
     pub const BaseXcmWeight: Weight = 100_000_000;
-    pub const MaxAssetsForTransfer: usize = 1;
+    pub const MaxAssetsForTransfer: usize = 2;
 }
 
 // The XCM message wrapper wrapper
