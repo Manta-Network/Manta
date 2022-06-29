@@ -298,7 +298,10 @@ fn send_para_a_native_asset_to_para_b() {
         assert_eq!(
             parachain::Balances::free_balance(&ALICE),
             INITIAL_BALANCE - amount
-        )
+        );
+        assert!(!frame_system::Account::<parachain::Runtime>::contains_key(
+            ALICE
+        ));
     });
 
     // Make sure B received the token
