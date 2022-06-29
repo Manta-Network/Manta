@@ -1103,6 +1103,19 @@ fn concrete_fungible_ledger_transfers_work() {
                 NativeTokenExistentialDeposit::get()
             );
 
+            // Transfer the ED should work if AllowDeath is selected
+            assert_ok!(CalamariConcreteFungibleLedger::transfer(
+                <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
+                &bob.clone(),
+                &alice.clone(),
+                NativeTokenExistentialDeposit::get(),
+                ExistenceRequirement::AllowDeath
+            ));
+            current_balance_alice += NativeTokenExistentialDeposit::get();
+            assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
+            assert_eq!(Balances::free_balance(bob.clone()), 0);
+            assert!(!frame_system::Account::<Runtime>::contains_key(bob.clone()));
+
             // Transfer tests for non-native assets:
 
             let min_balance = 10u128;
@@ -1139,7 +1152,7 @@ fn concrete_fungible_ledger_transfers_work() {
                 amount
             );
 
-            // Transferring and falling below ED of the asset should not work.
+            // Transferring and falling below ED of the asset should not work with KeepAlive.
             assert_err!(
                 CalamariConcreteFungibleLedger::transfer(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
@@ -1206,6 +1219,22 @@ fn concrete_fungible_ledger_transfers_work() {
                     bob.clone()
                 ),
                 transfer_amount
+            );
+
+            // Transferring all of the balance of an account should work.
+            assert_ok!(CalamariConcreteFungibleLedger::transfer(
+                <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+                &bob.clone(),
+                &alice.clone(),
+                transfer_amount,
+                ExistenceRequirement::AllowDeath
+            ),);
+            assert_eq!(
+                Assets::balance(
+                    <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+                    bob.clone()
+                ),
+                0
             );
 
             // Transferring invalid asset ID should not work.
@@ -1412,6 +1441,13 @@ fn concrete_fungible_ledger_can_reduce_by_amount_works() {
                 FungibleLedgerError::CannotWithdrawMoreThan(INITIAL_BALANCE - existential_deposit)
             );
 
+            assert_ok!(CalamariConcreteFungibleLedger::can_reduce_by_amount(
+                <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
+                &charlie.clone(),
+                INITIAL_BALANCE,
+                ExistenceRequirement::AllowDeath
+            ),);
+
             assert_err!(
                 CalamariConcreteFungibleLedger::can_reduce_by_amount(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
@@ -1483,6 +1519,21 @@ fn concrete_fungible_ledger_can_reduce_by_amount_works() {
                 ),
                 // NoFunds
                 FungibleLedgerError::CannotWithdrawMoreThan(0)
+            );
+
+            assert_ok!(CalamariConcreteFungibleLedger::mint(
+                <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+                &bob.clone(),
+                INITIAL_BALANCE,
+            ),);
+            assert_err!(
+                CalamariConcreteFungibleLedger::can_reduce_by_amount(
+                    <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+                    &alice.clone(),
+                    INITIAL_BALANCE,
+                    ExistenceRequirement::KeepAlive
+                ),
+                FungibleLedgerError::CannotWithdrawMoreThan(INITIAL_BALANCE - min_balance)
             );
 
             assert_ok!(Assets::freeze(
