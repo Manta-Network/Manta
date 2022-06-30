@@ -26,7 +26,7 @@ use frame_support::{
         currency::Currency,
         fungible::Inspect as FungibleInspect,
         fungibles::{Inspect as FungiblesInspect, Mutate, Transfer},
-        DepositConsequence, ExistenceRequirement, WithdrawConsequence,
+        DepositConsequence, ExistenceRequirement, WithdrawConsequence, WithdrawReasons,
     },
     Parameter,
 };
@@ -286,10 +286,6 @@ pub enum FungibleLedgerError {
     /// Not enough of the funds in the account are unavailable for withdrawal.
     Frozen,
 
-    /// Account balance would reduce to zero, potentially destroying it. The parameter is the
-    /// amount of balance which is destroyed.
-    ReducedToZero(Balance),
-
     /// Withdraw could not happen since the amount to be withdrawn is less than the total funds in
     /// the account.
     NoFunds,
@@ -300,6 +296,9 @@ pub enum FungibleLedgerError {
 
     /// Unable to Mint an Asset
     InvalidMint(DispatchError),
+
+    /// Unable to Burn an Asset
+    InvalidBurn(DispatchError),
 
     /// Unable to Transfer an Asset
     InvalidTransfer(DispatchError),
@@ -328,10 +327,9 @@ impl FungibleLedgerError {
             WithdrawConsequence::NoFunds => Self::NoFunds,
             WithdrawConsequence::Overflow => Self::Overflow,
             WithdrawConsequence::Underflow => Self::Underflow,
-            WithdrawConsequence::ReducedToZero(balance) => Self::ReducedToZero(balance),
             WithdrawConsequence::UnknownAsset => Self::UnknownAsset,
             WithdrawConsequence::WouldDie => Self::WouldDie,
-            WithdrawConsequence::Success => return Ok(()),
+            WithdrawConsequence::Success | WithdrawConsequence::ReducedToZero(_) => return Ok(()),
         })
     }
 }
@@ -375,6 +373,13 @@ where
         asset_id: AssetId,
         source: &C::AccountId,
         destination: &C::AccountId,
+        amount: Balance,
+    ) -> Result<(), FungibleLedgerError>;
+
+    /// Performs a burn from `who` for `amount` of `asset_id`
+    fn burn(
+        asset_id: AssetId,
+        who: &C::AccountId,
         amount: Balance,
     ) -> Result<(), FungibleLedgerError>;
 }
@@ -475,5 +480,28 @@ where
             .map(|_| ())
         }
         .map_err(FungibleLedgerError::InvalidTransfer)
+    }
+
+    #[inline]
+    fn burn(
+        asset_id: AssetId,
+        who: &C::AccountId,
+        amount: Balance,
+    ) -> Result<(), FungibleLedgerError> {
+        Self::ensure_valid(asset_id)?;
+        Self::can_withdraw(asset_id, who, amount)?;
+        if asset_id == A::NativeAssetId::get() {
+            <Native as Currency<C::AccountId>>::withdraw(
+                who,
+                amount,
+                WithdrawReasons::TRANSFER,
+                ExistenceRequirement::AllowDeath,
+            )
+            .map_err(FungibleLedgerError::InvalidBurn)?;
+        } else {
+            <NonNative as Mutate<C::AccountId>>::burn_from(asset_id, who, amount)
+                .map_err(FungibleLedgerError::InvalidBurn)?;
+        }
+        Ok(())
     }
 }
