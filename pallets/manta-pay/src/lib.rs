@@ -81,11 +81,9 @@ use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use types::*;
 
-#[cfg(feature = "serde")]
-use manta_util::serde::{Deserialize, Serialize};
-
 pub use manta_pay::signer::{Checkpoint, RawCheckpoint};
 pub use pallet::*;
+pub use types::PullResponse;
 pub use weights::WeightInfo;
 
 #[cfg(test)]
@@ -145,30 +143,31 @@ pub mod pallet {
     /// UTXOs and Encrypted Notes Grouped by Shard
     #[pallet::storage]
     pub(super) type Shards<T: Config> =
-        StorageDoubleMap<_, Identity, u8, Identity, u64, (Utxo, EncryptedNote), ValueQuery>;
+        StorageDoubleMap<_, Twox64Concat, u8, Twox64Concat, u64, (Utxo, EncryptedNote), ValueQuery>;
 
     /// Shard Merkle Tree Paths
     #[pallet::storage]
     pub(super) type ShardTrees<T: Config> =
-        StorageMap<_, Identity, u8, UtxoMerkleTreePath, ValueQuery>;
+        StorageMap<_, Twox64Concat, u8, UtxoMerkleTreePath, ValueQuery>;
 
     /// Outputs of Utxo Accumulator
     #[pallet::storage]
     pub(super) type UtxoAccumulatorOutputs<T: Config> =
-        StorageMap<_, Identity, UtxoAccumulatorOutput, (), ValueQuery>;
+        StorageMap<_, Twox64Concat, UtxoAccumulatorOutput, (), ValueQuery>;
 
     /// UTXO Set
     #[pallet::storage]
-    pub(super) type UtxoSet<T: Config> = StorageMap<_, Identity, Utxo, (), ValueQuery>;
+    pub(super) type UtxoSet<T: Config> = StorageMap<_, Twox64Concat, Utxo, (), ValueQuery>;
 
     /// Void Number Set
     #[pallet::storage]
-    pub(super) type VoidNumberSet<T: Config> = StorageMap<_, Identity, VoidNumber, (), ValueQuery>;
+    pub(super) type VoidNumberSet<T: Config> =
+        StorageMap<_, Twox64Concat, VoidNumber, (), ValueQuery>;
 
     /// Void Number Ordered by Insertion
     #[pallet::storage]
     pub(super) type VoidNumberSetInsertionOrder<T: Config> =
-        StorageMap<_, Identity, u64, VoidNumber, ValueQuery>;
+        StorageMap<_, Twox64Concat, u64, VoidNumber, ValueQuery>;
 
     /// The size of Void Number Set
     #[pallet::storage]
@@ -464,19 +463,41 @@ pub mod pallet {
     where
         T: Config,
     {
-        /// Maximum Number of Updates per Shard
-        const PULL_MAX_PER_SHARD_UPDATE_SIZE: usize = 128;
+        /// Maximum Number of Updates per Shard (based on benchmark result)
+        const PULL_MAX_RECEIVER_UPDATE_SIZE: u64 = 32768;
 
-        /// Maximum Size of Sender Data Update
-        const PULL_MAX_SENDER_UPDATE_SIZE: usize = 1024;
+        /// Maximum Size of Sender Data Update (based on benchmark result)
+        const PULL_MAX_SENDER_UPDATE_SIZE: u64 = 32768;
 
-        /// Pulls receiver data from the ledger starting at the `receiver_index`.
+        /// Pulls receiver data from the ledger starting at the `receiver_indices`.
+        /// The pull algorithm is greedy. It tries to pull as many as possible from each shard
+        /// before moving to the next shard.
         #[inline]
-        fn pull_receivers(receiver_index: [usize; 256]) -> (bool, ReceiverChunk) {
+        fn pull_receivers(
+            receiver_indices: [usize; 256],
+            max_update_request: u64,
+        ) -> (bool, ReceiverChunk) {
             let mut more_receivers = false;
             let mut receivers = Vec::new();
-            for (i, index) in receiver_index.into_iter().enumerate() {
-                more_receivers |= Self::pull_receivers_for_shard(i as u8, index, &mut receivers);
+            let mut receivers_pulled: u64 = 0;
+            let max_update = if max_update_request > Self::PULL_MAX_RECEIVER_UPDATE_SIZE {
+                Self::PULL_MAX_RECEIVER_UPDATE_SIZE
+            } else {
+                max_update_request
+            };
+
+            for (shard_index, utxo_index) in receiver_indices.into_iter().enumerate() {
+                more_receivers |= Self::pull_receivers_for_shard(
+                    shard_index as u8,
+                    utxo_index,
+                    max_update,
+                    &mut receivers,
+                    &mut receivers_pulled,
+                );
+                // if max capacity is reached and there is more to pull, then we return
+                if receivers_pulled == max_update && more_receivers {
+                    break;
+                }
             }
             (more_receivers, receivers)
         }
@@ -487,42 +508,57 @@ pub mod pallet {
         fn pull_receivers_for_shard(
             shard_index: u8,
             receiver_index: usize,
+            max_update: u64,
             receivers: &mut ReceiverChunk,
+            receivers_pulled: &mut u64,
         ) -> bool {
-            let mut iter = if receiver_index == 0 {
-                Shards::<T>::iter_prefix(shard_index)
-            } else {
-                let raw_key = Shards::<T>::hashed_key_for(shard_index, receiver_index as u64 - 1);
-                Shards::<T>::iter_prefix_from(shard_index, raw_key)
-            };
-            for _ in 0..Self::PULL_MAX_PER_SHARD_UPDATE_SIZE {
-                match iter.next() {
-                    Some((_, next)) => receivers.push(next),
+            let max_receiver_index = (receiver_index as u64) + max_update;
+            for idx in (receiver_index as u64)..max_receiver_index {
+                if *receivers_pulled == max_update {
+                    return Shards::<T>::contains_key(shard_index, idx);
+                }
+                match Shards::<T>::try_get(shard_index, idx) {
+                    Ok(next) => {
+                        *receivers_pulled += 1;
+                        receivers.push(next);
+                    }
                     _ => return false,
                 }
             }
-            iter.next().is_some()
+            Shards::<T>::contains_key(shard_index, max_receiver_index)
         }
 
         /// Pulls sender data from the ledger starting at the `sender_index`.
         #[inline]
-        fn pull_senders(sender_index: usize) -> (bool, SenderChunk) {
+        fn pull_senders(sender_index: usize, max_update_request: u64) -> (bool, SenderChunk) {
             let mut senders = Vec::new();
-            let mut iter = VoidNumberSetInsertionOrder::<T>::iter().skip(sender_index);
-            for _ in 0..Self::PULL_MAX_SENDER_UPDATE_SIZE {
-                match iter.next() {
-                    Some((_, next)) => senders.push(next),
+            let max_sender_index = if max_update_request > Self::PULL_MAX_SENDER_UPDATE_SIZE {
+                (sender_index as u64) + Self::PULL_MAX_SENDER_UPDATE_SIZE
+            } else {
+                (sender_index as u64) + max_update_request
+            };
+            for idx in (sender_index as u64)..max_sender_index {
+                match VoidNumberSetInsertionOrder::<T>::try_get(idx) {
+                    Ok(next) => senders.push(next),
                     _ => return (false, senders),
                 }
             }
-            (iter.next().is_some(), senders)
+            (
+                VoidNumberSetInsertionOrder::<T>::contains_key(max_sender_index as u64),
+                senders,
+            )
         }
 
-        /// Returns the diff of ledger state since the given `checkpoint`.
+        /// Returns the diff of ledger state since the given `checkpoint`, `max_receivers` and `max_senders`.
         #[inline]
-        pub fn pull_ledger_diff(checkpoint: Checkpoint) -> PullResponse {
-            let (more_receivers, receivers) = Self::pull_receivers(*checkpoint.receiver_index);
-            let (more_senders, senders) = Self::pull_senders(checkpoint.sender_index);
+        pub fn pull_ledger_diff(
+            checkpoint: Checkpoint,
+            max_receivers: u64,
+            max_senders: u64,
+        ) -> PullResponse {
+            let (more_receivers, receivers) =
+                Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
+            let (more_senders, senders) = Self::pull_senders(checkpoint.sender_index, max_senders);
             PullResponse {
                 should_continue: more_receivers || more_senders,
                 receivers,
@@ -555,33 +591,6 @@ pub mod pallet {
             Ok(().into())
         }
     }
-}
-
-/// Receiver Chunk Data Type
-pub type ReceiverChunk = Vec<(Utxo, EncryptedNote)>;
-
-/// Sender Chunk Data Type
-pub type SenderChunk = Vec<VoidNumber>;
-
-/// Ledger Source Pull Response
-#[cfg_attr(
-    feature = "serde",
-    derive(Deserialize, Serialize),
-    serde(crate = "manta_util::serde", deny_unknown_fields)
-)]
-#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, PartialEq, TypeInfo)]
-pub struct PullResponse {
-    /// Pull Continuation Flag
-    ///
-    /// The `should_continue` flag is set to `true` if the client should request more data from the
-    /// ledger to finish the pull.
-    pub should_continue: bool,
-
-    /// Ledger Receiver Chunk
-    pub receivers: ReceiverChunk,
-
-    /// Ledger Sender Chunk
-    pub senders: SenderChunk,
 }
 
 /// Preprocessed Event
