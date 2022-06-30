@@ -14,9 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-#![allow(dead_code)]
-// Tolerate clippy warning originating in ChainSpecGroup, which is a dependency
+//! Chain Specification Definitions
+
+// NOTE: Tolerate clippy warning originating in ChainSpecGroup, which is a dependency.
 #![allow(clippy::derive_partial_eq_without_eq)]
+// NOTE: Missing documentation on all `ChainSpecGroup` implementations.
+#![allow(missing_docs)]
 
 use manta_primitives::{
     constants,
@@ -36,20 +39,24 @@ pub use calamari_runtime::currency::KMA;
 pub use dolphin_runtime::currency::DOL;
 pub use manta_runtime::currency::MANTA;
 
-const CALAMARI_ENDOWMENT: Balance = 1_000_000_000 * KMA; // 10 endowment so that total supply is 10B
+/// Calamari Endowment: 10 endowment so that total supply is 10B
+pub const CALAMARI_ENDOWMENT: Balance = 1_000_000_000 * KMA;
 
-const DOLPHIN_ENDOWMENT: Balance = 1_000_000_000 * DOL; // 10 endowment so that total supply is 10B
+/// Dolphin Endowment: 10 endowment so that total supply is 10B
+pub const DOLPHIN_ENDOWMENT: Balance = 1_000_000_000 * DOL;
 
-const MANTA_ENDOWMENT: Balance = 100_000_000 * MANTA; // 10 endowment so that total supply is 1B
+/// Manta Endowment: 10 endowment so that total supply is 1B
+pub const MANTA_ENDOWMENT: Balance = 100_000_000 * MANTA;
 
-const STAGING_TELEMETRY_URL: &str = "wss://api.telemetry.manta.systems/submit/";
+/// Staging Telemetry URL
+pub const STAGING_TELEMETRY_URL: &str = "wss://api.telemetry.manta.systems/submit/";
 
-// A generic chain spec
+/// Manta Network Chain Spec
 pub type ChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
 
 /// The extensions for the [`ChainSpec`].
 #[derive(
-    Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension,
+    ChainSpecExtension, ChainSpecGroup, Clone, Debug, Deserialize, Eq, PartialEq, Serialize,
 )]
 #[serde(deny_unknown_fields)]
 pub struct Extensions {
