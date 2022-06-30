@@ -438,14 +438,14 @@ fn send_para_a_native_asset_to_para_b_barriers_should_work() {
     let weight = weight_of_four_xcm_instructions_on_para() - 1;
     ParaA::execute_with(|| {
         assert_ok!(parachain::XTokens::transfer(
-            parachain::Origin::signed(ALICE.into()),
+            parachain::Origin::signed(ALICE),
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             amount,
             Box::new(VersionedMultiLocation::V1(dest)),
             weight
         ));
         assert_eq!(
-            parachain::Balances::free_balance(&ALICE.into()),
+            parachain::Balances::free_balance(&ALICE),
             INITIAL_BALANCE - amount
         )
     });
@@ -462,10 +462,7 @@ fn send_para_a_native_asset_to_para_b_barriers_should_work() {
 
     // Make sure B didn't receive the token
     ParaB::execute_with(|| {
-        assert_eq!(
-            parachain::Assets::balance(a_asset_id_on_b, &ALICE.into()),
-            0
-        );
+        assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), 0);
     });
 }
 
