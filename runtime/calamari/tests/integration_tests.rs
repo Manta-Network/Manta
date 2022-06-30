@@ -1439,19 +1439,10 @@ fn concrete_fungible_ledger_can_withdraw_works() {
                 FungibleLedgerError::Underflow
             );
 
-            assert_err!(
-                CalamariConcreteFungibleLedger::can_withdraw(
-                    <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    &alice.clone(),
-                    INITIAL_BALANCE,
-                ),
-                FungibleLedgerError::ReducedToZero(0)
-            );
-
             assert_ok!(CalamariConcreteFungibleLedger::can_withdraw(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &alice.clone(),
-                INITIAL_BALANCE - min_balance,
+                INITIAL_BALANCE,
             ),);
 
             assert_err!(

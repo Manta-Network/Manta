@@ -23,13 +23,16 @@ use sp_runtime::traits::AccountIdConversion;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
 pub const INITIAL_BALANCE: u128 = 10_000_000_000_000_000;
+pub const PARA_A_ID: u32 = 1;
+pub const PARA_B_ID: u32 = 2;
+pub const PARA_C_ID: u32 = 3;
 
 decl_test_parachain! {
     pub struct ParaA {
         Runtime = parachain::Runtime,
         XcmpMessageHandler = parachain::XcmpQueue,
         DmpMessageHandler = parachain::MsgQueue,
-        new_ext = para_ext(1),
+        new_ext = para_ext(PARA_A_ID),
     }
 }
 
@@ -38,7 +41,7 @@ decl_test_parachain! {
         Runtime = parachain::Runtime,
         XcmpMessageHandler = parachain::XcmpQueue,
         DmpMessageHandler = parachain::MsgQueue,
-        new_ext = para_ext(2),
+        new_ext = para_ext(PARA_B_ID),
     }
 }
 
@@ -47,7 +50,7 @@ decl_test_parachain! {
         Runtime = parachain::Runtime,
         XcmpMessageHandler = parachain::XcmpQueue,
         DmpMessageHandler = parachain::MsgQueue,
-        new_ext = para_ext(3),
+        new_ext = para_ext(PARA_C_ID),
     }
 }
 
