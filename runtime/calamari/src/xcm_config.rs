@@ -15,7 +15,8 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    AssetManager, Assets, Balances, Call, DmpQueue, EnsureRootOrMoreThanHalfCouncil, Event, Origin,
+    assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},
+    AssetManager, Assets, Call, DmpQueue, EnsureRootOrMoreThanHalfCouncil, Event, Origin,
     ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, Treasury, XcmpQueue,
     MAXIMUM_BLOCK_WEIGHT,
 };
@@ -34,7 +35,10 @@ use frame_system::EnsureRoot;
 use manta_primitives::{
     assets::{AssetIdLocationConvert, AssetLocation},
     types::{AccountId, AssetId, Balance},
-    xcm::{AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
+    xcm::{
+        AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
+        MultiNativeAsset,
+    },
 };
 
 #[cfg(any(feature = "std", test))]
@@ -49,10 +53,9 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
-    FungiblesAdapter, LocationInverter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
-    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SovereignSignedViaLocation, TakeWeightCredit,
+    EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
+    ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
@@ -97,20 +100,6 @@ pub type LocationToAccountId = (
     AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
-/// Transactor for native currency, i.e. implements `fungible` trait
-pub type LocalAssetTransactor = XcmCurrencyAdapter<
-    // Transacting native currency, i.e. MANTA, KMA, DOL
-    Balances,
-    // Used when the incoming asset is a fungible concrete asset matching the given location or name:
-    IsNativeConcrete<SelfReserve>,
-    // Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
-    LocationToAccountId,
-    // Our chain's account ID type (we can't get away without mentioning it explicitly):
-    AccountId,
-    // We don't track any teleports.
-    (),
->;
-
 /// This is the type to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`.
 /// It uses some Rust magic macro to do the pattern matching sequentially.
@@ -146,22 +135,25 @@ parameter_types! {
     pub const MaxInstructions: u32 = 100;
 }
 
-/// Transactor for currency in pallet-assets, i.e. implements `fungibles` trait
-pub type FungiblesTransactor = FungiblesAdapter<
-    Assets,
+/// Transactor for the native asset which implements `fungible` trait, as well as
+/// Transactor for assets in pallet-assets, i.e. implements `fungibles` trait
+pub type MultiAssetTransactor = MultiAssetAdapter<
+    Runtime,
+    // "default" implementation of converting a `MultiLocation` to an `AccountId`
+    LocationToAccountId,
+    // Used when the incoming asset is a fungible concrete asset matching the given location or name:
+    IsNativeConcrete<SelfReserve>,
+    // Used to match incoming assets which are not the native asset.
     ConvertedConcreteAssetId<
         AssetId,
         Balance,
         AssetIdLocationConvert<AssetLocation, AssetManager>,
         JustTry,
     >,
-    // "default" implementation of converting a `MultiLocation` to an `AccountId`
-    LocationToAccountId,
-    AccountId,
-    // No teleport support.
-    Nothing,
-    // No teleport tracking.
-    CheckingAccount,
+    // Precondition checks and actual implementations of mint and burn logic.
+    CalamariConcreteFungibleLedger,
+    // Used to find the query the native asset id of the chain.
+    CalamariAssetConfig,
 >;
 
 match_type! {
@@ -215,9 +207,7 @@ impl Config for XcmExecutorConfig {
     type Call = Call;
     type XcmSender = XcmRouter;
     // Defines how to Withdraw and Deposit instruction work
-    // Under the hood, substrate framework will do pattern matching in macro,
-    // as a result, the order of the following tuple matters.
-    type AssetTransactor = (LocalAssetTransactor, FungiblesTransactor);
+    type AssetTransactor = MultiAssetTransactor;
     type OriginConverter = XcmOriginToCallOrigin;
     // Combinations of (Location, Asset) pairs which we trust as reserves.
     type IsReserve = MultiNativeAsset;

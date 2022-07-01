@@ -18,7 +18,9 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-    assert_ok, construct_runtime, parameter_types,
+    assert_ok, construct_runtime,
+    pallet_prelude::DispatchResult,
+    parameter_types,
     traits::{ConstU32, Everything, Nothing},
     weights::{constants::WEIGHT_PER_SECOND, Weight},
     PalletId,
@@ -33,21 +35,6 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-use pallet_xcm::XcmPassthrough;
-use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
-use polkadot_parachain::primitives::{
-    DmpMessageHandler, Id as ParaId, Sibling, XcmpMessageFormat, XcmpMessageHandler,
-};
-use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, VersionedXcm};
-use xcm_builder::{
-    AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
-    FungiblesAdapter, LocationInverter, ParentIsPreset, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SovereignSignedViaLocation,
-};
-use xcm_executor::{traits::JustTry, Config, XcmExecutor};
-use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
-
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdLocationConvert, AssetLocation, AssetRegistrar, AssetRegistrarMetadata,
@@ -55,8 +42,22 @@ use manta_primitives::{
     },
     constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
     types::AssetId,
-    xcm::{FirstAssetTrader, IsNativeConcrete, MultiNativeAsset},
+    xcm::{FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter, MultiNativeAsset},
 };
+use pallet_xcm::XcmPassthrough;
+use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
+use polkadot_parachain::primitives::{
+    DmpMessageHandler, Id as ParaId, Sibling, XcmpMessageFormat, XcmpMessageHandler,
+};
+use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, VersionedXcm};
+use xcm_builder::{
+    AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId, EnsureXcmOrigin,
+    FixedRateOfFungible, FixedWeightBounds, LocationInverter, ParentIsPreset,
+    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SovereignSignedViaLocation,
+};
+use xcm_executor::{traits::JustTry, Config, XcmExecutor};
+use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 
@@ -187,32 +188,25 @@ parameter_types! {
     pub const MaxInstructions: u32 = 100;
 }
 
-/// Transactor for native currency, i.e. implements `fungible` trait
-pub type LocalAssetTransactor = XcmCurrencyAdapter<
-    // Transacting native currency, i.e. MANTA, KMA, DOL
-    Balances,
-    IsNativeConcrete<SelfReserve>,
+/// Transactor for the native asset which implements `fungible` trait, as well as
+/// Transactor for assets in pallet-assets, i.e. implements `fungibles` trait
+pub type MultiAssetTransactor = MultiAssetAdapter<
+    Runtime,
+    // "default" implementation of converting a `MultiLocation` to an `AccountId`
     LocationToAccountId,
-    AccountId,
-    (),
->;
-
-/// Transactor for currency in pallet-assets, i.e. implements `fungibles` trait
-pub type FungiblesTransactor = FungiblesAdapter<
-    Assets,
+    // Used when the incoming asset is a fungible concrete asset matching the given location or name:
+    IsNativeConcrete<SelfReserve>,
+    // Used to match incoming assets which are not the native asset.
     ConvertedConcreteAssetId<
         AssetId,
         Balance,
         AssetIdLocationConvert<AssetLocation, AssetManager>,
         JustTry,
     >,
-    // "default" implementation of converting a `MultiLocation` to an `AccountId`
-    LocationToAccountId,
-    AccountId,
-    // No teleport support.
-    Nothing,
-    // No teleport tracking.
-    CheckingAccount,
+    // Precondition checks and actual implementations of mint and burn logic.
+    ConcreteFungibleLedger<Runtime, ParachainAssetConfig, Balances, Assets>,
+    // Used to find the query the native asset id of the chain.
+    ParachainAssetConfig,
 >;
 
 pub type XcmRouter = super::ParachainXcmRouter<ParachainInfo>;
@@ -240,9 +234,7 @@ impl Config for XcmExecutorConfig {
     type Call = Call;
     type XcmSender = XcmRouter;
     // Defines how to Withdraw and Deposit instruction work
-    // Under the hood, substrate framework will do pattern matching in macro,
-    // as a result, the order of the following tuple matters.
-    type AssetTransactor = (LocalAssetTransactor, FungiblesTransactor);
+    type AssetTransactor = MultiAssetTransactor;
     type OriginConverter = XcmOriginToCallOrigin;
     // Combinations of (Location, Asset) pairs which we trust as reserves.
     type IsReserve = MultiNativeAsset;
@@ -468,8 +460,7 @@ pub(crate) fn set_current_xcm_version(version: XcmVersion) {
 }
 
 pub struct CalamariAssetRegistrar;
-use frame_support::pallet_prelude::DispatchResult;
-impl AssetRegistrar<Runtime, CalamariAssetConfig> for CalamariAssetRegistrar {
+impl AssetRegistrar<Runtime, ParachainAssetConfig> for CalamariAssetRegistrar {
     fn create_asset(
         asset_id: AssetId,
         min_balance: Balance,
@@ -513,8 +504,8 @@ parameter_types! {
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(SelfReserve::get()));
     pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
-        name: b"Calamari".to_vec(),
-        symbol: b"KMA".to_vec(),
+        name: b"ParaAToken".to_vec(),
+        symbol: b"ParaA".to_vec(),
         decimals: CALAMARI_DECIMAL,
         min_balance: 1,
         evm_address: None,
@@ -522,12 +513,13 @@ parameter_types! {
         is_sufficient: true,
     };
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
+
 }
 
 #[derive(Clone, Eq, PartialEq)]
-pub struct CalamariAssetConfig;
+pub struct ParachainAssetConfig;
 
-impl AssetConfig<Runtime> for CalamariAssetConfig {
+impl AssetConfig<Runtime> for ParachainAssetConfig {
     type DummyAssetId = DummyAssetId;
     type NativeAssetId = NativeAssetId;
     type StartNonNativeAssetId = StartNonNativeAssetId;
@@ -537,12 +529,12 @@ impl AssetConfig<Runtime> for CalamariAssetConfig {
     type StorageMetadata = AssetStorageMetadata;
     type AssetLocation = AssetLocation;
     type AssetRegistrar = CalamariAssetRegistrar;
-    type FungibleLedger = ConcreteFungibleLedger<Runtime, CalamariAssetConfig, Balances, Assets>;
+    type FungibleLedger = ConcreteFungibleLedger<Runtime, ParachainAssetConfig, Balances, Assets>;
 }
 
 impl pallet_asset_manager::Config for Runtime {
     type Event = Event;
-    type AssetConfig = CalamariAssetConfig;
+    type AssetConfig = ParachainAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;
     type PalletId = AssetManagerPalletId;
     type WeightInfo = ();
@@ -678,6 +670,25 @@ pub(crate) fn create_asset_location(parents: u8, para_id: u32) -> AssetLocation 
     )))
 }
 
+fn insert_dummy_data(
+    dummy_mult_loc: MultiLocation,
+    dummy_asset_metadata: &AssetRegistrarMetadata,
+    start_from: u32,
+    insert_until: u32,
+) {
+    let mut next_asset_id = start_from;
+    let mut next_dummy_mult_loc = dummy_mult_loc;
+    while next_asset_id < insert_until {
+        assert_ok!(AssetManager::register_asset(
+            self::Origin::root(),
+            AssetLocation::from(next_dummy_mult_loc.clone()),
+            dummy_asset_metadata.clone()
+        ));
+        next_dummy_mult_loc.parents += 1;
+        next_asset_id += 1;
+    }
+}
+
 pub(crate) fn register_assets_on_parachain<P>(
     source_location: &AssetLocation,
     asset_metadata: &AssetRegistrarMetadata,
@@ -687,9 +698,33 @@ pub(crate) fn register_assets_on_parachain<P>(
 where
     P: XcmpMessageHandlerT + DmpMessageHandlerT + TestExt,
 {
-    let mut currency_id = 0u32;
+    let mut asset_id = 0;
+    let mut dummy_mult_loc = match source_location.0.clone() {
+        VersionedMultiLocation::V1(some_location) => some_location,
+        _ => MultiLocation::default(),
+    };
+    // Use some fake location as dummy to fill in gaps between Native and Non-Native assets
+    dummy_mult_loc.parents = 50;
+    let native_asset_id = <ParachainAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
+    let non_native_asset_id_start =
+        <ParachainAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get();
+
     P::execute_with(|| {
-        currency_id = AssetManager::next_asset_id();
+        asset_id = AssetManager::next_asset_id();
+
+        if asset_id < native_asset_id {
+            insert_dummy_data(dummy_mult_loc, asset_metadata, asset_id, native_asset_id);
+        } else if asset_id < non_native_asset_id_start {
+            insert_dummy_data(
+                dummy_mult_loc,
+                asset_metadata,
+                asset_id,
+                non_native_asset_id_start,
+            );
+        }
+
+        asset_id = AssetManager::next_asset_id();
+
         assert_ok!(AssetManager::register_asset(
             self::Origin::root(),
             source_location.clone(),
@@ -699,7 +734,7 @@ where
         if let Some((owner, min_balance, is_sufficient, is_frozen)) = mint_asset {
             assert_ok!(self::Assets::force_asset_status(
                 self::Origin::root(),
-                currency_id,
+                asset_id,
                 owner.clone(),
                 owner.clone(),
                 owner.clone(),
@@ -713,15 +748,16 @@ where
         if let Some(ups) = units_per_second {
             assert_ok!(AssetManager::set_units_per_second(
                 self::Origin::root(),
-                currency_id,
+                asset_id,
                 ups,
             ));
         }
 
         assert_eq!(
-            Some(currency_id),
+            Some(asset_id),
             AssetManager::location_asset_id(source_location.clone())
         );
     });
-    currency_id
+
+    asset_id
 }

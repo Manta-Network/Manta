@@ -359,9 +359,6 @@ pub mod pallet {
         /// [`Frozen`](FungibleLedgerError::Frozen) from [`FungibleLedgerError`]
         PublicUpdateFrozen,
 
-        /// [`ReducedToZero`](FungibleLedgerError::ReducedToZero) from [`FungibleLedgerError`]
-        PublicUpdateReducedToZero,
-
         /// [`NoFunds`](FungibleLedgerError::NoFunds) from [`FungibleLedgerError`]
         PublicUpdateNoFunds,
 
@@ -430,7 +427,6 @@ pub mod pallet {
                 FungibleLedgerError::Overflow => Self::PublicUpdateOverflow,
                 FungibleLedgerError::Underflow => Self::PublicUpdateUnderflow,
                 FungibleLedgerError::Frozen => Self::PublicUpdateFrozen,
-                FungibleLedgerError::ReducedToZero(_) => Self::PublicUpdateReducedToZero,
                 FungibleLedgerError::NoFunds => Self::PublicUpdateNoFunds,
                 FungibleLedgerError::WouldDie => Self::PublicUpdateWouldDie,
                 FungibleLedgerError::InvalidTransfer(_e) => Self::PublicUpdateInvalidTransfer,

@@ -352,14 +352,12 @@ fn overdrawn_mint_should_not_work() {
         let asset_id = rng.gen();
         // FIXME: remove the division after parity fix the pallet-asset bug
         let double_supply: u128 = rng.gen();
-        let total_supply = AssetValue(double_supply / 2)
-            .checked_sub(AssetValue(1))
-            .unwrap_or_default();
+        let total_supply = AssetValue(double_supply / 2);
         initialize_test(asset_id, total_supply + DEFAULT_ASSET_ED);
         assert_noop!(
             MantaPayPallet::to_private(
                 Origin::signed(ALICE),
-                sample_mint(asset_id.with(total_supply + 1), &mut rng).into()
+                sample_mint(asset_id.with(total_supply + DEFAULT_ASSET_ED + 1), &mut rng).into()
             ),
             Error::<Test>::InvalidSourceAccount
         );
@@ -408,7 +406,7 @@ fn private_transfer_should_work() {
 
 /// Test a [`PrivateTransfer`] transaction with native currency
 #[test]
-fn private_transfer_native_asset_shoud_work() {
+fn private_transfer_native_asset_should_work() {
     new_test_ext().execute_with(|| {
         private_transfer_test(1, Some(NATIVE_ASSET_ID), &mut OsRng);
     });
