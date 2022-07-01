@@ -7,7 +7,7 @@ import { u8aToHex, hexToU8a } from '@polkadot/util';
 import { ExecutionContext, emojis, delay } from './test-util';
 
 const dolphin_config = {
-    ws_address: "ws://127.0.0.1:9800"
+    ws_address: "wss://ws.rococo.dolphin.engineering"
 }
 // "ws://127.0.0.1:9800"
 
@@ -78,6 +78,56 @@ async function insert_values(
     }
 }
 
+async function drop_keys_in_batches(
+    context: ExecutionContext,    
+    keys: Array<String>, 
+    batch_size: number,
+    timeout: number,
+){
+    let success_batch = 0;
+    let expected_batch = Math.ceil(keys.length/batch_size);
+    for(let check_point = 0;  check_point < keys.length; ){
+        let finish_point = check_point + batch_size > keys.length ? keys.length : check_point + batch_size;
+        let data = keys.slice(check_point, finish_point);
+        let call_data = context.api.tx.system.killStorage(data);
+        const unsub = await context.api.tx.sudo.sudo(call_data).signAndSend(context.keyring, {nonce: -1}, ({ events = [], status }) => {
+            if (status.isFinalized) {
+                success_batch ++;
+                console.log("%s %i batchs insertion finalized.", emojis.write, success_batch);
+                unsub();
+            }
+        });
+        check_point = finish_point;
+    }
+
+    // wait all txs finalized
+    for(let i =0; i < timeout; i ++){
+        await delay(1000);
+        if (success_batch === expected_batch) {
+            console.log("total wait: %i sec.", i + 1);
+            return success_batch;
+        }
+    }
+    throw "timeout";
+}
+
+async function drop_keys(
+    context: ExecutionContext,
+    keys: Array<String>, 
+    batch_size: number = 4096,
+    batch_count_before_gap: number = 4,
+    timeout_for_big_batch: number = 1000, 
+){
+    const big_batch_size = batch_size * batch_count_before_gap;
+    for(let check_point = 0; check_point < keys.length; ){
+        let finish_point = check_point + big_batch_size > keys.length ? keys.length : check_point + big_batch_size;
+        console.log(">>>>>> writng big batch from %i", check_point);
+        await drop_keys_in_batches(context, keys.slice(check_point, finish_point), batch_size, timeout_for_big_batch);
+        check_point = finish_point;
+    }
+}
+
+
 function convert_single_map_keys_hex(key: string, changed_bytes: number): string {
     let bytes = hexToU8a(key);
     let transformed_last_bytes = convert_single_map_keys(bytes.slice(-changed_bytes));
@@ -111,13 +161,34 @@ async function main(){
     // void_number_set: take last 32 bytes
     // void_number_set_insertion_order: take last 8 bytes
 
+    // drop keys
+    await drop_keys(context, manta_keys_read.shards);
+    let shards_keys = await api.query.mantaPay.shards.keys();
+    console.log("shards key count: %i", shards_keys.length);
+    await drop_keys(context, manta_keys_read.shard_trees);
+    let shard_trees_keys = await api.query.mantaPay.shardTrees.keys();
+    console.log("shard trees key count: %i", shard_trees_keys.length);
+    await drop_keys(context, manta_keys_read.utxo_acc_outputs);
+    let utxo_acc_outputs = await api.query.mantaPay.utxoAccumulatorOutputs.keys();
+    console.log("key count: %i", utxo_acc_outputs.length);
+    await drop_keys(context, manta_keys_read.utxo_set);
+    let utxo_set = await api.query.mantaPay.utxoSet.keys();
+    console.log("drop %i keys from UtxoSet", utxo_set.length);
+
+    await drop_keys(context, manta_keys_read.void_number_set);
+    let void_number_set = await api.query.mantaPay.voidNumberSet.keys();
+    console.log("drop %i keys from VoidNumberSet", void_number_set.length);
+
+    await drop_keys(context, manta_keys_read.void_number_set_insertion_order);
+    let vnsio = await api.query.mantaPay.voidNumberSetInsertionOrder.keys();
+    console.log("Fetched %i keys from VNSIO", vnsio.length);
     const shards_raw = await readFile('./shards.json');
     const shards = JSON.parse(shards_raw.toString());
     const shard_trees_raw = await readFile('./shards_trees.json');
     const shard_trees = JSON.parse(shard_trees_raw.toString());
     const void_number_set_insertion_order_raw = await readFile('./void_number_set_insertion_order.json');
     const void_number_set_insertion_order = JSON.parse(void_number_set_insertion_order_raw.toString());
-    
+
     // inserting new shards
     const new_shards_keys = (manta_keys_read.shards as Array<string>).map((entry)=>{
         let bytes = hexToU8a(entry);
@@ -133,8 +204,8 @@ async function main(){
         throw "shards keys and values are not the same len.";
     const new_shards_kvs = new_shards_keys.map((e, i)=>{
         return [e, shards[i]];
-    })
-    //await insert_values(context, new_shards_kvs);
+    });
+    await insert_values(context, new_shards_kvs);
 
     // inserting new shard trees
     const new_shard_tree_keys = (manta_keys_read.shard_trees as Array<string>).map((e)=>{
@@ -145,7 +216,7 @@ async function main(){
     const new_shard_tree_kvs = new_shard_tree_keys.map((e, i)=>{
         return [e, shard_trees[i]]
     });
-    //await insert_values(context, new_shard_tree_kvs);
+    await insert_values(context, new_shard_tree_kvs);
 
     // inserting new utxo_acc_outputs
     const new_utxo_acc_output_keys = (manta_keys_read.utxo_acc_outputs as Array<string>).map((e)=>{
@@ -154,7 +225,7 @@ async function main(){
     const new_utxo_acc_output_kvs = new_utxo_acc_output_keys.map((e)=>{
         return [e, '0x'];
     });
-    //await insert_values(context, new_utxo_acc_output_kvs);
+    await insert_values(context, new_utxo_acc_output_kvs);
    
     // inserting new utxo_set
     const new_utxo_set_keys = (manta_keys_read.utxo_set as Array<string>).map((e)=>{
@@ -163,7 +234,7 @@ async function main(){
     const new_utxo_set_kvs = new_utxo_set_keys.map((e)=>{
         return [e, '0x'];
     })
-    //await insert_values(context, new_utxo_set_kvs);
+    await insert_values(context, new_utxo_set_kvs);
 
     // inserting void number set
     const new_void_number_set_keys = (manta_keys_read.void_number_set as Array<string>).map((e)=>{
@@ -184,7 +255,6 @@ async function main(){
         return [e, void_number_set_insertion_order[i]];
     });
     await insert_values(context, new_void_number_set_insertion_order_kvs);
-
-}
+}   
 
 main().catch(console.error).finally(() => process.exit());
