@@ -14,6 +14,7 @@
 - [\#607](https://github.com/Manta-Network/Manta/pull/607) Turn node client code into library for CLI project
 - [\#609](https://github.com/Manta-Network/Manta/pull/609) Update parameter path from `sdk` to `manta-parameters`.
 - [\#619](https://github.com/Manta-Network/Manta/pull/619) Add CI runtime upgrade test for Dolphin and improve test scenario.
+- [\#638](https://github.com/Manta-Network/Manta/pull/638) `existence_requirement` argument for `FungibleLedger` trait functions.
 
 ### Bug fixes
 
