@@ -14,6 +14,7 @@
 - [\#607](https://github.com/Manta-Network/Manta/pull/607) Turn node client code into library for CLI project
 - [\#609](https://github.com/Manta-Network/Manta/pull/609) Update parameter path from `sdk` to `manta-parameters`.
 - [\#619](https://github.com/Manta-Network/Manta/pull/619) Add CI runtime upgrade test for Dolphin and improve test scenario.
+- [\#636](https://github.com/Manta-Network/Manta/pull/636) Equalize Barrier impl between Calamari/Dolphin production and XCM tests mock parachain.
 
 ### Bug fixes
 
