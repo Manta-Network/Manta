@@ -21,7 +21,7 @@ ExecStart=/usr/bin/manta \
         /dns/hypostoma.manta.systems/tcp/30333/p2p/12D3KooWHF462NFNuhPAK3cmqZ6c9jD85GnknsFT43n8TFdWcxJY \
         /dns/japanica.manta.systems/tcp/30333/p2p/12D3KooWQvvB62n2dEWEYxUCcqzU6dxzVgi8ACPA6X7VeWzxAFMF \
     -- \
-    --chain /usr/share/substrate/polkadot.json
+    --chain polkadot
 User=manta
 Group=manta
 Restart=always

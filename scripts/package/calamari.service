@@ -21,7 +21,7 @@ ExecStart=/usr/bin/calamari \
         /dns/tasty.calamari.systems/tcp/30333/p2p/12D3KooWGs2hfnRQ3Y2eAoUyWKUL3g7Jmcsf8FpyhVYeNpXeBMSu \
         /dns/tender.calamari.systems/tcp/30333/p2p/12D3KooWNXZeUSEKRPsp1yiDH99qSVawQSWHqG4umPjgHsn1joci \
     -- \
-    --chain /usr/share/substrate/kusama.json
+    --chain kusama
 User=manta
 Group=manta
 Restart=always
