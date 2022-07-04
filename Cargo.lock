@@ -1414,16 +1414,16 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.1.18"
+version = "3.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2dbdf4bdacb33466e854ce889eee8dfd5729abf7ccd7664d0a2d60cd384440b"
+checksum = "190814073e85d238f31ff738fcb0bf6910cedeb73376c87cd69291028966fd83"
 dependencies = [
  "atty",
  "bitflags",
  "clap_derive",
  "clap_lex",
  "indexmap",
- "lazy_static",
+ "once_cell",
  "strsim",
  "termcolor",
  "textwrap 0.15.0",
@@ -1431,9 +1431,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "3.1.18"
+version = "3.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25320346e922cffe59c0bbc5410c8d8784509efb321488971081313cb1e1a33c"
+checksum = "759bf187376e1afa7b85b959e6a664a3e7a95203415dba952ad19139e798f902"
 dependencies = [
  "heck 0.4.0",
  "proc-macro-error",
@@ -1444,9 +1444,9 @@ dependencies = [
 
 [[package]]
 name = "clap_lex"
-version = "0.2.0"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a37c35f1112dad5e6e0b1adaff798507497a18fceeb30cceb3bae7d1427b9213"
+checksum = "2850f2f5a82cbf437dd5af4d49848fbdfc27c157c3d010345776f952765261c5"
 dependencies = [
  "os_str_bytes",
 ]
@@ -1814,7 +1814,7 @@ name = "cumulus-client-cli"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.18#b1e91afb7421309b203d7627b736d9bcf58260eb"
 dependencies = [
- "clap 3.1.18",
+ "clap 3.2.8",
  "sc-cli",
  "sc-service",
  "url 2.2.2",
@@ -2976,7 +2976,7 @@ source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.1
 dependencies = [
  "Inflector",
  "chrono",
- "clap 3.1.18",
+ "clap 3.2.8",
  "frame-benchmarking",
  "frame-support",
  "handlebars",
@@ -5211,7 +5211,7 @@ dependencies = [
  "async-trait",
  "calamari-runtime",
  "cfg-if 1.0.0",
- "clap 3.1.18",
+ "clap 3.2.8",
  "cumulus-client-cli",
  "cumulus-client-consensus-aura",
  "cumulus-client-consensus-common",
@@ -7622,7 +7622,7 @@ name = "polkadot-cli"
 version = "0.9.18"
 source = "git+https://github.com/paritytech/polkadot.git?branch=release-v0.9.18#9ed0c98204d25eaad8a6b40248daee8e6a40d111"
 dependencies = [
- "clap 3.1.18",
+ "clap 3.2.8",
  "frame-benchmarking-cli",
  "futures 0.3.21",
  "log",
@@ -9591,7 +9591,7 @@ version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.18#fc3fd073d3a0acf9933c3994b660ebd7b5833f65"
 dependencies = [
  "chrono",
- "clap 3.1.18",
+ "clap 3.2.8",
  "fdlimit",
  "futures 0.3.21",
  "hex",
@@ -12305,7 +12305,7 @@ name = "try-runtime-cli"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.18#fc3fd073d3a0acf9933c3994b660ebd7b5833f65"
 dependencies = [
- "clap 3.1.18",
+ "clap 3.2.8",
  "jsonrpsee 0.4.1",
  "log",
  "parity-scale-codec",
