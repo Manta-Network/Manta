@@ -752,7 +752,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsReversedWithSystemFirst,
-    crate::migrations::sudo::RemoveSudo<Runtime>,
+    (),
 >;
 
 #[cfg(feature = "runtime-benchmarks")]
