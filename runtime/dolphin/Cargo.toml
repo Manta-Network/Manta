@@ -13,7 +13,7 @@ hex-literal = { version = '0.3.4', optional = true }
 log = { version = "0.4.16", default-features = false }
 scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
 serde = { version = '1.0.137', features = ['derive'], optional = true }
-smallvec = "1.8.0"
+smallvec = "1.9.0"
 
 # Substrate primitives
 sp-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
