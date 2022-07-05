@@ -557,9 +557,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
     MockNet::reset();
 
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
-    let para_a_native_source_location = create_asset_location(0, PARA_A_ID);
     let para_b_source_location = create_asset_location(1, PARA_B_ID);
-    let para_b_native_source_location = create_asset_location(0, PARA_B_ID);
 
     let amount = 5000u128;
     let weight = 800000u64;
@@ -572,7 +570,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
         create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
 
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        &para_a_native_source_location,
+        &para_a_source_location,
         &para_a_asset_metadata,
         Some(0u128),
         None,
@@ -585,7 +583,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
     );
 
     let _ = register_assets_on_parachain::<ParaB>(
-        &para_b_native_source_location,
+        &para_b_source_location,
         &para_b_asset_metadata,
         Some(0u128),
         None,
@@ -1576,7 +1574,6 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
 
     // register relay asset in parachain A (XCM version 1)
     ParaA::execute_with(|| {
-        // SelfReserve
         parachain::set_current_xcm_version(1);
     });
     let _ = register_assets_on_parachain::<ParaA>(
@@ -2219,16 +2216,8 @@ fn less_than_min_xcm_fee_should_not_work() {
 fn transfer_multicurrencies_should_work_scenarios() {
     MockNet::reset();
 
-    let para_a_id = 1;
-    let para_b_id = 2;
-    let para_a_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
-        1,
-        X1(Parachain(para_a_id)),
-    )));
-    let para_b_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
-        1,
-        X1(Parachain(para_b_id)),
-    )));
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
+    let para_b_source_location = create_asset_location(1, PARA_B_ID);
     let units_per_sec = 0;
 
     let para_a_asset_metadata =
@@ -2239,21 +2228,18 @@ fn transfer_multicurrencies_should_work_scenarios() {
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
 
-    // Register ParaA native asset in ParaA
     let _ = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(units_per_sec),
         None,
     );
-    // Register relaychain native asset in ParaA
     let relay_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &relay_source_location,
         &relay_asset_metadata,
         Some(units_per_sec),
         None,
     );
-    // register ParaB native asset on ParaA
     let b_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_b_source_location,
         &para_b_asset_metadata,
@@ -2261,21 +2247,18 @@ fn transfer_multicurrencies_should_work_scenarios() {
         None,
     );
 
-    // register ParaB native asset on ParaB
     let b_asset_id_on_b = register_assets_on_parachain::<ParaB>(
         &para_b_source_location,
         &para_b_asset_metadata,
         Some(units_per_sec),
         None,
     );
-    // register ParaA native asset on ParaB
     let _ = register_assets_on_parachain::<ParaB>(
         &para_a_source_location,
         &para_a_asset_metadata,
         Some(units_per_sec),
         None,
     );
-    // Register relaychain native asset in ParaB
     let relay_asset_id_on_b = register_assets_on_parachain::<ParaB>(
         &relay_source_location,
         &relay_asset_metadata,
@@ -2297,7 +2280,7 @@ fn transfer_multicurrencies_should_work_scenarios() {
     let dest = MultiLocation {
         parents: 1,
         interior: X2(
-            Parachain(para_a_id),
+            Parachain(PARA_A_ID),
             AccountId32 {
                 network: NetworkId::Any,
                 id: ALICE.into(),
@@ -2321,7 +2304,7 @@ fn transfer_multicurrencies_should_work_scenarios() {
     let dest = MultiLocation {
         parents: 1,
         interior: X2(
-            Parachain(para_b_id),
+            Parachain(PARA_B_ID),
             AccountId32 {
                 network: NetworkId::Any,
                 id: ALICE.into(),
@@ -2380,8 +2363,8 @@ fn transfer_multicurrencies_should_work_scenarios() {
     });
 
     Relay::execute_with(|| {
-        let para_a_sovereign_on_relay = para_account_id(1);
-        let para_b_sovereign_on_relay = para_account_id(2);
+        let para_a_sovereign_on_relay = para_account_id(PARA_A_ID);
+        let para_b_sovereign_on_relay = para_account_id(PARA_B_ID);
         assert_eq!(
             relay_chain::Balances::free_balance(&para_a_sovereign_on_relay),
             INITIAL_BALANCE - (fee_amount - min_xcm_fee)
@@ -2402,7 +2385,7 @@ fn transfer_multicurrencies_should_work_scenarios() {
         // (fee - min_xcm_fee) from the first to-non-reserve xcm message, reduced by the execution cost on the relay chain
         // Then it will be again reduced by the min_xcm_fee to buy execution time for the second to-reserve xcm message
         let para_a_sovereign_on_para_b = parachain::LocationToAccountId::convert_ref(
-            MultiLocation::new(1, X1(Parachain(para_a_id))),
+            MultiLocation::new(1, X1(Parachain(PARA_A_ID))),
         )
         .unwrap();
         let execution_cost_on_relay_chain = 0;

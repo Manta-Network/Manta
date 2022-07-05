@@ -26,7 +26,6 @@ use frame_support::{
     PalletId,
 };
 use frame_system::EnsureRoot;
-use orml_traits::location::{AbsoluteReserveProvider, RelativeReserveProvider, Reserve};
 use scale_info::TypeInfo;
 use sp_core::{H160, H256};
 use sp_runtime::{
@@ -34,7 +33,7 @@ use sp_runtime::{
     traits::{Hash, IdentityLookup},
     AccountId32,
 };
-use sp_std::{marker::PhantomData, prelude::*};
+use sp_std::prelude::*;
 
 use manta_primitives::{
     assets::{
@@ -43,7 +42,7 @@ use manta_primitives::{
     },
     constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
     types::AssetId,
-    xcm::{FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter, MultiNativeAsset},
+    xcm::{AbsoluteAndRelativeReserve, FirstAssetTrader, MultiAssetAdapter, MultiNativeAsset},
 };
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
@@ -53,7 +52,7 @@ use polkadot_parachain::primitives::{
 use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, VersionedXcm};
 use xcm_builder::{
     AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId, EnsureXcmOrigin,
-    FixedRateOfFungible, FixedWeightBounds, LocationInverter, ParentIsPreset,
+    FixedRateOfFungible, FixedWeightBounds, IsConcrete, LocationInverter, ParentIsPreset,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
     SovereignSignedViaLocation,
 };
@@ -121,7 +120,7 @@ parameter_types! {
     pub const RelayNetwork: NetworkId = NetworkId::Kusama;
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
     pub AbsoluteSelfLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
-    pub SelfReserve: MultiLocation = MultiLocation::new(0, Here);
+    pub RelativeSelfLocation: MultiLocation = MultiLocation::new(0, Here);
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
@@ -197,7 +196,7 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
     // "default" implementation of converting a `MultiLocation` to an `AccountId`
     LocationToAccountId,
     // Used when the incoming asset is a fungible concrete asset matching the given location or name:
-    IsNativeConcrete<SelfReserve>,
+    IsConcrete<RelativeSelfLocation>,
     // Used to match incoming assets which are not the native asset.
     ConvertedConcreteAssetId<
         AssetId,
@@ -247,7 +246,7 @@ impl Config for XcmExecutorConfig {
     // Trader is the means to purchasing weight credit for XCM execution.
     // We define two traders:
     // The first one will charge parachain's native currency, who's `MultiLocation`
-    // is defined in `SelfReserve`.
+    // is defined in `RelativeSelfLocation`.
     // The second one will charge the first asset in the MultiAssets with pre-defined rate
     // i.e. units_per_second in `AssetManager`
     type Trader = (
@@ -504,7 +503,7 @@ parameter_types! {
     pub const NativeAssetId: AssetId = 1;
     pub const StartNonNativeAssetId: AssetId = 8;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
-        VersionedMultiLocation::V1(SelfReserve::get()));
+        VersionedMultiLocation::V1(RelativeSelfLocation::get()));
     pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
         name: b"ParaAToken".to_vec(),
         symbol: b"ParaA".to_vec(),
@@ -574,28 +573,6 @@ parameter_types! {
     pub const MaxAssetsForTransfer: usize = 3;
 }
 
-/// This struct offers uses RelativeReserveProvider to output relative views of multilocations
-/// However, additionally accepts a MultiLocation that aims at representing the chain part
-/// (parent: 1, Parachain(paraId)) of the absolute representation of our chain.
-/// If a token reserve matches against this absolute view, we return  Some(MultiLocation::here())
-/// This helps users by preventing errors when they try to transfer a token through xtokens
-/// to our chain (either inserting the relative or the absolute value).
-pub struct AbsoluteAndRelativeReserve<AbsoluteMultiLocation>(PhantomData<AbsoluteMultiLocation>);
-impl<AbsoluteMultiLocation> Reserve for AbsoluteAndRelativeReserve<AbsoluteMultiLocation>
-where
-    AbsoluteMultiLocation: Get<MultiLocation>,
-{
-    fn reserve(asset: &MultiAsset) -> Option<MultiLocation> {
-        RelativeReserveProvider::reserve(asset).map(|relative_reserve| {
-            if relative_reserve == AbsoluteMultiLocation::get() {
-                MultiLocation::here()
-            } else {
-                relative_reserve
-            }
-        })
-    }
-}
-
 // The XCM message wrapper wrapper
 impl orml_xtokens::Config for Runtime {
     type Event = Event;
@@ -605,7 +582,7 @@ impl orml_xtokens::Config for Runtime {
     type CurrencyIdConvert =
         CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
-    type SelfLocation = SelfReserve;
+    type SelfLocation = RelativeSelfLocation;
     type Weigher = xcm_builder::FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
     type BaseXcmWeight = BaseXcmWeight;
     type LocationInverter = LocationInverter<Ancestry>;
@@ -731,14 +708,17 @@ where
         VersionedMultiLocation::V1(some_location) => some_location,
         _ => MultiLocation::default(),
     };
-    // Use some fake location as dummy to fill in gaps between Native and Non-Native assets
     dummy_mult_loc.parents = 50;
+
     let native_asset_id = <ParachainAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
     let non_native_asset_id_start =
         <ParachainAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get();
 
     P::execute_with(|| {
         asset_id = AssetManager::next_asset_id();
+
+        // // Use some fake location as dummy to fill in gaps between Native and Non-Native assets
+        // dummy_mult_loc.parents = asset_id as u8 + 10;
 
         if asset_id < native_asset_id {
             insert_dummy_data(dummy_mult_loc, asset_metadata, asset_id, native_asset_id);

@@ -29,6 +29,7 @@ use frame_support::{
 };
 
 use crate::assets::{AssetIdLocationGetter, UnitsToWeightRatio};
+use orml_traits::location::{RelativeReserveProvider, Reserve as OrmlReserve};
 use xcm::{
     latest::{prelude::Concrete, Error as XcmError, Result as XcmResult},
     v1::{
@@ -66,6 +67,28 @@ impl Reserve for MultiAsset {
         } else {
             None
         }
+    }
+}
+
+/// This struct offers uses RelativeReserveProvider to output relative views of multilocations
+/// However, additionally accepts a MultiLocation that aims at representing the chain part
+/// (parent: 1, Parachain(paraId)) of the absolute representation of our chain.
+/// If a token reserve matches against this absolute view, we return  Some(MultiLocation::here())
+/// This helps users by preventing errors when they try to transfer a token through xtokens
+/// to our chain (either inserting the relative or the absolute value).
+pub struct AbsoluteAndRelativeReserve<AbsoluteMultiLocation>(PhantomData<AbsoluteMultiLocation>);
+impl<AbsoluteMultiLocation> OrmlReserve for AbsoluteAndRelativeReserve<AbsoluteMultiLocation>
+where
+    AbsoluteMultiLocation: Get<MultiLocation>,
+{
+    fn reserve(asset: &MultiAsset) -> Option<MultiLocation> {
+        RelativeReserveProvider::reserve(asset).map(|relative_reserve| {
+            if relative_reserve == AbsoluteMultiLocation::get() {
+                MultiLocation::here()
+            } else {
+                relative_reserve
+            }
+        })
     }
 }
 
@@ -305,21 +328,22 @@ impl<
 /// `../parachain(id)`.
 /// `T` should specify a `SelfLocation` in the form of absolute path to the
 /// relaychain.
-pub struct IsNativeConcrete<T>(PhantomData<T>);
-impl<T, Balance> MatchesFungible<Balance> for IsNativeConcrete<T>
-where
-    T: Get<MultiLocation>,
-    Balance: TryFrom<u128>,
-{
-    fn matches_fungible(a: &MultiAsset) -> Option<Balance> {
-        if let (Fungible(ref amount), Concrete(ref location)) = (&a.fun, &a.id) {
-            if location == &T::get() || MultiLocation::is_here(location) {
-                return CheckedConversion::checked_from(*amount);
-            }
-        }
-        None
-    }
-}
+// pub struct IsNativeConcrete<T>(PhantomData<T>);
+// impl<T, Balance> MatchesFungible<Balance> for IsNativeConcrete<T>
+// where
+//     T: Get<MultiLocation>,
+//     Balance: TryFrom<u128>,
+// {
+//     fn matches_fungible(a: &MultiAsset) -> Option<Balance> {
+//         if let (Fungible(ref amount), Concrete(ref location)) = (&a.fun, &a.id) {
+//             // if location == &T::get() || MultiLocation::is_here(location) {
+//             if location == &T::get() {
+//                 return CheckedConversion::checked_from(*amount);
+//             }
+//         }
+//         None
+//     }
+// }
 
 pub struct MultiAssetAdapter<
     Runtime,

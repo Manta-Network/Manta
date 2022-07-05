@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
+    weights, xcm_config::RelativeSelfLocation, AssetManager, Assets, Balances, Event,
     NativeTokenExistentialDeposit, Origin, Runtime,
 };
 
@@ -103,7 +103,7 @@ parameter_types! {
     pub const NativeAssetId: AssetId = 1;
     pub const StartNonNativeAssetId: AssetId = 8;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
-        VersionedMultiLocation::V1(SelfReserve::get()));
+        VersionedMultiLocation::V1(RelativeSelfLocation::get()));
     pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
         name: b"Calamari".to_vec(),
         symbol: b"KMA".to_vec(),

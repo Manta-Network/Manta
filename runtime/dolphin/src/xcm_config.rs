@@ -36,7 +36,7 @@ use manta_primitives::{
     assets::{AssetIdLocationConvert, AssetLocation},
     types::{AccountId, AssetId, Balance},
     xcm::{
-        AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
+        AbsoluteAndRelativeReserve, AccountIdToMultiLocation, FirstAssetTrader, MultiAssetAdapter,
         MultiNativeAsset,
     },
 };
@@ -52,9 +52,10 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
-    ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SovereignSignedViaLocation, TakeWeightCredit,
+    EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, IsConcrete, LocationInverter,
+    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+    SiblingParachainConvertsVia, SignedAccountId32AsNative, SovereignSignedViaLocation,
+    TakeWeightCredit,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
@@ -83,7 +84,8 @@ parameter_types! {
     pub const RelayNetwork: NetworkId = NetworkId::Kusama;
     pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-    pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
+    pub AbsoluteSelfLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
+    pub RelativeSelfLocation: MultiLocation = MultiLocation::new(0, Here);
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
@@ -141,7 +143,7 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
     // "default" implementation of converting a `MultiLocation` to an `AccountId`
     LocationToAccountId,
     // Used when the incoming asset is a fungible concrete asset matching the given location or name:
-    IsNativeConcrete<SelfReserve>,
+    IsConcrete<RelativeSelfLocation>,
     // Used to match incoming assets which are not the native asset.
     ConvertedConcreteAssetId<
         AssetId,
@@ -217,7 +219,7 @@ impl Config for XcmExecutorConfig {
     // Trader is the means to purchasing weight credit for XCM execution.
     // We define two traders:
     // The first one will charge parachain's native currency, who's `MultiLocation`
-    // is defined in `SelfReserve`.
+    // is defined in `RelativeSelfLocation`.
     // The second one will charge the first asset in the MultiAssets with pre-defined rate
     // i.e. units_per_second in `AssetManager`
     type Trader = (
@@ -321,7 +323,7 @@ impl orml_xtokens::Config for Runtime {
     type CurrencyIdConvert =
         CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
-    type SelfLocation = SelfReserve;
+    type SelfLocation = RelativeSelfLocation;
     // Take note that this pallet does not have the typical configurable WeightInfo.
     // It uses the Weigher configuration to calculate weights for the user callable extrinsics on this chain,
     // as well as weights for execution on the destination chain. Both based on the composed xcm messages.
@@ -331,5 +333,5 @@ impl orml_xtokens::Config for Runtime {
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
     type MinXcmFee = AssetManager;
     type MultiLocationsFilter = AssetManager;
-    type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
+    type ReserveProvider = AbsoluteAndRelativeReserve<AbsoluteSelfLocation>;
 }
