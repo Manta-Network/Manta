@@ -26,7 +26,6 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use nimbus_session::AuthorInherentWithNoOpSession;
 use sp_api::impl_runtime_apis;
-use sp_application_crypto::sr25519;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
@@ -106,10 +105,11 @@ pub mod opaque {
     }
 
     pub fn transform_session_keys(_v: AccountId, old: OldSessionKeys) -> SessionKeys {
+        use sp_application_crypto::UncheckedFrom;
         SessionKeys {
             aura: old.aura,
             nimbus: {
-                sr25519::Public::unchecked_from([0; 32]).into();
+                sp_application_crypto::sr25519::Public::unchecked_from([0; 32]).into()
                 // manta_primitives::helpers::get_pair_from_seed("DUMMY")
             },
             // vrf: {
@@ -780,8 +780,7 @@ impl frame_support::traits::OnRuntimeUpgrade for UpgradeSessionKeys {
     fn on_runtime_upgrade() -> frame_support::weights::Weight {
         use opaque::transform_session_keys;
         Session::upgrade_keys::<opaque::OldSessionKeys, _>(transform_session_keys);
-        BlockWeights::default().try_into().unwrap()
-        // Perbill::from_percent(50) * BlockWeights::max_block() as u64 // TODO: Check if this is realistic, this might need to be calculated from db accesses times acconuts
+        Perbill::from_percent(50) * BlockWeights::default().max_block as u64 // TODO: Check if this is realistic, this might need to be calculated from db accesses times acconuts
     }
     // #[cfg(feature = "try_runtime")]
     // fn pre_runtime_upgrade() -> frame_support::weights::Weight {
