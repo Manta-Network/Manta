@@ -24,7 +24,9 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use nimbus_session::AuthorInherentWithNoOpSession;
 use sp_api::impl_runtime_apis;
+use sp_application_crypto::sr25519;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
@@ -68,6 +70,7 @@ pub mod assets_config;
 pub mod currency;
 pub mod fee;
 pub mod impls;
+mod nimbus_session;
 pub mod xcm_config;
 
 use currency::*;
@@ -90,8 +93,29 @@ pub mod opaque {
     /// Opaque block identifier type.
     pub type BlockId = generic::BlockId<Block>;
     impl_opaque_keys! {
+        pub struct OldSessionKeys {
+            pub aura: Aura,
+        }
+    }
+    impl_opaque_keys! {
         pub struct SessionKeys {
             pub aura: Aura,
+            pub nimbus: AuthorInherentWithNoOpSession<Runtime>,
+            // pub vrf: AuthorInherentWithNoOpSession<Runtime>,
+        }
+    }
+
+    pub fn transform_session_keys(_v: AccountId, old: OldSessionKeys) -> SessionKeys {
+        SessionKeys {
+            aura: old.aura,
+            nimbus: {
+                sr25519::Public::unchecked_from([0; 32]).into();
+                // manta_primitives::helpers::get_pair_from_seed("DUMMY")
+            },
+            // vrf: {
+            //     sr25519::Public::unchecked_from([0; 32]).into();
+            //     // manta_primitives::helpers::get_pair_from_seed("DUMMY")
+            // }
         }
     }
 }
@@ -532,12 +556,12 @@ impl pallet_treasury::Config for Runtime {
     type SpendFunds = ();
 }
 impl pallet_author_inherent::Config for Runtime {
-        // We start a new slot each time we see a new relay block.
-        type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
-        type AccountLookup = ();
-        type EventHandler = ();
-        type CanAuthor = ();
-    }
+    // We start a new slot each time we see a new relay block.
+    type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
+    type AccountLookup = ();
+    type EventHandler = ();
+    type CanAuthor = ();
+}
 
 parameter_types! {
     pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
@@ -685,14 +709,12 @@ construct_runtime!(
         TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 
         // Collator support. the order of these 5 are important and shall not change.
-        Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
         CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
         AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
         AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 48, // TODO: check index
 
-        // Treasury
         Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,
 
         // Preimage registrar.
@@ -748,7 +770,26 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsReversedWithSystemFirst,
+    UpgradeSessionKeys,
 >;
+// When this is removed, should also remove `OldSessionKeys`.
+pub struct UpgradeSessionKeys;
+impl frame_support::traits::OnRuntimeUpgrade for UpgradeSessionKeys {
+    fn on_runtime_upgrade() -> frame_support::weights::Weight {
+        use opaque::transform_session_keys;
+        Session::upgrade_keys::<opaque::OldSessionKeys, _>(transform_session_keys);
+        BlockWeights::default().try_into().unwrap()
+        // Perbill::from_percent(50) * BlockWeights::max_block() as u64 // TODO: Check if this is realistic, this might need to be calculated from db accesses times acconuts
+    }
+    // #[cfg(feature = "try_runtime")]
+    // fn pre_runtime_upgrade() -> frame_support::weights::Weight {
+    //     // TODO Check if SessionKeys == OldSessionKeys
+    // }
+    // #[cfg(feature = "try_runtime")]
+    // fn post_runtime_upgrade() -> frame_support::weights::Weight {
+    //     // TODO Check that SessionKeys == SessionKeys
+    // }
+}
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]

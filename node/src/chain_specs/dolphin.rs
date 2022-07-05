@@ -40,7 +40,11 @@ pub type DolphinChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensio
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
 pub fn dolphin_session_keys(keys: AuraId) -> dolphin_runtime::opaque::SessionKeys {
-    dolphin_runtime::opaque::SessionKeys { aura: keys }
+    dolphin_runtime::opaque::SessionKeys {
+        aura: keys,
+        nimbus: sr25519::Public::unchecked_from([0; 32]).into(),
+        // vrf: sr25519::Public::unchecked_from([0; 32]).into()
+    }
 }
 
 /// Returns the [`Properties`] for the Dolphin parachain.

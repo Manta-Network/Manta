@@ -2545,6 +2545,7 @@ dependencies = [
  "serde",
  "smallvec",
  "sp-api",
+ "sp-application-crypto",
  "sp-arithmetic",
  "sp-block-builder",
  "sp-consensus-aura",
