@@ -28,7 +28,7 @@
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-
+pub mod migrations;
 pub mod weights;
 pub use crate::weights::WeightInfo;
 
@@ -44,11 +44,7 @@ mod tests;
 pub mod pallet {
 
     use crate::weights::WeightInfo;
-    use frame_support::{
-        pallet_prelude::*,
-        traits::{Contains, StorageVersion},
-        transactional, PalletId,
-    };
+    use frame_support::{pallet_prelude::*, traits::Contains, transactional, PalletId};
     use frame_system::pallet_prelude::*;
     use manta_primitives::{
         assets::{
@@ -485,9 +481,7 @@ pub mod pallet {
         }
 
         /// Get para id from asset location
-        pub(crate) fn get_para_id_from_multilocation(
-            location: Option<&MultiLocation>,
-        ) -> Option<ParaId> {
+        pub fn get_para_id_from_multilocation(location: Option<&MultiLocation>) -> Option<ParaId> {
             if let Some(MultiLocation { interior, .. }) = location {
                 match interior {
                     Junctions::X1(Junction::Parachain(para_id))
@@ -506,7 +500,7 @@ pub mod pallet {
         }
 
         /// Increases the count of associated assets for the para id.
-        pub(crate) fn increase_count_of_associated_assets(para_id: ParaId) -> DispatchResult {
+        pub fn increase_count_of_associated_assets(para_id: ParaId) -> DispatchResult {
             // If it's a new para id, which will be inserted with AssetCount as 1.
             // If not, AssetCount will increased by 1.
             if AllowedDestParaIds::<T>::contains_key(para_id) {
@@ -554,79 +548,6 @@ pub mod pallet {
             match MinXcmFee::<T>::get(&location) {
                 Some(min_fee) => min_fee,
                 None => u128::MAX,
-            }
-        }
-    }
-
-    #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_runtime_upgrade() -> Weight {
-            // currently, it's 0 on calamari.
-            let storage_version = Self::on_chain_storage_version();
-            if storage_version < 1 {
-                log::info!(target: "asset-manager", "Start to execute storage migration for asset-manager.");
-
-                let mut reads: Weight = 0;
-                let mut writes: Weight = 0;
-                LocationAssetId::<T>::iter().for_each(|(location, _asset_id)| {
-                    reads += 1;
-                    if let Some(para_id) =
-                        Self::get_para_id_from_multilocation(location.into().as_ref())
-                    {
-                        if para_id != 2084 {
-                            let _ = Self::increase_count_of_associated_assets(para_id);
-                            reads += 1; // There's one read in method increase_count_of_associated_assets.
-                            writes += 1; // There's one write in method increase_count_of_associated_assets.
-                        }
-                    }
-                });
-
-                // Update storage version.
-                StorageVersion::new(1u16).put::<Self>();
-                writes += 1;
-
-                T::DbWeight::get()
-                    .reads(reads)
-                    .saturating_add(T::DbWeight::get().writes(writes))
-            } else {
-                log::info!("✅ no migration for asset-manager.");
-                // only 1 read
-                T::DbWeight::get().reads(1)
-            }
-        }
-
-        #[cfg(feature = "try-runtime")]
-        fn pre_upgrade() -> Result<(), &'static str> {
-            let storage_version = Self::on_chain_storage_version();
-
-            if storage_version >= 1 {
-                return Err("Storage version is >= 1, the migration won't be executed.");
-            }
-
-            Ok(())
-        }
-
-        #[cfg(feature = "try-runtime")]
-        fn post_upgrade() -> Result<(), &'static str> {
-            let storage_version = Self::on_chain_storage_version();
-
-            if storage_version < 1 {
-                return Err("Storage version is >= 1, the migration won't be executed.");
-            }
-
-            let acala = (2000, 3); // karura has 3 asset locations on calamari.
-            let moonbeam = (2023, 1); // moonbean has 1 asset location on calamari.
-            let calamari = 2084; // our own asset location won't be counted.
-            if AllowedDestParaIds::<T>::get(acala.0) == Some(acala.1)
-                && AllowedDestParaIds::<T>::get(moonbeam.0) == Some(moonbeam.1)
-                && AllowedDestParaIds::<T>::get(calamari).is_none()
-            {
-                log::info!(
-                    "✅ Storage migration for asset-manager has been executed successfully."
-                );
-                Ok(())
-            } else {
-                Err("Failed to executed storage migration for asset-manager.")
             }
         }
     }

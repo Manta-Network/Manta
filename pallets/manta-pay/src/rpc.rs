@@ -35,9 +35,17 @@ const SERVER_ERROR: i32 = 1;
 #[rpc(client, server)]
 pub trait PullApi {
     /// Returns the update required to be synchronized with the ledger starting from
-    /// `checkpoint`.
+    // /// `checkpoint`.
+    // #[method(name = "mantaPay_pull_ledger_diff", blocking)]
+    // fn pull_ledger_diff(&self, checkpoint: Checkpoint) -> RpcResult<PullResponse>;
+    /// `checkpoint`, `max_receivers` and `max_senders`.
     #[method(name = "mantaPay_pull_ledger_diff", blocking)]
-    fn pull_ledger_diff(&self, checkpoint: Checkpoint) -> RpcResult<PullResponse>;
+    fn pull_ledger_diff(
+        &self,
+        checkpoint: Checkpoint,
+        max_receivers: u64,
+        max_senders: u64,
+    ) -> RpcResult<PullResponse>;
 }
 
 /// Pull RPC API Implementation
@@ -68,16 +76,22 @@ where
     C::Api: PullLedgerDiffApi<B>,
 {
     #[inline]
-    fn pull_ledger_diff(&self, checkpoint: Checkpoint) -> RpcResult<PullResponse> {
+    fn pull_ledger_diff(
+        &self,
+        checkpoint: Checkpoint,
+        max_receivers: u64,
+        max_senders: u64,
+    ) -> RpcResult<PullResponse> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(self.client.info().best_hash);
-        api.pull_ledger_diff(&at, checkpoint.into()).map_err(|err| {
-            CallError::Custom(ErrorObject::owned(
-                SERVER_ERROR,
-                "Unable to compute state diff for pull",
-                Some(format!("{:?}", err)),
-            ))
-            .into()
-        })
+        api.pull_ledger_diff(&at, checkpoint.into(), max_receivers, max_senders)
+            .map_err(|err| {
+                CallError::Custom(ErrorObject::owned(
+                    SERVER_ERROR,
+                    "Unable to compute state diff for pull",
+                    Some(format!("{:?}", err)),
+                ))
+                .into()
+            })
     }
 }

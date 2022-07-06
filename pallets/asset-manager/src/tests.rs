@@ -264,7 +264,7 @@ fn check_para_id_info_when_update_asset_location() {
             MultiLocation::new(1, X1(Parachain(manta_para_id))),
         ));
 
-        // regitering manta native asset should work.
+        // registering manta native asset should work.
         assert_ok!(AssetManager::register_asset(
             Origin::root(),
             manta_native_location,
@@ -288,7 +288,7 @@ fn check_para_id_info_when_update_asset_location() {
                 1,
                 X2(Parachain(manta_para_id), GeneralKey(b"eMANTA".to_vec())),
             )));
-        // regitering manta non native asset should work.
+        // registering manta non native asset should work.
         assert_ok!(AssetManager::register_asset(
             Origin::root(),
             manta_non_native_location,

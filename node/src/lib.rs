@@ -16,9 +16,12 @@
 
 //! Parachain CLI
 
-use manta::command::{run, Result};
+#![warn(missing_docs)]
 
-#[inline]
-fn main() -> Result {
-    run()
-}
+extern crate alloc;
+
+pub mod chain_specs;
+pub mod cli;
+pub mod command;
+pub mod rpc;
+pub mod service;
