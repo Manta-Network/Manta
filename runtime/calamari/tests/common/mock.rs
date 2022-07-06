@@ -105,9 +105,13 @@ impl ExtBuilder {
                 .cloned()
                 .map(|(acc, aura)| {
                     (
-                        acc.clone(),                                    // account id
-                        acc,                                            // validator id
-                        calamari_runtime::opaque::SessionKeys { aura }, // session keys
+                        acc.clone(), // account id
+                        acc,         // validator id
+                        calamari_runtime::opaque::SessionKeys {
+                            aura,
+                            nimbus: { Public::unchecked_from([0; 32]).into() },
+                            vrf: { Public::unchecked_from([0; 32]).into() },
+                        }, // session keys
                     )
                 })
                 .collect(),

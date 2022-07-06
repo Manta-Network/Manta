@@ -567,6 +567,8 @@ fn session_and_collator_selection_work() {
             // Create and bond session keys to Bob's account.
             let keys = calamari_runtime::opaque::SessionKeys {
                 aura: bob_aura.clone(),
+                nimbus: { Public::unchecked_from([0; 32]).into() },
+                vrf: { Public::unchecked_from([0; 32]).into() },
             };
             assert_ok!(Session::set_keys(Origin::signed(bob.clone()), keys, vec![]));
 
@@ -587,6 +589,8 @@ fn session_and_collator_selection_work() {
                     alice.clone(),
                     calamari_runtime::opaque::SessionKeys {
                         aura: alice_aura.clone(),
+                        nimbus: { Public::unchecked_from([0; 32]).into() },
+                        vrf: { Public::unchecked_from([0; 32]).into() },
                     }
                 )]
             );
@@ -606,12 +610,16 @@ fn session_and_collator_selection_work() {
                         alice.clone(),
                         calamari_runtime::opaque::SessionKeys {
                             aura: alice_aura.clone(),
+                            nimbus: { Public::unchecked_from([0; 32]).into() },
+                            vrf: { Public::unchecked_from([0; 32]).into() },
                         }
                     ),
                     (
                         bob.clone(),
                         calamari_runtime::opaque::SessionKeys {
                             aura: bob_aura.clone(),
+                            nimbus: { Public::unchecked_from([0; 32]).into() },
+                            vrf: { Public::unchecked_from([0; 32]).into() },
                         }
                     )
                 ]
@@ -664,11 +672,15 @@ fn batched_registration_of_collator_candidates_works() {
         .execute_with(|| {
             let keys = calamari_runtime::opaque::SessionKeys {
                 aura: bob_aura.clone(),
+                nimbus: { Public::unchecked_from([0; 32]).into() },
+                vrf: { Public::unchecked_from([0; 32]).into() },
             };
             assert_ok!(Session::set_keys(Origin::signed(bob.clone()), keys, vec![]));
 
             let keys = calamari_runtime::opaque::SessionKeys {
                 aura: charlie_aura.clone(),
+                nimbus: { Public::unchecked_from([0; 32]).into() },
+                vrf: { Public::unchecked_from([0; 32]).into() },
             };
             assert_ok!(Session::set_keys(
                 Origin::signed(charlie.clone()),
@@ -708,6 +720,8 @@ fn batched_registration_of_collator_candidates_works() {
                     alice.clone(),
                     calamari_runtime::opaque::SessionKeys {
                         aura: alice_aura.clone(),
+                        nimbus: { Public::unchecked_from([0; 32]).into() },
+                        vrf: { Public::unchecked_from([0; 32]).into() },
                     }
                 ),]
             );
@@ -721,18 +735,24 @@ fn batched_registration_of_collator_candidates_works() {
                     alice.clone(),
                     calamari_runtime::opaque::SessionKeys {
                         aura: alice_aura.clone(),
+                        nimbus: { Public::unchecked_from([0; 32]).into() },
+                        vrf: { Public::unchecked_from([0; 32]).into() },
                     },
                 ),
                 (
                     bob.clone(),
                     calamari_runtime::opaque::SessionKeys {
                         aura: bob_aura.clone(),
+                        nimbus: { Public::unchecked_from([0; 32]).into() },
+                        vrf: { Public::unchecked_from([0; 32]).into() },
                     },
                 ),
                 (
                     charlie.clone(),
                     calamari_runtime::opaque::SessionKeys {
                         aura: charlie_aura.clone(),
+                        nimbus: { Public::unchecked_from([0; 32]).into() },
+                        vrf: { Public::unchecked_from([0; 32]).into() },
                     },
                 ),
             ];
