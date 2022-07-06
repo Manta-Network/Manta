@@ -1178,6 +1178,7 @@ dependencies = [
  "log",
  "manta-collator-selection",
  "manta-primitives",
+ "nimbus-primitives",
  "orml-traits",
  "orml-xtokens",
  "pallet-asset-manager",
@@ -1209,8 +1210,10 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
+ "session-keys-primitives",
  "smallvec",
  "sp-api",
+ "sp-application-crypto",
  "sp-arithmetic",
  "sp-block-builder",
  "sp-consensus-aura",
@@ -2543,6 +2546,7 @@ dependencies = [
  "runtime-common",
  "scale-info",
  "serde",
+ "session-keys-primitives",
  "smallvec",
  "sp-api",
  "sp-application-crypto",
@@ -10749,6 +10753,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "session-keys-primitives"
+version = "0.1.0"
+dependencies = [
+ "nimbus-primitives",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-application-crypto",
+ "sp-runtime",
 ]
 
 [[package]]

@@ -40,7 +40,12 @@ pub type CalamariChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensi
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
 pub fn calamari_session_keys(keys: AuraId) -> calamari_runtime::opaque::SessionKeys {
-    calamari_runtime::opaque::SessionKeys { aura: keys }
+    use sp_core::crypto::UncheckedFrom;
+    calamari_runtime::opaque::SessionKeys {
+        aura: keys,
+        nimbus: sr25519::Public::unchecked_from([0; 32]).into(),
+        vrf: sr25519::Public::unchecked_from([0; 32]).into(),
+    }
 }
 
 /// Returns the [`Properties`] for the Calamari parachain.

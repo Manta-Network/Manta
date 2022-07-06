@@ -44,7 +44,7 @@ pub fn dolphin_session_keys(keys: AuraId) -> dolphin_runtime::opaque::SessionKey
     dolphin_runtime::opaque::SessionKeys {
         aura: keys,
         nimbus: sr25519::Public::unchecked_from([0; 32]).into(),
-        // vrf: sr25519::Public::unchecked_from([0; 32]).into()
+        vrf: sr25519::Public::unchecked_from([0; 32]).into(),
     }
 }
 

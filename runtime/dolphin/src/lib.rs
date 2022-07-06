@@ -24,7 +24,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use nimbus_session::AuthorInherentWithNoOpSession;
+use nimbus_session::{AuthorInherentWithNoOpSession, VrfWithNoOpSession};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -100,22 +100,16 @@ pub mod opaque {
         pub struct SessionKeys {
             pub aura: Aura,
             pub nimbus: AuthorInherentWithNoOpSession<Runtime>,
-            // pub vrf: AuthorInherentWithNoOpSession<Runtime>,
+            pub vrf: VrfWithNoOpSession,
         }
     }
 
     pub fn transform_session_keys(_v: AccountId, old: OldSessionKeys) -> SessionKeys {
-        use sp_application_crypto::UncheckedFrom;
+        use sp_application_crypto::{sr25519::Public, UncheckedFrom};
         SessionKeys {
             aura: old.aura,
-            nimbus: {
-                sp_application_crypto::sr25519::Public::unchecked_from([0; 32]).into()
-                // manta_primitives::helpers::get_pair_from_seed("DUMMY")
-            },
-            // vrf: {
-            //     sr25519::Public::unchecked_from([0; 32]).into();
-            //     // manta_primitives::helpers::get_pair_from_seed("DUMMY")
-            // }
+            nimbus: { Public::unchecked_from([0; 32]).into() },
+            vrf: { Public::unchecked_from([0; 32]).into() },
         }
     }
 }
@@ -555,13 +549,6 @@ impl pallet_treasury::Config for Runtime {
     type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
     type SpendFunds = ();
 }
-impl pallet_author_inherent::Config for Runtime {
-    // We start a new slot each time we see a new relay block.
-    type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
-    type AccountLookup = ();
-    type EventHandler = ();
-    type CanAuthor = ();
-}
 
 parameter_types! {
     pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
@@ -714,7 +701,6 @@ construct_runtime!(
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
         AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
-        AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 48, // TODO: check index
 
         // Treasury
         Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,

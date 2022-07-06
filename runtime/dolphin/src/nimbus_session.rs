@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+// TODO: This file should be part of primitives along with session-keys
+
 use frame_support::traits::OneSessionHandler;
 use frame_system::Config;
 use pallet_author_inherent::Pallet as AuthorInherent;
@@ -37,6 +39,34 @@ impl<T: Config> OneSessionHandler<T::AccountId> for AuthorInherentWithNoOpSessio
     fn on_new_session<'a, I: 'a>(_: bool, _: I, _: I)
     where
         I: Iterator<Item = (&'a T::AccountId, Self::Key)>,
+    {
+    }
+
+    fn on_disabled(_: u32) {}
+
+    fn on_before_session_ending() {}
+}
+
+use crate::AccountId;
+use session_keys_primitives::vrf::VrfSessionKey;
+pub struct VrfWithNoOpSession(pub VrfSessionKey);
+
+impl BoundToRuntimeAppPublic for VrfWithNoOpSession {
+    type Public = <VrfSessionKey as BoundToRuntimeAppPublic>::Public;
+}
+
+impl OneSessionHandler<AccountId> for VrfWithNoOpSession {
+    type Key = <VrfSessionKey as BoundToRuntimeAppPublic>::Public;
+
+    fn on_genesis_session<'a, I: 'a>(_: I)
+    where
+        I: Iterator<Item = (&'a AccountId, Self::Key)>,
+    {
+    }
+
+    fn on_new_session<'a, I: 'a>(_: bool, _: I, _: I)
+    where
+        I: Iterator<Item = (&'a AccountId, Self::Key)>,
     {
     }
 
