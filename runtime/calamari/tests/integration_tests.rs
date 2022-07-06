@@ -552,8 +552,6 @@ fn session_and_collator_selection_work() {
     let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
     let alice_aura = get_collator_keys_from_seed("Alice");
     let bob_aura = get_collator_keys_from_seed("Bob");
-    let alice_nimbus = get_collator_keys_from_seed("Alice");
-    let bob_nimbus = get_collator_keys_from_seed("Bob");
     let desired_candidates = 1;
 
     ExtBuilder::default()
