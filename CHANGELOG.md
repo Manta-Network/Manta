@@ -3,10 +3,11 @@
 ## [Unreleased]
 
 ### Breaking changes
-- [\#628](https://github.com/Manta-Network/Manta/pull/628) Improve RPC performance, add `max_receivers` and `max_senders` fields in the RPC request. 
+- [\#628](https://github.com/Manta-Network/Manta/pull/628) Improve RPC performance, add `max_receivers` and `max_senders` fields in the RPC request.
 
 ### Features
 - [\#576](https://github.com/Manta-Network/Manta/pull/576) Unfilter xtokens.transfer_multicurrencies and bump MaxAssetsForTransfer to 2.
+- [\#646](https://github.com/Manta-Network/Manta/pull/646) Add session key types for new consensus implementation to Dolphin and Calamari (Nimbus Stage 0)
 
 ### Improvements
 - [\#449](https://github.com/Manta-Network/Manta/pull/449) Remove strip from CI, and add strip profile to production.
