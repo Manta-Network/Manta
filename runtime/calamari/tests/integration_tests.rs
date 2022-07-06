@@ -61,6 +61,7 @@ use xcm::{
 
 use pallet_transaction_payment::ChargeTransactionPayment;
 
+use sp_application_crypto::{sr25519::Public, UncheckedFrom};
 use sp_consensus_aura::AURA_ENGINE_ID;
 use sp_core::{sr25519, H256};
 use sp_runtime::{
@@ -551,6 +552,8 @@ fn session_and_collator_selection_work() {
     let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
     let alice_aura = get_collator_keys_from_seed("Alice");
     let bob_aura = get_collator_keys_from_seed("Bob");
+    let alice_nimbus = get_collator_keys_from_seed("Alice");
+    let bob_nimbus = get_collator_keys_from_seed("Bob");
     let desired_candidates = 1;
 
     ExtBuilder::default()
