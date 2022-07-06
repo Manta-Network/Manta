@@ -9,7 +9,7 @@ on:
   pull_request:
     branches: [manta]
   push:
-    branches: [manta]
+    branches: [ghzlatarev/ledger-rpc-ci]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 
@@ -534,6 +534,8 @@ jobs:
           repository: Manta-Network/Dev-Tools
           path: dev-tools-calamari
       -
+        uses: actions/checkout@v2
+      -
         name: launch testnet
         run: |
           cd ${{ github.workspace }}/manta-pc-launch
@@ -573,7 +575,11 @@ jobs:
         name: run test suites
         run: |
           # todo: implement moonbeam-like js test suite triggers here
-          sleep 300
+          cd ${{ github.workspace }}/Manta/tests
+          yarn install
+          yarn test --address=ws://127.0.0.1:9921
+          yarn ts-node rpc_performance.ts --address=ws://127.0.0.1:9921
+          sleep 180
       -
         name: check if target block is finalized
         run: |
