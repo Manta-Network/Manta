@@ -456,7 +456,10 @@ fn send_para_a_native_asset_to_para_b_barriers_should_work() {
         use parachain::{Event, System};
         assert!(System::events().iter().any(|r| matches!(
             r.event,
-            Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail { .. })
+            Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail(
+                Some(_),
+                xcm_simulator::XcmError::Barrier
+            ))
         )));
     });
 
@@ -586,6 +589,109 @@ fn send_insufficient_asset_from_para_a_to_para_b() {
             parachain::Assets::balance(a_asset_id_on_b, &ALICE),
             (amount - fee_at_b) * 2
         );
+    });
+}
+
+#[test]
+fn send_para_a_native_asset_to_para_b_must_fail_cases() {
+    MockNet::reset();
+
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
+    let para_b_source_location = create_asset_location(1, PARA_B_ID);
+
+    let amount = 1u128;
+    let units_per_sec = 125000000000;
+
+    let para_a_asset_metadata =
+        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, false);
+    let para_b_asset_metadata =
+        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, false);
+
+    let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(units_per_sec),
+        None,
+    );
+    let _ = register_assets_on_parachain::<ParaA>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(units_per_sec),
+        None,
+    );
+
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(units_per_sec),
+        None,
+    );
+    let a_asset_id_on_b = register_assets_on_parachain::<ParaB>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(units_per_sec),
+        None,
+    );
+
+    let dest = MultiLocation {
+        parents: 1,
+        interior: X2(
+            Parachain(PARA_B_ID),
+            AccountId32 {
+                network: NetworkId::Any,
+                id: ALICE.into(),
+            },
+        ),
+    };
+
+    // High amount should fail on the sender side
+    let weight = weight_of_four_xcm_instructions_on_para() * 100_000_000;
+    ParaA::execute_with(|| {
+        assert_err!(
+            parachain::XTokens::transfer(
+                parachain::Origin::signed(ALICE),
+                parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
+                amount + INITIAL_BALANCE,
+                Box::new(VersionedMultiLocation::V1(dest.clone())),
+                weight
+            ),
+            orml_xtokens::Error::<parachain::Runtime>::XcmExecutionFailed
+        );
+        assert_eq!(parachain::Balances::free_balance(&ALICE), INITIAL_BALANCE);
+    });
+
+    // Low amount for the required weight results in TooExpensive error on the receiver side
+    ParaA::execute_with(|| {
+        assert_ok!(parachain::XTokens::transfer(
+            parachain::Origin::signed(ALICE),
+            parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
+            amount,
+            Box::new(VersionedMultiLocation::V1(dest)),
+            weight
+        ));
+        assert_eq!(
+            parachain::Balances::free_balance(&ALICE),
+            INITIAL_BALANCE - amount
+        )
+    });
+
+    ParaB::execute_with(|| {
+        use parachain::{Event, System};
+
+        assert!(System::events().iter().any(|r| {
+            matches!(
+                r.event,
+                Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail(
+                    Some(_),
+                    xcm_simulator::XcmError::TooExpensive
+                ))
+            )
+        }));
+    });
+
+    // Make sure B didn't receive the token
+    ParaB::execute_with(|| {
+        assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), 0);
     });
 }
 
