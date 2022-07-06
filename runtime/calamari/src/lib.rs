@@ -69,6 +69,7 @@ pub mod currency;
 pub mod fee;
 pub mod impls;
 pub mod migrations;
+mod nimbus_session_adapter;
 pub mod xcm_config;
 
 use currency::*;
@@ -90,9 +91,27 @@ pub mod opaque {
     pub type Block = generic::Block<Header, UncheckedExtrinsic>;
     /// Opaque block identifier type.
     pub type BlockId = generic::BlockId<Block>;
+
+    use nimbus_session_adapter::{AuthorInherentWithNoOpSession, VrfWithNoOpSession};
+    impl_opaque_keys! {
+        pub struct OldSessionKeys {
+            pub aura: Aura,
+        }
+    }
     impl_opaque_keys! {
         pub struct SessionKeys {
             pub aura: Aura,
+            pub nimbus: AuthorInherentWithNoOpSession<Runtime>,
+            pub vrf: VrfWithNoOpSession,
+        }
+    }
+
+    pub fn transform_session_keys(_v: AccountId, old: OldSessionKeys) -> SessionKeys {
+        use sp_application_crypto::{sr25519::Public, UncheckedFrom};
+        SessionKeys {
+            aura: old.aura,
+            nimbus: { Public::unchecked_from([0; 32]).into() },
+            vrf: { Public::unchecked_from([0; 32]).into() },
         }
     }
 }

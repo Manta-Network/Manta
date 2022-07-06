@@ -24,7 +24,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use nimbus_session::{AuthorInherentWithNoOpSession, VrfWithNoOpSession};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -69,7 +68,7 @@ pub mod assets_config;
 pub mod currency;
 pub mod fee;
 pub mod impls;
-mod nimbus_session;
+mod nimbus_session_adapter;
 pub mod xcm_config;
 
 use currency::*;
@@ -91,6 +90,8 @@ pub mod opaque {
     pub type Block = generic::Block<Header, UncheckedExtrinsic>;
     /// Opaque block identifier type.
     pub type BlockId = generic::BlockId<Block>;
+
+    use nimbus_session_adapter::{AuthorInherentWithNoOpSession, VrfWithNoOpSession};
     impl_opaque_keys! {
         pub struct OldSessionKeys {
             pub aura: Aura,

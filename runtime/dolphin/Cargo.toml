@@ -73,7 +73,6 @@ parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-fe
 
 # Nimbus Dependencies
 nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v0.9.18", default-features = false }
-pallet-aura-style-filter = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v0.9.18", default-features = false }
 pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v0.9.18", default-features = false }
 
 # Polkadot dependencies
@@ -207,7 +206,6 @@ std = [
   "cumulus-primitives-utility/std",
   "nimbus-primitives/std",
   "pallet-author-inherent/std",
-  "pallet-aura-style-filter/std",
   'xcm/std',
   'xcm-builder/std',
   'xcm-executor/std',
