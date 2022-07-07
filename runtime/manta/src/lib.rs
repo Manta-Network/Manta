@@ -53,8 +53,9 @@ use frame_system::{
 };
 use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID},
-    types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
+    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
+use session_keys_primitives::aura::AuraId;
 use runtime_common::prod_or_fast;
 use sp_runtime::Perbill;
 

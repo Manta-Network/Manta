@@ -48,9 +48,9 @@ use manta_primitives::{
         AssetConfig, AssetLocation, AssetRegistrarMetadata, FungibleLedger, FungibleLedgerError,
     },
     constants::time::{DAYS, HOURS},
-    helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
     types::{AccountId, Header},
 };
+use session_keys_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 use xcm::{
     opaque::latest::{
         Junction::{PalletInstance, Parachain},

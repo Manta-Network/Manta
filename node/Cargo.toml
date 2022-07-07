@@ -94,6 +94,7 @@ dolphin-runtime = { path = '../runtime/dolphin' }
 manta-primitives = { path = '../primitives' }
 manta-runtime = { path = '../runtime/manta' }
 pallet-manta-pay = { path = '../pallets/manta-pay', features = ["rpc", "runtime"] }
+session-keys-primitives = { path = '../session-keys' }
 
 [build-dependencies]
 substrate-build-script-utils = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18" }

@@ -14,9 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::types::{AccountId, AuraId, Signature};
+//! Helper methods to generate dummy keys used in testing
+
+use crate::{aura::AuraId, vrf::VrfId};
+use manta_primitives::types::{AccountId, Signature};
 use nimbus_primitives::NimbusId;
-use session_keys_primitives::vrf::VrfId;
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 

@@ -53,8 +53,9 @@ use frame_system::{
 };
 use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
-    types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
+    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
+use session_keys_primitives::aura::AuraId;
 use nimbus_primitives::NimbusId;
 use runtime_common::prod_or_fast;
 use session_keys_primitives::VrfId;
@@ -114,11 +115,11 @@ pub mod opaque {
     }
 
     pub fn transform_session_keys(_v: AccountId, old: OldSessionKeys) -> SessionKeys {
-        use sp_application_crypto::{sr25519::Public, UncheckedFrom};
+        let unique_dummy_nimbus_id = session_keys_primitives::nimbus::from_aura_key(old.aura.clone());
         SessionKeys {
             aura: old.aura,
-            nimbus: { Public::unchecked_from([0; 32]).into() },
-            vrf: { Public::unchecked_from([0; 32]).into() },
+            nimbus: unique_dummy_nimbus_id.clone(),
+            vrf: unique_dummy_nimbus_id.into(),
         }
     }
 }

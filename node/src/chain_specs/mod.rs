@@ -23,8 +23,9 @@
 
 use manta_primitives::{
     constants,
-    types::{AccountId, AuraId, Balance},
+    types::{AccountId, Balance},
 };
+use session_keys_primitives::aura::AuraId;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, Properties};
 use serde::{Deserialize, Serialize};

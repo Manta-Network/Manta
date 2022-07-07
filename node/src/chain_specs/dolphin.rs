@@ -21,7 +21,7 @@ use crate::command::DOLPHIN_PARACHAIN_ID;
 use dolphin_runtime::{
     opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
 };
-use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
+use session_keys_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 /// Dolphin Protocol Identifier
 pub const DOLPHIN_PROTOCOL_ID: &str = "dolphin";
@@ -42,12 +42,12 @@ pub type DolphinChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensio
 ///
 /// The input must be a tuple of individual keys (a single arg for now sinc we have just one key).
 pub fn dolphin_session_keys(keys: AuraId) -> SessionKeys {
-    use sp_core::crypto::UncheckedFrom;
-    SessionKeys {
-        aura: keys,
-        nimbus: sr25519::Public::unchecked_from([0; 32]).into(),
-        vrf: sr25519::Public::unchecked_from([0; 32]).into(),
-    }
+        let unique_dummy_nimbus_id = session_keys_primitives::nimbus::from_aura_key(keys.clone());
+        SessionKeys {
+            aura: keys,
+            nimbus: unique_dummy_nimbus_id.clone(),
+            vrf: unique_dummy_nimbus_id.into(),
+        }
 }
 
 /// Returns the [`Properties`] for the Dolphin parachain.

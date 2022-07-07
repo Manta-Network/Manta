@@ -5263,6 +5263,7 @@ dependencies = [
  "sc-transaction-pool",
  "sc-transaction-pool-api",
  "serde",
+ "session-keys-primitives",
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
@@ -5407,12 +5408,9 @@ dependencies = [
  "frame-system",
  "log",
  "manta-accounting 0.5.0",
- "nimbus-primitives",
  "parity-scale-codec",
  "scale-info",
- "session-keys-primitives",
  "smallvec",
- "sp-consensus-aura",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -5467,6 +5465,7 @@ dependencies = [
  "runtime-common",
  "scale-info",
  "serde",
+ "session-keys-primitives",
  "smallvec",
  "sp-api",
  "sp-block-builder",
@@ -10745,10 +10744,13 @@ dependencies = [
 name = "session-keys-primitives"
 version = "0.1.0"
 dependencies = [
+ "manta-primitives",
  "nimbus-primitives",
  "parity-scale-codec",
  "scale-info",
  "sp-application-crypto",
+ "sp-consensus-aura",
+ "sp-core",
  "sp-runtime",
 ]
 

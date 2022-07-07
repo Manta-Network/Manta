@@ -14,12 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-#![allow(non_upper_case_globals)]
-#![allow(clippy::unnecessary_cast)]
-#![allow(clippy::upper_case_acronyms)]
-#![cfg_attr(not(feature = "std"), no_std)]
+//! Helpers for handling nimbus keys
 
-pub mod assets;
-pub mod constants;
-pub mod types;
-pub mod xcm;
+use nimbus_primitives::NimbusId;
+use crate::aura::AuraId;
+use sp_application_crypto::{sr25519, UncheckedFrom};
+
+/// Clones an aura pubkey and represents it as a nimbus pubkey
+/// Note: Not implementing From/Into because neither Nimbus nor Aura are our crates
+pub fn from_aura_key(aura_id: AuraId) -> NimbusId {
+        let aura_as_sr25519: sr25519::Public = aura_id.into();
+        let sr25519_as_bytes: [u8; 32] = aura_as_sr25519.into();
+        sr25519::Public::unchecked_from(sr25519_as_bytes).into()
+}
