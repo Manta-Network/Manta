@@ -93,7 +93,7 @@ manta-primitives = { path = '../../primitives', default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
-session-keys-primitives = { path = '../../session-keys', default-features = false }
+session-key-primitives = { path = '../../session-keys', default-features = false }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -208,7 +208,7 @@ std = [
   "cumulus-primitives-utility/std",
   "nimbus-primitives/std",
   "pallet-author-inherent/std",
-  'session-keys-primitives/std',
+  'session-key-primitives/std',
   'xcm/std',
   'xcm-builder/std',
   'xcm-executor/std',

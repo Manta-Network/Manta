@@ -57,7 +57,7 @@ use manta_primitives::{
 };
 use nimbus_primitives::NimbusId;
 use runtime_common::prod_or_fast;
-use session_keys_primitives::{aura::AuraId, VrfId};
+use session_key_primitives::{aura::AuraId, VrfId};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -115,7 +115,7 @@ pub mod opaque {
 
     pub fn transform_session_keys(_v: AccountId, old: OldSessionKeys) -> SessionKeys {
         let unique_dummy_nimbus_id =
-            session_keys_primitives::nimbus::from_aura_key(old.aura.clone());
+            session_key_primitives::nimbus::from_aura_key(old.aura.clone());
         SessionKeys {
             aura: old.aura,
             nimbus: unique_dummy_nimbus_id.clone(),

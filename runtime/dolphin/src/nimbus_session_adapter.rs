@@ -48,7 +48,7 @@ impl<T: Config> OneSessionHandler<T::AccountId> for AuthorInherentWithNoOpSessio
 }
 
 use crate::AccountId;
-use session_keys_primitives::vrf::VrfSessionKey;
+use session_key_primitives::vrf::VrfSessionKey;
 pub struct VrfWithNoOpSession(pub VrfSessionKey);
 
 impl BoundToRuntimeAppPublic for VrfWithNoOpSession {

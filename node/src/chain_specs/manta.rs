@@ -19,7 +19,7 @@
 use super::*;
 use crate::command::MANTA_PARACHAIN_ID;
 use manta_runtime::opaque::SessionKeys;
-use session_keys_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
+use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 /// Manta Protocol Identifier
 pub const MANTA_PROTOCOL_ID: &str = "manta";
 

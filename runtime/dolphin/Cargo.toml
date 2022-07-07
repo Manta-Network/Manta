@@ -92,7 +92,7 @@ pallet-asset-manager = { path = '../../pallets/asset-manager', default-features 
 pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
-session-keys-primitives = { path = '../../session-keys', default-features = false }
+session-key-primitives = { path = '../../session-keys', default-features = false }
 
 # Third party (vendored) dependencies
 orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev = "7e2f985" }
@@ -206,7 +206,7 @@ std = [
   "cumulus-primitives-utility/std",
   "nimbus-primitives/std",
   "pallet-author-inherent/std",
-  'session-keys-primitives/std',
+  'session-key-primitives/std',
   'xcm/std',
   'xcm-builder/std',
   'xcm-executor/std',

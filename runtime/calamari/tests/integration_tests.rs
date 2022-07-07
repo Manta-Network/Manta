@@ -50,7 +50,7 @@ use manta_primitives::{
     constants::time::{DAYS, HOURS},
     types::{AccountId, Header},
 };
-use session_keys_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
+use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 use xcm::{
     opaque::latest::{
         Junction::{PalletInstance, Parachain},

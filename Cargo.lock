@@ -1211,7 +1211,7 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "session-keys-primitives",
+ "session-key-primitives",
  "smallvec",
  "sp-api",
  "sp-application-crypto",
@@ -2546,7 +2546,7 @@ dependencies = [
  "runtime-common",
  "scale-info",
  "serde",
- "session-keys-primitives",
+ "session-key-primitives",
  "smallvec",
  "sp-api",
  "sp-application-crypto",
@@ -5263,7 +5263,7 @@ dependencies = [
  "sc-transaction-pool",
  "sc-transaction-pool-api",
  "serde",
- "session-keys-primitives",
+ "session-key-primitives",
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
@@ -5465,7 +5465,7 @@ dependencies = [
  "runtime-common",
  "scale-info",
  "serde",
- "session-keys-primitives",
+ "session-key-primitives",
  "smallvec",
  "sp-api",
  "sp-block-builder",
@@ -10741,7 +10741,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "session-keys-primitives"
+name = "session-key-primitives"
 version = "0.1.0"
 dependencies = [
  "manta-primitives",

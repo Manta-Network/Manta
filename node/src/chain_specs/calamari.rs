@@ -21,7 +21,7 @@ use crate::command::CALAMARI_PARACHAIN_ID;
 use calamari_runtime::{
     opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
 };
-use session_keys_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
+use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 /// Calamari Protocol Identifier
 pub const CALAMARI_PROTOCOL_ID: &str = "calamari";
@@ -42,7 +42,7 @@ pub type CalamariChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensi
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
 pub fn calamari_session_keys(keys: AuraId) -> SessionKeys {
-    let unique_dummy_nimbus_id = session_keys_primitives::nimbus::from_aura_key(keys.clone());
+    let unique_dummy_nimbus_id = session_key_primitives::nimbus::from_aura_key(keys.clone());
     SessionKeys {
         aura: keys,
         nimbus: unique_dummy_nimbus_id.clone(),

@@ -2,7 +2,7 @@
 authors = ["PureStake"]
 description = "Primitives for session keys"
 edition = "2021"
-name = "session-keys-primitives"
+name = "session-key-primitives"
 version = "0.1.0"
 
 [dependencies]
