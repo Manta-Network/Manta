@@ -55,8 +55,8 @@ use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
-use session_keys_primitives::aura::AuraId;
 use runtime_common::prod_or_fast;
+use session_keys_primitives::aura::AuraId;
 use sp_runtime::Perbill;
 
 #[cfg(any(feature = "std", test))]

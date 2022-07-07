@@ -25,10 +25,10 @@ use manta_primitives::{
     constants,
     types::{AccountId, Balance},
 };
-use session_keys_primitives::aura::AuraId;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::{ChainType, Properties};
 use serde::{Deserialize, Serialize};
+use session_keys_primitives::aura::AuraId;
 use sp_core::sr25519;
 
 pub mod calamari;

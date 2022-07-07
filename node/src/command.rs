@@ -27,13 +27,13 @@ use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::info;
 use manta_primitives::types::Header;
-use session_keys_primitives::aura::AuraId;
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
     NetworkParams, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
+use session_keys_primitives::aura::AuraId;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{generic, traits::Block as BlockT, OpaqueExtrinsic};
 use std::{io::Write, net::SocketAddr};

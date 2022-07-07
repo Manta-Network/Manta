@@ -42,12 +42,12 @@ pub type CalamariChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensi
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
 pub fn calamari_session_keys(keys: AuraId) -> SessionKeys {
-        let unique_dummy_nimbus_id = session_keys_primitives::nimbus::from_aura_key(keys.clone());
-        SessionKeys {
-            aura: keys,
-            nimbus: unique_dummy_nimbus_id.clone(),
-            vrf: unique_dummy_nimbus_id.into(),
-        }
+    let unique_dummy_nimbus_id = session_keys_primitives::nimbus::from_aura_key(keys.clone());
+    SessionKeys {
+        aura: keys,
+        nimbus: unique_dummy_nimbus_id.clone(),
+        vrf: unique_dummy_nimbus_id.into(),
+    }
 }
 
 /// Returns the [`Properties`] for the Calamari parachain.

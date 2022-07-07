@@ -55,10 +55,9 @@ use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
-use session_keys_primitives::aura::AuraId;
 use nimbus_primitives::NimbusId;
 use runtime_common::prod_or_fast;
-use session_keys_primitives::VrfId;
+use session_keys_primitives::{aura::AuraId, VrfId};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -115,7 +114,8 @@ pub mod opaque {
     }
 
     pub fn transform_session_keys(_v: AccountId, old: OldSessionKeys) -> SessionKeys {
-        let unique_dummy_nimbus_id = session_keys_primitives::nimbus::from_aura_key(old.aura.clone());
+        let unique_dummy_nimbus_id =
+            session_keys_primitives::nimbus::from_aura_key(old.aura.clone());
         SessionKeys {
             aura: old.aura,
             nimbus: unique_dummy_nimbus_id.clone(),
