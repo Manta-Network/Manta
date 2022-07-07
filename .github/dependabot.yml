@@ -1,11 +1,9 @@
----
-
 version: 2
 updates:
   - package-ecosystem: "cargo"
     directory: "/"
-    labels: ["Priority: Medium"]
-    # We update upstream manually.
+    labels: ["P-medium"]
+    # NOTE: We update upstream manually.
     ignore:
       - dependency-name: "substrate-*"
       - dependency-name: "sc-*"
