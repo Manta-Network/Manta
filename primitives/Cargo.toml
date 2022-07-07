@@ -19,6 +19,9 @@ smallvec = "1.8.0"
 # manta-rs dependencies
 manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.0", default-features = false }
 
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v0.9.18", default-features = false }
+session-keys-primitives = { path = '../session-keys', default-features = false }
+
 # Substrate primitives
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.18", default-features = false, optional = true }
 frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.18" }
@@ -50,6 +53,8 @@ std = [
   'log/std',
   'frame-support/std',
   'frame-system/std',
+  "nimbus-primitives/std",
+  'session-keys-primitives/std',
   'sp-consensus-aura/std',
   'sp-core/std',
   'sp-runtime/std',

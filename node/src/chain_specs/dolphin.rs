@@ -18,7 +18,9 @@
 
 use super::*;
 use crate::command::DOLPHIN_PARACHAIN_ID;
-use dolphin_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
+use dolphin_runtime::{
+    opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
+};
 use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 /// Dolphin Protocol Identifier
@@ -38,10 +40,10 @@ pub type DolphinChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensio
 
 /// Generate the dolphin session keys from individual elements.
 ///
-/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn dolphin_session_keys(keys: AuraId) -> dolphin_runtime::opaque::SessionKeys {
+/// The input must be a tuple of individual keys (a single arg for now sinc we have just one key).
+pub fn dolphin_session_keys(keys: AuraId) -> SessionKeys {
     use sp_core::crypto::UncheckedFrom;
-    dolphin_runtime::opaque::SessionKeys {
+    SessionKeys {
         aura: keys,
         nimbus: sr25519::Public::unchecked_from([0; 32]).into(),
         vrf: sr25519::Public::unchecked_from([0; 32]).into(),
@@ -67,7 +69,7 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
             dolphin_dev_genesis(
                 vec![(
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_collator_keys_from_seed("Alice"),
+                    SessionKeys::new(get_collator_keys_from_seed("Alice")).aura,
                 )],
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 vec![
@@ -101,23 +103,23 @@ pub fn dolphin_local_config() -> DolphinChainSpec {
                 vec![
                     (
                         get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        get_collator_keys_from_seed("Alice"),
+                        SessionKeys::new(get_collator_keys_from_seed("Alice")).aura,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        get_collator_keys_from_seed("Bob"),
+                        SessionKeys::new(get_collator_keys_from_seed("Bob")).aura,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                        get_collator_keys_from_seed("Charlie"),
+                        SessionKeys::new(get_collator_keys_from_seed("Charlie")).aura,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Dave"),
-                        get_collator_keys_from_seed("Dave"),
+                        SessionKeys::new(get_collator_keys_from_seed("Dave")).aura,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Eve"),
-                        get_collator_keys_from_seed("Eve"),
+                        SessionKeys::new(get_collator_keys_from_seed("Eve")).aura,
                     ),
                 ],
                 get_account_id_from_seed::<sr25519::Public>("Alice"),

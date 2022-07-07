@@ -34,6 +34,7 @@ pub use calamari_runtime::{
     Runtime, TechnicalCommittee, Timestamp, Treasury, Utility, VotingPeriod,
 };
 
+use calamari_runtime::opaque::SessionKeys;
 use frame_support::{
     assert_err, assert_ok,
     codec::Encode,
@@ -350,7 +351,10 @@ fn balances_operations_should_work() {
             (charlie.clone(), INITIAL_BALANCE),
             (dave.clone(), INITIAL_BALANCE),
         ])
-        .with_authorities(vec![(alice.clone(), get_collator_keys_from_seed("Alice"))])
+        .with_authorities(vec![(
+            alice.clone(),
+            SessionKeys::new(get_collator_keys_from_seed("Alice")),
+        )])
         .with_collators(vec![alice.clone()], 0)
         .build()
         .execute_with(|| {
@@ -458,7 +462,10 @@ fn reward_fees_to_block_author_and_treasury() {
             (bob.clone(), INITIAL_BALANCE),
             (charlie.clone(), INITIAL_BALANCE),
         ])
-        .with_authorities(vec![(alice.clone(), get_collator_keys_from_seed("Alice"))])
+        .with_authorities(vec![(
+            alice.clone(),
+            SessionKeys::new(get_collator_keys_from_seed("Alice")),
+        )])
         .with_collators(vec![alice.clone()], desired_candidates)
         .build()
         .execute_with(|| {
@@ -550,8 +557,8 @@ fn advance_session_assertions(session_index: &mut u32, advance_by: u32) {
 fn session_and_collator_selection_work() {
     let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
     let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
-    let alice_aura = get_collator_keys_from_seed("Alice");
-    let bob_aura = get_collator_keys_from_seed("Bob");
+    let alice_session_keys = SessionKeys::new(get_collator_keys_from_seed("Alice"));
+    let bob_session_keys = SessionKeys::new(get_collator_keys_from_seed("Bob"));
     let desired_candidates = 1;
 
     ExtBuilder::default()
@@ -566,12 +573,11 @@ fn session_and_collator_selection_work() {
             assert_eq!(CollatorSelection::candidates(), vec![]);
 
             // Create and bond session keys to Bob's account.
-            let keys = calamari_runtime::opaque::SessionKeys {
-                aura: bob_aura.clone(),
-                nimbus: { Public::unchecked_from([0; 32]).into() },
-                vrf: { Public::unchecked_from([0; 32]).into() },
-            };
-            assert_ok!(Session::set_keys(Origin::signed(bob.clone()), keys, vec![]));
+            assert_ok!(Session::set_keys(
+                Origin::signed(bob.clone()),
+                bob_session_keys.clone(),
+                vec![]
+            ));
 
             assert_ok!(CollatorSelection::register_candidate(
                 root_origin(),
@@ -586,14 +592,7 @@ fn session_and_collator_selection_work() {
             assert_eq!(CollatorSelection::candidates(), vec![candidate]);
             assert_eq!(
                 Session::queued_keys(),
-                vec![(
-                    alice.clone(),
-                    calamari_runtime::opaque::SessionKeys {
-                        aura: alice_aura.clone(),
-                        nimbus: { Public::unchecked_from([0; 32]).into() },
-                        vrf: { Public::unchecked_from([0; 32]).into() },
-                    }
-                )]
+                vec![(alice.clone(), alice_session_keys.clone())]
             );
             assert_eq!(Session::validators(), vec![alice.clone()]);
 
@@ -607,22 +606,8 @@ fn session_and_collator_selection_work() {
             assert_eq!(
                 Session::queued_keys(),
                 vec![
-                    (
-                        alice.clone(),
-                        calamari_runtime::opaque::SessionKeys {
-                            aura: alice_aura.clone(),
-                            nimbus: { Public::unchecked_from([0; 32]).into() },
-                            vrf: { Public::unchecked_from([0; 32]).into() },
-                        }
-                    ),
-                    (
-                        bob.clone(),
-                        calamari_runtime::opaque::SessionKeys {
-                            aura: bob_aura.clone(),
-                            nimbus: { Public::unchecked_from([0; 32]).into() },
-                            vrf: { Public::unchecked_from([0; 32]).into() },
-                        }
-                    )
+                    (alice.clone(), alice_session_keys.clone()),
+                    (bob.clone(), bob_session_keys.clone())
                 ]
             );
             assert_eq!(Session::validators(), vec![alice.clone()]);
@@ -657,9 +642,9 @@ fn batched_registration_of_collator_candidates_works() {
     let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
     let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
     let charlie = get_account_id_from_seed::<sr25519::Public>("Charlie");
-    let alice_aura = get_collator_keys_from_seed("Alice");
-    let bob_aura = get_collator_keys_from_seed("Bob");
-    let charlie_aura = get_collator_keys_from_seed("Charlie");
+    let alice_session_keys = SessionKeys::new(get_collator_keys_from_seed("Alice"));
+    let bob_session_keys = SessionKeys::new(get_collator_keys_from_seed("Bob"));
+    let charlie_session_keys = SessionKeys::new(get_collator_keys_from_seed("Charlie"));
     let desired_candidates = 2;
 
     ExtBuilder::default()
@@ -671,21 +656,15 @@ fn batched_registration_of_collator_candidates_works() {
         .with_collators(vec![alice.clone()], desired_candidates)
         .build()
         .execute_with(|| {
-            let keys = calamari_runtime::opaque::SessionKeys {
-                aura: bob_aura.clone(),
-                nimbus: { Public::unchecked_from([0; 32]).into() },
-                vrf: { Public::unchecked_from([0; 32]).into() },
-            };
-            assert_ok!(Session::set_keys(Origin::signed(bob.clone()), keys, vec![]));
+            assert_ok!(Session::set_keys(
+                Origin::signed(bob.clone()),
+                bob_session_keys.clone(),
+                vec![]
+            ));
 
-            let keys = calamari_runtime::opaque::SessionKeys {
-                aura: charlie_aura.clone(),
-                nimbus: { Public::unchecked_from([0; 32]).into() },
-                vrf: { Public::unchecked_from([0; 32]).into() },
-            };
             assert_ok!(Session::set_keys(
                 Origin::signed(charlie.clone()),
-                keys,
+                charlie_session_keys.clone(),
                 vec![]
             ));
 
@@ -717,14 +696,7 @@ fn batched_registration_of_collator_candidates_works() {
             );
             assert_eq!(
                 Session::queued_keys(),
-                vec![(
-                    alice.clone(),
-                    calamari_runtime::opaque::SessionKeys {
-                        aura: alice_aura.clone(),
-                        nimbus: { Public::unchecked_from([0; 32]).into() },
-                        vrf: { Public::unchecked_from([0; 32]).into() },
-                    }
-                ),]
+                vec![(alice.clone(), alice_session_keys.clone()),]
             );
             assert_eq!(Session::validators(), vec![alice.clone()]);
 
@@ -732,30 +704,9 @@ fn batched_registration_of_collator_candidates_works() {
             run_to_block(session_index * Period::get());
 
             let all_collator_pairs = vec![
-                (
-                    alice.clone(),
-                    calamari_runtime::opaque::SessionKeys {
-                        aura: alice_aura.clone(),
-                        nimbus: { Public::unchecked_from([0; 32]).into() },
-                        vrf: { Public::unchecked_from([0; 32]).into() },
-                    },
-                ),
-                (
-                    bob.clone(),
-                    calamari_runtime::opaque::SessionKeys {
-                        aura: bob_aura.clone(),
-                        nimbus: { Public::unchecked_from([0; 32]).into() },
-                        vrf: { Public::unchecked_from([0; 32]).into() },
-                    },
-                ),
-                (
-                    charlie.clone(),
-                    calamari_runtime::opaque::SessionKeys {
-                        aura: charlie_aura.clone(),
-                        nimbus: { Public::unchecked_from([0; 32]).into() },
-                        vrf: { Public::unchecked_from([0; 32]).into() },
-                    },
-                ),
+                (alice.clone(), alice_session_keys.clone()),
+                (bob.clone(), bob_session_keys.clone()),
+                (charlie.clone(), charlie_session_keys.clone()),
             ];
 
             assert_eq!(Session::queued_keys(), all_collator_pairs);

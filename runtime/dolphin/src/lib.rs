@@ -55,7 +55,9 @@ use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
     types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
+use nimbus_primitives::NimbusId;
 use runtime_common::prod_or_fast;
+use session_keys_primitives::VrfId;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -102,6 +104,12 @@ pub mod opaque {
             pub aura: Aura,
             pub nimbus: AuthorInherentWithNoOpSession<Runtime>,
             pub vrf: VrfWithNoOpSession,
+        }
+    }
+    impl SessionKeys {
+        pub fn new(tuple: (AuraId, NimbusId, VrfId)) -> SessionKeys {
+            let (aura, nimbus, vrf) = tuple;
+            SessionKeys { aura, nimbus, vrf }
         }
     }
 

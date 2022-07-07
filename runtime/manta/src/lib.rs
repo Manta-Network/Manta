@@ -103,6 +103,12 @@ pub mod opaque {
             pub aura: Aura,
         }
     }
+    impl SessionKeys {
+        pub fn new<T, U>(tuple: (AuraId, T, U)) -> SessionKeys {
+            let (aura, _, _) = tuple;
+            SessionKeys { aura }
+        }
+    }
 }
 
 // Weights used in the runtime.

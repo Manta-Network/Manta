@@ -18,7 +18,9 @@
 
 use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
-use calamari_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
+use calamari_runtime::{
+    opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
+};
 use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 /// Calamari Protocol Identifier
@@ -39,9 +41,9 @@ pub type CalamariChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensi
 /// Generate the calamari session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn calamari_session_keys(keys: AuraId) -> calamari_runtime::opaque::SessionKeys {
+pub fn calamari_session_keys(keys: AuraId) -> SessionKeys {
     use sp_core::crypto::UncheckedFrom;
-    calamari_runtime::opaque::SessionKeys {
+    SessionKeys {
         aura: keys,
         nimbus: sr25519::Public::unchecked_from([0; 32]).into(),
         vrf: sr25519::Public::unchecked_from([0; 32]).into(),
@@ -70,7 +72,7 @@ pub fn calamari_development_config() -> CalamariChainSpec {
             calamari_dev_genesis(
                 vec![(
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_collator_keys_from_seed("Alice"),
+                    get_collator_keys_from_seed("Alice").0,
                 )],
                 vec![
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -103,23 +105,23 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                 vec![
                     (
                         get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        get_collator_keys_from_seed("Alice"),
+                        get_collator_keys_from_seed("Alice").0,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        get_collator_keys_from_seed("Bob"),
+                        get_collator_keys_from_seed("Bob").0,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                        get_collator_keys_from_seed("Charlie"),
+                        get_collator_keys_from_seed("Charlie").0,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Dave"),
-                        get_collator_keys_from_seed("Dave"),
+                        get_collator_keys_from_seed("Dave").0,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Eve"),
-                        get_collator_keys_from_seed("Eve"),
+                        get_collator_keys_from_seed("Eve").0,
                     ),
                 ],
                 vec![
