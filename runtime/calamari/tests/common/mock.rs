@@ -24,9 +24,9 @@ pub use calamari_runtime::{
 use frame_support::traits::{GenesisBuild, OnFinalize, OnInitialize};
 use manta_primitives::{
     assets::AssetConfig,
-    helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
     types::{AccountId, Balance},
 };
+use session_keys_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 use sp_core::sr25519;
 pub struct ExtBuilder {
     balances: Vec<(AccountId, Balance)>,
@@ -35,6 +35,7 @@ pub struct ExtBuilder {
     desired_candidates: u32,
     safe_xcm_version: Option<u32>,
 }
+use sp_application_crypto::{sr25519::Public, UncheckedFrom};
 use sp_std::marker::PhantomData;
 
 impl Default for ExtBuilder {
