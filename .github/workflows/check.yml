@@ -1,0 +1,53 @@
+---
+
+# yamllint disable rule:line-length
+
+name: Check Build and Tests
+
+# yamllint disable-line rule:truthy
+on:
+  pull_request:
+    branches: [manta]
+  push:
+    branches: [manta]
+env:
+  RUST_BACKTRACE: full
+jobs:
+  yamllint:
+    name: Yaml Lint
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Run yamllint
+        uses: actionshub/yamllint@main
+  format:
+    name: Check Formatting
+    runs-on: ubuntu-20-04
+    steps:
+      - uses: actions/checkout@v3
+      - run: rustup update nightly && rustup default nightly && rustup component add rustfmt
+      - run: cargo fmt --all -- --check
+  format-cargo-toml:
+    name: Check Crate Configuration Formatting
+    runs-on: ubuntu-20-04
+    steps:
+      - uses: actions/checkout@v3
+      - run: cargo install taplo-cli
+      - run: cargo taplo fmt --check
+      - run: cargo taplo lint
+  lint:
+    name: Lint
+    runs-on: ubuntu-20-04
+    steps:
+      - uses: actions/checkout@v3
+      - run: rustup update nightly && rustup default nightly && rustup component add clippy
+      - run: rustup target add wasm32-unknown-unknown 
+      - run: SKIP_WASM_BUILD=1 cargo check --no-default-features
+      - run: SKIP_WASM_BUILD=1 cargo clippy --all-targets --all-features -- -D warnings
+  test:
+    name: Test
+    runs-on: ubuntu-20-04
+    steps:
+      - uses: actions/checkout@v3
+      - run: rustup update nightly && rustup default nightly && rustup component add clippy
+      - run: rustup target add wasm32-unknown-unknown 
+      - run: cargo test --release --features=runtime-benchmarks,try-runtime -- --test-threads=2
