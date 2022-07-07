@@ -58,8 +58,8 @@ where
     C::Api: BlockBuilder<Block>,
     P: TransactionPool + Sync + Send + 'static,
 {
-    use frame_rpc_system::{SystemApiServer, SystemRpc};
-    use pallet_transaction_payment_rpc::{TransactionPaymentApiServer, TransactionPaymentRpc};
+    use frame_rpc_system::{System, SystemApiServer};
+    use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 
     let mut module = RpcExtension::new(());
     let FullDeps {
@@ -69,10 +69,10 @@ where
     } = deps;
 
     module
-        .merge(SystemRpc::new(client.clone(), pool, deny_unsafe).into_rpc())
+        .merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
     module
-        .merge(TransactionPaymentRpc::new(client).into_rpc())
+        .merge(TransactionPayment::new(client).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
     Ok(module)
@@ -94,8 +94,8 @@ where
     C::Api: PullLedgerDiffApi<Block>,
     P: TransactionPool + Sync + Send + 'static,
 {
-    use frame_rpc_system::{SystemApiServer, SystemRpc};
-    use pallet_transaction_payment_rpc::{TransactionPaymentApiServer, TransactionPaymentRpc};
+    use frame_rpc_system::{System, SystemApiServer};
+    use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 
     let mut module = RpcExtension::new(());
     let FullDeps {
@@ -105,10 +105,10 @@ where
     } = deps;
 
     module
-        .merge(SystemRpc::new(client.clone(), pool, deny_unsafe).into_rpc())
+        .merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
     module
-        .merge(TransactionPaymentRpc::new(client.clone()).into_rpc())
+        .merge(TransactionPayment::new(client.clone()).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
     let manta_pay_rpc: jsonrpsee::RpcModule<Pull<Block, C>> = Pull::new(client).into_rpc();

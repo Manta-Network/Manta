@@ -333,4 +333,5 @@ impl orml_xtokens::Config for Runtime {
     type MinXcmFee = AssetManager;
     type MultiLocationsFilter = AssetManager;
     type ReserveProvider = AbsoluteReserveProvider;
+    type XcmSender = XcmRouter;
 }

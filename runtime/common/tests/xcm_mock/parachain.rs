@@ -51,10 +51,11 @@ use polkadot_parachain::primitives::{
 };
 use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, VersionedXcm};
 use xcm_builder::{
-    AccountId32Aliases, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId, EnsureXcmOrigin,
-    FixedRateOfFungible, FixedWeightBounds, LocationInverter, ParentIsPreset,
+    Account32Hash, AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
+    ConvertedConcreteAssetId, CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin,
+    FixedRateOfFungible, FixedWeightBounds, FungiblesAdapter, LocationInverter, ParentIsPreset,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SovereignSignedViaLocation,
+    SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
@@ -158,6 +159,7 @@ pub type LocationToAccountId = (
     // Sibling parachain origins convert to AccountId via the `ParaId::into`.
     SiblingParachainConvertsVia<Sibling, AccountId>,
     AccountId32Aliases<RelayNetwork, AccountId>,
+    Account32Hash<RelayNetwork, AccountId>,
 );
 
 /// This is the type to convert an (incoming) XCM origin into a local `Origin` instance,
@@ -589,6 +591,7 @@ impl orml_xtokens::Config for Runtime {
     type MinXcmFee = AssetManager;
     type MultiLocationsFilter = AssetManager;
     type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
+    type XcmSender = XcmRouter;
 }
 
 impl parachain_info::Config for Runtime {}

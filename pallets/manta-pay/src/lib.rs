@@ -565,7 +565,7 @@ pub mod pallet {
         /// Returns the account ID of this pallet.
         #[inline]
         pub fn account_id() -> T::AccountId {
-            T::PalletId::get().into_account()
+            T::PalletId::get().into_account_truncating()
         }
 
         /// Posts the transaction encoded in `post` to the ledger, using `sources` and `sinks` as

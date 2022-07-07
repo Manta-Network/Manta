@@ -29,14 +29,17 @@ use log::info;
 
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use manta_primitives::types::{AuraId, Header};
-use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
     NetworkParams, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::{generic, traits::Block as BlockT, OpaqueExtrinsic};
+use sp_runtime::{
+    generic,
+    traits::{AccountIdConversion, Block as BlockT},
+    OpaqueExtrinsic,
+};
 use std::{io::Write, net::SocketAddr};
 
 pub use sc_cli::Error;
@@ -482,8 +485,9 @@ pub fn run_with(cli: Cli) -> Result {
 
                 let id = ParaId::from(para_id);
 
-                let parachain_account =
-                    AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account(&id);
+                let parachain_account: polkadot_primitives::v2::AccountId =
+                    id.into_account_truncating();
+                // AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account(&id);
 
                 let state_version =
                     RelayChainCli::native_runtime_version(&config.chain_spec).state_version();
