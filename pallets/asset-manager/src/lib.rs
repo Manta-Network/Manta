@@ -537,9 +537,8 @@ pub mod pallet {
 				// Send tokens back to relaychain.
 				Junctions::X1(Junction::AccountId32 { .. }) => true,
 				// Send tokens to sibling chain.
-				Junctions::X2(Junction::Parachain(para_id), Junction::AccountId32 { .. }) => {
-					AllowedDestParaIds::<T>::contains_key(para_id)
-				}
+				Junctions::X2(Junction::Parachain(para_id), _)
+				| Junctions::X1(Junction::Parachain(para_id)) => AllowedDestParaIds::<T>::contains_key(para_id),
 				// We don't support X3 or longer Junctions.
 				_ => false,
 			}
