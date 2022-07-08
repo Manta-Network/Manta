@@ -21,6 +21,8 @@ use frame_system::Config;
 use pallet_author_inherent::Pallet as AuthorInherent;
 use sp_application_crypto::BoundToRuntimeAppPublic;
 
+/// This adapts pallet AuthorInherent to be compatible with pallet session
+/// making it suitable as a SessionKey entry
 pub struct AuthorInherentWithNoOpSession<T: Config>(pub AuthorInherent<T>);
 
 impl<T: Config> BoundToRuntimeAppPublic for AuthorInherentWithNoOpSession<T> {
@@ -49,6 +51,8 @@ impl<T: Config> OneSessionHandler<T::AccountId> for AuthorInherentWithNoOpSessio
 
 use crate::AccountId;
 use session_key_primitives::vrf::VrfSessionKey;
+/// This adapts VrfSessionKey to be compatible with pallet session
+/// making it suitable as a SessionKey entry
 pub struct VrfWithNoOpSession(pub VrfSessionKey);
 
 impl BoundToRuntimeAppPublic for VrfWithNoOpSession {

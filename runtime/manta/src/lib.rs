@@ -105,6 +105,7 @@ pub mod opaque {
         }
     }
     impl SessionKeys {
+        /// generates SessionKey, discarding key types not used on manta
         pub fn new<T, U>(tuple: (AuraId, T, U)) -> SessionKeys {
             let (aura, _, _) = tuple;
             SessionKeys { aura }

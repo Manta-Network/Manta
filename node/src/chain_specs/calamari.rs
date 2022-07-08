@@ -72,7 +72,7 @@ pub fn calamari_development_config() -> CalamariChainSpec {
             calamari_dev_genesis(
                 vec![(
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_collator_keys_from_seed("Alice").0,
+                    SessionKeys::new(get_collator_keys_from_seed("Alice")).aura,
                 )],
                 vec![
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -105,23 +105,23 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                 vec![
                     (
                         get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        get_collator_keys_from_seed("Alice").0,
+                        SessionKeys::new(get_collator_keys_from_seed("Alice")).aura,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        get_collator_keys_from_seed("Bob").0,
+                        SessionKeys::new(get_collator_keys_from_seed("Bob")).aura,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                        get_collator_keys_from_seed("Charlie").0,
+                        SessionKeys::new(get_collator_keys_from_seed("Charlie")).aura,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Dave"),
-                        get_collator_keys_from_seed("Dave").0,
+                        SessionKeys::new(get_collator_keys_from_seed("Dave")).aura,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Eve"),
-                        get_collator_keys_from_seed("Eve").0,
+                        SessionKeys::new(get_collator_keys_from_seed("Eve")).aura,
                     ),
                 ],
                 vec![

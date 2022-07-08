@@ -780,8 +780,17 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsReversedWithSystemFirst,
-    (),
+    UpgradeSessionKeys,
 >;
+// When this is removed, should also remove `OldSessionKeys`.
+pub struct UpgradeSessionKeys;
+impl frame_support::traits::OnRuntimeUpgrade for UpgradeSessionKeys {
+    fn on_runtime_upgrade() -> frame_support::weights::Weight {
+        use opaque::transform_session_keys;
+        Session::upgrade_keys::<opaque::OldSessionKeys, _>(transform_session_keys);
+        Perbill::from_percent(50) * BlockWeights::default().max_block as u64 // TODO: Check if this is realistic, this might need to be calculated from db accesses times acconuts
+    }
+}
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]

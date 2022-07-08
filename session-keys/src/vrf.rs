@@ -27,6 +27,9 @@ impl BoundToRuntimeAppPublic for VrfSessionKey {
 }
 
 impl From<NimbusId> for VrfId {
+    /// Reinterprets Nimbus as VRFId.
+    /// No corresponding private key to that VRFId will exist,
+    /// **use this only for dummy public keys**
     fn from(nimbus_id: NimbusId) -> VrfId {
         let nimbus_as_sr25519: sr25519::Public = nimbus_id.into();
         let sr25519_as_bytes: [u8; 32] = nimbus_as_sr25519.into();

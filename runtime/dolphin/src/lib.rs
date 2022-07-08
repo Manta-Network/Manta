@@ -778,14 +778,6 @@ impl frame_support::traits::OnRuntimeUpgrade for UpgradeSessionKeys {
         Session::upgrade_keys::<opaque::OldSessionKeys, _>(transform_session_keys);
         Perbill::from_percent(50) * BlockWeights::default().max_block as u64 // TODO: Check if this is realistic, this might need to be calculated from db accesses times acconuts
     }
-    // #[cfg(feature = "try_runtime")]
-    // fn pre_runtime_upgrade() -> frame_support::weights::Weight {
-    //     // TODO Check if SessionKeys == OldSessionKeys
-    // }
-    // #[cfg(feature = "try_runtime")]
-    // fn post_runtime_upgrade() -> frame_support::weights::Weight {
-    //     // TODO Check that SessionKeys == SessionKeys
-    // }
 }
 
 #[cfg(feature = "runtime-benchmarks")]
