@@ -1,10 +1,4 @@
----
-# yamllint disable rule:line-length
-
-# This workflow checks whether `transaction_version` should be updated.
-
 name: Transaction Version Update Check
-# yamllint disable-line rule:truthy
 on:
   workflow_dispatch:
     inputs:
@@ -16,7 +10,6 @@ on:
         description: The name of the chain under test. Usually, you would pass a local chain
         default: calamari-local
         required: true
-
 env:
   AWS_REGION: us-east-1
   AWS_INSTANCE_TYPE: c5a.8xlarge
@@ -25,9 +18,7 @@ env:
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
   CHAIN: ${{github.event.inputs.chain}}
   REF_URL: ${{github.event.inputs.reference_url}}
-
 jobs:
-
   start-checks:
     runs-on: ubuntu-20.04
     outputs:
@@ -35,8 +26,7 @@ jobs:
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
       aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
     steps:
-      -
-        id: start-self-hosted-runner
+      - id: start-self-hosted-runner
         uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: start
@@ -48,10 +38,8 @@ jobs:
           aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
-      -
-        uses: actions/checkout@v2
-      -
-        name: install sccache
+      - uses: actions/checkout@v2
+      - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
           SCCACHE_VERSION: v0.2.15
@@ -63,8 +51,7 @@ jobs:
           chmod +x $HOME/.local/bin/sccache
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      -
-        name: cache cargo registry
+      - name: cache cargo registry
         uses: actions/cache@v2
         with:
           path: |
@@ -73,8 +60,7 @@ jobs:
           key: cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             cargo-
-      -
-        name: cache sccache
+      - name: cache sccache
         uses: actions/cache@v2
         continue-on-error: false
         with:
@@ -82,11 +68,9 @@ jobs:
           key: sccache-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             sccache-
-      -
-        name: start sccache server
+      - name: start sccache server
         run: sccache --start-server
-      -
-        name: init
+      - name: init
         run: |
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
@@ -95,8 +79,7 @@ jobs:
           rustup default stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
           rustup update
-      -
-        name: Build Binary
+      - name: Build Binary
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -106,8 +89,7 @@ jobs:
           source ${HOME}/.cargo/env
           cargo build --release
           chmod +x target/release/manta
-      -
-        name: stop sccache server
+      - name: stop sccache server
         run: sccache --stop-server || true
       - name: Start local node
         run: |
@@ -140,22 +122,18 @@ jobs:
           cat output.txt
       - name: Stop our local node
         run: pkill manta
-
       - name: Save output as artifact
         uses: actions/upload-artifact@v2
         with:
           name: ${{ env.CHAIN }}
           path: |
             output.txt
-
   stop-checks:
-    needs:
-      - start-checks
+    needs: start-checks
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
-      -
-        uses: audacious-network/aws-github-runner@v1.0.33
+      - uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
           github-token: ${{ secrets.GH_SHR_TOKEN }}

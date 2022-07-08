@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### Breaking changes
-- [\#628](https://github.com/Manta-Network/Manta/pull/628) Improve RPC performance, add `max_receivers` and `max_senders` fields in the RPC request. 
+- [\#628](https://github.com/Manta-Network/Manta/pull/628) Improve RPC performance, add `max_receivers` and `max_senders` fields in the RPC request.
 
 ### Features
 - [\#576](https://github.com/Manta-Network/Manta/pull/576) Unfilter xtokens.transfer_multicurrencies and bump MaxAssetsForTransfer to 2.
@@ -18,6 +18,7 @@
 - [\#619](https://github.com/Manta-Network/Manta/pull/619) Add CI runtime upgrade test for Dolphin and improve test scenario.
 - [\#622](https://github.com/Manta-Network/Manta/pull/622) Update parameter path from `sdk` to `manta-parameters`.
 - [\#638](https://github.com/Manta-Network/Manta/pull/638) `existence_requirement` argument for `FungibleLedger` trait functions.
+- [\#653](https://github.com/Manta-Network/Manta/pull/653) Add concurrency groups for pull request CI builds to reduce CI costs
 
 ### Bug fixes
 
