@@ -190,7 +190,6 @@ std = [
   'sp-application-crypto/std',
   'pallet-xcm/std',
   'pallet-transaction-payment/std',
-  "pallet-author-inherent/std",
   'pallet-treasury/std',
   'pallet-collective/std',
   'pallet-democracy/std',
