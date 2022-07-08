@@ -806,8 +806,6 @@ impl frame_support::traits::OnRuntimeUpgrade for UpgradeSessionKeys {
             let ((old_owner, old_key), (new_owner, new_key)) = iter;
             ensure!(old_owner == new_owner, "owner changed");
             ensure!(old_key.aura == new_key.aura, "key changed");
-            // ensure!(old_key.aura == new_key.nimbus ,"key changed");
-            // ensure!(old_key.aura == new_key.vrf ,"key changed");
         }
         0
     }

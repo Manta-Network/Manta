@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-// TODO: This file should be part of primitives along with session-keys
 
 use frame_support::traits::OneSessionHandler;
 use frame_system::Config;

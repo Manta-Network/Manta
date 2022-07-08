@@ -18,6 +18,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkad
 [features]
 default = ["std"]
 std = [
+  "manta-primitives/std",
   "nimbus-primitives/std",
   "parity-scale-codec/std",
   "scale-info/std",
