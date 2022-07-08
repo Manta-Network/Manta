@@ -236,8 +236,8 @@ jobs:
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         uses: actions/checkout@v2
         with:
-          repository: Manta-Network/manta-pc-launch
-          path: manta-pc-launch
+          repository: paritytech/polkadot-launch
+          path: polkadot-launch
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         uses: actions/checkout@v2
         with:
@@ -246,13 +246,13 @@ jobs:
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: launch testnet
         run: |
-          cd ${{ github.workspace }}/manta-pc-launch
+          cd ${{ github.workspace }}/polkadot-launch
           yarn install
           yarn build
           pm2 start dist/cli.js \
-            --name manta-pc-launch \
-            --output ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.runtime.chain-spec }}-stdout.log \
-            --error ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.runtime.chain-spec }}-stderr.log \
+            --name polkadot-launch \
+            --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.runtime.chain-spec }}-stdout.log \
+            --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.runtime.chain-spec }}-stderr.log \
             --no-autorestart \
             -- $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
@@ -321,9 +321,9 @@ jobs:
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: stop testnet
         run: |
-          cd ${{ github.workspace }}/manta-pc-launch
+          cd ${{ github.workspace }}/polkadot-launch
           pm2 stop measure-block-time-${{ matrix.runtime.chain-spec }}
-          pm2 stop manta-pc-launch
+          pm2 stop polkadot-launch
           pm2 stop test-previous-runtime-upgrade-${{ matrix.runtime.chain-spec }}
           pm2 stop test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
@@ -444,8 +444,8 @@ jobs:
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
       - uses: actions/checkout@v2
         with:
-          repository: Manta-Network/manta-pc-launch
-          path: manta-pc-launch
+          repository: paritytech/polkadot-launch
+          path: polkadot-launch
       - uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
@@ -456,13 +456,13 @@ jobs:
           path: dev-tools-calamari
       - name: launch testnet
         run: |
-          cd ${{ github.workspace }}/manta-pc-launch
+          cd ${{ github.workspace }}/polkadot-launch
           yarn install
           yarn build
           pm2 start dist/cli.js \
-            --name manta-pc-launch \
-            --output ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
+            --name polkadot-launch \
+            --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart \
             -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
       - name: init measure-block-time rococo
@@ -501,18 +501,18 @@ jobs:
           if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
       - name: stop testnet
         run: |
-          cd ${{ github.workspace }}/manta-pc-launch
+          cd ${{ github.workspace }}/polkadot-launch
           pm2 stop measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}
           pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
-          pm2 stop manta-pc-launch
+          pm2 stop polkadot-launch
       - uses: actions/upload-artifact@v2
         with:
-          name: manta-pc-launch-for-${{ matrix.chain-spec.id }}-stdout.log
-          path: ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.chain-spec.id }}-stdout.log
+          name: polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log
+          path: ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log
       - uses: actions/upload-artifact@v2
         with:
-          name: manta-pc-launch-for-${{ matrix.chain-spec.id }}-stderr.log
-          path: ${{ github.workspace }}/manta-pc-launch-for-${{ matrix.chain-spec.id }}-stderr.log
+          name: polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log
+          path: ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log
       - uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
@@ -532,19 +532,19 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: rococo-alice-relay-for-${{ matrix.chain-spec.id }}.log
-          path: ${{ github.workspace }}/manta-pc-launch/alice.log
+          path: ${{ github.workspace }}/polkadot-launch/alice.log
       - uses: actions/upload-artifact@v2
         with:
           name: rococo-bob-relay-for-${{ matrix.chain-spec.id }}.log
-          path: ${{ github.workspace }}/manta-pc-launch/bob.log
+          path: ${{ github.workspace }}/polkadot-launch/bob.log
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-alice.log
-          path: ${{ github.workspace }}/manta-pc-launch/9921.log
+          path: ${{ github.workspace }}/polkadot-launch/9921.log
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-bob.log
-          path: ${{ github.workspace }}/manta-pc-launch/9922.log
+          path: ${{ github.workspace }}/polkadot-launch/9922.log
       - name: parse rococo block times
         run: |
           grep '#.*' ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-rococo.csv; done
@@ -565,13 +565,13 @@ jobs:
           path: ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
       - name: test - rococo alice peered successfully
         run: |
-          grep '💤 Idle (${{ matrix.chain-spec.expected.peer-count.relay }} peers)' ${{ github.workspace }}/manta-pc-launch/alice.log
+          grep '💤 Idle (${{ matrix.chain-spec.expected.peer-count.relay }} peers)' ${{ github.workspace }}/polkadot-launch/alice.log
       - name: test - rococo alice imported block ${{ matrix.chain-spec.expected.block-count.relay }}
         run: |
-          grep ' Imported #${{ matrix.chain-spec.expected.block-count.relay }} ' ${{ github.workspace }}/manta-pc-launch/alice.log
+          grep ' Imported #${{ matrix.chain-spec.expected.block-count.relay }} ' ${{ github.workspace }}/polkadot-launch/alice.log
       - name: test - calamari alice peered successfully
         run: |
-          grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/manta-pc-launch/9921.log
+          grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9921.log
   build-changelog:
     runs-on: ubuntu-20.04
     needs: [get-rust-versions, build-runtimes]

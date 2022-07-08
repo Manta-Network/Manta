@@ -18,6 +18,7 @@
 - [\#619](https://github.com/Manta-Network/Manta/pull/619) Add CI runtime upgrade test for Dolphin and improve test scenario.
 - [\#622](https://github.com/Manta-Network/Manta/pull/622) Update parameter path from `sdk` to `manta-parameters`.
 - [\#653](https://github.com/Manta-Network/Manta/pull/653) Add concurrency groups for pull request CI builds to reduce CI costs
+- [\#657](https://github.com/Manta-Network/Manta/pull/657) retire manta-pc-launch with polkadot-launch.
 
 ### Bug fixes
 
