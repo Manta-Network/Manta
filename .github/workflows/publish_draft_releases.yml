@@ -167,7 +167,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: manta
-          path: target/production/manta
+          path: target/release/manta
       -
         name: upload
         uses: actions/upload-artifact@v2
