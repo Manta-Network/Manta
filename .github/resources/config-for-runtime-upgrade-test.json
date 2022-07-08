@@ -52,8 +52,6 @@
           "port": 32331,
           "flags": [
             "--rpc-cors=all",
-            "--unsafe-ws-external",
-            "--unsafe-rpc-external",
             "--rpc-port=9971",
             "--",
             "--execution=wasm"
@@ -64,8 +62,6 @@
           "port": 32332,
           "flags": [
             "--rpc-cors=all",
-            "--unsafe-ws-external",
-            "--unsafe-rpc-external",
             "--rpc-port=9972",
             "--",
             "--execution=wasm"
@@ -76,8 +72,6 @@
           "port": 32333,
           "flags": [
             "--rpc-cors=all",
-            "--unsafe-ws-external",
-            "--unsafe-rpc-external",
             "--rpc-port=9973",
             "--",
             "--execution=wasm"
@@ -88,8 +82,6 @@
           "port": 32334,
           "flags": [
             "--rpc-cors=all",
-            "--unsafe-ws-external",
-            "--unsafe-rpc-external",
             "--rpc-port=9974",
             "--",
             "--execution=wasm"
@@ -100,8 +92,6 @@
           "port": 32335,
           "flags": [
             "--rpc-cors=all",
-            "--unsafe-ws-external",
-            "--unsafe-rpc-external",
             "--rpc-port=9975",
             "--",
             "--execution=wasm"

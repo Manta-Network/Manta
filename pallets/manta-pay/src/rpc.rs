@@ -35,10 +35,7 @@ const SERVER_ERROR: i32 = 1;
 #[rpc(client, server)]
 pub trait PullApi {
     /// Returns the update required to be synchronized with the ledger starting from
-    // /// `checkpoint`.
-    // #[method(name = "mantaPay_pull_ledger_diff", blocking)]
-    // fn pull_ledger_diff(&self, checkpoint: Checkpoint) -> RpcResult<PullResponse>;
-    /// `checkpoint`, `max_receivers` and `max_senders`.
+    /// `checkpoint`.
     #[method(name = "mantaPay_pull_ledger_diff", blocking)]
     fn pull_ledger_diff(
         &self,
