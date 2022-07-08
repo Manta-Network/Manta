@@ -21,7 +21,9 @@
 mod xcm_mock;
 
 use codec::Encode;
-use frame_support::{assert_err, assert_noop, assert_ok, weights::constants::WEIGHT_PER_SECOND};
+use frame_support::{
+    assert_err, assert_noop, assert_ok, weights::constants::WEIGHT_PER_SECOND, BoundedVec,
+};
 use manta_primitives::assets::AssetLocation;
 use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
 use xcm_executor::traits::Convert;
@@ -2858,6 +2860,10 @@ fn send_para_a_native_asset_para_b_and_then_send_back3() {
             remark: vec![1, 2, 3],
         },
     );
+    let encoded_call: Vec<u8> = remark.encode().into();
+    let bounded_vec: BoundedVec<u8, <parachain::Runtime as orml_xtokens::Config>::MaxTransactSize> =
+        BoundedVec::try_from(encoded_call).unwrap();
+
     ParaA::execute_with(|| {
         assert_ok!(parachain::XTokens::transfer_with_transact(
             parachain::Origin::signed(ALICE.into()),
@@ -2865,7 +2871,8 @@ fn send_para_a_native_asset_para_b_and_then_send_back3() {
             amount,
             PARA_B_ID,
             3000,
-            remark.encode().into(),
+            // remark.encode().into(),
+            bounded_vec.clone(),
             3500
         ));
         // assert_eq!(
@@ -2921,8 +2928,9 @@ fn send_para_a_native_asset_para_b_and_then_send_back3() {
             // TODO:: this is the remark weight `message_call.get_dispatch_info().weight`
             3000,
             //Some(try_encode),
-            remark.encode().into(),
-            amount / 2
+            // remark.encode().into(),
+            bounded_vec.clone(),
+            amount / 5
         ));
         // assert_eq!(
         // 	parachain::Assets::balance(a_currency_id_on_b, &ALICE.into()),
@@ -2957,8 +2965,23 @@ fn send_para_a_native_asset_para_b_and_then_send_back3() {
             amount,
             PARA_B_ID,
             3000,
-            remark.encode().into(),
-            3500
+            // remark.encode().into(),
+            bounded_vec,
+            amount / 5
         ));
+    });
+
+    ParaB::execute_with(|| {
+        use parachain::{Event, System};
+        let mut remark_counter = 0;
+        for r in System::events() {
+            match r.event {
+                Event::System(frame_system::Event::Remarked { .. }) => {
+                    remark_counter += 1;
+                }
+                _ => {}
+            }
+        }
+        assert!(remark_counter == 2);
     });
 }

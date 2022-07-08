@@ -572,6 +572,7 @@ where
 parameter_types! {
     pub const BaseXcmWeight: Weight = 100_000_000;
     pub const MaxAssetsForTransfer: usize = 3;
+    pub const MaxTransactSize: u32 = 256;
 }
 
 // The XCM message wrapper wrapper
@@ -592,6 +593,7 @@ impl orml_xtokens::Config for Runtime {
     type MultiLocationsFilter = AssetManager;
     type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
     type XcmSender = XcmRouter;
+    type MaxTransactSize = MaxTransactSize;
 }
 
 impl parachain_info::Config for Runtime {}
