@@ -1,16 +1,9 @@
----
-
 name: Auto Assign Issues to Projects
-
-# yamllint disable-line rule:truthy
 on:
   issues:
     types: opened
-
 env:
   MY_GITHUB_TOKEN: ${{ secrets.ORG_ISSUE_GITHUB_TOKEN }}
-
-
 jobs:
   assign_to_project:
     runs-on: ubuntu-latest
