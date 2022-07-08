@@ -1,5 +1,5 @@
 [package]
-authors = ["PureStake"]
+authors = ['Manta Network']
 description = "Primitives for session keys"
 edition = "2021"
 name = "session-key-primitives"
