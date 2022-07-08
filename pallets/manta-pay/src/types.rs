@@ -341,3 +341,30 @@ pub struct UtxoMerkleTreePath {
     /// Current Path
     pub current_path: CurrentPath,
 }
+
+/// Receiver Chunk Data Type
+pub type ReceiverChunk = Vec<(Utxo, EncryptedNote)>;
+
+/// Sender Chunk Data Type
+pub type SenderChunk = Vec<VoidNumber>;
+
+/// Ledger Source Pull Response
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, PartialEq, TypeInfo)]
+pub struct PullResponse {
+    /// Pull Continuation Flag
+    ///
+    /// The `should_continue` flag is set to `true` if the client should request more data from the
+    /// ledger to finish the pull.
+    pub should_continue: bool,
+
+    /// Ledger Receiver Chunk
+    pub receivers: ReceiverChunk,
+
+    /// Ledger Sender Chunk
+    pub senders: SenderChunk,
+}

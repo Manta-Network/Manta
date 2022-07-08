@@ -4,16 +4,29 @@
   "description": "Functional Tests for Manta",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha -r ts-node/register rpc_test.ts",
+    "lint": "eslint ."
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@polkadot/api": "^7.10.1",
-    "@polkadot/types": "^7.10.1",
+    "@polkadot/api": "^7.15.1",
+    "@polkadot/types": "^7.15.1",
+    "@types/minimist": "^1.2.2",
     "@types/yargs": "^17.0.0",
+    "minimist": "^1.2.5",
     "ts-node": "^10.8.0",
-    "typescript": "4.6.4"
+    "typescript": "^4.7.4"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.3.1",
+    "@types/mocha": "^9.1.1",
+    "@typescript-eslint/eslint-plugin": "^5.29.0",
+    "@typescript-eslint/parser": "^5.29.0",
+    "chai": "^4.3.6",
+    "eslint": "^8.18.0",
+    "eslint-config-prettier": "8.5.0",
+    "mocha": "^10.0.0"
   }
 }

@@ -14,8 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+use super::{
+    assets::{AssetConfig, FungibleLedger},
+    types::{AssetId, Balance},
+};
+
 use sp_runtime::traits::{CheckedConversion, Convert, Zero};
-use sp_std::marker::PhantomData;
+use sp_std::{marker::PhantomData, result};
 
 use frame_support::{
     pallet_prelude::Get,
@@ -25,7 +30,7 @@ use frame_support::{
 
 use crate::assets::{AssetIdLocationGetter, UnitsToWeightRatio};
 use xcm::{
-    latest::{prelude::Concrete, Error as XcmError},
+    latest::{prelude::Concrete, Error as XcmError, Result as XcmResult},
     v1::{
         AssetId as xcmAssetId, Fungibility,
         Fungibility::*,
@@ -35,7 +40,10 @@ use xcm::{
     },
 };
 use xcm_builder::TakeRevenue;
-use xcm_executor::traits::{FilterAssetLocation, MatchesFungible, MatchesFungibles, WeightTrader};
+use xcm_executor::traits::{
+    Convert as XcmConvert, FilterAssetLocation, MatchesFungible, MatchesFungibles, TransactAsset,
+    WeightTrader,
+};
 
 pub trait Reserve {
     /// Returns assets reserve location.
@@ -310,5 +318,119 @@ where
             }
         }
         None
+    }
+}
+
+pub struct MultiAssetAdapter<
+    Runtime,
+    AccountIdConverter,
+    NativeMatcher,
+    NonNativeMatcher,
+    MultiAdapterFungibleLedger,
+    MultiAdapterAssetConfig,
+>(
+    PhantomData<(
+        Runtime,
+        NativeMatcher,
+        AccountIdConverter,
+        NonNativeMatcher,
+        MultiAdapterFungibleLedger,
+        MultiAdapterAssetConfig,
+    )>,
+);
+
+impl<
+        Runtime: frame_system::Config,
+        AccountIdConverter: XcmConvert<MultiLocation, Runtime::AccountId>,
+        NativeMatcher: MatchesFungible<Balance>,
+        NonNativeMatcher: MatchesFungibles<AssetId, Balance>,
+        MultiAdapterFungibleLedger: FungibleLedger<Runtime>,
+        MultiAdapterAssetConfig: AssetConfig<Runtime>,
+    > TransactAsset
+    for MultiAssetAdapter<
+        Runtime,
+        AccountIdConverter,
+        NativeMatcher,
+        NonNativeMatcher,
+        MultiAdapterFungibleLedger,
+        MultiAdapterAssetConfig,
+    >
+{
+    fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> XcmResult {
+        log::debug!(
+            target: "xcm::multi_asset_adapter",
+            "deposit_asset asset: {:?}, location: {:?}",
+            asset, location,
+        );
+
+        let (asset_id, amount, who) = Self::match_asset_and_location(asset, location)?;
+
+        MultiAdapterFungibleLedger::mint(asset_id, &who, amount)
+            .map_err(|_| XcmError::FailedToTransactAsset("Failed Mint"))?;
+
+        Ok(())
+    }
+
+    fn withdraw_asset(
+        asset: &MultiAsset,
+        location: &MultiLocation,
+    ) -> result::Result<xcm_executor::Assets, XcmError> {
+        log::debug!(
+            target: "xcm::multi_asset_adapter",
+            "withdraw_asset asset: {:?}, location: {:?}",
+            asset, location,
+        );
+
+        let (asset_id, amount, who) = Self::match_asset_and_location(asset, location)?;
+
+        MultiAdapterFungibleLedger::burn(asset_id, &who, amount)
+            .map_err(|_| XcmError::FailedToTransactAsset("Failed Burn"))?;
+
+        Ok(asset.clone().into())
+    }
+}
+
+impl<
+        Runtime: frame_system::Config,
+        AccountIdConverter: XcmConvert<MultiLocation, Runtime::AccountId>,
+        NativeMatcher: MatchesFungible<Balance>,
+        NonNativeMatcher: MatchesFungibles<AssetId, Balance>,
+        MultiAdapterFungibleLedger: FungibleLedger<Runtime>,
+        MultiAdapterAssetConfig: AssetConfig<Runtime>,
+    >
+    MultiAssetAdapter<
+        Runtime,
+        AccountIdConverter,
+        NativeMatcher,
+        NonNativeMatcher,
+        MultiAdapterFungibleLedger,
+        MultiAdapterAssetConfig,
+    >
+{
+    /// Matches the incoming `asset` to an `asset_id` and `amount` on this chain.
+    /// Matches the incoming `location` to a `receiver` account on this chain.
+    /// Uses the matcher implementation of both native and non-native assets.
+    /// Returns the `asset_id`, `amount` and `receiver` if all three were matched.
+    fn match_asset_and_location(
+        asset: &MultiAsset,
+        location: &MultiLocation,
+    ) -> result::Result<(AssetId, Balance, Runtime::AccountId), XcmError> {
+        let receiver = AccountIdConverter::convert_ref(location).map_err(|_| {
+            XcmError::FailedToTransactAsset("Failed Location to AccountId Conversion")
+        })?;
+
+        let (asset_id, amount) = match (
+            NativeMatcher::matches_fungible(asset),
+            NonNativeMatcher::matches_fungibles(asset),
+        ) {
+            // native asset
+            (Some(amount), _) => (MultiAdapterAssetConfig::NativeAssetId::get(), amount),
+            // assets asset
+            (_, Ok((asset_id, amount))) => (asset_id, amount),
+            // unknown asset
+            _ => return Err(XcmError::FailedToTransactAsset("Unknown Asset")),
+        };
+
+        Ok((asset_id, amount, receiver))
     }
 }

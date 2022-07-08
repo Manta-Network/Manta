@@ -105,7 +105,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 1,
-    spec_version: 3200,
+    spec_version: 3201,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 5,
@@ -208,7 +208,6 @@ impl Contains<Call> for BaseFilter {
                                 orml_xtokens::Call::transfer_with_fee {..}
                                 | orml_xtokens::Call::transfer_multiasset {..}
                                 | orml_xtokens::Call::transfer_multiasset_with_fee {..}
-                                | orml_xtokens::Call::transfer_multicurrencies {..}
                                 | orml_xtokens::Call::transfer_multiassets {..})
             // Filter callables from XCM pallets, we use XTokens exclusively
             | Call::XcmpQueue(_) | Call::PolkadotXcm(_) | Call::DmpQueue(_) => false,
@@ -253,7 +252,8 @@ impl Contains<Call> for BaseFilter {
                 | manta_collator_selection::Call::leave_intent{..})
             | Call::Balances(_)
             | Call::Preimage(_)
-            | Call::XTokens(orml_xtokens::Call::transfer {..})
+            | Call::XTokens(orml_xtokens::Call::transfer {..}
+                | orml_xtokens::Call::transfer_multicurrencies {..})
             | Call::Utility(_) => true,
 
             // DISALLOW anything else
@@ -752,7 +752,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsReversedWithSystemFirst,
-    crate::migrations::sudo::RemoveSudo<Runtime>,
+    (),
 >;
 
 #[cfg(feature = "runtime-benchmarks")]
