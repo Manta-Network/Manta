@@ -24,15 +24,3 @@ pub use vrf::*;
 
 #[cfg(feature = "std")]
 pub mod helpers;
-
-/// A Trait to lookup keys from AuthorIds
-pub trait KeysLookup<AuthorId, Keys> {
-    fn lookup_keys(author: &AuthorId) -> Option<Keys>;
-}
-
-// A dummy impl used in simple tests
-impl<AuthorId, Keys> KeysLookup<AuthorId, Keys> for () {
-    fn lookup_keys(_: &AuthorId) -> Option<Keys> {
-        None
-    }
-}

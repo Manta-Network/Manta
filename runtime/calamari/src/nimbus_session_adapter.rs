@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-
 use frame_support::traits::OneSessionHandler;
 use frame_system::Config;
 use pallet_author_inherent::Pallet as AuthorInherent;

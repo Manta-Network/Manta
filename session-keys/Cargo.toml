@@ -2,8 +2,9 @@
 authors = ['Manta Network']
 description = "Primitives for session keys"
 edition = "2021"
+license = 'GPL-3.0'
 name = "session-key-primitives"
-version = "0.1.0"
+version = "1.0.0"
 
 [dependencies]
 manta-primitives = { path = "../primitives", default-features = false }
