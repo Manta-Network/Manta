@@ -187,6 +187,7 @@ std = [
   'pallet-transaction-payment-rpc-runtime-api/std',
   'pallet-timestamp/std',
   'pallet-session/std',
+  'sp-application-crypto/std',
   'pallet-xcm/std',
   'pallet-transaction-payment/std',
   "pallet-author-inherent/std",

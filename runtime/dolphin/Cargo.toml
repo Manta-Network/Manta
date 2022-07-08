@@ -208,6 +208,7 @@ std = [
   "pallet-author-inherent/std",
   'session-key-primitives/std',
   'xcm/std',
+  'sp-application-crypto/std',
   'xcm-builder/std',
   'xcm-executor/std',
   'polkadot-runtime-common/std',
