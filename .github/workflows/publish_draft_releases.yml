@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [manta]
   push:
-    branches: [Yi/retire-mpl]
+    branches: [manta]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 concurrency:
