@@ -19,11 +19,69 @@
 
 pub mod aura;
 pub mod nimbus;
+mod nimbus_session_adapter;
 pub mod vrf;
 pub use vrf::*;
 
 #[cfg(feature = "std")]
 pub mod helpers;
+
+pub mod v1 {
+    use crate::aura::AuraId;
+    sp_runtime::impl_opaque_keys! {
+        pub struct SessionKeys<Runtime> {
+            pub aura: pallet_aura::Pallet<Runtime>,
+        }
+    }
+    impl<Runtime> SessionKeys<Runtime> {
+        pub fn new<T, U>(tuple: (AuraId, T, U)) -> Self {
+            let (aura, _, _) = tuple;
+            Self { aura }
+        }
+    }
+}
+pub mod v2 {
+    use crate::{
+        aura::AuraId,
+        nimbus_session_adapter::{AuthorInherentWithNoOpSession, VrfWithNoOpSession},
+        vrf::VrfId,
+    };
+    use nimbus_primitives::NimbusId;
+
+    sp_runtime::impl_opaque_keys! {
+        pub struct SessionKeys<Runtime: frame_system::Config> {
+            pub aura: pallet_aura::Pallet<Runtime>,
+            pub nimbus: AuthorInherentWithNoOpSession<Runtime>,
+            pub vrf: VrfWithNoOpSession,
+        }
+    }
+
+    impl<Runtime: frame_system::Config> SessionKeys<Runtime> {
+        pub fn new(tuple: (AuraId, NimbusId, VrfId)) -> Self {
+            let (aura, nimbus, vrf) = tuple;
+            Self { aura, nimbus, vrf }
+        }
+    }
+}
+pub use latest::SessionKeys;
+use v2 as latest;
+
+pub mod migrations {
+    type OldSessionKeys<R> = crate::v1::SessionKeys<R>;
+    type SessionKeys<R> = crate::v2::SessionKeys<R>;
+    /// This function is fed into `upgrade_keys` to update Session pallet storage on RT upgrade
+    pub fn transform_session_keys_v1_v2<R: frame_system::Config>(
+        _v: manta_primitives::types::AccountId,
+        old: OldSessionKeys<R>,
+    ) -> SessionKeys<R> {
+        let unique_dummy_nimbus_id = crate::nimbus::from_aura_key(old.aura.clone());
+        SessionKeys {
+            aura: old.aura,
+            nimbus: unique_dummy_nimbus_id.clone(),
+            vrf: unique_dummy_nimbus_id.into(),
+        }
+    }
+}
 
 /// A Trait to lookup keys from AuthorIds
 pub trait KeysLookup<AuthorId, Keys> {

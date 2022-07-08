@@ -18,9 +18,9 @@
 
 use frame_support::traits::OneSessionHandler;
 use frame_system::Config;
-use pallet_author_inherent::Pallet as AuthorInherent;
 use sp_application_crypto::BoundToRuntimeAppPublic;
 
+use pallet_author_inherent::Pallet as AuthorInherent;
 pub struct AuthorInherentWithNoOpSession<T: Config>(pub AuthorInherent<T>);
 
 impl<T: Config> BoundToRuntimeAppPublic for AuthorInherentWithNoOpSession<T> {
@@ -47,8 +47,8 @@ impl<T: Config> OneSessionHandler<T::AccountId> for AuthorInherentWithNoOpSessio
     fn on_before_session_ending() {}
 }
 
-use crate::AccountId;
-use session_key_primitives::vrf::VrfSessionKey;
+use crate::vrf::VrfSessionKey;
+use manta_primitives::types::AccountId;
 pub struct VrfWithNoOpSession(pub VrfSessionKey);
 
 impl BoundToRuntimeAppPublic for VrfWithNoOpSession {

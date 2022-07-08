@@ -34,7 +34,6 @@ pub use calamari_runtime::{
     Runtime, TechnicalCommittee, Timestamp, Treasury, Utility, VotingPeriod,
 };
 
-use calamari_runtime::opaque::SessionKeys;
 use frame_support::{
     assert_err, assert_ok,
     codec::Encode,
@@ -50,7 +49,10 @@ use manta_primitives::{
     constants::time::{DAYS, HOURS},
     types::{AccountId, Header},
 };
-use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
+use session_key_primitives::{
+    helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
+    SessionKeys,
+};
 use xcm::{
     opaque::latest::{
         Junction::{PalletInstance, Parachain},

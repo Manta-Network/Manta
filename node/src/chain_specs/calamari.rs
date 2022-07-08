@@ -18,10 +18,11 @@
 
 use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
-use calamari_runtime::{
-    opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
+use calamari_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
+use session_key_primitives::{
+    helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
+    SessionKeys,
 };
-use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 /// Calamari Protocol Identifier
 pub const CALAMARI_PROTOCOL_ID: &str = "calamari";

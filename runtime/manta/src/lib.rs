@@ -27,7 +27,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
+    create_runtime_str, generic,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult,
@@ -56,7 +56,7 @@ use manta_primitives::{
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use runtime_common::prod_or_fast;
-use session_key_primitives::aura::AuraId;
+use session_key_primitives::{aura::AuraId, v1::SessionKeys};
 use sp_runtime::Perbill;
 
 #[cfg(any(feature = "std", test))]
@@ -99,16 +99,10 @@ pub mod opaque {
     pub type Block = generic::Block<Header, UncheckedExtrinsic>;
     /// Opaque block identifier type.
     pub type BlockId = generic::BlockId<Block>;
-    impl_opaque_keys! {
-        pub struct SessionKeys {
-            pub aura: Aura,
-        }
-    }
-    impl SessionKeys {
-        pub fn new<T, U>(tuple: (AuraId, T, U)) -> SessionKeys {
-            let (aura, _, _) = tuple;
-            SessionKeys { aura }
-        }
+    // NOTE: Workaround for impl_opaque_keys not supporting generics
+    type IntermediateSessionKey = session_key_primitives::v1::SessionKeys<Runtime>;
+    sp_runtime::impl_opaque_keys! {
+        pub type SessionKeys = IntermediateSessionKey;
     }
 }
 
@@ -562,9 +556,8 @@ impl pallet_session::Config for Runtime {
     type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
     type SessionManager = CollatorSelection;
     // Essentially just Aura, but lets be pedantic.
-    type SessionHandler =
-        <opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
-    type Keys = opaque::SessionKeys;
+    type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
+    type Keys = SessionKeys;
     type WeightInfo = weights::pallet_session::SubstrateWeight<Runtime>;
 }
 
@@ -770,13 +763,13 @@ impl_runtime_apis! {
 
     impl sp_session::SessionKeys<Block> for Runtime {
         fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
-            opaque::SessionKeys::generate(seed)
+            SessionKeys::generate(seed)
         }
 
         fn decode_session_keys(
             encoded: Vec<u8>,
         ) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
-            opaque::SessionKeys::decode_into_raw_public_keys(&encoded)
+            SessionKeys::decode_into_raw_public_keys(&encoded)
         }
     }
 

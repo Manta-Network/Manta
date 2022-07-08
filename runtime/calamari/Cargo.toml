@@ -69,9 +69,6 @@ cumulus-primitives-core = { git = 'https://github.com/paritytech/cumulus.git', d
 cumulus-primitives-timestamp = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.18" }
 cumulus-primitives-utility = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.18" }
 parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.18" }
-# Nimbus Dependencies
-nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v0.9.18", default-features = false }
-pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v0.9.18", default-features = false }
 
 # Polkadot dependencies
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
@@ -189,7 +186,6 @@ std = [
   'pallet-session/std',
   'pallet-xcm/std',
   'pallet-transaction-payment/std',
-  "pallet-author-inherent/std",
   'pallet-treasury/std',
   'pallet-collective/std',
   'pallet-democracy/std',
@@ -206,8 +202,6 @@ std = [
   "cumulus-primitives-core/std",
   "cumulus-primitives-timestamp/std",
   "cumulus-primitives-utility/std",
-  "nimbus-primitives/std",
-  "pallet-author-inherent/std",
   'session-key-primitives/std',
   'xcm/std',
   'xcm-builder/std',

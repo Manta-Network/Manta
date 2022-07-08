@@ -18,10 +18,11 @@
 
 use super::*;
 use crate::command::DOLPHIN_PARACHAIN_ID;
-use dolphin_runtime::{
-    opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
+use dolphin_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
+use session_key_primitives::{
+    helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
+    SessionKeys,
 };
-use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 /// Dolphin Protocol Identifier
 pub const DOLPHIN_PROTOCOL_ID: &str = "dolphin";

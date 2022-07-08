@@ -27,7 +27,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
+    create_runtime_str, generic,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, Perbill, Permill,
@@ -55,9 +55,8 @@ use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
-use nimbus_primitives::NimbusId;
 use runtime_common::prod_or_fast;
-use session_key_primitives::{aura::AuraId, VrfId};
+use session_key_primitives::{aura::AuraId, SessionKeys, VrfId};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -92,35 +91,9 @@ pub mod opaque {
     pub type Block = generic::Block<Header, UncheckedExtrinsic>;
     /// Opaque block identifier type.
     pub type BlockId = generic::BlockId<Block>;
-
-    use nimbus_session_adapter::{AuthorInherentWithNoOpSession, VrfWithNoOpSession};
-    impl_opaque_keys! {
-        pub struct OldSessionKeys {
-            pub aura: Aura,
-        }
-    }
-    impl_opaque_keys! {
-        pub struct SessionKeys {
-            pub aura: Aura,
-            pub nimbus: AuthorInherentWithNoOpSession<Runtime>,
-            pub vrf: VrfWithNoOpSession,
-        }
-    }
-    impl SessionKeys {
-        pub fn new(tuple: (AuraId, NimbusId, VrfId)) -> SessionKeys {
-            let (aura, nimbus, vrf) = tuple;
-            SessionKeys { aura, nimbus, vrf }
-        }
-    }
-
-    pub fn transform_session_keys(_v: AccountId, old: OldSessionKeys) -> SessionKeys {
-        let unique_dummy_nimbus_id =
-            session_key_primitives::nimbus::from_aura_key(old.aura.clone());
-        SessionKeys {
-            aura: old.aura,
-            nimbus: unique_dummy_nimbus_id.clone(),
-            vrf: unique_dummy_nimbus_id.into(),
-        }
+    // NOTE: Workaround for impl_opaque_keys not supporting generics
+    type IntermediateSessionKey = session_key_primitives::SessionKeys<Runtime>;
+        pub type SessionKeys = IntermediateSessionKey;
     }
 }
 
@@ -637,9 +610,8 @@ impl pallet_session::Config for Runtime {
     type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
     type SessionManager = CollatorSelection;
     // Essentially just Aura, but lets be pedantic.
-    type SessionHandler =
-        <opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
-    type Keys = opaque::SessionKeys;
+    type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
+    type Keys = SessionKeys;
     type WeightInfo = weights::pallet_session::SubstrateWeight<Runtime>;
 }
 
@@ -889,13 +861,13 @@ impl_runtime_apis! {
 
     impl sp_session::SessionKeys<Block> for Runtime {
         fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
-            opaque::SessionKeys::generate(seed)
+            SessionKeys::generate(seed)
         }
 
         fn decode_session_keys(
             encoded: Vec<u8>,
         ) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
-            opaque::SessionKeys::decode_into_raw_public_keys(&encoded)
+            SessionKeys::decode_into_raw_public_keys(&encoded)
         }
     }
 

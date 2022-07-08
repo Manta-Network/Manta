@@ -16,7 +16,6 @@
 
 use crate::common::*;
 
-use calamari_runtime::opaque::SessionKeys;
 pub use calamari_runtime::{
     assets_config::CalamariAssetConfig, currency::KMA, Call, CollatorSelection, Democracy, Runtime,
     Scheduler, Session, System, TransactionPayment,
@@ -26,7 +25,10 @@ use manta_primitives::{
     assets::AssetConfig,
     types::{AccountId, Balance},
 };
-use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
+use session_key_primitives::{
+    helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
+    SessionKeys,
+};
 use sp_core::sr25519;
 pub struct ExtBuilder {
     balances: Vec<(AccountId, Balance)>,
