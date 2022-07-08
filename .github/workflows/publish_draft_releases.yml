@@ -158,7 +158,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo build --profile production --verbose
+          cargo build
       -
         name: stop sccache server
         run: sccache --stop-server || true
@@ -535,6 +535,9 @@ jobs:
           path: dev-tools-calamari
       -
         uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Manta
+          path: Manta
       -
         name: launch testnet
         run: |
