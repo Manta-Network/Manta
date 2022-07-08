@@ -158,7 +158,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo build
+          cargo build --release
       -
         name: stop sccache server
         run: sccache --stop-server || true
