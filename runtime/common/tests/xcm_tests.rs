@@ -2939,6 +2939,11 @@ fn send_para_a_native_asset_para_b_and_then_send_back3() {
     // });
 
     ParaA::execute_with(|| {
+        use parachain::{Event, System};
+        assert!(System::events()
+            .iter()
+            .any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked { .. }))));
+
         parachain::Assets::mint(
             parachain::Origin::signed(parachain::AssetManager::account_id()),
             relay_asset_id_on_a,
