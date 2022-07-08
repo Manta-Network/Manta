@@ -49,7 +49,7 @@ orml-traits = { git = "https://github.com/manta-network/open-runtime-module-libr
 orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", rev = "7e2f985" }
 
 # Self dependencies
-manta-primitives = { path = '../../primitives' }
+manta-primitives = { path = '../../primitives/manta' }
 pallet-asset-manager = { path = '../../pallets/asset-manager' }
 
 [features]

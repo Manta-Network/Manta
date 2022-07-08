@@ -74,10 +74,10 @@ xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', default-feat
 xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.18" }
 
 # Self dependencies
-manta-primitives = { path = '../../primitives', default-features = false }
+manta-primitives = { path = '../../primitives/manta', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
-session-key-primitives = { path = '../../session-keys', default-features = false }
+session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']

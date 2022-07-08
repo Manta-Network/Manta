@@ -7,7 +7,7 @@ name = "session-key-primitives"
 version = "1.0.0"
 
 [dependencies]
-manta-primitives = { path = "../primitives", default-features = false }
+manta-primitives = { path = "../manta", default-features = false }
 nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v0.9.18", default-features = false }
 parity-scale-codec = { version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.0", default-features = false, features = ["derive"] }

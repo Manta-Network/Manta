@@ -89,11 +89,11 @@ orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-lib
 # Self dependencies
 calamari-vesting = { path = '../../pallets/vesting', default-features = false }
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
-manta-primitives = { path = '../../primitives', default-features = false }
+manta-primitives = { path = '../../primitives/manta', default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
-session-key-primitives = { path = '../../session-keys', default-features = false }
+session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
