@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 env:
   AWS_REGION: us-east-1
-  AWS_INSTANCE_TYPE: c5a.8xlarge
+  AWS_INSTANCE_TYPE: c5.4xlarge
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 256
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
