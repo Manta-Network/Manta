@@ -14,69 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Parachain-specific RPCs implementation.
+//! Dolphin RPC Extensions
 
-use sc_client_api::AuxStore;
-pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
-use sc_transaction_pool_api::TransactionPool;
-use sp_api::ProvideRuntimeApi;
-use sp_block_builder::BlockBuilder;
-use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
-use std::sync::Arc;
-
-use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
+use super::*;
 use pallet_manta_pay::{
     rpc::{Pull, PullApiServer},
     runtime::PullLedgerDiffApi,
 };
-
-/// A type representing all RPC extensions.
-pub type RpcExtension = jsonrpsee::RpcModule<()>;
-
-/// Full client dependencies
-pub struct FullDeps<C, P> {
-    /// The client instance to use.
-    pub client: Arc<C>,
-    /// Transaction pool instance.
-    pub pool: Arc<P>,
-    /// Whether to deny unsafe calls
-    pub deny_unsafe: DenyUnsafe,
-}
-
-/// Instantiate all RPC extensions for common nodes like calamari/manta.
-pub fn create_common_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
-where
-    C: ProvideRuntimeApi<Block>
-        + HeaderBackend<Block>
-        + AuxStore
-        + HeaderMetadata<Block, Error = BlockChainError>
-        + Send
-        + Sync
-        + 'static,
-    C::Api: frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
-    C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-    C::Api: BlockBuilder<Block>,
-    P: TransactionPool + Sync + Send + 'static,
-{
-    use frame_rpc_system::{SystemApiServer, SystemRpc};
-    use pallet_transaction_payment_rpc::{TransactionPaymentApiServer, TransactionPaymentRpc};
-
-    let mut module = RpcExtension::new(());
-    let FullDeps {
-        client,
-        pool,
-        deny_unsafe,
-    } = deps;
-
-    module
-        .merge(SystemRpc::new(client.clone(), pool, deny_unsafe).into_rpc())
-        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
-    module
-        .merge(TransactionPaymentRpc::new(client).into_rpc())
-        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
-
-    Ok(module)
-}
 
 /// Instantiate all RPC extensions for dolphin.
 pub fn create_dolphin_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
