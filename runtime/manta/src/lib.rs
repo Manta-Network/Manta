@@ -39,11 +39,11 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use frame_support::{
-    construct_runtime, match_type, parameter_types,
+    construct_runtime, match_types, parameter_types,
     traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, Everything, Nothing},
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
-        DispatchClass, IdentityFee, Weight,
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+        ConstantMultiplier, DispatchClass, IdentityFee, Weight,
     },
     PalletId,
 };
@@ -55,7 +55,7 @@ use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
-use runtime_common::prod_or_fast;
+use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use session_key_primitives::aura::AuraId;
 use sp_runtime::Perbill;
 
@@ -65,7 +65,6 @@ pub use sp_runtime::BuildStorage;
 // Polkadot imports
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
 use polkadot_parachain::primitives::Sibling;
-use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -290,8 +289,8 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
-    type TransactionByteFee = TransactionByteFee;
     type WeightToFee = WeightToFee;
+    type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
 }
@@ -451,13 +450,13 @@ parameter_types! {
     pub const MaxInstructions: u32 = 100;
 }
 
-match_type! {
+match_types! {
     pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
         MultiLocation { parents: 1, interior: Here } |
         MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
     };
 }
-match_type! {
+match_types! {
     pub type ParentOrSiblings: impl Contains<MultiLocation> = {
         MultiLocation { parents: 1, interior: Here } |
         MultiLocation { parents: 1, interior: X1(_) }

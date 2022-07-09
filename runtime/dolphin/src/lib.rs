@@ -42,8 +42,8 @@ use frame_support::{
     construct_runtime, parameter_types,
     traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, PrivilegeCmp},
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
-        DispatchClass, Weight,
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+        ConstantMultiplier, DispatchClass, Weight,
     },
     PalletId,
 };
@@ -56,14 +56,11 @@ use manta_primitives::{
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use nimbus_primitives::NimbusId;
-use runtime_common::prod_or_fast;
+use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use session_key_primitives::{aura::AuraId, VrfId};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-
-// Polkadot imports
-use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 use xcm::latest::prelude::*;
 
 pub mod assets_config;
@@ -359,8 +356,8 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
-    type TransactionByteFee = TransactionByteFee;
     type WeightToFee = WeightToFee;
+    type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
 }

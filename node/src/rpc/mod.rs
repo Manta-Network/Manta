@@ -16,44 +16,30 @@
 
 //! Parachain-specific RPCs implementation.
 
-use alloc::sync::Arc;
-use core::marker::PhantomData;
+use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
+use sc_client_api::AuxStore;
+pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
+use sc_transaction_pool_api::TransactionPool;
+use sp_api::ProvideRuntimeApi;
+use sp_block_builder::BlockBuilder;
+use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
+use std::sync::Arc;
 
 mod common;
 mod dolphin;
 
-pub use common::Common;
-pub use dolphin::Dolphin;
+pub use common::create_common_full;
+pub use dolphin::create_dolphin_full;
 
-/// RPC Extension Type
-pub type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
+/// A type representing all RPC extensions.
+pub type RpcExtension = jsonrpsee::RpcModule<()>;
 
-/// RPC Extension Builder
-pub struct Builder<C, P, M = common::Common> {
-    /// Client
-    client: Arc<C>,
-
-    /// Transaction Poool
-    transaction_pool: Arc<P>,
-
-    /// Runtime Marker
-    __: PhantomData<M>,
-}
-
-impl<C, P, M> Builder<C, P, M> {
-    /// Builds a new RPC Extension [`Builder`] from `client` and `transaction_pool`.
-    #[inline]
-    pub fn new(client: Arc<C>, transaction_pool: Arc<P>) -> Self {
-        Self {
-            client,
-            transaction_pool,
-            __: PhantomData,
-        }
-    }
-
-    /// Converts `self` into a [`Builder`] with the `T` marker.
-    #[inline]
-    pub fn using<T>(&self) -> Builder<C, P, T> {
-        Builder::new(self.client.clone(), self.transaction_pool.clone())
-    }
+/// Full client dependencies
+pub struct FullDeps<C, P> {
+    /// The client instance to use.
+    pub client: Arc<C>,
+    /// Transaction pool instance.
+    pub pool: Arc<P>,
+    /// Whether to deny unsafe calls
+    pub deny_unsafe: DenyUnsafe,
 }

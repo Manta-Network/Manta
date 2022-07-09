@@ -14,7 +14,7 @@ env:
   AWS_REGION: us-east-1
   AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
   AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
-  AWS_INSTANCE_TYPE: c5a.8xlarge
+  AWS_INSTANCE_TYPE: c5.9xlarge
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
@@ -188,7 +188,7 @@ jobs:
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch and chmod polkadot
         run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.18/polkadot
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.22/polkadot
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
@@ -384,7 +384,7 @@ jobs:
           ls -ahl $HOME/.local/bin/
       - name: fetch and chmod polkadot
         run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.18/polkadot
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.22/polkadot
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       - id: create-chainspec

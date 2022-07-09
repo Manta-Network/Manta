@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+#![allow(clippy::unnecessary_cast)]
+
 use core::marker::PhantomData;
 use frame_support::{
     migration::{have_storage_value, remove_storage_prefix},
