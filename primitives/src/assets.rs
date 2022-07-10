@@ -419,7 +419,7 @@ where
     ) -> Result<(), FungibleLedgerError> {
         Self::ensure_valid(asset_id)?;
         FungibleLedgerError::from_deposit(if asset_id == A::NativeAssetId::get() {
-            <Native as FungibleInspect<C::AccountId>>::can_deposit(account, amount, mint)
+            <Native as FungibleInspect<C::AccountId>>::can_deposit(account, amount, false)
         } else {
             <NonNative as FungiblesInspect<C::AccountId>>::can_deposit(
                 asset_id, account, amount, mint,
@@ -448,10 +448,11 @@ where
         amount: Balance,
     ) -> Result<(), FungibleLedgerError> {
         Self::ensure_valid(asset_id)?;
-        Self::can_deposit(asset_id, beneficiary, amount, true)?;
         if asset_id == A::NativeAssetId::get() {
+            Self::can_deposit(asset_id, beneficiary, amount, false)?;
             <Native as Currency<C::AccountId>>::deposit_creating(beneficiary, amount);
         } else {
+            Self::can_deposit(asset_id, beneficiary, amount, true)?;
             <NonNative as Mutate<C::AccountId>>::mint_into(asset_id, beneficiary, amount)
                 .map_err(FungibleLedgerError::InvalidMint)?;
         }
