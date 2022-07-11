@@ -12,8 +12,8 @@ const dolphin_config = {
 // "ws://127.0.0.1:9800"
 
 function convert_shard_utxo_keys(data: Uint8Array): Uint8Array{
-    let shard_idx_data = data.slice(0, 1);
-    let utxo_idx_data = data.slice(1,);
+    const shard_idx_data = data.slice(0, 1);
+    const utxo_idx_data = data.slice(1,);
     return new Uint8Array([
         ...xxhashAsU8a(shard_idx_data, 64),
         ...shard_idx_data,
@@ -31,16 +31,16 @@ function convert_single_map_keys(data: Uint8Array): Uint8Array{
 
 async function insert_value_batches(
     context: ExecutionContext,    
-    kvs: Array<String[]>, 
+    kvs: Array<string[]>, 
     batch_size: number,
     timeout: number,
 ){
     let success_batch = 0;
-    let expected_batch = Math.ceil(kvs.length/batch_size);
+    const expected_batch = Math.ceil(kvs.length/batch_size);
     for(let check_point = 0;  check_point < kvs.length; ){
-        let finish_point = check_point + batch_size > kvs.length ? kvs.length : check_point + batch_size;
-        let data = kvs.slice(check_point, finish_point);
-        let call_data = context.api.tx.system.setStorage(data);
+        const finish_point = check_point + batch_size > kvs.length ? kvs.length : check_point + batch_size;
+        const data = kvs.slice(check_point, finish_point);
+        const call_data = context.api.tx.system.setStorage(data);
         const unsub = await context.api.tx.sudo.sudo(call_data).signAndSend(context.keyring, {nonce: -1}, ({ events = [], status }) => {
             if (status.isFinalized) {
                 success_batch ++;
@@ -64,14 +64,14 @@ async function insert_value_batches(
 
 async function insert_values(
     context: ExecutionContext,
-    kvs: Array<String[]>, 
-    batch_size: number = 4096,
-    batch_count_before_gap: number = 4,
-    timeout_for_big_batch: number = 1000, 
+    kvs: Array<string[]>, 
+    batch_size = 4096,
+    batch_count_before_gap = 4,
+    timeout_for_big_batch = 1000, 
 ){
     const big_batch_size = batch_size * batch_count_before_gap;
     for(let check_point = 0; check_point < kvs.length; ){
-        let finish_point = check_point + big_batch_size > kvs.length ? kvs.length : check_point + big_batch_size;
+        const finish_point = check_point + big_batch_size > kvs.length ? kvs.length : check_point + big_batch_size;
         console.log(">>>>>> writng big batch from %i", check_point);
         await insert_value_batches(context, kvs.slice(check_point, finish_point), batch_size, timeout_for_big_batch);
         check_point = finish_point;
@@ -80,16 +80,16 @@ async function insert_values(
 
 async function drop_keys_in_batches(
     context: ExecutionContext,    
-    keys: Array<String>, 
+    keys: Array<string>, 
     batch_size: number,
     timeout: number,
 ){
     let success_batch = 0;
-    let expected_batch = Math.ceil(keys.length/batch_size);
+    const expected_batch = Math.ceil(keys.length/batch_size);
     for(let check_point = 0;  check_point < keys.length; ){
-        let finish_point = check_point + batch_size > keys.length ? keys.length : check_point + batch_size;
-        let data = keys.slice(check_point, finish_point);
-        let call_data = context.api.tx.system.killStorage(data);
+        const finish_point = check_point + batch_size > keys.length ? keys.length : check_point + batch_size;
+        const data = keys.slice(check_point, finish_point);
+        const call_data = context.api.tx.system.killStorage(data);
         const unsub = await context.api.tx.sudo.sudo(call_data).signAndSend(context.keyring, {nonce: -1}, ({ events = [], status }) => {
             if (status.isFinalized) {
                 success_batch ++;
@@ -113,14 +113,14 @@ async function drop_keys_in_batches(
 
 async function drop_keys(
     context: ExecutionContext,
-    keys: Array<String>, 
-    batch_size: number = 4096,
-    batch_count_before_gap: number = 4,
-    timeout_for_big_batch: number = 1000, 
+    keys: Array<string>, 
+    batch_size = 4096,
+    batch_count_before_gap = 4,
+    timeout_for_big_batch = 1000, 
 ){
     const big_batch_size = batch_size * batch_count_before_gap;
     for(let check_point = 0; check_point < keys.length; ){
-        let finish_point = check_point + big_batch_size > keys.length ? keys.length : check_point + big_batch_size;
+        const finish_point = check_point + big_batch_size > keys.length ? keys.length : check_point + big_batch_size;
         console.log(">>>>>> writng big batch from %i", check_point);
         await drop_keys_in_batches(context, keys.slice(check_point, finish_point), batch_size, timeout_for_big_batch);
         check_point = finish_point;
@@ -129,9 +129,9 @@ async function drop_keys(
 
 
 function convert_single_map_keys_hex(key: string, changed_bytes: number): string {
-    let bytes = hexToU8a(key);
-    let transformed_last_bytes = convert_single_map_keys(bytes.slice(-changed_bytes));
-    let result = new Uint8Array([
+    const bytes = hexToU8a(key);
+    const transformed_last_bytes = convert_single_map_keys(bytes.slice(-changed_bytes));
+    const result = new Uint8Array([
         ...bytes.slice(0, -changed_bytes),
         ...transformed_last_bytes
     ]);
@@ -163,24 +163,24 @@ async function main(){
 
     // drop keys
     await drop_keys(context, manta_keys_read.shards);
-    let shards_keys = await api.query.mantaPay.shards.keys();
+    const shards_keys = await api.query.mantaPay.shards.keys();
     console.log("shards key count: %i", shards_keys.length);
     await drop_keys(context, manta_keys_read.shard_trees);
-    let shard_trees_keys = await api.query.mantaPay.shardTrees.keys();
+    const shard_trees_keys = await api.query.mantaPay.shardTrees.keys();
     console.log("shard trees key count: %i", shard_trees_keys.length);
     await drop_keys(context, manta_keys_read.utxo_acc_outputs);
-    let utxo_acc_outputs = await api.query.mantaPay.utxoAccumulatorOutputs.keys();
+    const utxo_acc_outputs = await api.query.mantaPay.utxoAccumulatorOutputs.keys();
     console.log("key count: %i", utxo_acc_outputs.length);
     await drop_keys(context, manta_keys_read.utxo_set);
-    let utxo_set = await api.query.mantaPay.utxoSet.keys();
+    const utxo_set = await api.query.mantaPay.utxoSet.keys();
     console.log("drop %i keys from UtxoSet", utxo_set.length);
 
     await drop_keys(context, manta_keys_read.void_number_set);
-    let void_number_set = await api.query.mantaPay.voidNumberSet.keys();
+    const void_number_set = await api.query.mantaPay.voidNumberSet.keys();
     console.log("drop %i keys from VoidNumberSet", void_number_set.length);
 
     await drop_keys(context, manta_keys_read.void_number_set_insertion_order);
-    let vnsio = await api.query.mantaPay.voidNumberSetInsertionOrder.keys();
+    const vnsio = await api.query.mantaPay.voidNumberSetInsertionOrder.keys();
     console.log("Fetched %i keys from VNSIO", vnsio.length);
     const shards_raw = await readFile('./shards.json');
     const shards = JSON.parse(shards_raw.toString());
@@ -191,9 +191,9 @@ async function main(){
 
     // inserting new shards
     const new_shards_keys = (manta_keys_read.shards as Array<string>).map((entry)=>{
-        let bytes = hexToU8a(entry);
-        let transformed_last_bytes = convert_shard_utxo_keys(bytes.slice(-9));
-        let result = new Uint8Array([
+        const bytes = hexToU8a(entry);
+        const transformed_last_bytes = convert_shard_utxo_keys(bytes.slice(-9));
+        const result = new Uint8Array([
             ...bytes.slice(0, -9),
             ...transformed_last_bytes
         ]);

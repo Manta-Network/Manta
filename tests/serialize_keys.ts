@@ -15,17 +15,17 @@ async function main(){
         rpc: rpc_api});
     
     // get storage keys 
-    let shards = await api.query.mantaPay.shards.keys();
+    const shards = await api.query.mantaPay.shards.keys();
     console.log("Fetched %i keys from Shards", shards.length);
-    let shard_trees = await api.query.mantaPay.shardTrees.keys();
+    const shard_trees = await api.query.mantaPay.shardTrees.keys();
     console.log("Fetched %i keys from ShardTrees", shard_trees.length);
-    let utxo_acc_outputs = await api.query.mantaPay.utxoAccumulatorOutputs.keys();
+    const utxo_acc_outputs = await api.query.mantaPay.utxoAccumulatorOutputs.keys();
     console.log("Fetched %i keys from UtxoAccumulatorOutputs", utxo_acc_outputs.length);
-    let utxo_set = await api.query.mantaPay.utxoSet.keys();
+    const utxo_set = await api.query.mantaPay.utxoSet.keys();
     console.log("Fetched %i keys from UtxoSet", utxo_set.length);
-    let void_number_set = await api.query.mantaPay.voidNumberSet.keys();
+    const void_number_set = await api.query.mantaPay.voidNumberSet.keys();
     console.log("Fetched %i keys from VoidNumberSet", void_number_set.length);
-    let void_number_set_insertion_order = await api.query.mantaPay.voidNumberSetInsertionOrder.keys();
+    const void_number_set_insertion_order = await api.query.mantaPay.voidNumberSetInsertionOrder.keys();
     console.log("Fetched %i keys from VNSIO", void_number_set_insertion_order.length);
     
     const manta_pay_keys = {
@@ -37,7 +37,7 @@ async function main(){
         void_number_set_insertion_order: void_number_set_insertion_order,
     };
 
-    var manta_keys_raw = JSON.stringify(manta_pay_keys);
+    const manta_keys_raw = JSON.stringify(manta_pay_keys);
     console.log(manta_keys_raw.length);
 
     await writeFile('./manta_pay_keys.json', manta_keys_raw);
