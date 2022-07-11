@@ -419,7 +419,7 @@ where
     ) -> Result<(), FungibleLedgerError> {
         Self::ensure_valid(asset_id)?;
         FungibleLedgerError::from_deposit(if asset_id == A::NativeAssetId::get() {
-            <Native as FungibleInspect<C::AccountId>>::can_deposit(account, amount, false)
+            <Native as FungibleInspect<C::AccountId>>::can_deposit(account, amount, mint)
         } else {
             <NonNative as FungiblesInspect<C::AccountId>>::can_deposit(
                 asset_id, account, amount, mint,

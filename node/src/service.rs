@@ -37,7 +37,7 @@ use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 use jsonrpsee::RpcModule;
-use polkadot_service::{CollatorPair, NativeExecutionDispatch};
+use polkadot_service::CollatorPair;
 
 use futures::lock::Mutex;
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
@@ -46,7 +46,7 @@ use sc_consensus::{
     import_queue::{BasicQueue, Verifier as VerifierT},
     BlockImportParams,
 };
-use sc_executor::NativeElseWasmExecutor;
+use sc_executor::{NativeElseWasmExecutor, NativeExecutionDispatch};
 use sc_network::NetworkService;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_service::{Configuration, Error, Role, TFullBackend, TFullClient, TaskManager};
@@ -69,7 +69,7 @@ use substrate_prometheus_endpoint::Registry;
 
 /// Native Manta Parachain executor instance.
 pub struct MantaRuntimeExecutor;
-impl sc_executor::NativeExecutionDispatch for MantaRuntimeExecutor {
+impl NativeExecutionDispatch for MantaRuntimeExecutor {
     type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
     fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -83,7 +83,7 @@ impl sc_executor::NativeExecutionDispatch for MantaRuntimeExecutor {
 
 /// Native Calamari Parachain executor instance.
 pub struct CalamariRuntimeExecutor;
-impl sc_executor::NativeExecutionDispatch for CalamariRuntimeExecutor {
+impl NativeExecutionDispatch for CalamariRuntimeExecutor {
     type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
     fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -97,7 +97,7 @@ impl sc_executor::NativeExecutionDispatch for CalamariRuntimeExecutor {
 
 /// Native Dolphin Parachain executor instance.
 pub struct DolphinRuntimeExecutor;
-impl sc_executor::NativeExecutionDispatch for DolphinRuntimeExecutor {
+impl NativeExecutionDispatch for DolphinRuntimeExecutor {
     type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
     fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -267,7 +267,7 @@ where
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     StateBackend: sp_api::StateBackend<BlakeTwo256>,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
+    Executor: NativeExecutionDispatch + 'static,
     FullRpc: Fn(
             rpc::FullDeps<Client<RuntimeApi, Executor>, TransactionPool<RuntimeApi, Executor>>,
         ) -> Result<RpcModule<()>, Error>
@@ -545,7 +545,7 @@ where
         + sp_block_builder::BlockBuilder<Block>
         + sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>,
     StateBackend: sp_api::StateBackend<BlakeTwo256>,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
+    Executor: NativeExecutionDispatch + 'static,
     <<AuraId as AppKey>::Pair as Pair>::Signature:
         TryFrom<Vec<u8>> + std::hash::Hash + sp_runtime::traits::Member + Codec,
 {
@@ -628,7 +628,7 @@ where
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     StateBackend: sp_api::StateBackend<BlakeTwo256>,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
+    Executor: NativeExecutionDispatch + 'static,
     <<AuraId as AppKey>::Pair as Pair>::Signature:
         TryFrom<Vec<u8>> + std::hash::Hash + sp_runtime::traits::Member + Codec,
     FullRpc: Fn(
