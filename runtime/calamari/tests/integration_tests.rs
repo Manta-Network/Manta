@@ -1254,26 +1254,6 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                 FungibleLedgerError::BelowMinimum
             );
 
-            let remaining_to_max = u128::MAX - Balances::total_issuance();
-            assert_ok!(CalamariConcreteFungibleLedger::mint(
-                <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                &new_account,
-                remaining_to_max,
-            ),);
-            assert_eq!(
-                Balances::free_balance(new_account.clone()),
-                remaining_to_max
-            );
-            assert_err!(
-                CalamariConcreteFungibleLedger::can_deposit(
-                    <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                    &new_account,
-                    1,
-                    true,
-                ),
-                FungibleLedgerError::Overflow
-            );
-
             // Non-native asset tests:
 
             let min_balance = 10u128;
