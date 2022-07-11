@@ -7,6 +7,7 @@
 
 ### Features
 - [\#576](https://github.com/Manta-Network/Manta/pull/576) Unfilter xtokens.transfer_multicurrencies and bump MaxAssetsForTransfer to 2.
+- [\#635](https://github.com/Manta-Network/Manta/pull/576) dolphin v2.1.0 ledger state migration.
 
 ### Improvements
 - [\#449](https://github.com/Manta-Network/Manta/pull/449) Remove strip from CI, and add strip profile to production.
