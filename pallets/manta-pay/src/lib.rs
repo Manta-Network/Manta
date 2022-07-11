@@ -57,7 +57,8 @@ extern crate alloc;
 
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
-use frame_support::{transactional, PalletId};
+use frame_support::{traits::tokens::ExistenceRequirement, transactional, PalletId};
+
 use manta_accounting::{
     asset,
     transfer::{
@@ -218,8 +219,14 @@ pub mod pallet {
             sink: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
-            FungibleLedger::<T>::transfer(asset.id, &origin, &sink, asset.value)
-                .map_err(Error::<T>::from)?;
+            FungibleLedger::<T>::transfer(
+                asset.id,
+                &origin,
+                &sink,
+                asset.value,
+                ExistenceRequirement::KeepAlive,
+            )
+            .map_err(Error::<T>::from)?;
             Self::deposit_event(Event::Transfer {
                 asset,
                 source: origin,
@@ -353,17 +360,14 @@ pub mod pallet {
         /// [`Overflow`](FungibleLedgerError::Overflow) from [`FungibleLedgerError`]
         PublicUpdateOverflow,
 
-        /// [`Underflow`](FungibleLedgerError::Underflow) from [`FungibleLedgerError`]
-        PublicUpdateUnderflow,
+        /// [`CannotWithdraw`](FungibleLedgerError::CannotWithdrawMoreThan(Balance)) from [`FungibleLedgerError`]
+        PublicUpdateCannotWithdraw,
 
-        /// [`Frozen`](FungibleLedgerError::Frozen) from [`FungibleLedgerError`]
-        PublicUpdateFrozen,
+        /// [`InvalidMint`](FungibleLedgerError::InvalidMint) from [`FungibleLedgerError`]
+        PublicUpdateInvalidMint,
 
-        /// [`NoFunds`](FungibleLedgerError::NoFunds) from [`FungibleLedgerError`]
-        PublicUpdateNoFunds,
-
-        /// [`WouldDie`](FungibleLedgerError::WouldDie) from [`FungibleLedgerError`]
-        PublicUpdateWouldDie,
+        /// [`InvalidBurn`](FungibleLedgerError::InvalidBurn) from [`FungibleLedgerError`]
+        PublicUpdateInvalidBurn,
 
         /// [`InvalidTransfer`](FungibleLedgerError::InvalidTransfer) from [`FungibleLedgerError`]
         PublicUpdateInvalidTransfer,
@@ -425,12 +429,10 @@ pub mod pallet {
                 FungibleLedgerError::CannotCreate => Self::PublicUpdateCannotCreate,
                 FungibleLedgerError::UnknownAsset => Self::PublicUpdateUnknownAsset,
                 FungibleLedgerError::Overflow => Self::PublicUpdateOverflow,
-                FungibleLedgerError::Underflow => Self::PublicUpdateUnderflow,
-                FungibleLedgerError::Frozen => Self::PublicUpdateFrozen,
-                FungibleLedgerError::NoFunds => Self::PublicUpdateNoFunds,
-                FungibleLedgerError::WouldDie => Self::PublicUpdateWouldDie,
-                FungibleLedgerError::InvalidTransfer(_e) => Self::PublicUpdateInvalidTransfer,
-                _ => Self::InternalLedgerError,
+                FungibleLedgerError::CannotWithdrawMoreThan(_) => Self::PublicUpdateCannotWithdraw,
+                FungibleLedgerError::InvalidMint(_) => Self::PublicUpdateInvalidMint,
+                FungibleLedgerError::InvalidBurn(_) => Self::PublicUpdateInvalidBurn,
+                FungibleLedgerError::InvalidTransfer(_) => Self::PublicUpdateInvalidTransfer,
             }
         }
     }
@@ -806,13 +808,18 @@ where
     {
         sources
             .map(move |(account_id, withdraw)| {
-                FungibleLedger::<T>::can_withdraw(asset_id.0, &account_id, withdraw.0)
-                    .map(|_| WrapPair(account_id.clone(), withdraw))
-                    .map_err(|_| InvalidSourceAccount {
-                        account_id,
-                        asset_id,
-                        withdraw,
-                    })
+                FungibleLedger::<T>::can_reduce_by_amount(
+                    asset_id.0,
+                    &account_id,
+                    withdraw.0,
+                    ExistenceRequirement::KeepAlive,
+                )
+                .map(|_| WrapPair(account_id.clone(), withdraw))
+                .map_err(|_| InvalidSourceAccount {
+                    account_id,
+                    asset_id,
+                    withdraw,
+                })
             })
             .collect()
     }
@@ -906,6 +913,7 @@ where
                 &account_id,
                 &Pallet::<T>::account_id(),
                 withdraw.0,
+                ExistenceRequirement::KeepAlive,
             )?;
         }
         for WrapPair(account_id, deposit) in sinks {
@@ -914,6 +922,7 @@ where
                 &Pallet::<T>::account_id(),
                 &account_id,
                 deposit.0,
+                ExistenceRequirement::KeepAlive,
             )?;
         }
         Ok(())
