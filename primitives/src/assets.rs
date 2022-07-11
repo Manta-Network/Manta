@@ -26,7 +26,7 @@ use frame_support::{
         currency::Currency,
         fungible::Inspect as FungibleInspect,
         fungibles::{Inspect as FungiblesInspect, Mutate, Transfer},
-        DepositConsequence, ExistenceRequirement, WithdrawConsequence, WithdrawReasons,
+        DepositConsequence, ExistenceRequirement, WithdrawReasons,
     },
     Parameter,
 };
@@ -278,21 +278,8 @@ pub enum FungibleLedgerError {
     /// type.
     Overflow,
 
-    /// There has been an underflow in the system. This is indicative of a corrupt state and
-    /// likely unrecoverable.
-    Underflow,
-
-    /// Account continued in existence.
-    /// Not enough of the funds in the account are unavailable for withdrawal.
-    Frozen,
-
-    /// Withdraw could not happen since the amount to be withdrawn is less than the total funds in
-    /// the account.
-    NoFunds,
-
-    /// The withdraw would mean the account dying when it needs to exist (usually because it is a
-    /// provider and there are consumer references on it).
-    WouldDie,
+    /// Cannot withdraw more than the specified amount
+    CannotWithdrawMoreThan(Balance),
 
     /// Unable to Mint an Asset
     InvalidMint(DispatchError),
@@ -315,21 +302,6 @@ impl FungibleLedgerError {
             DepositConsequence::Overflow => Self::Overflow,
             DepositConsequence::UnknownAsset => Self::UnknownAsset,
             DepositConsequence::Success => return Ok(()),
-        })
-    }
-
-    /// Converts a withdraw `consequence` into a [`FungibleLedgerError`] or into `Ok(())` when the
-    /// value of `consequence` is [`Success`](WithdrawConsequence::Success).
-    #[inline]
-    pub fn from_withdraw(consequence: WithdrawConsequence<Balance>) -> Result<(), Self> {
-        Err(match consequence {
-            WithdrawConsequence::Frozen => Self::Frozen,
-            WithdrawConsequence::NoFunds => Self::NoFunds,
-            WithdrawConsequence::Overflow => Self::Overflow,
-            WithdrawConsequence::Underflow => Self::Underflow,
-            WithdrawConsequence::UnknownAsset => Self::UnknownAsset,
-            WithdrawConsequence::WouldDie => Self::WouldDie,
-            WithdrawConsequence::Success | WithdrawConsequence::ReducedToZero(_) => return Ok(()),
         })
     }
 }
@@ -355,10 +327,11 @@ where
     ) -> Result<(), FungibleLedgerError>;
 
     /// Check whether `account` can decrease its balance by `amount` in the given `asset_id`.
-    fn can_withdraw(
+    fn can_reduce_by_amount(
         asset_id: AssetId,
         account: &C::AccountId,
         amount: Balance,
+        existence_requirement: ExistenceRequirement,
     ) -> Result<(), FungibleLedgerError>;
 
     /// Mints `amount` of an asset with the given `asset_id` to `beneficiary`.
@@ -374,6 +347,7 @@ where
         source: &C::AccountId,
         destination: &C::AccountId,
         amount: Balance,
+        existence_requirement: ExistenceRequirement,
     ) -> Result<(), FungibleLedgerError>;
 
     /// Performs a burn from `who` for `amount` of `asset_id`
@@ -381,6 +355,7 @@ where
         asset_id: AssetId,
         who: &C::AccountId,
         amount: Balance,
+        existence_requirement: ExistenceRequirement,
     ) -> Result<(), FungibleLedgerError>;
 }
 
@@ -424,17 +399,32 @@ where
     }
 
     #[inline]
-    fn can_withdraw(
+    fn can_reduce_by_amount(
         asset_id: AssetId,
         account: &C::AccountId,
         amount: Balance,
+        existence_requirement: ExistenceRequirement,
     ) -> Result<(), FungibleLedgerError> {
         Self::ensure_valid(asset_id)?;
-        FungibleLedgerError::from_withdraw(if asset_id == A::NativeAssetId::get() {
-            <Native as FungibleInspect<C::AccountId>>::can_withdraw(account, amount)
+
+        let keep_alive = match existence_requirement {
+            ExistenceRequirement::KeepAlive => true,
+            ExistenceRequirement::AllowDeath => false,
+        };
+        let reducible_amount = if asset_id == A::NativeAssetId::get() {
+            <Native as FungibleInspect<C::AccountId>>::reducible_balance(account, keep_alive)
         } else {
-            <NonNative as FungiblesInspect<C::AccountId>>::can_withdraw(asset_id, account, amount)
-        })
+            <NonNative as FungiblesInspect<C::AccountId>>::reducible_balance(
+                asset_id, account, keep_alive,
+            )
+        };
+
+        if reducible_amount >= amount {
+            return Ok(());
+        }
+        Err(FungibleLedgerError::CannotWithdrawMoreThan(
+            reducible_amount,
+        ))
     }
 
     #[inline]
@@ -460,6 +450,7 @@ where
         source: &C::AccountId,
         destination: &C::AccountId,
         amount: Balance,
+        existence_requirement: ExistenceRequirement,
     ) -> Result<(), FungibleLedgerError> {
         Self::ensure_valid(asset_id)?;
         if asset_id == A::NativeAssetId::get() {
@@ -467,15 +458,19 @@ where
                 source,
                 destination,
                 amount,
-                ExistenceRequirement::KeepAlive,
+                existence_requirement,
             )
         } else {
+            let keep_alive = match existence_requirement {
+                ExistenceRequirement::KeepAlive => true,
+                ExistenceRequirement::AllowDeath => false,
+            };
             <NonNative as Transfer<C::AccountId>>::transfer(
                 asset_id,
                 source,
                 destination,
                 amount,
-                true,
+                keep_alive,
             )
             .map(|_| ())
         }
@@ -487,18 +482,21 @@ where
         asset_id: AssetId,
         who: &C::AccountId,
         amount: Balance,
+        existence_requirement: ExistenceRequirement,
     ) -> Result<(), FungibleLedgerError> {
         Self::ensure_valid(asset_id)?;
-        Self::can_withdraw(asset_id, who, amount)?;
+        Self::can_reduce_by_amount(asset_id, who, amount, existence_requirement)?;
         if asset_id == A::NativeAssetId::get() {
             <Native as Currency<C::AccountId>>::withdraw(
                 who,
                 amount,
                 WithdrawReasons::TRANSFER,
-                ExistenceRequirement::AllowDeath,
+                existence_requirement,
             )
             .map_err(FungibleLedgerError::InvalidBurn)?;
         } else {
+            // `existence_requirement` is used in the `can_reduce_by_amount` checks
+            // so it doesn't matter that `burn_from` uses `allow_death` by default in own chosen implementation
             <NonNative as Mutate<C::AccountId>>::burn_from(asset_id, who, amount)
                 .map_err(FungibleLedgerError::InvalidBurn)?;
         }
