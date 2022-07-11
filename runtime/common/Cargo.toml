@@ -10,6 +10,7 @@ version = '3.2.0'
 [dependencies]
 
 [dev-dependencies]
+syn = { version = "=1.0.96" } # Workaround until polkadot-v0.9.24 for https://github.com/paritytech/substrate/issues/11706
 # 3rd dependencies
 codec = { package = "parity-scale-codec", version = "3.0" }
 scale-info = { version = "2.0", features = ["derive"] }
