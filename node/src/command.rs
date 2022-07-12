@@ -20,7 +20,8 @@ use crate::{
     chain_specs,
     cli::{Cli, RelayChainCli, Subcommand},
     rpc,
-    service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
+    service::{new_partial, CalamariRuntimeExecutor, MantaRuntimeExecutor},
+    service_nimbus::DolphinRuntimeExecutor,
 };
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
@@ -272,14 +273,14 @@ macro_rules! construct_async_run {
                     { $( $code )* }.map(|v| (v, task_manager))
                 })
             } else if runner.config().chain_spec.is_dolphin() {
-                runner.async_run(|$config| {
-                    let $components = new_partial::<dolphin_runtime::RuntimeApi, DolphinRuntimeExecutor, _>(
-                        &$config,
-                        crate::service::parachain_build_import_queue::<_, _, AuraId>,
-                    )?;
-                    let task_manager = $components.task_manager;
-                    { $( $code )* }.map(|v| (v, task_manager))
-                })
+				runner.async_run(|$config| {
+					let $components = crate::service_nimbus::new_partial::<dolphin_runtime::RuntimeApi, DolphinRuntimeExecutor>(
+						&$config,
+						false,
+					)?;
+					let task_manager = $components.task_manager;
+					{ $( $code )* }.map(|v| (v, task_manager))
+				})
             } else {
                 panic!("wrong chain spec, must be one of manta, calamari, or dolphin chain specs");
             }
@@ -345,6 +346,8 @@ pub fn run_with(cli: Cli) -> Result {
             let spec = load_spec(&params.chain.clone().unwrap_or_default())?;
             let state_version = Cli::native_runtime_version(&spec).state_version();
 
+            // TODO match chainspec
+            // let block: crate::service_nim::Block = generate_genesis_block(&spec, state_version)?;
             let block: crate::service::Block = generate_genesis_block(&spec, state_version)?;
             let raw_header = block.header().encode();
             let output_buf = if params.raw {
@@ -488,6 +491,8 @@ pub fn run_with(cli: Cli) -> Result {
                 let state_version =
                     RelayChainCli::native_runtime_version(&config.chain_spec).state_version();
 
+                // TODO match chainspec
+                // let block: crate::service_nim::Block =
                 let block: crate::service::Block =
                     generate_genesis_block(&config.chain_spec, state_version)
                         .map_err(|e| format!("{:?}", e))?;
@@ -545,10 +550,9 @@ pub fn run_with(cli: Cli) -> Result {
                     .map(|r| r.0)
                     .map_err(Into::into)
                 } else if config.chain_spec.is_dolphin() {
-                    crate::service::start_parachain_node::<
+                    crate::service_nimbus::start_parachain_node::<
                         dolphin_runtime::RuntimeApi,
                         DolphinRuntimeExecutor,
-                        AuraId,
                         _,
                     >(
                         config,

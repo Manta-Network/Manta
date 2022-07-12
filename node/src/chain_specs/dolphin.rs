@@ -210,7 +210,6 @@ fn dolphin_dev_genesis(
         asset_manager: Default::default(),
         council_membership: Default::default(),
         technical_membership: Default::default(),
-        aura_ext: Default::default(),
         parachain_system: Default::default(),
         polkadot_xcm: dolphin_runtime::PolkadotXcmConfig {
             safe_xcm_version: Some(SAFE_XCM_VERSION),

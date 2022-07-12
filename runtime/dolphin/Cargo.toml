@@ -20,7 +20,7 @@ sp-api = { git = 'https://github.com/paritytech/substrate.git', default-features
 sp-application-crypto = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.22" }
 sp-arithmetic = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.22" }
 sp-block-builder = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.22" }
-sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.22" }
+sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.22" }     # TODO: Check if consensus-aura is still needed
 sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.22" }
 sp-inherents = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.22" }
 sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.22" }
@@ -60,7 +60,6 @@ pallet-treasury = { git = "https://github.com/paritytech/substrate.git", default
 pallet-utility = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.22" }
 
 # Cumulus dependencies
-cumulus-pallet-aura-ext = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.22" }
 cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.22" }
 cumulus-pallet-parachain-system = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.22" }
 cumulus-pallet-session-benchmarking = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, optional = true, branch = "polkadot-v0.9.22" }
@@ -73,6 +72,7 @@ parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-fe
 
 # Nimbus Dependencies
 nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "polkadot-v0.9.22", default-features = false }
+pallet-aura-style-filter = { git = "https://github.com/manta-network/nimbus.git", branch = "polkadot-v0.9.22", default-features = false }
 pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", branch = "polkadot-v0.9.22", default-features = false }
 
 # Polkadot dependencies
@@ -195,7 +195,6 @@ std = [
   'manta-primitives/std',
   'runtime-common/std',
   'parachain-info/std',
-  "cumulus-pallet-aura-ext/std",
   'cumulus-pallet-parachain-system/std',
   'cumulus-pallet-dmp-queue/std',
   "cumulus-pallet-xcmp-queue/std",
@@ -205,6 +204,7 @@ std = [
   "cumulus-primitives-utility/std",
   "nimbus-primitives/std",
   "pallet-author-inherent/std",
+  "pallet-aura-style-filter/std",
   'session-key-primitives/std',
   'xcm/std',
   'sp-application-crypto/std',
@@ -219,5 +219,4 @@ std = [
   'pallet-treasury/std',
   'pallet-assets/std',
   'pallet-manta-pay/std',
-  'pallet-asset-manager/std',
 ]

@@ -670,6 +670,7 @@ impl manta_collator_selection::Config for Runtime {
     type AccountIdOf = manta_collator_selection::IdentityCollator;
     type ValidatorRegistration = Session;
     type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
+    type CanAuthor = (); // Not currently used until tested on dolphin
 }
 
 // Calamari pallets configuration
