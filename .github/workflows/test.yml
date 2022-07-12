@@ -51,7 +51,7 @@ jobs:
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
   stop-node-builder-current:
-    needs: [start-node-builder-current, run-benchmark]
+    needs: [start-node-builder-current]
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
