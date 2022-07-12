@@ -16,7 +16,7 @@ ExecStart=/usr/bin/dolphin \
     --prometheus-port 9315 \
     --state-cache-size 0 \
     -- \
-    --chain /usr/share/substrate/rococo.json \
+    --chain rococo \
     --port 33334 \
     --ws-port 9345 \
     --rpc-port 9334 \

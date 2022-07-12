@@ -6,11 +6,17 @@ if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
     if systemctl is-active --quiet calamari.service; then
         systemctl stop calamari.service
     fi
+    if systemctl is-active --quiet dolphin.service; then
+        systemctl stop dolphin.service
+    fi
     if systemctl is-active --quiet manta.service; then
         systemctl stop manta.service
     fi
     if systemctl is-enabled --quiet calamari.service; then
         systemctl disable calamari.service
+    fi
+    if systemctl is-enabled --quiet dolphin.service; then
+        systemctl disable dolphin.service
     fi
     if systemctl is-enabled --quiet manta.service; then
         systemctl disable manta.service
