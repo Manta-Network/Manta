@@ -1,0 +1,66 @@
+name: Benchmark Calamari Runtime & Generate Weights Files
+on:
+  push:
+    branches: [garandor/test2]
+env:
+  AWS_REGION: us-east-1
+  AWS_INSTANCE_TYPE: c5d.metal
+  AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
+  AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
+  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
+jobs:
+  build-benchmark:
+    needs: start-node-builder-current
+    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: init
+        run: |
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install 1.61.0
+          rustup default 1.61.0
+          rustup update
+          rustup toolchain install nightly-2022-07-10-x86_64-unknown-linux-gnu
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2022-07-10-x86_64-unknown-linux-gnu
+      - name: build
+        env:
+          RUST_BACKTRACE: full
+          CARGO_TERM_COLOR: always
+        run: |
+          source ${HOME}/.cargo/env
+          cargo build -p calamari-runtime
+  start-node-builder-current:
+    runs-on: ubuntu-20.04
+    outputs:
+      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    steps:
+      - id: start-self-hosted-runner
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
+          aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
+          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
+  stop-node-builder-current:
+    needs: [start-node-builder-current, run-benchmark]
+    runs-on: ubuntu-20.04
+    if: ${{ always() }}
+    steps:
+      - uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
+          runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
