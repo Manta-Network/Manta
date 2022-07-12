@@ -21,8 +21,8 @@ jobs:
           rustup toolchain install 1.61.0
           rustup default 1.61.0
           rustup update
-          rustup toolchain install nightly-2022-07-10-x86_64-unknown-linux-gnu
-          rustup target add wasm32-unknown-unknown --toolchain nightly-2022-07-10-x86_64-unknown-linux-gnu
+          rustup toolchain install nightly-2022-06-02-x86_64-unknown-linux-gnu
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2022-06-02-x86_64-unknown-linux-gnu
       - name: build
         env:
           RUST_BACKTRACE: full
