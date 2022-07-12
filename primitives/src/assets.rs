@@ -324,7 +324,7 @@ where
         asset_id: AssetId,
         account: &C::AccountId,
         amount: Balance,
-        will_increase_total_supply: bool,
+        can_increase_total_supply: bool,
     ) -> Result<(), FungibleLedgerError>;
 
     /// Check whether `account` can decrease its balance by `amount` in the given `asset_id`.
@@ -390,7 +390,7 @@ where
         asset_id: AssetId,
         account: &C::AccountId,
         amount: Balance,
-        will_increase_total_supply: bool,
+        can_increase_total_supply: bool,
     ) -> Result<(), FungibleLedgerError> {
         Self::ensure_valid(asset_id)?;
         FungibleLedgerError::from_deposit(if asset_id == A::NativeAssetId::get() {
@@ -400,7 +400,7 @@ where
                 asset_id,
                 account,
                 amount,
-                will_increase_total_supply,
+                can_increase_total_supply,
             )
         })
     }
