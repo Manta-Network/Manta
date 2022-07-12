@@ -19,7 +19,7 @@ jobs:
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install nightly-2022-06-02-x86_64-unknown-linux-gnu
-          rustup target add wasm32-unknown-unknown --toolchain nightly-2022-06-02-x86_64-unknown-linux-gnu
+          rustup --toolchain nightly-2022-06-02-x86_64-unknown-linux-gnu target add wasm32-unknown-unknown 
           rustup default nightly-2022-06-02-x86_64-unknown-linux-gnu
       - name: build
         env:
