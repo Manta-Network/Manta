@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [manta]
   push:
-    branches: [manta]
+    branches: [ghzlatarev/check-ci-failure]
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -84,6 +84,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
+          cargo b
           cargo fmt --all -- --check
           $HOME/.cargo/bin/taplo fmt --check
           $HOME/.cargo/bin/taplo lint
