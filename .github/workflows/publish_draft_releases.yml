@@ -120,10 +120,9 @@ jobs:
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install stable
-          rustup toolchain install nightly
           rustup default stable
-          rustup target add wasm32-unknown-unknown --toolchain nightly
           rustup update
+          rustup target add wasm32-unknown-unknown
       - name: build
         env:
           RUST_BACKTRACE: full
@@ -132,7 +131,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo build --profile production --verbose
+          RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose
       - name: stop sccache server
         run: sccache --stop-server || true
       - name: upload
@@ -188,7 +187,7 @@ jobs:
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch and chmod polkadot
         run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.18/polkadot
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.22/polkadot
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
