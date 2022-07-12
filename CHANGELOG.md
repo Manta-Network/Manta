@@ -23,6 +23,7 @@
 - [\#657](https://github.com/Manta-Network/Manta/pull/657) retire manta-pc-launch with polkadot-launch.
 
 ### Bug fixes
+- [\#677](https://github.com/Manta-Network/Manta/pull/677) Compile the runtime with stable Rust by adding RUSTC_BOOTSTRAP=1 flag
 
 ## v3.2.0
 ### Breaking changes
