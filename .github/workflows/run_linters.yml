@@ -1,4 +1,4 @@
-name: Check Build
+name: Run Linters
 on:
   pull_request:
     branches: [manta]
@@ -87,7 +87,7 @@ jobs:
           cargo fmt --all -- --check
           $HOME/.cargo/bin/taplo fmt --check
           $HOME/.cargo/bin/taplo lint
-      - name: Check Build
+      - name: Cargo Check & Clippy
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
