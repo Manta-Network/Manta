@@ -9,7 +9,6 @@ import { ExecutionContext, emojis, delay } from './test-util';
 const dolphin_config = {
     ws_address: "wss://ws.rococo.dolphin.engineering"
 }
-// "ws://127.0.0.1:9800"
 
 function convert_shard_utxo_keys(data: Uint8Array): Uint8Array{
     const shard_idx_data = data.slice(0, 1);
