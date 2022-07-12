@@ -72,6 +72,7 @@ jobs:
           rustup toolchain install stable
           rustup default stable
           rustup update
+          rustup target add wasm32-unknown-unknown
       - name: Run Unit Tests
         env:
           RUST_BACKTRACE: full
