@@ -85,7 +85,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo b
+          cargo b --release
           cargo fmt --all -- --check
           $HOME/.cargo/bin/taplo fmt --check
           $HOME/.cargo/bin/taplo lint
