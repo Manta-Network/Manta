@@ -107,8 +107,10 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %{_bindir}/*
 /usr/lib/systemd/system/calamari.service
+/usr/lib/systemd/system/dolphin.service
 /usr/lib/systemd/system/manta.service
 /usr/share/substrate/calamari.json
 /usr/share/substrate/kusama.json
 /usr/share/substrate/manta.json
 /usr/share/substrate/polkadot.json
+/usr/share/substrate/rococo.json
