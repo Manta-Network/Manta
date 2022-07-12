@@ -385,7 +385,7 @@ pub fn run_with(cli: Cli) -> Result {
         Some(Subcommand::Benchmark(cmd)) => {
             let runner = cli.create_runner(cmd)?;
 
-            // Switch on the concrete benchmark sub-command-
+            // Switch on the concrete benchmark sub-command
             match cmd {
                 BenchmarkCmd::Pallet(cmd) => {
                     if cfg!(feature = "runtime-benchmarks") {
