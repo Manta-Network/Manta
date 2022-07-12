@@ -1,4 +1,4 @@
-name: Check Build
+name: Run Linters
 on:
   pull_request:
     branches: [manta]
