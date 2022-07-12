@@ -24,7 +24,7 @@ use sp_std::{marker::PhantomData, result};
 
 use frame_support::{
     pallet_prelude::Get,
-    traits::fungibles::Mutate,
+    traits::{fungibles::Mutate, tokens::ExistenceRequirement},
     weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 
@@ -383,7 +383,7 @@ impl<
 
         let (asset_id, amount, who) = Self::match_asset_and_location(asset, location)?;
 
-        MultiAdapterFungibleLedger::burn(asset_id, &who, amount)
+        MultiAdapterFungibleLedger::burn(asset_id, &who, amount, ExistenceRequirement::AllowDeath)
             .map_err(|_| XcmError::FailedToTransactAsset("Failed Burn"))?;
 
         Ok(asset.clone().into())
