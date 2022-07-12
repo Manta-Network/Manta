@@ -87,7 +87,7 @@ jobs:
           cargo fmt --all -- --check
           $HOME/.cargo/bin/taplo fmt --check
           $HOME/.cargo/bin/taplo lint
-      - name: Check Build
+      - name: Check Syntax and Lint
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
