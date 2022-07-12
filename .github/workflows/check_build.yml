@@ -70,8 +70,7 @@ jobs:
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install nightly
-          rustup target add wasm32-unknown-unknown --toolchain nightly
-          rustup default nightly
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2022-07-10-x86_64-unknown-linux-gnu
           rustup update
           rustup default nightly-2022-07-10-x86_64-unknown-linux-gnu
           cargo install taplo-cli
