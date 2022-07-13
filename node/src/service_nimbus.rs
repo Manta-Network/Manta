@@ -44,7 +44,7 @@ pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index
 
 // use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use nimbus_consensus::{BuildNimbusConsensusParams, NimbusConsensus};
-use nimbus_primitives::NimbusId;
+use session_key_primitives::NimbusId;
 // use sc_client_api::ExecutorProvider;
 // use sc_consensus::{
 //     import_queue::{BasicQueue, Verifier as VerifierT},

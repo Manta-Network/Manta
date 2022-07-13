@@ -17,7 +17,7 @@
 //! Helpers for handling nimbus keys
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::aura::AuraId;
+use crate::AuraId;
 use sp_application_crypto::{sr25519, UncheckedFrom};
 
 pub type NimbusId = nimbus_primitives::NimbusId;
