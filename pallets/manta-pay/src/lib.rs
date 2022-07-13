@@ -834,10 +834,10 @@ where
         I: Iterator<Item = (Self::AccountId, asset::AssetValue)>,
     {
         // NOTE: Existence of accounts is type-checked so we don't need to do anything here, just
-        //         pass the data forward.
+        // pass the data forward.
         sinks
             .map(move |(account_id, deposit)| {
-                FungibleLedger::<T>::can_deposit(asset_id.0, &account_id, deposit.0)
+                FungibleLedger::<T>::can_deposit(asset_id.0, &account_id, deposit.0, false)
                     .map(|_| WrapPair(account_id.clone(), deposit))
                     .map_err(|_| InvalidSinkAccount {
                         account_id,
