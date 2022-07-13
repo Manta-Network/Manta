@@ -662,7 +662,7 @@ pub mod pallet {
             {
                 return false;
             }
-            T::CanAuthor::can_author(&account, slot) // filter passed, hand execution to the next pipeline step
+            T::CanAuthor::can_author(account, slot) // filter passed, hand execution to the next pipeline step
         }
     }
 
