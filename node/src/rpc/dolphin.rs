@@ -16,43 +16,49 @@
 
 //! Dolphin RPC Extensions
 
-use crate::rpc::{common::Common, Builder, RpcExtension};
-use frame_rpc_system::AccountNonceApi;
-use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
+use super::*;
 use pallet_manta_pay::{
-    rpc::{Pull, PullApi},
+    rpc::{Pull, PullApiServer},
     runtime::PullLedgerDiffApi,
 };
-use pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi;
-use sc_client_api::HeaderBackend;
-use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
-use sc_service::{Error, RpcExtensionBuilder};
-use sc_transaction_pool_api::TransactionPool;
-use sp_api::ProvideRuntimeApi;
-use sp_block_builder::BlockBuilder;
 
-/// Dolphin RPC Extension Marker
-pub struct Dolphin;
-
-impl<C, P> RpcExtensionBuilder for Builder<C, P, Dolphin>
+/// Instantiate all RPC extensions for dolphin.
+pub fn create_dolphin_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
 where
-    C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    C::Api: BlockBuilder<Block>
-        + AccountNonceApi<Block, AccountId, Nonce>
-        + PullLedgerDiffApi<Block>
-        + TransactionPaymentRuntimeApi<Block, Balance>,
-    P: 'static + TransactionPool,
+    C: ProvideRuntimeApi<Block>
+        + HeaderBackend<Block>
+        + AuxStore
+        + HeaderMetadata<Block, Error = BlockChainError>
+        + Send
+        + Sync
+        + 'static,
+    C::Api: frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
+    C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+    C::Api: BlockBuilder<Block>,
+    C::Api: PullLedgerDiffApi<Block>,
+    P: TransactionPool + Sync + Send + 'static,
 {
-    type Output = RpcExtension;
+    use frame_rpc_system::{SystemApiServer, SystemRpc};
+    use pallet_transaction_payment_rpc::{TransactionPaymentApiServer, TransactionPaymentRpc};
 
-    #[inline]
-    fn build(
-        &self,
-        deny: DenyUnsafe,
-        subscription_executor: SubscriptionTaskExecutor,
-    ) -> Result<Self::Output, Error> {
-        let mut io = self.using::<Common>().build(deny, subscription_executor)?;
-        io.extend_with(Pull::new(self.client.clone()).to_delegate());
-        Ok(io)
-    }
+    let mut module = RpcExtension::new(());
+    let FullDeps {
+        client,
+        pool,
+        deny_unsafe,
+    } = deps;
+
+    module
+        .merge(SystemRpc::new(client.clone(), pool, deny_unsafe).into_rpc())
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+    module
+        .merge(TransactionPaymentRpc::new(client.clone()).into_rpc())
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+
+    let manta_pay_rpc: jsonrpsee::RpcModule<Pull<Block, C>> = Pull::new(client).into_rpc();
+    module
+        .merge(manta_pay_rpc)
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+
+    Ok(module)
 }

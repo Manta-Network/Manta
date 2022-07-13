@@ -27,7 +27,7 @@ use scale_info::TypeInfo;
 use sp_std::prelude::*;
 
 use frame_support::{
-    match_type, parameter_types,
+    match_types, parameter_types,
     traits::{Everything, Nothing},
     weights::Weight,
 };
@@ -155,12 +155,12 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
     DolphinAssetConfig,
 >;
 
-match_type! {
+match_types! {
     pub type ParentLocation: impl Contains<MultiLocation> = {
         MultiLocation { parents: 1, interior: Here }
     };
 }
-match_type! {
+match_types! {
     pub type ParentOrSiblings: impl Contains<MultiLocation> = {
         MultiLocation { parents: 1, interior: Here } |
         MultiLocation { parents: 1, interior: X1(_) }

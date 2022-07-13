@@ -37,93 +37,107 @@
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
 #![allow(unused_imports)]
+#![allow(clippy::unnecessary_cast)]
 
 use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_treasury.
 pub trait WeightInfo {
-    fn propose_spend() -> Weight;
-    fn reject_proposal() -> Weight;
-    fn approve_proposal(p: u32, ) -> Weight;
-    fn on_initialize_proposals(p: u32, ) -> Weight;
+	fn propose_spend() -> Weight;
+	fn reject_proposal() -> Weight;
+	fn approve_proposal(p: u32, ) -> Weight;
+	fn remove_approval() -> Weight;
+	fn on_initialize_proposals(p: u32, ) -> Weight;
 }
 
 /// Weights for pallet_treasury using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T> {
-    // Storage: Treasury ProposalCount (r:1 w:1)
-    // Storage: Treasury Proposals (r:0 w:1)
-    fn propose_spend() -> Weight {
-        (25_278_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(1 as Weight))
-            .saturating_add(T::DbWeight::get().writes(2 as Weight))
-    }
-    // Storage: Treasury Proposals (r:1 w:1)
-    // Storage: System Account (r:2 w:2)
-    fn reject_proposal() -> Weight {
-        (42_964_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(3 as Weight))
-            .saturating_add(T::DbWeight::get().writes(3 as Weight))
-    }
-    // Storage: Treasury Proposals (r:1 w:0)
-    // Storage: Treasury Approvals (r:1 w:1)
-    fn approve_proposal(p: u32, ) -> Weight {
-        (10_466_000 as Weight)
-            // Standard Error: 1_000
-            .saturating_add((65_000 as Weight).saturating_mul(p as Weight))
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
-    }
-    // Storage: System Account (r:1 w:0)
-    // Storage: Treasury Approvals (r:1 w:1)
-    // Storage: Treasury Proposals (r:2 w:2)
-    fn on_initialize_proposals(p: u32, ) -> Weight {
-        (28_898_000 as Weight)
-            // Standard Error: 37_000
-            .saturating_add((32_652_000 as Weight).saturating_mul(p as Weight))
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().reads((3 as Weight).saturating_mul(p as Weight)))
-            .saturating_add(T::DbWeight::get().writes(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes((3 as Weight).saturating_mul(p as Weight)))
-    }
+	// Storage: Treasury ProposalCount (r:1 w:1)
+	// Storage: Treasury Proposals (r:0 w:1)
+	fn propose_spend() -> Weight {
+		(25_278_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(1 as Weight))
+			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+	}
+	// Storage: Treasury Proposals (r:1 w:1)
+	// Storage: System Account (r:2 w:2)
+	fn reject_proposal() -> Weight {
+		(42_964_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(3 as Weight))
+			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+	}
+	// Storage: Treasury Proposals (r:1 w:0)
+	// Storage: Treasury Approvals (r:1 w:1)
+	fn approve_proposal(p: u32, ) -> Weight {
+		(10_466_000 as Weight)
+			// Standard Error: 1_000
+			.saturating_add((65_000 as Weight).saturating_mul(p as Weight))
+			.saturating_add(T::DbWeight::get().reads(2 as Weight))
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
+	// Storage: Treasury Approvals (r:1 w:1)
+	fn remove_approval() -> Weight {
+		(3_867_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(1 as Weight))
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
+	// Storage: System Account (r:1 w:0)
+	// Storage: Treasury Approvals (r:1 w:1)
+	// Storage: Treasury Proposals (r:2 w:2)
+	fn on_initialize_proposals(p: u32, ) -> Weight {
+		(28_898_000 as Weight)
+			// Standard Error: 37_000
+			.saturating_add((32_652_000 as Weight).saturating_mul(p as Weight))
+			.saturating_add(T::DbWeight::get().reads(2 as Weight))
+			.saturating_add(T::DbWeight::get().reads((3 as Weight).saturating_mul(p as Weight)))
+			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+			.saturating_add(T::DbWeight::get().writes((3 as Weight).saturating_mul(p as Weight)))
+	}
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-    // Storage: Treasury ProposalCount (r:1 w:1)
-    // Storage: Treasury Proposals (r:0 w:1)
-    fn propose_spend() -> Weight {
-        (25_278_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
-    }
-    // Storage: Treasury Proposals (r:1 w:1)
-    // Storage: System Account (r:2 w:2)
-    fn reject_proposal() -> Weight {
-        (42_964_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(3 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(3 as Weight))
-    }
-    // Storage: Treasury Proposals (r:1 w:0)
-    // Storage: Treasury Approvals (r:1 w:1)
-    fn approve_proposal(p: u32, ) -> Weight {
-        (10_466_000 as Weight)
-            // Standard Error: 1_000
-            .saturating_add((65_000 as Weight).saturating_mul(p as Weight))
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
-    }
-    // Storage: System Account (r:1 w:0)
-    // Storage: Treasury Approvals (r:1 w:1)
-    // Storage: Treasury Proposals (r:2 w:2)
-    fn on_initialize_proposals(p: u32, ) -> Weight {
-        (28_898_000 as Weight)
-            // Standard Error: 37_000
-            .saturating_add((32_652_000 as Weight).saturating_mul(p as Weight))
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().reads((3 as Weight).saturating_mul(p as Weight)))
-            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes((3 as Weight).saturating_mul(p as Weight)))
-    }
+	// Storage: Treasury ProposalCount (r:1 w:1)
+	// Storage: Treasury Proposals (r:0 w:1)
+	fn propose_spend() -> Weight {
+		(25_278_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
+	}
+	// Storage: Treasury Proposals (r:1 w:1)
+	// Storage: System Account (r:2 w:2)
+	fn reject_proposal() -> Weight {
+		(42_964_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
+	}
+	// Storage: Treasury Proposals (r:1 w:0)
+	// Storage: Treasury Approvals (r:1 w:1)
+	fn approve_proposal(p: u32, ) -> Weight {
+		(10_466_000 as Weight)
+			// Standard Error: 1_000
+			.saturating_add((65_000 as Weight).saturating_mul(p as Weight))
+			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+	}
+	// Storage: Treasury Approvals (r:1 w:1)
+	fn remove_approval() -> Weight {
+		(3_867_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+	}
+	// Storage: System Account (r:1 w:0)
+	// Storage: Treasury Approvals (r:1 w:1)
+	// Storage: Treasury Proposals (r:2 w:2)
+	fn on_initialize_proposals(p: u32, ) -> Weight {
+		(28_898_000 as Weight)
+			// Standard Error: 37_000
+			.saturating_add((32_652_000 as Weight).saturating_mul(p as Weight))
+			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
+			.saturating_add(RocksDbWeight::get().reads((3 as Weight).saturating_mul(p as Weight)))
+			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
+			.saturating_add(RocksDbWeight::get().writes((3 as Weight).saturating_mul(p as Weight)))
+	}
 }

@@ -52,8 +52,9 @@ pub enum Subcommand {
     /// Revert the chain to a previous state.
     Revert(sc_cli::RevertCmd),
 
-    /// The custom benchmark subcommmand benchmarking runtime pallets.
-    #[clap(name = "benchmark", about = "Benchmark runtime pallets.")]
+    /// Sub-commands concerned with benchmarking.
+    /// The pallet benchmarking moved to the `pallet` sub-command.
+    #[clap(subcommand)]
     Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 
     /// Try some command against runtime state.
@@ -120,8 +121,18 @@ pub struct Cli {
     #[clap(flatten)]
     pub run: cumulus_client_cli::RunCmd,
 
-    /// Relaychain arguments
-    #[clap(raw = true)]
+    /// Disable automatic hardware benchmarks.
+    ///
+    /// By default these benchmarks are automatically ran at startup and measure
+    /// the CPU speed, the memory bandwidth and the disk speed.
+    ///
+    /// The results are then printed out in the logs, and also sent as part of
+    /// telemetry, if telemetry is enabled.
+    #[clap(long)]
+    pub no_hardware_benchmarks: bool,
+
+    /// Relay chain arguments
+    #[clap(raw = true, conflicts_with = "relay-chain-rpc-url")]
     pub relaychain_args: Vec<String>,
 }
 
