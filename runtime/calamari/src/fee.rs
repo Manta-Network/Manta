@@ -63,7 +63,9 @@ mod multiplier_tests {
     use frame_support::weights::{DispatchClass, Weight, WeightToFeePolynomial};
     use frame_system::WeightInfo;
     use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
-    use polkadot_runtime_common::{AdjustmentVariable, MinimumMultiplier, TargetBlockFullness};
+    use runtime_common::{
+        AdjustmentVariable, MinimumMultiplier, SlowAdjustingFeeUpdate, TargetBlockFullness,
+    };
     use sp_runtime::{
         traits::{Convert, One},
         FixedPointNumber,
@@ -141,7 +143,7 @@ mod multiplier_tests {
         let remark_weight: Weight =
             <Runtime as frame_system::Config>::SystemWeightInfo::remark(len);
         let max_number_of_remarks_per_block = (block_weight / remark_weight) as u128;
-        let per_byte = <Runtime as pallet_transaction_payment::Config>::TransactionByteFee::get();
+        let per_byte = crate::TransactionByteFee::get();
         // length fee. this is not adjusted.
         let len_fee =
             max_number_of_remarks_per_block.saturating_mul(per_byte.saturating_mul(len as u128));
@@ -191,8 +193,8 @@ mod multiplier_tests {
 
     #[test]
     fn multiplier_can_grow_from_zero() {
-        let minimum_multiplier = polkadot_runtime_common::MinimumMultiplier::get();
-        let target = polkadot_runtime_common::TargetBlockFullness::get()
+        let minimum_multiplier = MinimumMultiplier::get();
+        let target = TargetBlockFullness::get()
             * BlockWeights::get()
                 .get(DispatchClass::Normal)
                 .max_total
@@ -200,9 +202,7 @@ mod multiplier_tests {
         // if the min is too small, then this will not change, and we are doomed forever.
         // the weight is 1/100th bigger than target.
         run_with_system_weight(target * 101 / 100, || {
-            let next = polkadot_runtime_common::SlowAdjustingFeeUpdate::<Runtime>::convert(
-                minimum_multiplier,
-            );
+            let next = SlowAdjustingFeeUpdate::<Runtime>::convert(minimum_multiplier);
             assert!(
                 next > minimum_multiplier,
                 "{:?} !>= {:?}",
@@ -217,8 +217,8 @@ mod multiplier_tests {
     fn multiplier_growth_simulator() {
         // assume the multiplier is initially set to its minimum. We update it with values twice the
         //target (target is 25%, thus 50%) and we see at which point it reaches 1.
-        let mut multiplier = polkadot_runtime_common::MinimumMultiplier::get();
-        let block_weight = polkadot_runtime_common::TargetBlockFullness::get()
+        let mut multiplier = MinimumMultiplier::get();
+        let block_weight = TargetBlockFullness::get()
             * BlockWeights::get()
                 .get(DispatchClass::Normal)
                 .max_total
@@ -227,8 +227,7 @@ mod multiplier_tests {
         let mut blocks = 0;
         while multiplier <= Multiplier::one() {
             run_with_system_weight(block_weight, || {
-                let next =
-                    polkadot_runtime_common::SlowAdjustingFeeUpdate::<Runtime>::convert(multiplier);
+                let next = SlowAdjustingFeeUpdate::<Runtime>::convert(multiplier);
                 // ensure that it is growing as well.
                 assert!(next > multiplier, "{:?} !>= {:?}", next, multiplier);
                 multiplier = next;
