@@ -71,7 +71,6 @@ jobs:
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install nightly
-          rustup +nightly target add wasm32-unknown-unknown
           rustup default nightly
           cargo install taplo-cli
       - name: Run yamllint
