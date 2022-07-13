@@ -3,6 +3,7 @@ import { Keyring } from '@polkadot/keyring';
 import { manta_pay_types, rpc_api } from './types';
 import { setup_storage, generate_utxo, manta_pay_config, generate_void_number} from './manta_pay';
 import { expect } from 'chai';
+import minimist, { ParsedArgs } from 'minimist';
 
 const test_config = {
     ws_address: "ws://127.0.0.1:9800",
@@ -19,7 +20,17 @@ const test_config = {
 
 describe('Node RPC Test', () => { 
     it('Check RPC result', async () => {
-        const wsProvider = new WsProvider(test_config.ws_address);
+
+        let nodeAddress = "";
+        const args: ParsedArgs = minimist(process.argv.slice(2));
+        if (args["address"] == null) {
+            nodeAddress = "ws://127.0.0.1:9800";
+        } else {
+            nodeAddress = args["address"];
+        }
+        console.log("using address %s", nodeAddress);
+
+        const wsProvider = new WsProvider(nodeAddress);
         const api = await ApiPromise.create({ 
             provider: wsProvider,
             types: manta_pay_types,
