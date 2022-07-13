@@ -156,9 +156,8 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
 >;
 
 match_types! {
-    pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
-        MultiLocation { parents: 1, interior: Here } |
-        MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
+    pub type ParentLocation: impl Contains<MultiLocation> = {
+        MultiLocation { parents: 1, interior: Here }
     };
 }
 match_types! {
@@ -174,8 +173,8 @@ pub type Barrier = (
     // Allows non-local origin messages, for example from from the xcmp queue,
     // which have the ability to deposit assets and pay for their own execution.
     AllowTopLevelPaidExecutionFrom<Everything>,
-    // Parent and its exec plurality get free execution
-    AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+    // Parent root gets free execution
+    AllowUnpaidExecutionFrom<ParentLocation>,
     // Expected responses are OK.
     // Allows `Pending` or `VersionNotifier` query responses.
     AllowKnownQueryResponses<PolkadotXcm>,
