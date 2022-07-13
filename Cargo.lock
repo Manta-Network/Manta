@@ -2538,6 +2538,7 @@ dependencies = [
  "log",
  "manta-collator-selection",
  "manta-primitives",
+ "nimbus-primitives",
  "orml-traits",
  "orml-xtokens",
  "pallet-asset-manager",
