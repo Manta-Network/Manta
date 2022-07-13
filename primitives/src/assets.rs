@@ -324,6 +324,7 @@ where
         asset_id: AssetId,
         account: &C::AccountId,
         amount: Balance,
+        can_increase_total_supply: bool,
     ) -> Result<(), FungibleLedgerError>;
 
     /// Check whether `account` can decrease its balance by `amount` in the given `asset_id`.
@@ -389,12 +390,18 @@ where
         asset_id: AssetId,
         account: &C::AccountId,
         amount: Balance,
+        can_increase_total_supply: bool,
     ) -> Result<(), FungibleLedgerError> {
         Self::ensure_valid(asset_id)?;
         FungibleLedgerError::from_deposit(if asset_id == A::NativeAssetId::get() {
-            <Native as FungibleInspect<C::AccountId>>::can_deposit(account, amount)
+            <Native as FungibleInspect<C::AccountId>>::can_deposit(account, amount, false)
         } else {
-            <NonNative as FungiblesInspect<C::AccountId>>::can_deposit(asset_id, account, amount)
+            <NonNative as FungiblesInspect<C::AccountId>>::can_deposit(
+                asset_id,
+                account,
+                amount,
+                can_increase_total_supply,
+            )
         })
     }
 
@@ -434,10 +441,11 @@ where
         amount: Balance,
     ) -> Result<(), FungibleLedgerError> {
         Self::ensure_valid(asset_id)?;
-        Self::can_deposit(asset_id, beneficiary, amount)?;
         if asset_id == A::NativeAssetId::get() {
+            Self::can_deposit(asset_id, beneficiary, amount, false)?;
             <Native as Currency<C::AccountId>>::deposit_creating(beneficiary, amount);
         } else {
+            Self::can_deposit(asset_id, beneficiary, amount, true)?;
             <NonNative as Mutate<C::AccountId>>::mint_into(asset_id, beneficiary, amount)
                 .map_err(FungibleLedgerError::InvalidMint)?;
         }

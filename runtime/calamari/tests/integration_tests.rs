@@ -168,7 +168,7 @@ fn assert_proposal_is_filtered(proposer: &AccountId, motion: &Call) {
             proposal_hash: council_motion_hash,
             result: Err(DispatchError::Module(ModuleError {
                 index: 0,
-                error: 5,
+                error: [5, 0, 0, 0],
                 message: None
             }))
         })
@@ -1003,7 +1003,7 @@ fn concrete_fungible_ledger_transfers_work() {
                         Balances,
                     >()
                     .unwrap() as u8,
-                    error: 2,
+                    error: [2, 0, 0, 0],
                     message: Some("InsufficientBalance")
                 }))
             );
@@ -1027,7 +1027,7 @@ fn concrete_fungible_ledger_transfers_work() {
                         Balances,
                     >()
                     .unwrap() as u8,
-                    error: 4,
+                    error: [4, 0, 0, 0],
                     message: Some("KeepAlive")
                 }))
             );
@@ -1068,7 +1068,7 @@ fn concrete_fungible_ledger_transfers_work() {
                         Balances,
                     >()
                     .unwrap() as u8,
-                    error: 3,
+                    error: [3, 0, 0, 0],
                     message: Some("ExistentialDeposit")
                 }))
             );
@@ -1166,7 +1166,7 @@ fn concrete_fungible_ledger_transfers_work() {
                         Assets,
                     >()
                     .unwrap() as u8,
-                    error: 0,
+                    error: [0, 0, 0, 0],
                     message: Some("BalanceLow")
                 }))
             );
@@ -1268,7 +1268,7 @@ fn concrete_fungible_ledger_transfers_work() {
                         Assets,
                     >()
                     .unwrap() as u8,
-                    error: 3,
+                    error: [3, 0, 0, 0],
                     message: Some("Unknown")
                 }))
             );
@@ -1291,27 +1291,9 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
                     &new_account,
                     NativeTokenExistentialDeposit::get() - 1,
+                    true,
                 ),
                 FungibleLedgerError::BelowMinimum
-            );
-
-            let remaining_to_max = u128::MAX - Balances::total_issuance();
-            assert_ok!(CalamariConcreteFungibleLedger::mint(
-                <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                &new_account,
-                remaining_to_max,
-            ),);
-            assert_eq!(
-                Balances::free_balance(new_account.clone()),
-                remaining_to_max
-            );
-            assert_err!(
-                CalamariConcreteFungibleLedger::can_deposit(
-                    <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                    &new_account,
-                    1,
-                ),
-                FungibleLedgerError::Overflow
             );
 
             // Non-native asset tests:
@@ -1339,6 +1321,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     &alice.clone(),
                     0,
+                    true,
                 ),
                 FungibleLedgerError::BelowMinimum
             );
@@ -1347,6 +1330,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get() + 1,
                     &alice.clone(),
                     11,
+                    true,
                 ),
                 FungibleLedgerError::UnknownAsset
             );
@@ -1367,6 +1351,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     &alice.clone(),
                     1,
+                    true,
                 ),
                 FungibleLedgerError::Overflow
             );
@@ -1395,6 +1380,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get() + 1,
                     &XcmFeesAccount::get(),
                     11,
+                    true,
                 ),
                 FungibleLedgerError::CannotCreate
             );

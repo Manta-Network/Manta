@@ -16,39 +16,39 @@
 
 //! Common RPC Extensions
 
-use crate::rpc::{Builder, RpcExtension};
-use frame_rpc_system::{AccountNonceApi, FullSystem, SystemApi};
-use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
-use pallet_transaction_payment_rpc::{
-    TransactionPayment, TransactionPaymentApi, TransactionPaymentRuntimeApi,
-};
-use sc_client_api::HeaderBackend;
-use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
-use sc_service::{Error, RpcExtensionBuilder};
-use sc_transaction_pool_api::TransactionPool;
-use sp_api::ProvideRuntimeApi;
-use sp_block_builder::BlockBuilder;
+use super::*;
 
-/// Common RPC Extension Marker
-pub struct Common;
-
-impl<C, P> RpcExtensionBuilder for Builder<C, P, Common>
+/// Instantiate all RPC extensions for common nodes like calamari/manta.
+pub fn create_common_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
 where
-    C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    C::Api: BlockBuilder<Block>
-        + AccountNonceApi<Block, AccountId, Nonce>
-        + TransactionPaymentRuntimeApi<Block, Balance>,
-    P: 'static + TransactionPool,
+    C: ProvideRuntimeApi<Block>
+        + HeaderBackend<Block>
+        + AuxStore
+        + HeaderMetadata<Block, Error = BlockChainError>
+        + Send
+        + Sync
+        + 'static,
+    C::Api: frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
+    C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+    C::Api: BlockBuilder<Block>,
+    P: TransactionPool + Sync + Send + 'static,
 {
-    type Output = RpcExtension;
+    use frame_rpc_system::{SystemApiServer, SystemRpc};
+    use pallet_transaction_payment_rpc::{TransactionPaymentApiServer, TransactionPaymentRpc};
 
-    #[inline]
-    fn build(&self, deny: DenyUnsafe, _: SubscriptionTaskExecutor) -> Result<Self::Output, Error> {
-        let mut io = RpcExtension::default();
-        io.extend_with(
-            FullSystem::new(self.client.clone(), self.transaction_pool.clone(), deny).to_delegate(),
-        );
-        io.extend_with(TransactionPayment::new(self.client.clone()).to_delegate());
-        Ok(io)
-    }
+    let mut module = RpcExtension::new(());
+    let FullDeps {
+        client,
+        pool,
+        deny_unsafe,
+    } = deps;
+
+    module
+        .merge(SystemRpc::new(client.clone(), pool, deny_unsafe).into_rpc())
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+    module
+        .merge(TransactionPaymentRpc::new(client).into_rpc())
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+
+    Ok(module)
 }

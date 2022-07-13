@@ -213,6 +213,7 @@ jobs:
       - name: run benchmark
         run: |
           manta benchmark \
+            pallet \
             --chain=calamari-dev \
             --pallet=${{ matrix.benchmark.pallet.id }} \
             --extrinsic=${{ matrix.benchmark.extrinsic.id }} \
