@@ -49,10 +49,9 @@ jobs:
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install stable
-          rustup toolchain install nightly
           rustup default stable
-          rustup target add wasm32-unknown-unknown --toolchain nightly
           rustup update
+          rustup target add wasm32-unknown-unknown
       - name: build
         env:
           RUST_BACKTRACE: full
@@ -62,7 +61,7 @@ jobs:
           CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
-          cargo build --profile production --verbose --features=runtime-benchmarks
+          RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose --features=runtime-benchmarks
       - name: stop sccache server
         run: sccache --stop-server || true
       - name: upload

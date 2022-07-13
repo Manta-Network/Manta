@@ -75,10 +75,9 @@ jobs:
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install stable
-          rustup toolchain install nightly
           rustup default stable
-          rustup target add wasm32-unknown-unknown --toolchain nightly
           rustup update
+          rustup target add wasm32-unknown-unknown
       - name: Build Binary
         env:
           RUST_BACKTRACE: full
@@ -87,7 +86,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          cargo build --release
+          RUSTC_BOOTSTRAP=1 cargo build --release
           chmod +x target/release/manta
       - name: stop sccache server
         run: sccache --stop-server || true
