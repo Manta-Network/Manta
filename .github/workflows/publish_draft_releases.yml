@@ -498,7 +498,7 @@ jobs:
           yarn
           yarn test --address=ws://127.0.0.1:9921
           echo $?
-          if [ $? != 0 ]; then echo "Ledger RPC test failed!"; exit 1; fi
+          if [ $? != 0 ]; then echo "Ledger RPC test failed!"; exit 1;
           sleep 180
       - name: check if target block is finalized
         run: |
