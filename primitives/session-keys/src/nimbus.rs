@@ -18,12 +18,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use crate::aura::AuraId;
-use nimbus_primitives::NimbusId;
 use sp_application_crypto::{sr25519, UncheckedFrom};
 
-/// Clones an aura pubkey and represents it as a nimbus pubkey
-/// Note: Not implementing From/Into because neither Nimbus nor Aura are our crates
-pub fn from_aura_key(aura_id: AuraId) -> NimbusId {
+pub type NimbusId = nimbus_primitives::NimbusId;
+
+/// Reinterprets Aura public key as a NimbusId
+/// NO CORRESPONDING PRIVATE KEY TO THAT KEY WILL EXIST
+pub fn dummy_key_from(aura_id: AuraId) -> NimbusId {
     let aura_as_sr25519: sr25519::Public = aura_id.into();
     let sr25519_as_bytes: [u8; 32] = aura_as_sr25519.into();
     sr25519::Public::unchecked_from(sr25519_as_bytes).into()

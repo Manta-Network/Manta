@@ -17,9 +17,11 @@
 //! This file contains wrappers for Nimbus to make them compatible with pallet session traits,
 //! but has No-Op implementations on everything so as to not change behavior of the running chain just yet
 
+use crate::AccountId;
 use frame_support::traits::OneSessionHandler;
 use frame_system::Config;
 use pallet_author_inherent::Pallet as AuthorInherent;
+use session_key_primitives::vrf::VrfSessionKey;
 use sp_application_crypto::BoundToRuntimeAppPublic;
 
 /// This adapts pallet AuthorInherent to be compatible with pallet session
@@ -50,8 +52,6 @@ impl<T: Config> OneSessionHandler<T::AccountId> for AuthorInherentWithNoOpSessio
     fn on_before_session_ending() {}
 }
 
-use crate::AccountId;
-use session_key_primitives::vrf::VrfSessionKey;
 /// This adapts VrfSessionKey to be compatible with pallet session
 /// making it suitable as a SessionKey entry
 pub struct VrfWithNoOpSession(pub VrfSessionKey);

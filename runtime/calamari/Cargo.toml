@@ -71,7 +71,6 @@ cumulus-primitives-utility = { git = 'https://github.com/paritytech/cumulus.git'
 parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.22" }
 
 # Nimbus Dependencies
-nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "polkadot-v0.9.22", default-features = false }
 pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", branch = "polkadot-v0.9.22", default-features = false }
 
 # Polkadot dependencies
@@ -206,7 +205,6 @@ std = [
   "cumulus-primitives-core/std",
   "cumulus-primitives-timestamp/std",
   "cumulus-primitives-utility/std",
-  "nimbus-primitives/std",
   "pallet-author-inherent/std",
   'session-key-primitives/std',
   'xcm/std',

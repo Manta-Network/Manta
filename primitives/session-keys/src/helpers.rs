@@ -16,9 +16,8 @@
 
 //! Helper methods to generate dummy keys used in testing
 
-use crate::{aura::AuraId, vrf::VrfId};
+use crate::{AuraId, NimbusId, VrfId};
 use manta_primitives::types::{AccountId, Signature};
-use nimbus_primitives::NimbusId;
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
