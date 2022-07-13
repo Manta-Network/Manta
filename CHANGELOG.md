@@ -24,6 +24,7 @@
 
 ### Bug fixes
 - [\#677](https://github.com/Manta-Network/Manta/pull/677) Fix CI failure by building the runtime with stable Rust
+- [\#671](https://github.com/Manta-Network/Manta/pull/671) polkadot-v0.9.22 syn breakage workaround
 
 ## v3.2.0
 ### Breaking changes

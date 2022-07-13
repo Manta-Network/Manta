@@ -9191,6 +9191,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "syn",
  "xcm",
  "xcm-builder",
  "xcm-executor",
