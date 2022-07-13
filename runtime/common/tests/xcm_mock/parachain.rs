@@ -18,7 +18,7 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-    assert_ok, construct_runtime, match_type,
+    assert_ok, construct_runtime, match_types,
     pallet_prelude::DispatchResult,
     parameter_types,
     traits::{ConstU32, Everything, Nothing},
@@ -212,12 +212,12 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
 
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
 
-match_type! {
+match_types! {
     pub type ParentLocation: impl Contains<MultiLocation> = {
         MultiLocation { parents: 1, interior: Here }
     };
 }
-match_type! {
+match_types! {
     pub type ParentOrSiblings: impl Contains<MultiLocation> = {
         MultiLocation { parents: 1, interior: Here } |
         MultiLocation { parents: 1, interior: X1(_) }
