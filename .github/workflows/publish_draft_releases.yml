@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [manta]
   push:
-    branches: [manta]
+    branches: [ghzlatarev/ledger-rpc-ci-2]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 concurrency:
@@ -131,14 +131,14 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose
+          RUSTC_BOOTSTRAP=1 cargo build --release --verbose
       - name: stop sccache server
         run: sccache --stop-server || true
       - name: upload
         uses: actions/upload-artifact@v2
         with:
           name: manta
-          path: target/production/manta
+          path: target/release/manta
       - name: upload
         uses: actions/upload-artifact@v2
         with:
@@ -486,10 +486,19 @@ jobs:
             --no-autorestart \
             -- \
             --address=ws://127.0.0.1:9921
+      - uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Manta
+          path: Manta
       - name: run test suites
         run: |
           # TODO: implement moonbeam-like js test suite triggers here
-          sleep 300
+          cd ${{ github.workspace }}/Manta/tests
+          yarn install
+          yarn
+          yarn test --address=ws://127.0.0.1:9921
+          yarn ts-node rpc_performance.ts --address=ws://127.0.0.1:9921
+          sleep 180
       - name: check if target block is finalized
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
