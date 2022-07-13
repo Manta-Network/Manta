@@ -1,4 +1,4 @@
-name: Check Build
+name: Run Linters
 on:
   pull_request:
     branches: [manta]
@@ -66,12 +66,12 @@ jobs:
       - name: start sccache server
         run: sccache --start-server
       - name: init
+      # NOTE: We use nightly Rust only to get nightly fmt & clippy
         run: |
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
-          rustup toolchain install nightly-2022-06-02-x86_64-unknown-linux-gnu
-          rustup +nightly-2022-06-02-x86_64-unknown-linux-gnu target add wasm32-unknown-unknown
-          rustup default nightly-2022-06-02-x86_64-unknown-linux-gnu
+          rustup toolchain install nightly
+          rustup default nightly
           cargo install taplo-cli
       - name: Run yamllint
         uses: actionshub/yamllint@main
@@ -86,7 +86,7 @@ jobs:
           cargo fmt --all -- --check
           $HOME/.cargo/bin/taplo fmt --check
           $HOME/.cargo/bin/taplo lint
-      - name: Check Build
+      - name: Cargo Check & Clippy
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
