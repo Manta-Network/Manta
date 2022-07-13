@@ -56,7 +56,7 @@ use manta_primitives::{
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
-use session_key_primitives::aura::AuraId;
+use session_key_primitives::AuraId;
 use sp_runtime::Perbill;
 
 #[cfg(any(feature = "std", test))]
