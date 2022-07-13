@@ -497,7 +497,6 @@ jobs:
           yarn install
           yarn
           yarn test --address=ws://127.0.0.1:9921
-          yarn ts-node rpc_performance.ts --address=ws://127.0.0.1:9921
           sleep 180
       - name: check if target block is finalized
         run: |
