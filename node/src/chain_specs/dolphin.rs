@@ -42,11 +42,10 @@ pub type DolphinChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensio
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
 pub fn dolphin_session_keys(keys: AuraId) -> SessionKeys {
-    let unique_dummy_nimbus_id = session_key_primitives::nimbus::from_aura_key(keys.clone());
     SessionKeys {
-        aura: keys,
-        nimbus: unique_dummy_nimbus_id.clone(),
-        vrf: unique_dummy_nimbus_id.into(),
+        aura: keys.clone(),
+        nimbus: session_key_primitives::nimbus::dummy_key_from(keys.clone()),
+        vrf: session_key_primitives::vrf::dummy_key_from(keys),
     }
 }
 

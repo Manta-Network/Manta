@@ -32,7 +32,7 @@ use sp_runtime::{generic::BlockId, traits::Block};
 const SERVER_ERROR: i32 = 1;
 
 /// Pull API
-#[rpc(client, server)]
+#[rpc(server)]
 pub trait PullApi {
     /// Returns the update required to be synchronized with the ledger starting from
     /// `checkpoint`.

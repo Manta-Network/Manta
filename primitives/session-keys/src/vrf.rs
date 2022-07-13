@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 //! VRF Key type, which is sr25519
-use nimbus_primitives::NimbusId;
+use crate::AuraId;
 use sp_application_crypto::{sr25519, KeyTypeId, UncheckedFrom};
 use sp_runtime::{BoundToRuntimeAppPublic, ConsensusEngineId};
 
@@ -26,15 +26,12 @@ impl BoundToRuntimeAppPublic for VrfSessionKey {
     type Public = VrfId;
 }
 
-impl From<NimbusId> for VrfId {
-    /// Reinterprets Nimbus as VRFId.
-    /// No corresponding private key to that VRFId will exist,
-    /// **use this only for dummy public keys**
-    fn from(nimbus_id: NimbusId) -> VrfId {
-        let nimbus_as_sr25519: sr25519::Public = nimbus_id.into();
-        let sr25519_as_bytes: [u8; 32] = nimbus_as_sr25519.into();
-        sr25519::Public::unchecked_from(sr25519_as_bytes).into()
-    }
+/// Reinterprets Aura public key as a VRFId.
+/// NO CORRESPONDING PRIVATE KEY TO THAT KEY WILL EXIST
+pub fn dummy_key_from(aura_id: AuraId) -> VrfId {
+    let aura_as_sr25519: sr25519::Public = aura_id.into();
+    let sr25519_as_bytes: [u8; 32] = aura_as_sr25519.into();
+    sr25519::Public::unchecked_from(sr25519_as_bytes).into()
 }
 
 /// The ConsensusEngineId for VRF keys
@@ -46,7 +43,7 @@ pub const VRF_KEY_ID: KeyTypeId = KeyTypeId(VRF_ENGINE_ID);
 // The strongly-typed crypto wrappers to be used by VRF in the keystore
 mod vrf_crypto {
     use sp_application_crypto::{app_crypto, sr25519};
-    app_crypto!(sr25519, crate::VRF_KEY_ID);
+    app_crypto!(sr25519, crate::vrf::VRF_KEY_ID);
 }
 
 /// A vrf public key.
@@ -61,11 +58,11 @@ sp_application_crypto::with_pair! {
 }
 
 #[test]
-fn nimbus_to_vrf_id() {
+fn converted_dummy_id_is_same_as_newly_created_id() {
     for x in 0u8..10u8 {
-        let nimbus_id: NimbusId = sr25519::Public::unchecked_from([x; 32]).into();
+        let aura_id: AuraId = sr25519::Public::unchecked_from([x; 32]).into();
         let expected_vrf_id: VrfId = sr25519::Public::unchecked_from([x; 32]).into();
-        let nimbus_to_vrf_id: VrfId = nimbus_id.into();
-        assert_eq!(expected_vrf_id, nimbus_to_vrf_id);
+        let aura_to_vrf_id: VrfId = dummy_key_from(aura_id);
+        assert_eq!(expected_vrf_id, aura_to_vrf_id);
     }
 }

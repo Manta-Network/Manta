@@ -18,9 +18,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod aura;
+pub use aura::AuraId;
 pub mod nimbus;
+pub use nimbus::NimbusId;
 pub mod vrf;
-pub use vrf::*;
+pub use vrf::VrfId;
 
 #[cfg(feature = "std")]
 pub mod helpers;

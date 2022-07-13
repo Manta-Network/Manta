@@ -56,7 +56,7 @@ use manta_primitives::{
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
-use session_key_primitives::aura::AuraId;
+use session_key_primitives::AuraId;
 use sp_runtime::Perbill;
 
 #[cfg(any(feature = "std", test))]
@@ -104,10 +104,10 @@ pub mod opaque {
         }
     }
     impl SessionKeys {
-        /// generates SessionKey, discarding key types not used on manta
-        pub fn new<T, U>(tuple: (AuraId, T, U)) -> SessionKeys {
-            let (aura, _, _) = tuple;
-            SessionKeys { aura }
+        /// Generates a [`SessionKey`], discarding key types that are not currently used.
+        #[inline]
+        pub fn new<T, U>((aura, _, _): (AuraId, T, U)) -> Self {
+            Self { aura }
         }
     }
 }

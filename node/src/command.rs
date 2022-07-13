@@ -35,7 +35,7 @@ use sc_cli::{
     NetworkParams, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
-use session_key_primitives::aura::AuraId;
+use session_key_primitives::AuraId;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{generic, traits::Block as BlockT, OpaqueExtrinsic};
 use std::{io::Write, net::SocketAddr};
