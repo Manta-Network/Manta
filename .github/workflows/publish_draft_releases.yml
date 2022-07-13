@@ -498,8 +498,10 @@ jobs:
           yarn
           yarn test --address=ws://127.0.0.1:9921
           echo $?
-          if [ $? != 0 ]; then echo "Ledger RPC test failed!"; exit 1;
-          sleep 180
+          if [ $? != 0 ]; then echo "Ledger RPC correctness test failed!"; exit 1;
+          yarn performance_test --address=ws://127.0.0.1:9921
+          echo $?
+          if [ $? != 0 ]; then echo "Ledger RPC performance test failed!"; exit 1;
       - name: check if target block is finalized
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
