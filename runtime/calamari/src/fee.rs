@@ -143,10 +143,9 @@ mod multiplier_tests {
         let remark_weight: Weight =
             <Runtime as frame_system::Config>::SystemWeightInfo::remark(len);
         let max_number_of_remarks_per_block = (block_weight / remark_weight) as u128;
-        let per_byte = crate::TransactionByteFee::get();
-        // length fee. this is not adjusted.
-        let len_fee =
-            max_number_of_remarks_per_block.saturating_mul(per_byte.saturating_mul(len as u128));
+        let len_fee = max_number_of_remarks_per_block.saturating_mul(
+            <Runtime as pallet_transaction_payment::Config>::LengthToFee::calc(&(len as Weight)),
+        );
 
         let base_fee = max_number_of_remarks_per_block
             * <Runtime as pallet_transaction_payment::Config>::WeightToFee::calc(
@@ -172,7 +171,8 @@ mod multiplier_tests {
                     &block_weight,
                 );
 
-                // base_fee and len_fee are not adjusted
+                // base_fee and len_fee are not adjusted:
+                // https://docs.substrate.io/main-docs/build/tx-weights-fees/#:~:text=A%20closer%20look%20at%20the%20inclusion%20fee
                 let adjusted_fee = fee_adjustment.saturating_mul_acc_int(fee) + base_fee + len_fee;
                 accumulated_fee += adjusted_fee;
                 println!(
