@@ -41,7 +41,7 @@ describe('Node RPC Performance Test', () => {
         let nodeAddress = "";
         const args: ParsedArgs = minimist(process.argv.slice(2));
         if (args["address"] == null) {
-            nodeAddress = "ws://127.0.0.1:9800";
+            nodeAddress = test_config.ws_address;
         } else {
             nodeAddress = args["address"];
         }

@@ -1078,7 +1078,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ needs.start-dolphin-integration-tester.outputs.aws-region }}
           runner-label: ${{ needs.start-dolphin-integration-tester.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-dolphin-integration-tester.outputs.aws-instance-id }}          
+          aws-instance-id: ${{ needs.start-dolphin-integration-tester.outputs.aws-instance-id }}
   start-runtime-upgrade-tester:
     runs-on: ubuntu-20.04
     outputs:
