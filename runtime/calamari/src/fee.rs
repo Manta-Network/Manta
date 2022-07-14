@@ -112,9 +112,10 @@ mod multiplier_tests {
     // Consider the daily cost to fully congest our network to be defined as:
     // `target_daily_congestion_cost_usd = inclusion_fee * blocks_per_day * kma_price`
     // Where:
-    // `inclusion_fee = fee_adjustment * (weight_to_fee_coeff * (block_weight ^ degree)) + base_fee + (weight_to_fee_coeff * length_fee)`
+    // `inclusion_fee = fee_adjustment * (weight_to_fee_coeff * (block_weight ^ degree)) + base_fee + (len_to_fee_coeff * length_fee)`
     // Where:
-    // `fee_adjustment` and `weight_to_fee_coeff` are configurable in a runtime via `FeeMultiplierUpdate` and `WeightToFee`
+    // `fee_adjustment`, `weight_to_fee_coeff` and `len_to_fee_coeff` are configurable in a runtime via:
+    // `FeeMultiplierUpdate` and `WeightToFee` and `LengthToFee`
     // `fee_adjustment` is also variable depending on previous block's fullness
     // We are also assuming `length_fee` is negligible for small TXs like a remark or a transfer.
     // This test loops 1 day of parachain blocks (7200) and calculates accumulated fee if every block is almost full
