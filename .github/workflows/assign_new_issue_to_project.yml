@@ -1,0 +1,16 @@
+name: Auto Assign Issues to Projects
+on:
+  issues:
+    types: opened
+env:
+  MY_GITHUB_TOKEN: ${{ secrets.ORG_ISSUE_GITHUB_TOKEN }}
+jobs:
+  assign_to_project:
+    runs-on: ubuntu-latest
+    name: Assign topic to Project
+    steps:
+      - name: Assign issues with new-topic label to GitHub Project
+        uses: srggrs/assign-one-project-github-action@1.2.0
+        with:
+          project: 'https://github.com/orgs/Manta-Network/projects/8'
+          column_name: 'No Status'

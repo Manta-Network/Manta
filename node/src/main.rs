@@ -14,18 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Manta/Calamari Parachain CLI
+//! Parachain CLI
 
-#![warn(missing_docs)]
+use manta::command::{run, Result};
 
-extern crate alloc;
-
-mod chain_specs;
-mod cli;
-mod command;
-mod rpc;
-mod service;
-
-fn main() -> sc_cli::Result<()> {
-    command::run()
+#[inline]
+fn main() -> Result {
+    run()
 }

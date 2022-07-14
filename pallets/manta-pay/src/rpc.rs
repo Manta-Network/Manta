@@ -19,20 +19,30 @@
 use crate::{runtime::PullLedgerDiffApi, PullResponse};
 use alloc::sync::Arc;
 use core::marker::PhantomData;
-use jsonrpc_core::{Error, ErrorCode, Result};
-use jsonrpc_derive::rpc;
+use jsonrpsee::{
+    core::{async_trait, RpcResult},
+    proc_macros::rpc,
+    types::error::{CallError, ErrorObject},
+};
 use manta_pay::signer::Checkpoint;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block};
+
+const SERVER_ERROR: i32 = 1;
 
 /// Pull API
 #[rpc(server)]
 pub trait PullApi {
     /// Returns the update required to be synchronized with the ledger starting from
     /// `checkpoint`.
-    #[rpc(name = "mantaPay_pull_ledger_diff")]
-    fn pull_ledger_diff(&self, checkpoint: Checkpoint) -> Result<PullResponse>;
+    #[method(name = "mantaPay_pull_ledger_diff", blocking)]
+    fn pull_ledger_diff(
+        &self,
+        checkpoint: Checkpoint,
+        max_receivers: u64,
+        max_senders: u64,
+    ) -> RpcResult<PullResponse>;
 }
 
 /// Pull RPC API Implementation
@@ -55,21 +65,30 @@ impl<B, C> Pull<B, C> {
     }
 }
 
-impl<B, C> PullApi for Pull<B, C>
+#[async_trait]
+impl<B, C> PullApiServer for Pull<B, C>
 where
     B: Block,
     C: 'static + ProvideRuntimeApi<B> + HeaderBackend<B>,
     C::Api: PullLedgerDiffApi<B>,
 {
     #[inline]
-    fn pull_ledger_diff(&self, checkpoint: Checkpoint) -> Result<PullResponse> {
+    fn pull_ledger_diff(
+        &self,
+        checkpoint: Checkpoint,
+        max_receivers: u64,
+        max_senders: u64,
+    ) -> RpcResult<PullResponse> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(self.client.info().best_hash);
-        api.pull_ledger_diff(&at, checkpoint.into())
-            .map_err(|err| Error {
-                code: ErrorCode::ServerError(1),
-                message: "Unable to compute state diff for pull".into(),
-                data: Some(err.to_string().into()),
+        api.pull_ledger_diff(&at, checkpoint.into(), max_receivers, max_senders)
+            .map_err(|err| {
+                CallError::Custom(ErrorObject::owned(
+                    SERVER_ERROR,
+                    "Unable to compute state diff for pull",
+                    Some(format!("{:?}", err)),
+                ))
+                .into()
             })
     }
 }

@@ -37,55 +37,67 @@
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
 #![allow(unused_imports)]
+#![allow(clippy::unnecessary_cast)]
 
 use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_utility.
 pub trait WeightInfo {
-    fn batch(c: u32, ) -> Weight;
-    fn as_derivative() -> Weight;
-    fn batch_all(c: u32, ) -> Weight;
-    fn dispatch_as() -> Weight;
+	fn batch(c: u32, ) -> Weight;
+	fn as_derivative() -> Weight;
+	fn batch_all(c: u32, ) -> Weight;
+	fn dispatch_as() -> Weight;
+	fn force_batch(c: u32, ) -> Weight;
 }
 
 /// Weights for pallet_utility using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_utility::WeightInfo for SubstrateWeight<T> {
-    fn batch(c: u32, ) -> Weight {
-        (21_573_000 as Weight)
-            // Standard Error: 4_000
-            .saturating_add((3_544_000 as Weight).saturating_mul(c as Weight))
-    }
-    fn as_derivative() -> Weight {
-        (2_148_000 as Weight)
-    }
-    fn batch_all(c: u32, ) -> Weight {
-        (25_257_000 as Weight)
-            // Standard Error: 4_000
-            .saturating_add((3_789_000 as Weight).saturating_mul(c as Weight))
-    }
-    fn dispatch_as() -> Weight {
-        (9_294_000 as Weight)
-    }
+	fn batch(c: u32, ) -> Weight {
+		(21_573_000 as Weight)
+			// Standard Error: 4_000
+			.saturating_add((3_544_000 as Weight).saturating_mul(c as Weight))
+	}
+	fn as_derivative() -> Weight {
+		(2_148_000 as Weight)
+	}
+	fn batch_all(c: u32, ) -> Weight {
+		(25_257_000 as Weight)
+			// Standard Error: 4_000
+			.saturating_add((3_789_000 as Weight).saturating_mul(c as Weight))
+	}
+	fn dispatch_as() -> Weight {
+		(9_294_000 as Weight)
+	}
+	fn force_batch(c: u32, ) -> Weight {
+		(13_988_000 as Weight)
+			// Standard Error: 1_000
+			.saturating_add((2_481_000 as Weight).saturating_mul(c as Weight))
+	}
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-    fn batch(c: u32, ) -> Weight {
-        (21_573_000 as Weight)
-            // Standard Error: 4_000
-            .saturating_add((3_544_000 as Weight).saturating_mul(c as Weight))
-    }
-    fn as_derivative() -> Weight {
-        (2_148_000 as Weight)
-    }
-    fn batch_all(c: u32, ) -> Weight {
-        (25_257_000 as Weight)
-            // Standard Error: 4_000
-            .saturating_add((3_789_000 as Weight).saturating_mul(c as Weight))
-    }
-    fn dispatch_as() -> Weight {
-        (9_294_000 as Weight)
-    }
+	fn batch(c: u32, ) -> Weight {
+		(21_573_000 as Weight)
+			// Standard Error: 4_000
+			.saturating_add((3_544_000 as Weight).saturating_mul(c as Weight))
+	}
+	fn as_derivative() -> Weight {
+		(2_148_000 as Weight)
+	}
+	fn batch_all(c: u32, ) -> Weight {
+		(25_257_000 as Weight)
+			// Standard Error: 4_000
+			.saturating_add((3_789_000 as Weight).saturating_mul(c as Weight))
+	}
+	fn dispatch_as() -> Weight {
+		(9_294_000 as Weight)
+	}
+	fn force_batch(c: u32, ) -> Weight {
+		(13_988_000 as Weight)
+			// Standard Error: 1_000
+			.saturating_add((2_481_000 as Weight).saturating_mul(c as Weight))
+	}
 }

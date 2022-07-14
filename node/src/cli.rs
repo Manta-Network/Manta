@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Command Line Interfaces
+
 use crate::chain_specs;
 use clap::Parser;
 use std::path::PathBuf;
@@ -50,8 +52,9 @@ pub enum Subcommand {
     /// Revert the chain to a previous state.
     Revert(sc_cli::RevertCmd),
 
-    /// The custom benchmark subcommmand benchmarking runtime pallets.
-    #[clap(name = "benchmark", about = "Benchmark runtime pallets.")]
+    /// Sub-commands concerned with benchmarking.
+    /// The pallet benchmarking moved to the `pallet` sub-command.
+    #[clap(subcommand)]
     Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 
     /// Try some command against runtime state.
@@ -102,6 +105,7 @@ pub struct ExportGenesisWasmCommand {
     pub chain: Option<String>,
 }
 
+/// Node CLI
 #[derive(Debug, Parser)]
 #[clap(
     propagate_version = true,
@@ -109,17 +113,30 @@ pub struct ExportGenesisWasmCommand {
     subcommand_negates_reqs = true
 )]
 pub struct Cli {
+    /// Subcommand
     #[clap(subcommand)]
     pub subcommand: Option<Subcommand>,
 
+    /// Cumulus Client Running CLI
     #[clap(flatten)]
     pub run: cumulus_client_cli::RunCmd,
 
-    /// Relaychain arguments
-    #[clap(raw = true)]
+    /// Disable automatic hardware benchmarks.
+    ///
+    /// By default these benchmarks are automatically ran at startup and measure
+    /// the CPU speed, the memory bandwidth and the disk speed.
+    ///
+    /// The results are then printed out in the logs, and also sent as part of
+    /// telemetry, if telemetry is enabled.
+    #[clap(long)]
+    pub no_hardware_benchmarks: bool,
+
+    /// Relay chain arguments
+    #[clap(raw = true, conflicts_with = "relay-chain-rpc-url")]
     pub relaychain_args: Vec<String>,
 }
 
+/// Relay Chain CLI
 #[derive(Debug)]
 pub struct RelayChainCli {
     /// The actual relay chain cli object.

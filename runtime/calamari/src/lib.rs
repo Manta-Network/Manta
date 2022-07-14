@@ -41,8 +41,8 @@ use frame_support::{
     construct_runtime, parameter_types,
     traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, PrivilegeCmp},
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
-        DispatchClass, Weight,
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+        ConstantMultiplier, DispatchClass, Weight,
     },
     PalletId,
 };
@@ -54,14 +54,12 @@ use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
     types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
-use runtime_common::prod_or_fast;
+use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use sp_runtime::{Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-// Polkadot imports
-use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 use xcm::latest::prelude::*;
 
 pub mod assets_config;
@@ -105,7 +103,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 1,
-    spec_version: 3200,
+    spec_version: 3201,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 5,
@@ -208,7 +206,6 @@ impl Contains<Call> for BaseFilter {
                                 orml_xtokens::Call::transfer_with_fee {..}
                                 | orml_xtokens::Call::transfer_multiasset {..}
                                 | orml_xtokens::Call::transfer_multiasset_with_fee {..}
-                                | orml_xtokens::Call::transfer_multicurrencies {..}
                                 | orml_xtokens::Call::transfer_multiassets {..})
             // Filter callables from XCM pallets, we use XTokens exclusively
             | Call::XcmpQueue(_) | Call::PolkadotXcm(_) | Call::DmpQueue(_) => false,
@@ -253,7 +250,8 @@ impl Contains<Call> for BaseFilter {
                 | manta_collator_selection::Call::leave_intent{..})
             | Call::Balances(_)
             | Call::Preimage(_)
-            | Call::XTokens(orml_xtokens::Call::transfer {..})
+            | Call::XTokens(orml_xtokens::Call::transfer {..}
+                | orml_xtokens::Call::transfer_multicurrencies {..})
             | Call::Utility(_) => true,
 
             // DISALLOW anything else
@@ -332,8 +330,8 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
-    type TransactionByteFee = TransactionByteFee;
     type WeightToFee = WeightToFee;
+    type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
 }
@@ -752,7 +750,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsReversedWithSystemFirst,
-    crate::migrations::sudo::RemoveSudo<Runtime>,
+    (),
 >;
 
 #[cfg(feature = "runtime-benchmarks")]
