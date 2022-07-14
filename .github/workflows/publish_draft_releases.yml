@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [manta]
   push:
-    branches: [ghzlatarev/ledger-rpc-ci-2]
+    branches: [manta]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 concurrency:
@@ -131,14 +131,14 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo build --release --verbose
+          RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose
       - name: stop sccache server
         run: sccache --stop-server || true
       - name: upload
         uses: actions/upload-artifact@v2
         with:
           name: manta
-          path: target/release/manta
+          path: target/production/manta
       - name: upload
         uses: actions/upload-artifact@v2
         with:
