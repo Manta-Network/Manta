@@ -17,6 +17,7 @@ sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = "po
 manta-primitives = { path = '../../primitives', default-features = false }
 
 [dev-dependencies]
+syn = { version = "=1.0.96" } # Workaround until polkadot-v0.9.24 for https://github.com/paritytech/substrate/issues/11706
 # 3rd dependencies
 codec = { package = "parity-scale-codec", version = "3.1.2" }
 scale-info = { version = "2.1.2", features = ["derive"] }
