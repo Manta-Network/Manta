@@ -58,7 +58,7 @@ sp_application_crypto::with_pair! {
 }
 
 #[test]
-fn converted_dummy_id_is_same_as_newly_created_id() {
+fn creating_dummy_vrf_id_from_aura_id_is_sane() {
     for x in 0u8..10u8 {
         let aura_id: AuraId = sr25519::Public::unchecked_from([x; 32]).into();
         let expected_vrf_id: VrfId = sr25519::Public::unchecked_from([x; 32]).into();
