@@ -17,6 +17,7 @@ smallvec = "1.8.0"
 
 # Substrate primitives
 sp-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.22" }
+sp-application-crypto = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.22" }
 sp-arithmetic = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.22" }
 sp-block-builder = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.22" }
 sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.22" }
@@ -69,6 +70,9 @@ cumulus-primitives-timestamp = { git = 'https://github.com/paritytech/cumulus.gi
 cumulus-primitives-utility = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.22" }
 parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.22" }
 
+# Nimbus Dependencies
+pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", branch = "polkadot-v0.9.22", default-features = false }
+
 # Polkadot dependencies
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.22" }
 polkadot-parachain = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.22" }
@@ -84,10 +88,11 @@ orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-lib
 # Self dependencies
 calamari-vesting = { path = '../../pallets/vesting', default-features = false }
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
-manta-primitives = { path = '../../primitives', default-features = false }
+manta-primitives = { path = '../../primitives/manta', default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
+session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -181,6 +186,7 @@ std = [
   'pallet-transaction-payment-rpc-runtime-api/std',
   'pallet-timestamp/std',
   'pallet-session/std',
+  'sp-application-crypto/std',
   'pallet-xcm/std',
   'pallet-transaction-payment/std',
   'pallet-treasury/std',
@@ -199,6 +205,8 @@ std = [
   "cumulus-primitives-core/std",
   "cumulus-primitives-timestamp/std",
   "cumulus-primitives-utility/std",
+  "pallet-author-inherent/std",
+  'session-key-primitives/std',
   'xcm/std',
   'xcm-builder/std',
   'xcm-executor/std',

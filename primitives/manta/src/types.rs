@@ -48,9 +48,6 @@ pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>
 /// Digest item type.
 pub type DigestItem = sp_runtime::generic::DigestItem;
 
-// Aura consensus authority.
-pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
-
 // Moment
 pub type Moment = u64;
 

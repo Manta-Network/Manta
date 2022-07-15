@@ -14,7 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::types::{AccountId, AuraId, Signature};
+//! Helper methods to generate dummy keys used in testing
+
+use crate::{AuraId, NimbusId, VrfId};
+use manta_primitives::types::{AccountId, Signature};
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
@@ -28,8 +31,12 @@ pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair
 /// Generate collator keys from seed.
 ///
 /// This function's return type must always match the session keys of the chain in tuple format.
-pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
-    get_pair_from_seed::<AuraId>(seed)
+pub fn get_collator_keys_from_seed(seed: &str) -> (AuraId, NimbusId, VrfId) {
+    (
+        get_pair_from_seed::<AuraId>(seed),
+        get_pair_from_seed::<NimbusId>(seed),
+        get_pair_from_seed::<VrfId>(seed),
+    )
 }
 
 type AccountPublic = <Signature as Verify>::Signer;

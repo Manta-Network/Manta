@@ -18,8 +18,8 @@
 
 use super::*;
 use crate::command::MANTA_PARACHAIN_ID;
-use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
-
+use manta_runtime::opaque::SessionKeys;
+use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 /// Manta Protocol Identifier
 pub const MANTA_PROTOCOL_ID: &str = "manta";
 
@@ -38,8 +38,8 @@ pub type MantaChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisCon
 /// Generate the manta session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn manta_session_keys(keys: AuraId) -> manta_runtime::opaque::SessionKeys {
-    manta_runtime::opaque::SessionKeys { aura: keys }
+pub fn manta_session_keys(keys: AuraId) -> SessionKeys {
+    SessionKeys { aura: keys }
 }
 
 /// Returns the [`Properties`] for the Manta parachain.
@@ -61,7 +61,7 @@ pub fn manta_development_config() -> MantaChainSpec {
             manta_dev_genesis(
                 vec![(
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_collator_keys_from_seed("Alice"),
+                    get_collator_keys_from_seed("Alice").0,
                 )],
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 vec![
@@ -95,11 +95,11 @@ pub fn manta_local_config() -> MantaChainSpec {
                 vec![
                     (
                         get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        get_collator_keys_from_seed("Alice"),
+                        get_collator_keys_from_seed("Alice").0,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        get_collator_keys_from_seed("Bob"),
+                        get_collator_keys_from_seed("Bob").0,
                     ),
                 ],
                 get_account_id_from_seed::<sr25519::Public>("Alice"),

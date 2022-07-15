@@ -25,16 +25,16 @@ use crate::{
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
-use log::info;
-
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-use manta_primitives::types::{AuraId, Header};
+use log::info;
+use manta_primitives::types::Header;
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
     NetworkParams, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
+use session_key_primitives::AuraId;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{generic, traits::Block as BlockT, OpaqueExtrinsic};
 use std::{io::Write, net::SocketAddr};
