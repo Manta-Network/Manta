@@ -6,7 +6,8 @@ members = [
   'runtime/calamari',
   'runtime/dolphin',
   'runtime/common',
-  'primitives',
+  'primitives/manta',
+  'primitives/session-keys',
 ]
 resolver = "2"
 

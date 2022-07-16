@@ -13,7 +13,7 @@ frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', bran
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22", default-features = false }
 log = { version = "0.4.0", default-features = false }
-manta-primitives = { path = "../../primitives", default-features = false }
+manta-primitives = { path = "../../primitives/manta", default-features = false }
 scale-info = { version = "2.0.0", default-features = false, features = ["derive"] }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22", default-features = false }

@@ -96,7 +96,7 @@ manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag 
 manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.1", default-features = false }
 manta-parameters = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.1", default-features = false }
 manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.1", default-features = false, features = ["groth16", "scale"] }
-manta-primitives = { path = "../../primitives", default-features = false }
+manta-primitives = { path = "../../primitives/manta", default-features = false }
 manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.1", default-features = false }
 
 [dev-dependencies]

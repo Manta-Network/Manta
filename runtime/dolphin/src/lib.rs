@@ -53,9 +53,10 @@ use frame_system::{
 };
 use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
-    types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
+    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
+use session_key_primitives::{AuraId, NimbusId, VrfId};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -65,6 +66,7 @@ pub mod assets_config;
 pub mod currency;
 pub mod fee;
 pub mod impls;
+mod nimbus_session_adapter;
 pub mod xcm_config;
 
 use currency::*;
@@ -86,9 +88,32 @@ pub mod opaque {
     pub type Block = generic::Block<Header, UncheckedExtrinsic>;
     /// Opaque block identifier type.
     pub type BlockId = generic::BlockId<Block>;
+
+    use nimbus_session_adapter::{AuthorInherentWithNoOpSession, VrfWithNoOpSession};
+    impl_opaque_keys! {
+        pub struct OldSessionKeys {
+            pub aura: Aura,
+        }
+    }
     impl_opaque_keys! {
         pub struct SessionKeys {
             pub aura: Aura,
+            pub nimbus: AuthorInherentWithNoOpSession<Runtime>,
+            pub vrf: VrfWithNoOpSession,
+        }
+    }
+    impl SessionKeys {
+        pub fn new(tuple: (AuraId, NimbusId, VrfId)) -> SessionKeys {
+            let (aura, nimbus, vrf) = tuple;
+            SessionKeys { aura, nimbus, vrf }
+        }
+    }
+
+    pub fn transform_session_keys(_v: AccountId, old: OldSessionKeys) -> SessionKeys {
+        SessionKeys {
+            aura: old.aura.clone(),
+            nimbus: session_key_primitives::nimbus::dummy_key_from(old.aura.clone()),
+            vrf: session_key_primitives::vrf::dummy_key_from(old.aura),
         }
     }
 }
@@ -737,7 +762,48 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsReversedWithSystemFirst,
+    UpgradeSessionKeys,
 >;
+// When this is removed, should also remove `OldSessionKeys`.
+pub struct UpgradeSessionKeys;
+impl frame_support::traits::OnRuntimeUpgrade for UpgradeSessionKeys {
+    fn on_runtime_upgrade() -> frame_support::weights::Weight {
+        use opaque::transform_session_keys;
+        // transform_session_keys runs translate() on NextKeys and on QueuedKeys which is (at worst or faster than) 1 read 1 write
+        let validator_set_len: u64 = Session::queued_keys().len().try_into().unwrap();
+
+        Session::upgrade_keys::<opaque::OldSessionKeys, _>(transform_session_keys);
+
+        core::cmp::max(
+            Perbill::from_percent(50) * BlockWeights::default().max_block as u64,
+            <Runtime as frame_system::Config>::DbWeight::get()
+                .reads_writes(2 * validator_set_len, validator_set_len * 2),
+        )
+    }
+    #[cfg(feature = "try_runtime")]
+    fn pre_runtime_upgrade() -> frame_support::weights::Weight {
+        // get aura keys
+        let owners_and_aura_keys = Session::queued_keys();
+        Self::set_temp_storage(owners_and_aura_keys, "aura_keys");
+        0
+    }
+    #[cfg(feature = "try_runtime")]
+    fn post_runtime_upgrade() -> frame_support::weights::Weight {
+        // ensure aura keys have not changed
+        let pre_migration_keys = Self::get_temp_storage(owners_and_aura_keys, "aura_keys");
+        let new_owners_and_aura_keys = Session::queued_keys();
+
+        for it in pre_migration_keys
+            .iter()
+            .zip(new_owners_and_aura_keys.iter())
+        {
+            let ((old_owner, old_key), (new_owner, new_key)) = iter;
+            ensure!(old_owner == new_owner, "owner changed");
+            ensure!(old_key.aura == new_key.aura, "key changed");
+        }
+        0
+    }
+}
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]

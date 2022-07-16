@@ -71,7 +71,7 @@ jobs:
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install nightly
-          rustup default nightly
+          rustup default nightly-2022-07-10-x86_64-unknown-linux-gnu
           cargo install taplo-cli
       - name: Run yamllint
         uses: actionshub/yamllint@main

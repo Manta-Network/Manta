@@ -1157,6 +1157,7 @@ dependencies = [
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-aura",
+ "pallet-author-inherent",
  "pallet-authorship",
  "pallet-balances",
  "pallet-collective",
@@ -1182,8 +1183,10 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
+ "session-key-primitives",
  "smallvec",
  "sp-api",
+ "sp-application-crypto",
  "sp-arithmetic",
  "sp-block-builder",
  "sp-consensus-aura",
@@ -2535,6 +2538,7 @@ dependencies = [
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-aura",
+ "pallet-author-inherent",
  "pallet-authorship",
  "pallet-balances",
  "pallet-collective",
@@ -2561,8 +2565,10 @@ dependencies = [
  "runtime-common",
  "scale-info",
  "serde",
+ "session-key-primitives",
  "smallvec",
  "sp-api",
+ "sp-application-crypto",
  "sp-arithmetic",
  "sp-block-builder",
  "sp-consensus-aura",
@@ -5021,6 +5027,7 @@ dependencies = [
  "sc-transaction-pool",
  "sc-transaction-pool-api",
  "serde",
+ "session-key-primitives",
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
@@ -5168,7 +5175,6 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "smallvec",
- "sp-consensus-aura",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -5223,6 +5229,7 @@ dependencies = [
  "runtime-common",
  "scale-info",
  "serde",
+ "session-key-primitives",
  "smallvec",
  "sp-api",
  "sp-block-builder",
@@ -5636,6 +5643,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "nimbus-primitives"
+version = "0.9.0"
+source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.22#84161bc6e71ee10ea34a50bb839b2c24f64760a5"
+dependencies = [
+ "async-trait",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "nix"
 version = "0.22.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5990,6 +6014,26 @@ dependencies = [
  "scale-info",
  "sp-application-crypto",
  "sp-consensus-aura",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-author-inherent"
+version = "0.9.0"
+source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.22#84161bc6e71ee10ea34a50bb839b2c24f64760a5"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "nimbus-primitives",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-authorship",
+ "sp-inherents",
  "sp-runtime",
  "sp-std",
 ]
@@ -10615,6 +10659,20 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "session-key-primitives"
+version = "3.2.0"
+dependencies = [
+ "manta-primitives",
+ "nimbus-primitives",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-application-crypto",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]

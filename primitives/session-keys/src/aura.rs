@@ -14,15 +14,5 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-#![allow(non_upper_case_globals)]
-#![allow(clippy::unnecessary_cast)]
-#![allow(clippy::upper_case_acronyms)]
-#![cfg_attr(not(feature = "std"), no_std)]
-
-pub mod assets;
-pub mod constants;
-pub mod types;
-pub mod xcm;
-
-#[cfg(feature = "std")]
-pub mod helpers;
+// Aura consensus authority.
+pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
