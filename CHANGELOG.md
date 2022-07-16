@@ -5,7 +5,6 @@
 - [Dolphin] [\#628](https://github.com/Manta-Network/Manta/pull/628) Improve RPC performance, add `max_receivers` and `max_senders` fields in the RPC request.
 
 ### Features
-- [\#576](https://github.com/Manta-Network/Manta/pull/576) Unfilter `xtokens.transfer_multicurrencies` and bump MaxAssetsForTransfer to 2.
 
 ### Improvements
 - [\#449](https://github.com/Manta-Network/Manta/pull/449) Remove strip from CI, and add strip profile to production.
