@@ -16,6 +16,7 @@
 
 use crate::common::*;
 
+use calamari_runtime::opaque::SessionKeys;
 pub use calamari_runtime::{
     assets_config::CalamariAssetConfig, currency::KMA, Call, CollatorSelection, Democracy, Runtime,
     Scheduler, Session, System, TransactionPayment,
@@ -23,13 +24,13 @@ pub use calamari_runtime::{
 use frame_support::traits::{GenesisBuild, OnFinalize, OnInitialize};
 use manta_primitives::{
     assets::AssetConfig,
-    helpers::{get_account_id_from_seed, get_collator_keys_from_seed},
-    types::{AccountId, AuraId, Balance},
+    types::{AccountId, Balance},
 };
+use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 use sp_core::sr25519;
 pub struct ExtBuilder {
     balances: Vec<(AccountId, Balance)>,
-    authorities: Vec<(AccountId, AuraId)>,
+    authorities: Vec<(AccountId, SessionKeys)>,
     invulnerables: Vec<AccountId>,
     desired_candidates: u32,
     safe_xcm_version: Option<u32>,
@@ -45,7 +46,7 @@ impl Default for ExtBuilder {
             )],
             authorities: vec![(
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
-                get_collator_keys_from_seed("Alice"),
+                SessionKeys::new(get_collator_keys_from_seed("Alice")),
             )],
             invulnerables: vec![get_account_id_from_seed::<sr25519::Public>("Alice")],
             safe_xcm_version: None,
@@ -60,7 +61,7 @@ impl ExtBuilder {
         self
     }
 
-    pub fn with_authorities(mut self, authorities: Vec<(AccountId, AuraId)>) -> Self {
+    pub fn with_authorities(mut self, authorities: Vec<(AccountId, SessionKeys)>) -> Self {
         self.authorities = authorities;
         self
     }
@@ -103,11 +104,11 @@ impl ExtBuilder {
                 .authorities
                 .iter()
                 .cloned()
-                .map(|(acc, aura)| {
+                .map(|(acc, session_keys)| {
                     (
-                        acc.clone(),                                    // account id
-                        acc,                                            // validator id
-                        calamari_runtime::opaque::SessionKeys { aura }, // session keys
+                        acc.clone(),  // account id
+                        acc,          // validator id
+                        session_keys, // session keys
                     )
                 })
                 .collect(),

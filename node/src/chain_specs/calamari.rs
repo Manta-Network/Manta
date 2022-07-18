@@ -18,8 +18,10 @@
 
 use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
-use calamari_runtime::{CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig};
-use manta_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
+use calamari_runtime::{
+    opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
+};
+use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 
 /// Calamari Protocol Identifier
 pub const CALAMARI_PROTOCOL_ID: &str = "calamari";
@@ -39,8 +41,12 @@ pub type CalamariChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensi
 /// Generate the calamari session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn calamari_session_keys(keys: AuraId) -> calamari_runtime::opaque::SessionKeys {
-    calamari_runtime::opaque::SessionKeys { aura: keys }
+pub fn calamari_session_keys(keys: AuraId) -> SessionKeys {
+    SessionKeys {
+        aura: keys.clone(),
+        nimbus: session_key_primitives::nimbus::dummy_key_from(keys.clone()),
+        vrf: session_key_primitives::vrf::dummy_key_from(keys),
+    }
 }
 
 /// Returns the [`Properties`] for the Calamari parachain.
@@ -65,7 +71,7 @@ pub fn calamari_development_config() -> CalamariChainSpec {
             calamari_dev_genesis(
                 vec![(
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_collator_keys_from_seed("Alice"),
+                    SessionKeys::new(get_collator_keys_from_seed("Alice")).aura,
                 )],
                 vec![
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -98,23 +104,23 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                 vec![
                     (
                         get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        get_collator_keys_from_seed("Alice"),
+                        SessionKeys::new(get_collator_keys_from_seed("Alice")).aura,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        get_collator_keys_from_seed("Bob"),
+                        SessionKeys::new(get_collator_keys_from_seed("Bob")).aura,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                        get_collator_keys_from_seed("Charlie"),
+                        SessionKeys::new(get_collator_keys_from_seed("Charlie")).aura,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Dave"),
-                        get_collator_keys_from_seed("Dave"),
+                        SessionKeys::new(get_collator_keys_from_seed("Dave")).aura,
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Eve"),
-                        get_collator_keys_from_seed("Eve"),
+                        SessionKeys::new(get_collator_keys_from_seed("Eve")).aura,
                     ),
                 ],
                 vec![

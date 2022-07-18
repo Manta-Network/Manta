@@ -46,7 +46,7 @@ sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "po
 sc-rpc = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.22" }
 sc-rpc-api = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.22" }
 sc-service = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.22" }
-sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22" }
+sc-sysinfo = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22" }
 sc-telemetry = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.22" }
 sc-tracing = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.22" }
 sc-transaction-pool = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.22" }
@@ -91,9 +91,10 @@ xcm = { git = "https://github.com/paritytech/polkadot.git", branch = "release-v0
 # Self dependencies
 calamari-runtime = { path = '../runtime/calamari' }
 dolphin-runtime = { path = '../runtime/dolphin' }
-manta-primitives = { path = '../primitives' }
+manta-primitives = { path = '../primitives/manta' }
 manta-runtime = { path = '../runtime/manta' }
 pallet-manta-pay = { path = '../pallets/manta-pay', features = ["rpc", "runtime"] }
+session-key-primitives = { path = '../primitives/session-keys' }
 
 [build-dependencies]
 substrate-build-script-utils = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.22" }
