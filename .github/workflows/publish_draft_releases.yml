@@ -28,7 +28,7 @@ jobs:
       rustc-nightly: ${{ steps.get-rust-versions.outputs.nightly }}
     env:
       CARGO_TERM_COLOR: always
-    if: startsWith(github.ref, 'refs/tags') || ${{ github.ref }} == 'ghzlatarev/ledger-rpc-ci-3'
+    if: startsWith(github.ref, 'refs/tags') || ${{ github.ref }} == 'mamta'
     steps:
       - id: get-rust-versions
         run: |
