@@ -5,7 +5,7 @@
 - [Dolphin] [\#628](https://github.com/Manta-Network/Manta/pull/628) Improve RPC performance, add `max_receivers` and `max_senders` fields in the RPC request.
 
 ### Features
-- [\#646](https://github.com/Manta-Network/Manta/pull/646) Add collator session keys for future nimbus consensus and a vrf placeholder
+- [\#646](https://github.com/Manta-Network/Manta/pull/646) Add collator session keys for future nimbus consensus and a vrf placeholder.
 
 ### Improvements
 - [\#449](https://github.com/Manta-Network/Manta/pull/449) Remove strip from CI, and add strip profile to production.
@@ -13,7 +13,6 @@
 - [\#563](https://github.com/Manta-Network/Manta/pull/563) Re-implement the `TransactAsset` trait with the unified interface of `FungibleLedger` trait, and `AssetConfig` trait.
 - [\#576](https://github.com/Manta-Network/Manta/pull/576) Unfilter xtokens.transfer_multicurrencies and bump MaxAssetsForTransfer to 2.
 - [\#607](https://github.com/Manta-Network/Manta/pull/607) Turn node client code into library for CLI project.
-- [Dolphin] [\#609](https://github.com/Manta-Network/Manta/pull/609) Update parameter path from `sdk` to `manta-parameters`.
 - [\#614](https://github.com/Manta-Network/Manta/pull/614) Remove `OnRuntimeUpgrade` from calamari-runtime.
 - [\#619](https://github.com/Manta-Network/Manta/pull/619) Add CI runtime upgrade test for Dolphin and improve test scenario.
 - [Dolphin] [\#622](https://github.com/Manta-Network/Manta/pull/622) Update parameter path from `sdk` to `manta-parameters`.
