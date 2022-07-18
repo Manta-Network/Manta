@@ -1,10 +1,17 @@
 import { xxhashAsU8a } from '@polkadot/util-crypto';
 import type { HexString } from '@polkadot/util/types';
 import { u8aToHex, u8aToBigInt, numberToU8a, nToU8a} from '@polkadot/util';
+import { ApiPromise } from '@polkadot/api';
+import { KeyringPair } from '@polkadot/keyring/types';
 
 export enum HashType {
     Identity,
     TwoxConcat
+}
+
+export interface ExecutionContext {
+    api: ApiPromise,
+    keyring: KeyringPair
 }
 
 /**
