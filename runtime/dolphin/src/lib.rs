@@ -24,14 +24,15 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-// use nimbus_primitives::AccountLookup;
+use core::marker::PhantomData;
+use nimbus_primitives::AccountLookup;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, Perbill, Permill,
+    ApplyExtrinsicResult, Perbill, Permill, RuntimeAppPublic,
 };
 use sp_std::{cmp::Ordering, prelude::*};
 use sp_version::RuntimeVersion;
@@ -40,10 +41,8 @@ use sp_version::RuntimeVersion;
 use sp_version::NativeVersion;
 
 use frame_support::{
-    construct_runtime,
-    parameter_types,
-    // traits::ValidatorRegistration,
-    traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, PrivilegeCmp},
+    construct_runtime, parameter_types,
+    traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, Get, PrivilegeCmp},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, Weight,
@@ -119,13 +118,6 @@ pub mod opaque {
             vrf: session_key_primitives::vrf::dummy_key_from(old.aura),
         }
     }
-    // impl_opaque_keys! {
-    //     pub struct SessionKeys {
-    //         //TODO this was called author_inherent in the old runtime.
-    //         // Can I just rename it like this?
-    //         pub nimbus: AuthorInherent,
-    //     }
-    // }
 }
 
 // Weights used in the runtime.
@@ -293,15 +285,59 @@ impl Contains<Call> for BaseFilter {
     }
 }
 
-// pub struct TestConverter<T>{_A:PhantomData<T>}
+/// Converter struct to use the Session pallet for mapping a NimbusId to its AccountId
+pub struct TestConverter<T> {
+    _phantom: PhantomData<T>,
+}
 
-// impl<T: Config> AccountLookup<AccountId> for TestConverter<T>{
-//     fn lookup_account(author: &NimbusId) -> Option<AccountId> {
-//         // Mapping::<T>::get(&author)
-//         // assuming NimbusId === ValidatorId === AuraKeys, then
-//         (T::Config as pallet_session::Pallet<Runtime>::Config).validators().iter().find(|vkey|{vkey == author}).and_then(|vkey|{vkey.into::<AccountId>()})
-//     }
-// }
+// Fetch list of eligible authors. This should be in manta_collator_selection
+impl<T> Get<Vec<T::AccountId>> for TestConverter<T>
+where
+    T: frame_system::Config + manta_collator_selection::Config + pallet_session::Config,
+    // Implemented only where Session's ValidatorId is directly convertible to collator_selection's ValidatorId
+    <T as manta_collator_selection::Config>::ValidatorId:
+        From<<T as pallet_session::Config>::ValidatorId>,
+{
+    /// Return the set of eligible collator accounts
+    fn get() -> Vec<T::AccountId>
+    where
+        <T as manta_collator_selection::Config>::ValidatorId:
+            From<<T as pallet_session::Config>::ValidatorId>,
+    {
+        use sp_runtime::traits::Convert;
+
+        let v = pallet_session::Pallet::<T>::validators()
+            .into_iter()
+            .map(|vid: <T as pallet_session::Config>::ValidatorId| {
+                <T as manta_collator_selection::Config>::AccountIdOf::convert(vid.into())
+            })
+            .collect::<Vec<T::AccountId>>();
+
+        log::info!("Requested Registered account Ids {:?}", v);
+        v
+    }
+}
+
+impl<T> AccountLookup<T::AccountId> for TestConverter<T>
+where
+    T: pallet_session::Config + manta_collator_selection::Config,
+    // Implemented only where Session's ValidatorId is directly convertible to collator_selection's ValidatorId
+    <T as manta_collator_selection::Config>::ValidatorId:
+        From<<T as pallet_session::Config>::ValidatorId>,
+{
+    fn lookup_account(author: &NimbusId) -> Option<T::AccountId>
+    where
+        <T as manta_collator_selection::Config>::ValidatorId:
+            From<<T as pallet_session::Config>::ValidatorId>,
+    {
+        use sp_runtime::traits::Convert;
+        pallet_session::Pallet::<T>::key_owner(
+            nimbus_primitives::NIMBUS_KEY_ID,
+            &author.to_raw_vec(),
+        )
+        .and_then(|vid| Some(T::AccountIdOf::convert(vid.into())))
+    }
+}
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
@@ -573,15 +609,14 @@ impl pallet_treasury::Config for Runtime {
     type SpendFunds = ();
 }
 impl pallet_aura_style_filter::Config for Runtime {
-    // type PotentialAuthors = TestConverter<Self>;
-    type PotentialAuthors = ();
+    type PotentialAuthors = TestConverter<Self>;
+    // type PotentialAuthors = ();
 }
 
 impl pallet_author_inherent::Config for Runtime {
     // We start a new slot each time we see a new relay block.
     type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
-    // type AccountLookup = TestConverter<Self>;
-    type AccountLookup = ();
+    type AccountLookup = TestConverter<Self>;
     type EventHandler = ();
     type WeightInfo = (); // TODO: Add benchmarked weights
     type CanAuthor = CollatorSelection;
@@ -703,7 +738,8 @@ impl manta_collator_selection::Config for Runtime {
     type AccountIdOf = manta_collator_selection::IdentityCollator;
     type ValidatorRegistration = Session;
     type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
-    type CanAuthor = AuraAuthorFilter; // NOTE: End of the nimbus filter pipeline (Aura filter has no CanAuthor trait
+    // type CanAuthor = AuraAuthorFilter; // NOTE: End of the nimbus filter pipeline (Aura filter has no CanAuthor trait
+    type CanAuthor = ();
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
