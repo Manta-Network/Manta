@@ -18,8 +18,9 @@
 
 use super::*;
 use crate::command::DOLPHIN_PARACHAIN_ID;
-use dolphin_runtime::{ currency::DOL, Range, get, ParachainStakingConfig,
-    opaque::SessionKeys, InflationInfo, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
+use dolphin_runtime::{
+    currency::DOL, get, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig,
+    InflationInfo, ParachainStakingConfig, Range, TechnicalCommitteeConfig,
 };
 use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 use sp_runtime::Perbill;
@@ -61,8 +62,8 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
                     SessionKeys::new(get_collator_keys_from_seed("Alice")),
                 )],
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
-				// Delegations
-				vec![],
+                // Delegations
+                vec![],
                 vec![
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
                     get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -114,8 +115,8 @@ pub fn dolphin_local_config() -> DolphinChainSpec {
                     ),
                 ],
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
-				// Delegations
-				vec![],
+                // Delegations
+                vec![],
                 vec![
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
                     get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -145,7 +146,7 @@ pub fn dolphin_local_config() -> DolphinChainSpec {
 fn dolphin_dev_genesis(
     invulnerables: Vec<(AccountId, SessionKeys)>,
     root_key: AccountId,
-	delegations: Vec<(AccountId, AccountId, Balance)>,
+    delegations: Vec<(AccountId, AccountId, Balance)>,
     endowed_accounts: Vec<AccountId>,
 ) -> GenesisConfig {
     GenesisConfig {
@@ -168,15 +169,15 @@ fn dolphin_dev_genesis(
         // no need to pass anything to aura, in fact it will panic if we do. Session will take care
         // of this.
         aura: Default::default(),
-		parachain_staking: ParachainStakingConfig {
-			candidates: invulnerables
-				.iter()
-				.cloned()
-				.map(|(account, _)| (account, 1000 * DOL ))
-				.collect(),
-			delegations,
-			inflation_config: inflation_config(),
-		},
+        parachain_staking: ParachainStakingConfig {
+            candidates: invulnerables
+                .iter()
+                .cloned()
+                .map(|(account, _)| (account, 1000 * DOL))
+                .collect(),
+            delegations,
+            inflation_config: inflation_config(),
+        },
         sudo: dolphin_runtime::SudoConfig {
             key: Some(root_key),
         },
@@ -221,33 +222,33 @@ fn dolphin_dev_genesis(
 }
 
 pub fn inflation_config() -> InflationInfo<Balance> {
-	fn to_round_inflation(annual: Range<Perbill>) -> Range<Perbill> {
-		use pallet_parachain_staking::inflation::{
-			perbill_annual_to_perbill_round, BLOCKS_PER_YEAR,
-		};
-		perbill_annual_to_perbill_round(
-			annual,
-			// rounds per year
-			BLOCKS_PER_YEAR
-				/ dolphin_runtime::get!(pallet_parachain_staking, DefaultBlocksPerRound, u32),
-		)
-	}
-	let annual = Range {
-		min: Perbill::from_percent(4),
-		ideal: Perbill::from_percent(5),
-		max: Perbill::from_percent(5),
-	};
-	InflationInfo {
-		// staking expectations
-		expect: Range {
-			min: 100_000 * DOL,
-			ideal: 200_000 * DOL,
-			max: 500_000 * DOL,
-		},
-		// annual inflation
-		annual,
-		round: to_round_inflation(annual),
-	}
+    fn to_round_inflation(annual: Range<Perbill>) -> Range<Perbill> {
+        use pallet_parachain_staking::inflation::{
+            perbill_annual_to_perbill_round, BLOCKS_PER_YEAR,
+        };
+        perbill_annual_to_perbill_round(
+            annual,
+            // rounds per year
+            BLOCKS_PER_YEAR
+                / dolphin_runtime::get!(pallet_parachain_staking, DefaultBlocksPerRound, u32),
+        )
+    }
+    let annual = Range {
+        min: Perbill::from_percent(4),
+        ideal: Perbill::from_percent(5),
+        max: Perbill::from_percent(5),
+    };
+    InflationInfo {
+        // staking expectations
+        expect: Range {
+            min: 100_000 * DOL,
+            ideal: 200_000 * DOL,
+            max: 500_000 * DOL,
+        },
+        // annual inflation
+        annual,
+        round: to_round_inflation(annual),
+    }
 }
 
 /// Returns the Dolphin testnet chainspec.
