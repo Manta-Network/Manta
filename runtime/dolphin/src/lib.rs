@@ -339,7 +339,7 @@ where
             nimbus_primitives::NIMBUS_KEY_ID,
             &author.to_raw_vec(),
         )
-        .and_then(|vid| Some(T::AccountIdOf::convert(vid.into())))
+        .map(|vid| T::AccountIdOf::convert(vid.into()))
     }
 }
 
@@ -625,9 +625,9 @@ parameter_types! {
 pub struct OnCollatorPayout;
 impl pallet_parachain_staking::OnCollatorPayout<AccountId, Balance> for OnCollatorPayout {
     fn on_collator_payout(
-        for_round: pallet_parachain_staking::RoundIndex,
-        collator_id: AccountId,
-        amount: Balance,
+        _for_round: pallet_parachain_staking::RoundIndex,
+        _collator_id: AccountId,
+        _amount: Balance,
     ) -> Weight {
         // MoonbeamOrbiters::distribute_rewards(for_round, collator_id, amount)
         0
@@ -635,7 +635,7 @@ impl pallet_parachain_staking::OnCollatorPayout<AccountId, Balance> for OnCollat
 }
 pub struct OnNewRound;
 impl pallet_parachain_staking::OnNewRound for OnNewRound {
-    fn on_new_round(round_index: pallet_parachain_staking::RoundIndex) -> Weight {
+    fn on_new_round(_round_index: pallet_parachain_staking::RoundIndex) -> Weight {
         // MoonbeamOrbiters::on_new_round(round_index)
         0
     }

@@ -109,6 +109,7 @@ impl<T: Config> OnRuntimeUpgrade for SplitDelegatorStateIntoDelegationScheduledR
         let mut reads: Weight = 0;
         let mut writes: Weight = 0;
 
+        #[allow(clippy::type_complexity)]
         let mut scheduled_requests: BTreeMap<
             T::AccountId,
             Vec<ScheduledRequest<T::AccountId, BalanceOf<T>>>,
@@ -166,7 +167,7 @@ impl<T: Config> OnRuntimeUpgrade for SplitDelegatorStateIntoDelegationScheduledR
 
             for (collator, request) in state.requests.requests.iter() {
                 Self::set_temp_storage(
-                    Self::old_request_to_string(&state.id, &request),
+                    Self::old_request_to_string(&state.id, request),
                     &*format!(
                         "expected_collator-{:?}_delegator-{:?}_request",
                         collator, state.id,
@@ -554,7 +555,7 @@ impl<T: Config> OnRuntimeUpgrade for IncreaseMaxDelegationsPerCandidate<T> {
                 Vec::new()
             };
             let (mut total_counted, mut total_backing): (BalanceOf<T>, BalanceOf<T>) =
-                (state.bond.into(), state.bond.into());
+                (state.bond, state.bond);
             for Bond { amount, .. } in &top_delegations {
                 total_counted = total_counted.saturating_add(*amount);
                 total_backing = total_backing.saturating_add(*amount);

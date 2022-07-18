@@ -193,7 +193,7 @@ impl<A, B> From<Collator2<A, B>> for CollatorCandidate<A, B> {
     }
 }
 
-#[derive(PartialEq, Clone, Copy, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, Copy, Encode, Decode, RuntimeDebug, TypeInfo)]
 /// Request scheduled to change the collator candidate self-bond
 pub struct CandidateBondLessRequest<Balance> {
     pub amount: Balance,
@@ -305,18 +305,18 @@ impl<AccountId, Balance: Copy + Ord + sp_std::ops::AddAssign + Zero + Saturating
         self.delegations
             .last()
             .map(|x| x.amount)
-            .unwrap_or(Balance::zero())
+            .unwrap_or_else(Balance::zero)
     }
     /// Return highest delegation amount
     pub fn highest_delegation_amount(&self) -> Balance {
         self.delegations
             .first()
             .map(|x| x.amount)
-            .unwrap_or(Balance::zero())
+            .unwrap_or_else(Balance::zero)
     }
 }
 
-#[derive(PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 /// Capacity status for top or bottom delegations
 pub enum CapacityStatus {
     /// Reached capacity
@@ -411,7 +411,7 @@ impl<
     where
         BalanceOf<T>: From<Balance>,
     {
-        <Pallet<T>>::jit_ensure_collator_reserve_migrated(&who.clone())?;
+        <Pallet<T>>::jit_ensure_collator_reserve_migrated(&who)?;
         ensure!(
             <Pallet<T>>::get_collator_stakable_free_balance(&who) >= more.into(),
             Error::<T>::InsufficientBalance
@@ -421,13 +421,13 @@ impl<
         self.bond = self.bond.saturating_add(more);
         T::Currency::set_lock(
             COLLATOR_LOCK_ID,
-            &who.clone(),
+            &who,
             self.bond.into(),
             WithdrawReasons::all(),
         );
         self.total_counted = self.total_counted.saturating_add(more);
         <Pallet<T>>::deposit_event(Event::CandidateBondedMore {
-            candidate: who.clone(),
+            candidate: who,
             amount: more.into(),
             new_total_bond: self.bond.into(),
         });
@@ -478,16 +478,16 @@ impl<
         // Arithmetic assumptions are self.bond > less && self.bond - less > CollatorMinBond
         // (assumptions enforced by `schedule_bond_less`; if storage corrupts, must re-verify)
         self.bond = self.bond.saturating_sub(request.amount);
-        <Pallet<T>>::jit_ensure_collator_reserve_migrated(&who.clone())?;
+        <Pallet<T>>::jit_ensure_collator_reserve_migrated(&who)?;
         T::Currency::set_lock(
             COLLATOR_LOCK_ID,
-            &who.clone(),
+            &who,
             self.bond.into(),
             WithdrawReasons::all(),
         );
         self.total_counted = self.total_counted.saturating_sub(request.amount);
         let event = Event::CandidateBondedLess {
-            candidate: who.clone().into(),
+            candidate: who.clone(),
             amount: request.amount.into(),
             new_bond: self.bond.into(),
         };
@@ -495,7 +495,7 @@ impl<
         self.request = None;
         // update candidate pool value because it must change if self bond changes
         if self.is_active() {
-            Pallet::<T>::update_active(who.into(), self.total_counted.into());
+            Pallet::<T>::update_active(who, self.total_counted.into());
         }
         Pallet::<T>::deposit_event(event);
         Ok(())
@@ -509,7 +509,7 @@ impl<
             .request
             .ok_or(Error::<T>::PendingCandidateRequestsDNE)?;
         let event = Event::CancelledCandidateBondLess {
-            candidate: who.clone().into(),
+            candidate: who,
             amount: request.amount.into(),
             execute_round: request.when_executable,
         };
@@ -670,7 +670,7 @@ impl<
             let leaving = delegator_state.delegations.0.len() == 1usize;
             delegator_state.rm_delegation::<T>(candidate);
             <Pallet<T>>::delegation_remove_request_with_state(
-                &candidate,
+                candidate,
                 &lowest_bottom_to_be_kicked.owner,
                 &mut delegator_state,
             );
@@ -835,7 +835,7 @@ impl<
         let delegation_dne_err: DispatchError = Error::<T>::DelegationDNE.into();
         if bond_geq_lowest_top && !lowest_top_eq_highest_bottom {
             // definitely in top
-            self.increase_top_delegation::<T>(candidate, delegator.clone(), more)
+            self.increase_top_delegation::<T>(candidate, delegator, more)
         } else if bond_geq_lowest_top && lowest_top_eq_highest_bottom {
             // update top but if error then update bottom (because could be in bottom because
             // lowest_top_eq_highest_bottom)
@@ -986,7 +986,7 @@ impl<
         let delegation_dne_err: DispatchError = Error::<T>::DelegationDNE.into();
         if bond_geq_lowest_top && !lowest_top_eq_highest_bottom {
             // definitely in top
-            self.decrease_top_delegation::<T>(candidate, delegator.clone(), bond.into(), less)
+            self.decrease_top_delegation::<T>(candidate, delegator, bond.into(), less)
         } else if bond_geq_lowest_top && lowest_top_eq_highest_bottom {
             // update top but if error then update bottom (because could be in bottom because
             // lowest_top_eq_highest_bottom)
@@ -1180,7 +1180,7 @@ impl<A: PartialEq, B: PartialEq> PartialEq for CollatorCandidate<A, B> {
 
 /// Convey relevant information describing if a delegator was added to the top or bottom
 /// Delegations added to the top yield a new total
-#[derive(Clone, Copy, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Copy, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum DelegatorAdded<B> {
     AddedToTop { new_total: B },
     AddedToBottom,
@@ -1211,7 +1211,7 @@ impl<A: Clone, B: Copy> From<CollatorCandidate<A, B>> for CollatorSnapshot<A, B>
     }
 }
 
-#[derive(Clone, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum DelegatorStatus {
     /// Active with no scheduled exit
     Active,
@@ -1439,7 +1439,7 @@ impl<
                     delegator: delegator_id,
                     candidate: candidate_id,
                     amount: balance_amt,
-                    in_top: in_top,
+                    in_top,
                 });
                 return Ok(());
             }
@@ -1528,7 +1528,7 @@ pub mod deprecated {
     }
 
     #[deprecated(note = "use DelegationScheduledRequests storage item")]
-    #[derive(Clone, Encode, PartialEq, Decode, RuntimeDebug, TypeInfo)]
+    #[derive(Clone, Encode, PartialEq, Eq, Decode, RuntimeDebug, TypeInfo)]
     /// Pending requests to mutate delegations for each delegator
     pub struct PendingDelegationRequests<AccountId, Balance> {
         /// Number of pending revocations (necessary for determining whether revoke is exit)

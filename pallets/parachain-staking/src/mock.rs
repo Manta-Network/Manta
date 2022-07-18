@@ -30,7 +30,6 @@ use frame_support::{
     weights::Weight,
 };
 use sp_core::H256;
-use sp_io;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
@@ -297,6 +296,7 @@ pub(crate) fn events() -> Vec<pallet::Event<Test>> {
 
 /// Assert input equal to the last event emitted
 #[macro_export]
+#[allow(clippy::crate_in_macro_def)]
 macro_rules! assert_last_event {
     ($event:expr) => {
         match &$event {
@@ -308,6 +308,7 @@ macro_rules! assert_last_event {
 /// Compares the system events with passed in events
 /// Prints highlighted diff iff assert_eq fails
 #[macro_export]
+#[allow(clippy::crate_in_macro_def)]
 macro_rules! assert_eq_events {
     ($events:expr) => {
         match &$events {
@@ -333,6 +334,7 @@ macro_rules! assert_eq_events {
 ///
 /// Note that events are filtered to only match parachain-staking (see events()).
 #[macro_export]
+#[allow(clippy::crate_in_macro_def)]
 macro_rules! assert_eq_last_events {
 	($events:expr $(,)?) => {
 		assert_tail_eq!($events, crate::mock::events());
@@ -345,6 +347,7 @@ macro_rules! assert_eq_last_events {
 /// Assert that one array is equal to the tail of the other. A more generic and testable version of
 /// assert_eq_last_events.
 #[macro_export]
+#[allow(clippy::crate_in_macro_def)]
 macro_rules! assert_tail_eq {
 	($tail:expr, $arr:expr $(,)?) => {
 		if $tail.len() != 0 {
@@ -374,6 +377,7 @@ macro_rules! assert_tail_eq {
 
 /// Panics if an event is not found in the system log of events
 #[macro_export]
+#[allow(clippy::crate_in_macro_def)]
 macro_rules! assert_event_emitted {
     ($event:expr) => {
         match &$event {
@@ -391,6 +395,7 @@ macro_rules! assert_event_emitted {
 
 /// Panics if an event is found in the system log of events
 #[macro_export]
+#[allow(clippy::crate_in_macro_def)]
 macro_rules! assert_event_not_emitted {
     ($event:expr) => {
         match &$event {

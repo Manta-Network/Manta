@@ -18,6 +18,7 @@
 
 use super::*;
 use crate::command::DOLPHIN_PARACHAIN_ID;
+#[allow(unused_imports)]
 use dolphin_runtime::{
     currency::DOL, get, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig,
     InflationInfo, ParachainStakingConfig, Range, TechnicalCommitteeConfig,
