@@ -426,6 +426,18 @@ pub mod pallet {
                 AssetIdLocation::<T>::contains_key(&asset_id),
                 Error::<T>::UpdateNonExistAsset
             );
+
+            ensure!(
+                <T::AssetConfig as AssetConfig<T>>::FungibleLedger::can_deposit(
+                    asset_id,
+                    &beneficiary,
+                    amount,
+                    true,
+                )
+                .is_ok(),
+                Error::<T>::MintError
+            );
+
             ensure!(
                 <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_increase_supply(
                     asset_id,

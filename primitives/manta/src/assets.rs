@@ -320,6 +320,7 @@ where
     fn ensure_valid(asset_id: AssetId) -> Result<(), FungibleLedgerError>;
 
     /// Check whether `account` can increase its balance by `amount` in the given `asset_id`.
+    /// Should be called before `deposit_can_increase_supply`
     fn can_deposit(
         asset_id: AssetId,
         account: &C::AccountId,
@@ -337,6 +338,7 @@ where
 
     /// Deposit `amount` of an asset with the given `asset_id` to `beneficiary`.
     /// can increase the total supply for non-native assets.
+    /// Should be called after `can_deposit`
     fn deposit_can_increase_supply(
         asset_id: AssetId,
         beneficiary: &C::AccountId,
@@ -443,10 +445,8 @@ where
     ) -> Result<(), FungibleLedgerError> {
         Self::ensure_valid(asset_id)?;
         if asset_id == A::NativeAssetId::get() {
-            Self::can_deposit(asset_id, beneficiary, amount, false)?;
             <Native as Currency<C::AccountId>>::deposit_creating(beneficiary, amount);
         } else {
-            Self::can_deposit(asset_id, beneficiary, amount, true)?;
             <NonNative as Mutate<C::AccountId>>::mint_into(asset_id, beneficiary, amount)
                 .map_err(FungibleLedgerError::InvalidMint)?;
         }
