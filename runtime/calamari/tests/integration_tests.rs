@@ -50,7 +50,7 @@ use manta_primitives::{
         AssetConfig, AssetLocation, AssetRegistrarMetadata, FungibleLedger, FungibleLedgerError,
     },
     constants::time::{DAYS, HOURS},
-    types::{AccountId, Header},
+    types::{AccountId, Balance, Header},
 };
 use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 use xcm::{
@@ -1108,7 +1108,7 @@ fn concrete_fungible_ledger_transfers_work() {
             ),);
 
             // Register and mint for testing.
-            let amount = u128::MAX;
+            let amount = Balance::MAX;
             assert_ok!(CalamariConcreteFungibleLedger::mint(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &alice.clone(),
