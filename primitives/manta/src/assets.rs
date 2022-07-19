@@ -337,7 +337,7 @@ where
     ) -> Result<(), FungibleLedgerError>;
 
     /// Deposit `amount` of an asset with the given `asset_id` to `beneficiary`.
-    /// can increase the total supply for non-native assets.
+    /// Will mint and increase the total supply for non-native assets.
     /// Should be called after `can_deposit`
     fn deposit_can_increase_supply(
         asset_id: AssetId,
@@ -354,8 +354,9 @@ where
         existence_requirement: ExistenceRequirement,
     ) -> Result<(), FungibleLedgerError>;
 
-    /// Performs a burn from `who` for `amount` of `asset_id`
-    fn burn(
+    /// Performs a withdraw from `who` for `amount` of `asset_id`
+    /// Will burn and decrease total supply in case of non-native assets
+    fn withdraw_can_decrease_supply(
         asset_id: AssetId,
         who: &C::AccountId,
         amount: Balance,
@@ -487,7 +488,7 @@ where
     }
 
     #[inline]
-    fn burn(
+    fn withdraw_can_decrease_supply(
         asset_id: AssetId,
         who: &C::AccountId,
         amount: Balance,

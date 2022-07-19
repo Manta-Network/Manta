@@ -392,8 +392,13 @@ impl<
 
         let (asset_id, amount, who) = Self::match_asset_and_location(asset, location)?;
 
-        MultiAdapterFungibleLedger::burn(asset_id, &who, amount, ExistenceRequirement::AllowDeath)
-            .map_err(|_| XcmError::FailedToTransactAsset("Failed Burn"))?;
+        MultiAdapterFungibleLedger::withdraw_can_decrease_supply(
+            asset_id,
+            &who,
+            amount,
+            ExistenceRequirement::AllowDeath,
+        )
+        .map_err(|_| XcmError::FailedToTransactAsset("Failed Burn"))?;
 
         Ok(asset.clone().into())
     }
