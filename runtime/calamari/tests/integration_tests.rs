@@ -1108,8 +1108,7 @@ fn concrete_fungible_ledger_transfers_work() {
             ),);
 
             // Register and mint for testing.
-            // TODO:: Switch to u128::MAX when we start using https://github.com/paritytech/substrate/pull/11241
-            let amount = INITIAL_BALANCE;
+            let amount = u128::MAX;
             assert_ok!(CalamariConcreteFungibleLedger::mint(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &alice.clone(),
@@ -1182,7 +1181,7 @@ fn concrete_fungible_ledger_transfers_work() {
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     alice.clone()
                 ),
-                INITIAL_BALANCE - transfer_amount
+                u128::MAX - transfer_amount
             );
             assert_eq!(
                 Assets::balance(
