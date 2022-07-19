@@ -160,8 +160,7 @@ where
         Some(id) => id,
         None => rng.gen(),
     };
-    let balance: u128 = rng.gen();
-    let total_free_balance = AssetValue(balance);
+    let total_free_balance = AssetValue(rng.gen());
     let balances = value_distribution(count, total_free_balance, rng);
     initialize_test(asset_id, total_free_balance + DEFAULT_ASSET_ED);
     let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
@@ -231,8 +230,7 @@ where
         Some(id) => id,
         None => rng.gen(),
     };
-    let balance: u128 = rng.gen();
-    let total_free_balance = AssetValue(balance / 2);
+    let total_free_balance = AssetValue(rng.gen());
     let balances = value_distribution(count, total_free_balance, rng);
     initialize_test(asset_id, total_free_balance + DEFAULT_ASSET_ED);
     let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
@@ -312,8 +310,7 @@ fn to_private_should_work() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         let asset_id = rng.gen();
-        let supply: u128 = rng.gen();
-        let total_free_supply = AssetValue(supply);
+        let total_free_supply = AssetValue(rng.gen());
         initialize_test(asset_id, total_free_supply + DEFAULT_ASSET_ED);
         mint_tokens(
             asset_id,
@@ -327,8 +324,7 @@ fn to_private_should_work() {
 fn native_asset_to_private_should_work() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        let supply: u128 = rng.gen();
-        let total_free_supply = AssetValue(supply);
+        let total_free_supply = AssetValue(rng.gen());
         initialize_test(NATIVE_ASSET_ID, total_free_supply + DEFAULT_ASSET_ED);
         mint_tokens(
             NATIVE_ASSET_ID,
@@ -344,8 +340,7 @@ fn overdrawn_mint_should_not_work() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         let asset_id = rng.gen();
-        let supply: u128 = rng.gen();
-        let total_supply = AssetValue(supply);
+        let total_supply = AssetValue(rng.gen());
         initialize_test(asset_id, total_supply + DEFAULT_ASSET_ED);
         assert_noop!(
             MantaPayPallet::to_private(
