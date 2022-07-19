@@ -21,9 +21,9 @@ const test_config = {
 }
 
 async function single_rpc_performance(api:ApiPromise) {
-    const before_rpc = performance.now();
     const receiver_checkpoint = new Array<number>(manta_pay_config.shard_number);
     receiver_checkpoint.fill(0);
+    const before_rpc = performance.now();
     const data = await (api.rpc as any).mantaPay.pull_ledger_diff(
         {receiver_index: new Array<number>(manta_pay_config.shard_number).fill(0), sender_index: 0},
         BigInt(16384), BigInt(16384));
