@@ -365,7 +365,7 @@ jobs:
               peer-count:
                 relay: 5
                 para: 2
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-`) || github.ref == 'refs/heads/manta' }}
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-'') || github.ref == 'refs/heads/manta' }}
     steps:
       - run: |
           mkdir -p $HOME/.local/share/calamari-pc
@@ -1014,7 +1014,7 @@ jobs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
       aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-`) || github.ref == 'refs/heads/manta' }}
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-'') || github.ref == 'refs/heads/manta' }}
     steps:
       - id: start-self-hosted-runner
         uses: audacious-network/aws-github-runner@v1.0.33
@@ -1034,7 +1034,7 @@ jobs:
   stop-calamari-integration-tester:
     needs: [start-calamari-integration-tester, calamari-integration-test]
     runs-on: ubuntu-20.04
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-`) || github.ref == 'refs/heads/manta' }}
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
     steps:
       - uses: audacious-network/aws-github-runner@v1.0.33
         with:
