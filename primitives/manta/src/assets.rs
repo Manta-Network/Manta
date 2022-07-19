@@ -335,8 +335,9 @@ where
         existence_requirement: ExistenceRequirement,
     ) -> Result<(), FungibleLedgerError>;
 
-    /// Mints `amount` of an asset with the given `asset_id` to `beneficiary`.
-    fn mint(
+    /// Deposit `amount` of an asset with the given `asset_id` to `beneficiary`.
+    /// can increase the total supply for non-native assets.
+    fn deposit_can_increase_supply(
         asset_id: AssetId,
         beneficiary: &C::AccountId,
         amount: Balance,
@@ -435,7 +436,7 @@ where
     }
 
     #[inline]
-    fn mint(
+    fn deposit_can_increase_supply(
         asset_id: AssetId,
         beneficiary: &C::AccountId,
         amount: Balance,
@@ -503,8 +504,8 @@ where
             )
             .map_err(FungibleLedgerError::InvalidBurn)?;
         } else {
-            // `existence_requirement` is used in the `can_reduce_by_amount` checks
-            // so it doesn't matter that `burn_from` uses `allow_death` by default in own chosen implementation
+            // `existence_requirement` is used in the `can_reduce_by_amount` checks,
+            // so it doesn't matter that `burn_from` uses `allow_death` by default in our chosen implementation
             <NonNative as Mutate<C::AccountId>>::burn_from(asset_id, who, amount)
                 .map_err(FungibleLedgerError::InvalidBurn)?;
         }

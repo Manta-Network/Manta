@@ -427,7 +427,7 @@ pub mod pallet {
                 Error::<T>::UpdateNonExistAsset
             );
             ensure!(
-                <T::AssetConfig as AssetConfig<T>>::FungibleLedger::mint(
+                <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_increase_supply(
                     asset_id,
                     &beneficiary,
                     amount

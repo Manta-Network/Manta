@@ -365,7 +365,7 @@ impl<
 
         let (asset_id, amount, who) = Self::match_asset_and_location(asset, location)?;
 
-        MultiAdapterFungibleLedger::mint(asset_id, &who, amount)
+        MultiAdapterFungibleLedger::deposit_can_increase_supply(asset_id, &who, amount)
             .map_err(|_| XcmError::FailedToTransactAsset("Failed Mint"))?;
 
         Ok(())

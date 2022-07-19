@@ -1110,7 +1110,7 @@ fn concrete_fungible_ledger_transfers_work() {
             // Register and mint for testing.
             // TODO:: Switch to u128::MAX when we start using https://github.com/paritytech/substrate/pull/11241
             let amount = INITIAL_BALANCE;
-            assert_ok!(CalamariConcreteFungibleLedger::mint(
+            assert_ok!(CalamariConcreteFungibleLedger::deposit_can_increase_supply(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &alice.clone(),
                 amount,
@@ -1305,7 +1305,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                 ),
                 FungibleLedgerError::UnknownAsset
             );
-            assert_ok!(CalamariConcreteFungibleLedger::mint(
+            assert_ok!(CalamariConcreteFungibleLedger::deposit_can_increase_supply(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &alice.clone(),
                 u128::MAX,
@@ -1436,7 +1436,7 @@ fn concrete_fungible_ledger_can_reduce_by_amount_works() {
                 asset_metadata
             ),);
 
-            assert_ok!(CalamariConcreteFungibleLedger::mint(
+            assert_ok!(CalamariConcreteFungibleLedger::deposit_can_increase_supply(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &alice.clone(),
                 INITIAL_BALANCE,
@@ -1478,7 +1478,7 @@ fn concrete_fungible_ledger_can_reduce_by_amount_works() {
                 FungibleLedgerError::CannotWithdrawMoreThan(0)
             );
 
-            assert_ok!(CalamariConcreteFungibleLedger::mint(
+            assert_ok!(CalamariConcreteFungibleLedger::deposit_can_increase_supply(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &bob.clone(),
                 INITIAL_BALANCE,
