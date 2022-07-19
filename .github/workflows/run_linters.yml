@@ -66,7 +66,7 @@ jobs:
       - name: start sccache server
         run: sccache --start-server
       - name: init
-      # NOTE: We use nightly Rust only to get nightly fmt & clippy
+        # NOTE: We use nightly Rust only to get nightly fmt & clippy
         run: |
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
