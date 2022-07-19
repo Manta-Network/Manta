@@ -365,17 +365,15 @@ impl<
 
         let (asset_id, amount, who) = Self::match_asset_and_location(asset, location)?;
 
+        // If it's non-native asset we want to check with increase in total supply.
+        // Otherwise it will just use false, as it is assumed the native asset supply cannot be changed.
         MultiAdapterFungibleLedger::can_deposit(asset_id, &who, amount, true).map_err(|_| {
             XcmError::FailedToTransactAsset("Failed MultiAdapterFungibleLedger::can_deposit")
         })?;
 
-        MultiAdapterFungibleLedger::deposit_can_increase_supply(asset_id, &who, amount).map_err(
-            |_| {
-                XcmError::FailedToTransactAsset(
-                    "Failed MultiAdapterFungibleLedger::deposit_can_increase_supply",
-                )
-            },
-        )?;
+        MultiAdapterFungibleLedger::deposit_can_mint(asset_id, &who, amount).map_err(|_| {
+            XcmError::FailedToTransactAsset("Failed MultiAdapterFungibleLedger::deposit_can_mint")
+        })?;
 
         Ok(())
     }
@@ -392,7 +390,7 @@ impl<
 
         let (asset_id, amount, who) = Self::match_asset_and_location(asset, location)?;
 
-        MultiAdapterFungibleLedger::withdraw_can_decrease_supply(
+        MultiAdapterFungibleLedger::withdraw_can_burn(
             asset_id,
             &who,
             amount,

@@ -312,6 +312,9 @@ impl FungibleLedgerError {
 ///
 /// [`fungible`]: frame_support::traits::tokens::fungible
 /// [`fungibles`]: frame_support::traits::tokens::fungibles
+///
+/// It is assumed that the supply of native asset cannot be changed,
+/// while the supply of non-native assets can increase or decrease.
 pub trait FungibleLedger<C>
 where
     C: frame_system::Config,
@@ -320,7 +323,8 @@ where
     fn ensure_valid(asset_id: AssetId) -> Result<(), FungibleLedgerError>;
 
     /// Check whether `account` can increase its balance by `amount` in the given `asset_id`.
-    /// Should be called before `deposit_can_increase_supply`
+    /// Non-native assets will use the `can_increase_total_supply` check, while native assets will not.
+    /// Should be called before `deposit_can_mint`.
     fn can_deposit(
         asset_id: AssetId,
         account: &C::AccountId,
@@ -337,9 +341,9 @@ where
     ) -> Result<(), FungibleLedgerError>;
 
     /// Deposit `amount` of an asset with the given `asset_id` to `beneficiary`.
-    /// Will mint and increase the total supply for non-native assets.
+    /// Will mint and increase the total supply of non-native assets.
     /// Should be called after `can_deposit`
-    fn deposit_can_increase_supply(
+    fn deposit_can_mint(
         asset_id: AssetId,
         beneficiary: &C::AccountId,
         amount: Balance,
@@ -355,8 +359,8 @@ where
     ) -> Result<(), FungibleLedgerError>;
 
     /// Performs a withdraw from `who` for `amount` of `asset_id`
-    /// Will burn and decrease total supply in case of non-native assets
-    fn withdraw_can_decrease_supply(
+    /// Will burn and decrease total supply of non-native assets
+    fn withdraw_can_burn(
         asset_id: AssetId,
         who: &C::AccountId,
         amount: Balance,
@@ -439,7 +443,7 @@ where
     }
 
     #[inline]
-    fn deposit_can_increase_supply(
+    fn deposit_can_mint(
         asset_id: AssetId,
         beneficiary: &C::AccountId,
         amount: Balance,
@@ -488,7 +492,7 @@ where
     }
 
     #[inline]
-    fn withdraw_can_decrease_supply(
+    fn withdraw_can_burn(
         asset_id: AssetId,
         who: &C::AccountId,
         amount: Balance,

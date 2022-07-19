@@ -439,7 +439,7 @@ pub mod pallet {
             );
 
             ensure!(
-                <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_increase_supply(
+                <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_mint(
                     asset_id,
                     &beneficiary,
                     amount
