@@ -6,7 +6,7 @@
 ### Features
 
 ### Improvements
-- [\#695](https://github.com/Manta-Network/Manta/pull/695) Refactor fungible ledger mint/burn.
+- [\#694](https://github.com/Manta-Network/Manta/pull/694) Switch to u128::MAX in fungible ledger transfer integration test.
 
 ### Bug fixes
 

@@ -50,7 +50,7 @@ use manta_primitives::{
         AssetConfig, AssetLocation, AssetRegistrarMetadata, FungibleLedger, FungibleLedgerError,
     },
     constants::time::{DAYS, HOURS},
-    types::{AccountId, Header},
+    types::{AccountId, Balance, Header},
 };
 use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 use xcm::{
@@ -1108,9 +1108,8 @@ fn concrete_fungible_ledger_transfers_work() {
             ),);
 
             // Register and mint for testing.
-            // TODO:: Switch to u128::MAX when we start using https://github.com/paritytech/substrate/pull/11241
-            let amount = INITIAL_BALANCE;
-            assert_ok!(CalamariConcreteFungibleLedger::deposit_can_mint(
+            let amount = Balance::MAX;
+            assert_ok!(CalamariConcreteFungibleLedger::mint(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &alice.clone(),
                 amount,
@@ -1182,7 +1181,7 @@ fn concrete_fungible_ledger_transfers_work() {
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     alice.clone()
                 ),
-                INITIAL_BALANCE - transfer_amount
+                u128::MAX - transfer_amount
             );
             assert_eq!(
                 Assets::balance(
