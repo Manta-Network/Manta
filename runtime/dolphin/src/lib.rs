@@ -332,6 +332,7 @@ where
             From<<T as pallet_session::Config>::ValidatorId>,
     {
         use sp_runtime::traits::Convert;
+        #[allow(clippy::bind_instead_of_map)]
         pallet_session::Pallet::<T>::key_owner(
             nimbus_primitives::NIMBUS_KEY_ID,
             &author.to_raw_vec(),
