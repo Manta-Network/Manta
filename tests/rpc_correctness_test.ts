@@ -15,7 +15,7 @@ const test_config = {
         vn_batch_number: 1,
         vn_batch_size: 1024,
     },
-    timeout: 120000
+    timeout: 200000
 }
 
 describe('Node RPC Test', () => { 
