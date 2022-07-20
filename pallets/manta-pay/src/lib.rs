@@ -894,7 +894,7 @@ where
             &proof,
         )
         .ok()?
-        .then(move || (Wrap(()), event))
+        .then_some((Wrap(()), event))
     }
 
     #[inline]

@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## Unreleased
+### Breaking changes
+
+### Features
+
+### Improvements
+- [\#694](https://github.com/Manta-Network/Manta/pull/694) Switch to u128::MAX in fungible ledger transfer integration test.
+
+### Bug fixes
+
 ## v3.2.1
 ### Breaking changes
 - [Dolphin] [\#628](https://github.com/Manta-Network/Manta/pull/628) Improve RPC performance, add `max_receivers` and `max_senders` fields in the RPC request.

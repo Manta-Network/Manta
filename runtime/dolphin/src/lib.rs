@@ -265,6 +265,7 @@ impl Contains<Call> for BaseFilter {
             | Call::TechnicalMembership(_)
             | Call::Scheduler(_)
             | Call::Session(_) // User must be able to set their session key when applying for a collator
+            | Call::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // execute on every block
             | Call::CollatorSelection(
                 manta_collator_selection::Call::set_invulnerables{..}
                 | manta_collator_selection::Call::set_desired_candidates{..}
@@ -333,6 +334,7 @@ where
             From<<T as pallet_session::Config>::ValidatorId>,
     {
         use sp_runtime::traits::Convert;
+        #[allow(clippy::bind_instead_of_map)]
         pallet_session::Pallet::<T>::key_owner(
             nimbus_primitives::NIMBUS_KEY_ID,
             &author.to_raw_vec(),
@@ -768,7 +770,6 @@ impl pallet_session::Config for Runtime {
     type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
     type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
     type SessionManager = CollatorSelection;
-    // Essentially just Aura, but lets be pedantic.
     type SessionHandler =
         <opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
     type Keys = opaque::SessionKeys;
@@ -808,7 +809,7 @@ impl manta_collator_selection::Config for Runtime {
     type AccountIdOf = manta_collator_selection::IdentityCollator;
     type ValidatorRegistration = Session;
     type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
-    type CanAuthor = AuraAuthorFilter; // NOTE: End of the nimbus filter pipeline (Aura filter has no CanAuthor trait
+    type CanAuthor = AuraAuthorFilter; // NOTE: End of the nimbus filter pipeline (Aura filter has no CanAuthor trait)
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
