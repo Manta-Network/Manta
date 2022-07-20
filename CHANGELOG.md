@@ -28,9 +28,9 @@
 - [Dolphin] [\#622](https://github.com/Manta-Network/Manta/pull/622) Update parameter path from `sdk` to `manta-parameters`.
 - [\#636](https://github.com/Manta-Network/Manta/pull/636) Equalize Barrier impl between Calamari/Dolphin production and XCM tests mock parachain.
 - [\#638](https://github.com/Manta-Network/Manta/pull/638) `existence_requirement` argument for `FungibleLedger` trait functions.
-- [\#652](https://github.com/Manta-Network/Manta/pull/652) Reduce CI failure rate by switching AWS CI runners from AMD to Intel
-- [\#653](https://github.com/Manta-Network/Manta/pull/653) Add concurrency groups for pull request CI builds to reduce CI costs
-- [\#657](https://github.com/Manta-Network/Manta/pull/657) retire manta-pc-launch with polkadot-launch.
+- [\#652](https://github.com/Manta-Network/Manta/pull/652) Reduce CI failure rate by switching AWS CI runners from AMD to Intel.
+- [\#653](https://github.com/Manta-Network/Manta/pull/653) Add concurrency groups for pull request CI builds to reduce CI costs.
+- [\#657](https://github.com/Manta-Network/Manta/pull/657) retire `manta-pc-launch` with `polkadot-launch`.
 
 ### Bug fixes
 - [\#671](https://github.com/Manta-Network/Manta/pull/671) polkadot-v0.9.22 syn breakage workaround.
