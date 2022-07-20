@@ -641,6 +641,9 @@ impl pallet_parachain_staking::OnNewRound for OnNewRound {
 	}
 }
 
+parameter_types! {
+	pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(2 * HOURS ,15,"DOLPHIN_DEFAULTBLOCKSPERROUND");
+}
 impl pallet_parachain_staking::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
@@ -648,7 +651,7 @@ impl pallet_parachain_staking::Config for Runtime {
 	/// Minimum round length is 2 minutes (10 * 12 second block times)
 	type MinBlocksPerRound = ConstU32<10>;
 	/// Blocks per round
-	type DefaultBlocksPerRound = ConstU32<{ 2 * HOURS }>;
+	type DefaultBlocksPerRound = DefaultBlocksPerRound;
 	/// Rounds before the collator leaving the candidates request can be executed
 	type LeaveCandidatesDelay = ConstU32<24>;
 	/// Rounds before the candidate bond increase/decrease can be executed
