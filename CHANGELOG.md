@@ -1,6 +1,14 @@
 # CHANGELOG
 
-## [Unreleased]
+## Unreleased
+### Breaking changes
+
+### Features
+
+### Improvements
+- [\#694](https://github.com/Manta-Network/Manta/pull/694) Switch to u128::MAX in fungible ledger transfer integration test.
+
+### Bug fixes
 
 ### Breaking changes
 - [\#628](https://github.com/Manta-Network/Manta/pull/628) Improve RPC performance, add `max_receivers` and `max_senders` fields in the RPC request.
@@ -23,7 +31,6 @@
 - [\#652](https://github.com/Manta-Network/Manta/pull/652) Reduce CI failure rate by switching AWS CI runners from AMD to Intel
 - [\#653](https://github.com/Manta-Network/Manta/pull/653) Add concurrency groups for pull request CI builds to reduce CI costs
 - [\#657](https://github.com/Manta-Network/Manta/pull/657) retire manta-pc-launch with polkadot-launch.
-- [\#694](https://github.com/Manta-Network/Manta/pull/694) Switch to u128::MAX in fungible ledger transfer integration test.
 
 ### Bug fixes
 - [\#677](https://github.com/Manta-Network/Manta/pull/677) Fix CI failure by building the runtime with stable Rust
