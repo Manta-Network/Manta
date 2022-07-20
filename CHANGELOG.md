@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## Unreleased
+### Breaking changes
+
+### Features
+
+### Improvements
+- [\#681](https://github.com/Manta-Network/Manta/pull/681) CI Ledger RPC Tests.
+
+### Bug fixes
+
 ## v3.2.1
 ### Breaking changes
 - [Dolphin] [\#628](https://github.com/Manta-Network/Manta/pull/628) Improve RPC performance, add `max_receivers` and `max_senders` fields in the RPC request.
