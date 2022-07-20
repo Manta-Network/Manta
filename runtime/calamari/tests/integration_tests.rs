@@ -1109,7 +1109,7 @@ fn concrete_fungible_ledger_transfers_work() {
 
             // Register and mint for testing.
             let amount = Balance::MAX;
-            assert_ok!(CalamariConcreteFungibleLedger::mint(
+            assert_ok!(CalamariConcreteFungibleLedger::deposit_can_mint(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &alice.clone(),
                 amount,
