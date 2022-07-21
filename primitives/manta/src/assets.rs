@@ -324,7 +324,6 @@ where
 
     /// Check whether `account` can increase its balance by `amount` in the given `asset_id`.
     /// Non-native assets will use the `can_increase_total_supply` check, while native assets will not.
-    /// Should be called before `deposit_can_mint`.
     fn can_deposit(
         asset_id: AssetId,
         account: &C::AccountId,
@@ -342,7 +341,6 @@ where
 
     /// Deposit `amount` of an asset with the given `asset_id` to `beneficiary`.
     /// Will mint and increase the total supply of non-native assets.
-    /// Should be called after `can_deposit`
     fn deposit_can_mint(
         asset_id: AssetId,
         beneficiary: &C::AccountId,
