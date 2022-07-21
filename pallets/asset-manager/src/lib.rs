@@ -427,20 +427,26 @@ pub mod pallet {
                 Error::<T>::UpdateNonExistAsset
             );
 
-            <T::AssetConfig as AssetConfig<T>>::FungibleLedger::can_deposit(
-                asset_id,
-                &beneficiary,
-                amount,
-                true,
-            )
-            .map_err(|_| Error::<T>::MintError)?;
+            ensure!(
+                <T::AssetConfig as AssetConfig<T>>::FungibleLedger::can_deposit(
+                    asset_id,
+                    &beneficiary,
+                    amount,
+                    true,
+                )
+                .is_ok(),
+                Error::<T>::MintError
+            );
 
-            <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_mint(
-                asset_id,
-                &beneficiary,
-                amount,
-            )
-            .map_err(|_| Error::<T>::MintError)?;
+            ensure!(
+                <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_mint(
+                    asset_id,
+                    &beneficiary,
+                    amount
+                )
+                .is_ok(),
+                Error::<T>::MintError
+            );
 
             Self::deposit_event(Event::<T>::AssetMinted {
                 asset_id,
