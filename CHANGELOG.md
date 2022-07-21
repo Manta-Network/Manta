@@ -7,6 +7,7 @@
 
 ### Improvements
 - [\#694](https://github.com/Manta-Network/Manta/pull/694) Switch to u128::MAX in fungible ledger transfer integration test.
+- [\#469](https://github.com/Manta-Network/Manta/pull/469) Switch runtime to wasm only.
 
 ### Bug fixes
 
