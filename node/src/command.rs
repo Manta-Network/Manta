@@ -511,11 +511,7 @@ pub fn run_with(cli: Cli) -> Result {
                 );
 
                 if config.chain_spec.is_manta() {
-                    crate::service::start_parachain_node::<
-                        manta_runtime::RuntimeApi,
-                        AuraId,
-                        _,
-                    >(
+                    crate::service::start_parachain_node::<manta_runtime::RuntimeApi, AuraId, _>(
                         config,
                         polkadot_config,
                         collator_options,
@@ -527,11 +523,7 @@ pub fn run_with(cli: Cli) -> Result {
                     .map(|r| r.0)
                     .map_err(Into::into)
                 } else if config.chain_spec.is_calamari() {
-                    crate::service::start_parachain_node::<
-                        calamari_runtime::RuntimeApi,
-                        AuraId,
-                        _,
-                    >(
+                    crate::service::start_parachain_node::<calamari_runtime::RuntimeApi, AuraId, _>(
                         config,
                         polkadot_config,
                         collator_options,
@@ -543,11 +535,7 @@ pub fn run_with(cli: Cli) -> Result {
                     .map(|r| r.0)
                     .map_err(Into::into)
                 } else if config.chain_spec.is_dolphin() {
-                    crate::service::start_parachain_node::<
-                        dolphin_runtime::RuntimeApi,
-                        AuraId,
-                        _,
-                    >(
+                    crate::service::start_parachain_node::<dolphin_runtime::RuntimeApi, AuraId, _>(
                         config,
                         polkadot_config,
                         collator_options,
