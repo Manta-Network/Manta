@@ -1,14 +1,30 @@
 # CHANGELOG
 
-## Unreleased
-### Breaking changes
+## Fake V3.3.0
 
-### Features
+### Added
+- [\#646](https://github.com/Manta-Network/Manta/pull/646) Add collator session keys for future nimbus consensus and a vrf placeholder.
+- [\#475](https://github.com/Manta-Network/Manta/pull/475) New workflow for comparing runtime metadata before and after runtime upgrade.
 
-### Improvements
-- [\#694](https://github.com/Manta-Network/Manta/pull/694) Switch to u128::MAX in fungible ledger transfer integration test.
+### Changed
+- [\#523](https://github.com/Manta-Network/Manta/pull/523) Move xcm and assets related runtime configurations to own files.
+- [\#531](https://github.com/Manta-Network/Manta/pull/531) Clean up AssetManager migration code.
+- [\#541](https://github.com/Manta-Network/Manta/pull/541) Skip build on too tiny change.
+- [\#542](https://github.com/Manta-Network/Manta/pull/542) Update xcm integrations template issue.
+- [Calamari] [\#550](https://github.com/Manta-Network/Manta/pull/550) Remove sudo pallet from calamari runtime.
 
-### Bug fixes
+### Depricated
+
+### Removed
+- [\#449](https://github.com/Manta-Network/Manta/pull/449) Remove strip from CI, and add strip profile to production.
+- [\#614](https://github.com/Manta-Network/Manta/pull/614) Remove `OnRuntimeUpgrade` from calamari-runtime.
+
+### Fixed
+- [\#671](https://github.com/Manta-Network/Manta/pull/671) polkadot-v0.9.22 syn breakage workaround.
+- [\#677](https://github.com/Manta-Network/Manta/pull/677) Fix CI failure by building the runtime with stable Rust.
+
+### Security
+
 
 ## v3.2.1
 ### Breaking changes
