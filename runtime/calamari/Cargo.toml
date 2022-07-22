@@ -80,6 +80,7 @@ polkadot-primitives = { git = 'https://github.com/paritytech/polkadot.git', defa
 xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.22" }
 xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.22" }
 xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.22" }
+pallet-xcm-benchmarks = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.22", optional = true }
 
 # Third party (vendored) dependencies
 orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, rev = "cc26ffa" }
@@ -132,6 +133,7 @@ runtime-benchmarks = [
   'pallet-assets/runtime-benchmarks',
   'pallet-asset-manager/runtime-benchmarks',
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
+  'pallet-xcm-benchmarks',
 ]
 try-runtime = [
   'frame-executive/try-runtime',

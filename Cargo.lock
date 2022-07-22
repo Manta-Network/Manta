@@ -1174,6 +1174,7 @@ dependencies = [
  "pallet-tx-pause",
  "pallet-utility",
  "pallet-xcm",
+ "pallet-xcm-benchmarks",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",

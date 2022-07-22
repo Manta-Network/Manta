@@ -30,7 +30,10 @@ use manta_primitives::{
 
 use frame_support::{pallet_prelude::DispatchResult, parameter_types, PalletId};
 use frame_system::EnsureRoot;
-use xcm::VersionedMultiLocation;
+use xcm::{
+    v1::{Junctions::Here, MultiLocation},
+    VersionedMultiLocation,
+};
 
 parameter_types! {
     pub const AssetDeposit: Balance = 0; // Does not really matter as this will be only called by root
@@ -123,6 +126,17 @@ parameter_types! {
         is_frozen: false,
         is_sufficient: true,
     };
+    pub RelayAssetLocation: AssetLocation = AssetLocation(
+        VersionedMultiLocation::V1(MultiLocation::new(1, Here)));
+    pub RelayAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
+        name: b"KSM".to_vec(),
+        symbol: b"Kusama".to_vec(),
+        decimals: 12,
+        min_balance: 1,
+        evm_address: None,
+        is_frozen: false,
+        is_sufficient: true,
+    };
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
 }
 
@@ -139,6 +153,8 @@ impl AssetConfig<Runtime> for DolphinAssetConfig {
     type AssetRegistrarMetadata = AssetRegistrarMetadata;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
+    type RelayAssetLocation = RelayAssetLocation;
+    type RelayAssetMetadata = RelayAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
     type AssetLocation = AssetLocation;
     type AssetRegistrar = MantaAssetRegistrar;

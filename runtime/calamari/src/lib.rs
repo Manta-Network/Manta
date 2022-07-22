@@ -57,6 +57,7 @@ use manta_primitives::{
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 use sp_runtime::{Perbill, Permill};
+use xcm_config::{CheckingAccount, LocationToAccountId, XcmExecutorConfig};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -841,6 +842,8 @@ mod benches {
         [pallet_assets, Assets]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]
+        [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
+        [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
         // Manta pallets
         [calamari_vesting, CalamariVesting]
         [pallet_tx_pause, TransactionPause]
@@ -989,13 +992,78 @@ impl_runtime_apis! {
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-            use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey};
+            use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey, BenchmarkError};
 
             use frame_system_benchmarking::Pallet as SystemBench;
             impl frame_system_benchmarking::Config for Runtime {}
 
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
             impl cumulus_pallet_session_benchmarking::Config for Runtime {}
+
+            impl pallet_xcm_benchmarks::Config for Runtime {
+                type XcmConfig = XcmExecutorConfig;
+                type AccountIdConverter = LocationToAccountId;
+
+                fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
+                    Ok(MultiLocation::new(1, X1(Parachain(3000))))
+                }
+                fn worst_case_holding() -> MultiAssets {
+                    // Kusama only knows about KSM.
+                    vec![MultiAsset{
+                        id: Concrete(MultiLocation { parents: 1, interior: Here }),
+                        fun: Fungible(1_000_000 * KMA),
+                    }].into()
+                }
+            }
+
+            parameter_types! {
+                pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = Some((
+                    MultiLocation { parents: 1, interior: X1(Parachain(1000)) },
+                    MultiAsset { fun: Fungible(1 * KMA), id: Concrete(MultiLocation { parents: 1, interior: Here }) },
+                ));
+                pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((
+                    MultiLocation { parents: 1, interior: X1(Parachain(1000)) },
+                    MultiAsset { fun: Fungible(1 * KMA), id: Concrete(MultiLocation { parents: 1, interior: Here }) },
+                ));
+            }
+
+            impl pallet_xcm_benchmarks::fungible::Config for Runtime {
+                type TransactAsset = Balances;
+
+                type CheckedAccount = CheckingAccount;
+                type TrustedTeleporter = TrustedTeleporter;
+                type TrustedReserve = TrustedReserve;
+
+                fn get_multi_asset() -> MultiAsset {
+                    MultiAsset {
+                        id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(2084)) }),
+                        fun: Fungible(1 * KMA),
+                    }
+                }
+            }
+
+            impl pallet_xcm_benchmarks::generic::Config for Runtime {
+                type Call = Call;
+
+                fn worst_case_response() -> (u64, Response) {
+                    (0u64, Response::Version(Default::default()))
+                }
+
+                fn transact_origin() -> Result<MultiLocation, BenchmarkError> {
+                    Ok(MultiLocation::new(1, X1(Parachain(1000))))
+                }
+
+                fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
+                    Ok(MultiLocation::new(1, X1(Parachain(1000))))
+                }
+
+                fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
+                    let origin = MultiLocation::new(1, X1(Parachain(1000)));
+                    let assets: MultiAssets = (Concrete(MultiLocation { parents: 1, interior: Here }), 1_000 * KMA).into();
+                    let ticket = MultiLocation { parents: 0, interior: Here };
+                    Ok((origin, ticket, assets))
+                }
+            }
 
             let whitelist: Vec<TrackedStorageKey> = vec![
                 // Block Number
