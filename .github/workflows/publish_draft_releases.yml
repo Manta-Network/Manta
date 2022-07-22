@@ -131,7 +131,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose --features "std,on-chain-release-build"
+          RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose --features "on-chain-release-build"
       - name: stop sccache server
         run: sccache --stop-server || true
       - name: upload
