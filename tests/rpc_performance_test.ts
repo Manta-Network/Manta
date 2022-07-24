@@ -17,22 +17,29 @@ const test_config = {
         vn_batch_size: 4096,
     },
     timeout: 200000,
-    expected_sync_time: 600
+    expected_sync_time: 375
 }
 
 async function single_rpc_performance(api:ApiPromise) {
-    const receiver_checkpoint = new Array<number>(manta_pay_config.shard_number);
-    receiver_checkpoint.fill(0);
-    const before_rpc = performance.now();
-    const data = await (api.rpc as any).mantaPay.pull_ledger_diff(
-        {receiver_index: new Array<number>(manta_pay_config.shard_number).fill(0), sender_index: 0},
-        BigInt(16384), BigInt(16384));
-    const after_rpc = performance.now();
-    const sync_time = after_rpc - before_rpc;
-    console.log("ledger diff receiver size: %i", data.receivers.length);
-    console.log("ledger diff void number size: %i", data.senders.length);
-    console.log("single rpc sync time: %i ms", after_rpc - before_rpc);
-    expect(sync_time < test_config.expected_sync_time);
+    let total_sync_time = 0;
+    const iterations = 50;
+    for(let i = 0; i < iterations; ++i){
+        const receiver_checkpoint = new Array<number>(manta_pay_config.shard_number);
+        receiver_checkpoint.fill(0);
+        const before_rpc = performance.now();
+        const data = await (api.rpc as any).mantaPay.pull_ledger_diff(
+            {receiver_index: new Array<number>(manta_pay_config.shard_number).fill(0), sender_index: 0},
+            BigInt(16384), BigInt(16384));
+        const after_rpc = performance.now();
+        const sync_time = after_rpc - before_rpc;
+        console.log("ledger diff receiver size: %i", data.receivers.length);
+        console.log("ledger diff void number size: %i", data.senders.length);
+        console.log("single rpc sync time: %i ms", after_rpc - before_rpc);
+        total_sync_time+=sync_time;
+    }
+    const average_sync_time = total_sync_time / iterations;
+    console.log("average sync time: %i ms", average_sync_time);
+    expect(average_sync_time < test_config.expected_sync_time).equals(true);
 }
 
 describe('Node RPC Performance Test', () => { 
