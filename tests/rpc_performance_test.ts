@@ -16,7 +16,7 @@ const test_config = {
         vn_batch_number: 2,
         vn_batch_size: 4096,
     },
-    timeout: 200000,
+    timeout: 1000000,
     expected_sync_time: 375
 }
 
