@@ -17,13 +17,13 @@ const test_config = {
         vn_batch_size: 4096,
     },
     timeout: 1000000,
-    expected_sync_time: 375
+    sync_iterations: 50,
+    expected_average_sync_time: 650
 }
 
 async function single_rpc_performance(api:ApiPromise) {
     let total_sync_time = 0;
-    const iterations = 50;
-    for(let i = 0; i < iterations; ++i){
+    for(let i = 0; i < test_config.sync_iterations; ++i){
         const receiver_checkpoint = new Array<number>(manta_pay_config.shard_number);
         receiver_checkpoint.fill(0);
         const before_rpc = performance.now();
@@ -37,9 +37,9 @@ async function single_rpc_performance(api:ApiPromise) {
         console.log("single rpc sync time: %i ms", after_rpc - before_rpc);
         total_sync_time+=sync_time;
     }
-    const average_sync_time = total_sync_time / iterations;
+    const average_sync_time = total_sync_time / test_config.sync_iterations;
     console.log("average sync time: %i ms", average_sync_time);
-    expect(average_sync_time < test_config.expected_sync_time).equals(true);
+    expect(average_sync_time < test_config.expected_average_sync_time).equals(true);
 }
 
 describe('Node RPC Performance Test', () => { 
