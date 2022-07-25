@@ -568,7 +568,11 @@ pub mod pallet {
         #[inline]
         pub fn pull_latest_checkpoint() -> Checkpoint {
             Checkpoint {
-                receiver_index: [0; 256].into(), // FIXME: get the correct number
+                receiver_index: {
+                    (0..=255)
+                        .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as usize)
+                        .collect()
+                },
                 sender_index: VoidNumberSetSize::<T>::get() as usize,
             }
         }
