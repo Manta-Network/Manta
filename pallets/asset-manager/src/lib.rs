@@ -433,14 +433,14 @@ pub mod pallet {
                 amount,
                 true,
             )
-            .map_err(e || Error::<T>::MintError)?;
+            .map_err(|_| Error::<T>::MintError)?;
 
             <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_mint(
                 asset_id,
                 &beneficiary,
                 amount,
             )
-            .map_err(e || Error::<T>::MintError)?;
+            .map_err(|_| Error::<T>::MintError)?;
 
             Self::deposit_event(Event::<T>::AssetMinted {
                 asset_id,
