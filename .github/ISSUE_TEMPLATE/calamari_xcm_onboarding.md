@@ -316,6 +316,7 @@ Once everything is successful we can plan for:
 * Cross marketing initiatives between our teams.
 * Product integrations if relevant.
 * Governance proposals to open HRMP channels and register assets.
+	- Please submit your proposal to our governance forum [similarly to this proposal](https://forum.manta.network/t/proposal-for-open-bi-directionnal-hrmp-channel-with-khala-network/142) 
 
 ### Example Polkadot Launch Config
 
