@@ -564,6 +564,15 @@ pub mod pallet {
             }
         }
 
+        /// Returns the current latest checkpoint.
+        #[inline]
+        pub fn pull_latest_checkpoint() -> Checkpoint {
+            Checkpoint {
+                receiver_index: [0; 256].into(), // FIXME: get the correct number
+                sender_index: VoidNumberSetSize::<T>::get() as usize,
+            }
+        }
+
         /// Returns the account ID of this pallet.
         #[inline]
         pub fn account_id() -> T::AccountId {
