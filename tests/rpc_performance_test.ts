@@ -16,7 +16,7 @@ const test_config = {
         vn_batch_number: 2,
         vn_batch_size: 4096,
     },
-    timeout: 1000000,
+    storage_setup_timeout: 750000,
     sync_iterations: 50,
     expected_average_sync_time: 650
 }
@@ -67,5 +67,5 @@ describe('Node RPC Performance Test', () => {
         await single_rpc_performance(api);
 
         api.disconnect();
-    }).timeout(test_config.timeout);
+    }).timeout(test_config.storage_setup_timeout + (test_config.sync_iterations * test_config.expected_average_sync_time * 1.5));
 });
