@@ -31,14 +31,24 @@ The following checks can be performed after we have frozen our release candidate
 - [ ] Complete the following [manual QA workflow](https://hackmd.io/TbFmorG2RnOPmLuFcg9JOQ?view).
 - [ ] Verify Polkadot JS API are up to date with the latest
     runtime changes.
-- [ ] Execute runtime upgrade to Baikal and verify network stability.
-- [ ] Execute runtime upgrade to Rococo and verify network stability.
+- [ ] Execute runtime upgrade to Baikal relay and verify network stability.
+- [ ] Execute runtime upgrade to Calamari @ Baikal and verify network stability.
+- [ ] Execute runtime upgrade to Calamari @ Moonbase-Relay and verify network stability.
+- [ ] Execute runtime upgrade to Dolphin @ Rococo and verify network stability.
+- [ ] Check that the new runtime versions have [burned-in](#burn-in) without issue for at least 12 hours.
 - [ ] Prepare a governance post and submit to our forum with description and motivation for changes.
+
+Note: Usually update client first then runtime.
 
 ### Client Releases
 
 - [ ] Verify that each crate's `version` has been bumped from previous release.
+- [ ] Update client of Baikal relay nodes.
+- [ ] Update client of Calamari-Testnet @ Baikal nodes.
+- [ ] Update client of Calamari-Testnet @ Moonbase-Relay nodes.
+- [ ] Update client of Dolphin @ Rococo nodes.
 - [ ] Check that the new client versions have [burned-in](#burn-in) without issue for at least 12 hours.
+
 
 ### All Releases
 
