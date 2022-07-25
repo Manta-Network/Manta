@@ -44,7 +44,7 @@ about: Perform cross chain transfer tests in order to open HRMP channel with Cal
 
 - Ideally we should create a channel for direct messaging between or teams.
 - We can communicate on Discord, Element or Telegram.
-- Please fill out this [form](https://forms.gle/SPitZjuiir6fVkrn8) and someone from our team will contact you to setup the chat room.
+- Please fill out this [form](https://forms.gle/SPitZjuiir6fVkrn8) if we have not setup the channel already and someone from our team will contact you to setup the chat room.
 
 ## Local XCM Integration
 
