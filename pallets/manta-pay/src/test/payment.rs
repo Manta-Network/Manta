@@ -222,7 +222,12 @@ where
 
 /// Builds `count`-many [`Reclaim`] tests.
 #[inline]
-fn reclaim_test<R>(count: usize, id_option: Option<AssetId>, rng: &mut R) -> Vec<TransferPost>
+fn reclaim_test<R>(
+    count: usize,
+    total_supply: AssetValue,
+    id_option: Option<AssetId>,
+    rng: &mut R,
+) -> Vec<TransferPost>
 where
     R: CryptoRng + RngCore + ?Sized,
 {
@@ -230,9 +235,8 @@ where
         Some(id) => id,
         None => rng.gen(),
     };
-    let total_free_balance = AssetValue(rng.gen());
-    let balances = value_distribution(count, total_free_balance, rng);
-    initialize_test(asset_id, total_free_balance + DEFAULT_ASSET_ED);
+    let balances = value_distribution(count, total_supply, rng);
+    initialize_test(asset_id, total_supply + DEFAULT_ASSET_ED);
     let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
     let mut posts = Vec::new();
     for balance in balances {
@@ -422,26 +426,36 @@ fn double_spend_in_private_transfer_should_not_work() {
 /// Tests a [`Reclaim`] transaction.
 #[test]
 fn reclaim_should_work() {
-    new_test_ext().execute_with(|| reclaim_test(1, None, &mut OsRng));
+    let mut rng = OsRng;
+    let total_supply = AssetValue(rng.gen());
+    new_test_ext().execute_with(|| reclaim_test(1, total_supply, None, &mut rng));
 }
 
 /// Test a [`Reclaim`] of native currency
 #[test]
 fn reclaim_native_should_work() {
-    new_test_ext().execute_with(|| reclaim_test(1, Some(NATIVE_ASSET_ID), &mut OsRng));
+    let mut rng = OsRng;
+    let total_supply = AssetValue(rng.gen());
+    new_test_ext().execute_with(|| reclaim_test(1, total_supply, Some(NATIVE_ASSET_ID), &mut rng));
 }
 
 /// Tests multiple [`Reclaim`] transactions.
 #[test]
 fn reclaim_10_times_should_work() {
-    new_test_ext().execute_with(|| reclaim_test(10, None, &mut OsRng));
+    let mut rng = OsRng;
+    let total_supply = AssetValue(rng.gen());
+    new_test_ext().execute_with(|| reclaim_test(10, total_supply, None, &mut rng));
 }
 
 /// Tests that a double-spent [`Reclaim`] will fail.
 #[test]
 fn double_spend_in_reclaim_should_not_work() {
     new_test_ext().execute_with(|| {
-        for reclaim in reclaim_test(1, None, &mut OsRng) {
+        let mut rng = OsRng;
+        // Divide by two because otherwise we might fail for a different reason (Overflow)
+        // than what we are testing for (AssetSpent)
+        let total_supply: u128 = rng.gen();
+        for reclaim in reclaim_test(1, AssetValue(total_supply / 2), None, &mut rng) {
             assert_noop!(
                 MantaPayPallet::to_public(Origin::signed(ALICE), reclaim.into()),
                 Error::<Test>::AssetSpent,
