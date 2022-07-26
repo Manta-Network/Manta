@@ -71,7 +71,7 @@ Note: Do not publish draft releases from PR branches, because those branches wil
 
 ### Burn In
 
-Ensure that Manta DevOps has run the new release on Como and Baikal nodes
+Ensure that Manta DevOps has run the new release on Baikal nodes
 for at least 12 hours prior to publishing the release.
 
 ### Release notes
