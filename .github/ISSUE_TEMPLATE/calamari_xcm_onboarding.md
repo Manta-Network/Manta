@@ -165,9 +165,9 @@ console.log(tx.toHex());
 
 - The result will be like:
 
-`0x1c04170124080000`, remove the leading hex `1c04`, and the final encoded result is:
+`0x1c043c0124080000`, remove the leading hex `1c04`, and the final encoded result is:
 ```
-0x170124080000
+0x3c0124080000
 ```
 
 ### Send XCM to Rococo
@@ -258,7 +258,7 @@ console.log(tx.toHex());
 ### Get the Relay Encoded Call Data to Accept HRMP Channel
 
 - To get an encoded call data from the relay chain, to accept a channel request with a target parachain, take the following steps:
-- In PolkadotJS app, switch to the live Polkadot/Kusama network. Go to Developer -> [Javascript section](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-rpc.polkadot.io#/js). Then run the following code, and replace the demo recipient para id with your own:
+- In PolkadotJS app, switch to the live Polkadot/Kusama network. Go to Developer -> [Javascript section](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-rpc.kusama.io#/js). Then run the following code, and replace the demo recipient para id with your own:
 ```
 const tx = api.tx.hrmp.hrmpAcceptOpenChannel(2084);
 console.log(tx.toHex());
@@ -299,7 +299,7 @@ console.log(tx.toHex());
 Name: Calamari
 Symbol: KMA
 Decimals: 12
-Min Balance: 1
+Min Balance: 100000000000
 Self sufficient: true
 ```
 - Note: Calamari MultiLocation and metadata are different!
