@@ -282,9 +282,9 @@ pub fn dolphin_testnet_config() -> DolphinChainSpec {
 
     DolphinChainSpec::from_genesis(
         // Name
-        "Dolphin Parachain Temp",
+        "Dolphin-2085 Parachain",
         // ID
-        "dolphin_temp",
+        "dolphin_2085",
         ChainType::Live,
         move || dolphin_testnet_genesis(initial_authorities.clone(), root_key.clone()),
         vec![],

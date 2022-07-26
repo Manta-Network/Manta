@@ -1,6 +1,6 @@
 {
-  "name": "Dolphin Parachain Temp",
-  "id": "dolphin_temp",
+  "name": "Dolphin-2085 Parachain",
+  "id": "dolphin_2085",
   "chainType": "Live",
   "bootNodes": [],
   "telemetryEndpoints": [
