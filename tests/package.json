@@ -4,7 +4,8 @@
   "description": "Functional Tests for Manta",
   "main": "index.js",
   "scripts": {
-    "test": "mocha -r ts-node/register rpc_test.ts",
+    "correctness_test": "mocha -r ts-node/register rpc_correctness_test.ts",
+    "performance_test": "mocha -r ts-node/register rpc_performance_test.ts",
     "lint": "eslint ."
   },
   "keywords": [],
