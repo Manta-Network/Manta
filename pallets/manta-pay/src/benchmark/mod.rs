@@ -58,10 +58,18 @@ where
     )
     .expect("Unable to create asset.");
     let pallet_account: T::AccountId = Pallet::<T>::account_id();
-    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::mint(id, owner, value + DEFAULT_ASSET_ED)
-        .expect("Unable to mint asset to its new owner.");
-    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::mint(id, &pallet_account, DEFAULT_ASSET_ED)
-        .expect("Unable to mint existential deposit to pallet account.");
+    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_mint(
+        id,
+        owner,
+        value + DEFAULT_ASSET_ED,
+    )
+    .expect("Unable to mint asset to its new owner.");
+    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_mint(
+        id,
+        &pallet_account,
+        DEFAULT_ASSET_ED,
+    )
+    .expect("Unable to mint existential deposit to pallet account.");
 }
 
 benchmarks! {
