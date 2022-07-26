@@ -24,7 +24,6 @@ use dolphin_runtime::{
 use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 /// Dolphin Protocol Identifier
 pub const DOLPHIN_PROTOCOL_ID: &str = "dolphin";
-use sp_core::crypto::UncheckedInto;
 /// Kusama Relaychain Local Network Identifier
 pub const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
 
