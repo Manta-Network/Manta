@@ -34,7 +34,7 @@ The following checks can be performed after we have frozen our release candidate
 - [ ] Execute runtime upgrade to Baikal relay and verify network stability.
 - [ ] Execute runtime upgrade to Calamari @ Baikal and verify network stability.
 - [ ] Execute runtime upgrade to Calamari @ Moonbase-Relay and verify network stability.
-- [ ] Execute runtime upgrade to Dolphin @ Rococo and verify network stability.
+- [ ] Execute runtime upgrade to Dolphin @ Baikal and verify network stability.
 - [ ] Check that the new runtime versions have [burned-in](#burn-in) without issue for at least 12 hours.
 - [ ] Prepare a governance post and submit to our forum with description and motivation for changes.
 
@@ -46,7 +46,7 @@ Note: Usually update client first then runtime.
 - [ ] Update client of Baikal relay nodes.
 - [ ] Update client of Calamari-Testnet @ Baikal nodes.
 - [ ] Update client of Calamari-Testnet @ Moonbase-Relay nodes.
-- [ ] Update client of Dolphin @ Rococo nodes.
+- [ ] Update client of Dolphin @ Baikal nodes.
 - [ ] Check that the new client versions have [burned-in](#burn-in) without issue for at least 12 hours.
 
 
