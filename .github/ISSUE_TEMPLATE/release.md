@@ -35,7 +35,7 @@ The following checks can be performed after we have frozen our release candidate
 - [ ] Execute runtime upgrade to Calamari @ Baikal and verify network stability.
 - [ ] Execute runtime upgrade to Calamari @ Moonbase-Relay and verify network stability.
 - [ ] Execute runtime upgrade to Dolphin @ Baikal and verify network stability.
-- [ ] Check that the new runtime versions have [burned-in](#burn-in) without issue for at least 12 hours.
+- [ ] Check that the new runtime versions have [burned-in](#burn-in) without issue for at least 3 days.
 - [ ] Prepare a governance post and submit to our forum with description and motivation for changes.
 
 Note: Usually update client first then runtime.
@@ -47,8 +47,7 @@ Note: Usually update client first then runtime.
 - [ ] Update client of Calamari-Testnet @ Baikal nodes.
 - [ ] Update client of Calamari-Testnet @ Moonbase-Relay nodes.
 - [ ] Update client of Dolphin @ Baikal nodes.
-- [ ] Check that the new client versions have [burned-in](#burn-in) without issue for at least 12 hours.
-
+- [ ] Check that the new client versions have [burned-in](#burn-in) without issue for at least 3 days.
 
 ### All Releases
 
@@ -60,7 +59,7 @@ Note: Usually update client first then runtime.
 - [ ] Coordinate with marketing team for documentation updates and other relevant tasks.
 - [ ] Update changelog.
 - [ ] If the release contains any changes that break/change functionality used in https://github.com/Manta-Network/sdk (e.g. RPC changes, see also [extrinsic ordering](#extrinsic-ordering)), raise a PR there and **block this release** until your PR has been merged and incorporated in a new SDK release.
-- [ ] During the [burn-in](#burn-in) make sure to look out for anomalies in our nodes' memory, cpu, disk and network usage via the [Grafana Node Explorer](https://grafana.pulse.pelagos.systems/d/rYdddlPWk/node-exporter-full).
+- [ ] Before declaring a successful [burn-in](#burn-in) make sure to look out for anomalies in our nodes' memory, cpu, disk and network usage via the [Grafana Node Explorer](https://grafana.pulse.pelagos.systems/d/rYdddlPWk/node-exporter-full).
 
 Note: Do not publish draft releases from PR branches, because those branches will be deleted when the PR is merged.
 
@@ -72,7 +71,7 @@ Note: Do not publish draft releases from PR branches, because those branches wil
 ### Burn In
 
 Ensure that Manta DevOps has run the new release on Baikal nodes
-for at least 12 hours prior to publishing the release.
+for at least 3 days prior to publishing the release.
 
 ### Release notes
 
