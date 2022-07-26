@@ -60,6 +60,7 @@ Note: Usually update client first then runtime.
 - [ ] Coordinate with marketing team for documentation updates and other relevant tasks.
 - [ ] Update changelog.
 - [ ] If the release contains any changes that break/change functionality used in https://github.com/Manta-Network/sdk (e.g. RPC changes, see also [extrinsic ordering](#extrinsic-ordering)), raise a PR there and **block this release** until your PR has been merged and incorporated in a new SDK release.
+- [ ] During the [burn-in](#burn-in) make sure to look out for anomalies in our nodes' memory, cpu, disk and network usage via the [Grafana Node Explorer](https://grafana.pulse.pelagos.systems/d/rYdddlPWk/node-exporter-full).
 
 Note: Do not publish draft releases from PR branches, because those branches will be deleted when the PR is merged.
 
