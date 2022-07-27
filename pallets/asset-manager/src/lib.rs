@@ -484,7 +484,7 @@ pub mod pallet {
 
         /// The account ID of AssetManager
         pub fn account_id() -> T::AccountId {
-            T::PalletId::get().into_account()
+            T::PalletId::get().into_account_truncating()
         }
 
         /// Get para id from asset location
@@ -548,13 +548,13 @@ pub mod pallet {
     }
 
     /// Get min-xcm-fee by multilocation.
-    impl<T: Config> GetByKey<MultiLocation, u128> for Pallet<T> {
-        fn get(location: &MultiLocation) -> u128 {
+    impl<T: Config> GetByKey<MultiLocation, Option<u128>> for Pallet<T> {
+        fn get(location: &MultiLocation) -> Option<u128> {
             let location =
                 <T::AssetConfig as AssetConfig<T>>::AssetLocation::from(location.clone());
             match MinXcmFee::<T>::get(&location) {
-                Some(min_fee) => min_fee,
-                None => u128::MAX,
+                Some(min_fee) => Some(min_fee),
+                None => None,
             }
         }
     }

@@ -531,7 +531,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Get a unique, inaccessible account id from the `PotId`.
         pub fn account_id() -> T::AccountId {
-            T::PotId::get().into_account()
+            T::PotId::get().into_account_truncating()
         }
 
         /// Removes a candidate if they exist and sends them back their deposit
@@ -635,7 +635,7 @@ pub mod pallet {
 
         /// Reset the performance map to the currently active validators at 0 blocks
         pub fn reset_collator_performance() {
-            <BlocksPerCollatorThisSession<T>>::remove_all(None);
+            let _ = <BlocksPerCollatorThisSession<T>>::clear(<DesiredCandidates<T>>::get(), None);
             let validators = T::ValidatorRegistration::validators();
             for validator_id in validators {
                 let account_id = T::AccountIdOf::convert(validator_id.clone().into());
