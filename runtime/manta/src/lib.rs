@@ -64,6 +64,8 @@ use sp_runtime::Perbill;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
+use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+
 // Polkadot imports
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
 use polkadot_parachain::primitives::Sibling;
@@ -383,7 +385,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type OutboundXcmpMessageSource = XcmpQueue;
     type XcmpMessageHandler = XcmpQueue;
     type ReservedXcmpWeight = ReservedXcmpWeight;
-    type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+    type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 impl parachain_info::Config for Runtime {}

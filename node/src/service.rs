@@ -242,12 +242,12 @@ async fn build_relay_chain_interface(
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
 #[allow(clippy::too_many_arguments)]
-async fn start_node_impl<RuntimeApi, Executor, BIQ, BIC, FullRpc>(
+async fn start_node_impl<RuntimeApi, Executor, BIQ, BIC, RB>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
-    _full_rpc: FullRpc,
+    _rpc_ext_builder: RB,
     build_import_queue: BIQ,
     build_consensus: BIC,
     hwbench: Option<sc_sysinfo::HwBench>,
@@ -268,7 +268,7 @@ where
         + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     StateBackend: sp_api::StateBackend<BlakeTwo256>,
     Executor: NativeExecutionDispatch + 'static,
-    FullRpc: Fn(
+    RB: Fn(
             rpc::FullDeps<Client<RuntimeApi, Executor>, TransactionPool<RuntimeApi, Executor>>,
         ) -> Result<RpcModule<()>, Error>
         + 'static,
@@ -604,13 +604,13 @@ where
 }
 
 /// Start a calamari/manta parachain node.
-pub async fn start_parachain_node<RuntimeApi, Executor, AuraId: AppKey, FullRpc>(
+pub async fn start_parachain_node<RuntimeApi, Executor, AuraId: AppKey, RB>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
     hwbench: Option<sc_sysinfo::HwBench>,
-    full_rpc: FullRpc,
+    rpc_ext_builder: RB,
 ) -> sc_service::error::Result<(
     TaskManager,
     Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
@@ -631,7 +631,7 @@ where
     Executor: NativeExecutionDispatch + 'static,
     <<AuraId as AppKey>::Pair as Pair>::Signature:
         TryFrom<Vec<u8>> + std::hash::Hash + sp_runtime::traits::Member + Codec,
-    FullRpc: Fn(
+    RB: Fn(
             rpc::FullDeps<Client<RuntimeApi, Executor>, TransactionPool<RuntimeApi, Executor>>,
         ) -> Result<RpcModule<()>, Error>
         + 'static,
@@ -641,7 +641,7 @@ where
         polkadot_config,
         collator_options,
         id,
-        full_rpc,
+        rpc_ext_builder,
         parachain_build_import_queue::<_, _, AuraId>,
         |client,
          prometheus_registry,
