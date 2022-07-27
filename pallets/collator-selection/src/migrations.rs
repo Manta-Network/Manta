@@ -15,12 +15,13 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![allow(deprecated)]
 
 use super::*;
+#[allow(deprecated)]
+use frame_support::migration::remove_storage_prefix;
 use frame_support::{
     dispatch::GetStorageVersion,
-    migration::{have_storage_value, remove_storage_prefix, storage_key_iter},
+    migration::{have_storage_value, storage_key_iter},
     pallet_prelude::Weight,
     traits::{Get, PalletInfoAccess, StorageVersion},
     Twox64Concat,
@@ -44,6 +45,7 @@ impl<T: Config> Pallet<T> {
                 dropcount += 1;
             }
             log::info!(" >>> Cleaned {} keys from LastAuthoredBlock", dropcount);
+            #[allow(deprecated)]
             remove_storage_prefix(Self::name().as_bytes(), b"LastAuthoredBlock", &[]);
             log::info!(" >>> Removed LastAuthoredBlock from storage");
 
@@ -52,6 +54,7 @@ impl<T: Config> Pallet<T> {
 
             // Remove KickThreshold if customized
             if have_storage_value(Self::name().as_bytes(), b"KickThreshold", &[]) {
+                #[allow(deprecated)]
                 remove_storage_prefix(Self::name().as_bytes(), b"KickThreshold", &[]);
                 log::info!(" >>> Removed KickThreshold");
             } else {
