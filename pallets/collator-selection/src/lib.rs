@@ -590,7 +590,7 @@ pub mod pallet {
 
             // 2. get percentile by _exclusive_ nearest rank method https://en.wikipedia.org/wiki/Percentile#The_nearest-rank_method (rust percentile API is feature gated and unstable)
             let ordinal_rank = percentile_for_kick.mul_ceil(collator_count);
-            let index_at_ordinal_rank = ordinal_rank.saturating_sub(One::one()); // -1 to accomodate 0-index counting, should not saturate due to precondition check and round up multiplication
+            let index_at_ordinal_rank = ordinal_rank.saturating_sub(One::one()); // -1 to accommodate 0-index counting, should not saturate due to precondition check and round up multiplication
 
             // 3. Block number at rank is the percentile and our kick performance benchmark
             let blocks_created_at_baseline: BlockCount =
@@ -705,7 +705,7 @@ pub mod pallet {
                 DispatchClass::Mandatory,
             );
 
-            Self::reset_collator_performance(); // Reset performance map for the now starting session's active validatorset
+            Self::reset_collator_performance(); // Reset performance map for the now starting session's active validator set
             Some(result)
         }
         fn start_session(_: SessionIndex) {
