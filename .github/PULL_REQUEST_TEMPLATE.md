@@ -6,9 +6,9 @@ relates to OR closes: #XXXX
 
 Before we can approve this PR for merge, please make sure that **all** the following items have been checked off:
 - [ ] Linked to Github issue with discussion and accepted design OR have an explanation in the PR that describes this work.
-- [ ] Linked *at least* one label from the `A-` and one label from the `C-` category against either this PR or its associated issue
+- [ ] Added *exactly* one label from the `L-` group against this PR
+- [ ] Added *at least* one label from the `A-` and one label from the `C-` group against either this PR or its associated issue
 - [ ] Either this PR or its associated issue is targeted against the *current* Milestone ( otherwise discuss if it can be added )
-- [ ] Added **one** line describing your change in `<branch>/CHANGELOG.md`
 - [ ] Re-reviewed `Files changed` in the Github PR explorer.
 
 
