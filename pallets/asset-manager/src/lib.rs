@@ -552,10 +552,7 @@ pub mod pallet {
         fn get(location: &MultiLocation) -> Option<u128> {
             let location =
                 <T::AssetConfig as AssetConfig<T>>::AssetLocation::from(location.clone());
-            match MinXcmFee::<T>::get(&location) {
-                Some(min_fee) => Some(min_fee),
-                None => None,
-            }
+            MinXcmFee::<T>::get(&location)
         }
     }
 
