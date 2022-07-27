@@ -1,29 +1,41 @@
 # CHANGELOG
 
-## [Unreleased]
-
+## Unreleased
 ### Breaking changes
-- [\#628](https://github.com/Manta-Network/Manta/pull/628) Improve RPC performance, add `max_receivers` and `max_senders` fields in the RPC request.
 
 ### Features
-- [\#576](https://github.com/Manta-Network/Manta/pull/576) Unfilter xtokens.transfer_multicurrencies and bump MaxAssetsForTransfer to 2.
+
+### Improvements
+- [\#681](https://github.com/Manta-Network/Manta/pull/681) CI Ledger RPC Tests.
+- [\#694](https://github.com/Manta-Network/Manta/pull/694) Switch to u128::MAX in fungible ledger transfer integration test.
+
+### Bug fixes
+
+## v3.2.1
+### Breaking changes
+- [Dolphin] [\#628](https://github.com/Manta-Network/Manta/pull/628) Improve RPC performance, add `max_receivers` and `max_senders` fields in the RPC request.
+
+### Features
+- [\#646](https://github.com/Manta-Network/Manta/pull/646) Add collator session keys for future nimbus consensus and a vrf placeholder.
 
 ### Improvements
 - [\#449](https://github.com/Manta-Network/Manta/pull/449) Remove strip from CI, and add strip profile to production.
+- [\#571](https://github.com/Manta-Network/Manta/pull/571) Update upstream dependencies to v0.9.22.
 - [\#563](https://github.com/Manta-Network/Manta/pull/563) Re-implement the `TransactAsset` trait with the unified interface of `FungibleLedger` trait, and `AssetConfig` trait.
 - [\#576](https://github.com/Manta-Network/Manta/pull/576) Unfilter xtokens.transfer_multicurrencies and bump MaxAssetsForTransfer to 2.
-- [\#607](https://github.com/Manta-Network/Manta/pull/607) Turn node client code into library for CLI project
-- [\#609](https://github.com/Manta-Network/Manta/pull/609) Update parameter path from `sdk` to `manta-parameters`.
+- [\#607](https://github.com/Manta-Network/Manta/pull/607) Turn node client code into library for CLI project.
 - [\#614](https://github.com/Manta-Network/Manta/pull/614) Remove `OnRuntimeUpgrade` from calamari-runtime.
 - [\#619](https://github.com/Manta-Network/Manta/pull/619) Add CI runtime upgrade test for Dolphin and improve test scenario.
-- [\#622](https://github.com/Manta-Network/Manta/pull/622) Update parameter path from `sdk` to `manta-parameters`.
+- [Dolphin] [\#622](https://github.com/Manta-Network/Manta/pull/622) Update parameter path from `sdk` to `manta-parameters`.
+- [\#636](https://github.com/Manta-Network/Manta/pull/636) Equalize Barrier impl between Calamari/Dolphin production and XCM tests mock parachain.
 - [\#638](https://github.com/Manta-Network/Manta/pull/638) `existence_requirement` argument for `FungibleLedger` trait functions.
-- [\#652](https://github.com/Manta-Network/Manta/pull/652) Reduce CI failure rate by switching AWS CI runners from AMD to Intel
-- [\#653](https://github.com/Manta-Network/Manta/pull/653) Add concurrency groups for pull request CI builds to reduce CI costs
-- [\#657](https://github.com/Manta-Network/Manta/pull/657) retire manta-pc-launch with polkadot-launch.
+- [\#652](https://github.com/Manta-Network/Manta/pull/652) Reduce CI failure rate by switching AWS CI runners from AMD to Intel.
+- [\#653](https://github.com/Manta-Network/Manta/pull/653) Add concurrency groups for pull request CI builds to reduce CI costs.
+- [\#657](https://github.com/Manta-Network/Manta/pull/657) retire `manta-pc-launch` with `polkadot-launch`.
 
 ### Bug fixes
-- [\#677](https://github.com/Manta-Network/Manta/pull/677) Fix CI failure by building the runtime with stable Rust
+- [\#671](https://github.com/Manta-Network/Manta/pull/671) polkadot-v0.9.22 syn breakage workaround.
+- [\#677](https://github.com/Manta-Network/Manta/pull/677) Fix CI failure by building the runtime with stable Rust.
 
 ## v3.2.0
 ### Breaking changes

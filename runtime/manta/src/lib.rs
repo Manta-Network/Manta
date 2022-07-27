@@ -39,11 +39,11 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use frame_support::{
-    construct_runtime, match_type, parameter_types,
+    construct_runtime, match_types, parameter_types,
     traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, Everything, Nothing},
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
-        DispatchClass, IdentityFee, Weight,
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+        ConstantMultiplier, DispatchClass, IdentityFee, Weight,
     },
     PalletId,
 };
@@ -53,9 +53,10 @@ use frame_system::{
 };
 use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID},
-    types::{AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature},
+    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
-use runtime_common::prod_or_fast;
+use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
+use session_key_primitives::AuraId;
 use sp_runtime::Perbill;
 
 #[cfg(any(feature = "std", test))]
@@ -64,7 +65,6 @@ pub use sp_runtime::BuildStorage;
 // Polkadot imports
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
 use polkadot_parachain::primitives::Sibling;
-use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -103,6 +103,13 @@ pub mod opaque {
             pub aura: Aura,
         }
     }
+    impl SessionKeys {
+        /// Generates a [`SessionKey`], discarding key types that are not currently used.
+        #[inline]
+        pub fn new<T, U>((aura, _, _): (AuraId, T, U)) -> Self {
+            Self { aura }
+        }
+    }
 }
 
 // Weights used in the runtime.
@@ -113,7 +120,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("manta"),
     impl_name: create_runtime_str!("manta"),
     authoring_version: 1,
-    spec_version: 3201,
+    spec_version: 3210,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -276,14 +283,14 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    /// Relay Chain `TransactionByteFee` / 10
-    pub const TransactionByteFee: Balance = mMANTA/10;
+    /// Relay Chain `TransactionLengthToFeeCoeff` / 10
+    pub const TransactionLengthToFeeCoeff: Balance = mMANTA / 10;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
-    type TransactionByteFee = TransactionByteFee;
     type WeightToFee = WeightToFee;
+    type LengthToFee = ConstantMultiplier<Balance, TransactionLengthToFeeCoeff>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
 }
@@ -443,13 +450,12 @@ parameter_types! {
     pub const MaxInstructions: u32 = 100;
 }
 
-match_type! {
-    pub type ParentOrParentsExecutivePlurality: impl Contains<MultiLocation> = {
-        MultiLocation { parents: 1, interior: Here } |
-        MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
+match_types! {
+    pub type ParentLocation: impl Contains<MultiLocation> = {
+        MultiLocation { parents: 1, interior: Here }
     };
 }
-match_type! {
+match_types! {
     pub type ParentOrSiblings: impl Contains<MultiLocation> = {
         MultiLocation { parents: 1, interior: Here } |
         MultiLocation { parents: 1, interior: X1(_) }
@@ -459,8 +465,8 @@ match_type! {
 pub type Barrier = (
     TakeWeightCredit,
     AllowTopLevelPaidExecutionFrom<Everything>,
-    // Parent and its exec plurality get free execution
-    AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+    // Parent root gets free execution
+    AllowUnpaidExecutionFrom<ParentLocation>,
     // Expected responses are OK.
     // Allows `Pending` or `VersionNotifier` query responses.
     AllowKnownQueryResponses<PolkadotXcm>,

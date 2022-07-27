@@ -143,6 +143,7 @@ jobs:
       - name: run benchmark
         run: |
           manta benchmark \
+            pallet \
             --chain=manta-local \
             --pallet=${{ matrix.benchmark.pallet.id }} \
             --extrinsic=${{ matrix.benchmark.extrinsic.id }} \

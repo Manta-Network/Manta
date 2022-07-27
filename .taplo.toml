@@ -1,3 +1,4 @@
+exclude = ["target/*"]
 [formatting]
 array_auto_collapse = false
 array_auto_expand = false

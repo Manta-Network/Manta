@@ -160,9 +160,7 @@ where
         Some(id) => id,
         None => rng.gen(),
     };
-    // FIXME: get rid of the division after parity fixes the pallet-asset bug
-    let double_balance: u128 = rng.gen();
-    let total_free_balance = AssetValue(double_balance / 2);
+    let total_free_balance = AssetValue(rng.gen());
     let balances = value_distribution(count, total_free_balance, rng);
     initialize_test(asset_id, total_free_balance + DEFAULT_ASSET_ED);
     let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
@@ -224,7 +222,12 @@ where
 
 /// Builds `count`-many [`Reclaim`] tests.
 #[inline]
-fn reclaim_test<R>(count: usize, id_option: Option<AssetId>, rng: &mut R) -> Vec<TransferPost>
+fn reclaim_test<R>(
+    count: usize,
+    total_supply: AssetValue,
+    id_option: Option<AssetId>,
+    rng: &mut R,
+) -> Vec<TransferPost>
 where
     R: CryptoRng + RngCore + ?Sized,
 {
@@ -232,11 +235,8 @@ where
         Some(id) => id,
         None => rng.gen(),
     };
-    // FIXME: This is a workaround due to the substrate asset bug
-    let double_balance: u128 = rng.gen();
-    let total_free_balance = AssetValue(double_balance / 2);
-    let balances = value_distribution(count, total_free_balance, rng);
-    initialize_test(asset_id, total_free_balance + DEFAULT_ASSET_ED);
+    let balances = value_distribution(count, total_supply, rng);
+    initialize_test(asset_id, total_supply + DEFAULT_ASSET_ED);
     let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
     let mut posts = Vec::new();
     for balance in balances {
@@ -300,8 +300,10 @@ fn initialize_test(id: AssetId, value: AssetValue) {
         metadata.into(),
         true
     ));
-    assert_ok!(FungibleLedger::<Test>::mint(id.0, &ALICE, value.0));
-    assert_ok!(FungibleLedger::<Test>::mint(
+    assert_ok!(FungibleLedger::<Test>::deposit_can_mint(
+        id.0, &ALICE, value.0
+    ));
+    assert_ok!(FungibleLedger::<Test>::deposit_can_mint(
         id.0,
         &MantaPayPallet::account_id(),
         DEFAULT_ASSET_ED
@@ -314,10 +316,7 @@ fn to_private_should_work() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         let asset_id = rng.gen();
-        // FIXME: get rid of divide by two after parity fix pallet-asset
-        // This is to work around the substrate bug
-        let double_supply: u128 = rng.gen();
-        let total_free_supply = AssetValue(double_supply / 2);
+        let total_free_supply = AssetValue(rng.gen());
         initialize_test(asset_id, total_free_supply + DEFAULT_ASSET_ED);
         mint_tokens(
             asset_id,
@@ -331,10 +330,7 @@ fn to_private_should_work() {
 fn native_asset_to_private_should_work() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        // FIXME: get rid of divide by two after parity fix pallet-asset
-        // This is to work around the substrate bug
-        let double_supply: u128 = rng.gen();
-        let total_free_supply = AssetValue(double_supply / 2);
+        let total_free_supply = AssetValue(rng.gen());
         initialize_test(NATIVE_ASSET_ID, total_free_supply + DEFAULT_ASSET_ED);
         mint_tokens(
             NATIVE_ASSET_ID,
@@ -350,9 +346,7 @@ fn overdrawn_mint_should_not_work() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         let asset_id = rng.gen();
-        // FIXME: remove the division after parity fix the pallet-asset bug
-        let double_supply: u128 = rng.gen();
-        let total_supply = AssetValue(double_supply / 2);
+        let total_supply = AssetValue(rng.gen());
         initialize_test(asset_id, total_supply + DEFAULT_ASSET_ED);
         assert_noop!(
             MantaPayPallet::to_private(
@@ -434,26 +428,36 @@ fn double_spend_in_private_transfer_should_not_work() {
 /// Tests a [`Reclaim`] transaction.
 #[test]
 fn reclaim_should_work() {
-    new_test_ext().execute_with(|| reclaim_test(1, None, &mut OsRng));
+    let mut rng = OsRng;
+    let total_supply = AssetValue(rng.gen());
+    new_test_ext().execute_with(|| reclaim_test(1, total_supply, None, &mut rng));
 }
 
 /// Test a [`Reclaim`] of native currency
 #[test]
 fn reclaim_native_should_work() {
-    new_test_ext().execute_with(|| reclaim_test(1, Some(NATIVE_ASSET_ID), &mut OsRng));
+    let mut rng = OsRng;
+    let total_supply = AssetValue(rng.gen());
+    new_test_ext().execute_with(|| reclaim_test(1, total_supply, Some(NATIVE_ASSET_ID), &mut rng));
 }
 
 /// Tests multiple [`Reclaim`] transactions.
 #[test]
 fn reclaim_10_times_should_work() {
-    new_test_ext().execute_with(|| reclaim_test(10, None, &mut OsRng));
+    let mut rng = OsRng;
+    let total_supply = AssetValue(rng.gen());
+    new_test_ext().execute_with(|| reclaim_test(10, total_supply, None, &mut rng));
 }
 
 /// Tests that a double-spent [`Reclaim`] will fail.
 #[test]
 fn double_spend_in_reclaim_should_not_work() {
     new_test_ext().execute_with(|| {
-        for reclaim in reclaim_test(1, None, &mut OsRng) {
+        let mut rng = OsRng;
+        // Divide by two because otherwise we might fail for a different reason (Overflow)
+        // than what we are testing for (AssetSpent)
+        let total_supply: u128 = rng.gen();
+        for reclaim in reclaim_test(1, AssetValue(total_supply / 2), None, &mut rng) {
             assert_noop!(
                 MantaPayPallet::to_public(Origin::signed(ALICE), reclaim.into()),
                 Error::<Test>::AssetSpent,

@@ -312,6 +312,9 @@ impl FungibleLedgerError {
 ///
 /// [`fungible`]: frame_support::traits::tokens::fungible
 /// [`fungibles`]: frame_support::traits::tokens::fungibles
+///
+/// It is assumed that the supply of native asset cannot be changed,
+/// while the supply of non-native assets can increase or decrease.
 pub trait FungibleLedger<C>
 where
     C: frame_system::Config,
@@ -320,10 +323,12 @@ where
     fn ensure_valid(asset_id: AssetId) -> Result<(), FungibleLedgerError>;
 
     /// Check whether `account` can increase its balance by `amount` in the given `asset_id`.
+    /// Non-native assets will use the `can_increase_total_supply` check, while native assets will not.
     fn can_deposit(
         asset_id: AssetId,
         account: &C::AccountId,
         amount: Balance,
+        can_increase_total_supply: bool,
     ) -> Result<(), FungibleLedgerError>;
 
     /// Check whether `account` can decrease its balance by `amount` in the given `asset_id`.
@@ -334,8 +339,9 @@ where
         existence_requirement: ExistenceRequirement,
     ) -> Result<(), FungibleLedgerError>;
 
-    /// Mints `amount` of an asset with the given `asset_id` to `beneficiary`.
-    fn mint(
+    /// Deposit `amount` of an asset with the given `asset_id` to `beneficiary`.
+    /// Will mint and increase the total supply of non-native assets.
+    fn deposit_can_mint(
         asset_id: AssetId,
         beneficiary: &C::AccountId,
         amount: Balance,
@@ -350,8 +356,9 @@ where
         existence_requirement: ExistenceRequirement,
     ) -> Result<(), FungibleLedgerError>;
 
-    /// Performs a burn from `who` for `amount` of `asset_id`
-    fn burn(
+    /// Performs a withdraw from `who` for `amount` of `asset_id`
+    /// Will burn and decrease total supply of non-native assets
+    fn withdraw_can_burn(
         asset_id: AssetId,
         who: &C::AccountId,
         amount: Balance,
@@ -389,12 +396,18 @@ where
         asset_id: AssetId,
         account: &C::AccountId,
         amount: Balance,
+        can_increase_total_supply: bool,
     ) -> Result<(), FungibleLedgerError> {
         Self::ensure_valid(asset_id)?;
         FungibleLedgerError::from_deposit(if asset_id == A::NativeAssetId::get() {
-            <Native as FungibleInspect<C::AccountId>>::can_deposit(account, amount)
+            <Native as FungibleInspect<C::AccountId>>::can_deposit(account, amount, false)
         } else {
-            <NonNative as FungiblesInspect<C::AccountId>>::can_deposit(asset_id, account, amount)
+            <NonNative as FungiblesInspect<C::AccountId>>::can_deposit(
+                asset_id,
+                account,
+                amount,
+                can_increase_total_supply,
+            )
         })
     }
 
@@ -428,13 +441,12 @@ where
     }
 
     #[inline]
-    fn mint(
+    fn deposit_can_mint(
         asset_id: AssetId,
         beneficiary: &C::AccountId,
         amount: Balance,
     ) -> Result<(), FungibleLedgerError> {
         Self::ensure_valid(asset_id)?;
-        Self::can_deposit(asset_id, beneficiary, amount)?;
         if asset_id == A::NativeAssetId::get() {
             <Native as Currency<C::AccountId>>::deposit_creating(beneficiary, amount);
         } else {
@@ -478,7 +490,7 @@ where
     }
 
     #[inline]
-    fn burn(
+    fn withdraw_can_burn(
         asset_id: AssetId,
         who: &C::AccountId,
         amount: Balance,
@@ -495,8 +507,8 @@ where
             )
             .map_err(FungibleLedgerError::InvalidBurn)?;
         } else {
-            // `existence_requirement` is used in the `can_reduce_by_amount` checks
-            // so it doesn't matter that `burn_from` uses `allow_death` by default in own chosen implementation
+            // `existence_requirement` is used in the `can_reduce_by_amount` checks,
+            // so it doesn't matter that `burn_from` uses `allow_death` by default in our chosen implementation
             <NonNative as Mutate<C::AccountId>>::burn_from(asset_id, who, amount)
                 .map_err(FungibleLedgerError::InvalidBurn)?;
         }
