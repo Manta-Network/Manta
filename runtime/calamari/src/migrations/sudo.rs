@@ -15,6 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 #![allow(clippy::unnecessary_cast)]
+#![allow(deprecated)]
 
 use core::marker::PhantomData;
 use frame_support::{
