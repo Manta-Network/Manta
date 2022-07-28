@@ -222,11 +222,6 @@ pub mod pallet {
     #[pallet::getter(fn candidacy_bond)]
     pub type CandidacyBond<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
-    /// The collators count.
-    #[pallet::storage]
-    #[pallet::getter(fn collators_count)]
-    pub type CollatorsCount<T: Config> = StorageValue<_, u32, ValueQuery>;
-
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         pub invulnerables: Vec<T::AccountId>,
@@ -640,8 +635,8 @@ pub mod pallet {
 
         /// Reset the performance map to the currently active validators at 0 blocks
         pub fn reset_collator_performance() {
-            let _ = <BlocksPerCollatorThisSession<T>>::clear(<CollatorsCount<T>>::get(), None);
             let validators = T::ValidatorRegistration::validators();
+            let _ = <BlocksPerCollatorThisSession<T>>::clear(validators.len() as u32, None);
             for validator_id in validators {
                 let account_id = T::AccountIdOf::convert(validator_id.clone().into());
                 <BlocksPerCollatorThisSession<T>>::insert(account_id.clone(), 0u32);
@@ -704,7 +699,6 @@ pub mod pallet {
                 })
                 .collect::<Vec<_>>();
             let result = Self::assemble_collators(active_candidate_ids);
-            <CollatorsCount<T>>::set(result.len() as u32);
             frame_system::Pallet::<T>::register_extra_weight_unchecked(
                 T::WeightInfo::new_session(candidates_len_before as u32),
                 DispatchClass::Mandatory,
