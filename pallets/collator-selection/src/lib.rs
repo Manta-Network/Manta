@@ -636,7 +636,17 @@ pub mod pallet {
         /// Reset the performance map to the currently active validators at 0 blocks
         pub fn reset_collator_performance() {
             let validators = T::ValidatorRegistration::validators();
-            let _ = <BlocksPerCollatorThisSession<T>>::clear(validators.len() as u32, None);
+            let validators_len = validators.len() as u32;
+            let mut clear_res = <BlocksPerCollatorThisSession<T>>::clear(validators_len, None);
+            let mut old_cursor = vec![];
+            while let Some(cursor) = clear_res.maybe_cursor {
+                clear_res = <BlocksPerCollatorThisSession<T>>::clear(validators_len, Some(&cursor));
+                if cursor == old_cursor {
+                    // As per the documentation the cursor may not advance after every operation
+                    break;
+                }
+                old_cursor = cursor;
+            }
             for validator_id in validators {
                 let account_id = T::AccountIdOf::convert(validator_id.clone().into());
                 <BlocksPerCollatorThisSession<T>>::insert(account_id.clone(), 0u32);
