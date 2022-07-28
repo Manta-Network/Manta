@@ -4,3 +4,4 @@
 Cargo.lock
 runtime/**/target
 .vscode
+/tests/node_modules/

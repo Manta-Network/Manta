@@ -357,7 +357,7 @@ fn mint_asset() {
         // mint native asset
         let native_asset_id = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
         assert_ok!(
-            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::mint(
+            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::deposit_can_mint(
                 native_asset_id,
                 &ALICE,
                 1_000_000
@@ -375,7 +375,7 @@ fn mint_asset() {
             asset_metadata
         ));
         assert_ok!(
-            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::mint(
+            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::deposit_can_mint(
                 non_native_asset_id,
                 &ALICE,
                 1_000_000

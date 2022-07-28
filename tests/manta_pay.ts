@@ -169,7 +169,7 @@ async function insert_void_numbers_in_batch(
         const unsub = await api.tx.sudo.sudo(call_data).signAndSend(keyring, {nonce: -1}, ({ events = [], status }) => {
             if (status.isFinalized) {
                 success_batch ++;
-                console.log("%s %i batchs void number insertion finalized.", emojis.write, success_batch);
+                console.log("%s %i batch void number insertion finalized.", emojis.write, success_batch);
                 unsub();
             }
         });
@@ -221,7 +221,7 @@ export async function setup_storage(
     }
     console.log(">>>>>>>>> UTXO INSERT DONE >>>>>>>>");
 
-    console.log(">>>> Inserting void numbers: %i per batch, %i batchs", 
+    console.log(">>>> Inserting void numbers: %i per batch, %i batch", 
         config.vn_batch_size, config.vn_batch_number);
     const vn_batch_done = await insert_void_numbers_in_batch(api, keyring, config.vn_batch_size, config.vn_batch_number, 0, 1000);
     console.log(">>>> Complete inserting %i void numbers", vn_batch_done * config.vn_batch_size);

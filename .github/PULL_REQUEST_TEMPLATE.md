@@ -14,7 +14,7 @@ write a little note why.
 
 
 Situational Notes:
-- If adding functonality, write unit tests!
+- If adding functionality, write unit tests!
 - If importing a new pallet, choose a proper module index for it, and allow it in `BaseFilter`. Ensure **every** extrinsic works from front-end. If there's corresponding tool, ensure both work for each other.
 - If needed, update our Javascript/Typescript APIs. These APIs are officially used by exchanges or community developers.
 - If modifying existing runtime storage items, make sure to implement storage migrations for the runtime and test them with `try-runtime`. This includes migrations inherited from upstream changes, and you can search the diffs for modifications of `#[pallet::storage]` items to check for any.
