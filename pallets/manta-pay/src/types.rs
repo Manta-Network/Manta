@@ -17,6 +17,7 @@
 //! Type Definitions for Manta Pay
 
 use super::*;
+use manta_crypto::encryption::hybrid;
 use manta_util::into_array_unchecked;
 use scale_codec::Error;
 
@@ -133,6 +134,7 @@ impl Default for EncryptedNote {
 impl From<config::EncryptedNote> for EncryptedNote {
     #[inline]
     fn from(encrypted_note: config::EncryptedNote) -> Self {
+        let encrypted_note = encrypted_note.ciphertext;
         Self {
             ephemeral_public_key: encode(encrypted_note.ephemeral_public_key),
             ciphertext: encrypted_note.ciphertext.into(),
@@ -146,8 +148,11 @@ impl TryFrom<EncryptedNote> for config::EncryptedNote {
     #[inline]
     fn try_from(encrypted_note: EncryptedNote) -> Result<Self, Self::Error> {
         Ok(Self {
-            ephemeral_public_key: decode(encrypted_note.ephemeral_public_key)?,
-            ciphertext: encrypted_note.ciphertext.into(),
+            header: (),
+            ciphertext: hybrid::Ciphertext {
+                ephemeral_public_key: decode(encrypted_note.ephemeral_public_key)?,
+                ciphertext: encrypted_note.ciphertext.into(),
+            },
         })
     }
 }
@@ -199,7 +204,7 @@ impl From<config::ReceiverPost> for ReceiverPost {
     fn from(post: config::ReceiverPost) -> Self {
         Self {
             utxo: encode(post.utxo),
-            encrypted_note: post.encrypted_note.into(),
+            encrypted_note: EncryptedNote::from(post.encrypted_note),
         }
     }
 }
@@ -304,7 +309,7 @@ impl MaxEncodedLen for CurrentPath {
             .saturating_add(
                 // NOTE: We know that these paths don't exceed the path length.
                 InnerDigest::max_encoded_len().saturating_mul(
-                    manta_crypto::merkle_tree::path_length::<config::MerkleTreeConfiguration>(),
+                    manta_crypto::merkle_tree::path_length::<config::MerkleTreeConfiguration, ()>(),
                 ),
             )
     }
