@@ -247,7 +247,7 @@ async fn start_node_impl<RuntimeApi, Executor, BIQ, BIC, RB>(
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
-    _rpc_ext_builder: RB,
+    rpc_ext_builder: RB,
     build_import_queue: BIQ,
     build_consensus: BIC,
     hwbench: Option<sc_sysinfo::HwBench>,
@@ -348,7 +348,7 @@ where
                 deny_unsafe,
             };
 
-            crate::rpc::create_common_full(deps).map_err(Into::into)
+            rpc_ext_builder(deps)
         })
     };
 
