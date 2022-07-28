@@ -30,6 +30,8 @@
 mod benchmarking;
 pub mod migrations;
 pub mod weights;
+
+use frame_support::traits::StorageVersion;
 pub use crate::weights::WeightInfo;
 
 pub use pallet::*;
@@ -39,6 +41,8 @@ mod mock;
 
 #[cfg(test)]
 mod tests;
+
+const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -59,6 +63,7 @@ pub mod pallet {
         ArithmeticError,
     };
     use xcm::latest::prelude::*;
+    use super::STORAGE_VERSION;
 
     /// Alias for the junction Parachain(#[codec(compact)] u32),
     pub(crate) type ParaId = u32;
@@ -67,6 +72,7 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
     /// Convert AssetId and AssetLocation

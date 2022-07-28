@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-#![allow(non_upper_case_globals)]
-#![allow(clippy::unnecessary_cast)]
-#![allow(clippy::upper_case_acronyms)]
-#![cfg_attr(not(feature = "std"), no_std)]
 
-pub mod assets;
-pub mod constants;
-pub mod types;
-pub mod xcm;
-pub mod migration;
+//! Migration creates some helper function to make storage migration more convenient.
+
+/// MigratePalletPv2Sv means a wrapped handler to automatically upgrade our pallet
+/// from PalletVersion(Pv) to StorageVersion(Sv).
+///
+/// It's actually a simple rewriting about storage flag: delete [pallet_name] + '__STORAGE_VERSION__' key
+/// and reset [pallet_name] + '__PALLET_VERSION__' key.
+/// So It's a one-time job, and should be removed soon to minimize runtime size.
+pub struct MigratePalletPv2Sv;
