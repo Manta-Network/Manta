@@ -3430,10 +3430,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4eb1a864a501629691edf6c15a593b7a51eebaa1e8468e9ddc623de7c9b58ec6"
 dependencies = [
  "cfg-if 1.0.0",
- "js-sys",
  "libc",
  "wasi 0.11.0+wasi-snapshot-preview1",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -5050,26 +5048,15 @@ dependencies = [
 
 [[package]]
 name = "manta-accounting"
-version = "0.5.0"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.0#df042ff97cc24c3b4b7e223e56297bcb2b77791f"
-dependencies = [
- "derivative",
- "derive_more",
- "manta-crypto 0.5.0",
- "manta-util 0.5.0",
-]
-
-[[package]]
-name = "manta-accounting"
-version = "0.5.3"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/recover-compat-poseidon#e42d9787e2c0f8193566eedd98aa6a99f80cf333"
+version = "0.5.4"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=release-v0.5.4#e3be1de257c92f2a6eeb66867fde32cc385a9357"
 dependencies = [
  "derivative",
  "derive_more",
  "futures 0.3.21",
  "indexmap",
- "manta-crypto 0.5.3",
- "manta-util 0.5.3",
+ "manta-crypto",
+ "manta-util",
  "parking_lot 0.12.1",
  "statrs",
  "workspace-hack",
@@ -5104,21 +5091,11 @@ dependencies = [
 
 [[package]]
 name = "manta-crypto"
-version = "0.5.0"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.0#df042ff97cc24c3b4b7e223e56297bcb2b77791f"
+version = "0.5.4"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=release-v0.5.4#e3be1de257c92f2a6eeb66867fde32cc385a9357"
 dependencies = [
  "derivative",
- "manta-util 0.5.0",
- "rand_core 0.6.3",
-]
-
-[[package]]
-name = "manta-crypto"
-version = "0.5.3"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/recover-compat-poseidon#e42d9787e2c0f8193566eedd98aa6a99f80cf333"
-dependencies = [
- "derivative",
- "manta-util 0.5.3",
+ "manta-util",
  "rand 0.8.5",
  "rand_core 0.6.3",
  "workspace-hack",
@@ -5126,8 +5103,8 @@ dependencies = [
 
 [[package]]
 name = "manta-parameters"
-version = "0.5.3"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/recover-compat-poseidon#e42d9787e2c0f8193566eedd98aa6a99f80cf333"
+version = "0.5.4"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=release-v0.5.4#e3be1de257c92f2a6eeb66867fde32cc385a9357"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5139,8 +5116,8 @@ dependencies = [
 
 [[package]]
 name = "manta-pay"
-version = "0.5.3"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/recover-compat-poseidon#e42d9787e2c0f8193566eedd98aa6a99f80cf333"
+version = "0.5.4"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=release-v0.5.4#e3be1de257c92f2a6eeb66867fde32cc385a9357"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -5155,14 +5132,13 @@ dependencies = [
  "ark-std",
  "blake2 0.10.4",
  "derivative",
- "manta-accounting 0.5.3",
- "manta-crypto 0.5.3",
+ "manta-accounting",
+ "manta-crypto",
  "manta-parameters",
- "manta-util 0.5.3",
+ "manta-util",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
  "scale-info",
- "syn",
  "tempfile",
  "workspace-hack",
 ]
@@ -5175,7 +5151,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "manta-accounting 0.5.0",
+ "manta-accounting",
  "parity-scale-codec",
  "scale-info",
  "smallvec",
@@ -5255,13 +5231,8 @@ dependencies = [
 
 [[package]]
 name = "manta-util"
-version = "0.5.0"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.0#df042ff97cc24c3b4b7e223e56297bcb2b77791f"
-
-[[package]]
-name = "manta-util"
-version = "0.5.3"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/recover-compat-poseidon#e42d9787e2c0f8193566eedd98aa6a99f80cf333"
+version = "0.5.4"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=release-v0.5.4#e3be1de257c92f2a6eeb66867fde32cc385a9357"
 dependencies = [
  "serde",
  "serde_with",
@@ -6479,12 +6450,12 @@ dependencies = [
  "indoc",
  "jsonrpsee",
  "lazy_static",
- "manta-accounting 0.5.3",
- "manta-crypto 0.5.3",
+ "manta-accounting",
+ "manta-crypto",
  "manta-parameters",
  "manta-pay",
  "manta-primitives",
- "manta-util 0.5.3",
+ "manta-util",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",
@@ -11647,15 +11618,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
-name = "standback"
-version = "0.2.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e113fb6f3de07a243d434a56ec6f186dfd51cb08448239fe7bcae73f87ff28ff"
-dependencies = [
- "version_check",
-]
-
-[[package]]
 name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11846,12 +11808,6 @@ name = "subtle"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
-
-[[package]]
-name = "sval"
-version = "1.0.0-alpha.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45f6ee7c7b87caf59549e9fe45d6a69c75c8019e79e212a835c5da0e92f0ba08"
 
 [[package]]
 name = "syn"
@@ -12511,7 +12467,6 @@ dependencies = [
  "idna",
  "matches",
  "percent-encoding",
- "serde",
 ]
 
 [[package]]
@@ -12527,7 +12482,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2209b78d1249f7e6f3293657c9779fe31ced465df091bbd433a1cf88e916ec55"
 dependencies = [
  "ctor",
- "sval",
  "version_check",
 ]
 
@@ -13203,45 +13157,7 @@ dependencies = [
 [[package]]
 name = "workspace-hack"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/recover-compat-poseidon#e42d9787e2c0f8193566eedd98aa6a99f80cf333"
-dependencies = [
- "aes-gcm",
- "anyhow",
- "bitflags",
- "blake3",
- "cc",
- "crypto-common",
- "digest 0.10.3",
- "digest 0.9.0",
- "futures 0.3.21",
- "futures-channel",
- "futures-core",
- "futures-io",
- "futures-sink",
- "futures-task",
- "futures-util",
- "generic-array 0.14.5",
- "getrandom 0.2.7",
- "indexmap",
- "log",
- "memchr",
- "num-traits",
- "ppv-lite86",
- "proc-macro2",
- "quote",
- "rand 0.8.5",
- "rand_chacha 0.3.1",
- "rand_core 0.6.3",
- "serde",
- "serde_json",
- "sha2 0.9.9",
- "standback",
- "subtle",
- "syn",
- "url",
- "web-sys",
- "zeroize",
-]
+source = "git+https://github.com/manta-network/manta-rs.git?branch=release-v0.5.4#e3be1de257c92f2a6eeb66867fde32cc385a9357"
 
 [[package]]
 name = "wyz"
