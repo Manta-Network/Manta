@@ -17,15 +17,13 @@
 //! Dolphin Chain Specifications
 
 use super::*;
-use crate::command::DOLPHIN_PARACHAIN_ID;
+use crate::command::{DOLPHIN_ON_BAIKAL_PARACHAIN_ID, DOLPHIN_PARACHAIN_ID};
 use dolphin_runtime::{
     opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
 };
 use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
-
 /// Dolphin Protocol Identifier
 pub const DOLPHIN_PROTOCOL_ID: &str = "dolphin";
-
 /// Kusama Relaychain Local Network Identifier
 pub const KUSAMA_RELAYCHAIN_LOCAL_NET: &str = "kusama-local";
 
@@ -223,6 +221,14 @@ pub fn dolphin_testnet_config() -> Result<DolphinChainSpec, String> {
         &include_bytes!("../../../genesis/dolphin-testnet-genesis.json")[..],
     )?;
     spec.extensions_mut().para_id = DOLPHIN_PARACHAIN_ID;
+    Ok(spec)
+}
+
+pub fn dolphin_2085_config() -> Result<DolphinChainSpec, String> {
+    let mut spec = DolphinChainSpec::from_json_bytes(
+        &include_bytes!("../../../genesis/dolphin-2085-genesis.json")[..],
+    )?;
+    spec.extensions_mut().para_id = DOLPHIN_ON_BAIKAL_PARACHAIN_ID;
     Ok(spec)
 }
 
