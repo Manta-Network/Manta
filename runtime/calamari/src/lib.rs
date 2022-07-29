@@ -787,7 +787,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsReversedWithSystemFirst,
-    OnRuntimeUpgradeHooks
+    OnRuntimeUpgradeHooks,
 >;
 // When this is removed, should also remove `OldSessionKeys`.
 pub struct UpgradeSessionKeys;

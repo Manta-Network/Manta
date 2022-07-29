@@ -48,8 +48,8 @@ const VESTING_ID: LockIdentifier = *b"calamvst";
 
 #[frame_support::pallet]
 pub mod pallet {
-    use frame_support::traits::StorageVersion;
     use super::*;
+    use frame_support::traits::StorageVersion;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 

@@ -42,8 +42,8 @@ pub use weights::WeightInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use frame_support::traits::StorageVersion;
     use super::*;
+    use frame_support::traits::StorageVersion;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
