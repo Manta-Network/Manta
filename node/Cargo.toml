@@ -22,10 +22,12 @@ codec = { package = 'parity-scale-codec', version = '3.1.2' }
 futures = "0.3.21"
 log = "0.4.16"
 serde = { version = "1.0.137", features = ["derive"] }
+serde_json = "1.0.82"
 
 # Substrate frames
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.22" }
 frame-benchmarking-cli = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.22" }
+frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.22" }
 try-runtime-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22", optional = true }
 
 # RPC related dependencies
