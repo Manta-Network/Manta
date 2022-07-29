@@ -367,4 +367,7 @@ pub struct PullResponse {
 
     /// Ledger Sender Chunk
     pub senders: SenderChunk,
+
+    /// Total Number of receivers in Ledger
+    pub receivers_total: u128,
 }

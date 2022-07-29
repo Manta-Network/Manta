@@ -557,23 +557,14 @@ pub mod pallet {
             let (more_receivers, receivers) =
                 Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
             let (more_senders, senders) = Self::pull_senders(checkpoint.sender_index, max_senders);
+            let receivers_total = (0..=255)
+                .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
+                .sum();
             PullResponse {
                 should_continue: more_receivers || more_senders,
                 receivers,
                 senders,
-            }
-        }
-
-        /// Returns the current latest checkpoint.
-        #[inline]
-        pub fn pull_latest_checkpoint() -> Checkpoint {
-            Checkpoint {
-                receiver_index: {
-                    (0..=255)
-                        .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as usize)
-                        .collect()
-                },
-                sender_index: VoidNumberSetSize::<T>::get() as usize,
+                receivers_total,
             }
         }
 

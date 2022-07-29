@@ -29,19 +29,12 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block};
 
-/// Pull Latest Checkpoint Error Code
-pub const PULL_LATEST_CHECKPOINT_ERROR: i32 = 1;
-
 /// Pull Ledger Diff Error Code
-pub const PULL_LEDGER_DIFF_ERROR: i32 = 2;
+pub const PULL_LEDGER_DIFF_ERROR: i32 = 1;
 
 /// Pull API
 #[rpc(server)]
 pub trait PullApi {
-    /// Returns the current latest checkpoint.
-    #[method(name = "mantaPay_pull_latest_checkpoint", blocking)]
-    fn pull_latest_checkpoint(&self) -> RpcResult<Checkpoint>;
-
     /// Returns the update required to be synchronized with the ledger starting from
     /// `checkpoint`.
     #[method(name = "mantaPay_pull_ledger_diff", blocking)]
@@ -80,22 +73,6 @@ where
     C: 'static + ProvideRuntimeApi<B> + HeaderBackend<B>,
     C::Api: PullLedgerDiffApi<B>,
 {
-    #[inline]
-    fn pull_latest_checkpoint(&self) -> RpcResult<Checkpoint> {
-        let api = self.client.runtime_api();
-        let at = BlockId::hash(self.client.info().best_hash);
-        api.pull_latest_checkpoint(&at)
-            .map(Into::into)
-            .map_err(|err| {
-                CallError::Custom(ErrorObject::owned(
-                    PULL_LATEST_CHECKPOINT_ERROR,
-                    "Unable to retrieve the latest checkpoint",
-                    Some(format!("{:?}", err)),
-                ))
-                .into()
-            })
-    }
-
     #[inline]
     fn pull_ledger_diff(
         &self,
