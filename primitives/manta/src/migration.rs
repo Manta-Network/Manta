@@ -16,10 +16,12 @@
 
 //! Migration creates some helper function to make storage migration more convenient.
 
-use frame_support::dispatch::Weight;
-use frame_support::migrations::migrate_from_pallet_version_to_storage_version;
-use frame_support::traits::{Get, GetStorageVersion, OnRuntimeUpgrade, PalletInfoAccess};
-use frame_support::weights::constants::RocksDbWeight;
+use frame_support::{
+    dispatch::Weight,
+    migrations::migrate_from_pallet_version_to_storage_version,
+    traits::{Get, GetStorageVersion, OnRuntimeUpgrade, PalletInfoAccess},
+    weights::constants::RocksDbWeight,
+};
 use frame_system::Config;
 use sp_std::marker::PhantomData;
 

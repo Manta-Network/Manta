@@ -21,6 +21,6 @@
 
 pub mod assets;
 pub mod constants;
+pub mod migration;
 pub mod types;
 pub mod xcm;
-pub mod migration;
