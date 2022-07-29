@@ -19,10 +19,9 @@
 use frame_support::{
     dispatch::Weight,
     migrations::migrate_from_pallet_version_to_storage_version,
-    traits::{Get, GetStorageVersion, OnRuntimeUpgrade, PalletInfoAccess},
+    traits::{GetStorageVersion, OnRuntimeUpgrade, PalletInfoAccess},
     weights::constants::RocksDbWeight,
 };
-use frame_system::Config;
 use sp_std::marker::PhantomData;
 
 /// MigratePalletPv2Sv means a wrapped handler to automatically upgrade our pallet
