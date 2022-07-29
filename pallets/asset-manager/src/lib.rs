@@ -30,10 +30,7 @@
 mod benchmarking;
 pub mod migrations;
 pub mod weights;
-
-use frame_support::traits::StorageVersion;
 pub use crate::weights::WeightInfo;
-
 pub use pallet::*;
 
 #[cfg(test)]
@@ -42,13 +39,12 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
-
 #[frame_support::pallet]
 pub mod pallet {
 
     use crate::weights::WeightInfo;
     use frame_support::{pallet_prelude::*, traits::Contains, transactional, PalletId};
+    use frame_support::traits::StorageVersion;
     use frame_system::pallet_prelude::*;
     use manta_primitives::{
         assets::{
@@ -63,7 +59,9 @@ pub mod pallet {
         ArithmeticError,
     };
     use xcm::latest::prelude::*;
-    use super::STORAGE_VERSION;
+
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
 
     /// Alias for the junction Parachain(#[codec(compact)] u32),
     pub(crate) type ParaId = u32;

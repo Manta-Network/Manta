@@ -14,8 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-
 //! Migration creates some helper function to make storage migration more convenient.
+
+use frame_support::dispatch::Weight;
+use frame_support::migrations::migrate_from_pallet_version_to_storage_version;
+use frame_support::traits::{Get, GetStorageVersion, OnRuntimeUpgrade, PalletInfoAccess};
+use frame_support::weights::constants::RocksDbWeight;
+use frame_system::Config;
+use sp_std::marker::PhantomData;
 
 /// MigratePalletPv2Sv means a wrapped handler to automatically upgrade our pallet
 /// from PalletVersion(Pv) to StorageVersion(Sv).
@@ -23,4 +29,15 @@
 /// It's actually a simple rewriting about storage flag: delete [pallet_name] + '__STORAGE_VERSION__' key
 /// and reset [pallet_name] + '__PALLET_VERSION__' key.
 /// So It's a one-time job, and should be removed soon to minimize runtime size.
-pub struct MigratePalletPv2Sv;
+pub struct MigratePalletPv2Sv<T>(PhantomData<T>);
+
+impl<T> OnRuntimeUpgrade for MigratePalletPv2Sv<T>
+where
+    T: GetStorageVersion + PalletInfoAccess,
+{
+    fn on_runtime_upgrade() -> Weight {
+        // let db_weight = <T::Runtime as Config>::DbWeight::get();
+        let db_weight = RocksDbWeight::get();
+        migrate_from_pallet_version_to_storage_version::<T>(&db_weight)
+    }
+}

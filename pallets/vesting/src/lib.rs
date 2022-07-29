@@ -48,7 +48,10 @@ const VESTING_ID: LockIdentifier = *b"calamvst";
 
 #[frame_support::pallet]
 pub mod pallet {
+    use frame_support::traits::StorageVersion;
     use super::*;
+
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -111,6 +114,7 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
     #[pallet::event]
