@@ -83,7 +83,6 @@ cumulus-relay-chain-rpc-interface = { git = 'https://github.com/paritytech/cumul
 
 # Polkadot dependencies
 polkadot-cli = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.26" }
-polkadot-parachain = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.26" }
 polkadot-primitives = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.26" }
 polkadot-service = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.26" }
 xcm = { git = "https://github.com/paritytech/polkadot.git", branch = "release-v0.9.26" }

@@ -27,7 +27,8 @@ use cumulus_client_consensus_common::{
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
-    prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
+    prepare_node_config, start_collator, start_full_node, SharedImportQueue, StartCollatorParams,
+    StartFullNodeParams,
 };
 use cumulus_primitives_core::{
     relay_chain::v2::{Hash as PHash, PersistedValidationData},
@@ -323,7 +324,7 @@ where
     let validator = parachain_config.role.is_authority();
     let prometheus_registry = parachain_config.prometheus_registry().cloned();
     let transaction_pool = params.transaction_pool.clone();
-    let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
+    let import_queue = SharedImportQueue::new(params.import_queue);
     let (network, system_rpc_tx, start_network) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &parachain_config,
