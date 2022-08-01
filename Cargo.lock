@@ -982,8 +982,8 @@ dependencies = [
  "log",
  "manta-collator-selection",
  "manta-primitives",
- "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.26)",
- "orml-xtokens 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.26)",
+ "orml-traits",
+ "orml-xtokens",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-aura",
@@ -2372,8 +2372,8 @@ dependencies = [
  "log",
  "manta-collator-selection",
  "manta-primitives",
- "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.26)",
- "orml-xtokens 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.26)",
+ "orml-traits",
+ "orml-xtokens",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-aura",
@@ -5762,25 +5762,7 @@ dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
  "num-traits",
- "orml-utilities 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.26)",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "xcm",
-]
-
-[[package]]
-name = "orml-traits"
-version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.26#33dbc5e35305d0cf5937c896dae8655ca7da95d8"
-dependencies = [
- "frame-support",
- "impl-trait-for-tuples",
- "num-traits",
- "orml-utilities 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.26)",
+ "orml-utilities",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -5805,40 +5787,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "orml-utilities"
-version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.26#33dbc5e35305d0cf5937c896dae8655ca7da95d8"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "orml-xcm-support"
 version = "0.4.1-dev"
 source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.26#33dbc5e35305d0cf5937c896dae8655ca7da95d8"
 dependencies = [
  "frame-support",
- "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.26)",
- "parity-scale-codec",
- "sp-runtime",
- "sp-std",
- "xcm",
- "xcm-executor",
-]
-
-[[package]]
-name = "orml-xcm-support"
-version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.26#33dbc5e35305d0cf5937c896dae8655ca7da95d8"
-dependencies = [
- "frame-support",
- "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.26)",
+ "orml-traits",
  "parity-scale-codec",
  "sp-runtime",
  "sp-std",
@@ -5854,29 +5808,8 @@ dependencies = [
  "cumulus-primitives-core",
  "frame-support",
  "frame-system",
- "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.26)",
- "orml-xcm-support 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.26)",
- "pallet-xcm",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "xcm",
- "xcm-executor",
-]
-
-[[package]]
-name = "orml-xtokens"
-version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.26#33dbc5e35305d0cf5937c896dae8655ca7da95d8"
-dependencies = [
- "cumulus-primitives-core",
- "frame-support",
- "frame-system",
- "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.26)",
- "orml-xcm-support 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.26)",
+ "orml-traits",
+ "orml-xcm-support",
  "pallet-xcm",
  "parity-scale-codec",
  "scale-info",
@@ -5912,7 +5845,7 @@ dependencies = [
  "frame-system",
  "log",
  "manta-primitives",
- "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.26)",
+ "orml-traits",
  "pallet-assets",
  "pallet-balances",
  "parity-scale-codec",
@@ -9026,8 +8959,8 @@ dependencies = [
  "frame-support",
  "frame-system",
  "manta-primitives",
- "orml-traits 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.26)",
- "orml-xtokens 0.4.1-dev (git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.26)",
+ "orml-traits",
+ "orml-xtokens",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",
