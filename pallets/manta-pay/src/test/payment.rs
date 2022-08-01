@@ -300,8 +300,10 @@ fn initialize_test(id: AssetId, value: AssetValue) {
         metadata.into(),
         true
     ));
-    assert_ok!(FungibleLedger::<Test>::mint(id.0, &ALICE, value.0));
-    assert_ok!(FungibleLedger::<Test>::mint(
+    assert_ok!(FungibleLedger::<Test>::deposit_can_mint(
+        id.0, &ALICE, value.0
+    ));
+    assert_ok!(FungibleLedger::<Test>::deposit_can_mint(
         id.0,
         &MantaPayPallet::account_id(),
         DEFAULT_ASSET_ED

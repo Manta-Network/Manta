@@ -55,6 +55,8 @@ pub const CALAMARI_PARACHAIN_ID: u32 = 2084;
 
 /// Dolphin Parachain ID
 pub const DOLPHIN_PARACHAIN_ID: u32 = 2084;
+/// Dolphin on Baikal Parachain ID. Can't be 2084 because Calamari @ Baikal already uses it.
+pub const DOLPHIN_ON_BAIKAL_PARACHAIN_ID: u32 = 2085;
 
 trait IdentifyChain {
     fn is_manta(&self) -> bool;
@@ -104,6 +106,7 @@ fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         "dolphin-dev" => Ok(Box::new(chain_specs::dolphin_development_config())),
         "dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config())),
         "dolphin-testnet" => Ok(Box::new(chain_specs::dolphin_testnet_config()?)),
+        "dolphin-2085" => Ok(Box::new(chain_specs::dolphin_2085_config()?)),
         "dolphin-testnet-ci" => Ok(Box::new(chain_specs::dolphin_testnet_ci_config()?)),
         path => {
             let chain_spec = chain_specs::ChainSpec::from_json_file(path.into())?;

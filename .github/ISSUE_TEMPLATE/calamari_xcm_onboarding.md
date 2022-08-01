@@ -6,7 +6,9 @@ about: Perform cross chain transfer tests in order to open HRMP channel with Cal
 
 # ⛓ Calamari XCM Testing And Onboarding Checklist
 
-## Process Overview:
+## Process Overview
+
+### Test Environment:
 - [ ] Open channel for communication.
 
 - [ ] Test XCM between parachains locally with polkadot-launch.
@@ -15,23 +17,34 @@ about: Perform cross chain transfer tests in order to open HRMP channel with Cal
 
 - [ ] Calculate and fund your parachain's sovereign account on Rococo.
 
+- [ ] Open HRMP channels with Dolphin.
+
+- [ ] Assets registrations of the Rococo parachains.
+
+- [ ] Complete XCM tests between the Rococo parachains.
+
+### Production Environment:
 - [ ] Open HRMP channels with Calamari.
 
-- [ ] Assets registrations.
-
-- [ ] Complete XCM tests between parachains.
+- [ ] Assets registrations of Kusama parachains.
 
 - [ ] Next steps discussion.
 
 * Manta Team Contact:
     - Georgi (XCM Eng): @Ghz (Telegram)
     - Shumo (Co-founder, Tech.): @xstec (Telegram)
+* Keep in mind that:
+	- Manta is our Polkadot parachain.
+	- Calamari is our Kusama parachain.
+	- Dolphin is our Rococo parachain.
+
+# Test Environment
 
 ## Open communication channel
 
 - Ideally we should create a channel for direct messaging between or teams.
 - We can communicate on Discord, Element or Telegram.
-- Please fill out this [form](https://forms.gle/SPitZjuiir6fVkrn8) and someone from our team will contact you to setup the chat room.
+- Please fill out this [form](https://forms.gle/SPitZjuiir6fVkrn8) if we have not setup the channel already and someone from our team will contact you to setup the chat room.
 
 ## Local XCM Integration
 
@@ -77,7 +90,7 @@ Sovereign Account Address on Relay: 0x706172612408000000000000000000000000000000
 1. `Transact` instruction and encoded inner calls to HRMP pallet to open/accept HRMP channels.
 2. Reserves for the HRMP channels, which are chain specific configurations, and can be checked with `configuration.activeConfig()` - `hrmpSenderDeposit` and `hrmpRecipientDeposit` 
 
-## Create HRMP Channel with Dolphin
+## Requesting HRMP Channel to Dolphin
 ### Get the Relay Encoded Call Data to Open HRMP Channel.
 
 - Once your parachain is onboard, you need to create the HRMP channel between your Parachain and Dolphin.
@@ -98,7 +111,7 @@ console.log(tx.toHex());
 
  **Note:** that `hrmpChannelMaxCapacity` and `hrmpChannelMaxMessageSize` need to be in the range of the relay chain's configuration and can be checked with `configuration.activeConfig()`
 
-### Send XCM to Relay Chain
+### Send XCM to Rococo
 
 - The next step is to build and send an XCM message to the relay chain that will request a channel to be opened through the relay chain. This XCM message needs to be sent from the root account (either SUDO or via governance). The message can be broken down in the following elements:
     1. Withdraw asset: take funds out of the Sovereign Account of the origin parachain (in the relay chain) to a holding state
@@ -152,12 +165,12 @@ console.log(tx.toHex());
 
 - The result will be like:
 
-`0x1c04170124080000`, remove the leading hex `1c04`, and the final encoded result is:
+`0x1c043c0124080000`, remove the leading hex `1c04`, and the final encoded result is:
 ```
-0x170124080000
+0x3c0124080000
 ```
 
-### Send XCM to Relay Chain
+### Send XCM to Rococo
 
 - The steps are the same as before (when making the request to open a channel). The main difference is in the `Transact` item, where you need to provide the encoded call data calculated above. This XCM message needs to be sent from the root account (either SUDO or via governance):
 ```
@@ -166,7 +179,7 @@ Transact { originType: Native, requireWeightAtMost: 1000000000, call: XcmDoubleE
     
 **Note**: The values used above are for reference to be used in this testing environment, do not use these values in production!
     
-## Assets Registrations
+## Assets registrations of the Rococo parachains
 
 ### Registering your Asset on Dolphin
 
@@ -187,7 +200,7 @@ Transact { originType: Native, requireWeightAtMost: 1000000000, call: XcmDoubleE
 
 - We will also set an arbitrary `UnitsPerSecond` value, which is the number of tokens charged per second of execution of the XCM message. This can be arbitrary on the testnet, but on Calamari we're targeting a $0.1 cost for transfers.
 
-### Registering Calamari’s Token on your Parachain
+### Registering Dolphin's Token on your Parachain
 
 - To register our DOL token on your parachain, you can use the following MultiLocation:
 
@@ -205,7 +218,7 @@ Self sufficient: true
 
 - Note: Calamari MultiLocation and metadata are different!
 
-## Complete cross chain transfer tests on Dolphin
+## Complete XCM tests between the Rococo parachains.
 
 * The following items must have been completed and fully tested in the Rococo Ecosystem with Dolphin before proceeding with an XCM integration on Calamari (and Manta in the future):
     1. Bi-directional HRMP channels between Dolphin and your parachain
@@ -216,12 +229,94 @@ Self sufficient: true
 	1. Transferring a parachain's native token to another parachain and back.
 	2. Transferring a non-native token from one parachain to another and back.
 
+# Production Environment
+
+## Requesting HRMP Channel to Calamari
+### Get the Relay Encoded Call Data to Open HRMP Channel.
+
+- Once we've completed testing, we should proceed to production environment and create the HRMP channel between your Parachain and Calamari.
+- Again the first step is to get an encoded call data from the relay chain. The extrinsic contains the target parachain ID, max number of messages, and max message size, described in the next bullet.
+- In PolkadotJS app, switch to the Rococo network and go to Developer -> [Javascript section](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fkusama-rpc.polkadot.io#/js). Then run the following code, and replace the demo recipient para id with your own:
+
+```
+const tx = api.tx.hrmp.hrmpInitOpenChannel(receiverParaId, hrmpChannelMaxCapacity, hrmpChannelMaxMessageSize);
+console.log(tx.toHex());
+```
+- With arguments `2084, 1000, 102400` respectively the result will be:
+`0x3c043c0024080000e803000000900100`, remove the leading hex `3c04`, and so the final encoded result is:
+ ```
+ 0x3c0024080000e803000000900100
+ ```
+ **Note:** that `hrmpChannelMaxCapacity` and `hrmpChannelMaxMessageSize` need to be in the range of the relay chain's configuration and can be checked with `configuration.activeConfig()`
+
+### Send XCM to Kusama
+
+- The next step is to build and send an XCM message to the relay chain that will request a channel to be opened through the relay chain. This XCM message needs to be sent from the root account (either SUDO or via governance). 
+- The message composition that was used previously used to open channel with Dolphin on Rococo can be reused in this case.
+
+## Accepting HRMP Channel from Calamari
+### Get the Relay Encoded Call Data to Accept HRMP Channel
+
+- To get an encoded call data from the relay chain, to accept a channel request with a target parachain, take the following steps:
+- In PolkadotJS app, switch to the live Polkadot/Kusama network. Go to Developer -> [Javascript section](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frococo-rpc.kusama.io#/js). Then run the following code, and replace the demo recipient para id with your own:
+```
+const tx = api.tx.hrmp.hrmpAcceptOpenChannel(2084);
+console.log(tx.toHex());
+```
+- The result will be like:
+`0x1c04170124080000`, remove the leading hex `1c04`, and the final encoded result is:
+```
+0x170124080000
+```
+
+### Send XCM to Kusama
+
+- For this step you can again reuse the message composition that was previously used to accept the open channel request from Dolphin on Rococo.
+    
+## Assets registrations of the Kusama parachains
+
+### Registering your Asset on Calamari
+
+- Once the channel is opened, we need to register the asset that will be transferred to Calamari.
+- Like with your Rococo parachain asset, please write the required asset information as a comment in this issue and we will confirm once the asset is registered.
+- After the asset is successfully registered, you can try transferring tokens from your parachain to Calamari.
+- For testing, please also provide your Parachain WS Endpoint so we can connect to it. Lastly, we would need some funds to the following account:
+    
+    `5CacAW3K4gq3Ufv2dAqUFYWKoqJcQaFu346ahesmt4sua7Xx`
+    
+- If you need KMA tokens (the native token for Calamari) to use your parachain's asset, please contact us in a comment or via a direct message.
+- Unlike with Dolphin on Rococo the `UnitsPerSecond` value of your asset on Calamari will be set to target roughly a $0.1 cost for transfers.
+
+### Registering Calamari's Token on your Parachain
+
+- To register our KMA token on your parachain, you can use the following MultiLocation:
+
+`{ "parents": 1, "interior": {"X1": { "Parachain": 2084 }}`
+
+- And the following metadata:
+
+```
+Name: Calamari
+Symbol: KMA
+Decimals: 12
+Min Balance: 100000000000
+Self sufficient: true
+```
+- Note: Calamari MultiLocation and metadata are different!
+
+## Final XCM tests between the Kusama parachains.
+
+* As a final sanity check in the production environment we will perform the following tests:
+	1. Transferring a parachain's native token to another parachain and back.
+	2. Transferring a non-native token from one parachain to another and back.
+
 ## Next Steps - Calamari & Manta
 
 Once everything is successful we can plan for:
 * Cross marketing initiatives between our teams.
 * Product integrations if relevant.
 * Governance proposals to open HRMP channels and register assets.
+	- Please submit your proposal to our governance forum [similarly to this proposal](https://forum.manta.network/t/proposal-for-open-bi-directionnal-hrmp-channel-with-khala-network/142) 
 
 ### Example Polkadot Launch Config
 
