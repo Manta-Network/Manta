@@ -16,13 +16,16 @@
 
 //! Migration creates some helper function to make storage migration more convenient.
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
 use frame_support::{
     dispatch::Weight,
     migrations::migrate_from_pallet_version_to_storage_version,
     traits::{GetStorageVersion, OnRuntimeUpgrade, PalletInfoAccess},
     weights::constants::RocksDbWeight,
 };
-use std::marker::PhantomData;
+
+use sp_std::marker::PhantomData;
 
 /// MigratePalletPv2Sv means a wrapped handler to automatically upgrade our pallet
 /// from PalletVersion(Pv) to StorageVersion(Sv).
@@ -37,8 +40,95 @@ where
     T: GetStorageVersion + PalletInfoAccess,
 {
     fn on_runtime_upgrade() -> Weight {
-        // let db_weight = <T::Runtime as Config>::DbWeight::get();
         let db_weight = RocksDbWeight::get();
         migrate_from_pallet_version_to_storage_version::<T>(&db_weight)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use frame_support::traits::{CrateVersion, StorageInstance, StorageVersion};
+    use sp_io::TestExternalities;
+
+    pub struct DummyPrefix;
+
+    impl StorageInstance for DummyPrefix {
+        fn pallet_prefix() -> &'static str {
+            "test_pv2sv"
+        }
+
+        const STORAGE_PREFIX: &'static str = "foo";
+    }
+
+    // just used for below migration test.
+    // avoiding declare a huge Runtime part.
+    struct MockForMigrationTesting {}
+
+    impl GetStorageVersion for MockForMigrationTesting {
+        fn current_storage_version() -> StorageVersion {
+            StorageVersion::new(10)
+        }
+
+        fn on_chain_storage_version() -> StorageVersion {
+            StorageVersion::get::<Self>()
+        }
+    }
+
+    impl PalletInfoAccess for MockForMigrationTesting {
+        fn index() -> usize {
+            0
+        }
+
+        fn name() -> &'static str {
+            "test_pv_2_sv"
+        }
+
+        fn module_name() -> &'static str {
+            "test_module_name"
+        }
+
+        fn crate_version() -> CrateVersion {
+            CrateVersion {
+                major: 4,
+                minor: 0,
+                patch: 0,
+            }
+        }
+    }
+
+    #[test]
+    fn test_pv_2_sv_works() {
+        // 1. write old pallet version into storage.
+        // 2. call utility
+        // 3. test whether it works.
+        const PALLET_VERSION_STORAGE_KEY_POSTFIX: &[u8] = b":__PALLET_VERSION__:";
+        fn pallet_version_key(name: &str) -> [u8; 32] {
+            frame_support::storage::storage_prefix(
+                name.as_bytes(),
+                PALLET_VERSION_STORAGE_KEY_POSTFIX,
+            )
+        }
+
+        let mut db = TestExternalities::default();
+        db.execute_with(|| {
+            sp_io::storage::set(
+                &pallet_version_key(MockForMigrationTesting::name()),
+                &[1, 0, 0],
+            );
+            assert_eq!(
+                MockForMigrationTesting::on_chain_storage_version(),
+                StorageVersion::new(0)
+            );
+            let weight = MigratePalletPv2Sv::<MockForMigrationTesting>::on_runtime_upgrade();
+            assert_eq!(100_000 * 1000 * 2, weight);
+            assert!(
+                sp_io::storage::get(&pallet_version_key(MockForMigrationTesting::name())).is_none()
+            );
+            assert_eq!(
+                MockForMigrationTesting::on_chain_storage_version(),
+                StorageVersion::new(10)
+            );
+        })
     }
 }
