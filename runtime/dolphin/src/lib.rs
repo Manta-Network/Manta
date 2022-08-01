@@ -40,7 +40,10 @@ use sp_version::NativeVersion;
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, PrivilegeCmp},
+    traits::{
+        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, NeverEnsureOrigin,
+        PrivilegeCmp,
+    },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, Weight,
@@ -553,7 +556,9 @@ impl pallet_treasury::Config for Runtime {
     type MaxApprovals = ConstU32<100>;
     type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
     type SpendFunds = ();
-    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
+    // Expects an implementation of `EnsureOrigin` with a `Success` generic,
+    // which is the the maximum amount that this origin is allowed to spend at a time.
+    type SpendOrigin = NeverEnsureOrigin<Balance>;
 }
 
 parameter_types! {
