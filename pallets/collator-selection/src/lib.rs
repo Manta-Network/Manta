@@ -324,6 +324,7 @@ pub mod pallet {
         /// Set candidate collator as invulnerable.
         ///
         /// `new`: candidate collator.
+        #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::set_invulnerables(new.len() as u32))]
         pub fn set_invulnerables(
             origin: OriginFor<T>,
@@ -344,6 +345,7 @@ pub mod pallet {
         /// Set how many candidate collator are allowed.
         ///
         /// `max`: The max number of candidates.
+        #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::set_desired_candidates())]
         pub fn set_desired_candidates(
             origin: OriginFor<T>,
@@ -362,6 +364,7 @@ pub mod pallet {
         /// Set the amount held on reserved for candidate collator.
         ///
         /// `bond`: The amount held on reserved.
+        #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::set_candidacy_bond())]
         pub fn set_candidacy_bond(
             origin: OriginFor<T>,
@@ -374,6 +377,7 @@ pub mod pallet {
         }
 
         /// Register as candidate collator.
+        #[pallet::call_index(3)]
         #[pallet::weight(T::WeightInfo::register_as_candidate(T::MaxCandidates::get()))]
         pub fn register_as_candidate(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -421,6 +425,7 @@ pub mod pallet {
         /// Register an specified candidate as collator.
         ///
         /// - `new_candidate`: Who is going to be collator.
+        #[pallet::call_index(4)]
         #[pallet::weight(T::WeightInfo::register_candidate(T::MaxCandidates::get()))]
         pub fn register_candidate(
             origin: OriginFor<T>,
@@ -471,6 +476,7 @@ pub mod pallet {
         }
 
         /// Leave from collator set.
+        #[pallet::call_index(5)]
         #[pallet::weight(T::WeightInfo::leave_intent(T::MaxCandidates::get()))]
         pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -482,6 +488,7 @@ pub mod pallet {
         /// Remove an specified collator.
         ///
         /// - `collator`: Who is going to be remove from collators set.
+        #[pallet::call_index(6)]
         #[pallet::weight(T::WeightInfo::remove_collator(T::MaxCandidates::get()))]
         pub fn remove_collator(
             origin: OriginFor<T>,
@@ -503,6 +510,7 @@ pub mod pallet {
         /// Set the collator performance percentile used as baseline for eviction
         ///
         /// `percentile`: x-th percentile of collator performance to use as eviction baseline
+        #[pallet::call_index(7)]
         #[pallet::weight(T::WeightInfo::set_eviction_baseline())]
         pub fn set_eviction_baseline(
             origin: OriginFor<T>,
@@ -517,6 +525,7 @@ pub mod pallet {
         /// Set the tolerated underperformance percentage before evicting
         ///
         /// `percentage`: x% of missed blocks under eviction_baseline to tolerate
+        #[pallet::call_index(8)]
         #[pallet::weight(T::WeightInfo::set_eviction_tolerance())]
         pub fn set_eviction_tolerance(
             origin: OriginFor<T>,
