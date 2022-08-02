@@ -43,7 +43,7 @@ use sp_version::NativeVersion;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, Get, NeverEnsureOrigin,
+        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, NeverEnsureOrigin,
         PrivilegeCmp,
     },
     weights::{
@@ -292,34 +292,6 @@ impl Contains<Call> for BaseFilter {
 /// Converter struct to use the Session pallet for mapping a NimbusId to its AccountId
 pub struct TestConverter<T> {
     _phantom: PhantomData<T>,
-}
-
-// Fetch list of eligible authors. This should be in manta_collator_selection
-impl<T> Get<Vec<T::AccountId>> for TestConverter<T>
-where
-    T: frame_system::Config + manta_collator_selection::Config + pallet_session::Config,
-    // Implemented only where Session's ValidatorId is directly convertible to collator_selection's ValidatorId
-    <T as manta_collator_selection::Config>::ValidatorId:
-        From<<T as pallet_session::Config>::ValidatorId>,
-{
-    /// Return the set of eligible collator accounts
-    fn get() -> Vec<T::AccountId>
-    where
-        <T as manta_collator_selection::Config>::ValidatorId:
-            From<<T as pallet_session::Config>::ValidatorId>,
-    {
-        use sp_runtime::traits::Convert;
-
-        let v = pallet_session::Pallet::<T>::validators()
-            .into_iter()
-            .map(|vid: <T as pallet_session::Config>::ValidatorId| {
-                <T as manta_collator_selection::Config>::AccountIdOf::convert(vid.into())
-            })
-            .collect::<Vec<T::AccountId>>();
-
-        log::info!("Requested Registered account Ids {:?}", v);
-        v
-    }
 }
 
 impl<T> AccountLookup<T::AccountId> for TestConverter<T>
@@ -618,7 +590,7 @@ impl pallet_treasury::Config for Runtime {
     type SpendOrigin = NeverEnsureOrigin<Balance>;
 }
 impl pallet_aura_style_filter::Config for Runtime {
-    type PotentialAuthors = TestConverter<Self>;
+    type PotentialAuthors = CollatorSelection;
 }
 
 impl pallet_author_inherent::Config for Runtime {

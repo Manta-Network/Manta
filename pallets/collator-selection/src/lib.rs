@@ -671,6 +671,36 @@ pub mod pallet {
         }
     }
 
+/// Fetch list of all possibly eligible authors to use in nimbus consensus filters
+///
+/// This is currently the static set registered with pallet_session and will be superseded by parachain_staking
+///
+/// NOTE: This should really be in pallet_session as we only use its storage, but since we haven't
+/// forked that one, this is the next best place.
+impl<T> Get<Vec<T::AccountId>> for Pallet<T>
+where
+    T: Config + pallet_session::Config,
+    // Implemented only where Session's ValidatorId is directly convertible to collator_selection's ValidatorId
+    <T as Config>::ValidatorId: From<<T as pallet_session::Config>::ValidatorId>
+{
+    /// Return the set of eligible collator accounts
+    fn get() -> Vec<T::AccountId>
+    where
+        <T as Config>::ValidatorId: From<<T as pallet_session::Config>::ValidatorId>,
+    {
+        use sp_runtime::traits::Convert;
+
+        let validator_account_set = pallet_session::Pallet::<T>::validators()
+            .into_iter()
+            .map(|vid: <T as pallet_session::Config>::ValidatorId| {
+                <T as Config>::AccountIdOf::convert(vid.into())
+            })
+            .collect::<Vec<T::AccountId>>();
+
+        validator_account_set
+    }
+}
+
     /// Implements authoring filter for nimbus consensus pipeline
     impl<T: Config> nimbus_primitives::CanAuthor<T::AccountId> for Pallet<T> {
         fn can_author(account: &T::AccountId, slot: &u32) -> bool {
