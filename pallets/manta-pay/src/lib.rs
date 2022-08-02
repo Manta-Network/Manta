@@ -178,6 +178,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Transforms some public assets into private ones using `post`, withdrawing the public
         /// assets from the `origin` account.
+        #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::to_private())]
         #[transactional]
         pub fn to_private(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
@@ -187,6 +188,7 @@ pub mod pallet {
 
         /// Transforms some private assets into public ones using `post`, depositing the public
         /// assets in the `origin` account.
+        #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::to_public())]
         #[transactional]
         pub fn to_public(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
@@ -200,6 +202,7 @@ pub mod pallet {
         ///
         /// In this transaction, `origin` is just signing the `post` and is not necessarily related
         /// to any of the participants in the transaction itself.
+        #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::private_transfer())]
         #[transactional]
         pub fn private_transfer(
@@ -211,6 +214,7 @@ pub mod pallet {
         }
 
         /// Transfers public `asset` from `origin` to the `sink` account.
+        #[pallet::call_index(3)]
         #[pallet::weight(T::WeightInfo::public_transfer())]
         #[transactional]
         pub fn public_transfer(
@@ -567,7 +571,7 @@ pub mod pallet {
         /// Returns the account ID of this pallet.
         #[inline]
         pub fn account_id() -> T::AccountId {
-            T::PalletId::get().into_account()
+            T::PalletId::get().into_account_truncating()
         }
 
         /// Posts the transaction encoded in `post` to the ledger, using `sources` and `sinks` as

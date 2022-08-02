@@ -27,7 +27,8 @@ use cumulus_client_consensus_common::{
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
-    prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
+    prepare_node_config, start_collator, start_full_node, SharedImportQueue, StartCollatorParams,
+    StartFullNodeParams,
 };
 use cumulus_primitives_core::{
     relay_chain::v2::{Hash as PHash, PersistedValidationData},
@@ -253,12 +254,13 @@ async fn build_relay_chain_interface(
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
 #[allow(clippy::too_many_arguments)]
-async fn start_node_impl<RuntimeApi, BIQ, BIC, FullRpc>(
+
+async fn start_node_impl<RuntimeApi, BIQ, BIC, RB>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
-    full_rpc: FullRpc,
+    rpc_ext_builder: RB,
     build_import_queue: BIQ,
     build_consensus: BIC,
     hwbench: Option<sc_sysinfo::HwBench>,
@@ -275,7 +277,8 @@ where
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     StateBackend: sp_api::StateBackend<BlakeTwo256>,
-    FullRpc: Fn(
+
+    RB: Fn(
             rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
         ) -> Result<RpcModule<()>, Error>
         + 'static,
@@ -330,7 +333,7 @@ where
     let validator = parachain_config.role.is_authority();
     let prometheus_registry = parachain_config.prometheus_registry().cloned();
     let transaction_pool = params.transaction_pool.clone();
-    let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
+    let import_queue = SharedImportQueue::new(params.import_queue);
     let (network, system_rpc_tx, start_network) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &parachain_config,
@@ -355,7 +358,7 @@ where
                 deny_unsafe,
             };
 
-            full_rpc(deps)
+            rpc_ext_builder(deps)
         })
     };
 
@@ -608,13 +611,13 @@ where
 }
 
 /// Start a calamari/manta parachain node.
-pub async fn start_parachain_node<RuntimeApi, AuraId: AppKey, FullRpc>(
+pub async fn start_parachain_node<RuntimeApi, AuraId: AppKey, RB>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
     hwbench: Option<sc_sysinfo::HwBench>,
-    full_rpc: FullRpc,
+    rpc_ext_builder: RB,
 ) -> sc_service::error::Result<(TaskManager, Arc<Client<RuntimeApi>>)>
 where
     RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
@@ -631,7 +634,7 @@ where
     StateBackend: sp_api::StateBackend<BlakeTwo256>,
     <<AuraId as AppKey>::Pair as Pair>::Signature:
         TryFrom<Vec<u8>> + std::hash::Hash + sp_runtime::traits::Member + Codec,
-    FullRpc: Fn(
+    RB: Fn(
             rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
         ) -> Result<RpcModule<()>, Error>
         + 'static,
@@ -641,7 +644,7 @@ where
         polkadot_config,
         collator_options,
         id,
-        full_rpc,
+        rpc_ext_builder,
         parachain_build_import_queue::<_, AuraId>,
         |client,
          prometheus_registry,

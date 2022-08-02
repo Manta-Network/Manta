@@ -53,8 +53,11 @@
             "port": 32331,
             "flags": [
               "--rpc-cors=all",
+              "--execution=wasm",
+              "--wasm-execution=compiled",
               "--",
-              "--execution=wasm"
+              "--execution=wasm",
+              "--wasm-execution=compiled"
             ]
           },
           {
@@ -63,8 +66,11 @@
             "port": 32332,
             "flags": [
               "--rpc-cors=all",
+              "--execution=wasm",
+              "--wasm-execution=compiled",
               "--",
-              "--execution=wasm"
+              "--execution=wasm",
+              "--wasm-execution=compiled"
             ]
           },
           {
@@ -73,8 +79,11 @@
             "port": 32333,
             "flags": [
               "--rpc-cors=all",
+              "--execution=wasm",
+              "--wasm-execution=compiled",
               "--",
-              "--execution=wasm"
+              "--execution=wasm",
+              "--wasm-execution=compiled"
             ]
           }
         ]

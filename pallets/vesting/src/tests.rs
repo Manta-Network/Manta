@@ -80,7 +80,7 @@ fn alice_vesting_for_bob_should_work() {
             assert_eq!(Balances::free_balance(BOB), unvested);
 
             // BOB cannot transfer more than 1th round of vested tokens.
-            // Bacause the rest of tokens are locked.
+            // Because the rest of tokens are locked.
             let vested = VestingSchedule::<Test>::get()[first_round].0 * unvested;
             // Check event
             System::assert_has_event(MockEvent::CalamariVesting(PalletEvent::VestingUpdated(
@@ -211,7 +211,7 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
             assert_eq!(Balances::free_balance(BOB), unvested);
 
             // BOB cannot transfer more than 1th round of vested tokens.
-            // Bacause the rest of tokens are locked.
+            // Because the rest of tokens are locked.
             let vested_1 = VestingSchedule::<Test>::get()[first_round].0 * unvested;
             // Check event
             System::assert_has_event(MockEvent::CalamariVesting(PalletEvent::VestingUpdated(
@@ -337,8 +337,8 @@ fn partially_update_vesting_schedule_should_work() {
         .execute_with(|| {
             // Ensure current timestamp is bigger than the 1th round of schedule.
             // Now Bob can claim 1th round vested tokens.
-            let frist_round = 0;
-            let now = VestingSchedule::<Test>::get()[frist_round].1 * 1000 + 1;
+            let first_round = 0;
+            let now = VestingSchedule::<Test>::get()[first_round].1 * 1000 + 1;
             Timestamp::set_timestamp(now);
 
             // skip 2 round of old schedule.
@@ -351,7 +351,7 @@ fn partially_update_vesting_schedule_should_work() {
                         new_schedule.push(*schedule);
                         continue;
                     }
-                    // odd means more early than old schedle but still later than now.
+                    // odd means more early than old schedule but still later than now.
                     // even means more late than old schedle but still later than now.
                     if index % 2 == 0 {
                         new_schedule.push(*schedule + 1);
@@ -504,7 +504,7 @@ fn check_vesting_schedule() {
         .execute_with(|| {
             // Check current schedule.
             let schedule = VestingSchedule::<Test>::get();
-            let schedule_len: u32 = <Test as Config>::MaxScheduleLength::get();
+            let schedule_len = <Test as Config>::MaxScheduleLength::get();
             assert_eq!(schedule.len(), schedule_len as usize);
 
             //Check percentage.
