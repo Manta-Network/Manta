@@ -9,7 +9,8 @@ checked off. If any of the checklist items are not applicable, please leave them
 write a little note why.
 
 - [ ] Linked to Github issue with discussion and accepted design OR have an explanation in the PR that describes this work.
-- [ ] Added **one** line describing your change in `<branch>/CHANGELOG.md`
+- [ ] Added **one** label out of the `L-` group to this PR
+- [ ] Added **one or more** labels out of `A-` and `C-` groups to this PR
 - [ ] Re-reviewed `Files changed` in the Github PR explorer.
 
 
