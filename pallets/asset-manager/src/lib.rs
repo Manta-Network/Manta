@@ -251,6 +251,7 @@ pub mod pallet {
         /// * `min_balance`: Minimum balance to keep an account alive, used in conjunction with `is_sufficient`.
         /// * `is_sufficient`: Whether this asset needs users to have an existential deposit to hold
         ///  this asset.
+        #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::register_asset())]
         #[transactional]
         pub fn register_asset(
@@ -296,6 +297,7 @@ pub mod pallet {
         /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
         /// * `asset_id`: AssetId to be updated.
         /// * `location`: `location` to update the asset location.
+        #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::update_asset_location())]
         #[transactional]
         pub fn update_asset_location(
@@ -357,6 +359,7 @@ pub mod pallet {
         /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
         /// * `asset_id`: AssetId to be updated.
         /// * `metadata`: new `metadata` to be associated with `asset_id`.
+        #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::update_asset_metadata())]
         #[transactional]
         pub fn update_asset_metadata(
@@ -387,6 +390,7 @@ pub mod pallet {
         /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
         /// * `asset_id`: AssetId to be updated.
         /// * `units_per_second`: units per second for `asset_id`
+        #[pallet::call_index(3)]
         #[pallet::weight(T::WeightInfo::set_units_per_second())]
         #[transactional]
         pub fn set_units_per_second(
@@ -413,6 +417,7 @@ pub mod pallet {
         /// * `asset_id`: AssetId to be updated.
         /// * `beneficiary`: Account to mint the asset.
         /// * `amount`: Amount of asset being minted.
+        #[pallet::call_index(4)]
         #[pallet::weight(T::WeightInfo::mint_asset())]
         #[transactional]
         pub fn mint_asset(
@@ -455,6 +460,7 @@ pub mod pallet {
         /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
         /// * `reserve_chain`: Multilocation to be haven min xcm fee.
         /// * `min_xcm_fee`: Amount of min_xcm_fee.
+        #[pallet::call_index(5)]
         #[pallet::weight(T::WeightInfo::set_min_xcm_fee())]
         #[transactional]
         pub fn set_min_xcm_fee(
@@ -484,7 +490,7 @@ pub mod pallet {
 
         /// The account ID of AssetManager
         pub fn account_id() -> T::AccountId {
-            T::PalletId::get().into_account()
+            T::PalletId::get().into_account_truncating()
         }
 
         /// Get para id from asset location
@@ -548,14 +554,11 @@ pub mod pallet {
     }
 
     /// Get min-xcm-fee by multilocation.
-    impl<T: Config> GetByKey<MultiLocation, u128> for Pallet<T> {
-        fn get(location: &MultiLocation) -> u128 {
+    impl<T: Config> GetByKey<MultiLocation, Option<u128>> for Pallet<T> {
+        fn get(location: &MultiLocation) -> Option<u128> {
             let location =
                 <T::AssetConfig as AssetConfig<T>>::AssetLocation::from(location.clone());
-            match MinXcmFee::<T>::get(&location) {
-                Some(min_fee) => min_fee,
-                None => u128::MAX,
-            }
+            MinXcmFee::<T>::get(&location)
         }
     }
 

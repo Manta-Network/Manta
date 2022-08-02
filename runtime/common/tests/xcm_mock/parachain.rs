@@ -17,6 +17,7 @@
 //! Parachain runtime mock.
 
 use codec::{Decode, Encode};
+use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
     assert_ok, construct_runtime, match_types,
     pallet_prelude::DispatchResult,
@@ -455,6 +456,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type XcmpMessageHandler = XcmpQueue;
     type ReservedXcmpWeight = ReservedXcmpWeight;
     type OnSystemEvent = ();
+    type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 pub type LocalOriginToLocation = ();

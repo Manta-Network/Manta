@@ -40,7 +40,9 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
     construct_runtime, match_types, parameter_types,
-    traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, Everything, Nothing},
+    traits::{
+        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, Everything, Nothing,
+    },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, IdentityFee, Weight,
@@ -61,6 +63,8 @@ use sp_runtime::Perbill;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+
+use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 
 // Polkadot imports
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
@@ -293,6 +297,7 @@ impl pallet_transaction_payment::Config for Runtime {
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthToFeeCoeff>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
+    type Event = Event;
 }
 
 parameter_types! {
@@ -380,6 +385,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type OutboundXcmpMessageSource = XcmpQueue;
     type XcmpMessageHandler = XcmpQueue;
     type ReservedXcmpWeight = ReservedXcmpWeight;
+    type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -584,7 +590,7 @@ parameter_types! {
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
 pub type CollatorSelectionUpdateOrigin =
-    EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+    EitherOfDiverse<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
 
 impl pallet_collator_selection::Config for Runtime {
     type Event = Event;
@@ -618,7 +624,7 @@ construct_runtime!(
         TransactionPause: pallet_tx_pause::{Pallet, Call, Storage, Event<T>} = 9,
         // Monetary stuff.
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+        TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
 
         // Collator support. the order of these 5 are important and shall not change.
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,

@@ -23,6 +23,7 @@ use asset_manager::mock::*;
 use frame_support::{
     assert_noop, assert_ok,
     traits::{fungibles::InspectMetadata, Contains},
+    WeakBoundedVec,
 };
 use manta_primitives::assets::{AssetConfig, AssetLocation, FungibleLedger};
 use orml_traits::GetByKey;
@@ -286,7 +287,10 @@ fn check_para_id_info_when_update_asset_location() {
         let mut manta_non_native_location =
             AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
                 1,
-                X2(Parachain(manta_para_id), GeneralKey(b"eMANTA".to_vec())),
+                X2(
+                    Parachain(manta_para_id),
+                    GeneralKey(WeakBoundedVec::force_from(b"eMANTA".to_vec(), None)),
+                ),
             )));
         // registering manta non native asset should work.
         assert_ok!(AssetManager::register_asset(
@@ -305,7 +309,10 @@ fn check_para_id_info_when_update_asset_location() {
         let new_para_id = manta_para_id + 1;
         manta_native_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
             1,
-            X2(Parachain(new_para_id), GeneralKey(b"MANTA".to_vec())),
+            X2(
+                Parachain(new_para_id),
+                GeneralKey(WeakBoundedVec::force_from(b"eMANTA".to_vec(), None)),
+            ),
         )));
         assert_ok!(AssetManager::update_asset_location(
             Origin::root(),
@@ -327,7 +334,10 @@ fn check_para_id_info_when_update_asset_location() {
         let new_para_id_again = new_para_id + 1;
         manta_non_native_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
             1,
-            X2(Parachain(new_para_id_again), GeneralKey(b"eMANTA".to_vec())),
+            X2(
+                Parachain(new_para_id_again),
+                GeneralKey(WeakBoundedVec::force_from(b"eMANTA".to_vec(), None)),
+            ),
         )));
         assert_ok!(AssetManager::update_asset_location(
             Origin::root(),
@@ -486,7 +496,10 @@ fn set_min_xcm_fee_should_work() {
         create_asset_metadata("Manta", "MANTA", 18, 1u128, None, false, false);
     let manta_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
         1,
-        X2(Parachain(2015), GeneralKey(b"MANTA".to_vec())),
+        X2(
+            Parachain(2015),
+            GeneralKey(WeakBoundedVec::force_from(b"MANTA".to_vec(), None)),
+        ),
     )));
     new_test_ext().execute_with(|| {
         // Register a non native token.
@@ -528,14 +541,17 @@ fn set_min_xcm_fee_should_work() {
         // that means your crosschain transaction will fail due to no one can pay u128::MAX.
         let calamari_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
             1,
-            X2(Parachain(2084), GeneralKey(b"KMA".to_vec())),
+            X2(
+                Parachain(2084),
+                GeneralKey(WeakBoundedVec::force_from(b"KMA".to_vec(), None)),
+            ),
         )));
 
         assert_eq!(
             crate::Pallet::<Runtime>::get(
                 &Into::<Option<MultiLocation>>::into(calamari_location).unwrap()
             ),
-            u128::MAX
+            None
         );
     })
 }

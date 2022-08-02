@@ -17,17 +17,20 @@
 #![allow(clippy::unnecessary_cast)]
 
 use core::marker::PhantomData;
+#[allow(deprecated)]
+use frame_support::migration::remove_storage_prefix;
 use frame_support::{
-    migration::{have_storage_value, remove_storage_prefix},
+    migration::have_storage_value,
     pallet_prelude::Weight,
     traits::{Get, OnRuntimeUpgrade},
 };
-
 pub struct RemoveSudo<T>(PhantomData<T>);
 impl<T: frame_system::Config> OnRuntimeUpgrade for RemoveSudo<T> {
     fn on_runtime_upgrade() -> Weight {
         if have_storage_value(b"Sudo", b"Key", b"") {
+            #[allow(deprecated)]
             remove_storage_prefix(b"Sudo", b"Key", b"");
+            #[allow(deprecated)]
             remove_storage_prefix(b"Sudo", b":__STORAGE_VERSION__:", b"");
             log::info!(target: "OnRuntimeUpgrade", "✅ Sudo key has been removed.");
             log::info!(target: "OnRuntimeUpgrade", "✅ The pallet version has been removed.");

@@ -153,6 +153,7 @@ pub mod pallet {
         /// Update vesting schedule.
         ///
         /// - `new_schedule`: New schedule for vesting.
+        #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::update_vesting_schedule())]
         pub fn update_vesting_schedule(
             origin: OriginFor<T>,
@@ -206,6 +207,7 @@ pub mod pallet {
         /// locked under this pallet.
         ///
         /// Emits either `VestingCompleted` or `VestingUpdated`.
+        #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::vest())]
         pub fn vest(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
@@ -226,6 +228,7 @@ pub mod pallet {
         ///
         /// - `target`: The account receiving the vested funds.
         /// - `locked_amount`: How much tokens will be transfered.
+        #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::vested_transfer())]
         pub fn vested_transfer(
             origin: OriginFor<T>,
