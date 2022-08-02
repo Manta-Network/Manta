@@ -60,7 +60,7 @@ mod multiplier_tests {
         Call, Runtime, RuntimeBlockWeights as BlockWeights, System, TransactionPayment, KMA,
     };
     use codec::Encode;
-    use frame_support::weights::{DispatchClass, Weight, WeightToFeePolynomial};
+    use frame_support::weights::{DispatchClass, Weight, WeightToFee};
     use frame_system::WeightInfo;
     use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
     use runtime_common::{
@@ -145,11 +145,13 @@ mod multiplier_tests {
             <Runtime as frame_system::Config>::SystemWeightInfo::remark(len);
         let max_number_of_remarks_per_block = (block_weight / remark_weight) as u128;
         let len_fee = max_number_of_remarks_per_block.saturating_mul(
-            <Runtime as pallet_transaction_payment::Config>::LengthToFee::calc(&(len as Weight)),
+            <Runtime as pallet_transaction_payment::Config>::LengthToFee::weight_to_fee(
+                &(len as Weight),
+            ),
         );
 
         let base_fee = max_number_of_remarks_per_block
-            * <Runtime as pallet_transaction_payment::Config>::WeightToFee::calc(
+            * <Runtime as pallet_transaction_payment::Config>::WeightToFee::weight_to_fee(
                 &frame_support::weights::constants::ExtrinsicBaseWeight::get(),
             );
 
@@ -168,9 +170,10 @@ mod multiplier_tests {
                     panic!("The fee should ever increase");
                 }
                 fee_adjustment = next;
-                let fee = <Runtime as pallet_transaction_payment::Config>::WeightToFee::calc(
-                    &block_weight,
-                );
+                let fee =
+                    <Runtime as pallet_transaction_payment::Config>::WeightToFee::weight_to_fee(
+                        &block_weight,
+                    );
 
                 // base_fee and len_fee are not adjusted:
                 // https://docs.substrate.io/main-docs/build/tx-weights-fees/#:~:text=A%20closer%20look%20at%20the%20inclusion%20fee

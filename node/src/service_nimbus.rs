@@ -472,6 +472,7 @@ where
             };
 
             Ok(NimbusConsensus::build(BuildNimbusConsensusParams {
+                additional_digests_provider: (),
                 para_id: id,
                 proposer_factory,
                 block_import: client.clone(),

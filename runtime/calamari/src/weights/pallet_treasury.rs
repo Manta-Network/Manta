@@ -45,6 +45,7 @@ use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_treasury.
 pub trait WeightInfo {
+    fn spend() -> Weight;
     fn propose_spend() -> Weight;
     fn reject_proposal() -> Weight;
     fn approve_proposal(p: u32, ) -> Weight;
@@ -55,6 +56,9 @@ pub trait WeightInfo {
 /// Weights for pallet_treasury using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T> {
+    fn spend() -> Weight {
+		(151_000 as Weight)
+	}
     // Storage: Treasury ProposalCount (r:1 w:1)
     // Storage: Treasury Proposals (r:0 w:1)
     fn propose_spend() -> Weight {
@@ -100,6 +104,9 @@ impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T>
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
+    fn spend() -> Weight {
+		(151_000 as Weight)
+	}
     // Storage: Treasury ProposalCount (r:1 w:1)
     // Storage: Treasury Proposals (r:0 w:1)
     fn propose_spend() -> Weight {
