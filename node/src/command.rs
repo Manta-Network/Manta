@@ -543,10 +543,7 @@ pub fn run_with(cli: Cli) -> Result {
                     .map(|r| r.0)
                     .map_err(Into::into)
                 } else if config.chain_spec.is_dolphin() {
-                    crate::service_nimbus::start_parachain_node::<
-                        dolphin_runtime::RuntimeApi,
-                        _,
-                    >(
+                    crate::service_nimbus::start_parachain_node::<dolphin_runtime::RuntimeApi, _>(
                         config,
                         polkadot_config,
                         collator_options,

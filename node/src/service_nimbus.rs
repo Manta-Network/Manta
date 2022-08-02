@@ -49,9 +49,9 @@ use session_key_primitives::NimbusId;
 //     import_queue::{BasicQueue, Verifier as VerifierT},
 //     BlockImportParams,
 // };
+use sc_executor::WasmExecutor;
 use sc_network::NetworkService;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
-use sc_executor::WasmExecutor;
 use sc_service::{Configuration, Error, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::{ApiExt, ConstructRuntimeApi};
@@ -399,7 +399,7 @@ pub async fn start_parachain_node<RuntimeApi, FullRpc>(
     id: ParaId,
     hwbench: Option<sc_sysinfo::HwBench>,
     full_rpc: FullRpc,
-) -> sc_service::error::Result<( TaskManager, Arc<Client<RuntimeApi>>)>
+) -> sc_service::error::Result<(TaskManager, Arc<Client<RuntimeApi>>)>
 where
     RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
     // sp_runtime::generic::Block<sp_runtime::generic::Header<u32, BlakeTwo256>, OpaqueExtrinsic>
