@@ -31,14 +31,21 @@ The following checks can be performed after we have frozen our release candidate
 - [ ] Complete the following [manual QA workflow](https://hackmd.io/TbFmorG2RnOPmLuFcg9JOQ?view).
 - [ ] Verify Polkadot JS API are up to date with the latest
     runtime changes.
-- [ ] Execute runtime upgrade to Baikal and verify network stability.
-- [ ] Execute runtime upgrade to Rococo and verify network stability.
+- [ ] Execute runtime upgrade to Baikal relay and verify network stability.
+- [ ] Execute runtime upgrade to Calamari @ Baikal and verify network stability.
+- [ ] Execute runtime upgrade to Calamari @ Moonbase-Relay and verify network stability.
+- [ ] Execute runtime upgrade to Dolphin @ Baikal and verify network stability.
 - [ ] Prepare a governance post and submit to our forum with description and motivation for changes.
+
+Note: Usually update client first then runtime.
 
 ### Client Releases
 
 - [ ] Verify that each crate's `version` has been bumped from previous release.
-- [ ] Check that the new client versions have [burned-in](#burn-in) without issue for at least 12 hours.
+- [ ] Update client of Baikal relay nodes.
+- [ ] Update client of Calamari-Testnet @ Baikal nodes.
+- [ ] Update client of Calamari-Testnet @ Moonbase-Relay nodes.
+- [ ] Update client of Dolphin @ Baikal nodes.
 
 ### All Releases
 
@@ -50,6 +57,9 @@ The following checks can be performed after we have frozen our release candidate
 - [ ] Coordinate with marketing team for documentation updates and other relevant tasks.
 - [ ] Update changelog.
 - [ ] If the release contains any changes that break/change functionality used in https://github.com/Manta-Network/sdk (e.g. RPC changes, see also [extrinsic ordering](#extrinsic-ordering)), raise a PR there and **block this release** until your PR has been merged and incorporated in a new SDK release.
+- [ ] Check that the new client and/or runtime versions have [burned-in](#burn-in) without issue for at least 3 days.
+- [ ] Before declaring a successful burn-in make sure to check for anomalies in our nodes' memory, cpu, disk and network usage via the [Grafana Node Explorer](https://grafana.pulse.pelagos.systems/d/rYdddlPWk/node-exporter-full). These would include but are not limited to: memory leaks, cpu spikes, spike in tcp sockets waiting to close, etc. Make sure to take a look at all of the available graphs, because some problems might only show up in the collapsed views.
+- [ ] Keep an eye out on the [manta status dashboard](https://status.manta.network/) for additional metrics like outages.
 
 Note: Do not publish draft releases from PR branches, because those branches will be deleted when the PR is merged.
 
@@ -60,8 +70,8 @@ Note: Do not publish draft releases from PR branches, because those branches wil
 
 ### Burn In
 
-Ensure that Manta DevOps has run the new release on Como and Baikal nodes
-for at least 12 hours prior to publishing the release.
+Ensure that Manta DevOps has run the new release on Baikal nodes
+for at least 3 days prior to publishing the release.
 
 ### Release notes
 

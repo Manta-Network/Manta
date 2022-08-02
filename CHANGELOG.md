@@ -6,6 +6,7 @@
 ### Features
 
 ### Improvements
+- [\#681](https://github.com/Manta-Network/Manta/pull/681) CI Ledger RPC Tests.
 - [\#694](https://github.com/Manta-Network/Manta/pull/694) Switch to u128::MAX in fungible ledger transfer integration test.
 
 ### Bug fixes

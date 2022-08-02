@@ -36,8 +36,7 @@ use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 use jsonrpsee::RpcModule;
-use polkadot_service::{CollatorPair, NativeExecutionDispatch};
-
+use polkadot_service::CollatorPair;
 // use futures::lock::Mutex;
 // use dolphin_runtime::RuntimeApi;
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
@@ -50,9 +49,9 @@ use session_key_primitives::NimbusId;
 //     import_queue::{BasicQueue, Verifier as VerifierT},
 //     BlockImportParams,
 // };
-use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
+use sc_executor::WasmExecutor;
 use sc_service::{Configuration, Error, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::{ApiExt, ConstructRuntimeApi};
@@ -65,6 +64,15 @@ use sp_session::SessionKeys;
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
+
+#[cfg(not(feature = "runtime-benchmarks"))]
+type HostFunctions = sp_io::SubstrateHostFunctions;
+
+#[cfg(feature = "runtime-benchmarks")]
+type HostFunctions = (
+    sp_io::SubstrateHostFunctions,
+    frame_benchmarking::benchmarking::HostFunctions,
+);
 
 /// Native Dolphin Parachain executor instance.
 pub struct DolphinRuntimeExecutor;
@@ -80,23 +88,26 @@ impl sc_executor::NativeExecutionDispatch for DolphinRuntimeExecutor {
     }
 }
 
+/// We use wasm executor only now.
+pub type DefaultExecutorType = WasmExecutor<HostFunctions>;
+
 /// Full Client Implementation Type
-pub type Client<R, E> = TFullClient<Block, R, NativeElseWasmExecutor<E>>;
+pub type Client<R> = TFullClient<Block, R, DefaultExecutorType>;
 
 /// Default Import Queue Type
-pub type ImportQueue<R, E> = sc_consensus::DefaultImportQueue<Block, Client<R, E>>;
+pub type ImportQueue<R> = sc_consensus::DefaultImportQueue<Block, Client<R>>;
 
 /// Full Transaction Pool Type
-pub type TransactionPool<R, E> = sc_transaction_pool::FullPool<Block, Client<R, E>>;
+pub type TransactionPool<R> = sc_transaction_pool::FullPool<Block, Client<R>>;
 
 /// Components Needed for Chain Ops Subcommands
-pub type PartialComponents<R, E> = sc_service::PartialComponents<
-    Client<R, E>,
+pub type PartialComponents<R> = sc_service::PartialComponents<
+    Client<R>,
     TFullBackend<Block>,
     // (),
     sc_consensus::LongestChain<TFullBackend<Block>, Block>, // TODO: Undo this change if ManualSeal turns out to be useless
-    ImportQueue<R, E>,
-    TransactionPool<R, E>,
+    ImportQueue<R>,
+    TransactionPool<R>,
     (Option<Telemetry>, Option<TelemetryWorkerHandle>),
 >;
 
@@ -107,12 +118,12 @@ pub type StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Bloc
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
-pub fn new_partial<RuntimeApi, Executor>(
+pub fn new_partial<RuntimeApi>(
     config: &Configuration,
     dev_service: bool,
-) -> Result<PartialComponents<RuntimeApi, Executor>, Error>
+) -> Result<PartialComponents<RuntimeApi>, Error>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi, Executor>> + Send + Sync + 'static,
+    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
     RuntimeApi::RuntimeApi: TaggedTransactionQueue<Block>
         + sp_api::Metadata<Block>
         + SessionKeys<Block>
@@ -120,7 +131,6 @@ where
         + OffchainWorkerApi<Block>
         + sp_block_builder::BlockBuilder<Block>,
     StateBackend: sp_api::StateBackend<BlakeTwo256>,
-    Executor: NativeExecutionDispatch + 'static,
 {
     let telemetry = config
         .telemetry_endpoints
@@ -132,10 +142,11 @@ where
             Ok((worker, telemetry))
         })
         .transpose()?;
-    let executor = sc_executor::NativeElseWasmExecutor::<Executor>::new(
+    let executor = WasmExecutor::<HostFunctions>::new(
         config.wasm_method,
         config.default_heap_pages,
         config.max_runtime_instances,
+        None,
         config.runtime_cache_size,
     );
     let (client, backend, keystore_container, task_manager) =
@@ -217,7 +228,7 @@ async fn build_relay_chain_interface(
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
-async fn start_node_impl<RuntimeApi, Executor, BIC, FullRpc>(
+async fn start_node_impl<RuntimeApi, BIC, FullRpc>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
@@ -225,12 +236,9 @@ async fn start_node_impl<RuntimeApi, Executor, BIC, FullRpc>(
     full_rpc: FullRpc,
     build_consensus: BIC,
     hwbench: Option<sc_sysinfo::HwBench>,
-) -> sc_service::error::Result<(
-    TaskManager,
-    Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-)>
+) -> sc_service::error::Result<(TaskManager, Arc<Client<RuntimeApi>>)>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi, Executor>> + Send + Sync + 'static,
+    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
     RuntimeApi::RuntimeApi: TaggedTransactionQueue<Block>
         + sp_api::Metadata<Block>
         + SessionKeys<Block>
@@ -243,18 +251,17 @@ where
         + nimbus_primitives::NimbusApi<Block>
         + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     StateBackend: sp_api::StateBackend<BlakeTwo256>,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
     FullRpc: Fn(
-            rpc::FullDeps<Client<RuntimeApi, Executor>, TransactionPool<RuntimeApi, Executor>>,
+            rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
         ) -> Result<RpcModule<()>, Error>
         + 'static,
     BIC: FnOnce(
-        Arc<Client<RuntimeApi, Executor>>,
+        Arc<Client<RuntimeApi>>,
         Option<&Registry>,
         Option<TelemetryHandle>,
         &TaskManager,
         Arc<dyn RelayChainInterface>,
-        Arc<TransactionPool<RuntimeApi, Executor>>,
+        Arc<TransactionPool<RuntimeApi>>,
         Arc<NetworkService<Block, Hash>>,
         SyncCryptoStorePtr,
         bool,
@@ -266,7 +273,7 @@ where
 
     let parachain_config = prepare_node_config(parachain_config);
 
-    let params = new_partial::<RuntimeApi, Executor>(&parachain_config, false)?; // RAD: false = run as parachain as opposed to sovereign
+    let params = new_partial::<RuntimeApi>(&parachain_config, false)?; // RAD: false = run as parachain as opposed to sovereign
     let (mut telemetry, telemetry_worker_handle) = params.other;
 
     let mut task_manager = params.task_manager;
@@ -385,19 +392,16 @@ where
 }
 
 /// Start a dolphin parachain node.
-pub async fn start_parachain_node<RuntimeApi, Executor, FullRpc>(
+pub async fn start_parachain_node<RuntimeApi, FullRpc>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     collator_options: CollatorOptions,
     id: ParaId,
     hwbench: Option<sc_sysinfo::HwBench>,
     full_rpc: FullRpc,
-) -> sc_service::error::Result<(
-    TaskManager,
-    Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-)>
+) -> sc_service::error::Result<( TaskManager, Arc<Client<RuntimeApi>>)>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi, Executor>> + Send + Sync + 'static,
+    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
     // sp_runtime::generic::Block<sp_runtime::generic::Header<u32, BlakeTwo256>, OpaqueExtrinsic>
     // , RuntimeApi>>>::RuntimeApi: nimbus_primitives::AuthorFilterAPI<sp_runtime::generic::Block<sp_runtime::generic::Header<u32, BlakeTwo256>, OpaqueExtrinsic>, nimbus_primitives::nimbus_crypto::Public>
     RuntimeApi::RuntimeApi: TaggedTransactionQueue<Block>
@@ -412,13 +416,12 @@ where
         + nimbus_primitives::NimbusApi<Block>
         + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     StateBackend: sp_api::StateBackend<BlakeTwo256>,
-    Executor: sc_executor::NativeExecutionDispatch + 'static,
     FullRpc: Fn(
-            rpc::FullDeps<Client<RuntimeApi, Executor>, TransactionPool<RuntimeApi, Executor>>,
+            rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
         ) -> Result<RpcModule<()>, Error>
         + 'static,
 {
-    start_node_impl::<RuntimeApi, Executor, _, _>(
+    start_node_impl::<RuntimeApi, _, _>(
         parachain_config,
         polkadot_config,
         collator_options,
