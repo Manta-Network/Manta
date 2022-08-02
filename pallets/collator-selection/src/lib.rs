@@ -98,6 +98,7 @@ pub mod pallet {
     use pallet_session::SessionManager;
     use sp_arithmetic::Percent;
     use sp_staking::SessionIndex;
+    use sp_std::vec;
 
     type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
@@ -323,6 +324,7 @@ pub mod pallet {
         /// Set candidate collator as invulnerable.
         ///
         /// `new`: candidate collator.
+        #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::set_invulnerables(new.len() as u32))]
         pub fn set_invulnerables(
             origin: OriginFor<T>,
@@ -343,6 +345,7 @@ pub mod pallet {
         /// Set how many candidate collator are allowed.
         ///
         /// `max`: The max number of candidates.
+        #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::set_desired_candidates())]
         pub fn set_desired_candidates(
             origin: OriginFor<T>,
@@ -361,6 +364,7 @@ pub mod pallet {
         /// Set the amount held on reserved for candidate collator.
         ///
         /// `bond`: The amount held on reserved.
+        #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::set_candidacy_bond())]
         pub fn set_candidacy_bond(
             origin: OriginFor<T>,
@@ -373,6 +377,7 @@ pub mod pallet {
         }
 
         /// Register as candidate collator.
+        #[pallet::call_index(3)]
         #[pallet::weight(T::WeightInfo::register_as_candidate(T::MaxCandidates::get()))]
         pub fn register_as_candidate(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -420,6 +425,7 @@ pub mod pallet {
         /// Register an specified candidate as collator.
         ///
         /// - `new_candidate`: Who is going to be collator.
+        #[pallet::call_index(4)]
         #[pallet::weight(T::WeightInfo::register_candidate(T::MaxCandidates::get()))]
         pub fn register_candidate(
             origin: OriginFor<T>,
@@ -470,6 +476,7 @@ pub mod pallet {
         }
 
         /// Leave from collator set.
+        #[pallet::call_index(5)]
         #[pallet::weight(T::WeightInfo::leave_intent(T::MaxCandidates::get()))]
         pub fn leave_intent(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -481,6 +488,7 @@ pub mod pallet {
         /// Remove an specified collator.
         ///
         /// - `collator`: Who is going to be remove from collators set.
+        #[pallet::call_index(6)]
         #[pallet::weight(T::WeightInfo::remove_collator(T::MaxCandidates::get()))]
         pub fn remove_collator(
             origin: OriginFor<T>,
@@ -502,6 +510,7 @@ pub mod pallet {
         /// Set the collator performance percentile used as baseline for eviction
         ///
         /// `percentile`: x-th percentile of collator performance to use as eviction baseline
+        #[pallet::call_index(7)]
         #[pallet::weight(T::WeightInfo::set_eviction_baseline())]
         pub fn set_eviction_baseline(
             origin: OriginFor<T>,
@@ -516,6 +525,7 @@ pub mod pallet {
         /// Set the tolerated underperformance percentage before evicting
         ///
         /// `percentage`: x% of missed blocks under eviction_baseline to tolerate
+        #[pallet::call_index(8)]
         #[pallet::weight(T::WeightInfo::set_eviction_tolerance())]
         pub fn set_eviction_tolerance(
             origin: OriginFor<T>,
@@ -531,7 +541,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Get a unique, inaccessible account id from the `PotId`.
         pub fn account_id() -> T::AccountId {
-            T::PotId::get().into_account()
+            T::PotId::get().into_account_truncating()
         }
 
         /// Removes a candidate if they exist and sends them back their deposit
@@ -590,7 +600,7 @@ pub mod pallet {
 
             // 2. get percentile by _exclusive_ nearest rank method https://en.wikipedia.org/wiki/Percentile#The_nearest-rank_method (rust percentile API is feature gated and unstable)
             let ordinal_rank = percentile_for_kick.mul_ceil(collator_count);
-            let index_at_ordinal_rank = ordinal_rank.saturating_sub(One::one()); // -1 to accomodate 0-index counting, should not saturate due to precondition check and round up multiplication
+            let index_at_ordinal_rank = ordinal_rank.saturating_sub(One::one()); // -1 to accommodate 0-index counting, should not saturate due to precondition check and round up multiplication
 
             // 3. Block number at rank is the percentile and our kick performance benchmark
             let blocks_created_at_baseline: BlockCount =
@@ -635,8 +645,18 @@ pub mod pallet {
 
         /// Reset the performance map to the currently active validators at 0 blocks
         pub fn reset_collator_performance() {
-            <BlocksPerCollatorThisSession<T>>::remove_all(None);
             let validators = T::ValidatorRegistration::validators();
+            let validators_len = validators.len() as u32;
+            let mut clear_res = <BlocksPerCollatorThisSession<T>>::clear(validators_len, None);
+            let mut old_cursor = vec![];
+            while let Some(cursor) = clear_res.maybe_cursor {
+                clear_res = <BlocksPerCollatorThisSession<T>>::clear(validators_len, Some(&cursor));
+                if cursor == old_cursor {
+                    // As per the documentation the cursor may not advance after every operation
+                    break;
+                }
+                old_cursor = cursor;
+            }
             for validator_id in validators {
                 let account_id = T::AccountIdOf::convert(validator_id.clone().into());
                 <BlocksPerCollatorThisSession<T>>::insert(account_id.clone(), 0u32);
@@ -699,13 +719,12 @@ pub mod pallet {
                 })
                 .collect::<Vec<_>>();
             let result = Self::assemble_collators(active_candidate_ids);
-
             frame_system::Pallet::<T>::register_extra_weight_unchecked(
                 T::WeightInfo::new_session(candidates_len_before as u32),
                 DispatchClass::Mandatory,
             );
 
-            Self::reset_collator_performance(); // Reset performance map for the now starting session's active validatorset
+            Self::reset_collator_performance(); // Reset performance map for the now starting session's active validator set
             Some(result)
         }
         fn start_session(_: SessionIndex) {

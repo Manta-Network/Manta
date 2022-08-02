@@ -21,7 +21,9 @@
 mod xcm_mock;
 
 use codec::Encode;
-use frame_support::{assert_err, assert_noop, assert_ok, weights::constants::WEIGHT_PER_SECOND};
+use frame_support::{
+    assert_err, assert_noop, assert_ok, weights::constants::WEIGHT_PER_SECOND, WeakBoundedVec,
+};
 use manta_primitives::assets::AssetLocation;
 use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
 use xcm_executor::traits::{Convert, WeightBounds};
@@ -456,10 +458,11 @@ fn send_para_a_native_asset_to_para_b_barriers_should_work() {
         use parachain::{Event, System};
         assert!(System::events().iter().any(|r| matches!(
             r.event,
-            Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail(
-                Some(_),
-                xcm_simulator::XcmError::Barrier
-            ))
+            Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail {
+                message_hash: Some(_),
+                error: xcm_simulator::XcmError::Barrier,
+                weight: _
+            })
         )));
     });
 
@@ -681,10 +684,11 @@ fn send_para_a_native_asset_to_para_b_must_fail_cases() {
         assert!(System::events().iter().any(|r| {
             matches!(
                 r.event,
-                Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail(
-                    Some(_),
-                    xcm_simulator::XcmError::TooExpensive
-                ))
+                Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail {
+                    message_hash: Some(_),
+                    error: xcm_simulator::XcmError::TooExpensive,
+                    weight: _
+                })
             )
         }));
     });
@@ -2311,7 +2315,10 @@ fn less_than_min_xcm_fee_should_not_work() {
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
     let para_b_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
         1,
-        X2(Parachain(PARA_B_ID), GeneralKey(b"ParaBToken".to_vec())),
+        X2(
+            Parachain(PARA_B_ID),
+            GeneralKey(WeakBoundedVec::force_from(b"ParaBToken".to_vec(), None)),
+        ),
     )));
     let para_b_as_reserve_chain = create_asset_location(1, PARA_B_ID);
 
@@ -2397,7 +2404,7 @@ fn less_than_min_xcm_fee_should_not_work() {
     // like `NonReserve` or `SelfReserve` with relay-chain fee is not support.
     // And our `MaxAssetsForTransfer` for xtokens is 1,
     // so `transfer_multicurrencies` is not supported on calamari.
-    // If min-xcm-fee is not set, no one can pay xcm fee(u129::MAX).
+    // If min-xcm-fee is not set, no one can pay xcm fee(MinXcmFeeNotDefined).
     ParaA::execute_with(|| {
         assert_noop!(
             parachain::XTokens::transfer_multicurrencies(
@@ -2416,7 +2423,7 @@ fn less_than_min_xcm_fee_should_not_work() {
                 Box::new(VersionedMultiLocation::V1(dest.clone())),
                 40,
             ),
-            orml_xtokens::Error::<parachain::Runtime>::FeeNotEnough
+            orml_xtokens::Error::<parachain::Runtime>::MinXcmFeeNotDefined
         );
     });
 
@@ -2641,37 +2648,40 @@ fn transfer_multicurrencies_should_work_scenarios() {
         );
         assert_eq!(
             relay_chain::Balances::free_balance(&para_b_sovereign_on_relay),
-            fee_amount - min_xcm_fee
+            // 0 because transfer_multicurrencies uses a Teleport for this case
+            0
         );
     });
 
     ParaB::execute_with(|| {
         assert_eq!(
             parachain::Balances::free_balance(&ALICE),
-            INITIAL_BALANCE - amount_to_a + amount_back_to_b
+            // because transfer_multicurrencies uses a Teleport for this case
+            // we no longer expect the amount_back_to_b to be in the sovereign account
+            INITIAL_BALANCE - amount_to_a
         );
 
-        // Parachain A sovereign account on Parachain B should receive:
-        // (fee - min_xcm_fee) from the first to-non-reserve xcm message, reduced by the execution cost on the relay chain
-        // Then it will be again reduced by the min_xcm_fee to buy execution time for the second to-reserve xcm message
+        // Parachain A sovereign account on Parachain B should receive: 0
+        // because transfer_multicurrencies uses Teleport in this case
         let para_a_sovereign_on_para_b = parachain::LocationToAccountId::convert_ref(
             MultiLocation::new(1, X1(Parachain(para_a_id))),
         )
         .unwrap();
-        let execution_cost_on_relay_chain = 0;
         assert_eq!(
             parachain::Assets::balance(relay_asset_id_on_b, &para_a_sovereign_on_para_b),
-            (fee_amount - min_xcm_fee) - execution_cost_on_relay_chain - min_xcm_fee
+            0
         );
 
         assert_eq!(
-            // The change from BuyExecution will then be deposited in Alice's account.
+            // min_xcm_fee will be just enough to pay for execution so
+            // no change from BuyExecution will be deposited in Alice's account.
             parachain::Assets::balance(relay_asset_id_on_b, &ALICE),
-            min_xcm_fee
+            0
         );
         assert_eq!(
             parachain::Assets::total_supply(relay_asset_id_on_b),
-            fee_amount - min_xcm_fee
+            // Since all of the fee is used the total supply should be 0
+            0
         );
     });
 }
@@ -2998,24 +3008,21 @@ fn transfer_multicurrencies_should_fail_scenarios() {
         );
         assert_eq!(
             relay_chain::Balances::free_balance(&para_b_sovereign_on_relay),
-            fee_amount - min_xcm_fee
+            // 0 because transfer_multicurrencies uses a Teleport for this case
+            0
         );
     });
 
     ParaB::execute_with(|| {
-        // Parachain A sovereign account on Parachain B should receive:
-        // (fee - min_xcm_fee) from the first to-non-reserve xcm message, reduced by the execution cost on the relay chain
-        // Then it will be again reduced by the min_xcm_fee to buy execution time for the second to-reserve xcm message
-        // But the latter should fail because the fee was not enough
+        // Parachain A sovereign account on Parachain B should receive: 0
+        // because transfer_multicurrencies uses Teleport in this case
         let para_a_sovereign_on_para_b = parachain::LocationToAccountId::convert_ref(
             MultiLocation::new(1, X1(Parachain(para_a_id))),
         )
         .unwrap();
         assert_eq!(
             parachain::Assets::balance(relay_asset_id_on_b, &para_a_sovereign_on_para_b),
-            // should be `(fee_amount - min_xcm_fee) - execution_cost_on_relay_chain - min_xcm_fee`
-            // but there was not enough of the asset to withdraw the second min_xcm_fee
-            fee_amount - min_xcm_fee
+            0
         );
 
         assert_eq!(
@@ -3023,10 +3030,9 @@ fn transfer_multicurrencies_should_fail_scenarios() {
             parachain::Assets::balance(relay_asset_id_on_b, &ALICE),
             0
         );
-        assert_eq!(
-            parachain::Assets::total_supply(relay_asset_id_on_b),
-            fee_amount - min_xcm_fee
-        );
+        // Since BuyExecution failed so no change to deposit in Alice's account
+        // the total_supply will remain 0.
+        assert_eq!(parachain::Assets::total_supply(relay_asset_id_on_b), 0);
 
         assert_eq!(
             parachain::Balances::free_balance(&ALICE),

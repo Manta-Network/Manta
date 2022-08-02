@@ -40,7 +40,10 @@ use sp_version::NativeVersion;
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, PrivilegeCmp},
+    traits::{
+        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, NeverEnsureOrigin,
+        PrivilegeCmp,
+    },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, Weight,
@@ -357,6 +360,7 @@ impl pallet_transaction_payment::Config for Runtime {
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthToFeeCoeff>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
+    type Event = Event;
 }
 
 parameter_types! {
@@ -431,7 +435,7 @@ impl pallet_democracy::Config for Runtime {
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>;
     // To cancel a proposal before it has been passed, the technical committee must be unanimous or
     // Root must agree.
-    type CancelProposalOrigin = EnsureOneOf<
+    type CancelProposalOrigin = EitherOfDiverse<
         EnsureRoot<AccountId>,
         pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>,
     >;
@@ -468,7 +472,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
     type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
 }
 
-pub type EnsureRootOrThreeFourthsCouncil = EnsureOneOf<
+pub type EnsureRootOrThreeFourthsCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 4>,
 >;
@@ -526,12 +530,12 @@ parameter_types! {
     pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
 }
 
-type EnsureRootOrThreeFifthsCouncil = EnsureOneOf<
+type EnsureRootOrThreeFifthsCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
 >;
 
-type EnsureRootOrMoreThanHalfCouncil = EnsureOneOf<
+type EnsureRootOrMoreThanHalfCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
 >;
@@ -552,6 +556,9 @@ impl pallet_treasury::Config for Runtime {
     type MaxApprovals = ConstU32<100>;
     type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
     type SpendFunds = ();
+    // Expects an implementation of `EnsureOrigin` with a `Success` generic,
+    // which is the the maximum amount that this origin is allowed to spend at a time.
+    type SpendOrigin = NeverEnsureOrigin<Balance>;
 }
 
 parameter_types! {
@@ -653,7 +660,7 @@ parameter_types! {
 }
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = EnsureOneOf<
+pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
 >;
@@ -690,7 +697,7 @@ construct_runtime!(
 
         // Monetary stuff.
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+        TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
 
         // Governance stuff.
         Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>} = 14,
