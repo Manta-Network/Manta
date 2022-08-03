@@ -108,14 +108,6 @@ pub mod opaque {
             SessionKeys { aura, nimbus, vrf }
         }
     }
-
-    pub fn transform_session_keys(_v: AccountId, old: OldSessionKeys) -> SessionKeys {
-        SessionKeys {
-            aura: old.aura.clone(),
-            nimbus: session_key_primitives::nimbus::dummy_key_from(old.aura.clone()),
-            vrf: session_key_primitives::vrf::dummy_key_from(old.aura),
-        }
-    }
 }
 
 // Weights used in the runtime.
