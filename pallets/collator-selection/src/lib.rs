@@ -85,7 +85,7 @@ pub mod pallet {
         pallet_prelude::*,
         sp_runtime::{
             traits::{AccountIdConversion, CheckedSub, Convert, One, Zero},
-            RuntimeDebug,
+            RuntimeAppPublic, RuntimeDebug,
         },
         traits::{
             Currency, EnsureOrigin, ExistenceRequirement::KeepAlive, ReservableCurrency,
@@ -95,12 +95,11 @@ pub mod pallet {
         PalletId,
     };
     use frame_system::{pallet_prelude::*, Config as SystemConfig};
+    use nimbus_primitives::{AccountLookup, CanAuthor, NimbusId};
     use pallet_session::SessionManager;
     use sp_arithmetic::Percent;
     use sp_staking::SessionIndex;
     use sp_std::vec;
-
-    use nimbus_primitives::CanAuthor;
 
     type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
@@ -671,35 +670,56 @@ pub mod pallet {
         }
     }
 
-/// Fetch list of all possibly eligible authors to use in nimbus consensus filters
-///
-/// This is currently the static set registered with pallet_session and will be superseded by parachain_staking
-///
-/// NOTE: This should really be in pallet_session as we only use its storage, but since we haven't
-/// forked that one, this is the next best place.
-impl<T> Get<Vec<T::AccountId>> for Pallet<T>
-where
-    T: Config + pallet_session::Config,
-    // Implemented only where Session's ValidatorId is directly convertible to collator_selection's ValidatorId
-    <T as Config>::ValidatorId: From<<T as pallet_session::Config>::ValidatorId>
-{
-    /// Return the set of eligible collator accounts
-    fn get() -> Vec<T::AccountId>
+    /// Lookup an AccountId from a NimbusId, needed for author_inherent
+    impl<T> AccountLookup<T::AccountId> for Pallet<T>
     where
+        T: pallet_session::Config + Config,
+        // Implemented only where Session's ValidatorId is directly convertible to collator_selection's ValidatorId
         <T as Config>::ValidatorId: From<<T as pallet_session::Config>::ValidatorId>,
     {
-        use sp_runtime::traits::Convert;
-
-        let validator_account_set = pallet_session::Pallet::<T>::validators()
-            .into_iter()
-            .map(|vid: <T as pallet_session::Config>::ValidatorId| {
-                <T as Config>::AccountIdOf::convert(vid.into())
-            })
-            .collect::<Vec<T::AccountId>>();
-
-        validator_account_set
+        fn lookup_account(author: &NimbusId) -> Option<T::AccountId>
+        where
+            <T as Config>::ValidatorId: From<<T as pallet_session::Config>::ValidatorId>,
+        {
+            use sp_runtime::traits::Convert;
+            #[allow(clippy::bind_instead_of_map)]
+            pallet_session::Pallet::<T>::key_owner(
+                nimbus_primitives::NIMBUS_KEY_ID,
+                &author.to_raw_vec(),
+            )
+            .and_then(|vid| Some(T::AccountIdOf::convert(vid.into())))
+        }
     }
-}
+
+    /// Fetch list of all possibly eligible authors to use in nimbus consensus filters
+    ///
+    /// This is currently the static set registered with pallet_session and will be superseded by parachain_staking
+    ///
+    /// NOTE: This should really be in pallet_session as we only use its storage, but since we haven't
+    /// forked that one, this is the next best place.
+    impl<T> Get<Vec<T::AccountId>> for Pallet<T>
+    where
+        T: Config + pallet_session::Config,
+        // Implemented only where Session's ValidatorId is directly convertible to collator_selection's ValidatorId
+        <T as Config>::ValidatorId: From<<T as pallet_session::Config>::ValidatorId>,
+    {
+        /// Return the set of eligible collator accounts
+        fn get() -> Vec<T::AccountId>
+        where
+            <T as Config>::ValidatorId: From<<T as pallet_session::Config>::ValidatorId>,
+        {
+            use sp_runtime::traits::Convert;
+
+            let validator_account_set = pallet_session::Pallet::<T>::validators()
+                .into_iter()
+                .map(|vid: <T as pallet_session::Config>::ValidatorId| {
+                    <T as Config>::AccountIdOf::convert(vid.into())
+                })
+                .collect::<Vec<T::AccountId>>();
+
+            validator_account_set
+        }
+    }
 
     /// Implements authoring filter for nimbus consensus pipeline
     impl<T: Config> nimbus_primitives::CanAuthor<T::AccountId> for Pallet<T> {

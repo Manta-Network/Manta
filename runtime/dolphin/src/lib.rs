@@ -24,15 +24,14 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use core::marker::PhantomData;
-use nimbus_primitives::AccountLookup;
+use manta_collator_selection::IdentityCollator;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, Perbill, Permill, RuntimeAppPublic,
+    ApplyExtrinsicResult, Perbill, Permill,
 };
 use sp_std::{cmp::Ordering, prelude::*};
 use sp_version::RuntimeVersion;
@@ -286,33 +285,6 @@ impl Contains<Call> for BaseFilter {
             // DISALLOW anything else
             _ => false,
         }
-    }
-}
-
-/// Converter struct to use the Session pallet for mapping a NimbusId to its AccountId
-pub struct TestConverter<T> {
-    _phantom: PhantomData<T>,
-}
-
-impl<T> AccountLookup<T::AccountId> for TestConverter<T>
-where
-    T: pallet_session::Config + manta_collator_selection::Config,
-    // Implemented only where Session's ValidatorId is directly convertible to collator_selection's ValidatorId
-    <T as manta_collator_selection::Config>::ValidatorId:
-        From<<T as pallet_session::Config>::ValidatorId>,
-{
-    fn lookup_account(author: &NimbusId) -> Option<T::AccountId>
-    where
-        <T as manta_collator_selection::Config>::ValidatorId:
-            From<<T as pallet_session::Config>::ValidatorId>,
-    {
-        use sp_runtime::traits::Convert;
-        #[allow(clippy::bind_instead_of_map)]
-        pallet_session::Pallet::<T>::key_owner(
-            nimbus_primitives::NIMBUS_KEY_ID,
-            &author.to_raw_vec(),
-        )
-        .and_then(|vid| Some(T::AccountIdOf::convert(vid.into())))
     }
 }
 
@@ -596,7 +568,7 @@ impl pallet_aura_style_filter::Config for Runtime {
 impl pallet_author_inherent::Config for Runtime {
     // We start a new slot each time we see a new relay block.
     type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
-    type AccountLookup = TestConverter<Self>;
+    type AccountLookup = CollatorSelection;
     type EventHandler = ();
     type WeightInfo = (); // TODO: Add benchmarked weights
     type CanAuthor = CollatorSelection;
@@ -674,7 +646,7 @@ impl pallet_session::Config for Runtime {
     type Event = Event;
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     // we don't have stash and controller, thus we don't need the convert as well.
-    type ValidatorIdOf = manta_collator_selection::IdentityCollator;
+    type ValidatorIdOf = IdentityCollator;
     type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
     type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
     type SessionManager = CollatorSelection;
@@ -713,8 +685,8 @@ impl manta_collator_selection::Config for Runtime {
     type MaxCandidates = ConstU32<50>; // 50 candidates at most
     type MaxInvulnerables = ConstU32<5>; // 5 invulnerables at most
     type ValidatorId = <Self as frame_system::Config>::AccountId;
-    type ValidatorIdOf = manta_collator_selection::IdentityCollator;
-    type AccountIdOf = manta_collator_selection::IdentityCollator;
+    type ValidatorIdOf = IdentityCollator;
+    type AccountIdOf = IdentityCollator;
     type ValidatorRegistration = Session;
     type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
     type CanAuthor = AuraAuthorFilter; // NOTE: End of the nimbus filter pipeline (Aura filter has no CanAuthor trait)
