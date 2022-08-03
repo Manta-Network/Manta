@@ -5537,6 +5537,7 @@ version = "0.9.0"
 source = "git+https://github.com/manta-network/nimbus.git?branch=garandor/polkadot-v0.9.26#90a9c0453117b215dcb28714999fc9d716b02bf5"
 dependencies = [
  "async-trait",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "parity-scale-codec",

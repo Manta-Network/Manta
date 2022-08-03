@@ -34,10 +34,10 @@ use sp_runtime::{
     ApplyExtrinsicResult, Perbill, Permill,
 };
 use sp_std::{cmp::Ordering, prelude::*};
-use sp_version::RuntimeVersion;
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
+use sp_version::RuntimeVersion;
 
 use frame_support::{
     construct_runtime, parameter_types,
@@ -265,7 +265,7 @@ impl Contains<Call> for BaseFilter {
             | Call::TechnicalMembership(_)
             | Call::Scheduler(_)
             | Call::Session(_) // User must be able to set their session key when applying for a collator
-            | Call::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // execute on every block
+            | Call::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
             | Call::CollatorSelection(
                 manta_collator_selection::Call::set_invulnerables{..}
                 | manta_collator_selection::Call::set_desired_candidates{..}
@@ -721,13 +721,12 @@ construct_runtime!(
         TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 
         // Collator support. the order of these 5 are important and shall not change.
-        AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 50, // TODO: Number is likely wrong. Doublecheck inclusion order. Session likely must be included after a_inherent
+        AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 50,
         AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage} = 53,
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
         CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
-        // This used to be pallet_aura with idx = 23, // TODO: Write check that these are not reused
         // This used to be cumulus_pallet_aura_ext with idx = 24,
 
         // Treasury
@@ -972,8 +971,8 @@ impl_runtime_apis! {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
     }
+
     impl nimbus_primitives::NimbusApi<Block> for Runtime {
-        // fn can_author(author: NimbusId, slot: u32, parent_header: &<Block as BlockT>::Header) -> bool {
         fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool{
             System::initialize(&(parent_header.number + 1), &parent_header.hash(), &parent_header.digest);
 
