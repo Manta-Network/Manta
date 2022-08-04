@@ -25,4 +25,4 @@ pub mod cli;
 pub mod command;
 pub mod rpc;
 pub mod service;
-pub mod service_nimbus;
+pub mod service_aura;
