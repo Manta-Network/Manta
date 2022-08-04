@@ -17,46 +17,28 @@
 //! Nimbus-based Parachain Node Service
 
 use crate::rpc;
-// use codec::Codec;
-// use core::marker::PhantomData;
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::ParachainConsensus;
-// use cumulus_client_consensus_common::{
-//     ParachainBlockImport, ParachainCandidate, ParachainConsensus,
-// };
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
     prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
-// use cumulus_primitives_parachain_inherent::{
-//     MockValidationDataInherentDataProvider, MockXcmConfig,
-// };
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 use jsonrpsee::RpcModule;
 use polkadot_service::CollatorPair;
-// use futures::lock::Mutex;
-// use dolphin_runtime::RuntimeApi;
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
 
-// use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
 use nimbus_consensus::{BuildNimbusConsensusParams, NimbusConsensus};
 use session_key_primitives::NimbusId;
-// use sc_client_api::ExecutorProvider;
-// use sc_consensus::{
-//     import_queue::{BasicQueue, Verifier as VerifierT},
-//     BlockImportParams,
-// };
 use sc_executor::WasmExecutor;
 use sc_network::NetworkService;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_service::{Configuration, Error, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::{ApiExt, ConstructRuntimeApi};
-// use sp_consensus::CacheKeyId;
-// use sp_core::crypto::Pair;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_offchain::OffchainWorkerApi;
 use sp_runtime::traits::BlakeTwo256;
