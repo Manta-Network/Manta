@@ -794,7 +794,6 @@ fn verify_pallet_prefixes() {
     is_pallet_prefix::<calamari_runtime::CollatorSelection>("CollatorSelection");
     is_pallet_prefix::<calamari_runtime::Session>("Session");
     is_pallet_prefix::<calamari_runtime::Aura>("Aura");
-    is_pallet_prefix::<calamari_runtime::AuraExt>("AuraExt");
     is_pallet_prefix::<calamari_runtime::Treasury>("Treasury");
     is_pallet_prefix::<calamari_runtime::Scheduler>("Scheduler");
     is_pallet_prefix::<calamari_runtime::XcmpQueue>("XcmpQueue");
@@ -912,7 +911,6 @@ fn verify_pallet_indices() {
     is_pallet_index::<calamari_runtime::CollatorSelection>(21);
     is_pallet_index::<calamari_runtime::Session>(22);
     is_pallet_index::<calamari_runtime::Aura>(23);
-    is_pallet_index::<calamari_runtime::AuraExt>(24);
     is_pallet_index::<calamari_runtime::Treasury>(26);
     is_pallet_index::<calamari_runtime::Preimage>(28);
     is_pallet_index::<calamari_runtime::Scheduler>(29);
@@ -936,6 +934,8 @@ fn verify_pallet_indices() {
         if let RuntimeMetadata::V14(v14) = runtime_metadata.1 {
             // Ensure sudo=42 has been removed, no one is taking this index.
             assert!(v14.pallets.iter().any(|pallet| pallet.index != 42));
+            // AuraExt
+            assert!(v14.pallets.iter().any(|pallet| pallet.index != 24));
         }
     });
 }
