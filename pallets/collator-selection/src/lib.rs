@@ -703,21 +703,20 @@ pub mod pallet {
         // Implemented only where Session's ValidatorId is directly convertible to collator_selection's ValidatorId
         <T as Config>::ValidatorId: From<<T as pallet_session::Config>::ValidatorId>,
     {
-        /// Return the set of eligible collator accounts
+        /// Return the set of eligible collator accounts as registered with pallet session
         fn get() -> Vec<T::AccountId>
         where
             <T as Config>::ValidatorId: From<<T as pallet_session::Config>::ValidatorId>,
         {
             use sp_runtime::traits::Convert;
-
-            let validator_account_set = pallet_session::Pallet::<T>::validators()
+            pallet_session::Pallet::<T>::validators()
                 .into_iter()
-                .map(|vid: <T as pallet_session::Config>::ValidatorId| {
-                    <T as Config>::AccountIdOf::convert(vid.into())
-                })
-                .collect::<Vec<T::AccountId>>();
-
-            validator_account_set
+                .map(
+                    |session_validator_id: <T as pallet_session::Config>::ValidatorId| {
+                        <T as Config>::AccountIdOf::convert(session_validator_id.into())
+                    },
+                )
+                .collect::<Vec<T::AccountId>>()
         }
     }
 
