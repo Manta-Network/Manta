@@ -78,7 +78,6 @@ pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", 
 
 # Polkadot dependencies
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
-polkadot-core-primitives = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
 polkadot-parachain = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
 polkadot-primitives = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
 xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }

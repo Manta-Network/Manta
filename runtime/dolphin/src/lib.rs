@@ -721,8 +721,8 @@ construct_runtime!(
         TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 
         // Collator support. the order of these 5 are important and shall not change.
-        AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 50,
-        AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage} = 53,
+        AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 60,
+        AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage} = 63,
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
         CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
@@ -856,6 +856,8 @@ mod benches {
         [manta_collator_selection, CollatorSelection]
         [pallet_manta_pay, MantaPay]
         [pallet_asset_manager, AssetManager]
+        // Nimbus pallets
+        [pallet_author_inherent, AuthorInherent]
     );
 }
 

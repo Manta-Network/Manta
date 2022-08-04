@@ -20,8 +20,8 @@ use crate::{
     chain_specs,
     cli::{Cli, RelayChainCli, Subcommand},
     rpc,
-    service::{new_partial, CalamariRuntimeExecutor, MantaRuntimeExecutor},
-    service_nimbus::DolphinRuntimeExecutor,
+    service::{new_partial, MantaRuntimeExecutor},
+    service_nimbus::{CalamariRuntimeExecutor, DolphinRuntimeExecutor}
 };
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
@@ -495,7 +495,7 @@ pub fn run_with(cli: Cli) -> Result {
                     .map(|r| r.0)
                     .map_err(Into::into)
                 } else if config.chain_spec.is_calamari() {
-                    crate::service::start_parachain_node::<calamari_runtime::RuntimeApi, AuraId, _>(
+                    crate::service_nimbus::start_parachain_node::<calamari_runtime::RuntimeApi, _>(
                         config,
                         polkadot_config,
                         collator_options,

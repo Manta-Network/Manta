@@ -74,6 +74,20 @@ type HostFunctions = (
     frame_benchmarking::benchmarking::HostFunctions,
 );
 
+/// Native Calamari Parachain executor instance.
+pub struct CalamariRuntimeExecutor;
+impl sc_executor::NativeExecutionDispatch for CalamariRuntimeExecutor {
+    type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+    fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+        calamari_runtime::api::dispatch(method, data)
+    }
+
+    fn native_version() -> sc_executor::NativeVersion {
+        calamari_runtime::native_version()
+    }
+}
+
 /// Native Dolphin Parachain executor instance.
 pub struct DolphinRuntimeExecutor;
 impl sc_executor::NativeExecutionDispatch for DolphinRuntimeExecutor {
@@ -391,7 +405,7 @@ where
     Ok((task_manager, client))
 }
 
-/// Start a dolphin parachain node.
+/// Start a calamari/dolphin parachain node.
 pub async fn start_parachain_node<RuntimeApi, FullRpc>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
@@ -402,8 +416,6 @@ pub async fn start_parachain_node<RuntimeApi, FullRpc>(
 ) -> sc_service::error::Result<(TaskManager, Arc<Client<RuntimeApi>>)>
 where
     RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    // sp_runtime::generic::Block<sp_runtime::generic::Header<u32, BlakeTwo256>, OpaqueExtrinsic>
-    // , RuntimeApi>>>::RuntimeApi: nimbus_primitives::AuthorFilterAPI<sp_runtime::generic::Block<sp_runtime::generic::Header<u32, BlakeTwo256>, OpaqueExtrinsic>, nimbus_primitives::nimbus_crypto::Public>
     RuntimeApi::RuntimeApi: TaggedTransactionQueue<Block>
         + sp_api::Metadata<Block>
         + SessionKeys<Block>

@@ -58,6 +58,7 @@ std = [
   'frame-support/std',
   'frame-system/std',
   'frame-benchmarking/std',
+  'nimbus-primitives/std',
   'pallet-authorship/std',
   'pallet-session/std',
 ]

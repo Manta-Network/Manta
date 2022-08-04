@@ -159,7 +159,7 @@ fn dolphin_dev_genesis(
         },
         // no need to pass anything to aura, in fact it will panic if we do. Session will take care
         // of this.
-        aura: Default::default(),
+        aura: Default::default(), // TODO: Remove
         sudo: dolphin_runtime::SudoConfig {
             key: Some(root_key),
         },
@@ -179,7 +179,7 @@ fn dolphin_dev_genesis(
                     (
                         acc.clone(),  // account id
                         acc,          // validator id
-                        session_keys, // nimbus validator keys
+                        session_keys, // collator session keys
                     )
                 })
                 .collect(),

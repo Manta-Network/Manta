@@ -90,20 +90,6 @@ impl NativeExecutionDispatch for MantaRuntimeExecutor {
     }
 }
 
-/// Native Calamari Parachain executor instance.
-pub struct CalamariRuntimeExecutor;
-impl NativeExecutionDispatch for CalamariRuntimeExecutor {
-    type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
-
-    fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-        calamari_runtime::api::dispatch(method, data)
-    }
-
-    fn native_version() -> sc_executor::NativeVersion {
-        calamari_runtime::native_version()
-    }
-}
-
 /// We use wasm executor only now.
 pub type DefaultExecutorType = WasmExecutor<HostFunctions>;
 
