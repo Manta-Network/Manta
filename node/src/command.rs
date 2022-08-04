@@ -231,10 +231,10 @@ macro_rules! construct_benchmark_partials {
             )?;
             $code
         } else if $config.chain_spec.is_calamari() {
-            let $partials = new_partial::<calamari_runtime::RuntimeApi>(&$config, false)?;
+            let $partials = new_partial::<calamari_runtime::RuntimeApi>(&$config)?;
             $code
         } else if $config.chain_spec.is_dolphin() {
-            let $partials = new_partial::<dolphin_runtime::RuntimeApi>(&$config, false)?;
+            let $partials = new_partial::<dolphin_runtime::RuntimeApi>(&$config)?;
             $code
         } else {
             Err("The chain is not supported".into())
@@ -258,7 +258,6 @@ macro_rules! construct_async_run {
                 runner.async_run(|$config| {
                     let $components = new_partial::<calamari_runtime::RuntimeApi>(
                         &$config,
-                        false,
                     )?;
                     let task_manager = $components.task_manager;
                     { $( $code )* }.map(|v| (v, task_manager))
@@ -267,7 +266,6 @@ macro_rules! construct_async_run {
                 runner.async_run(|$config| {
                     let $components = new_partial::<dolphin_runtime::RuntimeApi>(
                         &$config,
-                        false,
                     )?;
                     let task_manager = $components.task_manager;
                     { $( $code )* }.map(|v| (v, task_manager))

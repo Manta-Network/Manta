@@ -115,7 +115,6 @@ pub type StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Bloc
 /// be able to perform chain operations.
 pub fn new_partial<RuntimeApi>(
     config: &Configuration,
-    dev_service: bool,
 ) -> Result<PartialComponents<RuntimeApi>, Error>
 where
     RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
@@ -175,7 +174,7 @@ where
         },
         &task_manager.spawn_essential_handle(),
         config.prometheus_registry(),
-        !dev_service,
+        true, // Note: we run as parachain only. No sovereign chain mode
     )?;
 
     Ok(PartialComponents {
@@ -265,7 +264,7 @@ where
 
     let parachain_config = prepare_node_config(parachain_config);
 
-    let params = new_partial::<RuntimeApi>(&parachain_config, false)?;
+    let params = new_partial::<RuntimeApi>(&parachain_config)?;
     let (mut telemetry, telemetry_worker_handle) = params.other;
 
     let mut task_manager = params.task_manager;
