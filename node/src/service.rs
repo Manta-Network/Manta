@@ -158,8 +158,6 @@ where
             .spawn("telemetry", None, worker.run());
         telemetry
     });
-    // Although this will not be used by the parachain collator, it will be used by the instant seal
-    // And sovereign nodes, so we create it anyway.
     let transaction_pool = sc_transaction_pool::BasicPool::new_full(
         config.transaction_pool.clone(),
         config.role.is_authority().into(),
