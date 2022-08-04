@@ -88,21 +88,21 @@ impl sc_executor::NativeExecutionDispatch for DolphinRuntimeExecutor {
 pub type DefaultExecutorType = WasmExecutor<HostFunctions>;
 
 /// Full Client Implementation Type
-pub type Client<R> = TFullClient<Block, R, DefaultExecutorType>;
+pub type Client<RuntimeApi> = TFullClient<Block, RuntimeApi, DefaultExecutorType>;
 
 /// Default Import Queue Type
-pub type ImportQueue<R> = sc_consensus::DefaultImportQueue<Block, Client<R>>;
+pub type ImportQueue<RuntimeApi> = sc_consensus::DefaultImportQueue<Block, Client<RuntimeApi>>;
 
 /// Full Transaction Pool Type
-pub type TransactionPool<R> = sc_transaction_pool::FullPool<Block, Client<R>>;
+pub type TransactionPool<RuntimeApi> = sc_transaction_pool::FullPool<Block, Client<RuntimeApi>>;
 
 /// Components Needed for Chain Ops Subcommands
-pub type PartialComponents<R> = sc_service::PartialComponents<
-    Client<R>,
+pub type PartialComponents<RuntimeApi> = sc_service::PartialComponents<
+    Client<RuntimeApi>,
     TFullBackend<Block>,
     (),
-    ImportQueue<R>,
-    TransactionPool<R>,
+    ImportQueue<RuntimeApi>,
+    TransactionPool<RuntimeApi>,
     (Option<Telemetry>, Option<TelemetryWorkerHandle>),
 >;
 
