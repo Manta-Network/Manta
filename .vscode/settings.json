@@ -1,0 +1,12 @@
+{
+    "lldb.dbgconfig": {
+      "rustc_path": "${env:HOME}/.rustup/toolchains/nightly-2022-07-10-x86_64-unknown-linux-gnu/",
+      "para_chain": "calamari-dev",
+      // "relay_chain": "dev",
+      "relay_chain": "/home/georgi/Desktop/workspace/Parity/polkadot-launch/rococo-local-raw.json",
+      "port_p2p": 19931,
+      "port_rpc": 19932,
+      "port_ws": 19933
+    }
+}
+  
