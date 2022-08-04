@@ -29,9 +29,10 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
+    Perbill, Permill,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, Perbill, Permill,
+    ApplyExtrinsicResult,
 };
 use sp_std::{cmp::Ordering, prelude::*};
 
@@ -561,7 +562,11 @@ impl pallet_treasury::Config for Runtime {
     // which is the the maximum amount that this origin is allowed to spend at a time.
     type SpendOrigin = NeverEnsureOrigin<Balance>;
 }
+
 impl pallet_aura_style_filter::Config for Runtime {
+    /// Nimbus filter pipeline (final) step 3:
+    /// Choose 1 collator from PotentialAuthors as eligible
+    /// for each slot in round-robin fashion
     type PotentialAuthors = CollatorSelection;
 }
 
@@ -571,6 +576,8 @@ impl pallet_author_inherent::Config for Runtime {
     type AccountLookup = CollatorSelection;
     type EventHandler = ();
     type WeightInfo = (); // TODO: Add benchmarked weights
+    /// Nimbus filter pipeline step 1:
+    /// Filters out NimbusIds not registered as SessionKeys of some AccountId
     type CanAuthor = CollatorSelection;
 }
 
@@ -689,7 +696,9 @@ impl manta_collator_selection::Config for Runtime {
     type AccountIdOf = IdentityCollator;
     type ValidatorRegistration = Session;
     type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
-    type CanAuthor = AuraAuthorFilter; // NOTE: End of the nimbus filter pipeline (Aura filter has no CanAuthor trait)
+    /// Nimbus filter pipeline step 2:
+    /// Filters collators not part of the current pallet_session::validators()
+    type CanAuthor = AuraAuthorFilter;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -712,7 +721,6 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
 
-
         // Governance stuff.
         Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>} = 14,
         Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 15,
@@ -721,6 +729,7 @@ construct_runtime!(
         TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 
         // Collator support. the order of these 5 are important and shall not change.
+        // Session must be included *before* AuthorInherent
         AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 60,
         AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage} = 63,
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -1048,7 +1057,6 @@ impl_runtime_apis! {
 
             let mut batches = Vec::<BenchmarkBatch>::new();
             let params = (&config, &whitelist);
-
             add_benchmarks!(params, batches);
 
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }

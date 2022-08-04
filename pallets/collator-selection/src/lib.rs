@@ -166,7 +166,7 @@ pub mod pallet {
 
         /// The final word on whether the reported author can author at this height.
         /// If the pallet that implements this trait depends on an inherent, that inherent **must**
-        /// be included before this one. //TODO: Check the meaning of this.
+        /// be included before this one.
         type CanAuthor: CanAuthor<Self::AccountId>;
     }
 
@@ -670,7 +670,7 @@ pub mod pallet {
         }
     }
 
-    /// Lookup an AccountId from a NimbusId, needed for author_inherent
+    /// Checks if a provided NimbusId SessionKey has an associated AccountId
     impl<T> AccountLookup<T::AccountId> for Pallet<T>
     where
         T: pallet_session::Config + Config,
@@ -721,7 +721,7 @@ pub mod pallet {
         }
     }
 
-    /// Implements authoring filter for nimbus consensus pipeline
+    /// Returns whether an account is part of pallet_session::Validators
     impl<T: Config> nimbus_primitives::CanAuthor<T::AccountId> for Pallet<T> {
         fn can_author(account: &T::AccountId, slot: &u32) -> bool {
             let validator_key = T::ValidatorIdOf::convert(account.clone());

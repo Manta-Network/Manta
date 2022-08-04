@@ -35,6 +35,7 @@ use sp_runtime::{
     ApplyExtrinsicResult,
 };
 use sp_std::{cmp::Ordering, prelude::*};
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -340,7 +341,6 @@ impl pallet_authorship::Config for Runtime {
 parameter_types! {
     pub const NativeTokenExistentialDeposit: u128 = 10 * cKMA; // 0.1 KMA
 }
-
 impl pallet_balances::Config for Runtime {
     type MaxLocks = ConstU32<50>;
     type MaxReserves = ConstU32<50>;
@@ -561,14 +561,20 @@ impl pallet_treasury::Config for Runtime {
 }
 
 impl pallet_aura_style_filter::Config for Runtime {
+    /// Nimbus filter pipeline (final) step 3:
+    /// Choose 1 collator from PotentialAuthors as eligible
+    /// for each slot in round-robin fashion
     type PotentialAuthors = CollatorSelection;
 }
+
 impl pallet_author_inherent::Config for Runtime {
     // We start a new slot each time we see a new relay block.
     type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
     type AccountLookup = CollatorSelection;
     type EventHandler = ();
     type WeightInfo = (); // TODO: Add benchmarked weights
+    /// Nimbus filter pipeline step 1:
+    /// Filters out NimbusIds not registered as SessionKeys of some AccountId
     type CanAuthor = CollatorSelection;
 }
 
@@ -687,7 +693,9 @@ impl manta_collator_selection::Config for Runtime {
     type AccountIdOf = IdentityCollator;
     type ValidatorRegistration = Session;
     type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
-    type CanAuthor = AuraAuthorFilter; // NOTE: End of the nimbus filter pipeline (Aura filter has no CanAuthor trait)
+    /// Nimbus filter pipeline step 2:
+    /// Filters collators not part of the current pallet_session::validators()
+    type CanAuthor = AuraAuthorFilter;
 }
 
 // Calamari pallets configuration
@@ -732,6 +740,7 @@ construct_runtime!(
         TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 
         // Collator support. the order of these 5 are important and shall not change.
+        // Session must be included *before* AuthorInherent
         AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 60,
         AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage} = 63,
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
@@ -982,12 +991,11 @@ impl_runtime_apis! {
     }
 
     impl nimbus_primitives::NimbusApi<Block> for Runtime {
-        fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool {
+        fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool{
             System::initialize(&(parent_header.number + 1), &parent_header.hash(), &parent_header.digest);
 
             // And now the actual prediction call
-            <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
-        }
+            <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)		}
     }
 
     // We also implement the old AuthorFilterAPI to meet the trait bounds on the client side.
@@ -1024,6 +1032,7 @@ impl_runtime_apis! {
             list_benchmarks!(list, extra);
 
             let storage_info = AllPalletsReversedWithSystemFirst::storage_info();
+
             (list, storage_info)
         }
 

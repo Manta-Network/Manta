@@ -159,7 +159,7 @@ fn dolphin_dev_genesis(
         },
         // no need to pass anything to aura, in fact it will panic if we do. Session will take care
         // of this.
-        aura: Default::default(), // TODO: Remove
+        aura: Default::default(),
         sudo: dolphin_runtime::SudoConfig {
             key: Some(root_key),
         },

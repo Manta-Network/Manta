@@ -161,7 +161,7 @@ fn calamari_dev_genesis(
         },
         // no need to pass anything to aura, in fact it will panic if we do. Session will take care
         // of this.
-        aura: Default::default(), // TODO: Remove
+        aura: Default::default(),
         parachain_info: calamari_runtime::ParachainInfoConfig {
             parachain_id: CALAMARI_PARACHAIN_ID.into(),
         },
