@@ -28,16 +28,16 @@ use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 use jsonrpsee::RpcModule;
-use polkadot_service::CollatorPair;
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
+use polkadot_service::CollatorPair;
 
 use nimbus_consensus::{BuildNimbusConsensusParams, NimbusConsensus};
-use session_key_primitives::NimbusId;
 use sc_executor::WasmExecutor;
 use sc_network::NetworkService;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_service::{Configuration, Error, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
+use session_key_primitives::NimbusId;
 use sp_api::{ApiExt, ConstructRuntimeApi};
 use sp_keystore::SyncCryptoStorePtr;
 use sp_offchain::OffchainWorkerApi;

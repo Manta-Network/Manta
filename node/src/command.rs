@@ -21,7 +21,9 @@ use crate::{
     cli::{Cli, RelayChainCli, Subcommand},
     rpc,
     service::{new_partial, MantaRuntimeExecutor},
-    service_nimbus::{CalamariRuntimeExecutor, DolphinRuntimeExecutor}
+    service_nimbus::{
+        new_partial as nimbus_new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor,
+    },
 };
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
@@ -231,16 +233,10 @@ macro_rules! construct_benchmark_partials {
             )?;
             $code
         } else if $config.chain_spec.is_calamari() {
-            let $partials = new_partial::<calamari_runtime::RuntimeApi, _>(
-                &$config,
-                crate::service::parachain_build_import_queue::<_, AuraId>,
-            )?;
+            let $partials = nimbus_new_partial::<calamari_runtime::RuntimeApi>(&$config, false)?;
             $code
         } else if $config.chain_spec.is_dolphin() {
-            let $partials = new_partial::<dolphin_runtime::RuntimeApi, _>(
-                &$config,
-                crate::service::parachain_build_import_queue::<_, AuraId>,
-            )?;
+            let $partials = nimbus_new_partial::<dolphin_runtime::RuntimeApi>(&$config, false)?;
             $code
         } else {
             Err("The chain is not supported".into())
@@ -262,16 +258,16 @@ macro_rules! construct_async_run {
                 })
             } else if runner.config().chain_spec.is_calamari() {
                 runner.async_run(|$config| {
-                    let $components = new_partial::<calamari_runtime::RuntimeApi, _>(
+                    let $components = nimbus_new_partial::<calamari_runtime::RuntimeApi>(
                         &$config,
-                        crate::service::parachain_build_import_queue::<_, AuraId>,
+                        false,
                     )?;
                     let task_manager = $components.task_manager;
                     { $( $code )* }.map(|v| (v, task_manager))
                 })
             } else if runner.config().chain_spec.is_dolphin() {
                 runner.async_run(|$config| {
-                    let $components = crate::service_nimbus::new_partial::<dolphin_runtime::RuntimeApi>(
+                    let $components = nimbus_new_partial::<dolphin_runtime::RuntimeApi>(
                         &$config,
                         false,
                     )?;
