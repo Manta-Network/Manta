@@ -92,6 +92,13 @@ jobs:
             iterations: 20
           - extrinsic:
               id: '*'
+              name: pallet_author_inherent
+            pallet:
+              id: pallet_author_inherent
+              name: pallet_author_inherent
+            iterations: 20
+          - extrinsic:
+              id: '*'
               name: pallet_balances
             pallet:
               id: pallet_balances
