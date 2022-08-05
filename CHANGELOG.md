@@ -1,15 +1,17 @@
-# CHANGELOG
+# CHANGELOG 
 
-## Unreleased
-### Breaking changes
+## v3.2.2
+### Changed
+-[\#681](https://github.com/Manta-Network/Manta/pull/681) CI Ledger RPC Tests 
+-[\#682](https://github.com/Manta-Network/Manta/pull/682) Use `LengthToFee` in the `congested_chain_simulation`'s fee calculation 
+-[\#695](https://github.com/Manta-Network/Manta/pull/695) Refactor fungible ledger mint/burn 
+-[\#715](https://github.com/Manta-Network/Manta/pull/715) Update xcm-onboarding and release templates 
+-[\#701](https://github.com/Manta-Network/Manta/pull/701) switch runtime to wasm only 
+-[\#720](https://github.com/Manta-Network/Manta/pull/720) Update deps from v0.9.22 to v0.9.26 
 
-### Features
-
-### Improvements
-- [\#681](https://github.com/Manta-Network/Manta/pull/681) CI Ledger RPC Tests.
-- [\#694](https://github.com/Manta-Network/Manta/pull/694) Switch to u128::MAX in fungible ledger transfer integration test.
-
-### Bug fixes
+### Fixed
+-[\#694](https://github.com/Manta-Network/Manta/pull/694) Use u128::MAX in fungible ledger transfer test 
+-[\#703](https://github.com/Manta-Network/Manta/pull/703) Fix double spend reclaim test 
 
 ## v3.2.1
 ### Breaking changes
