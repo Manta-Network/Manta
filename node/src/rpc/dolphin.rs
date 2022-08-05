@@ -22,8 +22,8 @@ use codec::Encode;
 use frame_support::{storage::storage_prefix, StorageHasher, Twox64Concat};
 use manta_primitives::types::Block;
 use pallet_manta_pay::{
-    types::{ReceiverChunk, SenderChunk},
-    Checkpoint, PullResponse, RawCheckpoint,
+    types::{ReceiverChunk, SenderChunk, VoidNumber},
+    Checkpoint, PullResponse,
 };
 use polkadot_service::NativeExecutionDispatch;
 use sc_client_api::{HeaderBackend, StorageProvider};
@@ -67,7 +67,8 @@ where
         + sp_block_builder::BlockBuilder<Block>
         + cumulus_primitives_core::CollectCollationInfo<Block>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-        + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
+        + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+        + pallet_manta_pay::runtime::PullLedgerDiffApi<Block>,
     StateBackend: sp_api::StateBackend<BlakeTwo256>,
     Executor: NativeExecutionDispatch + 'static,
 {
@@ -88,9 +89,17 @@ where
         .merge(TransactionPaymentRpc::new(client.clone()).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
-    let manta_pay_rpc = Pull::new(client).into_rpc();
+    let runtime_manta_pay_rpc = {
+        use pallet_manta_pay::rpc::PullApiServer;
+        pallet_manta_pay::rpc::Pull::new(client.clone()).into_rpc()
+    };
     module
-        .merge(manta_pay_rpc)
+        .merge(runtime_manta_pay_rpc)
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+
+    let prototype_manta_pay_rpc = Pull::new(client).into_rpc();
+    module
+        .merge(prototype_manta_pay_rpc)
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
     Ok(module)
@@ -206,8 +215,9 @@ where
         let key = create_full_map_key(&MANTA_PAY_STORAGE_VOID_NAME, idx);
         match client.storage(block_id, &key) {
             Ok(Some(next)) => {
-                let next = serde_json::from_slice(&next.0).unwrap();
-                senders.push(next);
+                let mut _next: VoidNumber = [0u8; 32];
+                _next.copy_from_slice(&next.0[..32]);
+                senders.push(_next);
             }
             _ => return (false, senders),
         }
@@ -281,7 +291,8 @@ where
         }
         match client.storage(block_id, &key) {
             Ok(Some(next)) => {
-                let next = serde_json::from_slice(&next.0).unwrap();
+                // println!("pull_receivers_for_shard next: {:?}, key: {:?}", next, hex::encode(&key));
+                let next = serde_json::from_slice(&next.0).unwrap_or(Default::default());
                 *receivers_pulled += 1;
                 receivers.push(next);
             }

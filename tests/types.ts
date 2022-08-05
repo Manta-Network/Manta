@@ -34,6 +34,25 @@ export const rpc_api = {
 
             ],
             type: 'PullResponse'
+        },
+        pullLedgerDiff: {
+            description: 'pull from mantaPay',
+            params: [
+                {
+                    name: 'checkpoint',
+                    type: 'Checkpoint'
+                },
+                {
+                    name: 'max_receiver',
+                    type: 'u64'
+                },
+                {
+                    name: 'max_sender',
+                    type: 'u64'
+                }
+
+            ],
+            type: 'PullResponse'
         }
     }
 }

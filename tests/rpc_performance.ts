@@ -5,11 +5,26 @@ import { StoragePrepareConfig, setup_storage, manta_pay_config} from './manta_pa
 import minimist, { ParsedArgs } from 'minimist';
 import { performance } from 'perf_hooks';
 
+// This is for the original ledger diff rpc interface.
 async function single_rpc_performance(api:ApiPromise) {
     const before_rpc = performance.now();
     const receiver_checkpoint = new Array<number>(manta_pay_config.shard_number);
     receiver_checkpoint.fill(0);
     const data = await (api.rpc as any).mantaPay.pull_ledger_diff(
+        {receiver_index: new Array<number>(manta_pay_config.shard_number).fill(0), sender_index: 0},
+        BigInt(16384), BigInt(16384));
+    const after_rpc = performance.now();
+    console.log("ledger diff receiver size: %i", data.receivers.length);
+    console.log("ledger diff void number size: %i", data.senders.length);
+    console.log("single rpc sync time: %i ms", after_rpc - before_rpc);
+}
+
+// This is for the prototype of ledger diff rpc interface.
+async function prototypeSingleRpcPerformance(api: ApiPromise) {
+    const before_rpc = performance.now();
+    const receiver_checkpoint = new Array<number>(manta_pay_config.shard_number);
+    receiver_checkpoint.fill(0);
+    const data = await (api.rpc as any).mantaPay.pullLedgerDiff(
         {receiver_index: new Array<number>(manta_pay_config.shard_number).fill(0), sender_index: 0},
         BigInt(16384), BigInt(16384));
     const after_rpc = performance.now();
@@ -47,6 +62,7 @@ async function main(){
     }
     await setup_storage(api, sudo_key_pair, 0, storage_prepare_config);
     await single_rpc_performance(api);
+    await prototypeSingleRpcPerformance(api);
 }
 
 main().catch(console.error).finally(() => process.exit());
