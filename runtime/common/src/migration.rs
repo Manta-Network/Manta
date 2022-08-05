@@ -20,8 +20,9 @@
 
 use frame_support::{
     dispatch::Weight,
+    ensure,
     migrations::migrate_from_pallet_version_to_storage_version,
-    traits::{GetStorageVersion, OnRuntimeUpgrade, PalletInfoAccess},
+    traits::{GetStorageVersion, OnRuntimeUpgrade, PalletInfoAccess, StorageVersion},
     weights::constants::RocksDbWeight,
 };
 
@@ -42,6 +43,27 @@ where
     fn on_runtime_upgrade() -> Weight {
         let db_weight = RocksDbWeight::get();
         migrate_from_pallet_version_to_storage_version::<T>(&db_weight)
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn pre_upgrade() -> Result<(), &'static str> {
+        let storage_version = StorageVersion::get::<T>();
+        frame_support::debug(&"----PreUpgrade----");
+        frame_support::debug(&T::module_name());
+        frame_support::debug(&T::name());
+        frame_support::debug(&storage_version);
+        Ok(())
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade() -> Result<(), &'static str> {
+        let storage_version = StorageVersion::get::<T>();
+        frame_support::debug(&"----PostUpgrade----");
+        frame_support::debug(&T::module_name());
+        frame_support::debug(&T::name());
+        frame_support::debug(&storage_version);
+        ensure!(storage_version == StorageVersion::new(1), T::module_name());
+        Ok(())
     }
 }
 
