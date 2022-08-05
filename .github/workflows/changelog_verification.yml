@@ -1,6 +1,13 @@
 name: Changelog Verification
 on:
+  pull_request:
+    branches: 
+      - '**/release-**'
   push:
+    branches: 
+      - '**/release-**'
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
 jobs:
   verify_changelog:
     runs-on: ubuntu-20.04
@@ -8,6 +15,7 @@ jobs:
     - name: checkout
       uses: actions/checkout@v2
       with:
+        fetch-depth: 0
         path: manta
     - name: Save Dev Local CHANGELOG for diff
       run: |
@@ -20,9 +28,22 @@ jobs:
         ref: Apokalip/changelog-generator-license
         path: dev-tools
     - name: Generate workflow Changelog
+      continue-on-error: true
       run: |
-        git -C ${{ github.workspace }}/manta branch --show-current
+        git -C ${{ github.workspace }}/manta fetch
         cd dev-tools/changelog-generator
         cargo b -r
-        cargo run -- -u ${{ github.actor }} ${{ github.token }} -r ${{ github.workspace }}/manta
+        cargo run -- -u ${GITHUB_ACTOR} ${{ secrets.GITHUB_TOKEN }} -r ${{ github.workspace }}/manta
+    - name: Diff changelogs
+      run: |
+        cd ${{ github.workspace }}/manta
+        res=$(diff CHANGELOG.md CHANGELOG_ORIGIN.md)
+        exit $res
+        
+        
+
+        
+        
+        
+
         
