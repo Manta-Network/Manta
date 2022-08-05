@@ -983,9 +983,11 @@ impl_runtime_apis! {
     }
 
     impl nimbus_primitives::NimbusApi<Block> for Runtime {
-        fn can_author(author: NimbusId, relay_parent: u32, _parent_header: &<Block as BlockT>::Header) -> bool {
-            <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
-        }
+        fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool{
+            System::initialize(&(parent_header.number + 1), &parent_header.hash(), &parent_header.digest);
+
+            // And now the actual prediction call
+            <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)		}
     }
 
     // We also implement the old AuthorFilterAPI to meet the trait bounds on the client side.
