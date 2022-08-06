@@ -75,6 +75,7 @@ pub mod xcm_config;
 use currency::*;
 use fee::WeightToFee;
 use impls::DealWithFees;
+use runtime_common::migration::MigratePalletPv2Sv;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -749,6 +750,17 @@ pub type SignedExtra = (
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
+
+/// Types for runtime upgrading.
+/// Each type should implement trait `OnRuntimeUpgrade`.
+pub type OnRuntimeUpgradeHooks = (
+    UpgradeSessionKeys,
+    MigratePalletPv2Sv<pallet_asset_manager::Pallet<Runtime>>,
+    MigratePalletPv2Sv<pallet_tx_pause::Pallet<Runtime>>,
+    MigratePalletPv2Sv<manta_collator_selection::Pallet<Runtime>>,
+    MigratePalletPv2Sv<pallet_manta_pay::Pallet<Runtime>>,
+);
+
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,

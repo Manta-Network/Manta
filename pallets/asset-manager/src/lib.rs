@@ -31,7 +31,6 @@ mod benchmarking;
 pub mod migrations;
 pub mod weights;
 pub use crate::weights::WeightInfo;
-
 pub use pallet::*;
 
 #[cfg(test)]
@@ -44,7 +43,11 @@ mod tests;
 pub mod pallet {
 
     use crate::weights::WeightInfo;
-    use frame_support::{pallet_prelude::*, traits::Contains, transactional, PalletId};
+    use frame_support::{
+        pallet_prelude::*,
+        traits::{Contains, StorageVersion},
+        transactional, PalletId,
+    };
     use frame_system::pallet_prelude::*;
     use manta_primitives::{
         assets::{
@@ -60,6 +63,8 @@ pub mod pallet {
     };
     use xcm::latest::prelude::*;
 
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
     /// Alias for the junction Parachain(#[codec(compact)] u32),
     pub(crate) type ParaId = u32;
     pub(crate) type AssetCount = u32;
@@ -67,6 +72,7 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
     /// Convert AssetId and AssetLocation
