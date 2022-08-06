@@ -754,7 +754,6 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExt
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
 pub type OnRuntimeUpgradeHooks = (
-    UpgradeSessionKeys,
     MigratePalletPv2Sv<pallet_asset_manager::Pallet<Runtime>>,
     MigratePalletPv2Sv<pallet_tx_pause::Pallet<Runtime>>,
     MigratePalletPv2Sv<manta_collator_selection::Pallet<Runtime>>,
@@ -768,6 +767,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsReversedWithSystemFirst,
+    OnRuntimeUpgradeHooks,
 >;
 
 #[cfg(feature = "runtime-benchmarks")]
