@@ -19,6 +19,8 @@
 #![allow(clippy::upper_case_acronyms)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub mod migration;
+
 use frame_support::parameter_types;
 use manta_primitives::types::BlockNumber;
 use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
