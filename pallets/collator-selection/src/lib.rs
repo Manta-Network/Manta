@@ -721,9 +721,14 @@ pub mod pallet {
     }
 
     /// Returns whether an account is part of pallet_session::Validators
-    impl<T: Config> nimbus_primitives::CanAuthor<T::AccountId> for Pallet<T> {
+    impl<T> nimbus_primitives::CanAuthor<T::AccountId> for Pallet<T>
+    where
+        T: Config + pallet_session::Config,
+        // Implemented only where Session's ValidatorId is directly convertible to collator_selection's ValidatorId
+        <T as Config>::ValidatorId: From<<T as pallet_session::Config>::ValidatorId>,
+    {
         fn can_author(account: &T::AccountId, slot: &u32) -> bool {
-            let validator_key = T::ValidatorIdOf::convert(account.clone());
+            let validator_key = <T as Config>::ValidatorIdOf::convert(account.clone());
             if validator_key.is_none()
                 || !T::ValidatorRegistration::is_registered(
                     &validator_key.expect("we checked against none before. qed"),
@@ -732,6 +737,18 @@ pub mod pallet {
                 return false;
             }
             T::CanAuthor::can_author(account, slot) // filter passed, hand execution to the next pipeline step
+        }
+        #[cfg(feature = "runtime-benchmarks")]
+        fn get_authors(_slot: &u32) -> Vec<T::AccountId> {
+            use sp_runtime::traits::Convert;
+            pallet_session::Pallet::<T>::validators()
+                .into_iter()
+                .map(
+                    |session_validator_id: <T as pallet_session::Config>::ValidatorId| {
+                        <T as Config>::AccountIdOf::convert(session_validator_id.into())
+                    },
+                )
+                .collect::<Vec<T::AccountId>>()
         }
     }
 
