@@ -64,7 +64,7 @@ use xcm::{
 
 use pallet_transaction_payment::ChargeTransactionPayment;
 
-use sp_consensus_aura::AURA_ENGINE_ID;
+use nimbus_primitives::NIMBUS_ENGINE_ID;
 use sp_core::{sr25519, H256};
 use sp_runtime::{
     generic::DigestItem,
@@ -435,10 +435,10 @@ fn seal_header(mut header: Header, author: AccountId) -> Header {
         let digest = header.digest_mut();
         digest
             .logs
-            .push(DigestItem::PreRuntime(AURA_ENGINE_ID, author.encode()));
+            .push(DigestItem::PreRuntime(NIMBUS_ENGINE_ID, author.encode()));
         digest
             .logs
-            .push(DigestItem::Seal(AURA_ENGINE_ID, author.encode()));
+            .push(DigestItem::Seal(NIMBUS_ENGINE_ID, author.encode()));
     }
 
     header
