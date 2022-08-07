@@ -803,6 +803,8 @@ fn verify_pallet_prefixes() {
     is_pallet_prefix::<calamari_runtime::Utility>("Utility");
     is_pallet_prefix::<calamari_runtime::Multisig>("Multisig");
     is_pallet_prefix::<calamari_runtime::CalamariVesting>("CalamariVesting");
+    is_pallet_prefix::<calamari_runtime::AuthorInherent>("AuthorInherent");
+    is_pallet_prefix::<calamari_runtime::AuraAuthorFilter>("AuraAuthorFilter");
 
     let prefix = |pallet_name, storage_name| {
         let mut res = [0u8; 32];
@@ -924,6 +926,8 @@ fn verify_pallet_indices() {
     is_pallet_index::<calamari_runtime::Assets>(45);
     is_pallet_index::<calamari_runtime::AssetManager>(46);
     is_pallet_index::<calamari_runtime::CalamariVesting>(50);
+    is_pallet_index::<calamari_runtime::AuthorInherent>(60);
+    is_pallet_index::<calamari_runtime::AuraAuthorFilter>(63);
 
     // Check removed pallets.
     ExtBuilder::default().build().execute_with(|| {
