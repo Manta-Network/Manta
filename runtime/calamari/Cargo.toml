@@ -155,6 +155,7 @@ try-runtime = [
   'pallet-assets/try-runtime',
   'pallet-tx-pause/try-runtime',
   'pallet-asset-manager/try-runtime',
+  'runtime-common/try-runtime',
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
