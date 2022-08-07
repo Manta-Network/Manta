@@ -109,13 +109,16 @@ pub mod runtime;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
+    use frame_support::{pallet_prelude::*, traits::StorageVersion};
     use frame_system::pallet_prelude::*;
     use sp_runtime::traits::AccountIdConversion;
+
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     /// Pallet
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
     /// The module configuration trait.
