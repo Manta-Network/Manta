@@ -575,7 +575,7 @@ impl pallet_author_inherent::Config for Runtime {
     type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
     type AccountLookup = CollatorSelection;
     type EventHandler = ();
-    type WeightInfo = (); // TODO: Add benchmarked weights
+    type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
     /// Nimbus filter pipeline step 1:
     /// Filters out NimbusIds not registered as SessionKeys of some AccountId
     type CanAuthor = CollatorSelection;
