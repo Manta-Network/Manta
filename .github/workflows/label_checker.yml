@@ -14,18 +14,6 @@ jobs:
             L-changed,
             L-fixed,
             L-deprecated,
-            L-removed,
-            L-release
+            L-removed
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Check L-release
-        if: ${{ github.event.label.name == 'L-release' }}
-        run: |
-          if [[ ${{ github.head_ref }} =~ ^release-v[0-9]+\.[0-9]+\.[0-9]+(\-[0-9]+)? ]]; then
-            echo "Release with L-release is ok"
-            exit 0
-          else
-            echo "Non Release branches should not have L-release label"
-            exit 1
-          fi
-
 
