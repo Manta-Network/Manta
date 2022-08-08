@@ -18,14 +18,7 @@ jobs:
             L-release
           repo_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check L-release
-        continue-on-error: true
-        id: release_check
-        uses: docker://agilepathway/pull-request-label-checker:latest
-        with:
-          all_of: L-release
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: L-release result
-        if: steps.release_check.conclusion == 'success'
+        if: ${{ github.event.label.name == 'L-release' }}
         run: |
           if [[ ${{ github.head_ref }} =~ ^release-v[0-9]+\.[0-9]+\.[0-9]+(\-[0-9]+)? ]]; then
             echo "Release with L-release is ok"
@@ -34,8 +27,5 @@ jobs:
             echo "Non Release branches should not have L-release label"
             exit 1
           fi
-      - id: no_release_label
-        if: steps.release_check.conclusion == 'failure'
-        run: exit 0
 
 
