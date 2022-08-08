@@ -6,7 +6,7 @@ jobs:
   check_release:
     name: Release Label Check
     runs-on: ubuntu-latest
-    if: startsWith(github.head_ref, 'Apokalip')
+    if: startsWith(github.head_ref, 'release-')
     steps:
       - uses: docker://agilepathway/pull-request-label-checker:latest
         with:
