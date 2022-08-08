@@ -1,12 +1,29 @@
-name: Label Checker
+name: Labels Checker
 on:
   pull_request:
-  push:
+    branches: [manta]
 jobs:
-  check_for_release:
-    runs-on: ubuntu-22.04
-    name: Check if release name
+  check_release:
+    name: Release Label Check
+    runs-on: ubuntu-latest
+    if: startsWith(github.head_ref, 'Apokalip')
     steps:
-      - name: run
-        run: echo ${{ github.event.pull_request.base.ref }}
+      - uses: docker://agilepathway/pull-request-label-checker:latest
+        with:
+          all_of: L-release
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+  check_l_labels:
+    name: L- Labels Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker://agilepathway/pull-request-label-checker:latest
+        with:
+          any_of: |
+            L-added,
+            L-changed,
+            L-fixed,
+            L-deprecated,
+            L-removed,
+            L-release
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
 
