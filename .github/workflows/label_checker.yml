@@ -33,5 +33,8 @@ jobs:
             echo "Non Release branches should not have L-release label"
             exit 1
           fi
+      - id: no_release_label
+        if: steps.release_check.conclusion == 'failure'
+        run: exit 0
 
 
