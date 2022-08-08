@@ -1,0 +1,12 @@
+name: Label Checker
+on:
+  pull_request:
+  push:
+jobs:
+  check_for_release:
+    runs-on: ubuntu-22.04
+    name: Check if release name
+    steps:
+      - name: run
+        run: echo ${{ github.event.pull_request.base.ref }}
+
