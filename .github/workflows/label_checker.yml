@@ -1,20 +1,13 @@
 name: Labels Checker
 on:
+  push:
+    branches: [manta]
   pull_request:
     branches: [manta]
 jobs:
-  check_release:
-    name: Release Label Check
-    runs-on: ubuntu-latest
-    if: startsWith(github.head_ref, 'release-')
-    steps:
-      - uses: docker://agilepathway/pull-request-label-checker:latest
-        with:
-          all_of: L-release
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
   check_l_labels:
     name: L- Labels Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: docker://agilepathway/pull-request-label-checker:latest
         with:

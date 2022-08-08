@@ -1,0 +1,34 @@
+name: Release Checks
+on:
+  push:
+    branches: [manta]
+  pull_request:
+    branches: [manta]
+jobs:
+  release_label:
+    name: Release Label Check
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: docker://agilepathway/pull-request-label-checker:latest
+        with:
+          all_of: L-release
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+  changelog_present:
+    name: Release Changelog Check
+    runs-on: ubuntu-20.04
+    steps:
+      - name: checkout branch
+        uses: actions/checkout@v2
+        with:
+          path: manta
+      - id: search_for_changelog
+        run: |
+          cd manta
+          if [ -f "CHANGELOG.md" ]
+          then
+            echo "File is found"
+          else
+            echo "File is not found"
+          fi
+
+
