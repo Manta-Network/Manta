@@ -339,6 +339,7 @@ jobs:
           if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv ]; then echo "block times not detected"; exit 1; fi
           jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv > ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.json
   dolphin-integration-test:
+    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin')
     needs: [build-node-current, build-runtimes, start-dolphin-integration-tester, check-for-runtime-upgrade]
     runs-on: ${{ needs.start-dolphin-integration-tester.outputs.runner-label }}
     timeout-minutes: 90

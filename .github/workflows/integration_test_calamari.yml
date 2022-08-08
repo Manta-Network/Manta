@@ -347,7 +347,7 @@ jobs:
       fail-fast: false
       matrix:
         chain-spec:
-          - id: calamari-local
+          - id: calamari-dev
             expected:
               block-count:
                 relay: 25
@@ -355,7 +355,7 @@ jobs:
               peer-count:
                 relay: 5
                 para: 2
-          - id: calamari-dev
+          - id: calamari-local
             expected:
               block-count:
                 relay: 25
