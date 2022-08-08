@@ -18,6 +18,7 @@ jobs:
             L-release
           repo_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check L-release
+        continue-on-error: true
         id: release_check
         uses: docker://agilepathway/pull-request-label-checker:latest
         with:
