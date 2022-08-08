@@ -97,11 +97,6 @@ pub mod opaque {
 
     use nimbus_session_adapter::{AuthorInherentWithNoOpSession, VrfWithNoOpSession};
     impl_opaque_keys! {
-        pub struct OldSessionKeys {
-            pub aura: Aura,
-        }
-    }
-    impl_opaque_keys! {
         pub struct SessionKeys {
             pub aura: Aura,
             pub nimbus: AuthorInherentWithNoOpSession<Runtime>,
@@ -112,14 +107,6 @@ pub mod opaque {
         pub fn new(tuple: (AuraId, NimbusId, VrfId)) -> SessionKeys {
             let (aura, nimbus, vrf) = tuple;
             SessionKeys { aura, nimbus, vrf }
-        }
-    }
-
-    pub fn transform_session_keys(_v: AccountId, old: OldSessionKeys) -> SessionKeys {
-        SessionKeys {
-            aura: old.aura.clone(),
-            nimbus: session_key_primitives::nimbus::dummy_key_from(old.aura.clone()),
-            vrf: session_key_primitives::vrf::dummy_key_from(old.aura),
         }
     }
 }
@@ -780,7 +767,6 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExt
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
 pub type OnRuntimeUpgradeHooks = (
-    UpgradeSessionKeys,
     MigratePalletPv2Sv<pallet_asset_manager::Pallet<Runtime>>,
     MigratePalletPv2Sv<pallet_tx_pause::Pallet<Runtime>>,
     MigratePalletPv2Sv<manta_collator_selection::Pallet<Runtime>>,
@@ -796,46 +782,6 @@ pub type Executive = frame_executive::Executive<
     AllPalletsReversedWithSystemFirst,
     OnRuntimeUpgradeHooks,
 >;
-// When this is removed, should also remove `OldSessionKeys`.
-pub struct UpgradeSessionKeys;
-impl frame_support::traits::OnRuntimeUpgrade for UpgradeSessionKeys {
-    fn on_runtime_upgrade() -> frame_support::weights::Weight {
-        use opaque::transform_session_keys;
-        // transform_session_keys runs translate() on NextKeys and on QueuedKeys which is (at worst or faster than) 1 read 1 write
-        let validator_set_len: u64 = Session::queued_keys().len().try_into().unwrap();
-
-        Session::upgrade_keys::<opaque::OldSessionKeys, _>(transform_session_keys);
-
-        core::cmp::max(
-            Perbill::from_percent(50) * BlockWeights::default().max_block as u64,
-            <Runtime as frame_system::Config>::DbWeight::get()
-                .reads_writes(2 * validator_set_len, validator_set_len * 2),
-        )
-    }
-    #[cfg(feature = "try_runtime")]
-    fn pre_runtime_upgrade() -> frame_support::weights::Weight {
-        // get aura keys
-        let owners_and_aura_keys = Session::queued_keys();
-        Self::set_temp_storage(owners_and_aura_keys, "aura_keys");
-        0
-    }
-    #[cfg(feature = "try_runtime")]
-    fn post_runtime_upgrade() -> frame_support::weights::Weight {
-        // ensure aura keys have not changed
-        let pre_migration_keys = Self::get_temp_storage(owners_and_aura_keys, "aura_keys");
-        let new_owners_and_aura_keys = Session::queued_keys();
-
-        for it in pre_migration_keys
-            .iter()
-            .zip(new_owners_and_aura_keys.iter())
-        {
-            let ((old_owner, old_key), (new_owner, new_key)) = iter;
-            ensure!(old_owner == new_owner, "owner changed");
-            ensure!(old_key.aura == new_key.aura, "key changed");
-        }
-        0
-    }
-}
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
