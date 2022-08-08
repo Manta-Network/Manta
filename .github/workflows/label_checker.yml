@@ -16,4 +16,3 @@ jobs:
             L-deprecated,
             L-removed
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-
