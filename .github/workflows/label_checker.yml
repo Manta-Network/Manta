@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: docker://agilepathway/pull-request-label-checker:latest
         with:
-          any_of: |
+          one_of: |
             L-added,
             L-changed,
             L-fixed,
