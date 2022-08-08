@@ -1,8 +1,10 @@
 name: calamari integration test
 on:
   push:
+    branches: [manta]
   pull_request:
-    types: [ labeled ]
+    branches: [manta]
+    types: [labeled]
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
