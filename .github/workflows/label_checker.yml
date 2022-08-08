@@ -14,5 +14,6 @@ jobs:
             L-changed,
             L-fixed,
             L-deprecated,
-            L-removed
+            L-removed,
+            L-skip
           repo_token: ${{ secrets.GITHUB_TOKEN }}
