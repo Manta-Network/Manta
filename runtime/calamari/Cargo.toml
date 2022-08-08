@@ -136,6 +136,7 @@ runtime-benchmarks = [
   'pallet-assets/runtime-benchmarks',
   'pallet-asset-manager/runtime-benchmarks',
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
+  'cumulus-pallet-parachain-system/runtime-benchmarks',
 ]
 try-runtime = [
   'frame-executive/try-runtime',
