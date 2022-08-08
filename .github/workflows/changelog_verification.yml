@@ -1,15 +1,16 @@
 name: Changelog Verification
 on:
   pull_request:
-    branches:
-      - 'release-**'
   push:
-    branches:
-      - 'release-**'
-    tags:
-      - 'v[0-9]+\.[0-9]+\.[0-9]+*'
 jobs:
   verify_changelog:
+    if: |
+      github.event.label.name == 'L-added' ||
+      github.event.label.name == 'L-changed' ||
+      github.event.label.name == 'L-fixed' ||
+      github.event.label.name == 'L-security' ||
+      github.event.label.name == 'L-removed' ||
+      github.event.label.name == 'L-deprecated'
     runs-on: ubuntu-20.04
     steps:
       - name: checkout
