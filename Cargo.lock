@@ -89,6 +89,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fbf688625d06217d5b1bb0ea9d9c44a1635fd0ee3534466388d18203174f4d11"
 
 [[package]]
+name = "android_system_properties"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7ed72e1635e121ca3e79420540282af22da58be50de153d36f81ddc6b83aa9e"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "ansi_term"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1153,10 +1162,11 @@ dependencies = [
 
 [[package]]
 name = "chrono"
-version = "0.4.20"
+version = "0.4.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6127248204b9aba09a362f6c930ef6a78f2c1b2215f8a7b398c06e1083f17af0"
+checksum = "3f725f340c3854e3cb3ab736dc21f0cca183303acea3b3ffec30f141503ac8eb"
 dependencies = [
+ "iana-time-zone",
  "js-sys",
  "num-integer",
  "num-traits",
@@ -3605,6 +3615,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "iana-time-zone"
+version = "0.1.41"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1779539f58004e5dba1c1f093d44325ebeb244bfc04b791acdc0aaeca9c04570"
+dependencies = [
+ "android_system_properties",
+ "core-foundation",
+ "js-sys",
+ "wasm-bindgen",
+ "winapi",
+]
+
+[[package]]
 name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4923,7 +4946,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#07c67f70c728fbbafae7fc310f9a7352352773a6"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#975d345d083b2f7a58b1f1df2d6078803e19f980"
 dependencies = [
  "derivative",
  "derive_more",
@@ -4966,7 +4989,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#07c67f70c728fbbafae7fc310f9a7352352773a6"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#975d345d083b2f7a58b1f1df2d6078803e19f980"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -4983,7 +5006,7 @@ dependencies = [
 [[package]]
 name = "manta-parameters"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#07c67f70c728fbbafae7fc310f9a7352352773a6"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#975d345d083b2f7a58b1f1df2d6078803e19f980"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -4996,7 +5019,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#07c67f70c728fbbafae7fc310f9a7352352773a6"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#975d345d083b2f7a58b1f1df2d6078803e19f980"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -5107,7 +5130,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#07c67f70c728fbbafae7fc310f9a7352352773a6"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#975d345d083b2f7a58b1f1df2d6078803e19f980"
 dependencies = [
  "serde",
  "serde_with",
@@ -10314,9 +10337,9 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.142"
+version = "1.0.143"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e590c437916fb6b221e1d00df6e3294f3fccd70ca7e92541c475d6ed6ef5fee2"
+checksum = "53e8e5d5b70924f74ff5c6d64d9a5acd91422117c60f48c4e07855238a254553"
 dependencies = [
  "serde_derive",
 ]
@@ -10333,9 +10356,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.142"
+version = "1.0.143"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34b5b8d809babe02f538c2cfec6f2c1ed10804c0e5a6a041a049a4f5588ccc2e"
+checksum = "d3d8e8de557aee63c26b85b947f5e59b690d0454c753f3adeb5cd7835ab88391"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -12904,7 +12927,7 @@ dependencies = [
 [[package]]
 name = "workspace-hack"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#07c67f70c728fbbafae7fc310f9a7352352773a6"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#975d345d083b2f7a58b1f1df2d6078803e19f980"
 
 [[package]]
 name = "wyz"
