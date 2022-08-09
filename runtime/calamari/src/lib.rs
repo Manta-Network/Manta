@@ -24,15 +24,17 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use manta_collator_selection::IdentityCollator;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult,
+    ApplyExtrinsicResult, Perbill, Permill,
 };
 use sp_std::{cmp::Ordering, prelude::*};
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -59,7 +61,6 @@ use manta_primitives::{
 };
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
-use sp_runtime::{Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -118,7 +119,7 @@ mod weights;
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
-    authoring_version: 1,
+    authoring_version: 2,
     spec_version: 3210,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
@@ -255,6 +256,7 @@ impl Contains<Call> for BaseFilter {
             | Call::Scheduler(_)
             | Call::CalamariVesting(_)
             | Call::Session(_) // User must be able to set their session key when applying for a collator
+            | Call::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
             | Call::CollatorSelection(
                 manta_collator_selection::Call::set_invulnerables{..}
                 | manta_collator_selection::Call::set_desired_candidates{..}
@@ -317,7 +319,7 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 impl pallet_authorship::Config for Runtime {
-    type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
+    type FindAuthor = AuthorInherent;
     type UncleGenerations = ConstU32<0>;
     type FilterUncle = ();
     type EventHandler = (CollatorSelection,);
@@ -326,7 +328,6 @@ impl pallet_authorship::Config for Runtime {
 parameter_types! {
     pub const NativeTokenExistentialDeposit: u128 = 10 * cKMA; // 0.1 KMA
 }
-
 impl pallet_balances::Config for Runtime {
     type MaxLocks = ConstU32<50>;
     type MaxReserves = ConstU32<50>;
@@ -546,6 +547,24 @@ impl pallet_treasury::Config for Runtime {
     type SpendOrigin = NeverEnsureOrigin<Balance>;
 }
 
+impl pallet_aura_style_filter::Config for Runtime {
+    /// Nimbus filter pipeline (final) step 3:
+    /// Choose 1 collator from PotentialAuthors as eligible
+    /// for each slot in round-robin fashion
+    type PotentialAuthors = CollatorSelection;
+}
+
+impl pallet_author_inherent::Config for Runtime {
+    // We start a new slot each time we see a new relay block.
+    type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
+    type AccountLookup = CollatorSelection;
+    type EventHandler = ();
+    type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
+    /// Nimbus filter pipeline step 1:
+    /// Filters out NimbusIds not registered as SessionKeys of some AccountId
+    type CanAuthor = CollatorSelection;
+}
+
 parameter_types! {
     pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
         RuntimeBlockWeights::get().max_block;
@@ -618,11 +637,10 @@ impl pallet_session::Config for Runtime {
     type Event = Event;
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     // we don't have stash and controller, thus we don't need the convert as well.
-    type ValidatorIdOf = manta_collator_selection::IdentityCollator;
+    type ValidatorIdOf = IdentityCollator;
     type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
     type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
     type SessionManager = CollatorSelection;
-    // Essentially just Aura, but lets be pedantic.
     type SessionHandler =
         <opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
     type Keys = opaque::SessionKeys;
@@ -658,10 +676,13 @@ impl manta_collator_selection::Config for Runtime {
     type MaxCandidates = ConstU32<50>; // 50 candidates at most
     type MaxInvulnerables = ConstU32<5>; // 5 invulnerables at most
     type ValidatorId = <Self as frame_system::Config>::AccountId;
-    type ValidatorIdOf = manta_collator_selection::IdentityCollator;
-    type AccountIdOf = manta_collator_selection::IdentityCollator;
+    type ValidatorIdOf = IdentityCollator;
+    type AccountIdOf = IdentityCollator;
     type ValidatorRegistration = Session;
     type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
+    /// Nimbus filter pipeline step 2:
+    /// Filters collators not part of the current pallet_session::validators()
+    type CanAuthor = AuraAuthorFilter;
 }
 
 // Calamari pallets configuration
@@ -705,12 +726,15 @@ construct_runtime!(
         TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 17,
         TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 
-        // Collator support. the order of these 5 are important and shall not change.
+        // Collator support.
+        AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 60,
+        AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage} = 63,
+        // The order of the next 4 is important and shall not change.
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
         CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
-        AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
+        // This used to be cumulus_pallet_aura_ext with idx = 24,
 
         // Treasury
         Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,
@@ -811,6 +835,8 @@ mod benches {
         [pallet_tx_pause, TransactionPause]
         [manta_collator_selection, CollatorSelection]
         [pallet_asset_manager, AssetManager]
+        // Nimbus pallets
+        [pallet_author_inherent, AuthorInherent]
     );
 }
 
@@ -921,6 +947,22 @@ impl_runtime_apis! {
         }
     }
 
+    impl nimbus_primitives::NimbusApi<Block> for Runtime {
+        fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool {
+            System::initialize(&(parent_header.number + 1), &parent_header.hash(), &parent_header.digest);
+
+            // And now the actual prediction call
+            <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
+        }
+    }
+
+    // We also implement the old AuthorFilterAPI to meet the trait bounds on the client side.
+    impl nimbus_primitives::AuthorFilterAPI<Block, NimbusId> for Runtime {
+        fn can_author(_: NimbusId, _: u32, _: &<Block as BlockT>::Header) -> bool {
+            panic!("AuthorFilterAPI is no longer supported. Please update your client.")
+        }
+    }
+
     #[cfg(feature = "try-runtime")]
     impl frame_try_runtime::TryRuntime<Block> for Runtime {
         fn on_runtime_upgrade() -> (Weight, Weight) {
@@ -948,6 +990,7 @@ impl_runtime_apis! {
             list_benchmarks!(list, extra);
 
             let storage_info = AllPalletsReversedWithSystemFirst::storage_info();
+
             (list, storage_info)
         }
 
@@ -1011,6 +1054,6 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 
 cumulus_pallet_parachain_system::register_validate_block! {
     Runtime = Runtime,
-    BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
+    BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
     CheckInherents = CheckInherents,
 }

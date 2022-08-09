@@ -475,7 +475,7 @@ jobs:
             --error ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart \
             -- \
-            --address=ws://127.0.0.1:9921
+            --address=ws://127.0.0.1:9911
       - name: init measure-block-time calamari
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/measure-block-time
@@ -705,7 +705,7 @@ jobs:
             --error ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart \
             -- \
-            --address=ws://127.0.0.1:9921
+            --address=ws://127.0.0.1:9911
       - name: init measure-block-time calamari
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/measure-block-time

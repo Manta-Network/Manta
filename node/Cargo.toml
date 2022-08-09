@@ -81,6 +81,11 @@ cumulus-relay-chain-inprocess-interface = { git = 'https://github.com/paritytech
 cumulus-relay-chain-interface = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.26" }
 cumulus-relay-chain-rpc-interface = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.26" }
 
+# Nimbus dependencies
+nimbus-consensus = { git = "https://github.com/manta-network/nimbus.git", branch = "garandor/polkadot-v0.9.26" }
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "garandor/polkadot-v0.9.26" }
+pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", branch = "garandor/polkadot-v0.9.26" }
+
 # Polkadot dependencies
 polkadot-cli = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.26" }
 polkadot-primitives = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.26" }

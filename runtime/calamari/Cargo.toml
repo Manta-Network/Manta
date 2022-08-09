@@ -59,7 +59,6 @@ pallet-treasury = { git = "https://github.com/paritytech/substrate.git", default
 pallet-utility = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.26" }
 
 # Cumulus dependencies
-cumulus-pallet-aura-ext = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.26" }
 cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.26" }
 cumulus-pallet-parachain-system = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.26" }
 cumulus-pallet-session-benchmarking = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, optional = true, branch = "polkadot-v0.9.26" }
@@ -71,7 +70,9 @@ cumulus-primitives-utility = { git = 'https://github.com/paritytech/cumulus.git'
 parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.26" }
 
 # Nimbus Dependencies
-# `garabdor/polkadot-v0.9.26` is a temporary branch until the official v0.9.26 Nimbus release.
+# `garandor/polkadot-v0.9.26` is a temporary branch until the official v0.9.26 Nimbus release.
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "garandor/polkadot-v0.9.26", default-features = false }
+pallet-aura-style-filter = { git = "https://github.com/manta-network/nimbus.git", branch = "garandor/polkadot-v0.9.26", default-features = false }
 pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", branch = "garandor/polkadot-v0.9.26", default-features = false }
 
 # Polkadot dependencies
@@ -116,12 +117,14 @@ runtime-benchmarks = [
   'frame-system-benchmarking',
   'frame-support/runtime-benchmarks',
   'frame-system/runtime-benchmarks',
+  'manta-collator-selection/runtime-benchmarks',
+  'nimbus-primitives/runtime-benchmarks',
+  'pallet-author-inherent/runtime-benchmarks',
   'pallet-balances/runtime-benchmarks',
   'pallet-multisig/runtime-benchmarks',
   'pallet-utility/runtime-benchmarks',
   'pallet-timestamp/runtime-benchmarks',
   'pallet-xcm/runtime-benchmarks',
-  'manta-collator-selection/runtime-benchmarks',
   'pallet-collective/runtime-benchmarks',
   'pallet-democracy/runtime-benchmarks',
   'pallet-scheduler/runtime-benchmarks',
@@ -133,6 +136,7 @@ runtime-benchmarks = [
   'pallet-assets/runtime-benchmarks',
   'pallet-asset-manager/runtime-benchmarks',
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
+  'cumulus-pallet-parachain-system/runtime-benchmarks',
 ]
 try-runtime = [
   'frame-executive/try-runtime',
@@ -199,7 +203,6 @@ std = [
   'manta-primitives/std',
   'runtime-common/std',
   'parachain-info/std',
-  "cumulus-pallet-aura-ext/std",
   'cumulus-pallet-parachain-system/std',
   'cumulus-pallet-dmp-queue/std',
   "cumulus-pallet-xcmp-queue/std",
@@ -208,6 +211,7 @@ std = [
   "cumulus-primitives-timestamp/std",
   "cumulus-primitives-utility/std",
   "pallet-author-inherent/std",
+  "pallet-aura-style-filter/std",
   'session-key-primitives/std',
   'xcm/std',
   'xcm-builder/std',
