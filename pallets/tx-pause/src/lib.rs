@@ -43,6 +43,9 @@ pub use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    use frame_support::traits::StorageVersion;
+
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -82,6 +85,7 @@ pub mod pallet {
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
     #[pallet::hooks]
@@ -91,6 +95,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Pause an extrinsic by passing the extrinsic and corresponding pallet names.
         /// Use names as they are written in the source code of the pallet.
+        #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::pause_transaction())]
         #[transactional]
         pub fn pause_transaction(
@@ -122,6 +127,7 @@ pub mod pallet {
 
         /// Unpause an extrinsic by passing the extrinsic and corresponding pallet names.
         /// Use names as they are written in the source code of the pallet.
+        #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::unpause_transaction())]
         #[transactional]
         pub fn unpause_transaction(

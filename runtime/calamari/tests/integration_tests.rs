@@ -844,14 +844,14 @@ fn verify_pallet_prefixes() {
                 pallet_name: b"Balances".to_vec(),
                 storage_name: b"Account".to_vec(),
                 prefix: prefix(b"Balances", b"Account"),
-                max_values: Some(300_000),
+                max_values: None,
                 max_size: Some(112),
             },
             StorageInfo {
                 pallet_name: b"Balances".to_vec(),
                 storage_name: b"Locks".to_vec(),
                 prefix: prefix(b"Balances", b"Locks"),
-                max_values: Some(300_000),
+                max_values: None,
                 max_size: Some(1299),
             },
             StorageInfo {

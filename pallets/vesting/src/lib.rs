@@ -49,6 +49,9 @@ const VESTING_ID: LockIdentifier = *b"calamvst";
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    use frame_support::traits::StorageVersion;
+
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -111,6 +114,7 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
     #[pallet::event]
@@ -153,6 +157,7 @@ pub mod pallet {
         /// Update vesting schedule.
         ///
         /// - `new_schedule`: New schedule for vesting.
+        #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::update_vesting_schedule())]
         pub fn update_vesting_schedule(
             origin: OriginFor<T>,
@@ -206,6 +211,7 @@ pub mod pallet {
         /// locked under this pallet.
         ///
         /// Emits either `VestingCompleted` or `VestingUpdated`.
+        #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::vest())]
         pub fn vest(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
@@ -226,6 +232,7 @@ pub mod pallet {
         ///
         /// - `target`: The account receiving the vested funds.
         /// - `locked_amount`: How much tokens will be transfered.
+        #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::vested_transfer())]
         pub fn vested_transfer(
             origin: OriginFor<T>,

@@ -39,7 +39,10 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, PrivilegeCmp},
+    traits::{
+        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, NeverEnsureOrigin,
+        PrivilegeCmp,
+    },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, Weight,
@@ -74,6 +77,7 @@ pub mod xcm_config;
 use currency::*;
 use fee::WeightToFee;
 use impls::DealWithFees;
+use runtime_common::migration::MigratePalletPv2Sv;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -93,11 +97,6 @@ pub mod opaque {
 
     use nimbus_session_adapter::{AuthorInherentWithNoOpSession, VrfWithNoOpSession};
     impl_opaque_keys! {
-        pub struct OldSessionKeys {
-            pub aura: Aura,
-        }
-    }
-    impl_opaque_keys! {
         pub struct SessionKeys {
             pub aura: Aura,
             pub nimbus: AuthorInherentWithNoOpSession<Runtime>,
@@ -108,14 +107,6 @@ pub mod opaque {
         pub fn new(tuple: (AuraId, NimbusId, VrfId)) -> SessionKeys {
             let (aura, nimbus, vrf) = tuple;
             SessionKeys { aura, nimbus, vrf }
-        }
-    }
-
-    pub fn transform_session_keys(_v: AccountId, old: OldSessionKeys) -> SessionKeys {
-        SessionKeys {
-            aura: old.aura.clone(),
-            nimbus: session_key_primitives::nimbus::dummy_key_from(old.aura.clone()),
-            vrf: session_key_primitives::vrf::dummy_key_from(old.aura),
         }
     }
 }
@@ -180,7 +171,7 @@ parameter_types! {
 
 impl pallet_tx_pause::Config for Runtime {
     type Event = Event;
-    type UpdateOrigin = EnsureOneOf<
+    type UpdateOrigin = EitherOfDiverse<
         EnsureRoot<AccountId>,
         pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 1, 2>,
     >;
@@ -359,6 +350,7 @@ impl pallet_transaction_payment::Config for Runtime {
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthToFeeCoeff>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
+    type Event = Event;
 }
 
 parameter_types! {
@@ -428,7 +420,7 @@ impl pallet_democracy::Config for Runtime {
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>;
     // To cancel a proposal before it has been passed, the technical committee must be unanimous or
     // Root must agree.
-    type CancelProposalOrigin = EnsureOneOf<
+    type CancelProposalOrigin = EitherOfDiverse<
         EnsureRoot<AccountId>,
         pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>,
     >;
@@ -465,7 +457,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
     type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
 }
 
-pub type EnsureRootOrThreeFourthsCouncil = EnsureOneOf<
+pub type EnsureRootOrThreeFourthsCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 4>,
 >;
@@ -523,12 +515,12 @@ parameter_types! {
     pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
 }
 
-type EnsureRootOrThreeFifthsCouncil = EnsureOneOf<
+type EnsureRootOrThreeFifthsCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
 >;
 
-type EnsureRootOrMoreThanHalfCouncil = EnsureOneOf<
+type EnsureRootOrMoreThanHalfCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
 >;
@@ -549,6 +541,9 @@ impl pallet_treasury::Config for Runtime {
     type MaxApprovals = ConstU32<100>;
     type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
     type SpendFunds = ();
+    // Expects an implementation of `EnsureOrigin` with a `Success` generic,
+    // which is the the maximum amount that this origin is allowed to spend at a time.
+    type SpendOrigin = NeverEnsureOrigin<Balance>;
 }
 
 parameter_types! {
@@ -650,7 +645,7 @@ parameter_types! {
 }
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = EnsureOneOf<
+pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
 >;
@@ -701,7 +696,7 @@ construct_runtime!(
 
         // Monetary stuff.
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+        TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
 
         // Governance stuff.
         Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>} = 14,
@@ -768,6 +763,16 @@ pub type SignedExtra = (
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
+
+/// Types for runtime upgrading.
+/// Each type should implement trait `OnRuntimeUpgrade`.
+pub type OnRuntimeUpgradeHooks = (
+    MigratePalletPv2Sv<pallet_asset_manager::Pallet<Runtime>>,
+    MigratePalletPv2Sv<pallet_tx_pause::Pallet<Runtime>>,
+    MigratePalletPv2Sv<manta_collator_selection::Pallet<Runtime>>,
+    MigratePalletPv2Sv<calamari_vesting::Pallet<Runtime>>,
+);
+
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -775,48 +780,8 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsReversedWithSystemFirst,
-    UpgradeSessionKeys,
+    OnRuntimeUpgradeHooks,
 >;
-// When this is removed, should also remove `OldSessionKeys`.
-pub struct UpgradeSessionKeys;
-impl frame_support::traits::OnRuntimeUpgrade for UpgradeSessionKeys {
-    fn on_runtime_upgrade() -> frame_support::weights::Weight {
-        use opaque::transform_session_keys;
-        // transform_session_keys runs translate() on NextKeys and on QueuedKeys which is (at worst or faster than) 1 read 1 write
-        let validator_set_len: u64 = Session::queued_keys().len().try_into().unwrap();
-
-        Session::upgrade_keys::<opaque::OldSessionKeys, _>(transform_session_keys);
-
-        core::cmp::max(
-            Perbill::from_percent(50) * BlockWeights::default().max_block as u64,
-            <Runtime as frame_system::Config>::DbWeight::get()
-                .reads_writes(2 * validator_set_len, validator_set_len * 2),
-        )
-    }
-    #[cfg(feature = "try_runtime")]
-    fn pre_runtime_upgrade() -> frame_support::weights::Weight {
-        // get aura keys
-        let owners_and_aura_keys = Session::queued_keys();
-        Self::set_temp_storage(owners_and_aura_keys, "aura_keys");
-        0
-    }
-    #[cfg(feature = "try_runtime")]
-    fn post_runtime_upgrade() -> frame_support::weights::Weight {
-        // ensure aura keys have not changed
-        let pre_migration_keys = Self::get_temp_storage(owners_and_aura_keys, "aura_keys");
-        let new_owners_and_aura_keys = Session::queued_keys();
-
-        for it in pre_migration_keys
-            .iter()
-            .zip(new_owners_and_aura_keys.iter())
-        {
-            let ((old_owner, old_key), (new_owner, new_key)) = iter;
-            ensure!(old_owner == new_owner, "owner changed");
-            ensure!(old_key.aura == new_key.aura, "key changed");
-        }
-        0
-    }
-}
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]

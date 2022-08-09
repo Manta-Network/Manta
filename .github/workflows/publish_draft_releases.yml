@@ -815,46 +815,9 @@ jobs:
       - name: test - calamari alice peered successfully
         run: |
           grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9921.log
-  build-changelog:
-    runs-on: ubuntu-20.04
-    needs: [get-rust-versions, build-runtimes]
-    strategy:
-      matrix:
-        runtime:
-          - name: calamari
-          - name: manta
-    if: startsWith(github.ref, 'refs/tags')
-    steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: ${{ matrix.runtime.name }}-srtool-json
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          path: Manta
-      - name: ruby setup
-        uses: actions/setup-ruby@v1
-        with:
-          ruby-version: 2.7
-      - name: changelog gems
-        run: |
-          gem install changelogerator git toml
-      - name: generate changelog
-        env:
-          RUSTC_STABLE: ${{ needs.get-rust-versions.outputs.rustc-stable }}
-          RUSTC_NIGHTLY: ${{ needs.get-rust-versions.outputs.rustc-nightly }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: >
-          ruby $GITHUB_WORKSPACE/Manta/scripts/github/generate-changelog.rb |
-          tee changelog.md
-      - name: upload changelog
-        uses: actions/upload-artifact@v2
-        with:
-          name: changelog
-          path: changelog.md
   create-draft-release:
     runs-on: ubuntu-20.04
-    needs: [build-changelog, build-runtimes, calamari-integration-test, dolphin-integration-test, runtime-upgrade-test, docker-image-test]
+    needs: [build-runtimes, calamari-integration-test, dolphin-integration-test, runtime-upgrade-test, docker-image-test]
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
       asset_upload_url: ${{ steps.create-release.outputs.upload_url }}

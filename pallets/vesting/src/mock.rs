@@ -107,13 +107,14 @@ impl pallet_timestamp::Config for Test {
 parameter_types! {
     pub const MinVestedTransfer: Balance = 2;
     pub static ExistentialDeposit: Balance = 1;
+    pub const MaxScheduleLength: u32 = 6;
 }
 impl Config for Test {
     type Currency = Balances;
     type Event = Event;
     type Timestamp = Timestamp;
     type MinVestedTransfer = MinVestedTransfer;
-    type MaxScheduleLength = ConstU32<6>;
+    type MaxScheduleLength = MaxScheduleLength;
     type WeightInfo = ();
 }
 
