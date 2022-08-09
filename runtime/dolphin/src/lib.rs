@@ -909,7 +909,11 @@ impl_runtime_apis! {
     }
 
     impl pallet_manta_pay::runtime::PullLedgerDiffApi<Block> for Runtime {
-        fn pull_ledger_diff(checkpoint: pallet_manta_pay::RawCheckpoint, max_receiver: u64, max_sender: u64) -> pallet_manta_pay::PullResponse {
+        fn pull_ledger_diff(
+            checkpoint: pallet_manta_pay::RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> pallet_manta_pay::PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
     }
