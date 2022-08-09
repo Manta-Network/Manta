@@ -4946,7 +4946,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#975d345d083b2f7a58b1f1df2d6078803e19f980"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#420a53baaa230a1e148cd43dd64540f82b68f99d"
 dependencies = [
  "derivative",
  "derive_more",
@@ -4989,7 +4989,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#975d345d083b2f7a58b1f1df2d6078803e19f980"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#420a53baaa230a1e148cd43dd64540f82b68f99d"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -5006,7 +5006,7 @@ dependencies = [
 [[package]]
 name = "manta-parameters"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#975d345d083b2f7a58b1f1df2d6078803e19f980"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#420a53baaa230a1e148cd43dd64540f82b68f99d"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5019,7 +5019,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#975d345d083b2f7a58b1f1df2d6078803e19f980"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#420a53baaa230a1e148cd43dd64540f82b68f99d"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -5130,7 +5130,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#975d345d083b2f7a58b1f1df2d6078803e19f980"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#420a53baaa230a1e148cd43dd64540f82b68f99d"
 dependencies = [
  "serde",
  "serde_with",
@@ -12927,7 +12927,7 @@ dependencies = [
 [[package]]
 name = "workspace-hack"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#975d345d083b2f7a58b1f1df2d6078803e19f980"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#420a53baaa230a1e148cd43dd64540f82b68f99d"
 
 [[package]]
 name = "wyz"
