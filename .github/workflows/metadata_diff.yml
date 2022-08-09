@@ -91,6 +91,7 @@ jobs:
           chmod +x $HOME/manta-old
           ls -ahl $HOME/
       - name: Start old node
+        run: |
           echo Running on $CHAIN
           $HOME/manta-old --chain=$CHAIN --port 30444 --ws-port 9944 -- --chain kusama &
       - name: Start new node
