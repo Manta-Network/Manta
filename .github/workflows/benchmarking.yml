@@ -1,12 +1,18 @@
-name: Benchmark Manta Runtime & Generate Weights Files
+name: Benchmark Calamari Runtime & Generate Weights Files
 on:
   workflow_dispatch:
+    inputs:
+      chain_spec:
+        description: The chain spec to be used for benchmarks. 
+        default: calamari-dev
+        required: true
 env:
   AWS_REGION: us-east-1
   AWS_INSTANCE_TYPE: c5d.metal
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
+  CHAIN_SPEC: ${{github.event.inputs.chain_spec}}
 jobs:
   build-benchmark:
     needs: start-node-builder-current
@@ -61,103 +67,29 @@ jobs:
           CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose --features=runtime-benchmarks
+          ./scripts/run_all_benchmarks.sh -c $CHAIN_SPEC
       - name: stop sccache server
         run: sccache --stop-server || true
       - name: upload
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: manta
           path: target/production/manta
-  run-benchmark:
-    name: benchmark (${{ matrix.benchmark.pallet.name }} ${{ matrix.benchmark.extrinsic.name }})
-    needs: [start-node-builder-current, build-benchmark]
-    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
-    strategy:
-      matrix:
-        benchmark:
-          - extrinsic:
-              id: '*'
-              name: pallet_scheduler
-            pallet:
-              id: pallet_scheduler
-              name: pallet_scheduler
-            iterations: 20
-          - extrinsic:
-              id: '*'
-              name: pallet_balances
-            pallet:
-              id: pallet_balances
-              name: pallet_balances
-            iterations: 20
-          - extrinsic:
-              id: '*'
-              name: frame_system
-            pallet:
-              id: frame_system
-              name: frame_system
-            iterations: 20
-          - extrinsic:
-              id: '*'
-              name: pallet_session
-            pallet:
-              id: pallet_session
-              name: pallet_session
-            iterations: 20
-          - extrinsic:
-              id: '*'
-              name: pallet_tx_pause
-            pallet:
-              id: pallet_tx_pause
-              name: pallet_tx_pause
-            iterations: 20
-          - extrinsic:
-              id: '*'
-              name: pallet_multisig
-            pallet:
-              id: pallet_multisig
-              name: pallet_multisig
-            iterations: 20
-          - extrinsic:
-              id: '*'
-              name: pallet_timestamp
-            pallet:
-              id: pallet_timestamp
-              name: pallet_timestamp
-            iterations: 20
-          - extrinsic:
-              id: '*'
-              name: pallet_preimage
-            pallet:
-              id: pallet_preimage
-              name: pallet_preimage
-            iterations: 20
-    steps:
-      - uses: actions/download-artifact@v2
+      - name: upload weights
+        uses: actions/upload-artifact@v3
         with:
-          name: manta
-      - run: |
-          mv manta $HOME/.local/bin/
-          chmod +x $HOME/.local/bin/manta
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-      - name: run benchmark
-        run: |
-          manta benchmark \
-            pallet \
-            --chain=manta-local \
-            --pallet=${{ matrix.benchmark.pallet.id }} \
-            --extrinsic=${{ matrix.benchmark.extrinsic.id }} \
-            --execution=Wasm \
-            --wasm-execution=Compiled \
-            --heap-pages=4096 \
-            --repeat=${{ matrix.benchmark.iterations }} \
-            --steps=50 \
-            --template=.github/resources/frame-weight-template.hbs \
-            --output=${{ matrix.benchmark.pallet.name }}.rs
-      - uses: actions/upload-artifact@v2
+          name: weights-output
+          path: scripts/benchmarking/weights-output/
+      - name: upload overheads
+        uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.benchmark.pallet.id }}-${{ matrix.benchmark.pallet.name }}.rs
-          path: ${{ github.workspace }}/${{ matrix.benchmark.pallet.name }}.rs
+          name: overheads-output
+          path: scripts/benchmarking/overheads-output/
+      - name: upload errors
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmarks-errors
+          path: scripts/benchmarking/benchmark_errors.txt
   start-node-builder-current:
     runs-on: ubuntu-20.04
     outputs:

@@ -6,3 +6,6 @@ runtime/**/target
 .vscode
 .idea
 /tests/node_modules/
+/scripts/benchmarking/benchmarking_errors.txt
+/scripts/benchmarking/weights-output/
+/scripts/benchmarking/overheads-output/
