@@ -137,21 +137,21 @@ for PALLET in "${PALLETS[@]}"; do
   fi
 done
 
-# Update the block and extrinsic overhead weights.
-echo "[+] Benchmarking block and extrinsic overheads..."
-OUTPUT=$(
-  $MANTA benchmark overhead \
-  --chain=$chain_spec \
-  --execution=wasm \
-  --wasm-execution=compiled \
-  --weight-path="./${OVERHEADS_OUTPUT}/${PALLET}" \
-  --warmup=10 \
-  --repeat=100 2>&1
-)
-if [ $? -ne 0 ]; then
-  echo "$OUTPUT" >> "$ERR_FILE"
-  echo "[-] Failed to benchmark the block and extrinsic overheads. Error written to $ERR_FILE; continuing..."
-fi
+# # Update the block and extrinsic overhead weights.
+# echo "[+] Benchmarking block and extrinsic overheads..."
+# OUTPUT=$(
+#   $MANTA benchmark overhead \
+#   --chain=$chain_spec \
+#   --execution=wasm \
+#   --wasm-execution=compiled \
+#   --weight-path="./${OVERHEADS_OUTPUT}/${PALLET}" \
+#   --warmup=10 \
+#   --repeat=100 2>&1
+# )
+# if [ $? -ne 0 ]; then
+#   echo "$OUTPUT" >> "$ERR_FILE"
+#   echo "[-] Failed to benchmark the block and extrinsic overheads. Error written to $ERR_FILE; continuing..."
+# fi
 
 echo "[+] Benchmarking the machine..."
 OUTPUT=$(
