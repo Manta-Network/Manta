@@ -1,4 +1,4 @@
-name: All Benchmarks
+name: Execute All Benchmarks
 on:
   workflow_dispatch:
     inputs:
@@ -11,7 +11,7 @@ env:
   AWS_INSTANCE_TYPE: c5d.metal
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
+  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
   CHAIN_SPEC: ${{github.event.inputs.chain_spec}}
 jobs:
   build-benchmark:
@@ -109,7 +109,7 @@ jobs:
           aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
           aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-node-builder-current:
     needs: [build-benchmark, start-node-builder-current]
     runs-on: ubuntu-20.04
