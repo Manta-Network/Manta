@@ -1,4 +1,4 @@
-name: Benchmark Calamari Runtime & Generate Weights Files
+name: Execute all benchmarks for a specified chain spec
 on:
   workflow_dispatch:
     inputs:
@@ -58,7 +58,7 @@ jobs:
           rustup default stable
           rustup update
           rustup target add wasm32-unknown-unknown
-      - name: build
+      - name: build & run benchmarks
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
