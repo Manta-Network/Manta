@@ -1,4 +1,4 @@
-name: Benchmark Calamari Runtime & Generate Weights Files
+name: All Benchmarks
 on:
   workflow_dispatch:
     inputs:
