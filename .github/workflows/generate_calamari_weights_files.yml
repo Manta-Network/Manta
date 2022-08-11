@@ -1,4 +1,4 @@
-name: Execute All Benchmarks
+name: Benchmark Calamari Runtime & Generate Weights Files
 on:
   workflow_dispatch:
     inputs:
@@ -67,6 +67,7 @@ jobs:
           CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
+          cd Manta
           ./scripts/run_all_benchmarks.sh -c $CHAIN_SPEC
       - name: stop sccache server
         run: sccache --stop-server || true
