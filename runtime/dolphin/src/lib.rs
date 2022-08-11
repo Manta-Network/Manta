@@ -561,7 +561,6 @@ impl pallet_author_inherent::Config for Runtime {
     // We start a new slot each time we see a new relay block.
     type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
     type AccountLookup = CollatorSelection;
-    type EventHandler = ();
     type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
     /// Nimbus filter pipeline step 1:
     /// Filters out NimbusIds not registered as SessionKeys of some AccountId
