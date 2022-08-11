@@ -67,9 +67,7 @@ jobs:
           CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
-          ls -a
-          cd Manta
-          ./scripts/run_all_benchmarks.sh -c $CHAIN_SPEC
+          ./scripts/benchmarking/run_all_benchmarks.sh -c $CHAIN_SPEC
       - name: stop sccache server
         run: sccache --stop-server || true
       - name: upload
