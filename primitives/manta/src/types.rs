@@ -16,8 +16,6 @@
 
 use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
 
-pub use manta_accounting::asset::{AssetIdType, AssetValueType};
-
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -33,7 +31,7 @@ pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::Account
 pub type AccountIndex = u32;
 
 /// Balance of an account.
-pub type Balance = AssetValueType;
+pub type Balance = u128;
 
 /// Index of a transaction in the chain.
 pub type Index = u32;
@@ -41,15 +39,17 @@ pub type Index = u32;
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
 
-/// Block header type as expected by this runtime.
+/// Block Header Type
 pub type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
+
+/// Block Type
 pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
 
 /// Digest item type.
 pub type DigestItem = sp_runtime::generic::DigestItem;
 
-// Moment
+/// Moment
 pub type Moment = u64;
 
-// AssetId
-pub type AssetId = AssetIdType;
+/// AssetId
+pub type AssetId = u32;

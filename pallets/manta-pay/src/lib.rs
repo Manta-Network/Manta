@@ -58,26 +58,28 @@ extern crate alloc;
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use frame_support::{traits::tokens::ExistenceRequirement, transactional, PalletId};
-
-use manta_accounting::{
-    asset,
-    transfer::{
-        canonical::TransferShape, InvalidSinkAccount, InvalidSourceAccount, Proof, ReceiverLedger,
-        ReceiverPostError, ReceiverPostingKey, SenderLedger, SenderPostError, SenderPostingKey,
-        SinkPostingKey, SourcePostingKey, TransferLedger, TransferLedgerSuperPostingKey,
-        TransferPostError, TransferPostingKey,
+use manta_pay::{
+    config::{self, Asset, AssetId, AssetValue},
+    manta_accounting::{
+        asset,
+        transfer::{
+            canonical::TransferShape,
+            receiver::{ReceiverLedger, ReceiverPostError, ReceiverPostingKey},
+            sender::{SenderLedger, SenderPostError, SenderPostingKey},
+            InvalidSinkAccount, InvalidSourceAccount, Proof, SinkPostingKey, SourcePostingKey,
+            TransferLedger, TransferLedgerSuperPostingKey, TransferPostError, TransferPostingKey,
+        },
     },
+    manta_crypto::{
+        constraint::ProofSystem,
+        merkle_tree::{self, forest::Configuration as _},
+    },
+    manta_util::codec::Decode as _,
 };
-use manta_crypto::{
-    constraint::ProofSystem,
-    merkle_tree::{self, forest::Configuration as _},
-};
-use manta_pay::config;
 use manta_primitives::{
     assets::{AssetConfig, FungibleLedger as _, FungibleLedgerError},
-    types::{AssetId, Balance},
+    types::Balance,
 };
-use manta_util::codec::Decode as _;
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use types::*;
@@ -144,10 +146,14 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
-    /// UTXOs and Encrypted Notes Grouped by Shard
+    /// UTXO Set
+    #[pallet::storage]
+    pub(super) type UtxoSet<T: Config> = StorageMap<_, Twox64Concat, Utxo, (), ValueQuery>;
+
+    /// UTXOs and Incoming Notes Grouped by Shard
     #[pallet::storage]
     pub(super) type Shards<T: Config> =
-        StorageDoubleMap<_, Twox64Concat, u8, Twox64Concat, u64, (Utxo, EncryptedNote), ValueQuery>;
+        StorageDoubleMap<_, Twox64Concat, u8, Twox64Concat, u64, (Utxo, IncomingNote), ValueQuery>;
 
     /// Shard Merkle Tree Paths
     #[pallet::storage]
@@ -159,23 +165,19 @@ pub mod pallet {
     pub(super) type UtxoAccumulatorOutputs<T: Config> =
         StorageMap<_, Twox64Concat, UtxoAccumulatorOutput, (), ValueQuery>;
 
-    /// UTXO Set
+    /// Nullifier Set
     #[pallet::storage]
-    pub(super) type UtxoSet<T: Config> = StorageMap<_, Twox64Concat, Utxo, (), ValueQuery>;
+    pub(super) type NullifierSet<T: Config> =
+        StorageMap<_, Twox64Concat, Nullifier, (), ValueQuery>;
 
-    /// Void Number Set
+    /// Nullifiers Ordered by Insertion
     #[pallet::storage]
-    pub(super) type VoidNumberSet<T: Config> =
-        StorageMap<_, Twox64Concat, VoidNumber, (), ValueQuery>;
+    pub(super) type NullifierSetInsertionOrder<T: Config> =
+        StorageMap<_, Twox64Concat, u64, (Nullifier, OutgoingNote), ValueQuery>;
 
-    /// Void Number Ordered by Insertion
+    /// Nullifier Set Size
     #[pallet::storage]
-    pub(super) type VoidNumberSetInsertionOrder<T: Config> =
-        StorageMap<_, Twox64Concat, u64, VoidNumber, ValueQuery>;
-
-    /// The size of Void Number Set
-    #[pallet::storage]
-    pub(super) type VoidNumberSetSize<T: Config> = StorageValue<_, u64, ValueQuery>;
+    pub(super) type NullifierSetSize<T: Config> = StorageValue<_, u64, ValueQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
@@ -385,22 +387,22 @@ pub mod pallet {
         InternalLedgerError,
     }
 
-    impl<T> From<InvalidSourceAccount<T::AccountId>> for Error<T>
+    impl<T> From<InvalidSourceAccount<config::Config, T::AccountId>> for Error<T>
     where
         T: Config,
     {
         #[inline]
-        fn from(_: InvalidSourceAccount<T::AccountId>) -> Self {
+        fn from(_: InvalidSourceAccount<config::Config, T::AccountId>) -> Self {
             Self::InvalidSourceAccount
         }
     }
 
-    impl<T> From<InvalidSinkAccount<T::AccountId>> for Error<T>
+    impl<T> From<InvalidSinkAccount<config::Config, T::AccountId>> for Error<T>
     where
         T: Config,
     {
         #[inline]
-        fn from(_: InvalidSinkAccount<T::AccountId>) -> Self {
+        fn from(_: InvalidSinkAccount<config::Config, T::AccountId>) -> Self {
             Self::InvalidSinkAccount
         }
     }
@@ -444,12 +446,12 @@ pub mod pallet {
         }
     }
 
-    impl<T> From<TransferPostError<T::AccountId, FungibleLedgerError>> for Error<T>
+    impl<T> From<TransferPostError<config::Config, T::AccountId, FungibleLedgerError>> for Error<T>
     where
         T: Config,
     {
         #[inline]
-        fn from(err: TransferPostError<T::AccountId, FungibleLedgerError>) -> Self {
+        fn from(err: TransferPostError<config::Config, T::AccountId, FungibleLedgerError>) -> Self {
             match err {
                 TransferPostError::InvalidShape => Self::InvalidShape,
                 TransferPostError::InvalidSourceAccount(err) => err.into(),
@@ -543,18 +545,19 @@ pub mod pallet {
                 (sender_index as u64) + max_update_request
             };
             for idx in (sender_index as u64)..max_sender_index {
-                match VoidNumberSetInsertionOrder::<T>::try_get(idx) {
+                match NullifierSetInsertionOrder::<T>::try_get(idx) {
                     Ok(next) => senders.push(next),
                     _ => return (false, senders),
                 }
             }
             (
-                VoidNumberSetInsertionOrder::<T>::contains_key(max_sender_index as u64),
+                NullifierSetInsertionOrder::<T>::contains_key(max_sender_index as u64),
                 senders,
             )
         }
 
-        /// Returns the diff of ledger state since the given `checkpoint`, `max_receivers` and `max_senders`.
+        /// Returns the diff of ledger state since the given `checkpoint`, `max_receivers`, and
+        /// `max_senders`.
         #[inline]
         pub fn pull_ledger_diff(
             checkpoint: Checkpoint,
@@ -675,16 +678,16 @@ impl<T> SenderLedger<config::Config> for Ledger<T>
 where
     T: Config,
 {
-    type ValidVoidNumber = Wrap<config::VoidNumber>;
+    type ValidNullifier = Wrap<config::Nullifier>;
     type ValidUtxoAccumulatorOutput = Wrap<config::UtxoAccumulatorOutput>;
     type SuperPostingKey = (Wrap<()>, ());
 
     #[inline]
-    fn is_unspent(&self, void_number: config::VoidNumber) -> Option<Self::ValidVoidNumber> {
-        if VoidNumberSet::<T>::contains_key(encode(&void_number)) {
+    fn is_unspent(&self, nullifier: config::Nullifier) -> Option<Self::ValidNullifier> {
+        if NullifierSet::<T>::contains_key(encode(&nullifier)) {
             None
         } else {
-            Some(Wrap(void_number))
+            Some(Wrap(nullifier))
         }
     }
 
@@ -702,19 +705,19 @@ where
     #[inline]
     fn spend_all<I>(&mut self, iter: I, super_key: &Self::SuperPostingKey)
     where
-        I: IntoIterator<Item = (Self::ValidUtxoAccumulatorOutput, Self::ValidVoidNumber)>,
+        I: IntoIterator<Item = (Self::ValidUtxoAccumulatorOutput, Self::ValidNullifier)>,
     {
         let _ = super_key;
-        let index = VoidNumberSetSize::<T>::get();
+        let index = NullifierSetSize::<T>::get();
         let mut i = 0;
-        for (_, void_number) in iter {
-            let void_number = encode(&void_number.0);
-            VoidNumberSet::<T>::insert(void_number, ());
-            VoidNumberSetInsertionOrder::<T>::insert(index + i, void_number);
+        for (_, nullifier) in iter {
+            let nullifier = encode(&nullifier.0);
+            NullifierSet::<T>::insert(nullifier.commitment, ());
+            NullifierSetInsertionOrder::<T>::insert(index + i, nullifier);
             i += 1;
         }
         if i != 0 {
-            VoidNumberSetSize::<T>::set(index + i);
+            NullifierSetSize::<T>::set(index + i);
         }
     }
 }
@@ -799,19 +802,19 @@ where
     type AccountId = T::AccountId;
     type UpdateError = FungibleLedgerError;
     type Event = PreprocessedEvent<T>;
-    type ValidSourceAccount = WrapPair<Self::AccountId, asset::AssetValue>;
-    type ValidSinkAccount = WrapPair<Self::AccountId, asset::AssetValue>;
+    type ValidSourceAccount = WrapPair<Self::AccountId, AssetValue>;
+    type ValidSinkAccount = WrapPair<Self::AccountId, AssetValue>;
     type ValidProof = Wrap<()>;
     type SuperPostingKey = ();
 
     #[inline]
     fn check_source_accounts<I>(
         &self,
-        asset_id: asset::AssetId,
+        asset_id: AssetId,
         sources: I,
-    ) -> Result<Vec<Self::ValidSourceAccount>, InvalidSourceAccount<Self::AccountId>>
+    ) -> Result<Vec<Self::ValidSourceAccount>, InvalidSourceAccount<config::Config, Self::AccountId>>
     where
-        I: Iterator<Item = (Self::AccountId, asset::AssetValue)>,
+        I: Iterator<Item = (Self::AccountId, AssetValue)>,
     {
         sources
             .map(move |(account_id, withdraw)| {
@@ -834,11 +837,11 @@ where
     #[inline]
     fn check_sink_accounts<I>(
         &self,
-        asset_id: asset::AssetId,
+        asset_id: AssetId,
         sinks: I,
-    ) -> Result<Vec<Self::ValidSinkAccount>, InvalidSinkAccount<Self::AccountId>>
+    ) -> Result<Vec<Self::ValidSinkAccount>, InvalidSinkAccount<config::Config, Self::AccountId>>
     where
-        I: Iterator<Item = (Self::AccountId, asset::AssetValue)>,
+        I: Iterator<Item = (Self::AccountId, AssetValue)>,
     {
         // NOTE: Existence of accounts is type-checked so we don't need to do anything here, just
         // pass the data forward.
@@ -858,7 +861,7 @@ where
     #[inline]
     fn is_valid(
         &self,
-        asset_id: Option<asset::AssetId>,
+        asset_id: Option<AssetId>,
         sources: &[SourcePostingKey<config::Config, Self>],
         senders: &[SenderPostingKey<config::Config, Self>],
         receivers: &[ReceiverPostingKey<config::Config, Self>],
@@ -907,7 +910,7 @@ where
     #[inline]
     fn update_public_balances(
         &mut self,
-        asset_id: asset::AssetId,
+        asset_id: AssetId,
         sources: Vec<SourcePostingKey<config::Config, Self>>,
         sinks: Vec<SinkPostingKey<config::Config, Self>>,
         proof: Self::ValidProof,

@@ -108,9 +108,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.60"
+version = "1.0.61"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c794e162a5eff65c72ef524dfe393eb923c354e350bb78b9c7383df13f3bc142"
+checksum = "508b352bb5c066aac251f6daf6b36eccd03e8a88e8081cd44959ea277a3af9a8"
 
 [[package]]
 name = "approx"
@@ -365,9 +365,9 @@ dependencies = [
 
 [[package]]
 name = "async-channel"
-version = "1.7.0"
+version = "1.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b31b87a3367ed04dbcbc252bce3f2a8172fef861d47177524c503c908dff2c6"
+checksum = "e14485364214912d3b19cc3435dde4df66065127f05fa0d75c712f36f12c2f28"
 dependencies = [
  "concurrent-queue",
  "event-listener",
@@ -1064,9 +1064,9 @@ dependencies = [
 
 [[package]]
 name = "camino"
-version = "1.0.9"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "869119e97797867fd90f5e22af7d0bd274bd4635ebb9eb68c04f3f513ae6c412"
+checksum = "88ad0e1e3e88dd237a156ab9f571021b8a158caa0ae44b1968a241efb5144c1e"
 dependencies = [
  "serde",
 ]
@@ -1230,9 +1230,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.16"
+version = "3.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3dbbb6653e7c55cc8595ad3e1f7be8f32aba4eb7ff7f0fd1163d4f3d137c0a9"
+checksum = "29e724a68d9319343bb3328c9cc2dfde263f4b3142ee1059a9980580171c954b"
 dependencies = [
  "atty",
  "bitflags",
@@ -1247,9 +1247,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "3.2.15"
+version = "3.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ba52acd3b0a5c33aeada5cdaa3267cdc7c594a98731d4268cdc1532f4264cb4"
+checksum = "13547f7012c01ab4a0e8f8967730ada8f9fdf419e8b6c792788f39cf4e46eefa"
 dependencies = [
  "heck 0.4.0",
  "proc-macro-error",
@@ -1670,7 +1670,7 @@ name = "cumulus-client-cli"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.26#e43b8b878a6fd0ca8b5e88d19822c4d777d3c677"
 dependencies = [
- "clap 3.2.16",
+ "clap 3.2.17",
  "parity-scale-codec",
  "sc-chain-spec",
  "sc-cli",
@@ -2864,7 +2864,7 @@ source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.2
 dependencies = [
  "Inflector",
  "chrono",
- "clap 3.2.16",
+ "clap 3.2.17",
  "comfy-table",
  "frame-benchmarking",
  "frame-support",
@@ -3616,12 +3616,12 @@ dependencies = [
 
 [[package]]
 name = "iana-time-zone"
-version = "0.1.41"
+version = "0.1.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1779539f58004e5dba1c1f093d44325ebeb244bfc04b791acdc0aaeca9c04570"
+checksum = "808cf7d67cf4a22adc5be66e75ebdf769b3f2ea032041437a7061f97a63dad4b"
 dependencies = [
  "android_system_properties",
- "core-foundation",
+ "core-foundation-sys",
  "js-sys",
  "wasm-bindgen",
  "winapi",
@@ -4139,9 +4139,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "libc"
-version = "0.2.127"
+version = "0.2.131"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "505e71a4706fa491e9b1b55f51b95d4037d0821ee40131190475f692b35b009b"
+checksum = "04c3b4822ccebfa39c02fc03d1534441b22ead323fa0f48bb7ddd8e6ba076a40"
 
 [[package]]
 name = "libloading"
@@ -4165,9 +4165,9 @@ dependencies = [
 
 [[package]]
 name = "libm"
-version = "0.2.3"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da83a57f3f5ba3680950aa3cbc806fc297bc0b289d42e8942ed528ace71b8145"
+checksum = "292a948cd991e376cf75541fe5b97a1081d713c618b4f1b9500f8844e49eb565"
 
 [[package]]
 name = "libp2p"
@@ -4878,7 +4878,7 @@ dependencies = [
  "async-trait",
  "calamari-runtime",
  "cfg-if 1.0.0",
- "clap 3.2.16",
+ "clap 3.2.17",
  "cumulus-client-cli",
  "cumulus-client-consensus-aura",
  "cumulus-client-consensus-common",
@@ -4946,7 +4946,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#420a53baaa230a1e148cd43dd64540f82b68f99d"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#f5d4fa82689a5743617d07cec73489b005a769db"
 dependencies = [
  "derivative",
  "derive_more",
@@ -4989,7 +4989,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#420a53baaa230a1e148cd43dd64540f82b68f99d"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#f5d4fa82689a5743617d07cec73489b005a769db"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -5006,7 +5006,7 @@ dependencies = [
 [[package]]
 name = "manta-parameters"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#420a53baaa230a1e148cd43dd64540f82b68f99d"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#f5d4fa82689a5743617d07cec73489b005a769db"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5019,7 +5019,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#420a53baaa230a1e148cd43dd64540f82b68f99d"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#f5d4fa82689a5743617d07cec73489b005a769db"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -5034,6 +5034,7 @@ dependencies = [
  "manta-parameters",
  "manta-util",
  "num-bigint 0.4.3",
+ "num-integer",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
  "scale-info",
@@ -5130,7 +5131,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#420a53baaa230a1e148cd43dd64540f82b68f99d"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#f5d4fa82689a5743617d07cec73489b005a769db"
 dependencies = [
  "serde",
  "serde_with",
@@ -5193,9 +5194,9 @@ dependencies = [
 
 [[package]]
 name = "memmap2"
-version = "0.5.5"
+version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a79b39c93a7a5a27eeaf9a23b5ff43f1b9e0ad6b1cdd441140ae53c35613fc7"
+checksum = "8e2e4455be2010e8c5e77f0d10234b30f3a636a5305725609b5a71ad00d22577"
 dependencies = [
  "libc",
 ]
@@ -5328,9 +5329,9 @@ dependencies = [
 
 [[package]]
 name = "multihash"
-version = "0.16.2"
+version = "0.16.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3db354f401db558759dfc1e568d010a5d4146f4d3f637be1275ec4a3cf09689"
+checksum = "1c346cf9999c631f002d8f977c4eaeaa0e6386f16007202308d0b3757522c2cc"
 dependencies = [
  "blake2b_simd",
  "blake2s_simd",
@@ -5508,7 +5509,7 @@ dependencies = [
 [[package]]
 name = "nimbus-primitives"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=garandor/polkadot-v0.9.26#c823cda87dad2adc7607b85f2e9456ae4c1fecef"
+source = "git+https://github.com/manta-network/nimbus.git?branch=garandor/polkadot-v0.9.26#35d527705513068196369da74e8b9fdc069f9620"
 dependencies = [
  "async-trait",
  "frame-support",
@@ -5914,7 +5915,7 @@ dependencies = [
 [[package]]
 name = "pallet-author-inherent"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=garandor/polkadot-v0.9.26#c823cda87dad2adc7607b85f2e9456ae4c1fecef"
+source = "git+https://github.com/manta-network/nimbus.git?branch=garandor/polkadot-v0.9.26#35d527705513068196369da74e8b9fdc069f9620"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7226,7 +7227,7 @@ name = "polkadot-cli"
 version = "0.9.26"
 source = "git+https://github.com/paritytech/polkadot.git?branch=release-v0.9.26#d8785970175dce344f2a6ad1cd88297529a6dd59"
 dependencies = [
- "clap 3.2.16",
+ "clap 3.2.17",
  "frame-benchmarking-cli",
  "futures",
  "log",
@@ -9231,7 +9232,7 @@ version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26#e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"
 dependencies = [
  "impl-trait-for-tuples",
- "memmap2 0.5.5",
+ "memmap2 0.5.6",
  "parity-scale-codec",
  "sc-chain-spec-derive",
  "sc-network",
@@ -9259,7 +9260,7 @@ version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26#e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"
 dependencies = [
  "chrono",
- "clap 3.2.16",
+ "clap 3.2.17",
  "fdlimit",
  "futures",
  "hex",
@@ -12096,7 +12097,7 @@ name = "try-runtime-cli"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26#e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"
 dependencies = [
- "clap 3.2.16",
+ "clap 3.2.17",
  "jsonrpsee",
  "log",
  "parity-scale-codec",
@@ -12927,7 +12928,7 @@ dependencies = [
 [[package]]
 name = "workspace-hack"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#420a53baaa230a1e148cd43dd64540f82b68f99d"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#f5d4fa82689a5743617d07cec73489b005a769db"
 
 [[package]]
 name = "wyz"

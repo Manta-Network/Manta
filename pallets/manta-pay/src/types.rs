@@ -28,7 +28,7 @@ pub(crate) const CIPHER_TEXT_LENGTH: usize = 68;
 pub(crate) const EPHEMERAL_PUBLIC_KEY_LENGTH: usize = 32;
 pub(crate) const UTXO_ACCUMULATOR_OUTPUT_LENGTH: usize = 32;
 pub(crate) const UTXO_LENGTH: usize = 32;
-pub(crate) const VOID_NUMBER_LENGTH: usize = 32;
+pub(crate) const NULLIFIER_LENGTH: usize = 32;
 pub(crate) const PROOF_LENGTH: usize = 192;
 
 /// Encodes the SCALE encodable `value` into a byte array with the given length `N`.
@@ -56,8 +56,8 @@ pub type Group = [u8; EPHEMERAL_PUBLIC_KEY_LENGTH];
 /// UTXO Type
 pub type Utxo = [u8; UTXO_LENGTH];
 
-/// Void Number Type
-pub type VoidNumber = [u8; VOID_NUMBER_LENGTH];
+/// Nullifier Type
+pub type Nullifier = [u8; NULLIFIER_LENGTH];
 
 /// UTXO Accumulator Output Type
 pub type UtxoAccumulatorOutput = [u8; UTXO_ACCUMULATOR_OUTPUT_LENGTH];
@@ -163,8 +163,11 @@ pub struct SenderPost {
     /// UTXO Accumulator Output
     pub utxo_accumulator_output: UtxoAccumulatorOutput,
 
-    /// Void Number
-    pub void_number: VoidNumber,
+    /// Nullifier
+    pub nullifier: Nullifier,
+
+    /// Outgoing Note
+    pub outgoing_note: OutgoingNote,
 }
 
 impl From<config::SenderPost> for SenderPost {
@@ -172,7 +175,8 @@ impl From<config::SenderPost> for SenderPost {
     fn from(post: config::SenderPost) -> Self {
         Self {
             utxo_accumulator_output: encode(post.utxo_accumulator_output),
-            void_number: encode(post.void_number),
+            nullifier: encode(post.nullifier.commitment),
+            outgoing_note: encode(post.nullifier.outgoing_note),
         }
     }
 }
@@ -184,7 +188,10 @@ impl TryFrom<SenderPost> for config::SenderPost {
     fn try_from(post: SenderPost) -> Result<Self, Self::Error> {
         Ok(Self {
             utxo_accumulator_output: decode(post.utxo_accumulator_output)?,
-            void_number: decode(post.void_number)?,
+            nullifier: config::Nullifier {
+                commitment: decode(post.nullifier)?,
+                outgoing_note: decode(post.outgoing_note)?,
+            },
         })
     }
 }
@@ -195,8 +202,8 @@ pub struct ReceiverPost {
     /// Unspent Transaction Output
     pub utxo: Utxo,
 
-    /// Encrypted Note
-    pub encrypted_note: EncryptedNote,
+    /// Incoming Note
+    pub incoming_note: EncryptedNote,
 }
 
 impl From<config::ReceiverPost> for ReceiverPost {
@@ -348,10 +355,10 @@ pub struct UtxoMerkleTreePath {
 }
 
 /// Receiver Chunk Data Type
-pub type ReceiverChunk = Vec<(Utxo, EncryptedNote)>;
+pub type ReceiverChunk = Vec<(Utxo, IncomingNote)>;
 
 /// Sender Chunk Data Type
-pub type SenderChunk = Vec<VoidNumber>;
+pub type SenderChunk = Vec<(Nullifier, OutgoingNote)>;
 
 /// Ledger Source Pull Response
 #[cfg_attr(
