@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       chain_spec:
-        description: The chain spec to be used for benchmarks. 
+        description: The chain spec to be used for execution benchmarks.
         default: calamari-dev
         required: true
 env:
@@ -58,7 +58,7 @@ jobs:
           rustup default stable
           rustup update
           rustup target add wasm32-unknown-unknown
-      - name: build & run benchmarks
+      - name: build benchmarks
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -67,30 +67,27 @@ jobs:
           CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose
-          ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC
+          RUSTC_BOOTSTRAP=1 cargo build --profile production --features runtime-benchmarks --verbose
       - name: stop sccache server
         run: sccache --stop-server || true
+      - name: run all benchmarks script
+        run: |
+          ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC
       - name: upload
         uses: actions/upload-artifact@v3
         with:
           name: manta
-          path: target/production/manta
+          path: ./target/production/manta
       - name: upload weights
         uses: actions/upload-artifact@v3
         with:
           name: weights-output
-          path: scripts/benchmarking/weights-output/
-      - name: upload overheads
-        uses: actions/upload-artifact@v3
-        with:
-          name: overheads-output
-          path: scripts/benchmarking/overheads-output/
+          path: ./scripts/benchmarking/weights-output/
       - name: upload errors
         uses: actions/upload-artifact@v3
         with:
           name: benchmarks-errors
-          path: scripts/benchmarking/benchmark_errors.txt
+          path: ./scripts/benchmarking/benchmark_errors.txt
   start-node-builder-current:
     runs-on: ubuntu-20.04
     outputs:

@@ -95,13 +95,10 @@ ERR_FILE="scripts/benchmarking/benchmarking_errors.txt"
 rm -f $ERR_FILE
 
 WEIGHTS_OUTPUT="scripts/benchmarking/weights-output"
-OVERHEADS_OUTPUT="scripts/benchmarking/overheads-output"
 # Delete the output folders before each run.
 rm -R ${WEIGHTS_OUTPUT}
-rm -R ${OVERHEADS_OUTPUT}
 # Create the output folders.
 mkdir ${WEIGHTS_OUTPUT}
-mkdir ${OVERHEADS_OUTPUT}
 
 # Benchmark each pallet.
 for PALLET in "${PALLETS[@]}"; do
@@ -136,22 +133,6 @@ for PALLET in "${PALLETS[@]}"; do
     echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
   fi
 done
-
-# # Update the block and extrinsic overhead weights.
-# echo "[+] Benchmarking block and extrinsic overheads..."
-# OUTPUT=$(
-#   $MANTA benchmark overhead \
-#   --chain=$chain_spec \
-#   --execution=wasm \
-#   --wasm-execution=compiled \
-#   --weight-path="./${OVERHEADS_OUTPUT}/${PALLET}" \
-#   --warmup=10 \
-#   --repeat=100 2>&1
-# )
-# if [ $? -ne 0 ]; then
-#   echo "$OUTPUT" >> "$ERR_FILE"
-#   echo "[-] Failed to benchmark the block and extrinsic overheads. Error written to $ERR_FILE; continuing..."
-# fi
 
 echo "[+] Benchmarking the machine..."
 OUTPUT=$(
