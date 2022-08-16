@@ -67,7 +67,8 @@ jobs:
           CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
-          ./scripts/benchmarking/run_all_benchmarks.sh -c $CHAIN_SPEC
+          RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose
+          ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC
       - name: stop sccache server
         run: sccache --stop-server || true
       - name: upload
