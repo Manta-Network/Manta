@@ -59,7 +59,11 @@ use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use frame_support::{traits::tokens::ExistenceRequirement, transactional, PalletId};
 use manta_pay::{
-    config::{self, Asset, AssetId, AssetValue},
+    config::{
+        self,
+        utxo::v1::{IncomingNote, MerkleTreeConfiguration, OutgoingNote},
+        Asset, AssetId, AssetValue,
+    },
     manta_accounting::{
         asset,
         transfer::{
@@ -674,7 +678,7 @@ impl<L, R> AsRef<R> for WrapPair<L, R> {
     }
 }
 
-impl<T> SenderLedger<config::Config> for Ledger<T>
+impl<T> SenderLedger<config::Parameters> for Ledger<T>
 where
     T: Config,
 {
@@ -722,7 +726,7 @@ where
     }
 }
 
-impl<T> ReceiverLedger<config::Config> for Ledger<T>
+impl<T> ReceiverLedger<config::Parameters> for Ledger<T>
 where
     T: Config,
 {
@@ -741,7 +745,7 @@ where
     #[inline]
     fn register_all<I>(&mut self, iter: I, super_key: &Self::SuperPostingKey)
     where
-        I: IntoIterator<Item = (Self::ValidUtxo, config::EncryptedNote)>,
+        I: IntoIterator<Item = (Self::ValidUtxo, config::Note)>,
     {
         let _ = super_key;
         let parameters = config::UtxoAccumulatorModel::decode(
@@ -751,13 +755,7 @@ where
         .expect("Unable to decode the Merkle Tree Parameters.");
         let mut shard_indices = iter
             .into_iter()
-            .map(move |(utxo, note)| {
-                (
-                    config::MerkleTreeConfiguration::tree_index(&utxo.0),
-                    utxo.0,
-                    note,
-                )
-            })
+            .map(move |(utxo, note)| (MerkleTreeConfiguration::tree_index(&utxo.0), utxo.0, note))
             .collect::<Vec<_>>();
         shard_indices.sort_by_key(|(s, _, _)| *s);
         let mut shard_insertions = Vec::<(_, Vec<_>)>::new();
@@ -784,7 +782,7 @@ where
                 let next_index = current_path.leaf_index().0 as u64;
                 let utxo = encode(&utxo);
                 UtxoSet::<T>::insert(utxo, ());
-                Shards::<T>::insert(shard_index, next_index, (utxo, EncryptedNote::from(note)));
+                Shards::<T>::insert(shard_index, next_index, (utxo, IncomingNote::from(note)));
             }
             tree.current_path = current_path.into();
             if let Some(next_root) = next_root {
@@ -863,8 +861,8 @@ where
         &self,
         asset_id: Option<AssetId>,
         sources: &[SourcePostingKey<config::Config, Self>],
-        senders: &[SenderPostingKey<config::Config, Self>],
-        receivers: &[ReceiverPostingKey<config::Config, Self>],
+        senders: &[SenderPostingKey<config::Parameters, Self>],
+        receivers: &[ReceiverPostingKey<config::Parameters, Self>],
         sinks: &[SinkPostingKey<config::Config, Self>],
         proof: Proof<config::Config>,
     ) -> Option<(Self::ValidProof, Self::Event)> {
@@ -875,8 +873,8 @@ where
             receivers.len(),
             sinks.len(),
         )? {
-            TransferShape::Mint => (
-                manta_parameters::pay::testnet::verifying::Mint::get()
+            TransferShape::ToPrivate => (
+                manta_parameters::pay::testnet::verifying::ToPrivate::get()
                     .expect("Checksum did not match."),
                 PreprocessedEvent::<T>::ToPrivate {
                     asset: Asset::new(asset_id.unwrap().0, (sources[0].1).0),
@@ -888,8 +886,8 @@ where
                     .expect("Checksum did not match."),
                 PreprocessedEvent::<T>::PrivateTransfer,
             ),
-            TransferShape::Reclaim => (
-                manta_parameters::pay::testnet::verifying::Reclaim::get()
+            TransferShape::ToPublic => (
+                manta_parameters::pay::testnet::verifying::ToPublic::get()
                     .expect("Checksum did not match."),
                 PreprocessedEvent::<T>::ToPublic {
                     asset: Asset::new(asset_id.unwrap().0, (sinks[0].1).0),

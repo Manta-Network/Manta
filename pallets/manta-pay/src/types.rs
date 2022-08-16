@@ -17,12 +17,15 @@
 //! Type Definitions for Manta Pay
 
 use super::*;
-use manta_crypto::encryption::hybrid;
-use manta_util::into_array_unchecked;
+use manta_pay::{
+    config::{utxo::v1::MerkleTreeConfiguration, AssetId, AssetValue},
+    manta_crypto::encryption::hybrid,
+    manta_util::into_array_unchecked,
+};
 use scale_codec::Error;
 
 #[cfg(feature = "rpc")]
-use manta_util::serde::{Deserialize, Serialize};
+use manta_pay::manta_util::serde::{Deserialize, Serialize};
 
 pub(crate) const CIPHER_TEXT_LENGTH: usize = 68;
 pub(crate) const EPHEMERAL_PUBLIC_KEY_LENGTH: usize = 32;
@@ -270,7 +273,7 @@ impl TryFrom<TransferPost> for config::TransferPost {
     #[inline]
     fn try_from(post: TransferPost) -> Result<Self, Self::Error> {
         Ok(Self {
-            asset_id: post.asset_id.map(asset::AssetId),
+            asset_id: post.asset_id.map(AssetId),
             sources: post.sources.into_iter().map(asset::AssetValue).collect(),
             sender_posts: post
                 .sender_posts
@@ -289,10 +292,10 @@ impl TryFrom<TransferPost> for config::TransferPost {
 }
 
 /// Leaf Digest Type
-pub type LeafDigest = merkle_tree::LeafDigest<config::MerkleTreeConfiguration>;
+pub type LeafDigest = merkle_tree::LeafDigest<MerkleTreeConfiguration>;
 
 /// Inner Digest Type
-pub type InnerDigest = merkle_tree::InnerDigest<config::MerkleTreeConfiguration>;
+pub type InnerDigest = merkle_tree::InnerDigest<MerkleTreeConfiguration>;
 
 /// Merkle Tree Current Path
 #[derive(Clone, Debug, Decode, Default, Encode, Eq, PartialEq, TypeInfo)]
@@ -316,15 +319,15 @@ impl MaxEncodedLen for CurrentPath {
             .saturating_add(
                 // NOTE: We know that these paths don't exceed the path length.
                 InnerDigest::max_encoded_len().saturating_mul(
-                    manta_crypto::merkle_tree::path_length::<config::MerkleTreeConfiguration, ()>(),
+                    manta_crypto::merkle_tree::path_length::<MerkleTreeConfiguration, ()>(),
                 ),
             )
     }
 }
 
-impl From<merkle_tree::CurrentPath<config::MerkleTreeConfiguration>> for CurrentPath {
+impl From<merkle_tree::CurrentPath<MerkleTreeConfiguration>> for CurrentPath {
     #[inline]
-    fn from(path: merkle_tree::CurrentPath<config::MerkleTreeConfiguration>) -> Self {
+    fn from(path: merkle_tree::CurrentPath<MerkleTreeConfiguration>) -> Self {
         Self {
             sibling_digest: path.sibling_digest,
             leaf_index: path.inner_path.leaf_index.0 as u32,
@@ -333,7 +336,7 @@ impl From<merkle_tree::CurrentPath<config::MerkleTreeConfiguration>> for Current
     }
 }
 
-impl From<CurrentPath> for merkle_tree::CurrentPath<config::MerkleTreeConfiguration> {
+impl From<CurrentPath> for merkle_tree::CurrentPath<MerkleTreeConfiguration> {
     #[inline]
     fn from(path: CurrentPath) -> Self {
         Self::new(
