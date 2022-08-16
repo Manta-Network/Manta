@@ -104,48 +104,48 @@ rm -R ${WEIGHTS_OUTPUT}
 # Create the output folders.
 mkdir ${WEIGHTS_OUTPUT}
 
-# Benchmark each pallet.
-for PALLET in "${PALLETS[@]}"; do
-  # If `-p` is used, skip benchmarks until the start pallet.
-  if [ ! -z "$start_pallet" ] && [ "$start_pallet" != "$PALLET" ]
-  then
-    echo "[+] Skipping ${PALLET}..."
-    continue
-  else
-    unset start_pallet
-  fi
+# # Benchmark each pallet.
+# for PALLET in "${PALLETS[@]}"; do
+#   # If `-p` is used, skip benchmarks until the start pallet.
+#   if [ ! -z "$start_pallet" ] && [ "$start_pallet" != "$PALLET" ]
+#   then
+#     echo "[+] Skipping ${PALLET}..."
+#     continue
+#   else
+#     unset start_pallet
+#   fi
 
-  FOLDER="$(echo "${PALLET#*_}" | tr '_' '-')";
-  WEIGHT_FILE="./${WEIGHTS_OUTPUT}/${PALLET}.rs"
-  echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
+#   FOLDER="$(echo "${PALLET#*_}" | tr '_' '-')";
+#   WEIGHT_FILE="./${WEIGHTS_OUTPUT}/${PALLET}.rs"
+#   echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
 
-  OUTPUT=$(
-    $MANTA benchmark pallet \
-    --chain=$chain_spec \
-    --steps=50 \
-    --repeat=20 \
-    --pallet="$PALLET" \
-    --extrinsic="*" \
-    --execution=wasm \
-    --wasm-execution=compiled \
-    --heap-pages=4096 \
-    --output="$WEIGHT_FILE" \
-    --template=.github/resources/frame-weight-template.hbs 2>&1
-  )
-  if [ $? -ne 0 ]; then
-    echo "$OUTPUT" >> "$ERR_FILE"
-    echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
-  fi
-done
+#   OUTPUT=$(
+#     $MANTA benchmark pallet \
+#     --chain=$chain_spec \
+#     --steps=50 \
+#     --repeat=20 \
+#     --pallet="$PALLET" \
+#     --extrinsic="*" \
+#     --execution=wasm \
+#     --wasm-execution=compiled \
+#     --heap-pages=4096 \
+#     --output="$WEIGHT_FILE" \
+#     --template=.github/resources/frame-weight-template.hbs 2>&1
+#   )
+#   if [ $? -ne 0 ]; then
+#     echo "$OUTPUT" >> "$ERR_FILE"
+#     echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
+#   fi
+# done
 
-echo "[+] Benchmarking the machine..."
-OUTPUT=$(
-  $MANTA benchmark machine --chain=$chain_spec 2>&1
-)
-if [ $? -ne 0 ]; then
-  # Do not write the error to the error file since it is not a benchmarking error.
-  echo "[-] Failed the machine benchmark:\n$OUTPUT"
-fi
+# echo "[+] Benchmarking the machine..."
+# OUTPUT=$(
+#   $MANTA benchmark machine --chain=$chain_spec 2>&1
+# )
+# if [ $? -ne 0 ]; then
+#   # Do not write the error to the error file since it is not a benchmarking error.
+#   echo "[-] Failed the machine benchmark:\n$OUTPUT"
+# fi
 
 # If `-s` is used, download a storage snapshot, unzip it and run the storage benchmark.
 if [ ! -z "$storage_snapshot" ] ]

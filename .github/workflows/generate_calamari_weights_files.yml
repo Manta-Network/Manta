@@ -86,7 +86,7 @@ jobs:
           if [ $SNAPSHOT_URL != "" ]; then \
           mkdir full-db \
           tar -xf calamari.tar.gz --directory ./full-db \
-          ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC -s ./full-db; \
+          ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC -s ./full-db ; \
           fi
       - name: upload
         uses: actions/upload-artifact@v3
