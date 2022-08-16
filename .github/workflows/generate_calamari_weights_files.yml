@@ -6,6 +6,10 @@ on:
         description: The chain spec to be used for execution benchmarks.
         default: calamari-dev
         required: true
+      snapshot_url:
+        description: The chain snapshot to use for storage benchmarks.
+        default: ""
+        required: false
 env:
   AWS_REGION: us-east-1
   AWS_INSTANCE_TYPE: c5d.metal
@@ -13,66 +17,77 @@ env:
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
   CHAIN_SPEC: ${{github.event.inputs.chain_spec}}
+  SNAPSHOT_URL: ${{github.event.inputs.snapshot_url}}
 jobs:
   build-benchmark:
     needs: start-node-builder-current
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     steps:
       - uses: actions/checkout@v2
-      - name: install sccache
-        env:
-          SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
-          SCCACHE_VERSION: v0.2.15
-        run: |
-          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
-          mkdir -p $HOME/.local/bin
-          curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
-          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
-          chmod +x $HOME/.local/bin/sccache
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            cargo-
-      - name: cache sccache
-        uses: actions/cache@v2
-        continue-on-error: false
-        with:
-          path: /home/runner/.cache/sccache
-          key: sccache-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            sccache-
-      - name: start sccache server
-        run: sccache --start-server
-      - name: init
-        run: |
-          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-          source ${HOME}/.cargo/env
-          rustup toolchain install stable
-          rustup default stable
-          rustup update
-          rustup target add wasm32-unknown-unknown
+# - name: install sccache
+#   env:
+#     SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
+#     SCCACHE_VERSION: v0.2.15
+#   run: |
+#     SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
+#     mkdir -p $HOME/.local/bin
+#     curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
+#     mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
+#     chmod +x $HOME/.local/bin/sccache
+#     echo "$HOME/.local/bin" >> $GITHUB_PATH
+#     echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+# - name: cache cargo registry
+#   uses: actions/cache@v2
+#   with:
+#     path: |
+#       ~/.cargo/registry
+#       ~/.cargo/git
+#     key: cargo-${{ hashFiles('**/Cargo.lock') }}
+#     restore-keys: |
+#       cargo-
+# - name: cache sccache
+#   uses: actions/cache@v2
+#   continue-on-error: false
+#   with:
+#     path: /home/runner/.cache/sccache
+#     key: sccache-${{ hashFiles('**/Cargo.lock') }}
+#     restore-keys: |
+#       sccache-
+# - name: start sccache server
+#   run: sccache --start-server
+# - name: init
+#   run: |
+#     curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+#     source ${HOME}/.cargo/env
+#     rustup toolchain install stable
+#     rustup default stable
+#     rustup update
+#     rustup target add wasm32-unknown-unknown
       - name: build benchmarks
-        env:
-          RUST_BACKTRACE: full
-          RUSTC_WRAPPER: sccache
-          SCCACHE_CACHE_SIZE: 2G
-          SCCACHE_DIR: /home/runner/.cache/sccache
-          CARGO_TERM_COLOR: always
+# env:
+#   RUST_BACKTRACE: full
+#   RUSTC_WRAPPER: sccache
+#   SCCACHE_CACHE_SIZE: 2G
+#   SCCACHE_DIR: /home/runner/.cache/sccache
+#   CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo build --profile production --features runtime-benchmarks --verbose
-      - name: stop sccache server
-        run: sccache --stop-server || true
+          mkdir target/production/
+          cd target/production/
+          wget https://manta-ops.s3.amazonaws.com/manta-benchmarking/manta
+          chmod 777 manta
+          cd ../../
+# RUSTC_BOOTSTRAP=1 cargo build --profile production --features runtime-benchmarks --verbose
+# - name: stop sccache server
+#   run: sccache --stop-server || true
       - name: run all benchmarks script
         run: |
-          ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC
+          if [ $SNAPSHOT_URL == "" ]; then ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC; fi
+          if [ $SNAPSHOT_URL != "" ]; then \
+          mkdir full-db \
+          tar -xf calamari.tar.gz --directory ./full-db \
+          ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC -s ./full-db; \
+          fi
       - name: upload
         uses: actions/upload-artifact@v3
         with:
@@ -88,6 +103,11 @@ jobs:
         with:
           name: benchmarks-errors
           path: ./scripts/benchmarking/benchmark_errors.txt
+      - name: upload storage benchmark results
+        uses: actions/upload-artifact@v3
+        with:
+          name: rocksdb-weights
+          path: ./rocksdb_weights.rs
   start-node-builder-current:
     runs-on: ubuntu-20.04
     outputs:

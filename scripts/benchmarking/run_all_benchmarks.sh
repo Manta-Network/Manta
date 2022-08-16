@@ -25,7 +25,7 @@
 #
 # Should be run from the root of the repo.
 
-while getopts 'bfpc:v' flag; do
+while getopts 'bfpsc:v' flag; do
   case "${flag}" in
     b)
       # Skip build.
@@ -48,6 +48,10 @@ while getopts 'bfpc:v' flag; do
     p)
       # Start at pallet
       start_pallet="${OPTARG}"
+      ;;
+    s)
+      # Storage snapshot url
+      storage_snapshot="${OPTARG}"
       ;;
     v)
       # Echo all executed commands.
@@ -141,6 +145,23 @@ OUTPUT=$(
 if [ $? -ne 0 ]; then
   # Do not write the error to the error file since it is not a benchmarking error.
   echo "[-] Failed the machine benchmark:\n$OUTPUT"
+fi
+
+# If `-s` is used, download a storage snapshot, unzip it and run the storage benchmark.
+if [ ! -z "$storage_snapshot" ] ]
+then
+  wget $storage_snapshot
+  unzip result
+  ./target/production/manta \
+    benchmark \
+    storage \
+    --chain=$chain_spec \
+    --state-version=1 \
+    --warmups=10 \
+    --base-path=$UNZIP_RES \
+    --weight-path=./rocksdb_weights.rs
+else
+  unset storage_snapshot
 fi
 
 # Check if the error file exists.
