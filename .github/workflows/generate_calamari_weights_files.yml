@@ -1,4 +1,4 @@
-name: Execute all benchmarks for a specified chain spec
+name: Benchmark Calamari Runtime & Generate Weights Files
 on:
   workflow_dispatch:
     inputs:
