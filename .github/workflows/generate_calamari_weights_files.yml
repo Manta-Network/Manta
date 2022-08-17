@@ -90,6 +90,7 @@ jobs:
       - if: ${{ env.SNAPSHOT_URL != '' }}
         name: run all benchmarks script with storage benchmark
         run: |
+          wget $SNAPSHOT_URL
           mkdir full-db
           tar -xf scripts/benchmarking/calamari.tar.gz --directory ./full-db 
           ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC -s ./full-db
