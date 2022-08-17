@@ -88,27 +88,14 @@ jobs:
         run: |
           ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC
       - if: ${{ env.SNAPSHOT_URL != '' }}
-        name: Download archived database
+        name: run all benchmarks script with storage benchmark
         run: |
           mkdir $FULL_DB_FOLDER
           cd $FULL_DB_FOLDER
-          wget $SNAPSHOT_URL
-      - if: ${{ env.SNAPSHOT_URL != '' }}
-        name: Download and extract database
-        uses: a7ul/tar-action@v1.1.0
-        id: extract
-        with:
-          command: xf
-          files: ${SNAPSHOT_URL##*/}
-      - if: ${{ env.SNAPSHOT_URL != '' }}
-        name: run all benchmarks script with storage benchmark
-        run: |
-# wget $SNAPSHOT_URL
-# mkdir $FULL_DB_FOLDER
-# ls -a
-# chmod +x ${SNAPSHOT_URL##*/}
-# sudo tar -xf ${SNAPSHOT_URL##*/} --directory ./$FULL_DB_FOLDER
+          wget $SNAPSHOT_URL | tar -xz
           cd ..
+          ls -a
+# tar -xf ${SNAPSHOT_URL##*/} --directory ./$FULL_DB_FOLDER
           ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC -s ./$FULL_DB_FOLDER
       - name: upload benchmarking binary
         uses: actions/upload-artifact@v3
