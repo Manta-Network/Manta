@@ -99,10 +99,16 @@ ERR_FILE="scripts/benchmarking/benchmarking_errors.txt"
 rm -f $ERR_FILE
 
 WEIGHTS_OUTPUT="scripts/benchmarking/weights-output"
-# Delete the output folders before each run.
+# Delete the weights output folders before each run.
 rm -R ${WEIGHTS_OUTPUT}
-# Create the output folders.
+# Create the weights output folders.
 mkdir ${WEIGHTS_OUTPUT}
+
+STORAGE_OUTPUT="scripts/benchmarking/rocksdb_weights.rs"
+rm -R ${STORAGE_OUTPUT}
+
+MACHINE_OUTPUT="scripts/benchmarking/machine_benchmark_result.txt"
+rm -f $MACHINE_OUTPUT
 
 # # Benchmark each pallet.
 # for PALLET in "${PALLETS[@]}"; do
@@ -138,18 +144,22 @@ mkdir ${WEIGHTS_OUTPUT}
 #   fi
 # done
 
-# echo "[+] Benchmarking the machine..."
-# OUTPUT=$(
-#   $MANTA benchmark machine --chain=$chain_spec 2>&1
-# )
-# if [ $? -ne 0 ]; then
-#   # Do not write the error to the error file since it is not a benchmarking error.
-#   echo "[-] Failed the machine benchmark:\n$OUTPUT"
-# fi
+echo "[+] Benchmarking the machine..."
+OUTPUT=$(
+  $MANTA benchmark machine --chain=$chain_spec 2>&1
+)
+if [ $? -ne 0 ]; then
+  # Do not write the error to the error file since it is not a benchmarking error.
+  echo "[-] Failed the machine benchmark:\n$OUTPUT"
+fi
+else
+  echo $OUTPUT >> $MACHINE_OUTPUT
+fi
 
 # If `-s` is used, download a storage snapshot, unzip it and run the storage benchmark.
 if [ ! -z "$storage_folder" ]
 then
+  OUTPUT=$(
   ./target/production/manta \
     benchmark \
     storage \
@@ -157,7 +167,12 @@ then
     --state-version=1 \
     --warmups=10 \
     --base-path=$storage_folder \
-    --weight-path=./rocksdb_weights.rs
+    --weight-path=./$STORAGE_OUTPUT 2>&1
+  )
+  if [ $? -ne 0 ]; then
+    echo "$OUTPUT" >> "$ERR_FILE"
+    echo "[-] Failed the storage benchmark. Error written to $ERR_FILE; continuing..."
+  fi
 else
   unset storage_folder
 fi

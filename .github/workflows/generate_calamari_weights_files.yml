@@ -7,7 +7,7 @@ on:
         default: calamari-dev
         required: true
       snapshot_url:
-        description: The chain snapshot to use for storage benchmarks.
+        description: The chain snapshot to use for storage benchmarks. Leaving it blank will skip the storage benchmark.
         default: ""
         required: false
 env:
@@ -65,7 +65,7 @@ jobs:
           rustup default stable
           rustup update
           rustup target add wasm32-unknown-unknown
-      - name: build benchmarks
+      - name: build benchmarking binary
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -109,12 +109,17 @@ jobs:
         with:
           name: benchmarks-errors
           path: ./scripts/benchmarking/benchmark_errors.txt
+      - name: upload machine benchmark result
+        uses: actions/upload-artifact@v3
+        with:
+          name: machine-benchmark
+          path: ./scripts/benchmarking/machine_benchmark_result.txt
       - if: ${{ env.SNAPSHOT_URL != '' }}
         name: upload storage weights
         uses: actions/upload-artifact@v3
         with:
           name: rocksdb-weights
-          path: ./rocksdb_weights.rs
+          path: ./scripts/benchmarking/rocksdb_weights.rs
   start-node-builder-current:
     runs-on: ubuntu-20.04
     outputs:
