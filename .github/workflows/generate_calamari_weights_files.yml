@@ -93,7 +93,7 @@ jobs:
           mkdir $FULL_DB_FOLDER
           cd $FULL_DB_FOLDER
           wget $SNAPSHOT_URL
-          tar -xf
+          tar -xf ${SNAPSHOT_URL##*/}
           cd ..
           ls -a
           ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC -s ./$FULL_DB_FOLDER
