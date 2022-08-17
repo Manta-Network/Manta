@@ -100,7 +100,6 @@ jobs:
         with:
           command: xf
           files: ${SNAPSHOT_URL##*/}
-          outPath: ./$FULL_DB_FOLDER
       - if: ${{ env.SNAPSHOT_URL != '' }}
         name: run all benchmarks script with storage benchmark
         run: |
