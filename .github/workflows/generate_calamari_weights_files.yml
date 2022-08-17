@@ -83,7 +83,7 @@ jobs:
 # RUSTC_BOOTSTRAP=1 cargo build --profile production --features runtime-benchmarks --verbose
 # - name: stop sccache server
 #   run: sccache --stop-server || true
-      - if: ${{ $SNAPSHOT_URL == "" }}
+      - if: ${ SNAPSHOT_URL == "" }
         name: run all benchmarks script without storage benchmark
         run: |
           ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC
