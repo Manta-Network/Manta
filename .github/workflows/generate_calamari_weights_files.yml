@@ -100,6 +100,9 @@ jobs:
           cd ..
           ls -a
           sudo ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC -s ./$FULL_DB_FOLDER
+          cd scripts/benchmarking
+          ls -a
+          cd ../../
       - name: upload benchmarking binary
         uses: actions/upload-artifact@v3
         with:
