@@ -154,7 +154,7 @@ if [ $? -ne 0 ]; then
 fi
 echo $OUTPUT >> $MACHINE_OUTPUT
 
-echo $storage_folder
+echo "$storage_folder"
 # If `-s` is used, run the storage benchmark.
 if [ ! -z "$storage_folder" ]
   echo "I'm here"
@@ -171,8 +171,6 @@ if [ ! -z "$storage_folder" ]
 #     echo "$OUTPUT" >> "$ERR_FILE"
 #     echo "[-] Failed the storage benchmark. Error written to $ERR_FILE; continuing..."
 #   fi
-else
-  unset storage_folder
 fi
 
 # Check if the error file exists.
