@@ -144,15 +144,13 @@ rm -f $MACHINE_OUTPUT
 #   fi
 # done
 
-# echo "[+] Benchmarking the machine..."
-# OUTPUT=$(
-#   $MANTA benchmark machine --chain=$chain_spec --allow-fail 2>&1
-# )
-# if [ $? -ne 0 ]; then
-#   # Do not write the error to the error file since it is not a benchmarking error.
-#   echo "[-] Failed the machine benchmark:\n$OUTPUT"
-# fi
-# echo $OUTPUT >> $MACHINE_OUTPUT
+echo "[+] Benchmarking the machine..."
+OUTPUT=$(
+  $MANTA benchmark machine --chain=$chain_spec --allow-fail 2>&1
+)
+# In any case don't write errors to the error file since they're not benchmarking errors.
+echo "[x] Machine benchmark:\n$OUTPUT"
+echo $OUTPUT >> $MACHINE_OUTPUT
 
 # If `-s` is used, run the storage benchmark.
 if [ ! -z "$storage_folder" ]; then
