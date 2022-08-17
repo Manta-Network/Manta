@@ -72,7 +72,8 @@ jobs:
 #   CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
-          mkdir target/production/
+          mkdir target
+          mkdir target/production
           cd target/production/
           wget https://manta-ops.s3.amazonaws.com/manta-benchmarking/manta
           chmod 777 manta
