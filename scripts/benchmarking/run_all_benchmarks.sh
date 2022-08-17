@@ -151,25 +151,26 @@ OUTPUT=$(
 if [ $? -ne 0 ]; then
   # Do not write the error to the error file since it is not a benchmarking error.
   echo "[-] Failed the machine benchmark:\n$OUTPUT"
-else
-  echo $OUTPUT >> $MACHINE_OUTPUT
 fi
+echo $OUTPUT >> $MACHINE_OUTPUT
 
-# If `-s` is used, download a storage snapshot, unzip it and run the storage benchmark.
+echo $storage_folder
+# If `-s` is used, run the storage benchmark.
 if [ ! -z "$storage_folder" ]
-then
-  OUTPUT=$(
-  $MANTA benchmark storage \
-    --chain=$chain_spec \
-    --state-version=1 \
-    --warmups=10 \
-    --base-path=$storage_folder \
-    --weight-path=./$STORAGE_OUTPUT 2>&1
-  )
-  if [ $? -ne 0 ]; then
-    echo "$OUTPUT" >> "$ERR_FILE"
-    echo "[-] Failed the storage benchmark. Error written to $ERR_FILE; continuing..."
-  fi
+  echo "I'm here"
+# then
+#   OUTPUT=$(
+#   $MANTA benchmark storage \
+#     --chain=$chain_spec \
+#     --state-version=1 \
+#     --warmups=10 \
+#     --base-path=$storage_folder \
+#     --weight-path=./$STORAGE_OUTPUT 2>&1
+#   )
+#   if [ $? -ne 0 ]; then
+#     echo "$OUTPUT" >> "$ERR_FILE"
+#     echo "[-] Failed the storage benchmark. Error written to $ERR_FILE; continuing..."
+#   fi
 else
   unset storage_folder
 fi
