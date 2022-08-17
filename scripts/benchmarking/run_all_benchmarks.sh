@@ -148,7 +148,7 @@ mkdir ${WEIGHTS_OUTPUT}
 # fi
 
 # If `-s` is used, download a storage snapshot, unzip it and run the storage benchmark.
-if [ ! -z "$storage_snapshot" ] ]
+if [ ! -z "$storage_snapshot" ]
 then
   wget $storage_snapshot
   unzip result
