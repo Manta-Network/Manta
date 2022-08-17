@@ -159,7 +159,7 @@ then
     --base-path=$storage_folder \
     --weight-path=./rocksdb_weights.rs
 else
-  unset storage_snapshot
+  unset storage_folder
 fi
 
 # Check if the error file exists.
