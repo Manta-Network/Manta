@@ -36,8 +36,7 @@ use sp_runtime::{
     AccountId32,
 };
 use xcm::{
-    prelude::{Parachain, X1},
-    v1::MultiLocation,
+    v1::{Junctions::Here, MultiLocation},
     VersionedMultiLocation,
 };
 
@@ -191,7 +190,7 @@ parameter_types! {
     pub const NativeAssetId: AssetId = 1;
     pub const StartNonNativeAssetId: AssetId = 8;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
-        VersionedMultiLocation::V1(RelativeSelfLocation::get()));
+        VersionedMultiLocation::V1(MultiLocation::new(0, Here)));
     pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
         name: b"Dolphin".to_vec(),
         symbol: b"DOL".to_vec(),

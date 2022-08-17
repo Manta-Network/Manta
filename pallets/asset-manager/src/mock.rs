@@ -40,8 +40,7 @@ use sp_runtime::{
 };
 use sp_std::marker::PhantomData;
 use xcm::{
-    prelude::{Parachain, X1},
-    v1::MultiLocation,
+    v1::{Junctions::Here, MultiLocation},
     VersionedMultiLocation,
 };
 
