@@ -105,7 +105,7 @@ rm -R ${WEIGHTS_OUTPUT}
 mkdir ${WEIGHTS_OUTPUT}
 
 STORAGE_OUTPUT="scripts/benchmarking/rocksdb_weights.rs"
-rm -R ${STORAGE_OUTPUT}
+rm -f ${STORAGE_OUTPUT}
 
 MACHINE_OUTPUT="scripts/benchmarking/machine_benchmark_result.txt"
 rm -f $MACHINE_OUTPUT
@@ -159,14 +159,11 @@ fi
 if [ ! -z "$storage_folder" ]
 then
   OUTPUT=$(
-  ./target/production/manta \
-    benchmark \
-    storage \
+  $MANTA benchmark storage \
     --chain=$chain_spec \
     --state-version=1 \
     --warmups=10 \
     --base-path=$storage_folder \
-    --allow-fail \
     --weight-path=./$STORAGE_OUTPUT 2>&1
   )
   if [ $? -ne 0 ]; then
