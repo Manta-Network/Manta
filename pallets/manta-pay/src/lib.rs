@@ -52,18 +52,21 @@
 //! [`public_transfer`]: Pallet::public_transfer
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
+#![forbid(rustdoc::broken_intra_doc_links)]
+#![forbid(missing_docs)]
 
 extern crate alloc;
 
+use crate::types::{
+    Asset, AssetId, AssetValue, IncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk,
+    SenderChunk, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
+};
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use frame_support::{traits::tokens::ExistenceRequirement, transactional, PalletId};
 use manta_pay::{
-    config::{
-        self,
-        utxo::v1::{IncomingNote, MerkleTreeConfiguration, OutgoingNote},
-        Asset, AssetId, AssetValue,
-    },
+    config::{self, utxo::v1::MerkleTreeConfiguration},
     manta_accounting::{
         asset,
         transfer::{
@@ -72,23 +75,21 @@ use manta_pay::{
             sender::{SenderLedger, SenderPostError, SenderPostingKey},
             InvalidSinkAccount, InvalidSourceAccount, Proof, SinkPostingKey, SourcePostingKey,
             TransferLedger, TransferLedgerSuperPostingKey, TransferPostError, TransferPostingKey,
+            TransferPostingKeyRef,
         },
     },
     manta_crypto::{
         constraint::ProofSystem,
         merkle_tree::{self, forest::Configuration as _},
     },
+    manta_parameters::Get as _,
     manta_util::codec::Decode as _,
 };
-use manta_primitives::{
-    assets::{AssetConfig, FungibleLedger as _, FungibleLedgerError},
-    types::Balance,
-};
+use manta_primitives::assets::{AssetConfig, FungibleLedger as _, FungibleLedgerError};
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use types::*;
 
-pub use manta_pay::signer::{Checkpoint, RawCheckpoint};
+pub use crate::types::{Checkpoint, RawCheckpoint};
 pub use pallet::*;
 pub use types::PullResponse;
 pub use weights::WeightInfo;
@@ -169,15 +170,15 @@ pub mod pallet {
     pub(super) type UtxoAccumulatorOutputs<T: Config> =
         StorageMap<_, Twox64Concat, UtxoAccumulatorOutput, (), ValueQuery>;
 
-    /// Nullifier Set
+    /// Nullifier Commitment Set
     #[pallet::storage]
-    pub(super) type NullifierSet<T: Config> =
-        StorageMap<_, Twox64Concat, Nullifier, (), ValueQuery>;
+    pub(super) type NullifierCommitmentSet<T: Config> =
+        StorageMap<_, Twox64Concat, NullifierCommitment, (), ValueQuery>;
 
     /// Nullifiers Ordered by Insertion
     #[pallet::storage]
     pub(super) type NullifierSetInsertionOrder<T: Config> =
-        StorageMap<_, Twox64Concat, u64, (Nullifier, OutgoingNote), ValueQuery>;
+        StorageMap<_, Twox64Concat, u64, (NullifierCommitment, OutgoingNote), ValueQuery>;
 
     /// Nullifier Set Size
     #[pallet::storage]
@@ -240,11 +241,13 @@ pub mod pallet {
                 ExistenceRequirement::KeepAlive,
             )
             .map_err(Error::<T>::from)?;
+            /* TODO:
             Self::deposit_event(Event::Transfer {
                 asset,
                 source: origin,
                 sink,
             });
+            */
             Ok(().into())
         }
     }
@@ -436,6 +439,7 @@ pub mod pallet {
     {
         #[inline]
         fn from(err: FungibleLedgerError) -> Self {
+            /* TODO:
             match err {
                 FungibleLedgerError::InvalidAssetId => Self::PublicUpdateInvalidAssetId,
                 FungibleLedgerError::BelowMinimum => Self::PublicUpdateBelowMinimum,
@@ -447,6 +451,8 @@ pub mod pallet {
                 FungibleLedgerError::InvalidBurn(_) => Self::PublicUpdateInvalidBurn,
                 FungibleLedgerError::InvalidTransfer(_) => Self::PublicUpdateInvalidTransfer,
             }
+            */
+            todo!()
         }
     }
 
@@ -456,6 +462,7 @@ pub mod pallet {
     {
         #[inline]
         fn from(err: TransferPostError<config::Config, T::AccountId, FungibleLedgerError>) -> Self {
+            /* TODO:
             match err {
                 TransferPostError::InvalidShape => Self::InvalidShape,
                 TransferPostError::InvalidSourceAccount(err) => err.into(),
@@ -467,6 +474,8 @@ pub mod pallet {
                 TransferPostError::InvalidProof => Self::InvalidProof,
                 TransferPostError::UpdateError(err) => err.into(),
             }
+            */
+            todo!()
         }
     }
 
@@ -523,6 +532,7 @@ pub mod pallet {
             receivers: &mut ReceiverChunk,
             receivers_pulled: &mut u64,
         ) -> bool {
+            /* TODO:
             let max_receiver_index = (receiver_index as u64) + max_update;
             for idx in (receiver_index as u64)..max_receiver_index {
                 if *receivers_pulled == max_update {
@@ -537,11 +547,14 @@ pub mod pallet {
                 }
             }
             Shards::<T>::contains_key(shard_index, max_receiver_index)
+            */
+            todo!()
         }
 
         /// Pulls sender data from the ledger starting at the `sender_index`.
         #[inline]
         fn pull_senders(sender_index: usize, max_update_request: u64) -> (bool, SenderChunk) {
+            /* TODO:
             let mut senders = Vec::new();
             let max_sender_index = if max_update_request > Self::PULL_MAX_SENDER_UPDATE_SIZE {
                 (sender_index as u64) + Self::PULL_MAX_SENDER_UPDATE_SIZE
@@ -558,6 +571,8 @@ pub mod pallet {
                 NullifierSetInsertionOrder::<T>::contains_key(max_sender_index as u64),
                 senders,
             )
+            */
+            todo!()
         }
 
         /// Returns the diff of ledger state since the given `checkpoint`, `max_receivers`, and
@@ -593,6 +608,7 @@ pub mod pallet {
             sinks: Vec<T::AccountId>,
             post: TransferPost,
         ) -> DispatchResultWithPostInfo {
+            /* TODO:
             Self::deposit_event(
                 config::TransferPost::try_from(post)
                     .map_err(|_| Error::<T>::InvalidSerializedForm)?
@@ -601,6 +617,8 @@ pub mod pallet {
                     .convert(origin),
             );
             Ok(().into())
+            */
+            todo!()
         }
     }
 }
@@ -682,17 +700,20 @@ impl<T> SenderLedger<config::Parameters> for Ledger<T>
 where
     T: Config,
 {
-    type ValidNullifier = Wrap<config::Nullifier>;
-    type ValidUtxoAccumulatorOutput = Wrap<config::UtxoAccumulatorOutput>;
     type SuperPostingKey = (Wrap<()>, ());
+    type ValidUtxoAccumulatorOutput = Wrap<config::UtxoAccumulatorOutput>;
+    type ValidNullifier = Wrap<config::Nullifier>;
 
     #[inline]
     fn is_unspent(&self, nullifier: config::Nullifier) -> Option<Self::ValidNullifier> {
+        /* TODO:
         if NullifierSet::<T>::contains_key(encode(&nullifier)) {
             None
         } else {
             Some(Wrap(nullifier))
         }
+        */
+        todo!()
     }
 
     #[inline]
@@ -700,17 +721,21 @@ where
         &self,
         output: config::UtxoAccumulatorOutput,
     ) -> Option<Self::ValidUtxoAccumulatorOutput> {
+        /* TODO:
         if UtxoAccumulatorOutputs::<T>::contains_key(encode(&output)) {
             return Some(Wrap(output));
         }
         None
+        */
+        todo!()
     }
 
     #[inline]
-    fn spend_all<I>(&mut self, iter: I, super_key: &Self::SuperPostingKey)
+    fn spend_all<I>(&mut self, super_key: &Self::SuperPostingKey, iter: I)
     where
         I: IntoIterator<Item = (Self::ValidUtxoAccumulatorOutput, Self::ValidNullifier)>,
     {
+        /* TODO:
         let _ = super_key;
         let index = NullifierSetSize::<T>::get();
         let mut i = 0;
@@ -723,6 +748,8 @@ where
         if i != 0 {
             NullifierSetSize::<T>::set(index + i);
         }
+        */
+        todo!()
     }
 }
 
@@ -730,23 +757,27 @@ impl<T> ReceiverLedger<config::Parameters> for Ledger<T>
 where
     T: Config,
 {
-    type ValidUtxo = Wrap<config::Utxo>;
     type SuperPostingKey = (Wrap<()>, ());
+    type ValidUtxo = Wrap<config::Utxo>;
 
     #[inline]
     fn is_not_registered(&self, utxo: config::Utxo) -> Option<Self::ValidUtxo> {
+        /* TODO:
         if UtxoSet::<T>::contains_key(encode(&utxo)) {
             None
         } else {
             Some(Wrap(utxo))
         }
+        */
+        todo!()
     }
 
     #[inline]
-    fn register_all<I>(&mut self, iter: I, super_key: &Self::SuperPostingKey)
+    fn register_all<I>(&mut self, super_key: &Self::SuperPostingKey, iter: I)
     where
         I: IntoIterator<Item = (Self::ValidUtxo, config::Note)>,
     {
+        /* TODO:
         let _ = super_key;
         let parameters = config::UtxoAccumulatorModel::decode(
             manta_parameters::pay::testnet::parameters::UtxoAccumulatorModel::get()
@@ -790,6 +821,8 @@ where
                 UtxoAccumulatorOutputs::<T>::insert(encode(&next_root), ());
             }
         }
+        */
+        todo!()
     }
 }
 
@@ -797,23 +830,24 @@ impl<T> TransferLedger<config::Config> for Ledger<T>
 where
     T: Config,
 {
+    type SuperPostingKey = ();
     type AccountId = T::AccountId;
-    type UpdateError = FungibleLedgerError;
     type Event = PreprocessedEvent<T>;
+    type UpdateError = FungibleLedgerError;
     type ValidSourceAccount = WrapPair<Self::AccountId, AssetValue>;
     type ValidSinkAccount = WrapPair<Self::AccountId, AssetValue>;
     type ValidProof = Wrap<()>;
-    type SuperPostingKey = ();
 
     #[inline]
     fn check_source_accounts<I>(
         &self,
-        asset_id: AssetId,
+        asset_id: &config::AssetId,
         sources: I,
     ) -> Result<Vec<Self::ValidSourceAccount>, InvalidSourceAccount<config::Config, Self::AccountId>>
     where
-        I: Iterator<Item = (Self::AccountId, AssetValue)>,
+        I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
     {
+        /* TODO:
         sources
             .map(move |(account_id, withdraw)| {
                 FungibleLedger::<T>::can_reduce_by_amount(
@@ -830,17 +864,20 @@ where
                 })
             })
             .collect()
+        */
+        todo!()
     }
 
     #[inline]
     fn check_sink_accounts<I>(
         &self,
-        asset_id: AssetId,
+        asset_id: &config::AssetId,
         sinks: I,
     ) -> Result<Vec<Self::ValidSinkAccount>, InvalidSinkAccount<config::Config, Self::AccountId>>
     where
-        I: Iterator<Item = (Self::AccountId, AssetValue)>,
+        I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
     {
+        /* TODO:
         // NOTE: Existence of accounts is type-checked so we don't need to do anything here, just
         // pass the data forward.
         sinks
@@ -854,18 +891,16 @@ where
                     })
             })
             .collect()
+        */
+        todo!()
     }
 
     #[inline]
     fn is_valid(
         &self,
-        asset_id: Option<AssetId>,
-        sources: &[SourcePostingKey<config::Config, Self>],
-        senders: &[SenderPostingKey<config::Parameters, Self>],
-        receivers: &[ReceiverPostingKey<config::Parameters, Self>],
-        sinks: &[SinkPostingKey<config::Config, Self>],
-        proof: Proof<config::Config>,
+        posting_key: TransferPostingKeyRef<config::Config, Self>,
     ) -> Option<(Self::ValidProof, Self::Event)> {
+        /* TODO:
         let (mut verifying_context, event) = match TransferShape::select(
             asset_id.is_some(),
             sources.len(),
@@ -903,17 +938,20 @@ where
         )
         .ok()?
         .then_some((Wrap(()), event))
+        */
+        todo!()
     }
 
     #[inline]
     fn update_public_balances(
         &mut self,
-        asset_id: AssetId,
+        super_key: &TransferLedgerSuperPostingKey<config::Config, Self>,
+        asset_id: config::AssetId,
         sources: Vec<SourcePostingKey<config::Config, Self>>,
         sinks: Vec<SinkPostingKey<config::Config, Self>>,
         proof: Self::ValidProof,
-        super_key: &TransferLedgerSuperPostingKey<config::Config, Self>,
     ) -> Result<(), Self::UpdateError> {
+        /* TODO:
         let _ = (proof, super_key);
         for WrapPair(account_id, withdraw) in sources {
             FungibleLedger::<T>::transfer(
@@ -934,5 +972,7 @@ where
             )?;
         }
         Ok(())
+        */
+        todo!()
     }
 }

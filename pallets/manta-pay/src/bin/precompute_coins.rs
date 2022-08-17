@@ -16,6 +16,8 @@
 
 //! Precomputed Transactions
 
+/* TODO:
+
 use anyhow::Result;
 use indoc::indoc;
 use manta_accounting::{
@@ -313,3 +315,7 @@ fn main() -> Result<()> {
 
     Ok(())
 }
+
+*/
+
+fn main() {}

@@ -31,6 +31,8 @@ use scale_codec::Decode;
 
 mod precomputed_coins;
 
+/* TODO:
+
 /// Asserts that the last event that has occured is the same as `event`.
 #[inline]
 pub fn assert_last_event<T, E>(event: E)
@@ -141,3 +143,5 @@ benchmarks! {
 }
 
 impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
+
+*/

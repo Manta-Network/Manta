@@ -18,8 +18,7 @@
 
 use super::*;
 use manta_pay::{
-    config::{utxo::v1::MerkleTreeConfiguration, AssetId, AssetValue},
-    manta_crypto::encryption::hybrid,
+    config::utxo::v1::MerkleTreeConfiguration, manta_crypto::encryption::hybrid,
     manta_util::into_array_unchecked,
 };
 use scale_codec::Error;
@@ -27,12 +26,7 @@ use scale_codec::Error;
 #[cfg(feature = "rpc")]
 use manta_pay::manta_util::serde::{Deserialize, Serialize};
 
-pub(crate) const CIPHER_TEXT_LENGTH: usize = 68;
-pub(crate) const EPHEMERAL_PUBLIC_KEY_LENGTH: usize = 32;
-pub(crate) const UTXO_ACCUMULATOR_OUTPUT_LENGTH: usize = 32;
-pub(crate) const UTXO_LENGTH: usize = 32;
-pub(crate) const NULLIFIER_LENGTH: usize = 32;
-pub(crate) const PROOF_LENGTH: usize = 192;
+pub use manta_pay::config::utxo::v1::{Checkpoint, RawCheckpoint};
 
 /// Encodes the SCALE encodable `value` into a byte array with the given length `N`.
 #[inline]
@@ -53,23 +47,41 @@ where
     T::decode(&mut bytes.as_slice())
 }
 
+///
+pub const GROUP_LENGTH: usize = 32;
+
 /// Group Type
-pub type Group = [u8; EPHEMERAL_PUBLIC_KEY_LENGTH];
+pub type Group = [u8; GROUP_LENGTH];
+
+///
+pub const UTXO_LENGTH: usize = 32;
 
 /// UTXO Type
 pub type Utxo = [u8; UTXO_LENGTH];
 
-/// Nullifier Type
-pub type Nullifier = [u8; NULLIFIER_LENGTH];
+///
+pub const NULLIFIER_COMMITMENT_LENGTH: usize = 32;
+
+/// Nullifier Commitment Type
+pub type NullifierCommitment = [u8; NULLIFIER_COMMITMENT_LENGTH];
+
+///
+pub const UTXO_ACCUMULATOR_OUTPUT_LENGTH: usize = 32;
 
 /// UTXO Accumulator Output Type
 pub type UtxoAccumulatorOutput = [u8; UTXO_ACCUMULATOR_OUTPUT_LENGTH];
 
-/// Ciphertext Type
-pub type Ciphertext = [u8; CIPHER_TEXT_LENGTH];
+///
+pub const PROOF_LENGTH: usize = 192;
 
 /// Transfer Proof Type
 pub type Proof = [u8; PROOF_LENGTH];
+
+///
+pub type AssetId = [u8; 32];
+
+///
+pub type AssetValue = u128;
 
 /// Asset
 #[derive(
@@ -92,16 +104,18 @@ pub struct Asset {
     pub id: AssetId,
 
     /// Asset Value
-    pub value: Balance,
+    pub value: AssetValue,
 }
 
 impl Asset {
     /// Builds a new [`Asset`] from `id` and `value`.
     #[inline]
-    pub fn new(id: AssetId, value: Balance) -> Self {
+    pub fn new(id: AssetId, value: AssetValue) -> Self {
         Self { id, value }
     }
 }
+
+/*
 
 /// Encrypted Note
 #[cfg_attr(
@@ -160,14 +174,25 @@ impl TryFrom<EncryptedNote> for config::EncryptedNote {
     }
 }
 
+*/
+
+///
+#[cfg_attr(
+    feature = "rpc",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
+pub struct OutgoingNote;
+
 /// Sender Post
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct SenderPost {
     /// UTXO Accumulator Output
     pub utxo_accumulator_output: UtxoAccumulatorOutput,
 
-    /// Nullifier
-    pub nullifier: Nullifier,
+    /// Nullifier Commitment
+    pub nullifier_commitment: NullifierCommitment,
 
     /// Outgoing Note
     pub outgoing_note: OutgoingNote,
@@ -176,11 +201,14 @@ pub struct SenderPost {
 impl From<config::SenderPost> for SenderPost {
     #[inline]
     fn from(post: config::SenderPost) -> Self {
+        /* TODO:
         Self {
             utxo_accumulator_output: encode(post.utxo_accumulator_output),
             nullifier: encode(post.nullifier.commitment),
             outgoing_note: encode(post.nullifier.outgoing_note),
         }
+        */
+        todo!()
     }
 }
 
@@ -189,6 +217,7 @@ impl TryFrom<SenderPost> for config::SenderPost {
 
     #[inline]
     fn try_from(post: SenderPost) -> Result<Self, Self::Error> {
+        /* TODO:
         Ok(Self {
             utxo_accumulator_output: decode(post.utxo_accumulator_output)?,
             nullifier: config::Nullifier {
@@ -196,8 +225,19 @@ impl TryFrom<SenderPost> for config::SenderPost {
                 outgoing_note: decode(post.outgoing_note)?,
             },
         })
+        */
+        todo!()
     }
 }
+
+///
+#[cfg_attr(
+    feature = "rpc",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
+pub struct IncomingNote;
 
 /// Receiver Post
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
@@ -206,16 +246,19 @@ pub struct ReceiverPost {
     pub utxo: Utxo,
 
     /// Incoming Note
-    pub incoming_note: EncryptedNote,
+    pub incoming_note: IncomingNote,
 }
 
 impl From<config::ReceiverPost> for ReceiverPost {
     #[inline]
     fn from(post: config::ReceiverPost) -> Self {
+        /* TODO:
         Self {
             utxo: encode(post.utxo),
             encrypted_note: EncryptedNote::from(post.encrypted_note),
         }
+        */
+        todo!()
     }
 }
 
@@ -224,10 +267,13 @@ impl TryFrom<ReceiverPost> for config::ReceiverPost {
 
     #[inline]
     fn try_from(post: ReceiverPost) -> Result<Self, Self::Error> {
+        /* TODO:
         Ok(Self {
             utxo: decode(post.utxo)?,
             encrypted_note: post.encrypted_note.try_into()?,
         })
+        */
+        todo!()
     }
 }
 
@@ -238,7 +284,7 @@ pub struct TransferPost {
     pub asset_id: Option<AssetId>,
 
     /// Sources
-    pub sources: Vec<Balance>,
+    pub sources: Vec<AssetValue>,
 
     /// Sender Posts
     pub sender_posts: Vec<SenderPost>,
@@ -247,7 +293,7 @@ pub struct TransferPost {
     pub receiver_posts: Vec<ReceiverPost>,
 
     /// Sinks
-    pub sinks: Vec<Balance>,
+    pub sinks: Vec<AssetValue>,
 
     /// Validity Proof
     pub validity_proof: Proof,
@@ -256,6 +302,7 @@ pub struct TransferPost {
 impl From<config::TransferPost> for TransferPost {
     #[inline]
     fn from(post: config::TransferPost) -> Self {
+        /* TODO:
         Self {
             asset_id: post.asset_id.map(|id| id.0),
             sources: post.sources.into_iter().map(|s| s.0).collect(),
@@ -264,6 +311,8 @@ impl From<config::TransferPost> for TransferPost {
             sinks: post.sinks.into_iter().map(|s| s.0).collect(),
             validity_proof: encode(post.validity_proof),
         }
+        */
+        todo!()
     }
 }
 
@@ -272,6 +321,7 @@ impl TryFrom<TransferPost> for config::TransferPost {
 
     #[inline]
     fn try_from(post: TransferPost) -> Result<Self, Self::Error> {
+        /* TODO:
         Ok(Self {
             asset_id: post.asset_id.map(AssetId),
             sources: post.sources.into_iter().map(asset::AssetValue).collect(),
@@ -288,6 +338,8 @@ impl TryFrom<TransferPost> for config::TransferPost {
             sinks: post.sinks.into_iter().map(asset::AssetValue).collect(),
             validity_proof: decode(post.validity_proof)?,
         })
+        */
+        todo!()
     }
 }
 
@@ -361,7 +413,7 @@ pub struct UtxoMerkleTreePath {
 pub type ReceiverChunk = Vec<(Utxo, IncomingNote)>;
 
 /// Sender Chunk Data Type
-pub type SenderChunk = Vec<(Nullifier, OutgoingNote)>;
+pub type SenderChunk = Vec<(NullifierCommitment, OutgoingNote)>;
 
 /// Ledger Source Pull Response
 #[cfg_attr(
