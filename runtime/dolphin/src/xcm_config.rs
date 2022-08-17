@@ -145,8 +145,6 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
         AssetIdLocationConvert<AssetLocation, AssetManager>,
         JustTry,
     >,
-    // Precondition checks and actual implementations of mint and burn logic.
-    DolphinConcreteFungibleLedger,
     // Used to find the query the native asset id of the chain.
     DolphinAssetConfig,
 >;

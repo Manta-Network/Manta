@@ -16,42 +16,48 @@
 
 //! Types
 
-use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
+use sp_core::H256;
+use sp_runtime::{
+    generic,
+    traits::{BlakeTwo256, IdentifyAccount, Verify},
+    MultiSignature, OpaqueExtrinsic,
+};
 
-/// An index to a block.
+/// Block Number Type
 pub type BlockNumber = u32;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
-pub type Signature = sp_runtime::MultiSignature;
+pub type Signature = MultiSignature;
 
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
 /// to the public key of our transaction signing scheme.
 pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
-/// The type for looking up accounts. We don't expect more than 4 billion of them, but you
-/// never know...
+/// Account Index Type
+///
+/// This index is used to look up accounts.
 pub type AccountIndex = u32;
 
-/// Balance of an account.
+/// Asset Id Type
+pub type AssetId = u32;
+
+/// Balance of an Account
 pub type Balance = u128;
 
-/// Index of a transaction in the chain.
+/// Transaciton Index Type
 pub type Index = u32;
 
 /// A hash of some data used by the chain.
-pub type Hash = sp_core::H256;
+pub type Hash = H256;
 
 /// Block Header Type
-pub type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
+pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 
 /// Block Type
-pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
+pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
-/// Digest item type.
-pub type DigestItem = sp_runtime::generic::DigestItem;
+/// Digest Item Type
+pub type DigestItem = generic::DigestItem;
 
-/// Moment
+/// Moment Type
 pub type Moment = u64;
-
-/// AssetId
-pub type AssetId = u32;

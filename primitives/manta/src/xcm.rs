@@ -16,10 +16,7 @@
 
 //! XCM Primitives
 
-use crate::{
-    assets::{AssetConfig, AssetIdLocationGetter, FungibleLedger, UnitsToWeightRatio},
-    types::{AssetId, Balance},
-};
+use crate::assets::{AssetConfig, AssetIdLocationGetter, FungibleLedger, UnitsToWeightRatio};
 use core::marker::PhantomData;
 use frame_support::{
     pallet_prelude::Get,
@@ -38,25 +35,28 @@ use xcm::{
     },
 };
 use xcm_builder::TakeRevenue;
-use xcm_executor::traits::{
-    Convert as XcmConvert, FilterAssetLocation, MatchesFungible, MatchesFungibles, TransactAsset,
-    WeightTrader,
+use xcm_executor::{
+    traits::{
+        Convert as XcmConvert, FilterAssetLocation, MatchesFungible, MatchesFungibles,
+        TransactAsset, WeightTrader,
+    },
+    Assets,
 };
 
 /// XCM Result
 pub type Result<T = (), E = Error> = core::result::Result<T, E>;
 
-///
+/// Reserve Location
 pub trait Reserve {
-    /// Returns assets reserve location.
+    /// Returns the reserve location for `self`.
     fn reserve(&self) -> Option<MultiLocation>;
 }
 
 impl Reserve for MultiAsset {
-    /// Takes the chain part of a MultiAsset.
+    /// Returns the chain part of a concrete location `self`, returning `None` if `self` has more
+    /// than one parent or `self` is not concrete.
     #[inline]
     fn reserve(&self) -> Option<MultiLocation> {
-        // NOTE: We only care about concrete location now.
         if let XcmAssetId::Concrete(location) = &self.id {
             match (location.parent_count(), location.first_interior()) {
                 (0, Some(Parachain(id))) => Some(MultiLocation::new(0, X1(Parachain(*id)))),
@@ -109,13 +109,13 @@ pub struct FirstAssetTrader<AssetId, AssetLocation, AssetIdInfoGetter, R>
 where
     R: TakeRevenue,
 {
-    ///
+    /// Weight
     weight: Weight,
 
-    ///
+    /// Refund Cache
     refund_cache: Option<(MultiLocation, u128, u128)>,
 
-    ///
+    /// Type Parameter Marker
     __: PhantomData<(AssetId, AssetLocation, AssetIdInfoGetter, R)>,
 }
 
@@ -139,11 +139,7 @@ where
     /// Buys weight for XCM execution. We always return the [`TooExpensive`](Error::TooExpensive)
     /// error if this fails.
     #[inline]
-    fn buy_weight(
-        &mut self,
-        weight: Weight,
-        payment: xcm_executor::Assets,
-    ) -> Result<xcm_executor::Assets> {
+    fn buy_weight(&mut self, weight: Weight, payment: Assets) -> Result<Assets> {
         log::debug!(
             target: "FirstAssetTrader::buy_weight",
             "weight: {:?}, payment: {:?}",
@@ -215,10 +211,10 @@ where
 
                 // In short, we only refund on the asset the trader first successfully was able
                 // to pay for an execution
-                let new_asset = match self.refund_cache.clone() {
+                let new_asset = match &self.refund_cache {
                     Some((prev_id, prev_amount, units_per_second)) => {
-                        if prev_id == id {
-                            Some((id, prev_amount.saturating_add(amount), units_per_second))
+                        if prev_id == &id {
+                            Some((id, prev_amount.saturating_add(amount), *units_per_second))
                         } else {
                             None
                         }
@@ -247,18 +243,14 @@ where
     ///
     #[inline]
     fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
-        if let Some((id, prev_amount, units_per_second)) = self.refund_cache.clone() {
+        if let Some((id, prev_amount, units_per_second)) = &mut self.refund_cache {
             let weight = weight.min(self.weight);
             self.weight -= weight;
-            let amount = units_per_second * (weight as u128) / (WEIGHT_PER_SECOND as u128);
-            self.refund_cache = Some((
-                id.clone(),
-                prev_amount.saturating_sub(amount),
-                units_per_second,
-            ));
+            let amount = *units_per_second * (weight as u128) / (WEIGHT_PER_SECOND as u128);
+            *prev_amount = prev_amount.saturating_sub(amount);
             Some(MultiAsset {
                 fun: Fungibility::Fungible(amount),
-                id: XcmAssetId::Concrete(id),
+                id: XcmAssetId::Concrete(id.clone()),
             })
         } else {
             None
@@ -274,8 +266,8 @@ where
     /// Handles spent fees, depositing them as defined by `R`.
     #[inline]
     fn drop(&mut self) {
-        if let Some((id, amount, _)) = self.refund_cache.clone() {
-            R::take_revenue((id, amount).into());
+        if let Some((id, amount, _)) = &self.refund_cache {
+            R::take_revenue((id.clone(), *amount).into());
         }
     }
 }
@@ -284,24 +276,20 @@ where
 /// XCM fee depositor to which we implement the TakeRevenue trait
 /// It receives a fungibles::Mutate implemented argument, a matcher to convert MultiAsset into
 /// AssetId and amount, and the fee receiver account
-pub struct XcmFeesToAccount<Assets, Matcher, AccountId, ReceiverAccount>(
-    PhantomData<(Assets, Matcher, AccountId, ReceiverAccount)>,
-);
+pub struct XcmFeesToAccount<AccountId, A, M, R>(PhantomData<(AccountId, A, M, R)>);
 
-impl<Assets, Matcher, AccountId, ReceiverAccount> TakeRevenue
-    for XcmFeesToAccount<Assets, Matcher, AccountId, ReceiverAccount>
+impl<AccountId, A, M, R> TakeRevenue for XcmFeesToAccount<AccountId, A, M, R>
 where
-    Assets: Mutate<AccountId>,
-    Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
-    AccountId: Clone,
-    ReceiverAccount: Get<AccountId>,
+    A: Mutate<AccountId>,
+    M: MatchesFungibles<A::AssetId, A::Balance>,
+    R: Get<AccountId>,
 {
     #[inline]
     fn take_revenue(revenue: MultiAsset) {
-        match Matcher::matches_fungibles(&revenue) {
+        match M::matches_fungibles(&revenue) {
             Ok((asset_id, amount)) => {
                 if !amount.is_zero() {
-                    if let Err(err) = Assets::mint_into(asset_id, &ReceiverAccount::get(), amount) {
+                    if let Err(err) = A::mint_into(asset_id, &R::get(), amount) {
                         log::debug!(target: "manta-xcm", "mint_into failed with {:?}", err);
                     }
                 }
@@ -335,98 +323,18 @@ where
 }
 
 ///
-pub struct MultiAssetAdapter<
-    T,
-    AccountIdConverter,
-    NativeMatcher,
-    NonNativeMatcher,
-    MultiAdapterAssetConfig,
->(
-    PhantomData<(
-        T,
-        NativeMatcher,
-        AccountIdConverter,
-        NonNativeMatcher,
-        MultiAdapterAssetConfig,
-    )>,
+pub struct MultiAssetAdapter<T, A, AccountIdConverter, Native, NonNative>(
+    PhantomData<(T, A, AccountIdConverter, Native, NonNative)>,
 );
 
-impl<T, AccountIdConverter, NativeMatcher, NonNativeMatcher, MultiAdapterAssetConfig> TransactAsset
-    for MultiAssetAdapter<
-        T,
-        AccountIdConverter,
-        NativeMatcher,
-        NonNativeMatcher,
-        MultiAdapterAssetConfig,
-    >
+impl<T, A, AccountIdConverter, Native, NonNative>
+    MultiAssetAdapter<T, A, AccountIdConverter, Native, NonNative>
 where
     T: Config,
+    A: AssetConfig<T>,
     AccountIdConverter: XcmConvert<MultiLocation, T::AccountId>,
-    NativeMatcher: MatchesFungible<Balance>,
-    NonNativeMatcher: MatchesFungibles<AssetId, Balance>,
-    MultiAdapterAssetConfig: AssetConfig<T, AssetId = AssetId, Balance = Balance>,
-{
-    #[inline]
-    fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> Result {
-        log::debug!(
-            target: "xcm::multi_asset_adapter",
-            "deposit_asset asset: {:?}, location: {:?}",
-            asset, location,
-        );
-        let (asset_id, amount, who) = Self::match_asset_and_location(asset, location)?;
-        // NOTE: If it's non-native asset we want to check with increase in total supply. Otherwise
-        //       it will just use false, as it is assumed the native asset supply cannot be changed.
-        <MultiAdapterAssetConfig as AssetConfig<T>>::FungibleLedger::can_deposit(
-            &asset_id, &who, &amount, true,
-        )
-        .map_err(|_| {
-            Error::FailedToTransactAsset("Failed MultiAdapterFungibleLedger::can_deposit")
-        })?;
-        <MultiAdapterAssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_mint(
-            &asset_id, &who, &amount,
-        )
-        .map_err(|_| {
-            Error::FailedToTransactAsset("Failed MultiAdapterFungibleLedger::deposit_can_mint")
-        })?;
-        Ok(())
-    }
-
-    #[inline]
-    fn withdraw_asset(
-        asset: &MultiAsset,
-        location: &MultiLocation,
-    ) -> Result<xcm_executor::Assets> {
-        log::debug!(
-            target: "xcm::multi_asset_adapter",
-            "withdraw_asset asset: {:?}, location: {:?}",
-            asset, location,
-        );
-        let (asset_id, amount, who) = Self::match_asset_and_location(asset, location)?;
-        <MultiAdapterAssetConfig as AssetConfig<T>>::FungibleLedger::withdraw_can_burn(
-            &asset_id,
-            &who,
-            &amount,
-            ExistenceRequirement::AllowDeath,
-        )
-        .map_err(|_| Error::FailedToTransactAsset("Failed Burn"))?;
-        Ok(asset.clone().into())
-    }
-}
-
-impl<
-        T: Config,
-        AccountIdConverter: XcmConvert<MultiLocation, T::AccountId>,
-        NativeMatcher: MatchesFungible<Balance>,
-        NonNativeMatcher: MatchesFungibles<AssetId, Balance>,
-        MultiAdapterAssetConfig: AssetConfig<T, AssetId = AssetId, Balance = Balance>,
-    >
-    MultiAssetAdapter<
-        T,
-        AccountIdConverter,
-        NativeMatcher,
-        NonNativeMatcher,
-        MultiAdapterAssetConfig,
-    >
+    Native: MatchesFungible<A::Balance>,
+    NonNative: MatchesFungibles<A::AssetId, A::Balance>,
 {
     /// Matches the incoming `asset` to an `asset_id` and `amount` on this chain.
     /// Matches the incoming `location` to a `receiver` account on this chain.
@@ -436,20 +344,67 @@ impl<
     fn match_asset_and_location(
         asset: &MultiAsset,
         location: &MultiLocation,
-    ) -> Result<(AssetId, Balance, T::AccountId)> {
+    ) -> Result<(A::AssetId, T::AccountId, A::Balance)> {
         let receiver = AccountIdConverter::convert_ref(location)
             .map_err(|_| Error::FailedToTransactAsset("Failed Location to AccountId Conversion"))?;
         let (asset_id, amount) = match (
-            NativeMatcher::matches_fungible(asset),
-            NonNativeMatcher::matches_fungibles(asset),
+            Native::matches_fungible(asset),
+            NonNative::matches_fungibles(asset),
         ) {
             // native asset
-            (Some(amount), _) => (MultiAdapterAssetConfig::NativeAssetId::get(), amount),
+            (Some(amount), _) => (A::NativeAssetId::get(), amount),
             // assets asset
             (_, Ok((asset_id, amount))) => (asset_id, amount),
             // unknown asset
             _ => return Err(Error::FailedToTransactAsset("Unknown Asset")),
         };
-        Ok((asset_id, amount, receiver))
+        Ok((asset_id, receiver, amount))
+    }
+}
+
+impl<T, A, AccountIdConverter, Native, NonNative> TransactAsset
+    for MultiAssetAdapter<T, A, AccountIdConverter, Native, NonNative>
+where
+    T: Config,
+    A: AssetConfig<T>,
+    AccountIdConverter: XcmConvert<MultiLocation, T::AccountId>,
+    Native: MatchesFungible<A::Balance>,
+    NonNative: MatchesFungibles<A::AssetId, A::Balance>,
+{
+    #[inline]
+    fn deposit_asset(asset: &MultiAsset, location: &MultiLocation) -> Result {
+        log::debug!(
+            target: "xcm::multi_asset_adapter",
+            "deposit_asset asset: {:?}, location: {:?}",
+            asset, location,
+        );
+        let (asset_id, who, amount) = Self::match_asset_and_location(asset, location)?;
+        // NOTE: If it's non-native asset we want to check with increase in total supply. Otherwise
+        //       it will just use false, as it is assumed the native asset supply cannot be changed.
+        A::FungibleLedger::can_deposit(&asset_id, &who, &amount, true).map_err(|_| {
+            Error::FailedToTransactAsset("Failed MultiAdapterFungibleLedger::can_deposit")
+        })?;
+        A::FungibleLedger::deposit_can_mint(&asset_id, &who, &amount).map_err(|_| {
+            Error::FailedToTransactAsset("Failed MultiAdapterFungibleLedger::deposit_can_mint")
+        })?;
+        Ok(())
+    }
+
+    #[inline]
+    fn withdraw_asset(asset: &MultiAsset, location: &MultiLocation) -> Result<Assets> {
+        log::debug!(
+            target: "xcm::multi_asset_adapter",
+            "withdraw_asset asset: {:?}, location: {:?}",
+            asset, location,
+        );
+        let (asset_id, who, amount) = Self::match_asset_and_location(asset, location)?;
+        A::FungibleLedger::withdraw_can_burn(
+            &asset_id,
+            &who,
+            &amount,
+            ExistenceRequirement::AllowDeath,
+        )
+        .map_err(|_| Error::FailedToTransactAsset("Failed Burn"))?;
+        Ok(asset.clone().into())
     }
 }

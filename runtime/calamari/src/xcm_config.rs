@@ -147,8 +147,6 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
         AssetIdLocationConvert<AssetLocation, AssetManager>,
         JustTry,
     >,
-    // Precondition checks and actual implementations of mint and burn logic.
-    CalamariConcreteFungibleLedger,
     // Used to find the query the native asset id of the chain.
     CalamariAssetConfig,
 >;

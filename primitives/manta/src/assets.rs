@@ -41,6 +41,7 @@ use xcm::{
     v1::{Junctions, MultiLocation},
     VersionedMultiLocation,
 };
+use xcm_executor::traits::Convert;
 
 /// Asset Metadata
 ///
@@ -297,16 +298,18 @@ pub struct AssetIdLocationConvert<AssetLocation, AssetInfoGetter>(
     PhantomData<(AssetLocation, AssetInfoGetter)>,
 );
 
-impl<AssetLocation, AssetInfoGetter> xcm_executor::traits::Convert<MultiLocation, AssetId>
+impl<AssetLocation, AssetInfoGetter> Convert<MultiLocation, AssetId>
     for AssetIdLocationConvert<AssetLocation, AssetInfoGetter>
 where
-    AssetLocation: From<MultiLocation> + Into<Option<MultiLocation>> + Clone,
+    AssetLocation: Clone + From<MultiLocation> + Into<Option<MultiLocation>>,
     AssetInfoGetter: AssetIdLocationGetter<AssetLocation>,
 {
+    #[inline]
     fn convert_ref(loc: impl Borrow<MultiLocation>) -> Result<AssetId, ()> {
         AssetInfoGetter::get_asset_id(&loc.borrow().clone().into()).ok_or(())
     }
 
+    #[inline]
     fn reverse_ref(id: impl Borrow<AssetId>) -> Result<MultiLocation, ()> {
         AssetInfoGetter::get_asset_location(*id.borrow())
             .and_then(Into::into)
