@@ -11,7 +11,7 @@ on:
         default: ""
         required: false
 env:
-  AWS_REGION: us-east-2
+  AWS_REGION: us-east-1
   AWS_INSTANCE_TYPE: c5d.metal
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 128
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
