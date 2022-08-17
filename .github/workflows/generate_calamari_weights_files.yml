@@ -127,7 +127,7 @@ jobs:
         with:
           name: machine-benchmark
           path: ./scripts/benchmarking/machine_benchmark_result.txt
-      - if: always()}
+      - if: always()
         name: upload storage weights
         uses: actions/upload-artifact@v3
         with:
