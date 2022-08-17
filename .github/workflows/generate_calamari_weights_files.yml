@@ -18,6 +18,7 @@ env:
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
   CHAIN_SPEC: ${{github.event.inputs.chain_spec}}
   SNAPSHOT_URL: ${{github.event.inputs.snapshot_url}}
+  FULL_DB_FOLDER: full-db
 jobs:
   build-benchmark:
 # needs: start-node-builder-current
@@ -75,7 +76,6 @@ jobs:
           source ${HOME}/.cargo/env
           mkdir target
           mkdir target/production
-          mkdir full-db
           cd target/production/
           wget https://manta-ops.s3.amazonaws.com/manta-benchmarking/manta
           chmod 777 manta
@@ -91,9 +91,9 @@ jobs:
         name: run all benchmarks script with storage benchmark
         run: |
           wget $SNAPSHOT_URL
-          mkdir full-db
-          tar -xf scripts/benchmarking/calamari.tar.gz --directory ./full-db 
-          ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC -s ./full-db
+          mkdir $FULL_DB_FOLDER
+          tar -xf scripts/benchmarking/calamari.tar.gz --directory ./$FULL_DB_FOLDER 
+          ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC -s ./$FULL_DB_FOLDER
       - name: upload
         uses: actions/upload-artifact@v3
         with:
