@@ -187,7 +187,7 @@ jobs:
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch and chmod polkadot
         run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.22/polkadot
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.26/polkadot
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
@@ -269,7 +269,7 @@ jobs:
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch previous ${{ matrix.runtime.name }}_runtime.compact.compressed.wasm
         run: |
-          wget -cO - https://github.com/Manta-Network/Manta/releases/download/v3.1.5-1/${{ matrix.runtime.name }}-runtime-v3151.compact.compressed.wasm > ${{ github.workspace }}/${{ matrix.runtime.name }}_runtime_previous.compact.compressed.wasm
+          wget -cO - https://github.com/Manta-Network/Manta/releases/download/v3.2.1/${{ matrix.runtime.name }}-runtime-v3210.compact.compressed.wasm > ${{ github.workspace }}/${{ matrix.runtime.name }}_runtime_previous.compact.compressed.wasm
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch new ${{ matrix.runtime.name }}_runtime.compact.compressed.wasm
         uses: actions/download-artifact@v2
@@ -384,7 +384,7 @@ jobs:
           ls -ahl $HOME/.local/bin/
       - name: fetch and chmod polkadot
         run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.22/polkadot
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.26/polkadot
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       - id: create-chainspec
@@ -614,7 +614,7 @@ jobs:
           ls -ahl $HOME/.local/bin/
       - name: fetch and chmod polkadot
         run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.22/polkadot
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.26/polkadot
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       - id: create-chainspec

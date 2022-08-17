@@ -959,7 +959,7 @@ checksum = "c1db59621ec70f09c5e9b597b220c7a2b43611f4710dc03ceb8748637775692c"
 
 [[package]]
 name = "calamari-runtime"
-version = "3.2.1"
+version = "3.3.0"
 dependencies = [
  "calamari-vesting",
  "cumulus-pallet-dmp-queue",
@@ -1038,7 +1038,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-vesting"
-version = "3.2.1"
+version = "3.3.0"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -2351,7 +2351,7 @@ dependencies = [
 
 [[package]]
 name = "dolphin-runtime"
-version = "3.2.1"
+version = "3.3.0"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -4860,7 +4860,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "3.2.1"
+version = "3.3.0"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -4951,7 +4951,7 @@ dependencies = [
 
 [[package]]
 name = "manta-collator-selection"
-version = "3.2.1"
+version = "3.3.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5033,7 +5033,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "3.2.1"
+version = "3.3.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5054,7 +5054,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "3.2.1"
+version = "3.3.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -5503,7 +5503,7 @@ dependencies = [
 [[package]]
 name = "nimbus-consensus"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=garandor/polkadot-v0.9.26#c823cda87dad2adc7607b85f2e9456ae4c1fecef"
+source = "git+https://github.com/manta-network/nimbus.git?branch=manta-v3.3.0#37543e0898ce68c6cf251d068613cd5435d59420"
 dependencies = [
  "async-trait",
  "cumulus-client-consensus-common",
@@ -5534,7 +5534,7 @@ dependencies = [
 [[package]]
 name = "nimbus-primitives"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=garandor/polkadot-v0.9.26#c823cda87dad2adc7607b85f2e9456ae4c1fecef"
+source = "git+https://github.com/manta-network/nimbus.git?branch=manta-v3.3.0#37543e0898ce68c6cf251d068613cd5435d59420"
 dependencies = [
  "async-trait",
  "frame-benchmarking",
@@ -5882,7 +5882,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-manager"
-version = "3.2.1"
+version = "3.3.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5934,7 +5934,7 @@ dependencies = [
 [[package]]
 name = "pallet-aura-style-filter"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=garandor/polkadot-v0.9.26#c823cda87dad2adc7607b85f2e9456ae4c1fecef"
+source = "git+https://github.com/manta-network/nimbus.git?branch=manta-v3.3.0#37543e0898ce68c6cf251d068613cd5435d59420"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5950,7 +5950,7 @@ dependencies = [
 [[package]]
 name = "pallet-author-inherent"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=garandor/polkadot-v0.9.26#c823cda87dad2adc7607b85f2e9456ae4c1fecef"
+source = "git+https://github.com/manta-network/nimbus.git?branch=manta-v3.3.0#37543e0898ce68c6cf251d068613cd5435d59420"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6775,7 +6775,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "3.2.1"
+version = "3.3.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -9008,7 +9008,7 @@ dependencies = [
 
 [[package]]
 name = "runtime-common"
-version = "3.2.1"
+version = "3.3.0"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -10488,7 +10488,7 @@ dependencies = [
 
 [[package]]
 name = "session-key-primitives"
-version = "3.2.1"
+version = "3.3.0"
 dependencies = [
  "manta-primitives",
  "nimbus-primitives",
@@ -12192,9 +12192,9 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.3",
- "rand 0.8.5",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
@@ -13095,9 +13095,9 @@ dependencies = [
 
 [[package]]
 name = "yamux"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c0608f53c1dc0bad505d03a34bbd49fbf2ad7b51eb036123e896365532745a1"
+checksum = "e5d9ba232399af1783a58d8eb26f6b5006fbefe2dc9ef36bd283324792d03ea5"
 dependencies = [
  "futures 0.3.21",
  "log",
