@@ -73,7 +73,7 @@ then
 fi
 
 # The executable to use.
-MANTA=./target/debug/manta
+MANTA=./target/production/manta
 
 # Manually exclude some pallets.
 EXCLUDED_PALLETS=(
