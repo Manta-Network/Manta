@@ -103,27 +103,31 @@ jobs:
           cd scripts/benchmarking
           ls -a
           cd ../../
-      - name: upload benchmarking binary
+      - if: always()
+        name: upload benchmarking binary
         uses: actions/upload-artifact@v3
         with:
           name: manta
           path: ./target/production/manta
-      - name: upload pallets' weights
+      - if: always()
+        name: upload pallets' weights
         uses: actions/upload-artifact@v3
         with:
           name: weights-output
           path: ./scripts/benchmarking/weights-output/
-      - name: upload benchmarking errors
+      - if: always()
+        name: upload benchmarking errors
         uses: actions/upload-artifact@v3
         with:
           name: benchmarks-errors
           path: ./scripts/benchmarking/benchmark_errors.txt
-      - name: upload machine benchmark result
+      - if: always()
+        name: upload machine benchmark result
         uses: actions/upload-artifact@v3
         with:
           name: machine-benchmark
           path: ./scripts/benchmarking/machine_benchmark_result.txt
-      - if: ${{ env.SNAPSHOT_URL != '' }}
+      - if: always()}
         name: upload storage weights
         uses: actions/upload-artifact@v3
         with:
