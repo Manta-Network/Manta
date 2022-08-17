@@ -23,7 +23,6 @@ jobs:
   build-benchmark-binary:
     needs: start-node-builder-current
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
-# runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: install sccache
@@ -74,15 +73,9 @@ jobs:
           CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
-          mkdir target
-          mkdir target/production
-          cd target/production/
-          wget https://manta-ops.s3.amazonaws.com/manta-benchmarking/manta
-          chmod 777 manta
-          cd ../../
-# RUSTC_BOOTSTRAP=1 cargo build --profile production --features runtime-benchmarks --verbose
-# - name: stop sccache server
-#   run: sccache --stop-server || true
+          RUSTC_BOOTSTRAP=1 cargo build --profile production --features runtime-benchmarks --verbose
+      - name: stop sccache server
+        run: sccache --stop-server || true
       - if: ${{ env.SNAPSHOT_URL == '' }}
         name: run all benchmarks script without storage benchmark
         run: |
