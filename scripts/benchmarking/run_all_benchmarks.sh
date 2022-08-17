@@ -51,7 +51,7 @@ while getopts 'bfpsc:v' flag; do
       ;;
     s)
       # Storage snapshot url
-      storage_snapshot="${OPTARG}"
+      storage_folder="${OPTARG}"
       ;;
     v)
       # Echo all executed commands.
@@ -148,17 +148,15 @@ mkdir ${WEIGHTS_OUTPUT}
 # fi
 
 # If `-s` is used, download a storage snapshot, unzip it and run the storage benchmark.
-if [ ! -z "$storage_snapshot" ]
+if [ ! -z "$storage_folder" ]
 then
-  wget $storage_snapshot
-  unzip result
   ./target/production/manta \
     benchmark \
     storage \
     --chain=$chain_spec \
     --state-version=1 \
     --warmups=10 \
-    --base-path=$UNZIP_RES \
+    --base-path=$storage_folder \
     --weight-path=./rocksdb_weights.rs
 else
   unset storage_snapshot
