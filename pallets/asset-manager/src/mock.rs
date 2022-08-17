@@ -164,7 +164,7 @@ parameter_types! {
     pub const NativeAssetId: AssetId = 1;
     pub const StartNonNativeAssetId: AssetId = 8;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
-        VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
+        VersionedMultiLocation::V1(MultiLocation::new(0, Here)));
     pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
         name: b"Dolphin".to_vec(),
         symbol: b"DOL".to_vec(),

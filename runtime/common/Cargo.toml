@@ -51,7 +51,6 @@ cumulus-test-relay-sproof-builder = { git = "https://github.com/paritytech/cumul
 parachain-info = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.26" }
 
 # Orml dependencies
-orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.26" }
 orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.26" }
 
 # Self dependencies

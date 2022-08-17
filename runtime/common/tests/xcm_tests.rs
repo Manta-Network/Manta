@@ -818,12 +818,45 @@ fn send_para_a_custom_asset_to_para_b() {
 }
 
 #[test]
-fn send_para_a_native_asset_para_b_and_then_send_back() {
+fn send_para_a_native_asset_para_b_and_then_send_back_relative_self_location() {
     MockNet::reset();
 
-    let para_a_source_location = create_asset_location(1, PARA_A_ID);
-    let para_b_source_location = create_asset_location(1, PARA_B_ID);
+    let para_a_source_location_on_a = create_asset_location(0, PARA_A_ID);
+    let para_b_source_location_on_b = create_asset_location(0, PARA_B_ID);
+    let para_a_source_location_on_b = create_asset_location(1, PARA_A_ID);
+    let para_b_source_location_on_a = create_asset_location(1, PARA_B_ID);
 
+    send_para_a_native_asset_para_b_and_then_send_back_relative_self(
+        para_a_source_location_on_a,
+        para_b_source_location_on_b,
+        para_a_source_location_on_b,
+        para_b_source_location_on_a,
+    );
+}
+
+#[test]
+fn send_para_a_native_asset_para_b_and_then_send_back_absolute_self_location() {
+    MockNet::reset();
+
+    let para_a_source_location_on_a = create_asset_location(1, PARA_A_ID);
+    let para_b_source_location_on_b = create_asset_location(1, PARA_B_ID);
+    let para_a_source_location_on_b = create_asset_location(1, PARA_A_ID);
+    let para_b_source_location_on_a = create_asset_location(1, PARA_B_ID);
+
+    send_para_a_native_asset_para_b_and_then_send_back_relative_self(
+        para_a_source_location_on_a,
+        para_b_source_location_on_b,
+        para_a_source_location_on_b,
+        para_b_source_location_on_a,
+    );
+}
+
+fn send_para_a_native_asset_para_b_and_then_send_back_relative_self(
+    para_a_source_location_on_a: AssetLocation,
+    para_b_source_location_on_b: AssetLocation,
+    para_a_source_location_on_b: AssetLocation,
+    para_b_source_location_on_a: AssetLocation,
+) {
     let amount = 5000000u128;
     let weight = weight_of_four_xcm_instructions_on_para();
     let fee_on_b_when_send_back = calculate_fee(ParaTokenPerSecond::get().1, weight);
@@ -835,26 +868,26 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
         create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
 
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        &para_a_source_location,
+        &para_a_source_location_on_a,
         &para_a_asset_metadata,
         Some(0u128),
         None,
     );
     let _ = register_assets_on_parachain::<ParaA>(
-        &para_b_source_location,
+        &para_b_source_location_on_a,
         &para_b_asset_metadata,
         Some(0u128),
         None,
     );
 
     let _ = register_assets_on_parachain::<ParaB>(
-        &para_b_source_location,
+        &para_b_source_location_on_b,
         &para_b_asset_metadata,
         Some(0u128),
         None,
     );
     let a_asset_id_on_b = register_assets_on_parachain::<ParaB>(
-        &para_a_source_location,
+        &para_a_source_location_on_b,
         &para_a_asset_metadata,
         Some(0u128),
         None,
