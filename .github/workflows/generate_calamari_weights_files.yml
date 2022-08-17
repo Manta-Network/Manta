@@ -22,6 +22,7 @@ jobs:
   build-benchmark:
 # needs: start-node-builder-current
 # runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 # - name: install sccache
