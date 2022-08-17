@@ -25,7 +25,7 @@
 #
 # Should be run from the root of the repo.
 
-while getopts 'bfpsc:v' flag; do
+while getopts 'bfps:c:v' flag; do
   case "${flag}" in
     b)
       # Skip build.
@@ -73,7 +73,7 @@ then
 fi
 
 # The executable to use.
-MANTA=./target/production/manta
+MANTA=./target/debug/manta
 
 # Manually exclude some pallets.
 EXCLUDED_PALLETS=(
@@ -144,32 +144,30 @@ rm -f $MACHINE_OUTPUT
 #   fi
 # done
 
-echo "[+] Benchmarking the machine..."
-OUTPUT=$(
-  $MANTA benchmark machine --chain=$chain_spec --allow-fail 2>&1
-)
-if [ $? -ne 0 ]; then
-  # Do not write the error to the error file since it is not a benchmarking error.
-  echo "[-] Failed the machine benchmark:\n$OUTPUT"
-fi
-echo $OUTPUT >> $MACHINE_OUTPUT
+# echo "[+] Benchmarking the machine..."
+# OUTPUT=$(
+#   $MANTA benchmark machine --chain=$chain_spec --allow-fail 2>&1
+# )
+# if [ $? -ne 0 ]; then
+#   # Do not write the error to the error file since it is not a benchmarking error.
+#   echo "[-] Failed the machine benchmark:\n$OUTPUT"
+# fi
+# echo $OUTPUT >> $MACHINE_OUTPUT
 
-echo $storage_folder
 # If `-s` is used, run the storage benchmark.
 if [ ! -z "$storage_folder" ]; then
-  echo "I'm here"
-#   OUTPUT=$(
-#   $MANTA benchmark storage \
-#     --chain=$chain_spec \
-#     --state-version=1 \
-#     --warmups=10 \
-#     --base-path=$storage_folder \
-#     --weight-path=./$STORAGE_OUTPUT 2>&1
-#   )
-#   if [ $? -ne 0 ]; then
-#     echo "$OUTPUT" >> "$ERR_FILE"
-#     echo "[-] Failed the storage benchmark. Error written to $ERR_FILE; continuing..."
-#   fi
+  OUTPUT=$(
+  $MANTA benchmark storage \
+    --chain=$chain_spec \
+    --state-version=1 \
+    --warmups=10 \
+    --base-path=$storage_folder \
+    --weight-path=./$STORAGE_OUTPUT 2>&1
+  )
+  if [ $? -ne 0 ]; then
+    echo "$OUTPUT" >> "$ERR_FILE"
+    echo "[-] Failed the storage benchmark. Error written to $ERR_FILE; continuing..."
+  fi
 else
   unset storage_folder
 fi
