@@ -152,6 +152,9 @@ rm -f $MACHINE_OUTPUT
 # echo "[x] Machine benchmark:\n$OUTPUT"
 # echo $OUTPUT >> $MACHINE_OUTPUT
 
+echo $chain_spec
+echo $storage_folder
+
 # If `-s` is used, run the storage benchmark.
 if [ ! -z "$storage_folder" ]; then
   OUTPUT=$(
