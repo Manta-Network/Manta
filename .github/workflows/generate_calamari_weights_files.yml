@@ -94,6 +94,8 @@ jobs:
           cd $FULL_DB_FOLDER
           wget $SNAPSHOT_URL
           tar --version
+          ls -a
+          tar -x calamari.tar.gz
           tar -xf calamari.tar.gz
           cd ..
           ls -a
