@@ -946,7 +946,7 @@ jobs:
         uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: start
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
@@ -965,7 +965,7 @@ jobs:
       - uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
@@ -983,7 +983,7 @@ jobs:
         uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: start
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
@@ -1002,7 +1002,7 @@ jobs:
       - uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ needs.start-calamari-integration-tester.outputs.aws-region }}
@@ -1019,7 +1019,7 @@ jobs:
         uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: start
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
@@ -1038,7 +1038,7 @@ jobs:
       - uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ needs.start-dolphin-integration-tester.outputs.aws-region }}
@@ -1055,7 +1055,7 @@ jobs:
         uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: start
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
@@ -1074,7 +1074,7 @@ jobs:
       - uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ needs.start-runtime-upgrade-tester.outputs.aws-region }}
@@ -1146,7 +1146,7 @@ jobs:
         uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: start
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
@@ -1214,7 +1214,7 @@ jobs:
       - uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ needs.start-docker-image-tester.outputs.aws-region }}
