@@ -1,9 +1,9 @@
-name: Benchmark Calamari Runtime & Generate Weights Files
+name: Run All Benchmarks
 on:
   workflow_dispatch:
     inputs:
       chain_spec:
-        description: The chain spec to be used for execution benchmarks.
+        description: The chain spec to be used for all benchmarks.
         default: calamari-dev
         required: true
       snapshot_url:
