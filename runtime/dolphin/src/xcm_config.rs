@@ -20,13 +20,8 @@ use super::{
     ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, Treasury, XcmpQueue,
     MAXIMUM_BLOCK_WEIGHT,
 };
-
 use codec::{Decode, Encode};
-use scale_info::TypeInfo;
-
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-use sp_std::prelude::*;
-
 use frame_support::{
     match_types, parameter_types,
     traits::{Everything, Nothing},
@@ -41,14 +36,10 @@ use manta_primitives::{
         MultiNativeAsset,
     },
 };
-
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-
-// Polkadot imports
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
-
+use scale_info::TypeInfo;
+use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -58,6 +49,9 @@ use xcm_builder::{
     SignedAccountId32AsNative, SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
+
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
 
 parameter_types! {
     pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;

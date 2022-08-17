@@ -20,13 +20,9 @@ use super::{
     ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, Treasury, XcmpQueue,
     MAXIMUM_BLOCK_WEIGHT,
 };
-
 use codec::{Decode, Encode};
-use scale_info::TypeInfo;
-
+use core::marker::PhantomData;
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-use sp_std::prelude::*;
-
 use frame_support::{
     match_types, parameter_types,
     traits::{Everything, Nothing},
@@ -41,15 +37,11 @@ use manta_primitives::{
         MultiNativeAsset,
     },
 };
-
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-
 use orml_traits::location::AbsoluteReserveProvider;
-// Polkadot imports
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
-
+use scale_info::TypeInfo;
+use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -59,6 +51,9 @@ use xcm_builder::{
     SignedAccountId32AsNative, SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
+
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
 
 parameter_types! {
     pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
@@ -128,11 +123,11 @@ pub type XcmOriginToCallOrigin = (
 );
 
 parameter_types! {
-    // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
+    /// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
     pub UnitWeightCost: Weight = 1_000_000_000;
-    // Used in native traders
-    // This might be able to skipped.
-    // We have to use `here()` because of reanchoring logic
+    /// Used in native traders
+    /// This might be able to skipped.
+    /// We have to use `here()` because of reanchoring logic
     pub ParaTokenPerSecond: (xcm::v2::AssetId, u128) = (Concrete(MultiLocation::here()), 1_000_000_000);
     pub const MaxInstructions: u32 = 100;
 }
@@ -287,13 +282,16 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }
 
-// We wrap AssetId for XToken
+/// We wrap AssetId for XToken
 #[derive(Clone, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
 pub enum CurrencyId {
+    ///
     MantaCurrency(AssetId),
 }
 
-pub struct CurrencyIdtoMultiLocation<AssetXConverter>(sp_std::marker::PhantomData<AssetXConverter>);
+///
+pub struct CurrencyIdtoMultiLocation<AssetXConverter>(PhantomData<AssetXConverter>);
+
 impl<AssetXConverter> sp_runtime::traits::Convert<CurrencyId, Option<MultiLocation>>
     for CurrencyIdtoMultiLocation<AssetXConverter>
 where
@@ -324,9 +322,9 @@ impl orml_xtokens::Config for Runtime {
         CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type SelfLocation = SelfReserve;
-    // Take note that this pallet does not have the typical configurable WeightInfo.
-    // It uses the Weigher configuration to calculate weights for the user callable extrinsics on this chain,
-    // as well as weights for execution on the destination chain. Both based on the composed xcm messages.
+    /// Take note that this pallet does not have the typical configurable WeightInfo.
+    /// It uses the Weigher configuration to calculate weights for the user callable extrinsics on this chain,
+    /// as well as weights for execution on the destination chain. Both based on the composed xcm messages.
     type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
     type BaseXcmWeight = BaseXcmWeight;
     type LocationInverter = LocationInverter<Ancestry>;

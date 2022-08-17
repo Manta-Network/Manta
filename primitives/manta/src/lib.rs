@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//!
+//! Manta Primitives
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
@@ -26,4 +26,4 @@ extern crate alloc;
 pub mod assets;
 pub mod constants;
 pub mod types;
-// TODO: pub mod xcm;
+pub mod xcm;

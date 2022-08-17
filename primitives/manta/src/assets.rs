@@ -17,7 +17,7 @@
 //! Asset Utilities
 
 use crate::{
-    constants::DEFAULT_ASSET_ED,
+    constants::TEST_DEFAULT_ASSET_ED,
     types::{AssetId, Balance},
 };
 use alloc::vec::Vec;
@@ -186,7 +186,7 @@ impl Default for AssetRegistrarMetadata {
             decimals: 12,
             evm_address: None,
             is_frozen: false,
-            min_balance: DEFAULT_ASSET_ED,
+            min_balance: TEST_DEFAULT_ASSET_ED,
             is_sufficient: true,
         }
     }
@@ -441,7 +441,7 @@ pub type FungibleBalance<C, F> = <F as FungibleInspect<<C as Config>::AccountId>
 ///
 pub type FungiblesBalance<C, F> = <F as FungiblesInspect<<C as Config>::AccountId>>::Balance;
 
-/* TODO:
+/*
 
 /// Concrete Fungible Ledger Implementation
 pub struct ConcreteFungibleLedger<C, A, Native, NonNative> {
