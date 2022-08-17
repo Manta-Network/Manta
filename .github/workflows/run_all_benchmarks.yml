@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       chain_spec:
-        description: The chain spec to be used for all benchmarks.
+        description: The chain spec to be used for all benchmarks. Required.
         default: calamari-dev
         required: true
       snapshot_url:
@@ -20,7 +20,7 @@ env:
   SNAPSHOT_URL: ${{github.event.inputs.snapshot_url}}
   FULL_DB_FOLDER: full-db
 jobs:
-  build-benchmark-binary:
+  run-benchmarks:
     needs: start-node-builder-current
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     steps:
@@ -138,7 +138,7 @@ jobs:
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-node-builder-current:
-    needs: [build-benchmark-binary, start-node-builder-current]
+    needs: [run-benchmarks, start-node-builder-current]
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
