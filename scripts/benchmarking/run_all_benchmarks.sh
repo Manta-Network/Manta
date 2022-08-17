@@ -154,11 +154,10 @@ if [ $? -ne 0 ]; then
 fi
 echo $OUTPUT >> $MACHINE_OUTPUT
 
-echo "$storage_folder"
+echo $storage_folder
 # If `-s` is used, run the storage benchmark.
-if [ ! -z "$storage_folder" ]
+if [ ! -z "$storage_folder" ] then
   echo "I'm here"
-# then
 #   OUTPUT=$(
 #   $MANTA benchmark storage \
 #     --chain=$chain_spec \
@@ -171,6 +170,8 @@ if [ ! -z "$storage_folder" ]
 #     echo "$OUTPUT" >> "$ERR_FILE"
 #     echo "[-] Failed the storage benchmark. Error written to $ERR_FILE; continuing..."
 #   fi
+else
+  unset storage_folder
 fi
 
 # Check if the error file exists.
