@@ -152,9 +152,6 @@ OUTPUT=$(
 echo "[x] Machine benchmark:\n$OUTPUT"
 echo $OUTPUT >> $MACHINE_OUTPUT
 
-echo $chain_spec
-echo $storage_folder
-
 # If `-s` is used, run the storage benchmark.
 if [ ! -z "$storage_folder" ]; then
   OUTPUT=$(
@@ -172,8 +169,6 @@ if [ ! -z "$storage_folder" ]; then
 else
   unset storage_folder
 fi
-
-echo $OUTPUT
 
 # Check if the error file exists.
 if [ -f "$ERR_FILE" ]; then
