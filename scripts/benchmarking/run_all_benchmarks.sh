@@ -151,7 +151,6 @@ OUTPUT=$(
 if [ $? -ne 0 ]; then
   # Do not write the error to the error file since it is not a benchmarking error.
   echo "[-] Failed the machine benchmark:\n$OUTPUT"
-fi
 else
   echo $OUTPUT >> $MACHINE_OUTPUT
 fi
@@ -167,6 +166,7 @@ then
     --state-version=1 \
     --warmups=10 \
     --base-path=$storage_folder \
+    --allow-fail \
     --weight-path=./$STORAGE_OUTPUT 2>&1
   )
   if [ $? -ne 0 ]; then
