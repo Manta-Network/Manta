@@ -63,12 +63,14 @@ jobs:
         run: >
           echo '${{ steps.srtool-build.outputs.json }}' |
           jq > ${{ matrix.runtime.name }}-srtool-output.json
-      - name: upload srtool json
+      - if: always()
+        name: upload srtool json
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.runtime.name }}-srtool-json
           path: ${{ matrix.runtime.name }}-srtool-output.json
-      - name: upload runtime
+      - if: always()
+        name: upload runtime
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.runtime.name }}-runtime
@@ -134,17 +136,20 @@ jobs:
           RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose
       - name: stop sccache server
         run: sccache --stop-server || true
-      - name: upload
+      - if: always()
+        name: upload
         uses: actions/upload-artifact@v2
         with:
           name: manta
           path: target/production/manta
-      - name: upload
+      - if: always()
+        name: upload
         uses: actions/upload-artifact@v2
         with:
           name: config-for-integration-test
           path: .github/resources/config-for-integration-test.json
-      - name: upload
+      - if: always()
+        name: upload
         uses: actions/upload-artifact@v2
         with:
           name: config-for-runtime-upgrade-test
