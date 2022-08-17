@@ -146,7 +146,7 @@ rm -f $MACHINE_OUTPUT
 
 echo "[+] Benchmarking the machine..."
 OUTPUT=$(
-  $MANTA benchmark machine --chain=$chain_spec 2>&1
+  $MANTA benchmark machine --chain=$chain_spec --allow-fail 2>&1
 )
 if [ $? -ne 0 ]; then
   # Do not write the error to the error file since it is not a benchmarking error.
@@ -170,8 +170,6 @@ if [ ! -z "$storage_folder" ] then
 #     echo "$OUTPUT" >> "$ERR_FILE"
 #     echo "[-] Failed the storage benchmark. Error written to $ERR_FILE; continuing..."
 #   fi
-else
-  unset storage_folder
 fi
 
 # Check if the error file exists.
