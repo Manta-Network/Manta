@@ -19,7 +19,7 @@ use super::{
     types::{AssetId, Balance},
 };
 
-use sp_runtime::traits::{Convert, Zero};
+use sp_runtime::traits::{CheckedConversion, Convert, Zero};
 use sp_std::{marker::PhantomData, result};
 
 use frame_support::{
@@ -31,9 +31,10 @@ use frame_support::{
 use crate::assets::{AssetIdLocationGetter, UnitsToWeightRatio};
 use orml_traits::location::{RelativeReserveProvider, Reserve as OrmlReserve};
 use xcm::{
-    latest::{Error as XcmError, Result as XcmResult},
+    latest::{prelude::Concrete, Error as XcmError, Result as XcmResult},
     v1::{
         AssetId as xcmAssetId, Fungibility,
+        Fungibility::*,
         Junction::{AccountId32, Parachain},
         Junctions::*,
         MultiAsset, MultiLocation, NetworkId,
@@ -45,58 +46,24 @@ use xcm_executor::traits::{
     WeightTrader,
 };
 
-pub trait Reserve {
-    /// Returns assets reserve location.
-    fn reserve(&self) -> Option<MultiLocation>;
-}
-
-// Takes the chain part of a MultiAsset
-impl Reserve for MultiAsset {
-    fn reserve(&self) -> Option<MultiLocation> {
-        // We only care about concrete location now.
-        if let xcmAssetId::Concrete(location) = self.id.clone() {
-            let first_interior = location.first_interior();
-            let parents = location.parent_count();
-            match (parents, first_interior) {
-                (0, Some(Parachain(id))) => Some(MultiLocation::new(0, X1(Parachain(*id)))),
-                (1, Some(Parachain(id))) => Some(MultiLocation::new(1, X1(Parachain(*id)))),
-                (1, _) => Some(MultiLocation::parent()),
-                _ => None,
-            }
-        } else {
-            None
-        }
-    }
-}
-
-/// This struct offers uses RelativeReserveProvider to output relative views of multilocations
-/// However, additionally accepts a MultiLocation that aims at representing the chain part
-/// (parent: 1, Parachain(paraId)) of the absolute representation of our chain.
-/// If a token reserve matches against this absolute view, we return  Some(MultiLocation::here())
+/// This struct offers uses RelativeReserveProvider to output absolute views of multilocations.
+/// However, additionally accepts a MultiLocations in relative view (parent: 0, Here).
+/// In any case the absolute view of the multilocation is returned.
 /// This helps users by preventing errors when they try to transfer a token through xtokens
-/// to our chain (either inserting the relative or the absolute value).
+/// to and from our chain (either inserting the relative or the absolute value).
 pub struct AbsoluteAndRelativeReserve<AbsoluteMultiLocation>(PhantomData<AbsoluteMultiLocation>);
 impl<AbsoluteMultiLocation> OrmlReserve for AbsoluteAndRelativeReserve<AbsoluteMultiLocation>
 where
     AbsoluteMultiLocation: Get<MultiLocation>,
 {
     fn reserve(asset: &MultiAsset) -> Option<MultiLocation> {
-        RelativeReserveProvider::reserve(asset).map(|relative_reserve| {
-            if relative_reserve == AbsoluteMultiLocation::get() {
-                MultiLocation::here()
+        RelativeReserveProvider::reserve(asset).map(|reserve| {
+            if reserve == MultiLocation::here() {
+                AbsoluteMultiLocation::get()
             } else {
-                relative_reserve
+                reserve
             }
         })
-    }
-}
-
-/// A `FilterAssetLocation` implementation. Filters multi native assets whose
-/// reserve is same with `origin`.
-pub struct MultiNativeAsset;
-impl FilterAssetLocation for MultiNativeAsset {
-    fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
-        asset.reserve().map(|r| r == *origin).unwrap_or(false)
     }
 }
 
@@ -319,6 +286,27 @@ impl<
                 "take revenue failed matching fungible"
             ),
         }
+    }
+}
+
+/// Manta's `MatchFungible` implementation.
+/// It resolves the reanchoring logic as well, i.e. it recognize the relative view
+/// `here()` as `../parachain(id)`, by default.
+/// `T` should specify a `SelfLocation` in the form of absolute path to the
+/// relaychain and to the native asset.
+pub struct IsNativeConcreteRelativeOrAbsolute<T>(PhantomData<T>);
+impl<T, Balance> MatchesFungible<Balance> for IsNativeConcreteRelativeOrAbsolute<T>
+where
+    T: Get<MultiLocation>,
+    Balance: TryFrom<u128>,
+{
+    fn matches_fungible(a: &MultiAsset) -> Option<Balance> {
+        if let (Fungible(ref amount), Concrete(ref location)) = (&a.fun, &a.id) {
+            if location == &T::get() || MultiLocation::is_here(location) {
+                return CheckedConversion::checked_from(*amount);
+            }
+        }
+        None
     }
 }
 

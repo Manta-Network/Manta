@@ -40,6 +40,7 @@ use sp_runtime::{
 };
 use sp_std::marker::PhantomData;
 use xcm::{
+    prelude::{Parachain, X1},
     v1::{Junctions::Here, MultiLocation},
     VersionedMultiLocation,
 };
@@ -163,7 +164,7 @@ parameter_types! {
     pub const NativeAssetId: AssetId = 1;
     pub const StartNonNativeAssetId: AssetId = 8;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
-        VersionedMultiLocation::V1(MultiLocation::new(0, Here)));
+        VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
     pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
         name: b"Dolphin".to_vec(),
         symbol: b"DOL".to_vec(),

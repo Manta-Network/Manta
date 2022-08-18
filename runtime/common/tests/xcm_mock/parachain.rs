@@ -43,8 +43,13 @@ use manta_primitives::{
     },
     constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
     types::AssetId,
-    xcm::{AbsoluteAndRelativeReserve, FirstAssetTrader, MultiAssetAdapter, MultiNativeAsset},
+    xcm::{
+        AbsoluteAndRelativeReserve, FirstAssetTrader, IsNativeConcreteRelativeOrAbsolute,
+        MultiAssetAdapter,
+    },
 };
+use orml_traits::location::AbsoluteReserveProvider;
+use orml_xcm_support::MultiNativeAsset;
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain::primitives::{
@@ -54,9 +59,9 @@ use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, Ver
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, IsConcrete, LocationInverter,
-    ParentIsPreset, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SovereignSignedViaLocation, TakeWeightCredit,
+    EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, LocationInverter, ParentIsPreset,
+    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
@@ -198,7 +203,7 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
     // "default" implementation of converting a `MultiLocation` to an `AccountId`
     LocationToAccountId,
     // Used when the incoming asset is a fungible concrete asset matching the given location or name:
-    IsConcrete<RelativeSelfLocation>,
+    IsNativeConcreteRelativeOrAbsolute<AbsoluteSelfLocation>,
     // Used to match incoming assets which are not the native asset.
     ConvertedConcreteAssetId<
         AssetId,
@@ -266,8 +271,11 @@ impl Config for XcmExecutorConfig {
     // Defines how to Withdraw and Deposit instruction work
     type AssetTransactor = MultiAssetTransactor;
     type OriginConverter = XcmOriginToCallOrigin;
-    // Combinations of (Location, Asset) pairs which we trust as reserves.
-    type IsReserve = MultiNativeAsset;
+    // Filter to the reserve withdraw operations.
+    // This only applies to withdraw operations of foreign assets because
+    // pallet-xcm calls are filtered and xtokens does not allow sending xcm
+    // to the local chain, so we only need to support absolute views.
+    type IsReserve = MultiNativeAsset<AbsoluteReserveProvider>;
     type IsTeleporter = ();
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = Barrier;
@@ -275,7 +283,7 @@ impl Config for XcmExecutorConfig {
     // Trader is the means to purchasing weight credit for XCM execution.
     // We define two traders:
     // The first one will charge parachain's native currency, who's `MultiLocation`
-    // is defined in `RelativeSelfLocation`.
+    // is defined in `AbsoluteSelfLocation`.
     // The second one will charge the first asset in the MultiAssets with pre-defined rate
     // i.e. units_per_second in `AssetManager`
     type Trader = (
@@ -533,7 +541,7 @@ parameter_types! {
     pub const NativeAssetId: AssetId = 1;
     pub const StartNonNativeAssetId: AssetId = 8;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
-        VersionedMultiLocation::V1(RelativeSelfLocation::get()));
+        VersionedMultiLocation::V1(AbsoluteSelfLocation::get()));
     pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
         name: b"ParaAToken".to_vec(),
         symbol: b"ParaA".to_vec(),
@@ -612,7 +620,7 @@ impl orml_xtokens::Config for Runtime {
     type CurrencyIdConvert =
         CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
-    type SelfLocation = RelativeSelfLocation;
+    type SelfLocation = AbsoluteSelfLocation;
     type Weigher = xcm_builder::FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
     type BaseXcmWeight = BaseXcmWeight;
     type LocationInverter = LocationInverter<Ancestry>;

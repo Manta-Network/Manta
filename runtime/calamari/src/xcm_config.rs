@@ -37,8 +37,8 @@ use manta_primitives::{
     assets::{AssetIdLocationConvert, AssetLocation},
     types::{AccountId, AssetId, Balance},
     xcm::{
-        AbsoluteAndRelativeReserve, AccountIdToMultiLocation, FirstAssetTrader, MultiAssetAdapter,
-        MultiNativeAsset,
+        AbsoluteAndRelativeReserve, AccountIdToMultiLocation, FirstAssetTrader,
+        IsNativeConcreteRelativeOrAbsolute, MultiAssetAdapter,
     },
 };
 
@@ -49,14 +49,15 @@ pub use sp_runtime::BuildStorage;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 
+use orml_traits::location::AbsoluteReserveProvider;
+use orml_xcm_support::MultiNativeAsset;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, IsConcrete, LocationInverter,
-    ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SovereignSignedViaLocation,
-    TakeWeightCredit,
+    EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
+    ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
@@ -143,7 +144,7 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
     // "default" implementation of converting a `MultiLocation` to an `AccountId`
     LocationToAccountId,
     // Used when the incoming asset is a fungible concrete asset matching the given location or name:
-    IsConcrete<RelativeSelfLocation>,
+    IsNativeConcreteRelativeOrAbsolute<AbsoluteSelfLocation>,
     // Used to match incoming assets which are not the native asset.
     ConvertedConcreteAssetId<
         AssetId,
@@ -209,8 +210,11 @@ impl Config for XcmExecutorConfig {
     // Defines how to Withdraw and Deposit instruction work
     type AssetTransactor = MultiAssetTransactor;
     type OriginConverter = XcmOriginToCallOrigin;
-    // Combinations of (Location, Asset) pairs which we trust as reserves.
-    type IsReserve = MultiNativeAsset;
+    // Filter to the reserve withdraw operations.
+    // This only applies to withdraw operations of foreign assets because
+    // pallet-xcm calls are filtered and xtokens does not allow sending xcm
+    // to the local chain, so we only need to support absolute views.
+    type IsReserve = MultiNativeAsset<AbsoluteReserveProvider>;
     type IsTeleporter = ();
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = Barrier;
@@ -218,7 +222,7 @@ impl Config for XcmExecutorConfig {
     // Trader is the means to purchasing weight credit for XCM execution.
     // We define two traders:
     // The first one will charge parachain's native currency, who's `MultiLocation`
-    // is defined in `RelativeSelfLocation`.
+    // is defined in `AbsoluteSelfLocation`.
     // The second one will charge the first asset in the MultiAssets with pre-defined rate
     // i.e. units_per_second in `AssetManager`
     type Trader = (
@@ -322,7 +326,7 @@ impl orml_xtokens::Config for Runtime {
     type CurrencyIdConvert =
         CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
-    type SelfLocation = RelativeSelfLocation;
+    type SelfLocation = AbsoluteSelfLocation;
     // Take note that this pallet does not have the typical configurable WeightInfo.
     // It uses the Weigher configuration to calculate weights for the user callable extrinsics on this chain,
     // as well as weights for execution on the destination chain. Both based on the composed xcm messages.

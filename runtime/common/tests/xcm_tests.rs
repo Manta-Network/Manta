@@ -25,7 +25,9 @@ use frame_support::{
     assert_err, assert_noop, assert_ok, weights::constants::WEIGHT_PER_SECOND, WeakBoundedVec,
 };
 use manta_primitives::assets::AssetLocation;
-use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
+use xcm::{
+    latest::prelude::*, v2::Response, VersionedMultiAsset, VersionedMultiLocation, WrapVersion,
+};
 use xcm_executor::traits::{Convert, WeightBounds};
 use xcm_mock::{parachain::PALLET_ASSET_INDEX, *};
 use xcm_simulator::TestExt;
@@ -303,6 +305,82 @@ fn reserve_transfer_relaychain_to_parachain_a_then_back() {
             RelayBalances::free_balance(&ALICE),
             balance_before_sending + amount
         );
+    });
+}
+
+#[test]
+fn send_para_a_native_asset_by_relative_view_to_para_b() {
+    MockNet::reset();
+
+    let para_a_source_location_relative = create_asset_location(0, PARA_A_ID);
+    let para_a_source_location_absolute = create_asset_location(1, PARA_A_ID);
+    let para_b_source_location_relative = create_asset_location(0, PARA_B_ID);
+    let para_b_source_location_absolute = create_asset_location(1, PARA_B_ID);
+
+    let amount = 100_000_000_000_000;
+    let weight = weight_of_four_xcm_instructions_on_para();
+
+    let para_a_asset_metadata =
+        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, false);
+    let para_b_asset_metadata =
+        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, false);
+
+    let _ = register_assets_on_parachain::<ParaA>(
+        &para_a_source_location_relative,
+        &para_a_asset_metadata,
+        Some(0u128),
+        None,
+    );
+    let _ = register_assets_on_parachain::<ParaA>(
+        &para_b_source_location_absolute,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
+
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_b_source_location_relative,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
+    let a_asset_id_on_b = register_assets_on_parachain::<ParaB>(
+        &para_a_source_location_absolute,
+        &para_a_asset_metadata,
+        Some(0u128),
+        None,
+    );
+
+    let dest = MultiLocation {
+        parents: 1,
+        interior: X2(
+            Parachain(2),
+            AccountId32 {
+                network: NetworkId::Any,
+                id: ALICE.into(),
+            },
+        ),
+    };
+
+    ParaA::execute_with(|| {
+        assert_ok!(parachain::XTokens::transfer_multiasset(
+            parachain::Origin::signed(ALICE),
+            Box::new(VersionedMultiAsset::V1(MultiAsset {
+                id: Concrete(MultiLocation {
+                    parents: 0,
+                    interior: Here,
+                }),
+                fun: Fungible(amount),
+            })),
+            Box::new(VersionedMultiLocation::V1(dest)),
+            weight
+        ));
+    });
+
+    // Make sure B received the token
+    ParaB::execute_with(|| {
+        // free execution, full amount received
+        assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), amount);
     });
 }
 
