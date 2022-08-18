@@ -44,71 +44,64 @@ use sp_runtime::{
 
 const LOG_TARGET: &str = "aura-nimbus-consensus";
 
-struct AuraOrNimbusVerifier<C, Block: BlockT, CIDP_AURA: CreateInherentDataProviders<Block,ExtraArgs>, CIDP_NIMBUS: CreateInherentDataProviders<Block,ExtraArgs>> {
-    auraVerifier: sc_consensus_aura::AuraVerifier<C, <AuraId as AppKey>::Pair, NeverCanAuthor, CIDP_AURA>,
+// struct nimCidp<Block, ExtraArgs>;
+
+// #[async_trait::async_trait]
+// impl<Block, ExtraArgs> CreateInherentDataProviders<Block, ExtraArgs> for nimCidp<Block, ExtraArgs>
+// where
+//  Block: sp_runtime::traits::Hash
+// {
+// 	async fn create_inherent_data_providers(
+// 		&self,
+// 		_parent: Block::Hash,
+//         _extra_args: ExtraArgs,
+// 	) -> Result<Self::InherentDataProviders, Box<dyn std::error::Error + Send + Sync>>
+//     {
+//             let time = sp_timestamp::InherentDataProvider::from_system_time();
+//             Ok((time,))
+//     }
+// }
+
+struct AuraOrNimbusVerifier<C, Block: BlockT, CIDP_NIMBUS> {
     nimbusVerifier: nimbus_consensus::Verifier<C, Block, CIDP_NIMBUS>,
 }
-impl<C, Block, CIDP_AURA, CIDP_NIMBUS> AuraOrNimbusVerifier<C, Block, CIDP_AURA, CIDP_NIMBUS>
+impl<C, Block, CIDP_NIMBUS> AuraOrNimbusVerifier<C, Block, CIDP_NIMBUS>
 where
     Block: BlockT,
-    CIDP_AURA: CreateInherentDataProviders<Block, ()>, // TODO: Get rid of CIDP
-	CIDP_AURA::InherentDataProviders: InherentDataProviderExt + Send,
-    CIDP_NIMBUS: CreateInherentDataProviders<Block, ()>, // TODO: Get rid of CIDP
+    // CIDP_NIMBUS: CreateInherentDataProviders<Block, ()>, // TODO: Get rid of CIDP
 {
     pub fn new(
         client: Arc<C>,
+        create_inherent_data_providers_nimbus: CIDP_NIMBUS,
         telemetry: Option<TelemetryHandle>,
     ) -> Self
     where
         C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
-        <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block> + sp_consensus_aura::AuraApi<Block, AuraId>,
-        // Aura Traits
-        C: sc_client_api::UsageProvider<Block> + sc_client_api::AuxStore
+        <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
+        CIDP_NIMBUS: CreateInherentDataProviders<Block, ()> + 'static,
     {
-        let create_aura_inherent : CIDP_AURA = move |_, _| async {
-            let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-            let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client).unwrap();
-            let slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-                *timestamp,
-                slot_duration,
-            );
-            Ok((timestamp, slot))
-        };
-        let create_nimbus_inherent : CIDP_NIMBUS = move |_, _| async move {
-            let time = sp_timestamp::InherentDataProvider::from_system_time();
-            Ok((time,))
-        };
+        // let create_nimbus_inherent: dyn CreateInherentDataProviders<Block, ()> = move |_, _| async move {
+        //     let time = sp_timestamp::InherentDataProvider::from_system_time();
+        //     Ok((time,))
+        // };
         Self{
-            auraVerifier: sc_consensus_aura::build_verifier(BuildVerifierParams {
+            nimbusVerifier: nimbus_consensus::build_verifier(nimbus_consensus::BuildVerifierParams{
                 client: client.clone(),
-                create_inherent_data_providers: create_aura_inherent,
-                // NOTE: We only support verification of historic aura blocks, not new block proposals using aura
-                can_author_with: NeverCanAuthor {},
-                check_for_equivocation: sc_consensus_aura::CheckForEquivocation::No,
-                telemetry,
+                // create_inherent_data_providers: create_nimbus_inherent,
+                // create_inherent_data_providers: nimCidp<Block,()>{},
+                create_inherent_data_providers: create_inherent_data_providers_nimbus,
+                _marker: PhantomData::<Block> {}
             }),
-            nimbusVerifier: nimbus_consensus::Verifier {
-                client: client.clone(),
-                create_inherent_data_providers: create_nimbus_inherent,
-                _marker: PhantomData::<Block> {},
-            },
         }
     }
 }
 
 #[async_trait::async_trait]
-impl<C, Block, CIDP_AURA, CIDP_NIMBUS> VerifierT<Block> for AuraOrNimbusVerifier<C, Block, CIDP_AURA, CIDP_NIMBUS>
+impl<C, Block, CIDP_NIMBUS> VerifierT<Block> for AuraOrNimbusVerifier<C, Block, CIDP_NIMBUS>
 where
     Block: BlockT,
     C: ProvideRuntimeApi<Block> + Send + Sync,
     <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
-    // Aura Traits
-    C: sc_client_api::AuxStore,
-    C: sc_client_api::BlockOf,
-    <C as sp_api::ProvideRuntimeApi<Block>>::Api: sp_consensus_aura::AuraApi<Block, AuraId>,
-    sp_consensus_aura::sr25519::AuthorityPair: sp_application_crypto::Pair,
-    CIDP_AURA: CreateInherentDataProviders<Block, ()>, // TODO: Get rid of CIDP
-	CIDP_AURA::InherentDataProviders: InherentDataProviderExt + Send,
     CIDP_NIMBUS: CreateInherentDataProviders<Block, ()>, // TODO: Get rid of CIDP
 {
     async fn verify(
@@ -130,13 +123,9 @@ where
             .expect("Block should have at least one digest/seal on it");
 
         // delegate to Aura or nimbus verifiers
-        if seal.seal_try_to(&NIMBUS_ENGINE_ID).is_some() {
+        // if seal.seal_try_to::<dyn nimbus_primitives::CompatibleDigestItem>(&NIMBUS_ENGINE_ID).is_some() {
+        if nimbus_primitives::CompatibleDigestItem::as_nimbus_seal(seal).is_some() {
             self.nimbusVerifier
-                .verify(block_params)
-                .map_err(Into::into)
-                .await
-        } else if seal.seal_try_to(&AURA_ENGINE_ID).is_some() {
-            self.auraVerifier
                 .verify(block_params)
                 .map_err(Into::into)
                 .await
@@ -158,12 +147,16 @@ where
     I::Transaction: Send,
     C::Api: BlockBuilderApi<Block>,
     C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
-    C: HeaderBackend<Block> + sc_client_api::BlockOf + sc_client_api::AuxStore + sc_client_api::UsageProvider<Block>,
-    // <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block> + AuraApi<Block, AuraId> + ApiExt<Block>,
-    <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block> + AuraApi<Block, AuraId>,
-    // <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block> + AuraApi<Block, <AuraId as AppKey> as Pair>,
+    C: HeaderBackend<Block>,
+    <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
 {
-    let verifier = AuraOrNimbusVerifier::new(client.clone(), telemetry);
+    let verifier = AuraOrNimbusVerifier::new(client.clone(),
+                    move |_, _| async move {
+                    let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+                    Ok((time,))
+                },
+        telemetry);
     Ok(BasicQueue::new(
         verifier,
         Box::new(block_import),
