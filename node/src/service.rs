@@ -46,6 +46,7 @@ use sp_session::SessionKeys;
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
+use session_key_primitives::AuraId;
 
 #[cfg(not(feature = "runtime-benchmarks"))]
 type HostFunctions = sp_io::SubstrateHostFunctions;
@@ -122,6 +123,7 @@ where
         + sp_api::Metadata<Block>
         + SessionKeys<Block>
         + ApiExt<Block, StateBackend = StateBackend>
+        + sp_consensus_aura::AuraApi<Block, AuraId>
         + OffchainWorkerApi<Block>
         + sp_block_builder::BlockBuilder<Block>,
     StateBackend: sp_api::StateBackend<BlakeTwo256>,
@@ -175,7 +177,7 @@ where
         },
         &task_manager.spawn_essential_handle(),
         config.prometheus_registry(),
-        telemetry,
+        telemetry.as_ref().map(|telemetry| telemetry.handle()),
     )?;
 
     Ok(PartialComponents {
