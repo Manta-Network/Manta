@@ -52,8 +52,8 @@ parachain-info = { git = 'https://github.com/paritytech/cumulus.git', branch = "
 
 # Orml dependencies
 orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.26" }
-orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.26" }
 orml-xcm-support = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.26" }
+orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.26" }
 
 # Self dependencies
 pallet-asset-manager = { path = '../../pallets/asset-manager' }

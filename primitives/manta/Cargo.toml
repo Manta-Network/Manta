@@ -55,5 +55,5 @@ std = [
   'xcm-executor/std',
   'xcm-builder/std',
   'xcm/std',
-  'orml-traits/std'
+  'orml-traits/std',
 ]
