@@ -175,9 +175,9 @@ where
         },
     &task_manager.spawn_essential_handle(),
     config.prometheus_registry(),
-    Some(telemetry_worker_handle)
+    telemetry
     )?;
-    
+
 
     Ok(PartialComponents {
         backend,

@@ -52,34 +52,32 @@ use cumulus_relay_chain_interface::RelayChainInterface;
 use sc_service::TaskManager;
 use sc_telemetry::TelemetryHandle;
 use substrate_prometheus_endpoint::Registry;
-use crate::service_aura::Client;
 use sc_consensus::DefaultImportQueue;
 use codec::Encode;
 use codec::Decode;
 use sp_core::Pair;
 use sp_api::ApiExt;
 use session_key_primitives::aura::AuraId;
-// use sc_consensus_aura::AuthorityId;
 use sp_consensus_aura::AuraApi;
 use sc_consensus::ImportResult;
 use codec::alloc::collections::HashMap;
 use nimbus_primitives::NimbusApi;
 use core::fmt::Debug;
 use sc_consensus::BlockCheckParams;
-
-type AuthorityId<P> = AuraId;
+use cumulus_client_consensus_common::ParachainBlockImport;
+use futures::TryFutureExt;
 
 const LOG_TARGET: &str = "aura-nimbus-consensus";
 
-/// A block-import handler that selects aura or nimbus import dynamically.
-pub struct AuraOrNimbusBlockImport<Block: BlockT, C, I: BlockImport<Block>, P> {
+/// A block-import handler that selects aura or nimbus import dynamically
+pub struct AuraOrNimbusBlockImport<Block: BlockT, C, I: BlockImport<Block>> {
     inner_aura: I,
     inner_nimbus: I,
     client: Arc<C>,
-    _phantom: PhantomData<(Block, P)>,
+    _phantom: PhantomData<(Block, AuraId)>,
 }
 
-impl<Block: BlockT, C, I: Clone + BlockImport<Block>, P> Clone for AuraOrNimbusBlockImport<Block, C, I, P> {
+impl<Block: BlockT, C, I: Clone + BlockImport<Block>> Clone for AuraOrNimbusBlockImport<Block, C, I> {
     fn clone(&self) -> Self {
         AuraOrNimbusBlockImport {
             inner_aura: self.inner_aura.clone(),
@@ -90,7 +88,7 @@ impl<Block: BlockT, C, I: Clone + BlockImport<Block>, P> Clone for AuraOrNimbusB
     }
 }
 
-impl<Block: BlockT, C, I: BlockImport<Block>, P> AuraOrNimbusBlockImport<Block, C, I, P> {
+impl<Block: BlockT, C, I: BlockImport<Block>> AuraOrNimbusBlockImport<Block, C, I> {
     /// New aura block import.
     pub fn new(
         inner_aura: I,
@@ -106,13 +104,10 @@ impl<Block: BlockT, C, I: BlockImport<Block>, P> AuraOrNimbusBlockImport<Block, 
     }
 }
 
-impl<Block: BlockT, C, I, P> BlockImport<Block> for AuraOrNimbusBlockImport<Block, C, I, P> where
+impl<Block: BlockT, C, I> BlockImport<Block> for AuraOrNimbusBlockImport<Block, C, I> where
     I: BlockImport<Block, Transaction = sp_api::TransactionFor<C, Block>> + Send + Sync,
     I::Error: Into<ConsensusError>,
     C: HeaderBackend<Block> + ProvideRuntimeApi<Block>,
-    P: Pair + Send + Sync + 'static,
-    P::Public: Clone + Eq + Send + Sync + Hash + Debug + Encode + Decode,
-    P::Signature: Encode + Decode,
 {
     type Error = ConsensusError;
     type Transaction = sp_api::TransactionFor<C, Block>;
@@ -121,13 +116,13 @@ impl<Block: BlockT, C, I, P> BlockImport<Block> for AuraOrNimbusBlockImport<Bloc
         &mut self,
         block: BlockCheckParams<Block>,
     ) -> Result<ImportResult, Self::Error> {
-
-        if self.client.runtime_api().has_api::<dyn AuraApi<Block, AuraId>>(block).unwrap_or(false) {
+		let at = BlockId::hash(block.hash());
+        if self.client.runtime_api().has_api::<dyn AuraApi<Block, AuraId>>(at).unwrap_or(false) {
             self.inner_aura.check_block(block).map_err(Into::into)
-        } else if self.client.runtime_api().has_api::<dyn NimbusApi<Block>>(block).unwrap_or(false) {
+        } else if self.client.runtime_api().has_api::<dyn NimbusApi<Block>>(at).unwrap_or(false) {
             self.inner_nimbus.check_block(block).map_err(Into::into)
         } else {
-            Err("No supported consensus mechanism found in block {}",block)
+            sp_consensus::Error::ClientImport("No aura or nimbus support in runtime".to_string())
         }
     }
 
@@ -136,25 +131,31 @@ impl<Block: BlockT, C, I, P> BlockImport<Block> for AuraOrNimbusBlockImport<Bloc
         block: BlockImportParams<Block, Self::Transaction>,
         new_cache: HashMap<CacheKeyId, Vec<u8>>,
     ) -> Result<ImportResult, Self::Error> {
-        if self.client.runtime_api().has_api::<dyn AuraApi<Block, AuraId>>(&block).unwrap_or(false) {
+        let at = BlockId::hash(block.header.hash())
+        if self.client.runtime_api().has_api::<dyn AuraApi<Block, AuraId>>(at).unwrap_or(false) {
             self.inner_aura.import_block(block, new_cache).map_err(Into::into)
-        } else if self.client.runtime_api().has_api::<dyn NimbusApi<Block>>(&block).unwrap_or(false) {
+        } else if self.client.runtime_api().has_api::<dyn NimbusApi<Block>>(at).unwrap_or(false) {
             self.inner_nimbus.import_block(block, new_cache).map_err(Into::into)
         } else {
-            Err("No supported consensus mechanism found in block {}",block)
+            sp_consensus::Error::ClientImport("No aura or nimbus seal in block".to_string())
         }
     }
 }
 
-struct AuraOrNimbusVerifier<Client, Block, CIDP> {
-    auraVerifier: sc_consensus_aura::AuraVerifier<Client, P, CAW, CIDP>,
-    nimbusVerifier: nimbus_consensus::Verifier<Client, Block, CIDP>,
+struct AuraOrNimbusVerifier<C, Block, CIDP> {
+    auraVerifier: sc_consensus_aura::AuraVerifier<C, AuraId, sp_consensus::NeverCanAuthor, CIDP>,
+    nimbusVerifier: nimbus_consensus::Verifier<C, Block, CIDP>,
 }
-impl<CIDP, Block> AuraOrNimbusVerifier<Client<RuntimeApi>, Block, CIDP> where
+impl<C, Block, CIDP> AuraOrNimbusVerifier<C, Block, CIDP>
+where
     Block: BlockT,
     CIDP: CreateInherentDataProviders<Block, ()>,
 {
-    pub fn new ( client : Client, create_inherent_data_providers: CIDP, telemetry: TelemetryHandle ){
+    pub fn new( client : C, create_inherent_data_providers: CIDP, telemetry: Option<TelemetryHandle> )
+    where
+        C: ProvideRuntimeApi<Block> + Clone + Send + Sync + 'static,
+        <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
+    {
         AuraOrNimbusVerifier{
             auraVerifier: sc_consensus_aura::build_verifier(
                 BuildVerifierParams {
@@ -166,7 +167,7 @@ impl<CIDP, Block> AuraOrNimbusVerifier<Client<RuntimeApi>, Block, CIDP> where
                     telemetry
                 }
             ),
-            nimbusVerifier: nimbus_consensus::import_queue::Verifier {
+            nimbusVerifier: nimbus_consensus::Verifier {
                 client:client.clone(),
                 create_inherent_data_providers: client.clone(),
                 _marker: PhantomData::<Block>{},
@@ -176,11 +177,11 @@ impl<CIDP, Block> AuraOrNimbusVerifier<Client<RuntimeApi>, Block, CIDP> where
 }
 
 #[async_trait::async_trait]
-impl<Client, Block, CIDP> VerifierT<Block> for AuraOrNimbusVerifier<Client, Block, CIDP>
+impl<C, Block, CIDP> VerifierT<Block> for AuraOrNimbusVerifier<C, Block, CIDP>
 where
     Block: BlockT,
-    Client: ProvideRuntimeApi<Block> + Send + Sync,
-    <Client as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
+    C: ProvideRuntimeApi<Block> + Send + Sync,
+    <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
     CIDP: CreateInherentDataProviders<Block, ()>,
 {
     async fn verify(
@@ -201,12 +202,15 @@ where
         // We assume the outermost digest item is the block seal ( we have no two-step consensus )
         let seal = block_params
             .header
+            .digest()
             .logs()
             .first()
             .expect("Block should have at least one digest on it");
 
-        let isNimbus = seal.into::<nimbus_primitives::CompatibleDigestItem>().as_nimbus_seal().is_ok();
-        let isAura = seal.into::<sp_consensus_aura::digests::CompatibleDigestItem>().as_aura_seal().is_ok();
+        // let isNimbus = seal.into::<nimbus_primitives::CompatibleDigestItem>().as_nimbus_seal().is_ok();
+        // let isAura = seal.into::<sp_consensus_aura::digests::CompatibleDigestItem>().as_aura_seal().is_ok();
+        let isNimbus = seal.into().as_nimbus_seal().is_ok();
+        let isAura = seal.into().as_aura_seal().is_ok();
 
         if !(isAura || isNimbus) {
             Err("NoSealFound")
@@ -214,44 +218,43 @@ where
 
         // delegate to Aura or nimbus verifiers
         if isNimbus {
-            self.nimbusVerifier.verify(block_params)
+            return self.nimbusVerifier.verify(block_params);
         }
         else {
-            self.auraVerifier.verify(block_params)
+            return self.auraVerifier.verify(block_params);
         }
     }
 }
 
-pub fn import_queue<B, I, C, P, S>(
-    block_import: I,
-    client: Arc<C>,
-    inherent_data_providers: sp_inherents::InherentDataProvider,
-    spawner: &S,
-    registry: Option<&Registry>,
+pub fn import_queue<C, Block: BlockT, I, CIDP>(
+	client: Arc<C>,
+	block_import: I,
+	create_inherent_data_providers: CIDP,
+	spawner: &impl sp_core::traits::SpawnEssentialNamed,
+	registry: Option<&substrate_prometheus_endpoint::Registry>,
     telemetry: Option<TelemetryHandle>,
-) -> Result<DefaultImportQueue<B, C>, sp_consensus::Error> where
-B: BlockT,
-C::Api: BlockBuilderApi<B> + AuraApi<B, AuthorityId<P>>,
-// C::Api: BlockBuilderApi<B> + AuraApi<B, AuthorityId<P>> + ApiExt<B, Error = sp_blockchain::Error>,
-C: 'static + ProvideRuntimeApi<B> + BlockOf + Send + Sync + AuxStore + HeaderBackend<B>,
-I: BlockImport<B, Error=ConsensusError, Transaction = sp_api::TransactionFor<C, B>> + Send + Sync + 'static,
-DigestItemFor<B>: CompatibleDigestItem<P>,
-P: Pair + Send + Sync + 'static,
-P::Public: Clone + Eq + Send + Sync + Hash + Debug + Encode + Decode,
-P::Signature: Encode + Decode,
-S: sp_core::traits::SpawnNamed,
+) -> ClientResult<BasicQueue<Block, I::Transaction>>
+where
+	I: BlockImport<Block, Error = ConsensusError> + Send + Sync + 'static,
+	I::Transaction: Send,
+	C::Api: BlockBuilderApi<Block>,
+	C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
+    C: HeaderBackend<Block> ,
+	// <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block> + AuraApi<Block, AuraId> + ApiExt<Block>,
+	<C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block> + AuraApi<Block, AuraId>,
+	CIDP: CreateInherentDataProviders<Block, ()> + 'static
 {
     let verifier = AuraOrNimbusVerifier::new(
-        client,
+        client.clone(),
         inherent_data_providers,
         telemetry
     );
 
     let auraBlockImport = Arc::new(futures::lock::Mutex::new(ParachainBlockImport::new(block_import))); // see cumulus/client/consensus/aura/src/import_queue.rs:90
-    let nimbusBlockImport = NimbusBlockImport::new(block_import, true);// true = always parachain mode
+    let nimbusBlockImport = NimbusBlockImport::new(block_import, true); // true = always parachain mode
     Ok(BasicQueue::new(
         verifier,
-        Box::new(AuraOrNimbusBlockImport::new(auraBlockImport,nimbusBlockImport)),
+        Box::new(AuraOrNimbusBlockImport::new(auraBlockImport,nimbusBlockImport,client) as I::Transaction),
         None,
         spawner,
         registry,
