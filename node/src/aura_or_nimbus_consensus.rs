@@ -46,7 +46,7 @@ use sp_runtime::{
 
 const LOG_TARGET: &str = "aura-nimbus-consensus";
 
-/// A block-import handler that selects aura or nimbus import dynamically
+/// A block-import that selects aura or nimbus import dynamically
 pub struct AuraOrNimbusBlockImport<Block: BlockT, C, I: BlockImport<Block>> {
     inner_aura: I,
     inner_nimbus: I,
@@ -58,7 +58,7 @@ impl<Block: BlockT, C, I: Clone + BlockImport<Block>> Clone
     for AuraOrNimbusBlockImport<Block, C, I>
 {
     fn clone(&self) -> Self {
-        AuraOrNimbusBlockImport {
+        Self {
             inner_aura: self.inner_aura.clone(),
             inner_nimbus: self.inner_nimbus.clone(),
             client: self.client.clone(),
@@ -68,7 +68,7 @@ impl<Block: BlockT, C, I: Clone + BlockImport<Block>> Clone
 }
 
 impl<Block: BlockT, C, I: BlockImport<Block>> AuraOrNimbusBlockImport<Block, C, I> {
-    /// New aura block import.
+    /// New block import.
     pub fn new(inner_aura: I, inner_nimbus: I, client: Arc<C>) -> Self {
         Self {
             inner_aura,
@@ -169,7 +169,7 @@ where
     {
         let aura_inherent = Box::new(|_, _| async {
             let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-            let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client).unwrap();
+            let slot_duration = cumulus_client_consensus_aura::slot_duration(client).unwrap();
             let slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
                 *timestamp,
                 slot_duration,
@@ -179,8 +179,8 @@ where
         let nimbus_inherent = move |_, _| async move {
             let time = sp_timestamp::InherentDataProvider::from_system_time();
             Ok((time,))
-        }
-        Self {
+        };
+        Self{
             auraVerifier: sc_consensus_aura::build_verifier(BuildVerifierParams {
                 client: client.clone(),
                 aura_inherent,
@@ -269,15 +269,12 @@ where
     let verifier =
         AuraOrNimbusVerifier::new(client.clone(), create_inherent_data_providers, telemetry);
 
-    let auraBlockImport = Arc::new(futures::lock::Mutex::new(ParachainBlockImport::new(
-        block_import,
-    ))); // see cumulus/client/consensus/aura/src/import_queue.rs:90
+    let auraBlockImport = ParachainBlockImport::new(block_import); // see cumulus/client/consensus/aura/src/import_queue.rs:90
     let nimbusBlockImport = NimbusBlockImport::new(block_import, true); // true = always parachain mode
     Ok(BasicQueue::new(
         verifier,
         Box::new(
             AuraOrNimbusBlockImport::new(auraBlockImport, nimbusBlockImport, client)
-                as I::Transaction,
         ),
         None,
         spawner,
