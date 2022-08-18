@@ -46,7 +46,7 @@ use xcm_executor::traits::{
 /// However, additionally accepts a MultiLocations in relative view (parent: 0, Here).
 /// In any case the absolute view of the multilocation is returned.
 /// This helps users by preventing errors when they try to transfer a token through xtokens
-/// to and from our chain (either inserting the relative or the absolute value).
+/// from our chain (either inserting the relative or the absolute value).
 pub struct AbsoluteAndRelativeReserve<AbsoluteMultiLocation>(PhantomData<AbsoluteMultiLocation>);
 impl<AbsoluteMultiLocation> OrmlReserve for AbsoluteAndRelativeReserve<AbsoluteMultiLocation>
 where
