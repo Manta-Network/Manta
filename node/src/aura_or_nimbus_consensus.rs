@@ -159,7 +159,7 @@ where
         telemetry);
     Ok(BasicQueue::new(
         verifier,
-        Box::new(cumulus_client_consensus_common::ParachainBlockImport::new(block_import)),
+        Box::new(cumulus_client_consensus_common::ParachainBlockImport::new(block_import)), // TODO: Check if this sets non-longest fork choice rule
         None,
         spawner,
         registry,
