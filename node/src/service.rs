@@ -166,18 +166,17 @@ where
     );
 
     let import_queue = crate::aura_or_nimbus_consensus::import_queue(
-    // single step block import pipeline, after nimbus/aura seal, import block into client
-    client.clone(),
-    client.clone(),
-    move |_, _| async move {
+        // single step block import pipeline, after nimbus/aura seal, import block into client
+        client.clone(),
+        client.clone(),
+        move |_, _| async move {
             let time = sp_timestamp::InherentDataProvider::from_system_time();
             Ok((time,))
         },
-    &task_manager.spawn_essential_handle(),
-    config.prometheus_registry(),
-    telemetry
+        &task_manager.spawn_essential_handle(),
+        config.prometheus_registry(),
+        telemetry,
     )?;
-
 
     Ok(PartialComponents {
         backend,
