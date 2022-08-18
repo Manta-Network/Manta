@@ -37,6 +37,7 @@ use sc_network::NetworkService;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_service::{Configuration, Error, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
+use session_key_primitives::AuraId;
 use session_key_primitives::NimbusId;
 use sp_api::{ApiExt, ConstructRuntimeApi};
 use sp_keystore::SyncCryptoStorePtr;
@@ -46,7 +47,6 @@ use sp_session::SessionKeys;
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
-use session_key_primitives::AuraId;
 
 #[cfg(not(feature = "runtime-benchmarks"))]
 type HostFunctions = sp_io::SubstrateHostFunctions;
