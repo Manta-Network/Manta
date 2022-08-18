@@ -17,7 +17,7 @@
 //! Implements a consensus that can propose blocks with Nimbus and verify with both Nimbus and Aura
 
 use std::{marker::PhantomData, sync::Arc};
-
+use sp_runtime::app_crypto::AppKey;
 use codec::alloc::collections::HashMap;
 use sp_consensus::NeverCanAuthor;
 use cumulus_client_consensus_common::ParachainBlockImport;
@@ -153,7 +153,7 @@ where
 }
 
 struct AuraOrNimbusVerifier<C, Block, CIDP> {
-    auraVerifier: sc_consensus_aura::AuraVerifier<C, AuraId, NeverCanAuthor, CIDP>,
+    auraVerifier: sc_consensus_aura::AuraVerifier<C, <AuraId as AppKey>::Pair, NeverCanAuthor, CIDP>,
     nimbusVerifier: nimbus_consensus::Verifier<C, Block, CIDP>,
 }
 impl<C, Block, CIDP> AuraOrNimbusVerifier<C, Block, CIDP>
@@ -241,11 +241,10 @@ where
                 .map_err(Into::into)
                 .await
         } else if seal.seal_try_to(&AURA_ENGINE_ID).is_some() {
-            sc_consensus_aura::AuraVerifier::<C, AuraId, NeverCanAuthor, CIDP>::verify(block_params)
-            // self.auraVerifier
-            //     .verify(block_params)
-            //     .map_err(Into::into)
-            //     .await
+            self.auraVerifier
+                .verify(block_params)
+                .map_err(Into::into)
+                .await
         } else {
             Err("NoSealFound".to_string())
         }
