@@ -167,10 +167,10 @@ where
         telemetry: Option<TelemetryHandle>,
     ) -> Self
     where
-        C: ProvideRuntimeApi<Block> + Clone + Send + Sync + 'static,
-        <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block>,
+        C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
+        <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block> + sp_consensus_aura::AuraApi<Block, AuraId>,
         // Aura Traits
-        C: sc_client_api::UsageProvider<Block>
+        C: sc_client_api::UsageProvider<Block> + sc_client_api::AuxStore
     {
         let aura_inherent = |_, _| async {
             let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
@@ -241,13 +241,13 @@ where
                 .map_err(Into::into)
                 .await
         } else if seal.seal_try_to(&AURA_ENGINE_ID).is_some() {
-            AuraVerifier::<C, AuraId, NeverCanAuthor, CIDP>::verify(block_params)
+            sc_consensus_aura::AuraVerifier::<C, AuraId, NeverCanAuthor, CIDP>::verify(block_params)
             // self.auraVerifier
             //     .verify(block_params)
             //     .map_err(Into::into)
             //     .await
         } else {
-            Err("NoSealFound".to_string());
+            Err("NoSealFound".to_string())
         }
     }
 }
@@ -265,21 +265,20 @@ where
     I::Transaction: Send,
     C::Api: BlockBuilderApi<Block>,
     C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
-    C: HeaderBackend<Block> + sc_client_api::BlockOf + sc_client_api::AuxStore,
+    C: HeaderBackend<Block> + sc_client_api::BlockOf + sc_client_api::AuxStore + sc_client_api::UsageProvider<Block>,
     // <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block> + AuraApi<Block, AuraId> + ApiExt<Block>,
     <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block> + AuraApi<Block, AuraId>,
     // <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block> + AuraApi<Block, <AuraId as AppKey> as Pair>,
     CIDP: CreateInherentDataProviders<Block, ()> + 'static,
 {
-    let verifier =
-        AuraOrNimbusVerifier::new(client.clone(), create_inherent_data_providers, telemetry);
+    let verifier = AuraOrNimbusVerifier::new(client.clone(), create_inherent_data_providers, telemetry);
 
-    let auraBlockImport = ParachainBlockImport::new(block_import); // see cumulus/client/consensus/aura/src/import_queue.rs:90
-    let nimbusBlockImport = NimbusBlockImport::new(block_import, true); // true = always parachain mode
+    let auraBlockImport: Box<dyn BlockImport<Block, Error = I::Error, Transaction = I::Transaction> + Send + Sync> = Box::new(ParachainBlockImport::new(block_import)); // see cumulus/client/consensus/aura/src/import_queue.rs:90
+    let nimbusBlockImport: Box<dyn BlockImport<Block, Error = I::Error, Transaction = I::Transaction> + Send + Sync> = Box::new(NimbusBlockImport::new(block_import, true)); // true = always parachain mode
     Ok(BasicQueue::new(
         verifier,
         Box::new(
-            AuraOrNimbusBlockImport::new(auraBlockImport as BlockImport<Block>, nimbusBlockImport as BlockImport<Block>, client)
+            AuraOrNimbusBlockImport::new(auraBlockImport, nimbusBlockImport, client)
         ),
         None,
         spawner,

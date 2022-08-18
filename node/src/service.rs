@@ -243,6 +243,7 @@ where
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + nimbus_primitives::AuthorFilterAPI<Block, NimbusId>
         + nimbus_primitives::NimbusApi<Block>
+        + sp_consensus_aura::AuraApi<Block, AuraId>
         + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     StateBackend: sp_api::StateBackend<BlakeTwo256>,
     FullRpc: Fn(
@@ -406,6 +407,7 @@ where
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + nimbus_primitives::AuthorFilterAPI<Block, NimbusId>
         + nimbus_primitives::NimbusApi<Block>
+        + sp_consensus_aura::AuraApi<Block, AuraId>
         + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     StateBackend: sp_api::StateBackend<BlakeTwo256>,
     FullRpc: Fn(
