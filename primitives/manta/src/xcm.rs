@@ -33,17 +33,13 @@ use orml_traits::location::{RelativeReserveProvider, Reserve as OrmlReserve};
 use xcm::{
     latest::{prelude::Concrete, Error as XcmError, Result as XcmResult},
     v1::{
-        AssetId as xcmAssetId, Fungibility,
-        Fungibility::*,
-        Junction::{AccountId32, Parachain},
-        Junctions::*,
+        AssetId as xcmAssetId, Fungibility, Fungibility::*, Junction::AccountId32, Junctions::*,
         MultiAsset, MultiLocation, NetworkId,
     },
 };
 use xcm_builder::TakeRevenue;
 use xcm_executor::traits::{
-    Convert as XcmConvert, FilterAssetLocation, MatchesFungible, MatchesFungibles, TransactAsset,
-    WeightTrader,
+    Convert as XcmConvert, MatchesFungible, MatchesFungibles, TransactAsset, WeightTrader,
 };
 
 /// This struct offers uses RelativeReserveProvider to output absolute views of multilocations.

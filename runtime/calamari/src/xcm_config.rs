@@ -38,7 +38,7 @@ use manta_primitives::{
     types::{AccountId, AssetId, Balance},
     xcm::{
         AbsoluteAndRelativeReserve, AccountIdToMultiLocation, FirstAssetTrader,
-        IsNativeConcreteRelativeOrAbsolute, MultiAssetAdapter,
+        IsNativeConcreteAbsoluteAndRelative, MultiAssetAdapter,
     },
 };
 
@@ -144,7 +144,7 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
     // "default" implementation of converting a `MultiLocation` to an `AccountId`
     LocationToAccountId,
     // Used when the incoming asset is a fungible concrete asset matching the given location or name:
-    IsNativeConcreteRelativeOrAbsolute<AbsoluteSelfLocation>,
+    IsNativeConcreteAbsoluteAndRelative<AbsoluteSelfLocation>,
     // Used to match incoming assets which are not the native asset.
     ConvertedConcreteAssetId<
         AssetId,

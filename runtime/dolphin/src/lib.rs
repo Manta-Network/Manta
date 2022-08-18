@@ -215,12 +215,6 @@ impl Contains<Call> for BaseFilter {
                                 | pallet_democracy::Call::external_propose_majority {..})
             | Call::Treasury(_) // Treasury calls are filtered while it is accumulating funds.
             // Everything except transfer() is filtered out until it is practically needed:
-            | Call::XTokens(
-                                orml_xtokens::Call::transfer_with_fee {..}
-                                | orml_xtokens::Call::transfer_multiasset {..}
-                                | orml_xtokens::Call::transfer_multiasset_with_fee {..}
-                                | orml_xtokens::Call::transfer_multiassets {..})
-            // Everything except transfer() is filtered out until it is practically needed:
             | Call::XcmpQueue(_) | Call::PolkadotXcm(_) | Call::DmpQueue(_) => false,
 
             // Explicitly ALLOWED calls
@@ -265,7 +259,11 @@ impl Contains<Call> for BaseFilter {
                 | manta_collator_selection::Call::leave_intent{..})
             | Call::Balances(_)
             | Call::XTokens(orml_xtokens::Call::transfer {..}
-                | orml_xtokens::Call::transfer_multicurrencies  {..})
+                | orml_xtokens::Call::transfer_multicurrencies {..}
+                | orml_xtokens::Call::transfer_with_fee {..}
+                | orml_xtokens::Call::transfer_multiasset {..}
+                | orml_xtokens::Call::transfer_multiasset_with_fee {..}
+                | orml_xtokens::Call::transfer_multiassets {..})
             | Call::MantaPay(_)
             | Call::Preimage(_)
             | Call::Utility(_) => true,
