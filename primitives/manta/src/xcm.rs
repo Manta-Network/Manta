@@ -294,8 +294,8 @@ impl<
 /// `here()` as `../parachain(id)`, by default.
 /// `T` should specify a `SelfLocation` in the form of absolute path to the
 /// relaychain and to the native asset.
-pub struct IsNativeConcreteRelativeOrAbsolute<T>(PhantomData<T>);
-impl<T, Balance> MatchesFungible<Balance> for IsNativeConcreteRelativeOrAbsolute<T>
+pub struct IsNativeConcreteAbsoluteAndRelative<T>(PhantomData<T>);
+impl<T, Balance> MatchesFungible<Balance> for IsNativeConcreteAbsoluteAndRelative<T>
 where
     T: Get<MultiLocation>,
     Balance: TryFrom<u128>,
