@@ -126,6 +126,7 @@ where
     AssetIdInfoGetter: AssetIdLocationGetter<AssetLocation> + UnitsToWeightRatio,
     R: TakeRevenue,
 {
+    /* TODO remove:
     /// Builds a new default [`FirstAssetTrader`].
     #[inline]
     fn new() -> Self {
@@ -135,6 +136,7 @@ where
             __: PhantomData,
         }
     }
+    */
 
     /// Buys weight for XCM execution. We always return the [`TooExpensive`](Error::TooExpensive)
     /// error if this fails.
