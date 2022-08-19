@@ -41,8 +41,8 @@ use sp_runtime::app_crypto::AppKey;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use std::{marker::PhantomData, sync::Arc};
 
-use sc_consensus_aura::CompatibleDigestItem as AuraDigestItem;
 use nimbus_primitives::CompatibleDigestItem as NimbusDigestItem;
+use sc_consensus_aura::CompatibleDigestItem as AuraDigestItem;
 
 const LOG_TARGET: &str = "aura-nimbus-consensus";
 
@@ -93,9 +93,11 @@ impl<C, Block, CIDP_AURA, CIDP_NIMBUS> VerifierT<Block>
 where
     Block: BlockT,
     C: ProvideRuntimeApi<Block> + Send + Sync,
-    <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block> + sp_consensus_aura::AuraApi<Block, AuraId>,
+    <C as ProvideRuntimeApi<Block>>::Api:
+        BlockBuilderApi<Block> + sp_consensus_aura::AuraApi<Block, AuraId>,
     CIDP_AURA: CreateInherentDataProviders<Block, ()> + 'static,
-    <CIDP_AURA as CreateInherentDataProviders<Block, ()>>::InherentDataProviders: InherentDataProviderExt,
+    <CIDP_AURA as CreateInherentDataProviders<Block, ()>>::InherentDataProviders:
+        InherentDataProviderExt,
     CIDP_NIMBUS: CreateInherentDataProviders<Block, ()>,
     C: sc_client_api::AuxStore + sc_client_api::BlockOf,
 {
@@ -147,20 +149,24 @@ where
     C::Api: BlockBuilderApi<Block>,
     C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
     C: sc_client_api::AuxStore + sc_client_api::UsageProvider<Block>,
-    C: HeaderBackend<Block> +  sc_client_api::BlockOf,
-    <C as ProvideRuntimeApi<Block>>::Api: BlockBuilderApi<Block> + sp_consensus_aura::AuraApi<Block, AuraId>,
+    C: HeaderBackend<Block> + sc_client_api::BlockOf,
+    <C as ProvideRuntimeApi<Block>>::Api:
+        BlockBuilderApi<Block> + sp_consensus_aura::AuraApi<Block, AuraId>,
 {
     let verifier = AuraOrNimbusVerifier::new(
         client.clone(),
-        move |_, _| async {
+        move |_, _| {
             let client2 = client.clone();
-            let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-            let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
-            let slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-			                *timestamp,
-			                slot_duration,
-			            );
-            Ok((timestamp, slot))
+            async move {
+                let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+                let slot_duration =
+                    cumulus_client_consensus_aura::slot_duration(&*client2).unwrap();
+                let slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+                            *timestamp,
+                            slot_duration,
+                        );
+                Ok((timestamp, slot))
+            }
         },
         move |_, _| async move {
             let time = sp_timestamp::InherentDataProvider::from_system_time();
