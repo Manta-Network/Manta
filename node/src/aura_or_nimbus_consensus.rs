@@ -76,8 +76,8 @@ where
                 telemetry,
             }),
             nimbus_verifier: nimbus_consensus::Verifier::new(
-                    client,
-                    create_inherent_data_providers_nimbus,
+                client,
+                create_inherent_data_providers_nimbus,
             ),
         }
     }
@@ -128,7 +128,7 @@ where
                 .map_err(Into::into)
                 .await
         } else {
-                Err("NoSealFound".to_string())
+            Err("NoSealFound".to_string())
         }
     }
 }
