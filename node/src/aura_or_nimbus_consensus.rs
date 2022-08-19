@@ -14,8 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Implements a consensus that can  verify with both Nimbus and Aura
-//! NOTE: Nimbus is used for proposing exclusively
+//! Implements a consensus that can verify blocks with both Nimbus and Aura
+//! by adding a custom import_queue and Verifier that delegate based on
+//! what type of seal a block has
+//! NOTE: Does not change block *proposing*, set to Nimbus in service.rs
 
 use futures::TryFutureExt;
 use log::debug;
