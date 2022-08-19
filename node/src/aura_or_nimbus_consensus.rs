@@ -114,7 +114,7 @@ where
             .header
             .digest()
             .logs()
-            .first()
+            .last()
             .expect("Block should have at least one digest/seal on it");
 
         // delegate verification to Aura or Nimbus verifiers
@@ -131,7 +131,13 @@ where
                 .map_err(Into::into)
                 .await
         } else {
-            Err("NoSealFound".to_string())
+            // if block_params.header.number().is_zero(){
+            //     // NOTE: We assume the genesis block comes unsealed
+            //     info!(target: LOG_TARGET, "Skipping Seal Verification for Genesis Block");
+            //     Ok((block_params,None))
+            // } else {
+                Err("NoSealFound".to_string())
+            // }
         }
     }
 }
