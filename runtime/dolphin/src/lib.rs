@@ -1048,20 +1048,6 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
     }
 }
 
-// struct<Runtime, Executive> AllExecutors (){
-//     type aura: cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
-//     type nimbus: pallet_author_inherent::BlockExecutor::<Runtime, Executive>
-// }
-
-// impl frame_support::traits::ExecuteBlock<Block> for AllExecutors {
-// 	fn execute_block(block: Block) {
-//         // if <v330
-//         aura.execute_block(block)
-//         // else >=v330
-// 		nimbus.execute_block(block);
-// 	}
-// }
-
 cumulus_pallet_parachain_system::register_validate_block! {
     Runtime = Runtime,
     BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
