@@ -25,8 +25,8 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use core::marker::PhantomData;
-use nimbus_primitives::AccountLookup;
 use manta_collator_selection::IdentityCollator;
+use nimbus_primitives::AccountLookup;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -44,7 +44,10 @@ use sp_version::RuntimeVersion;
 pub use frame_support::traits::Get;
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, NeverEnsureOrigin, PrivilegeCmp},
+    traits::{
+        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse,
+        NeverEnsureOrigin, PrivilegeCmp,
+    },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, Weight,
@@ -601,6 +604,100 @@ impl pallet_treasury::Config for Runtime {
     type MaxApprovals = ConstU32<100>;
     type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
     type SpendFunds = ();
+    // Expects an implementation of `EnsureOrigin` with a `Success` generic,
+    // which is the the maximum amount that this origin is allowed to spend at a time.
+    type SpendOrigin = NeverEnsureOrigin<Balance>;
+}
+
+impl pallet_aura_style_filter::Config for Runtime {
+    /// Nimbus filter pipeline (final) step 3:
+    /// Choose 1 collator from PotentialAuthors as eligible
+    /// for each slot in round-robin fashion
+    type PotentialAuthors = ParachainStaking;
+}
+
+parameter_types! {
+    /// Default fixed percent a collator takes off the top of due rewards
+    pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(20);
+    /// Default percent of inflation set aside for parachain bond every round
+    pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(30);
+}
+
+pub struct OnCollatorPayout;
+impl pallet_parachain_staking::OnCollatorPayout<AccountId, Balance> for OnCollatorPayout {
+    fn on_collator_payout(
+        _for_round: pallet_parachain_staking::RoundIndex,
+        _collator_id: AccountId,
+        _amount: Balance,
+    ) -> Weight {
+        // MoonbeamOrbiters::distribute_rewards(for_round, collator_id, amount)
+        0
+    }
+}
+pub struct OnNewRound;
+impl pallet_parachain_staking::OnNewRound for OnNewRound {
+    fn on_new_round(_round_index: pallet_parachain_staking::RoundIndex) -> Weight {
+        // MoonbeamOrbiters::on_new_round(round_index)
+        0
+    }
+}
+
+parameter_types! {
+    pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(2 * HOURS ,15,"DOLPHIN_DEFAULTBLOCKSPERROUND");
+}
+impl pallet_parachain_staking::Config for Runtime {
+    type Event = Event;
+    type Currency = Balances;
+    type BlockAuthor = AuthorInherent;
+    type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
+    /// Minimum round length is 2 minutes (10 * 12 second block times)
+    type MinBlocksPerRound = ConstU32<10>;
+    /// Blocks per round
+    type DefaultBlocksPerRound = DefaultBlocksPerRound;
+    /// Rounds before the collator leaving the candidates request can be executed
+    type LeaveCandidatesDelay = ConstU32<24>;
+    /// Rounds before the candidate bond increase/decrease can be executed
+    type CandidateBondLessDelay = ConstU32<24>;
+    /// Rounds before the delegator exit can be executed
+    type LeaveDelegatorsDelay = ConstU32<24>;
+    /// Rounds before the delegator revocation can be executed
+    type RevokeDelegationDelay = ConstU32<24>;
+    /// Rounds before the delegator bond increase/decrease can be executed
+    type DelegationBondLessDelay = ConstU32<24>;
+    /// Rounds before the reward is paid
+    type RewardPaymentDelay = ConstU32<2>;
+    /// Minimum collators selected per round, default at genesis and minimum forever after
+    type MinSelectedCandidates = ConstU32<8>;
+    /// Maximum top delegations per candidate
+    type MaxTopDelegationsPerCandidate = ConstU32<300>;
+    /// Maximum bottom delegations per candidate
+    type MaxBottomDelegationsPerCandidate = ConstU32<50>;
+    /// Maximum delegations per delegator
+    type MaxDelegationsPerDelegator = ConstU32<100>;
+    type DefaultCollatorCommission = DefaultCollatorCommission;
+    type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
+    /// Minimum stake required to become a collator
+    type MinCollatorStk = ConstU128<{ 1000 * DOL }>;
+    /// Minimum stake required to be reserved to be a candidate
+    type MinCandidateStk = ConstU128<{ 500 * DOL }>;
+    /// Minimum stake required to be reserved to be a delegator
+    type MinDelegation = ConstU128<{ 5 * DOL }>;
+    /// Minimum stake required to be reserved to be a delegator
+    type MinDelegatorStk = ConstU128<{ 5 * DOL }>;
+    type OnCollatorPayout = OnCollatorPayout;
+    type OnNewRound = OnNewRound;
+    type WeightInfo = ();
+    // type WeightInfo = pallet_parachain_staking::weights::SubstrateWeight<Runtime>; TODO
+}
+
+impl pallet_author_inherent::Config for Runtime {
+    // We start a new slot each time we see a new relay block.
+    type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
+    type AccountLookup = CollatorSelection;
+    type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
+    /// Nimbus filter pipeline step 1:
+    /// Filters out NimbusIds not registered as SessionKeys of some AccountId
+    type CanAuthor = CollatorSelection;
 }
 
 parameter_types! {
@@ -858,8 +955,10 @@ mod benches {
         [manta_collator_selection, CollatorSelection]
         [pallet_manta_pay, MantaPay]
         [pallet_asset_manager, AssetManager]
+        [pallet_parachain_staking, ParachainStaking]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
+
     );
 }
 
@@ -977,6 +1076,22 @@ impl_runtime_apis! {
             max_sender: u64
         ) -> pallet_manta_pay::PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+    }
+
+    impl nimbus_primitives::NimbusApi<Block> for Runtime {
+        fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool {
+            System::initialize(&(parent_header.number + 1), &parent_header.hash(), &parent_header.digest);
+
+            // And now the actual prediction call
+            <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
+        }
+    }
+
+    // We also implement the old AuthorFilterAPI to meet the trait bounds on the client side.
+    impl nimbus_primitives::AuthorFilterAPI<Block, NimbusId> for Runtime {
+        fn can_author(_: NimbusId, _: u32, _: &<Block as BlockT>::Header) -> bool {
+            panic!("AuthorFilterAPI is no longer supported. Please update your client.")
         }
     }
 

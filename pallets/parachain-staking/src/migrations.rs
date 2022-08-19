@@ -24,9 +24,8 @@ use crate::{
     delegation_requests::{DelegationAction, ScheduledRequest},
     pallet::{DelegationScheduledRequests, DelegatorState, Total},
     types::Delegator,
-    BalanceOf, Bond, BottomDelegations, CandidateInfo, CandidateMetadata, CandidateState,
-    CapacityStatus, CollatorCandidate, Config, Delegations, Event, Pallet, Points, Round, Staked,
-    TopDelegations,
+    BalanceOf, Bond, BottomDelegations, CandidateInfo, CandidateMetadata, CapacityStatus,
+    CollatorCandidate, Config, Delegations, Event, Pallet, Points, Round, Staked, TopDelegations,
 };
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::OnRuntimeUpgradeHelpersExt;
@@ -35,7 +34,7 @@ extern crate alloc;
 #[cfg(feature = "try-runtime")]
 use alloc::format;
 use frame_support::{
-    migration::{remove_storage_prefix, storage_key_iter},
+    migration::storage_key_iter,
     pallet_prelude::PhantomData,
     traits::{Get, OnRuntimeUpgrade, ReservableCurrency},
     weights::Weight,
@@ -109,7 +108,6 @@ impl<T: Config> OnRuntimeUpgrade for SplitDelegatorStateIntoDelegationScheduledR
         let mut reads: Weight = 0;
         let mut writes: Weight = 0;
 
-        #[allow(clippy::type_complexity)]
         let mut scheduled_requests: BTreeMap<
             T::AccountId,
             Vec<ScheduledRequest<T::AccountId, BalanceOf<T>>>,
@@ -167,7 +165,7 @@ impl<T: Config> OnRuntimeUpgrade for SplitDelegatorStateIntoDelegationScheduledR
 
             for (collator, request) in state.requests.requests.iter() {
                 Self::set_temp_storage(
-                    Self::old_request_to_string(&state.id, request),
+                    Self::old_request_to_string(&state.id, &request),
                     &*format!(
                         "expected_collator-{:?}_delegator-{:?}_request",
                         collator, state.id,
@@ -525,95 +523,6 @@ impl<T: Config> OnRuntimeUpgrade for SplitCandidateStateToDecreasePoV<T> {
     }
 }
 */
-
-/// Migration to properly increase maximum delegations per collator
-/// The logic may be used to recompute the top and bottom delegations whenever
-/// MaxTopDelegationsPerCandidate changes (works for if decreases as well)
-pub struct IncreaseMaxDelegationsPerCandidate<T>(PhantomData<T>);
-impl<T: Config> OnRuntimeUpgrade for IncreaseMaxDelegationsPerCandidate<T> {
-    fn on_runtime_upgrade() -> Weight {
-        let (mut reads, mut writes) = (0u64, 0u64);
-        for (account, state) in <CandidateState<T>>::iter() {
-            reads = reads.saturating_add(1u64);
-            // 1. collect all delegations into single vec and order them
-            let mut all_delegations = state.top_delegations.clone();
-            let mut starting_bottom_delegations = state.bottom_delegations.clone();
-            all_delegations.append(&mut starting_bottom_delegations);
-            // sort all delegations from greatest to least
-            all_delegations.sort_unstable_by(|a, b| b.amount.cmp(&a.amount));
-            let top_n = T::MaxTopDelegationsPerCandidate::get() as usize;
-            // 2. split them into top and bottom using the T::MaxNominatorsPerCollator
-            let top_delegations: Vec<Bond<T::AccountId, BalanceOf<T>>> =
-                all_delegations.iter().take(top_n).cloned().collect();
-            let bottom_delegations = if all_delegations.len() > top_n {
-                let rest = all_delegations.len() - top_n;
-                let bottom: Vec<Bond<T::AccountId, BalanceOf<T>>> =
-                    all_delegations.iter().rev().take(rest).cloned().collect();
-                bottom
-            } else {
-                // empty, all nominations are in top
-                Vec::new()
-            };
-            let (mut total_counted, mut total_backing): (BalanceOf<T>, BalanceOf<T>) =
-                (state.bond, state.bond);
-            for Bond { amount, .. } in &top_delegations {
-                total_counted = total_counted.saturating_add(*amount);
-                total_backing = total_backing.saturating_add(*amount);
-            }
-            for Bond { amount, .. } in &bottom_delegations {
-                total_backing = total_backing.saturating_add(*amount);
-            }
-            // update candidate pool with new total counted if it changed
-            if state.total_counted != total_counted && state.is_active() {
-                reads = reads.saturating_add(1u64);
-                writes = writes.saturating_add(1u64);
-                <Pallet<T>>::update_active(account.clone(), total_counted);
-            }
-            <CandidateState<T>>::insert(
-                account,
-                CollatorCandidate {
-                    top_delegations,
-                    bottom_delegations,
-                    total_counted,
-                    total_backing,
-                    ..state
-                },
-            );
-            writes = writes.saturating_add(1u64);
-        }
-        let weight = T::DbWeight::get();
-        // 20% of the max block weight as safety margin for computation
-        weight.reads(reads) + weight.writes(writes) + 100_000_000_000
-    }
-    #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
-        // get delegation count for all candidates to check consistency
-        for (account, state) in <CandidateState<T>>::iter() {
-            // insert top + bottom into some temp map?
-            let total_delegation_count =
-                state.top_delegations.len() as u32 + state.bottom_delegations.len() as u32;
-            Self::set_temp_storage(
-                total_delegation_count,
-                &format!("Candidate{:?}DelegationCount", account)[..],
-            );
-        }
-        Ok(())
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
-        // check that top + bottom are the same as the expected (stored in temp)
-        for (account, state) in <CandidateState<T>>::iter() {
-            let expected_count: u32 =
-                Self::get_temp_storage(&format!("Candidate{:?}DelegationCount", account)[..])
-                    .expect("qed");
-            let actual_count =
-                state.top_delegations.len() as u32 + state.bottom_delegations.len() as u32;
-            assert_eq!(expected_count, actual_count);
-        }
-        Ok(())
-    }
-}
 
 /// Migration to replace the automatic ExitQueue with a manual exits API.
 /// This migration is idempotent so it can be run more than once without any risk.

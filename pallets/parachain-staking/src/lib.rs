@@ -59,6 +59,7 @@ pub mod weights;
 #[allow(clippy::all)]
 mod benchmarks;
 #[cfg(test)]
+#[allow(clippy::all)]
 mod mock;
 mod set;
 #[cfg(test)]
@@ -92,6 +93,7 @@ pub mod pallet {
         },
     };
     use frame_system::pallet_prelude::*;
+    use parity_scale_codec::Decode;
     use sp_runtime::{
         traits::{Saturating, Zero},
         Perbill, Percent,
@@ -176,6 +178,8 @@ pub mod pallet {
         /// Minimum stake for any registered on-chain account to be a delegator
         #[pallet::constant]
         type MinDelegatorStk: Get<BalanceOf<Self>>;
+        /// Get the current block author
+        type BlockAuthor: Get<Self::AccountId>;
         /// Handler to notify the runtime when a collator is paid.
         /// If you don't need it, you can specify the type `()`.
         type OnCollatorPayout: OnCollatorPayout<Self::AccountId, BalanceOf<Self>>;
@@ -451,7 +455,18 @@ pub mod pallet {
 
             weight = weight.saturating_add(Self::handle_delayed_payouts(round.current));
 
+            // add on_finalize weight
+            weight = weight.saturating_add(
+                // read Author, Points, AwardedPts
+                // write Points, AwardedPts
+                T::DbWeight::get()
+                    .reads(3)
+                    .saturating_add(T::DbWeight::get().writes(2)),
+            );
             weight
+        }
+        fn on_finalize(_n: T::BlockNumber) {
+            Self::award_points_to_block_author();
         }
     }
 
@@ -477,18 +492,6 @@ pub mod pallet {
     pub(crate) type Round<T: Config> = StorageValue<_, RoundInfo<T::BlockNumber>, ValueQuery>;
 
     #[pallet::storage]
-    #[pallet::getter(fn nominator_state2)]
-    /// DEPRECATED in favor of DelegatorState
-    /// Get nominator state associated with an account if account is nominating else None
-    pub(crate) type NominatorState2<T: Config> = StorageMap<
-        _,
-        Twox64Concat,
-        T::AccountId,
-        Nominator2<T::AccountId, BalanceOf<T>>,
-        OptionQuery,
-    >;
-
-    #[pallet::storage]
     #[pallet::getter(fn delegator_state)]
     /// Get delegator state associated with an account if account is delegating else None
     pub(crate) type DelegatorState<T: Config> = StorageMap<
@@ -500,32 +503,10 @@ pub mod pallet {
     >;
 
     #[pallet::storage]
-    #[pallet::getter(fn candidate_state)]
-    /// DEPRECATED
-    /// Get collator candidate state associated with an account if account is a candidate else None
-    pub(crate) type CandidateState<T: Config> = StorageMap<
-        _,
-        Twox64Concat,
-        T::AccountId,
-        CollatorCandidate<T::AccountId, BalanceOf<T>>,
-        OptionQuery,
-    >;
-
-    #[pallet::storage]
     #[pallet::getter(fn candidate_info)]
     /// Get collator candidate info associated with an account if account is candidate else None
     pub(crate) type CandidateInfo<T: Config> =
         StorageMap<_, Twox64Concat, T::AccountId, CandidateMetadata<BalanceOf<T>>, OptionQuery>;
-
-    #[pallet::storage]
-    /// Temporary storage item to track whether a given delegator's reserve has been migrated.
-    pub(crate) type DelegatorReserveToLockMigrations<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, bool, ValueQuery>;
-
-    #[pallet::storage]
-    /// Temporary storage item to track whether a given collator's reserve has been migrated.
-    pub(crate) type CollatorReserveToLockMigrations<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, bool, ValueQuery>;
 
     /// Stores outstanding delegation requests per collator.
     #[pallet::storage]
@@ -557,18 +538,6 @@ pub mod pallet {
         Twox64Concat,
         T::AccountId,
         Delegations<T::AccountId, BalanceOf<T>>,
-        OptionQuery,
-    >;
-
-    #[pallet::storage]
-    #[pallet::getter(fn collator_state2)]
-    /// DEPRECATED in favor of CandidateState
-    /// Get collator state associated with an account if account is collating else None
-    pub(crate) type CollatorState2<T: Config> = StorageMap<
-        _,
-        Twox64Concat,
-        T::AccountId,
-        Collator2<T::AccountId, BalanceOf<T>>,
         OptionQuery,
     >;
 
@@ -887,8 +856,8 @@ pub mod pallet {
             Self::deposit_event(Event::BlocksPerRoundSet {
                 current_round: now,
                 first_block: first,
-                old,
-                new,
+                old: old,
+                new: new,
                 new_per_round_inflation_min: inflation_config.round.min,
                 new_per_round_inflation_ideal: inflation_config.round.ideal,
                 new_per_round_inflation_max: inflation_config.round.max,
@@ -930,7 +899,6 @@ pub mod pallet {
             T::Currency::set_lock(COLLATOR_LOCK_ID, &acc, bond, WithdrawReasons::all());
             let candidate = CandidateMetadata::new(bond);
             <CandidateInfo<T>>::insert(&acc, candidate);
-            <CollatorReserveToLockMigrations<T>>::insert(&acc, true);
             let empty_delegations: Delegations<T::AccountId, BalanceOf<T>> = Default::default();
             // insert empty top delegations
             <TopDelegations<T>>::insert(&acc, empty_delegations.clone());
@@ -1037,7 +1005,6 @@ pub mod pallet {
             }
             total_backing = total_backing.saturating_add(bottom_delegations.total);
             // return stake to collator
-            Self::jit_ensure_collator_reserve_migrated(&candidate)?;
             T::Currency::remove_lock(COLLATOR_LOCK_ID, &candidate);
             <CandidateInfo<T>>::remove(&candidate);
             <DelegationScheduledRequests<T>>::remove(&candidate);
@@ -1220,7 +1187,6 @@ pub mod pallet {
                     }),
                     Error::<T>::AlreadyDelegatedCandidate
                 );
-                Self::jit_ensure_delegator_reserve_migrated(&delegator)?;
                 state
             } else {
                 // first delegation
@@ -1255,12 +1221,11 @@ pub mod pallet {
             <Total<T>>::put(new_total_locked);
             <CandidateInfo<T>>::insert(&candidate, state);
             <DelegatorState<T>>::insert(&delegator, delegator_state);
-            <DelegatorReserveToLockMigrations<T>>::insert(&delegator, true);
             Self::deposit_event(Event::Delegation {
-                delegator,
+                delegator: delegator,
                 locked_amount: amount,
-                candidate,
-                delegator_position,
+                candidate: candidate,
+                delegator_position: delegator_position,
             });
             Ok(().into())
         }
@@ -1314,7 +1279,7 @@ pub mod pallet {
                 Error::<T>::PendingDelegationRevoke
             );
             let mut state = <DelegatorState<T>>::get(&delegator).ok_or(Error::<T>::DelegatorDNE)?;
-            state.increase_delegation::<T>(candidate, more)?;
+            state.increase_delegation::<T>(candidate.clone(), more)?;
             Ok(().into())
         }
 
@@ -1375,88 +1340,7 @@ pub mod pallet {
                 <DelegationScheduledRequests<T>>::remove(candidate);
             }
 
-            Ok(())
-        }
-
-        /// Hotfix to migrate a delegator's reserve to a lock. For any given delegator in the
-        /// provided list:
-        /// * this fn is idempotent
-        /// * is safe to call if the delegator doesn't exist
-        /// * is safe to call if the delegator has been migrated
-        /// * is safe to call if the delegator is a collator (this is a no-op)
-        ///
-        /// weight calculation:
-        ///   reads:
-        ///    * DelegatorReserveToLockMigrations
-        ///    * DelegatorState
-        ///   writes:
-        ///    * unreserve()
-        ///    * set_lock()
-        ///    * DelegatorReserveToLockMigrations
-        ///   other: 50M flat weight + 100M weight per item
-        #[pallet::weight(
-			T::DbWeight::get().reads_writes(
-				2 * delegators.len() as u64,
-				3 * delegators.len() as u64
-			)
-			.saturating_add((delegators.len() as Weight).saturating_mul(100_000_000 as Weight))
-			.saturating_add(50_000_000 as Weight)
-		)]
-        pub fn hotfix_migrate_delegators_from_reserve_to_locks(
-            origin: OriginFor<T>,
-            delegators: Vec<T::AccountId>,
-        ) -> DispatchResult {
-            ensure_signed(origin)?;
-            ensure!(
-                delegators.len() < 100,
-                DispatchError::Other("Exceeded max allowed delegators.")
-            );
-            for delegator in &delegators {
-                let _ = Self::jit_ensure_delegator_reserve_migrated(delegator);
-                // ignore error
-            }
-
-            Ok(())
-        }
-
-        /// Hotfix to migrate a collator's reserve to a lock. For any given collator in the
-        /// provided list:
-        /// * this fn is idempotent
-        /// * is safe to call if the collator doesn't exist
-        /// * is safe to call if the collator has been migrated
-        /// * is safe to call if the collator is a collator (this is a no-op)
-        ///
-        /// weight calculation:
-        ///   reads:
-        ///    * CollatorReserveToLockMigrations
-        ///    * CandidateInfo
-        ///   writes:
-        ///    * unreserve()
-        ///    * set_lock()
-        ///    * CollatorReserveToLockMigrations
-        ///   other: 50M flat weight + 100M weight per item
-        #[pallet::weight(
-			T::DbWeight::get().reads_writes(
-				2 * collators.len() as u64,
-				3 * collators.len() as u64
-			)
-			.saturating_add((collators.len() as Weight).saturating_mul(100_000_000 as Weight))
-			.saturating_add(50_000_000 as Weight)
-		)]
-        pub fn hotfix_migrate_collators_from_reserve_to_locks(
-            origin: OriginFor<T>,
-            collators: Vec<T::AccountId>,
-        ) -> DispatchResult {
-            ensure_signed(origin)?;
-            ensure!(
-                collators.len() < 100,
-                DispatchError::Other("Exceeded max allowed collators.")
-            );
-            for collator in &collators {
-                let _ = Self::jit_ensure_collator_reserve_migrated(collator); // ignore error
-            }
-
-            Ok(())
+            Ok(().into())
         }
     }
 
@@ -1523,8 +1407,8 @@ pub mod pallet {
             let new_total = state.total_counted;
             <CandidateInfo<T>>::insert(&candidate, state);
             Self::deposit_event(Event::DelegatorLeftCandidate {
-                delegator,
-                candidate,
+                delegator: delegator,
+                candidate: candidate,
                 unstaked_amount: amount,
                 total_candidate_staked: new_total,
             });
@@ -1576,7 +1460,7 @@ pub mod pallet {
 
             // don't underflow uint
             if now < delay {
-                return 0u64;
+                return 0u64.into();
             }
 
             let paid_for_round = now.saturating_sub(delay);
@@ -1591,7 +1475,7 @@ pub mod pallet {
                 }
                 result.1 // weight consumed by pay_one_collator_reward
             } else {
-                0u64
+                0u64.into()
             }
         }
 
@@ -1599,7 +1483,6 @@ pub mod pallet {
         ///
         /// Returns an optional tuple of (Collator's AccountId, total paid)
         /// or None if there were no more payouts to be made for the round.
-        #[allow(clippy::type_complexity)]
         pub(crate) fn pay_one_collator_reward(
             paid_for_round: RoundIndex,
             payout_info: DelayedPayout<BalanceOf<T>>,
@@ -1614,7 +1497,7 @@ pub mod pallet {
                 // 2. we called pay_one_collator_reward when we were actually done with deferred
                 //    payouts
                 log::warn!("pay_one_collator_reward called with no <Points<T>> for the round!");
-                return (None, 0u64);
+                return (None, 0u64.into());
             }
 
             let mint = |amt: BalanceOf<T>, to: T::AccountId| {
@@ -1676,7 +1559,7 @@ pub mod pallet {
             } else {
                 // Note that we don't clean up storage here; it is cleaned up in
                 // handle_delayed_payouts()
-                (None, 0u64)
+                (None, 0u64.into())
             }
         }
 
@@ -1741,19 +1624,22 @@ pub mod pallet {
                 collator_count = collator_count.saturating_add(1u32);
                 delegation_count = delegation_count.saturating_add(state.delegation_count);
                 total = total.saturating_add(state.total_counted);
-                let snapshot_total = state.total_counted;
-                let top_rewardable_delegations = Self::get_rewardable_delegators(account);
+                let CountedDelegations {
+                    uncounted_stake,
+                    rewardable_delegations,
+                } = Self::get_rewardable_delegators(&account);
+                let total_counted = state.total_counted.saturating_sub(uncounted_stake);
 
                 let snapshot = CollatorSnapshot {
                     bond: state.bond,
-                    delegations: top_rewardable_delegations,
-                    total: state.total_counted,
+                    delegations: rewardable_delegations,
+                    total: total_counted,
                 };
                 <AtStake<T>>::insert(now, account, snapshot);
                 Self::deposit_event(Event::CollatorChosen {
                     round: now,
                     collator_account: account.clone(),
-                    total_exposed_amount: snapshot_total,
+                    total_exposed_amount: state.total_counted,
                 });
             }
             // insert canonical collator set
@@ -1770,15 +1656,13 @@ pub mod pallet {
         /// - else, do nothing
         ///
         /// The intended bond amounts will be used while calculating rewards.
-        fn get_rewardable_delegators(
-            collator: &T::AccountId,
-        ) -> Vec<Bond<T::AccountId, BalanceOf<T>>> {
+        fn get_rewardable_delegators(collator: &T::AccountId) -> CountedDelegations<T> {
             let requests = <DelegationScheduledRequests<T>>::get(collator)
                 .into_iter()
                 .map(|x| (x.delegator, x.action))
                 .collect::<BTreeMap<_, _>>();
-
-            <TopDelegations<T>>::get(collator)
+            let mut uncounted_stake = BalanceOf::<T>::zero();
+            let rewardable_delegations = <TopDelegations<T>>::get(collator)
                 .expect("all members of CandidateQ must be candidates")
                 .delegations
                 .into_iter()
@@ -1791,6 +1675,7 @@ pub mod pallet {
 								revoke request",
                                 bond.owner
                             );
+                            uncounted_stake = uncounted_stake.saturating_add(bond.amount);
                             BalanceOf::<T>::zero()
                         }
                         Some(DelegationAction::Decrease(amount)) => {
@@ -1799,61 +1684,26 @@ pub mod pallet {
 								decrease request",
                                 bond.owner
                             );
+                            uncounted_stake = uncounted_stake.saturating_add(*amount);
                             bond.amount.saturating_sub(*amount)
                         }
                     };
 
                     bond
                 })
-                .collect()
-        }
-
-        /// Temporary JIT migration of a single delegator's reserve -> lock. This will query
-        /// whether or not the given delegator has been migrated and migrate it if not. This should
-        /// be removeable once all on-chain delegators have been migrated.
-        pub(crate) fn jit_ensure_delegator_reserve_migrated(
-            delegator: &T::AccountId,
-        ) -> DispatchResult {
-            let is_migrated = <DelegatorReserveToLockMigrations<T>>::get(&delegator);
-            if !is_migrated {
-                let delegator_state =
-                    <DelegatorState<T>>::get(&delegator).ok_or(Error::<T>::DelegatorDNE)?;
-                let reserved = delegator_state.total();
-                let _remaining = T::Currency::unreserve(delegator, reserved);
-                T::Currency::set_lock(
-                    DELEGATOR_LOCK_ID,
-                    delegator,
-                    reserved,
-                    WithdrawReasons::all(),
-                );
-                <DelegatorReserveToLockMigrations<T>>::insert(&delegator, true);
+                .collect();
+            CountedDelegations {
+                uncounted_stake,
+                rewardable_delegations,
             }
-            Ok(())
-        }
-
-        /// Temporary JIT migration of a single collator's reserve -> lock. This will query
-        /// whether or not the given collator has been migrated and migrate it if not. This should
-        /// be removeable once all on-chain collators have been migrated.
-        pub(crate) fn jit_ensure_collator_reserve_migrated(
-            collator: &T::AccountId,
-        ) -> DispatchResult {
-            let is_migrated = <CollatorReserveToLockMigrations<T>>::get(&collator);
-            if !is_migrated {
-                let collator_info =
-                    <CandidateInfo<T>>::get(&collator).ok_or(Error::<T>::CandidateDNE)?;
-                let reserved = collator_info.bond;
-                let _remaining = T::Currency::unreserve(collator, reserved);
-                T::Currency::set_lock(COLLATOR_LOCK_ID, collator, reserved, WithdrawReasons::all());
-                <CollatorReserveToLockMigrations<T>>::insert(&collator, true);
-            }
-            Ok(())
         }
     }
 
     /// Add reward points to block authors:
     /// * 20 points to the block producer for producing a block in the chain
-    impl<T: Config> nimbus_primitives::EventHandler<T::AccountId> for Pallet<T> {
-        fn note_author(author: T::AccountId) {
+    impl<T: Config> Pallet<T> {
+        fn award_points_to_block_author() {
+            let author = T::BlockAuthor::get();
             let now = <Round<T>>::get().current;
             let score_plus_20 = <AwardedPts<T>>::get(now, &author).saturating_add(20);
             <AwardedPts<T>>::insert(now, author, score_plus_20);

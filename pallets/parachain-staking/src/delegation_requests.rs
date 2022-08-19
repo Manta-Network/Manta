@@ -21,7 +21,7 @@ use crate::{
         BalanceOf, CandidateInfo, Config, DelegationScheduledRequests, DelegatorState, Error,
         Event, Pallet, Round, RoundIndex, Total,
     },
-    Delegator,
+    Delegator, DelegatorStatus,
 };
 use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::Get, RuntimeDebug};
 use parity_scale_codec::{Decode, Encode};
@@ -133,7 +133,7 @@ impl<T: Config> Pallet<T> {
             bonded_amount > decrease_amount,
             <Error<T>>::DelegatorBondBelowMin
         );
-        let new_amount: BalanceOf<T> = bonded_amount - decrease_amount;
+        let new_amount: BalanceOf<T> = (bonded_amount - decrease_amount).into();
         ensure!(
             new_amount >= T::MinDelegation::get(),
             <Error<T>>::DelegationBelowMin
@@ -142,7 +142,7 @@ impl<T: Config> Pallet<T> {
         // Net Total is total after pending orders are executed
         let net_total = state.total().saturating_sub(state.less_total);
         // Net Total is always >= MinDelegatorStk
-        let max_subtracted_amount = net_total.saturating_sub(T::MinDelegatorStk::get());
+        let max_subtracted_amount = net_total.saturating_sub(T::MinDelegatorStk::get().into());
         ensure!(
             decrease_amount <= max_subtracted_amount,
             <Error<T>>::DelegatorBondBelowMin
@@ -232,7 +232,10 @@ impl<T: Config> Pallet<T> {
                     true
                 } else {
                     ensure!(
-                        state.total().saturating_sub(T::MinDelegatorStk::get()) >= amount,
+                        state
+                            .total()
+                            .saturating_sub(T::MinDelegatorStk::get().into())
+                            >= amount,
                         <Error<T>>::DelegatorBondBelowMin
                     );
                     false
@@ -274,13 +277,13 @@ impl<T: Config> Pallet<T> {
                 for bond in &mut state.delegations.0 {
                     if bond.owner == collator {
                         return if bond.amount > amount {
-                            let amount_before: BalanceOf<T> = bond.amount;
+                            let amount_before: BalanceOf<T> = bond.amount.into();
                             bond.amount = bond.amount.saturating_sub(amount);
                             let mut collator_info = <CandidateInfo<T>>::get(&collator)
                                 .ok_or(<Error<T>>::CandidateDNE)?;
 
                             state.total_sub_if::<T, _>(amount, |total| {
-                                let new_total: BalanceOf<T> = total;
+                                let new_total: BalanceOf<T> = total.into();
                                 ensure!(
                                     new_total >= T::MinDelegation::get(),
                                     <Error<T>>::DelegationBelowMin
@@ -289,8 +292,6 @@ impl<T: Config> Pallet<T> {
                                     new_total >= T::MinDelegatorStk::get(),
                                     <Error<T>>::DelegatorBondBelowMin
                                 );
-
-                                Self::jit_ensure_delegator_reserve_migrated(&delegator)?;
 
                                 Ok(())
                             })?;
@@ -339,6 +340,13 @@ impl<T: Config> Pallet<T> {
         let now = <Round<T>>::get().current;
         let when = now.saturating_add(T::LeaveDelegatorsDelay::get());
 
+        // lazy migration for DelegatorStatus::Leaving
+        #[allow(deprecated)]
+        if matches!(state.status, DelegatorStatus::Leaving(_)) {
+            state.status = DelegatorStatus::Active;
+            <DelegatorState<T>>::insert(delegator.clone(), state.clone());
+        }
+
         // it is assumed that a multiple delegations to the same collator does not exist, else this
         // will cause a bug - the last duplicate delegation update will be the only one applied.
         let mut existing_revoke_count = 0;
@@ -357,7 +365,7 @@ impl<T: Config> Pallet<T> {
                 }
                 _ => ScheduledRequest {
                     delegator: delegator.clone(),
-                    action: DelegationAction::Revoke(bonded_amount),
+                    action: DelegationAction::Revoke(bonded_amount.clone()),
                     when_executable: when,
                 },
             };
@@ -394,6 +402,15 @@ impl<T: Config> Pallet<T> {
     ) -> DispatchResultWithPostInfo {
         let mut state = <DelegatorState<T>>::get(&delegator).ok_or(<Error<T>>::DelegatorDNE)?;
         let mut updated_scheduled_requests = vec![];
+
+        // backwards compatible handling for DelegatorStatus::Leaving
+        #[allow(deprecated)]
+        if matches!(state.status, DelegatorStatus::Leaving(_)) {
+            state.status = DelegatorStatus::Active;
+            <DelegatorState<T>>::insert(delegator.clone(), state.clone());
+            Self::deposit_event(Event::DelegatorExitCancelled { delegator });
+            return Ok(().into());
+        }
 
         // pre-validate that all delegations have a Revoke request.
         for bond in &state.delegations.0 {
@@ -441,6 +458,36 @@ impl<T: Config> Pallet<T> {
         );
         let now = <Round<T>>::get().current;
 
+        // backwards compatible handling for DelegatorStatus::Leaving
+        #[allow(deprecated)]
+        if let DelegatorStatus::Leaving(when) = state.status {
+            ensure!(
+                <Round<T>>::get().current >= when,
+                Error::<T>::DelegatorCannotLeaveYet
+            );
+
+            for bond in state.delegations.0.clone() {
+                if let Err(error) = Self::delegator_leaves_candidate(
+                    bond.owner.clone(),
+                    delegator.clone(),
+                    bond.amount,
+                ) {
+                    log::warn!(
+                        "STORAGE CORRUPTED \nDelegator leaving collator failed with error: {:?}",
+                        error
+                    );
+                }
+
+                Self::delegation_remove_request_with_state(&bond.owner, &delegator, &mut state);
+            }
+            <DelegatorState<T>>::remove(&delegator);
+            Self::deposit_event(Event::DelegatorLeft {
+                delegator,
+                unstaked_amount: state.total,
+            });
+            return Ok(().into());
+        }
+
         let mut validated_scheduled_requests = vec![];
         // pre-validate that all delegations have a Revoke request that can be executed now.
         for bond in &state.delegations.0 {
@@ -480,9 +527,6 @@ impl<T: Config> Pallet<T> {
             scheduled_requests.remove(request_idx).action.amount();
             updated_scheduled_requests.push((collator, scheduled_requests));
         }
-
-        // TODO: reveiew -- we're about to leave, so this is mostly extra work (extra writes)
-        Self::jit_ensure_delegator_reserve_migrated(&delegator)?;
 
         // set state.total so that state.adjust_bond_lock will remove lock
         let unstaked_amount = state.total();

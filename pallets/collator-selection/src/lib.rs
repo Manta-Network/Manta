@@ -653,7 +653,7 @@ pub mod pallet {
             let validators = T::ValidatorRegistration::validators();
             let validators_len = validators.len() as u32;
             let mut clear_res = <BlocksPerCollatorThisSession<T>>::clear(validators_len, None);
-            let mut old_cursor = vec![];
+            let mut old_cursor = Vec::new();
             while let Some(cursor) = clear_res.maybe_cursor {
                 clear_res = <BlocksPerCollatorThisSession<T>>::clear(validators_len, Some(&cursor));
                 if cursor == old_cursor {
@@ -692,7 +692,7 @@ pub mod pallet {
 
     /// Fetch list of all possibly eligible authors to use in nimbus consensus filters
     ///
-    /// TODO: This is currently the static set registered with pallet_session and will be superseded by parachain_staking
+    /// This is currently the static set registered with pallet_session and will be superseded by parachain_staking
     ///
     /// NOTE: This should really be in pallet_session as we only use its storage, but since we haven't
     /// forked that one, this is the next best place.
