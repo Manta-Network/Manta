@@ -38,7 +38,7 @@ use sp_runtime::{
     app_crypto::AppKey,
     traits::{Block as BlockT, Header as HeaderT},
 };
-use std::{marker::PhantomData, sync::Arc};
+use std::sync::Arc;
 
 use nimbus_primitives::CompatibleDigestItem as NimbusDigestItem;
 use sc_consensus_aura::CompatibleDigestItem as AuraDigestItem;
@@ -77,7 +77,7 @@ where
             }),
             nimbus_verifier: nimbus_consensus::Verifier::new(
                     client,
-                    create_inherent_data_providers: create_inherent_data_providers_nimbus,
+                    create_inherent_data_providers_nimbus,
             ),
         }
     }
