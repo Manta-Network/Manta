@@ -16,10 +16,12 @@
 -[\#726](https://github.com/Manta-Network/Manta/pull/726) support STORAGE_VERSION for our pallets 
 -[\#738](https://github.com/Manta-Network/Manta/pull/738) Add changelog verification. Remove old changelog workflow 
 -[\#582](https://github.com/Manta-Network/Manta/pull/582) Consensus migration stage 1: Enable Nimbus-Aura [CADO]
+-[\#752](https://github.com/Manta-Network/Manta/pull/752) v3.3.0 bump versions and weights 
 
 ### Fixed
 -[\#694](https://github.com/Manta-Network/Manta/pull/694) Use u128::MAX in fungible ledger transfer test 
 -[\#703](https://github.com/Manta-Network/Manta/pull/703) Fix double spend reclaim test 
+-[\#723](https://github.com/Manta-Network/Manta/pull/723) fix: upgrade to `manta-rs` v0.5.4 
 
 ### Removed
 -[\#737](https://github.com/Manta-Network/Manta/pull/737) Remove v3.2.1 SessionKey migration code [CADO]
