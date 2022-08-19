@@ -24,6 +24,8 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use core::marker::PhantomData;
+use nimbus_primitives::AccountLookup;
 use manta_collator_selection::IdentityCollator;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -31,7 +33,7 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, Perbill, Permill,
+    ApplyExtrinsicResult, Perbill, Percent, Permill, RuntimeAppPublic,
 };
 use sp_std::{cmp::Ordering, prelude::*};
 
@@ -39,12 +41,10 @@ use sp_std::{cmp::Ordering, prelude::*};
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+pub use frame_support::traits::Get;
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{
-        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, NeverEnsureOrigin,
-        PrivilegeCmp,
-    },
+    traits::{ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, NeverEnsureOrigin, PrivilegeCmp},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, Weight,
@@ -59,6 +59,7 @@ use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
+pub use pallet_parachain_staking::{InflationInfo, Range};
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
@@ -273,6 +274,61 @@ impl Contains<Call> for BaseFilter {
             // DISALLOW anything else
             _ => false,
         }
+    }
+}
+
+/// Converter struct to use the Session pallet for mapping a NimbusId to its AccountId
+pub struct TestConverter<T> {
+    _phantom: PhantomData<T>,
+}
+
+// Fetch list of eligible authors. This should be in manta_collator_selection
+impl<T> Get<Vec<T::AccountId>> for TestConverter<T>
+where
+    T: frame_system::Config + manta_collator_selection::Config + pallet_session::Config,
+    // Implemented only where Session's ValidatorId is directly convertible to collator_selection's ValidatorId
+    <T as manta_collator_selection::Config>::ValidatorId:
+        From<<T as pallet_session::Config>::ValidatorId>,
+{
+    /// Return the set of eligible collator accounts
+    fn get() -> Vec<T::AccountId>
+    where
+        <T as manta_collator_selection::Config>::ValidatorId:
+            From<<T as pallet_session::Config>::ValidatorId>,
+    {
+        use sp_runtime::traits::Convert;
+
+        let v = pallet_session::Pallet::<T>::validators()
+            .into_iter()
+            .map(|vid: <T as pallet_session::Config>::ValidatorId| {
+                <T as manta_collator_selection::Config>::AccountIdOf::convert(vid.into())
+            })
+            .collect::<Vec<T::AccountId>>();
+
+        log::info!("Requested Registered account Ids {:?}", v);
+        v
+    }
+}
+
+impl<T> AccountLookup<T::AccountId> for TestConverter<T>
+where
+    T: pallet_session::Config + manta_collator_selection::Config,
+    // Implemented only where Session's ValidatorId is directly convertible to collator_selection's ValidatorId
+    <T as manta_collator_selection::Config>::ValidatorId:
+        From<<T as pallet_session::Config>::ValidatorId>,
+{
+    fn lookup_account(author: &NimbusId) -> Option<T::AccountId>
+    where
+        <T as manta_collator_selection::Config>::ValidatorId:
+            From<<T as pallet_session::Config>::ValidatorId>,
+    {
+        use sp_runtime::traits::Convert;
+        #[allow(clippy::bind_instead_of_map)]
+        pallet_session::Pallet::<T>::key_owner(
+            nimbus_primitives::NIMBUS_KEY_ID,
+            &author.to_raw_vec(),
+        )
+        .and_then(|vid| Some(T::AccountIdOf::convert(vid.into())))
     }
 }
 
@@ -545,26 +601,6 @@ impl pallet_treasury::Config for Runtime {
     type MaxApprovals = ConstU32<100>;
     type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
     type SpendFunds = ();
-    // Expects an implementation of `EnsureOrigin` with a `Success` generic,
-    // which is the the maximum amount that this origin is allowed to spend at a time.
-    type SpendOrigin = NeverEnsureOrigin<Balance>;
-}
-
-impl pallet_aura_style_filter::Config for Runtime {
-    /// Nimbus filter pipeline (final) step 3:
-    /// Choose 1 collator from PotentialAuthors as eligible
-    /// for each slot in round-robin fashion
-    type PotentialAuthors = CollatorSelection;
-}
-
-impl pallet_author_inherent::Config for Runtime {
-    // We start a new slot each time we see a new relay block.
-    type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
-    type AccountLookup = CollatorSelection;
-    type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
-    /// Nimbus filter pipeline step 1:
-    /// Filters out NimbusIds not registered as SessionKeys of some AccountId
-    type CanAuthor = CollatorSelection;
 }
 
 parameter_types! {
@@ -714,6 +750,7 @@ construct_runtime!(
         TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 17,
         TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 
+        ParachainStaking: pallet_parachain_staking::{Pallet, Call, Storage, Event<T>, Config<T>} = 48,
         // Collator support.
         AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 60,
         AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage} = 63,
@@ -943,22 +980,6 @@ impl_runtime_apis! {
         }
     }
 
-    impl nimbus_primitives::NimbusApi<Block> for Runtime {
-        fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool {
-            System::initialize(&(parent_header.number + 1), &parent_header.hash(), &parent_header.digest);
-
-            // And now the actual prediction call
-            <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
-        }
-    }
-
-    // We also implement the old AuthorFilterAPI to meet the trait bounds on the client side.
-    impl nimbus_primitives::AuthorFilterAPI<Block, NimbusId> for Runtime {
-        fn can_author(_: NimbusId, _: u32, _: &<Block as BlockT>::Header) -> bool {
-            panic!("AuthorFilterAPI is no longer supported. Please update your client.")
-        }
-    }
-
     #[cfg(feature = "try-runtime")]
     impl frame_try_runtime::TryRuntime<Block> for Runtime {
         fn on_runtime_upgrade() -> (Weight, Weight) {
@@ -1052,4 +1073,12 @@ cumulus_pallet_parachain_system::register_validate_block! {
     Runtime = Runtime,
     BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
     CheckInherents = CheckInherents,
+}
+
+// Shorthand for a Get field of a pallet Config.
+#[macro_export]
+macro_rules! get {
+    ($pallet:ident, $name:ident, $type:ty) => {
+        <<$crate::Runtime as $pallet::Config>::$name as $crate::Get<$type>>::get()
+    };
 }

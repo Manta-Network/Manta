@@ -450,6 +450,8 @@ pub fn run_with(cli: Cli) -> Result {
                 let state_version =
                     RelayChainCli::native_runtime_version(&config.chain_spec).state_version();
 
+                // TODO match chainspec
+                // let block: crate::service_nim::Block =
                 let block: crate::service::Block =
                     generate_genesis_block(&*config.chain_spec, state_version)
                         .map_err(|e| format!("{:?}", e))?;
