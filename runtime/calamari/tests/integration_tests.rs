@@ -64,7 +64,7 @@ use xcm::{
 
 use pallet_transaction_payment::ChargeTransactionPayment;
 
-use sp_consensus_aura::AURA_ENGINE_ID;
+use nimbus_primitives::NIMBUS_ENGINE_ID;
 use sp_core::{sr25519, H256};
 use sp_runtime::{
     generic::DigestItem,
@@ -435,10 +435,10 @@ fn seal_header(mut header: Header, author: AccountId) -> Header {
         let digest = header.digest_mut();
         digest
             .logs
-            .push(DigestItem::PreRuntime(AURA_ENGINE_ID, author.encode()));
+            .push(DigestItem::PreRuntime(NIMBUS_ENGINE_ID, author.encode()));
         digest
             .logs
-            .push(DigestItem::Seal(AURA_ENGINE_ID, author.encode()));
+            .push(DigestItem::Seal(NIMBUS_ENGINE_ID, author.encode()));
     }
 
     header
@@ -794,7 +794,6 @@ fn verify_pallet_prefixes() {
     is_pallet_prefix::<calamari_runtime::CollatorSelection>("CollatorSelection");
     is_pallet_prefix::<calamari_runtime::Session>("Session");
     is_pallet_prefix::<calamari_runtime::Aura>("Aura");
-    is_pallet_prefix::<calamari_runtime::AuraExt>("AuraExt");
     is_pallet_prefix::<calamari_runtime::Treasury>("Treasury");
     is_pallet_prefix::<calamari_runtime::Scheduler>("Scheduler");
     is_pallet_prefix::<calamari_runtime::XcmpQueue>("XcmpQueue");
@@ -804,6 +803,8 @@ fn verify_pallet_prefixes() {
     is_pallet_prefix::<calamari_runtime::Utility>("Utility");
     is_pallet_prefix::<calamari_runtime::Multisig>("Multisig");
     is_pallet_prefix::<calamari_runtime::CalamariVesting>("CalamariVesting");
+    is_pallet_prefix::<calamari_runtime::AuthorInherent>("AuthorInherent");
+    is_pallet_prefix::<calamari_runtime::AuraAuthorFilter>("AuraAuthorFilter");
 
     let prefix = |pallet_name, storage_name| {
         let mut res = [0u8; 32];
@@ -912,7 +913,6 @@ fn verify_pallet_indices() {
     is_pallet_index::<calamari_runtime::CollatorSelection>(21);
     is_pallet_index::<calamari_runtime::Session>(22);
     is_pallet_index::<calamari_runtime::Aura>(23);
-    is_pallet_index::<calamari_runtime::AuraExt>(24);
     is_pallet_index::<calamari_runtime::Treasury>(26);
     is_pallet_index::<calamari_runtime::Preimage>(28);
     is_pallet_index::<calamari_runtime::Scheduler>(29);
@@ -926,6 +926,8 @@ fn verify_pallet_indices() {
     is_pallet_index::<calamari_runtime::Assets>(45);
     is_pallet_index::<calamari_runtime::AssetManager>(46);
     is_pallet_index::<calamari_runtime::CalamariVesting>(50);
+    is_pallet_index::<calamari_runtime::AuthorInherent>(60);
+    is_pallet_index::<calamari_runtime::AuraAuthorFilter>(63);
 
     // Check removed pallets.
     ExtBuilder::default().build().execute_with(|| {
@@ -936,6 +938,8 @@ fn verify_pallet_indices() {
         if let RuntimeMetadata::V14(v14) = runtime_metadata.1 {
             // Ensure sudo=42 has been removed, no one is taking this index.
             assert!(v14.pallets.iter().any(|pallet| pallet.index != 42));
+            // AuraExt
+            assert!(v14.pallets.iter().any(|pallet| pallet.index != 24));
         }
     });
 }
