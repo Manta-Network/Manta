@@ -18,6 +18,7 @@
 //! by adding a custom import_queue and Verifier that delegate based on
 //! what type of seal a block has
 //! NOTE: Does not change block *proposing*, set to Nimbus in service.rs
+//! NOTE: Assumes running as a Parachain. Sovereign chain mode NOT SUPPORTED
 
 use futures::TryFutureExt;
 use log::debug;
@@ -114,7 +115,7 @@ where
             .digest()
             .logs()
             .last()
-            .expect("Block should have at least one digest/seal on it");
+            .ok_or("Block should have at least one digest/seal on it")?;
 
         // delegate verification to Aura or Nimbus verifiers
         if NimbusDigestItem::as_nimbus_seal(seal).is_some() {
@@ -130,7 +131,7 @@ where
                 .map_err(Into::into)
                 .await
         } else {
-            Err("NoSealFound".to_string())
+            Err("No Aura or Nimbus seal on block".to_string())
         }
     }
 }
@@ -176,7 +177,9 @@ where
         verifier,
         // NOTE: As of Aug2022, nimbus and aura simply delegate block import
         //       to cumulus. We're skipping wrapping both by using this directly.
-        //       If in the future either of them diverge from this, we'll have to adapt
+        //       If in the future either of them diverge from this,
+        //       we'll have to adapt to the change here and in
+        //       node/src/service.rs:L467 aka. BuildNimbusConsensusParams
         Box::new(cumulus_client_consensus_common::ParachainBlockImport::new(
             block_import,
         )),

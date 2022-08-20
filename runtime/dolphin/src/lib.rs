@@ -833,7 +833,9 @@ impl_runtime_apis! {
         }
 
         fn authorities() -> Vec<AuraId> {
-            Aura::authorities().into_inner()
+            // NOTE: AuraAPI must exist for node/src/aura_or_nimbus_consensus.rs
+            // But is intentionally DISABLED starting with manta v3.3.0
+            vec![]
         }
     }
 
