@@ -54,7 +54,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![forbid(rustdoc::broken_intra_doc_links)]
-#![forbid(missing_docs)]
 
 extern crate alloc;
 
@@ -70,12 +69,13 @@ use manta_pay::{
     manta_accounting::{
         asset,
         transfer::{
+            self,
             canonical::TransferShape,
             receiver::{ReceiverLedger, ReceiverPostError, ReceiverPostingKey},
             sender::{SenderLedger, SenderPostError, SenderPostingKey},
-            InvalidSinkAccount, InvalidSourceAccount, Proof, SinkPostingKey, SourcePostingKey,
-            TransferLedger, TransferLedgerSuperPostingKey, TransferPostError, TransferPostingKey,
-            TransferPostingKeyRef,
+            InvalidAuthorizationSignature, InvalidSinkAccount, InvalidSourceAccount, Proof,
+            SinkPostingKey, SourcePostingKey, TransferLedger, TransferLedgerSuperPostingKey,
+            TransferPostingKey, TransferPostingKeyRef,
         },
     },
     manta_crypto::{
@@ -135,7 +135,7 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// Asset Configuration
-        type AssetConfig: AssetConfig<Self>;
+        type AssetConfig: AssetConfig<Self, AssetId = AssetId, Balance = AssetValue>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -234,20 +234,18 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
             FungibleLedger::<T>::transfer(
-                asset.id,
+                &asset.id,
                 &origin,
                 &sink,
-                asset.value,
+                &asset.value,
                 ExistenceRequirement::KeepAlive,
             )
             .map_err(Error::<T>::from)?;
-            /* TODO:
             Self::deposit_event(Event::Transfer {
                 asset,
                 source: origin,
                 sink,
             });
-            */
             Ok(().into())
         }
     }
@@ -321,6 +319,9 @@ pub mod pallet {
         /// The transfer had an invalid shape.
         InvalidShape,
 
+        /// Invalid Authorization Signature
+        InvalidAuthorizationSignature,
+
         /// Asset Spent
         ///
         /// An asset present in this transfer has already been spent.
@@ -376,7 +377,7 @@ pub mod pallet {
         /// [`Overflow`](FungibleLedgerError::Overflow) from [`FungibleLedgerError`]
         PublicUpdateOverflow,
 
-        /// [`CannotWithdraw`](FungibleLedgerError::CannotWithdrawMoreThan(Balance)) from [`FungibleLedgerError`]
+        /// [`CannotWithdraw`](FungibleLedgerError::CannotWithdrawMoreThan) from [`FungibleLedgerError`]
         PublicUpdateCannotWithdraw,
 
         /// [`InvalidMint`](FungibleLedgerError::InvalidMint) from [`FungibleLedgerError`]
@@ -392,6 +393,16 @@ pub mod pallet {
         ///
         /// This is caused by some internal error in the ledger and should never occur.
         InternalLedgerError,
+    }
+
+    impl<T> From<InvalidAuthorizationSignature> for Error<T>
+    where
+        T: Config,
+    {
+        #[inline]
+        fn from(_: InvalidAuthorizationSignature) -> Self {
+            Self::InvalidAuthorizationSignature
+        }
     }
 
     impl<T> From<InvalidSourceAccount<config::Config, T::AccountId>> for Error<T>
@@ -433,15 +444,14 @@ pub mod pallet {
         }
     }
 
-    impl<T> From<FungibleLedgerError> for Error<T>
+    impl<T> From<FungibleLedgerError<AssetId, AssetValue>> for Error<T>
     where
         T: Config,
     {
         #[inline]
-        fn from(err: FungibleLedgerError) -> Self {
-            /* TODO:
+        fn from(err: FungibleLedgerError<AssetId, AssetValue>) -> Self {
             match err {
-                FungibleLedgerError::InvalidAssetId => Self::PublicUpdateInvalidAssetId,
+                FungibleLedgerError::InvalidAssetId(_) => Self::PublicUpdateInvalidAssetId,
                 FungibleLedgerError::BelowMinimum => Self::PublicUpdateBelowMinimum,
                 FungibleLedgerError::CannotCreate => Self::PublicUpdateCannotCreate,
                 FungibleLedgerError::UnknownAsset => Self::PublicUpdateUnknownAsset,
@@ -451,31 +461,34 @@ pub mod pallet {
                 FungibleLedgerError::InvalidBurn(_) => Self::PublicUpdateInvalidBurn,
                 FungibleLedgerError::InvalidTransfer(_) => Self::PublicUpdateInvalidTransfer,
             }
-            */
-            todo!()
         }
     }
 
-    impl<T> From<TransferPostError<config::Config, T::AccountId, FungibleLedgerError>> for Error<T>
+    /// Transfer Post Error
+    pub type TransferPostError<T> = transfer::TransferPostError<
+        config::Config,
+        <T as frame_system::Config>::AccountId,
+        FungibleLedgerError<AssetId, AssetValue>,
+    >;
+
+    impl<T> From<TransferPostError<T>> for Error<T>
     where
         T: Config,
     {
         #[inline]
-        fn from(err: TransferPostError<config::Config, T::AccountId, FungibleLedgerError>) -> Self {
-            /* TODO:
+        fn from(err: TransferPostError<T>) -> Self {
             match err {
-                TransferPostError::InvalidShape => Self::InvalidShape,
-                TransferPostError::InvalidSourceAccount(err) => err.into(),
-                TransferPostError::InvalidSinkAccount(err) => err.into(),
-                TransferPostError::Sender(err) => err.into(),
-                TransferPostError::Receiver(err) => err.into(),
-                TransferPostError::DuplicateSpend => Self::DuplicateSpend,
-                TransferPostError::DuplicateRegister => Self::DuplicateRegister,
-                TransferPostError::InvalidProof => Self::InvalidProof,
-                TransferPostError::UpdateError(err) => err.into(),
+                TransferPostError::<T>::InvalidShape => Self::InvalidShape,
+                TransferPostError::<T>::InvalidAuthorizationSignature(err) => err.into(),
+                TransferPostError::<T>::InvalidSourceAccount(err) => err.into(),
+                TransferPostError::<T>::InvalidSinkAccount(err) => err.into(),
+                TransferPostError::<T>::Sender(err) => err.into(),
+                TransferPostError::<T>::Receiver(err) => err.into(),
+                TransferPostError::<T>::DuplicateMint => Self::DuplicateRegister,
+                TransferPostError::<T>::DuplicateSpend => Self::DuplicateSpend,
+                TransferPostError::<T>::InvalidProof => Self::InvalidProof,
+                TransferPostError::<T>::UpdateError(err) => err.into(),
             }
-            */
-            todo!()
         }
     }
 
@@ -833,7 +846,7 @@ where
     type SuperPostingKey = ();
     type AccountId = T::AccountId;
     type Event = PreprocessedEvent<T>;
-    type UpdateError = FungibleLedgerError;
+    type UpdateError = FungibleLedgerError<AssetId, AssetValue>;
     type ValidSourceAccount = WrapPair<Self::AccountId, AssetValue>;
     type ValidSinkAccount = WrapPair<Self::AccountId, AssetValue>;
     type ValidProof = Wrap<()>;

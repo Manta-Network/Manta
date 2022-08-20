@@ -23,9 +23,8 @@ use crate::{
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
 use manta_primitives::{
-    assets::{AssetConfig, AssetRegistrar, FungibleLedger},
-    constants::DEFAULT_ASSET_ED,
-    types::{AssetId, Balance},
+    assets::{AssetConfig, AssetRegistry, FungibleLedger},
+    constants::TEST_DEFAULT_ASSET_ED,
 };
 use scale_codec::Decode;
 

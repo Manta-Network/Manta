@@ -95,8 +95,7 @@ jsonrpsee = { version = "0.14.0", features = ["server", "macros"], optional = tr
 # manta dependencies
 manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", default-features = false }
 manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", default-features = false }
-manta-parameters = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", default-features = false }
-manta-pay = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", default-features = false, features = ["groth16", "scale"] }
+manta-pay = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", default-features = false, features = ["groth16", "manta-parameters", "scale"] }
 manta-primitives = { path = "../../primitives/manta", default-features = false }
 manta-util = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", default-features = false }
 
