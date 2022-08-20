@@ -29,9 +29,12 @@ pub type BlockNumber = u32;
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
 
+/// Signer Type
+pub type Signer = <Signature as Verify>::Signer;
+
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
 /// to the public key of our transaction signing scheme.
-pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
+pub type AccountId = <Signer as IdentifyAccount>::AccountId;
 
 /// Account Index Type
 ///

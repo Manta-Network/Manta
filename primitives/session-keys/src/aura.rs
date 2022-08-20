@@ -14,5 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-/// Aura consensus authority
+//! Aura Keys
+
+/// Aura Consensus Authority
 pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;

@@ -17,9 +17,10 @@
 //! Asset Utilities
 
 use alloc::vec::Vec;
-use codec::{Codec, Decode, Encode};
+use codec::{Decode, Encode};
 use core::{borrow::Borrow, marker::PhantomData};
 use frame_support::{
+    dispatch::DispatchError,
     pallet_prelude::Get,
     traits::tokens::{
         currency::Currency,
@@ -32,7 +33,6 @@ use frame_support::{
 use frame_system::Config;
 use scale_info::TypeInfo;
 use sp_core::H160;
-use sp_runtime::{traits::Member, DispatchError, DispatchResult};
 use xcm::{
     v1::{Junctions, MultiLocation},
     VersionedMultiLocation,
@@ -75,12 +75,57 @@ pub trait AssetMetadata: BalanceType {
     fn is_sufficient(&self) -> bool;
 }
 
-/// Asset Configuration
+/// Asset Registry
 ///
-pub trait AssetConfig<C>: 'static + Clone + Eq + AssetIdType + BalanceType + LocationType
+/// The registrar trait: defines the interface of creating an asset in the asset implementation
+/// layer. We may revisit this interface design (e.g. add change asset interface). However, change
+/// in StorageMetadata should be rare.
+pub trait AssetRegistry: AssetIdType + BalanceType {
+    /// Metadata Type
+    type Metadata;
+
+    /// Error Type
+    type Error;
+
+    /// Creates an new asset.
+    ///
+    /// * `asset_id`: the asset id to be created
+    /// * `metadata`: the metadata that the implementation layer stores
+    /// * `min_balance`: the minimum balance to hold this asset
+    /// * `is_sufficient`: whether this asset can be used as reserve asset,
+    ///     to the first approximation. More specifically, Whether a non-zero balance of this asset
+    ///     is deposit of sufficient value to account for the state bloat associated with its
+    ///     balance storage. If set to `true`, then non-zero balances may be stored without a
+    ///     `consumer` reference (and thus an ED in the Balances pallet or whatever else is used to
+    ///     control user-account state growth).
+    fn create_asset(
+        asset_id: Self::AssetId,
+        metadata: Self::Metadata,
+        min_balance: Self::Balance,
+        is_sufficient: bool,
+    ) -> Result<(), Self::Error>;
+
+    /// Update asset metadata by `AssetId`.
+    ///
+    /// * `asset_id`: the asset id to be created.
+    /// * `metadata`: the metadata that the implementation layer stores.
+    fn update_asset_metadata(
+        asset_id: &Self::AssetId,
+        metadata: Self::Metadata,
+    ) -> Result<(), Self::Error>;
+}
+
+/// Asset Configuration
+pub trait AssetConfig<C>: AssetIdType + BalanceType + LocationType
 where
     C: Config,
 {
+    /// Metadata type that required in token storage: e.g. AssetMetadata in Pallet-Assets.
+    type StorageMetadata: From<Self::AssetRegistryMetadata>;
+
+    /// The Asset Metadata type stored in this pallet.
+    type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance> + Default + Parameter;
+
     /// The AssetId that the non-native asset starts from.
     ///
     /// A typical configuration is 8, so that asset 0 - 7 is reserved.
@@ -95,30 +140,15 @@ where
     /// Native Asset Metadata
     type NativeAssetMetadata: Get<Self::AssetRegistryMetadata>;
 
+    /// Asset Registry
     ///
-    ///
-    /// The trait we use to register Assets and mint assets
-    type AssetRegistry: AssetRegistry<C, Self>;
-
-    /// Metadata type that required in token storage: e.g. AssetMetadata in Pallet-Assets.
-    type StorageMetadata: Default + Member + Parameter + From<Self::AssetRegistryMetadata>;
-
-    /// The Asset Metadata type stored in this pallet.
-    type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance>
-        + Codec
-        + Default
-        + Member
-        + Parameter;
-
-    /*
-    /// The AssetLocation type: could be just a thin wrapper of MultiLocation
-    type AssetLocation: Default
-        + Member
-        + Parameter
-        + TypeInfo
-        + From<MultiLocation>
-        + Into<Option<MultiLocation>>;
-    */
+    /// The trait we use to register Assets and mint assets.
+    type AssetRegistry: AssetRegistry<
+        AssetId = Self::AssetId,
+        Balance = Self::Balance,
+        Metadata = Self::StorageMetadata,
+        Error = DispatchError,
+    >;
 
     /// Fungible Ledger
     type FungibleLedger: FungibleLedger<
@@ -126,41 +156,6 @@ where
         AssetId = Self::AssetId,
         Balance = Self::Balance,
     >;
-}
-
-/// Asset Registry
-///
-/// The registrar trait: defines the interface of creating an asset in the asset implementation
-/// layer. We may revisit this interface design (e.g. add change asset interface). However, change
-/// in StorageMetadata should be rare.
-pub trait AssetRegistry<C, T>
-where
-    C: Config,
-    T: AssetConfig<C>,
-{
-    /// Creates an new asset.
-    ///
-    /// * `asset_id`: the asset id to be created
-    /// * `metadata`: the metadata that the implementation layer stores
-    /// * `min_balance`: the minimum balance to hold this asset
-    /// * `is_sufficient`: whether this asset can be used as reserve asset,
-    ///     to the first approximation. More specifically, Whether a non-zero balance of this asset
-    ///     is deposit of sufficient value to account for the state bloat associated with its
-    ///     balance storage. If set to `true`, then non-zero balances may be stored without a
-    ///     `consumer` reference (and thus an ED in the Balances pallet or whatever else is used to
-    ///     control user-account state growth).
-    fn create_asset(
-        asset_id: T::AssetId,
-        metadata: T::StorageMetadata,
-        min_balance: T::Balance,
-        is_sufficient: bool,
-    ) -> DispatchResult;
-
-    /// Update asset metadata by `AssetId`.
-    ///
-    /// * `asset_id`: the asset id to be created.
-    /// * `metadata`: the metadata that the implementation layer stores.
-    fn update_asset_metadata(asset_id: T::AssetId, metadata: T::StorageMetadata) -> DispatchResult;
 }
 
 /// Asset Storage Metadata

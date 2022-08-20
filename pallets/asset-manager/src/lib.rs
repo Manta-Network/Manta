@@ -51,8 +51,8 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use manta_primitives::assets::{
-        self, AssetConfig, AssetId, AssetIdLocationMap, AssetIdType, AssetMetadata, AssetRegistry,
-        Balance, FungibleLedger, Location, LocationType,
+        self, AssetConfig, AssetIdLocationMap, AssetIdType, AssetMetadata, AssetRegistry,
+        FungibleLedger, LocationType,
     };
     use manta_util::num::CheckedIncrement;
     use orml_traits::GetByKey;
@@ -62,36 +62,34 @@ pub mod pallet {
     };
     use xcm::latest::prelude::*;
 
-    ///
+    /// Storage Version
     pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
-    /// Alias for the junction Parachain(#[codec(compact)] u32),
+    /// Alias for the junction type `Parachain(#[codec(compact)] u32)`
     pub(crate) type ParaId = u32;
 
-    ///
+    /// Asset Count Type
     pub(crate) type AssetCount = u32;
 
-    ///
+    /// Pallet Configuration
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-        ///
+        /// Asset Id Type
         type AssetId: CheckedIncrement
             + Default
-            + Member
             + Parameter
             + Serialize
             + for<'de> Deserialize<'de>
             + TypeInfo;
 
-        ///
+        /// Balance Type
         type Balance: Default + Member + Parameter + TypeInfo;
 
-        ///
+        /// Location Type
         type Location: Default
-            + Member
             + Parameter
             + TypeInfo
             + From<MultiLocation>
@@ -127,14 +125,14 @@ pub mod pallet {
     where
         T: Config,
     {
-        type AssetId = AssetId<T::AssetConfig>;
+        type AssetId = T::AssetId;
     }
 
     impl<T> LocationType for Pallet<T>
     where
         T: Config,
     {
-        type Location = Location<T::AssetConfig>;
+        type Location = T::Location;
     }
 
     impl<T> AssetIdLocationMap for Pallet<T>
@@ -165,7 +163,7 @@ pub mod pallet {
     ///
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub start_id: AssetId<T::AssetConfig>,
+        pub start_id: T::AssetId,
     }
 
     #[cfg(feature = "std")]
@@ -220,10 +218,10 @@ pub mod pallet {
         /// A new asset was registered
         AssetRegistered {
             /// Asset Id of new Asset
-            asset_id: AssetId<T::AssetConfig>,
+            asset_id: T::AssetId,
 
             /// Location of the new Asset
-            location: Location<T::AssetConfig>,
+            location: T::Location,
 
             /// Metadata Registered to Asset Manager
             metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
@@ -232,16 +230,16 @@ pub mod pallet {
         /// Updated the location of an asset
         AssetLocationUpdated {
             /// Asset Id of the updated Asset
-            asset_id: AssetId<T::AssetConfig>,
+            asset_id: T::AssetId,
 
             /// Updated Location for the Asset
-            location: Location<T::AssetConfig>,
+            location: T::Location,
         },
 
         /// Updated the metadata of an asset
         AssetMetadataUpdated {
             /// Asset Id of the updated Asset
-            asset_id: AssetId<T::AssetConfig>,
+            asset_id: T::AssetId,
 
             /// Updated Metadata for the Asset
             metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
@@ -250,7 +248,7 @@ pub mod pallet {
         /// Updated the units-per-second for an asset
         UnitsPerSecondUpdated {
             /// Asset Id of the updated Asset
-            asset_id: AssetId<T::AssetConfig>,
+            asset_id: T::AssetId,
 
             /// Updated units-per-second for the Asset
             units_per_second: u128,
@@ -259,19 +257,19 @@ pub mod pallet {
         /// An asset was minted
         AssetMinted {
             /// Asset Id of the minted Asset
-            asset_id: AssetId<T::AssetConfig>,
+            asset_id: T::AssetId,
 
             /// Beneficiary Account
             beneficiary: T::AccountId,
 
             /// Amount Minted
-            amount: Balance<T::AssetConfig>,
+            amount: T::Balance,
         },
 
         /// Updated the minimum XCM fee for an asset
         MinXcmFeeUpdated {
             /// Reserve Chain Location
-            reserve_chain: Location<T::AssetConfig>,
+            reserve_chain: T::Location,
 
             /// Updated Minimum XCM Fee
             min_xcm_fee: u128,
@@ -309,7 +307,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn asset_id_location)]
     pub(super) type AssetIdLocation<T: Config> =
-        StorageMap<_, Blake2_128Concat, AssetId<T::AssetConfig>, Location<T::AssetConfig>>;
+        StorageMap<_, Blake2_128Concat, T::AssetId, T::Location>;
 
     /// [`MultiLocation`] to [`AssetId`](AssetConfig::AssetId) Map
     ///
@@ -317,7 +315,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn location_asset_id)]
     pub(super) type LocationAssetId<T: Config> =
-        StorageMap<_, Blake2_128Concat, Location<T::AssetConfig>, AssetId<T::AssetConfig>>;
+        StorageMap<_, Blake2_128Concat, T::Location, T::AssetId>;
 
     /// AssetId to AssetRegistrar Map.
     #[pallet::storage]
@@ -325,24 +323,23 @@ pub mod pallet {
     pub(super) type AssetIdMetadata<T: Config> = StorageMap<
         _,
         Blake2_128Concat,
-        AssetId<T::AssetConfig>,
+        T::AssetId,
         <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
     >;
 
     /// The Next Available [`AssetId`](AssetConfig::AssetId)
     #[pallet::storage]
     #[pallet::getter(fn next_asset_id)]
-    pub type NextAssetId<T: Config> = StorageValue<_, AssetId<T::AssetConfig>, ValueQuery>;
+    pub type NextAssetId<T: Config> = StorageValue<_, T::AssetId, ValueQuery>;
 
     /// XCM transfer cost for each [`AssetId`](AssetConfig::AssetId)
     #[pallet::storage]
-    pub type UnitsPerSecond<T: Config> =
-        StorageMap<_, Blake2_128Concat, AssetId<T::AssetConfig>, u128>;
+    pub type UnitsPerSecond<T: Config> = StorageMap<_, Blake2_128Concat, T::AssetId, u128>;
 
     /// Minimum xcm execution fee paid on destination chain.
     #[pallet::storage]
     #[pallet::getter(fn get_min_xcm_fee)]
-    pub type MinXcmFee<T: Config> = StorageMap<_, Blake2_128Concat, Location<T::AssetConfig>, u128>;
+    pub type MinXcmFee<T: Config> = StorageMap<_, Blake2_128Concat, T::Location, u128>;
 
     /// The count of associated assets for each para id except relaychain.
     #[pallet::storage]
@@ -364,7 +361,7 @@ pub mod pallet {
         #[transactional]
         pub fn register_asset(
             origin: OriginFor<T>,
-            location: Location<T::AssetConfig>,
+            location: T::Location,
             metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
@@ -410,8 +407,8 @@ pub mod pallet {
         #[transactional]
         pub fn update_asset_location(
             origin: OriginFor<T>,
-            asset_id: AssetId<T::AssetConfig>,
-            location: Location<T::AssetConfig>,
+            asset_id: T::AssetId,
+            location: T::Location,
         ) -> DispatchResult {
             // checks validity
             T::ModifierOrigin::ensure_origin(origin)?;
@@ -472,7 +469,7 @@ pub mod pallet {
         #[transactional]
         pub fn update_asset_metadata(
             origin: OriginFor<T>,
-            asset_id: AssetId<T::AssetConfig>,
+            asset_id: T::AssetId,
             metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
@@ -485,7 +482,7 @@ pub mod pallet {
                 Error::<T>::UpdateNonExistentAsset
             );
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::update_asset_metadata(
-                asset_id.clone(),
+                &asset_id,
                 metadata.clone().into(),
             )?;
             AssetIdMetadata::<T>::insert(&asset_id, &metadata);
@@ -503,7 +500,7 @@ pub mod pallet {
         #[transactional]
         pub fn set_units_per_second(
             origin: OriginFor<T>,
-            asset_id: AssetId<T::AssetConfig>,
+            asset_id: T::AssetId,
             #[pallet::compact] units_per_second: u128,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
@@ -530,9 +527,9 @@ pub mod pallet {
         #[transactional]
         pub fn mint_asset(
             origin: OriginFor<T>,
-            asset_id: AssetId<T::AssetConfig>,
+            asset_id: T::AssetId,
             beneficiary: T::AccountId,
-            amount: Balance<T::AssetConfig>,
+            amount: T::Balance,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
@@ -570,7 +567,7 @@ pub mod pallet {
         #[transactional]
         pub fn set_min_xcm_fee(
             origin: OriginFor<T>,
-            reserve_chain: Location<T::AssetConfig>,
+            reserve_chain: T::Location,
             #[pallet::compact] min_xcm_fee: u128,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
@@ -589,7 +586,7 @@ pub mod pallet {
     {
         /// Returns and increments the [`NextAssetId`] by one.
         #[inline]
-        fn next_asset_id_and_increment() -> Result<AssetId<T::AssetConfig>, DispatchError> {
+        fn next_asset_id_and_increment() -> Result<T::AssetId, DispatchError> {
             NextAssetId::<T>::try_mutate(|current| {
                 let id = current.clone();
                 current
@@ -674,7 +671,7 @@ pub mod pallet {
     {
         #[inline]
         fn get(location: &MultiLocation) -> Option<u128> {
-            MinXcmFee::<T>::get(&Location::<T::AssetConfig>::from(location.clone()))
+            MinXcmFee::<T>::get(&T::Location::from(location.clone()))
         }
     }
 }
