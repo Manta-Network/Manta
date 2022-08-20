@@ -1,8 +1,8 @@
 [package]
-authors = ['Manta Network']
+authors = ["Manta Network"]
 description = "Primitives for session keys"
 edition = "2021"
-license = 'GPL-3.0'
+license = "GPL-3.0"
 name = "session-key-primitives"
 version = "3.2.1"
 
@@ -13,8 +13,8 @@ nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branc
 parity-scale-codec = { version = "3.1.2", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
-sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.26" }
-sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.26" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.26" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.26" }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
 
 [features]
@@ -25,7 +25,7 @@ std = [
   "parity-scale-codec/std",
   "scale-info/std",
   "sp-application-crypto/std",
+  "sp-consensus-aura/std",
+  "sp-core/std",
   "sp-runtime/std",
-  'sp-core/std',
-  'sp-consensus-aura/std',
 ]

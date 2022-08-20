@@ -16,7 +16,7 @@
 
 //! VRF Keys
 
-use sp_application_crypto::{sr25519, KeyTypeId, UncheckedFrom};
+use sp_application_crypto::KeyTypeId;
 use sp_runtime::{BoundToRuntimeAppPublic, ConsensusEngineId};
 
 /// Implementation of [`BoundToRuntimeAppPublic`] with the public key set to [`VrfId`]
@@ -55,6 +55,7 @@ sp_application_crypto::with_pair! {
 mod test {
     use super::*;
     use crate::{util::dummy_key, AuraId};
+    use sp_application_crypto::{sr25519, UncheckedFrom};
 
     /// Checks that the dummy [`VrfId`] created from an [`AuraId`] is of the expected form.
     #[test]
