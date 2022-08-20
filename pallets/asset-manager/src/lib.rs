@@ -372,7 +372,7 @@ pub mod pallet {
                 !LocationAssetId::<T>::contains_key(&location),
                 Error::<T>::LocationAlreadyExists
             );
-            let asset_id = Self::next_asset_id()?;
+            let asset_id = Self::next_asset_id_and_increment()?;
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
                 asset_id.clone(),
                 metadata.clone().into(),
@@ -589,10 +589,10 @@ pub mod pallet {
     {
         /// Returns and increments the [`NextAssetId`] by one.
         #[inline]
-        fn next_asset_id() -> Result<AssetId<T::AssetConfig>, DispatchError> {
+        fn next_asset_id_and_increment() -> Result<AssetId<T::AssetConfig>, DispatchError> {
             NextAssetId::<T>::try_mutate(|current| {
-                let id = *current;
-                *current = current
+                let id = current.clone();
+                current
                     .checked_increment()
                     .ok_or(ArithmeticError::Overflow)?;
                 Ok(id)
