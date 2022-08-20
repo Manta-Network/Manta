@@ -28,7 +28,7 @@ The following checks can be performed after we have frozen our release candidate
 
 - [ ] Code freeze should typically happen one week prior to release, to ensure we have enough time for related testing.
 - [ ] Notify everyone, especially people with merge rights to `manta` (stechu, Dengjianping) that a release is ongoing and no more merges to `manta` should happen until told otherwise
-- [ ] Complete the following [manual QA workflow](https://hackmd.io/TbFmorG2RnOPmLuFcg9JOQ?view).
+- [ ] Complete the [manual QA workflow](https://www.notion.so/mantanetwork/d55be01354bb4f579b16d6e34df9e2e1?v=dcfa54e2b4a343ad9b899574ddb94a1c).
 - [ ] Verify Polkadot JS API are up to date with the latest
     runtime changes.
 - [ ] Execute runtime upgrade to Baikal relay and verify network stability.
