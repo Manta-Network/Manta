@@ -4944,7 +4944,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#f7f70a1ad654fcdb98191acbc77a4de1488d5be6"
+source = "git+https://github.com/manta-network/manta-rs?branch=feat/new-circuits#f7f70a1ad654fcdb98191acbc77a4de1488d5be6"
 dependencies = [
  "derivative",
  "derive_more",
@@ -4987,7 +4987,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#f7f70a1ad654fcdb98191acbc77a4de1488d5be6"
+source = "git+https://github.com/manta-network/manta-rs?branch=feat/new-circuits#f7f70a1ad654fcdb98191acbc77a4de1488d5be6"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -5004,7 +5004,7 @@ dependencies = [
 [[package]]
 name = "manta-parameters"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#f7f70a1ad654fcdb98191acbc77a4de1488d5be6"
+source = "git+https://github.com/manta-network/manta-rs?branch=feat/new-circuits#f7f70a1ad654fcdb98191acbc77a4de1488d5be6"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5017,7 +5017,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#f7f70a1ad654fcdb98191acbc77a4de1488d5be6"
+source = "git+https://github.com/manta-network/manta-rs?branch=feat/new-circuits#f7f70a1ad654fcdb98191acbc77a4de1488d5be6"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -5129,7 +5129,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#f7f70a1ad654fcdb98191acbc77a4de1488d5be6"
+source = "git+https://github.com/manta-network/manta-rs?branch=feat/new-circuits#f7f70a1ad654fcdb98191acbc77a4de1488d5be6"
 dependencies = [
  "serde",
  "serde_with",
@@ -5868,6 +5868,7 @@ dependencies = [
  "frame-system",
  "log",
  "manta-primitives",
+ "manta-util",
  "orml-traits",
  "pallet-assets",
  "pallet-balances",
@@ -12926,7 +12927,7 @@ dependencies = [
 [[package]]
 name = "workspace-hack"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#f7f70a1ad654fcdb98191acbc77a4de1488d5be6"
+source = "git+https://github.com/manta-network/manta-rs?branch=feat/new-circuits#f7f70a1ad654fcdb98191acbc77a4de1488d5be6"
 
 [[package]]
 name = "wyz"

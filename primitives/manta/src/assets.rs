@@ -104,7 +104,11 @@ where
     type StorageMetadata: Default + Member + Parameter + From<Self::AssetRegistryMetadata>;
 
     /// The Asset Metadata type stored in this pallet.
-    type AssetRegistryMetadata: AssetMetadata + Codec + Default + Member + Parameter;
+    type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance>
+        + Codec
+        + Default
+        + Member
+        + Parameter;
 
     /*
     /// The AssetLocation type: could be just a thin wrapper of MultiLocation

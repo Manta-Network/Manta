@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-///! Do storage migration for AllowedDestParaIds which records the count of associated assets for each para id.
+//! Do storage migration for AllowedDestParaIds which records the count of associated assets for
+//! each para id.
+
 use super::*;
 use core::marker::PhantomData;
 use frame_support::{
@@ -23,35 +25,35 @@ use frame_support::{
     traits::{Get, OnRuntimeUpgrade, PalletInfoAccess, StorageVersion},
 };
 
+///
 pub struct AllowedDestParaIdsMigration<T>(PhantomData<T>);
-impl<T: GetStorageVersion + Config + PalletInfoAccess> OnRuntimeUpgrade
-    for AllowedDestParaIdsMigration<T>
+
+impl<T> OnRuntimeUpgrade for AllowedDestParaIdsMigration<T>
+where
+    T: GetStorageVersion + Config + PalletInfoAccess,
 {
     fn on_runtime_upgrade() -> Weight {
         // currently, it's 0 on calamari.
         let storage_version = <T as GetStorageVersion>::on_chain_storage_version();
         if storage_version < 1 {
             log::info!(target: "asset-manager", "Start to execute storage migration for asset-manager.");
-
             let mut reads: Weight = 0;
             let mut writes: Weight = 0;
             LocationAssetId::<T>::iter().for_each(|(location, _asset_id)| {
                 reads += 1;
                 if let Some(para_id) =
-                    Pallet::<T>::get_para_id_from_multilocation(location.into().as_ref())
+                    Pallet::<T>::para_id_from_multilocation(location.into().as_ref())
                 {
-                    if para_id != 2084 {
-                        let _ = Pallet::<T>::increase_count_of_associated_assets(para_id);
+                    if *para_id != 2084 {
+                        let _ = Pallet::<T>::increase_count_of_associated_assets(*para_id);
                         reads += 1; // There's one read in method increase_count_of_associated_assets.
                         writes += 1; // There's one write in method increase_count_of_associated_assets.
                     }
                 }
             });
-
             // Update storage version.
             StorageVersion::new(1u16).put::<T>();
             writes += 1;
-
             T::DbWeight::get()
                 .reads(reads)
                 .saturating_add(T::DbWeight::get().writes(writes))
@@ -65,22 +67,18 @@ impl<T: GetStorageVersion + Config + PalletInfoAccess> OnRuntimeUpgrade
     #[cfg(feature = "try-runtime")]
     fn pre_upgrade() -> Result<(), &'static str> {
         let storage_version = <T as GetStorageVersion>::on_chain_storage_version();
-
         if storage_version >= 1 {
             return Err("Storage version is >= 1, the migration won't be executed.");
         }
-
         Ok(())
     }
 
     #[cfg(feature = "try-runtime")]
     fn post_upgrade() -> Result<(), &'static str> {
         let storage_version = <T as GetStorageVersion>::on_chain_storage_version();
-
         if storage_version < 1 {
             return Err("Storage version is >= 1, the migration won't be executed.");
         }
-
         let acala = (2000, 3); // karura has 3 asset locations on calamari.
         let moonbeam = (2023, 1); // moonbean has 1 asset location on calamari.
         let calamari = 2084; // our own asset location won't be counted.
