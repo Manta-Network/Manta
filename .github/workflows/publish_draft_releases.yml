@@ -823,10 +823,6 @@ jobs:
       asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
     if: startsWith(github.ref, 'refs/tags')
     steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: changelog
-          path: ./
       - name: create draft release
         id: create-release
         uses: actions/create-release@v1
@@ -835,7 +831,6 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: ${{ github.ref }}
-          body_path: changelog.md
           draft: true
   publish-runtimes:
     runs-on: ubuntu-20.04
