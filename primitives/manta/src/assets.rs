@@ -16,10 +16,6 @@
 
 //! Asset Utilities
 
-use crate::{
-    constants::TEST_DEFAULT_ASSET_ED,
-    types::{AssetId, Balance},
-};
 use alloc::vec::Vec;
 use codec::{Codec, Decode, Encode};
 use core::{borrow::Borrow, marker::PhantomData};
@@ -43,13 +39,35 @@ use xcm::{
 };
 use xcm_executor::traits::Convert;
 
-/// Asset Metadata
-///
-///
-pub trait AssetMetadata {
+/// Asset Id
+pub trait AssetIdType {
+    /// Asset Id Type
+    type AssetId;
+}
+
+/// Asset Id Type
+pub type AssetId<T> = <T as AssetIdType>::AssetId;
+
+/// Balance
+pub trait BalanceType {
     /// Balance Type
     type Balance;
+}
 
+/// Balance Type
+pub type Balance<T> = <T as BalanceType>::Balance;
+
+/// Location
+pub trait LocationType {
+    /// Location Type
+    type Location;
+}
+
+/// Location Type
+pub type Location<T> = <T as LocationType>::Location;
+
+/// Asset Metadata
+pub trait AssetMetadata: BalanceType {
     /// Returns the minimum balance to hold this asset.
     fn min_balance(&self) -> &Self::Balance;
 
@@ -59,29 +77,20 @@ pub trait AssetMetadata {
 
 /// Asset Configuration
 ///
-pub trait AssetConfig<C>: 'static + Clone + Eq
+pub trait AssetConfig<C>: 'static + Clone + Eq + AssetIdType + BalanceType + LocationType
 where
     C: Config,
 {
-    /// Asset Id Type
-    type AssetId;
-
-    /// Balance Type
-    type Balance;
-
     /// The AssetId that the non-native asset starts from.
     ///
     /// A typical configuration is 8, so that asset 0 - 7 is reserved.
     type StartNonNativeAssetId: Get<Self::AssetId>;
 
-    /// Dummy Asset ID, a typical configuration is 0.
-    type DummyAssetId: Get<Self::AssetId>;
-
     /// The Native Asset Id, a typical configuration is 1.
     type NativeAssetId: Get<Self::AssetId>;
 
     /// Native Asset Location
-    type NativeAssetLocation: Get<Self::AssetLocation>;
+    type NativeAssetLocation: Get<Self::Location>;
 
     /// Native Asset Metadata
     type NativeAssetMetadata: Get<Self::AssetRegistryMetadata>;
@@ -97,6 +106,7 @@ where
     /// The Asset Metadata type stored in this pallet.
     type AssetRegistryMetadata: AssetMetadata + Codec + Default + Member + Parameter;
 
+    /*
     /// The AssetLocation type: could be just a thin wrapper of MultiLocation
     type AssetLocation: Default
         + Member
@@ -104,8 +114,9 @@ where
         + TypeInfo
         + From<MultiLocation>
         + Into<Option<MultiLocation>>;
+    */
 
-    /// The Fungible ledger implementation of this trait
+    /// Fungible Ledger
     type FungibleLedger: FungibleLedger<
         AccountId = C::AccountId,
         AssetId = Self::AssetId,
@@ -126,8 +137,8 @@ where
     /// Creates an new asset.
     ///
     /// * `asset_id`: the asset id to be created
-    /// * `min_balance`: the minimum balance to hold this asset
     /// * `metadata`: the metadata that the implementation layer stores
+    /// * `min_balance`: the minimum balance to hold this asset
     /// * `is_sufficient`: whether this asset can be used as reserve asset,
     ///     to the first approximation. More specifically, Whether a non-zero balance of this asset
     ///     is deposit of sufficient value to account for the state bloat associated with its
@@ -136,8 +147,8 @@ where
     ///     control user-account state growth).
     fn create_asset(
         asset_id: T::AssetId,
-        min_balance: T::Balance,
         metadata: T::StorageMetadata,
+        min_balance: T::Balance,
         is_sufficient: bool,
     ) -> DispatchResult;
 
@@ -148,33 +159,52 @@ where
     fn update_asset_metadata(asset_id: T::AssetId, metadata: T::StorageMetadata) -> DispatchResult;
 }
 
-/// The metadata of a Manta Asset
+/// Asset Storage Metadata
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
-pub struct AssetRegistryMetadata<B> {
-    ///
+pub struct AssetStorageMetadata {
+    /// Asset Name
     pub name: Vec<u8>,
 
-    ///
+    /// Asset Symbol
     pub symbol: Vec<u8>,
 
-    ///
+    /// Number of Decimals
     pub decimals: u8,
 
+    /// Frozen Flag
     ///
+    /// Whether or not transfers of the asset are allowed.
+    pub is_frozen: bool,
+}
+
+impl<B> From<AssetRegistryMetadata<B>> for AssetStorageMetadata {
+    #[inline]
+    fn from(source: AssetRegistryMetadata<B>) -> Self {
+        source.metadata
+    }
+}
+
+/// Asset Registry Metadata
+#[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
+pub struct AssetRegistryMetadata<B> {
+    /// Asset Storage Metadata
+    pub metadata: AssetStorageMetadata,
+
+    /// Optional EVM Address for the Asset
     pub evm_address: Option<H160>,
 
-    ///
-    pub is_frozen: bool,
-
-    ///
+    /// Minimum Balance
     pub min_balance: B,
 
-    /// `is_sufficient`: Whether a non-zero balance of this asset is deposit of sufficient
-    /// value to account for the state bloat associated with its balance storage. If set to
-    /// `true`, then non-zero balances may be stored without a `consumer` reference (and thus
-    /// an ED in the Balances pallet or whatever else is used to control user-account state
-    /// growth).
-    /// For example, if is_sufficient set to `false`, a fresh account cannot receive XCM tokens.
+    /// Sufficiency Flag
+    ///
+    /// This flag should be set to `true` whenever a non-zero balance of this asset is deposit of
+    /// sufficient value to account for the state bloat associated with its balance storage. If set
+    /// to `true`, then non-zero balances may be stored without a `consumer` reference (and thus an
+    /// existential deposit in the balances pallet or whatever else is used to control user-account
+    /// state growth).
+    ///
+    /// If this flag is set to `false`, a fresh account cannot receive XCM tokens.
     pub is_sufficient: bool,
 }
 
@@ -194,9 +224,11 @@ impl Default for AssetRegistrarMetadata {
 }
 */
 
-impl<B> AssetMetadata for AssetRegistryMetadata<B> {
+impl<B> BalanceType for AssetRegistryMetadata<B> {
     type Balance = B;
+}
 
+impl<B> AssetMetadata for AssetRegistryMetadata<B> {
     #[inline]
     fn min_balance(&self) -> &B {
         &self.min_balance
@@ -208,38 +240,8 @@ impl<B> AssetMetadata for AssetRegistryMetadata<B> {
     }
 }
 
-/// Asset storage metadata
-///
-/// Currently, `AssetStorageMetadata` is stored at `pallet-asset`.
-#[derive(Clone, Default, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
-pub struct AssetStorageMetadata {
-    ///
-    pub name: Vec<u8>,
-
-    ///
-    pub symbol: Vec<u8>,
-
-    ///
-    pub decimals: u8,
-
-    ///
-    pub is_frozen: bool,
-}
-
-impl<B> From<AssetRegistryMetadata<B>> for AssetStorageMetadata {
-    #[inline]
-    fn from(source: AssetRegistryMetadata<B>) -> Self {
-        Self {
-            name: source.name,
-            symbol: source.symbol,
-            decimals: source.decimals,
-            is_frozen: source.is_frozen,
-        }
-    }
-}
-
 /// Asset Location
-#[derive(Clone, Eq, Debug, PartialEq, Encode, Decode, TypeInfo)]
+#[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, TypeInfo)]
 pub struct AssetLocation(pub VersionedMultiLocation);
 
 impl Default for AssetLocation {
@@ -277,55 +279,52 @@ impl From<AssetLocation> for Option<MultiLocation> {
     }
 }
 
-/// Defines the trait to obtain a generic AssetId
-pub trait AssetIdLocationGetter<AssetLocation> {
-    /// Gets the [`AssetLocation`] from [`AssetId`].
-    fn get_asset_location(asset_id: AssetId) -> Option<AssetLocation>;
+///
+pub trait AssetIdLocationMap: AssetIdType + LocationType {
+    /// Returns the [`Location`](LocationType::Location) of `asset_id`.
+    fn location(asset_id: &Self::AssetId) -> Option<Self::Location>;
 
-    /// Gets the [`AssetId`] from [`AssetLocation`].
-    fn get_asset_id(loc: &AssetLocation) -> Option<AssetId>;
+    /// Returns the [`AssetId`](AssetIdType::AssetId) located at `location`.
+    fn asset_id(location: &Self::Location) -> Option<Self::AssetId>;
 }
 
 /// Defines the units per second charged given an `AssetId`.
-pub trait UnitsToWeightRatio {
-    /// Get units per second from asset id
-    fn get_units_per_second(asset_id: AssetId) -> Option<u128>;
+pub trait UnitsPerSecond: AssetIdType {
+    /// Returns the units per second for `asset_id`.
+    fn units_per_second(asset_id: &Self::AssetId) -> Option<u128>;
 }
 
-/// Converter struct implementing `Convert`.
-/// This enforce the `AssetInfoGetter` implements `AssetIdLocationGetter`
-pub struct AssetIdLocationConvert<AssetLocation, AssetInfoGetter>(
-    PhantomData<(AssetLocation, AssetInfoGetter)>,
-);
+///
+pub struct AssetIdLocationConvert<M>(PhantomData<M>);
 
-impl<AssetLocation, AssetInfoGetter> Convert<MultiLocation, AssetId>
-    for AssetIdLocationConvert<AssetLocation, AssetInfoGetter>
+impl<M> Convert<MultiLocation, M::AssetId> for AssetIdLocationConvert<M>
 where
-    AssetLocation: Clone + From<MultiLocation> + Into<Option<MultiLocation>>,
-    AssetInfoGetter: AssetIdLocationGetter<AssetLocation>,
+    M: AssetIdLocationMap,
+    M::AssetId: Clone,
+    M::Location: Clone + From<MultiLocation> + Into<Option<MultiLocation>>,
 {
     #[inline]
-    fn convert_ref(loc: impl Borrow<MultiLocation>) -> Result<AssetId, ()> {
-        AssetInfoGetter::get_asset_id(&loc.borrow().clone().into()).ok_or(())
+    fn convert_ref(location: impl Borrow<MultiLocation>) -> Result<M::AssetId, ()> {
+        M::asset_id(&location.borrow().clone().into()).ok_or(())
     }
 
     #[inline]
-    fn reverse_ref(id: impl Borrow<AssetId>) -> Result<MultiLocation, ()> {
-        AssetInfoGetter::get_asset_location(*id.borrow())
+    fn reverse_ref(asset_id: impl Borrow<M::AssetId>) -> Result<MultiLocation, ()> {
+        M::location(asset_id.borrow())
             .and_then(Into::into)
             .ok_or(())
     }
 }
 
 /// Fungible Ledger Error
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum FungibleLedgerError {
+#[derive(Clone, Copy, Debug, Decode, Encode, Eq, PartialEq, TypeInfo)]
+pub enum FungibleLedgerError<I, B> {
     /// Invalid Asset Id
-    InvalidAssetId,
+    InvalidAssetId(I),
 
-    /// Deposit couldn't happen due to the amount being too low. This is usually because the
-    /// account doesn't yet exist and the deposit wouldn't bring it to at least the minimum needed
-    /// for existence.
+    /// Deposit couldn't happen due to the amount being too low. This is usually because the account
+    /// doesn't yet exist and the deposit wouldn't bring it to at least the minimum needed for
+    /// existence.
     BelowMinimum,
 
     /// Deposit cannot happen since the account cannot be created (usually because it's a consumer
@@ -342,7 +341,7 @@ pub enum FungibleLedgerError {
     Overflow,
 
     /// Cannot withdraw more than the specified amount
-    CannotWithdrawMoreThan(Balance),
+    CannotWithdrawMoreThan(B),
 
     /// Unable to Mint an Asset
     InvalidMint(DispatchError),
@@ -354,7 +353,7 @@ pub enum FungibleLedgerError {
     InvalidTransfer(DispatchError),
 }
 
-impl FungibleLedgerError {
+impl<I, B> FungibleLedgerError<I, B> {
     /// Converts a deposit `consequence` into a [`FungibleLedgerError`] or into `Ok(())` when the
     /// value of `consequence` is [`Success`](DepositConsequence::Success).
     #[inline]
@@ -369,6 +368,14 @@ impl FungibleLedgerError {
     }
 }
 
+impl<I, B> AssetIdType for FungibleLedgerError<I, B> {
+    type AssetId = I;
+}
+
+impl<I, B> BalanceType for FungibleLedgerError<I, B> {
+    type Balance = B;
+}
+
 /// Unified Interface for Fungible Assets
 ///
 /// This trait unifies the interface for the [`fungible`] and [`fungibles`] modules.
@@ -378,18 +385,14 @@ impl FungibleLedgerError {
 ///
 /// It is assumed that the supply of native asset cannot be changed,
 /// while the supply of non-native assets can increase or decrease.
-pub trait FungibleLedger {
+pub trait FungibleLedger: AssetIdType + BalanceType {
     /// Account Id Type
     type AccountId;
 
-    /// Asset Id Type
-    type AssetId;
-
-    /// Balance Type
-    type Balance;
-
     /// Checks if an asset id is valid and returning and [`Error`](FungibleLedgerError) otherwise.
-    fn ensure_valid(asset_id: &Self::AssetId) -> Result<(), FungibleLedgerError>;
+    fn ensure_valid(
+        asset_id: &Self::AssetId,
+    ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>>;
 
     /// Check whether `account` can increase its balance by `amount` in the given `asset_id`.
     /// Non-native assets will use the `can_increase_total_supply` check, while native assets will not.
@@ -398,7 +401,7 @@ pub trait FungibleLedger {
         account: &Self::AccountId,
         amount: &Self::Balance,
         can_increase_total_supply: bool,
-    ) -> Result<(), FungibleLedgerError>;
+    ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>>;
 
     /// Check whether `account` can decrease its balance by `amount` in the given `asset_id`.
     fn can_reduce_by_amount(
@@ -406,7 +409,7 @@ pub trait FungibleLedger {
         account: &Self::AccountId,
         amount: &Self::Balance,
         existence_requirement: ExistenceRequirement,
-    ) -> Result<(), FungibleLedgerError>;
+    ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>>;
 
     /// Deposit `amount` of an asset with the given `asset_id` to `beneficiary`.
     /// Will mint and increase the total supply of non-native assets.
@@ -414,7 +417,7 @@ pub trait FungibleLedger {
         asset_id: &Self::AssetId,
         beneficiary: &Self::AccountId,
         amount: &Self::Balance,
-    ) -> Result<(), FungibleLedgerError>;
+    ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>>;
 
     /// Performs a transfer from `source` to `destination` of
     fn transfer(
@@ -423,7 +426,7 @@ pub trait FungibleLedger {
         destination: &Self::AccountId,
         amount: &Self::Balance,
         existence_requirement: ExistenceRequirement,
-    ) -> Result<(), FungibleLedgerError>;
+    ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>>;
 
     /// Performs a withdraw from `who` for `amount` of `asset_id`
     /// Will burn and decrease total supply of non-native assets
@@ -432,7 +435,7 @@ pub trait FungibleLedger {
         who: &Self::AccountId,
         amount: &Self::Balance,
         existence_requirement: ExistenceRequirement,
-    ) -> Result<(), FungibleLedgerError>;
+    ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>>;
 }
 
 ///

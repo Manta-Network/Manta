@@ -16,7 +16,7 @@
 
 //! XCM Primitives
 
-use crate::assets::{AssetConfig, AssetIdLocationGetter, FungibleLedger, UnitsToWeightRatio};
+use crate::assets::{AssetConfig, AssetIdLocationMap, FungibleLedger, UnitsPerSecond};
 use core::marker::PhantomData;
 use frame_support::{
     pallet_prelude::Get,
@@ -105,7 +105,7 @@ where
 /// This trader defines how to charge a XCM call.
 /// This takes the first fungible asset, and takes UnitPerSecondGetter that implements
 /// UnitToWeightRatio trait.
-pub struct FirstAssetTrader<AssetId, AssetLocation, AssetIdInfoGetter, R>
+pub struct FirstAssetTrader<M, R>
 where
     R: TakeRevenue,
 {
@@ -116,18 +116,15 @@ where
     refund_cache: Option<(MultiLocation, u128, u128)>,
 
     /// Type Parameter Marker
-    __: PhantomData<(AssetId, AssetLocation, AssetIdInfoGetter, R)>,
+    __: PhantomData<(M, R)>,
 }
 
-impl<AssetId, AssetLocation, AssetIdInfoGetter, R> WeightTrader
-    for FirstAssetTrader<AssetId, AssetLocation, AssetIdInfoGetter, R>
+impl<M, R> WeightTrader for FirstAssetTrader<M, R>
 where
-    AssetLocation: From<MultiLocation>,
-    AssetIdInfoGetter: AssetIdLocationGetter<AssetLocation> + UnitsToWeightRatio,
+    M: AssetIdLocationMap + UnitsPerSecond,
+    M::Location: From<MultiLocation>,
     R: TakeRevenue,
 {
-    /* TODO remove:
-    /// Builds a new default [`FirstAssetTrader`].
     #[inline]
     fn new() -> Self {
         Self {
@@ -136,7 +133,6 @@ where
             __: PhantomData,
         }
     }
-    */
 
     /// Buys weight for XCM execution. We always return the [`TooExpensive`](Error::TooExpensive)
     /// error if this fails.
@@ -161,7 +157,7 @@ where
         // Check the first asset
         match (first_asset.id, first_asset.fun) {
             (XcmAssetId::Concrete(id), Fungibility::Fungible(_)) => {
-                let asset_id = AssetIdInfoGetter::get_asset_id(&id.clone().into()).ok_or({
+                let asset_id = M::asset_id(&id.clone().into()).ok_or({
                     log::debug!(
                         target: "FirstAssetTrader::buy_weight",
                         "asset_id missing for asset location with id: {:?}",
@@ -169,15 +165,14 @@ where
                     );
                     Error::TooExpensive
                 })?;
-                let units_per_second =
-                    AssetIdInfoGetter::get_units_per_second(asset_id).ok_or({
-                        log::debug!(
-                            target: "FirstAssetTrader::buy_weight",
-                            "units_per_second missing for asset with id: {:?}",
-                            id,
-                        );
-                        Error::TooExpensive
-                    })?;
+                let units_per_second = M::units_per_second(&asset_id).ok_or({
+                    log::debug!(
+                        target: "FirstAssetTrader::buy_weight",
+                        "units_per_second missing for asset with id: {:?}",
+                        id,
+                    );
+                    Error::TooExpensive
+                })?;
 
                 let amount = units_per_second * (weight as u128) / (WEIGHT_PER_SECOND as u128);
                 // we don't need to proceed if amount is zero.
@@ -260,8 +255,7 @@ where
     }
 }
 
-impl<AssetId, AssetLocation, AssetIdInfoGetter, R> Drop
-    for FirstAssetTrader<AssetId, AssetLocation, AssetIdInfoGetter, R>
+impl<M, R> Drop for FirstAssetTrader<M, R>
 where
     R: TakeRevenue,
 {

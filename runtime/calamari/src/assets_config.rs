@@ -99,9 +99,8 @@ impl AssetRegistrar<Runtime, CalamariAssetConfig> for CalamariAssetRegistrar {
 }
 
 parameter_types! {
-    pub const DummyAssetId: AssetId = 0;
-    pub const NativeAssetId: AssetId = 1;
     pub const StartNonNativeAssetId: AssetId = 8;
+    pub const NativeAssetId: AssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(SelfReserve::get()));
     pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
@@ -123,9 +122,8 @@ pub type CalamariConcreteFungibleLedger =
 pub struct CalamariAssetConfig;
 
 impl AssetConfig<Runtime> for CalamariAssetConfig {
-    type DummyAssetId = DummyAssetId;
-    type NativeAssetId = NativeAssetId;
     type StartNonNativeAssetId = StartNonNativeAssetId;
+    type NativeAssetId = NativeAssetId;
     type AssetRegistrarMetadata = AssetRegistrarMetadata;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;

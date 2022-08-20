@@ -109,9 +109,8 @@ impl AssetRegistrar<Runtime, DolphinAssetConfig> for MantaAssetRegistrar {
 }
 
 parameter_types! {
-    pub const DummyAssetId: AssetId = 0;
-    pub const NativeAssetId: AssetId = 1;
     pub const StartNonNativeAssetId: AssetId = 8;
+    pub const NativeAssetId: AssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(SelfReserve::get()));
     pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
@@ -133,9 +132,8 @@ pub type DolphinConcreteFungibleLedger =
 pub struct DolphinAssetConfig;
 
 impl AssetConfig<Runtime> for DolphinAssetConfig {
-    type DummyAssetId = DummyAssetId;
-    type NativeAssetId = NativeAssetId;
     type StartNonNativeAssetId = StartNonNativeAssetId;
+    type NativeAssetId = NativeAssetId;
     type AssetRegistrarMetadata = AssetRegistrarMetadata;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;

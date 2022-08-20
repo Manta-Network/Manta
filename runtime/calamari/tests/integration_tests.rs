@@ -1207,23 +1207,6 @@ fn concrete_fungible_ledger_transfers_work() {
                 0
             );
 
-            // Transferring invalid asset ID should not work.
-            assert_err!(
-                CalamariConcreteFungibleLedger::transfer(
-                    <CalamariAssetConfig as AssetConfig<Runtime>>::DummyAssetId::get(),
-                    &alice.clone(),
-                    &charlie.clone(),
-                    transfer_amount,
-                    ExistenceRequirement::KeepAlive
-                ),
-                FungibleLedgerError::InvalidAssetId
-            );
-            assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
-            assert_eq!(
-                Balances::free_balance(charlie.clone()),
-                current_balance_charlie
-            );
-
             // Transferring unregistered asset ID should not work.
             assert_err!(
                 CalamariConcreteFungibleLedger::transfer(

@@ -528,9 +528,8 @@ impl AssetRegistrar<Runtime, ParachainAssetConfig> for CalamariAssetRegistrar {
 }
 
 parameter_types! {
-    pub const DummyAssetId: AssetId = 0;
-    pub const NativeAssetId: AssetId = 1;
     pub const StartNonNativeAssetId: AssetId = 8;
+    pub const NativeAssetId: AssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(SelfReserve::get()));
     pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
@@ -546,13 +545,13 @@ parameter_types! {
 
 }
 
+///
 #[derive(Clone, Eq, PartialEq)]
 pub struct ParachainAssetConfig;
 
 impl AssetConfig<Runtime> for ParachainAssetConfig {
-    type DummyAssetId = DummyAssetId;
-    type NativeAssetId = NativeAssetId;
     type StartNonNativeAssetId = StartNonNativeAssetId;
+    type NativeAssetId = NativeAssetId;
     type AssetRegistrarMetadata = AssetRegistrarMetadata;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;

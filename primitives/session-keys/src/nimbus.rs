@@ -15,7 +15,6 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Helpers for handling nimbus keys
-#![cfg_attr(not(feature = "std"), no_std)]
 
 use crate::AuraId;
 use sp_application_crypto::{sr25519, UncheckedFrom};

@@ -14,7 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! VRF Key type, which is sr25519
+//! VRF Key type, which is [`sr25519`]
+
 use crate::AuraId;
 use sp_application_crypto::{sr25519, KeyTypeId, UncheckedFrom};
 use sp_runtime::{BoundToRuntimeAppPublic, ConsensusEngineId};
@@ -40,7 +41,7 @@ pub const VRF_ENGINE_ID: ConsensusEngineId = *b"rand";
 /// The KeyTypeId used for VRF keys
 pub const VRF_KEY_ID: KeyTypeId = KeyTypeId(VRF_ENGINE_ID);
 
-// The strongly-typed crypto wrappers to be used by VRF in the keystore
+/// The strongly-typed crypto wrappers to be used by VRF in the keystore
 mod vrf_crypto {
     use sp_application_crypto::{app_crypto, sr25519};
     app_crypto!(sr25519, crate::vrf::VRF_KEY_ID);
