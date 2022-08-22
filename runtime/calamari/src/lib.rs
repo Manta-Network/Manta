@@ -24,6 +24,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+pub use frame_support::traits::Get;
 use manta_collator_selection::IdentityCollator;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -31,7 +32,7 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, Perbill, Permill,
+    ApplyExtrinsicResult, Perbill, Percent, Permill,
 };
 use sp_std::{cmp::Ordering, prelude::*};
 
@@ -42,8 +43,8 @@ use sp_version::RuntimeVersion;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, NeverEnsureOrigin,
-        PrivilegeCmp,
+    ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse,
+        NeverEnsureOrigin, PrivilegeCmp,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -59,6 +60,7 @@ use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
+pub use pallet_parachain_staking::{InflationInfo, Range};
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
@@ -551,7 +553,81 @@ impl pallet_aura_style_filter::Config for Runtime {
     /// Nimbus filter pipeline (final) step 3:
     /// Choose 1 collator from PotentialAuthors as eligible
     /// for each slot in round-robin fashion
-    type PotentialAuthors = CollatorSelection;
+    type PotentialAuthors = ParachainStaking;
+}
+
+parameter_types! {
+    /// Default fixed percent a collator takes off the top of due rewards
+    pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(20);
+    /// Default percent of inflation set aside for parachain bond every round
+    pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(30);
+}
+
+pub struct OnCollatorPayout;
+impl pallet_parachain_staking::OnCollatorPayout<AccountId, Balance> for OnCollatorPayout {
+    fn on_collator_payout(
+        _for_round: pallet_parachain_staking::RoundIndex,
+        _collator_id: AccountId,
+        _amount: Balance,
+    ) -> Weight {
+        // MoonbeamOrbiters::distribute_rewards(for_round, collator_id, amount)
+        0
+    }
+}
+pub struct OnNewRound;
+impl pallet_parachain_staking::OnNewRound for OnNewRound {
+    fn on_new_round(_round_index: pallet_parachain_staking::RoundIndex) -> Weight {
+        // MoonbeamOrbiters::on_new_round(round_index)
+        0
+    }
+}
+
+parameter_types! {
+    pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(2 * HOURS ,15,"DOLPHIN_DEFAULTBLOCKSPERROUND");
+}
+impl pallet_parachain_staking::Config for Runtime {
+    type Event = Event;
+    type Currency = Balances;
+    type BlockAuthor = AuthorInherent;
+    type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
+    /// Minimum round length is 2 minutes (10 * 12 second block times)
+    type MinBlocksPerRound = ConstU32<10>;
+    /// Blocks per round
+    type DefaultBlocksPerRound = DefaultBlocksPerRound;
+    /// Rounds before the collator leaving the candidates request can be executed
+    type LeaveCandidatesDelay = ConstU32<24>;
+    /// Rounds before the candidate bond increase/decrease can be executed
+    type CandidateBondLessDelay = ConstU32<24>;
+    /// Rounds before the delegator exit can be executed
+    type LeaveDelegatorsDelay = ConstU32<24>;
+    /// Rounds before the delegator revocation can be executed
+    type RevokeDelegationDelay = ConstU32<24>;
+    /// Rounds before the delegator bond increase/decrease can be executed
+    type DelegationBondLessDelay = ConstU32<24>;
+    /// Rounds before the reward is paid
+    type RewardPaymentDelay = ConstU32<2>;
+    /// Minimum collators selected per round, default at genesis and minimum forever after
+    type MinSelectedCandidates = ConstU32<8>;
+    /// Maximum top delegations per candidate
+    type MaxTopDelegationsPerCandidate = ConstU32<300>;
+    /// Maximum bottom delegations per candidate
+    type MaxBottomDelegationsPerCandidate = ConstU32<50>;
+    /// Maximum delegations per delegator
+    type MaxDelegationsPerDelegator = ConstU32<100>;
+    type DefaultCollatorCommission = DefaultCollatorCommission;
+    type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
+    /// Minimum stake required to become a collator
+    type MinCollatorStk = ConstU128<{ 1000 * KMA }>;
+    /// Minimum stake required to be reserved to be a candidate
+    type MinCandidateStk = ConstU128<{ 500 * KMA }>;
+    /// Minimum stake required to be reserved to be a delegator
+    type MinDelegation = ConstU128<{ 5 * KMA }>;
+    /// Minimum stake required to be reserved to be a delegator
+    type MinDelegatorStk = ConstU128<{ 5 * KMA }>;
+    type OnCollatorPayout = OnCollatorPayout;
+    type OnNewRound = OnNewRound;
+    type WeightInfo = ();
+    // type WeightInfo = pallet_parachain_staking::weights::SubstrateWeight<Runtime>; TODO
 }
 
 impl pallet_author_inherent::Config for Runtime {
@@ -725,6 +801,7 @@ construct_runtime!(
         TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 17,
         TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 
+        ParachainStaking: pallet_parachain_staking::{Pallet, Call, Storage, Event<T>, Config<T>} = 48,
         // Collator support.
         AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 60,
         AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage} = 63,
@@ -834,6 +911,7 @@ mod benches {
         [pallet_tx_pause, TransactionPause]
         [manta_collator_selection, CollatorSelection]
         [pallet_asset_manager, AssetManager]
+        [pallet_parachain_staking, ParachainStaking]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );
@@ -846,7 +924,9 @@ impl_runtime_apis! {
         }
 
         fn authorities() -> Vec<AuraId> {
-            Aura::authorities().into_inner()
+            // NOTE: AuraAPI must exist for node/src/aura_or_nimbus_consensus.rs
+            // But is intentionally DISABLED starting with manta v3.3.0
+            vec![]
         }
     }
 
@@ -1055,4 +1135,12 @@ cumulus_pallet_parachain_system::register_validate_block! {
     Runtime = Runtime,
     BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
     CheckInherents = CheckInherents,
+}
+
+// Shorthand for a Get field of a pallet Config ( used in chain_spec/calamari.rs )
+#[macro_export]
+macro_rules! get {
+    ($pallet:ident, $name:ident, $type:ty) => {
+        <<$crate::Runtime as $pallet::Config>::$name as $crate::Get<$type>>::get()
+    };
 }

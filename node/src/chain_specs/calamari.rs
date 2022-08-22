@@ -18,10 +18,12 @@
 
 use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
+#[allow(unused_imports)]
 use calamari_runtime::{
-    opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
+    currency::KMA, get, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,    InflationInfo, ParachainStakingConfig, Range,
 };
 use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
+use sp_runtime::Perbill;
 
 /// Calamari Protocol Identifier
 pub const CALAMARI_PROTOCOL_ID: &str = "calamari";
@@ -62,6 +64,9 @@ pub fn calamari_development_config() -> CalamariChainSpec {
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
                     SessionKeys::new(get_collator_keys_from_seed("Alice")),
                 )],
+
+                // Delegations
+                vec![],
                 vec![
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
                     get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -112,6 +117,8 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                         SessionKeys::new(get_collator_keys_from_seed("Eve")),
                     ),
                 ],
+                // Delegations
+                vec![],
                 vec![
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
                     get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -140,6 +147,8 @@ pub fn calamari_local_config() -> CalamariChainSpec {
 
 fn calamari_dev_genesis(
     invulnerables: Vec<(AccountId, SessionKeys)>,
+
+    delegations: Vec<(AccountId, AccountId, Balance)>,
     endowed_accounts: Vec<AccountId>,
 ) -> GenesisConfig {
     GenesisConfig {
@@ -162,6 +171,15 @@ fn calamari_dev_genesis(
         // no need to pass anything to aura, in fact it will panic if we do. Session will take care
         // of this.
         aura: Default::default(),
+        parachain_staking: ParachainStakingConfig {
+            candidates: invulnerables
+                .iter()
+                .cloned()
+                .map(|(account, _)| (account, 1000 * KMA))
+                .collect(),
+            delegations,
+            inflation_config: inflation_config(),
+        },
         parachain_info: calamari_runtime::ParachainInfoConfig {
             parachain_id: CALAMARI_PARACHAIN_ID.into(),
         },
@@ -201,7 +219,35 @@ fn calamari_dev_genesis(
         },
     }
 }
-
+pub fn inflation_config() -> InflationInfo<Balance> {
+    fn to_round_inflation(annual: Range<Perbill>) -> Range<Perbill> {
+        use pallet_parachain_staking::inflation::{
+            perbill_annual_to_perbill_round, BLOCKS_PER_YEAR,
+        };
+        perbill_annual_to_perbill_round(
+            annual,
+            // rounds per year
+            BLOCKS_PER_YEAR
+                / calamari_runtime::get!(pallet_parachain_staking, DefaultBlocksPerRound, u32),
+        )
+    }
+    let annual = Range {
+        min: Perbill::from_percent(4),
+        ideal: Perbill::from_percent(5),
+        max: Perbill::from_percent(5),
+    };
+    InflationInfo {
+        // staking expectations
+        expect: Range {
+            min: 100_000 * KMA,
+            ideal: 200_000 * KMA,
+            max: 500_000 * KMA,
+        },
+        // annual inflation
+        annual,
+        round: to_round_inflation(annual),
+    }
+}
 /// Returns the Calamari testnet chainspec.
 pub fn calamari_testnet_config() -> Result<CalamariChainSpec, String> {
     let mut spec = CalamariChainSpec::from_json_bytes(
