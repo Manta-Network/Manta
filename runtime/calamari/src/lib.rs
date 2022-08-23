@@ -560,30 +560,10 @@ parameter_types! {
     /// Default fixed percent a collator takes off the top of due rewards
     pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(20);
     /// Default percent of inflation set aside for parachain bond every round
-    pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(30);
-}
-
-pub struct OnCollatorPayout;
-impl pallet_parachain_staking::OnCollatorPayout<AccountId, Balance> for OnCollatorPayout {
-    fn on_collator_payout(
-        _for_round: pallet_parachain_staking::RoundIndex,
-        _collator_id: AccountId,
-        _amount: Balance,
-    ) -> Weight {
-        // MoonbeamOrbiters::distribute_rewards(for_round, collator_id, amount)
-        0
-    }
-}
-pub struct OnNewRound;
-impl pallet_parachain_staking::OnNewRound for OnNewRound {
-    fn on_new_round(_round_index: pallet_parachain_staking::RoundIndex) -> Weight {
-        // MoonbeamOrbiters::on_new_round(round_index)
-        0
-    }
-}
-
-parameter_types! {
-    pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(2 * HOURS ,15,"DOLPHIN_DEFAULTBLOCKSPERROUND");
+    pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(0);
+    pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(2 * HOURS ,15,"CALAMARI_DEFAULTBLOCKSPERROUND");
+    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(2 * DAYS / DefaultBlocksPerRound,1,"CALAMARI_DEFAULTBLOCKSPERROUND");
+    pub CandidateBondLessDelay: BlockNumber = prod_or_fast!(2 * DAYS / DefaultBlocksPerRound,1,"CALAMARI_DEFAULTBLOCKSPERROUND");
 }
 impl pallet_parachain_staking::Config for Runtime {
     type Event = Event;
@@ -595,39 +575,57 @@ impl pallet_parachain_staking::Config for Runtime {
     /// Blocks per round
     type DefaultBlocksPerRound = DefaultBlocksPerRound;
     /// Rounds before the collator leaving the candidates request can be executed
-    type LeaveCandidatesDelay = ConstU32<24>;
+    type LeaveCandidatesDelay = LeaveDelayRounds;
     /// Rounds before the candidate bond increase/decrease can be executed
-    type CandidateBondLessDelay = ConstU32<24>;
+    type CandidateBondLessDelay = LeaveDelayRounds;
     /// Rounds before the delegator exit can be executed
-    type LeaveDelegatorsDelay = ConstU32<24>;
+    type LeaveDelegatorsDelay = LeaveDelayRounds;
     /// Rounds before the delegator revocation can be executed
-    type RevokeDelegationDelay = ConstU32<24>;
+    type RevokeDelegationDelay = LeaveDelayRounds;
     /// Rounds before the delegator bond increase/decrease can be executed
-    type DelegationBondLessDelay = ConstU32<24>;
+    type DelegationBondLessDelay = LeaveDelayRounds;
     /// Rounds before the reward is paid
     type RewardPaymentDelay = ConstU32<2>;
     /// Minimum collators selected per round, default at genesis and minimum forever after
-    type MinSelectedCandidates = ConstU32<8>;
+    type MinSelectedCandidates = ConstU32<5>;
     /// Maximum top delegations per candidate
-    type MaxTopDelegationsPerCandidate = ConstU32<300>;
+    type MaxTopDelegationsPerCandidate = ConstU32<100>;
     /// Maximum bottom delegations per candidate
     type MaxBottomDelegationsPerCandidate = ConstU32<50>;
     /// Maximum delegations per delegator
-    type MaxDelegationsPerDelegator = ConstU32<100>;
+    type MaxDelegationsPerDelegator = ConstU32<25>;
     type DefaultCollatorCommission = DefaultCollatorCommission;
     type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
-    /// Minimum stake required to become a collator
-    type MinCollatorStk = ConstU128<{ 1000 * KMA }>;
-    /// Minimum stake required to be reserved to be a candidate
-    type MinCandidateStk = ConstU128<{ 500 * KMA }>;
+    /// Minimum stake on a collator to be considered for block production
+    type MinCollatorStk = ConstU128<{ 4_000_000 * KMA }>;
+    /// Minimum stake the collator runner must bond to register as collator candidate
+    type MinCandidateStk = ConstU128<{ 4_000_000 * KMA }>;
+    /// Smallest amount that can be delegated
+    type MinDelegation = ConstU128<{ 5_000 * KMA }>;
     /// Minimum stake required to be reserved to be a delegator
-    type MinDelegation = ConstU128<{ 5 * KMA }>;
-    /// Minimum stake required to be reserved to be a delegator
-    type MinDelegatorStk = ConstU128<{ 5 * KMA }>;
+    type MinDelegatorStk = ConstU128<{ 5_000 * KMA }>;
     type OnCollatorPayout = OnCollatorPayout;
     type OnNewRound = OnNewRound;
     type WeightInfo = ();
     // type WeightInfo = pallet_parachain_staking::weights::SubstrateWeight<Runtime>; TODO
+}
+pub struct OnCollatorPayout;
+impl pallet_parachain_staking::OnCollatorPayout<AccountId, Balance> for OnCollatorPayout {
+    fn on_collator_payout(
+        _for_round: pallet_parachain_staking::RoundIndex,
+        _collator_id: AccountId,
+        _amount: Balance,
+    ) -> Weight {
+        // MoonbeamOrbiters::distribute_rewards(for_round, collator_id, amount)
+        0 // TODO: Fix
+    }
+}
+pub struct OnNewRound;
+impl pallet_parachain_staking::OnNewRound for OnNewRound {
+    fn on_new_round(_round_index: pallet_parachain_staking::RoundIndex) -> Weight {
+        // MoonbeamOrbiters::on_new_round(round_index)
+        0 // TODO: Fix
+    }
 }
 
 impl pallet_author_inherent::Config for Runtime {
