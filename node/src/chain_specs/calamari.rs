@@ -175,7 +175,7 @@ fn calamari_dev_genesis(
             candidates: invulnerables
                 .iter()
                 .cloned()
-                .map(|(account, _)| (account, 1000 * KMA))
+                .map(|(account, _)| (account, 4_000_000 * KMA))
                 .collect(),
             delegations,
             inflation_config: inflation_config(),
