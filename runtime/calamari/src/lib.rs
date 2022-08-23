@@ -33,7 +33,7 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Percent, Permill,
+    ApplyExtrinsicResult, FixedPointNumber, PerThing, Perbill, Percent, Permill,
 };
 use sp_std::{cmp::Ordering, prelude::*};
 
@@ -559,7 +559,7 @@ impl pallet_aura_style_filter::Config for Runtime {
 use sp_runtime::traits::UniqueSaturatedInto;
 parameter_types! {
     /// Default fixed percent a collator takes off the top of due rewards
-    pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(20);
+    pub DefaultCollatorCommission: Perbill = Perbill::from_rational_with_rounding(1u32, 6u32, sp_arithmetic::Rounding::Down).unwrap(); // 0.5 out of 3% inflation go to collators, TODO: Read this val from primitives
     /// Default percent of inflation set aside for parachain bond every round
     pub const DefaultParachainBondReservePercent: Percent = Percent::zero();
     pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(2 * HOURS ,15,"CALAMARI_DEFAULTBLOCKSPERROUND");

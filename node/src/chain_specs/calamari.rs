@@ -24,8 +24,7 @@ use calamari_runtime::{
     InflationInfo, ParachainStakingConfig, Range, TechnicalCommitteeConfig,
 };
 use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
-use sp_runtime::Perbill;
-
+use sp_runtime::{PerThing, Perbill};
 /// Calamari Protocol Identifier
 pub const CALAMARI_PROTOCOL_ID: &str = "calamari";
 
@@ -175,7 +174,7 @@ fn calamari_dev_genesis(
             candidates: invulnerables
                 .iter()
                 .cloned()
-                .map(|(account, _)| (account, 4_000_000 * KMA))
+                .map(|(account, _)| (account, 4_000_000 * KMA)) // TODO: Change to use constant from primtives
                 .collect(),
             delegations,
             inflation_config: inflation_config(),
@@ -232,9 +231,10 @@ pub fn inflation_config() -> InflationInfo<Balance> {
         )
     }
     let annual = Range {
-        min: Perbill::from_percent(4),
-        ideal: Perbill::from_percent(5),
-        max: Perbill::from_percent(5),
+        min: Perbill::from_rational_with_rounding(5u32, 200u32, sp_arithmetic::Rounding::Down)
+            .expect("constant denom is not 0. qed"), // = 2.5%
+        ideal: Perbill::from_percent(3),
+        max: Perbill::from_percent(3),
     };
     InflationInfo {
         // staking expectations

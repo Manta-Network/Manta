@@ -4938,6 +4938,7 @@ dependencies = [
  "session-key-primitives",
  "sp-api",
  "sp-application-crypto",
+ "sp-arithmetic",
  "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
