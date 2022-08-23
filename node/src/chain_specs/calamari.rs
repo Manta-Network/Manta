@@ -20,7 +20,8 @@ use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
 #[allow(unused_imports)]
 use calamari_runtime::{
-    currency::KMA, get, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,    InflationInfo, ParachainStakingConfig, Range,
+    currency::KMA, get, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig,
+    InflationInfo, ParachainStakingConfig, Range, TechnicalCommitteeConfig,
 };
 use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 use sp_runtime::Perbill;
@@ -64,7 +65,6 @@ pub fn calamari_development_config() -> CalamariChainSpec {
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
                     SessionKeys::new(get_collator_keys_from_seed("Alice")),
                 )],
-
                 // Delegations
                 vec![],
                 vec![

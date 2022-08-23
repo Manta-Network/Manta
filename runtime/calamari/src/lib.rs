@@ -27,16 +27,15 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub use frame_support::traits::Get;
 use manta_collator_selection::IdentityCollator;
 use sp_api::impl_runtime_apis;
+use sp_arithmetic::FixedU128;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, Perbill, Percent, Permill,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Percent, Permill,
 };
 use sp_std::{cmp::Ordering, prelude::*};
-use sp_arithmetic::FixedU128;
-use sp_runtime::FixedPointNumber;
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -45,7 +44,7 @@ use sp_version::RuntimeVersion;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-    ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse,
+        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse,
         NeverEnsureOrigin, PrivilegeCmp,
     },
     weights::{
@@ -1135,7 +1134,6 @@ cumulus_pallet_parachain_system::register_validate_block! {
     BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
     CheckInherents = CheckInherents,
 }
-
 
 // Shorthand for a Get field of a pallet Config ( used in chain_spec/calamari.rs )
 #[macro_export]

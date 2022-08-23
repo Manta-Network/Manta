@@ -203,7 +203,6 @@ fn dolphin_dev_genesis(
     }
 }
 
-
 /// Returns the Dolphin testnet chainspec.
 pub fn dolphin_testnet_config() -> Result<DolphinChainSpec, String> {
     let mut spec = DolphinChainSpec::from_json_bytes(

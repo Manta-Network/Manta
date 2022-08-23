@@ -276,7 +276,6 @@ impl Contains<Call> for BaseFilter {
     }
 }
 
-
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
     type BaseCallFilter = BaseFilter; // Let filter activate.
@@ -557,7 +556,6 @@ impl pallet_aura_style_filter::Config for Runtime {
     /// for each slot in round-robin fashion
     type PotentialAuthors = CollatorSelection;
 }
-
 
 impl pallet_author_inherent::Config for Runtime {
     // We start a new slot each time we see a new relay block.
