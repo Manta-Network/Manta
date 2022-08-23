@@ -34,7 +34,9 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, Perbill, Percent, Permill,
 };
+use sp_runtime::SaturatedConversion;
 use sp_std::{cmp::Ordering, prelude::*};
+use substrate_fixed::FixedU32;
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -562,8 +564,15 @@ parameter_types! {
     /// Default percent of inflation set aside for parachain bond every round
     pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(0);
     pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(2 * HOURS ,15,"CALAMARI_DEFAULTBLOCKSPERROUND");
-    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(2 * DAYS / DefaultBlocksPerRound,1,"CALAMARI_DEFAULTBLOCKSPERROUND");
-    pub CandidateBondLessDelay: BlockNumber = prod_or_fast!(2 * DAYS / DefaultBlocksPerRound,1,"CALAMARI_DEFAULTBLOCKSPERROUND");
+    pub LeaveDelayRounds: BlockNumber = prod_or_fast!((FixedU32::from(2 * DAYS) / FixedU32::from(Into::<u32>::into(DefaultBlocksPerRound))).into(),1,"CALAMARI_DEFAULTBLOCKSPERROUND");
+    // pub LeaveDelayRounds: BlockNumber = (FixedU32::from(2 * DAYS) / FixedU32::from(Into::<u32>::into(DefaultBlocksPerRound))).into();
+}
+#[test]
+fn defaultBlocksPerRound_is_large_enough_for_division(){
+    let a : u32 = BlockNumber{3};
+    assert!(
+        // 2 * DAYS > DefaultBlocksPerRound * 10
+    );
 }
 impl pallet_parachain_staking::Config for Runtime {
     type Event = Event;
@@ -1134,6 +1143,7 @@ cumulus_pallet_parachain_system::register_validate_block! {
     BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
     CheckInherents = CheckInherents,
 }
+
 
 // Shorthand for a Get field of a pallet Config ( used in chain_spec/calamari.rs )
 #[macro_export]
