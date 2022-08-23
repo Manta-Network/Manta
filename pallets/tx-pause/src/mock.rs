@@ -96,7 +96,8 @@ ord_parameter_types! {
 
 impl Config for Runtime {
     type Event = Event;
-    type UpdateOrigin = EnsureRoot<AccountId>;
+    type PauseOrigin = EnsureRoot<AccountId>;
+    type UnpauseOrigin = EnsureRoot<AccountId>;
     type WeightInfo = ();
 }
 

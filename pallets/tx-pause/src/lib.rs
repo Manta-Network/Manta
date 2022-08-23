@@ -51,8 +51,14 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-        /// The origin which may set filter.
-        type UpdateOrigin: EnsureOrigin<Self::Origin>;
+        /// The origin which may add to filter.
+        type PauseOrigin: EnsureOrigin<Self::Origin>;
+
+        /// The origin which may remove from filter.
+        type UnpauseOrigin: EnsureOrigin<Self::Origin>;
+
+        /// Names of pallets which cannot be paused.
+        type UnpausablePallets: Contains<Vec<u8>>;
 
         /// Weight information for the extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -103,13 +109,18 @@ pub mod pallet {
             pallet_name: Vec<u8>,
             function_name: Vec<u8>,
         ) -> DispatchResult {
-            T::UpdateOrigin::ensure_origin(origin)?;
+            T::PauseOrigin::ensure_origin(origin)?;
 
             // not allowed to pause calls of this pallet to ensure safe
             let pallet_name_string =
                 sp_std::str::from_utf8(&pallet_name).map_err(|_| Error::<T>::InvalidCharacter)?;
             ensure!(
                 pallet_name_string != <Self as PalletInfoAccess>::name(),
+                Error::<T>::CannotPause
+            );
+
+            ensure!(
+                !T::UnpausablePallets::contains(&pallet_name),
                 Error::<T>::CannotPause
             );
 
@@ -135,7 +146,7 @@ pub mod pallet {
             pallet_name: Vec<u8>,
             function_name: Vec<u8>,
         ) -> DispatchResult {
-            T::UpdateOrigin::ensure_origin(origin)?;
+            T::UnpauseOrigin::ensure_origin(origin)?;
             if PausedTransactions::<T>::take((&pallet_name, &function_name)).is_some() {
                 Self::deposit_event(Event::TransactionUnpaused(pallet_name, function_name));
             };
