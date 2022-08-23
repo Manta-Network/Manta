@@ -707,11 +707,13 @@ pub(crate) fn create_asset_location(parents: u8, para_id: u32) -> AssetLocation 
         return AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
             parents, Here,
         )));
+    } else if parents == 1 {
+        return AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
+            parents,
+            X1(Parachain(para_id)),
+        )));
     }
-    AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
-        parents,
-        X1(Parachain(para_id)),
-    )))
+    panic!("Asset MultiLocation parents should be 0 or 1")
 }
 
 fn insert_dummy_data(
