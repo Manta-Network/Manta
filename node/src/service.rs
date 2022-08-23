@@ -37,7 +37,7 @@ use sc_network::NetworkService;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_service::{Configuration, Error, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
-use session_key_primitives::NimbusId;
+use session_key_primitives::{AuraId, NimbusId};
 use sp_api::{ApiExt, ConstructRuntimeApi};
 use sp_keystore::SyncCryptoStorePtr;
 use sp_offchain::OffchainWorkerApi;
@@ -122,6 +122,7 @@ where
         + sp_api::Metadata<Block>
         + SessionKeys<Block>
         + ApiExt<Block, StateBackend = StateBackend>
+        + sp_consensus_aura::AuraApi<Block, AuraId>
         + OffchainWorkerApi<Block>
         + sp_block_builder::BlockBuilder<Block>,
     StateBackend: sp_api::StateBackend<BlakeTwo256>,
@@ -164,17 +165,14 @@ where
         task_manager.spawn_essential_handle(),
         client.clone(),
     );
-    let import_queue = nimbus_consensus::import_queue(
-        client.clone(),
-        client.clone(),
-        move |_, _| async move {
-            let time = sp_timestamp::InherentDataProvider::from_system_time();
 
-            Ok((time,))
-        },
+    let import_queue = crate::aura_or_nimbus_consensus::import_queue(
+        // single step block import pipeline, after nimbus/aura seal, import block into client
+        client.clone(),
+        client.clone(),
         &task_manager.spawn_essential_handle(),
         config.prometheus_registry(),
-        true, // Note: we run as parachain only. No sovereign chain mode
+        telemetry.as_ref().map(|telemetry| telemetry.handle()),
     )?;
 
     Ok(PartialComponents {
@@ -240,6 +238,7 @@ where
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + nimbus_primitives::AuthorFilterAPI<Block, NimbusId>
         + nimbus_primitives::NimbusApi<Block>
+        + sp_consensus_aura::AuraApi<Block, AuraId>
         + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     StateBackend: sp_api::StateBackend<BlakeTwo256>,
     FullRpc: Fn(
@@ -403,6 +402,7 @@ where
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + nimbus_primitives::AuthorFilterAPI<Block, NimbusId>
         + nimbus_primitives::NimbusApi<Block>
+        + sp_consensus_aura::AuraApi<Block, AuraId>
         + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     StateBackend: sp_api::StateBackend<BlakeTwo256>,
     FullRpc: Fn(
