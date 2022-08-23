@@ -604,28 +604,10 @@ impl pallet_parachain_staking::Config for Runtime {
     type MinDelegation = ConstU128<{ 5_000 * KMA }>;
     /// Minimum stake required to be reserved to be a delegator
     type MinDelegatorStk = ConstU128<{ 5_000 * KMA }>;
-    type OnCollatorPayout = OnCollatorPayout;
-    type OnNewRound = OnNewRound;
+    type OnCollatorPayout = ();
+    type OnNewRound = ();
     type WeightInfo = ();
     // type WeightInfo = pallet_parachain_staking::weights::SubstrateWeight<Runtime>; TODO
-}
-pub struct OnCollatorPayout;
-impl pallet_parachain_staking::OnCollatorPayout<AccountId, Balance> for OnCollatorPayout {
-    fn on_collator_payout(
-        _for_round: pallet_parachain_staking::RoundIndex,
-        _collator_id: AccountId,
-        _amount: Balance,
-    ) -> Weight {
-        // MoonbeamOrbiters::distribute_rewards(for_round, collator_id, amount)
-        0 // TODO: Fix
-    }
-}
-pub struct OnNewRound;
-impl pallet_parachain_staking::OnNewRound for OnNewRound {
-    fn on_new_round(_round_index: pallet_parachain_staking::RoundIndex) -> Weight {
-        // MoonbeamOrbiters::on_new_round(round_index)
-        0 // TODO: Fix
-    }
 }
 
 impl pallet_author_inherent::Config for Runtime {
