@@ -405,7 +405,8 @@ pub trait FungibleLedger: AssetIdType + BalanceType {
         amount: Self::Balance,
     ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>>;
 
-    ///
+    /// Checks if `amount` of `asset_id` can be deposited into `account` and then deposits it if
+    /// that is successful.
     fn try_deposit_minting(
         asset_id: Self::AssetId,
         account: &Self::AccountId,
@@ -489,31 +490,6 @@ where
         }
     }
 
-    #[inline]
-    fn can_reduce_by_amount(
-        asset_id: Self::AssetId,
-        account: &C::AccountId,
-        amount: &Self::Balance,
-        existence_requirement: ExistenceRequirement,
-    ) -> Result<Self::AssetId, FungibleLedgerError<Self::AssetId, Self::Balance>> {
-        let asset_id = Self::ensure_valid(asset_id)?;
-        let keep_alive = match existence_requirement {
-            ExistenceRequirement::KeepAlive => true,
-            ExistenceRequirement::AllowDeath => false,
-        };
-        let reducible_amount = if asset_id == A::NativeAssetId::get() {
-            Native::reducible_balance(account, keep_alive)
-        } else {
-            NonNative::reducible_balance(asset_id.clone(), account, keep_alive)
-        };
-        if reducible_amount >= *amount {
-            return Ok(asset_id);
-        }
-        Err(FungibleLedgerError::CannotWithdrawMoreThan(
-            reducible_amount,
-        ))
-    }
-
     /// Non-native assets will use the `can_increase_total_supply` flag, while native assets will
     /// not.
     #[inline]
@@ -522,18 +498,19 @@ where
         account: &C::AccountId,
         amount: Self::Balance,
         can_increase_total_supply: bool,
-    ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>> {
+    ) -> Result<Self::AssetId, FungibleLedgerError<Self::AssetId, Self::Balance>> {
         let asset_id = Self::ensure_valid(asset_id)?;
         FungibleLedgerError::from_deposit(if asset_id == A::NativeAssetId::get() {
             Native::can_deposit(account, amount, false)
         } else {
-            NonNative::can_deposit(asset_id, account, amount, can_increase_total_supply)
+            NonNative::can_deposit(asset_id.clone(), account, amount, can_increase_total_supply)
         })
+        .map(|_| asset_id)
     }
 
     /// Will mint and increase the total supply of non-native assets.
     #[inline]
-    fn deposit_can_mint(
+    fn deposit_minting(
         asset_id: Self::AssetId,
         account: &C::AccountId,
         amount: Self::Balance,
@@ -599,15 +576,40 @@ where
         .map_err(FungibleLedgerError::InvalidTransfer)
     }
 
+    #[inline]
+    fn can_withdraw(
+        asset_id: Self::AssetId,
+        account: &C::AccountId,
+        amount: &Self::Balance,
+        existence_requirement: ExistenceRequirement,
+    ) -> Result<Self::AssetId, FungibleLedgerError<Self::AssetId, Self::Balance>> {
+        let asset_id = Self::ensure_valid(asset_id)?;
+        let keep_alive = match existence_requirement {
+            ExistenceRequirement::KeepAlive => true,
+            ExistenceRequirement::AllowDeath => false,
+        };
+        let reducible_amount = if asset_id == A::NativeAssetId::get() {
+            Native::reducible_balance(account, keep_alive)
+        } else {
+            NonNative::reducible_balance(asset_id.clone(), account, keep_alive)
+        };
+        if reducible_amount >= *amount {
+            return Ok(asset_id);
+        }
+        Err(FungibleLedgerError::CannotWithdrawMoreThan(
+            reducible_amount,
+        ))
+    }
+
     /// Will burn and decrease total supply of non-native assets.
     #[inline]
-    fn withdraw_can_burn(
+    fn withdraw_burning(
         asset_id: Self::AssetId,
         who: &C::AccountId,
         amount: Self::Balance,
         existence_requirement: ExistenceRequirement,
     ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>> {
-        let asset_id = Self::can_reduce_by_amount(
+        let asset_id = Self::can_withdraw(
             Self::ensure_valid(asset_id)?,
             who,
             &amount,

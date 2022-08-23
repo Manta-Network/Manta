@@ -379,13 +379,8 @@ where
         let (asset_id, who, amount) = Self::match_asset_and_location(asset, location)?;
         // NOTE: If it's non-native asset we want to check with increase in total supply. Otherwise
         //       it will just use false, as it is assumed the native asset supply cannot be changed.
-        A::FungibleLedger::can_deposit(asset_id.clone(), &who, amount.clone(), true).map_err(
-            |_| Error::FailedToTransactAsset("Failed MultiAdapterFungibleLedger::can_deposit"),
-        )?;
-        A::FungibleLedger::deposit_can_mint(asset_id, &who, amount).map_err(|_| {
-            Error::FailedToTransactAsset("Failed MultiAdapterFungibleLedger::deposit_can_mint")
-        })?;
-        Ok(())
+        A::FungibleLedger::try_deposit_minting(asset_id, &who, amount, true)
+            .map_err(|_| Error::FailedToTransactAsset("Failed deposit minting"))
     }
 
     #[inline]
@@ -396,7 +391,7 @@ where
             asset, location,
         );
         let (asset_id, who, amount) = Self::match_asset_and_location(asset, location)?;
-        A::FungibleLedger::withdraw_can_burn(
+        A::FungibleLedger::withdraw_burning(
             asset_id,
             &who,
             amount,

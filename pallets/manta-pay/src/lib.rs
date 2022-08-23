@@ -82,10 +82,10 @@ use manta_pay::{
         constraint::ProofSystem,
         merkle_tree::{self, forest::Configuration as _},
     },
-    manta_parameters::Get as _,
+    manta_parameters::{self, Get as _},
     manta_util::codec::Decode as _,
 };
-use manta_primitives::assets::{AssetConfig, FungibleLedger as _, FungibleLedgerError};
+use manta_primitives::assets::{self, AssetConfig, FungibleLedger as _};
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
@@ -112,6 +112,12 @@ pub mod rpc;
 #[cfg(feature = "runtime")]
 pub mod runtime;
 
+/// Standard Asset Id
+pub type StandardAssetId = u128;
+
+/// Fungible Ledger Error
+pub type FungibleLedgerError = assets::FungibleLedgerError<StandardAssetId, AssetValue>;
+
 /// MantaPay Pallet
 #[frame_support::pallet]
 pub mod pallet {
@@ -135,7 +141,7 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// Asset Configuration
-        type AssetConfig: AssetConfig<Self, AssetId = AssetId, Balance = AssetValue>;
+        type AssetConfig: AssetConfig<Self, AssetId = StandardAssetId, Balance = AssetValue>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -234,10 +240,10 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
             FungibleLedger::<T>::transfer(
-                &asset.id,
+                Self::id_from_field(asset.id).ok_or(Error::<T>::InvalidAssetId)?,
                 &origin,
                 &sink,
-                &asset.value,
+                asset.value,
                 ExistenceRequirement::KeepAlive,
             )
             .map_err(Error::<T>::from)?;
@@ -313,6 +319,11 @@ pub mod pallet {
         ///
         /// The transfer could not be interpreted because of an issue during deserialization.
         InvalidSerializedForm,
+
+        /// Invalid Asset Id
+        ///
+        /// The asset id of the transfer could not be converted correctly to the standard format.
+        InvalidAssetId,
 
         /// Invalid Shape
         ///
@@ -444,12 +455,12 @@ pub mod pallet {
         }
     }
 
-    impl<T> From<FungibleLedgerError<AssetId, AssetValue>> for Error<T>
+    impl<T> From<FungibleLedgerError> for Error<T>
     where
         T: Config,
     {
         #[inline]
-        fn from(err: FungibleLedgerError<AssetId, AssetValue>) -> Self {
+        fn from(err: FungibleLedgerError) -> Self {
             match err {
                 FungibleLedgerError::InvalidAssetId(_) => Self::PublicUpdateInvalidAssetId,
                 FungibleLedgerError::BelowMinimum => Self::PublicUpdateBelowMinimum,
@@ -468,7 +479,7 @@ pub mod pallet {
     pub type TransferPostError<T> = transfer::TransferPostError<
         config::Config,
         <T as frame_system::Config>::AccountId,
-        FungibleLedgerError<AssetId, AssetValue>,
+        FungibleLedgerError,
     >;
 
     impl<T> From<TransferPostError<T>> for Error<T>
@@ -527,7 +538,7 @@ pub mod pallet {
                     &mut receivers,
                     &mut receivers_pulled,
                 );
-                // if max capacity is reached and there is more to pull, then we return
+                // NOTE: If max capacity is reached and there is more to pull, then we return.
                 if receivers_pulled == max_update && more_receivers {
                     break;
                 }
@@ -633,6 +644,18 @@ pub mod pallet {
             */
             todo!()
         }
+
+        ///
+        #[inline]
+        pub fn id_from_field(id: [u8; 32]) -> Option<StandardAssetId> {
+            todo!()
+        }
+
+        ///
+        #[inline]
+        pub fn field_from_id(id: StandardAssetId) -> [u8; 32] {
+            todo!()
+        }
     }
 }
 
@@ -719,14 +742,11 @@ where
 
     #[inline]
     fn is_unspent(&self, nullifier: config::Nullifier) -> Option<Self::ValidNullifier> {
-        /* TODO:
-        if NullifierSet::<T>::contains_key(encode(&nullifier)) {
+        if NullifierCommitmentSet::<T>::contains_key(types::encode(&nullifier.commitment)) {
             None
         } else {
             Some(Wrap(nullifier))
         }
-        */
-        todo!()
     }
 
     #[inline]
@@ -734,13 +754,10 @@ where
         &self,
         output: config::UtxoAccumulatorOutput,
     ) -> Option<Self::ValidUtxoAccumulatorOutput> {
-        /* TODO:
-        if UtxoAccumulatorOutputs::<T>::contains_key(encode(&output)) {
+        if UtxoAccumulatorOutputs::<T>::contains_key(types::encode(&output)) {
             return Some(Wrap(output));
         }
         None
-        */
-        todo!()
     }
 
     #[inline]
@@ -748,13 +765,13 @@ where
     where
         I: IntoIterator<Item = (Self::ValidUtxoAccumulatorOutput, Self::ValidNullifier)>,
     {
-        /* TODO:
+        /*
         let _ = super_key;
         let index = NullifierSetSize::<T>::get();
         let mut i = 0;
         for (_, nullifier) in iter {
-            let nullifier = encode(&nullifier.0);
-            NullifierSet::<T>::insert(nullifier.commitment, ());
+            let nullifier = types::encode(&nullifier.0);
+            NullifierCommitmentSet::<T>::insert(nullifier.commitment, ());
             NullifierSetInsertionOrder::<T>::insert(index + i, nullifier);
             i += 1;
         }
@@ -790,13 +807,13 @@ where
     where
         I: IntoIterator<Item = (Self::ValidUtxo, config::Note)>,
     {
-        /* TODO:
         let _ = super_key;
         let parameters = config::UtxoAccumulatorModel::decode(
             manta_parameters::pay::testnet::parameters::UtxoAccumulatorModel::get()
                 .expect("Checksum did not match."),
         )
         .expect("Unable to decode the Merkle Tree Parameters.");
+        /* TODO:
         let mut shard_indices = iter
             .into_iter()
             .map(move |(utxo, note)| (MerkleTreeConfiguration::tree_index(&utxo.0), utxo.0, note))
@@ -846,7 +863,7 @@ where
     type SuperPostingKey = ();
     type AccountId = T::AccountId;
     type Event = PreprocessedEvent<T>;
-    type UpdateError = FungibleLedgerError<AssetId, AssetValue>;
+    type UpdateError = FungibleLedgerError;
     type ValidSourceAccount = WrapPair<Self::AccountId, AssetValue>;
     type ValidSinkAccount = WrapPair<Self::AccountId, AssetValue>;
     type ValidProof = Wrap<()>;
@@ -860,13 +877,13 @@ where
     where
         I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
     {
-        /* TODO:
+        /*
         sources
             .map(move |(account_id, withdraw)| {
-                FungibleLedger::<T>::can_reduce_by_amount(
+                FungibleLedger::<T>::can_withdraw(
                     asset_id.0,
                     &account_id,
-                    withdraw.0,
+                    &withdraw,
                     ExistenceRequirement::KeepAlive,
                 )
                 .map(|_| WrapPair(account_id.clone(), withdraw))
@@ -890,7 +907,7 @@ where
     where
         I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
     {
-        /* TODO:
+        /*
         // NOTE: Existence of accounts is type-checked so we don't need to do anything here, just
         // pass the data forward.
         sinks
@@ -913,46 +930,48 @@ where
         &self,
         posting_key: TransferPostingKeyRef<config::Config, Self>,
     ) -> Option<(Self::ValidProof, Self::Event)> {
-        /* TODO:
-        let (mut verifying_context, event) = match TransferShape::select(
-            asset_id.is_some(),
-            sources.len(),
-            senders.len(),
-            receivers.len(),
-            sinks.len(),
-        )? {
-            TransferShape::ToPrivate => (
-                manta_parameters::pay::testnet::verifying::ToPrivate::get()
-                    .expect("Checksum did not match."),
-                PreprocessedEvent::<T>::ToPrivate {
-                    asset: Asset::new(asset_id.unwrap().0, (sources[0].1).0),
-                    source: sources[0].0.clone(),
-                },
-            ),
-            TransferShape::PrivateTransfer => (
-                manta_parameters::pay::testnet::verifying::PrivateTransfer::get()
-                    .expect("Checksum did not match."),
-                PreprocessedEvent::<T>::PrivateTransfer,
-            ),
-            TransferShape::ToPublic => (
-                manta_parameters::pay::testnet::verifying::ToPublic::get()
-                    .expect("Checksum did not match."),
-                PreprocessedEvent::<T>::ToPublic {
-                    asset: Asset::new(asset_id.unwrap().0, (sinks[0].1).0),
-                    sink: sinks[0].0.clone(),
-                },
-            ),
-        };
-        config::ProofSystem::verify(
-            &config::VerifyingContext::decode(&mut verifying_context)
-                .expect("Unable to decode the verifying context."),
-            &TransferPostingKey::generate_proof_input(asset_id, sources, senders, receivers, sinks),
-            &proof,
-        )
-        .ok()?
-        .then_some((Wrap(()), event))
-        */
-        todo!()
+        let (mut verifying_context, event) =
+            match TransferShape::from_posting_key_ref(&posting_key)? {
+                TransferShape::ToPrivate =>
+                /*(
+                    manta_parameters::pay::testnet::verifying::ToPrivate::get()
+                        .expect("Checksum did not match."),
+                    PreprocessedEvent::<T>::ToPrivate {
+                        asset: Asset::new(
+                            posting_key.asset_id.unwrap().0,
+                            posting_key.sources[0].1,
+                        ),
+                        source: posting_key.sources[0].0.clone(),
+                    },
+                )*/
+                {
+                    todo!()
+                }
+                TransferShape::PrivateTransfer => (
+                    manta_parameters::pay::testnet::verifying::PrivateTransfer::get()
+                        .expect("Checksum did not match."),
+                    PreprocessedEvent::<T>::PrivateTransfer,
+                ),
+                TransferShape::ToPublic =>
+                /*(
+                    manta_parameters::pay::testnet::verifying::ToPublic::get()
+                        .expect("Checksum did not match."),
+                    PreprocessedEvent::<T>::ToPublic {
+                        asset: Asset::new(posting_key.asset_id.unwrap().0, posting_key.sinks[0].1),
+                        sink: posting_key.sinks[0].0.clone(),
+                    },
+                )*/
+                {
+                    todo!()
+                }
+            };
+        posting_key
+            .has_valid_proof(
+                &config::VerifyingContext::decode(&mut verifying_context)
+                    .expect("Unable to decode the verifying context."),
+            )
+            .ok()?
+            .then_some((Wrap(()), event))
     }
 
     #[inline]
@@ -964,14 +983,14 @@ where
         sinks: Vec<SinkPostingKey<config::Config, Self>>,
         proof: Self::ValidProof,
     ) -> Result<(), Self::UpdateError> {
-        /* TODO:
+        /*
         let _ = (proof, super_key);
         for WrapPair(account_id, withdraw) in sources {
             FungibleLedger::<T>::transfer(
                 asset_id.0,
                 &account_id,
                 &Pallet::<T>::account_id(),
-                withdraw.0,
+                withdraw,
                 ExistenceRequirement::KeepAlive,
             )?;
         }
@@ -980,7 +999,7 @@ where
                 asset_id.0,
                 &Pallet::<T>::account_id(),
                 &account_id,
-                deposit.0,
+                deposit,
                 ExistenceRequirement::KeepAlive,
             )?;
         }

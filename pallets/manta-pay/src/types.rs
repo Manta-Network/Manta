@@ -18,7 +18,8 @@
 
 use super::*;
 use manta_pay::{
-    config::utxo::v1::MerkleTreeConfiguration, manta_crypto::encryption::hybrid,
+    config::utxo::v1::{self, MerkleTreeConfiguration},
+    manta_crypto::encryption::hybrid,
     manta_util::into_array_unchecked,
 };
 use scale_codec::Error;
@@ -46,6 +47,12 @@ where
 {
     T::decode(&mut bytes.as_slice())
 }
+
+///
+pub const TAG_LENGTH: usize = 32;
+
+/// Tag Type
+pub type Tag = [u8; TAG_LENGTH];
 
 ///
 pub const GROUP_LENGTH: usize = 32;
@@ -115,75 +122,49 @@ impl Asset {
     }
 }
 
-/*
+/// Outgoing Ciphertext
+pub type OutgoingCiphertext = [[u8; 32]; 2];
 
-/// Encrypted Note
-#[cfg_attr(
-    feature = "rpc",
-    derive(Deserialize, Serialize),
-    serde(crate = "manta_util::serde", deny_unknown_fields)
-)]
-#[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
-pub struct EncryptedNote {
-    /// Ephemeral Public Key
-    pub ephemeral_public_key: Group,
-
-    /// Ciphertext
-    #[cfg_attr(
-        feature = "rpc",
-        serde(
-            with = "manta_util::serde_with::As::<[manta_util::serde_with::Same; CIPHER_TEXT_LENGTH]>"
-        )
-    )]
-    pub ciphertext: Ciphertext,
-}
-
-impl Default for EncryptedNote {
-    #[inline]
-    fn default() -> Self {
-        Self {
-            ephemeral_public_key: [0; EPHEMERAL_PUBLIC_KEY_LENGTH],
-            ciphertext: [0; CIPHER_TEXT_LENGTH],
-        }
-    }
-}
-
-impl From<config::EncryptedNote> for EncryptedNote {
-    #[inline]
-    fn from(encrypted_note: config::EncryptedNote) -> Self {
-        let encrypted_note = encrypted_note.ciphertext;
-        Self {
-            ephemeral_public_key: encode(encrypted_note.ephemeral_public_key),
-            ciphertext: encrypted_note.ciphertext.into(),
-        }
-    }
-}
-
-impl TryFrom<EncryptedNote> for config::EncryptedNote {
-    type Error = Error;
-
-    #[inline]
-    fn try_from(encrypted_note: EncryptedNote) -> Result<Self, Self::Error> {
-        Ok(Self {
-            header: (),
-            ciphertext: hybrid::Ciphertext {
-                ephemeral_public_key: decode(encrypted_note.ephemeral_public_key)?,
-                ciphertext: encrypted_note.ciphertext.into(),
-            },
-        })
-    }
-}
-
-*/
-
-///
+/// Outgoing Note
 #[cfg_attr(
     feature = "rpc",
     derive(Deserialize, Serialize),
     serde(crate = "manta_util::serde", deny_unknown_fields)
 )]
 #[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
-pub struct OutgoingNote;
+pub struct OutgoingNote {
+    /// Ephemeral Public Key
+    pub ephemeral_public_key: Group,
+
+    /// Tag
+    pub tag: Tag,
+
+    /// Ciphertext
+    pub ciphertext: OutgoingCiphertext,
+}
+
+impl From<v1::OutgoingNote> for OutgoingNote {
+    #[inline]
+    fn from(note: v1::OutgoingNote) -> Self {
+        Self {
+            ephemeral_public_key: encode(note.ciphertext.ephemeral_public_key),
+            tag: encode(note.ciphertext.ciphertext.tag.0),
+            ciphertext: {
+                // encode(note.ciphertext.ciphertext.message)
+                todo!()
+            },
+        }
+    }
+}
+
+impl TryFrom<OutgoingNote> for v1::OutgoingNote {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(note: OutgoingNote) -> Result<Self, Self::Error> {
+        todo!()
+    }
+}
 
 /// Sender Post
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
@@ -201,14 +182,11 @@ pub struct SenderPost {
 impl From<config::SenderPost> for SenderPost {
     #[inline]
     fn from(post: config::SenderPost) -> Self {
-        /* TODO:
         Self {
             utxo_accumulator_output: encode(post.utxo_accumulator_output),
-            nullifier: encode(post.nullifier.commitment),
-            outgoing_note: encode(post.nullifier.outgoing_note),
+            nullifier_commitment: encode(post.nullifier.commitment),
+            outgoing_note: From::from(post.nullifier.outgoing_note),
         }
-        */
-        todo!()
     }
 }
 
@@ -217,27 +195,59 @@ impl TryFrom<SenderPost> for config::SenderPost {
 
     #[inline]
     fn try_from(post: SenderPost) -> Result<Self, Self::Error> {
-        /* TODO:
         Ok(Self {
             utxo_accumulator_output: decode(post.utxo_accumulator_output)?,
             nullifier: config::Nullifier {
-                commitment: decode(post.nullifier)?,
-                outgoing_note: decode(post.outgoing_note)?,
+                commitment: decode(post.nullifier_commitment)?,
+                outgoing_note: TryFrom::try_from(post.outgoing_note)?,
             },
         })
-        */
-        todo!()
     }
 }
 
-///
+/// Incoming Ciphertext Type
+pub type IncomingCiphertext = [[u8; 32]; 4];
+
+/// Incoming Note
 #[cfg_attr(
     feature = "rpc",
     derive(Deserialize, Serialize),
     serde(crate = "manta_util::serde", deny_unknown_fields)
 )]
 #[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
-pub struct IncomingNote;
+pub struct IncomingNote {
+    /// Ephemeral Public Key
+    pub ephemeral_public_key: Group,
+
+    /// Tag
+    pub tag: Tag,
+
+    /// Ciphertext
+    pub ciphertext: IncomingCiphertext,
+}
+
+impl From<v1::IncomingNote> for IncomingNote {
+    #[inline]
+    fn from(note: v1::IncomingNote) -> Self {
+        Self {
+            ephemeral_public_key: encode(note.ciphertext.ephemeral_public_key),
+            tag: encode(note.ciphertext.ciphertext.tag.0),
+            ciphertext: {
+                // encode(note.ciphertext.ciphertext.message)
+                todo!()
+            },
+        }
+    }
+}
+
+impl TryFrom<IncomingNote> for v1::IncomingNote {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(note: IncomingNote) -> Result<Self, Self::Error> {
+        todo!()
+    }
+}
 
 /// Receiver Post
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
@@ -252,10 +262,10 @@ pub struct ReceiverPost {
 impl From<config::ReceiverPost> for ReceiverPost {
     #[inline]
     fn from(post: config::ReceiverPost) -> Self {
-        /* TODO:
+        /*
         Self {
             utxo: encode(post.utxo),
-            encrypted_note: EncryptedNote::from(post.encrypted_note),
+            note: post.note.into(),
         }
         */
         todo!()
@@ -295,24 +305,26 @@ pub struct TransferPost {
     /// Sinks
     pub sinks: Vec<AssetValue>,
 
-    /// Validity Proof
-    pub validity_proof: Proof,
+    /// Proof
+    pub proof: Proof,
 }
 
 impl From<config::TransferPost> for TransferPost {
     #[inline]
     fn from(post: config::TransferPost) -> Self {
-        /* TODO:
         Self {
-            asset_id: post.asset_id.map(|id| id.0),
-            sources: post.sources.into_iter().map(|s| s.0).collect(),
-            sender_posts: post.sender_posts.into_iter().map(Into::into).collect(),
-            receiver_posts: post.receiver_posts.into_iter().map(Into::into).collect(),
-            sinks: post.sinks.into_iter().map(|s| s.0).collect(),
-            validity_proof: encode(post.validity_proof),
+            asset_id: post.body.asset_id.map(encode),
+            sources: post.body.sources,
+            sender_posts: post.body.sender_posts.into_iter().map(Into::into).collect(),
+            receiver_posts: post
+                .body
+                .receiver_posts
+                .into_iter()
+                .map(Into::into)
+                .collect(),
+            sinks: post.body.sinks,
+            proof: encode(post.body.proof),
         }
-        */
-        todo!()
     }
 }
 
@@ -321,7 +333,7 @@ impl TryFrom<TransferPost> for config::TransferPost {
 
     #[inline]
     fn try_from(post: TransferPost) -> Result<Self, Self::Error> {
-        /* TODO:
+        /*
         Ok(Self {
             asset_id: post.asset_id.map(AssetId),
             sources: post.sources.into_iter().map(asset::AssetValue).collect(),
@@ -336,7 +348,7 @@ impl TryFrom<TransferPost> for config::TransferPost {
                 .map(TryInto::try_into)
                 .collect::<Result<_, _>>()?,
             sinks: post.sinks.into_iter().map(asset::AssetValue).collect(),
-            validity_proof: decode(post.validity_proof)?,
+            proof: decode(post.proof)?,
         })
         */
         todo!()
