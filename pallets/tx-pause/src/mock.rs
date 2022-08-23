@@ -24,7 +24,7 @@
 use super::*;
 use frame_support::{
     construct_runtime, ord_parameter_types, parameter_types,
-    traits::{ConstU32, ConstU64},
+    traits::{ConstU32, ConstU64, IsInVec},
 };
 use frame_system::EnsureRoot;
 use manta_primitives::types::Balance;
@@ -33,17 +33,16 @@ use sp_core::H256;
 use sp_runtime::{testing::Header, traits::IdentityLookup};
 
 pub type AccountId = u128;
-pub const ALICE: AccountId = 1;
 
 mod tx_pause {
     pub use super::super::*;
 }
 
-// Don't allow permission-less asset creation.
 pub struct BaseFilter;
 impl Contains<Call> for BaseFilter {
     fn contains(call: &Call) -> bool {
-        !tx_pause::PausedTransactionFilter::<Runtime>::contains(call) // filter paused calls
+        // filter paused calls
+        !tx_pause::PausedTransactionFilter::<Runtime>::contains(call)
     }
 }
 
@@ -94,10 +93,15 @@ ord_parameter_types! {
     pub const One: AccountId = 1;
 }
 
+parameter_types! {
+    pub UnpausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilCollective".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalCollective".to_vec()];
+}
+
 impl Config for Runtime {
     type Event = Event;
     type PauseOrigin = EnsureRoot<AccountId>;
     type UnpauseOrigin = EnsureRoot<AccountId>;
+    type UnpausablePallets = IsInVec<UnpausablePallets>;
     type WeightInfo = ();
 }
 
