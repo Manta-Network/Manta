@@ -40,7 +40,7 @@ mod tests;
 pub use crate::weights::WeightInfo;
 pub use pallet::*;
 
-///
+/// Asset Manager Pallet
 #[frame_support::pallet]
 pub mod pallet {
     use crate::weights::WeightInfo;
@@ -160,7 +160,7 @@ pub mod pallet {
         }
     }
 
-    ///
+    /// Genesis Configuration
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         pub start_id: T::AssetId,
@@ -536,17 +536,11 @@ pub mod pallet {
                 AssetIdLocation::<T>::contains_key(&asset_id),
                 Error::<T>::UpdateNonExistentAsset
             );
-            <T::AssetConfig as AssetConfig<T>>::FungibleLedger::can_deposit(
+            <T::AssetConfig as AssetConfig<T>>::FungibleLedger::try_deposit_minting(
                 &asset_id,
                 &beneficiary,
                 &amount,
                 true,
-            )
-            .map_err(|_| Error::<T>::MintError)?;
-            <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_mint(
-                &asset_id,
-                &beneficiary,
-                &amount,
             )
             .map_err(|_| Error::<T>::MintError)?;
             Self::deposit_event(Event::<T>::AssetMinted {

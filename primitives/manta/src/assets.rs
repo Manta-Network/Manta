@@ -24,8 +24,8 @@ use frame_support::{
     pallet_prelude::Get,
     traits::tokens::{
         currency::Currency,
-        fungible::Inspect as FungibleInspect,
-        fungibles::{Inspect as FungiblesInspect, Mutate, Transfer},
+        fungible,
+        fungibles::{self, Mutate, Transfer},
         DepositConsequence, ExistenceRequirement, WithdrawReasons,
     },
     Parameter,
@@ -379,160 +379,194 @@ impl<I, B> BalanceType for FungibleLedgerError<I, B> {
 ///
 /// This trait unifies the interface for the [`fungible`] and [`fungibles`] modules.
 ///
-/// [`fungible`]: frame_support::traits::tokens::fungible
-/// [`fungibles`]: frame_support::traits::tokens::fungibles
-///
-/// It is assumed that the supply of native asset cannot be changed,
-/// while the supply of non-native assets can increase or decrease.
+/// It is assumed that the supply of native asset cannot be changed, while the supply of non-native
+/// assets can increase or decrease.
 pub trait FungibleLedger: AssetIdType + BalanceType {
     /// Account Id Type
     type AccountId;
 
     /// Checks if an asset id is valid and returning and [`Error`](FungibleLedgerError) otherwise.
     fn ensure_valid(
-        asset_id: &Self::AssetId,
-    ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>>;
+        asset_id: Self::AssetId,
+    ) -> Result<Self::AssetId, FungibleLedgerError<Self::AssetId, Self::Balance>>;
 
     /// Check whether `account` can increase its balance by `amount` in the given `asset_id`.
-    /// Non-native assets will use the `can_increase_total_supply` check, while native assets will not.
     fn can_deposit(
-        asset_id: &Self::AssetId,
+        asset_id: Self::AssetId,
         account: &Self::AccountId,
-        amount: &Self::Balance,
+        amount: Self::Balance,
         can_increase_total_supply: bool,
-    ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>>;
+    ) -> Result<Self::AssetId, FungibleLedgerError<Self::AssetId, Self::Balance>>;
 
-    /// Check whether `account` can decrease its balance by `amount` in the given `asset_id`.
-    fn can_reduce_by_amount(
-        asset_id: &Self::AssetId,
+    /// Deposit `amount` of an asset with the given `asset_id` to `account`.
+    fn deposit_minting(
+        asset_id: Self::AssetId,
         account: &Self::AccountId,
-        amount: &Self::Balance,
-        existence_requirement: ExistenceRequirement,
+        amount: Self::Balance,
     ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>>;
 
-    /// Deposit `amount` of an asset with the given `asset_id` to `beneficiary`.
-    /// Will mint and increase the total supply of non-native assets.
-    fn deposit_can_mint(
-        asset_id: &Self::AssetId,
-        beneficiary: &Self::AccountId,
-        amount: &Self::Balance,
+    ///
+    fn try_deposit_minting(
+        asset_id: Self::AssetId,
+        account: &Self::AccountId,
+        amount: Self::Balance,
+        can_increase_total_supply: bool,
     ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>>;
 
     /// Performs a transfer from `source` to `destination` of
     fn transfer(
-        asset_id: &Self::AssetId,
+        asset_id: Self::AssetId,
         source: &Self::AccountId,
         destination: &Self::AccountId,
-        amount: &Self::Balance,
+        amount: Self::Balance,
         existence_requirement: ExistenceRequirement,
     ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>>;
 
-    /// Performs a withdraw from `who` for `amount` of `asset_id`
-    /// Will burn and decrease total supply of non-native assets
-    fn withdraw_can_burn(
-        asset_id: &Self::AssetId,
-        who: &Self::AccountId,
+    /// Check whether `account` can decrease its balance by `amount` in the given `asset_id`.
+    fn can_withdraw(
+        asset_id: Self::AssetId,
+        account: &Self::AccountId,
         amount: &Self::Balance,
+        existence_requirement: ExistenceRequirement,
+    ) -> Result<Self::AssetId, FungibleLedgerError<Self::AssetId, Self::Balance>>;
+
+    /// Performs a withdraw from `who` for `amount` of `asset_id`
+    fn withdraw_burning(
+        asset_id: Self::AssetId,
+        who: &Self::AccountId,
+        amount: Self::Balance,
         existence_requirement: ExistenceRequirement,
     ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>>;
 }
 
+/// Fungible Ledger Implementation for Native and NonNative Assets
 ///
-pub type FungiblesAssetId<C, F> = <F as FungiblesInspect<<C as Config>::AccountId>>::AssetId;
-
-///
-pub type FungibleBalance<C, F> = <F as FungibleInspect<<C as Config>::AccountId>>::Balance;
-
-///
-pub type FungiblesBalance<C, F> = <F as FungiblesInspect<<C as Config>::AccountId>>::Balance;
-
-/*
-
-/// Concrete Fungible Ledger Implementation
-pub struct ConcreteFungibleLedger<C, A, Native, NonNative> {
+/// The `Native` assets are defined by an implementation of a [`fungible`] asset and the `NonNative`
+/// by a set of fungible assets using [`fungibles`].
+pub struct NativeAndNonNative<C, A, Native, NonNative> {
     ///  Type Parameter Marker
     __: PhantomData<(C, A, Native, NonNative)>,
 }
 
-impl<C, A, Native, NonNative> FungibleLedger for ConcreteFungibleLedger<C, A, Native, NonNative>
+impl<C, A, Native, NonNative> AssetIdType for NativeAndNonNative<C, A, Native, NonNative>
 where
     C: Config,
     A: AssetConfig<C>,
-    Native: FungibleInspect<C::AccountId, Balance = Self::Balance>
-        + Currency<C::AccountId, Balance = Self::Balance>,
-    NonNative: FungiblesInspect<C::AccountId> + Mutate<C::AccountId> + Transfer<C::AccountId>,
+{
+    type AssetId = A::AssetId;
+}
+
+impl<C, A, Native, NonNative> BalanceType for NativeAndNonNative<C, A, Native, NonNative>
+where
+    C: Config,
+    A: AssetConfig<C>,
+{
+    type Balance = A::Balance;
+}
+
+impl<C, A, Native, NonNative> FungibleLedger for NativeAndNonNative<C, A, Native, NonNative>
+where
+    C: Config,
+    A: AssetConfig<C>,
+    A::AssetId: Clone + PartialOrd,
+    A::Balance: Clone + PartialOrd,
+    Native: fungible::Inspect<C::AccountId, Balance = A::Balance>
+        + Currency<C::AccountId, Balance = A::Balance>,
+    NonNative: fungibles::Inspect<C::AccountId, AssetId = A::AssetId, Balance = A::Balance>
+        + Mutate<C::AccountId>
+        + Transfer<C::AccountId>,
 {
     type AccountId = C::AccountId;
-    type AssetId = <NonNative as FungiblesInspect<C::AccountId>>::AssetId;
-    type AssetValue = <NonNative as FungiblesInspect<C::AccountId>>::Balance;
 
     #[inline]
-    fn ensure_valid(asset_id: &Self::AssetId) -> Result<(), FungibleLedgerError> {
-        if *asset_id >= A::StartNonNativeAssetId::get() || *asset_id == A::NativeAssetId::get() {
-            Ok(())
+    fn ensure_valid(
+        asset_id: Self::AssetId,
+    ) -> Result<Self::AssetId, FungibleLedgerError<Self::AssetId, Self::Balance>> {
+        if asset_id >= A::StartNonNativeAssetId::get() || asset_id == A::NativeAssetId::get() {
+            Ok(asset_id)
         } else {
-            Err(FungibleLedgerError::InvalidAssetId)
+            Err(FungibleLedgerError::InvalidAssetId(asset_id))
         }
     }
 
     #[inline]
-    fn can_deposit(
-        asset_id: &Self::AssetId,
-        account: &C::AccountId,
-        amount: &Self::AssetValue,
-        can_increase_total_supply: bool,
-    ) -> Result<(), FungibleLedgerError> {
-        Self::ensure_valid(asset_id)?;
-        FungibleLedgerError::from_deposit(if *asset_id == A::NativeAssetId::get() {
-            <Native as FungibleInspect<C::AccountId>>::can_deposit(account, *amount, false)
-        } else {
-            <NonNative as FungiblesInspect<C::AccountId>>::can_deposit(
-                *asset_id,
-                account,
-                *amount,
-                can_increase_total_supply,
-            )
-        })
-    }
-
-    #[inline]
     fn can_reduce_by_amount(
-        asset_id: &Self::AssetId,
+        asset_id: Self::AssetId,
         account: &C::AccountId,
-        amount: &Self::AssetValue,
+        amount: &Self::Balance,
         existence_requirement: ExistenceRequirement,
-    ) -> Result<(), FungibleLedgerError> {
-        Self::ensure_valid(asset_id)?;
+    ) -> Result<Self::AssetId, FungibleLedgerError<Self::AssetId, Self::Balance>> {
+        let asset_id = Self::ensure_valid(asset_id)?;
         let keep_alive = match existence_requirement {
             ExistenceRequirement::KeepAlive => true,
             ExistenceRequirement::AllowDeath => false,
         };
-        let reducible_amount = if *asset_id == A::NativeAssetId::get() {
-            <Native as FungibleInspect<C::AccountId>>::reducible_balance(account, keep_alive)
+        let reducible_amount = if asset_id == A::NativeAssetId::get() {
+            Native::reducible_balance(account, keep_alive)
         } else {
-            <NonNative as FungiblesInspect<C::AccountId>>::reducible_balance(
-                *asset_id, account, keep_alive,
-            )
+            NonNative::reducible_balance(asset_id.clone(), account, keep_alive)
         };
         if reducible_amount >= *amount {
-            return Ok(());
+            return Ok(asset_id);
         }
         Err(FungibleLedgerError::CannotWithdrawMoreThan(
             reducible_amount,
         ))
     }
 
+    /// Non-native assets will use the `can_increase_total_supply` flag, while native assets will
+    /// not.
+    #[inline]
+    fn can_deposit(
+        asset_id: Self::AssetId,
+        account: &C::AccountId,
+        amount: Self::Balance,
+        can_increase_total_supply: bool,
+    ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>> {
+        let asset_id = Self::ensure_valid(asset_id)?;
+        FungibleLedgerError::from_deposit(if asset_id == A::NativeAssetId::get() {
+            Native::can_deposit(account, amount, false)
+        } else {
+            NonNative::can_deposit(asset_id, account, amount, can_increase_total_supply)
+        })
+    }
+
+    /// Will mint and increase the total supply of non-native assets.
     #[inline]
     fn deposit_can_mint(
-        asset_id: &Self::AssetId,
-        beneficiary: &C::AccountId,
-        amount: &Self::AssetValue,
-    ) -> Result<(), FungibleLedgerError> {
-        Self::ensure_valid(asset_id)?;
-        if *asset_id == A::NativeAssetId::get() {
-            <Native as Currency<C::AccountId>>::deposit_creating(beneficiary, amount);
+        asset_id: Self::AssetId,
+        account: &C::AccountId,
+        amount: Self::Balance,
+    ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>> {
+        let asset_id = Self::ensure_valid(asset_id)?;
+        if asset_id == A::NativeAssetId::get() {
+            Native::deposit_creating(account, amount);
         } else {
-            <NonNative as Mutate<C::AccountId>>::mint_into(asset_id, beneficiary, amount)
+            NonNative::mint_into(asset_id, account, amount)
+                .map_err(FungibleLedgerError::InvalidMint)?;
+        }
+        Ok(())
+    }
+
+    #[inline]
+    fn try_deposit_minting(
+        asset_id: Self::AssetId,
+        account: &Self::AccountId,
+        amount: Self::Balance,
+        can_increase_total_supply: bool,
+    ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>> {
+        let asset_id = Self::ensure_valid(asset_id)?;
+        if asset_id == A::NativeAssetId::get() {
+            FungibleLedgerError::from_deposit(Native::can_deposit(account, amount.clone(), false))?;
+            Native::deposit_creating(account, amount);
+        } else {
+            FungibleLedgerError::from_deposit(NonNative::can_deposit(
+                asset_id.clone(),
+                account,
+                amount.clone(),
+                can_increase_total_supply,
+            ))?;
+            NonNative::mint_into(asset_id, account, amount)
                 .map_err(FungibleLedgerError::InvalidMint)?;
         }
         Ok(())
@@ -540,48 +574,47 @@ where
 
     #[inline]
     fn transfer(
-        asset_id: &Self::AssetId,
+        asset_id: Self::AssetId,
         source: &C::AccountId,
         destination: &C::AccountId,
-        amount: &Self::AssetValue,
+        amount: Self::Balance,
         existence_requirement: ExistenceRequirement,
-    ) -> Result<(), FungibleLedgerError> {
-        Self::ensure_valid(asset_id)?;
+    ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>> {
+        let asset_id = Self::ensure_valid(asset_id)?;
         if asset_id == A::NativeAssetId::get() {
-            <Native as Currency<C::AccountId>>::transfer(
-                source,
-                destination,
-                amount,
-                existence_requirement,
-            )
+            Native::transfer(source, destination, amount, existence_requirement)
         } else {
-            let keep_alive = match existence_requirement {
-                ExistenceRequirement::KeepAlive => true,
-                ExistenceRequirement::AllowDeath => false,
-            };
-            <NonNative as Transfer<C::AccountId>>::transfer(
+            NonNative::transfer(
                 asset_id,
                 source,
                 destination,
                 amount,
-                keep_alive,
+                match existence_requirement {
+                    ExistenceRequirement::KeepAlive => true,
+                    ExistenceRequirement::AllowDeath => false,
+                },
             )
             .map(|_| ())
         }
         .map_err(FungibleLedgerError::InvalidTransfer)
     }
 
+    /// Will burn and decrease total supply of non-native assets.
     #[inline]
     fn withdraw_can_burn(
-        asset_id: &Self::AssetId,
+        asset_id: Self::AssetId,
         who: &C::AccountId,
-        amount: &Self::AssetValue,
+        amount: Self::Balance,
         existence_requirement: ExistenceRequirement,
-    ) -> Result<(), FungibleLedgerError> {
-        Self::ensure_valid(asset_id)?;
-        Self::can_reduce_by_amount(asset_id, who, amount, existence_requirement)?;
+    ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>> {
+        let asset_id = Self::can_reduce_by_amount(
+            Self::ensure_valid(asset_id)?,
+            who,
+            &amount,
+            existence_requirement,
+        )?;
         if asset_id == A::NativeAssetId::get() {
-            <Native as Currency<C::AccountId>>::withdraw(
+            Native::withdraw(
                 who,
                 amount,
                 WithdrawReasons::TRANSFER,
@@ -589,13 +622,12 @@ where
             )
             .map_err(FungibleLedgerError::InvalidBurn)?;
         } else {
-            // `existence_requirement` is used in the `can_reduce_by_amount` checks,
-            // so it doesn't matter that `burn_from` uses `allow_death` by default in our chosen implementation
-            <NonNative as Mutate<C::AccountId>>::burn_from(asset_id, who, amount)
+            // NOTE: The `existence_requirement` is used in the `can_reduce_by_amount` checks,
+            //       so it doesn't matter that `burn_from` uses `allow_death` by default in this
+            //       implementation.
+            NonNative::burn_from(asset_id, who, amount)
                 .map_err(FungibleLedgerError::InvalidBurn)?;
         }
         Ok(())
     }
 }
-
-*/

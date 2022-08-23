@@ -363,6 +363,8 @@ impl<T, A, AccountIdConverter, Native, NonNative> TransactAsset
 where
     T: Config,
     A: AssetConfig<T>,
+    A::AssetId: Clone,
+    A::Balance: Clone,
     AccountIdConverter: XcmConvert<MultiLocation, T::AccountId>,
     Native: MatchesFungible<A::Balance>,
     NonNative: MatchesFungibles<A::AssetId, A::Balance>,
@@ -377,10 +379,10 @@ where
         let (asset_id, who, amount) = Self::match_asset_and_location(asset, location)?;
         // NOTE: If it's non-native asset we want to check with increase in total supply. Otherwise
         //       it will just use false, as it is assumed the native asset supply cannot be changed.
-        A::FungibleLedger::can_deposit(&asset_id, &who, &amount, true).map_err(|_| {
-            Error::FailedToTransactAsset("Failed MultiAdapterFungibleLedger::can_deposit")
-        })?;
-        A::FungibleLedger::deposit_can_mint(&asset_id, &who, &amount).map_err(|_| {
+        A::FungibleLedger::can_deposit(asset_id.clone(), &who, amount.clone(), true).map_err(
+            |_| Error::FailedToTransactAsset("Failed MultiAdapterFungibleLedger::can_deposit"),
+        )?;
+        A::FungibleLedger::deposit_can_mint(asset_id, &who, amount).map_err(|_| {
             Error::FailedToTransactAsset("Failed MultiAdapterFungibleLedger::deposit_can_mint")
         })?;
         Ok(())
@@ -395,9 +397,9 @@ where
         );
         let (asset_id, who, amount) = Self::match_asset_and_location(asset, location)?;
         A::FungibleLedger::withdraw_can_burn(
-            &asset_id,
+            asset_id,
             &who,
-            &amount,
+            amount,
             ExistenceRequirement::AllowDeath,
         )
         .map_err(|_| Error::FailedToTransactAsset("Failed Burn"))?;
