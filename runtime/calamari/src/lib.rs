@@ -34,9 +34,9 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, Perbill, Percent, Permill,
 };
-use sp_runtime::SaturatedConversion;
 use sp_std::{cmp::Ordering, prelude::*};
-use substrate_fixed::FixedU32;
+use sp_arithmetic::FixedU128;
+use sp_runtime::FixedPointNumber;
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -557,22 +557,14 @@ impl pallet_aura_style_filter::Config for Runtime {
     /// for each slot in round-robin fashion
     type PotentialAuthors = ParachainStaking;
 }
-
+use sp_runtime::traits::UniqueSaturatedInto;
 parameter_types! {
     /// Default fixed percent a collator takes off the top of due rewards
     pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(20);
     /// Default percent of inflation set aside for parachain bond every round
-    pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(0);
+    pub const DefaultParachainBondReservePercent: Percent = Percent::zero();
     pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(2 * HOURS ,15,"CALAMARI_DEFAULTBLOCKSPERROUND");
-    pub LeaveDelayRounds: BlockNumber = prod_or_fast!((FixedU32::from(2 * DAYS) / FixedU32::from(Into::<u32>::into(DefaultBlocksPerRound))).into(),1,"CALAMARI_DEFAULTBLOCKSPERROUND");
-    // pub LeaveDelayRounds: BlockNumber = (FixedU32::from(2 * DAYS) / FixedU32::from(Into::<u32>::into(DefaultBlocksPerRound))).into();
-}
-#[test]
-fn defaultBlocksPerRound_is_large_enough_for_division(){
-    let a : u32 = BlockNumber{3};
-    assert!(
-        // 2 * DAYS > DefaultBlocksPerRound * 10
-    );
+    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(FixedU128::checked_from_rational(7u32.saturating_mul(DAYS.into()),u32::from(DefaultBlocksPerRound::get())).unwrap_or(FixedU128::from_inner(1u128)).into_inner().unique_saturated_into(),1,"CALAMARI_LEAVEDELAYROUNDS");
 }
 impl pallet_parachain_staking::Config for Runtime {
     type Event = Event;
