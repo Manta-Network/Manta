@@ -30,7 +30,7 @@ pub struct DealWithFees;
 impl OnUnbalanced<NegativeImbalance> for DealWithFees {
     fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
         if let Some(fees) = fees_then_tips.next() {
-            // for fees, 50% to treasury, 50% to author
+            // for fees, 50% to treasury, 50% burned
             let (to_treasury, _) = fees.ration(50, 50);
             Treasury::on_unbalanced(to_treasury);
 

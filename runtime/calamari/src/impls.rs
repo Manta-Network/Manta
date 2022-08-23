@@ -36,7 +36,7 @@ pub struct DealWithFees;
 impl OnUnbalanced<NegativeImbalance> for DealWithFees {
     fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
         if let Some(fees) = fees_then_tips.next() {
-            // for fees, 50% to treasury, 50% to author
+            // for fees, 50% to treasury, 50% burned
             let (to_treasury, _) = fees.ration(
                 FEES_PERCENTAGE_TO_TREASURY.into(),
                 FEES_PERCENTAGE_TO_BURN.into(),
