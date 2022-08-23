@@ -19,9 +19,14 @@
 use super::*;
 use manta_pay::{
     config::utxo::v1::{self, MerkleTreeConfiguration},
-    manta_crypto::encryption::hybrid,
+    manta_crypto::{
+        encryption::{hybrid, EmptyHeader},
+        permutation::duplex,
+        signature::schnorr,
+    },
     manta_util::into_array_unchecked,
 };
+use manta_util::Array;
 use scale_codec::Error;
 
 #[cfg(feature = "rpc")]
@@ -53,6 +58,12 @@ pub const TAG_LENGTH: usize = 32;
 
 /// Tag Type
 pub type Tag = [u8; TAG_LENGTH];
+
+///
+pub const SCALAR_LENGTH: usize = 32;
+
+/// Scalar Type
+pub type Scalar = [u8; SCALAR_LENGTH];
 
 ///
 pub const GROUP_LENGTH: usize = 32;
@@ -149,10 +160,10 @@ impl From<v1::OutgoingNote> for OutgoingNote {
         Self {
             ephemeral_public_key: encode(note.ciphertext.ephemeral_public_key),
             tag: encode(note.ciphertext.ciphertext.tag.0),
-            ciphertext: {
-                // encode(note.ciphertext.ciphertext.message)
-                todo!()
-            },
+            ciphertext: Array::from_iter(
+                note.ciphertext.ciphertext.message[0].0.iter().map(encode),
+            )
+            .into(),
         }
     }
 }
@@ -232,10 +243,10 @@ impl From<v1::IncomingNote> for IncomingNote {
         Self {
             ephemeral_public_key: encode(note.ciphertext.ephemeral_public_key),
             tag: encode(note.ciphertext.ciphertext.tag.0),
-            ciphertext: {
-                // encode(note.ciphertext.ciphertext.message)
-                todo!()
-            },
+            ciphertext: Array::from_iter(
+                note.ciphertext.ciphertext.message[0].0.iter().map(encode),
+            )
+            .into(),
         }
     }
 }
@@ -245,6 +256,18 @@ impl TryFrom<IncomingNote> for v1::IncomingNote {
 
     #[inline]
     fn try_from(note: IncomingNote) -> Result<Self, Self::Error> {
+        /*
+        Ok(Self {
+            header: EmptyHeader::default(),
+            ciphertext: hybrid::Ciphertext {
+                ephemeral_public_key: decode(note.ephemeral_public_key)?,
+                ciphertext: duplex::Ciphertext {
+                    tag: decode(note.tag)?.into(),
+                    message: decode(note.message)?,
+                },
+            },
+        })
+        */
         todo!()
     }
 }
@@ -280,16 +303,57 @@ impl TryFrom<ReceiverPost> for config::ReceiverPost {
         /* TODO:
         Ok(Self {
             utxo: decode(post.utxo)?,
-            encrypted_note: post.encrypted_note.try_into()?,
+            note: post.note.try_into()?,
         })
         */
         todo!()
     }
 }
 
+/// Authorization Signature
+#[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, TypeInfo)]
+pub struct AuthorizationSignature {
+    /// Authorization Key
+    pub authorization_key: Group,
+
+    /// Signature
+    pub signature: (Scalar, Group),
+}
+
+impl From<v1::AuthorizationSignature> for AuthorizationSignature {
+    #[inline]
+    fn from(signature: v1::AuthorizationSignature) -> Self {
+        Self {
+            authorization_key: encode(signature.authorization_key),
+            signature: (
+                encode(signature.signature.scalar),
+                encode(signature.signature.nonce_point),
+            ),
+        }
+    }
+}
+
+impl TryFrom<AuthorizationSignature> for v1::AuthorizationSignature {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(signature: AuthorizationSignature) -> Result<Self, Self::Error> {
+        Ok(Self {
+            authorization_key: decode(signature.authorization_key)?,
+            signature: schnorr::Signature {
+                scalar: decode(signature.signature.0)?,
+                nonce_point: decode(signature.signature.1)?,
+            },
+        })
+    }
+}
+
 /// Transfer Post
 #[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, TypeInfo)]
 pub struct TransferPost {
+    /// Authorization Signature
+    pub authorization_signature: Option<AuthorizationSignature>,
+
     /// Asset Id
     pub asset_id: Option<AssetId>,
 
@@ -313,6 +377,7 @@ impl From<config::TransferPost> for TransferPost {
     #[inline]
     fn from(post: config::TransferPost) -> Self {
         Self {
+            authorization_signature: post.authorization_signature.map(Into::into),
             asset_id: post.body.asset_id.map(encode),
             sources: post.body.sources,
             sender_posts: post.body.sender_posts.into_iter().map(Into::into).collect(),
@@ -333,25 +398,28 @@ impl TryFrom<TransferPost> for config::TransferPost {
 
     #[inline]
     fn try_from(post: TransferPost) -> Result<Self, Self::Error> {
-        /*
         Ok(Self {
-            asset_id: post.asset_id.map(AssetId),
-            sources: post.sources.into_iter().map(asset::AssetValue).collect(),
-            sender_posts: post
-                .sender_posts
-                .into_iter()
+            authorization_signature: post
+                .authorization_signature
                 .map(TryInto::try_into)
-                .collect::<Result<_, _>>()?,
-            receiver_posts: post
-                .receiver_posts
-                .into_iter()
-                .map(TryInto::try_into)
-                .collect::<Result<_, _>>()?,
-            sinks: post.sinks.into_iter().map(asset::AssetValue).collect(),
-            proof: decode(post.proof)?,
+                .transpose()?,
+            body: config::TransferPostBody {
+                asset_id: post.asset_id.map(decode).transpose()?,
+                sources: post.sources.into_iter().map(Into::into).collect(),
+                sender_posts: post
+                    .sender_posts
+                    .into_iter()
+                    .map(TryInto::try_into)
+                    .collect::<Result<_, _>>()?,
+                receiver_posts: post
+                    .receiver_posts
+                    .into_iter()
+                    .map(TryInto::try_into)
+                    .collect::<Result<_, _>>()?,
+                sinks: post.sinks.into_iter().map(Into::into).collect(),
+                proof: decode(post.proof)?,
+            },
         })
-        */
-        todo!()
     }
 }
 
