@@ -178,7 +178,7 @@ impl pallet_tx_pause::Config for Runtime {
     type Event = Event;
     type PauseOrigin = EitherOfDiverse<
         EnsureRoot<AccountId>,
-        pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 1, 2>,
+        pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 2, 6>,
     >;
     type UnpauseOrigin = EnsureRoot<AccountId>;
     type UnpausablePallets = IsInVec<UnpausablePallets>;
