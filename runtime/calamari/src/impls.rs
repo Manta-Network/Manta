@@ -16,7 +16,7 @@
 
 use crate::{
     fee::{
-        FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY, TIPS_PERCENTAGE_TO_AUTHOR,
+        FEES_PERCENTAGE_TO_BURN, FEES_PERCENTAGE_TO_TREASURY, TIPS_PERCENTAGE_TO_AUTHOR,
         TIPS_PERCENTAGE_TO_TREASURY,
     },
     Authorship, Balances, NegativeImbalance, Treasury,
@@ -36,22 +36,23 @@ pub struct DealWithFees;
 impl OnUnbalanced<NegativeImbalance> for DealWithFees {
     fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
         if let Some(fees) = fees_then_tips.next() {
-            // for fees, 40% to treasury, 60% to author
-            let mut split = fees.ration(
+            // for fees, 50% to treasury, 50% burned
+            let (to_treasury, _) = fees.ration(
                 FEES_PERCENTAGE_TO_TREASURY.into(),
-                FEES_PERCENTAGE_TO_AUTHOR.into(),
+                FEES_PERCENTAGE_TO_BURN.into(),
             );
+            Treasury::on_unbalanced(to_treasury);
+
             if let Some(tips) = fees_then_tips.next() {
                 // for tips, 100% to block author.
-                tips.ration_merge_into(
-                    TIPS_PERCENTAGE_TO_TREASURY.into(),
-                    TIPS_PERCENTAGE_TO_AUTHOR.into(),
-                    &mut split,
-                );
+                let to_author = tips
+                    .ration(
+                        TIPS_PERCENTAGE_TO_TREASURY.into(),
+                        TIPS_PERCENTAGE_TO_AUTHOR.into(),
+                    )
+                    .1;
+                Author::on_unbalanced(to_author);
             }
-
-            Treasury::on_unbalanced(split.0);
-            Author::on_unbalanced(split.1);
         }
     }
 }
