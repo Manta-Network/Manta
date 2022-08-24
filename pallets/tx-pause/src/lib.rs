@@ -40,6 +40,8 @@ pub mod weights;
 pub use pallet::*;
 pub use weights::WeightInfo;
 
+const PAUSE_ALL_PALLET_CALLS: &str = "txp_pause_all";
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -152,6 +154,50 @@ pub mod pallet {
             };
             Ok(())
         }
+
+        /// Pause all the calls of the listed pallets in `pallet_names`.
+        /// This logic is in its own extrinsic in order to not have to pause calls 1 by 1.
+        /// It uses PAUSE_ALL_PALLET_CALLS special function, which the contains implementation checks.
+        /// All calls can be unpaused by calling the `unpause_transaction` extrinsic,
+        /// with PAUSE_ALL_PALLET_CALLS for a function name.
+        #[pallet::call_index(2)]
+        #[pallet::weight(T::WeightInfo::pause_transaction())]
+        #[transactional]
+        pub fn pause_pallets(origin: OriginFor<T>, pallet_names: Vec<Vec<u8>>) -> DispatchResult {
+            T::PauseOrigin::ensure_origin(origin)?;
+
+            for pallet_name in pallet_names.clone() {
+                // not allowed to pause calls of this pallet to ensure safe
+                let pallet_name_string = sp_std::str::from_utf8(&pallet_name)
+                    .map_err(|_| Error::<T>::InvalidCharacter)?;
+                ensure!(
+                    pallet_name_string != <Self as PalletInfoAccess>::name(),
+                    Error::<T>::CannotPause
+                );
+                ensure!(
+                    !T::UnpausablePallets::contains(&pallet_name),
+                    Error::<T>::CannotPause
+                );
+            }
+
+            for pallet_name in pallet_names {
+                let function_name = PAUSE_ALL_PALLET_CALLS.as_bytes().to_vec();
+                PausedTransactions::<T>::mutate_exists(
+                    (pallet_name.clone(), function_name.clone()),
+                    |maybe_paused| {
+                        if maybe_paused.is_none() {
+                            *maybe_paused = Some(());
+                            Self::deposit_event(Event::TransactionPaused(
+                                pallet_name,
+                                function_name,
+                            ));
+                        }
+                    },
+                );
+            }
+
+            Ok(())
+        }
     }
 }
 
@@ -165,6 +211,12 @@ where
             function_name,
             pallet_name,
         } = call.get_call_metadata();
+        if PausedTransactions::<T>::contains_key((
+            pallet_name.as_bytes(),
+            PAUSE_ALL_PALLET_CALLS.as_bytes(),
+        )) {
+            return true;
+        }
         PausedTransactions::<T>::contains_key((pallet_name.as_bytes(), function_name.as_bytes()))
     }
 }
