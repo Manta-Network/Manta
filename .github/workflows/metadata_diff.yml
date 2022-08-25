@@ -129,7 +129,8 @@ jobs:
           cat output.txt
       - name: Stop our local node
         run: pkill manta
-      - name: Save output as artifact
+      - if: always()
+        name: Save output as artifact
         uses: actions/upload-artifact@v2
         with:
           name: ${{ env.CHAIN }}

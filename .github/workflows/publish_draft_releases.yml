@@ -63,12 +63,14 @@ jobs:
         run: >
           echo '${{ steps.srtool-build.outputs.json }}' |
           jq > ${{ matrix.runtime.name }}-srtool-output.json
-      - name: upload srtool json
+      - if: always()
+        name: upload srtool json
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.runtime.name }}-srtool-json
           path: ${{ matrix.runtime.name }}-srtool-output.json
-      - name: upload runtime
+      - if: always()
+        name: upload runtime
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.runtime.name }}-runtime
@@ -134,17 +136,20 @@ jobs:
           RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose
       - name: stop sccache server
         run: sccache --stop-server || true
-      - name: upload
+      - if: always()
+        name: upload
         uses: actions/upload-artifact@v2
         with:
           name: manta
           path: target/production/manta
-      - name: upload
+      - if: always()
+        name: upload
         uses: actions/upload-artifact@v2
         with:
           name: config-for-integration-test
           path: .github/resources/config-for-integration-test.json
-      - name: upload
+      - if: always()
+        name: upload
         uses: actions/upload-artifact@v2
         with:
           name: config-for-runtime-upgrade-test
@@ -404,15 +409,18 @@ jobs:
           ls -ahl $HOME/.local/share/calamari-pc/
           echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
           manta export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-state.json
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-spec.json
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
@@ -438,7 +446,8 @@ jobs:
             ' > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
           jq . $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
           ls -ahl $HOME/.local/share/calamari-pc/
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
@@ -505,43 +514,53 @@ jobs:
           pm2 stop measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}
           pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
           pm2 stop polkadot-launch
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log
           path: ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log
           path: ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
           path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
           path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
           path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
           path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: rococo-alice-relay-for-${{ matrix.chain-spec.id }}.log
           path: ${{ github.workspace }}/polkadot-launch/alice.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: rococo-bob-relay-for-${{ matrix.chain-spec.id }}.log
           path: ${{ github.workspace }}/polkadot-launch/bob.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-alice.log
           path: ${{ github.workspace }}/polkadot-launch/9921.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-bob.log
           path: ${{ github.workspace }}/polkadot-launch/9922.log
@@ -550,26 +569,32 @@ jobs:
           grep '#.*' ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-rococo.csv; done
           if [ ! -f ${{ github.workspace }}/block-time-rococo.csv ]; then echo "block times not detected"; exit 1; fi
           jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-rococo.csv > ${{ github.workspace }}/block-time-rococo.json
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: block-time-rococo-relay-for-${{ matrix.chain-spec.id }}.json
           path: ${{ github.workspace }}/block-time-rococo.json
-# - name: parse calamari block times
-#   run: |
-#     grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv; done
-#     if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv ]; then echo "block times not detected"; exit 1; fi
-#     jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv > ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
-      - uses: actions/upload-artifact@v2
+      # - if: always()
+      #   name: parse parachain block times
+      #   run: |
+      #     grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv; done
+      #     if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv ]; then echo "block times not detected"; exit 1; fi
+      #     jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv > ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: block-time-${{ matrix.chain-spec.id }}.json
           path: ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
-      - name: test - rococo alice peered successfully
+      - if: always()
+        name: test - rococo alice peered successfully
         run: |
           grep '💤 Idle (${{ matrix.chain-spec.expected.peer-count.relay }} peers)' ${{ github.workspace }}/polkadot-launch/alice.log
-      - name: test - rococo alice imported block ${{ matrix.chain-spec.expected.block-count.relay }}
+      - if: always()
+        name: test - rococo alice imported block ${{ matrix.chain-spec.expected.block-count.relay }}
         run: |
           grep ' Imported #${{ matrix.chain-spec.expected.block-count.relay }} ' ${{ github.workspace }}/polkadot-launch/alice.log
-      - name: test - calamari alice peered successfully
+      - if: always()
+        name: test - parachain alice peered successfully
         run: |
           grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9921.log
   dolphin-integration-test:
@@ -634,15 +659,18 @@ jobs:
           ls -ahl $HOME/.local/share/calamari-pc/
           echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
           manta export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-state.json
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-spec.json
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
@@ -668,7 +696,8 @@ jobs:
             ' > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
           jq . $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
           ls -ahl $HOME/.local/share/calamari-pc/
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
           path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
@@ -748,71 +777,88 @@ jobs:
           pm2 stop measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}
           pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
           pm2 stop polkadot-launch
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log
           path: ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log
           path: ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
           path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
           path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
           path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
           path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: rococo-alice-relay-for-${{ matrix.chain-spec.id }}.log
           path: ${{ github.workspace }}/polkadot-launch/alice.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: rococo-bob-relay-for-${{ matrix.chain-spec.id }}.log
           path: ${{ github.workspace }}/polkadot-launch/bob.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-alice.log
           path: ${{ github.workspace }}/polkadot-launch/9921.log
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-bob.log
           path: ${{ github.workspace }}/polkadot-launch/9922.log
-      - name: parse rococo block times
+      - if: always()
+        name: parse rococo block times
         run: |
           grep '#.*' ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-rococo.csv; done
           if [ ! -f ${{ github.workspace }}/block-time-rococo.csv ]; then echo "block times not detected"; exit 1; fi
           jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-rococo.csv > ${{ github.workspace }}/block-time-rococo.json
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: block-time-rococo-relay-for-${{ matrix.chain-spec.id }}.json
           path: ${{ github.workspace }}/block-time-rococo.json
-# - name: parse calamari block times
-#   run: |
-#     grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv; done
-#     if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv ]; then echo "block times not detected"; exit 1; fi
-#     jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv > ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
-      - uses: actions/upload-artifact@v2
+      # - if: always()
+      #   name: parse parachain block times
+      #   run: |
+      #     grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv; done
+      #     if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv ]; then echo "block times not detected"; exit 1; fi
+      #     jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv > ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: block-time-${{ matrix.chain-spec.id }}.json
           path: ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
-      - name: test - rococo alice peered successfully
+      - if: always()
+        name: test - rococo alice peered successfully
         run: |
           grep '💤 Idle (${{ matrix.chain-spec.expected.peer-count.relay }} peers)' ${{ github.workspace }}/polkadot-launch/alice.log
-      - name: test - rococo alice imported block ${{ matrix.chain-spec.expected.block-count.relay }}
+      - if: always()
+        name: test - rococo alice imported block ${{ matrix.chain-spec.expected.block-count.relay }}
         run: |
           grep ' Imported #${{ matrix.chain-spec.expected.block-count.relay }} ' ${{ github.workspace }}/polkadot-launch/alice.log
-      - name: test - calamari alice peered successfully
+      - if: always()
+        name: test - parachain alice peered successfully
         run: |
           grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9921.log
   create-draft-release:
@@ -948,10 +994,10 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
           aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}  # 32 vcpu, 64gb ram, $1.392 hourly
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
           aws-instance-root-volume-size: 32
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-node-builder-current:
     needs: [start-node-builder-current, build-node-current]
     runs-on: ubuntu-20.04
@@ -985,10 +1031,10 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
           aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}  # 32 vcpu, 64gb ram, $1.392 hourly
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
           aws-instance-root-volume-size: 64
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-calamari-integration-tester:
     needs: [start-calamari-integration-tester, calamari-integration-test]
     runs-on: ubuntu-20.04
