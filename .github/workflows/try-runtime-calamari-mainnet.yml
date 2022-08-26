@@ -108,9 +108,9 @@ jobs:
       - name: stop sccache server
         run: sccache --stop-server || true
   stop-checks:
+    if: jobs.start-checks.outcome == 'success'
     needs: start-checks
     runs-on: ubuntu-20.04
-    if: ${{ always() }}
     steps:
       - uses: audacious-network/aws-github-runner@v1.0.33
         with:

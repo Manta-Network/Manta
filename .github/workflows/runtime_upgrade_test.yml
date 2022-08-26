@@ -428,7 +428,7 @@ jobs:
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-node-builder-current:
-    if: ${{ always() }}
+    if: jobs.start-node-builder-current.outcome == 'success'
     needs: [start-node-builder-current, build-node-current]
     runs-on: ubuntu-20.04
     steps:
@@ -465,7 +465,7 @@ jobs:
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-runtime-upgrade-tester:
-    if: ${{ always() }}
+    if: jobs.start-runtime-upgrade-tester.outcome == 'success'
     needs: [runtime-upgrade-test, check-for-runtime-upgrade, start-runtime-upgrade-tester]
     runs-on: ubuntu-20.04
     steps:

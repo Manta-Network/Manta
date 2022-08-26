@@ -85,9 +85,9 @@ jobs:
       - name: stop sccache server
         run: sccache --stop-server || true
   stop-unit-test-checks:
+    if: jobs.start-unit-test-checks.outcome == 'success'
     needs: start-unit-test-checks
     runs-on: ubuntu-20.04
-    if: ${{ always() }}
     steps:
       - uses: audacious-network/aws-github-runner@v1.0.33
         with:
