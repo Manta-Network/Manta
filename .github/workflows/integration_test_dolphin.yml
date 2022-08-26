@@ -18,7 +18,7 @@ env:
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
 jobs:
-  get-rust-versions:
+  print-rust-versions:
     if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
     runs-on: ubuntu-20.04
     container:
@@ -33,48 +33,6 @@ jobs:
         run: |
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
-  build-runtimes:
-    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
-    runs-on: ubuntu-20.04
-    env:
-      CARGO_TERM_COLOR: always
-    strategy:
-      matrix:
-        runtime:
-          - name: dolphin
-    steps:
-      - uses: actions/checkout@v2
-      - name: cache target dir
-        uses: actions/cache@v2
-        with:
-          path: "${{ github.workspace }}/runtime/${{ matrix.runtime.name }}/target"
-          key: srtool-target-${{ matrix.runtime.name }}-${{ github.sha }}
-          restore-keys: |
-            srtool-target-${{ matrix.runtime.name }}
-      - name: build runtime
-        id: srtool-build
-        uses: chevdor/srtool-actions@v0.4.0
-        with:
-          image: paritytech/srtool
-          chain: ${{ matrix.runtime.name }}
-      - name: persist srtool digest
-        run: >
-          echo '${{ steps.srtool-build.outputs.json }}' |
-          jq > ${{ matrix.runtime.name }}-srtool-output.json
-      - if: always()
-        name: upload srtool json
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.runtime.name }}-srtool-json
-          path: ${{ matrix.runtime.name }}-srtool-output.json
-      - if: always()
-        name: upload runtime
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.runtime.name }}-runtime
-          path: |
-            ${{ steps.srtool-build.outputs.wasm }}
-            ${{ steps.srtool-build.outputs.wasm_compressed }}
   build-node-current:
     if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
     needs: start-node-builder-current
@@ -149,7 +107,7 @@ jobs:
           path: .github/resources/config-for-integration-test.json
   dolphin-integration-test:
     if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
-    needs: [build-node-current, build-runtimes, start-dolphin-integration-tester]
+    needs: [build-node-current, start-dolphin-integration-tester]
     runs-on: ${{ needs.start-dolphin-integration-tester.outputs.runner-label }}
     timeout-minutes: 90
     strategy:
@@ -411,47 +369,6 @@ jobs:
         name: test - dolphin alice peered successfully
         run: |
           grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9921.log
-  parse-runtimes:
-    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        runtime:
-          - name: calamari
-          - name: manta
-    outputs:
-      calamari-runtime-current: ${{ steps.get-runtime-current.outputs.calamari-runtime-current }}
-      calamari-runtime-base: ${{ steps.get-runtime-base.outputs.calamari-runtime-base }}
-      manta-runtime-current: ${{ steps.get-runtime-current.outputs.manta-runtime-current }}
-      manta-runtime-base: ${{ steps.get-runtime-base.outputs.manta-runtime-base }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: ruby setup
-        uses: actions/setup-ruby@v1
-        with:
-          ruby-version: 2.7
-      - name: get ${{ matrix.runtime.name }} runtime version current
-        id: get-runtime-current
-        run: |
-          runtime_current="$(ruby -e '
-            require "./scripts/github/lib.rb";
-            puts get_runtime("${{ matrix.runtime.name }}")
-          ')"
-          echo "::set-output name=${{ matrix.runtime.name }}-runtime-current::$runtime_current"
-          echo ....................
-      - name: get ${{ matrix.runtime.name }} runtime version base
-        id: get-runtime-base
-        run: |
-          mkdir temp_for_run
-          cd temp_for_run
-          git clone -b manta https://github.com/Manta-Network/Manta.git
-          cd Manta
-          runtime_base="$(ruby -e '
-            require "./scripts/github/lib.rb";
-            puts get_runtime("${{ matrix.runtime.name }}")
-          ')"
-          echo "::set-output name=${{ matrix.runtime.name }}-runtime-base::$runtime_base"
-          echo ....................
   # HELPER JOBS BELOW
   start-node-builder-current:
     if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
