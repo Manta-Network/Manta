@@ -149,7 +149,7 @@ jobs:
           path: .github/resources/config-for-integration-test.json
   dolphin-integration-test:
     if: contains(github.event.pull_request.labels.*.name, 'A-dolphin')
-    needs: [build-node-current, build-runtimes, start-dolphin-integration-tester, check-for-runtime-upgrade]
+    needs: [build-node-current, build-runtimes, start-dolphin-integration-tester]
     runs-on: ${{ needs.start-dolphin-integration-tester.outputs.runner-label }}
     timeout-minutes: 90
     strategy:
