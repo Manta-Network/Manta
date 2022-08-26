@@ -138,9 +138,9 @@ jobs:
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-node-builder-current:
-    if: jobs.start-node-builder-current.outcome == 'success'
     needs: [run-benchmarks, start-node-builder-current]
     runs-on: ubuntu-20.04
+    if: ${{ always() }}
     steps:
       - uses: audacious-network/aws-github-runner@v1.0.33
         with:
