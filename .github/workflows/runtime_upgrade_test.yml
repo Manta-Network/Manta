@@ -428,7 +428,7 @@ jobs:
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-node-builder-current:
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
+    if: ${{ always() }}
     needs: [start-node-builder-current, build-node-current]
     runs-on: ubuntu-20.04
     steps:
@@ -465,7 +465,7 @@ jobs:
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-runtime-upgrade-tester:
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
+    if: ${{ always() }}
     needs: [runtime-upgrade-test, check-for-runtime-upgrade, start-runtime-upgrade-tester]
     runs-on: ubuntu-20.04
     steps:
