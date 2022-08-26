@@ -116,18 +116,15 @@ as long as the indexes did not change.
 
 ### Benchmarks
 
-There are three benchmarking machines reserved for updating the weights at
-release-time. To initialize a benchmark run for each production runtime
-(calamari, manta):
-* Go to [Calamari Benchmarking Github Action](https://github.com/Manta-Network/Manta/actions/workflows/generate_calamari_weights_files.yml) 
-  and [Manta Benchmarking Github Action](https://github.com/Manta-Network/Manta/actions/workflows/generate_manta_weights_files.yml)
+There is a manually deployed github action that runs all benchmarks on a bare-metal AWS machine. In order to use go to :
+* Go to [Run All Benchmarks Github Action](https://github.com/Manta-Network/Manta/actions/workflows/run_all_benchmarks.yml) 
 * Open `Run workflow` drop-down menu.
-* Choose your branch and run the workflow.
-* When these jobs have completed (it takes a few hours), custom weights files will
-    be available to download as artifacts. 
+* Choose your branch.
+* Choose a chain-spec. You'll have to run the workflow multiple times usually with `dolphin-dev`, `calamari-dev`, `manta-dev`.
+* Optionally choose whether you want to provide a chain database snapshot to benchmark storage performance.
+* When these jobs have completed (it takes a few hours), all the benchmarks outputs files will be available to download as workflow artifacts.
 * Commit the changes to your branch and push to the remote branch for review.
-* The weights should be (Currently manually) checked to make sure there are no
-    big outliers (i.e., twice or half the weight).
+* The weights should be (Currently manually) checked to make sure there are no big outliers (i.e., twice or half the weight).
 
 ### Security Audit
 
