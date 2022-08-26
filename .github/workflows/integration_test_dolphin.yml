@@ -607,6 +607,64 @@ jobs:
         name: test - dolphin alice peered successfully
         run: |
           grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9921.log
+  parse-runtimes:
+    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin')
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        runtime:
+          - name: calamari
+          - name: manta
+    outputs:
+      calamari-runtime-current: ${{ steps.get-runtime-current.outputs.calamari-runtime-current }}
+      calamari-runtime-base: ${{ steps.get-runtime-base.outputs.calamari-runtime-base }}
+      manta-runtime-current: ${{ steps.get-runtime-current.outputs.manta-runtime-current }}
+      manta-runtime-base: ${{ steps.get-runtime-base.outputs.manta-runtime-base }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: ruby setup
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+      - name: get ${{ matrix.runtime.name }} runtime version current
+        id: get-runtime-current
+        run: |
+          runtime_current="$(ruby -e '
+            require "./scripts/github/lib.rb";
+            puts get_runtime("${{ matrix.runtime.name }}")
+          ')"
+          echo "::set-output name=${{ matrix.runtime.name }}-runtime-current::$runtime_current"
+          echo ....................
+      - name: get ${{ matrix.runtime.name }} runtime version base
+        id: get-runtime-base
+        run: |
+          mkdir temp_for_run
+          cd temp_for_run
+          git clone -b manta https://github.com/Manta-Network/Manta.git
+          cd Manta
+          runtime_base="$(ruby -e '
+            require "./scripts/github/lib.rb";
+            puts get_runtime("${{ matrix.runtime.name }}")
+          ')"
+          echo "::set-output name=${{ matrix.runtime.name }}-runtime-base::$runtime_base"
+          echo ....................
+  check-for-runtime-upgrade:
+    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin')
+    needs: parse-runtimes
+    runs-on: ubuntu-20.04
+    outputs:
+      do-versions-match: ${{ steps.check-match.outputs.match }}
+    steps:
+      - name: check if runtime versions match
+        id: check-match
+        run: |
+          echo "::set-output name=match::true"
+          if [[ ${{ needs.parse-runtimes.outputs.manta-runtime-base }} != ${{ needs.parse-runtimes.outputs.manta-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
+          if [[ ${{ needs.parse-runtimes.outputs.calamari-runtime-base }} != ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
+      - name: force fail if new versions don't match
+        run: |
+          if [[  ${{ needs.parse-runtimes.outputs.manta-runtime-current }} != ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then exit 1; fi
+  # HELPER JOBS BELOW
   start-node-builder-current:
     if: contains(github.event.pull_request.labels.*.name, 'A-dolphin')
     runs-on: ubuntu-20.04
@@ -718,60 +776,3 @@ jobs:
           aws-region: ${{ needs.start-runtime-upgrade-tester.outputs.aws-region }}
           runner-label: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-runtime-upgrade-tester.outputs.aws-instance-id }}
-  parse-runtimes:
-    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin')
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        runtime:
-          - name: calamari
-          - name: manta
-    outputs:
-      calamari-runtime-current: ${{ steps.get-runtime-current.outputs.calamari-runtime-current }}
-      calamari-runtime-base: ${{ steps.get-runtime-base.outputs.calamari-runtime-base }}
-      manta-runtime-current: ${{ steps.get-runtime-current.outputs.manta-runtime-current }}
-      manta-runtime-base: ${{ steps.get-runtime-base.outputs.manta-runtime-base }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: ruby setup
-        uses: actions/setup-ruby@v1
-        with:
-          ruby-version: 2.7
-      - name: get ${{ matrix.runtime.name }} runtime version current
-        id: get-runtime-current
-        run: |
-          runtime_current="$(ruby -e '
-            require "./scripts/github/lib.rb";
-            puts get_runtime("${{ matrix.runtime.name }}")
-          ')"
-          echo "::set-output name=${{ matrix.runtime.name }}-runtime-current::$runtime_current"
-          echo ....................
-      - name: get ${{ matrix.runtime.name }} runtime version base
-        id: get-runtime-base
-        run: |
-          mkdir temp_for_run
-          cd temp_for_run
-          git clone -b manta https://github.com/Manta-Network/Manta.git
-          cd Manta
-          runtime_base="$(ruby -e '
-            require "./scripts/github/lib.rb";
-            puts get_runtime("${{ matrix.runtime.name }}")
-          ')"
-          echo "::set-output name=${{ matrix.runtime.name }}-runtime-base::$runtime_base"
-          echo ....................
-  check-for-runtime-upgrade:
-    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin')
-    needs: parse-runtimes
-    runs-on: ubuntu-20.04
-    outputs:
-      do-versions-match: ${{ steps.check-match.outputs.match }}
-    steps:
-      - name: check if runtime versions match
-        id: check-match
-        run: |
-          echo "::set-output name=match::true"
-          if [[ ${{ needs.parse-runtimes.outputs.manta-runtime-base }} != ${{ needs.parse-runtimes.outputs.manta-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
-          if [[ ${{ needs.parse-runtimes.outputs.calamari-runtime-base }} != ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
-      - name: force fail if new versions don't match
-        run: |
-          if [[  ${{ needs.parse-runtimes.outputs.manta-runtime-current }} != ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then exit 1; fi

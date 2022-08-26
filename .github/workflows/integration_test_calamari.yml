@@ -594,6 +594,114 @@ jobs:
         name: test - calamari alice peered successfully
         run: |
           grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9921.log
+  parse-runtimes:
+    if: contains(github.event.pull_request.labels.*.name, 'A-calamari')
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        runtime:
+          - name: calamari
+          - name: manta
+    outputs:
+      calamari-runtime-current: ${{ steps.get-runtime-current.outputs.calamari-runtime-current }}
+      calamari-runtime-base: ${{ steps.get-runtime-base.outputs.calamari-runtime-base }}
+      manta-runtime-current: ${{ steps.get-runtime-current.outputs.manta-runtime-current }}
+      manta-runtime-base: ${{ steps.get-runtime-base.outputs.manta-runtime-base }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: ruby setup
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+      - name: get ${{ matrix.runtime.name }} runtime version current
+        id: get-runtime-current
+        run: |
+          runtime_current="$(ruby -e '
+            require "./scripts/github/lib.rb";
+            puts get_runtime("${{ matrix.runtime.name }}")
+          ')"
+          echo "::set-output name=${{ matrix.runtime.name }}-runtime-current::$runtime_current"
+          echo ....................
+      - name: get ${{ matrix.runtime.name }} runtime version base
+        id: get-runtime-base
+        run: |
+          mkdir temp_for_run
+          cd temp_for_run
+          git clone -b manta https://github.com/Manta-Network/Manta.git
+          cd Manta
+          runtime_base="$(ruby -e '
+            require "./scripts/github/lib.rb";
+            puts get_runtime("${{ matrix.runtime.name }}")
+          ')"
+          echo "::set-output name=${{ matrix.runtime.name }}-runtime-base::$runtime_base"
+          echo ....................
+  check-for-runtime-upgrade:
+    if: contains(github.event.pull_request.labels.*.name, 'A-calamari')
+    needs: parse-runtimes
+    runs-on: ubuntu-20.04
+    outputs:
+      do-versions-match: ${{ steps.check-match.outputs.match }}
+    steps:
+      - name: check if runtime versions match
+        id: check-match
+        run: |
+          echo "::set-output name=match::true"
+          if [[ ${{ needs.parse-runtimes.outputs.manta-runtime-base }} != ${{ needs.parse-runtimes.outputs.manta-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
+          if [[ ${{ needs.parse-runtimes.outputs.calamari-runtime-base }} != ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
+      - name: force fail if new versions don't match
+        run: |
+          if [[  ${{ needs.parse-runtimes.outputs.manta-runtime-current }} != ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then exit 1; fi
+  docker-image-test:
+    if: contains(github.event.pull_request.labels.*.name, 'A-calamari')
+    needs: [build-node-current, start-docker-image-tester]
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        runtime:
+          - name: calamari
+    steps:
+      - uses: actions/checkout@v2
+      - name: fetch manta
+        uses: actions/download-artifact@v2
+        with:
+          name: manta
+      - name: build docker image
+        run: |
+          mv manta docker/manta
+          cd docker/
+          chmod +x manta
+          GIT_TAG=${{ github.event.release.tag_name }}
+          BINARY_NAME=manta
+          ln -s ${{ matrix.runtime.name }}.Dockerfile Dockerfile
+          docker build \
+            --build-arg PARA_BINARY_REF=${GIT_TAG} \
+            --build-arg PARA_BINARY_URL=manta \
+            --tag ${{ matrix.runtime.name }}   ./
+      - name: run docker image
+        run: |
+          sudo docker run -p 9944:9944 -p 9945:9945 -d ${{ matrix.runtime.name }} --unsafe-ws-external -- --unsafe-ws-external > docker_id.log
+          sleep 60
+      - name: Show log
+        run: |
+          echo "Get the docker container ID:"
+          image_id=`cat docker_id.log`
+          echo $image_id
+          echo "Adjusting permissions so we can access docker logs..."
+          sudo chmod -R +x /var/lib/docker/
+          sudo cat /var/lib/docker/containers/${image_id}/${image_id}-json.log
+      - uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Dev-Tools
+          path: dev-tools
+      - name: check if target block is finalized
+        run: |
+          cd dev-tools/check-finalized-block
+          yarn install
+          yarn
+          node index.js --para_address=ws://127.0.0.1:9944 --relay_address=ws://127.0.0.1:9945 --target_block=6
+          echo $?
+          if [ $? == 1 ]; then echo "Failed to finalize the target block - 6"; exit 1; fi
+  # HELPER JOBS BELOW
   start-node-builder-current:
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari')
     runs-on: ubuntu-20.04
@@ -705,63 +813,6 @@ jobs:
           aws-region: ${{ needs.start-runtime-upgrade-tester.outputs.aws-region }}
           runner-label: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-runtime-upgrade-tester.outputs.aws-instance-id }}
-  parse-runtimes:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari')
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        runtime:
-          - name: calamari
-          - name: manta
-    outputs:
-      calamari-runtime-current: ${{ steps.get-runtime-current.outputs.calamari-runtime-current }}
-      calamari-runtime-base: ${{ steps.get-runtime-base.outputs.calamari-runtime-base }}
-      manta-runtime-current: ${{ steps.get-runtime-current.outputs.manta-runtime-current }}
-      manta-runtime-base: ${{ steps.get-runtime-base.outputs.manta-runtime-base }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: ruby setup
-        uses: actions/setup-ruby@v1
-        with:
-          ruby-version: 2.7
-      - name: get ${{ matrix.runtime.name }} runtime version current
-        id: get-runtime-current
-        run: |
-          runtime_current="$(ruby -e '
-            require "./scripts/github/lib.rb";
-            puts get_runtime("${{ matrix.runtime.name }}")
-          ')"
-          echo "::set-output name=${{ matrix.runtime.name }}-runtime-current::$runtime_current"
-          echo ....................
-      - name: get ${{ matrix.runtime.name }} runtime version base
-        id: get-runtime-base
-        run: |
-          mkdir temp_for_run
-          cd temp_for_run
-          git clone -b manta https://github.com/Manta-Network/Manta.git
-          cd Manta
-          runtime_base="$(ruby -e '
-            require "./scripts/github/lib.rb";
-            puts get_runtime("${{ matrix.runtime.name }}")
-          ')"
-          echo "::set-output name=${{ matrix.runtime.name }}-runtime-base::$runtime_base"
-          echo ....................
-  check-for-runtime-upgrade:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari')
-    needs: parse-runtimes
-    runs-on: ubuntu-20.04
-    outputs:
-      do-versions-match: ${{ steps.check-match.outputs.match }}
-    steps:
-      - name: check if runtime versions match
-        id: check-match
-        run: |
-          echo "::set-output name=match::true"
-          if [[ ${{ needs.parse-runtimes.outputs.manta-runtime-base }} != ${{ needs.parse-runtimes.outputs.manta-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
-          if [[ ${{ needs.parse-runtimes.outputs.calamari-runtime-base }} != ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
-      - name: force fail if new versions don't match
-        run: |
-          if [[  ${{ needs.parse-runtimes.outputs.manta-runtime-current }} != ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then exit 1; fi
   start-docker-image-tester:
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari')
     runs-on: ubuntu-20.04
@@ -785,56 +836,6 @@ jobs:
           aws-instance-root-volume-size: 64
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
-  docker-image-test:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari')
-    needs: [build-node-current, start-docker-image-tester]
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        runtime:
-          - name: calamari
-    steps:
-      - uses: actions/checkout@v2
-      - name: fetch manta
-        uses: actions/download-artifact@v2
-        with:
-          name: manta
-      - name: build docker image
-        run: |
-          mv manta docker/manta
-          cd docker/
-          chmod +x manta
-          GIT_TAG=${{ github.event.release.tag_name }}
-          BINARY_NAME=manta
-          ln -s ${{ matrix.runtime.name }}.Dockerfile Dockerfile
-          docker build \
-            --build-arg PARA_BINARY_REF=${GIT_TAG} \
-            --build-arg PARA_BINARY_URL=manta \
-            --tag ${{ matrix.runtime.name }}   ./
-      - name: run docker image
-        run: |
-          sudo docker run -p 9944:9944 -p 9945:9945 -d ${{ matrix.runtime.name }} --unsafe-ws-external -- --unsafe-ws-external > docker_id.log
-          sleep 60
-      - name: Show log
-        run: |
-          echo "Get the docker container ID:"
-          image_id=`cat docker_id.log`
-          echo $image_id
-          echo "Adjusting permissions so we can access docker logs..."
-          sudo chmod -R +x /var/lib/docker/
-          sudo cat /var/lib/docker/containers/${image_id}/${image_id}-json.log
-      - uses: actions/checkout@v2
-        with:
-          repository: Manta-Network/Dev-Tools
-          path: dev-tools
-      - name: check if target block is finalized
-        run: |
-          cd dev-tools/check-finalized-block
-          yarn install
-          yarn
-          node index.js --para_address=ws://127.0.0.1:9944 --relay_address=ws://127.0.0.1:9945 --target_block=6
-          echo $?
-          if [ $? == 1 ]; then echo "Failed to finalize the target block - 6"; exit 1; fi
   stop-docker-image-tester:
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari')
     needs: [start-docker-image-tester, docker-image-test]
