@@ -5174,7 +5174,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#b352be383e44bcd0e11c8b630c0d917685832fca"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#150ee4c177728d82a3d720a97e4258f23eb0f5de"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5217,7 +5217,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#b352be383e44bcd0e11c8b630c0d917685832fca"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#150ee4c177728d82a3d720a97e4258f23eb0f5de"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -5234,7 +5234,7 @@ dependencies = [
 [[package]]
 name = "manta-parameters"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#b352be383e44bcd0e11c8b630c0d917685832fca"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#150ee4c177728d82a3d720a97e4258f23eb0f5de"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5247,7 +5247,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#b352be383e44bcd0e11c8b630c0d917685832fca"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#150ee4c177728d82a3d720a97e4258f23eb0f5de"
 dependencies = [
  "aes-gcm 0.9.4",
  "ark-bls12-381",
@@ -5359,7 +5359,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#b352be383e44bcd0e11c8b630c0d917685832fca"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#150ee4c177728d82a3d720a97e4258f23eb0f5de"
 dependencies = [
  "serde",
  "serde_with",
@@ -13370,7 +13370,7 @@ dependencies = [
 [[package]]
 name = "workspace-hack"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#b352be383e44bcd0e11c8b630c0d917685832fca"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#150ee4c177728d82a3d720a97e4258f23eb0f5de"
 dependencies = [
  "aes-gcm 0.9.4",
  "anyhow",

@@ -58,8 +58,8 @@
 extern crate alloc;
 
 use crate::types::{
-    Asset, AssetId, AssetValue, IncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk,
-    SenderChunk, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
+    decode, encode, Asset, AssetId, AssetValue, IncomingNote, NullifierCommitment, OutgoingNote,
+    ReceiverChunk, SenderChunk, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
 };
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
@@ -556,7 +556,6 @@ pub mod pallet {
             receivers: &mut ReceiverChunk,
             receivers_pulled: &mut u64,
         ) -> bool {
-            /* TODO:
             let max_receiver_index = (receiver_index as u64) + max_update;
             for idx in (receiver_index as u64)..max_receiver_index {
                 if *receivers_pulled == max_update {
@@ -571,14 +570,11 @@ pub mod pallet {
                 }
             }
             Shards::<T>::contains_key(shard_index, max_receiver_index)
-            */
-            todo!()
         }
 
         /// Pulls sender data from the ledger starting at the `sender_index`.
         #[inline]
         fn pull_senders(sender_index: usize, max_update_request: u64) -> (bool, SenderChunk) {
-            /* TODO:
             let mut senders = Vec::new();
             let max_sender_index = if max_update_request > Self::PULL_MAX_SENDER_UPDATE_SIZE {
                 (sender_index as u64) + Self::PULL_MAX_SENDER_UPDATE_SIZE
@@ -595,8 +591,6 @@ pub mod pallet {
                 NullifierSetInsertionOrder::<T>::contains_key(max_sender_index as u64),
                 senders,
             )
-            */
-            todo!()
         }
 
         /// Returns the diff of ledger state since the given `checkpoint`, `max_receivers`, and
@@ -632,11 +626,11 @@ pub mod pallet {
             sinks: Vec<T::AccountId>,
             post: TransferPost,
         ) -> DispatchResultWithPostInfo {
-            /* TODO:
+            /*
             Self::deposit_event(
                 config::TransferPost::try_from(post)
                     .map_err(|_| Error::<T>::InvalidSerializedForm)?
-                    .post(sources, sinks, &(), &mut Ledger(PhantomData))
+                    .post(parameters, &mut Ledger(PhantomData), &(), sources, sinks)
                     .map_err(Error::<T>::from)?
                     .convert(origin),
             );
@@ -742,7 +736,7 @@ where
 
     #[inline]
     fn is_unspent(&self, nullifier: config::Nullifier) -> Option<Self::ValidNullifier> {
-        if NullifierCommitmentSet::<T>::contains_key(types::encode(&nullifier.commitment)) {
+        if NullifierCommitmentSet::<T>::contains_key(encode(&nullifier.commitment)) {
             None
         } else {
             Some(Wrap(nullifier))
@@ -754,7 +748,7 @@ where
         &self,
         output: config::UtxoAccumulatorOutput,
     ) -> Option<Self::ValidUtxoAccumulatorOutput> {
-        if UtxoAccumulatorOutputs::<T>::contains_key(types::encode(&output)) {
+        if UtxoAccumulatorOutputs::<T>::contains_key(encode(&output)) {
             return Some(Wrap(output));
         }
         None
@@ -765,21 +759,24 @@ where
     where
         I: IntoIterator<Item = (Self::ValidUtxoAccumulatorOutput, Self::ValidNullifier)>,
     {
-        /*
         let _ = super_key;
         let index = NullifierSetSize::<T>::get();
         let mut i = 0;
         for (_, nullifier) in iter {
-            let nullifier = types::encode(&nullifier.0);
-            NullifierCommitmentSet::<T>::insert(nullifier.commitment, ());
-            NullifierSetInsertionOrder::<T>::insert(index + i, nullifier);
+            let nullifier_commitment = encode(&nullifier.0.commitment);
+            NullifierCommitmentSet::<T>::insert(nullifier_commitment, ());
+            NullifierSetInsertionOrder::<T>::insert(
+                index + i,
+                (
+                    nullifier_commitment,
+                    OutgoingNote::from(nullifier.0.outgoing_note),
+                ),
+            );
             i += 1;
         }
         if i != 0 {
             NullifierSetSize::<T>::set(index + i);
         }
-        */
-        todo!()
     }
 }
 
@@ -792,14 +789,11 @@ where
 
     #[inline]
     fn is_not_registered(&self, utxo: config::Utxo) -> Option<Self::ValidUtxo> {
-        /* TODO:
-        if UtxoSet::<T>::contains_key(encode(&utxo)) {
+        if UtxoSet::<T>::contains_key(&Utxo::from(utxo.clone())) {
             None
         } else {
             Some(Wrap(utxo))
         }
-        */
-        todo!()
     }
 
     #[inline]

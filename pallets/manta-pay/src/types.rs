@@ -16,9 +16,13 @@
 
 //! Type Definitions for Manta Pay
 
-use super::*;
+use manta_crypto::merkle_tree;
 use manta_pay::{
-    config::utxo::v1::{self, MerkleTreeConfiguration},
+    config::{
+        self,
+        utxo::v1::{self, MerkleTreeConfiguration},
+    },
+    crypto::poseidon::encryption::{self, BlockArray, CiphertextBlock},
     manta_crypto::{
         encryption::{hybrid, EmptyHeader},
         permutation::duplex,
@@ -26,8 +30,9 @@ use manta_pay::{
     },
     manta_util::into_array_unchecked,
 };
-use manta_util::Array;
-use scale_codec::Error;
+use manta_util::{Array, BoxArray};
+use scale_codec::{Decode, Encode, Error, MaxEncodedLen};
+use scale_info::TypeInfo;
 
 #[cfg(feature = "rpc")]
 use manta_pay::manta_util::serde::{Deserialize, Serialize};
@@ -72,10 +77,10 @@ pub const GROUP_LENGTH: usize = 32;
 pub type Group = [u8; GROUP_LENGTH];
 
 ///
-pub const UTXO_LENGTH: usize = 32;
+pub const UTXO_COMMITMENT_LENGTH: usize = 32;
 
-/// UTXO Type
-pub type Utxo = [u8; UTXO_LENGTH];
+/// UTXO Commitment Type
+pub type UtxoCommitment = [u8; UTXO_COMMITMENT_LENGTH];
 
 ///
 pub const NULLIFIER_COMMITMENT_LENGTH: usize = 32;
@@ -102,6 +107,11 @@ pub type AssetId = [u8; 32];
 pub type AssetValue = u128;
 
 /// Asset
+#[cfg_attr(
+    feature = "rpc",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
 #[derive(
     Clone,
     Copy,
@@ -130,6 +140,28 @@ impl Asset {
     #[inline]
     pub fn new(id: AssetId, value: AssetValue) -> Self {
         Self { id, value }
+    }
+}
+
+impl From<config::Asset> for Asset {
+    #[inline]
+    fn from(asset: config::Asset) -> Self {
+        Self {
+            id: encode(asset.id),
+            value: asset.value,
+        }
+    }
+}
+
+impl TryFrom<Asset> for config::Asset {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(asset: Asset) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: decode(asset.id)?,
+            value: asset.value,
+        })
     }
 }
 
@@ -173,7 +205,22 @@ impl TryFrom<OutgoingNote> for v1::OutgoingNote {
 
     #[inline]
     fn try_from(note: OutgoingNote) -> Result<Self, Self::Error> {
-        todo!()
+        Ok(Self {
+            header: EmptyHeader::default(),
+            ciphertext: hybrid::Ciphertext {
+                ephemeral_public_key: decode(note.ephemeral_public_key)?,
+                ciphertext: duplex::Ciphertext {
+                    tag: encryption::Tag(decode(note.tag)?),
+                    message: BlockArray(BoxArray(Box::new([CiphertextBlock(
+                        note.ciphertext
+                            .into_iter()
+                            .map(decode)
+                            .collect::<Result<Vec<_>, _>>()?
+                            .into(),
+                    )]))),
+                },
+            },
+        })
     }
 }
 
@@ -256,19 +303,62 @@ impl TryFrom<IncomingNote> for v1::IncomingNote {
 
     #[inline]
     fn try_from(note: IncomingNote) -> Result<Self, Self::Error> {
-        /*
         Ok(Self {
             header: EmptyHeader::default(),
             ciphertext: hybrid::Ciphertext {
                 ephemeral_public_key: decode(note.ephemeral_public_key)?,
                 ciphertext: duplex::Ciphertext {
-                    tag: decode(note.tag)?.into(),
-                    message: decode(note.message)?,
+                    tag: encryption::Tag(decode(note.tag)?),
+                    message: BlockArray(BoxArray(Box::new([CiphertextBlock(
+                        note.ciphertext
+                            .into_iter()
+                            .map(decode)
+                            .collect::<Result<Vec<_>, _>>()?
+                            .into(),
+                    )]))),
                 },
             },
         })
-        */
-        todo!()
+    }
+}
+
+/// UTXO
+#[cfg_attr(
+    feature = "rpc",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
+pub struct Utxo {
+    /// Transparency Flag
+    pub is_transparent: bool,
+
+    /// Public Asset
+    pub public_asset: Asset,
+
+    /// UTXO Commitment
+    pub commitment: UtxoCommitment,
+}
+
+impl Utxo {
+    ///
+    #[inline]
+    pub fn from(utxo: v1::Utxo) -> Utxo {
+        Self {
+            is_transparent: utxo.is_transparent,
+            public_asset: utxo.public_asset.into(),
+            commitment: encode(utxo.commitment),
+        }
+    }
+
+    ///
+    #[inline]
+    pub fn try_into(self) -> Result<v1::Utxo, Error> {
+        Ok(v1::Utxo {
+            is_transparent: self.is_transparent,
+            public_asset: self.public_asset.try_into()?,
+            commitment: decode(self.commitment)?,
+        })
     }
 }
 
@@ -285,13 +375,10 @@ pub struct ReceiverPost {
 impl From<config::ReceiverPost> for ReceiverPost {
     #[inline]
     fn from(post: config::ReceiverPost) -> Self {
-        /*
         Self {
-            utxo: encode(post.utxo),
-            note: post.note.into(),
+            utxo: Utxo::from(post.utxo),
+            incoming_note: IncomingNote::from(post.note),
         }
-        */
-        todo!()
     }
 }
 
@@ -300,13 +387,10 @@ impl TryFrom<ReceiverPost> for config::ReceiverPost {
 
     #[inline]
     fn try_from(post: ReceiverPost) -> Result<Self, Self::Error> {
-        /* TODO:
         Ok(Self {
-            utxo: decode(post.utxo)?,
-            note: post.note.try_into()?,
+            utxo: post.utxo.try_into()?,
+            note: post.incoming_note.try_into()?,
         })
-        */
-        todo!()
     }
 }
 
