@@ -19,7 +19,7 @@ env:
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
 jobs:
   get-rust-versions:
-    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin')
+    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
     runs-on: ubuntu-20.04
     container:
       image: paritytech/ci-linux:production
@@ -34,7 +34,7 @@ jobs:
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
   build-runtimes:
-    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin')
+    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
     runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
@@ -76,7 +76,7 @@ jobs:
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
   build-node-current:
-    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin')
+    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
     needs: start-node-builder-current
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     env:
@@ -148,7 +148,7 @@ jobs:
           name: config-for-integration-test
           path: .github/resources/config-for-integration-test.json
   dolphin-integration-test:
-    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin')
+    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
     needs: [build-node-current, build-runtimes, start-dolphin-integration-tester]
     runs-on: ${{ needs.start-dolphin-integration-tester.outputs.runner-label }}
     timeout-minutes: 90
@@ -412,7 +412,7 @@ jobs:
         run: |
           grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9921.log
   parse-runtimes:
-    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin')
+    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -454,7 +454,7 @@ jobs:
           echo ....................
   # HELPER JOBS BELOW
   start-node-builder-current:
-    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin')
+    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -477,7 +477,7 @@ jobs:
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-node-builder-current:
-    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin')
+    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
     needs: [start-node-builder-current, build-node-current]
     runs-on: ubuntu-20.04
     steps:
@@ -491,7 +491,7 @@ jobs:
           runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
   start-dolphin-integration-tester:
-    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin')
+    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -514,7 +514,7 @@ jobs:
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-dolphin-integration-tester:
-    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin')
+    if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
     needs: [start-dolphin-integration-tester, dolphin-integration-test]
     runs-on: ubuntu-20.04
     steps:
