@@ -210,6 +210,7 @@ impl Config for Test {
     type AccountIdOf = IdentityCollator;
     type ValidatorRegistration = IsRegistered;
     type WeightInfo = ();
+    type CanAuthor = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

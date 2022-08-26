@@ -20,11 +20,12 @@
 
 use frame_support::{
     dispatch::Weight,
-    ensure,
     migrations::migrate_from_pallet_version_to_storage_version,
-    traits::{GetStorageVersion, OnRuntimeUpgrade, PalletInfoAccess, StorageVersion},
+    traits::{GetStorageVersion, OnRuntimeUpgrade, PalletInfoAccess},
     weights::constants::RocksDbWeight,
 };
+#[cfg(feature = "try-runtime")]
+use frame_support::{ensure, traits::StorageVersion};
 
 use sp_std::marker::PhantomData;
 
