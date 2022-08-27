@@ -25,7 +25,7 @@ pub use calamari_runtime::{
     assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},
     currency::KMA,
     fee::{
-        FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY, TIPS_PERCENTAGE_TO_AUTHOR,
+        FEES_PERCENTAGE_TO_BURN, FEES_PERCENTAGE_TO_TREASURY, TIPS_PERCENTAGE_TO_AUTHOR,
         TIPS_PERCENTAGE_TO_TREASURY,
     },
     xcm_config::XcmFeesAccount,
@@ -447,7 +447,7 @@ fn seal_header(mut header: Header, author: AccountId) -> Header {
 #[test]
 fn sanity_check_fees_and_tips_splits() {
     assert_eq!(100, TIPS_PERCENTAGE_TO_AUTHOR + TIPS_PERCENTAGE_TO_TREASURY);
-    assert_eq!(100, FEES_PERCENTAGE_TO_AUTHOR + FEES_PERCENTAGE_TO_TREASURY);
+    assert_eq!(100, FEES_PERCENTAGE_TO_BURN + FEES_PERCENTAGE_TO_TREASURY);
 }
 
 #[test]
@@ -515,7 +515,8 @@ fn reward_fees_to_block_author_and_treasury() {
             let author_received_reward = Balances::free_balance(alice) - INITIAL_BALANCE;
             println!("The rewarded_amount is: {:?}", author_received_reward);
 
-            let author_percent = Percent::from_percent(FEES_PERCENTAGE_TO_AUTHOR);
+            // Author should get none of the fees - 50% burned, 50% to treasury.
+            let author_percent = Percent::from_percent(0);
             let expected_fee =
                 TransactionPayment::compute_actual_fee(len as u32, &info, &post_info, 0);
             assert_eq!(author_received_reward, author_percent * expected_fee);

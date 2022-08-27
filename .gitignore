@@ -6,3 +6,7 @@ runtime/**/target
 .vscode
 .idea
 /tests/node_modules/
+/scripts/benchmarking/benchmarking_errors.txt
+/scripts/benchmarking/machine_benchmark_result.txt
+/scripts/benchmarking/rocksdb_weights.rs
+/scripts/benchmarking/weights-output/
