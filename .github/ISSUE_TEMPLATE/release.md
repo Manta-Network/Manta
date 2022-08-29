@@ -70,7 +70,7 @@ Note: Do not publish draft releases from PR branches, because those branches wil
 - Notify all external users of `manta`, include the block number the upgrade is enacted!
   - [ ] [Calamari Network Forum](https://forum.manta.network/c/calamari-network-governance/6)
   - [ ] Manta/Calamari Discord Announcement
-  - [ ] Exchange Integration Teams
+  - [ ] [Exchange Integration Teams](https://www.notion.so/mantanetwork/Exchanges-3rd-Infrastructures-b089e136a14b430ea405400311b362cb)
   - [ ] Subscan team. Ensure subscan service can continue to scan calamari blocks.
 
 ## Notes
