@@ -42,7 +42,7 @@ use xcm_executor::traits::{
     Convert as XcmConvert, MatchesFungible, MatchesFungibles, TransactAsset, WeightTrader,
 };
 
-/// This struct offers uses RelativeReserveProvider to output absolute views of multilocations.
+/// This struct uses RelativeReserveProvider to output absolute views of multilocations.
 /// However, additionally accepts a MultiLocations in relative view (parent: 0, Here).
 /// In any case the absolute view of the multilocation is returned.
 /// This helps users by preventing errors when they try to transfer a token through xtokens
