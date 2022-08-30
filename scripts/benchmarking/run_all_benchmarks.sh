@@ -125,24 +125,24 @@ for PALLET in "${PALLETS[@]}"; do
   WEIGHT_FILE="./${WEIGHTS_OUTPUT}/${PALLET}.rs"
   echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
 
-  OUTPUT=$(
-    $MANTA benchmark pallet \
-    --chain=$chain_spec \
-    --steps=50 \
-    --repeat=20 \
-    --pallet="$PALLET" \
-    --extrinsic="*" \
-    --execution=wasm \
-    --wasm-execution=compiled \
-    --heap-pages=4096 \
-    --output="$WEIGHT_FILE" \
-    --template=.github/resources/frame-weight-template.hbs 2>&1
-  )
-  if [ $? -ne 0 ]; then
-    echo "$OUTPUT" >> "$ERR_FILE"
-    echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
-  fi
-done
+#   OUTPUT=$(
+#     $MANTA benchmark pallet \
+#     --chain=$chain_spec \
+#     --steps=50 \
+#     --repeat=20 \
+#     --pallet="$PALLET" \
+#     --extrinsic="*" \
+#     --execution=wasm \
+#     --wasm-execution=compiled \
+#     --heap-pages=4096 \
+#     --output="$WEIGHT_FILE" \
+#     --template=.github/resources/frame-weight-template.hbs 2>&1
+#   )
+#   if [ $? -ne 0 ]; then
+#     echo "$OUTPUT" >> "$ERR_FILE"
+#     echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
+#   fi
+# done
 
 echo "[+] Benchmarking the machine..."
 OUTPUT=$(
@@ -152,23 +152,23 @@ OUTPUT=$(
 echo "[x] Machine benchmark:\n$OUTPUT"
 echo $OUTPUT >> $MACHINE_OUTPUT
 
-# If `-s` is used, run the storage benchmark.
-if [ ! -z "$storage_folder" ]; then
-  OUTPUT=$(
-  $MANTA benchmark storage \
-    --chain=$chain_spec \
-    --state-version=1 \
-    --warmups=10 \
-    --base-path=$storage_folder \
-    --weight-path=./$STORAGE_OUTPUT 2>&1
-  )
-  if [ $? -ne 0 ]; then
-    echo "$OUTPUT" >> "$ERR_FILE"
-    echo "[-] Failed the storage benchmark. Error written to $ERR_FILE; continuing..."
-  fi
-else
-  unset storage_folder
-fi
+# # If `-s` is used, run the storage benchmark.
+# if [ ! -z "$storage_folder" ]; then
+#   OUTPUT=$(
+#   $MANTA benchmark storage \
+#     --chain=$chain_spec \
+#     --state-version=1 \
+#     --warmups=10 \
+#     --base-path=$storage_folder \
+#     --weight-path=./$STORAGE_OUTPUT 2>&1
+#   )
+#   if [ $? -ne 0 ]; then
+#     echo "$OUTPUT" >> "$ERR_FILE"
+#     echo "[-] Failed the storage benchmark. Error written to $ERR_FILE; continuing..."
+#   fi
+# else
+#   unset storage_folder
+# fi
 
 # Check if the error file exists.
 if [ -f "$ERR_FILE" ]; then
