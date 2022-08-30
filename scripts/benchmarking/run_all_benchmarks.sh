@@ -110,20 +110,20 @@ rm -f ${STORAGE_OUTPUT}
 MACHINE_OUTPUT="scripts/benchmarking/machine_benchmark_result.txt"
 rm -f $MACHINE_OUTPUT
 
-# Benchmark each pallet.
-for PALLET in "${PALLETS[@]}"; do
-  # If `-p` is used, skip benchmarks until the start pallet.
-  if [ ! -z "$start_pallet" ] && [ "$start_pallet" != "$PALLET" ]
-  then
-    echo "[+] Skipping ${PALLET}..."
-    continue
-  else
-    unset start_pallet
-  fi
+# # Benchmark each pallet.
+# for PALLET in "${PALLETS[@]}"; do
+#   # If `-p` is used, skip benchmarks until the start pallet.
+#   if [ ! -z "$start_pallet" ] && [ "$start_pallet" != "$PALLET" ]
+#   then
+#     echo "[+] Skipping ${PALLET}..."
+#     continue
+#   else
+#     unset start_pallet
+#   fi
 
-  FOLDER="$(echo "${PALLET#*_}" | tr '_' '-')";
-  WEIGHT_FILE="./${WEIGHTS_OUTPUT}/${PALLET}.rs"
-  echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
+#   FOLDER="$(echo "${PALLET#*_}" | tr '_' '-')";
+#   WEIGHT_FILE="./${WEIGHTS_OUTPUT}/${PALLET}.rs"
+#   echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
 
 #   OUTPUT=$(
 #     $MANTA benchmark pallet \
