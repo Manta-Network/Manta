@@ -80,8 +80,8 @@ EXCLUDED_PALLETS=(
 )
 
 XCM_BENCHMARKS=(
-  "pallet_xcm_benchmarks::fungible"
-  "pallet_xcm_benchmarks::generic"
+  "pallet_xcm_benchmarks_fungible"
+  "pallet_xcm_benchmarks_generic"
 )
 
 # Load all pallet names in an array.
