@@ -79,6 +79,11 @@ MANTA=./target/production/manta
 EXCLUDED_PALLETS=(
 )
 
+XCM_BENCHMARKS=(
+  "pallet_xcm_benchmarks::fungible"
+  "pallet_xcm_benchmarks::generic"
+)
+
 # Load all pallet names in an array.
 ALL_PALLETS=($(
   $MANTA benchmark pallet --list --chain=$chain_spec |\
@@ -98,19 +103,23 @@ ERR_FILE="scripts/benchmarking/benchmarking_errors.txt"
 # Delete the error file before each run.
 rm -f $ERR_FILE
 
-WEIGHTS_OUTPUT="scripts/benchmarking/weights-output"
+FRAME_WEIGHTS_OUTPUT="scripts/benchmarking/frame-weights-output"
 # Delete the weights output folders before each run.
-rm -R ${WEIGHTS_OUTPUT}
+rm -R ${FRAME_WEIGHTS_OUTPUT}
 # Create the weights output folders.
-mkdir ${WEIGHTS_OUTPUT}
+mkdir ${FRAME_WEIGHTS_OUTPUT}
 
-STORAGE_OUTPUT="scripts/benchmarking/rocksdb_weights.rs"
-rm -f ${STORAGE_OUTPUT}
+XCM_WEIGHTS_OUTPUT="scripts/benchmarking/xcm-weights-output"
+rm -R ${XCM_WEIGHTS_OUTPUT}
+mkdir ${XCM_WEIGHTS_OUTPUT}
+
+STORAGE_WEIGHTS_OUTPUT="scripts/benchmarking/rocksdb_weights.rs"
+rm -f ${STORAGE_WEIGHTS_OUTPUT}
 
 MACHINE_OUTPUT="scripts/benchmarking/machine_benchmark_result.txt"
 rm -f $MACHINE_OUTPUT
 
-# Benchmark each pallet.
+# Benchmark each frame pallet.
 for PALLET in "${PALLETS[@]}"; do
   # If `-p` is used, skip benchmarks until the start pallet.
   if [ ! -z "$start_pallet" ] && [ "$start_pallet" != "$PALLET" ]
@@ -122,7 +131,7 @@ for PALLET in "${PALLETS[@]}"; do
   fi
 
   FOLDER="$(echo "${PALLET#*_}" | tr '_' '-')";
-  WEIGHT_FILE="./${WEIGHTS_OUTPUT}/${PALLET}.rs"
+  WEIGHT_FILE="./${FRAME_WEIGHTS_OUTPUT}/${PALLET}.rs"
   echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
 
   OUTPUT=$(
@@ -137,6 +146,32 @@ for PALLET in "${PALLETS[@]}"; do
     --heap-pages=4096 \
     --output="$WEIGHT_FILE" \
     --template=.github/resources/frame-weight-template.hbs 2>&1
+  )
+  if [ $? -ne 0 ]; then
+    echo "$OUTPUT" >> "$ERR_FILE"
+    echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
+  fi
+done
+
+# Benchmark xcm.
+for PALLET in "${XCM_BENCHMARKS[@]}"; do
+
+  FOLDER="$(echo "${PALLET#*_}" | tr '_' '-')";
+  WEIGHT_FILE="./${XCM_WEIGHTS_OUTPUT}/${PALLET}.rs"
+  echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
+
+  OUTPUT=$(
+    $MANTA benchmark pallet \
+    --chain=$chain_spec \
+    --steps=50 \
+    --repeat=20 \
+    --pallet="$PALLET" \
+    --extrinsic="*" \
+    --execution=wasm \
+    --wasm-execution=compiled \
+    --heap-pages=4096 \
+    --output="$WEIGHT_FILE" \
+    --template=.github/resources/xcm-weight-template.hbs 2>&1
   )
   if [ $? -ne 0 ]; then
     echo "$OUTPUT" >> "$ERR_FILE"
@@ -160,7 +195,7 @@ if [ ! -z "$storage_folder" ]; then
     --state-version=1 \
     --warmups=10 \
     --base-path=$storage_folder \
-    --weight-path=./$STORAGE_OUTPUT 2>&1
+    --weight-path=./$STORAGE_WEIGHTS_OUTPUT 2>&1
   )
   if [ $? -ne 0 ]; then
     echo "$OUTPUT" >> "$ERR_FILE"
