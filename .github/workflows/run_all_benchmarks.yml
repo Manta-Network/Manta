@@ -97,13 +97,13 @@ jobs:
         name: upload frame weights
         uses: actions/upload-artifact@v3
         with:
-          name: weights-output
+          name: frame-weights-output
           path: ./scripts/benchmarking/frame-weights-output/
       - if: always()
         name: upload xcm weights
         uses: actions/upload-artifact@v3
         with:
-          name: weights-output
+          name: xcm-weights-output
           path: ./scripts/benchmarking/xcm-weights-output/
       - if: always()
         name: upload benchmarking errors
