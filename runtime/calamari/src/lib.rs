@@ -57,7 +57,7 @@ use manta_primitives::{
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 use sp_runtime::{Perbill, Permill};
-use xcm_config::{CheckingAccount, LocationToAccountId, XcmExecutorConfig};
+use xcm_config::{LocationToAccountId, XcmExecutorConfig};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -1000,44 +1000,69 @@ impl_runtime_apis! {
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
             impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
+            use pallet_xcm_benchmarks::asset_instance_from;
+
             impl pallet_xcm_benchmarks::Config for Runtime {
                 type XcmConfig = XcmExecutorConfig;
                 type AccountIdConverter = LocationToAccountId;
 
                 fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
-                    Ok(MultiLocation::new(1, X1(Parachain(3000))))
+                 Ok( MultiLocation { parents: 1, interior: Here })
                 }
                 fn worst_case_holding() -> MultiAssets {
-                    // Kusama only knows about KSM.
-                    vec![MultiAsset{
-                        id: Concrete(MultiLocation { parents: 1, interior: Here }),
-                        fun: Fungible(1_000_000 * KMA),
-                    }].into()
+                    // // Kusama only knows about KSM.
+                    // vec![MultiAsset{
+                    //     id: Concrete(MultiLocation { parents: 1, interior: Here }),
+                    //     fun: Fungible(1_000_000 * KMA),
+                    // }].into()
+
+                    // A mix of fungible, non-fungible, and concrete assets.
+                    const HOLDING_FUNGIBLES: u32 = 100;
+                    const HOLDING_NON_FUNGIBLES: u32 = 100;
+                    let fungibles_amount: u128 = 100;
+                    let mut assets = (0..HOLDING_FUNGIBLES)
+                        .map(|i| {
+                            MultiAsset {
+                                id: Concrete(GeneralIndex(i as u128).into()),
+                                fun: Fungible(fungibles_amount * i as u128),
+                            }
+                            .into()
+                        })
+                        .chain(core::iter::once(MultiAsset { id: Concrete(Here.into()), fun: Fungible(u128::MAX) }))
+                        .chain((0..HOLDING_NON_FUNGIBLES).map(|i| MultiAsset {
+                            id: Concrete(GeneralIndex(i as u128).into()),
+                            fun: NonFungible(asset_instance_from(i)),
+                        }))
+                        .collect::<Vec<_>>();
+
+                        assets.push(MultiAsset{
+                            id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(2084)) }),
+                            fun: Fungible(1_000_000 * KMA),
+                        });
+                        assets.into()
                 }
             }
 
             parameter_types! {
-                pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = Some((
-                    MultiLocation { parents: 1, interior: X1(Parachain(1000)) },
-                    MultiAsset { fun: Fungible(1 * KMA), id: Concrete(MultiLocation { parents: 1, interior: Here }) },
-                ));
+                pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = None;
                 pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((
-                    MultiLocation { parents: 1, interior: X1(Parachain(1000)) },
-                    MultiAsset { fun: Fungible(1 * KMA), id: Concrete(MultiLocation { parents: 1, interior: Here }) },
+                    MultiLocation { parents: 1, interior: Here },
+                    MultiAsset { fun: Fungible(1_000_000_000_000), id: Concrete(MultiLocation { parents: 1, interior: Here }) },
                 ));
+                pub const CheckedAccount: Option<AccountId> = None;
             }
 
             impl pallet_xcm_benchmarks::fungible::Config for Runtime {
                 type TransactAsset = Balances;
 
-                type CheckedAccount = CheckingAccount;
+                type CheckedAccount = CheckedAccount;
                 type TrustedTeleporter = TrustedTeleporter;
                 type TrustedReserve = TrustedReserve;
 
                 fn get_multi_asset() -> MultiAsset {
                     MultiAsset {
                         id: Concrete(MultiLocation { parents: 1, interior: X1(Parachain(2084)) }),
-                        fun: Fungible(1 * KMA),
+                        fun: Fungible(1_000_000_000_000),
                     }
                 }
             }
@@ -1050,16 +1075,16 @@ impl_runtime_apis! {
                 }
 
                 fn transact_origin() -> Result<MultiLocation, BenchmarkError> {
-                    Ok(MultiLocation::new(1, X1(Parachain(1000))))
+                    Ok(MultiLocation { parents: 1, interior: Here })
                 }
 
                 fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
-                    Ok(MultiLocation::new(1, X1(Parachain(1000))))
+                    Ok(MultiLocation { parents: 1, interior: Here })
                 }
 
                 fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
-                    let origin = MultiLocation::new(1, X1(Parachain(1000)));
-                    let assets: MultiAssets = (Concrete(MultiLocation { parents: 1, interior: Here }), 1_000 * KMA).into();
+                    let origin = MultiLocation { parents: 1, interior: X1(Parachain(2084)) };
+                    let assets: MultiAssets = (Concrete(MultiLocation { parents: 1, interior: X1(Parachain(2084)) }), 1_000_000_000_000_000).into();
                     let ticket = MultiLocation { parents: 0, interior: Here };
                     Ok((origin, ticket, assets))
                 }
@@ -1078,13 +1103,14 @@ impl_runtime_apis! {
                 hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7").to_vec().into(),
                 // Treasury Account
                 hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef7b99d880ec681799c0cf30e8886371da95ecffd7b6c0f78751baa9d281e0bfa3a6d6f646c70792f74727372790000000000000000000000000000000000000000").to_vec().into(),
-            ];
+                hex_literal::hex!("06de3d8a54d27e44a9d5ce189618f22db4b49d95320d9021994c850f25b8e385").to_vec().into(),
+                ];
 
             let mut batches = Vec::<BenchmarkBatch>::new();
             let params = (&config, &whitelist);
             add_benchmarks!(params, batches);
 
-            if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
+            // if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)
         }
     }
