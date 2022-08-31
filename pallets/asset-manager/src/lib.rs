@@ -144,7 +144,6 @@ pub mod pallet {
             AssetIdLocation::<T>::insert(&asset_id, &location);
             AssetIdMetadata::<T>::insert(&asset_id, &metadata);
             LocationAssetId::<T>::insert(&location, &asset_id);
-            NextAssetId::<T>::set(self.start_id);
         }
     }
 
