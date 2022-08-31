@@ -1038,7 +1038,6 @@ impl_runtime_apis! {
                                 id: Concrete(GeneralIndex(i as u128).into()),
                                 fun: Fungible(fungibles_amount * i as u128),
                             }
-                            .into()
                         })
                         .chain(core::iter::once(MultiAsset { id: Concrete(Here.into()), fun: Fungible(u128::MAX) }))
                         .chain((0..HOLDING_NON_FUNGIBLES).map(|i| MultiAsset {
