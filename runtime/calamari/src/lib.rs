@@ -1009,7 +1009,7 @@ impl_runtime_apis! {
             impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
             use pallet_xcm_benchmarks::asset_instance_from;
-            use xcm_config::{KsmLocation, LocationToAccountId, XcmExecutorConfig};
+            use xcm_config::{LocationToAccountId, XcmExecutorConfig};
 
             parameter_types! {
                 pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = None;
@@ -1018,6 +1018,7 @@ impl_runtime_apis! {
                     MultiAsset { fun: Fungible(1_000_000_000_000), id: Concrete(KsmLocation::get()) },
                 ));
                 pub const CheckedAccount: Option<AccountId> = None;
+                pub const KsmLocation: MultiLocation = MultiLocation::parent();
                 pub KmaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(2084)));
             }
 
