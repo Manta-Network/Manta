@@ -79,11 +79,6 @@ MANTA=./target/production/manta
 EXCLUDED_PALLETS=(
 )
 
-XCM_BENCHMARKS=(
-  "pallet_xcm_benchmarks_fungible"
-  "pallet_xcm_benchmarks_generic"
-)
-
 # Load all pallet names in an array.
 ALL_PALLETS=($(
   $MANTA benchmark pallet --list --chain=$chain_spec |\
@@ -132,33 +127,15 @@ for PALLET in "${PALLETS[@]}"; do
 
   FOLDER="$(echo "${PALLET#*_}" | tr '_' '-')";
   WEIGHT_FILE="./${FRAME_WEIGHTS_OUTPUT}/${PALLET}.rs"
+  TEMPLATE_FILE=".github/resources/frame-weight-template.hbs"
   echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
 
-  OUTPUT=$(
-    $MANTA benchmark pallet \
-    --chain=$chain_spec \
-    --steps=50 \
-    --repeat=20 \
-    --pallet="$PALLET" \
-    --extrinsic="*" \
-    --execution=wasm \
-    --wasm-execution=compiled \
-    --heap-pages=4096 \
-    --output="$WEIGHT_FILE" \
-    --template=.github/resources/frame-weight-template.hbs 2>&1
-  )
-  if [ $? -ne 0 ]; then
-    echo "$OUTPUT" >> "$ERR_FILE"
-    echo "[-] Failed to benchmark $PALLET. Error written to $ERR_FILE; continuing..."
+  if [ "$PALLET" == "pallet_xcm_benchmarks::fungible" ] || [ "$PALLET" == "pallet_xcm_benchmarks::generic" ]
+  then
+    OUTPUT_NAME=$(echo $PALLET | sed -r 's/[:]+/_/g')
+    WEIGHT_FILE="./${XCM_WEIGHTS_OUTPUT}/$OUTPUT_NAME"
+    TEMPLATE_FILE=".github/resources/xcm-weight-template.hbs"
   fi
-done
-
-# Benchmark xcm.
-for PALLET in "${XCM_BENCHMARKS[@]}"; do
-
-  FOLDER="$(echo "${PALLET#*_}" | tr '_' '-')";
-  WEIGHT_FILE="./${XCM_WEIGHTS_OUTPUT}/${PALLET}.rs"
-  echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
 
   OUTPUT=$(
     $MANTA benchmark pallet \
@@ -171,7 +148,7 @@ for PALLET in "${XCM_BENCHMARKS[@]}"; do
     --wasm-execution=compiled \
     --heap-pages=4096 \
     --output="$WEIGHT_FILE" \
-    --template=.github/resources/xcm-weight-template.hbs 2>&1
+    --template="$TEMPLATE_FILE" 2>&1
   )
   if [ $? -ne 0 ]; then
     echo "$OUTPUT" >> "$ERR_FILE"
