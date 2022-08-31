@@ -221,4 +221,5 @@ std = [
   'pallet-asset-manager/std',
   'orml-traits/std',
   'orml-xtokens/std',
+  'pallet-xcm-benchmarks/std',
 ]
