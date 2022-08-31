@@ -11,6 +11,7 @@ export const manta_pay_types = {
         should_continue: 'bool',
         receivers: 'Vec<([u8; 32], EncryptedNote)>',
         senders: 'Vec<[u8; 32]>',
+        senders_receivers_total: 'u128',
     }
 };
 
@@ -31,7 +32,6 @@ export const rpc_api = {
                     name: 'max_sender',
                     type: 'u64'
                 }
-
             ],
             type: 'PullResponse'
         }

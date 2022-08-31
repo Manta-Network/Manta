@@ -24,22 +24,27 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use manta_collator_selection::IdentityCollator;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult,
+    ApplyExtrinsicResult, Perbill, Permill,
 };
 use sp_std::{cmp::Ordering, prelude::*};
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU16, ConstU32, ConstU8, Contains, Currency, EnsureOneOf, PrivilegeCmp},
+    traits::{
+        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, NeverEnsureOrigin,
+        PrivilegeCmp,
+    },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, Weight,
@@ -56,8 +61,6 @@ use manta_primitives::{
 };
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
-use sp_runtime::{Perbill, Permill};
-use xcm_config::{KsmLocation, LocationToAccountId, XcmExecutorConfig};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -75,6 +78,7 @@ pub mod xcm_config;
 use currency::*;
 use fee::WeightToFee;
 use impls::DealWithFees;
+use runtime_common::migration::MigratePalletPv2Sv;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -94,11 +98,6 @@ pub mod opaque {
 
     use nimbus_session_adapter::{AuthorInherentWithNoOpSession, VrfWithNoOpSession};
     impl_opaque_keys! {
-        pub struct OldSessionKeys {
-            pub aura: Aura,
-        }
-    }
-    impl_opaque_keys! {
         pub struct SessionKeys {
             pub aura: Aura,
             pub nimbus: AuthorInherentWithNoOpSession<Runtime>,
@@ -111,14 +110,6 @@ pub mod opaque {
             SessionKeys { aura, nimbus, vrf }
         }
     }
-
-    pub fn transform_session_keys(_v: AccountId, old: OldSessionKeys) -> SessionKeys {
-        SessionKeys {
-            aura: old.aura.clone(),
-            nimbus: session_key_primitives::nimbus::dummy_key_from(old.aura.clone()),
-            vrf: session_key_primitives::vrf::dummy_key_from(old.aura),
-        }
-    }
 }
 
 // Weights used in the runtime.
@@ -128,11 +119,11 @@ mod weights;
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
-    authoring_version: 1,
-    spec_version: 3210,
+    authoring_version: 2,
+    spec_version: 3300,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 6,
+    transaction_version: 7,
     state_version: 0,
 };
 
@@ -181,7 +172,7 @@ parameter_types! {
 
 impl pallet_tx_pause::Config for Runtime {
     type Event = Event;
-    type UpdateOrigin = EnsureOneOf<
+    type UpdateOrigin = EitherOfDiverse<
         EnsureRoot<AccountId>,
         pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 1, 2>,
     >;
@@ -265,6 +256,7 @@ impl Contains<Call> for BaseFilter {
             | Call::Scheduler(_)
             | Call::CalamariVesting(_)
             | Call::Session(_) // User must be able to set their session key when applying for a collator
+            | Call::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
             | Call::CollatorSelection(
                 manta_collator_selection::Call::set_invulnerables{..}
                 | manta_collator_selection::Call::set_desired_candidates{..}
@@ -327,7 +319,7 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 impl pallet_authorship::Config for Runtime {
-    type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
+    type FindAuthor = AuthorInherent;
     type UncleGenerations = ConstU32<0>;
     type FilterUncle = ();
     type EventHandler = (CollatorSelection,);
@@ -336,7 +328,6 @@ impl pallet_authorship::Config for Runtime {
 parameter_types! {
     pub const NativeTokenExistentialDeposit: u128 = 10 * cKMA; // 0.1 KMA
 }
-
 impl pallet_balances::Config for Runtime {
     type MaxLocks = ConstU32<50>;
     type MaxReserves = ConstU32<50>;
@@ -350,16 +341,17 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    /// Relay Chain `TransactionByteFee` / 10
-    pub const TransactionByteFee: Balance = mKMA / 100;
+    /// Relay Chain `TransactionLengthToFeeCoeff` / 10
+    pub const TransactionLengthToFeeCoeff: Balance = mKMA / 100;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
     type WeightToFee = WeightToFee;
-    type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
+    type LengthToFee = ConstantMultiplier<Balance, TransactionLengthToFeeCoeff>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
+    type Event = Event;
 }
 
 parameter_types! {
@@ -429,7 +421,7 @@ impl pallet_democracy::Config for Runtime {
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>;
     // To cancel a proposal before it has been passed, the technical committee must be unanimous or
     // Root must agree.
-    type CancelProposalOrigin = EnsureOneOf<
+    type CancelProposalOrigin = EitherOfDiverse<
         EnsureRoot<AccountId>,
         pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>,
     >;
@@ -466,7 +458,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
     type WeightInfo = weights::pallet_collective::SubstrateWeight<Runtime>;
 }
 
-pub type EnsureRootOrThreeFourthsCouncil = EnsureOneOf<
+pub type EnsureRootOrThreeFourthsCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 4>,
 >;
@@ -524,12 +516,12 @@ parameter_types! {
     pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
 }
 
-type EnsureRootOrThreeFifthsCouncil = EnsureOneOf<
+type EnsureRootOrThreeFifthsCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
 >;
 
-type EnsureRootOrMoreThanHalfCouncil = EnsureOneOf<
+type EnsureRootOrMoreThanHalfCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
 >;
@@ -550,6 +542,26 @@ impl pallet_treasury::Config for Runtime {
     type MaxApprovals = ConstU32<100>;
     type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
     type SpendFunds = ();
+    // Expects an implementation of `EnsureOrigin` with a `Success` generic,
+    // which is the the maximum amount that this origin is allowed to spend at a time.
+    type SpendOrigin = NeverEnsureOrigin<Balance>;
+}
+
+impl pallet_aura_style_filter::Config for Runtime {
+    /// Nimbus filter pipeline (final) step 3:
+    /// Choose 1 collator from PotentialAuthors as eligible
+    /// for each slot in round-robin fashion
+    type PotentialAuthors = CollatorSelection;
+}
+
+impl pallet_author_inherent::Config for Runtime {
+    // We start a new slot each time we see a new relay block.
+    type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
+    type AccountLookup = CollatorSelection;
+    type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
+    /// Nimbus filter pipeline step 1:
+    /// Filters out NimbusIds not registered as SessionKeys of some AccountId
+    type CanAuthor = CollatorSelection;
 }
 
 parameter_types! {
@@ -624,11 +636,10 @@ impl pallet_session::Config for Runtime {
     type Event = Event;
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     // we don't have stash and controller, thus we don't need the convert as well.
-    type ValidatorIdOf = manta_collator_selection::IdentityCollator;
+    type ValidatorIdOf = IdentityCollator;
     type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
     type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
     type SessionManager = CollatorSelection;
-    // Essentially just Aura, but lets be pedantic.
     type SessionHandler =
         <opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
     type Keys = opaque::SessionKeys;
@@ -651,7 +662,7 @@ parameter_types! {
 }
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
-pub type CollatorSelectionUpdateOrigin = EnsureOneOf<
+pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
 >;
@@ -664,10 +675,13 @@ impl manta_collator_selection::Config for Runtime {
     type MaxCandidates = ConstU32<50>; // 50 candidates at most
     type MaxInvulnerables = ConstU32<5>; // 5 invulnerables at most
     type ValidatorId = <Self as frame_system::Config>::AccountId;
-    type ValidatorIdOf = manta_collator_selection::IdentityCollator;
-    type AccountIdOf = manta_collator_selection::IdentityCollator;
+    type ValidatorIdOf = IdentityCollator;
+    type AccountIdOf = IdentityCollator;
     type ValidatorRegistration = Session;
     type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
+    /// Nimbus filter pipeline step 2:
+    /// Filters collators not part of the current pallet_session::validators()
+    type CanAuthor = AuraAuthorFilter;
 }
 
 // Calamari pallets configuration
@@ -702,7 +716,7 @@ construct_runtime!(
 
         // Monetary stuff.
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
+        TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 11,
 
         // Governance stuff.
         Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>} = 14,
@@ -711,12 +725,15 @@ construct_runtime!(
         TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 17,
         TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 
-        // Collator support. the order of these 5 are important and shall not change.
+        // Collator support.
+        AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 60,
+        AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage} = 63,
+        // The order of the next 4 is important and shall not change.
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
         CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
-        AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
+        // This used to be cumulus_pallet_aura_ext with idx = 24,
 
         // Treasury
         Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,
@@ -769,6 +786,16 @@ pub type SignedExtra = (
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
+
+/// Types for runtime upgrading.
+/// Each type should implement trait `OnRuntimeUpgrade`.
+pub type OnRuntimeUpgradeHooks = (
+    MigratePalletPv2Sv<pallet_asset_manager::Pallet<Runtime>>,
+    MigratePalletPv2Sv<pallet_tx_pause::Pallet<Runtime>>,
+    MigratePalletPv2Sv<manta_collator_selection::Pallet<Runtime>>,
+    MigratePalletPv2Sv<calamari_vesting::Pallet<Runtime>>,
+);
+
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -776,48 +803,8 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsReversedWithSystemFirst,
-    UpgradeSessionKeys,
+    OnRuntimeUpgradeHooks,
 >;
-// When this is removed, should also remove `OldSessionKeys`.
-pub struct UpgradeSessionKeys;
-impl frame_support::traits::OnRuntimeUpgrade for UpgradeSessionKeys {
-    fn on_runtime_upgrade() -> frame_support::weights::Weight {
-        use opaque::transform_session_keys;
-        // transform_session_keys runs translate() on NextKeys and on QueuedKeys which is (at worst or faster than) 1 read 1 write
-        let validator_set_len: u64 = Session::queued_keys().len().try_into().unwrap();
-
-        Session::upgrade_keys::<opaque::OldSessionKeys, _>(transform_session_keys);
-
-        core::cmp::max(
-            Perbill::from_percent(50) * BlockWeights::default().max_block as u64,
-            <Runtime as frame_system::Config>::DbWeight::get()
-                .reads_writes(2 * validator_set_len, validator_set_len * 2),
-        )
-    }
-    #[cfg(feature = "try_runtime")]
-    fn pre_runtime_upgrade() -> frame_support::weights::Weight {
-        // get aura keys
-        let owners_and_aura_keys = Session::queued_keys();
-        Self::set_temp_storage(owners_and_aura_keys, "aura_keys");
-        0
-    }
-    #[cfg(feature = "try_runtime")]
-    fn post_runtime_upgrade() -> frame_support::weights::Weight {
-        // ensure aura keys have not changed
-        let pre_migration_keys = Self::get_temp_storage(owners_and_aura_keys, "aura_keys");
-        let new_owners_and_aura_keys = Session::queued_keys();
-
-        for it in pre_migration_keys
-            .iter()
-            .zip(new_owners_and_aura_keys.iter())
-        {
-            let ((old_owner, old_key), (new_owner, new_key)) = iter;
-            ensure!(old_owner == new_owner, "owner changed");
-            ensure!(old_key.aura == new_key.aura, "key changed");
-        }
-        0
-    }
-}
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
@@ -849,6 +836,8 @@ mod benches {
         [pallet_tx_pause, TransactionPause]
         [manta_collator_selection, CollatorSelection]
         [pallet_asset_manager, AssetManager]
+        // Nimbus pallets
+        [pallet_author_inherent, AuthorInherent]
     );
 }
 
@@ -859,7 +848,9 @@ impl_runtime_apis! {
         }
 
         fn authorities() -> Vec<AuraId> {
-            Aura::authorities().into_inner()
+            // NOTE: AuraAPI must exist for node/src/aura_or_nimbus_consensus.rs
+            // But is intentionally DISABLED starting with manta v3.3.0
+            vec![]
         }
     }
 
@@ -959,6 +950,22 @@ impl_runtime_apis! {
         }
     }
 
+    impl nimbus_primitives::NimbusApi<Block> for Runtime {
+        fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool {
+            System::initialize(&(parent_header.number + 1), &parent_header.hash(), &parent_header.digest);
+
+            // And now the actual prediction call
+            <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
+        }
+    }
+
+    // We also implement the old AuthorFilterAPI to meet the trait bounds on the client side.
+    impl nimbus_primitives::AuthorFilterAPI<Block, NimbusId> for Runtime {
+        fn can_author(_: NimbusId, _: u32, _: &<Block as BlockT>::Header) -> bool {
+            panic!("AuthorFilterAPI is no longer supported. Please update your client.")
+        }
+    }
+
     #[cfg(feature = "try-runtime")]
     impl frame_try_runtime::TryRuntime<Block> for Runtime {
         fn on_runtime_upgrade() -> (Weight, Weight) {
@@ -986,6 +993,7 @@ impl_runtime_apis! {
             list_benchmarks!(list, extra);
 
             let storage_info = AllPalletsReversedWithSystemFirst::storage_info();
+
             (list, storage_info)
         }
 
@@ -1001,6 +1009,7 @@ impl_runtime_apis! {
             impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
             use pallet_xcm_benchmarks::asset_instance_from;
+            use xcm_config::{KsmLocation, LocationToAccountId, XcmExecutorConfig};
 
             parameter_types! {
                 pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = None;
@@ -1134,6 +1143,6 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 
 cumulus_pallet_parachain_system::register_validate_block! {
     Runtime = Runtime,
-    BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
+    BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
     CheckInherents = CheckInherents,
 }

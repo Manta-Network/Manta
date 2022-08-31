@@ -41,7 +41,7 @@ use sp_runtime::{
 use sp_std::marker::PhantomData;
 use xcm::{
     prelude::{Parachain, X1},
-    v1::MultiLocation,
+    v1::{Junctions::Here, MultiLocation},
     VersionedMultiLocation,
 };
 
@@ -175,6 +175,17 @@ parameter_types! {
         is_sufficient: true,
     };
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
+    pub RelayAssetLocation: AssetLocation = AssetLocation(
+        VersionedMultiLocation::V1(MultiLocation::new(1, Here)));
+    pub RelayAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
+        name: b"KSM".to_vec(),
+        symbol: b"Kusama".to_vec(),
+        decimals: 12,
+        min_balance: 1,
+        evm_address: None,
+        is_frozen: false,
+        is_sufficient: true,
+    };
 }
 
 #[derive(Clone, Eq, PartialEq)]
@@ -189,6 +200,8 @@ impl AssetConfig<Runtime> for MantaAssetConfig {
     type NativeAssetMetadata = NativeAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
     type AssetLocation = AssetLocation;
+    type RelayAssetLocation = RelayAssetLocation;
+    type RelayAssetMetadata = RelayAssetMetadata;
     type AssetRegistrar = MantaAssetRegistrar;
     type FungibleLedger = ConcreteFungibleLedger<Runtime, MantaAssetConfig, Balances, Assets>;
 }

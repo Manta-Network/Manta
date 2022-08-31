@@ -20,15 +20,15 @@ use crate::{
     chain_specs,
     cli::{Cli, RelayChainCli, Subcommand},
     rpc,
-    service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
+    service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor},
+    service_aura::MantaRuntimeExecutor,
 };
 use codec::Encode;
-use cumulus_client_service::genesis::generate_genesis_block;
+use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use log::info;
 use manta_primitives::types::Header;
-use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
     NetworkParams, RuntimeVersion, SharedParams, SubstrateCli,
@@ -36,8 +36,12 @@ use sc_cli::{
 use sc_service::config::{BasePath, PrometheusConfig};
 use session_key_primitives::AuraId;
 use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::{generic, traits::Block as BlockT, OpaqueExtrinsic};
-use std::{io::Write, net::SocketAddr};
+use sp_runtime::{
+    generic,
+    traits::{AccountIdConversion, Block as BlockT},
+    OpaqueExtrinsic,
+};
+use std::net::SocketAddr;
 
 pub use sc_cli::Error;
 
@@ -55,6 +59,8 @@ pub const CALAMARI_PARACHAIN_ID: u32 = 2084;
 
 /// Dolphin Parachain ID
 pub const DOLPHIN_PARACHAIN_ID: u32 = 2084;
+/// Dolphin on Baikal Parachain ID. Can't be 2084 because Calamari @ Baikal already uses it.
+pub const DOLPHIN_ON_BAIKAL_PARACHAIN_ID: u32 = 2085;
 
 trait IdentifyChain {
     fn is_manta(&self) -> bool;
@@ -104,6 +110,7 @@ fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         "dolphin-dev" => Ok(Box::new(chain_specs::dolphin_development_config())),
         "dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config())),
         "dolphin-testnet" => Ok(Box::new(chain_specs::dolphin_testnet_config()?)),
+        "dolphin-2085" => Ok(Box::new(chain_specs::dolphin_2085_config()?)),
         "dolphin-testnet-ci" => Ok(Box::new(chain_specs::dolphin_testnet_ci_config()?)),
         path => {
             let chain_spec = chain_specs::ChainSpec::from_json_file(path.into())?;
@@ -214,35 +221,20 @@ impl SubstrateCli for RelayChainCli {
     }
 }
 
-#[allow(clippy::borrowed_box)]
-fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Vec<u8>> {
-    let mut storage = chain_spec.build_storage()?;
-    storage
-        .top
-        .remove(sp_core::storage::well_known_keys::CODE)
-        .ok_or_else(|| "Could not find wasm file in genesis state!".into())
-}
-
 /// Creates partial components for the runtimes that are supported by the benchmarks.
 macro_rules! construct_benchmark_partials {
     ($config:expr, |$partials:ident| $code:expr) => {
         if $config.chain_spec.is_manta() {
-            let $partials = new_partial::<manta_runtime::RuntimeApi, MantaRuntimeExecutor, _>(
+            let $partials = crate::service_aura::new_partial::<manta_runtime::RuntimeApi, _>(
                 &$config,
-                crate::service::parachain_build_import_queue::<_, _, AuraId>,
+                crate::service_aura::parachain_build_import_queue::<_, AuraId>,
             )?;
             $code
         } else if $config.chain_spec.is_calamari() {
-            let $partials = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor, _>(
-                &$config,
-                crate::service::parachain_build_import_queue::<_, _, AuraId>,
-            )?;
+            let $partials = new_partial::<calamari_runtime::RuntimeApi>(&$config)?;
             $code
         } else if $config.chain_spec.is_dolphin() {
-            let $partials = new_partial::<dolphin_runtime::RuntimeApi, DolphinRuntimeExecutor, _>(
-                &$config,
-                crate::service::parachain_build_import_queue::<_, _, AuraId>,
-            )?;
+            let $partials = new_partial::<dolphin_runtime::RuntimeApi>(&$config)?;
             $code
         } else {
             Err("The chain is not supported".into())
@@ -255,27 +247,25 @@ macro_rules! construct_async_run {
         let runner = $cli.create_runner($cmd)?;
             if runner.config().chain_spec.is_manta() {
                 runner.async_run(|$config| {
-                    let $components = new_partial::<manta_runtime::RuntimeApi, MantaRuntimeExecutor, _>(
+                    let $components = crate::service_aura::new_partial::<manta_runtime::RuntimeApi, _>(
                         &$config,
-                        crate::service::parachain_build_import_queue::<_, _, AuraId>,
+                        crate::service_aura::parachain_build_import_queue::<_, AuraId>,
                     )?;
                     let task_manager = $components.task_manager;
                     { $( $code )* }.map(|v| (v, task_manager))
                 })
             } else if runner.config().chain_spec.is_calamari() {
                 runner.async_run(|$config| {
-                    let $components = new_partial::<calamari_runtime::RuntimeApi, CalamariRuntimeExecutor, _>(
+                    let $components = new_partial::<calamari_runtime::RuntimeApi>(
                         &$config,
-                        crate::service::parachain_build_import_queue::<_, _, AuraId>,
                     )?;
                     let task_manager = $components.task_manager;
                     { $( $code )* }.map(|v| (v, task_manager))
                 })
             } else if runner.config().chain_spec.is_dolphin() {
                 runner.async_run(|$config| {
-                    let $components = new_partial::<dolphin_runtime::RuntimeApi, DolphinRuntimeExecutor, _>(
+                    let $components = new_partial::<dolphin_runtime::RuntimeApi>(
                         &$config,
-                        crate::service::parachain_build_import_queue::<_, _, AuraId>,
                     )?;
                     let task_manager = $components.task_manager;
                     { $( $code )* }.map(|v| (v, task_manager))
@@ -313,6 +303,11 @@ pub fn run_with(cli: Cli) -> Result {
                 Ok(cmd.run(components.client, components.import_queue))
             })
         }
+        Some(Subcommand::Revert(cmd)) => {
+            construct_async_run!(|components, cli, cmd, config| {
+                Ok(cmd.run(components.client, components.backend, None))
+            })
+        }
         Some(Subcommand::PurgeChain(cmd)) => {
             let runner = cli.create_runner(cmd)?;
 
@@ -334,53 +329,20 @@ pub fn run_with(cli: Cli) -> Result {
                 cmd.run(config, polkadot_config)
             })
         }
-        Some(Subcommand::Revert(cmd)) => construct_async_run!(|components, cli, cmd, config| {
-            Ok(cmd.run(components.client, components.backend, None))
-        }),
-        Some(Subcommand::ExportGenesisState(params)) => {
-            let mut builder = sc_cli::LoggerBuilder::new("");
-            builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
-            let _ = builder.init();
-
-            let spec = load_spec(&params.chain.clone().unwrap_or_default())?;
-            let state_version = Cli::native_runtime_version(&spec).state_version();
-
-            let block: crate::service::Block = generate_genesis_block(&spec, state_version)?;
-            let raw_header = block.header().encode();
-            let output_buf = if params.raw {
-                raw_header
-            } else {
-                format!("0x{:?}", HexDisplay::from(&block.header().encode())).into_bytes()
-            };
-
-            if let Some(output) = &params.output {
-                std::fs::write(output, output_buf)?;
-            } else {
-                std::io::stdout().write_all(&output_buf)?;
-            }
-
-            Ok(())
+        Some(Subcommand::ExportGenesisState(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            runner.sync_run(|_config| {
+                let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
+                let state_version = Cli::native_runtime_version(&spec).state_version();
+                cmd.run::<Block>(&*spec, state_version)
+            })
         }
-        Some(Subcommand::ExportGenesisWasm(params)) => {
-            let mut builder = sc_cli::LoggerBuilder::new("");
-            builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
-            let _ = builder.init();
-
-            let raw_wasm_blob =
-                extract_genesis_wasm(&cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
-            let output_buf = if params.raw {
-                raw_wasm_blob
-            } else {
-                format!("0x{:?}", HexDisplay::from(&raw_wasm_blob)).into_bytes()
-            };
-
-            if let Some(output) = &params.output {
-                std::fs::write(output, output_buf)?;
-            } else {
-                std::io::stdout().write_all(&output_buf)?;
-            }
-
-            Ok(())
+        Some(Subcommand::ExportGenesisWasm(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            runner.sync_run(|_config| {
+                let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
+                cmd.run(&*spec)
+            })
         }
         Some(Subcommand::Benchmark(cmd)) => {
             let runner = cli.create_runner(cmd)?;
@@ -483,13 +445,13 @@ pub fn run_with(cli: Cli) -> Result {
                 let id = ParaId::from(para_id);
 
                 let parachain_account =
-                    AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account(&id);
+                    AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
 
                 let state_version =
                     RelayChainCli::native_runtime_version(&config.chain_spec).state_version();
 
                 let block: crate::service::Block =
-                    generate_genesis_block(&config.chain_spec, state_version)
+                    generate_genesis_block(&*config.chain_spec, state_version)
                         .map_err(|e| format!("{:?}", e))?;
                 let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
@@ -511,12 +473,7 @@ pub fn run_with(cli: Cli) -> Result {
                 );
 
                 if config.chain_spec.is_manta() {
-                    crate::service::start_parachain_node::<
-                        manta_runtime::RuntimeApi,
-                        MantaRuntimeExecutor,
-                        AuraId,
-                        _,
-                    >(
+                    crate::service_aura::start_parachain_node::<manta_runtime::RuntimeApi, AuraId, _>(
                         config,
                         polkadot_config,
                         collator_options,
@@ -528,12 +485,7 @@ pub fn run_with(cli: Cli) -> Result {
                     .map(|r| r.0)
                     .map_err(Into::into)
                 } else if config.chain_spec.is_calamari() {
-                    crate::service::start_parachain_node::<
-                        calamari_runtime::RuntimeApi,
-                        CalamariRuntimeExecutor,
-                        AuraId,
-                        _,
-                    >(
+                    crate::service::start_parachain_node::<calamari_runtime::RuntimeApi, _>(
                         config,
                         polkadot_config,
                         collator_options,
@@ -545,12 +497,7 @@ pub fn run_with(cli: Cli) -> Result {
                     .map(|r| r.0)
                     .map_err(Into::into)
                 } else if config.chain_spec.is_dolphin() {
-                    crate::service::start_parachain_node::<
-                        dolphin_runtime::RuntimeApi,
-                        DolphinRuntimeExecutor,
-                        AuraId,
-                        _,
-                    >(
+                    crate::service::start_parachain_node::<dolphin_runtime::RuntimeApi, _>(
                         config,
                         polkadot_config,
                         collator_options,

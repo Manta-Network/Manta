@@ -23,14 +23,6 @@ use std::path::PathBuf;
 /// Sub-commands supported by the collator.
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
-    /// Export the genesis state of the parachain.
-    #[clap(name = "export-genesis-state")]
-    ExportGenesisState(ExportGenesisStateCommand),
-
-    /// Export the genesis wasm of the parachain.
-    #[clap(name = "export-genesis-wasm")]
-    ExportGenesisWasm(ExportGenesisWasmCommand),
-
     /// Build a chain specification.
     BuildSpec(sc_cli::BuildSpecCmd),
 
@@ -46,11 +38,17 @@ pub enum Subcommand {
     /// Import blocks.
     ImportBlocks(sc_cli::ImportBlocksCmd),
 
+    /// Revert the chain to a previous state.
+    Revert(sc_cli::RevertCmd),
+
     /// Remove the whole chain.
     PurgeChain(cumulus_client_cli::PurgeChainCmd),
 
-    /// Revert the chain to a previous state.
-    Revert(sc_cli::RevertCmd),
+    /// Export the genesis state of the parachain.
+    ExportGenesisState(cumulus_client_cli::ExportGenesisStateCommand),
+
+    /// Export the genesis wasm of the parachain.
+    ExportGenesisWasm(cumulus_client_cli::ExportGenesisWasmCommand),
 
     /// Sub-commands concerned with benchmarking.
     /// The pallet benchmarking moved to the `pallet` sub-command.
@@ -65,44 +63,6 @@ pub enum Subcommand {
     /// be enabled.
     #[cfg(not(feature = "try-runtime"))]
     TryRuntime,
-}
-
-/// Command for exporting the genesis state of the parachain
-#[derive(Debug, Parser)]
-pub struct ExportGenesisStateCommand {
-    /// Output file name or stdout if unspecified.
-    #[clap(parse(from_os_str))]
-    pub output: Option<PathBuf>,
-
-    /// Id of the parachain this state is for.
-    ///
-    /// Default: 2084
-    #[clap(long)]
-    pub parachain_id: Option<u32>,
-
-    /// Write output in binary. Default is to write in hex.
-    #[clap(short, long)]
-    pub raw: bool,
-
-    /// The name of the chain for that the genesis state should be exported.
-    #[clap(long)]
-    pub chain: Option<String>,
-}
-
-/// Command for exporting the genesis wasm file.
-#[derive(Debug, Parser)]
-pub struct ExportGenesisWasmCommand {
-    /// Output file name or stdout if unspecified.
-    #[clap(parse(from_os_str))]
-    pub output: Option<PathBuf>,
-
-    /// Write output in binary. Default is to write in hex.
-    #[clap(short, long)]
-    pub raw: bool,
-
-    /// The name of the chain for that the genesis wasm file should be exported.
-    #[clap(long)]
-    pub chain: Option<String>,
 }
 
 /// Node CLI

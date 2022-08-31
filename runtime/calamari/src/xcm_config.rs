@@ -24,6 +24,7 @@ use super::{
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 
+use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_std::prelude::*;
 
 use frame_support::{
@@ -73,11 +74,10 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type XcmpMessageHandler = XcmpQueue;
     type ReservedXcmpWeight = ReservedXcmpWeight;
     type OnSystemEvent = ();
+    type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 impl parachain_info::Config for Runtime {}
-
-impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
     pub const KsmLocation: MultiLocation = MultiLocation::parent();
