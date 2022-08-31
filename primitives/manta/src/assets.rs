@@ -94,12 +94,8 @@ where
     /// Native Asset Location
     type NativeAssetLocation: Get<Self::AssetLocation>;
 
-    type RelayAssetLocation: Get<Self::AssetLocation>;
-
     /// Native Asset Metadata
     type NativeAssetMetadata: Get<Self::AssetRegistrarMetadata>;
-
-    type RelayAssetMetadata: Get<Self::AssetRegistrarMetadata>;
 
     /// The trait we use to register Assets and mint assets
     type AssetRegistrar: AssetRegistrar<C, Self>;

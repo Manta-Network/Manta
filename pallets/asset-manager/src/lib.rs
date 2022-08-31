@@ -144,14 +144,7 @@ pub mod pallet {
             AssetIdLocation::<T>::insert(&asset_id, &location);
             AssetIdMetadata::<T>::insert(&asset_id, &metadata);
             LocationAssetId::<T>::insert(&location, &asset_id);
-
-            let asset_id = self.start_id;
-            let metadata = <T::AssetConfig as AssetConfig<T>>::RelayAssetMetadata::get();
-            let location = <T::AssetConfig as AssetConfig<T>>::RelayAssetLocation::get();
-            AssetIdLocation::<T>::insert(&asset_id, &location);
-            AssetIdMetadata::<T>::insert(&asset_id, &metadata);
-            LocationAssetId::<T>::insert(&location, &asset_id);
-            NextAssetId::<T>::set(self.start_id + 1);
+            NextAssetId::<T>::set(self.start_id);
         }
     }
 

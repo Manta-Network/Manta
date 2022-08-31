@@ -32,10 +32,7 @@ use frame_support::{pallet_prelude::DispatchResult, parameter_types, traits::Con
 
 use frame_system::EnsureRoot;
 
-use xcm::{
-    v1::{Junctions::Here, MultiLocation},
-    VersionedMultiLocation,
-};
+use xcm::VersionedMultiLocation;
 
 parameter_types! {
     // Does not really matter as this will be only called by root
@@ -116,17 +113,6 @@ parameter_types! {
         is_frozen: false,
         is_sufficient: true,
     };
-    pub RelayAssetLocation: AssetLocation = AssetLocation(
-        VersionedMultiLocation::V1(MultiLocation::new(1, Here)));
-    pub RelayAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
-        name: b"KSM".to_vec(),
-        symbol: b"Kusama".to_vec(),
-        decimals: 12,
-        min_balance: 1,
-        evm_address: None,
-        is_frozen: false,
-        is_sufficient: true,
-    };
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
 }
 
@@ -142,9 +128,7 @@ impl AssetConfig<Runtime> for CalamariAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type AssetRegistrarMetadata = AssetRegistrarMetadata;
     type NativeAssetLocation = NativeAssetLocation;
-    type RelayAssetLocation = RelayAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
-    type RelayAssetMetadata = RelayAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
     type AssetLocation = AssetLocation;
     type AssetRegistrar = CalamariAssetRegistrar;
