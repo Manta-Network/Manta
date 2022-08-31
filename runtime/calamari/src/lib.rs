@@ -269,6 +269,29 @@ impl Contains<Call> for BaseFilter {
                 | manta_collator_selection::Call::register_candidate{..}
                 | manta_collator_selection::Call::remove_collator{..}
                 | manta_collator_selection::Call::leave_intent{..})
+            | Call::ParachainStaking(
+                // Collator extrinsics
+                pallet_parachain_staking::Call::join_candidates{..}
+                | pallet_parachain_staking::Call::schedule_leave_candidates{..}
+                | pallet_parachain_staking::Call::execute_leave_candidates{..}
+                | pallet_parachain_staking::Call::cancel_leave_candidates{..}
+                | pallet_parachain_staking::Call::go_offline{..}
+                | pallet_parachain_staking::Call::go_online{..}
+                | pallet_parachain_staking::Call::candidate_bond_more{..}
+                | pallet_parachain_staking::Call::schedule_candidate_bond_less{..}
+                | pallet_parachain_staking::Call::execute_candidate_bond_less{..}
+                | pallet_parachain_staking::Call::cancel_candidate_bond_less{..}
+                // Delegator extrinsics
+                | pallet_parachain_staking::Call::delegate{..}
+                | pallet_parachain_staking::Call::schedule_leave_delegators{..}
+                | pallet_parachain_staking::Call::execute_leave_delegators{..}
+                | pallet_parachain_staking::Call::cancel_leave_delegators{..}
+                | pallet_parachain_staking::Call::schedule_revoke_delegation{..}
+                | pallet_parachain_staking::Call::delegator_bond_more{..}
+                | pallet_parachain_staking::Call::schedule_delegator_bond_less{..}
+                | pallet_parachain_staking::Call::execute_delegation_request{..}
+                | pallet_parachain_staking::Call::cancel_delegation_request{..}
+                | pallet_parachain_staking::Call::hotfix_remove_delegation_requests_exited_candidates{..})
             | Call::Balances(_)
             | Call::Preimage(_)
             | Call::XTokens(orml_xtokens::Call::transfer {..}
