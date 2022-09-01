@@ -38,11 +38,5 @@ EXPOSE 30333 30334 9933 9944 9615 9945
 ENTRYPOINT [\
   "/usr/local/bin/manta",\
   "--chain",\
-  "/usr/share/calamari.json",\
-  "--bootnodes",\
-  "/dns/crispy.calamari.systems/tcp/30333/p2p/12D3KooWNE4LBfkYB2B7D4r9vL54YMMGsfAsXdkhWfBw8VHJSEQc", \
-  "/dns/crunchy.calamari.systems/tcp/30333/p2p/12D3KooWL3ELxcoMGA6han3wPQoym5DKbYHqkWkCuqyjaCXpyJTt", \
-  "/dns/hotdog.calamari.systems/tcp/30333/p2p/12D3KooWMHdpUCCS9j8hvNLTV8PeqJ16KaVEjb5PVdYgAQUFUcCG", \
-  "/dns/tasty.calamari.systems/tcp/30333/p2p/12D3KooWGs2hfnRQ3Y2eAoUyWKUL3g7Jmcsf8FpyhVYeNpXeBMSu", \
-  "/dns/tender.calamari.systems/tcp/30333/p2p/12D3KooWNXZeUSEKRPsp1yiDH99qSVawQSWHqG4umPjgHsn1joci" \
+  "/usr/share/calamari.json"\
 ]
