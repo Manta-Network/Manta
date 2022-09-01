@@ -133,7 +133,7 @@ for PALLET in "${PALLETS[@]}"; do
   if [ "$PALLET" == "pallet_xcm_benchmarks::fungible" ] || [ "$PALLET" == "pallet_xcm_benchmarks::generic" ]
   then
     OUTPUT_NAME=$(echo $PALLET | sed -r 's/[:]+/_/g')
-    WEIGHT_FILE="./${XCM_WEIGHTS_OUTPUT}/$OUTPUT_NAME"
+    WEIGHT_FILE="./${XCM_WEIGHTS_OUTPUT}/${OUTPUT_NAME}.rs"
     TEMPLATE_FILE=".github/resources/xcm-weight-template.hbs"
   fi
 
