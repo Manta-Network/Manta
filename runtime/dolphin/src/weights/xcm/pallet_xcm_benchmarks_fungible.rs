@@ -18,23 +18,23 @@
 //!
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2022-08-31, STEPS: `50`, REPEAT: 20, LOW RANGE: `[]`, HIGH RANGE: `[]`
-//! HOSTNAME: `georgi-desktop`, CPU: `AMD Ryzen 9 5900X 12-Core Processor`
+//! HOSTNAME: `ip-172-31-0-42`, CPU: `Intel(R) Xeon(R) Platinum 8275CL CPU @ 3.00GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("dolphin-dev"), DB CACHE: 1024
 
 // Executed Command:
-// ./target/release/manta
+// ./target/production/manta
 // benchmark
 // pallet
+// --chain=dolphin-dev
 // --steps=50
 // --repeat=20
+// --pallet=pallet_xcm_benchmarks::fungible
 // --extrinsic=*
 // --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
-// --pallet=pallet_xcm_benchmarks::fungible
-// --chain=dolphin-dev
+// --output=./scripts/benchmarking/xcm-weights-output/pallet_xcm_benchmarks_fungible
 // --template=.github/resources/xcm-weight-template.hbs
-// --output=pallet_xcm_benchmarks_fungible.rs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
@@ -50,7 +50,7 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: AssetManager LocationAssetId (r:1 w:0)
 	// Storage: System Account (r:1 w:1)
 	pub(crate) fn withdraw_asset() -> Weight {
-		(35_256_000 as Weight)
+		(38_493_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
@@ -58,7 +58,7 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: AssetManager LocationAssetId (r:1 w:0)
 	// Storage: System Account (r:2 w:2)
 	pub(crate) fn transfer_asset() -> Weight {
-		(54_002_000 as Weight)
+		(55_134_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
@@ -71,18 +71,18 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn transfer_reserve_asset() -> Weight {
-		(68_439_000 as Weight)
+		(68_586_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(9 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
 	pub(crate) fn reserve_asset_deposited() -> Weight {
-		(1_733_000 as Weight)
+		(2_284_000 as Weight)
 	}
 	// Storage: ParachainInfo ParachainId (r:1 w:0)
 	// Storage: AssetManager LocationAssetId (r:1 w:0)
 	// Storage: System Account (r:1 w:1)
 	pub(crate) fn deposit_asset() -> Weight {
-		(38_241_000 as Weight)
+		(39_039_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
@@ -95,7 +95,7 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn deposit_reserve_asset() -> Weight {
-		(57_307_000 as Weight)
+		(60_373_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(8 as Weight))
 			.saturating_add(T::DbWeight::get().writes(3 as Weight))
 	}
@@ -106,7 +106,7 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn initiate_teleport() -> Weight {
-		(23_594_000 as Weight)
+		(25_805_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(6 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}

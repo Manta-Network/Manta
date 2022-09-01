@@ -18,11 +18,11 @@
 //!
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2022-08-31, STEPS: `50`, REPEAT: 20, LOW RANGE: `[]`, HIGH RANGE: `[]`
-//! HOSTNAME: `georgi-desktop`, CPU: `AMD Ryzen 9 5900X 12-Core Processor`
+//! HOSTNAME: `ip-172-31-13-155`, CPU: `Intel(R) Xeon(R) Platinum 8275CL CPU @ 3.00GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("calamari-dev"), DB CACHE: 1024
 
 // Executed Command:
-// ./target/release/manta
+// ./target/production/manta
 // benchmark
 // pallet
 // --chain=calamari-dev
@@ -33,7 +33,7 @@
 // --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
-// --output=./scripts/benchmarking/xcm-weights-output/pallet_xcm_benchmarks::generic.rs
+// --output=./scripts/benchmarking/xcm-weights-output/pallet_xcm_benchmarks_generic
 // --template=.github/resources/xcm-weight-template.hbs
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
@@ -53,38 +53,38 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn query_holding() -> Weight {
-		(661_042_000 as Weight)
+		(819_954_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(6 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
 	pub(crate) fn buy_execution() -> Weight {
-		(3_336_000 as Weight)
+		(4_520_000 as Weight)
 	}
 	// Storage: PolkadotXcm Queries (r:1 w:0)
 	pub(crate) fn query_response() -> Weight {
-		(11_231_000 as Weight)
+		(11_807_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 	}
 	pub(crate) fn transact() -> Weight {
-		(14_858_000 as Weight)
+		(15_624_000 as Weight)
 	}
 	pub(crate) fn refund_surplus() -> Weight {
-		(3_226_000 as Weight)
+		(4_373_000 as Weight)
 	}
 	pub(crate) fn set_error_handler() -> Weight {
-		(731_000 as Weight)
+		(788_000 as Weight)
 	}
 	pub(crate) fn set_appendix() -> Weight {
-		(742_000 as Weight)
+		(799_000 as Weight)
 	}
 	pub(crate) fn clear_error() -> Weight {
-		(712_000 as Weight)
+		(818_000 as Weight)
 	}
 	pub(crate) fn descend_origin() -> Weight {
-		(1_462_000 as Weight)
+		(1_564_000 as Weight)
 	}
 	pub(crate) fn clear_origin() -> Weight {
-		(721_000 as Weight)
+		(796_000 as Weight)
 	}
 	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
 	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
@@ -92,18 +92,18 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn report_error() -> Weight {
-		(13_465_000 as Weight)
+		(13_437_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(5 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
 	// Storage: PolkadotXcm AssetTraps (r:1 w:1)
 	pub(crate) fn claim_asset() -> Weight {
-		(6_322_000 as Weight)
+		(6_558_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	pub(crate) fn trap() -> Weight {
-		(711_000 as Weight)
+		(798_000 as Weight)
 	}
 	// Storage: PolkadotXcm VersionNotifyTargets (r:1 w:1)
 	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
@@ -112,13 +112,13 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn subscribe_version() -> Weight {
-		(17_824_000 as Weight)
+		(17_478_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(6 as Weight))
 			.saturating_add(T::DbWeight::get().writes(3 as Weight))
 	}
 	// Storage: PolkadotXcm VersionNotifyTargets (r:0 w:1)
 	pub(crate) fn unsubscribe_version() -> Weight {
-		(2_875_000 as Weight)
+		(3_059_000 as Weight)
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: ParachainInfo ParachainId (r:1 w:0)
@@ -128,7 +128,7 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn initiate_reserve_withdraw() -> Weight {
-		(835_721_000 as Weight)
+		(1_059_801_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(6 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
