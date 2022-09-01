@@ -12,7 +12,7 @@ env:
   AWS_INSTANCE_TYPE: c5.4xlarge
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
+  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
 jobs:
   start-checks:
     runs-on: ubuntu-20.04
@@ -32,8 +32,10 @@ jobs:
           aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
           aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
       - uses: actions/checkout@v2
+      - name: Run yamllint
+        uses: actionshub/yamllint@main
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
@@ -65,7 +67,7 @@ jobs:
             sccache-
       - name: start sccache server
         run: sccache --start-server
-      - name: init
+      - name: init rust toolchain
         # NOTE: We use nightly Rust only to get nightly fmt & clippy
         run: |
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
@@ -73,8 +75,6 @@ jobs:
           rustup toolchain install nightly
           rustup default nightly
           cargo install taplo-cli
-      - name: Run yamllint
-        uses: actionshub/yamllint@main
       - name: Check Formatting
         env:
           RUST_BACKTRACE: full
