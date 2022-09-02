@@ -1012,6 +1012,7 @@ impl_runtime_apis! {
             pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = None;
                 pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((
                     RocLocation::get(),
+                    // Random amount for the benchmark.
                     MultiAsset { fun: Fungible(1_000_000_000_000_000_000), id: Concrete(RocLocation::get()) },
                 ));
                 pub const CheckedAccount: Option<AccountId> = None;

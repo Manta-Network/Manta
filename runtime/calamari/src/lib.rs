@@ -1015,6 +1015,7 @@ impl_runtime_apis! {
                 pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = None;
                 pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((
                     KsmLocation::get(),
+                    // Random amount for the benchmark.
                     MultiAsset { fun: Fungible(1_000_000_000_000), id: Concrete(KsmLocation::get()) },
                 ));
                 pub const CheckedAccount: Option<AccountId> = None;
