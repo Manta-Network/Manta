@@ -588,7 +588,7 @@ where
 {
     fn convert(currency: CurrencyId) -> Option<MultiLocation> {
         match currency {
-            CurrencyId::MantaCurrency(asset_id) => match AssetXConverter::reverse_ref(&asset_id) {
+            CurrencyId::MantaCurrency(asset_id) => match AssetXConverter::reverse_ref(asset_id) {
                 Ok(location) => Some(location),
                 Err(_) => None,
             },

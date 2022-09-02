@@ -686,7 +686,7 @@ where
 
     #[inline]
     fn is_unspent(&self, void_number: config::VoidNumber) -> Option<Self::ValidVoidNumber> {
-        if VoidNumberSet::<T>::contains_key(encode(&void_number)) {
+        if VoidNumberSet::<T>::contains_key(encode(void_number)) {
             None
         } else {
             Some(Wrap(void_number))
@@ -698,7 +698,7 @@ where
         &self,
         output: config::UtxoAccumulatorOutput,
     ) -> Option<Self::ValidUtxoAccumulatorOutput> {
-        if UtxoAccumulatorOutputs::<T>::contains_key(encode(&output)) {
+        if UtxoAccumulatorOutputs::<T>::contains_key(encode(output)) {
             return Some(Wrap(output));
         }
         None
@@ -713,7 +713,7 @@ where
         let index = VoidNumberSetSize::<T>::get();
         let mut i = 0;
         for (_, void_number) in iter {
-            let void_number = encode(&void_number.0);
+            let void_number = encode(void_number.0);
             VoidNumberSet::<T>::insert(void_number, ());
             VoidNumberSetInsertionOrder::<T>::insert(index + i, void_number);
             i += 1;
@@ -733,7 +733,7 @@ where
 
     #[inline]
     fn is_not_registered(&self, utxo: config::Utxo) -> Option<Self::ValidUtxo> {
-        if UtxoSet::<T>::contains_key(encode(&utxo)) {
+        if UtxoSet::<T>::contains_key(encode(utxo)) {
             None
         } else {
             Some(Wrap(utxo))
@@ -784,14 +784,14 @@ where
                     .expect("If this errors, then we have run out of Merkle Tree capacity."),
                 );
                 let next_index = current_path.leaf_index().0 as u64;
-                let utxo = encode(&utxo);
+                let utxo = encode(utxo);
                 UtxoSet::<T>::insert(utxo, ());
                 Shards::<T>::insert(shard_index, next_index, (utxo, EncryptedNote::from(note)));
             }
             tree.current_path = current_path.into();
             if let Some(next_root) = next_root {
                 ShardTrees::<T>::insert(shard_index, tree);
-                UtxoAccumulatorOutputs::<T>::insert(encode(&next_root), ());
+                UtxoAccumulatorOutputs::<T>::insert(encode(next_root), ());
             }
         }
     }
