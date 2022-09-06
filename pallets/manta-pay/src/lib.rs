@@ -807,10 +807,15 @@ where
                 .expect("Checksum did not match."),
         )
         .expect("Unable to decode the Merkle Tree Parameters.");
-        /* TODO:
         let mut shard_indices = iter
             .into_iter()
-            .map(move |(utxo, note)| (MerkleTreeConfiguration::tree_index(&utxo.0), utxo.0, note))
+            .map(move |(utxo, note)| {
+                (
+                    MerkleTreeConfiguration::tree_index(&utxo.0.commitment),
+                    utxo.0,
+                    note,
+                )
+            })
             .collect::<Vec<_>>();
         shard_indices.sort_by_key(|(s, _, _)| *s);
         let mut shard_insertions = Vec::<(_, Vec<_>)>::new();
@@ -820,6 +825,7 @@ where
                 _ => shard_insertions.push((shard_index, vec![(utxo, note)])),
             }
         }
+        /*
         for (shard_index, insertions) in shard_insertions {
             let mut tree = ShardTrees::<T>::get(shard_index);
             let mut next_root = Option::<config::UtxoAccumulatorOutput>::None;
@@ -834,16 +840,20 @@ where
                     )
                     .expect("If this errors, then we have run out of Merkle Tree capacity."),
                 );
+                /*
                 let next_index = current_path.leaf_index().0 as u64;
                 let utxo = encode(&utxo);
                 UtxoSet::<T>::insert(utxo, ());
                 Shards::<T>::insert(shard_index, next_index, (utxo, IncomingNote::from(note)));
+                */
             }
+            /*
             tree.current_path = current_path.into();
             if let Some(next_root) = next_root {
                 ShardTrees::<T>::insert(shard_index, tree);
                 UtxoAccumulatorOutputs::<T>::insert(encode(&next_root), ());
             }
+            */
         }
         */
         todo!()
@@ -871,11 +881,10 @@ where
     where
         I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
     {
-        /*
         sources
             .map(move |(account_id, withdraw)| {
                 FungibleLedger::<T>::can_withdraw(
-                    asset_id.0,
+                    Pallet::<T>::id_from_field(encode(asset_id)).expect("FIXME"),
                     &account_id,
                     &withdraw,
                     ExistenceRequirement::KeepAlive,
@@ -883,13 +892,11 @@ where
                 .map(|_| WrapPair(account_id.clone(), withdraw))
                 .map_err(|_| InvalidSourceAccount {
                     account_id,
-                    asset_id,
+                    asset_id: *asset_id,
                     withdraw,
                 })
             })
             .collect()
-        */
-        todo!()
     }
 
     #[inline]
@@ -901,22 +908,24 @@ where
     where
         I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
     {
-        /*
         // NOTE: Existence of accounts is type-checked so we don't need to do anything here, just
         // pass the data forward.
         sinks
             .map(move |(account_id, deposit)| {
-                FungibleLedger::<T>::can_deposit(asset_id.0, &account_id, deposit.0, false)
-                    .map(|_| WrapPair(account_id.clone(), deposit))
-                    .map_err(|_| InvalidSinkAccount {
-                        account_id,
-                        asset_id,
-                        deposit,
-                    })
+                FungibleLedger::<T>::can_deposit(
+                    Pallet::<T>::id_from_field(encode(asset_id)).expect("FIXME"),
+                    &account_id,
+                    deposit,
+                    false,
+                )
+                .map(|_| WrapPair(account_id.clone(), deposit))
+                .map_err(|_| InvalidSinkAccount {
+                    account_id,
+                    asset_id: *asset_id,
+                    deposit,
+                })
             })
             .collect()
-        */
-        todo!()
     }
 
     #[inline]
@@ -977,11 +986,10 @@ where
         sinks: Vec<SinkPostingKey<config::Config, Self>>,
         proof: Self::ValidProof,
     ) -> Result<(), Self::UpdateError> {
-        /*
         let _ = (proof, super_key);
         for WrapPair(account_id, withdraw) in sources {
             FungibleLedger::<T>::transfer(
-                asset_id.0,
+                Pallet::<T>::id_from_field(encode(asset_id)).expect("FIXME"),
                 &account_id,
                 &Pallet::<T>::account_id(),
                 withdraw,
@@ -990,7 +998,7 @@ where
         }
         for WrapPair(account_id, deposit) in sinks {
             FungibleLedger::<T>::transfer(
-                asset_id.0,
+                Pallet::<T>::id_from_field(encode(asset_id)).expect("FIXME"),
                 &Pallet::<T>::account_id(),
                 &account_id,
                 deposit,
@@ -998,7 +1006,5 @@ where
             )?;
         }
         Ok(())
-        */
-        todo!()
     }
 }
