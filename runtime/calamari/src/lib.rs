@@ -64,6 +64,7 @@ use manta_primitives::{
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
+use pallet_session::ShouldEndSession;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -711,14 +712,24 @@ parameter_types! {
     pub const Offset: u32 = 0;
 }
 
+// NOTE: pallet_parachain_staking rounds are now used,
+// session rotation through pallet session no longer needed
+// but the pallet is used for SessionKeys storage
+pub struct NeverEndSession;
+impl ShouldEndSession<u32> for NeverEndSession {
+	fn should_end_session(_: u32) -> bool {
+        false
+	}
+}
+
 impl pallet_session::Config for Runtime {
     type Event = Event;
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     // we don't have stash and controller, thus we don't need the convert as well.
     type ValidatorIdOf = IdentityCollator;
-    type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+    type ShouldEndSession = NeverEndSession;
     type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
-    type SessionManager = CollatorSelection;
+    type SessionManager = ();
     type SessionHandler =
         <opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
     type Keys = opaque::SessionKeys;
