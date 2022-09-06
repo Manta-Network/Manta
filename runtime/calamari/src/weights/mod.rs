@@ -35,3 +35,4 @@ pub mod pallet_timestamp;
 pub mod pallet_treasury;
 pub mod pallet_tx_pause;
 pub mod pallet_utility;
+pub mod xcm;

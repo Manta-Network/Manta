@@ -1,19 +1,18 @@
-#!/usr/bin/env bash
-
-# This file is part of Substrate.
-# Copyright (C) 2022 Parity Technologies (UK) Ltd.
-# SPDX-License-Identifier: Apache-2.0
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# Copyright 2020-2022 Manta Network.
+# This file is part of Manta.
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+# Manta is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Manta is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 # This script has three parts which all use the Substrate runtime:
 # - Pallet benchmarking to update the pallet weights
@@ -21,7 +20,8 @@
 # - Machine benchmarking
 #
 # Should be run on a reference machine to gain accurate benchmarks
-# current reference machine: https://github.com/paritytech/substrate/pull/5848
+# current reference machine:
+# https://github.com/Manta-Network/Manta/blob/manta/.github/workflows/run_all_benchmarks.yml#L15
 #
 # Should be run from the root of the repo.
 
@@ -98,19 +98,23 @@ ERR_FILE="scripts/benchmarking/benchmarking_errors.txt"
 # Delete the error file before each run.
 rm -f $ERR_FILE
 
-WEIGHTS_OUTPUT="scripts/benchmarking/weights-output"
+FRAME_WEIGHTS_OUTPUT="scripts/benchmarking/frame-weights-output"
 # Delete the weights output folders before each run.
-rm -R ${WEIGHTS_OUTPUT}
+rm -R ${FRAME_WEIGHTS_OUTPUT}
 # Create the weights output folders.
-mkdir ${WEIGHTS_OUTPUT}
+mkdir ${FRAME_WEIGHTS_OUTPUT}
 
-STORAGE_OUTPUT="scripts/benchmarking/rocksdb_weights.rs"
-rm -f ${STORAGE_OUTPUT}
+XCM_WEIGHTS_OUTPUT="scripts/benchmarking/xcm-weights-output"
+rm -R ${XCM_WEIGHTS_OUTPUT}
+mkdir ${XCM_WEIGHTS_OUTPUT}
+
+STORAGE_WEIGHTS_OUTPUT="scripts/benchmarking/rocksdb_weights.rs"
+rm -f ${STORAGE_WEIGHTS_OUTPUT}
 
 MACHINE_OUTPUT="scripts/benchmarking/machine_benchmark_result.txt"
 rm -f $MACHINE_OUTPUT
 
-# Benchmark each pallet.
+# Benchmark each frame pallet.
 for PALLET in "${PALLETS[@]}"; do
   # If `-p` is used, skip benchmarks until the start pallet.
   if [ ! -z "$start_pallet" ] && [ "$start_pallet" != "$PALLET" ]
@@ -122,8 +126,16 @@ for PALLET in "${PALLETS[@]}"; do
   fi
 
   FOLDER="$(echo "${PALLET#*_}" | tr '_' '-')";
-  WEIGHT_FILE="./${WEIGHTS_OUTPUT}/${PALLET}.rs"
+  WEIGHT_FILE="./${FRAME_WEIGHTS_OUTPUT}/${PALLET}.rs"
+  TEMPLATE_FILE=".github/resources/frame-weight-template.hbs"
   echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
+
+  if [ "$PALLET" == "pallet_xcm_benchmarks::fungible" ] || [ "$PALLET" == "pallet_xcm_benchmarks::generic" ]
+  then
+    OUTPUT_NAME=$(echo $PALLET | sed -r 's/[:]+/_/g')
+    WEIGHT_FILE="./${XCM_WEIGHTS_OUTPUT}/${OUTPUT_NAME}.rs"
+    TEMPLATE_FILE=".github/resources/xcm-weight-template.hbs"
+  fi
 
   OUTPUT=$(
     $MANTA benchmark pallet \
@@ -136,7 +148,7 @@ for PALLET in "${PALLETS[@]}"; do
     --wasm-execution=compiled \
     --heap-pages=4096 \
     --output="$WEIGHT_FILE" \
-    --template=.github/resources/frame-weight-template.hbs 2>&1
+    --template="$TEMPLATE_FILE" 2>&1
   )
   if [ $? -ne 0 ]; then
     echo "$OUTPUT" >> "$ERR_FILE"
@@ -160,7 +172,7 @@ if [ ! -z "$storage_folder" ]; then
     --state-version=1 \
     --warmups=10 \
     --base-path=$storage_folder \
-    --weight-path=./$STORAGE_OUTPUT 2>&1
+    --weight-path=./$STORAGE_WEIGHTS_OUTPUT 2>&1
   )
   if [ $? -ne 0 ]; then
     echo "$OUTPUT" >> "$ERR_FILE"
