@@ -77,6 +77,7 @@ pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", 
 
 # Polkadot dependencies
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
+pallet-xcm-benchmarks = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26", optional = true }
 polkadot-parachain = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
 polkadot-primitives = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
 xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
@@ -137,6 +138,7 @@ runtime-benchmarks = [
   'pallet-asset-manager/runtime-benchmarks',
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
   'cumulus-pallet-parachain-system/runtime-benchmarks',
+  'pallet-xcm-benchmarks',
 ]
 try-runtime = [
   'frame-executive/try-runtime',

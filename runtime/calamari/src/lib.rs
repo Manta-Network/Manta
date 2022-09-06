@@ -829,6 +829,8 @@ mod benches {
         [pallet_assets, Assets]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]
+        [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
+        [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
         // Manta pallets
         [calamari_vesting, CalamariVesting]
         [pallet_tx_pause, TransactionPause]
@@ -998,13 +1000,101 @@ impl_runtime_apis! {
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-            use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey};
+            use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey, BenchmarkError};
 
             use frame_system_benchmarking::Pallet as SystemBench;
             impl frame_system_benchmarking::Config for Runtime {}
 
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
             impl cumulus_pallet_session_benchmarking::Config for Runtime {}
+
+            use pallet_xcm_benchmarks::asset_instance_from;
+            use xcm_config::{LocationToAccountId, XcmExecutorConfig};
+
+            parameter_types! {
+                pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = None;
+                pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((
+                    KsmLocation::get(),
+                    // Random amount for the benchmark.
+                    MultiAsset { fun: Fungible(1_000_000_000_000), id: Concrete(KsmLocation::get()) },
+                ));
+                pub const CheckedAccount: Option<AccountId> = None;
+                pub const KsmLocation: MultiLocation = MultiLocation::parent();
+                pub KmaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(2084)));
+            }
+
+            impl pallet_xcm_benchmarks::Config for Runtime {
+                type XcmConfig = XcmExecutorConfig;
+                type AccountIdConverter = LocationToAccountId;
+
+                fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
+                 Ok(KsmLocation::get())
+                }
+
+                fn worst_case_holding() -> MultiAssets {
+                    // A mix of fungible, non-fungible, and concrete assets.
+                    const HOLDING_FUNGIBLES: u32 = 100;
+                    const HOLDING_NON_FUNGIBLES: u32 = 100;
+                    let fungibles_amount: u128 = 100;
+                    let mut assets = (0..HOLDING_FUNGIBLES)
+                        .map(|i| {
+                            MultiAsset {
+                                id: Concrete(GeneralIndex(i as u128).into()),
+                                fun: Fungible(fungibles_amount * i as u128),
+                            }
+                        })
+                        .chain(core::iter::once(MultiAsset { id: Concrete(Here.into()), fun: Fungible(u128::MAX) }))
+                        .chain((0..HOLDING_NON_FUNGIBLES).map(|i| MultiAsset {
+                            id: Concrete(GeneralIndex(i as u128).into()),
+                            fun: NonFungible(asset_instance_from(i)),
+                        }))
+                        .collect::<Vec<_>>();
+
+                        assets.push(MultiAsset{
+                            id: Concrete(KmaLocation::get()),
+                            fun: Fungible(1_000_000 * KMA),
+                        });
+                        assets.into()
+                }
+            }
+
+            impl pallet_xcm_benchmarks::fungible::Config for Runtime {
+                type TransactAsset = Balances;
+
+                type CheckedAccount = CheckedAccount;
+                type TrustedTeleporter = TrustedTeleporter;
+                type TrustedReserve = TrustedReserve;
+
+                fn get_multi_asset() -> MultiAsset {
+                    MultiAsset {
+                        id: Concrete(KmaLocation::get()),
+                        fun: Fungible(1 * KMA),
+                    }
+                }
+            }
+
+            impl pallet_xcm_benchmarks::generic::Config for Runtime {
+                type Call = Call;
+
+                fn worst_case_response() -> (u64, Response) {
+                    (0u64, Response::Version(Default::default()))
+                }
+
+                fn transact_origin() -> Result<MultiLocation, BenchmarkError> {
+                    Ok(KsmLocation::get())
+                }
+
+                fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
+                    Ok(KsmLocation::get())
+                }
+
+                fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
+                    let origin = KmaLocation::get();
+                    let assets: MultiAssets = (Concrete(KmaLocation::get()), 1_000 * KMA).into();
+                    let ticket = MultiLocation { parents: 0, interior: Here };
+                    Ok((origin, ticket, assets))
+                }
+            }
 
             let whitelist: Vec<TrackedStorageKey> = vec![
                 // Block Number
@@ -1025,7 +1115,6 @@ impl_runtime_apis! {
             let params = (&config, &whitelist);
             add_benchmarks!(params, batches);
 
-            if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)
         }
     }

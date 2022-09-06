@@ -279,10 +279,10 @@ pub mod pallet {
                 self.eviction_tolerance <= Percent::one(),
                 "Eviction tolerance must be given as a percentage - number between 0 and 100",
             );
-            <DesiredCandidates<T>>::put(&self.desired_candidates);
-            <CandidacyBond<T>>::put(&self.candidacy_bond);
-            <EvictionBaseline<T>>::put(&self.eviction_baseline);
-            <EvictionTolerance<T>>::put(&self.eviction_tolerance);
+            <DesiredCandidates<T>>::put(self.desired_candidates);
+            <CandidacyBond<T>>::put(self.candidacy_bond);
+            <EvictionBaseline<T>>::put(self.eviction_baseline);
+            <EvictionTolerance<T>>::put(self.eviction_tolerance);
             <Invulnerables<T>>::put(&self.invulnerables);
         }
     }
@@ -362,7 +362,7 @@ pub mod pallet {
             if max > T::MaxCandidates::get() {
                 log::warn!("max > T::MaxCandidates; you might need to run benchmarks again");
             }
-            <DesiredCandidates<T>>::put(&max);
+            <DesiredCandidates<T>>::put(max);
             Self::deposit_event(Event::NewDesiredCandidates(max));
             Ok(().into())
         }
@@ -377,7 +377,7 @@ pub mod pallet {
             bond: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             T::UpdateOrigin::ensure_origin(origin)?;
-            <CandidacyBond<T>>::put(&bond);
+            <CandidacyBond<T>>::put(bond);
             Self::deposit_event(Event::NewCandidacyBond(bond));
             Ok(().into())
         }
