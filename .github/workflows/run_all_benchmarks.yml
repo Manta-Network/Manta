@@ -94,11 +94,17 @@ jobs:
           name: manta
           path: ./target/production/manta
       - if: always()
-        name: upload pallets' weights
+        name: upload frame weights
         uses: actions/upload-artifact@v3
         with:
-          name: weights-output
-          path: ./scripts/benchmarking/weights-output/
+          name: frame-weights-output
+          path: ./scripts/benchmarking/frame-weights-output/
+      - if: always()
+        name: upload xcm weights
+        uses: actions/upload-artifact@v3
+        with:
+          name: xcm-weights-output
+          path: ./scripts/benchmarking/xcm-weights-output/
       - if: always()
         name: upload benchmarking errors
         uses: actions/upload-artifact@v3
