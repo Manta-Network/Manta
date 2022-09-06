@@ -314,7 +314,7 @@ fn initialize_test(id: AssetId, value: AssetValue) {
 /// Tests multiple to_private from some total supply.
 #[test]
 fn to_private_should_work() {
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
         let mut rng = OsRng;
         new_test_ext().execute_with(|| {
             let asset_id = rng.gen();
@@ -331,7 +331,7 @@ fn to_private_should_work() {
 
 #[test]
 fn native_asset_to_private_should_work() {
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
         let mut rng = OsRng;
         new_test_ext().execute_with(|| {
             let total_free_supply = AssetValue(rng.gen());
@@ -348,7 +348,7 @@ fn native_asset_to_private_should_work() {
 /// Tests a mint that would overdraw the total supply.
 #[test]
 fn overdrawn_mint_should_not_work() {
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
         let mut rng = OsRng;
         new_test_ext().execute_with(|| {
             let asset_id = rng.gen();
@@ -369,7 +369,7 @@ fn overdrawn_mint_should_not_work() {
 /// Tests a mint that would overdraw from a non-existent supply.
 #[test]
 fn to_private_without_init_should_not_work() {
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
         let mut rng = OsRng;
         new_test_ext().execute_with(|| {
             assert_noop!(
@@ -386,7 +386,7 @@ fn to_private_without_init_should_not_work() {
 /// Tests that a double-spent [`Mint`] will fail.
 #[test]
 fn mint_existing_coin_should_not_work() {
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
         let mut rng = OsRng;
         new_test_ext().execute_with(|| {
             let asset_id = rng.gen();
@@ -407,7 +407,7 @@ fn mint_existing_coin_should_not_work() {
 /// Tests a [`PrivateTransfer`] transaction.
 #[test]
 fn private_transfer_should_work() {
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| private_transfer_test(1, None, &mut OsRng));
     }
 }
@@ -415,7 +415,7 @@ fn private_transfer_should_work() {
 /// Test a [`PrivateTransfer`] transaction with native currency
 #[test]
 fn private_transfer_native_asset_should_work() {
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
             private_transfer_test(1, Some(NATIVE_ASSET_ID), &mut OsRng);
         });
@@ -425,7 +425,7 @@ fn private_transfer_native_asset_should_work() {
 /// Tests multiple [`PrivateTransfer`] transactions.
 #[test]
 fn private_transfer_10_times_should_work() {
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| private_transfer_test(10, None, &mut OsRng));
     }
 }
@@ -433,7 +433,7 @@ fn private_transfer_10_times_should_work() {
 /// Tests that a double-spent [`PrivateTransfer`] will fail.
 #[test]
 fn double_spend_in_private_transfer_should_not_work() {
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
             for private_transfer in private_transfer_test(1, None, &mut OsRng) {
                 assert_noop!(
@@ -451,7 +451,7 @@ fn double_spend_in_private_transfer_should_not_work() {
 /// Tests a [`Reclaim`] transaction.
 #[test]
 fn reclaim_should_work() {
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
         let mut rng = OsRng;
         let total_supply = AssetValue(rng.gen());
         new_test_ext().execute_with(|| reclaim_test(1, total_supply, None, &mut rng));
@@ -461,7 +461,7 @@ fn reclaim_should_work() {
 /// Test a [`Reclaim`] of native currency
 #[test]
 fn reclaim_native_should_work() {
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
         let mut rng = OsRng;
         let total_supply = AssetValue(rng.gen());
         new_test_ext()
@@ -472,7 +472,7 @@ fn reclaim_native_should_work() {
 /// Tests multiple [`Reclaim`] transactions.
 #[test]
 fn reclaim_10_times_should_work() {
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
         let mut rng = OsRng;
         let total_supply = AssetValue(rng.gen());
         new_test_ext().execute_with(|| reclaim_test(10, total_supply, None, &mut rng));
@@ -482,7 +482,7 @@ fn reclaim_10_times_should_work() {
 /// Tests that a double-spent [`Reclaim`] will fail.
 #[test]
 fn double_spend_in_reclaim_should_not_work() {
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
             let mut rng = OsRng;
             // Divide by two because otherwise we might fail for a different reason (Overflow)
