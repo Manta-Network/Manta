@@ -621,9 +621,12 @@ impl pallet_parachain_staking::Config for Runtime {
     type DefaultCollatorCommission = DefaultCollatorCommission;
     type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
     /// Minimum stake on a collator to be considered for block production
-    type MinCollatorStk = ConstU128<{ 4_000_000 * KMA }>;
+    // WHITELIST: Temporarily 400k to accomodate whitelisted collators
+    type MinCollatorStk = ConstU128<{ 400_000 * KMA }>;
     /// Minimum stake the collator runner must bond to register as collator candidate
     type MinCandidateStk = ConstU128<{ 4_000_000 * KMA }>;
+    /// WHITELIST: Minimum stake required for *a whitelisted* account to be a collator candidate
+    type MinWhitelistCandidateStk = ConstU128<{ 400_000 * KMA }>;
     /// Smallest amount that can be delegated
     type MinDelegation = ConstU128<{ 5_000 * KMA }>;
     /// Minimum stake required to be reserved to be a delegator

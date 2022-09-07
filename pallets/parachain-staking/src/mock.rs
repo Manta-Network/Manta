@@ -40,6 +40,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
+// WHITELIST: Remove Session and CollatorSelection after end of whitelist-period
 construct_runtime!(
     pub enum Test where
         Block = Block,
@@ -50,6 +51,8 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         ParachainStaking: pallet_parachain_staking::{Pallet, Call, Storage, Config<T>, Event<T>},
         BlockAuthor: block_author::{Pallet, Storage},
+        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
+        CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Config<T>, Event<T>},
     }
 );
 
@@ -117,6 +120,7 @@ parameter_types! {
     pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(20);
     pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(30);
     pub const MinCollatorStk: u128 = 10;
+    pub const MinWhitelistCollatorStk: u128 = 1; // WHITELIST - remove
     pub const MinDelegatorStk: u128 = 5;
     pub const MinDelegation: u128 = 3;
 }
@@ -140,6 +144,7 @@ impl Config for Test {
     type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
     type MinCollatorStk = MinCollatorStk;
     type MinCandidateStk = MinCollatorStk;
+    type MinWhitelistCandidateStk = MinWhitelistCollatorStk; // WHITELIST - remove
     type MinDelegatorStk = MinDelegatorStk;
     type MinDelegation = MinDelegation;
     type BlockAuthor = BlockAuthor;
@@ -147,6 +152,108 @@ impl Config for Test {
     type OnNewRound = ();
     type WeightInfo = ();
 }
+
+/// WHITELIST BEGIN TEMPORARY SECTION FOR TIGHTLY COUPLED COLLATOR_SELECTION/SESSION PALLETS
+/// TODO: Remove after end of whitelist-period
+use frame_support::{
+    ord_parameter_types, PalletId};
+use sp_runtime::traits::ConstU32;
+use frame_support::traits::ValidatorRegistration;
+use manta_collator_selection::IdentityCollator;
+use frame_support::traits::ValidatorSet;
+
+ord_parameter_types! {
+    pub const RootAccount: u64 = 777;
+}
+
+parameter_types! {
+    pub const PotId: PalletId = PalletId(*b"PotStake");
+}
+pub struct IsRegistered;
+impl ValidatorRegistration<u64> for IsRegistered {
+    fn is_registered(id: &u64) -> bool {
+        *id != 7u64
+    }
+}
+
+impl ValidatorSet<u64> for IsRegistered {
+    type ValidatorId = u64;
+    type ValidatorIdOf = IdentityCollator;
+    fn session_index() -> sp_staking::SessionIndex {
+        Session::current_index()
+    }
+    fn validators() -> Vec<Self::ValidatorId> {
+        Session::validators()
+    }
+}
+
+use frame_system::EnsureSignedBy;
+impl manta_collator_selection::Config for Test {
+    type Event = Event;
+    type Currency = Balances;
+    type UpdateOrigin = EnsureSignedBy<RootAccount, u64>;
+    type PotId = PotId;
+    type MaxCandidates = ConstU32<20>;
+    type MaxInvulnerables = ConstU32<20>;
+    type ValidatorId = <Self as frame_system::Config>::AccountId;
+    type ValidatorIdOf = manta_collator_selection::IdentityCollator;
+    type AccountIdOf = manta_collator_selection::IdentityCollator;
+    type ValidatorRegistration = IsRegistered;
+    type WeightInfo = ();
+    type CanAuthor = ();
+}
+
+use sp_runtime::traits::OpaqueKeys;
+use sp_runtime::RuntimeAppPublic;
+parameter_types! {
+    pub static SessionHandlerCollators: Vec<u64> = Vec::new();
+    pub static SessionChangeBlock: u64 = 0;
+}
+
+pub struct TestSessionHandler;
+impl pallet_session::SessionHandler<u64> for TestSessionHandler {
+    const KEY_TYPE_IDS: &'static [sp_runtime::KeyTypeId] = &[UintAuthorityId::ID];
+    fn on_genesis_session<Ks: OpaqueKeys>(keys: &[(u64, Ks)]) {
+        SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
+    }
+    fn on_new_session<Ks: OpaqueKeys>(_: bool, keys: &[(u64, Ks)], _: &[(u64, Ks)]) {
+        SessionChangeBlock::set(System::block_number());
+        SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
+    }
+    fn on_before_session_ending() {}
+    fn on_disabled(_: u32) {}
+}
+
+sp_runtime::impl_opaque_keys! {
+    pub struct MockSessionKeys {
+        // a key for aura authoring
+        pub aura: UintAuthorityId,
+    }
+}
+use sp_runtime::testing::UintAuthorityId;
+impl From<UintAuthorityId> for MockSessionKeys {
+    fn from(aura: sp_runtime::testing::UintAuthorityId) -> Self {
+        Self { aura }
+    }
+}
+
+parameter_types! {
+    pub const Offset: u64 = 0;
+    pub const Period: u64 = 10;
+}
+impl pallet_session::Config for Test {
+    type Event = Event;
+    type ValidatorId = <Self as frame_system::Config>::AccountId;
+    // we don't have stash and controller, thus we don't need the convert as well.
+    type ValidatorIdOf = manta_collator_selection::IdentityCollator;
+    type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+    type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
+    type SessionManager = CollatorSelection;
+    type SessionHandler = TestSessionHandler;
+    type Keys = MockSessionKeys;
+    type WeightInfo = ();
+}
+/// WHITELIST END TEMPORARY SECTION FOR TIGHTLY COUPLED COLLATOR_SELECTION/SESSION PALLETS
 
 pub(crate) struct ExtBuilder {
     // endowed accounts with balances

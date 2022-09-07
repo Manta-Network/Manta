@@ -402,7 +402,7 @@ impl<T: Config> OnRuntimeUpgrade for SplitCandidateStateToDecreasePoV<T> {
                             total_less = total_less.saturating_add(*amount);
                             // update delegator state
                             // unreserve kicked bottom
-                            T::Currency::unreserve(&owner, *amount);
+                            <T as Config>::Currency::unreserve(&owner, *amount);
                             let mut delegator_state = <DelegatorState<T>>::get(&owner)
                                 .expect("Delegation existence => DelegatorState existence");
                             let leaving = delegator_state.delegations.0.len() == 1usize;

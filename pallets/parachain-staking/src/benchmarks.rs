@@ -49,8 +49,8 @@ fn create_funded_user<T: Config>(
     let user = account(string, n, SEED);
     let min_candidate_stk = min_candidate_stk::<T>();
     let total = min_candidate_stk + extra;
-    T::Currency::make_free_balance_be(&user, total);
-    T::Currency::issue(total);
+    <T as Config>::Currency::make_free_balance_be(&user, total);
+    <T as Config>::Currency::issue(total);
     (user, total)
 }
 
@@ -370,7 +370,7 @@ benchmarks! {
     }: _(RawOrigin::Signed(caller.clone()), more)
     verify {
         let expected_bond = more * 2u32.into();
-        assert_eq!(T::Currency::reserved_balance(&caller), expected_bond);
+        assert_eq!(<T as Config>::Currency::reserved_balance(&caller), expected_bond);
     }
 
     schedule_candidate_bond_less {
@@ -414,7 +414,7 @@ benchmarks! {
             caller.clone()
         )?;
     } verify {
-        assert_eq!(T::Currency::reserved_balance(&caller), min_candidate_stk);
+        assert_eq!(<T as Config>::Currency::reserved_balance(&caller), min_candidate_stk);
     }
 
     cancel_candidate_bond_less {
@@ -645,7 +645,7 @@ benchmarks! {
     }: _(RawOrigin::Signed(caller.clone()), collator.clone(), bond)
     verify {
         let expected_bond = bond * 2u32.into();
-        assert_eq!(T::Currency::reserved_balance(&caller), expected_bond);
+        assert_eq!(<T as Config>::Currency::reserved_balance(&caller), expected_bond);
     }
 
     schedule_delegator_bond_less {
@@ -744,7 +744,7 @@ benchmarks! {
         )?;
     } verify {
         let expected = total - bond_less;
-        assert_eq!(T::Currency::reserved_balance(&caller), expected);
+        assert_eq!(<T as Config>::Currency::reserved_balance(&caller), expected);
     }
 
     cancel_revoke_delegation {
@@ -859,7 +859,7 @@ benchmarks! {
         let collator_starting_balances: Vec<(
             T::AccountId,
             <<T as Config>::Currency as Currency<T::AccountId>>::Balance
-        )> = collators.iter().map(|x| (x.clone(), T::Currency::free_balance(&x))).collect();
+        )> = collators.iter().map(|x| (x.clone(), <T as Config>::Currency::free_balance(&x))).collect();
         // INITIALIZE DELEGATIONS
         let mut col_del_count: BTreeMap<T::AccountId, u32> = BTreeMap::new();
         collators.iter().for_each(|x| {
@@ -926,7 +926,7 @@ benchmarks! {
         let delegator_starting_balances: Vec<(
             T::AccountId,
             <<T as Config>::Currency as Currency<T::AccountId>>::Balance
-        )> = delegators.iter().map(|x| (x.clone(), T::Currency::free_balance(&x))).collect();
+        )> = delegators.iter().map(|x| (x.clone(), <T as Config>::Currency::free_balance(&x))).collect();
         // PREPARE RUN_TO_BLOCK LOOP
         let before_running_round_index = Pallet::<T>::round().current;
         let round_length: T::BlockNumber = Pallet::<T>::round().length.into();
@@ -957,11 +957,11 @@ benchmarks! {
     verify {
         // Collators have been paid
         for (col, initial) in collator_starting_balances {
-            assert!(T::Currency::free_balance(&col) > initial);
+            assert!(<T as Config>::Currency::free_balance(&col) > initial);
         }
         // Nominators have been paid
         for (col, initial) in delegator_starting_balances {
-            assert!(T::Currency::free_balance(&col) > initial);
+            assert!(<T as Config>::Currency::free_balance(&col) > initial);
         }
         // Round transitions
         assert_eq!(Pallet::<T>::round().current, before_running_round_index + reward_delay);
@@ -1046,13 +1046,13 @@ benchmarks! {
     verify {
         // collator should have been paid
         assert!(
-            T::Currency::free_balance(&sole_collator) > initial_stake_amount,
+            <T as Config>::Currency::free_balance(&sole_collator) > initial_stake_amount,
             "collator should have been paid in pay_one_collator_reward"
         );
         // nominators should have been paid
         for delegator in &delegators {
             assert!(
-                T::Currency::free_balance(&delegator) > initial_stake_amount,
+                <T as Config>::Currency::free_balance(&delegator) > initial_stake_amount,
                 "delegator should have been paid in pay_one_collator_reward"
             );
         }

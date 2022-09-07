@@ -22,6 +22,11 @@ substrate-fixed = { git = "https://github.com/encointer/substrate-fixed.git", de
 # Nimbus
 nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v3.3.0", default-features = false }
 
+# Manta ( TODO: remove after completed migration )
+sp-staking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.26" }
+manta-collator-selection = { path = '../collator-selection', default-features = false }
+pallet-session = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.26" }
+
 [dev-dependencies]
 similar-asserts = "1.1.0"
 
@@ -37,6 +42,8 @@ std = [
   "frame-support/std",
   "frame-system/std",
   "nimbus-primitives/std",
+  "manta-collator-selection/std",
+  'pallet-session/std',
   "parity-scale-codec/std",
   "scale-info/std",
   "serde",

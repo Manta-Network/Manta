@@ -423,7 +423,7 @@ impl<
         let new_total = <Total<T>>::get().saturating_add(more.into());
         <Total<T>>::put(new_total);
         self.bond = self.bond.saturating_add(more);
-        T::Currency::set_lock(
+        <T as Config>::Currency::set_lock(
             COLLATOR_LOCK_ID,
             &who.clone(),
             self.bond.into(),
@@ -482,7 +482,7 @@ impl<
         // Arithmetic assumptions are self.bond > less && self.bond - less > CollatorMinBond
         // (assumptions enforced by `schedule_bond_less`; if storage corrupts, must re-verify)
         self.bond = self.bond.saturating_sub(request.amount);
-        T::Currency::set_lock(
+        <T as Config>::Currency::set_lock(
             COLLATOR_LOCK_ID,
             &who.clone(),
             self.bond.into(),
@@ -1473,9 +1473,9 @@ impl<
         };
 
         if self.total.is_zero() {
-            T::Currency::remove_lock(DELEGATOR_LOCK_ID, &self.id.clone().into());
+            <T as Config>::Currency::remove_lock(DELEGATOR_LOCK_ID, &self.id.clone().into());
         } else {
-            T::Currency::set_lock(
+            <T as Config>::Currency::set_lock(
                 DELEGATOR_LOCK_ID,
                 &self.id.clone().into(),
                 self.total.into(),

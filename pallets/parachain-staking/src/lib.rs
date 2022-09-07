@@ -115,7 +115,7 @@ pub mod pallet {
 
     /// Configuration trait of this pallet.
     #[pallet::config]
-    pub trait Config: frame_system::Config {
+    pub trait Config: frame_system::Config + manta_collator_selection::Config {
         /// Overarching event type
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         /// The currency type
@@ -172,6 +172,9 @@ pub mod pallet {
         /// Minimum stake required for any account to be a collator candidate
         #[pallet::constant]
         type MinCandidateStk: Get<BalanceOf<Self>>;
+        /// Minimum stake required for *a whitelisted* account to be a collator candidate
+        #[pallet::constant]
+        type MinWhitelistCandidateStk: Get<BalanceOf<Self>>;
         /// Minimum stake for any registered on-chain account to delegate
         #[pallet::constant]
         type MinDelegation: Get<BalanceOf<Self>>;
@@ -424,7 +427,7 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: T::BlockNumber) -> Weight {
-            let mut weight = T::WeightInfo::base_on_initialize();
+            let mut weight = <T as Config>::WeightInfo::base_on_initialize();
 
             let mut round = <Round<T>>::get();
             if round.should_update(n) {
@@ -447,7 +450,7 @@ pub mod pallet {
                     selected_collators_number: collator_count,
                     total_balance: total_staked,
                 });
-                weight = weight.saturating_add(T::WeightInfo::round_transition_on_initialize(
+                weight = weight.saturating_add(<T as Config>::WeightInfo::round_transition_on_initialize(
                     collator_count,
                     delegation_count,
                 ));
@@ -713,7 +716,11 @@ pub mod pallet {
     }
 
     #[pallet::call]
-    impl<T: Config> Pallet<T> {
+    impl<T: Config> Pallet<T>
+    // where
+    // T:  Config +
+    //     manta_collator_selection::Config
+    {
         #[pallet::weight(<T as Config>::WeightInfo::set_staking_expectations())]
         /// Set the expectations for total staked. These expectations determine the issuance for
         /// the round according to logic in `fn compute_issuance`
@@ -872,13 +879,35 @@ pub mod pallet {
             bond: BalanceOf<T>,
             candidate_count: u32,
         ) -> DispatchResultWithPostInfo {
-            let acc = ensure_signed(origin)?;
+            let acc = ensure_signed(origin.clone())?;
             ensure!(!Self::is_candidate(&acc), Error::<T>::CandidateExists);
             ensure!(!Self::is_delegator(&acc), Error::<T>::DelegatorExists);
-            ensure!(
-                bond >= T::MinCandidateStk::get(),
-                Error::<T>::CandidateBondBelowMin
-            );
+
+            // WHITELIST Remove if branch when whitelist expires
+            let candidates = manta_collator_selection::Pallet::<T>::candidates();
+            if candidates.iter().any(|x| x.who == acc.clone()) {
+                ensure!(
+                    bond >= T::MinWhitelistCandidateStk::get(),
+                    Error::<T>::CandidateBondBelowMin
+                );
+                // if origin is in whitelist, remove it from manta_collator_selection candidates and
+                // return their collator bond, This should never fail as we checked we're part of candidates
+                // and there is no minimum candidate count in our pallet
+                ensure!(
+                    true == manta_collator_selection::Pallet::<T>::leave_intent(origin).is_ok(),
+                    Error::<T>::CandidateCannotLeaveYet
+                );
+                ensure!(
+                    false == manta_collator_selection::Pallet::<T>::candidates().iter().any(|x| x.who == acc.clone()),
+                    Error::<T>::CandidateExists
+                );
+            } else {
+                // collator not in whitelist, default branch
+                ensure!(
+                    bond >= T::MinCandidateStk::get(),
+                    Error::<T>::CandidateBondBelowMin
+                );
+            }
             let mut candidates = <CandidatePool<T>>::get();
             let old_count = candidates.0.len() as u32;
             ensure!(
@@ -896,7 +925,7 @@ pub mod pallet {
                 Self::get_collator_stakable_free_balance(&acc) >= bond,
                 Error::<T>::InsufficientBalance,
             );
-            T::Currency::set_lock(COLLATOR_LOCK_ID, &acc, bond, WithdrawReasons::all());
+            <T as Config>::Currency::set_lock(COLLATOR_LOCK_ID, &acc, bond, WithdrawReasons::all());
             let candidate = CandidateMetadata::new(bond);
             <CandidateInfo<T>>::insert(&acc, candidate);
             let empty_delegations: Delegations<T::AccountId, BalanceOf<T>> = Default::default();
@@ -977,14 +1006,14 @@ pub mod pallet {
                         // since it is assumed that they were removed incrementally before only the
                         // last delegation was left.
                         <DelegatorState<T>>::remove(&bond.owner);
-                        T::Currency::remove_lock(DELEGATOR_LOCK_ID, &bond.owner);
+                        <T as Config>::Currency::remove_lock(DELEGATOR_LOCK_ID, &bond.owner);
                     } else {
                         <DelegatorState<T>>::insert(&bond.owner, delegator);
                     }
                 } else {
                     // TODO: review. we assume here that this delegator has no remaining staked
                     // balance, so we ensure the lock is cleared
-                    T::Currency::remove_lock(DELEGATOR_LOCK_ID, &bond.owner);
+                    <T as Config>::Currency::remove_lock(DELEGATOR_LOCK_ID, &bond.owner);
                 }
                 Ok(())
             };
@@ -1005,7 +1034,7 @@ pub mod pallet {
             }
             total_backing = total_backing.saturating_add(bottom_delegations.total);
             // return stake to collator
-            T::Currency::remove_lock(COLLATOR_LOCK_ID, &candidate);
+            <T as Config>::Currency::remove_lock(COLLATOR_LOCK_ID, &candidate);
             <CandidateInfo<T>>::remove(&candidate);
             <DelegationScheduledRequests<T>>::remove(&candidate);
             <TopDelegations<T>>::remove(&candidate);
@@ -1356,7 +1385,7 @@ pub mod pallet {
         }
         /// Returns an account's free balance which is not locked in delegation staking
         pub fn get_delegator_stakable_free_balance(acc: &T::AccountId) -> BalanceOf<T> {
-            let mut balance = T::Currency::free_balance(acc);
+            let mut balance = <T as Config>::Currency::free_balance(acc);
             if let Some(state) = <DelegatorState<T>>::get(acc) {
                 balance = balance.saturating_sub(state.total());
             }
@@ -1364,7 +1393,7 @@ pub mod pallet {
         }
         /// Returns an account's free balance which is not locked in collator staking
         pub fn get_collator_stakable_free_balance(acc: &T::AccountId) -> BalanceOf<T> {
-            let mut balance = T::Currency::free_balance(acc);
+            let mut balance = <T as Config>::Currency::free_balance(acc);
             if let Some(info) = <CandidateInfo<T>>::get(acc) {
                 balance = balance.saturating_sub(info.bond);
             }
@@ -1432,7 +1461,7 @@ pub mod pallet {
             let bond_config = <ParachainBondInfo<T>>::get();
             let parachain_bond_reserve = bond_config.percent * total_issuance;
             if let Ok(imb) =
-                T::Currency::deposit_into_existing(&bond_config.account, parachain_bond_reserve)
+                <T as Config>::Currency::deposit_into_existing(&bond_config.account, parachain_bond_reserve)
             {
                 // update round issuance iff transfer succeeds
                 left_issuance = left_issuance.saturating_sub(imb.peek());
@@ -1501,7 +1530,7 @@ pub mod pallet {
             }
 
             let mint = |amt: BalanceOf<T>, to: T::AccountId| {
-                if let Ok(amount_transferred) = T::Currency::deposit_into_existing(&to, amt) {
+                if let Ok(amount_transferred) = <T as Config>::Currency::deposit_into_existing(&to, amt) {
                     Self::deposit_event(Event::Rewarded {
                         account: to.clone(),
                         rewards: amount_transferred.peek(),
@@ -1554,7 +1583,7 @@ pub mod pallet {
 
                 (
                     Some((collator, total_paid)),
-                    T::WeightInfo::pay_one_collator_reward(num_delegators as u32) + extra_weight,
+                    <T as Config>::WeightInfo::pay_one_collator_reward(num_delegators as u32) + extra_weight,
                 )
             } else {
                 // Note that we don't clean up storage here; it is cleaned up in
