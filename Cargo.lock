@@ -6544,6 +6544,7 @@ dependencies = [
  "frame-system",
  "log",
  "manta-collator-selection",
+ "manta-primitives",
  "nimbus-primitives",
  "pallet-balances",
  "pallet-session",

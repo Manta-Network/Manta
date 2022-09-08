@@ -27,8 +27,8 @@ use substrate_fixed::{
     types::{I32F32, I64F64},
 };
 
-const SECONDS_PER_YEAR: u32 = 31557600;
-const SECONDS_PER_BLOCK: u32 = 12;
+const SECONDS_PER_YEAR: u32 = 31557600; // = 365.25 * 24 * 60 * 60, .25 to accommodate leap years
+const SECONDS_PER_BLOCK: u32 = manta_primitives::constants::time::SECONDS_PER_BLOCK as u32;
 pub const BLOCKS_PER_YEAR: u32 = SECONDS_PER_YEAR / SECONDS_PER_BLOCK;
 
 fn rounds_per_year<T: Config>() -> u32 {
