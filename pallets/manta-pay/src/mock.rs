@@ -41,9 +41,11 @@ use xcm::{
     VersionedMultiLocation,
 };
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+// TODO: type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+// TODO: type Block = frame_system::mocking::MockBlock<Test>;
+type BlockNumber = u64;
 
+/* TODO:
 frame_support::construct_runtime!(
     pub enum Test where
         Block = Block,
@@ -57,14 +59,14 @@ frame_support::construct_runtime!(
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>},
     }
 );
-
-type BlockNumber = u64;
+*/
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
     pub const SS58Prefix: u8 = 42;
 }
 
+/* TODO:
 impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockWeights = ();
@@ -91,6 +93,7 @@ impl frame_system::Config for Test {
     type OnSetCode = ();
     type MaxConsumers = ConstU32<16>;
 }
+*/
 
 parameter_types! {
     pub ExistentialDeposit: Balance = 1;
@@ -98,6 +101,7 @@ parameter_types! {
     pub const MaxReserves: u32 = 50;
 }
 
+/* TODO:
 impl pallet_balances::Config for Test {
     type MaxLocks = MaxLocks;
     type Balance = Balance;
@@ -109,6 +113,7 @@ impl pallet_balances::Config for Test {
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
 }
+*/
 
 parameter_types! {
     pub const AssetDeposit: Balance = 0; // Does not really matter as this will be only called by root
@@ -119,6 +124,7 @@ parameter_types! {
     pub const MetadataDepositPerByte: Balance = 0;
 }
 
+/* TODO:
 impl pallet_assets::Config for Test {
     type Event = Event;
     type Balance = Balance;
@@ -135,11 +141,14 @@ impl pallet_assets::Config for Test {
     type Extra = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Test>;
 }
+*/
 
 ///
 pub struct MantaAssetRegistry;
 
-impl AssetRegistry<Test, MantaAssetConfig> for MantaAssetRegistry {
+/* TODO:
+
+impl AssetRegistry for MantaAssetRegistry {
     fn create_asset(
         asset_id: AssetId,
         min_balance: Balance,
@@ -193,7 +202,7 @@ parameter_types! {
     pub const NativeAssetId: AssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
-    pub NativeAssetMetadata: AssetRegistryMetadata = AssetRegistryMetadata {
+    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
         name: b"Dolphin".to_vec(),
         symbol: b"DOL".to_vec(),
         decimals: 18,
@@ -205,18 +214,21 @@ parameter_types! {
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
 }
 
+*/
+
 ///
 #[derive(Clone, Eq, PartialEq)]
 pub struct MantaAssetConfig;
 
+/* TODO:
+
 impl AssetConfig<Test> for MantaAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetId = NativeAssetId;
-    type AssetRegistryMetadata = AssetRegistryMetadata;
+    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
-    type AssetLocation = AssetLocation;
     type AssetRegistry = MantaAssetRegistry;
     type FungibleLedger = NativeAndNonNative<Test, MantaAssetConfig, Balances, Assets>;
 }
@@ -229,20 +241,27 @@ impl pallet_asset_manager::Config for Test {
     type WeightInfo = ();
 }
 
+*/
+
 parameter_types! {
     pub const MantaPayPalletId: PalletId = MANTA_PAY_PALLET_ID;
 }
 
+/* TODO:
 impl crate::Config for Test {
     type Event = Event;
     type WeightInfo = crate::weights::SubstrateWeight<Self>;
     type PalletId = MantaPayPalletId;
     type AssetConfig = MantaAssetConfig;
 }
+*/
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
+    /*
     frame_system::GenesisConfig::default()
         .build_storage::<Test>()
         .unwrap()
         .into()
+    */
+    todo!()
 }

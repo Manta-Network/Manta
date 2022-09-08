@@ -142,4 +142,4 @@ benchmarks! {
     }
 }
 
-impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
+// TODO: impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);

@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    mock::{new_test_ext, MantaAssetConfig, MantaAssetRegistry, MantaPayPallet, Origin, Test},
+    mock::{new_test_ext, MantaAssetConfig, MantaAssetRegistry},
     types::{Asset, AssetId, AssetValue},
     Error, FungibleLedger,
 };
@@ -47,9 +47,10 @@ lazy_static::lazy_static! {
     static ref UTXO_ACCUMULATOR_MODEL: UtxoAccumulatorModel = load_utxo_accumulator_model();
 }
 
+/* TODO:
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
-pub const NATIVE_ASSET_ID: AssetId =
-    AssetId(<MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get());
+pub const NATIVE_ASSET_ID: AssetId = <MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get();
+*/
 
 /// Loads the [`MultiProvingContext`].
 #[inline]
