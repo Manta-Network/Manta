@@ -450,10 +450,12 @@ pub mod pallet {
                     selected_collators_number: collator_count,
                     total_balance: total_staked,
                 });
-                weight = weight.saturating_add(<T as Config>::WeightInfo::round_transition_on_initialize(
-                    collator_count,
-                    delegation_count,
-                ));
+                weight = weight.saturating_add(
+                    <T as Config>::WeightInfo::round_transition_on_initialize(
+                        collator_count,
+                        delegation_count,
+                    ),
+                );
             }
 
             weight = weight.saturating_add(Self::handle_delayed_payouts(round.current));
@@ -898,7 +900,10 @@ pub mod pallet {
                     Error::<T>::CandidateCannotLeaveYet
                 );
                 ensure!(
-                    false == manta_collator_selection::Pallet::<T>::candidates().iter().any(|x| x.who == acc.clone()),
+                    false
+                        == manta_collator_selection::Pallet::<T>::candidates()
+                            .iter()
+                            .any(|x| x.who == acc.clone()),
                     Error::<T>::CandidateExists
                 );
             } else {
@@ -1460,9 +1465,10 @@ pub mod pallet {
             // reserve portion of issuance for parachain bond account
             let bond_config = <ParachainBondInfo<T>>::get();
             let parachain_bond_reserve = bond_config.percent * total_issuance;
-            if let Ok(imb) =
-                <T as Config>::Currency::deposit_into_existing(&bond_config.account, parachain_bond_reserve)
-            {
+            if let Ok(imb) = <T as Config>::Currency::deposit_into_existing(
+                &bond_config.account,
+                parachain_bond_reserve,
+            ) {
                 // update round issuance iff transfer succeeds
                 left_issuance = left_issuance.saturating_sub(imb.peek());
                 Self::deposit_event(Event::ReservedForParachainBond {
@@ -1530,7 +1536,9 @@ pub mod pallet {
             }
 
             let mint = |amt: BalanceOf<T>, to: T::AccountId| {
-                if let Ok(amount_transferred) = <T as Config>::Currency::deposit_into_existing(&to, amt) {
+                if let Ok(amount_transferred) =
+                    <T as Config>::Currency::deposit_into_existing(&to, amt)
+                {
                     Self::deposit_event(Event::Rewarded {
                         account: to.clone(),
                         rewards: amount_transferred.peek(),
@@ -1583,7 +1591,8 @@ pub mod pallet {
 
                 (
                     Some((collator, total_paid)),
-                    <T as Config>::WeightInfo::pay_one_collator_reward(num_delegators as u32) + extra_weight,
+                    <T as Config>::WeightInfo::pay_one_collator_reward(num_delegators as u32)
+                        + extra_weight,
                 )
             } else {
                 // Note that we don't clean up storage here; it is cleaned up in

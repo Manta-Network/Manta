@@ -153,14 +153,12 @@ impl Config for Test {
     type WeightInfo = ();
 }
 
+use frame_support::traits::{ValidatorRegistration, ValidatorSet};
 /// WHITELIST BEGIN TEMPORARY SECTION FOR TIGHTLY COUPLED COLLATOR_SELECTION/SESSION PALLETS
 /// TODO: Remove after end of whitelist-period
-use frame_support::{
-    ord_parameter_types, PalletId};
-use sp_runtime::traits::ConstU32;
-use frame_support::traits::ValidatorRegistration;
+use frame_support::{ord_parameter_types, PalletId};
 use manta_collator_selection::IdentityCollator;
-use frame_support::traits::ValidatorSet;
+use sp_runtime::traits::ConstU32;
 
 ord_parameter_types! {
     pub const RootAccount: u64 = 777;
@@ -203,8 +201,7 @@ impl manta_collator_selection::Config for Test {
     type CanAuthor = ();
 }
 
-use sp_runtime::traits::OpaqueKeys;
-use sp_runtime::RuntimeAppPublic;
+use sp_runtime::{traits::OpaqueKeys, RuntimeAppPublic};
 parameter_types! {
     pub static SessionHandlerCollators: Vec<u64> = Vec::new();
     pub static SessionChangeBlock: u64 = 0;

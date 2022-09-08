@@ -62,9 +62,9 @@ use manta_primitives::{
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 pub use pallet_parachain_staking::{InflationInfo, Range};
+use pallet_session::ShouldEndSession;
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
-use pallet_session::ShouldEndSession;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -720,9 +720,9 @@ parameter_types! {
 // but the pallet is used for SessionKeys storage
 pub struct NeverEndSession;
 impl ShouldEndSession<u32> for NeverEndSession {
-	fn should_end_session(_: u32) -> bool {
+    fn should_end_session(_: u32) -> bool {
         false
-	}
+    }
 }
 
 impl pallet_session::Config for Runtime {

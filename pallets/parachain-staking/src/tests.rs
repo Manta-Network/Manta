@@ -27,7 +27,7 @@ use crate::{
     delegation_requests::{CancelledScheduledRequest, DelegationAction, ScheduledRequest},
     mock::{
         roll_one_block, roll_to, roll_to_round_begin, roll_to_round_end, set_author, Balances,
-        Event as MetaEvent, ExtBuilder, Origin, ParachainStaking, Test, CollatorSelection
+        CollatorSelection, Event as MetaEvent, ExtBuilder, Origin, ParachainStaking, Test,
     },
     set::OrderedSet,
     AtStake, Bond, BottomDelegations, CandidateInfo, CandidateMetadata, CandidatePool,
@@ -734,46 +734,58 @@ fn cannot_join_candidates_if_candidate() {
 }
 
 // WHITELIST BEGIN SECTION Remove after whitelist period
-use crate::mock::RootAccount;
-use crate::mock::Session;
+use crate::mock::{RootAccount, Session};
 use sp_runtime::testing::UintAuthorityId;
 
 // Note: Anything but 7 is registered in mock
-const WHITELISTED_ACCOUNT_ID : u64 = 0x5;
-const NON_WHITELISTED_ACCOUNT_ID : u64 = 0x7;
+const WHITELISTED_ACCOUNT_ID: u64 = 0x5;
+const NON_WHITELISTED_ACCOUNT_ID: u64 = 0x7;
 #[test]
 fn can_join_candidates_with_smaller_bond_if_whitelisted() {
     ExtBuilder::default()
-        .with_balances(vec![(1, 50), (2, 20),(WHITELISTED_ACCOUNT_ID,30)])
+        .with_balances(vec![(1, 50), (2, 20), (WHITELISTED_ACCOUNT_ID, 30)])
         .with_candidates(vec![(1, 50)])
         .build()
         .execute_with(|| {
             // Register with collator_selection
-            assert_ok!(CollatorSelection::set_desired_candidates(Origin::signed(RootAccount::get()), 10));
-            assert_ok!(Session::set_keys( // type of keys doesn't matter, we only want to have the collator registered
+            assert_ok!(CollatorSelection::set_desired_candidates(
+                Origin::signed(RootAccount::get()),
+                10
+            ));
+            assert_ok!(Session::set_keys(
+                // type of keys doesn't matter, we only want to have the collator registered
                 Origin::signed(WHITELISTED_ACCOUNT_ID),
                 UintAuthorityId(123).into(),
                 vec![]
             ));
-            assert_ok!(CollatorSelection::register_candidate(Origin::signed(RootAccount::get()), WHITELISTED_ACCOUNT_ID));
+            assert_ok!(CollatorSelection::register_candidate(
+                Origin::signed(RootAccount::get()),
+                WHITELISTED_ACCOUNT_ID
+            ));
             // Migrate
-            assert_ok!(
-                ParachainStaking::join_candidates(Origin::signed(WHITELISTED_ACCOUNT_ID), 1u128, 6u32)
-            );
+            assert_ok!(ParachainStaking::join_candidates(
+                Origin::signed(WHITELISTED_ACCOUNT_ID),
+                1u128,
+                6u32
+            ));
             assert!(CollatorSelection::candidates().is_empty());
         });
 }
 #[test]
 fn non_whitelisted_candidate_cant_join_with_smaller_bond() {
     ExtBuilder::default()
-        .with_balances(vec![(1, 50), (2, 20),(NON_WHITELISTED_ACCOUNT_ID,30)])
+        .with_balances(vec![(1, 50), (2, 20), (NON_WHITELISTED_ACCOUNT_ID, 30)])
         .with_candidates(vec![(1, 50)])
         .build()
         .execute_with(|| {
             // Migrate
             assert_noop!(
                 // Note: 7 is NOT registered as collators_selection candidate in mock
-                ParachainStaking::join_candidates(Origin::signed(NON_WHITELISTED_ACCOUNT_ID), 1u128, 6u32),
+                ParachainStaking::join_candidates(
+                    Origin::signed(NON_WHITELISTED_ACCOUNT_ID),
+                    1u128,
+                    6u32
+                ),
                 Error::<Test>::CandidateBondBelowMin
             );
         });
@@ -781,35 +793,50 @@ fn non_whitelisted_candidate_cant_join_with_smaller_bond() {
 #[test]
 fn cannot_join_candidates_with_smaller_bond_twice_if_whitelisted() {
     ExtBuilder::default()
-        .with_balances(vec![(1, 50), (2, 20),(WHITELISTED_ACCOUNT_ID,30)])
+        .with_balances(vec![(1, 50), (2, 20), (WHITELISTED_ACCOUNT_ID, 30)])
         .with_candidates(vec![(1, 50)])
         .build()
         .execute_with(|| {
             // Register with collator_selection
-            assert_ok!(CollatorSelection::set_desired_candidates(Origin::signed(RootAccount::get()), 10));
+            assert_ok!(CollatorSelection::set_desired_candidates(
+                Origin::signed(RootAccount::get()),
+                10
+            ));
             assert_ok!(Session::set_keys(
                 Origin::signed(WHITELISTED_ACCOUNT_ID),
                 UintAuthorityId(7).into(),
                 vec![]
             ));
-            assert_ok!(CollatorSelection::register_candidate(Origin::signed(RootAccount::get()), WHITELISTED_ACCOUNT_ID));
+            assert_ok!(CollatorSelection::register_candidate(
+                Origin::signed(RootAccount::get()),
+                WHITELISTED_ACCOUNT_ID
+            ));
             // Migrate
-            assert_ok!(
-                ParachainStaking::join_candidates(Origin::signed(WHITELISTED_ACCOUNT_ID), 1u128, 6u32)
-            );
+            assert_ok!(ParachainStaking::join_candidates(
+                Origin::signed(WHITELISTED_ACCOUNT_ID),
+                1u128,
+                6u32
+            ));
             assert!(CollatorSelection::candidates().is_empty());
             // leave the candidate set
-            assert_ok!(
-                ParachainStaking::schedule_leave_candidates(Origin::signed(WHITELISTED_ACCOUNT_ID), 6u32)
-            );
+            assert_ok!(ParachainStaking::schedule_leave_candidates(
+                Origin::signed(WHITELISTED_ACCOUNT_ID),
+                6u32
+            ));
             // Forward the chain
             let num_blocks = roll_to_round_end(5);
-            assert_ok!(
-                ParachainStaking::execute_leave_candidates(Origin::signed(1),WHITELISTED_ACCOUNT_ID,6)
-            );
+            assert_ok!(ParachainStaking::execute_leave_candidates(
+                Origin::signed(1),
+                WHITELISTED_ACCOUNT_ID,
+                6
+            ));
             // attempt to reenter
             assert_noop!(
-                ParachainStaking::join_candidates(Origin::signed(WHITELISTED_ACCOUNT_ID), 1u128, 1u32),
+                ParachainStaking::join_candidates(
+                    Origin::signed(WHITELISTED_ACCOUNT_ID),
+                    1u128,
+                    1u32
+                ),
                 Error::<Test>::CandidateBondBelowMin
             );
         });
@@ -817,34 +844,48 @@ fn cannot_join_candidates_with_smaller_bond_twice_if_whitelisted() {
 #[test]
 fn cant_reduce_bond_between_1_and_10() {
     ExtBuilder::default()
-        .with_balances(vec![(1, 50), (2, 20),(WHITELISTED_ACCOUNT_ID,30)])
+        .with_balances(vec![(1, 50), (2, 20), (WHITELISTED_ACCOUNT_ID, 30)])
         .with_candidates(vec![(1, 50)])
         .build()
         .execute_with(|| {
             // Register with collator_selection
-            assert_ok!(CollatorSelection::set_desired_candidates(Origin::signed(RootAccount::get()), 10));
-            assert_ok!(Session::set_keys( // type of keys doesn't matter, we only want to have the collator registered
+            assert_ok!(CollatorSelection::set_desired_candidates(
+                Origin::signed(RootAccount::get()),
+                10
+            ));
+            assert_ok!(Session::set_keys(
+                // type of keys doesn't matter, we only want to have the collator registered
                 Origin::signed(WHITELISTED_ACCOUNT_ID),
                 UintAuthorityId(123).into(),
                 vec![]
             ));
-            assert_ok!(CollatorSelection::register_candidate(Origin::signed(RootAccount::get()), WHITELISTED_ACCOUNT_ID));
+            assert_ok!(CollatorSelection::register_candidate(
+                Origin::signed(RootAccount::get()),
+                WHITELISTED_ACCOUNT_ID
+            ));
             // Migrate
-            assert_ok!(
-                ParachainStaking::join_candidates(Origin::signed(WHITELISTED_ACCOUNT_ID), 1u128, 6u32)
-            );
+            assert_ok!(ParachainStaking::join_candidates(
+                Origin::signed(WHITELISTED_ACCOUNT_ID),
+                1u128,
+                6u32
+            ));
             assert!(CollatorSelection::candidates().is_empty());
             // Bond more
-            assert_ok!(
-                ParachainStaking::candidate_bond_more(Origin::signed(WHITELISTED_ACCOUNT_ID), 5u128)
-            );
+            assert_ok!(ParachainStaking::candidate_bond_more(
+                Origin::signed(WHITELISTED_ACCOUNT_ID),
+                5u128
+            ));
             // Bond more
-            assert_ok!(
-                ParachainStaking::candidate_bond_more(Origin::signed(WHITELISTED_ACCOUNT_ID), 5u128)
-            );
+            assert_ok!(ParachainStaking::candidate_bond_more(
+                Origin::signed(WHITELISTED_ACCOUNT_ID),
+                5u128
+            ));
             // attempt to bond less
             assert_noop!(
-                ParachainStaking::schedule_candidate_bond_less(Origin::signed(WHITELISTED_ACCOUNT_ID), 2u128),
+                ParachainStaking::schedule_candidate_bond_less(
+                    Origin::signed(WHITELISTED_ACCOUNT_ID),
+                    2u128
+                ),
                 Error::<Test>::CandidateBondBelowMin
             );
         });
@@ -852,59 +893,84 @@ fn cant_reduce_bond_between_1_and_10() {
 #[test]
 fn can_reduce_bond_to_10() {
     ExtBuilder::default()
-        .with_balances(vec![(1, 50), (2, 20),(WHITELISTED_ACCOUNT_ID,30)])
+        .with_balances(vec![(1, 50), (2, 20), (WHITELISTED_ACCOUNT_ID, 30)])
         .with_candidates(vec![(1, 50)])
         .build()
         .execute_with(|| {
             // Register with collator_selection
-            assert_ok!(CollatorSelection::set_desired_candidates(Origin::signed(RootAccount::get()), 10));
-            assert_ok!(Session::set_keys( // type of keys doesn't matter, we only want to have the collator registered
+            assert_ok!(CollatorSelection::set_desired_candidates(
+                Origin::signed(RootAccount::get()),
+                10
+            ));
+            assert_ok!(Session::set_keys(
+                // type of keys doesn't matter, we only want to have the collator registered
                 Origin::signed(WHITELISTED_ACCOUNT_ID),
                 UintAuthorityId(123).into(),
                 vec![]
             ));
-            assert_ok!(CollatorSelection::register_candidate(Origin::signed(RootAccount::get()), WHITELISTED_ACCOUNT_ID));
+            assert_ok!(CollatorSelection::register_candidate(
+                Origin::signed(RootAccount::get()),
+                WHITELISTED_ACCOUNT_ID
+            ));
             // Migrate
-            assert_ok!(
-                ParachainStaking::join_candidates(Origin::signed(WHITELISTED_ACCOUNT_ID), 1u128, 6u32)
-            );
+            assert_ok!(ParachainStaking::join_candidates(
+                Origin::signed(WHITELISTED_ACCOUNT_ID),
+                1u128,
+                6u32
+            ));
             assert!(CollatorSelection::candidates().is_empty());
             // Bond more 1 + 10 = 11
-            assert_ok!(
-                ParachainStaking::candidate_bond_more(Origin::signed(WHITELISTED_ACCOUNT_ID), 10u128)
-            );
+            assert_ok!(ParachainStaking::candidate_bond_more(
+                Origin::signed(WHITELISTED_ACCOUNT_ID),
+                10u128
+            ));
             // attempt to bond less -> 11 - 1 = 10
-            assert_ok!(
-                ParachainStaking::schedule_candidate_bond_less(Origin::signed(WHITELISTED_ACCOUNT_ID), 1u128)
-            );
+            assert_ok!(ParachainStaking::schedule_candidate_bond_less(
+                Origin::signed(WHITELISTED_ACCOUNT_ID),
+                1u128
+            ));
         });
-}#[test]
+}
+#[test]
 fn cant_reduce_bond_below_10() {
     ExtBuilder::default()
-        .with_balances(vec![(1, 50), (2, 20),(WHITELISTED_ACCOUNT_ID,30)])
+        .with_balances(vec![(1, 50), (2, 20), (WHITELISTED_ACCOUNT_ID, 30)])
         .with_candidates(vec![(1, 50)])
         .build()
         .execute_with(|| {
             // Register with collator_selection
-            assert_ok!(CollatorSelection::set_desired_candidates(Origin::signed(RootAccount::get()), 10));
-            assert_ok!(Session::set_keys( // type of keys doesn't matter, we only want to have the collator registered
+            assert_ok!(CollatorSelection::set_desired_candidates(
+                Origin::signed(RootAccount::get()),
+                10
+            ));
+            assert_ok!(Session::set_keys(
+                // type of keys doesn't matter, we only want to have the collator registered
                 Origin::signed(WHITELISTED_ACCOUNT_ID),
                 UintAuthorityId(123).into(),
                 vec![]
             ));
-            assert_ok!(CollatorSelection::register_candidate(Origin::signed(RootAccount::get()), WHITELISTED_ACCOUNT_ID));
+            assert_ok!(CollatorSelection::register_candidate(
+                Origin::signed(RootAccount::get()),
+                WHITELISTED_ACCOUNT_ID
+            ));
             // Migrate
-            assert_ok!(
-                ParachainStaking::join_candidates(Origin::signed(WHITELISTED_ACCOUNT_ID), 1u128, 6u32)
-            );
+            assert_ok!(ParachainStaking::join_candidates(
+                Origin::signed(WHITELISTED_ACCOUNT_ID),
+                1u128,
+                6u32
+            ));
             assert!(CollatorSelection::candidates().is_empty());
             // Bond more 1 + 10 = 11
-            assert_ok!(
-                ParachainStaking::candidate_bond_more(Origin::signed(WHITELISTED_ACCOUNT_ID), 10u128)
-            );
+            assert_ok!(ParachainStaking::candidate_bond_more(
+                Origin::signed(WHITELISTED_ACCOUNT_ID),
+                10u128
+            ));
             // attempt to bond less -> 11 - 3 = 8
             assert_noop!(
-                ParachainStaking::schedule_candidate_bond_less(Origin::signed(WHITELISTED_ACCOUNT_ID), 3u128),
+                ParachainStaking::schedule_candidate_bond_less(
+                    Origin::signed(WHITELISTED_ACCOUNT_ID),
+                    3u128
+                ),
                 Error::<Test>::CandidateBondBelowMin
             );
         });
