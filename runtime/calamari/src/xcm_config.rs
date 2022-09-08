@@ -54,9 +54,9 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
-    ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SovereignSignedViaLocation, TakeWeightCredit,
+    EnsureXcmOrigin, FixedRateOfFungible, LocationInverter, ParentAsSuperuser, ParentIsPreset,
+    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SovereignSignedViaLocation, TakeWeightCredit, WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
@@ -80,7 +80,6 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 impl parachain_info::Config for Runtime {}
 
 parameter_types! {
-    pub const KsmLocation: MultiLocation = MultiLocation::parent();
     pub const RelayNetwork: NetworkId = NetworkId::Kusama;
     pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
@@ -213,7 +212,8 @@ impl Config for XcmExecutorConfig {
     type IsTeleporter = ();
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = Barrier;
-    type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+    type Weigher =
+        WeightInfoBounds<crate::weights::xcm::CalamariXcmWeight<Call>, Call, MaxInstructions>;
     // Trader is the means to purchasing weight credit for XCM execution.
     // We define two traders:
     // The first one will charge parachain's native currency, who's `MultiLocation`
@@ -258,7 +258,8 @@ impl pallet_xcm::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Nothing;
-    type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+    type Weigher =
+        WeightInfoBounds<crate::weights::xcm::CalamariXcmWeight<Call>, Call, MaxInstructions>;
     type LocationInverter = LocationInverter<Ancestry>;
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 }
@@ -299,7 +300,7 @@ where
 {
     fn convert(currency: CurrencyId) -> Option<MultiLocation> {
         match currency {
-            CurrencyId::MantaCurrency(asset_id) => match AssetXConverter::reverse_ref(&asset_id) {
+            CurrencyId::MantaCurrency(asset_id) => match AssetXConverter::reverse_ref(asset_id) {
                 Ok(location) => Some(location),
                 Err(_) => None,
             },
@@ -325,7 +326,8 @@ impl orml_xtokens::Config for Runtime {
     // Take note that this pallet does not have the typical configurable WeightInfo.
     // It uses the Weigher configuration to calculate weights for the user callable extrinsics on this chain,
     // as well as weights for execution on the destination chain. Both based on the composed xcm messages.
-    type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+    type Weigher =
+        WeightInfoBounds<crate::weights::xcm::CalamariXcmWeight<Call>, Call, MaxInstructions>;
     type BaseXcmWeight = BaseXcmWeight;
     type LocationInverter = LocationInverter<Ancestry>;
     type MaxAssetsForTransfer = MaxAssetsForTransfer;

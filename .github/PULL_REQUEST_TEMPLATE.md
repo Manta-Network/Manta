@@ -10,7 +10,8 @@ write a little note why.
 
 - [ ] Linked to Github issue with discussion and accepted design OR have an explanation in the PR that describes this work.
 - [ ] Added **one** label out of the `L-` group to this PR
-- [ ] Added **one or more** labels out of `A-` and `C-` groups to this PR
+- [ ] Added **one or more** labels from the `A-` and `C-` groups to this PR
+- [ ] Explicitly labelled `A-calamari`, `A-dolphin` and/or `A-manta` if your changes are meant for/impact either of these (CI depends on it)
 - [ ] Re-reviewed `Files changed` in the Github PR explorer.
 
 

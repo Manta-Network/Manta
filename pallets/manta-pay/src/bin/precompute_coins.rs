@@ -231,7 +231,7 @@ fn main() -> Result<()> {
         target_file,
     );
     fs::create_dir_all(
-        &target_file
+        target_file
             .parent()
             .expect("This file should have a parent."),
     )?;
