@@ -460,6 +460,30 @@ pub struct TransferPost {
     pub proof: Proof,
 }
 
+impl TransferPost {
+    /// Constructs an [`Asset`] against the `asset_id` of `self` and `value`.
+    #[inline]
+    fn construct_asset(&self, value: &AssetValue) -> Option<Asset> {
+        Some(Asset::new(self.asset_id?, *value))
+    }
+
+    /// Returns the `k`-th source in the transfer.
+    #[inline]
+    pub fn source(&self, k: usize) -> Option<Asset> {
+        self.sources
+            .get(k)
+            .and_then(|value| self.construct_asset(value))
+    }
+
+    /// Returns the `k`-th sink in the transfer.
+    #[inline]
+    pub fn sink(&self, k: usize) -> Option<Asset> {
+        self.sinks
+            .get(k)
+            .and_then(|value| self.construct_asset(value))
+    }
+}
+
 impl From<config::TransferPost> for TransferPost {
     #[inline]
     fn from(post: config::TransferPost) -> Self {
