@@ -29,10 +29,9 @@ use crate::{
         roll_one_block, roll_to, roll_to_round_begin, roll_to_round_end, set_author, Balances,
         CollatorSelection, Event as MetaEvent, ExtBuilder, Origin, ParachainStaking, Test,
     },
-    set::OrderedSet,
-    AtStake, Bond, BottomDelegations, CandidateInfo, CandidateMetadata, CandidatePool,
-    CapacityStatus, CollatorStatus, DelegationScheduledRequests, Delegations, DelegatorAdded,
-    DelegatorState, DelegatorStatus, Error, Event, Range, TopDelegations, DELEGATOR_LOCK_ID,
+    AtStake, Bond,
+    CollatorStatus, DelegationScheduledRequests, DelegatorAdded,
+    DelegatorState, DelegatorStatus, Error, Event, Range, DELEGATOR_LOCK_ID,
 };
 use frame_support::{assert_noop, assert_ok};
 use sp_runtime::{traits::Zero, DispatchError, ModuleError, Perbill, Percent};
