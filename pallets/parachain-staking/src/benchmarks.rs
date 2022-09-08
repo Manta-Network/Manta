@@ -1095,20 +1095,6 @@ mod tests {
     }
 
     #[test]
-    fn bench_hotfix_remove_delegation_requests() {
-        new_test_ext().execute_with(|| {
-            assert_ok!(Pallet::<Test>::test_benchmark_hotfix_remove_delegation_requests());
-        });
-    }
-
-    #[test]
-    fn bench_hotfix_update_candidate_pool_value() {
-        new_test_ext().execute_with(|| {
-            assert_ok!(Pallet::<Test>::test_benchmark_hotfix_update_candidate_pool_value());
-        });
-    }
-
-    #[test]
     fn bench_set_staking_expectations() {
         new_test_ext().execute_with(|| {
             assert_ok!(Pallet::<Test>::test_benchmark_set_staking_expectations());
