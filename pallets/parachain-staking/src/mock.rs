@@ -157,23 +157,16 @@ use frame_support::traits::{ValidatorRegistration, ValidatorSet};
 /// WHITELIST BEGIN TEMPORARY SECTION FOR TIGHTLY COUPLED COLLATOR_SELECTION/SESSION PALLETS
 /// TODO: Remove after end of whitelist-period
 use frame_support::{ord_parameter_types, PalletId};
+use frame_system::EnsureSignedBy;
 use manta_collator_selection::IdentityCollator;
 use sp_runtime::traits::ConstU32;
 
-ord_parameter_types! {
-    pub const RootAccount: u64 = 777;
-}
-
-parameter_types! {
-    pub const PotId: PalletId = PalletId(*b"PotStake");
-}
 pub struct IsRegistered;
 impl ValidatorRegistration<u64> for IsRegistered {
     fn is_registered(id: &u64) -> bool {
         *id != 7u64
     }
 }
-
 impl ValidatorSet<u64> for IsRegistered {
     type ValidatorId = u64;
     type ValidatorIdOf = IdentityCollator;
@@ -184,8 +177,12 @@ impl ValidatorSet<u64> for IsRegistered {
         Session::validators()
     }
 }
-
-use frame_system::EnsureSignedBy;
+parameter_types! {
+    pub const PotId: PalletId = PalletId(*b"PotStake");
+}
+ord_parameter_types! {
+    pub const RootAccount: u64 = 777;
+}
 impl manta_collator_selection::Config for Test {
     type Event = Event;
     type Currency = Balances;
