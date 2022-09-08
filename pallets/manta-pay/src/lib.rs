@@ -736,7 +736,7 @@ where
 
     #[inline]
     fn is_unspent(&self, nullifier: config::Nullifier) -> Option<Self::ValidNullifier> {
-        if NullifierCommitmentSet::<T>::contains_key(encode(&nullifier.commitment)) {
+        if NullifierCommitmentSet::<T>::contains_key(encode(nullifier.commitment)) {
             None
         } else {
             Some(Wrap(nullifier))
@@ -748,7 +748,7 @@ where
         &self,
         output: config::UtxoAccumulatorOutput,
     ) -> Option<Self::ValidUtxoAccumulatorOutput> {
-        if UtxoAccumulatorOutputs::<T>::contains_key(encode(&output)) {
+        if UtxoAccumulatorOutputs::<T>::contains_key(encode(output)) {
             return Some(Wrap(output));
         }
         None
@@ -763,7 +763,7 @@ where
         let index = NullifierSetSize::<T>::get();
         let mut i = 0;
         for (_, nullifier) in iter {
-            let nullifier_commitment = encode(&nullifier.0.commitment);
+            let nullifier_commitment = encode(nullifier.0.commitment);
             NullifierCommitmentSet::<T>::insert(nullifier_commitment, ());
             NullifierSetInsertionOrder::<T>::insert(
                 index + i,
@@ -935,38 +935,33 @@ where
     ) -> Option<(Self::ValidProof, Self::Event)> {
         let (mut verifying_context, event) =
             match TransferShape::from_posting_key_ref(&posting_key)? {
-                TransferShape::ToPrivate =>
-                /*(
+                TransferShape::ToPrivate => (
                     manta_parameters::pay::testnet::verifying::ToPrivate::get()
                         .expect("Checksum did not match."),
                     PreprocessedEvent::<T>::ToPrivate {
                         asset: Asset::new(
-                            posting_key.asset_id.unwrap().0,
+                            encode(posting_key.asset_id.unwrap()),
                             posting_key.sources[0].1,
                         ),
                         source: posting_key.sources[0].0.clone(),
                     },
-                )*/
-                {
-                    todo!()
-                }
+                ),
                 TransferShape::PrivateTransfer => (
                     manta_parameters::pay::testnet::verifying::PrivateTransfer::get()
                         .expect("Checksum did not match."),
                     PreprocessedEvent::<T>::PrivateTransfer,
                 ),
-                TransferShape::ToPublic =>
-                /*(
+                TransferShape::ToPublic => (
                     manta_parameters::pay::testnet::verifying::ToPublic::get()
                         .expect("Checksum did not match."),
                     PreprocessedEvent::<T>::ToPublic {
-                        asset: Asset::new(posting_key.asset_id.unwrap().0, posting_key.sinks[0].1),
+                        asset: Asset::new(
+                            encode(posting_key.asset_id.unwrap()),
+                            posting_key.sinks[0].1,
+                        ),
                         sink: posting_key.sinks[0].0.clone(),
                     },
-                )*/
-                {
-                    todo!()
-                }
+                ),
             };
         posting_key
             .has_valid_proof(

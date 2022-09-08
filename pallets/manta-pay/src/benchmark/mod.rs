@@ -18,7 +18,8 @@ use crate::{
     benchmark::precomputed_coins::{
         MINT, PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, RECLAIM, RECLAIM_INPUT,
     },
-    Asset, Call, Config, Event, Pallet, TransferPost,
+    types::{AssetId, AssetValue},
+    Call, Config, Event, Pallet, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
@@ -29,8 +30,6 @@ use manta_primitives::{
 use scale_codec::Decode;
 
 mod precomputed_coins;
-
-/* TODO:
 
 /// Asserts that the last event that has occured is the same as `event`.
 #[inline]
@@ -45,34 +44,35 @@ where
 
 /// Init assets for manta-pay
 #[inline]
-pub fn init_asset<T>(owner: &T::AccountId, id: AssetId, value: Balance)
+pub fn init_asset<T>(owner: &T::AccountId, id: AssetId, value: AssetValue)
 where
     T: Config,
 {
-    let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistrarMetadata::default();
+    let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::default();
     let storage_metadata: <T::AssetConfig as AssetConfig<T>>::StorageMetadata = metadata.into();
-    <T::AssetConfig as AssetConfig<T>>::AssetRegistrar::create_asset(
-        id,
-        DEFAULT_ASSET_ED,
+    <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
+        Pallet::<T>::id_from_field(id).expect("FIXME"),
         storage_metadata,
+        TEST_DEFAULT_ASSET_ED,
         true,
     )
     .expect("Unable to create asset.");
     let pallet_account: T::AccountId = Pallet::<T>::account_id();
-    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_mint(
-        id,
+    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
+        Pallet::<T>::id_from_field(id).expect("FIXME"),
         owner,
-        value + DEFAULT_ASSET_ED,
+        value + TEST_DEFAULT_ASSET_ED,
     )
     .expect("Unable to mint asset to its new owner.");
-    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_mint(
-        id,
+    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
+        Pallet::<T>::id_from_field(id).expect("FIXME"),
         &pallet_account,
-        DEFAULT_ASSET_ED,
+        TEST_DEFAULT_ASSET_ED,
     )
     .expect("Unable to mint existential deposit to pallet account.");
 }
 
+/* TODO:
 benchmarks! {
     to_private {
         let caller: T::AccountId = whitelisted_caller();

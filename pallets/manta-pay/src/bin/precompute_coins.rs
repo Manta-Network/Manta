@@ -16,14 +16,9 @@
 
 //! Precomputed Transactions
 
-/* TODO:
-
 use anyhow::Result;
 use indoc::indoc;
-use manta_accounting::{
-    asset::{Asset, AssetId},
-    transfer::{self, test::assert_valid_proof, SpendingKey},
-};
+use manta_accounting::transfer::{self, SpendingKey};
 use manta_crypto::{
     accumulator::Accumulator,
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
@@ -31,9 +26,9 @@ use manta_crypto::{
 };
 use manta_pay::{
     config::{
-        FullParameters, MerkleTreeConfiguration, Mint, MultiProvingContext, MultiVerifyingContext,
-        Parameters, PrivateTransfer, ProvingContext, Reclaim, UtxoAccumulatorModel,
-        VerifyingContext,
+        utxo::v1::MerkleTreeConfiguration, Asset, AssetId, AssetValue, FullParametersRef,
+        MultiProvingContext, MultiVerifyingContext, Parameters, PrivateTransfer, ProvingContext,
+        ToPrivate, ToPublic, UtxoAccumulatorModel, VerifyingContext,
     },
     parameters::load_parameters,
 };
@@ -51,9 +46,9 @@ use std::{
 type UtxoAccumulator =
     TreeArrayMerkleForest<MerkleTreeConfiguration, Full<MerkleTreeConfiguration>, 256>;
 
-/// Samples a [`Mint`] transaction.
+/// Samples a [`ToPrivate`] transaction.
 #[inline]
-fn sample_mint<R>(
+fn sample_to_private<R>(
     proving_context: &ProvingContext,
     verifying_context: &VerifyingContext,
     parameters: &Parameters,
@@ -64,6 +59,7 @@ fn sample_mint<R>(
 where
     R: CryptoRng + RngCore + ?Sized,
 {
+    /*
     let mint = Mint::from_spending_key(parameters, &SpendingKey::gen(rng), asset, rng)
         .into_post(
             FullParameters::new(parameters, utxo_accumulator_model),
@@ -73,9 +69,11 @@ where
         .expect("Unable to build MINT proof.");
     assert_valid_proof(verifying_context, &mint);
     mint.into()
+    */
+    todo!()
 }
 
-/// Samples a [`PrivateTransfer`] transaction under two [`Mint`]s.
+/// Samples a [`PrivateTransfer`] transaction under two [`ToPrivate`]s.
 #[inline]
 fn sample_private_transfer<R>(
     proving_context: &MultiProvingContext,
@@ -89,6 +87,7 @@ fn sample_private_transfer<R>(
 where
     R: CryptoRng + RngCore + ?Sized,
 {
+    /*
     let mut utxo_accumulator = UtxoAccumulator::new(utxo_accumulator_model.clone());
     let spending_key_0 = SpendingKey::new(rng.gen(), rng.gen());
     let (mint_0, pre_sender_0) = transfer::test::sample_mint(
@@ -131,11 +130,13 @@ where
     .expect("Unable to build PRIVATE_TRANSFER proof.");
     assert_valid_proof(&verifying_context.private_transfer, &private_transfer);
     ([mint_0.into(), mint_1.into()], private_transfer.into())
+    */
+    todo!()
 }
 
-/// Samples a [`Reclaim`] transaction under two [`Mint`]s.
+/// Samples a [`ToPublic`] transaction under two [`ToPrivate`]s.
 #[inline]
-fn sample_reclaim<R>(
+fn sample_to_public<R>(
     proving_context: &MultiProvingContext,
     verifying_context: &MultiVerifyingContext,
     parameters: &Parameters,
@@ -147,6 +148,7 @@ fn sample_reclaim<R>(
 where
     R: CryptoRng + RngCore + ?Sized,
 {
+    /*
     let mut utxo_accumulator = UtxoAccumulator::new(utxo_accumulator_model.clone());
     let spending_key_0 = SpendingKey::new(rng.gen(), rng.gen());
     let (mint_0, pre_sender_0) = transfer::test::sample_mint(
@@ -187,6 +189,8 @@ where
     .expect("Unable to build RECLAIM proof.");
     assert_valid_proof(&verifying_context.reclaim, &reclaim);
     ([mint_0.into(), mint_1.into()], reclaim.into())
+    */
+    todo!()
 }
 
 /// Writes a new `const` definition to `$writer`.
@@ -233,7 +237,7 @@ fn main() -> Result<()> {
         target_file,
     );
     fs::create_dir_all(
-        &target_file
+        target_file
             .parent()
             .expect("This file should have a parent."),
     )?;
@@ -244,14 +248,14 @@ fn main() -> Result<()> {
     let mut rng = ChaCha20Rng::from_seed([0; 32]);
     let (proving_context, verifying_context, parameters, utxo_accumulator_model) =
         load_parameters(directory.path()).expect("Unable to load parameters.");
-    let asset_id: u32 = 8;
+    let asset_id = 8.into();
 
-    let mint = sample_mint(
-        &proving_context.mint,
-        &verifying_context.mint,
+    let to_private = sample_to_private(
+        &proving_context.to_private,
+        &verifying_context.to_private,
         &parameters,
         &utxo_accumulator_model,
-        AssetId(asset_id).value(100_000),
+        Asset::new(asset_id, 100_000),
         &mut rng,
     );
     let (private_transfer_input, private_transfer) = sample_private_transfer(
@@ -259,17 +263,17 @@ fn main() -> Result<()> {
         &verifying_context,
         &parameters,
         &utxo_accumulator_model,
-        AssetId(asset_id).value(10_000),
-        AssetId(asset_id).value(20_000),
+        Asset::new(asset_id, 10_000),
+        Asset::new(asset_id, 20_000),
         &mut rng,
     );
-    let (reclaim_input, reclaim) = sample_reclaim(
+    let (to_public_input, to_public) = sample_to_public(
         &proving_context,
         &verifying_context,
         &parameters,
         &utxo_accumulator_model,
-        AssetId(asset_id).value(10_000),
-        AssetId(asset_id).value(20_000),
+        Asset::new(asset_id, 10_000),
+        Asset::new(asset_id, 20_000),
         &mut rng,
     );
 
@@ -303,11 +307,11 @@ fn main() -> Result<()> {
         "}
     )?;
 
-    write_const_array!(target_file, MINT, mint)?;
+    write_const_array!(target_file, TO_PRIVATE, to_private)?;
     write_const_nested_array!(target_file, PRIVATE_TRANSFER_INPUT, private_transfer_input)?;
     write_const_array!(target_file, PRIVATE_TRANSFER, private_transfer)?;
-    write_const_nested_array!(target_file, RECLAIM_INPUT, reclaim_input)?;
-    write_const_array!(target_file, RECLAIM, reclaim)?;
+    write_const_nested_array!(target_file, TO_PUBLIC_INPUT, to_public_input)?;
+    write_const_array!(target_file, TO_PUBLIC, to_public)?;
 
     directory
         .close()
@@ -315,7 +319,3 @@ fn main() -> Result<()> {
 
     Ok(())
 }
-
-*/
-
-fn main() {}

@@ -3324,6 +3324,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "gitignore"
+version = "1.0.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "78aa90e4620c1498ac434c06ba6e521b525794bbdacf085d490cc794b4a2f9a4"
+dependencies = [
+ "glob",
+]
+
+[[package]]
 name = "glob"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4946,7 +4955,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#93d802c0a29fd9deedf89e40f5ace8513989068c"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9e29fe6b7e2e6feaecf4e721fe6a1fb22fc15caa"
 dependencies = [
  "derivative",
  "derive_more",
@@ -4956,7 +4965,6 @@ dependencies = [
  "manta-util",
  "parking_lot 0.12.1",
  "statrs",
- "workspace-hack",
 ]
 
 [[package]]
@@ -4989,7 +4997,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#93d802c0a29fd9deedf89e40f5ace8513989068c"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9e29fe6b7e2e6feaecf4e721fe6a1fb22fc15caa"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -4999,27 +5007,27 @@ dependencies = [
  "derivative",
  "manta-util",
  "rand 0.8.5",
+ "rand_chacha 0.3.1",
  "rand_core 0.6.3",
- "workspace-hack",
 ]
 
 [[package]]
 name = "manta-parameters"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#93d802c0a29fd9deedf89e40f5ace8513989068c"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9e29fe6b7e2e6feaecf4e721fe6a1fb22fc15caa"
 dependencies = [
  "anyhow",
  "attohttpc",
  "blake3",
+ "gitignore",
  "hex",
  "walkdir",
- "workspace-hack",
 ]
 
 [[package]]
 name = "manta-pay"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#93d802c0a29fd9deedf89e40f5ace8513989068c"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9e29fe6b7e2e6feaecf4e721fe6a1fb22fc15caa"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -5039,7 +5047,6 @@ dependencies = [
  "rand_chacha 0.3.1",
  "scale-info",
  "tempfile",
- "workspace-hack",
 ]
 
 [[package]]
@@ -5131,11 +5138,11 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#93d802c0a29fd9deedf89e40f5ace8513989068c"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9e29fe6b7e2e6feaecf4e721fe6a1fb22fc15caa"
 dependencies = [
+ "crossbeam-channel",
  "serde",
  "serde_with",
- "workspace-hack",
 ]
 
 [[package]]
@@ -8556,6 +8563,7 @@ checksum = "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88"
 dependencies = [
  "ppv-lite86",
  "rand_core 0.6.3",
+ "serde",
 ]
 
 [[package]]
@@ -12230,13 +12238,12 @@ checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
 
 [[package]]
 name = "url"
-version = "2.2.2"
+version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a507c383b2d33b5fc35d1861e77e6b383d158b2da5e14fe51b83dfedf6fd578c"
+checksum = "22fe195a4f217c25b25cb5058ced57059824a678474874038dc88d211bf508d3"
 dependencies = [
  "form_urlencoded",
  "idna",
- "matches",
  "percent-encoding",
 ]
 
@@ -12917,11 +12924,6 @@ checksum = "80d0f4e272c85def139476380b12f9ac60926689dd2e01d4923222f40580869d"
 dependencies = [
  "winapi",
 ]
-
-[[package]]
-name = "workspace-hack"
-version = "0.1.0"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#93d802c0a29fd9deedf89e40f5ace8513989068c"
 
 [[package]]
 name = "wyz"
