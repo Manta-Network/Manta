@@ -408,7 +408,7 @@ jobs:
           if [ $? == 1 ]; then echo "Failed to finalize the target block - 6"; exit 1; fi
   # HELPER JOBS BELOW
   start-node-builder-current:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
+    if: ${{ always() }}
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -446,7 +446,7 @@ jobs:
           runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
   start-calamari-integration-tester:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
+    if: ${{ always() }}
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -484,7 +484,7 @@ jobs:
           runner-label: ${{ needs.start-calamari-integration-tester.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-calamari-integration-tester.outputs.aws-instance-id }}
   start-docker-image-tester:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
+    if: ${{ always() }}
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
