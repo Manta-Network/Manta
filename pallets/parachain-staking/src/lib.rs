@@ -48,6 +48,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#![allow(clippy::all)]
+
 mod delegation_requests;
 pub mod inflation;
 pub mod migrations;
