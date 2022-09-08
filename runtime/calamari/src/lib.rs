@@ -587,7 +587,7 @@ parameter_types! {
     /// Default percent of inflation set aside for parachain bond every round
     pub const DefaultParachainBondReservePercent: Percent = Percent::zero();
     pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(2 * HOURS ,15,"CALAMARI_DEFAULTBLOCKSPERROUND");
-    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(FixedU128::checked_from_rational(7u32.saturating_mul(DAYS.into()),u32::from(DefaultBlocksPerRound::get())).unwrap_or(FixedU128::from_inner(1u128)).into_inner().unique_saturated_into(),1,"CALAMARI_LEAVEDELAYROUNDS");
+    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(FixedU128::checked_from_rational(7u32.saturating_mul(DAYS),DefaultBlocksPerRound::get()).unwrap_or(FixedU128::from_inner(1u128)).into_inner().unique_saturated_into(),1,"CALAMARI_LEAVEDELAYROUNDS");
 }
 impl pallet_parachain_staking::Config for Runtime {
     type Event = Event;
