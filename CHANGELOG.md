@@ -1,15 +1,30 @@
-# CHANGELOG
+# CHANGELOG 
 
-## Unreleased
-### Breaking changes
+## v3.3.0
+### Added
+-[\#717](https://github.com/Manta-Network/Manta/pull/717) Dolphin-2085 on Baikal genesis [DO]
+-[\#712](https://github.com/Manta-Network/Manta/pull/712) Add RPC for latest checkpoint 
+-[\#763](https://github.com/Manta-Network/Manta/pull/763) Support verification of historic Aura blocks 
 
-### Features
+### Changed
+-[\#681](https://github.com/Manta-Network/Manta/pull/681) CI Ledger RPC Tests 
+-[\#682](https://github.com/Manta-Network/Manta/pull/682) Use `LengthToFee` in the `congested_chain_simulation`'s fee calculation 
+-[\#695](https://github.com/Manta-Network/Manta/pull/695) Refactor fungible ledger mint/burn 
+-[\#715](https://github.com/Manta-Network/Manta/pull/715) Update xcm-onboarding and release templates 
+-[\#701](https://github.com/Manta-Network/Manta/pull/701) switch runtime to wasm only 
+-[\#720](https://github.com/Manta-Network/Manta/pull/720) Update deps from v0.9.22 to v0.9.26 
+-[\#726](https://github.com/Manta-Network/Manta/pull/726) support STORAGE_VERSION for our pallets 
+-[\#738](https://github.com/Manta-Network/Manta/pull/738) Add changelog verification. Remove old changelog workflow 
+-[\#582](https://github.com/Manta-Network/Manta/pull/582) Consensus migration stage 1: Enable Nimbus-Aura [CADO]
+-[\#752](https://github.com/Manta-Network/Manta/pull/752) v3.3.0 bump versions and weights 
 
-### Improvements
-- [\#681](https://github.com/Manta-Network/Manta/pull/681) CI Ledger RPC Tests.
-- [\#694](https://github.com/Manta-Network/Manta/pull/694) Switch to u128::MAX in fungible ledger transfer integration test.
+### Fixed
+-[\#694](https://github.com/Manta-Network/Manta/pull/694) Use u128::MAX in fungible ledger transfer test 
+-[\#703](https://github.com/Manta-Network/Manta/pull/703) Fix double spend reclaim test 
+-[\#723](https://github.com/Manta-Network/Manta/pull/723) fix: upgrade to `manta-rs` v0.5.4 
 
-### Bug fixes
+### Removed
+-[\#737](https://github.com/Manta-Network/Manta/pull/737) Remove v3.2.1 SessionKey migration code [CADO]
 
 ## v3.2.1
 ### Breaking changes

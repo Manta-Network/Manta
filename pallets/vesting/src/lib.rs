@@ -49,6 +49,9 @@ const VESTING_ID: LockIdentifier = *b"calamvst";
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    use frame_support::traits::StorageVersion;
+
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -111,6 +114,7 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
+    #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
 
     #[pallet::event]
@@ -153,6 +157,7 @@ pub mod pallet {
         /// Update vesting schedule.
         ///
         /// - `new_schedule`: New schedule for vesting.
+        #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::update_vesting_schedule())]
         pub fn update_vesting_schedule(
             origin: OriginFor<T>,
@@ -206,6 +211,7 @@ pub mod pallet {
         /// locked under this pallet.
         ///
         /// Emits either `VestingCompleted` or `VestingUpdated`.
+        #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::vest())]
         pub fn vest(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
@@ -225,7 +231,8 @@ pub mod pallet {
         /// The dispatch origin for this call must be _Signed_.
         ///
         /// - `target`: The account receiving the vested funds.
-        /// - `locked_amount`: How much tokens will be transfered.
+        /// - `locked_amount`: How much tokens will be transferred.
+        #[pallet::call_index(2)]
         #[pallet::weight(T::WeightInfo::vested_transfer())]
         pub fn vested_transfer(
             origin: OriginFor<T>,
@@ -267,7 +274,7 @@ impl<T: Config> Pallet<T> {
     /// (Re)set pallet's currency lock on `who`'s account in accordance with their
     /// current unvested amount.
     fn update_lock(who: &T::AccountId) -> DispatchResult {
-        let vesting = Self::vesting_balance(&who).ok_or(Error::<T>::NotVesting)?;
+        let vesting = Self::vesting_balance(who).ok_or(Error::<T>::NotVesting)?;
         let now = T::Timestamp::now().as_secs();
 
         // compute the vested portion
@@ -284,7 +291,7 @@ impl<T: Config> Pallet<T> {
 
         if unvested.is_zero() {
             T::Currency::remove_lock(VESTING_ID, who);
-            VestingBalances::<T>::remove(&who);
+            VestingBalances::<T>::remove(who);
             Self::deposit_event(Event::<T>::VestingCompleted(who.clone()));
         } else {
             let reasons = WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE;
@@ -302,11 +309,11 @@ impl<T: Config> Pallet<T> {
 
         // Ensure current user doesn't have any vested token.
         ensure!(
-            !VestingBalances::<T>::contains_key(&who),
+            !VestingBalances::<T>::contains_key(who),
             Error::<T>::ExistingVestingSchedule
         );
 
-        VestingBalances::<T>::insert(&who, locked);
+        VestingBalances::<T>::insert(who, locked);
         // it can't fail, but even if somehow it did, we don't really care.
         Self::update_lock(who)
     }

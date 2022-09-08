@@ -17,8 +17,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use super::*;
+#[allow(deprecated)]
+use frame_support::migration::remove_storage_prefix;
 use frame_support::{
     dispatch::GetStorageVersion,
+    migration::{have_storage_value, storage_key_iter},
     pallet_prelude::Weight,
     traits::{Get, PalletInfoAccess, StorageVersion},
     Twox64Concat,
@@ -27,9 +30,6 @@ use frame_support::{
 /// This migrates the pallet from the standard version by parity to our modified storage.
 impl<T: Config> Pallet<T> {
     pub fn migrate_v0_to_v1() -> frame_support::weights::Weight {
-        use frame_support::migration::{
-            have_storage_value, remove_storage_prefix, storage_key_iter,
-        };
         // Storage migrations should use storage versions for safety.
         if Self::on_chain_storage_version() < 1 {
             log::info!("Executing collator-selection V0->V1 migration!");
@@ -45,6 +45,7 @@ impl<T: Config> Pallet<T> {
                 dropcount += 1;
             }
             log::info!(" >>> Cleaned {} keys from LastAuthoredBlock", dropcount);
+            #[allow(deprecated)]
             remove_storage_prefix(Self::name().as_bytes(), b"LastAuthoredBlock", &[]);
             log::info!(" >>> Removed LastAuthoredBlock from storage");
 
@@ -53,10 +54,11 @@ impl<T: Config> Pallet<T> {
 
             // Remove KickThreshold if customized
             if have_storage_value(Self::name().as_bytes(), b"KickThreshold", &[]) {
+                #[allow(deprecated)]
                 remove_storage_prefix(Self::name().as_bytes(), b"KickThreshold", &[]);
                 log::info!(" >>> Removed KickThreshold");
             } else {
-                log::warn!(" !!! Chain did not have KickThreshold in storage. This is uenexpected but is possible if the genesis config was never changed");
+                log::warn!(" !!! Chain did not have KickThreshold in storage. This is unexpected but is possible if the genesis config was never changed");
             }
 
             // Return the weight consumed by the migration.
@@ -67,7 +69,6 @@ impl<T: Config> Pallet<T> {
         }
     }
     pub fn pre_migrate_v0_to_v1() -> Result<(), &'static str> {
-        use frame_support::migration::{have_storage_value, storage_key_iter};
         let chainver = Self::on_chain_storage_version();
         if chainver >= 1 {
             return Err("Migration to V1 does not apply");
@@ -88,7 +89,6 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn post_migrate_v0_to_v1() -> Result<(), &'static str> {
-        use frame_support::migration::{have_storage_value, storage_key_iter};
         if Self::on_chain_storage_version() != 1 {
             return Err("storage version not upgraded");
         }

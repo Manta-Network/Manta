@@ -25,7 +25,7 @@ pub use calamari_runtime::{
     assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},
     currency::KMA,
     fee::{
-        FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY, TIPS_PERCENTAGE_TO_AUTHOR,
+        FEES_PERCENTAGE_TO_BURN, FEES_PERCENTAGE_TO_TREASURY, TIPS_PERCENTAGE_TO_AUTHOR,
         TIPS_PERCENTAGE_TO_TREASURY,
     },
     xcm_config::XcmFeesAccount,
@@ -64,7 +64,7 @@ use xcm::{
 
 use pallet_transaction_payment::ChargeTransactionPayment;
 
-use sp_consensus_aura::AURA_ENGINE_ID;
+use nimbus_primitives::NIMBUS_ENGINE_ID;
 use sp_core::{sr25519, H256};
 use sp_runtime::{
     generic::DigestItem,
@@ -435,10 +435,10 @@ fn seal_header(mut header: Header, author: AccountId) -> Header {
         let digest = header.digest_mut();
         digest
             .logs
-            .push(DigestItem::PreRuntime(AURA_ENGINE_ID, author.encode()));
+            .push(DigestItem::PreRuntime(NIMBUS_ENGINE_ID, author.encode()));
         digest
             .logs
-            .push(DigestItem::Seal(AURA_ENGINE_ID, author.encode()));
+            .push(DigestItem::Seal(NIMBUS_ENGINE_ID, author.encode()));
     }
 
     header
@@ -447,7 +447,7 @@ fn seal_header(mut header: Header, author: AccountId) -> Header {
 #[test]
 fn sanity_check_fees_and_tips_splits() {
     assert_eq!(100, TIPS_PERCENTAGE_TO_AUTHOR + TIPS_PERCENTAGE_TO_TREASURY);
-    assert_eq!(100, FEES_PERCENTAGE_TO_AUTHOR + FEES_PERCENTAGE_TO_TREASURY);
+    assert_eq!(100, FEES_PERCENTAGE_TO_BURN + FEES_PERCENTAGE_TO_TREASURY);
 }
 
 #[test]
@@ -515,7 +515,8 @@ fn reward_fees_to_block_author_and_treasury() {
             let author_received_reward = Balances::free_balance(alice) - INITIAL_BALANCE;
             println!("The rewarded_amount is: {:?}", author_received_reward);
 
-            let author_percent = Percent::from_percent(FEES_PERCENTAGE_TO_AUTHOR);
+            // Author should get none of the fees - 50% burned, 50% to treasury.
+            let author_percent = Percent::from_percent(0);
             let expected_fee =
                 TransactionPayment::compute_actual_fee(len as u32, &info, &post_info, 0);
             assert_eq!(author_received_reward, author_percent * expected_fee);
@@ -794,7 +795,6 @@ fn verify_pallet_prefixes() {
     is_pallet_prefix::<calamari_runtime::CollatorSelection>("CollatorSelection");
     is_pallet_prefix::<calamari_runtime::Session>("Session");
     is_pallet_prefix::<calamari_runtime::Aura>("Aura");
-    is_pallet_prefix::<calamari_runtime::AuraExt>("AuraExt");
     is_pallet_prefix::<calamari_runtime::Treasury>("Treasury");
     is_pallet_prefix::<calamari_runtime::Scheduler>("Scheduler");
     is_pallet_prefix::<calamari_runtime::XcmpQueue>("XcmpQueue");
@@ -804,6 +804,8 @@ fn verify_pallet_prefixes() {
     is_pallet_prefix::<calamari_runtime::Utility>("Utility");
     is_pallet_prefix::<calamari_runtime::Multisig>("Multisig");
     is_pallet_prefix::<calamari_runtime::CalamariVesting>("CalamariVesting");
+    is_pallet_prefix::<calamari_runtime::AuthorInherent>("AuthorInherent");
+    is_pallet_prefix::<calamari_runtime::AuraAuthorFilter>("AuraAuthorFilter");
 
     let prefix = |pallet_name, storage_name| {
         let mut res = [0u8; 32];
@@ -844,14 +846,14 @@ fn verify_pallet_prefixes() {
                 pallet_name: b"Balances".to_vec(),
                 storage_name: b"Account".to_vec(),
                 prefix: prefix(b"Balances", b"Account"),
-                max_values: Some(300_000),
+                max_values: None,
                 max_size: Some(112),
             },
             StorageInfo {
                 pallet_name: b"Balances".to_vec(),
                 storage_name: b"Locks".to_vec(),
                 prefix: prefix(b"Balances", b"Locks"),
-                max_values: Some(300_000),
+                max_values: None,
                 max_size: Some(1299),
             },
             StorageInfo {
@@ -912,7 +914,6 @@ fn verify_pallet_indices() {
     is_pallet_index::<calamari_runtime::CollatorSelection>(21);
     is_pallet_index::<calamari_runtime::Session>(22);
     is_pallet_index::<calamari_runtime::Aura>(23);
-    is_pallet_index::<calamari_runtime::AuraExt>(24);
     is_pallet_index::<calamari_runtime::Treasury>(26);
     is_pallet_index::<calamari_runtime::Preimage>(28);
     is_pallet_index::<calamari_runtime::Scheduler>(29);
@@ -926,6 +927,8 @@ fn verify_pallet_indices() {
     is_pallet_index::<calamari_runtime::Assets>(45);
     is_pallet_index::<calamari_runtime::AssetManager>(46);
     is_pallet_index::<calamari_runtime::CalamariVesting>(50);
+    is_pallet_index::<calamari_runtime::AuthorInherent>(60);
+    is_pallet_index::<calamari_runtime::AuraAuthorFilter>(63);
 
     // Check removed pallets.
     ExtBuilder::default().build().execute_with(|| {
@@ -936,6 +939,8 @@ fn verify_pallet_indices() {
         if let RuntimeMetadata::V14(v14) = runtime_metadata.1 {
             // Ensure sudo=42 has been removed, no one is taking this index.
             assert!(v14.pallets.iter().any(|pallet| pallet.index != 42));
+            // AuraExt
+            assert!(v14.pallets.iter().any(|pallet| pallet.index != 24));
         }
     });
 }
