@@ -433,11 +433,11 @@ jobs:
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-dolphin-integration-tester:
     if: ${{ always() }}
-    continue-on-error: true
     needs: [start-dolphin-integration-tester, dolphin-integration-test]
     runs-on: ubuntu-20.04
     steps:
-      - uses: audacious-network/aws-github-runner@v1.0.33
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
           github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
