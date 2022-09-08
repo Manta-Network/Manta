@@ -429,6 +429,7 @@ jobs:
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-node-builder-current:
     if: ${{ always() }}
+    continue-on-error: true
     needs: [start-node-builder-current, build-node-current]
     runs-on: ubuntu-20.04
     steps:
@@ -466,6 +467,7 @@ jobs:
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-runtime-upgrade-tester:
     if: ${{ always() }}
+    continue-on-error: true
     needs: [runtime-upgrade-test, check-for-runtime-upgrade, start-runtime-upgrade-tester]
     runs-on: ubuntu-20.04
     steps:

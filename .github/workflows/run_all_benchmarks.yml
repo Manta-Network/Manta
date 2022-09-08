@@ -147,6 +147,7 @@ jobs:
     needs: [run-benchmarks, start-node-builder-current]
     runs-on: ubuntu-20.04
     if: ${{ always() }}
+    continue-on-error: true
     steps:
       - uses: audacious-network/aws-github-runner@v1.0.33
         with:

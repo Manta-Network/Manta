@@ -432,6 +432,7 @@ jobs:
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-node-builder-current:
     if: ${{ always() }}
+    continue-on-error: true
     needs: [start-node-builder-current, build-node-current]
     runs-on: ubuntu-20.04
     steps:
@@ -469,6 +470,7 @@ jobs:
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-calamari-integration-tester:
     if: ${{ always() }}
+    continue-on-error: true
     needs: [start-calamari-integration-tester, calamari-integration-test]
     runs-on: ubuntu-20.04
     steps:
@@ -506,6 +508,7 @@ jobs:
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-docker-image-tester:
     if: ${{ always() }}
+    continue-on-error: true
     needs: [start-docker-image-tester, docker-image-test]
     runs-on: ubuntu-20.04
     steps:
