@@ -508,7 +508,7 @@ pub mod pallet {
                 AssetIdLocation::<T>::contains_key(&asset_id),
                 Error::<T>::UpdateNonExistentAsset
             );
-            UnitsPerSecond::<T>::insert(&asset_id, &units_per_second);
+            UnitsPerSecond::<T>::insert(&asset_id, units_per_second);
             Self::deposit_event(Event::<T>::UnitsPerSecondUpdated {
                 asset_id,
                 units_per_second,
@@ -537,9 +537,9 @@ pub mod pallet {
                 Error::<T>::UpdateNonExistentAsset
             );
             <T::AssetConfig as AssetConfig<T>>::FungibleLedger::try_deposit_minting(
-                &asset_id,
+                asset_id.clone(),
                 &beneficiary,
-                &amount,
+                amount.clone(),
                 true,
             )
             .map_err(|_| Error::<T>::MintError)?;
@@ -565,7 +565,7 @@ pub mod pallet {
             #[pallet::compact] min_xcm_fee: u128,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
-            MinXcmFee::<T>::insert(&reserve_chain, &min_xcm_fee);
+            MinXcmFee::<T>::insert(&reserve_chain, min_xcm_fee);
             Self::deposit_event(Event::<T>::MinXcmFeeUpdated {
                 reserve_chain,
                 min_xcm_fee,

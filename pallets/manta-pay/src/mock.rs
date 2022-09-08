@@ -23,8 +23,8 @@ use frame_support::{
 use frame_system::EnsureRoot;
 use manta_primitives::{
     assets::{
-        AssetConfig, AssetLocation, AssetRegistrar, AssetRegistrarMetadata, AssetStorageMetadata,
-        ConcreteFungibleLedger,
+        AssetConfig, AssetLocation, AssetRegistry, AssetRegistryMetadata, AssetStorageMetadata,
+        NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, MANTA_PAY_PALLET_ID},
     types::{AssetId, Balance},
@@ -136,8 +136,10 @@ impl pallet_assets::Config for Test {
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Test>;
 }
 
-pub struct MantaAssetRegistrar;
-impl AssetRegistrar<Test, MantaAssetConfig> for MantaAssetRegistrar {
+///
+pub struct MantaAssetRegistry;
+
+impl AssetRegistry<Test, MantaAssetConfig> for MantaAssetRegistry {
     fn create_asset(
         asset_id: AssetId,
         min_balance: Balance,
@@ -191,7 +193,7 @@ parameter_types! {
     pub const NativeAssetId: AssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
-    pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
+    pub NativeAssetMetadata: AssetRegistryMetadata = AssetRegistryMetadata {
         name: b"Dolphin".to_vec(),
         symbol: b"DOL".to_vec(),
         decimals: 18,
@@ -210,13 +212,13 @@ pub struct MantaAssetConfig;
 impl AssetConfig<Test> for MantaAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetId = NativeAssetId;
-    type AssetRegistrarMetadata = AssetRegistrarMetadata;
+    type AssetRegistryMetadata = AssetRegistryMetadata;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
     type AssetLocation = AssetLocation;
-    type AssetRegistrar = MantaAssetRegistrar;
-    type FungibleLedger = ConcreteFungibleLedger<Test, MantaAssetConfig, Balances, Assets>;
+    type AssetRegistry = MantaAssetRegistry;
+    type FungibleLedger = NativeAndNonNative<Test, MantaAssetConfig, Balances, Assets>;
 }
 
 impl pallet_asset_manager::Config for Test {
