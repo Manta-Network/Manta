@@ -824,7 +824,7 @@ fn cannot_join_candidates_with_smaller_bond_twice_if_whitelisted() {
                 6u32
             ));
             // Forward the chain
-            let num_blocks = roll_to_round_end(5);
+            let _ = roll_to_round_end(5);
             assert_ok!(ParachainStaking::execute_leave_candidates(
                 Origin::signed(1),
                 WHITELISTED_ACCOUNT_ID,
