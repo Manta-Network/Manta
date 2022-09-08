@@ -57,6 +57,7 @@ impl WeightToFeePolynomial for WeightToFee {
 
 #[cfg(test)]
 mod fee_split_tests {
+    use super::*;
     #[test]
     fn fee_split_adds_up_to_one() {
         assert_eq!(
