@@ -47,7 +47,6 @@
 //! To leave the set of delegators and revoke all delegations, call `leave_delegators`.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-
 #![allow(clippy::all)]
 
 mod delegation_requests;
