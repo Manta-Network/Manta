@@ -329,7 +329,9 @@ impl TryFrom<IncomingNote> for v1::IncomingNote {
     derive(Deserialize, Serialize),
     serde(crate = "manta_util::serde", deny_unknown_fields)
 )]
-#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
+#[derive(
+    Clone, Copy, Debug, Decode, Default, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo,
+)]
 pub struct Utxo {
     /// Transparency Flag
     pub is_transparent: bool,

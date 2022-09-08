@@ -4955,7 +4955,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9e29fe6b7e2e6feaecf4e721fe6a1fb22fc15caa"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#581e11e13a531ce0392a83c9ce89bff34a1d4034"
 dependencies = [
  "derivative",
  "derive_more",
@@ -4997,7 +4997,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9e29fe6b7e2e6feaecf4e721fe6a1fb22fc15caa"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#581e11e13a531ce0392a83c9ce89bff34a1d4034"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -5014,7 +5014,7 @@ dependencies = [
 [[package]]
 name = "manta-parameters"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9e29fe6b7e2e6feaecf4e721fe6a1fb22fc15caa"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#581e11e13a531ce0392a83c9ce89bff34a1d4034"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5027,7 +5027,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9e29fe6b7e2e6feaecf4e721fe6a1fb22fc15caa"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#581e11e13a531ce0392a83c9ce89bff34a1d4034"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -5138,7 +5138,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9e29fe6b7e2e6feaecf4e721fe6a1fb22fc15caa"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#581e11e13a531ce0392a83c9ce89bff34a1d4034"
 dependencies = [
  "crossbeam-channel",
  "serde",

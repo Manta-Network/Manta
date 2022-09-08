@@ -84,8 +84,10 @@ use manta_pay::{
     },
     manta_parameters::{self, Get as _},
     manta_util::codec::Decode as _,
+    parameters::load_transfer_parameters,
 };
 use manta_primitives::assets::{self, AssetConfig, FungibleLedger as _};
+use manta_util::{into_array_unchecked, Array};
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
@@ -626,29 +628,38 @@ pub mod pallet {
             sinks: Vec<T::AccountId>,
             post: TransferPost,
         ) -> DispatchResultWithPostInfo {
-            /*
             Self::deposit_event(
                 config::TransferPost::try_from(post)
                     .map_err(|_| Error::<T>::InvalidSerializedForm)?
-                    .post(parameters, &mut Ledger(PhantomData), &(), sources, sinks)
+                    .post(
+                        &load_transfer_parameters(),
+                        &mut Ledger(PhantomData),
+                        &(),
+                        sources,
+                        sinks,
+                    )
                     .map_err(Error::<T>::from)?
                     .convert(origin),
             );
             Ok(().into())
-            */
-            todo!()
         }
 
         ///
         #[inline]
         pub fn id_from_field(id: [u8; 32]) -> Option<StandardAssetId> {
-            todo!()
+            if u128::from_le_bytes(Array::from_iter(id[0..16].iter().copied()).into()) == 0 {
+                Some(u128::from_le_bytes(
+                    Array::from_iter(id[16..32].iter().copied()).into(),
+                ))
+            } else {
+                None
+            }
         }
 
         ///
         #[inline]
         pub fn field_from_id(id: StandardAssetId) -> [u8; 32] {
-            todo!()
+            into_array_unchecked([[0; 16], id.to_le_bytes()].concat())
         }
     }
 }
@@ -789,7 +800,7 @@ where
 
     #[inline]
     fn is_not_registered(&self, utxo: config::Utxo) -> Option<Self::ValidUtxo> {
-        if UtxoSet::<T>::contains_key(&Utxo::from(utxo.clone())) {
+        if UtxoSet::<T>::contains_key(Utxo::from(utxo)) {
             None
         } else {
             Some(Wrap(utxo))
@@ -802,11 +813,16 @@ where
         I: IntoIterator<Item = (Self::ValidUtxo, config::Note)>,
     {
         let _ = super_key;
-        let parameters = config::UtxoAccumulatorModel::decode(
+        let utxo_accumulator_model = config::UtxoAccumulatorModel::decode(
             manta_parameters::pay::testnet::parameters::UtxoAccumulatorModel::get()
                 .expect("Checksum did not match."),
         )
         .expect("Unable to decode the Merkle Tree Parameters.");
+        let utxo_accumulator_item_hash = config::utxo::v1::UtxoAccumulatorItemHash::decode(
+            manta_parameters::pay::testnet::parameters::UtxoAccumulatorItemHash::get()
+                .expect("Checksum did not match."),
+        )
+        .expect("Unable to decode the Merkle Tree Item Hash.");
         let mut shard_indices = iter
             .into_iter()
             .map(move |(utxo, note)| {
@@ -825,7 +841,6 @@ where
                 _ => shard_insertions.push((shard_index, vec![(utxo, note)])),
             }
         }
-        /*
         for (shard_index, insertions) in shard_insertions {
             let mut tree = ShardTrees::<T>::get(shard_index);
             let mut next_root = Option::<config::UtxoAccumulatorOutput>::None;
@@ -833,30 +848,24 @@ where
             for (utxo, note) in insertions {
                 next_root = Some(
                     merkle_tree::single_path::raw::insert(
-                        &parameters,
+                        &utxo_accumulator_model,
                         &mut tree.leaf_digest,
                         &mut current_path,
-                        utxo,
+                        utxo.item_hash(&utxo_accumulator_item_hash, &mut ()),
                     )
                     .expect("If this errors, then we have run out of Merkle Tree capacity."),
                 );
-                /*
                 let next_index = current_path.leaf_index().0 as u64;
-                let utxo = encode(&utxo);
+                let utxo = Utxo::from(utxo);
                 UtxoSet::<T>::insert(utxo, ());
                 Shards::<T>::insert(shard_index, next_index, (utxo, IncomingNote::from(note)));
-                */
             }
-            /*
             tree.current_path = current_path.into();
             if let Some(next_root) = next_root {
                 ShardTrees::<T>::insert(shard_index, tree);
-                UtxoAccumulatorOutputs::<T>::insert(encode(&next_root), ());
+                UtxoAccumulatorOutputs::<T>::insert(encode(next_root), ());
             }
-            */
         }
-        */
-        todo!()
     }
 }
 
