@@ -47,6 +47,8 @@ use scale_info::prelude::string::String;
 use sp_runtime::traits::{Saturating, Zero};
 use sp_std::{convert::TryInto, vec::Vec};
 
+/// BELOW THIS ARE HISTORIC MOONBEAM MIGRATIONS THAT WERE APPLIED BEFORE OUR FORK
+/*
 /// Migration to move delegator requests towards a delegation, from [DelegatorState] into
 /// [DelegationScheduledRequests] storage item.
 /// Additionally [DelegatorState] is migrated from [OldDelegator] to [Delegator].
@@ -96,7 +98,9 @@ impl<T: Config> SplitDelegatorStateIntoDelegationScheduledRequests<T> {
         }
     }
 }
+*/
 
+/*
 #[allow(deprecated)]
 impl<T: Config> OnRuntimeUpgrade for SplitDelegatorStateIntoDelegationScheduledRequests<T> {
     fn on_runtime_upgrade() -> Weight {
@@ -246,7 +250,9 @@ impl<T: Config> OnRuntimeUpgrade for SplitDelegatorStateIntoDelegationScheduledR
         Ok(())
     }
 }
+*/
 
+/*
 /// Migration to patch the incorrect delegations sums for all candidates
 pub struct PatchIncorrectDelegationSums<T>(PhantomData<T>);
 impl<T: Config> OnRuntimeUpgrade for PatchIncorrectDelegationSums<T> {
@@ -356,6 +362,7 @@ impl<T: Config> OnRuntimeUpgrade for PatchIncorrectDelegationSums<T> {
         Ok(())
     }
 }
+*/
 
 /*
 /// Migration to split CandidateState and minimize unnecessary storage reads
