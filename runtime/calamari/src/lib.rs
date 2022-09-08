@@ -209,8 +209,6 @@ impl Contains<Call> for BaseFilter {
             | Call::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
             | Call::AssetManager(_) // AssetManager is also filtered because all of its extrinsics
                                     // are callable only by Root, and Root calls skip this whole filter.
-            // Currently, we filter `register_as_candidate` as this call is not yet ready for community.
-            | Call::CollatorSelection( manta_collator_selection::Call::register_as_candidate{..})
             // For now disallow public proposal workflows, treasury workflows,
             // as well as external_propose and external_propose_majority.
             // The following are filtered out:
@@ -261,15 +259,6 @@ impl Contains<Call> for BaseFilter {
             | Call::CalamariVesting(_)
             | Call::Session(_) // User must be able to set their session key when applying for a collator
             | Call::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
-            | Call::CollatorSelection(
-                manta_collator_selection::Call::set_invulnerables{..}
-                | manta_collator_selection::Call::set_desired_candidates{..}
-                | manta_collator_selection::Call::set_candidacy_bond{..}
-                | manta_collator_selection::Call::set_eviction_baseline{..}
-                | manta_collator_selection::Call::set_eviction_tolerance{..}
-                | manta_collator_selection::Call::register_candidate{..}
-                | manta_collator_selection::Call::remove_collator{..}
-                | manta_collator_selection::Call::leave_intent{..})
             | Call::ParachainStaking(
                 // Collator extrinsics
                 pallet_parachain_staking::Call::join_candidates{..}
