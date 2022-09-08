@@ -24,9 +24,7 @@ use common::{info_from_weight, last_event, mock::*, root_origin, BOND_AMOUNT, IN
 pub use calamari_runtime::{
     assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},
     currency::KMA,
-    fee::{
-        FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY
-    },
+    fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
     xcm_config::XcmFeesAccount,
     AssetManager, Assets, Authorship, Balances, CalamariVesting, Council, Democracy,
     EnactmentPeriod, LaunchPeriod, NativeTokenExistentialDeposit, Origin, Period, PolkadotXcm,

@@ -59,7 +59,10 @@ impl WeightToFeePolynomial for WeightToFee {
 mod fee_split_tests {
     #[test]
     fn fee_split_adds_up_to_one() {
-        assert_eq!(100, FEES_PERCENTAGE_TO_AUTHOR + FEES_PERCENTAGE_TO_BURN + FEES_PERCENTAGE_TO_TREASURY);
+        assert_eq!(
+            100,
+            FEES_PERCENTAGE_TO_AUTHOR + FEES_PERCENTAGE_TO_BURN + FEES_PERCENTAGE_TO_TREASURY
+        );
     }
     #[test]
     fn tips_split_adds_up_to_one() {
