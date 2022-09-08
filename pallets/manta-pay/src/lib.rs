@@ -58,38 +58,29 @@
 extern crate alloc;
 
 use crate::types::{
-    decode, encode, Asset, AssetId, AssetValue, IncomingNote, NullifierCommitment, OutgoingNote,
-    ReceiverChunk, SenderChunk, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
+    encode, Asset, AssetValue, IncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk,
+    SenderChunk, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
 };
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use frame_support::{traits::tokens::ExistenceRequirement, transactional, PalletId};
 use manta_pay::{
     config::{self, utxo::v1::MerkleTreeConfiguration},
-    manta_accounting::{
-        asset,
-        transfer::{
-            self,
-            canonical::TransferShape,
-            receiver::{ReceiverLedger, ReceiverPostError, ReceiverPostingKey},
-            sender::{SenderLedger, SenderPostError, SenderPostingKey},
-            InvalidAuthorizationSignature, InvalidSinkAccount, InvalidSourceAccount, Proof,
-            SinkPostingKey, SourcePostingKey, TransferLedger, TransferLedgerSuperPostingKey,
-            TransferPostingKey, TransferPostingKeyRef,
-        },
+    manta_accounting::transfer::{
+        self,
+        canonical::TransferShape,
+        receiver::{ReceiverLedger, ReceiverPostError},
+        sender::{SenderLedger, SenderPostError},
+        InvalidAuthorizationSignature, InvalidSinkAccount, InvalidSourceAccount, SinkPostingKey,
+        SourcePostingKey, TransferLedger, TransferLedgerSuperPostingKey, TransferPostingKeyRef,
     },
-    manta_crypto::{
-        constraint::ProofSystem,
-        merkle_tree::{self, forest::Configuration as _},
-    },
+    manta_crypto::merkle_tree::{self, forest::Configuration as _},
     manta_parameters::{self, Get as _},
     manta_util::codec::Decode as _,
     parameters::load_transfer_parameters,
 };
 use manta_primitives::assets::{self, AssetConfig, FungibleLedger as _};
 use manta_util::{into_array_unchecked, Array};
-use scale_codec::{Decode, Encode, MaxEncodedLen};
-use scale_info::TypeInfo;
 
 pub use crate::types::{Checkpoint, RawCheckpoint};
 pub use pallet::*;

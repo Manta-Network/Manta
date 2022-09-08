@@ -18,17 +18,14 @@
 
 use anyhow::Result;
 use indoc::indoc;
-use manta_accounting::transfer::{self, SpendingKey};
 use manta_crypto::{
-    accumulator::Accumulator,
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
-    rand::{CryptoRng, Rand, RngCore, Sample, SeedableRng},
+    rand::{CryptoRng, RngCore, SeedableRng},
 };
 use manta_pay::{
     config::{
-        utxo::v1::MerkleTreeConfiguration, Asset, AssetId, AssetValue, FullParametersRef,
-        MultiProvingContext, MultiVerifyingContext, Parameters, PrivateTransfer, ProvingContext,
-        ToPrivate, ToPublic, UtxoAccumulatorModel, VerifyingContext,
+        utxo::v1::MerkleTreeConfiguration, AssetId, AssetValue, MultiProvingContext, Parameters,
+        ProvingContext, UtxoAccumulatorModel,
     },
     parameters::load_parameters,
     test,
@@ -101,17 +98,30 @@ where
 #[inline]
 fn sample_to_public<R>(
     proving_context: &MultiProvingContext,
-    verifying_context: &MultiVerifyingContext,
     parameters: &Parameters,
     utxo_accumulator_model: &UtxoAccumulatorModel,
-    asset_0: Asset,
-    asset_1: Asset,
+    asset_id: AssetId,
+    values: [AssetValue; 2],
     rng: &mut R,
 ) -> ([TransferPost; 2], TransferPost)
 where
     R: CryptoRng + RngCore + ?Sized,
 {
-    todo!()
+    let ([to_private_0, to_private_1], to_public) = test::payment::private_transfer::prove_full(
+        proving_context,
+        parameters,
+        &mut UtxoAccumulator::new(utxo_accumulator_model.clone()),
+        asset_id,
+        values,
+        rng,
+    );
+    (
+        [
+            TransferPost::from(to_private_0),
+            TransferPost::from(to_private_1),
+        ],
+        TransferPost::from(to_public),
+    )
 }
 
 /// Writes a new `const` definition to `$writer`.
@@ -167,7 +177,7 @@ fn main() -> Result<()> {
     println!("[INFO] Temporary Directory: {:?}", directory);
 
     let mut rng = ChaCha20Rng::from_seed([0; 32]);
-    let (proving_context, verifying_context, parameters, utxo_accumulator_model) =
+    let (proving_context, _, parameters, utxo_accumulator_model) =
         load_parameters(directory.path()).expect("Unable to load parameters.");
     let asset_id = 8.into();
 
@@ -177,7 +187,6 @@ fn main() -> Result<()> {
         &utxo_accumulator_model,
         &mut rng,
     );
-
     let (private_transfer_input, private_transfer) = sample_private_transfer(
         &proving_context,
         &parameters,
@@ -186,14 +195,12 @@ fn main() -> Result<()> {
         [10_000, 20_000],
         &mut rng,
     );
-
     let (to_public_input, to_public) = sample_to_public(
         &proving_context,
-        &verifying_context,
         &parameters,
         &utxo_accumulator_model,
-        Asset::new(asset_id, 10_000),
-        Asset::new(asset_id, 20_000),
+        asset_id,
+        [10_000, 20_000],
         &mut rng,
     );
 
