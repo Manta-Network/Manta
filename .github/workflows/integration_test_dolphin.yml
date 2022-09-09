@@ -398,7 +398,8 @@ jobs:
     needs: [start-node-builder-current, build-node-current]
     runs-on: ubuntu-20.04
     steps:
-      - uses: audacious-network/aws-github-runner@v1.0.33
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
           github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
@@ -407,6 +408,8 @@ jobs:
           aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
           runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
+      - name: discard stopper success/failure
+        run: true
   start-dolphin-integration-tester:
     if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
     runs-on: ubuntu-20.04
@@ -435,7 +438,8 @@ jobs:
     needs: [start-dolphin-integration-tester, dolphin-integration-test]
     runs-on: ubuntu-20.04
     steps:
-      - uses: audacious-network/aws-github-runner@v1.0.33
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
           github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
@@ -444,3 +448,5 @@ jobs:
           aws-region: ${{ needs.start-dolphin-integration-tester.outputs.aws-region }}
           runner-label: ${{ needs.start-dolphin-integration-tester.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-dolphin-integration-tester.outputs.aws-instance-id }}
+      - name: discard stopper success/failure
+        run: true
