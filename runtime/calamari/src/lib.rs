@@ -622,8 +622,7 @@ impl pallet_parachain_staking::Config for Runtime {
     type MinDelegatorStk = ConstU128<{ 5_000 * KMA }>;
     type OnCollatorPayout = ();
     type OnNewRound = ();
-    type WeightInfo = ();
-    // type WeightInfo = pallet_parachain_staking::weights::SubstrateWeight<Runtime>; TODO
+    type WeightInfo = weights::pallet_parachain_staking::SubstrateWeight<Runtime>;
 }
 
 impl pallet_author_inherent::Config for Runtime {
