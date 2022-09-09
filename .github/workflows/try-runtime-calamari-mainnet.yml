@@ -112,7 +112,8 @@ jobs:
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
-      - uses: audacious-network/aws-github-runner@v1.0.33
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
           github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
@@ -121,3 +122,5 @@ jobs:
           aws-region: ${{ needs.start-checks.outputs.aws-region }}
           runner-label: ${{ needs.start-checks.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-checks.outputs.aws-instance-id }}
+      - name: discard stopper success/failure
+        run: true
