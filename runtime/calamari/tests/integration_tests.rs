@@ -19,7 +19,7 @@
 #![allow(clippy::identity_op)] // keep e.g. 1 * DAYS for legibility
 
 mod common;
-use common::{info_from_weight, last_event, mock::*, root_origin, BOND_AMOUNT, INITIAL_BALANCE};
+use common::{info_from_weight, last_event, mock::*, root_origin, INITIAL_BALANCE};
 
 pub use calamari_runtime::{
     assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},
@@ -29,9 +29,9 @@ pub use calamari_runtime::{
         TIPS_PERCENTAGE_TO_TREASURY,
     },
     xcm_config::XcmFeesAccount,
-    AssetManager, Assets, Authorship, Balances, CalamariVesting, Council, Democracy,
-    EnactmentPeriod, LaunchPeriod, NativeTokenExistentialDeposit, Origin, Period, PolkadotXcm,
-    Runtime, TechnicalCommittee, Timestamp, Treasury, Utility, VotingPeriod,
+    AssetManager, Assets, Authorship, Balances, CalamariVesting, Council, DefaultBlocksPerRound,
+    Democracy, EnactmentPeriod, LaunchPeriod, NativeTokenExistentialDeposit, Origin, Period,
+    PolkadotXcm, Runtime, TechnicalCommittee, Timestamp, Treasury, Utility, VotingPeriod,
 };
 
 use calamari_runtime::opaque::SessionKeys;
@@ -39,9 +39,7 @@ use frame_support::{
     assert_err, assert_ok,
     codec::Encode,
     dispatch::Dispatchable,
-    traits::{
-        tokens::ExistenceRequirement, PalletInfo, StorageInfo, StorageInfoTrait, ValidatorSet,
-    },
+    traits::{tokens::ExistenceRequirement, PalletInfo, StorageInfo, StorageInfoTrait},
     weights::constants::*,
     StorageHasher, Twox128,
 };
