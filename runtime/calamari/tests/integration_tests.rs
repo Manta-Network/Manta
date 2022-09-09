@@ -506,8 +506,8 @@ fn reward_fees_to_block_author_and_treasury() {
             let author_received_reward = Balances::free_balance(alice) - INITIAL_BALANCE;
             println!("The rewarded_amount is: {:?}", author_received_reward);
 
-            // Author should get none of the fees - 50% burned, 50% to treasury.
-            let author_percent = Percent::from_percent(0);
+            // Fees split: 40% burned, 40% to treasury, 10% to author.
+            let author_percent = Percent::from_percent(FEES_PERCENTAGE_TO_AUTHOR);
             let expected_fee =
                 TransactionPayment::compute_actual_fee(len as u32, &info, &post_info, 0);
             assert_eq!(author_received_reward, author_percent * expected_fee);
