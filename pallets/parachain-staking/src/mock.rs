@@ -142,7 +142,7 @@ impl Config for Test {
     type MaxDelegationsPerDelegator = MaxDelegationsPerDelegator;
     type DefaultCollatorCommission = DefaultCollatorCommission;
     type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
-    type MinCollatorStk = MinCollatorStk;
+    type MinCollatorStk = MinWhitelistCollatorStk; // WHITELIST - remove
     type MinCandidateStk = MinCollatorStk;
     type MinWhitelistCandidateStk = MinWhitelistCollatorStk; // WHITELIST - remove
     type MinDelegatorStk = MinDelegatorStk;

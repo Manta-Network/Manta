@@ -840,7 +840,7 @@ fn cannot_join_candidates_with_smaller_bond_twice_if_whitelisted() {
         });
 }
 #[test]
-fn cant_reduce_bond_between_1_and_10() {
+fn cannot_reduce_bond_between_1_and_10() {
     ExtBuilder::default()
         .with_balances(vec![(1, 50), (2, 20), (WHITELISTED_ACCOUNT_ID, 30)])
         .with_candidates(vec![(1, 50)])
@@ -873,6 +873,14 @@ fn cant_reduce_bond_between_1_and_10() {
                 Origin::signed(WHITELISTED_ACCOUNT_ID),
                 5u128
             ));
+            // attempt to bond less
+            assert_noop!(
+                ParachainStaking::schedule_candidate_bond_less(
+                    Origin::signed(WHITELISTED_ACCOUNT_ID),
+                    2u128
+                ),
+                Error::<Test>::CandidateBondBelowMin
+            );
             // Bond more
             assert_ok!(ParachainStaking::candidate_bond_more(
                 Origin::signed(WHITELISTED_ACCOUNT_ID),
@@ -886,6 +894,10 @@ fn cant_reduce_bond_between_1_and_10() {
                 ),
                 Error::<Test>::CandidateBondBelowMin
             );
+            assert_ok!(ParachainStaking::schedule_candidate_bond_less(
+                Origin::signed(WHITELISTED_ACCOUNT_ID),
+                1u128
+            ));
         });
 }
 #[test]
