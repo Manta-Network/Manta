@@ -435,7 +435,8 @@ jobs:
     needs: [start-node-builder-current, build-node-current]
     runs-on: ubuntu-20.04
     steps:
-      - uses: audacious-network/aws-github-runner@v1.0.33
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
           github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
@@ -444,6 +445,8 @@ jobs:
           aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
           runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
+      - name: discard stopper success/failure
+        run: true
   start-calamari-integration-tester:
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     runs-on: ubuntu-20.04
@@ -472,7 +475,8 @@ jobs:
     needs: [start-calamari-integration-tester, calamari-integration-test]
     runs-on: ubuntu-20.04
     steps:
-      - uses: audacious-network/aws-github-runner@v1.0.33
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
           github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
@@ -481,6 +485,8 @@ jobs:
           aws-region: ${{ needs.start-calamari-integration-tester.outputs.aws-region }}
           runner-label: ${{ needs.start-calamari-integration-tester.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-calamari-integration-tester.outputs.aws-instance-id }}
+      - name: discard stopper success/failure
+        run: true
   start-docker-image-tester:
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     runs-on: ubuntu-20.04
@@ -509,7 +515,8 @@ jobs:
     needs: [start-docker-image-tester, docker-image-test]
     runs-on: ubuntu-20.04
     steps:
-      - uses: audacious-network/aws-github-runner@v1.0.33
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
           github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
@@ -518,3 +525,5 @@ jobs:
           aws-region: ${{ needs.start-docker-image-tester.outputs.aws-region }}
           runner-label: ${{ needs.start-docker-image-tester.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-docker-image-tester.outputs.aws-instance-id }}
+      - name: discard stopper success/failure
+        run: true
