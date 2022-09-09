@@ -26,9 +26,12 @@ use manta_crypto::{
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
     rand::{CryptoRng, OsRng, Rand, RngCore, Sample},
 };
-use manta_pay::config::{
-    utxo::v1::MerkleTreeConfiguration, FullParametersRef, MultiProvingContext, Parameters,
-    PrivateTransfer, ProvingContext, TransferPost, UtxoAccumulatorModel,
+use manta_pay::{
+    config::{
+        utxo::v1::MerkleTreeConfiguration, FullParametersRef, MultiProvingContext, Parameters,
+        PrivateTransfer, ProvingContext, TransferPost, UtxoAccumulatorModel,
+    },
+    parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
 };
 use manta_primitives::{
     assets::{AssetConfig, AssetRegistry, AssetRegistryMetadata, FungibleLedger as _},
@@ -43,7 +46,7 @@ type UtxoAccumulator =
 
 lazy_static::lazy_static! {
     static ref PROVING_CONTEXT: MultiProvingContext = load_proving_context();
-    static ref PARAMETERS: Parameters = load_parameters();
+    static ref PARAMETERS: Parameters = load_transfer_parameters();
     static ref UTXO_ACCUMULATOR_MODEL: UtxoAccumulatorModel = load_utxo_accumulator_model();
 }
 
@@ -55,73 +58,11 @@ pub const NATIVE_ASSET_ID: AssetId = <MantaAssetConfig as AssetConfig<Test>>::Na
 /// Loads the [`MultiProvingContext`].
 #[inline]
 fn load_proving_context() -> MultiProvingContext {
-    /*
-    let directory = tempfile::tempdir().expect("Unable to create temporary directory.");
-    let path = directory.path();
-    let mint_path = path.join("mint.dat");
-    manta_parameters::pay::testnet::proving::Mint::download(&mint_path)
-        .expect("Unable to download MINT proving context.");
-    let private_transfer_path = path.join("private-transfer.dat");
-    manta_parameters::pay::testnet::proving::PrivateTransfer::download(&private_transfer_path)
-        .expect("Unable to download PRIVATE_TRANSFER proving context.");
-    let reclaim_path = path.join("reclaim.dat");
-    manta_parameters::pay::testnet::proving::Reclaim::download(&reclaim_path)
-        .expect("Unable to download RECLAIM proving context.");
-    MultiProvingContext {
-        mint: ProvingContext::decode(IoReader(
-            File::open(mint_path).expect("Unable to open MINT proving context file."),
-        ))
-        .expect("Unable to decode MINT proving context."),
-        private_transfer: ProvingContext::decode(IoReader(
-            File::open(private_transfer_path)
-                .expect("Unable to open PRIVATE_TRANSFER proving context file."),
-        ))
-        .expect("Unable to decode PRIVATE_TRANSFER proving context."),
-        reclaim: ProvingContext::decode(IoReader(
-            File::open(reclaim_path).expect("Unable to open RECLAIM proving context file."),
-        ))
-        .expect("Unable to decode RECLAIM proving context."),
-    }
-    */
-    todo!()
-}
-
-/// Loads the [`Parameters`].
-#[inline]
-fn load_parameters() -> Parameters {
-    /*
-    Parameters {
-        note_encryption_scheme: NoteEncryptionScheme::decode(
-            manta_parameters::pay::testnet::parameters::NoteEncryptionScheme::get()
-                .expect("Checksum did not match."),
-        )
-        .expect("Unable to decode NOTE_ENCRYPTION_SCHEME parameters."),
-        utxo_commitment: UtxoCommitmentScheme::decode(
-            manta_parameters::pay::testnet::parameters::UtxoCommitmentScheme::get()
-                .expect("Checksum did not match."),
-        )
-        .expect("Unable to decode UTXO_COMMITMENT_SCHEME parameters."),
-        void_number_commitment: VoidNumberCommitmentScheme::decode(
-            manta_parameters::pay::testnet::parameters::VoidNumberCommitmentScheme::get()
-                .expect("Checksum did not match."),
-        )
-        .expect("Unable to decode VOID_NUMBER_COMMITMENT_SCHEME parameters."),
-    }
-    */
-    todo!()
-}
-
-/// Loads the [`UtxoAccumulatorModel`].
-#[inline]
-fn load_utxo_accumulator_model() -> UtxoAccumulatorModel {
-    /*
-    UtxoAccumulatorModel::decode(
-        manta_parameters::pay::testnet::parameters::UtxoAccumulatorModel::get()
-            .expect("Checksum did not match."),
+    parameters::load_proving_context(
+        tempfile::tempdir()
+            .expect("Unable to create temporary directory.")
+            .path(),
     )
-    .expect("Unable to decode UTXO_ACCUMULATOR_MODEL.")
-    */
-    todo!()
 }
 
 /// Samples a [`Mint`] transaction of `asset` with a random secret.
@@ -176,7 +117,7 @@ where
     };
     let total_free_balance = AssetValue(rng.gen());
     let balances = value_distribution(count, total_free_balance, rng);
-    initialize_test(asset_id, total_free_balance + DEFAULT_ASSET_ED);
+    initialize_test(asset_id, total_free_balance + TEST_DEFAULT_ASSET_ED);
     let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
     let mut posts = Vec::new();
     for balance in balances {
@@ -253,7 +194,7 @@ where
         None => rng.gen(),
     };
     let balances = value_distribution(count, total_supply, rng);
-    initialize_test(asset_id, total_supply + DEFAULT_ASSET_ED);
+    initialize_test(asset_id, total_supply + TEST_DEFAULT_ASSET_ED);
     let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
     let mut posts = Vec::new();
     for balance in balances {
@@ -316,7 +257,7 @@ fn initialize_test(id: AssetId, value: AssetValue) {
     let metadata = AssetRegistrarMetadata::default();
     assert_ok!(MantaAssetRegistrar::create_asset(
         id.0,
-        DEFAULT_ASSET_ED,
+        TEST_DEFAULT_ASSET_ED,
         metadata.into(),
         true
     ));
@@ -326,7 +267,7 @@ fn initialize_test(id: AssetId, value: AssetValue) {
     assert_ok!(FungibleLedger::<Test>::deposit_can_mint(
         id.0,
         &MantaPayPallet::account_id(),
-        DEFAULT_ASSET_ED
+        TEST_DEFAULT_ASSET_ED
     ));
     */
     todo!()
@@ -335,20 +276,17 @@ fn initialize_test(id: AssetId, value: AssetValue) {
 /// Tests multiple to_private from some total supply.
 #[test]
 fn to_private_should_work() {
-    /*
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         let asset_id = rng.gen();
-        let total_free_supply = AssetValue(rng.gen());
-        initialize_test(asset_id, total_free_supply + DEFAULT_ASSET_ED);
+        let total_free_supply = rng.gen();
+        initialize_test(asset_id, total_free_supply + TEST_DEFAULT_ASSET_ED);
         mint_tokens(
             asset_id,
             &value_distribution(5, total_free_supply, &mut rng),
             &mut rng,
         );
     });
-    */
-    todo!()
 }
 
 ///
@@ -358,7 +296,7 @@ fn native_asset_to_private_should_work() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         let total_free_supply = AssetValue(rng.gen());
-        initialize_test(NATIVE_ASSET_ID, total_free_supply + DEFAULT_ASSET_ED);
+        initialize_test(NATIVE_ASSET_ID, total_free_supply + TEST_DEFAULT_ASSET_ED);
         mint_tokens(
             NATIVE_ASSET_ID,
             &value_distribution(5, total_free_supply, &mut rng),
@@ -377,11 +315,11 @@ fn overdrawn_mint_should_not_work() {
     new_test_ext().execute_with(|| {
         let asset_id = rng.gen();
         let total_supply = AssetValue(rng.gen());
-        initialize_test(asset_id, total_supply + DEFAULT_ASSET_ED);
+        initialize_test(asset_id, total_supply + TEST_DEFAULT_ASSET_ED);
         assert_noop!(
             MantaPayPallet::to_private(
                 Origin::signed(ALICE),
-                sample_mint(asset_id.with(total_supply + DEFAULT_ASSET_ED + 1), &mut rng).into()
+                sample_mint(asset_id.with(total_supply + TEST_DEFAULT_ASSET_ED + 1), &mut rng).into()
             ),
             Error::<Test>::InvalidSourceAccount
         );
