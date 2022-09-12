@@ -25,12 +25,8 @@ use frame_support::{
 pub struct ResetHighestSeen<T>(PhantomData<T>);
 impl<T: frame_system::Config> OnRuntimeUpgrade for ResetHighestSeen<T> {
     fn on_runtime_upgrade() -> Weight {
-        log::info!(target: "OnRuntimeUpgrade", "✅ is it even called.");
         if have_storage_value(b"AuthorInherent", b"HighestSlotSeen", b"") {
-            let value: u32 = get_storage_value(b"AuthorInherent", b"HighestSlotSeen", b"").unwrap();
-            log::info!(target: "OnRuntimeUpgrade", "\n✅ Initial value: {:?} \n", value);
-            put_storage_value(b"AuthorInherent", b"HighestSlotSeen:", b"", b"0x00000000");
-            log::info!(target: "OnRuntimeUpgrade", "✅ HighestSlotSeen was set to 0.");
+            put_storage_value(b"AuthorInherent", b"HighestSlotSeen", b"", 0u32);
             T::DbWeight::get()
                 .reads(1 as Weight)
                 .saturating_add(T::DbWeight::get().writes(1 as Weight))
@@ -42,21 +38,25 @@ impl<T: frame_system::Config> OnRuntimeUpgrade for ResetHighestSeen<T> {
     #[cfg(feature = "try-runtime")]
     fn pre_upgrade() -> Result<(), &'static str> {
         if have_storage_value(b"AuthorInherent", b"HighestSlotSeen", b"") {
-            log::info!(target: "OnRuntimeUpgrade", "✅ HighestSlotSeen will be reset to 0 soon.");
+            let old_value: u32 =
+                get_storage_value(b"AuthorInherent", b"HighestSlotSeen", b"").unwrap();
+            log::info!(target: "OnRuntimeUpgrade", "HighestSlotSeen initial value: {:?}", old_value);
+            log::info!(target: "OnRuntimeUpgrade", "HighestSlotSeen value will be reset to 0 soon.");
             Ok(())
         } else {
-            Err("")
+            Err("Missing HighestSlotSeen value!")
         }
     }
 
     #[cfg(feature = "try-runtime")]
     fn post_upgrade() -> Result<(), &'static str> {
         if have_storage_value(b"AuthorInherent", b"HighestSlotSeen", b"") {
-            let value: u32 = get_storage_value(b"AuthorInherent", b"HighestSlotSeen", b"").unwrap();
-            log::info!(target: "OnRuntimeUpgrade", "\n ✅ HighestSlotSeen was reset successfully. {:?} \n", value);
+            let new_value: u32 =
+                get_storage_value(b"AuthorInherent", b"HighestSlotSeen", b"").unwrap();
+            log::info!(target: "OnRuntimeUpgrade", "✅ HighestSlotSeen was reset successfully to: {:?}", new_value);
             Ok(())
         } else {
-            Err("HighestSlotSeen value is not set!")
+            Err("Missing HighestSlotSeen value!")
         }
     }
 }
