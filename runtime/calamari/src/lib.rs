@@ -29,7 +29,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, BlockNumberProvider},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, Perbill, Permill,
 };
@@ -120,7 +120,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 3300,
+    spec_version: 3301,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 7,
@@ -554,9 +554,24 @@ impl pallet_aura_style_filter::Config for Runtime {
     type PotentialAuthors = CollatorSelection;
 }
 
+pub struct RelaychainBlockNumberProviderHalved;
+impl BlockNumberProvider for RelaychainBlockNumberProviderHalved {
+    type BlockNumber = BlockNumber;
+
+    fn current_block_number() -> BlockNumber {
+        cumulus_pallet_parachain_system::RelaychainBlockNumberProvider::<Runtime>::current_block_number() / 2
+    }
+    #[cfg(feature = "runtime-benchmarks")]
+    fn set_block_number(block: Self::BlockNumber) {
+        cumulus_pallet_parachain_system::RelaychainBlockNumberProvider::<Runtime>::set_block_number(
+            block,
+        )
+    }
+}
+
 impl pallet_author_inherent::Config for Runtime {
     // We start a new slot each time we see a new relay block.
-    type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
+    type SlotBeacon = RelaychainBlockNumberProviderHalved;
     type AccountLookup = CollatorSelection;
     type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
     /// Nimbus filter pipeline step 1:
@@ -803,7 +818,8 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsReversedWithSystemFirst,
-    OnRuntimeUpgradeHooks,
+    // migrations::highest_seen::ResetHighestSeen<pallet_author_inherent::Pallet<Runtime>>,
+    migrations::highest_seen::ResetHighestSeen<Runtime>,
 >;
 
 #[cfg(feature = "runtime-benchmarks")]
