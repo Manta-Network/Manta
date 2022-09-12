@@ -78,7 +78,6 @@ pub mod xcm_config;
 use currency::*;
 use fee::WeightToFee;
 use impls::DealWithFees;
-use runtime_common::migration::MigratePalletPv2Sv;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -120,7 +119,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 3301,
+    spec_version: 3300,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 7,
@@ -802,15 +801,6 @@ pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signatu
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
 
-/// Types for runtime upgrading.
-/// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = (
-    MigratePalletPv2Sv<pallet_asset_manager::Pallet<Runtime>>,
-    MigratePalletPv2Sv<pallet_tx_pause::Pallet<Runtime>>,
-    MigratePalletPv2Sv<manta_collator_selection::Pallet<Runtime>>,
-    MigratePalletPv2Sv<calamari_vesting::Pallet<Runtime>>,
-);
-
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -818,8 +808,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsReversedWithSystemFirst,
-    // migrations::highest_seen::ResetHighestSeen<pallet_author_inherent::Pallet<Runtime>>,
-    migrations::highest_seen::ResetHighestSeen<Runtime>,
+    migrations::highest_slot_seen::ResetHighestSeen<Runtime>,
 >;
 
 #[cfg(feature = "runtime-benchmarks")]

@@ -14,5 +14,5 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-pub mod highest_seen;
+pub mod highest_slot_seen;
 pub mod sudo;
