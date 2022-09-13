@@ -371,7 +371,7 @@ benchmarks! {
     }: _(RawOrigin::Signed(caller.clone()), more)
     verify {
         let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
-        assert!(usable_balance_after < usable_balance_before); // TODO: account for more < to accommodate paid fees
+        assert!(usable_balance_after < usable_balance_before);
     }
     schedule_candidate_bond_less {
         let min_candidate_stk = min_candidate_stk::<T>();
@@ -416,7 +416,7 @@ benchmarks! {
         )?;
     } verify {
         let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
-        assert!(usable_balance_after > usable_balance_before); // TODO: account for more < to accommodate paid fees
+        assert!(usable_balance_after > usable_balance_before);
     }
 
     cancel_candidate_bond_less {
@@ -648,7 +648,7 @@ benchmarks! {
     }: _(RawOrigin::Signed(caller.clone()), collator.clone(), bond)
     verify {
         let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
-        assert!(usable_balance_after < usable_balance_before); // TODO: account for more < to accommodate paid fees
+        assert!(usable_balance_after < usable_balance_before);
     }
 
     schedule_delegator_bond_less {
