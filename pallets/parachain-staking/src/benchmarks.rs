@@ -22,11 +22,9 @@ use crate::{
     Points, Range, Round, ScheduledRequest,
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, vec};
-use frame_support::traits::{
-    tokens::fungible::Inspect, Currency, Get, OnFinalize, OnInitialize, ReservableCurrency,
-};
+use frame_support::traits::{tokens::fungible::Inspect, Currency, Get, OnFinalize, OnInitialize};
 use frame_system::RawOrigin;
-use sp_runtime::{traits::Saturating, Perbill, Percent};
+use sp_runtime::{Perbill, Percent};
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 /// Minimum collator candidate stake
 fn min_candidate_stk<T: Config>() -> BalanceOf<T> {
@@ -129,7 +127,6 @@ fn roll_to_and_author<T: Config>(round_delay: u32, author: T::AccountId) {
 }
 
 const USER_SEED: u32 = 999666;
-use frame_support::traits::tokens::Balance;
 benchmarks! {
     // MONETARY ORIGIN DISPATCHABLES
     set_staking_expectations {
