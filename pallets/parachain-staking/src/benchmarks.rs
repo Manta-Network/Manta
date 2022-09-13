@@ -749,7 +749,7 @@ benchmarks! {
     } verify {
         let expected = total - bond_less;
         let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
-        assert!(usable_balance_after > usable_balance_before); // TODO: account for more < to accommodate paid fees
+        assert!(usable_balance_after > usable_balance_before);
     }
 
     cancel_revoke_delegation {
