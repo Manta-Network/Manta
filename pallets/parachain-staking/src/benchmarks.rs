@@ -22,11 +22,11 @@ use crate::{
     Points, Range, Round, ScheduledRequest,
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, vec};
-use frame_support::traits::{Currency, Get, OnFinalize, OnInitialize, ReservableCurrency};
+use frame_support::traits::{ tokens::fungible::Inspect, Currency, Get, OnFinalize, OnInitialize, ReservableCurrency};
 use frame_system::RawOrigin;
 use sp_runtime::{Perbill, Percent};
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
-
+use sp_runtime::traits::Saturating;
 /// Minimum collator candidate stake
 fn min_candidate_stk<T: Config>() -> BalanceOf<T> {
     <<T as Config>::MinCandidateStk as Get<BalanceOf<T>>>::get()
@@ -128,7 +128,7 @@ fn roll_to_and_author<T: Config>(round_delay: u32, author: T::AccountId) {
 }
 
 const USER_SEED: u32 = 999666;
-
+use frame_support::traits::tokens::Balance;
 benchmarks! {
     // MONETARY ORIGIN DISPATCHABLES
     set_staking_expectations {
@@ -367,12 +367,12 @@ benchmarks! {
             true,
             1u32,
         )?;
+        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
     }: _(RawOrigin::Signed(caller.clone()), more)
     verify {
-        let expected_bond = more * 2u32.into();
-        assert_eq!(<T as Config>::Currency::reserved_balance(&caller), expected_bond);
+        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
+        assert!(usable_balance_after < usable_balance_before); // TODO: account for more < to accommodate paid fees
     }
-
     schedule_candidate_bond_less {
         let min_candidate_stk = min_candidate_stk::<T>();
         let caller: T::AccountId = create_funded_collator::<T>(
@@ -408,13 +408,15 @@ benchmarks! {
             min_candidate_stk
         )?;
         roll_to_and_author::<T>(2, caller.clone());
+        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
     }: {
         Pallet::<T>::execute_candidate_bond_less(
             RawOrigin::Signed(caller.clone()).into(),
             caller.clone()
         )?;
     } verify {
-        assert_eq!(<T as Config>::Currency::reserved_balance(&caller), min_candidate_stk);
+        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
+        assert!(usable_balance_after > usable_balance_before); // TODO: account for more < to accommodate paid fees
     }
 
     cancel_candidate_bond_less {
@@ -642,10 +644,11 @@ benchmarks! {
             0u32,
             0u32
         )?;
+        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
     }: _(RawOrigin::Signed(caller.clone()), collator.clone(), bond)
     verify {
-        let expected_bond = bond * 2u32.into();
-        assert_eq!(<T as Config>::Currency::reserved_balance(&caller), expected_bond);
+        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
+        assert!(usable_balance_after < usable_balance_before); // TODO: account for more < to accommodate paid fees
     }
 
     schedule_delegator_bond_less {
@@ -736,6 +739,7 @@ benchmarks! {
             bond_less
         )?;
         roll_to_and_author::<T>(2, collator.clone());
+        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
     }: {
         Pallet::<T>::execute_delegation_request(
             RawOrigin::Signed(caller.clone()).into(),
@@ -744,7 +748,8 @@ benchmarks! {
         )?;
     } verify {
         let expected = total - bond_less;
-        assert_eq!(<T as Config>::Currency::reserved_balance(&caller), expected);
+        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
+        assert!(usable_balance_after > usable_balance_before); // TODO: account for more < to accommodate paid fees
     }
 
     cancel_revoke_delegation {

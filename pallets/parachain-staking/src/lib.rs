@@ -89,7 +89,7 @@ pub mod pallet {
     use frame_support::{
         pallet_prelude::*,
         traits::{
-            tokens::WithdrawReasons, Currency, Get, Imbalance, LockIdentifier, LockableCurrency,
+            tokens::WithdrawReasons, tokens::fungible::Inspect, Currency, Get, Imbalance, LockIdentifier, LockableCurrency,
             ReservableCurrency,
         },
     };
@@ -122,7 +122,8 @@ pub mod pallet {
         /// The currency type
         type Currency: Currency<Self::AccountId>
             + ReservableCurrency<Self::AccountId>
-            + LockableCurrency<Self::AccountId>;
+            + LockableCurrency<Self::AccountId>
+            + Inspect<Self::AccountId>;
         /// The origin for monetary governance
         type MonetaryGovernanceOrigin: EnsureOrigin<Self::Origin>;
         /// Minimum number of blocks per round
