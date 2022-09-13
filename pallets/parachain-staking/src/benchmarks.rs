@@ -22,11 +22,12 @@ use crate::{
     Points, Range, Round, ScheduledRequest,
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, vec};
-use frame_support::traits::{ tokens::fungible::Inspect, Currency, Get, OnFinalize, OnInitialize, ReservableCurrency};
+use frame_support::traits::{
+    tokens::fungible::Inspect, Currency, Get, OnFinalize, OnInitialize, ReservableCurrency,
+};
 use frame_system::RawOrigin;
-use sp_runtime::{Perbill, Percent};
+use sp_runtime::{traits::Saturating, Perbill, Percent};
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
-use sp_runtime::traits::Saturating;
 /// Minimum collator candidate stake
 fn min_candidate_stk<T: Config>() -> BalanceOf<T> {
     <<T as Config>::MinCandidateStk as Get<BalanceOf<T>>>::get()

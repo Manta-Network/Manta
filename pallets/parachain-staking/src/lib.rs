@@ -89,8 +89,8 @@ pub mod pallet {
     use frame_support::{
         pallet_prelude::*,
         traits::{
-            tokens::WithdrawReasons, tokens::fungible::Inspect, Currency, Get, Imbalance, LockIdentifier, LockableCurrency,
-            ReservableCurrency,
+            tokens::{fungible::Inspect, WithdrawReasons},
+            Currency, Get, Imbalance, LockIdentifier, LockableCurrency, ReservableCurrency,
         },
     };
     use frame_system::pallet_prelude::*;
