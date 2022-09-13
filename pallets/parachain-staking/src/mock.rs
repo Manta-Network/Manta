@@ -119,8 +119,9 @@ parameter_types! {
     pub const MaxDelegationsPerDelegator: u32 = 4;
     pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(20);
     pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(30);
-    pub const MinCollatorStk: u128 = 10;
-    pub const MinWhitelistCollatorStk: u128 = 1; // WHITELIST - remove
+    pub const MinCollatorStk: u128 = 1;
+    pub const MinNormalCandidateStk: u128 = 10;
+    pub const MinWhitelistCandidateStk: u128 = 1; // WHITELIST - remove
     pub const MinDelegatorStk: u128 = 5;
     pub const MinDelegation: u128 = 3;
 }
@@ -142,9 +143,9 @@ impl Config for Test {
     type MaxDelegationsPerDelegator = MaxDelegationsPerDelegator;
     type DefaultCollatorCommission = DefaultCollatorCommission;
     type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
-    type MinCollatorStk = MinWhitelistCollatorStk; // WHITELIST - remove
-    type MinCandidateStk = MinCollatorStk;
-    type MinWhitelistCandidateStk = MinWhitelistCollatorStk; // WHITELIST - remove
+    type MinCollatorStk = MinCollatorStk; // WHITELIST - remove
+    type MinCandidateStk = MinNormalCandidateStk;
+    type MinWhitelistCandidateStk = MinWhitelistCandidateStk; // WHITELIST - remove
     type MinDelegatorStk = MinDelegatorStk;
     type MinDelegation = MinDelegation;
     type BlockAuthor = BlockAuthor;

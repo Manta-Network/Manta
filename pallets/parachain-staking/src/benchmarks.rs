@@ -29,7 +29,7 @@ use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
 /// Minimum collator candidate stake
 fn min_candidate_stk<T: Config>() -> BalanceOf<T> {
-    <<T as Config>::MinCollatorStk as Get<BalanceOf<T>>>::get()
+    <<T as Config>::MinCandidateStk as Get<BalanceOf<T>>>::get()
 }
 
 /// Minimum delegator stake

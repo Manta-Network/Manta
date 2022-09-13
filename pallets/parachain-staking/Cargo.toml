@@ -41,7 +41,11 @@ sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkado
 
 [features]
 default = ["std"]
-runtime-benchmarks = ["frame-benchmarking"]
+runtime-benchmarks = [
+    "frame-benchmarking",
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+    ]
 std = [
   "frame-benchmarking/std",
   "frame-support/std",
