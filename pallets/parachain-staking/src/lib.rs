@@ -1608,7 +1608,14 @@ pub mod pallet {
             let mut candidates = <CandidatePool<T>>::get().0;
             // order candidates by stake (least to greatest so requires `rev()`)
             candidates.sort_by(|a, b| a.amount.cmp(&b.amount));
-            let top_n = <TotalSelected<T>>::get() as usize;
+            let mut top_n = <TotalSelected<T>>::get() as usize;
+            // BEGIN MANTA WORKAROUND: remove the smallest-stake collator to get the set to be odd ( if possible )
+            if top_n % 2 == 0 {
+                if top_n > T::MinSelectedCandidates::get() as usize {
+                    top_n -= 1;
+                }
+            }
+            // END MANTA WORKAROUND
             // choose the top TotalSelected qualified candidates, ordered by stake
             let mut collators = candidates
                 .into_iter()
@@ -1617,13 +1624,6 @@ pub mod pallet {
                 .filter(|x| x.amount >= T::MinCollatorStk::get())
                 .map(|x| x.owner)
                 .collect::<Vec<T::AccountId>>();
-            // BEGIN MANTA WORKAROUND: remove the smallest-stake collator to get the set to be odd ( if possible )
-            if collators.len() % 2 == 0 {
-                if collators.len() > T::MinSelectedCandidates::get() as usize {
-                    collators.pop();
-                }
-            }
-            // END MANTA WORKAROUND
             collators.sort();
             collators
         }
