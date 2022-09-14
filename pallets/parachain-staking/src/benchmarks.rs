@@ -128,7 +128,6 @@ fn roll_to_and_author<T: Config>(round_delay: u32, author: T::AccountId) {
 }
 
 const USER_SEED: u32 = 999666;
-use frame_support::traits::tokens::Balance;
 benchmarks! {
     // MONETARY ORIGIN DISPATCHABLES
     set_staking_expectations {
