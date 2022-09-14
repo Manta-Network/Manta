@@ -81,7 +81,7 @@ where
         let _ = pallet_parachain_staking::Pallet::<T>::initialize_pallet(
             current_block,
             invulnerables,
-            crate::currency::inflation_config(),
+            crate::currency::inflation_config::<T>(),
         );
         // Setting total_selected will take effect at the beginning of the next round, so for the first 6 hours
         // our invulnerables will be the only collators
