@@ -825,6 +825,7 @@ mod benches {
         [pallet_asset_manager, AssetManager]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
+
     );
 }
 
