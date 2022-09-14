@@ -178,7 +178,6 @@ fn calamari_dev_genesis(
                 .collect(),
             delegations,
             inflation_config: calamari_runtime::currency::inflation_config(),
-
         },
         parachain_info: calamari_runtime::ParachainInfoConfig {
             parachain_id: CALAMARI_PARACHAIN_ID.into(),

@@ -28,9 +28,9 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 
 use pallet_parachain_staking::InflationInfo;
 pub fn inflation_config() -> InflationInfo<Balance> {
+    use pallet_parachain_staking::inflation::Range;
     use sp_arithmetic::Perbill;
     use sp_runtime::PerThing;
-    use pallet_parachain_staking::inflation::Range;
 
     fn to_round_inflation(annual: Range<Perbill>) -> Range<Perbill> {
         use pallet_parachain_staking::inflation::{
@@ -39,8 +39,7 @@ pub fn inflation_config() -> InflationInfo<Balance> {
         perbill_annual_to_perbill_round(
             annual,
             // rounds per year
-            BLOCKS_PER_YEAR
-                / crate::get!(pallet_parachain_staking, DefaultBlocksPerRound, u32),
+            BLOCKS_PER_YEAR / crate::get!(pallet_parachain_staking, DefaultBlocksPerRound, u32),
         )
     }
     let annual = Range {
