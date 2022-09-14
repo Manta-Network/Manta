@@ -18,6 +18,7 @@ frame-support = { git = "https://github.com/paritytech/substrate.git", branch = 
 frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
 parity-scale-codec = { version = "3.1.2", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
 substrate-fixed = { git = "https://github.com/encointer/substrate-fixed.git", default-features = false }
@@ -57,6 +58,7 @@ std = [
   "parity-scale-codec/std",
   "scale-info/std",
   "serde",
+  "sp-arithmetic/std",
   "sp-runtime/std",
   "sp-std/std",
 ]

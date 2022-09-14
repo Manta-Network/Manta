@@ -21,7 +21,7 @@ Links:
 
 ## History
 
-Manta Network forked it in Augus 2022 to deploy staking on Calamari Network.
+Manta Network forked it in August 2022 to deploy staking on Calamari Network.
 
 Since January 2021, Moonbeam's team has maintained this Delegated Proof of Stake (DPoS) pallet designed specifically for parachains.
 
