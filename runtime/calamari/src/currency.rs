@@ -26,12 +26,13 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
     items as Balance * 15 * mKMA + (bytes as Balance) * 6 * mKMA // TODO: revisit the storage cost here
 }
 
-use pallet_parachain_staking::InflationInfo;
-pub fn inflation_config() -> InflationInfo<Balance> {
-    use sp_arithmetic::Perbill;
-    use sp_runtime::PerThing;
+use pallet_parachain_staking::{BalanceOf, InflationInfo};
+pub fn inflation_config<T: frame_system::Config + pallet_parachain_staking::Config>()
+-> InflationInfo<BalanceOf<T>> {
     use pallet_parachain_staking::inflation::Range;
-
+    use sp_arithmetic::Perbill;
+    use sp_runtime::{PerThing, traits::UniqueSaturatedInto};
+    
     fn to_round_inflation(annual: Range<Perbill>) -> Range<Perbill> {
         use pallet_parachain_staking::inflation::{
             perbill_annual_to_perbill_round, BLOCKS_PER_YEAR,
@@ -39,8 +40,7 @@ pub fn inflation_config() -> InflationInfo<Balance> {
         perbill_annual_to_perbill_round(
             annual,
             // rounds per year
-            BLOCKS_PER_YEAR
-                / crate::get!(pallet_parachain_staking, DefaultBlocksPerRound, u32),
+            BLOCKS_PER_YEAR / crate::get!(pallet_parachain_staking, DefaultBlocksPerRound, u32),
         )
     }
     let annual = Range {
@@ -49,12 +49,12 @@ pub fn inflation_config() -> InflationInfo<Balance> {
         ideal: Perbill::from_percent(3),
         max: Perbill::from_percent(3),
     };
-    InflationInfo {
+    InflationInfo::<BalanceOf<T>> {
         // staking expectations **per round**
         expect: Range {
-            min: 170_000 * KMA,
-            ideal: 205_479 * KMA, // annual inflation / number of rounds
-            max: 210_000 * KMA,
+            min: (170_000 * KMA).unique_saturated_into(),
+            ideal: (205_479 * KMA).unique_saturated_into(), // annual inflation / number of rounds
+            max: (210_000 * KMA).unique_saturated_into(),
         },
         // annual inflation
         annual,

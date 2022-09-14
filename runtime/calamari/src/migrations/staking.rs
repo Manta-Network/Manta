@@ -15,12 +15,10 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    sp_api_hidden_includes_construct_runtime::hidden_include::traits::OriginTrait,
-    Weight,
+    sp_api_hidden_includes_construct_runtime::hidden_include::traits::OriginTrait, Balance, Weight,
 };
 use core::marker::PhantomData;
 use frame_support::traits::OnRuntimeUpgrade;
-use crate::Balance;
 
 /// Migration to move old invulnerables to the staking set on upgrade
 /// [DelegationScheduledRequests] storage item.
@@ -35,14 +33,14 @@ where
         + pallet_session::Config
         + manta_collator_selection::Config,
     <<T as frame_system::Config>::Origin as OriginTrait>::AccountId:
-    From<<T as frame_system::Config>::AccountId>,
+        From<<T as frame_system::Config>::AccountId>,
     pallet_parachain_staking::BalanceOf<T>: Into<Balance> + From<Balance>,
 {
     fn on_runtime_upgrade() -> Weight
     where
         <<T as frame_system::Config>::Origin as OriginTrait>::AccountId:
             From<<T as frame_system::Config>::AccountId>,
-            pallet_parachain_staking::BalanceOf<T>: Into<Balance> + From<Balance>,
+        pallet_parachain_staking::BalanceOf<T>: Into<Balance> + From<Balance>,
     {
         use crate::*;
 
@@ -81,7 +79,7 @@ where
         let _ = pallet_parachain_staking::Pallet::<T>::initialize_pallet(
             current_block,
             invulnerables,
-            crate::currency::inflation_config().unique_saturated_into(),
+            crate::currency::inflation_config::<T>(),
         );
         // Setting total_selected will take place at the beginning of the next round, so for the first 6 hours
         // our invulnerables will be the only collators

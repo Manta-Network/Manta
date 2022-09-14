@@ -177,7 +177,7 @@ fn calamari_dev_genesis(
                 .map(|(account, _)| (account, 4_000_000 * KMA)) // TODO: Change to use constant from primtives
                 .collect(),
             delegations,
-            inflation_config: calamari_runtime::currency::inflation_config(),
+            inflation_config: calamari_runtime::currency::inflation_config::<calamari_runtime::Runtime>(),
 
         },
         parachain_info: calamari_runtime::ParachainInfoConfig {
