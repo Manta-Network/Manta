@@ -1617,7 +1617,6 @@ pub mod pallet {
                 .filter(|x| x.amount >= T::MinCollatorStk::get())
                 .map(|x| x.owner)
                 .collect::<Vec<T::AccountId>>();
-            collators.sort();
             // BEGIN MANTA WORKAROUND: remove the smallest-stake collator to get the set to be odd ( if possible )
             if collators.len() % 2 == 0 {
                 if collators.len() > T::MinSelectedCandidates::get() as usize {
@@ -1625,6 +1624,7 @@ pub mod pallet {
                 }
             }
             // END MANTA WORKAROUND
+            collators.sort();
             collators
         }
         /// Best as in most cumulatively supported in terms of stake
