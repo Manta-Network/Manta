@@ -531,7 +531,7 @@ fn root_can_change_default_xcm_vers() {
 
 #[test]
 fn sanity_check_round_duration() {
-    assert_eq!(DefaultBlocksPerRound::get(), 2 * HOURS);
+    assert_eq!(DefaultBlocksPerRound::get(), 6 * HOURS);
 }
 
 // TODO: Full integration test for staking
