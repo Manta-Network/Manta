@@ -20,8 +20,8 @@ use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
 #[allow(unused_imports)]
 use calamari_runtime::{
-    currency::KMA, get, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig,
-    InflationInfo, ParachainStakingConfig, Range, TechnicalCommitteeConfig,
+    currency::KMA, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig,
+    ParachainStakingConfig, TechnicalCommitteeConfig,
 };
 use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 use sp_runtime::{PerThing, Perbill};
@@ -177,7 +177,8 @@ fn calamari_dev_genesis(
                 .map(|(account, _)| (account, 4_000_000 * KMA)) // TODO: Change to use constant from primtives
                 .collect(),
             delegations,
-            inflation_config: inflation_config(),
+            inflation_config: calamari_runtime::currency::inflation_config(),
+
         },
         parachain_info: calamari_runtime::ParachainInfoConfig {
             parachain_id: CALAMARI_PARACHAIN_ID.into(),
@@ -216,36 +217,6 @@ fn calamari_dev_genesis(
         polkadot_xcm: calamari_runtime::PolkadotXcmConfig {
             safe_xcm_version: Some(SAFE_XCM_VERSION),
         },
-    }
-}
-pub fn inflation_config() -> InflationInfo<Balance> {
-    fn to_round_inflation(annual: Range<Perbill>) -> Range<Perbill> {
-        use pallet_parachain_staking::inflation::{
-            perbill_annual_to_perbill_round, BLOCKS_PER_YEAR,
-        };
-        perbill_annual_to_perbill_round(
-            annual,
-            // rounds per year
-            BLOCKS_PER_YEAR
-                / calamari_runtime::get!(pallet_parachain_staking, DefaultBlocksPerRound, u32),
-        )
-    }
-    let annual = Range {
-        min: Perbill::from_rational_with_rounding(5u32, 200u32, sp_arithmetic::Rounding::Down)
-            .expect("constant denom is not 0. qed"), // = 2.5%
-        ideal: Perbill::from_percent(3),
-        max: Perbill::from_percent(3),
-    };
-    InflationInfo {
-        // staking expectations
-        expect: Range {
-            min: 100_000 * KMA,
-            ideal: 200_000 * KMA,
-            max: 500_000 * KMA,
-        },
-        // annual inflation
-        annual,
-        round: to_round_inflation(annual),
     }
 }
 /// Returns the Calamari testnet chainspec.

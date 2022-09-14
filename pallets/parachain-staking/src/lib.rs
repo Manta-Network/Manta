@@ -1405,6 +1405,66 @@ pub mod pallet {
             }
             balance
         }
+        /// One-off fn that initializes pallet parameters to onboard the pallet after genesis
+        pub fn initialize_pallet(
+            starting_block: <T as frame_system::Config>::BlockNumber,
+            candidates: Vec<T::AccountId>,
+            inflation: InflationInfo<BalanceOf<T>>,
+        ) {
+            // Ensure we have at least MinSelected candidates in the list
+            assert!(candidates.len() >= T::MinSelectedCandidates::get() as usize);
+
+            <InflationConfig<T>>::put(inflation);
+
+            let whitelist_bond = T::MinWhitelistCandidateStk::get();
+
+            let mut candidate_count = 0u32;
+            // Initialize the candidates
+            for candidate in candidates {
+                assert!(
+                    <Pallet<T>>::get_collator_stakable_free_balance(&candidate) >= whitelist_bond,
+                    "Account does not have enough balance to bond as a candidate."
+                );
+                candidate_count = candidate_count.saturating_add(1u32);
+                if let Err(error) = <Pallet<T>>::join_candidates(
+                    T::Origin::from(Some(candidate.clone()).into()),
+                    whitelist_bond,
+                    candidate_count,
+                ) {
+                    log::warn!("Join candidates failed in genesis with error {:?}", error);
+                } else {
+                    candidate_count = candidate_count.saturating_add(1u32);
+                }
+            }
+            log::info!("Added {} initial candidates", candidate_count);
+
+            // Set collator commission to default config
+            <CollatorCommission<T>>::put(T::DefaultCollatorCommission::get());
+            // Set parachain bond config to default config
+            <ParachainBondInfo<T>>::put(ParachainBondConfig {
+                // must be set soon; if not => due inflation will be sent to collators/delegators
+                account: T::AccountId::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes())
+                    .expect("infinite length input; no invalid inputs for type; qed"),
+                percent: T::DefaultParachainBondReservePercent::get(),
+            });
+            // Set total selected candidates to minimum config
+            <TotalSelected<T>>::put(T::MinSelectedCandidates::get());
+            // Choose top TotalSelected collator candidates
+            let (v_count, _, total_staked) = <Pallet<T>>::select_top_candidates(1u32);
+            // Start Round 1 at the given starting block
+            let round: RoundInfo<T::BlockNumber> =
+                RoundInfo::new(1u32, starting_block, T::DefaultBlocksPerRound::get());
+            <Round<T>>::put(round);
+            // Snapshot total stake
+            <Staked<T>>::insert(1u32, <Total<T>>::get());
+            <Pallet<T>>::deposit_event(Event::NewRound {
+                starting_block: starting_block,
+                round: 1u32,
+                selected_collators_number: v_count,
+                total_balance: total_staked,
+            });
+        }
+
         /// Caller must ensure candidate is active before calling
         pub(crate) fn update_active(candidate: T::AccountId, total: BalanceOf<T>) {
             let mut candidates = <CandidatePool<T>>::get();
