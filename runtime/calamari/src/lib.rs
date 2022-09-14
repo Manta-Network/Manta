@@ -876,6 +876,7 @@ pub type OnRuntimeUpgradeHooks = (
     MigratePalletPv2Sv<pallet_tx_pause::Pallet<Runtime>>,
     MigratePalletPv2Sv<manta_collator_selection::Pallet<Runtime>>,
     MigratePalletPv2Sv<calamari_vesting::Pallet<Runtime>>,
+    migrations::staking::MigrateInvulnerables<Runtime>,
 );
 
 /// Executive: handles dispatch to the various modules.
