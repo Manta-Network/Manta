@@ -100,7 +100,6 @@ pub mod pallet {
         Perbill, Percent,
     };
     use sp_std::{collections::btree_map::BTreeMap, prelude::*};
-
     /// Pallet for parachain staking
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -1619,6 +1618,13 @@ pub mod pallet {
                 .map(|x| x.owner)
                 .collect::<Vec<T::AccountId>>();
             collators.sort();
+            // BEGIN MANTA WORKAROUND: remove the smallest-stake collator to get the set to be odd ( if possible )
+            if collators.len() % 2 == 0 {
+                if collators.len() > T::MinSelectedCandidates::get() as usize {
+                    collators.pop();
+                }
+            }
+            // END MANTA WORKAROUND
             collators
         }
         /// Best as in most cumulatively supported in terms of stake
