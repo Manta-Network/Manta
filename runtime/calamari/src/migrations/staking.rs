@@ -22,12 +22,12 @@ use core::marker::PhantomData;
 use frame_support::traits::OnRuntimeUpgrade;
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::OnRuntimeUpgradeHelpersExt;
+use sp_runtime::traits::UniqueSaturatedInto;
 
 /// Migration to move old invulnerables to the staking set on upgrade
 /// [DelegationScheduledRequests] storage item.
 /// Additionally [DelegatorState] is migrated from [OldDelegator] to [Delegator].
 pub struct MigrateInvulnerables<T>(PhantomData<T>);
-
 impl<T> OnRuntimeUpgrade for MigrateInvulnerables<T>
 where
     T: frame_system::Config
@@ -37,6 +37,13 @@ where
     <<T as frame_system::Config>::Origin as OriginTrait>::AccountId:
         From<<T as frame_system::Config>::AccountId>,
     pallet_parachain_staking::BalanceOf<T>: Into<Balance> + From<Balance>,
+    <<T as manta_collator_selection::Config>::Currency as Currency<
+        <T as frame_system::Config>::AccountId,
+    >>::Balance: From<
+        <<T as pallet_parachain_staking::Config>::Currency as Currency<
+            <T as frame_system::Config>::AccountId,
+        >>::Balance,
+    >,
 {
     fn on_runtime_upgrade() -> Weight
     where
@@ -73,12 +80,11 @@ where
                 new_n_of_candidates,
             );
         }
-
         // 3.2 Ensure the candidacy bond for collator_selection is actually 400k
         // NOTE: This is needed to migrate already deployed testnets like Baikal
         let _ = manta_collator_selection::Pallet::<T>::set_candidacy_bond(
             <T as frame_system::Config>::Origin::root(),
-            T::MinWhitelistCandidateStk::get(),
+            T::MinWhitelistCandidateStk::get().unique_saturated_into(),
         );
 
         // 3.3 onboard with manta_collator_selection::registerCandidate
