@@ -10,7 +10,7 @@ version = "3.4.0"
 
 [dependencies]
 log = "0.4"
-serde = { version = "1.0.136", optional = true }
+serde = { version = "1.0.136", default-features = false, optional = true }
 
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true, default-features = false }
@@ -57,7 +57,7 @@ std = [
   'pallet-session/std',
   "parity-scale-codec/std",
   "scale-info/std",
-  "serde",
+  "serde/std",
   "sp-arithmetic/std",
   "sp-runtime/std",
   "sp-std/std",

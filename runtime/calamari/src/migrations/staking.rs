@@ -57,9 +57,6 @@ where
             pallet_parachain_staking"
         );
 
-        // let mut reads: Weight = 0;
-        // let mut writes: Weight = 0;
-
         // 1. Find current invulnerables
         let invulnerables = manta_collator_selection::Pallet::<T>::invulnerables();
 
@@ -139,8 +136,9 @@ where
 
         // Also ensure there's enough space in collator_selection's Candidates to add all invulnerables
         assert!(
-            T::MaxCandidates
-                >= manta_collator_selection::Pallet::<T>::candidates().len() + invulnerables.len()
+            <T as manta_collator_selection::Config>::MaxCandidates::get()
+                >= (manta_collator_selection::Pallet::<T>::candidates().len() + invulnerables.len())
+                    as u32
         );
 
         Self::set_temp_storage(invulnerables, "invulnerables");
