@@ -173,7 +173,7 @@ fn calamari_dev_genesis(
             candidates: invulnerables
                 .iter()
                 .cloned()
-                .map(|(account, _)| (account, 4_000_000 * KMA)) // TODO: Change to use constant from primtives
+                .map(|(account, _)| (account, 4_000_000 * KMA)) // TODO: Change to use constant from primitives
                 .collect(),
             delegations,
             inflation_config: calamari_runtime::currency::inflation_config::<

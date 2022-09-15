@@ -11665,6 +11665,7 @@ source = "git+https://github.com/encointer/substrate-fixed.git#a4fb461aae6205ffc
 dependencies = [
  "parity-scale-codec",
  "scale-info",
+ "serde",
  "typenum 1.16.0",
 ]
 

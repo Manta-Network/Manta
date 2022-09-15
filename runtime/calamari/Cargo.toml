@@ -195,6 +195,7 @@ std = [
   'pallet-balances/std',
   'pallet-multisig/std',
   'pallet-parachain-staking/std',
+  'substrate-fixed/std',
   'pallet-preimage/std',
   'pallet-utility/std',
   'pallet-transaction-payment-rpc-runtime-api/std',

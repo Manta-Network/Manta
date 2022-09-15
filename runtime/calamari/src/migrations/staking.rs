@@ -57,9 +57,6 @@ where
             pallet_parachain_staking"
         );
 
-        // let mut reads: Weight = 0;
-        // let mut writes: Weight = 0;
-
         // 1. Find current invulnerables
         let invulnerables = manta_collator_selection::Pallet::<T>::invulnerables();
 
