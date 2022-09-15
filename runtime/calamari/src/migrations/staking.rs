@@ -110,7 +110,7 @@ where
         let invulnerables = manta_collator_selection::Pallet::<T>::invulnerables();
         for invulnerable in invulnerables.clone() {
             assert!(
-                <T as pallet_parachain_staking::Config>::Currency::reserved_balance(&invulnerable)
+                <T as pallet_parachain_staking::Config>::Currency::free_balance(&invulnerable)
                     >= T::MinWhitelistCandidateStk::get()
             );
         }
