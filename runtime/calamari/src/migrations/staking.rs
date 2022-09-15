@@ -106,9 +106,7 @@ where
 
     #[cfg(feature = "try-runtime")]
     fn pre_upgrade() -> Result<(), &'static str> {
-        use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::ReservableCurrency;
-
-        // Ensure they each have 400k KMA reserved by collator_selection
+        // Before beginning the migration invulnerables must have 400k KMA in free balance
         let invulnerables = manta_collator_selection::Pallet::<T>::invulnerables();
         for invulnerable in invulnerables.clone() {
             assert!(
