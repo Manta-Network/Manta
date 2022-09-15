@@ -46,9 +46,9 @@ where
         pallet_parachain_staking::BalanceOf<T>: Into<Balance> + From<Balance>,
     {
         log::info!(
-            target: "SplitDelegatorStateIntoDelegationScheduledRequests",
-            "running migration for DelegatorState to new version and DelegationScheduledRequests \
-            storage item"
+            target: "MigrateInvulnerables",
+            "Migrating invulnerables from manta_collator_selection to
+            pallet_parachain_staking"
         );
 
         // let mut reads: Weight = 0;

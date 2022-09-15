@@ -686,52 +686,52 @@ impl<T: Config> OnRuntimeUpgrade for SplitCandidateStateToDecreasePoV<T> {
 // }
 
 /// Migration to purge staking storage bloat for `Points` and `AtStake` storage items
-pub struct PurgeStaleStorage<T>(PhantomData<T>);
-impl<T: Config> OnRuntimeUpgrade for PurgeStaleStorage<T> {
-    fn on_runtime_upgrade() -> Weight {
-        log::info!(target: "PurgeStaleStorage", "running migration to remove storage bloat");
-        let current_round = <Round<T>>::get().current;
-        let payment_delay = T::RewardPaymentDelay::get();
-        let db_weight = T::DbWeight::get();
-        let (reads, mut writes) = (3u64, 0u64);
-        if current_round <= payment_delay {
-            // early enough so no storage bloat exists yet
-            // (only relevant for chains <= payment_delay rounds old)
-            return db_weight.reads(reads);
-        }
-        // already paid out at the beginning of current round
-        let most_recent_round_to_kill = current_round - payment_delay;
-        for i in 1..=most_recent_round_to_kill {
-            writes = writes.saturating_add(2u64);
-            <Staked<T>>::remove(i);
-            <Points<T>>::remove(i);
-        }
-        // 5% of the max block weight as safety margin for computation
-        db_weight.reads(reads) + db_weight.writes(writes) + 25_000_000_000
-    }
+// pub struct PurgeStaleStorage<T>(PhantomData<T>);
+// impl<T: Config> OnRuntimeUpgrade for PurgeStaleStorage<T> {
+//     fn on_runtime_upgrade() -> Weight {
+//         log::info!(target: "PurgeStaleStorage", "running migration to remove storage bloat");
+//         let current_round = <Round<T>>::get().current;
+//         let payment_delay = T::RewardPaymentDelay::get();
+//         let db_weight = T::DbWeight::get();
+//         let (reads, mut writes) = (3u64, 0u64);
+//         if current_round <= payment_delay {
+//             // early enough so no storage bloat exists yet
+//             // (only relevant for chains <= payment_delay rounds old)
+//             return db_weight.reads(reads);
+//         }
+//         // already paid out at the beginning of current round
+//         let most_recent_round_to_kill = current_round - payment_delay;
+//         for i in 1..=most_recent_round_to_kill {
+//             writes = writes.saturating_add(2u64);
+//             <Staked<T>>::remove(i);
+//             <Points<T>>::remove(i);
+//         }
+//         // 5% of the max block weight as safety margin for computation
+//         db_weight.reads(reads) + db_weight.writes(writes) + 25_000_000_000
+//     }
 
-    #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
-        // trivial migration
-        Ok(())
-    }
+//     #[cfg(feature = "try-runtime")]
+//     fn pre_upgrade() -> Result<(), &'static str> {
+//         // trivial migration
+//         Ok(())
+//     }
 
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
-        // expect only the storage items for the last 2 rounds to be stored
-        let staked_count = Staked::<T>::iter().count() as u32;
-        let points_count = Points::<T>::iter().count() as u32;
-        let delay = T::RewardPaymentDelay::get();
-        assert_eq!(
-            staked_count, delay,
-            "Expected {} for `Staked` count, Found: {}",
-            delay, staked_count
-        );
-        assert_eq!(
-            points_count, delay,
-            "Expected {} for `Points` count, Found: {}",
-            delay, staked_count
-        );
-        Ok(())
-    }
-}
+//     #[cfg(feature = "try-runtime")]
+//     fn post_upgrade() -> Result<(), &'static str> {
+//         // expect only the storage items for the last 2 rounds to be stored
+//         let staked_count = Staked::<T>::iter().count() as u32;
+//         let points_count = Points::<T>::iter().count() as u32;
+//         let delay = T::RewardPaymentDelay::get();
+//         assert_eq!(
+//             staked_count, delay,
+//             "Expected {} for `Staked` count, Found: {}",
+//             delay, staked_count
+//         );
+//         assert_eq!(
+//             points_count, delay,
+//             "Expected {} for `Points` count, Found: {}",
+//             delay, staked_count
+//         );
+//         Ok(())
+//     }
+// }
