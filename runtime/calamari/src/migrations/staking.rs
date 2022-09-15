@@ -28,7 +28,6 @@ use frame_support::traits::OnRuntimeUpgradeHelpersExt;
 /// Additionally [DelegatorState] is migrated from [OldDelegator] to [Delegator].
 pub struct MigrateInvulnerables<T>(PhantomData<T>);
 
-#[allow(deprecated)]
 impl<T> OnRuntimeUpgrade for MigrateInvulnerables<T>
 where
     T: frame_system::Config
@@ -94,14 +93,15 @@ where
         );
         // Setting total_selected will take effect at the beginning of the next round, so for the first 6 hours
         // our invulnerables will be the only collators
+        const INITIAL_MAX_ACTIVE_COLLATORS: u32 = 63;
         let _ = pallet_parachain_staking::Pallet::<T>::set_total_selected(
             <T as frame_system::Config>::Origin::root(),
-            63u32,
+            INITIAL_MAX_ACTIVE_COLLATORS,
         );
 
         // TODO: Get correct weight from the extrinsics
         // T::DbWeight::get().reads_writes(reads, writes)
-        T::BlockWeights::get().max_block // only migration, we can just use the whole block
+        T::BlockWeights::get().max_block / 2 // simple weight
     }
 
     #[cfg(feature = "try-runtime")]
