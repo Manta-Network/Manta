@@ -1422,7 +1422,7 @@ pub mod pallet {
             // Initialize the candidates
             for candidate in candidates {
                 log::info!(
-                    "candidate {:?} has free balance of {}",
+                    "candidate {:?} has free balance of {:?}",
                     candidate.clone(),
                     <Pallet<T>>::get_collator_stakable_free_balance(&candidate)
                 ); // RAD: Remove

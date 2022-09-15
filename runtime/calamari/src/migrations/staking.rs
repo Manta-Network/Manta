@@ -15,8 +15,8 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    sp_api_hidden_includes_construct_runtime::hidden_include::traits::OriginTrait, Balance, Get,
-    Vec, Weight,
+    sp_api_hidden_includes_construct_runtime::hidden_include::traits::{Currency, OriginTrait},
+    Balance, Get, Vec, Weight,
 };
 use core::marker::PhantomData;
 use frame_support::traits::OnRuntimeUpgrade;
@@ -67,18 +67,18 @@ where
         // i.e. onboard with manta_collator_selection::registerCandidate
         for invuln in invulnerables.clone() {
             log::info!(
-                "Migrating account {:?} with initial free_balance {}",
-                invulnerable,
-                <T as pallet_parachain_staking::Config>::Currency::free_balance(&invulnerable)
+                "Migrating account {:?} with initial free_balance {:?}",
+                invuln.clone(),
+                <T as pallet_parachain_staking::Config>::Currency::free_balance(&invuln)
             );
             let _ = manta_collator_selection::Pallet::<T>::register_candidate(
                 <T as frame_system::Config>::Origin::root(),
-                invuln,
+                invuln.clone(),
             );
             log::info!(
-                "Migrating account {:?} with free_balance after collator_selection::candidates {}",
-                invulnerable,
-                <T as pallet_parachain_staking::Config>::Currency::free_balance(&invulnerable)
+                "Migrating account {:?} with free_balance after collator_selection::candidates {:?}",
+                invuln.clone(),
+                <T as pallet_parachain_staking::Config>::Currency::free_balance(&invuln)
             );
         }
 
@@ -106,9 +106,7 @@ where
 
     #[cfg(feature = "try-runtime")]
     fn pre_upgrade() -> Result<(), &'static str> {
-        use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::Currency;
-
-        // 2. Ensure they each have 400k KMA
+        // Ensure they each have 400k KMA
         let invulnerables = manta_collator_selection::Pallet::<T>::invulnerables();
         for invulnerable in invulnerables.clone() {
             assert!(
