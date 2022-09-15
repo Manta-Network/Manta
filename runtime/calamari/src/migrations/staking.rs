@@ -66,9 +66,19 @@ where
         // 3. Register invulnerables to whitelist
         // i.e. onboard with manta_collator_selection::registerCandidate
         for invuln in invulnerables.clone() {
+            log::info!(
+                "Migrating account {:?} with initial free_balance {}",
+                invulnerable,
+                <T as pallet_parachain_staking::Config>::Currency::free_balance(&invulnerable)
+            );
             let _ = manta_collator_selection::Pallet::<T>::register_candidate(
                 <T as frame_system::Config>::Origin::root(),
                 invuln,
+            );
+            log::info!(
+                "Migrating account {:?} with free_balance after collator_selection::candidates {}",
+                invulnerable,
+                <T as pallet_parachain_staking::Config>::Currency::free_balance(&invulnerable)
             );
         }
 
