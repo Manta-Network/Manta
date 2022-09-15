@@ -106,12 +106,14 @@ where
 
     #[cfg(feature = "try-runtime")]
     fn pre_upgrade() -> Result<(), &'static str> {
+        use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::ReservableCurrency;
+
         // Ensure they each have 400k KMA reserved by collator_selection
         let invulnerables = manta_collator_selection::Pallet::<T>::invulnerables();
         for invulnerable in invulnerables.clone() {
             assert!(
                 <T as pallet_parachain_staking::Config>::Currency::reserved_balance(&invulnerable)
-                    > T::MinWhitelistCandidateStk::get()
+                    >= T::MinWhitelistCandidateStk::get()
             );
         }
 
