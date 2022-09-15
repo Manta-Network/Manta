@@ -1425,13 +1425,12 @@ pub mod pallet {
                     <T as Config>::Currency::reserved_balance(&candidate) >= whitelist_bond,
                     "Account does not have enough balance to bond as a candidate."
                 );
-                candidate_count = candidate_count.saturating_add(1u32);
                 if let Err(error) = <Pallet<T>>::join_candidates(
                     T::Origin::from(Some(candidate.clone()).into()),
                     whitelist_bond,
                     candidate_count,
                 ) {
-                    log::warn!("Join candidates failed in genesis with error {:?}", error);
+                    log::warn!("Join candidates failed in migration with error {:?}", error);
                 } else {
                     candidate_count = candidate_count.saturating_add(1u32);
                 }
