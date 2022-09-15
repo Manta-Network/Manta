@@ -123,9 +123,7 @@ where
             INITIAL_MAX_ACTIVE_COLLATORS,
         );
 
-        // TODO: Get correct weight from the extrinsics
-        // T::DbWeight::get().reads_writes(reads, writes)
-        T::BlockWeights::get().max_block / 2 // simple weight
+        T::BlockWeights::get().max_block // simply use the whole block
     }
 
     #[cfg(feature = "try-runtime")]
