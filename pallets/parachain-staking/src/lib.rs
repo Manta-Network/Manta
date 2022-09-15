@@ -1831,9 +1831,18 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> Get<Vec<T::AccountId>> for Pallet<T> {
+    impl<T> Get<Vec<T::AccountId>> for Pallet<T>
+    where
+        T: Config + manta_collator_selection::Config,
+        manta_collator_selection::Pallet<T>: Get<Vec<T::AccountId>>,
+        {
         fn get() -> Vec<T::AccountId> {
-            Self::selected_candidates()
+            // Migration specifics: If we have no eligible block producers yet, use the old selection method
+            if Self::selected_candidates().is_empty() {
+                manta_collator_selection::Pallet::<T>::get()
+            } else {
+                Self::selected_candidates()
+            }
         }
     }
 }
