@@ -63,7 +63,17 @@ where
         );
 
         // 3. Register invulnerables to whitelist
-        // i.e. onboard with manta_collator_selection::registerCandidate
+        // 3.1 Ensure DesiredCandidates can take the additional invulnerables
+        let n_of_candidates = manta_collator_selection::Pallet::<T>::candidates().len() as u32;
+        let new_n_of_candidates = n_of_candidates + invulnerables.len() as u32;
+        let desired_candidates = manta_collator_selection::Pallet::<T>::desired_candidates();
+        if new_n_of_candidates > desired_candidates {
+            let _ = manta_collator_selection::Pallet::<T>::set_desired_candidates(
+                <T as frame_system::Config>::Origin::root(),
+                new_n_of_candidates,
+            );
+        }
+        // 3.2 onboard with manta_collator_selection::registerCandidate
         for invuln in invulnerables.clone() {
             log::info!(
                 "Migrating account {:?} with initial free_balance {:?}",
@@ -115,8 +125,13 @@ where
             );
         }
 
-        Self::set_temp_storage(invulnerables, "invulnerables");
+        // Also ensure there's enough space in collator_selection's Candidates to add all invulnerables
+        assert!(
+            T::MaxCandidates
+                >= manta_collator_selection::Pallet::<T>::candidates().len() + invulnerables.len()
+        );
 
+        Self::set_temp_storage(invulnerables, "invulnerables");
         Ok(())
     }
 
