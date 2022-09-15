@@ -1421,13 +1421,8 @@ pub mod pallet {
             let mut candidate_count = 0u32;
             // Initialize the candidates
             for candidate in candidates {
-                log::info!(
-                    "candidate {:?} has free balance of {:?}",
-                    candidate.clone(),
-                    <Pallet<T>>::get_collator_stakable_free_balance(&candidate)
-                ); // RAD: Remove
                 assert!(
-                    <Pallet<T>>::get_collator_stakable_free_balance(&candidate) >= whitelist_bond,
+                    <T as Config>::Currency::reserved(&candidate) >= whitelist_bond,
                     "Account does not have enough balance to bond as a candidate."
                 );
                 candidate_count = candidate_count.saturating_add(1u32);
