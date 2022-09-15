@@ -185,7 +185,7 @@ fn calamari_dev_genesis(
         },
         collator_selection: calamari_runtime::CollatorSelectionConfig {
             invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-            candidacy_bond: KMA * 1000, // How many tokens will be reserved as collator
+            candidacy_bond: 400_000 * KMA, // How many tokens will be reserved as collator
             ..Default::default()
         },
         session: calamari_runtime::SessionConfig {

@@ -73,7 +73,15 @@ where
                 new_n_of_candidates,
             );
         }
-        // 3.2 onboard with manta_collator_selection::registerCandidate
+
+        // 3.2 Ensure the candidacy bond for collator_selection is actually 400k
+        // NOTE: This is needed to migrate already deployed testnets like Baikal
+        let _ = manta_collator_selection::Pallet::<T>::set_candidacy_bond(
+            <T as frame_system::Config>::Origin::root(),
+            T::MinWhitelistCandidateStk::get(),
+        );
+
+        // 3.3 onboard with manta_collator_selection::registerCandidate
         for invuln in invulnerables.clone() {
             log::info!(
                 "Migrating account {:?} with initial free_balance {:?}",
