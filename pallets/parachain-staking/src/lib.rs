@@ -1422,7 +1422,7 @@ pub mod pallet {
             // Initialize the candidates
             for candidate in candidates {
                 assert!(
-                    <Pallet<T>>::get_collator_stakable_free_balance(&candidate) >= whitelist_bond,
+                    <T as Config>::Currency::reserved_balance(&candidate) >= whitelist_bond,
                     "Account does not have enough balance to bond as a candidate."
                 );
                 candidate_count = candidate_count.saturating_add(1u32);
