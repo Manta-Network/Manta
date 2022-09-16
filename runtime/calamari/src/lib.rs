@@ -870,7 +870,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExt
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = (migrations::staking::MigrateInvulnerables<Runtime>,);
+pub type OnRuntimeUpgradeHooks = (migrations::staking::InitializeStakingPallet<Runtime>,);
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<

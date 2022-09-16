@@ -102,6 +102,7 @@ pub mod pallet {
     use sp_std::{collections::btree_map::BTreeMap, prelude::*};
     /// Pallet for parachain staking
     #[pallet::pallet]
+    #[pallet::storage_version(STORAGE_VERSION)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(PhantomData<T>);
 
@@ -112,6 +113,8 @@ pub mod pallet {
 
     pub const COLLATOR_LOCK_ID: LockIdentifier = *b"stkngcol";
     pub const DELEGATOR_LOCK_ID: LockIdentifier = *b"stkngdel";
+
+    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     /// Configuration trait of this pallet.
     #[pallet::config]
@@ -238,6 +241,8 @@ pub mod pallet {
         PendingDelegationRequestNotDueYet,
         CannotDelegateLessThanOrEqualToLowestBottomWhenFull,
         PendingDelegationRevoke,
+        PalletAlreadyInitialized,
+        NotEnoughCollatorsForPalletInit,
     }
 
     #[pallet::event]
@@ -1410,9 +1415,25 @@ pub mod pallet {
             starting_block: <T as frame_system::Config>::BlockNumber,
             candidates: Vec<T::AccountId>,
             inflation: InflationInfo<BalanceOf<T>>,
-        ) {
+        ) -> Result<(), Error<T>> {
+            ensure!(
+                Self::on_chain_storage_version() == 0,
+                <Error<T>>::PalletAlreadyInitialized
+            );
+
             // Ensure we have at least MinSelected candidates in the list
-            assert!(candidates.len() >= T::MinSelectedCandidates::get() as usize);
+            ensure!(
+                candidates.len() >= T::MinSelectedCandidates::get() as usize,
+                <Error<T>>::NotEnoughCollatorsForPalletInit
+            );
+
+            // provided by https://docs.rs/frame-support/latest/frame_support/traits/trait.OnGenesis.html
+            // Sets STORAGE_VERSION
+            <Self as frame_support::traits::OnGenesis>::on_genesis();
+            assert_eq!(
+                Self::current_storage_version(),
+                Self::on_chain_storage_version(),
+            );
 
             <InflationConfig<T>>::put(inflation);
 
@@ -1421,9 +1442,9 @@ pub mod pallet {
             let mut candidate_count = 0u32;
             // Initialize the candidates
             for candidate in candidates {
-                assert!(
+                ensure!(
                     <T as Config>::Currency::reserved_balance(&candidate) >= whitelist_bond,
-                    "Account does not have enough balance to bond as a candidate."
+                    <Error<T>>::InsufficientBalance
                 );
                 if let Err(error) = <Pallet<T>>::join_candidates(
                     T::Origin::from(Some(candidate.clone()).into()),
@@ -1462,6 +1483,7 @@ pub mod pallet {
                 selected_collators_number: v_count,
                 total_balance: total_staked,
             });
+            Ok(())
         }
 
         /// Caller must ensure candidate is active before calling

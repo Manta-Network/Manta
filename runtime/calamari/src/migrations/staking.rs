@@ -27,8 +27,8 @@ use sp_runtime::traits::UniqueSaturatedInto;
 /// Migration to move old invulnerables to the staking set on upgrade
 /// [DelegationScheduledRequests] storage item.
 /// Additionally [DelegatorState] is migrated from [OldDelegator] to [Delegator].
-pub struct MigrateInvulnerables<T>(PhantomData<T>);
-impl<T> OnRuntimeUpgrade for MigrateInvulnerables<T>
+pub struct InitializeStakingPallet<T>(PhantomData<T>);
+impl<T> OnRuntimeUpgrade for InitializeStakingPallet<T>
 where
     T: frame_system::Config
         + pallet_parachain_staking::Config
@@ -52,7 +52,7 @@ where
         pallet_parachain_staking::BalanceOf<T>: Into<Balance> + From<Balance>,
     {
         log::info!(
-            target: "MigrateInvulnerables",
+            target: "InitializeStakingPallet",
             "Migrating invulnerables from manta_collator_selection to
             pallet_parachain_staking"
         );
@@ -111,7 +111,14 @@ where
             current_block,
             invulnerables,
             crate::currency::inflation_config::<T>(),
-        );
+        )
+        .unwrap_or_else(|err| {
+            log::error!(
+                "pallet_parachain_staking initialization failed with {:?}. Chain is likely effed",
+                err
+            );
+        });
+
         // Setting total_selected will take effect at the beginning of the next round, so for the first 6 hours
         // our invulnerables will be the only collators
         const INITIAL_MAX_ACTIVE_COLLATORS: u32 = 63;
@@ -172,11 +179,16 @@ where
         }
         // Other pallet parameters are set
         // Inflation is set to 3%
+        use sp_arithmetic::{PerThing, Perbill};
+        let infla = pallet_parachain_staking::Range {
+            min: Perbill::from_rational_with_rounding(5u32, 200u32, sp_arithmetic::Rounding::Down)
+                .expect("constant denom is not 0. qed"), // = 2.5%
+            ideal: Perbill::from_percent(3),
+            max: Perbill::from_percent(3),
+        };
         assert_eq!(
-            pallet_parachain_staking::Pallet::<T>::inflation_config()
-                .annual
-                .ideal,
-            sp_arithmetic::Perbill::from_percent(3)
+            pallet_parachain_staking::Pallet::<T>::inflation_config().annual,
+            infla
         );
 
         // TotalSelected is 63
