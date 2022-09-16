@@ -117,7 +117,6 @@ where
                 "pallet_parachain_staking initialization failed with {:?}. Chain is likely effed",
                 err
             );
-            ()
         });
 
         // Setting total_selected will take effect at the beginning of the next round, so for the first 6 hours
