@@ -179,11 +179,16 @@ where
         }
         // Other pallet parameters are set
         // Inflation is set to 3%
+        use sp_arithmetic::{PerThing, Perbill};
+        let infla = pallet_parachain_staking::Range {
+            min: Perbill::from_rational_with_rounding(5u32, 200u32, sp_arithmetic::Rounding::Down)
+                .expect("constant denom is not 0. qed"), // = 2.5%
+            ideal: Perbill::from_percent(3),
+            max: Perbill::from_percent(3),
+        };
         assert_eq!(
-            pallet_parachain_staking::Pallet::<T>::inflation_config()
-                .annual
-                .ideal,
-            sp_arithmetic::Perbill::from_percent(3)
+            pallet_parachain_staking::Pallet::<T>::inflation_config().annual,
+            infla
         );
 
         // TotalSelected is 63
