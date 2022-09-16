@@ -21,7 +21,7 @@ scale-info = { version = "2.1.2", default-features = false, features = ["derive"
 sp-arithmetic = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
-substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", tag = "0.5.9", default-features = false }
+substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", tag = "v0.5.9", default-features = false }
 
 # Nimbus
 nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v3.3.0", default-features = false }
