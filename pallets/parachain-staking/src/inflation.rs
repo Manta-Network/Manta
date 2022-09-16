@@ -42,7 +42,7 @@ fn rounds_per_year<T: Config>() -> u32 {
 )]
 pub struct Range<T> {
     pub min: T,
-    pub ideal: T,   // Target rate of inflation. round length will vary to keep issuance close to this setting
+    pub ideal: T, // Target rate of inflation. round length will vary to keep issuance close to this setting
     pub max: T,
 }
 
