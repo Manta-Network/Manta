@@ -425,13 +425,13 @@ impl<
         self.bond = self.bond.saturating_add(more);
         <T as Config>::Currency::set_lock(
             COLLATOR_LOCK_ID,
-            &who.clone(),
+            &who,
             self.bond.into(),
             WithdrawReasons::all(),
         );
         self.total_counted = self.total_counted.saturating_add(more);
         <Pallet<T>>::deposit_event(Event::CandidateBondedMore {
-            candidate: who.clone(),
+            candidate: who,
             amount: more.into(),
             new_total_bond: self.bond.into(),
         });
@@ -484,7 +484,7 @@ impl<
         self.bond = self.bond.saturating_sub(request.amount);
         <T as Config>::Currency::set_lock(
             COLLATOR_LOCK_ID,
-            &who.clone(),
+            &who,
             self.bond.into(),
             WithdrawReasons::all(),
         );
@@ -752,8 +752,8 @@ impl<
         let mut actual_amount_option: Option<BalanceOf<T>> = None;
         top_delegations.delegations = top_delegations
             .delegations
-            .clone()
-            .into_iter()
+            .iter()
+            .cloned()
             .filter(|d| {
                 if d.owner != delegator {
                     true
@@ -802,8 +802,8 @@ impl<
         let mut actual_amount_option: Option<BalanceOf<T>> = None;
         bottom_delegations.delegations = bottom_delegations
             .delegations
-            .clone()
-            .into_iter()
+            .iter()
+            .cloned()
             .filter(|d| {
                 if d.owner != delegator {
                     true
@@ -867,8 +867,8 @@ impl<
         let mut in_top = false;
         top_delegations.delegations = top_delegations
             .delegations
-            .clone()
-            .into_iter()
+            .iter()
+            .cloned()
             .map(|d| {
                 if d.owner != delegator {
                     d
@@ -908,8 +908,8 @@ impl<
             // bump it from bottom
             bottom_delegations.delegations = bottom_delegations
                 .delegations
-                .clone()
-                .into_iter()
+                .iter()
+                .cloned()
                 .filter(|d| {
                     if d.owner != delegator {
                         true
@@ -949,8 +949,8 @@ impl<
             // just increase the delegation
             bottom_delegations.delegations = bottom_delegations
                 .delegations
-                .clone()
-                .into_iter()
+                .iter()
+                .cloned()
                 .map(|d| {
                     if d.owner != delegator {
                         d
@@ -1029,8 +1029,8 @@ impl<
             // take delegation from top
             top_delegations.delegations = top_delegations
                 .delegations
-                .clone()
-                .into_iter()
+                .iter()
+                .cloned()
                 .filter(|d| {
                     if d.owner != delegator {
                         true
@@ -1064,8 +1064,8 @@ impl<
             let mut is_in_top = false;
             top_delegations.delegations = top_delegations
                 .delegations
-                .clone()
-                .into_iter()
+                .iter()
+                .cloned()
                 .map(|d| {
                     if d.owner != delegator {
                         d
@@ -1102,8 +1102,8 @@ impl<
         let mut in_bottom = false;
         bottom_delegations.delegations = bottom_delegations
             .delegations
-            .clone()
-            .into_iter()
+            .iter()
+            .cloned()
             .map(|d| {
                 if d.owner != delegator {
                     d
@@ -1455,10 +1455,11 @@ impl<
         BalanceOf<T>: From<Balance>,
         T::AccountId: From<AccountId>,
     {
+        let id = self.id.clone().into();
         match additional_required_balance {
             BondAdjust::Increase(amount) => {
                 ensure!(
-                    <Pallet<T>>::get_delegator_stakable_free_balance(&self.id.clone().into())
+                    <Pallet<T>>::get_delegator_stakable_free_balance(&id)
                         >= amount.into(),
                     Error::<T>::InsufficientBalance,
                 );
@@ -1473,11 +1474,11 @@ impl<
         };
 
         if self.total.is_zero() {
-            <T as Config>::Currency::remove_lock(DELEGATOR_LOCK_ID, &self.id.clone().into());
+            <T as Config>::Currency::remove_lock(DELEGATOR_LOCK_ID, &id);
         } else {
             <T as Config>::Currency::set_lock(
                 DELEGATOR_LOCK_ID,
-                &self.id.clone().into(),
+                &id,
                 self.total.into(),
                 WithdrawReasons::all(),
             );
