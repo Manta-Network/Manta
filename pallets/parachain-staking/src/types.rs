@@ -555,7 +555,7 @@ impl<
     /// Returns whether delegator was added and an optional negative total counted remainder
     /// for if a bottom delegation was kicked
     /// MUST ensure no delegation exists for this candidate in the `DelegatorState` before call
-    pub fn add_delegation<T: Config>(
+    pub(crate) fn add_delegation<T: Config>(
         &mut self,
         candidate: &T::AccountId,
         delegation: Bond<T::AccountId, BalanceOf<T>>,
@@ -602,7 +602,7 @@ impl<
     /// Add delegation to top delegation
     /// Returns Option<negative_total_staked_remainder>
     /// Only call if lowest top delegation is less than delegation.amount || !top_full
-    pub fn add_top_delegation<T: Config>(
+    fn add_top_delegation<T: Config>(
         &mut self,
         candidate: &T::AccountId,
         delegation: Bond<T::AccountId, BalanceOf<T>>,
@@ -640,7 +640,7 @@ impl<
     /// Check before call that if capacity is full, inserted delegation is higher than lowest
     /// bottom delegation (and if so, need to adjust the total storage item)
     /// CALLER MUST ensure(lowest_bottom_to_be_kicked.amount < delegation.amount)
-    pub fn add_bottom_delegation<T: Config>(
+    fn add_bottom_delegation<T: Config>(
         &mut self,
         bumped_from_top: bool,
         candidate: &T::AccountId,
@@ -708,7 +708,7 @@ impl<
     /// Remove delegation
     /// Removes from top if amount is above lowest top or top is not full
     /// Return Ok(if_total_counted_changed)
-    pub fn rm_delegation_if_exists<T: Config>(
+    pub(crate) fn rm_delegation_if_exists<T: Config>(
         &mut self,
         candidate: &T::AccountId,
         delegator: T::AccountId,
@@ -737,7 +737,7 @@ impl<
         }
     }
     /// Remove top delegation, bumps top bottom delegation if exists
-    pub fn rm_top_delegation<T: Config>(
+    fn rm_top_delegation<T: Config>(
         &mut self,
         candidate: &T::AccountId,
         delegator: T::AccountId,
@@ -788,7 +788,7 @@ impl<
     }
     /// Remove bottom delegation
     /// Returns if_total_counted_changed: bool
-    pub fn rm_bottom_delegation<T: Config>(
+    fn rm_bottom_delegation<T: Config>(
         &mut self,
         candidate: &T::AccountId,
         delegator: T::AccountId,
@@ -822,7 +822,7 @@ impl<
         Ok(false)
     }
     /// Increase delegation amount
-    pub fn increase_delegation<T: Config>(
+    pub(crate) fn increase_delegation<T: Config>(
         &mut self,
         candidate: &T::AccountId,
         delegator: T::AccountId,
@@ -853,7 +853,7 @@ impl<
         }
     }
     /// Increase top delegation
-    pub fn increase_top_delegation<T: Config>(
+    fn increase_top_delegation<T: Config>(
         &mut self,
         candidate: &T::AccountId,
         delegator: T::AccountId,
@@ -890,7 +890,7 @@ impl<
         Ok(true)
     }
     /// Increase bottom delegation
-    pub fn increase_bottom_delegation<T: Config>(
+    fn increase_bottom_delegation<T: Config>(
         &mut self,
         candidate: &T::AccountId,
         delegator: T::AccountId,
@@ -973,7 +973,7 @@ impl<
         Ok(in_top_after)
     }
     /// Decrease delegation
-    pub fn decrease_delegation<T: Config>(
+    pub(crate) fn decrease_delegation<T: Config>(
         &mut self,
         candidate: &T::AccountId,
         delegator: T::AccountId,
@@ -1005,7 +1005,7 @@ impl<
         }
     }
     /// Decrease top delegation
-    pub fn decrease_top_delegation<T: Config>(
+    fn decrease_top_delegation<T: Config>(
         &mut self,
         candidate: &T::AccountId,
         delegator: T::AccountId,
@@ -1088,7 +1088,7 @@ impl<
         Ok(in_top_after)
     }
     /// Decrease bottom delegation
-    pub fn decrease_bottom_delegation<T: Config>(
+    fn decrease_bottom_delegation<T: Config>(
         &mut self,
         candidate: &T::AccountId,
         delegator: T::AccountId,
@@ -1359,7 +1359,7 @@ impl<
     }
     // Return Some(remaining balance), must be more than MinDelegatorStk
     // Return None if delegation not found
-    pub fn rm_delegation<T: Config>(&mut self, collator: &AccountId) -> Option<Balance>
+    pub(crate) fn rm_delegation<T: Config>(&mut self, collator: &AccountId) -> Option<Balance>
     where
         BalanceOf<T>: From<Balance>,
         T::AccountId: From<AccountId>,
