@@ -984,8 +984,8 @@ pub mod pallet {
         }
 
         #[pallet::weight(
-			<T as Config>::WeightInfo::execute_leave_candidates(*candidate_delegation_count)
-		)]
+            <T as Config>::WeightInfo::execute_leave_candidates(*candidate_delegation_count)
+        )]
         /// Execute leave candidates request
         pub fn execute_leave_candidates(
             origin: OriginFor<T>,
@@ -1003,8 +1003,8 @@ pub mod pallet {
                 // remove delegation from delegator state
                 let mut delegator = DelegatorState::<T>::get(&bond.owner).expect(
                     "Collator state and delegator state are consistent.
-						Collator state has a record of this delegation. Therefore,
-						Delegator state also has a record. qed.",
+                        Collator state has a record of this delegation. Therefore,
+                        Delegator state also has a record. qed.",
                 );
 
                 if let Some(remaining) = delegator.rm_delegation::<T>(&candidate) {
@@ -1187,11 +1187,11 @@ pub mod pallet {
             Ok(().into())
         }
         #[pallet::weight(
-			<T as Config>::WeightInfo::delegate(
-				*candidate_delegation_count,
-				*delegation_count
-			)
-		)]
+            <T as Config>::WeightInfo::delegate(
+                *candidate_delegation_count,
+                *delegation_count
+            )
+        )]
         /// If caller is not a delegator and not a collator, then join the set of delegators
         /// If caller is a delegator, then makes delegation to change their delegation state
         pub fn delegate(
@@ -1773,7 +1773,7 @@ pub mod pallet {
                         Some(DelegationAction::Revoke(_)) => {
                             log::warn!(
                                 "reward for delegator '{:?}' set to zero due to pending \
-								revoke request",
+                                revoke request",
                                 bond.owner
                             );
                             uncounted_stake = uncounted_stake.saturating_add(bond.amount);
@@ -1782,7 +1782,7 @@ pub mod pallet {
                         Some(DelegationAction::Decrease(amount)) => {
                             log::warn!(
                                 "reward for delegator '{:?}' reduced by set amount due to pending \
-								decrease request",
+                                decrease request",
                                 bond.owner
                             );
                             uncounted_stake = uncounted_stake.saturating_add(*amount);
