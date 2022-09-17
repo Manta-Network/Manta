@@ -899,7 +899,7 @@ pub mod pallet {
 
             // WHITELIST Remove if branch when whitelist expires
             let candidates = manta_collator_selection::Pallet::<T>::candidates();
-            if candidates.iter().any(|x| x.who == acc.clone()) {
+            if candidates.iter().any(|x| &x.who == &acc) {
                 ensure!(
                     bond >= T::MinWhitelistCandidateStk::get(),
                     Error::<T>::CandidateBondBelowMin
@@ -915,7 +915,7 @@ pub mod pallet {
                     false
                         == manta_collator_selection::Pallet::<T>::candidates()
                             .iter()
-                            .any(|x| x.who == acc.clone()),
+                            .any(|x| &x.who == &acc),
                     Error::<T>::CandidateExists
                 );
             } else {
