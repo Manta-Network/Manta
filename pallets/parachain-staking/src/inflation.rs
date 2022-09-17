@@ -210,21 +210,17 @@ mod tests {
         );
     }
     #[test]
-    fn inflation_sane_at_round_number_limit() {
-        let expected_round_schedule: Range<u128> = Range {
-            min: 4,
-            ideal: 4,
-            max: 4,
-        };
+    fn inflation_does_not_panic_at_round_number_limit() {
         let schedule = Range {
             min: Perbill::from_percent(100),
             ideal: Perbill::from_percent(100),
             max: Perbill::from_percent(100),
         };
-
-        assert_eq!(
-            expected_round_schedule,
-            mock_round_issuance_range(u32::MAX.into(), mock_annual_to_round(schedule, u32::MAX))
-        );
+        mock_round_issuance_range(u32::MAX.into(), mock_annual_to_round(schedule, u32::MAX));
+        mock_round_issuance_range(u64::MAX.into(), mock_annual_to_round(schedule, u32::MAX));
+        mock_round_issuance_range(u128::MAX.into(), mock_annual_to_round(schedule, u32::MAX));
+        mock_round_issuance_range(u32::MAX.into(), mock_annual_to_round(schedule, 1));
+        mock_round_issuance_range(u64::MAX.into(), mock_annual_to_round(schedule, 1));
+        mock_round_issuance_range(u128::MAX.into(), mock_annual_to_round(schedule, 1));
     }
 }
