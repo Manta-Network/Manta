@@ -995,7 +995,7 @@ pub mod pallet {
             ensure_signed(origin)?;
             let state = <CandidateInfo<T>>::get(&candidate).ok_or(Error::<T>::CandidateDNE)?;
             ensure!(
-                state.delegation_count <= candidate_delegation_count,
+            state.delegation_count <= candidate_delegation_count,
                 Error::<T>::TooLowCandidateDelegationCountToLeaveCandidates
             );
             state.can_leave::<T>()?;
