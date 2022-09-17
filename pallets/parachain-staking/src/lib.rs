@@ -798,7 +798,7 @@ pub mod pallet {
         /// Set the percent of inflation set aside for parachain bond
         pub fn set_parachain_bond_reserve_percent(
             origin: OriginFor<T>,
-            new: Percent,
+            #[pallet::compact] new: Percent,
         ) -> DispatchResultWithPostInfo {
             T::MonetaryGovernanceOrigin::ensure_origin(origin)?;
             let ParachainBondConfig {
@@ -816,7 +816,10 @@ pub mod pallet {
         #[pallet::weight(<T as Config>::WeightInfo::set_total_selected())]
         /// Set the total number of collator candidates selected per round
         /// - changes are not applied until the start of the next round
-        pub fn set_total_selected(origin: OriginFor<T>, new: u32) -> DispatchResultWithPostInfo {
+        pub fn set_total_selected(
+            origin: OriginFor<T>,
+            #[pallet::compact] new: u32,
+        ) -> DispatchResultWithPostInfo {
             frame_system::ensure_root(origin)?;
             ensure!(
                 new >= T::MinSelectedCandidates::get(),
@@ -836,7 +839,7 @@ pub mod pallet {
         /// Set the commission for all collators
         pub fn set_collator_commission(
             origin: OriginFor<T>,
-            new: Perbill,
+            #[pallet::compact] new: Perbill,
         ) -> DispatchResultWithPostInfo {
             frame_system::ensure_root(origin)?;
             let old = <CollatorCommission<T>>::get();
@@ -850,7 +853,10 @@ pub mod pallet {
         /// - if called with `new` less than length of current round, will transition immediately
         /// in the next block
         /// - also updates per-round inflation config
-        pub fn set_blocks_per_round(origin: OriginFor<T>, new: u32) -> DispatchResultWithPostInfo {
+        pub fn set_blocks_per_round(
+            origin: OriginFor<T>,
+            #[pallet::compact] new: u32,
+        ) -> DispatchResultWithPostInfo {
             frame_system::ensure_root(origin)?;
             ensure!(
                 new >= T::MinBlocksPerRound::get(),
@@ -884,8 +890,8 @@ pub mod pallet {
         /// Join the set of collator candidates
         pub fn join_candidates(
             origin: OriginFor<T>,
-            bond: BalanceOf<T>,
-            candidate_count: u32,
+            #[pallet::compact] bond: BalanceOf<T>,
+            #[pallet::compact] candidate_count: u32,
         ) -> DispatchResultWithPostInfo {
             let acc = ensure_signed(origin.clone())?;
             ensure!(!Self::is_candidate(&acc), Error::<T>::CandidateExists);
@@ -959,7 +965,7 @@ pub mod pallet {
         /// removed from the candidate pool to prevent selection as a collator.
         pub fn schedule_leave_candidates(
             origin: OriginFor<T>,
-            candidate_count: u32,
+            #[pallet::compact] candidate_count: u32,
         ) -> DispatchResultWithPostInfo {
             let collator = ensure_signed(origin)?;
             let mut state = <CandidateInfo<T>>::get(&collator).ok_or(Error::<T>::CandidateDNE)?;
@@ -988,7 +994,7 @@ pub mod pallet {
         pub fn execute_leave_candidates(
             origin: OriginFor<T>,
             candidate: T::AccountId,
-            candidate_delegation_count: u32,
+            #[pallet::compact] candidate_delegation_count: u32,
         ) -> DispatchResultWithPostInfo {
             ensure_signed(origin)?;
             let state = <CandidateInfo<T>>::get(&candidate).ok_or(Error::<T>::CandidateDNE)?;
@@ -1065,7 +1071,7 @@ pub mod pallet {
         /// - result upon successful call is the candidate is active in the candidate pool
         pub fn cancel_leave_candidates(
             origin: OriginFor<T>,
-            candidate_count: u32,
+            #[pallet::compact] candidate_count: u32,
         ) -> DispatchResultWithPostInfo {
             let collator = ensure_signed(origin)?;
             let mut state = <CandidateInfo<T>>::get(&collator).ok_or(Error::<T>::CandidateDNE)?;
@@ -1134,7 +1140,7 @@ pub mod pallet {
         /// Increase collator candidate self bond by `more`
         pub fn candidate_bond_more(
             origin: OriginFor<T>,
-            more: BalanceOf<T>,
+            #[pallet::compact] more: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let collator = ensure_signed(origin)?;
             let mut state = <CandidateInfo<T>>::get(&collator).ok_or(Error::<T>::CandidateDNE)?;
@@ -1195,9 +1201,9 @@ pub mod pallet {
         pub fn delegate(
             origin: OriginFor<T>,
             candidate: T::AccountId,
-            amount: BalanceOf<T>,
-            candidate_delegation_count: u32,
-            delegation_count: u32,
+            #[pallet::compact] amount: BalanceOf<T>,
+            #[pallet::compact] candidate_delegation_count: u32,
+            #[pallet::compact] delegation_count: u32,
         ) -> DispatchResultWithPostInfo {
             let delegator = ensure_signed(origin)?;
             // check that caller can reserve the amount before any changes to storage
@@ -1282,7 +1288,7 @@ pub mod pallet {
         pub fn execute_leave_delegators(
             origin: OriginFor<T>,
             delegator: T::AccountId,
-            delegation_count: u32,
+            #[pallet::compact] delegation_count: u32,
         ) -> DispatchResultWithPostInfo {
             ensure_signed(origin)?;
             Self::delegator_execute_scheduled_revoke_all(delegator, delegation_count)
@@ -1311,7 +1317,7 @@ pub mod pallet {
         pub fn delegator_bond_more(
             origin: OriginFor<T>,
             candidate: T::AccountId,
-            more: BalanceOf<T>,
+            #[pallet::compact] more: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let delegator = ensure_signed(origin)?;
             ensure!(
@@ -1328,7 +1334,7 @@ pub mod pallet {
         pub fn schedule_delegator_bond_less(
             origin: OriginFor<T>,
             candidate: T::AccountId,
-            less: BalanceOf<T>,
+            #[pallet::compact] less: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let delegator = ensure_signed(origin)?;
             Self::delegation_schedule_bond_decrease(candidate, delegator, less)
