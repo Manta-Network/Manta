@@ -1459,8 +1459,7 @@ impl<
         match additional_required_balance {
             BondAdjust::Increase(amount) => {
                 ensure!(
-                    <Pallet<T>>::get_delegator_stakable_free_balance(&id)
-                        >= amount.into(),
+                    <Pallet<T>>::get_delegator_stakable_free_balance(&id) >= amount.into(),
                     Error::<T>::InsufficientBalance,
                 );
 
