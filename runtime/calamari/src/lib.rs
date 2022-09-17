@@ -279,8 +279,7 @@ impl Contains<Call> for BaseFilter {
                 | pallet_parachain_staking::Call::delegator_bond_more{..}
                 | pallet_parachain_staking::Call::schedule_delegator_bond_less{..}
                 | pallet_parachain_staking::Call::execute_delegation_request{..}
-                | pallet_parachain_staking::Call::cancel_delegation_request{..}
-                | pallet_parachain_staking::Call::hotfix_remove_delegation_requests_exited_candidates{..})
+                | pallet_parachain_staking::Call::cancel_delegation_request{..})
             | Call::Balances(_)
             | Call::Preimage(_)
             | Call::XTokens(orml_xtokens::Call::transfer {..}
