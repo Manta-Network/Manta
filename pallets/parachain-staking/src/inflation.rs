@@ -157,7 +157,7 @@ mod tests {
     }
     #[test]
     fn simple_issuance_conversion() {
-        // 5% inflation for 10_000_0000 = 500,000 minted over the year
+        // 5% inflation for 10_000_000 = 500,000 minted over the year
         // let's assume there are 10 periods in a year
         // => mint 500_000 over 10 periods => 50_000 minted per period
         let expected_round_issuance_range: Range<u128> = Range {
