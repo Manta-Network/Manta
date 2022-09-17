@@ -724,8 +724,7 @@ pub mod pallet {
     }
 
     #[pallet::call]
-    impl<T: Config> Pallet<T>
-    {
+    impl<T: Config> Pallet<T> {
         #[pallet::weight(<T as Config>::WeightInfo::set_staking_expectations())]
         /// Set the expectations for total staked. These expectations determine the issuance for
         /// the round according to logic in `fn compute_issuance`
