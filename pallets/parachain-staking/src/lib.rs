@@ -725,9 +725,6 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T>
-    // where
-    // T:  Config +
-    //     manta_collator_selection::Config
     {
         #[pallet::weight(<T as Config>::WeightInfo::set_staking_expectations())]
         /// Set the expectations for total staked. These expectations determine the issuance for
