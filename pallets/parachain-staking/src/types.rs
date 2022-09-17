@@ -114,10 +114,14 @@ pub struct CollatorSnapshot<AccountId, Balance> {
     pub total: Balance,
 }
 
+#[cfg(test)]
 impl<A: PartialEq, B: PartialEq> PartialEq for CollatorSnapshot<A, B> {
     fn eq(&self, other: &Self) -> bool {
         let must_be_true = self.bond == other.bond && self.total == other.total;
         if !must_be_true {
+            return false;
+        }
+        if self.delegations.len() != other.delegations.len() {
             return false;
         }
         for (
@@ -1125,7 +1129,8 @@ impl<
 }
 
 // Temporary manual implementation for migration testing purposes
-impl<A: PartialEq, B: PartialEq> PartialEq for CollatorCandidate<A, B> {
+#[cfg(test)]
+impl<A: PartialEq + Ord, B: PartialEq> PartialEq for CollatorCandidate<A, B> {
     fn eq(&self, other: &Self) -> bool {
         let must_be_true = self.id == other.id
             && self.bond == other.bond
@@ -1136,10 +1141,16 @@ impl<A: PartialEq, B: PartialEq> PartialEq for CollatorCandidate<A, B> {
         if !must_be_true {
             return false;
         }
+        if self.delegators.len() != other.delegators.len() {
+            return false;
+        }
         for (x, y) in self.delegators.0.iter().zip(other.delegators.0.iter()) {
             if x != y {
                 return false;
             }
+        }
+        if self.top_delegations.len() != other.top_delegations.len() {
+            return false;
         }
         for (
             Bond {
@@ -1158,6 +1169,9 @@ impl<A: PartialEq, B: PartialEq> PartialEq for CollatorCandidate<A, B> {
             if o1 != o2 || a1 != a2 {
                 return false;
             }
+        }
+        if self.bottom_delegations.len() != other.bottom_delegations.len() {
+            return false;
         }
         for (
             Bond {
@@ -1240,13 +1254,17 @@ pub struct Delegator<AccountId, Balance> {
 }
 
 // Temporary manual implementation for migration testing purposes
-impl<A: PartialEq, B: PartialEq> PartialEq for Delegator<A, B> {
+#[cfg(test)]
+impl<A: PartialEq + Ord, B: PartialEq> PartialEq for Delegator<A, B> {
     fn eq(&self, other: &Self) -> bool {
         let must_be_true = self.id == other.id
             && self.total == other.total
             && self.less_total == other.less_total
             && self.status == other.status;
         if !must_be_true {
+            return false;
+        }
+        if self.delegations.len() != other.delegations.len() {
             return false;
         }
         for (

@@ -80,6 +80,11 @@ impl<T: Ord> OrderedSet<T> {
     pub fn clear(&mut self) {
         self.0.clear();
     }
+
+    /// Length
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
 }
 
 impl<T: Ord> From<Vec<T>> for OrderedSet<T> {
