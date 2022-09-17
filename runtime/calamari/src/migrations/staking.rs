@@ -25,9 +25,8 @@ use frame_support::traits::OnRuntimeUpgradeHelpersExt;
 use sp_runtime::traits::UniqueSaturatedInto;
 
 /// Migration to move old invulnerables to the staking set on upgrade
-/// [DelegationScheduledRequests] storage item.
-/// Additionally [DelegatorState] is migrated from [OldDelegator] to [Delegator].
 pub struct InitializeStakingPallet<T>(PhantomData<T>);
+const INITIAL_MAX_ACTIVE_COLLATORS: u32 = 63;
 impl<T> OnRuntimeUpgrade for InitializeStakingPallet<T>
 where
     T: frame_system::Config
@@ -121,7 +120,6 @@ where
 
         // Setting total_selected will take effect at the beginning of the next round, so for the first 6 hours
         // our invulnerables will be the only collators
-        const INITIAL_MAX_ACTIVE_COLLATORS: u32 = 63;
         let _ = pallet_parachain_staking::Pallet::<T>::set_total_selected(
             <T as frame_system::Config>::Origin::root(),
             INITIAL_MAX_ACTIVE_COLLATORS,
@@ -194,7 +192,7 @@ where
         // TotalSelected is 63
         assert_eq!(
             pallet_parachain_staking::Pallet::<T>::total_selected(),
-            63u32
+            INITIAL_MAX_ACTIVE_COLLATORS
         );
 
         // Round is 1
