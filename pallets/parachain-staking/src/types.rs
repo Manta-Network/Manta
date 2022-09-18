@@ -46,7 +46,7 @@ impl<A: Decode, B: Default> Default for Bond<A, B> {
     fn default() -> Bond<A, B> {
         Bond {
             owner: A::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes())
-                .expect("infinite length input; no invalid inputs for type; qed"),
+                .expect("infinite length input; no invalid inputs for type; qed"), // expect
             amount: B::default(),
         }
     }
@@ -77,25 +77,21 @@ impl<AccountId: Ord, Balance> PartialOrd for Bond<AccountId, Balance> {
 
 impl<AccountId: Ord, Balance> PartialEq for Bond<AccountId, Balance> {
     fn eq(&self, other: &Self) -> bool {
-        self.owner == other.owner
+        self.owner == other.owner // why not compare self.balance
     }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 /// The activity status of the collator
+#[derive(Default)]
 pub enum CollatorStatus {
     /// Committed to be online and producing valid blocks (not equivocating)
+    #[default]
     Active,
     /// Temporarily inactive and excused for inactivity
     Idle,
     /// Bonded until the inner round
     Leaving(RoundIndex),
-}
-
-impl Default for CollatorStatus {
-    fn default() -> CollatorStatus {
-        CollatorStatus::Active
-    }
 }
 
 #[derive(Encode, Decode, RuntimeDebug, TypeInfo)]
@@ -114,6 +110,7 @@ pub struct CollatorSnapshot<AccountId, Balance> {
     pub total: Balance,
 }
 
+#[cfg(test)]
 impl<A: PartialEq, B: PartialEq> PartialEq for CollatorSnapshot<A, B> {
     fn eq(&self, other: &Self) -> bool {
         let must_be_true = self.bond == other.bond && self.total == other.total;
@@ -129,7 +126,7 @@ impl<A: PartialEq, B: PartialEq> PartialEq for CollatorSnapshot<A, B> {
                 owner: o2,
                 amount: a2,
             },
-        ) in self.delegations.iter().zip(other.delegations.iter())
+        ) in self.delegations.iter().zip(other.delegations.iter()) // use zip should ensure they have the same length
         {
             if o1 != o2 || a1 != a2 {
                 return false;
@@ -307,6 +304,7 @@ impl<AccountId, Balance: Copy + Ord + sp_std::ops::AddAssign + Zero + Saturating
     }
     /// Return last delegation amount without popping the delegation
     pub fn lowest_delegation_amount(&self) -> Balance {
+        // if delegations.is_empty, it still returns zero
         self.delegations
             .last()
             .map(|x| x.amount)
@@ -425,13 +423,13 @@ impl<
         self.bond = self.bond.saturating_add(more);
         <T as Config>::Currency::set_lock(
             COLLATOR_LOCK_ID,
-            &who.clone(),
+            &who,
             self.bond.into(),
             WithdrawReasons::all(),
         );
         self.total_counted = self.total_counted.saturating_add(more);
         <Pallet<T>>::deposit_event(Event::CandidateBondedMore {
-            candidate: who.clone(),
+            candidate: who,
             amount: more.into(),
             new_total_bond: self.bond.into(),
         });
@@ -484,7 +482,7 @@ impl<
         self.bond = self.bond.saturating_sub(request.amount);
         <T as Config>::Currency::set_lock(
             COLLATOR_LOCK_ID,
-            &who.clone(),
+            &who,
             self.bond.into(),
             WithdrawReasons::all(),
         );
@@ -649,19 +647,19 @@ impl<
         BalanceOf<T>: Into<Balance> + From<Balance>,
     {
         let mut bottom_delegations = <BottomDelegations<T>>::get(candidate)
-            .expect("CandidateInfo existence => BottomDelegations existence");
-        // if bottom is full, kick the lowest bottom (which is expected to be lower than input
-        // as per check)
+            .expect("CandidateInfo existence => BottomDelegations existence"); // expect
+                                                                               // if bottom is full, kick the lowest bottom (which is expected to be lower than input
+                                                                               // as per check)
         let increase_delegation_count = if bottom_delegations.delegations.len() as u32
             == T::MaxBottomDelegationsPerCandidate::get()
         {
             let lowest_bottom_to_be_kicked = bottom_delegations
                 .delegations
                 .pop()
-                .expect("if at full capacity (>0), then >0 bottom delegations exist; qed");
-            // EXPECT lowest_bottom_to_be_kicked.amount < delegation.amount enforced by caller
-            // if lowest_bottom_to_be_kicked.amount == delegation.amount, we will still kick
-            // the lowest bottom to enforce first come first served
+                .expect("if at full capacity (>0), then >0 bottom delegations exist; qed"); // expect
+                                                                                            // EXPECT lowest_bottom_to_be_kicked.amount < delegation.amount enforced by caller
+                                                                                            // if lowest_bottom_to_be_kicked.amount == delegation.amount, we will still kick
+                                                                                            // the lowest bottom to enforce first come first served
             bottom_delegations.total = bottom_delegations
                 .total
                 .saturating_sub(lowest_bottom_to_be_kicked.amount);
@@ -669,7 +667,7 @@ impl<
             // total staked is updated via propagation of lowest bottom delegation amount prior
             // to call
             let mut delegator_state = <DelegatorState<T>>::get(&lowest_bottom_to_be_kicked.owner)
-                .expect("Delegation existence => DelegatorState existence");
+                .expect("Delegation existence => DelegatorState existence"); // expect
             let leaving = delegator_state.delegations.0.len() == 1usize;
             delegator_state.rm_delegation::<T>(candidate);
             <Pallet<T>>::delegation_remove_request_with_state(
@@ -752,8 +750,8 @@ impl<
         let mut actual_amount_option: Option<BalanceOf<T>> = None;
         top_delegations.delegations = top_delegations
             .delegations
-            .clone()
-            .into_iter()
+            .iter()
+            .cloned()
             .filter(|d| {
                 if d.owner != delegator {
                     true
@@ -768,9 +766,9 @@ impl<
         // if bottom nonempty => bump top bottom to top
         if !matches!(self.bottom_capacity, CapacityStatus::Empty) {
             let mut bottom_delegations =
-                <BottomDelegations<T>>::get(candidate).expect("bottom is nonempty as just checked");
-            // expect already stored greatest to least by bond amount
-            let highest_bottom_delegation = bottom_delegations.delegations.remove(0);
+                <BottomDelegations<T>>::get(candidate).expect("bottom is nonempty as just checked"); // expect
+                                                                                                     // expect already stored greatest to least by bond amount
+            let highest_bottom_delegation = bottom_delegations.delegations.remove(0); // it will panic if delegations is empty
             bottom_delegations.total = bottom_delegations
                 .total
                 .saturating_sub(highest_bottom_delegation.amount);
@@ -798,12 +796,12 @@ impl<
     {
         // remove bottom delegation
         let mut bottom_delegations = <BottomDelegations<T>>::get(candidate)
-            .expect("CandidateInfo exists => BottomDelegations exists");
+            .expect("CandidateInfo exists => BottomDelegations exists"); // expect
         let mut actual_amount_option: Option<BalanceOf<T>> = None;
         bottom_delegations.delegations = bottom_delegations
             .delegations
-            .clone()
-            .into_iter()
+            .iter()
+            .cloned()
             .filter(|d| {
                 if d.owner != delegator {
                     true
@@ -863,12 +861,12 @@ impl<
         BalanceOf<T>: Into<Balance> + From<Balance>,
     {
         let mut top_delegations = <TopDelegations<T>>::get(candidate)
-            .expect("CandidateInfo exists => TopDelegations exists");
+            .expect("CandidateInfo exists => TopDelegations exists"); // expect
         let mut in_top = false;
         top_delegations.delegations = top_delegations
             .delegations
-            .clone()
-            .into_iter()
+            .iter()
+            .cloned()
             .map(|d| {
                 if d.owner != delegator {
                     d
@@ -908,8 +906,8 @@ impl<
             // bump it from bottom
             bottom_delegations.delegations = bottom_delegations
                 .delegations
-                .clone()
-                .into_iter()
+                .iter()
+                .cloned()
                 .filter(|d| {
                     if d.owner != delegator {
                         true
@@ -926,14 +924,14 @@ impl<
             bottom_delegations.total = bottom_delegations.total.saturating_sub(bond);
             // add it to top
             let mut top_delegations = <TopDelegations<T>>::get(candidate)
-                .expect("CandidateInfo existence => TopDelegations existence");
-            // if top is full, pop lowest top
+                .expect("CandidateInfo existence => TopDelegations existence"); // expect
+                                                                                // if top is full, pop lowest top
             if matches!(top_delegations.top_capacity::<T>(), CapacityStatus::Full) {
                 // pop lowest top delegation
                 let new_bottom_delegation = top_delegations
                     .delegations
                     .pop()
-                    .expect("Top capacity full => Exists at least 1 top delegation");
+                    .expect("Top capacity full => Exists at least 1 top delegation"); // expect
                 top_delegations.total = top_delegations
                     .total
                     .saturating_sub(new_bottom_delegation.amount);
@@ -949,8 +947,8 @@ impl<
             // just increase the delegation
             bottom_delegations.delegations = bottom_delegations
                 .delegations
-                .clone()
-                .into_iter()
+                .iter()
+                .cloned()
                 .map(|d| {
                     if d.owner != delegator {
                         d
@@ -1029,8 +1027,8 @@ impl<
             // take delegation from top
             top_delegations.delegations = top_delegations
                 .delegations
-                .clone()
-                .into_iter()
+                .iter()
+                .cloned()
                 .filter(|d| {
                     if d.owner != delegator {
                         true
@@ -1047,7 +1045,7 @@ impl<
             let delegation = delegation_option.ok_or(Error::<T>::DelegationDNE)?;
             // pop highest bottom by reverse and popping
             let mut bottom_delegations = <BottomDelegations<T>>::get(candidate)
-                .expect("CandidateInfo existence => BottomDelegations existence");
+                .expect("CandidateInfo existence => BottomDelegations existence"); // expect
             let highest_bottom_delegation = bottom_delegations.delegations.remove(0);
             bottom_delegations.total = bottom_delegations
                 .total
@@ -1064,8 +1062,8 @@ impl<
             let mut is_in_top = false;
             top_delegations.delegations = top_delegations
                 .delegations
-                .clone()
-                .into_iter()
+                .iter()
+                .cloned()
                 .map(|d| {
                     if d.owner != delegator {
                         d
@@ -1098,12 +1096,12 @@ impl<
         BalanceOf<T>: Into<Balance>,
     {
         let mut bottom_delegations = <BottomDelegations<T>>::get(candidate)
-            .expect("CandidateInfo exists => BottomDelegations exists");
+            .expect("CandidateInfo exists => BottomDelegations exists"); // expect
         let mut in_bottom = false;
         bottom_delegations.delegations = bottom_delegations
             .delegations
-            .clone()
-            .into_iter()
+            .iter()
+            .cloned()
             .map(|d| {
                 if d.owner != delegator {
                     d
@@ -1124,6 +1122,7 @@ impl<
     }
 }
 
+#[cfg(test)]
 // Temporary manual implementation for migration testing purposes
 impl<A: PartialEq, B: PartialEq> PartialEq for CollatorCandidate<A, B> {
     fn eq(&self, other: &Self) -> bool {
@@ -1381,7 +1380,7 @@ impl<
         if let Some(balance) = amt {
             self.delegations = OrderedSet::from(delegations);
             self.total_sub::<T>(balance)
-                .expect("Decreasing lock cannot fail, qed");
+                .expect("Decreasing lock cannot fail, qed"); // expect
             Some(self.total)
         } else {
             None
@@ -1455,11 +1454,11 @@ impl<
         BalanceOf<T>: From<Balance>,
         T::AccountId: From<AccountId>,
     {
+        let id = self.id.clone().into();
         match additional_required_balance {
             BondAdjust::Increase(amount) => {
                 ensure!(
-                    <Pallet<T>>::get_delegator_stakable_free_balance(&self.id.clone().into())
-                        >= amount.into(),
+                    <Pallet<T>>::get_delegator_stakable_free_balance(&id) >= amount.into(),
                     Error::<T>::InsufficientBalance,
                 );
 
@@ -1473,11 +1472,11 @@ impl<
         };
 
         if self.total.is_zero() {
-            <T as Config>::Currency::remove_lock(DELEGATOR_LOCK_ID, &self.id.clone().into());
+            <T as Config>::Currency::remove_lock(DELEGATOR_LOCK_ID, &id);
         } else {
             <T as Config>::Currency::set_lock(
                 DELEGATOR_LOCK_ID,
-                &self.id.clone().into(),
+                &id,
                 self.total.into(),
                 WithdrawReasons::all(),
             );
@@ -1661,7 +1660,7 @@ impl<A: Decode> Default for ParachainBondConfig<A> {
     fn default() -> ParachainBondConfig<A> {
         ParachainBondConfig {
             account: A::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes())
-                .expect("infinite length input; no invalid inputs for type; qed"),
+                .expect("infinite length input; no invalid inputs for type; qed"), // expect
             percent: Percent::zero(),
         }
     }

@@ -98,8 +98,8 @@ impl<T: Config> Pallet<T> {
             when_executable: when,
         });
         state.less_total = state.less_total.saturating_add(bonded_amount);
-        <DelegationScheduledRequests<T>>::insert(collator.clone(), scheduled_requests);
-        <DelegatorState<T>>::insert(delegator.clone(), state);
+        <DelegationScheduledRequests<T>>::insert(&collator, scheduled_requests);
+        <DelegatorState<T>>::insert(&delegator, state);
 
         Self::deposit_event(Event::DelegationRevocationScheduled {
             round: now,
@@ -156,8 +156,8 @@ impl<T: Config> Pallet<T> {
             when_executable: when,
         });
         state.less_total = state.less_total.saturating_add(decrease_amount);
-        <DelegationScheduledRequests<T>>::insert(collator.clone(), scheduled_requests);
-        <DelegatorState<T>>::insert(delegator.clone(), state);
+        <DelegationScheduledRequests<T>>::insert(&collator, scheduled_requests);
+        <DelegatorState<T>>::insert(&delegator, state);
 
         Self::deposit_event(Event::DelegationDecreaseScheduled {
             delegator,
@@ -180,8 +180,8 @@ impl<T: Config> Pallet<T> {
             Self::cancel_request_with_state(&delegator, &mut state, &mut scheduled_requests)
                 .ok_or(<Error<T>>::PendingDelegationRequestDNE)?;
 
-        <DelegationScheduledRequests<T>>::insert(collator.clone(), scheduled_requests);
-        <DelegatorState<T>>::insert(delegator.clone(), state);
+        <DelegationScheduledRequests<T>>::insert(&collator, scheduled_requests);
+        <DelegatorState<T>>::insert(&delegator, state);
 
         Self::deposit_event(Event::CancelledDelegationRequest {
             delegator,
@@ -307,14 +307,11 @@ impl<T: Config> Pallet<T> {
                             let new_total_staked = <Total<T>>::get().saturating_sub(amount);
                             <Total<T>>::put(new_total_staked);
 
-                            <DelegationScheduledRequests<T>>::insert(
-                                collator.clone(),
-                                scheduled_requests,
-                            );
-                            <DelegatorState<T>>::insert(delegator.clone(), state);
+                            <DelegationScheduledRequests<T>>::insert(&collator, scheduled_requests);
+                            <DelegatorState<T>>::insert(&delegator, state);
                             Self::deposit_event(Event::DelegationDecreased {
                                 delegator,
-                                candidate: collator.clone(),
+                                candidate: collator,
                                 amount,
                                 in_top,
                             });
@@ -344,7 +341,7 @@ impl<T: Config> Pallet<T> {
         #[allow(deprecated)]
         if matches!(state.status, DelegatorStatus::Leaving(_)) {
             state.status = DelegatorStatus::Active;
-            <DelegatorState<T>>::insert(delegator.clone(), state.clone());
+            <DelegatorState<T>>::insert(&delegator, &state);
         }
 
         // it is assumed that a multiple delegations to the same collator does not exist, else this
@@ -365,7 +362,7 @@ impl<T: Config> Pallet<T> {
                 }
                 _ => ScheduledRequest {
                     delegator: delegator.clone(),
-                    action: DelegationAction::Revoke(bonded_amount.clone()),
+                    action: DelegationAction::Revoke(bonded_amount),
                     when_executable: when,
                 },
             };
@@ -385,7 +382,7 @@ impl<T: Config> Pallet<T> {
                 <DelegationScheduledRequests<T>>::insert(collator, scheduled_requests);
             });
 
-        <DelegatorState<T>>::insert(delegator.clone(), state);
+        <DelegatorState<T>>::insert(&delegator, state);
         Self::deposit_event(Event::DelegatorExitScheduled {
             round: now,
             delegator,
@@ -407,14 +404,14 @@ impl<T: Config> Pallet<T> {
         #[allow(deprecated)]
         if matches!(state.status, DelegatorStatus::Leaving(_)) {
             state.status = DelegatorStatus::Active;
-            <DelegatorState<T>>::insert(delegator.clone(), state.clone());
+            <DelegatorState<T>>::insert(&delegator, &state);
             Self::deposit_event(Event::DelegatorExitCancelled { delegator });
             return Ok(().into());
         }
 
         // pre-validate that all delegations have a Revoke request.
         for bond in &state.delegations.0 {
-            let collator = bond.owner.clone();
+            let collator = &bond.owner;
             let scheduled_requests = <DelegationScheduledRequests<T>>::get(&collator);
             scheduled_requests
                 .iter()
@@ -426,7 +423,7 @@ impl<T: Config> Pallet<T> {
 
         // cancel all requests
         for bond in state.delegations.0.clone() {
-            let collator = bond.owner.clone();
+            let collator = bond.owner;
             let mut scheduled_requests = <DelegationScheduledRequests<T>>::get(&collator);
             Self::cancel_request_with_state(&delegator, &mut state, &mut scheduled_requests);
             updated_scheduled_requests.push((collator, scheduled_requests));
@@ -438,7 +435,7 @@ impl<T: Config> Pallet<T> {
                 <DelegationScheduledRequests<T>>::insert(collator, scheduled_requests);
             });
 
-        <DelegatorState<T>>::insert(delegator.clone(), state);
+        <DelegatorState<T>>::insert(&delegator, state);
         Self::deposit_event(Event::DelegatorExitCancelled { delegator });
 
         Ok(().into())
