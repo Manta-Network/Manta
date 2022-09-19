@@ -204,13 +204,10 @@ impl Contains<Call> for BaseFilter {
         #[allow(clippy::match_like_matches_macro)]
         // keep CallFilter with explicit true/false for documentation
         match call {
-            // Explicitly DISALLOWED calls
+            // Explicitly DISALLOWED calls ( Pallet user extrinsics we don't want used WITH REASONING )
             | Call::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
-            | Call::AssetManager(_) // AssetManager is also filtered because all of its extrinsics
-                                    // are callable only by Root, and Root calls skip this whole filter.
             // For now disallow public proposal workflows, treasury workflows,
             // as well as external_propose and external_propose_majority.
-            // The following are filtered out:
             | Call::Democracy(
                                 pallet_democracy::Call::propose {..}
                                 | pallet_democracy::Call::second {..}
