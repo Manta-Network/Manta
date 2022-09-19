@@ -24,14 +24,16 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+pub use frame_support::traits::Get;
 use manta_collator_selection::IdentityCollator;
 use sp_api::impl_runtime_apis;
+use sp_arithmetic::FixedU128;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, Perbill, Permill,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Percent, Permill,
 };
 use sp_std::{cmp::Ordering, prelude::*};
 
@@ -42,8 +44,8 @@ use sp_version::RuntimeVersion;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, NeverEnsureOrigin,
-        PrivilegeCmp,
+        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse,
+        NeverEnsureOrigin, PrivilegeCmp,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -59,6 +61,8 @@ use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
+pub use pallet_parachain_staking::{InflationInfo, Range};
+use pallet_session::ShouldEndSession;
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
@@ -78,7 +82,6 @@ pub mod xcm_config;
 use currency::*;
 use fee::WeightToFee;
 use impls::DealWithFees;
-use runtime_common::migration::MigratePalletPv2Sv;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -201,15 +204,10 @@ impl Contains<Call> for BaseFilter {
         #[allow(clippy::match_like_matches_macro)]
         // keep CallFilter with explicit true/false for documentation
         match call {
-            // Explicitly DISALLOWED calls
+            // Explicitly DISALLOWED calls ( Pallet user extrinsics we don't want used WITH REASONING )
             | Call::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
-            | Call::AssetManager(_) // AssetManager is also filtered because all of its extrinsics
-                                    // are callable only by Root, and Root calls skip this whole filter.
-            // Currently, we filter `register_as_candidate` as this call is not yet ready for community.
-            | Call::CollatorSelection( manta_collator_selection::Call::register_as_candidate{..})
             // For now disallow public proposal workflows, treasury workflows,
             // as well as external_propose and external_propose_majority.
-            // The following are filtered out:
             | Call::Democracy(
                                 pallet_democracy::Call::propose {..}
                                 | pallet_democracy::Call::second {..}
@@ -257,15 +255,28 @@ impl Contains<Call> for BaseFilter {
             | Call::CalamariVesting(_)
             | Call::Session(_) // User must be able to set their session key when applying for a collator
             | Call::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
-            | Call::CollatorSelection(
-                manta_collator_selection::Call::set_invulnerables{..}
-                | manta_collator_selection::Call::set_desired_candidates{..}
-                | manta_collator_selection::Call::set_candidacy_bond{..}
-                | manta_collator_selection::Call::set_eviction_baseline{..}
-                | manta_collator_selection::Call::set_eviction_tolerance{..}
-                | manta_collator_selection::Call::register_candidate{..}
-                | manta_collator_selection::Call::remove_collator{..}
-                | manta_collator_selection::Call::leave_intent{..})
+            | Call::ParachainStaking(
+                // Collator extrinsics
+                pallet_parachain_staking::Call::join_candidates{..}
+                | pallet_parachain_staking::Call::schedule_leave_candidates{..}
+                | pallet_parachain_staking::Call::execute_leave_candidates{..}
+                | pallet_parachain_staking::Call::cancel_leave_candidates{..}
+                | pallet_parachain_staking::Call::go_offline{..}
+                | pallet_parachain_staking::Call::go_online{..}
+                | pallet_parachain_staking::Call::candidate_bond_more{..}
+                | pallet_parachain_staking::Call::schedule_candidate_bond_less{..}
+                | pallet_parachain_staking::Call::execute_candidate_bond_less{..}
+                | pallet_parachain_staking::Call::cancel_candidate_bond_less{..}
+                // Delegator extrinsics
+                | pallet_parachain_staking::Call::delegate{..}
+                | pallet_parachain_staking::Call::schedule_leave_delegators{..}
+                | pallet_parachain_staking::Call::execute_leave_delegators{..}
+                | pallet_parachain_staking::Call::cancel_leave_delegators{..}
+                | pallet_parachain_staking::Call::schedule_revoke_delegation{..}
+                | pallet_parachain_staking::Call::delegator_bond_more{..}
+                | pallet_parachain_staking::Call::schedule_delegator_bond_less{..}
+                | pallet_parachain_staking::Call::execute_delegation_request{..}
+                | pallet_parachain_staking::Call::cancel_delegation_request{..})
             | Call::Balances(_)
             | Call::Preimage(_)
             | Call::XTokens(orml_xtokens::Call::transfer {..}
@@ -551,7 +562,62 @@ impl pallet_aura_style_filter::Config for Runtime {
     /// Nimbus filter pipeline (final) step 3:
     /// Choose 1 collator from PotentialAuthors as eligible
     /// for each slot in round-robin fashion
-    type PotentialAuthors = CollatorSelection;
+    type PotentialAuthors = ParachainStaking;
+}
+use sp_runtime::traits::UniqueSaturatedInto;
+parameter_types! {
+    /// Fixed percentage a collator takes off the top of due rewards
+    pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(10);
+    /// Default percent of inflation set aside for parachain bond every round
+    pub const DefaultParachainBondReservePercent: Percent = Percent::zero();
+    pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(6 * HOURS ,15,"CALAMARI_DEFAULTBLOCKSPERROUND");
+    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(FixedU128::checked_from_rational(7u32.saturating_mul(DAYS),DefaultBlocksPerRound::get()).unwrap_or(FixedU128::from_inner(1u128)).into_inner().unique_saturated_into(),1,"CALAMARI_LEAVEDELAYROUNDS");
+}
+impl pallet_parachain_staking::Config for Runtime {
+    type Event = Event;
+    type Currency = Balances;
+    type BlockAuthor = AuthorInherent;
+    type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
+    /// Minimum round length is 2 minutes (10 * 12 second block times)
+    type MinBlocksPerRound = ConstU32<10>;
+    /// Blocks per round
+    type DefaultBlocksPerRound = DefaultBlocksPerRound;
+    /// Rounds before the collator leaving the candidates request can be executed
+    type LeaveCandidatesDelay = LeaveDelayRounds;
+    /// Rounds before the candidate bond increase/decrease can be executed
+    type CandidateBondLessDelay = LeaveDelayRounds;
+    /// Rounds before the delegator exit can be executed
+    type LeaveDelegatorsDelay = LeaveDelayRounds;
+    /// Rounds before the delegator revocation can be executed
+    type RevokeDelegationDelay = LeaveDelayRounds;
+    /// Rounds before the delegator bond increase/decrease can be executed
+    type DelegationBondLessDelay = LeaveDelayRounds;
+    /// Rounds before the reward is paid
+    type RewardPaymentDelay = ConstU32<2>;
+    /// Minimum collators selected per round, default at genesis and minimum forever after
+    type MinSelectedCandidates = ConstU32<5>;
+    /// Maximum top delegations per candidate
+    type MaxTopDelegationsPerCandidate = ConstU32<100>;
+    /// Maximum bottom delegations per candidate
+    type MaxBottomDelegationsPerCandidate = ConstU32<50>;
+    /// Maximum delegations per delegator
+    type MaxDelegationsPerDelegator = ConstU32<25>;
+    type DefaultCollatorCommission = DefaultCollatorCommission;
+    type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
+    /// Minimum stake on a collator to be considered for block production
+    // WHITELIST: Temporarily 400k to accomodate whitelisted collators
+    type MinCollatorStk = ConstU128<{ 400_000 * KMA }>;
+    /// Minimum stake the collator runner must bond to register as collator candidate
+    type MinCandidateStk = ConstU128<{ 4_000_000 * KMA }>;
+    /// WHITELIST: Minimum stake required for *a whitelisted* account to be a collator candidate
+    type MinWhitelistCandidateStk = ConstU128<{ 400_000 * KMA }>;
+    /// Smallest amount that can be delegated
+    type MinDelegation = ConstU128<{ 5_000 * KMA }>;
+    /// Minimum stake required to be reserved to be a delegator
+    type MinDelegatorStk = ConstU128<{ 5_000 * KMA }>;
+    type OnCollatorPayout = ();
+    type OnNewRound = ();
+    type WeightInfo = weights::pallet_parachain_staking::SubstrateWeight<Runtime>;
 }
 
 impl pallet_author_inherent::Config for Runtime {
@@ -561,7 +627,7 @@ impl pallet_author_inherent::Config for Runtime {
     type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
     /// Nimbus filter pipeline step 1:
     /// Filters out NimbusIds not registered as SessionKeys of some AccountId
-    type CanAuthor = CollatorSelection;
+    type CanAuthor = ParachainStaking;
 }
 
 parameter_types! {
@@ -632,14 +698,24 @@ parameter_types! {
     pub const Offset: u32 = 0;
 }
 
+// NOTE: pallet_parachain_staking rounds are now used,
+// session rotation through pallet session no longer needed
+// but the pallet is used for SessionKeys storage
+pub struct NeverEndSession;
+impl ShouldEndSession<u32> for NeverEndSession {
+    fn should_end_session(_: u32) -> bool {
+        false
+    }
+}
+
 impl pallet_session::Config for Runtime {
     type Event = Event;
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     // we don't have stash and controller, thus we don't need the convert as well.
     type ValidatorIdOf = IdentityCollator;
-    type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+    type ShouldEndSession = NeverEndSession;
     type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
-    type SessionManager = CollatorSelection;
+    type SessionManager = ();
     type SessionHandler =
         <opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
     type Keys = opaque::SessionKeys;
@@ -725,6 +801,7 @@ construct_runtime!(
         TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 17,
         TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 
+        ParachainStaking: pallet_parachain_staking::{Pallet, Call, Storage, Event<T>, Config<T>} = 48,
         // Collator support.
         AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 60,
         AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage} = 63,
@@ -789,12 +866,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExt
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = (
-    MigratePalletPv2Sv<pallet_asset_manager::Pallet<Runtime>>,
-    MigratePalletPv2Sv<pallet_tx_pause::Pallet<Runtime>>,
-    MigratePalletPv2Sv<manta_collator_selection::Pallet<Runtime>>,
-    MigratePalletPv2Sv<calamari_vesting::Pallet<Runtime>>,
-);
+pub type OnRuntimeUpgradeHooks = (migrations::staking::InitializeStakingPallet<Runtime>,);
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -836,6 +908,7 @@ mod benches {
         [pallet_tx_pause, TransactionPause]
         [manta_collator_selection, CollatorSelection]
         [pallet_asset_manager, AssetManager]
+        [pallet_parachain_staking, ParachainStaking]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );

@@ -56,6 +56,7 @@ sc-transaction-pool = { git = 'https://github.com/paritytech/substrate.git', bra
 # Substrate primitives
 sp-api = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sp-application-crypto = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
+sp-arithmetic = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sp-block-builder = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sp-blockchain = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sp-consensus = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
@@ -101,6 +102,7 @@ dolphin-runtime = { path = '../runtime/dolphin' }
 manta-primitives = { path = '../primitives/manta' }
 manta-runtime = { path = '../runtime/manta' }
 pallet-manta-pay = { path = '../pallets/manta-pay', features = ["rpc", "runtime"] }
+pallet-parachain-staking = { path = '../pallets/parachain-staking' }
 session-key-primitives = { path = '../primitives/session-keys' }
 
 [build-dependencies]
