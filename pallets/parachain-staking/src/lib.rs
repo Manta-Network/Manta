@@ -243,6 +243,7 @@ pub mod pallet {
         PendingDelegationRevoke,
         PalletAlreadyInitialized,
         NotEnoughCollatorsForPalletInit,
+        InvalidState,
     }
 
     #[pallet::event]
@@ -1001,11 +1002,8 @@ pub mod pallet {
             state.can_leave::<T>()?;
             let return_stake = |bond: Bond<T::AccountId, BalanceOf<T>>| -> DispatchResult {
                 // remove delegation from delegator state
-                let mut delegator = DelegatorState::<T>::get(&bond.owner).expect(
-                    "Collator state and delegator state are consistent.
-                        Collator state has a record of this delegation. Therefore,
-                        Delegator state also has a record. qed.",
-                );
+                let mut delegator =
+                    DelegatorState::<T>::get(&bond.owner).ok_or(Error::<T>::InvalidState)?;
 
                 if let Some(remaining) = delegator.rm_delegation::<T>(&candidate) {
                     Self::delegation_remove_request_with_state(
@@ -1034,14 +1032,14 @@ pub mod pallet {
             let mut total_backing = state.bond;
             // return all top delegations
             let top_delegations =
-                <TopDelegations<T>>::take(&candidate).expect("CandidateInfo existence checked");
+                <TopDelegations<T>>::take(&candidate).ok_or(Error::<T>::InvalidState)?;
             for bond in top_delegations.delegations {
                 return_stake(bond)?;
             }
             total_backing = total_backing.saturating_add(top_delegations.total);
             // return all bottom delegations
             let bottom_delegations =
-                <BottomDelegations<T>>::take(&candidate).expect("CandidateInfo existence checked");
+                <BottomDelegations<T>>::take(&candidate).ok_or(Error::<T>::InvalidState)?;
             for bond in bottom_delegations.delegations {
                 return_stake(bond)?;
             }
@@ -1438,7 +1436,7 @@ pub mod pallet {
             <ParachainBondInfo<T>>::put(ParachainBondConfig {
                 // must be set soon; if not => due inflation will be sent to collators/delegators
                 account: T::AccountId::decode(&mut sp_runtime::traits::TrailingZeroInput::zeroes())
-                    .expect("infinite length input; no invalid inputs for type; qed"),
+                    .map_err(|_| Error::<T>::InvalidState)?,
                 percent: T::DefaultParachainBondReservePercent::get(),
             });
             // Set total selected candidates to minimum config
