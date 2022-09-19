@@ -1220,11 +1220,3 @@ cumulus_pallet_parachain_system::register_validate_block! {
     BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
     CheckInherents = CheckInherents,
 }
-
-// Shorthand for a Get field of a pallet Config ( used in chain_spec/calamari.rs )
-#[macro_export]
-macro_rules! get {
-    ($pallet:ident, $name:ident, $type:ty) => {
-        <<$crate::Runtime as $pallet::Config>::$name as $crate::Get<$type>>::get()
-    };
-}

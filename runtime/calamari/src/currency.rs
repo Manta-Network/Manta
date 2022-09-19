@@ -40,7 +40,7 @@ pub fn inflation_config<T: frame_system::Config + pallet_parachain_staking::Conf
         perbill_annual_to_perbill_round(
             annual,
             // rounds per year
-            BLOCKS_PER_YEAR / crate::get!(pallet_parachain_staking, DefaultBlocksPerRound, u32),
+            BLOCKS_PER_YEAR / crate::DefaultBlocksPerRound::get(),
         )
     }
     let annual = Range {
