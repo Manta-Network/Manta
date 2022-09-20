@@ -120,10 +120,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 3300,
+    spec_version: 3401,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 7,
+    transaction_version: 9,
     state_version: 0,
 };
 
@@ -789,12 +789,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExt
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = (
-    MigratePalletPv2Sv<pallet_asset_manager::Pallet<Runtime>>,
-    MigratePalletPv2Sv<pallet_tx_pause::Pallet<Runtime>>,
-    MigratePalletPv2Sv<manta_collator_selection::Pallet<Runtime>>,
-    MigratePalletPv2Sv<calamari_vesting::Pallet<Runtime>>,
-);
+pub type OnRuntimeUpgradeHooks = (crate::migrations::staking::UnInitializeStakingPallet<Runtime>);
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
