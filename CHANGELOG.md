@@ -1,5 +1,19 @@
 # CHANGELOG 
 
+## v3.4.0
+### Changed
+-[\#770](https://github.com/Manta-Network/Manta/pull/770) Update fees splits, 50% burned, 50% to treasury [CADO]
+-[\#766](https://github.com/Manta-Network/Manta/pull/766) Change QA workflow link to internal Notion 
+-[\#743](https://github.com/Manta-Network/Manta/pull/743) Split all testing from `publish_draft_release` workflow and filter execution by labels on the PRs [CADO]
+-[\#781](https://github.com/Manta-Network/Manta/pull/781) Proper XCM weights benchmark [CADO]
+-[\#782](https://github.com/Manta-Network/Manta/pull/782) Run manta-pay randomized tests in a loop 10 times [CADO]
+-[\#678](https://github.com/Manta-Network/Manta/pull/678) Minor: Update PULL_REQUEST_TEMPLATE.md 
+-[\#792](https://github.com/Manta-Network/Manta/pull/792) Adapt 45/45/10 TX fee split for KMA, 100% to author for DOL [CADO]
+
+### Fixed
+-[\#783](https://github.com/Manta-Network/Manta/pull/783) Fix calamari bootnode names in chain-spec and docker [CADO]
+-[\#791](https://github.com/Manta-Network/Manta/pull/791) Fix CI by ignoring failure of `stop-` jobs 
+
 ## v3.3.0
 ### Added
 -[\#717](https://github.com/Manta-Network/Manta/pull/717) Dolphin-2085 on Baikal genesis [DO]
