@@ -110,7 +110,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: benchmarks-errors
-          path: ./scripts/benchmarking/benchmark_errors.txt
+          path: ./scripts/benchmarking/benchmarking_errors.txt
       - if: always()
         name: upload machine benchmark result
         uses: actions/upload-artifact@v3
