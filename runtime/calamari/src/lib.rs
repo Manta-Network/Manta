@@ -27,7 +27,6 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub use frame_support::traits::Get;
 use manta_collator_selection::IdentityCollator;
 use sp_api::impl_runtime_apis;
-use sp_arithmetic::FixedU128;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
