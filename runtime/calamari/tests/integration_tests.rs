@@ -26,9 +26,11 @@ pub use calamari_runtime::{
     currency::KMA,
     fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
     xcm_config::XcmFeesAccount,
-    AssetManager, Assets, Authorship, Balances, CalamariVesting, Council, DefaultBlocksPerRound,
-    Democracy, EnactmentPeriod, LaunchPeriod, NativeTokenExistentialDeposit, Origin, Period,
-    PolkadotXcm, Runtime, TechnicalCommittee, Timestamp, Treasury, Utility, VotingPeriod,
+    AssetManager, Assets, Authorship, Balances, CalamariVesting, CandidateBondLessDelay, Council,
+    DefaultBlocksPerRound, DelegationBondLessDelay, Democracy, EnactmentPeriod, LaunchPeriod,
+    LeaveCandidatesDelay, LeaveDelayRounds, LeaveDelegatorsDelay, NativeTokenExistentialDeposit,
+    Origin, Period, PolkadotXcm, Runtime, TechnicalCommittee, Timestamp, Treasury, Utility,
+    VotingPeriod,
 };
 
 use calamari_runtime::opaque::SessionKeys;
@@ -181,6 +183,31 @@ fn sanity_check_governance_periods() {
     assert_eq!(LaunchPeriod::get(), 7 * DAYS);
     assert_eq!(VotingPeriod::get(), 7 * DAYS);
     assert_eq!(EnactmentPeriod::get(), 1 * DAYS);
+}
+
+#[test]
+fn ensure_block_per_round_and_leave_delays_equal_7days() {
+    // NOTE: If you change one, change the other as well
+    assert_eq!(
+        7 * DAYS,
+        DefaultBlocksPerRound::get() * LeaveDelayRounds::get()
+    );
+    assert_eq!(
+        7 * DAYS,
+        DefaultBlocksPerRound::get() * LeaveCandidatesDelay::get()
+    );
+    assert_eq!(
+        7 * DAYS,
+        DefaultBlocksPerRound::get() * LeaveDelegatorsDelay::get()
+    );
+    assert_eq!(
+        7 * DAYS,
+        DefaultBlocksPerRound::get() * CandidateBondLessDelay::get()
+    );
+    assert_eq!(
+        7 * DAYS,
+        DefaultBlocksPerRound::get() * DelegationBondLessDelay::get()
+    );
 }
 
 #[test]

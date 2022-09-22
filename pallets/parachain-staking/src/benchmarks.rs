@@ -286,7 +286,7 @@ benchmarks! {
             RawOrigin::Signed(candidate.clone()).into(),
             3u32
         )?;
-        roll_to_and_author::<T>(2, candidate.clone());
+        roll_to_and_author::<T>(<<T as Config>::LeaveCandidatesDelay as Get<u32>>::get(), candidate.clone());
     }: _(RawOrigin::Signed(candidate.clone()), candidate.clone(), col_del_count)
     verify {
         assert!(Pallet::<T>::candidate_info(&candidate).is_none());
