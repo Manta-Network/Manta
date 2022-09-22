@@ -26,9 +26,8 @@ pub use calamari_runtime::{
     currency::KMA,
     fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
     xcm_config::XcmFeesAccount,
-    AssetManager, Assets, Authorship, Balances, CalamariVesting, CandidateBondLessDelay, Council,
-    DefaultBlocksPerRound, DelegationBondLessDelay, Democracy, EnactmentPeriod, LaunchPeriod,
-    LeaveCandidatesDelay, LeaveDelayRounds, LeaveDelegatorsDelay, NativeTokenExistentialDeposit,
+    AssetManager, Assets, Authorship, Balances, CalamariVesting, Council, DefaultBlocksPerRound,
+    Democracy, EnactmentPeriod, LaunchPeriod, LeaveDelayRounds, NativeTokenExistentialDeposit,
     Origin, Period, PolkadotXcm, Runtime, TechnicalCommittee, Timestamp, Treasury, Utility,
     VotingPeriod,
 };
