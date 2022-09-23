@@ -253,18 +253,6 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(fn deposit_event)]
     pub enum Event<T: Config> {
-        /// Public Transfer Event
-        Transfer {
-            /// Asset Transferred
-            asset: Asset,
-
-            /// Source Account
-            source: T::AccountId,
-
-            /// Sink Account
-            sink: T::AccountId,
-        },
-
         /// To Private Event
         ToPrivate {
             /// Asset Converted
@@ -274,16 +262,28 @@ pub mod pallet {
             source: T::AccountId,
         },
 
+        /// To Public Event
+        ToPublic {
+            /// Asset Converted
+            asset: Asset,
+
+            /// Sink Account
+            sink: T::AccountId,
+        },
+
         /// Private Transfer Event
         PrivateTransfer {
             /// Origin Account
             origin: T::AccountId,
         },
 
-        /// To Public Event
-        ToPublic {
-            /// Asset Converted
+        /// Public Transfer Event
+        Transfer {
+            /// Asset Transferred
             asset: Asset,
+
+            /// Source Account
+            source: T::AccountId,
 
             /// Sink Account
             sink: T::AccountId,
