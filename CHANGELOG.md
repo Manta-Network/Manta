@@ -2,22 +2,22 @@
 
 ## v3.4.0
 ### Added
--[\#745](https://github.com/Manta-Network/Manta/pull/745) Workflow to check for labels
--[\#758](https://github.com/Manta-Network/Manta/pull/758) All-benchmarks script and CI workflow improvements
--[\#724](https://github.com/Manta-Network/Manta/pull/724) Nimbus Stage 2 - Enable permissionless staking on Calamari [CA]
+- [\#745](https://github.com/Manta-Network/Manta/pull/745) Workflow to check for labels
+- [\#758](https://github.com/Manta-Network/Manta/pull/758) All-benchmarks script and CI workflow improvements
+- [\#724](https://github.com/Manta-Network/Manta/pull/724) Nimbus Stage 2 - Enable permissionless staking on Calamari [CA]
 
 ### Changed
--[\#770](https://github.com/Manta-Network/Manta/pull/770) Update fees splits, 50% burned, 50% to treasury [CADO]
--[\#766](https://github.com/Manta-Network/Manta/pull/766) Change QA workflow link to internal Notion
--[\#743](https://github.com/Manta-Network/Manta/pull/743) Split all testing from `publish_draft_release` workflow and filter execution by labels on the PRs [CADO]
--[\#781](https://github.com/Manta-Network/Manta/pull/781) Proper XCM weights benchmark [CADO]
--[\#782](https://github.com/Manta-Network/Manta/pull/782) Run manta-pay randomized tests in a loop 10 times [CADO]
--[\#678](https://github.com/Manta-Network/Manta/pull/678) Minor: Update PULL_REQUEST_TEMPLATE.md
--[\#792](https://github.com/Manta-Network/Manta/pull/792) Adapt 45/45/10 TX fee split for KMA, 100% to author for DOL [CADO]
+- [\#770](https://github.com/Manta-Network/Manta/pull/770) Update fees splits, 50% burned, 50% to treasury [CADO]
+- [\#766](https://github.com/Manta-Network/Manta/pull/766) Change QA workflow link to internal Notion
+- [\#743](https://github.com/Manta-Network/Manta/pull/743) Split all testing from `publish_draft_release` workflow and filter execution by labels on the PRs [CADO]
+- [\#781](https://github.com/Manta-Network/Manta/pull/781) Proper XCM weights benchmark [CADO]
+- [\#782](https://github.com/Manta-Network/Manta/pull/782) Run manta-pay randomized tests in a loop 10 times [CADO]
+- [\#678](https://github.com/Manta-Network/Manta/pull/678) Minor: Update PULL_REQUEST_TEMPLATE.md
+- [\#792](https://github.com/Manta-Network/Manta/pull/792) Adapt 45/45/10 TX fee split for KMA, 100% to author for DOL [CADO]
 
 ### Fixed
--[\#783](https://github.com/Manta-Network/Manta/pull/783) Fix calamari bootnode names in chain-spec and docker [CADO]
--[\#791](https://github.com/Manta-Network/Manta/pull/791) Fix CI by ignoring failure of `stop-` jobs
+- [\#783](https://github.com/Manta-Network/Manta/pull/783) Fix calamari bootnode names in chain-spec and docker [CADO]
+- [\#791](https://github.com/Manta-Network/Manta/pull/791) Fix CI by ignoring failure of `stop-` jobs
 
 ## v3.3.0
 ### Added
