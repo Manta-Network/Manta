@@ -440,8 +440,7 @@ fn reclaim_should_work() {
 fn reclaim_native_should_work() {
     let mut rng = OsRng;
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
-        new_test_ext()
-            .execute_with(|| reclaim_test(1, rng.gen(), Some(NATIVE_ASSET_ID), &mut rng));
+        new_test_ext().execute_with(|| reclaim_test(1, rng.gen(), Some(NATIVE_ASSET_ID), &mut rng));
     }
 }
 

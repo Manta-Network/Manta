@@ -319,8 +319,8 @@ impl orml_xtokens::Config for Runtime {
         CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type SelfLocation = SelfReserve;
-    
-    /// Weigher Configuration 
+
+    /// Weigher Configuration
     ///
     /// Take note that this pallet does not have the typical configurable WeightInfo.
     /// It uses the Weigher configuration to calculate weights for the user callable
@@ -328,7 +328,7 @@ impl orml_xtokens::Config for Runtime {
     /// chain. Both based on the composed xcm messages.
     type Weigher =
         WeightInfoBounds<crate::weights::xcm::CalamariXcmWeight<Call>, Call, MaxInstructions>;
-    
+
     type BaseXcmWeight = BaseXcmWeight;
     type LocationInverter = LocationInverter<Ancestry>;
     type MaxAssetsForTransfer = MaxAssetsForTransfer;

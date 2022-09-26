@@ -205,9 +205,9 @@ pub mod pallet {
             let asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
             let metadata = <T::AssetConfig as AssetConfig<T>>::NativeAssetMetadata::get();
             let location = <T::AssetConfig as AssetConfig<T>>::NativeAssetLocation::get();
-            AssetIdLocation::<T>::insert(asset_id, &location);
-            AssetIdMetadata::<T>::insert(asset_id, &metadata);
-            LocationAssetId::<T>::insert(&location, asset_id);
+            AssetIdLocation::<T>::insert(&asset_id, &location);
+            AssetIdMetadata::<T>::insert(&asset_id, &metadata);
+            LocationAssetId::<T>::insert(&location, &asset_id);
         }
     }
 
