@@ -9,7 +9,7 @@ license = 'GPL-3.0'
 name = 'manta'
 repository = 'https://github.com/Manta-Network/Manta/'
 rust-version = '1.59'
-version = '3.2.1'
+version = '3.3.0'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -40,6 +40,8 @@ sc-chain-spec = { git = 'https://github.com/paritytech/substrate.git', branch = 
 sc-cli = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sc-client-api = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sc-consensus = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
+sc-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
+sc-consensus-slots = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sc-executor = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sc-keystore = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
@@ -53,6 +55,8 @@ sc-transaction-pool = { git = 'https://github.com/paritytech/substrate.git', bra
 
 # Substrate primitives
 sp-api = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
+sp-application-crypto = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
+sp-arithmetic = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sp-block-builder = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sp-blockchain = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sp-consensus = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
@@ -81,6 +85,11 @@ cumulus-relay-chain-inprocess-interface = { git = 'https://github.com/paritytech
 cumulus-relay-chain-interface = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.26" }
 cumulus-relay-chain-rpc-interface = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.26" }
 
+# Nimbus dependencies
+nimbus-consensus = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v3.3.0" }
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v3.3.0" }
+pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v3.3.0" }
+
 # Polkadot dependencies
 polkadot-cli = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.26" }
 polkadot-primitives = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.26" }
@@ -93,6 +102,7 @@ dolphin-runtime = { path = '../runtime/dolphin' }
 manta-primitives = { path = '../primitives/manta' }
 manta-runtime = { path = '../runtime/manta' }
 pallet-manta-pay = { path = '../pallets/manta-pay', features = ["rpc", "runtime"] }
+pallet-parachain-staking = { path = '../pallets/parachain-staking' }
 session-key-primitives = { path = '../primitives/session-keys' }
 
 [build-dependencies]

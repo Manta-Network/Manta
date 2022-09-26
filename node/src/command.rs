@@ -20,7 +20,8 @@ use crate::{
     chain_specs,
     cli::{Cli, RelayChainCli, Subcommand},
     rpc,
-    service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
+    service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor},
+    service_aura::MantaRuntimeExecutor,
 };
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
@@ -224,22 +225,16 @@ impl SubstrateCli for RelayChainCli {
 macro_rules! construct_benchmark_partials {
     ($config:expr, |$partials:ident| $code:expr) => {
         if $config.chain_spec.is_manta() {
-            let $partials = new_partial::<manta_runtime::RuntimeApi, _>(
+            let $partials = crate::service_aura::new_partial::<manta_runtime::RuntimeApi, _>(
                 &$config,
-                crate::service::parachain_build_import_queue::<_, AuraId>,
+                crate::service_aura::parachain_build_import_queue::<_, AuraId>,
             )?;
             $code
         } else if $config.chain_spec.is_calamari() {
-            let $partials = new_partial::<calamari_runtime::RuntimeApi, _>(
-                &$config,
-                crate::service::parachain_build_import_queue::<_, AuraId>,
-            )?;
+            let $partials = new_partial::<calamari_runtime::RuntimeApi>(&$config)?;
             $code
         } else if $config.chain_spec.is_dolphin() {
-            let $partials = new_partial::<dolphin_runtime::RuntimeApi, _>(
-                &$config,
-                crate::service::parachain_build_import_queue::<_, AuraId>,
-            )?;
+            let $partials = new_partial::<dolphin_runtime::RuntimeApi>(&$config)?;
             $code
         } else {
             Err("The chain is not supported".into())
@@ -252,27 +247,25 @@ macro_rules! construct_async_run {
         let runner = $cli.create_runner($cmd)?;
             if runner.config().chain_spec.is_manta() {
                 runner.async_run(|$config| {
-                    let $components = new_partial::<manta_runtime::RuntimeApi, _>(
+                    let $components = crate::service_aura::new_partial::<manta_runtime::RuntimeApi, _>(
                         &$config,
-                        crate::service::parachain_build_import_queue::<_, AuraId>,
+                        crate::service_aura::parachain_build_import_queue::<_, AuraId>,
                     )?;
                     let task_manager = $components.task_manager;
                     { $( $code )* }.map(|v| (v, task_manager))
                 })
             } else if runner.config().chain_spec.is_calamari() {
                 runner.async_run(|$config| {
-                    let $components = new_partial::<calamari_runtime::RuntimeApi, _>(
+                    let $components = new_partial::<calamari_runtime::RuntimeApi>(
                         &$config,
-                        crate::service::parachain_build_import_queue::<_, AuraId>,
                     )?;
                     let task_manager = $components.task_manager;
                     { $( $code )* }.map(|v| (v, task_manager))
                 })
             } else if runner.config().chain_spec.is_dolphin() {
                 runner.async_run(|$config| {
-                    let $components = new_partial::<dolphin_runtime::RuntimeApi, _>(
+                    let $components = new_partial::<dolphin_runtime::RuntimeApi>(
                         &$config,
-                        crate::service::parachain_build_import_queue::<_, AuraId>,
                     )?;
                     let task_manager = $components.task_manager;
                     { $( $code )* }.map(|v| (v, task_manager))
@@ -431,7 +424,7 @@ pub fn run_with(cli: Cli) -> Result {
             runner.run_node_until_exit(|config| async move {
                 let hwbench = if !cli.no_hardware_benchmarks {
                     config.database.path().map(|database_path| {
-                        let _ = std::fs::create_dir_all(&database_path);
+                        let _ = std::fs::create_dir_all(database_path);
                         sc_sysinfo::gather_hwbench(Some(database_path))
                     })
                 } else {
@@ -480,7 +473,7 @@ pub fn run_with(cli: Cli) -> Result {
                 );
 
                 if config.chain_spec.is_manta() {
-                    crate::service::start_parachain_node::<manta_runtime::RuntimeApi, AuraId, _>(
+                    crate::service_aura::start_parachain_node::<manta_runtime::RuntimeApi, AuraId, _>(
                         config,
                         polkadot_config,
                         collator_options,
@@ -492,7 +485,7 @@ pub fn run_with(cli: Cli) -> Result {
                     .map(|r| r.0)
                     .map_err(Into::into)
                 } else if config.chain_spec.is_calamari() {
-                    crate::service::start_parachain_node::<calamari_runtime::RuntimeApi, AuraId, _>(
+                    crate::service::start_parachain_node::<calamari_runtime::RuntimeApi, _>(
                         config,
                         polkadot_config,
                         collator_options,
@@ -504,7 +497,7 @@ pub fn run_with(cli: Cli) -> Result {
                     .map(|r| r.0)
                     .map_err(Into::into)
                 } else if config.chain_spec.is_dolphin() {
-                    crate::service::start_parachain_node::<dolphin_runtime::RuntimeApi, AuraId, _>(
+                    crate::service::start_parachain_node::<dolphin_runtime::RuntimeApi, _>(
                         config,
                         polkadot_config,
                         collator_options,

@@ -24,15 +24,19 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+pub use frame_support::traits::Get;
+use manta_collator_selection::IdentityCollator;
 use sp_api::impl_runtime_apis;
+use sp_arithmetic::FixedU128;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Percent, Permill,
 };
 use sp_std::{cmp::Ordering, prelude::*};
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -40,8 +44,8 @@ use sp_version::RuntimeVersion;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, NeverEnsureOrigin,
-        PrivilegeCmp,
+        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse,
+        NeverEnsureOrigin, PrivilegeCmp,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -57,9 +61,10 @@ use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
+pub use pallet_parachain_staking::{InflationInfo, Range};
+use pallet_session::ShouldEndSession;
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
-use sp_runtime::{Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -77,7 +82,6 @@ pub mod xcm_config;
 use currency::*;
 use fee::WeightToFee;
 use impls::DealWithFees;
-use runtime_common::migration::MigratePalletPv2Sv;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -118,11 +122,11 @@ mod weights;
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
-    authoring_version: 1,
-    spec_version: 3210,
+    authoring_version: 2,
+    spec_version: 3300,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 6,
+    transaction_version: 7,
     state_version: 0,
 };
 
@@ -200,15 +204,10 @@ impl Contains<Call> for BaseFilter {
         #[allow(clippy::match_like_matches_macro)]
         // keep CallFilter with explicit true/false for documentation
         match call {
-            // Explicitly DISALLOWED calls
+            // Explicitly DISALLOWED calls ( Pallet user extrinsics we don't want used WITH REASONING )
             | Call::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
-            | Call::AssetManager(_) // AssetManager is also filtered because all of its extrinsics
-                                    // are callable only by Root, and Root calls skip this whole filter.
-            // Currently, we filter `register_as_candidate` as this call is not yet ready for community.
-            | Call::CollatorSelection( manta_collator_selection::Call::register_as_candidate{..})
             // For now disallow public proposal workflows, treasury workflows,
             // as well as external_propose and external_propose_majority.
-            // The following are filtered out:
             | Call::Democracy(
                                 pallet_democracy::Call::propose {..}
                                 | pallet_democracy::Call::second {..}
@@ -255,15 +254,29 @@ impl Contains<Call> for BaseFilter {
             | Call::Scheduler(_)
             | Call::CalamariVesting(_)
             | Call::Session(_) // User must be able to set their session key when applying for a collator
-            | Call::CollatorSelection(
-                manta_collator_selection::Call::set_invulnerables{..}
-                | manta_collator_selection::Call::set_desired_candidates{..}
-                | manta_collator_selection::Call::set_candidacy_bond{..}
-                | manta_collator_selection::Call::set_eviction_baseline{..}
-                | manta_collator_selection::Call::set_eviction_tolerance{..}
-                | manta_collator_selection::Call::register_candidate{..}
-                | manta_collator_selection::Call::remove_collator{..}
-                | manta_collator_selection::Call::leave_intent{..})
+            | Call::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
+            | Call::ParachainStaking(
+                // Collator extrinsics
+                pallet_parachain_staking::Call::join_candidates{..}
+                | pallet_parachain_staking::Call::schedule_leave_candidates{..}
+                | pallet_parachain_staking::Call::execute_leave_candidates{..}
+                | pallet_parachain_staking::Call::cancel_leave_candidates{..}
+                | pallet_parachain_staking::Call::go_offline{..}
+                | pallet_parachain_staking::Call::go_online{..}
+                | pallet_parachain_staking::Call::candidate_bond_more{..}
+                | pallet_parachain_staking::Call::schedule_candidate_bond_less{..}
+                | pallet_parachain_staking::Call::execute_candidate_bond_less{..}
+                | pallet_parachain_staking::Call::cancel_candidate_bond_less{..}
+                // Delegator extrinsics
+                | pallet_parachain_staking::Call::delegate{..}
+                | pallet_parachain_staking::Call::schedule_leave_delegators{..}
+                | pallet_parachain_staking::Call::execute_leave_delegators{..}
+                | pallet_parachain_staking::Call::cancel_leave_delegators{..}
+                | pallet_parachain_staking::Call::schedule_revoke_delegation{..}
+                | pallet_parachain_staking::Call::delegator_bond_more{..}
+                | pallet_parachain_staking::Call::schedule_delegator_bond_less{..}
+                | pallet_parachain_staking::Call::execute_delegation_request{..}
+                | pallet_parachain_staking::Call::cancel_delegation_request{..})
             | Call::Balances(_)
             | Call::Preimage(_)
             | Call::XTokens(orml_xtokens::Call::transfer {..}
@@ -317,7 +330,7 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 impl pallet_authorship::Config for Runtime {
-    type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
+    type FindAuthor = AuthorInherent;
     type UncleGenerations = ConstU32<0>;
     type FilterUncle = ();
     type EventHandler = (CollatorSelection,);
@@ -326,7 +339,6 @@ impl pallet_authorship::Config for Runtime {
 parameter_types! {
     pub const NativeTokenExistentialDeposit: u128 = 10 * cKMA; // 0.1 KMA
 }
-
 impl pallet_balances::Config for Runtime {
     type MaxLocks = ConstU32<50>;
     type MaxReserves = ConstU32<50>;
@@ -546,6 +558,78 @@ impl pallet_treasury::Config for Runtime {
     type SpendOrigin = NeverEnsureOrigin<Balance>;
 }
 
+impl pallet_aura_style_filter::Config for Runtime {
+    /// Nimbus filter pipeline (final) step 3:
+    /// Choose 1 collator from PotentialAuthors as eligible
+    /// for each slot in round-robin fashion
+    type PotentialAuthors = ParachainStaking;
+}
+use sp_runtime::traits::UniqueSaturatedInto;
+parameter_types! {
+    /// Fixed percentage a collator takes off the top of due rewards
+    pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(10);
+    /// Default percent of inflation set aside for parachain bond every round
+    pub const DefaultParachainBondReservePercent: Percent = Percent::zero();
+    pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(6 * HOURS ,15,"CALAMARI_DEFAULTBLOCKSPERROUND");
+    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(FixedU128::checked_from_rational(7u32.saturating_mul(DAYS),DefaultBlocksPerRound::get()).unwrap_or(FixedU128::from_inner(1u128)).into_inner().unique_saturated_into(),1,"CALAMARI_LEAVEDELAYROUNDS");
+}
+impl pallet_parachain_staking::Config for Runtime {
+    type Event = Event;
+    type Currency = Balances;
+    type BlockAuthor = AuthorInherent;
+    type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
+    /// Minimum round length is 2 minutes (10 * 12 second block times)
+    type MinBlocksPerRound = ConstU32<10>;
+    /// Blocks per round
+    type DefaultBlocksPerRound = DefaultBlocksPerRound;
+    /// Rounds before the collator leaving the candidates request can be executed
+    type LeaveCandidatesDelay = LeaveDelayRounds;
+    /// Rounds before the candidate bond increase/decrease can be executed
+    type CandidateBondLessDelay = LeaveDelayRounds;
+    /// Rounds before the delegator exit can be executed
+    type LeaveDelegatorsDelay = LeaveDelayRounds;
+    /// Rounds before the delegator revocation can be executed
+    type RevokeDelegationDelay = LeaveDelayRounds;
+    /// Rounds before the delegator bond increase/decrease can be executed
+    type DelegationBondLessDelay = LeaveDelayRounds;
+    /// Rounds before the reward is paid
+    type RewardPaymentDelay = ConstU32<2>;
+    /// Minimum collators selected per round, default at genesis and minimum forever after
+    type MinSelectedCandidates = ConstU32<5>;
+    /// Maximum top delegations per candidate
+    type MaxTopDelegationsPerCandidate = ConstU32<100>;
+    /// Maximum bottom delegations per candidate
+    type MaxBottomDelegationsPerCandidate = ConstU32<50>;
+    /// Maximum delegations per delegator
+    type MaxDelegationsPerDelegator = ConstU32<25>;
+    type DefaultCollatorCommission = DefaultCollatorCommission;
+    type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
+    /// Minimum stake on a collator to be considered for block production
+    // WHITELIST: Temporarily 400k to accomodate whitelisted collators
+    type MinCollatorStk = ConstU128<{ 400_000 * KMA }>;
+    /// Minimum stake the collator runner must bond to register as collator candidate
+    type MinCandidateStk = ConstU128<{ 4_000_000 * KMA }>;
+    /// WHITELIST: Minimum stake required for *a whitelisted* account to be a collator candidate
+    type MinWhitelistCandidateStk = ConstU128<{ 400_000 * KMA }>;
+    /// Smallest amount that can be delegated
+    type MinDelegation = ConstU128<{ 5_000 * KMA }>;
+    /// Minimum stake required to be reserved to be a delegator
+    type MinDelegatorStk = ConstU128<{ 5_000 * KMA }>;
+    type OnCollatorPayout = ();
+    type OnNewRound = ();
+    type WeightInfo = weights::pallet_parachain_staking::SubstrateWeight<Runtime>;
+}
+
+impl pallet_author_inherent::Config for Runtime {
+    // We start a new slot each time we see a new relay block.
+    type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
+    type AccountLookup = CollatorSelection;
+    type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
+    /// Nimbus filter pipeline step 1:
+    /// Filters out NimbusIds not registered as SessionKeys of some AccountId
+    type CanAuthor = ParachainStaking;
+}
+
 parameter_types! {
     pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
         RuntimeBlockWeights::get().max_block;
@@ -614,15 +698,24 @@ parameter_types! {
     pub const Offset: u32 = 0;
 }
 
+// NOTE: pallet_parachain_staking rounds are now used,
+// session rotation through pallet session no longer needed
+// but the pallet is used for SessionKeys storage
+pub struct NeverEndSession;
+impl ShouldEndSession<u32> for NeverEndSession {
+    fn should_end_session(_: u32) -> bool {
+        false
+    }
+}
+
 impl pallet_session::Config for Runtime {
     type Event = Event;
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     // we don't have stash and controller, thus we don't need the convert as well.
-    type ValidatorIdOf = manta_collator_selection::IdentityCollator;
-    type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+    type ValidatorIdOf = IdentityCollator;
+    type ShouldEndSession = NeverEndSession;
     type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
-    type SessionManager = CollatorSelection;
-    // Essentially just Aura, but lets be pedantic.
+    type SessionManager = ();
     type SessionHandler =
         <opaque::SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
     type Keys = opaque::SessionKeys;
@@ -658,10 +751,13 @@ impl manta_collator_selection::Config for Runtime {
     type MaxCandidates = ConstU32<50>; // 50 candidates at most
     type MaxInvulnerables = ConstU32<5>; // 5 invulnerables at most
     type ValidatorId = <Self as frame_system::Config>::AccountId;
-    type ValidatorIdOf = manta_collator_selection::IdentityCollator;
-    type AccountIdOf = manta_collator_selection::IdentityCollator;
+    type ValidatorIdOf = IdentityCollator;
+    type AccountIdOf = IdentityCollator;
     type ValidatorRegistration = Session;
     type WeightInfo = weights::manta_collator_selection::SubstrateWeight<Runtime>;
+    /// Nimbus filter pipeline step 2:
+    /// Filters collators not part of the current pallet_session::validators()
+    type CanAuthor = AuraAuthorFilter;
 }
 
 // Calamari pallets configuration
@@ -705,12 +801,16 @@ construct_runtime!(
         TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 17,
         TechnicalMembership: pallet_membership::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>} = 18,
 
-        // Collator support. the order of these 5 are important and shall not change.
+        ParachainStaking: pallet_parachain_staking::{Pallet, Call, Storage, Event<T>, Config<T>} = 48,
+        // Collator support.
+        AuthorInherent: pallet_author_inherent::{Pallet, Call, Storage, Inherent} = 60,
+        AuraAuthorFilter: pallet_aura_style_filter::{Pallet, Storage} = 63,
+        // The order of the next 4 is important and shall not change.
         Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
         CollatorSelection: manta_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
-        AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
+        // This used to be cumulus_pallet_aura_ext with idx = 24,
 
         // Treasury
         Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,
@@ -766,12 +866,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExt
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = (
-    MigratePalletPv2Sv<pallet_asset_manager::Pallet<Runtime>>,
-    MigratePalletPv2Sv<pallet_tx_pause::Pallet<Runtime>>,
-    MigratePalletPv2Sv<manta_collator_selection::Pallet<Runtime>>,
-    MigratePalletPv2Sv<calamari_vesting::Pallet<Runtime>>,
-);
+pub type OnRuntimeUpgradeHooks = (migrations::staking::InitializeStakingPallet<Runtime>,);
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -806,11 +901,16 @@ mod benches {
         [pallet_assets, Assets]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]
+        [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
+        [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
         // Manta pallets
         [calamari_vesting, CalamariVesting]
         [pallet_tx_pause, TransactionPause]
         [manta_collator_selection, CollatorSelection]
         [pallet_asset_manager, AssetManager]
+        [pallet_parachain_staking, ParachainStaking]
+        // Nimbus pallets
+        [pallet_author_inherent, AuthorInherent]
     );
 }
 
@@ -821,7 +921,9 @@ impl_runtime_apis! {
         }
 
         fn authorities() -> Vec<AuraId> {
-            Aura::authorities().into_inner()
+            // NOTE: AuraAPI must exist for node/src/aura_or_nimbus_consensus.rs
+            // But is intentionally DISABLED starting with manta v3.3.0
+            vec![]
         }
     }
 
@@ -921,6 +1023,22 @@ impl_runtime_apis! {
         }
     }
 
+    impl nimbus_primitives::NimbusApi<Block> for Runtime {
+        fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool {
+            System::initialize(&(parent_header.number + 1), &parent_header.hash(), &parent_header.digest);
+
+            // And now the actual prediction call
+            <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
+        }
+    }
+
+    // We also implement the old AuthorFilterAPI to meet the trait bounds on the client side.
+    impl nimbus_primitives::AuthorFilterAPI<Block, NimbusId> for Runtime {
+        fn can_author(_: NimbusId, _: u32, _: &<Block as BlockT>::Header) -> bool {
+            panic!("AuthorFilterAPI is no longer supported. Please update your client.")
+        }
+    }
+
     #[cfg(feature = "try-runtime")]
     impl frame_try_runtime::TryRuntime<Block> for Runtime {
         fn on_runtime_upgrade() -> (Weight, Weight) {
@@ -948,19 +1066,108 @@ impl_runtime_apis! {
             list_benchmarks!(list, extra);
 
             let storage_info = AllPalletsReversedWithSystemFirst::storage_info();
+
             (list, storage_info)
         }
 
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-            use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey};
+            use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey, BenchmarkError};
 
             use frame_system_benchmarking::Pallet as SystemBench;
             impl frame_system_benchmarking::Config for Runtime {}
 
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
             impl cumulus_pallet_session_benchmarking::Config for Runtime {}
+
+            use pallet_xcm_benchmarks::asset_instance_from;
+            use xcm_config::{LocationToAccountId, XcmExecutorConfig};
+
+            parameter_types! {
+                pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = None;
+                pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((
+                    KsmLocation::get(),
+                    // Random amount for the benchmark.
+                    MultiAsset { fun: Fungible(1_000_000_000_000), id: Concrete(KsmLocation::get()) },
+                ));
+                pub const CheckedAccount: Option<AccountId> = None;
+                pub const KsmLocation: MultiLocation = MultiLocation::parent();
+                pub KmaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(2084)));
+            }
+
+            impl pallet_xcm_benchmarks::Config for Runtime {
+                type XcmConfig = XcmExecutorConfig;
+                type AccountIdConverter = LocationToAccountId;
+
+                fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
+                 Ok(KsmLocation::get())
+                }
+
+                fn worst_case_holding() -> MultiAssets {
+                    // A mix of fungible, non-fungible, and concrete assets.
+                    const HOLDING_FUNGIBLES: u32 = 100;
+                    const HOLDING_NON_FUNGIBLES: u32 = 100;
+                    let fungibles_amount: u128 = 100;
+                    let mut assets = (0..HOLDING_FUNGIBLES)
+                        .map(|i| {
+                            MultiAsset {
+                                id: Concrete(GeneralIndex(i as u128).into()),
+                                fun: Fungible(fungibles_amount * i as u128),
+                            }
+                        })
+                        .chain(core::iter::once(MultiAsset { id: Concrete(Here.into()), fun: Fungible(u128::MAX) }))
+                        .chain((0..HOLDING_NON_FUNGIBLES).map(|i| MultiAsset {
+                            id: Concrete(GeneralIndex(i as u128).into()),
+                            fun: NonFungible(asset_instance_from(i)),
+                        }))
+                        .collect::<Vec<_>>();
+
+                        assets.push(MultiAsset{
+                            id: Concrete(KmaLocation::get()),
+                            fun: Fungible(1_000_000 * KMA),
+                        });
+                        assets.into()
+                }
+            }
+
+            impl pallet_xcm_benchmarks::fungible::Config for Runtime {
+                type TransactAsset = Balances;
+
+                type CheckedAccount = CheckedAccount;
+                type TrustedTeleporter = TrustedTeleporter;
+                type TrustedReserve = TrustedReserve;
+
+                fn get_multi_asset() -> MultiAsset {
+                    MultiAsset {
+                        id: Concrete(KmaLocation::get()),
+                        fun: Fungible(1 * KMA),
+                    }
+                }
+            }
+
+            impl pallet_xcm_benchmarks::generic::Config for Runtime {
+                type Call = Call;
+
+                fn worst_case_response() -> (u64, Response) {
+                    (0u64, Response::Version(Default::default()))
+                }
+
+                fn transact_origin() -> Result<MultiLocation, BenchmarkError> {
+                    Ok(KsmLocation::get())
+                }
+
+                fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
+                    Ok(KsmLocation::get())
+                }
+
+                fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
+                    let origin = KmaLocation::get();
+                    let assets: MultiAssets = (Concrete(KmaLocation::get()), 1_000 * KMA).into();
+                    let ticket = MultiLocation { parents: 0, interior: Here };
+                    Ok((origin, ticket, assets))
+                }
+            }
 
             let whitelist: Vec<TrackedStorageKey> = vec![
                 // Block Number
@@ -981,7 +1188,6 @@ impl_runtime_apis! {
             let params = (&config, &whitelist);
             add_benchmarks!(params, batches);
 
-            if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)
         }
     }
@@ -1011,6 +1217,6 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 
 cumulus_pallet_parachain_system::register_validate_block! {
     Runtime = Runtime,
-    BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
+    BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
     CheckInherents = CheckInherents,
 }

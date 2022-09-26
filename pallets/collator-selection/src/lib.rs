@@ -85,7 +85,7 @@ pub mod pallet {
         pallet_prelude::*,
         sp_runtime::{
             traits::{AccountIdConversion, CheckedSub, Convert, One, Zero},
-            RuntimeDebug,
+            RuntimeAppPublic, RuntimeDebug,
         },
         traits::{
             Currency, EnsureOrigin, ExistenceRequirement::KeepAlive, ReservableCurrency,
@@ -95,10 +95,10 @@ pub mod pallet {
         PalletId,
     };
     use frame_system::{pallet_prelude::*, Config as SystemConfig};
+    use nimbus_primitives::{AccountLookup, CanAuthor, NimbusId};
     use pallet_session::SessionManager;
     use sp_arithmetic::Percent;
     use sp_staking::SessionIndex;
-    use sp_std::vec;
 
     type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
@@ -162,6 +162,11 @@ pub mod pallet {
 
         /// The weight information of this pallet.
         type WeightInfo: WeightInfo;
+
+        /// The final word on whether the reported author can author at this height.
+        /// If the pallet that implements this trait depends on an inherent, that inherent **must**
+        /// be included before this one.
+        type CanAuthor: CanAuthor<Self::AccountId>;
     }
 
     /// Basic information about a collation candidate.
@@ -273,10 +278,10 @@ pub mod pallet {
                 self.eviction_tolerance <= Percent::one(),
                 "Eviction tolerance must be given as a percentage - number between 0 and 100",
             );
-            <DesiredCandidates<T>>::put(&self.desired_candidates);
-            <CandidacyBond<T>>::put(&self.candidacy_bond);
-            <EvictionBaseline<T>>::put(&self.eviction_baseline);
-            <EvictionTolerance<T>>::put(&self.eviction_tolerance);
+            <DesiredCandidates<T>>::put(self.desired_candidates);
+            <CandidacyBond<T>>::put(self.candidacy_bond);
+            <EvictionBaseline<T>>::put(self.eviction_baseline);
+            <EvictionTolerance<T>>::put(self.eviction_tolerance);
             <Invulnerables<T>>::put(&self.invulnerables);
         }
     }
@@ -356,7 +361,7 @@ pub mod pallet {
             if max > T::MaxCandidates::get() {
                 log::warn!("max > T::MaxCandidates; you might need to run benchmarks again");
             }
-            <DesiredCandidates<T>>::put(&max);
+            <DesiredCandidates<T>>::put(max);
             Self::deposit_event(Event::NewDesiredCandidates(max));
             Ok(().into())
         }
@@ -371,7 +376,7 @@ pub mod pallet {
             bond: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             T::UpdateOrigin::ensure_origin(origin)?;
-            <CandidacyBond<T>>::put(&bond);
+            <CandidacyBond<T>>::put(bond);
             Self::deposit_event(Event::NewCandidacyBond(bond));
             Ok(().into())
         }
@@ -648,7 +653,7 @@ pub mod pallet {
             let validators = T::ValidatorRegistration::validators();
             let validators_len = validators.len() as u32;
             let mut clear_res = <BlocksPerCollatorThisSession<T>>::clear(validators_len, None);
-            let mut old_cursor = vec![];
+            let mut old_cursor = Vec::new();
             while let Some(cursor) = clear_res.maybe_cursor {
                 clear_res = <BlocksPerCollatorThisSession<T>>::clear(validators_len, Some(&cursor));
                 if cursor == old_cursor {
@@ -661,6 +666,86 @@ pub mod pallet {
                 let account_id = T::AccountIdOf::convert(validator_id.clone().into());
                 <BlocksPerCollatorThisSession<T>>::insert(account_id.clone(), 0u32);
             }
+        }
+    }
+
+    /// Checks if a provided NimbusId SessionKey has an associated AccountId
+    impl<T> AccountLookup<T::AccountId> for Pallet<T>
+    where
+        T: pallet_session::Config + Config,
+        // Implemented only where Session's ValidatorId is directly convertible to collator_selection's ValidatorId
+        <T as Config>::ValidatorId: From<<T as pallet_session::Config>::ValidatorId>,
+    {
+        fn lookup_account(author: &NimbusId) -> Option<T::AccountId>
+        where
+            <T as Config>::ValidatorId: From<<T as pallet_session::Config>::ValidatorId>,
+        {
+            use sp_runtime::traits::Convert;
+            #[allow(clippy::bind_instead_of_map)]
+            pallet_session::Pallet::<T>::key_owner(
+                nimbus_primitives::NIMBUS_KEY_ID,
+                &author.to_raw_vec(),
+            )
+            .and_then(|vid| Some(T::AccountIdOf::convert(vid.into())))
+        }
+    }
+
+    /// Fetch list of all possibly eligible authors to use in nimbus consensus filters
+    ///
+    /// NOTE: This should really be in pallet_session as we only use its storage, but since we haven't
+    /// forked that one, this is the next best place.
+    impl<T> Get<Vec<T::AccountId>> for Pallet<T>
+    where
+        T: Config + pallet_session::Config,
+        // Implemented only where Session's ValidatorId is directly convertible to collator_selection's ValidatorId
+        <T as Config>::ValidatorId: From<<T as pallet_session::Config>::ValidatorId>,
+    {
+        /// Return the set of eligible collator accounts as registered with pallet session
+        fn get() -> Vec<T::AccountId>
+        where
+            <T as Config>::ValidatorId: From<<T as pallet_session::Config>::ValidatorId>,
+        {
+            use sp_runtime::traits::Convert;
+            pallet_session::Pallet::<T>::validators()
+                .into_iter()
+                .map(
+                    |session_validator_id: <T as pallet_session::Config>::ValidatorId| {
+                        <T as Config>::AccountIdOf::convert(session_validator_id.into())
+                    },
+                )
+                .collect::<Vec<T::AccountId>>()
+        }
+    }
+
+    /// Returns whether an account is part of pallet_session::Validators
+    impl<T> nimbus_primitives::CanAuthor<T::AccountId> for Pallet<T>
+    where
+        T: Config + pallet_session::Config,
+        // Implemented only where Session's ValidatorId is directly convertible to collator_selection's ValidatorId
+        <T as Config>::ValidatorId: From<<T as pallet_session::Config>::ValidatorId>,
+    {
+        fn can_author(account: &T::AccountId, slot: &u32) -> bool {
+            let validator_key = <T as Config>::ValidatorIdOf::convert(account.clone());
+            if validator_key.is_none()
+                || !T::ValidatorRegistration::is_registered(
+                    &validator_key.expect("we checked against none before. qed"),
+                )
+            {
+                return false;
+            }
+            T::CanAuthor::can_author(account, slot) // filter passed, hand execution to the next pipeline step
+        }
+        #[cfg(feature = "runtime-benchmarks")]
+        fn get_authors(_slot: &u32) -> Vec<T::AccountId> {
+            use sp_runtime::traits::Convert;
+            pallet_session::Pallet::<T>::validators()
+                .into_iter()
+                .map(
+                    |session_validator_id: <T as pallet_session::Config>::ValidatorId| {
+                        <T as Config>::AccountIdOf::convert(session_validator_id.into())
+                    },
+                )
+                .collect::<Vec<T::AccountId>>()
         }
     }
 

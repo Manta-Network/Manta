@@ -1,9 +1,7 @@
 name: publish draft releases
 on:
-  pull_request:
-    branches: [manta]
   push:
-    branches: [manta]
+    branches: [manta, release-**]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 concurrency:
@@ -17,9 +15,10 @@ env:
   AWS_INSTANCE_TYPE: c5.9xlarge
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
+  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
 jobs:
   get-rust-versions:
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
     runs-on: ubuntu-20.04
     container:
       image: paritytech/ci-linux:production
@@ -34,7 +33,7 @@ jobs:
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
   build-runtimes:
-    needs: check-for-runtime-upgrade
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
     runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
@@ -63,12 +62,14 @@ jobs:
         run: >
           echo '${{ steps.srtool-build.outputs.json }}' |
           jq > ${{ matrix.runtime.name }}-srtool-output.json
-      - name: upload srtool json
+      - if: always()
+        name: upload srtool json
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.runtime.name }}-srtool-json
           path: ${{ matrix.runtime.name }}-srtool-output.json
-      - name: upload runtime
+      - if: always()
+        name: upload runtime
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.runtime.name }}-runtime
@@ -76,6 +77,7 @@ jobs:
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
   build-node-current:
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
     needs: start-node-builder-current
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     env:
@@ -134,699 +136,33 @@ jobs:
           RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose
       - name: stop sccache server
         run: sccache --stop-server || true
-      - name: upload
+      - if: always()
+        name: upload
         uses: actions/upload-artifact@v2
         with:
           name: manta
           path: target/production/manta
-      - name: upload
+      - if: always()
+        name: upload
         uses: actions/upload-artifact@v2
         with:
           name: config-for-integration-test
           path: .github/resources/config-for-integration-test.json
-      - name: upload
+      - if: always()
+        name: upload
         uses: actions/upload-artifact@v2
         with:
           name: config-for-runtime-upgrade-test
           path: .github/resources/config-for-runtime-upgrade-test.json
-  runtime-upgrade-test:
-    needs: [build-node-current, build-runtimes, start-runtime-upgrade-tester, check-for-runtime-upgrade, parse-runtimes]
-    runs-on: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
-    timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        runtime:
-          - name: calamari
-            chain-spec: calamari-testnet-ci
-          - name: manta
-            chain-spec: manta-testnet-ci
-          - name: dolphin
-            chain-spec: dolphin-testnet-ci
-    steps:
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        run: |
-          ls -ahl ${{ github.workspace }}/
-          mkdir -p $HOME/.local/share/${{ matrix.runtime.name }}-pc
-          mkdir -p $HOME/.local/bin
-          echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
-          echo "${HOME}/.local/bin" >> $GITHUB_PATH
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: fetch manta-base
-        uses: actions/download-artifact@v2
-        with:
-          name: manta
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: mv and chmod manta-base
-        run: |
-          ls -ahl ${{ github.workspace }}/
-          mv ${{ github.workspace }}/manta $HOME/.local/bin/manta-base
-          chmod +x $HOME/.local/bin/manta-base
-          ls -ahl ${{ github.workspace }}/
-          ls -ahl $HOME/.local/bin/
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: fetch and chmod polkadot
-        run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.22/polkadot
-          chmod +x $HOME/.local/bin/polkadot
-          ls -ahl $HOME/.local/bin/
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        id: create-chainspec
-        run: |
-          manta-base build-spec --chain ${{ matrix.runtime.chain-spec }} --disable-default-bootnode --raw > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json
-          jq \
-            --sort-keys \
-            --arg name "${{ matrix.runtime.name }} testnet base" \
-            --arg id ${{ matrix.runtime.chain-spec }}-base \
-            --arg relay_chain rococo-local-base \
-            '. |
-              .name = $name |
-              .id = $id |
-              .relay_chain = $relay_chain |
-              .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
-            ' $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json
-          ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-pc/
-          manta-base export-state --chain $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-state.json || true
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: fetch config-for-runtime-upgrade-test
-        uses: actions/download-artifact@v2
-        with:
-          name: config-for-runtime-upgrade-test
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: create launch config
-        run: |
-          ls -a
-          cat config-for-runtime-upgrade-test.json | \
-          jq \
-            --arg relaychain_bin $HOME/.local/bin/polkadot \
-            --arg relaychain_id rococo-local-base \
-            --arg relaychain_name "rococo local base" \
-            --arg parachains_bin $HOME/.local/bin/manta-base \
-            --arg parachains_spec $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json \
-            '.
-              | .relaychain.bin = $relaychain_bin
-              | .relaychain.mutation.id = $relaychain_id
-              | .relaychain.mutation.name = $relaychain_name
-              | .parachains[].bin = $parachains_bin
-              | .parachains[].chain = $parachains_spec
-            ' > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
-          jq . $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
-          ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-pc/
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        uses: actions/checkout@v2
-        with:
-          repository: paritytech/polkadot-launch
-          path: polkadot-launch
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        uses: actions/checkout@v2
-        with:
-          repository: Manta-Network/Dev-Tools
-          path: dev-tools
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: launch testnet
-        run: |
-          cd ${{ github.workspace }}/polkadot-launch
-          yarn install
-          yarn build
-          pm2 start dist/cli.js \
-            --name polkadot-launch \
-            --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.runtime.chain-spec }}-stdout.log \
-            --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.runtime.chain-spec }}-stderr.log \
-            --no-autorestart \
-            -- $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: init measure-block-time ${{ matrix.runtime.name }}
-        run: |
-          cd ${{ github.workspace }}/dev-tools/measure-block-time
-          yarn install
-          pm2 start index.js \
-            --name measure-block-time-${{ matrix.runtime.chain-spec }} \
-            --output ${{ github.workspace }}/measure-block-time-${{ matrix.runtime.chain-spec }}-stdout.log \
-            --error ${{ github.workspace }}/measure-block-time-${{ matrix.runtime.chain-spec }}-stderr.log \
-            --no-autorestart \
-            -- \
-            --address=ws://127.0.0.1:9921
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: fetch previous ${{ matrix.runtime.name }}_runtime.compact.compressed.wasm
-        run: |
-          wget -cO - https://github.com/Manta-Network/Manta/releases/download/v3.1.5-1/${{ matrix.runtime.name }}-runtime-v3151.compact.compressed.wasm > ${{ github.workspace }}/${{ matrix.runtime.name }}_runtime_previous.compact.compressed.wasm
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: fetch new ${{ matrix.runtime.name }}_runtime.compact.compressed.wasm
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ matrix.runtime.name }}-runtime
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: run test suites
-        run: |
-          # TODO: implement moonbeam-like js test suite triggers here
-          sleep 120
-          echo "midnight supply never you faith veteran danger purity tired illness dune token" > ${{ github.workspace }}/dev-tools/runtime-upgrade-test/root_mnemonics
-          curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "inhale connect winner reduce cheese bachelor crucial never metal seat time wage", "0xee73f78b7dd29f30902c1a3bd1e4a6fcc2f26be088343d3ee011e2660fd02a66"],"id":1 }' localhost:9971
-          curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "timber else work trophy build winner mechanic chunk budget orchard glide extra", "0x7cd4af9ad51d443740f71ecd5850385e98985224628c5ea08209bb2015523f3c"],"id":1 }' localhost:9972
-          curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "civil cigar remain hybrid glove symptom review what pole lock concert lamp", "0xb40aa6bd104d0260b60350c2fb30d4882437466d66135130b667799ea6c9f52b"],"id":1 }' localhost:9973
-          curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "output evidence anger invest country opinion girl mouse direct double carbon usage", "0x4a3aa51469e802be6504422cd9dd03be638ac3f6dc3a7c0c85a6ace3e72f0048"],"id":1 }' localhost:9974
-          curl -vH 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_insertKey", "params":["aura", "series disorder today argue interest pond flight guess asthma guilt road gadget", "0xa68feb4fe2ea3f8ff288af4254aad2284e1cd0da67cb9ea61c13632bad57eb40"],"id":1 }' localhost:9975
-          cp ${{ matrix.runtime.name }}_runtime_previous.compact.compressed.wasm ${{ github.workspace }}/dev-tools/runtime-upgrade-test/calamari.wasm
-          cd ${{ github.workspace }}/dev-tools/runtime-upgrade-test
-          yarn install
-          yarn
-          sleep 120
-          pm2 start index.js \
-            --name test-previous-runtime-upgrade-${{ matrix.runtime.chain-spec }} \
-            --output ${{ github.workspace }}/test-previous-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log \
-            --error ${{ github.workspace }}/test-previous-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log \
-            --no-autorestart
-          sleep 120
-          cp ${{ github.workspace }}/${{ matrix.runtime.name }}_runtime.compact.compressed.wasm ${{ github.workspace }}/dev-tools/runtime-upgrade-test/calamari.wasm
-          pm2 start index.js \
-            --name test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }} \
-            --output ${{ github.workspace }}/test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log \
-            --error ${{ github.workspace }}/test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log \
-            --no-autorestart
-          cd ${{ github.workspace }}
-          sleep 180
-      # NOTE: check_runtime_version.js reads the spec-version on-chain
-      # and compares it to the old runtime version we parsed earlier
-      # returns 0 if the former is less than or equal to the latter
-      # otherwise returns 1
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: check if spec version was successfully incremented
-        run: |
-          cd ${{ github.workspace }}/dev-tools/runtime-upgrade-test
-          node check_runtime_version.js --address=ws://127.0.0.1:9921 --compare_to=${{ needs.parse-runtimes.outputs.calamari-runtime-base }}
-          echo $?
-          if [ $? == 1 ]; then echo "Runtime upgrade failed, still using old spec version - ${{ needs.parse-runtimes.outputs.calamari-runtime-base }}"; exit 1; fi
-          cd ${{ github.workspace }}
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: stop testnet
-        run: |
-          cd ${{ github.workspace }}/polkadot-launch
-          pm2 stop measure-block-time-${{ matrix.runtime.chain-spec }}
-          pm2 stop polkadot-launch
-          pm2 stop test-previous-runtime-upgrade-${{ matrix.runtime.chain-spec }}
-          pm2 stop test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: runtime-upgrade-test-for-${{ matrix.runtime.chain-spec }}-stdout.log
-          path: ${{ github.workspace }}/test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: runtime-upgrade-test-for-${{ matrix.runtime.chain-spec }}-stderr.log
-          path: ${{ github.workspace }}/test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: parse ${{ matrix.runtime.name }} block times
-        run: |
-          grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.runtime.chain-spec }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv; done
-          if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv ]; then echo "block times not detected"; exit 1; fi
-          jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv > ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.json
-  calamari-integration-test:
-    needs: [build-node-current, build-runtimes, start-calamari-integration-tester, check-for-runtime-upgrade]
-    runs-on: ${{ needs.start-calamari-integration-tester.outputs.runner-label }}
-    timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        chain-spec:
-          - id: calamari-local
-            expected:
-              block-count:
-                relay: 25
-                para: 6
-              peer-count:
-                relay: 5
-                para: 2
-          - id: calamari-dev
-            expected:
-              block-count:
-                relay: 25
-                para: 6
-              peer-count:
-                relay: 5
-                para: 2
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
-    steps:
-      - run: |
-          mkdir -p $HOME/.local/share/calamari-pc
-          mkdir -p $HOME/.local/bin
-          echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
-          echo "${HOME}/.local/bin" >> $GITHUB_PATH
-      - name: fetch manta
-        uses: actions/download-artifact@v2
-        with:
-          name: manta
-      - name: mv and chmod manta
-        run: |
-          mv ${{ github.workspace }}/manta $HOME/.local/bin/
-          chmod +x $HOME/.local/bin/manta
-          ls -ahl ${{ github.workspace }}/
-          ls -ahl $HOME/.local/bin/
-      - name: fetch and chmod polkadot
-        run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.22/polkadot
-          chmod +x $HOME/.local/bin/polkadot
-          ls -ahl $HOME/.local/bin/
-      - id: create-chainspec
-        run: |
-          manta build-spec --chain ${{ matrix.chain-spec.id }} --disable-default-bootnode --raw > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
-          jq \
-            --sort-keys \
-            --arg name "calamari testnet ${GITHUB_SHA:0:7}" \
-            --arg id ${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7} \
-            --arg relay_chain rococo-local-${GITHUB_SHA:0:7} \
-            '. |
-              .name = $name |
-              .id = $id |
-              .relay_chain = $relay_chain |
-              .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
-            ' $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
-          ls -ahl $HOME/.local/share/calamari-pc/
-          echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
-          manta export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.chain-spec.id }}-state.json
-          path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.chain-spec.id }}-spec.json
-          path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
-          path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
-      - name: fetch config-for-integration-test
-        uses: actions/download-artifact@v2
-        with:
-          name: config-for-integration-test
-      - name: create launch config
-        run: |
-          cat config-for-integration-test.json | \
-          jq \
-            --arg relaychain_bin $HOME/.local/bin/polkadot \
-            --arg relaychain_id rococo-local-${GITHUB_SHA:0:7} \
-            --arg relaychain_name "rococo local ${GITHUB_SHA:0:7}" \
-            --arg parachains_bin $HOME/.local/bin/manta \
-            --arg parachains_spec $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json \
-            '.
-              | .relaychain.bin = $relaychain_bin
-              | .relaychain.mutation.id = $relaychain_id
-              | .relaychain.mutation.name = $relaychain_name
-              | .parachains[].bin = $parachains_bin
-              | .parachains[].chain = $parachains_spec
-            ' > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
-          jq . $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
-          ls -ahl $HOME/.local/share/calamari-pc/
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
-          path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
-      - uses: actions/checkout@v2
-        with:
-          repository: paritytech/polkadot-launch
-          path: polkadot-launch
-      - uses: actions/checkout@v2
-        with:
-          repository: Manta-Network/Dev-Tools
-          path: dev-tools-rococo
-      - uses: actions/checkout@v2
-        with:
-          repository: Manta-Network/Dev-Tools
-          path: dev-tools-calamari
-      - name: launch testnet
-        run: |
-          cd ${{ github.workspace }}/polkadot-launch
-          yarn install
-          yarn build
-          pm2 start dist/cli.js \
-            --name polkadot-launch \
-            --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
-            --no-autorestart \
-            -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
-      - name: init measure-block-time rococo
-        run: |
-          cd ${{ github.workspace }}/dev-tools-rococo/measure-block-time
-          yarn install
-          pm2 start index.js \
-            --name measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }} \
-            --output ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log \
-            --no-autorestart \
-            -- \
-            --address=ws://127.0.0.1:9921
-      - name: init measure-block-time calamari
-        run: |
-          cd ${{ github.workspace }}/dev-tools-calamari/measure-block-time
-          yarn install
-          pm2 start index.js \
-            --name measure-block-time-${{ matrix.chain-spec.id }} \
-            --output ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
-            --no-autorestart \
-            -- \
-            --address=ws://127.0.0.1:9921
-      - name: run test suites
-        run: |
-          # TODO: implement moonbeam-like js test suite triggers here
-          sleep 300
-      - name: check if target block is finalized
-        run: |
-          cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
-          yarn install
-          yarn
-          node index.js --para_address=ws://127.0.0.1:9921 --relay_address=ws://127.0.0.1:9911 --target_block=${{ matrix.chain-spec.expected.block-count.para }}
-          echo $?
-          if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
-      - name: stop testnet
-        run: |
-          cd ${{ github.workspace }}/polkadot-launch
-          pm2 stop measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}
-          pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
-          pm2 stop polkadot-launch
-      - uses: actions/upload-artifact@v2
-        with:
-          name: polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log
-          path: ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log
-          path: ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
-          path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
-          path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
-          path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
-          path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: rococo-alice-relay-for-${{ matrix.chain-spec.id }}.log
-          path: ${{ github.workspace }}/polkadot-launch/alice.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: rococo-bob-relay-for-${{ matrix.chain-spec.id }}.log
-          path: ${{ github.workspace }}/polkadot-launch/bob.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.chain-spec.id }}-alice.log
-          path: ${{ github.workspace }}/polkadot-launch/9921.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.chain-spec.id }}-bob.log
-          path: ${{ github.workspace }}/polkadot-launch/9922.log
-      - name: parse rococo block times
-        run: |
-          grep '#.*' ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-rococo.csv; done
-          if [ ! -f ${{ github.workspace }}/block-time-rococo.csv ]; then echo "block times not detected"; exit 1; fi
-          jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-rococo.csv > ${{ github.workspace }}/block-time-rococo.json
-      - uses: actions/upload-artifact@v2
-        with:
-          name: block-time-rococo-relay-for-${{ matrix.chain-spec.id }}.json
-          path: ${{ github.workspace }}/block-time-rococo.json
-      - name: parse calamari block times
-        run: |
-          grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv; done
-          if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv ]; then echo "block times not detected"; exit 1; fi
-          jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv > ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
-      - uses: actions/upload-artifact@v2
-        with:
-          name: block-time-${{ matrix.chain-spec.id }}.json
-          path: ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
-      - name: test - rococo alice peered successfully
-        run: |
-          grep '💤 Idle (${{ matrix.chain-spec.expected.peer-count.relay }} peers)' ${{ github.workspace }}/polkadot-launch/alice.log
-      - name: test - rococo alice imported block ${{ matrix.chain-spec.expected.block-count.relay }}
-        run: |
-          grep ' Imported #${{ matrix.chain-spec.expected.block-count.relay }} ' ${{ github.workspace }}/polkadot-launch/alice.log
-      - name: test - calamari alice peered successfully
-        run: |
-          grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9921.log
-  dolphin-integration-test:
-    needs: [build-node-current, build-runtimes, start-dolphin-integration-tester, check-for-runtime-upgrade]
-    runs-on: ${{ needs.start-dolphin-integration-tester.outputs.runner-label }}
-    timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        chain-spec:
-          - id: dolphin-dev
-            expected:
-              block-count:
-                relay: 25
-                para: 6
-              peer-count:
-                relay: 5
-                para: 2
-          - id: dolphin-local
-            expected:
-              block-count:
-                relay: 25
-                para: 6
-              peer-count:
-                relay: 5
-                para: 2
-    steps:
-      - run: |
-          mkdir -p $HOME/.local/share/calamari-pc
-          mkdir -p $HOME/.local/bin
-          echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
-          echo "${HOME}/.local/bin" >> $GITHUB_PATH
-      - name: fetch manta
-        uses: actions/download-artifact@v2
-        with:
-          name: manta
-      - name: mv and chmod manta
-        run: |
-          mv ${{ github.workspace }}/manta $HOME/.local/bin/
-          chmod +x $HOME/.local/bin/manta
-          ls -ahl ${{ github.workspace }}/
-          ls -ahl $HOME/.local/bin/
-      - name: fetch and chmod polkadot
-        run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.22/polkadot
-          chmod +x $HOME/.local/bin/polkadot
-          ls -ahl $HOME/.local/bin/
-      - id: create-chainspec
-        run: |
-          manta build-spec --chain ${{ matrix.chain-spec.id }} --disable-default-bootnode --raw > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
-          jq \
-            --sort-keys \
-            --arg name "calamari testnet ${GITHUB_SHA:0:7}" \
-            --arg id ${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7} \
-            --arg relay_chain rococo-local-${GITHUB_SHA:0:7} \
-            '. |
-              .name = $name |
-              .id = $id |
-              .relay_chain = $relay_chain |
-              .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
-            ' $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
-          ls -ahl $HOME/.local/share/calamari-pc/
-          echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
-          manta export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.chain-spec.id }}-state.json
-          path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.chain-spec.id }}-spec.json
-          path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-spec.json
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
-          path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-spec.json
-      - name: fetch config-for-integration-test
-        uses: actions/download-artifact@v2
-        with:
-          name: config-for-integration-test
-      - name: create launch config
-        run: |
-          cat config-for-integration-test.json | \
-          jq \
-            --arg relaychain_bin $HOME/.local/bin/polkadot \
-            --arg relaychain_id rococo-local-${GITHUB_SHA:0:7} \
-            --arg relaychain_name "rococo local ${GITHUB_SHA:0:7}" \
-            --arg parachains_bin $HOME/.local/bin/manta \
-            --arg parachains_spec $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json \
-            '.
-              | .relaychain.bin = $relaychain_bin
-              | .relaychain.mutation.id = $relaychain_id
-              | .relaychain.mutation.name = $relaychain_name
-              | .parachains[].bin = $parachains_bin
-              | .parachains[].chain = $parachains_spec
-            ' > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
-          jq . $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
-          ls -ahl $HOME/.local/share/calamari-pc/
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
-          path: /home/runner/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${{ steps.create-chainspec.outputs.short-sha }}-launch-config.json
-      - uses: actions/checkout@v2
-        with:
-          repository: paritytech/polkadot-launch
-          path: polkadot-launch
-      - uses: actions/checkout@v2
-        with:
-          repository: Manta-Network/Dev-Tools
-          path: dev-tools-rococo
-      - uses: actions/checkout@v2
-        with:
-          repository: Manta-Network/Dev-Tools
-          path: dev-tools-calamari
-      - name: launch testnet
-        run: |
-          cd ${{ github.workspace }}/polkadot-launch
-          yarn install
-          yarn build
-          pm2 start dist/cli.js \
-            --name polkadot-launch \
-            --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
-            --no-autorestart \
-            -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
-      - name: init measure-block-time rococo
-        run: |
-          cd ${{ github.workspace }}/dev-tools-rococo/measure-block-time
-          yarn install
-          pm2 start index.js \
-            --name measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }} \
-            --output ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log \
-            --no-autorestart \
-            -- \
-            --address=ws://127.0.0.1:9921
-      - name: init measure-block-time calamari
-        run: |
-          cd ${{ github.workspace }}/dev-tools-calamari/measure-block-time
-          yarn install
-          pm2 start index.js \
-            --name measure-block-time-${{ matrix.chain-spec.id }} \
-            --output ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
-            --error ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
-            --no-autorestart \
-            -- \
-            --address=ws://127.0.0.1:9921
-      - uses: actions/checkout@v2
-        with:
-          repository: Manta-Network/Manta
-          path: Manta
-      - name: run test suites
-        run: |
-          # TODO: implement moonbeam-like js test suite triggers here
-          sleep 120
-          cd ${{ github.workspace }}/Manta/tests
-          yarn install
-          yarn
-          yarn correctness_test --address=ws://127.0.0.1:9921 --exit
-          echo $?
-          if [ $? != 0 ]; then echo "Ledger RPC correctness test failed!"; exit 1; fi
-          yarn performance_test --address=ws://127.0.0.1:9921 --exit
-          echo $?
-          if [ $? != 0 ]; then echo "Ledger RPC performance test failed!"; exit 1; fi
-      - name: check if target block is finalized
-        run: |
-          cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
-          yarn install
-          yarn
-          node index.js --para_address=ws://127.0.0.1:9921 --relay_address=ws://127.0.0.1:9911 --target_block=${{ matrix.chain-spec.expected.block-count.para }}
-          echo $?
-          if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
-      - name: stop testnet
-        run: |
-          cd ${{ github.workspace }}/polkadot-launch
-          pm2 stop measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}
-          pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
-          pm2 stop polkadot-launch
-      - uses: actions/upload-artifact@v2
-        with:
-          name: polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log
-          path: ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log
-          path: ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
-          path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
-          path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
-          path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
-          path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: rococo-alice-relay-for-${{ matrix.chain-spec.id }}.log
-          path: ${{ github.workspace }}/polkadot-launch/alice.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: rococo-bob-relay-for-${{ matrix.chain-spec.id }}.log
-          path: ${{ github.workspace }}/polkadot-launch/bob.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.chain-spec.id }}-alice.log
-          path: ${{ github.workspace }}/polkadot-launch/9921.log
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.chain-spec.id }}-bob.log
-          path: ${{ github.workspace }}/polkadot-launch/9922.log
-      - name: parse rococo block times
-        run: |
-          grep '#.*' ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-rococo.csv; done
-          if [ ! -f ${{ github.workspace }}/block-time-rococo.csv ]; then echo "block times not detected"; exit 1; fi
-          jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-rococo.csv > ${{ github.workspace }}/block-time-rococo.json
-      - uses: actions/upload-artifact@v2
-        with:
-          name: block-time-rococo-relay-for-${{ matrix.chain-spec.id }}.json
-          path: ${{ github.workspace }}/block-time-rococo.json
-      - name: parse calamari block times
-        run: |
-          grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv; done
-          if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv ]; then echo "block times not detected"; exit 1; fi
-          jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv > ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
-      - uses: actions/upload-artifact@v2
-        with:
-          name: block-time-${{ matrix.chain-spec.id }}.json
-          path: ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
-      - name: test - rococo alice peered successfully
-        run: |
-          grep '💤 Idle (${{ matrix.chain-spec.expected.peer-count.relay }} peers)' ${{ github.workspace }}/polkadot-launch/alice.log
-      - name: test - rococo alice imported block ${{ matrix.chain-spec.expected.block-count.relay }}
-        run: |
-          grep ' Imported #${{ matrix.chain-spec.expected.block-count.relay }} ' ${{ github.workspace }}/polkadot-launch/alice.log
-      - name: test - calamari alice peered successfully
-        run: |
-          grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9921.log
+  # THE FOLLOWING HAPPENS ONLY WHEN TAGGED WITH A vX.Y.Z TAG
   create-draft-release:
     runs-on: ubuntu-20.04
-    needs: [build-runtimes, calamari-integration-test, dolphin-integration-test, runtime-upgrade-test, docker-image-test]
+    needs: [build-runtimes]
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
       asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
     if: startsWith(github.ref, 'refs/tags')
     steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: changelog
-          path: ./
       - name: create draft release
         id: create-release
         uses: actions/create-release@v1
@@ -835,7 +171,6 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: ${{ github.ref }}
-          body_path: changelog.md
           draft: true
   publish-runtimes:
     runs-on: ubuntu-20.04
@@ -936,6 +271,7 @@ jobs:
         with:
           args: 'draft runtime release ${{ github.ref }} created at ${{ needs.create-draft-release.outputs.release_url }}'
   start-node-builder-current:
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -946,277 +282,31 @@ jobs:
         uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: start
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
           aws-region: ${{ env.AWS_REGION }}
           aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
           aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}  # 32 vcpu, 64gb ram, $1.392 hourly
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
           aws-instance-root-volume-size: 32
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-node-builder-current:
+    if: ${{ always() }}
     needs: [start-node-builder-current, build-node-current]
     runs-on: ubuntu-20.04
-    if: ${{ always() }}
     steps:
-      - uses: audacious-network/aws-github-runner@v1.0.33
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
           runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
-  start-calamari-integration-tester:
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
-    steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
-          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}  # 32 vcpu, 64gb ram, $1.392 hourly
-          aws-instance-root-volume-size: 64
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
-  stop-calamari-integration-tester:
-    needs: [start-calamari-integration-tester, calamari-integration-test]
-    runs-on: ubuntu-20.04
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
-    steps:
-      - uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-calamari-integration-tester.outputs.aws-region }}
-          runner-label: ${{ needs.start-calamari-integration-tester.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-calamari-integration-tester.outputs.aws-instance-id }}
-  start-dolphin-integration-tester:
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
-          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}  # 32 vcpu, 64gb ram, $1.392 hourly
-          aws-instance-root-volume-size: 64
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
-  stop-dolphin-integration-tester:
-    needs: [start-dolphin-integration-tester, dolphin-integration-test]
-    runs-on: ubuntu-20.04
-    if: ${{ always() }}
-    steps:
-      - uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-dolphin-integration-tester.outputs.aws-region }}
-          runner-label: ${{ needs.start-dolphin-integration-tester.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-dolphin-integration-tester.outputs.aws-instance-id }}
-  start-runtime-upgrade-tester:
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
-          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}  # 32 vcpu, 64gb ram, $1.392 hourly
-          aws-instance-root-volume-size: 64
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
-  stop-runtime-upgrade-tester:
-    needs: [runtime-upgrade-test, check-for-runtime-upgrade, start-runtime-upgrade-tester]
-    runs-on: ubuntu-20.04
-    if: ${{ always() }}
-    steps:
-      - uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-runtime-upgrade-tester.outputs.aws-region }}
-          runner-label: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-runtime-upgrade-tester.outputs.aws-instance-id }}
-  parse-runtimes:
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        runtime:
-          - name: calamari
-          - name: manta
-    outputs:
-      calamari-runtime-current: ${{ steps.get-runtime-current.outputs.calamari-runtime-current }}
-      calamari-runtime-base: ${{ steps.get-runtime-base.outputs.calamari-runtime-base }}
-      manta-runtime-current: ${{ steps.get-runtime-current.outputs.manta-runtime-current }}
-      manta-runtime-base: ${{ steps.get-runtime-base.outputs.manta-runtime-base }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: ruby setup
-        uses: actions/setup-ruby@v1
-        with:
-          ruby-version: 2.7
-      - name: get ${{ matrix.runtime.name }} runtime version current
-        id: get-runtime-current
-        run: |
-          runtime_current="$(ruby -e '
-            require "./scripts/github/lib.rb";
-            puts get_runtime("${{ matrix.runtime.name }}")
-          ')"
-          echo "::set-output name=${{ matrix.runtime.name }}-runtime-current::$runtime_current"
-          echo ....................
-      - name: get ${{ matrix.runtime.name }} runtime version base
-        id: get-runtime-base
-        run: |
-          mkdir temp_for_run
-          cd temp_for_run
-          git clone -b manta https://github.com/Manta-Network/Manta.git
-          cd Manta
-          runtime_base="$(ruby -e '
-            require "./scripts/github/lib.rb";
-            puts get_runtime("${{ matrix.runtime.name }}")
-          ')"
-          echo "::set-output name=${{ matrix.runtime.name }}-runtime-base::$runtime_base"
-          echo ....................
-  check-for-runtime-upgrade:
-    needs: parse-runtimes
-    runs-on: ubuntu-20.04
-    outputs:
-      do-versions-match: ${{ steps.check-match.outputs.match }}
-    steps:
-      - name: check if runtime versions match
-        id: check-match
-        run: |
-          echo "::set-output name=match::true"
-          if [[ ${{ needs.parse-runtimes.outputs.manta-runtime-base }} != ${{ needs.parse-runtimes.outputs.manta-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
-          if [[ ${{ needs.parse-runtimes.outputs.calamari-runtime-base }} != ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then echo "::set-output name=match::false"; fi
-      - name: force fail if new versions don't match
-        run: |
-          if [[  ${{ needs.parse-runtimes.outputs.manta-runtime-current }} != ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then exit 1; fi
-  start-docker-image-tester:
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
-          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}  # 32 vcpu, 64gb ram, $1.392 hourly
-          aws-instance-root-volume-size: 64
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
-  docker-image-test:
-    needs: [build-node-current, start-docker-image-tester]
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        runtime:
-          - name: calamari
-    steps:
-      - uses: actions/checkout@v2
-      - name: fetch manta
-        uses: actions/download-artifact@v2
-        with:
-          name: manta
-      - name: build docker image
-        run: |
-          mv manta docker/manta
-          cd docker/
-          chmod +x manta
-          GIT_TAG=${{ github.event.release.tag_name }}
-          BINARY_NAME=manta
-          ln -s ${{ matrix.runtime.name }}.Dockerfile Dockerfile
-          docker build \
-            --build-arg PARA_BINARY_REF=${GIT_TAG} \
-            --build-arg PARA_BINARY_URL=manta \
-            --tag ${{ matrix.runtime.name }}   ./
-      - name: run docker image
-        run: |
-          sudo docker run -p 9944:9944 -p 9945:9945 -d ${{ matrix.runtime.name }} --unsafe-ws-external -- --unsafe-ws-external > docker_id.log
-          sleep 60
-      - name: Show log
-        run: |
-          echo "Get the docker container ID:"
-          image_id=`cat docker_id.log`
-          echo $image_id
-          echo "Adjusting permissions so we can access docker logs..."
-          sudo chmod -R +x /var/lib/docker/
-          sudo cat /var/lib/docker/containers/${image_id}/${image_id}-json.log
-      - uses: actions/checkout@v2
-        with:
-          repository: Manta-Network/Dev-Tools
-          path: dev-tools
-      - name: check if target block is finalized
-        run: |
-          cd dev-tools/check-finalized-block
-          yarn install
-          yarn
-          node index.js --para_address=ws://127.0.0.1:9944 --relay_address=ws://127.0.0.1:9945 --target_block=6
-          echo $?
-          if [ $? == 1 ]; then echo "Failed to finalize the target block - 6"; exit 1; fi
-  stop-docker-image-tester:
-    needs: [start-docker-image-tester, docker-image-test]
-    runs-on: ubuntu-20.04
-    if: ${{ always() }}
-    steps:
-      - uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-docker-image-tester.outputs.aws-region }}
-          runner-label: ${{ needs.start-docker-image-tester.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-docker-image-tester.outputs.aws-instance-id }}
+      - name: discard stopper success/failure
+        run: true

@@ -1,0 +1,67 @@
+[package]
+authors = ["Manta Network"]
+description = "parachain staking pallet for collator selection and reward distribution"
+edition = "2021"
+homepage = 'https://manta.network'
+license = 'GPL-3.0'
+name = "pallet-parachain-staking"
+repository = 'https://github.com/Manta-Network/Manta/'
+version = "3.4.0"
+
+[dependencies]
+log = { version = "0.4", default-features = false }
+serde = { version = "1.0.136", default-features = false, optional = true }
+
+# Substrate
+frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true, default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
+parity-scale-codec = { version = "3.1.2", default-features = false, features = ["derive"] }
+scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
+substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", tag = "v0.5.9", default-features = false }
+
+# Nimbus
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v3.3.0", default-features = false }
+
+# Manta
+manta-primitives = { path = '../../primitives/manta', default-features = false }
+# TODO: remove after whitelist period
+manta-collator-selection = { path = '../collator-selection', default-features = false }
+pallet-session = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.26" }
+sp-staking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.26" }
+
+[dev-dependencies]
+similar-asserts = "1.1.0"
+
+pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+
+[features]
+default = ["std"]
+runtime-benchmarks = [
+  "frame-benchmarking",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+]
+std = [
+  "frame-benchmarking/std",
+  "frame-support/std",
+  "frame-system/std",
+  "log/std",
+  "manta-primitives/std",
+  "manta-collator-selection/std",
+  "nimbus-primitives/std",
+  'pallet-session/std',
+  "parity-scale-codec/std",
+  "scale-info/std",
+  "serde/std",
+  "sp-arithmetic/std",
+  "sp-runtime/std",
+  "sp-std/std",
+  'substrate-fixed/std',
+]
+try-runtime = ["frame-support/try-runtime"]

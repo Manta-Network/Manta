@@ -2,9 +2,9 @@ name: Transaction Version Update Check
 on:
   workflow_dispatch:
     inputs:
-      reference_url:
-        description: The WebSocket url of the reference node
-        default: wss://ws.calamari.systems/
+      reference_binary:
+        description: The link to the reference binary, which should be the previous release.
+        default: https://github.com/Manta-Network/Manta/releases/download/v3.2.0/manta
         required: true
       chain:
         description: The name of the chain under test. Usually, you would pass a local chain
@@ -15,9 +15,9 @@ env:
   AWS_INSTANCE_TYPE: c5.4xlarge
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
+  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
   CHAIN: ${{github.event.inputs.chain}}
-  REF_URL: ${{github.event.inputs.reference_url}}
+  REF_BINARY: ${{github.event.inputs.reference_binary}}
 jobs:
   start-checks:
     runs-on: ubuntu-20.04
@@ -30,14 +30,14 @@ jobs:
         uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: start
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
           aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
           aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
       - uses: actions/checkout@v2
       - name: install sccache
         env:
@@ -78,7 +78,7 @@ jobs:
           rustup default stable
           rustup update
           rustup target add wasm32-unknown-unknown
-      - name: Build Binary
+      - name: Build New Binary
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -90,16 +90,24 @@ jobs:
           chmod +x target/release/manta
       - name: stop sccache server
         run: sccache --stop-server || true
-      - name: Start local node
+      - name: Fetch and chmod old release binary
+        run: |
+          curl -L -o $HOME/manta-old $REF_BINARY
+          chmod +x $HOME/manta-old
+          ls -ahl $HOME/
+      - name: Start old node
         run: |
           echo Running on $CHAIN
-          target/release/manta --chain=$CHAIN -- --chain kusama &
+          $HOME/manta-old --chain=$CHAIN --port 30444 --ws-port 9944 -- --chain kusama &
+      - name: Start new node
+        run: |
+          echo Running on $CHAIN
+          target/release/manta --chain=$CHAIN --port 30555 --ws-port 9955 -- --chain kusama &
       - name: Prepare output
         run: |
           VERSION=$(./target/release/manta --version)
           echo "Metadata comparison:" >> output.txt
           echo "Date: $(date)" >> output.txt
-          echo "Reference: $REF_URL" >> output.txt
           echo "Target version: $VERSION" >> output.txt
           echo "Chain: $CHAIN" >> output.txt
           echo "----------------------------------------------------------------------" >> output.txt
@@ -107,7 +115,7 @@ jobs:
         run: docker pull jacogr/polkadot-js-tools
       - name: Compare the metadata
         run: |
-          CMD="docker run --pull always --network host jacogr/polkadot-js-tools metadata $REF_URL ws://localhost:9944"
+          CMD="docker run --pull always --network host jacogr/polkadot-js-tools metadata ws://localhost:9944 ws://localhost:9955"
           echo -e "Running:\n$CMD"
           $CMD >> output.txt
           sed -z -i 's/\n\n/\n/g' output.txt
@@ -121,7 +129,8 @@ jobs:
           cat output.txt
       - name: Stop our local node
         run: pkill manta
-      - name: Save output as artifact
+      - if: always()
+        name: Save output as artifact
         uses: actions/upload-artifact@v2
         with:
           name: ${{ env.CHAIN }}
@@ -132,12 +141,15 @@ jobs:
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
-      - uses: audacious-network/aws-github-runner@v1.0.33
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ needs.start-checks.outputs.aws-region }}
           runner-label: ${{ needs.start-checks.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-checks.outputs.aws-instance-id }}
+      - name: discard stopper success/failure
+        run: true

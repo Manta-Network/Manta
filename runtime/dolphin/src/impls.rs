@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{Authorship, Balances, NegativeImbalance, Treasury};
+use crate::{Authorship, Balances, NegativeImbalance};
 use frame_support::traits::{Currency, Imbalance, OnUnbalanced};
 
 pub struct Author;
@@ -30,13 +30,11 @@ pub struct DealWithFees;
 impl OnUnbalanced<NegativeImbalance> for DealWithFees {
     fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
         if let Some(fees) = fees_then_tips.next() {
-            let mut split = fees.ration(80, 20);
+            let mut to_author = fees;
             if let Some(tips) = fees_then_tips.next() {
-                // for tips, if any, 0% to treasury, 100% to block author (though this can be anything)
-                tips.ration_merge_into(0, 100, &mut split);
+                tips.merge_into(&mut to_author);
             }
-            Treasury::on_unbalanced(split.0);
-            Author::on_unbalanced(split.1);
+            Author::on_unbalanced(to_author);
         }
     }
 }

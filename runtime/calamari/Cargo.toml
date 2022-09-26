@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'calamari-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '3.2.1'
+version = '3.3.0'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
@@ -57,9 +57,9 @@ pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.gi
 pallet-transaction-payment-rpc-runtime-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.26" }
 pallet-treasury = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.26" }
 pallet-utility = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.26" }
+substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", tag = "v0.5.9", default-features = false }
 
 # Cumulus dependencies
-cumulus-pallet-aura-ext = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.26" }
 cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.26" }
 cumulus-pallet-parachain-system = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.26" }
 cumulus-pallet-session-benchmarking = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, optional = true, branch = "polkadot-v0.9.26" }
@@ -71,11 +71,14 @@ cumulus-primitives-utility = { git = 'https://github.com/paritytech/cumulus.git'
 parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.26" }
 
 # Nimbus Dependencies
-# `garabdor/polkadot-v0.9.26` is a temporary branch until the official v0.9.26 Nimbus release.
-pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", branch = "garandor/polkadot-v0.9.26", default-features = false }
+# `manta-v3.3.0` is a temporary branch until the official v0.9.26 Nimbus release.
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v3.3.0", default-features = false }
+pallet-aura-style-filter = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v3.3.0", default-features = false }
+pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v3.3.0", default-features = false }
 
 # Polkadot dependencies
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
+pallet-xcm-benchmarks = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26", optional = true }
 polkadot-parachain = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
 polkadot-primitives = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
 xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
@@ -91,6 +94,7 @@ calamari-vesting = { path = '../../pallets/vesting', default-features = false }
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
+pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
@@ -116,12 +120,14 @@ runtime-benchmarks = [
   'frame-system-benchmarking',
   'frame-support/runtime-benchmarks',
   'frame-system/runtime-benchmarks',
+  'manta-collator-selection/runtime-benchmarks',
+  'nimbus-primitives/runtime-benchmarks',
+  'pallet-author-inherent/runtime-benchmarks',
   'pallet-balances/runtime-benchmarks',
   'pallet-multisig/runtime-benchmarks',
   'pallet-utility/runtime-benchmarks',
   'pallet-timestamp/runtime-benchmarks',
   'pallet-xcm/runtime-benchmarks',
-  'manta-collator-selection/runtime-benchmarks',
   'pallet-collective/runtime-benchmarks',
   'pallet-democracy/runtime-benchmarks',
   'pallet-scheduler/runtime-benchmarks',
@@ -129,10 +135,13 @@ runtime-benchmarks = [
   'calamari-vesting/runtime-benchmarks',
   'pallet-tx-pause/runtime-benchmarks',
   'pallet-treasury/runtime-benchmarks',
+  'pallet-parachain-staking/runtime-benchmarks',
   'pallet-preimage/runtime-benchmarks',
   'pallet-assets/runtime-benchmarks',
   'pallet-asset-manager/runtime-benchmarks',
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
+  'cumulus-pallet-parachain-system/runtime-benchmarks',
+  'pallet-xcm-benchmarks',
 ]
 try-runtime = [
   'frame-executive/try-runtime',
@@ -141,6 +150,7 @@ try-runtime = [
   'pallet-aura/try-runtime',
   'pallet-authorship/try-runtime',
   'pallet-balances/try-runtime',
+  'pallet-parachain-staking/try-runtime',
   'pallet-preimage/try-runtime',
   'pallet-multisig/try-runtime',
   'pallet-session/try-runtime',
@@ -183,6 +193,8 @@ std = [
   'pallet-authorship/std',
   'pallet-balances/std',
   'pallet-multisig/std',
+  'pallet-parachain-staking/std',
+  'substrate-fixed/std',
   'pallet-preimage/std',
   'pallet-utility/std',
   'pallet-transaction-payment-rpc-runtime-api/std',
@@ -199,7 +211,6 @@ std = [
   'manta-primitives/std',
   'runtime-common/std',
   'parachain-info/std',
-  "cumulus-pallet-aura-ext/std",
   'cumulus-pallet-parachain-system/std',
   'cumulus-pallet-dmp-queue/std',
   "cumulus-pallet-xcmp-queue/std",
@@ -208,6 +219,7 @@ std = [
   "cumulus-primitives-timestamp/std",
   "cumulus-primitives-utility/std",
   "pallet-author-inherent/std",
+  "pallet-aura-style-filter/std",
   'session-key-primitives/std',
   'xcm/std',
   'xcm-builder/std',

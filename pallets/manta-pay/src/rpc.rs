@@ -28,7 +28,8 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block};
 
-const SERVER_ERROR: i32 = 1;
+/// Pull Ledger Diff Error Code
+pub const PULL_LEDGER_DIFF_ERROR: i32 = 1;
 
 /// Pull API
 #[rpc(server)]
@@ -83,7 +84,7 @@ where
         api.pull_ledger_diff(&at, checkpoint.into(), max_receivers, max_senders)
             .map_err(|err| {
                 CallError::Custom(ErrorObject::owned(
-                    SERVER_ERROR,
+                    PULL_LEDGER_DIFF_ERROR,
                     "Unable to compute state diff for pull",
                     Some(format!("{:?}", err)),
                 ))

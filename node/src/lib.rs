@@ -20,8 +20,10 @@
 
 extern crate alloc;
 
+mod aura_or_nimbus_consensus;
 pub mod chain_specs;
 pub mod cli;
 pub mod command;
 pub mod rpc;
 pub mod service;
+pub mod service_aura;

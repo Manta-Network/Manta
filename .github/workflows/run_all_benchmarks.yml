@@ -1,14 +1,26 @@
-name: Benchmark Manta Runtime & Generate Weights Files
+name: Run All Benchmarks
 on:
   workflow_dispatch:
+    inputs:
+      chain_spec:
+        description: The chain spec to be used for all benchmarks. Required.
+        default: calamari-dev
+        required: true
+      snapshot_url:
+        description: The chain snapshot to use for storage benchmarks. Leaving it blank will skip the storage benchmark.
+        default: ""
+        required: false
 env:
   AWS_REGION: us-east-1
   AWS_INSTANCE_TYPE: c5d.metal
-  AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
+  AWS_INSTANCE_ROOT_VOLUME_SIZE: 128
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
+  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
+  CHAIN_SPEC: ${{github.event.inputs.chain_spec}}
+  SNAPSHOT_URL: ${{github.event.inputs.snapshot_url}}
+  FULL_DB_FOLDER: full-db
 jobs:
-  build-benchmark:
+  run-benchmarks:
     needs: start-node-builder-current
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     steps:
@@ -52,7 +64,7 @@ jobs:
           rustup default stable
           rustup update
           rustup target add wasm32-unknown-unknown
-      - name: build
+      - name: build benchmarking binary
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -61,103 +73,56 @@ jobs:
           CARGO_TERM_COLOR: always
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose --features=runtime-benchmarks
+          RUSTC_BOOTSTRAP=1 cargo build --profile production --features runtime-benchmarks --verbose
       - name: stop sccache server
         run: sccache --stop-server || true
-      - name: upload
-        uses: actions/upload-artifact@v2
-        with:
-          name: manta
-          path: target/production/manta
-  run-benchmark:
-    name: benchmark (${{ matrix.benchmark.pallet.name }} ${{ matrix.benchmark.extrinsic.name }})
-    needs: [start-node-builder-current, build-benchmark]
-    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
-    strategy:
-      matrix:
-        benchmark:
-          - extrinsic:
-              id: '*'
-              name: pallet_scheduler
-            pallet:
-              id: pallet_scheduler
-              name: pallet_scheduler
-            iterations: 20
-          - extrinsic:
-              id: '*'
-              name: pallet_balances
-            pallet:
-              id: pallet_balances
-              name: pallet_balances
-            iterations: 20
-          - extrinsic:
-              id: '*'
-              name: frame_system
-            pallet:
-              id: frame_system
-              name: frame_system
-            iterations: 20
-          - extrinsic:
-              id: '*'
-              name: pallet_session
-            pallet:
-              id: pallet_session
-              name: pallet_session
-            iterations: 20
-          - extrinsic:
-              id: '*'
-              name: pallet_tx_pause
-            pallet:
-              id: pallet_tx_pause
-              name: pallet_tx_pause
-            iterations: 20
-          - extrinsic:
-              id: '*'
-              name: pallet_multisig
-            pallet:
-              id: pallet_multisig
-              name: pallet_multisig
-            iterations: 20
-          - extrinsic:
-              id: '*'
-              name: pallet_timestamp
-            pallet:
-              id: pallet_timestamp
-              name: pallet_timestamp
-            iterations: 20
-          - extrinsic:
-              id: '*'
-              name: pallet_preimage
-            pallet:
-              id: pallet_preimage
-              name: pallet_preimage
-            iterations: 20
-    steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: manta
-      - run: |
-          mv manta $HOME/.local/bin/
-          chmod +x $HOME/.local/bin/manta
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-      - name: run benchmark
+      - if: ${{ env.SNAPSHOT_URL == '' }}
+        name: run all benchmarks script without storage benchmark
         run: |
-          manta benchmark \
-            pallet \
-            --chain=manta-local \
-            --pallet=${{ matrix.benchmark.pallet.id }} \
-            --extrinsic=${{ matrix.benchmark.extrinsic.id }} \
-            --execution=Wasm \
-            --wasm-execution=Compiled \
-            --heap-pages=4096 \
-            --repeat=${{ matrix.benchmark.iterations }} \
-            --steps=50 \
-            --template=.github/resources/frame-weight-template.hbs \
-            --output=${{ matrix.benchmark.pallet.name }}.rs
-      - uses: actions/upload-artifact@v2
+          ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC
+      - if: ${{ env.SNAPSHOT_URL != '' }}
+        name: run all benchmarks script with storage benchmark
+        run: |
+          mkdir $FULL_DB_FOLDER
+          wget -q $SNAPSHOT_URL
+          tar -xf calamari.tar.gz --directory ./$FULL_DB_FOLDER
+          ./scripts/benchmarking/run_all_benchmarks.sh -b -c $CHAIN_SPEC -s ./$FULL_DB_FOLDER
+      - if: always()
+        name: upload benchmarking binary
+        uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.benchmark.pallet.id }}-${{ matrix.benchmark.pallet.name }}.rs
-          path: ${{ github.workspace }}/${{ matrix.benchmark.pallet.name }}.rs
+          name: manta
+          path: ./target/production/manta
+      - if: always()
+        name: upload frame weights
+        uses: actions/upload-artifact@v3
+        with:
+          name: frame-weights-output
+          path: ./scripts/benchmarking/frame-weights-output/
+      - if: always()
+        name: upload xcm weights
+        uses: actions/upload-artifact@v3
+        with:
+          name: xcm-weights-output
+          path: ./scripts/benchmarking/xcm-weights-output/
+      - if: always()
+        name: upload benchmarking errors
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmarks-errors
+          path: ./scripts/benchmarking/benchmark_errors.txt
+      - if: always()
+        name: upload machine benchmark result
+        uses: actions/upload-artifact@v3
+        with:
+          name: machine-benchmark
+          path: ./scripts/benchmarking/machine_benchmark_result.txt
+      - if: always()
+        name: upload storage weights
+        uses: actions/upload-artifact@v3
+        with:
+          name: rocksdb-weights
+          path: ./scripts/benchmarking/rocksdb_weights.rs
   start-node-builder-current:
     runs-on: ubuntu-20.04
     outputs:
@@ -169,7 +134,7 @@ jobs:
         uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: start
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
@@ -177,18 +142,21 @@ jobs:
           aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
           aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-node-builder-current:
-    needs: [start-node-builder-current, run-benchmark]
+    needs: [run-benchmarks, start-node-builder-current]
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
-      - uses: audacious-network/aws-github-runner@v1.0.33
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
           runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
+      - name: discard stopper success/failure
+        run: true

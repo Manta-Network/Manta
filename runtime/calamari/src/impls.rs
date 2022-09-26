@@ -16,12 +16,13 @@
 
 use crate::{
     fee::{
-        FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY, TIPS_PERCENTAGE_TO_AUTHOR,
-        TIPS_PERCENTAGE_TO_TREASURY,
+        FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_BURN, FEES_PERCENTAGE_TO_TREASURY,
+        TIPS_PERCENTAGE_TO_AUTHOR, TIPS_PERCENTAGE_TO_TREASURY,
     },
     Authorship, Balances, NegativeImbalance, Treasury,
 };
 use frame_support::traits::{Currency, Imbalance, OnUnbalanced};
+use sp_arithmetic::Percent;
 
 pub struct Author;
 impl OnUnbalanced<NegativeImbalance> for Author {
@@ -36,22 +37,36 @@ pub struct DealWithFees;
 impl OnUnbalanced<NegativeImbalance> for DealWithFees {
     fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
         if let Some(fees) = fees_then_tips.next() {
-            // for fees, 40% to treasury, 60% to author
-            let mut split = fees.ration(
-                FEES_PERCENTAGE_TO_TREASURY.into(),
-                FEES_PERCENTAGE_TO_AUTHOR.into(),
+            const REMAINING_PERCENTAGE_AFTER_COLLATOR_SPLIT: u8 = 100 - FEES_PERCENTAGE_TO_AUTHOR;
+            let (mut to_author, rest) = fees.ration(
+                FEES_PERCENTAGE_TO_AUTHOR as u32,
+                REMAINING_PERCENTAGE_AFTER_COLLATOR_SPLIT as u32,
             );
-            if let Some(tips) = fees_then_tips.next() {
-                // for tips, 100% to block author.
-                tips.ration_merge_into(
-                    TIPS_PERCENTAGE_TO_TREASURY.into(),
-                    TIPS_PERCENTAGE_TO_AUTHOR.into(),
-                    &mut split,
-                );
-            }
 
-            Treasury::on_unbalanced(split.0);
-            Author::on_unbalanced(split.1);
+            // NOTE: `from_rational` always rounds DOWN, so if these don't divide cleanly, we'll burn more and distribute less
+            let to_treasury_from_rest = Percent::from_rational(
+                FEES_PERCENTAGE_TO_TREASURY,
+                REMAINING_PERCENTAGE_AFTER_COLLATOR_SPLIT,
+            )
+            .deconstruct();
+            let to_burn_from_rest = Percent::from_rational(
+                FEES_PERCENTAGE_TO_BURN,
+                REMAINING_PERCENTAGE_AFTER_COLLATOR_SPLIT,
+            )
+            .deconstruct();
+            let (mut to_treasury, _to_burn) =
+                rest.ration(to_treasury_from_rest as u32, to_burn_from_rest as u32);
+
+            if let Some(tips) = fees_then_tips.next() {
+                let (tips_to_treasury, tips_to_author) = tips.ration(
+                    TIPS_PERCENTAGE_TO_TREASURY as u32,
+                    TIPS_PERCENTAGE_TO_AUTHOR as u32,
+                );
+                tips_to_treasury.merge_into(&mut to_treasury);
+                tips_to_author.merge_into(&mut to_author);
+            }
+            Treasury::on_unbalanced(to_treasury);
+            Author::on_unbalanced(to_author);
         }
     }
 }

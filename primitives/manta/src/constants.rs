@@ -46,8 +46,8 @@ pub const DOLPHIN_TOKEN_SYMBOL: &str = "DOL";
 /// Manta parachain time-related
 pub mod time {
     use crate::types::{BlockNumber, Moment};
-
-    /// Milliseconds Per Block
+    
+    /// Seconds per Block
     ///
     /// This constant is currently set to 12 seconds.
     ///
@@ -57,7 +57,10 @@ pub mod time {
     /// `slot_duration` function.
     ///
     /// Change this to adjust the block time.
-    pub const MILLISECS_PER_BLOCK: Moment = 12_000;
+    pub const SECONDS_PER_BLOCK: Moment = 12;
+    
+    /// Milliseconds per Block
+    pub const MILLISECS_PER_BLOCK: Moment = SECONDS_PER_BLOCK * 1000;
 
     /// Slot Duration
     pub const SLOT_DURATION: Moment = MILLISECS_PER_BLOCK;
@@ -93,3 +96,8 @@ pub const MANTA_PAY_PALLET_ID: PalletId = PalletId(*b"mantapay");
 ///
 /// This should only be used for testing and should not be used in production.
 pub const TEST_DEFAULT_ASSET_ED: Balance = 1;
+
+pub mod calamari_staking {
+    // TODO
+    // pub const MinCollatorStake: u32 = 4_000_000;
+}

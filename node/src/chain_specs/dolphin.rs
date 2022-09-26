@@ -36,17 +36,6 @@ const SAFE_XCM_VERSION: u32 = 2;
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type DolphinChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
-/// Generate the dolphin session keys from individual elements.
-///
-/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn dolphin_session_keys(keys: AuraId) -> SessionKeys {
-    SessionKeys {
-        aura: keys.clone(),
-        nimbus: session_key_primitives::nimbus::dummy_key_from(keys.clone()),
-        vrf: session_key_primitives::vrf::dummy_key_from(keys),
-    }
-}
-
 /// Returns the [`Properties`] for the Dolphin parachain.
 pub fn dolphin_properties() -> Properties {
     let mut p = Properties::new();
@@ -66,7 +55,7 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
             dolphin_dev_genesis(
                 vec![(
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    SessionKeys::new(get_collator_keys_from_seed("Alice")).aura,
+                    SessionKeys::new(get_collator_keys_from_seed("Alice")),
                 )],
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 vec![
@@ -100,23 +89,23 @@ pub fn dolphin_local_config() -> DolphinChainSpec {
                 vec![
                     (
                         get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        SessionKeys::new(get_collator_keys_from_seed("Alice")).aura,
+                        SessionKeys::new(get_collator_keys_from_seed("Alice")),
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        SessionKeys::new(get_collator_keys_from_seed("Bob")).aura,
+                        SessionKeys::new(get_collator_keys_from_seed("Bob")),
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                        SessionKeys::new(get_collator_keys_from_seed("Charlie")).aura,
+                        SessionKeys::new(get_collator_keys_from_seed("Charlie")),
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Dave"),
-                        SessionKeys::new(get_collator_keys_from_seed("Dave")).aura,
+                        SessionKeys::new(get_collator_keys_from_seed("Dave")),
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Eve"),
-                        SessionKeys::new(get_collator_keys_from_seed("Eve")).aura,
+                        SessionKeys::new(get_collator_keys_from_seed("Eve")),
                     ),
                 ],
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -147,7 +136,7 @@ pub fn dolphin_local_config() -> DolphinChainSpec {
 }
 
 fn dolphin_dev_genesis(
-    invulnerables: Vec<(AccountId, AuraId)>,
+    invulnerables: Vec<(AccountId, SessionKeys)>,
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
 ) -> GenesisConfig {
@@ -186,11 +175,11 @@ fn dolphin_dev_genesis(
             keys: invulnerables
                 .iter()
                 .cloned()
-                .map(|(acc, aura)| {
+                .map(|(acc, session_keys)| {
                     (
-                        acc.clone(),                // account id
-                        acc,                        // validator id
-                        dolphin_session_keys(aura), // session keys
+                        acc.clone(),  // account id
+                        acc,          // validator id
+                        session_keys, // collator session keys
                     )
                 })
                 .collect(),
@@ -207,7 +196,6 @@ fn dolphin_dev_genesis(
         asset_manager: Default::default(),
         council_membership: Default::default(),
         technical_membership: Default::default(),
-        aura_ext: Default::default(),
         parachain_system: Default::default(),
         polkadot_xcm: dolphin_runtime::PolkadotXcmConfig {
             safe_xcm_version: Some(SAFE_XCM_VERSION),

@@ -16,7 +16,7 @@ env:
   AWS_INSTANCE_TYPE: c5.4xlarge
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
-  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'  # canonical
+  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
   PROD_URL: ${{github.event.inputs.prod_url}}
 jobs:
   start-checks:
@@ -30,14 +30,14 @@ jobs:
         uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: start
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
           aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
           aws-instance-root-volume-size: ${{ env.AWS_INSTANCE_ROOT_VOLUME_SIZE }}
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}  # canonical
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
       - uses: actions/checkout@v2
       - name: install sccache
         env:
@@ -112,12 +112,15 @@ jobs:
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
-      - uses: audacious-network/aws-github-runner@v1.0.33
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
-          github-token: ${{ secrets.GH_SHR_TOKEN }}
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ needs.start-checks.outputs.aws-region }}
           runner-label: ${{ needs.start-checks.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-checks.outputs.aws-instance-id }}
+      - name: discard stopper success/failure
+        run: true

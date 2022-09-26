@@ -18,11 +18,12 @@
 
 use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
+#[allow(unused_imports)]
 use calamari_runtime::{
-    opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
+    currency::KMA, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig,
+    ParachainStakingConfig, TechnicalCommitteeConfig,
 };
 use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
-
 /// Calamari Protocol Identifier
 pub const CALAMARI_PROTOCOL_ID: &str = "calamari";
 
@@ -37,17 +38,6 @@ pub const SAFE_XCM_VERSION: u32 = 2;
 
 /// Calamari Chain Spec
 pub type CalamariChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
-
-/// Generate the calamari session keys from individual elements.
-///
-/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn calamari_session_keys(keys: AuraId) -> SessionKeys {
-    SessionKeys {
-        aura: keys.clone(),
-        nimbus: session_key_primitives::nimbus::dummy_key_from(keys.clone()),
-        vrf: session_key_primitives::vrf::dummy_key_from(keys),
-    }
-}
 
 /// Returns the [`Properties`] for the Calamari parachain.
 pub fn calamari_properties() -> Properties {
@@ -71,8 +61,10 @@ pub fn calamari_development_config() -> CalamariChainSpec {
             calamari_dev_genesis(
                 vec![(
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    SessionKeys::new(get_collator_keys_from_seed("Alice")).aura,
+                    SessionKeys::new(get_collator_keys_from_seed("Alice")),
                 )],
+                // Delegations
+                vec![],
                 vec![
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
                     get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -104,25 +96,27 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                 vec![
                     (
                         get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        SessionKeys::new(get_collator_keys_from_seed("Alice")).aura,
+                        SessionKeys::new(get_collator_keys_from_seed("Alice")),
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        SessionKeys::new(get_collator_keys_from_seed("Bob")).aura,
+                        SessionKeys::new(get_collator_keys_from_seed("Bob")),
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                        SessionKeys::new(get_collator_keys_from_seed("Charlie")).aura,
+                        SessionKeys::new(get_collator_keys_from_seed("Charlie")),
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Dave"),
-                        SessionKeys::new(get_collator_keys_from_seed("Dave")).aura,
+                        SessionKeys::new(get_collator_keys_from_seed("Dave")),
                     ),
                     (
                         get_account_id_from_seed::<sr25519::Public>("Eve"),
-                        SessionKeys::new(get_collator_keys_from_seed("Eve")).aura,
+                        SessionKeys::new(get_collator_keys_from_seed("Eve")),
                     ),
                 ],
+                // Delegations
+                vec![],
                 vec![
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
                     get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -150,7 +144,9 @@ pub fn calamari_local_config() -> CalamariChainSpec {
 }
 
 fn calamari_dev_genesis(
-    invulnerables: Vec<(AccountId, AuraId)>,
+    invulnerables: Vec<(AccountId, SessionKeys)>,
+
+    delegations: Vec<(AccountId, AccountId, Balance)>,
     endowed_accounts: Vec<AccountId>,
 ) -> GenesisConfig {
     GenesisConfig {
@@ -173,23 +169,34 @@ fn calamari_dev_genesis(
         // no need to pass anything to aura, in fact it will panic if we do. Session will take care
         // of this.
         aura: Default::default(),
+        parachain_staking: ParachainStakingConfig {
+            candidates: invulnerables
+                .iter()
+                .cloned()
+                .map(|(account, _)| (account, 4_000_000 * KMA)) // TODO: Change to use constant from primitives
+                .collect(),
+            delegations,
+            inflation_config: calamari_runtime::currency::inflation_config::<
+                calamari_runtime::Runtime,
+            >(),
+        },
         parachain_info: calamari_runtime::ParachainInfoConfig {
             parachain_id: CALAMARI_PARACHAIN_ID.into(),
         },
         collator_selection: calamari_runtime::CollatorSelectionConfig {
             invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-            candidacy_bond: KMA * 1000, // How many tokens will be reserved as collator
+            candidacy_bond: 400_000 * KMA, // How many tokens will be reserved as collator
             ..Default::default()
         },
         session: calamari_runtime::SessionConfig {
             keys: invulnerables
                 .iter()
                 .cloned()
-                .map(|(acc, aura)| {
+                .map(|(acc, session_keys)| {
                     (
-                        acc.clone(),                 // account id
-                        acc,                         // validator id
-                        calamari_session_keys(aura), // session keys
+                        acc.clone(),  // account id
+                        acc,          // validator id
+                        session_keys, // collator session keys
                     )
                 })
                 .collect(),
@@ -206,14 +213,12 @@ fn calamari_dev_genesis(
         council_membership: Default::default(),
         technical_membership: Default::default(),
         asset_manager: Default::default(),
-        aura_ext: Default::default(),
         parachain_system: Default::default(),
         polkadot_xcm: calamari_runtime::PolkadotXcmConfig {
             safe_xcm_version: Some(SAFE_XCM_VERSION),
         },
     }
 }
-
 /// Returns the Calamari testnet chainspec.
 pub fn calamari_testnet_config() -> Result<CalamariChainSpec, String> {
     let mut spec = CalamariChainSpec::from_json_bytes(
