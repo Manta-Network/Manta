@@ -286,7 +286,7 @@ benchmarks! {
             RawOrigin::Signed(candidate.clone()).into(),
             3u32
         )?;
-        roll_to_and_author::<T>(2, candidate.clone());
+        roll_to_and_author::<T>(<<T as Config>::LeaveCandidatesDelay as Get<u32>>::get(), candidate.clone());
     }: _(RawOrigin::Signed(candidate.clone()), candidate.clone(), col_del_count)
     verify {
         assert!(Pallet::<T>::candidate_info(&candidate).is_none());
@@ -387,7 +387,7 @@ benchmarks! {
             state.request,
             Some(CandidateBondLessRequest {
                 amount: min_candidate_stk,
-                when_executable: 3,
+                when_executable: 1 + <<T as Config>::CandidateBondLessDelay as Get<u32>>::get(),
             })
         );
     }
@@ -405,7 +405,7 @@ benchmarks! {
             RawOrigin::Signed(caller.clone()).into(),
             min_candidate_stk
         )?;
-        roll_to_and_author::<T>(2, caller.clone());
+        roll_to_and_author::<T>(<<T as Config>::CandidateBondLessDelay as Get<u32>>::get(), caller.clone());
         let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
     }: {
         Pallet::<T>::execute_candidate_bond_less(
@@ -567,7 +567,7 @@ benchmarks! {
             delegation_count += 1u32;
         }
         Pallet::<T>::schedule_leave_delegators(RawOrigin::Signed(caller.clone()).into())?;
-        roll_to_and_author::<T>(2, author);
+        roll_to_and_author::<T>(<<T as Config>::LeaveDelegatorsDelay as Get<u32>>::get(), author);
     }: _(RawOrigin::Signed(caller.clone()), caller.clone(), delegation_count)
     verify {
         assert!(Pallet::<T>::delegator_state(&caller).is_none());
@@ -619,7 +619,7 @@ benchmarks! {
             Pallet::<T>::delegation_scheduled_requests(&collator),
             vec![ScheduledRequest {
                 delegator: caller,
-                when_executable: 3,
+                when_executable: 1 + <<T as Config>::RevokeDelegationDelay as Get<u32>>::get(),
                 action: DelegationAction::Revoke(bond),
             }],
         );
@@ -674,7 +674,7 @@ benchmarks! {
             Pallet::<T>::delegation_scheduled_requests(&collator),
             vec![ScheduledRequest {
                 delegator: caller,
-                when_executable: 3,
+                when_executable: 1 + <<T as Config>::DelegationBondLessDelay as Get<u32>>::get(),
                 action: DelegationAction::Decrease(bond_less),
             }],
         );
@@ -701,7 +701,7 @@ benchmarks! {
             caller.clone()).into(),
             collator.clone()
         )?;
-        roll_to_and_author::<T>(2, collator.clone());
+        roll_to_and_author::<T>(<<T as Config>::RevokeDelegationDelay as Get<u32>>::get(), collator.clone());
     }: {
         Pallet::<T>::execute_delegation_request(
             RawOrigin::Signed(caller.clone()).into(),
@@ -736,7 +736,7 @@ benchmarks! {
             collator.clone(),
             bond_less
         )?;
-        roll_to_and_author::<T>(2, collator.clone());
+        roll_to_and_author::<T>(<<T as Config>::DelegationBondLessDelay as Get<u32>>::get(), collator.clone());
         let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
     }: {
         Pallet::<T>::execute_delegation_request(

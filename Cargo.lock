@@ -959,7 +959,7 @@ checksum = "c1db59621ec70f09c5e9b597b220c7a2b43611f4710dc03ceb8748637775692c"
 
 [[package]]
 name = "calamari-runtime"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "calamari-vesting",
  "cumulus-pallet-dmp-queue",
@@ -1032,7 +1032,7 @@ dependencies = [
  "sp-std",
  "sp-transaction-pool",
  "sp-version",
- "substrate-fixed 0.5.9 (git+https://github.com/encointer/substrate-fixed.git)",
+ "substrate-fixed",
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",
@@ -1041,7 +1041,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-vesting"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -2367,7 +2367,7 @@ dependencies = [
 
 [[package]]
 name = "dolphin-runtime"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -4883,7 +4883,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -4979,7 +4979,7 @@ dependencies = [
 
 [[package]]
 name = "manta-collator-selection"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5061,7 +5061,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5082,7 +5082,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -5910,7 +5910,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-manager"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6558,7 +6558,7 @@ dependencies = [
  "sp-runtime",
  "sp-staking",
  "sp-std",
- "substrate-fixed 0.5.9 (git+https://github.com/Manta-Network/substrate-fixed.git?tag=v0.5.9)",
+ "substrate-fixed",
 ]
 
 [[package]]
@@ -6829,7 +6829,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -9062,7 +9062,7 @@ dependencies = [
 
 [[package]]
 name = "runtime-common"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -10542,7 +10542,7 @@ dependencies = [
 
 [[package]]
 name = "session-key-primitives"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "manta-primitives",
  "nimbus-primitives",
@@ -11662,16 +11662,6 @@ dependencies = [
 name = "substrate-fixed"
 version = "0.5.9"
 source = "git+https://github.com/Manta-Network/substrate-fixed.git?tag=v0.5.9#a4fb461aae6205ffc55bed51254a40c52be04e5d"
-dependencies = [
- "parity-scale-codec",
- "scale-info",
- "typenum 1.16.0",
-]
-
-[[package]]
-name = "substrate-fixed"
-version = "0.5.9"
-source = "git+https://github.com/encointer/substrate-fixed.git#a4fb461aae6205ffc55bed51254a40c52be04e5d"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
