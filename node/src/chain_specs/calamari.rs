@@ -22,6 +22,7 @@ use calamari_runtime::{
     opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
 };
 use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
+use sp_core::crypto::UncheckedInto;
 
 /// Calamari Protocol Identifier
 pub const CALAMARI_PROTOCOL_ID: &str = "calamari";
@@ -85,45 +86,136 @@ pub fn calamari_development_config() -> CalamariChainSpec {
 /// Returns the Calamari local chainspec.
 pub fn calamari_local_config() -> CalamariChainSpec {
     CalamariChainSpec::from_genesis(
-        "Calamari Parachain Local",
-        "calamari_local",
+        "Calamari Parachain Staging",
+        "calamari_staging",
         ChainType::Local,
         move || {
             calamari_dev_genesis(
                 vec![
                     (
-                        get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        SessionKeys::new(get_collator_keys_from_seed("Alice")),
+                        // account id: dmvSXhJWeJEKTZT8CCUieJDaNjNFC4ZFqfUm4Lx1z7J7oFzBf
+                        hex_literal::hex![
+                            "4294b2a716cea91dd008d694d264feeaf9f0baf9c0b8cbe3e107515947ed440d"
+                        ]
+                        .into(),
+                        SessionKeys::new(
+                            hex_literal::hex![
+                                "10814b2b41bf39155ef7b38bb2431056894ba71acc35cf0101c999fd69f9c357"
+                            ]
+                            .unchecked_into(),
+                            hex_literal::hex![
+                                "10814b2b41bf39155ef7b38bb2431056894ba71acc35cf0101c999fd69f9c357"
+                            ]
+                            .unchecked_into(),
+                            hex_literal::hex![
+                                "10814b2b41bf39155ef7b38bb2431056894ba71acc35cf0101c999fd69f9c357"
+                            ]
+                            .unchecked_into(),
+                        ),
                     ),
                     (
-                        get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        SessionKeys::new(get_collator_keys_from_seed("Bob")),
+                        // account id: dmxvZaMQir24EPxvFiCzkhDZaiScPB7ZWpHXUv5x8uct2A3du
+                        hex_literal::hex![
+                            "b06e5d852078f64ab74af9b31add10e36d0438b847bc925fbacbf1e14963e379"
+                        ]
+                        .into(),
+                        SessionKeys::new(
+                            hex_literal::hex![
+                                "f2ac4141fee9f9ba42e830f39f00f316e45d280db1464a9148702ab7c4fcde52"
+                            ]
+                            .unchecked_into(),
+                            hex_literal::hex![
+                                "f2ac4141fee9f9ba42e830f39f00f316e45d280db1464a9148702ab7c4fcde52"
+                            ]
+                            .unchecked_into(),
+                            hex_literal::hex![
+                                "f2ac4141fee9f9ba42e830f39f00f316e45d280db1464a9148702ab7c4fcde52"
+                            ]
+                            .unchecked_into(),
+                        ),
                     ),
                     (
-                        get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                        SessionKeys::new(get_collator_keys_from_seed("Charlie")),
+                        // account id: dmud2BmjLyMtbAX2FaVTUtvmutoCKvR3GbARLc4crzGvVMCwu
+                        hex_literal::hex![
+                            "1e58d3c3900c7ce6c6d82152becb45bf7bd3453fb2d267e5f72ca51285bca173"
+                        ]
+                        .into(),
+                        SessionKeys::new(
+                            hex_literal::hex![
+                                "f6284f9446db8f895c6cf02d0d6de6e67885a1e55c880ccac640ff4bc076df68"
+                            ]
+                            .unchecked_into(),
+                            hex_literal::hex![
+                                "f6284f9446db8f895c6cf02d0d6de6e67885a1e55c880ccac640ff4bc076df68"
+                            ]
+                            .unchecked_into(),
+                            hex_literal::hex![
+                                "f6284f9446db8f895c6cf02d0d6de6e67885a1e55c880ccac640ff4bc076df68"
+                            ]
+                            .unchecked_into(),
+                        ),
                     ),
                     (
-                        get_account_id_from_seed::<sr25519::Public>("Dave"),
-                        SessionKeys::new(get_collator_keys_from_seed("Dave")),
+                        // account id: dmx4vuA3PnQmraqJqeJaKRydUjP1AW4wMVTPLQWgZSpDyQUrp
+                        hex_literal::hex![
+                            "8a93e0f756448030dcb3018d25d75c7bf97a2e2ff15d02fd1f55bf3f2104fb5b"
+                        ]
+                        .into(),
+                        SessionKeys::new(
+                            hex_literal::hex![
+                                "741101a186479f4f28aa40fc78f02d7307ed3574e829aed76fdede5876e46a43"
+                            ]
+                            .unchecked_into(),
+                            hex_literal::hex![
+                                "741101a186479f4f28aa40fc78f02d7307ed3574e829aed76fdede5876e46a43"
+                            ]
+                            .unchecked_into(),
+                            hex_literal::hex![
+                                "741101a186479f4f28aa40fc78f02d7307ed3574e829aed76fdede5876e46a43"
+                            ]
+                            .unchecked_into(),
+                        ),
                     ),
                     (
-                        get_account_id_from_seed::<sr25519::Public>("Eve"),
-                        SessionKeys::new(get_collator_keys_from_seed("Eve")),
+                        // account id: dmtwRyEeNyRW3KApnTxjHahWCjN5b9gDjdvxpizHt6E9zYkXj
+                        hex_literal::hex![
+                            "0027131c176c0d19a2a5cc475ecc657f936085912b846839319249e700f37e79"
+                        ]
+                        .into(),
+                        SessionKeys::new(
+                            hex_literal::hex![
+                                "8ebf03bda1702d719f428bc0a4c7cfca010c44a48ef79752490818c901548d20"
+                            ]
+                            .unchecked_into(),
+                            hex_literal::hex![
+                                "8ebf03bda1702d719f428bc0a4c7cfca010c44a48ef79752490818c901548d20"
+                            ]
+                            .unchecked_into(),
+                            hex_literal::hex![
+                                "8ebf03bda1702d719f428bc0a4c7cfca010c44a48ef79752490818c901548d20"
+                            ]
+                            .unchecked_into(),
+                        ),
                     ),
                 ],
                 vec![
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve"),
-                    get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-                ],
+                    hex_literal::hex![
+                        "4294b2a716cea91dd008d694d264feeaf9f0baf9c0b8cbe3e107515947ed440d"
+                    ],
+                    hex_literal::hex![
+                        "b06e5d852078f64ab74af9b31add10e36d0438b847bc925fbacbf1e14963e379"
+                    ],
+                    hex_literal::hex![
+                        "1e58d3c3900c7ce6c6d82152becb45bf7bd3453fb2d267e5f72ca51285bca173"
+                    ],
+                    hex_literal::hex![
+                        "8a93e0f756448030dcb3018d25d75c7bf97a2e2ff15d02fd1f55bf3f2104fb5b"
+                    ],
+                    hex_literal::hex![
+                        "0027131c176c0d19a2a5cc475ecc657f936085912b846839319249e700f37e79"
+                    ],
+                ]
+                .into(),
             )
         },
         vec![],
@@ -132,7 +224,7 @@ pub fn calamari_local_config() -> CalamariChainSpec {
         None,
         Some(calamari_properties()),
         Extensions {
-            relay_chain: KUSAMA_RELAYCHAIN_LOCAL_NET.into(),
+            relay_chain: "kusama-staging".into(),
             para_id: CALAMARI_PARACHAIN_ID,
         },
     )
@@ -149,12 +241,12 @@ fn calamari_dev_genesis(
                 .to_vec(),
         },
         balances: calamari_runtime::BalancesConfig {
-            balances: endowed_accounts[..endowed_accounts.len() / 2]
+            balances: endowed_accounts
                 .iter()
                 .map(|k| {
                     (
                         k.clone(),
-                        100 * CALAMARI_ENDOWMENT / ((endowed_accounts.len() / 2) as Balance),
+                        10 * CALAMARI_ENDOWMENT / ((endowed_accounts.len()) as Balance),
                     )
                 })
                 .collect(),
