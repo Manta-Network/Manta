@@ -88,7 +88,7 @@ pub fn calamari_local_config() -> CalamariChainSpec {
     CalamariChainSpec::from_genesis(
         "Calamari Parachain Staging",
         "calamari_staging",
-        ChainType::Local,
+        ChainType::Live,
         move || {
             calamari_dev_genesis(
                 vec![
