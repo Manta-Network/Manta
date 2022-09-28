@@ -26,7 +26,7 @@ use manta_primitives::{
     assets::AssetConfig,
     types::{AccountId, Balance},
 };
-use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
+use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
 use sp_core::sr25519;
 pub struct ExtBuilder {
     balances: Vec<(AccountId, Balance)>,
@@ -41,14 +41,14 @@ impl Default for ExtBuilder {
     fn default() -> ExtBuilder {
         ExtBuilder {
             balances: vec![(
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                unchecked_account_id::<sr25519::Public>("Alice"),
                 INITIAL_BALANCE,
             )],
             authorities: vec![(
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                SessionKeys::new(get_collator_keys_from_seed("Alice")),
+                unchecked_account_id::<sr25519::Public>("Alice"),
+                SessionKeys::new(unchecked_collator_keys("Alice")),
             )],
-            invulnerables: vec![get_account_id_from_seed::<sr25519::Public>("Alice")],
+            invulnerables: vec![unchecked_account_id::<sr25519::Public>("Alice")],
             safe_xcm_version: None,
             desired_candidates: 1,
         }

@@ -131,19 +131,14 @@ parameter_types! {
 /// Transactor for assets in pallet-assets, i.e. implements `fungibles` trait
 pub type MultiAssetTransactor = MultiAssetAdapter<
     Runtime,
+    // Used to find the query the native asset id of the chain.
+    DolphinAssetConfig,
     // "default" implementation of converting a `MultiLocation` to an `AccountId`
     LocationToAccountId,
     // Used when the incoming asset is a fungible concrete asset matching the given location or name:
     IsNativeConcrete<SelfReserve>,
     // Used to match incoming assets which are not the native asset.
-    ConvertedConcreteAssetId<
-        AssetId,
-        Balance,
-        AssetIdLocationConvert<AssetLocation, AssetManager>,
-        JustTry,
-    >,
-    // Used to find the query the native asset id of the chain.
-    DolphinAssetConfig,
+    ConvertedConcreteAssetId<AssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
 >;
 
 match_types! {
@@ -180,14 +175,9 @@ parameter_types! {
 }
 
 pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
-    Assets,
-    ConvertedConcreteAssetId<
-        AssetId,
-        Balance,
-        AssetIdLocationConvert<AssetLocation, AssetManager>,
-        JustTry,
-    >,
     AccountId,
+    Assets,
+    ConvertedConcreteAssetId<AssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
     XcmFeesAccount,
 >;
 
@@ -213,7 +203,7 @@ impl Config for XcmExecutorConfig {
     // i.e. units_per_second in `AssetManager`
     type Trader = (
         FixedRateOfFungible<ParaTokenPerSecond, ()>,
-        FirstAssetTrader<AssetId, AssetLocation, AssetManager, XcmFeesToAccount>,
+        FirstAssetTrader<AssetManager, XcmFeesToAccount>,
     );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
@@ -309,9 +299,8 @@ impl orml_xtokens::Config for Runtime {
     type Event = Event;
     type Balance = Balance;
     type CurrencyId = CurrencyId;
-    type AccountIdToMultiLocation = AccountIdToMultiLocation<AccountId>;
-    type CurrencyIdConvert =
-        CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
+    type AccountIdToMultiLocation = AccountIdToMultiLocation;
+    type CurrencyIdConvert = CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetManager>>;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type SelfLocation = SelfReserve;
     // Take note that this pallet does not have the typical configurable WeightInfo.

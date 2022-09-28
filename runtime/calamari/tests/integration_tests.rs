@@ -47,7 +47,7 @@ use manta_primitives::{
     constants::time::{DAYS, HOURS},
     types::{AccountId, Balance, Header},
 };
-use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
+use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
 use xcm::{
     opaque::latest::{
         Junction::{PalletInstance, Parachain},
@@ -185,7 +185,7 @@ fn sanity_check_governance_periods() {
 
 #[test]
 fn slow_governance_works() {
-    let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+    let alice = unchecked_account_id::<sr25519::Public>("Alice");
 
     ExtBuilder::default().build().execute_with(|| {
         let _preimage_hash = start_governance_assertions(&alice);
@@ -228,7 +228,7 @@ fn slow_governance_works() {
 
 #[test]
 fn fast_track_governance_works() {
-    let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+    let alice = unchecked_account_id::<sr25519::Public>("Alice");
 
     ExtBuilder::default().build().execute_with(|| {
         let preimage_hash = start_governance_assertions(&alice);
@@ -289,7 +289,7 @@ fn fast_track_governance_works() {
 fn governance_filters_work() {
     assert!(<calamari_runtime::Runtime as pallet_democracy::Config>::InstantAllowed::get());
 
-    let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+    let alice = unchecked_account_id::<sr25519::Public>("Alice");
 
     ExtBuilder::default().build().execute_with(|| {
         // Setup the preimage and preimage hash
@@ -335,10 +335,10 @@ fn governance_filters_work() {
 
 #[test]
 fn balances_operations_should_work() {
-    let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
-    let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
-    let charlie = get_account_id_from_seed::<sr25519::Public>("Charlie");
-    let dave = get_account_id_from_seed::<sr25519::Public>("Dave");
+    let alice = unchecked_account_id::<sr25519::Public>("Alice");
+    let bob = unchecked_account_id::<sr25519::Public>("Bob");
+    let charlie = unchecked_account_id::<sr25519::Public>("Charlie");
+    let dave = unchecked_account_id::<sr25519::Public>("Dave");
 
     ExtBuilder::default()
         .with_balances(vec![
@@ -349,7 +349,7 @@ fn balances_operations_should_work() {
         ])
         .with_authorities(vec![(
             alice.clone(),
-            SessionKeys::new(get_collator_keys_from_seed("Alice")),
+            SessionKeys::new(unchecked_collator_keys("Alice")),
         )])
         .with_collators(vec![alice.clone()], 0)
         .build()
@@ -441,9 +441,9 @@ fn seal_header(mut header: Header, author: AccountId) -> Header {
 
 #[test]
 fn reward_fees_to_block_author_and_treasury() {
-    let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
-    let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
-    let charlie = get_account_id_from_seed::<sr25519::Public>("Charlie");
+    let alice = unchecked_account_id::<sr25519::Public>("Alice");
+    let bob = unchecked_account_id::<sr25519::Public>("Bob");
+    let charlie = unchecked_account_id::<sr25519::Public>("Charlie");
     let desired_candidates = 0;
 
     ExtBuilder::default()
@@ -454,7 +454,7 @@ fn reward_fees_to_block_author_and_treasury() {
         ])
         .with_authorities(vec![(
             alice.clone(),
-            SessionKeys::new(get_collator_keys_from_seed("Alice")),
+            SessionKeys::new(unchecked_collator_keys("Alice")),
         )])
         .with_collators(vec![alice.clone()], desired_candidates)
         .build()
@@ -547,10 +547,10 @@ fn sanity_check_round_duration() {
 
 // #[test]
 // fn session_and_collator_selection_work() {
-//     let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
-//     let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
-//     let alice_session_keys = SessionKeys::new(get_collator_keys_from_seed("Alice"));
-//     let bob_session_keys = SessionKeys::new(get_collator_keys_from_seed("Bob"));
+//     let alice = unchecked_account_id::<sr25519::Public>("Alice");
+//     let bob = unchecked_account_id::<sr25519::Public>("Bob");
+//     let alice_session_keys = SessionKeys::new(unchecked_collator_keys("Alice"));
+//     let bob_session_keys = SessionKeys::new(unchecked_collator_keys("Bob"));
 //     let desired_candidates = 1;
 
 //     ExtBuilder::default()
@@ -602,8 +602,8 @@ fn sanity_check_weight_per_time_constants_are_as_expected() {
 #[test]
 fn calamari_vesting_works() {
     ExtBuilder::default().build().execute_with(|| {
-        let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
-        let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
+        let alice = unchecked_account_id::<sr25519::Public>("Alice");
+        let bob = unchecked_account_id::<sr25519::Public>("Bob");
 
         let unvested = 100 * KMA;
         assert_ok!(CalamariVesting::vested_transfer(
@@ -811,9 +811,9 @@ fn verify_pallet_indices() {
 
 #[test]
 fn concrete_fungible_ledger_transfers_work() {
-    let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
-    let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
-    let charlie = get_account_id_from_seed::<sr25519::Public>("Charlie");
+    let alice = unchecked_account_id::<sr25519::Public>("Alice");
+    let bob = unchecked_account_id::<sr25519::Public>("Bob");
+    let charlie = unchecked_account_id::<sr25519::Public>("Charlie");
 
     ExtBuilder::default()
         .with_balances(vec![
@@ -894,7 +894,7 @@ fn concrete_fungible_ledger_transfers_work() {
             );
 
             // Should not be able to create new account with lower than ED balance
-            let new_account = get_account_id_from_seed::<sr25519::Public>("NewAccount");
+            let new_account = unchecked_account_id::<sr25519::Public>("NewAccount");
             assert_err!(
                 CalamariConcreteFungibleLedger::transfer(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
@@ -1099,7 +1099,7 @@ fn concrete_fungible_ledger_transfers_work() {
 
 #[test]
 fn concrete_fungible_ledger_can_deposit_and_mint_works() {
-    let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+    let alice = unchecked_account_id::<sr25519::Public>("Alice");
 
     ExtBuilder::default()
         .with_balances(vec![(alice.clone(), INITIAL_BALANCE)])
@@ -1107,7 +1107,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
         .execute_with(|| {
             // Native asset tests:
 
-            let new_account = get_account_id_from_seed::<sr25519::Public>("NewAccount");
+            let new_account = unchecked_account_id::<sr25519::Public>("NewAccount");
             assert_err!(
                 CalamariConcreteFungibleLedger::can_deposit(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
@@ -1215,9 +1215,9 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
 // are included as comments on top of each case for more clarity.
 #[test]
 fn concrete_fungible_ledger_can_reduce_by_amount_works() {
-    let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
-    let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
-    let charlie = get_account_id_from_seed::<sr25519::Public>("Charlie");
+    let alice = unchecked_account_id::<sr25519::Public>("Alice");
+    let bob = unchecked_account_id::<sr25519::Public>("Bob");
+    let charlie = unchecked_account_id::<sr25519::Public>("Charlie");
 
     ExtBuilder::default()
         .with_balances(vec![(charlie.clone(), INITIAL_BALANCE)])

@@ -124,7 +124,7 @@ where
     type StorageMetadata: From<Self::AssetRegistryMetadata>;
 
     /// The Asset Metadata type stored in this pallet.
-    type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance> + Default + Parameter;
+    type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance> + Parameter;
 
     /// The AssetId that the non-native asset starts from.
     ///

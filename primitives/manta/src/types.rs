@@ -42,7 +42,7 @@ pub type AccountId = <Signer as IdentifyAccount>::AccountId;
 pub type AccountIndex = u32;
 
 /// Asset Id Type
-pub type AssetId = u32;
+pub type AssetId = u128;
 
 /// Balance of an Account
 pub type Balance = u128;

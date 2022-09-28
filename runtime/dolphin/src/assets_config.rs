@@ -21,8 +21,8 @@ use super::{
 
 use manta_primitives::{
     assets::{
-        AssetConfig, AssetLocation, AssetRegistrar, AssetRegistrarMetadata, AssetStorageMetadata,
-        ConcreteFungibleLedger,
+        AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
+        AssetStorageMetadata, BalanceType, FungibleLedger, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, DOLPHIN_DECIMAL, MANTA_PAY_PALLET_ID},
     types::{AccountId, AssetId, Balance},
@@ -59,11 +59,20 @@ impl pallet_assets::Config for Runtime {
 }
 
 pub struct MantaAssetRegistrar;
-impl AssetRegistrar<Runtime, DolphinAssetConfig> for MantaAssetRegistrar {
+impl BalanceType for MantaAssetRegistrar {
+    type Balance = Balance;
+}
+impl AssetIdType for MantaAssetRegistrar {
+    type AssetId = AssetId;
+}
+impl AssetRegistry for MantaAssetRegistrar {
+    type Metadata = AssetStorageMetadata;
+    type Error = sp_runtime::DispatchError;
+
     fn create_asset(
         asset_id: AssetId,
-        min_balance: Balance,
         metadata: AssetStorageMetadata,
+        min_balance: Balance,
         is_sufficient: bool,
     ) -> DispatchResult {
         Assets::force_create(
@@ -96,10 +105,10 @@ impl AssetRegistrar<Runtime, DolphinAssetConfig> for MantaAssetRegistrar {
         )
     }
 
-    fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
+    fn update_asset_metadata(asset_id: &AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
         Assets::force_set_metadata(
             Origin::root(),
-            asset_id,
+            *asset_id,
             metadata.name,
             metadata.symbol,
             metadata.decimals,
@@ -113,38 +122,50 @@ parameter_types! {
     pub const NativeAssetId: AssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(SelfReserve::get()));
-    pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
-        name: b"Dolphin".to_vec(),
-        symbol: b"DOL".to_vec(),
-        decimals: DOLPHIN_DECIMAL,
+    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
+        metadata: AssetStorageMetadata {
+            name: b"Dolphin".to_vec(),
+            symbol: b"DOL".to_vec(),
+            decimals: DOLPHIN_DECIMAL,
+            is_frozen: false,
+        },
         min_balance: NativeTokenExistentialDeposit::get(),
         evm_address: None,
-        is_frozen: false,
         is_sufficient: true,
     };
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
 }
 
 pub type DolphinConcreteFungibleLedger =
-    ConcreteFungibleLedger<Runtime, DolphinAssetConfig, Balances, Assets>;
+    NativeAndNonNative<Runtime, DolphinAssetConfig, Balances, Assets>;
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct DolphinAssetConfig;
-
+impl LocationType for DolphinAssetConfig {
+    type Location = AssetLocation;
+}
+impl BalanceType for DolphinAssetConfig {
+    type Balance = Balance;
+}
+impl AssetIdType for DolphinAssetConfig {
+    type AssetId = AssetId;
+}
 impl AssetConfig<Runtime> for DolphinAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetId = NativeAssetId;
-    type AssetRegistrarMetadata = AssetRegistrarMetadata;
+    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
-    type AssetLocation = AssetLocation;
-    type AssetRegistrar = MantaAssetRegistrar;
+    type AssetRegistry = MantaAssetRegistrar;
     type FungibleLedger = DolphinConcreteFungibleLedger;
 }
 
 impl pallet_asset_manager::Config for Runtime {
     type Event = Event;
+    type AssetId = AssetId;
+    type Balance = Balance;
+    type Location = AssetLocation;
     type AssetConfig = DolphinAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;
     type PalletId = AssetManagerPalletId;

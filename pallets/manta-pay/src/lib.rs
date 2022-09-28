@@ -600,7 +600,7 @@ pub mod pallet {
             let senders_receivers_total = (0..=255)
                 .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
                 .sum::<u128>()
-                + VoidNumberSetSize::<T>::get() as u128;
+                + NullifierSetSize::<T>::get() as u128;
             PullResponse {
                 should_continue: more_receivers || more_senders,
                 receivers,

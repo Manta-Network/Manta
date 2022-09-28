@@ -21,8 +21,8 @@ use super::{
 
 use manta_primitives::{
     assets::{
-        AssetConfig, AssetLocation, AssetRegistrar, AssetRegistrarMetadata, AssetStorageMetadata,
-        ConcreteFungibleLedger,
+        AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
+        AssetStorageMetadata, BalanceType, FungibleLedger, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
     types::{AccountId, AssetId, Balance},
@@ -61,11 +61,20 @@ impl pallet_assets::Config for Runtime {
 }
 
 pub struct CalamariAssetRegistrar;
-impl AssetRegistrar<Runtime, CalamariAssetConfig> for CalamariAssetRegistrar {
+impl BalanceType for CalamariAssetRegistrar {
+    type Balance = Balance;
+}
+impl AssetIdType for CalamariAssetRegistrar {
+    type AssetId = AssetId;
+}
+impl AssetRegistry for CalamariAssetRegistrar {
+    type Metadata = AssetStorageMetadata;
+    type Error = sp_runtime::DispatchError;
+
     fn create_asset(
         asset_id: AssetId,
-        min_balance: Balance,
         metadata: AssetStorageMetadata,
+        min_balance: Balance,
         is_sufficient: bool,
     ) -> DispatchResult {
         Assets::force_create(
@@ -86,10 +95,10 @@ impl AssetRegistrar<Runtime, CalamariAssetConfig> for CalamariAssetRegistrar {
         )
     }
 
-    fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
+    fn update_asset_metadata(asset_id: &AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
         Assets::force_set_metadata(
             Origin::root(),
-            asset_id,
+            *asset_id,
             metadata.name,
             metadata.symbol,
             metadata.decimals,
@@ -103,38 +112,50 @@ parameter_types! {
     pub const NativeAssetId: AssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(SelfReserve::get()));
-    pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
-        name: b"Calamari".to_vec(),
-        symbol: b"KMA".to_vec(),
-        decimals: CALAMARI_DECIMAL,
+    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
+        metadata: AssetStorageMetadata {
+            name: b"Calamari".to_vec(),
+            symbol: b"KMA".to_vec(),
+            decimals: CALAMARI_DECIMAL,
+            is_frozen: false,
+        },
         min_balance: NativeTokenExistentialDeposit::get(),
         evm_address: None,
-        is_frozen: false,
         is_sufficient: true,
     };
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
 }
 
 pub type CalamariConcreteFungibleLedger =
-    ConcreteFungibleLedger<Runtime, CalamariAssetConfig, Balances, Assets>;
+    NativeAndNonNative<Runtime, CalamariAssetConfig, Balances, Assets>;
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct CalamariAssetConfig;
-
+impl LocationType for CalamariAssetConfig {
+    type Location = AssetLocation;
+}
+impl BalanceType for CalamariAssetConfig {
+    type Balance = Balance;
+}
+impl AssetIdType for CalamariAssetConfig {
+    type AssetId = AssetId;
+}
 impl AssetConfig<Runtime> for CalamariAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetId = NativeAssetId;
-    type AssetRegistrarMetadata = AssetRegistrarMetadata;
+    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
-    type AssetLocation = AssetLocation;
-    type AssetRegistrar = CalamariAssetRegistrar;
+    type AssetRegistry = CalamariAssetRegistrar;
     type FungibleLedger = CalamariConcreteFungibleLedger;
 }
 
 impl pallet_asset_manager::Config for Runtime {
     type Event = Event;
+    type AssetId = AssetId;
+    type Balance = Balance;
+    type Location = AssetLocation;
     type AssetConfig = CalamariAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;
     type PalletId = AssetManagerPalletId;

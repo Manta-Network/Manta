@@ -19,6 +19,7 @@ scale-info = { version = "2.1.2", default-features = false, features = ["derive"
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
 xcm = { git = "https://github.com/paritytech/polkadot.git", default-features = false, branch = "release-v0.9.26" }
+serde = { version = "1.0.140", default-features = false }
 
 # 3rd party dependencies
 orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, branch = "polkadot-v0.9.26" }

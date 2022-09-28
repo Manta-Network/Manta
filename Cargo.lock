@@ -5002,7 +5002,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#d334e936ea16f153d76f8850277fdeed2170a778"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9ef273c19299fd70c5cc1006649a60a60256500c"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5045,7 +5045,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#d334e936ea16f153d76f8850277fdeed2170a778"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9ef273c19299fd70c5cc1006649a60a60256500c"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -5062,7 +5062,7 @@ dependencies = [
 [[package]]
 name = "manta-parameters"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#d334e936ea16f153d76f8850277fdeed2170a778"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9ef273c19299fd70c5cc1006649a60a60256500c"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5075,7 +5075,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#d334e936ea16f153d76f8850277fdeed2170a778"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9ef273c19299fd70c5cc1006649a60a60256500c"
 dependencies = [
  "aes-gcm",
  "ark-bls12-381",
@@ -5186,7 +5186,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#d334e936ea16f153d76f8850277fdeed2170a778"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9ef273c19299fd70c5cc1006649a60a60256500c"
 dependencies = [
  "crossbeam-channel",
  "serde",
@@ -5954,6 +5954,7 @@ dependencies = [
  "pallet-balances",
  "parity-scale-codec",
  "scale-info",
+ "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -12327,9 +12328,9 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.5",
- "rand 0.8.5",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
