@@ -27,8 +27,8 @@ use frame_system as system;
 use frame_system::EnsureRoot;
 use manta_primitives::{
     assets::{
-        AssetConfig, AssetLocation, AssetRegistrar, AssetRegistrarMetadata, AssetStorageMetadata,
-        ConcreteFungibleLedger,
+        AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
+        AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, ASSET_STRING_LIMIT},
     types::{AccountId, AssetId, Balance},
@@ -122,11 +122,20 @@ impl pallet_balances::Config for Runtime {
 }
 
 pub struct MantaAssetRegistrar;
-impl AssetRegistrar<Runtime, MantaAssetConfig> for MantaAssetRegistrar {
+impl BalanceType for MantaAssetRegistrar {
+    type Balance = Balance;
+}
+impl AssetIdType for MantaAssetRegistrar {
+    type AssetId = AssetId;
+}
+impl AssetRegistry for MantaAssetRegistrar {
+    type Metadata = AssetStorageMetadata;
+    type Error = sp_runtime::DispatchError;
+
     fn create_asset(
         asset_id: AssetId,
-        min_balance: Balance,
         metadata: AssetStorageMetadata,
+        min_balance: Balance,
         is_sufficient: bool,
     ) -> DispatchResult {
         Assets::force_create(
@@ -147,10 +156,10 @@ impl AssetRegistrar<Runtime, MantaAssetConfig> for MantaAssetRegistrar {
         )
     }
 
-    fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
+    fn update_asset_metadata(asset_id: &AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
         Assets::force_set_metadata(
             Origin::root(),
-            asset_id,
+            *asset_id,
             metadata.name,
             metadata.symbol,
             metadata.decimals,
@@ -164,13 +173,15 @@ parameter_types! {
     pub const NativeAssetId: AssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
-    pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
-        name: b"Dolphin".to_vec(),
-        symbol: b"DOL".to_vec(),
-        decimals: 18,
+    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
+        metadata: AssetStorageMetadata {
+            name: b"Dolphin".to_vec(),
+            symbol: b"DOL".to_vec(),
+            decimals: 18,
+            is_frozen: false,
+        },
         min_balance: 1u128,
         evm_address: None,
-        is_frozen: false,
         is_sufficient: true,
     };
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
@@ -179,21 +190,31 @@ parameter_types! {
 ///
 #[derive(Clone, Eq, PartialEq)]
 pub struct MantaAssetConfig;
-
+impl LocationType for MantaAssetConfig {
+    type Location = AssetLocation;
+}
+impl AssetIdType for MantaAssetConfig {
+    type AssetId = AssetId;
+}
+impl BalanceType for MantaAssetConfig {
+    type Balance = Balance;
+}
 impl AssetConfig<Runtime> for MantaAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetId = NativeAssetId;
-    type AssetRegistrarMetadata = AssetRegistrarMetadata;
+    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
-    type AssetLocation = AssetLocation;
-    type AssetRegistrar = MantaAssetRegistrar;
-    type FungibleLedger = ConcreteFungibleLedger<Runtime, MantaAssetConfig, Balances, Assets>;
+    type AssetRegistry = MantaAssetRegistrar;
+    type FungibleLedger = NativeAndNonNative<Runtime, MantaAssetConfig, Balances, Assets>;
 }
 
 impl pallet_asset_manager::Config for Runtime {
     type Event = Event;
+    type AssetId = AssetId;
+    type Balance = Balance;
+    type Location = AssetLocation;
     type AssetConfig = MantaAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;
     type PalletId = AssetManagerPalletId;
@@ -224,7 +245,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .unwrap();
     pallet_asset_manager::GenesisConfig::<Runtime> {
         start_id: <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-        _marker: PhantomData::<Runtime>::default(),
     }
     .assimilate_storage(&mut t)
     .unwrap();
@@ -239,14 +259,16 @@ pub(crate) fn create_asset_metadata(
     evm_address: Option<H160>,
     is_frozen: bool,
     is_sufficient: bool,
-) -> AssetRegistrarMetadata {
-    AssetRegistrarMetadata {
-        name: name.as_bytes().to_vec(),
-        symbol: symbol.as_bytes().to_vec(),
-        decimals,
+) -> AssetRegistryMetadata<Balance> {
+    AssetRegistryMetadata {
+        metadata: AssetStorageMetadata {
+            name: name.as_bytes().to_vec(),
+            symbol: symbol.as_bytes().to_vec(),
+            decimals,
+            is_frozen,
+        },
         min_balance,
         evm_address,
-        is_frozen,
         is_sufficient,
     }
 }

@@ -118,7 +118,6 @@ impl ExtBuilder {
 
         pallet_asset_manager::GenesisConfig::<Runtime> {
             start_id: <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-            _marker: PhantomData::<Runtime>::default(),
         }
         .assimilate_storage(&mut t)
         .unwrap();

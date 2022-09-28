@@ -42,10 +42,11 @@ use frame_support::{
 };
 use manta_primitives::{
     assets::{
-        AssetConfig, AssetLocation, AssetRegistrarMetadata, FungibleLedger, FungibleLedgerError,
+        AssetConfig, AssetLocation, AssetRegistryMetadata, AssetStorageMetadata, FungibleLedger,
+        FungibleLedgerError,
     },
     constants::time::{DAYS, HOURS},
-    types::{AccountId, Balance, Header},
+    types::{AccountId, AssetId, Balance, Header},
 };
 use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
 use xcm::{
@@ -959,13 +960,15 @@ fn concrete_fungible_ledger_transfers_work() {
             // Transfer tests for non-native assets:
 
             let min_balance = 10u128;
-            let asset_metadata = AssetRegistrarMetadata {
-                name: b"Kusama".to_vec(),
-                symbol: b"KSM".to_vec(),
-                decimals: 12,
+            let asset_metadata = AssetRegistryMetadata {
+                metadata: AssetStorageMetadata {
+                    name: b"Kusama".to_vec(),
+                    symbol: b"KSM".to_vec(),
+                    decimals: 12,
+                    is_frozen: false,
+                },
                 min_balance,
                 evm_address: None,
-                is_frozen: false,
                 is_sufficient: true,
             };
             let source_location =
@@ -978,7 +981,7 @@ fn concrete_fungible_ledger_transfers_work() {
 
             // Register and mint for testing.
             let amount = Balance::MAX;
-            assert_ok!(CalamariConcreteFungibleLedger::deposit_can_mint(
+            assert_ok!(CalamariConcreteFungibleLedger::deposit_minting(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &alice.clone(),
                 amount,
@@ -1079,7 +1082,7 @@ fn concrete_fungible_ledger_transfers_work() {
             // Transferring unregistered asset ID should not work.
             assert_err!(
                 CalamariConcreteFungibleLedger::transfer(
-                    u32::MAX,
+                    AssetId::MAX,
                     &alice.clone(),
                     &charlie.clone(),
                     transfer_amount,
@@ -1121,13 +1124,15 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
             // Non-native asset tests:
 
             let min_balance = 10u128;
-            let asset_metadata = AssetRegistrarMetadata {
-                name: b"Kusama".to_vec(),
-                symbol: b"KSM".to_vec(),
-                decimals: 12,
+            let asset_metadata = AssetRegistryMetadata {
+                metadata: AssetStorageMetadata {
+                    name: b"Kusama".to_vec(),
+                    symbol: b"KSM".to_vec(),
+                    decimals: 12,
+                    is_frozen: false,
+                },
                 min_balance,
                 evm_address: None,
-                is_frozen: false,
                 is_sufficient: true,
             };
             let source_location =
@@ -1156,7 +1161,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                 ),
                 FungibleLedgerError::UnknownAsset
             );
-            assert_ok!(CalamariConcreteFungibleLedger::deposit_can_mint(
+            assert_ok!(CalamariConcreteFungibleLedger::deposit_minting(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &alice.clone(),
                 u128::MAX,
@@ -1178,13 +1183,15 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                 FungibleLedgerError::Overflow
             );
 
-            let asset_metadata = AssetRegistrarMetadata {
-                name: b"Rococo".to_vec(),
-                symbol: b"Roc".to_vec(),
-                decimals: 12,
+            let asset_metadata = AssetRegistryMetadata {
+                metadata: AssetStorageMetadata {
+                    name: b"Rococo".to_vec(),
+                    symbol: b"Roc".to_vec(),
+                    decimals: 12,
+                    is_frozen: false,
+                },
                 min_balance,
                 evm_address: None,
-                is_frozen: false,
                 is_sufficient: false,
             };
 
@@ -1209,12 +1216,12 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
         });
 }
 
-// `can_reduce_by_amount` uses `reducible_amount` implementation in order to use the `keep_alive` argument.
+// `can_withdraw` uses `reducible_amount` implementation in order to use the `keep_alive` argument.
 // Unfortunately that function does not return the reason for failure cases like `can_withdraw`.
 // The errors that would've been returned if `can_withdraw` was used instead of `reducible_amount`
 // are included as comments on top of each case for more clarity.
 #[test]
-fn concrete_fungible_ledger_can_reduce_by_amount_works() {
+fn concrete_fungible_ledger_can_withdraw_works() {
     let alice = unchecked_account_id::<sr25519::Public>("Alice");
     let bob = unchecked_account_id::<sr25519::Public>("Bob");
     let charlie = unchecked_account_id::<sr25519::Public>("Charlie");
@@ -1228,10 +1235,10 @@ fn concrete_fungible_ledger_can_reduce_by_amount_works() {
             // Native asset tests:
 
             assert_err!(
-                CalamariConcreteFungibleLedger::can_reduce_by_amount(
+                CalamariConcreteFungibleLedger::can_withdraw(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
                     &charlie.clone(),
-                    INITIAL_BALANCE + 1,
+                    &(INITIAL_BALANCE + 1),
                     ExistenceRequirement::KeepAlive
                 ),
                 // Underflow
@@ -1239,28 +1246,28 @@ fn concrete_fungible_ledger_can_reduce_by_amount_works() {
             );
 
             assert_err!(
-                CalamariConcreteFungibleLedger::can_reduce_by_amount(
+                CalamariConcreteFungibleLedger::can_withdraw(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
                     &charlie.clone(),
-                    INITIAL_BALANCE,
+                    &INITIAL_BALANCE,
                     ExistenceRequirement::KeepAlive
                 ),
                 // WouldDie
                 FungibleLedgerError::CannotWithdrawMoreThan(INITIAL_BALANCE - existential_deposit)
             );
 
-            assert_ok!(CalamariConcreteFungibleLedger::can_reduce_by_amount(
+            assert_ok!(CalamariConcreteFungibleLedger::can_withdraw(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
                 &charlie.clone(),
-                INITIAL_BALANCE,
+                &INITIAL_BALANCE,
                 ExistenceRequirement::AllowDeath
             ),);
 
             assert_err!(
-                CalamariConcreteFungibleLedger::can_reduce_by_amount(
+                CalamariConcreteFungibleLedger::can_withdraw(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
                     &bob.clone(),
-                    INITIAL_BALANCE,
+                    &INITIAL_BALANCE,
                     ExistenceRequirement::KeepAlive
                 ),
                 // NoFunds
@@ -1270,13 +1277,15 @@ fn concrete_fungible_ledger_can_reduce_by_amount_works() {
             // Non-native asset tests:
 
             let min_balance = 10u128;
-            let asset_metadata = AssetRegistrarMetadata {
-                name: b"Kusama".to_vec(),
-                symbol: b"KSM".to_vec(),
-                decimals: 12,
+            let asset_metadata = AssetRegistryMetadata {
+                metadata: AssetStorageMetadata {
+                    name: b"Kusama".to_vec(),
+                    symbol: b"KSM".to_vec(),
+                    decimals: 12,
+                    is_frozen: false,
+                },
                 min_balance,
                 evm_address: None,
-                is_frozen: false,
                 is_sufficient: true,
             };
             let source_location =
@@ -1287,7 +1296,7 @@ fn concrete_fungible_ledger_can_reduce_by_amount_works() {
                 asset_metadata
             ),);
 
-            assert_ok!(CalamariConcreteFungibleLedger::deposit_can_mint(
+            assert_ok!(CalamariConcreteFungibleLedger::deposit_minting(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &alice.clone(),
                 INITIAL_BALANCE,
@@ -1301,44 +1310,44 @@ fn concrete_fungible_ledger_can_reduce_by_amount_works() {
             );
 
             assert_err!(
-                CalamariConcreteFungibleLedger::can_reduce_by_amount(
+                CalamariConcreteFungibleLedger::can_withdraw(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     &alice.clone(),
-                    INITIAL_BALANCE + 1,
+                    &(INITIAL_BALANCE + 1),
                     ExistenceRequirement::AllowDeath
                 ),
                 // Underflow
                 FungibleLedgerError::CannotWithdrawMoreThan(INITIAL_BALANCE)
             );
 
-            assert_ok!(CalamariConcreteFungibleLedger::can_reduce_by_amount(
+            assert_ok!(CalamariConcreteFungibleLedger::can_withdraw(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &alice.clone(),
-                INITIAL_BALANCE,
+                &INITIAL_BALANCE,
                 ExistenceRequirement::AllowDeath
             ),);
 
             assert_err!(
-                CalamariConcreteFungibleLedger::can_reduce_by_amount(
+                CalamariConcreteFungibleLedger::can_withdraw(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     &bob.clone(),
-                    10,
+                    &10u128,
                     ExistenceRequirement::AllowDeath
                 ),
                 // NoFunds
                 FungibleLedgerError::CannotWithdrawMoreThan(0)
             );
 
-            assert_ok!(CalamariConcreteFungibleLedger::deposit_can_mint(
+            assert_ok!(CalamariConcreteFungibleLedger::deposit_minting(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 &bob.clone(),
                 INITIAL_BALANCE,
             ),);
             assert_err!(
-                CalamariConcreteFungibleLedger::can_reduce_by_amount(
+                CalamariConcreteFungibleLedger::can_withdraw(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     &alice.clone(),
-                    INITIAL_BALANCE,
+                    &INITIAL_BALANCE,
                     ExistenceRequirement::KeepAlive
                 ),
                 FungibleLedgerError::CannotWithdrawMoreThan(INITIAL_BALANCE - min_balance)
@@ -1350,10 +1359,10 @@ fn concrete_fungible_ledger_can_reduce_by_amount_works() {
                 sp_runtime::MultiAddress::Id(alice.clone()),
             ));
             assert_err!(
-                CalamariConcreteFungibleLedger::can_reduce_by_amount(
+                CalamariConcreteFungibleLedger::can_withdraw(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                     &alice.clone(),
-                    10,
+                    &10u128,
                     ExistenceRequirement::AllowDeath
                 ),
                 // Frozen

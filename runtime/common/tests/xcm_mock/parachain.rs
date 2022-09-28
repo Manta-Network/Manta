@@ -38,8 +38,8 @@ use sp_std::prelude::*;
 
 use manta_primitives::{
     assets::{
-        AssetConfig, AssetIdLocationConvert, AssetLocation, AssetRegistrar, AssetRegistrarMetadata,
-        AssetStorageMetadata, ConcreteFungibleLedger,
+        AssetConfig, AssetIdLocationConvert, AssetIdType, AssetLocation, AssetRegistry,
+        AssetRegistryMetadata, AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
     types::AssetId,
@@ -194,21 +194,14 @@ parameter_types! {
 /// Transactor for assets in pallet-assets, i.e. implements `fungibles` trait
 pub type MultiAssetTransactor = MultiAssetAdapter<
     Runtime,
+    // Used to find the query the native asset id of the chain.
+    ParachainAssetConfig,
     // "default" implementation of converting a `MultiLocation` to an `AccountId`
     LocationToAccountId,
     // Used when the incoming asset is a fungible concrete asset matching the given location or name:
     IsNativeConcrete<SelfReserve>,
     // Used to match incoming assets which are not the native asset.
-    ConvertedConcreteAssetId<
-        AssetId,
-        Balance,
-        AssetIdLocationConvert<AssetLocation, AssetManager>,
-        JustTry,
-    >,
-    // Precondition checks and actual implementations of mint and burn logic.
-    ConcreteFungibleLedger<Runtime, ParachainAssetConfig, Balances, Assets>,
-    // Used to find the query the native asset id of the chain.
-    ParachainAssetConfig,
+    ConvertedConcreteAssetId<AssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
 >;
 
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
@@ -247,14 +240,9 @@ parameter_types! {
 }
 
 pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
-    Assets,
-    ConvertedConcreteAssetId<
-        AssetId,
-        Balance,
-        AssetIdLocationConvert<AssetLocation, AssetManager>,
-        JustTry,
-    >,
     AccountId,
+    Assets,
+    ConvertedConcreteAssetId<AssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
     XcmFeesAccount,
 >;
 
@@ -279,7 +267,7 @@ impl Config for XcmExecutorConfig {
     // i.e. units_per_second in `AssetManager`
     type Trader = (
         FixedRateOfFungible<ParaTokenPerSecond, ()>,
-        FirstAssetTrader<AssetId, AssetLocation, AssetManager, XcmFeesToAccount>,
+        FirstAssetTrader<AssetManager, XcmFeesToAccount>,
     );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
@@ -490,11 +478,20 @@ pub(crate) fn set_current_xcm_version(version: XcmVersion) {
 }
 
 pub struct CalamariAssetRegistrar;
-impl AssetRegistrar<Runtime, ParachainAssetConfig> for CalamariAssetRegistrar {
+impl BalanceType for CalamariAssetRegistrar {
+    type Balance = Balance;
+}
+impl AssetIdType for CalamariAssetRegistrar {
+    type AssetId = AssetId;
+}
+impl AssetRegistry for CalamariAssetRegistrar {
+    type Metadata = AssetStorageMetadata;
+    type Error = sp_runtime::DispatchError;
+
     fn create_asset(
         asset_id: AssetId,
-        min_balance: Balance,
         metadata: AssetStorageMetadata,
+        min_balance: Balance,
         is_sufficient: bool,
     ) -> DispatchResult {
         Assets::force_create(
@@ -515,10 +512,10 @@ impl AssetRegistrar<Runtime, ParachainAssetConfig> for CalamariAssetRegistrar {
         )
     }
 
-    fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
+    fn update_asset_metadata(asset_id: &AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
         Assets::force_set_metadata(
             Origin::root(),
-            asset_id,
+            *asset_id,
             metadata.name,
             metadata.symbol,
             metadata.decimals,
@@ -532,13 +529,15 @@ parameter_types! {
     pub const NativeAssetId: AssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(SelfReserve::get()));
-    pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
-        name: b"ParaAToken".to_vec(),
-        symbol: b"ParaA".to_vec(),
-        decimals: CALAMARI_DECIMAL,
+    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
+        metadata: AssetStorageMetadata {
+            name: b"ParaAToken".to_vec(),
+            symbol: b"ParaA".to_vec(),
+            decimals: CALAMARI_DECIMAL,
+            is_frozen: false,
+        },
         min_balance: 1,
         evm_address: None,
-        is_frozen: false,
         is_sufficient: true,
     };
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
@@ -547,21 +546,31 @@ parameter_types! {
 ///
 #[derive(Clone, Eq, PartialEq)]
 pub struct ParachainAssetConfig;
-
+impl LocationType for ParachainAssetConfig {
+    type Location = AssetLocation;
+}
+impl AssetIdType for ParachainAssetConfig {
+    type AssetId = AssetId;
+}
+impl BalanceType for ParachainAssetConfig {
+    type Balance = Balance;
+}
 impl AssetConfig<Runtime> for ParachainAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetId = NativeAssetId;
-    type AssetRegistrarMetadata = AssetRegistrarMetadata;
+    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
-    type AssetLocation = AssetLocation;
-    type AssetRegistrar = CalamariAssetRegistrar;
-    type FungibleLedger = ConcreteFungibleLedger<Runtime, ParachainAssetConfig, Balances, Assets>;
+    type AssetRegistry = CalamariAssetRegistrar;
+    type FungibleLedger = NativeAndNonNative<Runtime, ParachainAssetConfig, Balances, Assets>;
 }
 
 impl pallet_asset_manager::Config for Runtime {
     type Event = Event;
+    type AssetId = AssetId;
+    type Balance = Balance;
+    type Location = AssetLocation;
     type AssetConfig = ParachainAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;
     type PalletId = AssetManagerPalletId;
@@ -605,9 +614,8 @@ impl orml_xtokens::Config for Runtime {
     type Event = Event;
     type Balance = Balance;
     type CurrencyId = CurrencyId;
-    type AccountIdToMultiLocation = manta_primitives::xcm::AccountIdToMultiLocation<AccountId>;
-    type CurrencyIdConvert =
-        CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
+    type AccountIdToMultiLocation = manta_primitives::xcm::AccountIdToMultiLocation;
+    type CurrencyIdConvert = CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetManager>>;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type SelfLocation = SelfReserve;
     type Weigher = xcm_builder::FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
@@ -679,14 +687,16 @@ pub(crate) fn create_asset_metadata(
     evm_address: Option<H160>,
     is_frozen: bool,
     is_sufficient: bool,
-) -> AssetRegistrarMetadata {
-    AssetRegistrarMetadata {
-        name: name.as_bytes().to_vec(),
-        symbol: symbol.as_bytes().to_vec(),
-        decimals,
+) -> AssetRegistryMetadata<Balance> {
+    AssetRegistryMetadata {
+        metadata: AssetStorageMetadata {
+            name: name.as_bytes().to_vec(),
+            symbol: symbol.as_bytes().to_vec(),
+            decimals,
+            is_frozen,
+        },
         min_balance,
         evm_address,
-        is_frozen,
         is_sufficient,
     }
 }
@@ -700,9 +710,9 @@ pub(crate) fn create_asset_location(parents: u8, para_id: u32) -> AssetLocation 
 
 fn insert_dummy_data(
     dummy_mult_loc: MultiLocation,
-    dummy_asset_metadata: &AssetRegistrarMetadata,
-    start_from: u32,
-    insert_until: u32,
+    dummy_asset_metadata: &AssetRegistryMetadata<Balance>,
+    start_from: AssetId,
+    insert_until: AssetId,
 ) {
     let mut next_asset_id = start_from;
     let mut next_dummy_mult_loc = dummy_mult_loc;
@@ -719,7 +729,7 @@ fn insert_dummy_data(
 
 pub(crate) fn register_assets_on_parachain<P>(
     source_location: &AssetLocation,
-    asset_metadata: &AssetRegistrarMetadata,
+    asset_metadata: &AssetRegistryMetadata<Balance>,
     units_per_second: Option<u128>,
     mint_asset: Option<(AccountId, Balance, bool, bool)>,
 ) -> AssetId
