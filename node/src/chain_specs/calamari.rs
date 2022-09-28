@@ -143,7 +143,7 @@ pub fn calamari_local_config() -> CalamariChainSpec {
 	];
 
 	// root account: dmyBqgFxMPZs1wKz8vFjv7nD4RBu4HeYhZTsGxSDU1wXQV15R
-	let root_key: AccountId =
+	let endowed: AccountId =
 		hex_literal::hex!["bc153ffd4c96de7496df009c6f4ecde6f95bf67b60e0c1025a7552d0b6926e04"]
 			.into();
 
@@ -152,12 +152,12 @@ pub fn calamari_local_config() -> CalamariChainSpec {
 		"Calamari Parachain Staging",
 		// ID
 		"calamari_staging",
-		ChainType::Local,
+		ChainType::Live,
 		move || {
 			calamari_dev_genesis(
 				// initial collators.
 				initial_authorities.clone(),
-				vec![root_key.clone()],
+				vec![endowed.clone()],
 			)
 		},
 		vec![],
