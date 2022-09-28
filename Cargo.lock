@@ -967,7 +967,7 @@ checksum = "c1db59621ec70f09c5e9b597b220c7a2b43611f4710dc03ceb8748637775692c"
 
 [[package]]
 name = "calamari-runtime"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "calamari-vesting",
  "cumulus-pallet-dmp-queue",
@@ -1049,7 +1049,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-vesting"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -2374,7 +2374,7 @@ dependencies = [
 
 [[package]]
 name = "dolphin-runtime"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -4921,7 +4921,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -5016,7 +5016,7 @@ dependencies = [
 
 [[package]]
 name = "manta-collator-selection"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5099,7 +5099,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5120,7 +5120,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -5941,7 +5941,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-manager"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6862,7 +6862,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -9100,7 +9100,7 @@ dependencies = [
 
 [[package]]
 name = "runtime-common"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -10580,7 +10580,7 @@ dependencies = [
 
 [[package]]
 name = "session-key-primitives"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "manta-primitives",
  "nimbus-primitives",

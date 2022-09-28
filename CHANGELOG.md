@@ -1,30 +1,49 @@
-# CHANGELOG 
+# CHANGELOG
+
+## v3.4.0
+### Added
+- [\#745](https://github.com/Manta-Network/Manta/pull/745) Workflow to check for labels
+- [\#758](https://github.com/Manta-Network/Manta/pull/758) All-benchmarks script and CI workflow improvements
+- [\#724](https://github.com/Manta-Network/Manta/pull/724) Nimbus Stage 2 - Enable permissionless staking on Calamari [CA]
+
+### Changed
+- [\#770](https://github.com/Manta-Network/Manta/pull/770) Update fees splits, 50% burned, 50% to treasury [CADO]
+- [\#766](https://github.com/Manta-Network/Manta/pull/766) Change QA workflow link to internal Notion
+- [\#743](https://github.com/Manta-Network/Manta/pull/743) Split all testing from `publish_draft_release` workflow and filter execution by labels on the PRs [CADO]
+- [\#781](https://github.com/Manta-Network/Manta/pull/781) Proper XCM weights benchmark [CADO]
+- [\#782](https://github.com/Manta-Network/Manta/pull/782) Run manta-pay randomized tests in a loop 10 times [CADO]
+- [\#678](https://github.com/Manta-Network/Manta/pull/678) Minor: Update PULL_REQUEST_TEMPLATE.md
+- [\#792](https://github.com/Manta-Network/Manta/pull/792) Adapt 45/45/10 TX fee split for KMA, 100% to author for DOL [CADO]
+
+### Fixed
+- [\#783](https://github.com/Manta-Network/Manta/pull/783) Fix calamari bootnode names in chain-spec and docker [CADO]
+- [\#791](https://github.com/Manta-Network/Manta/pull/791) Fix CI by ignoring failure of `stop-` jobs
 
 ## v3.3.0
 ### Added
--[\#717](https://github.com/Manta-Network/Manta/pull/717) Dolphin-2085 on Baikal genesis [DO]
--[\#712](https://github.com/Manta-Network/Manta/pull/712) Add RPC for latest checkpoint 
--[\#763](https://github.com/Manta-Network/Manta/pull/763) Support verification of historic Aura blocks 
+- [\#717](https://github.com/Manta-Network/Manta/pull/717) Dolphin-2085 on Baikal genesis [DO]
+- [\#712](https://github.com/Manta-Network/Manta/pull/712) Add RPC for latest checkpoint
+- [\#763](https://github.com/Manta-Network/Manta/pull/763) Support verification of historic Aura blocks
 
 ### Changed
--[\#681](https://github.com/Manta-Network/Manta/pull/681) CI Ledger RPC Tests 
--[\#682](https://github.com/Manta-Network/Manta/pull/682) Use `LengthToFee` in the `congested_chain_simulation`'s fee calculation 
--[\#695](https://github.com/Manta-Network/Manta/pull/695) Refactor fungible ledger mint/burn 
--[\#715](https://github.com/Manta-Network/Manta/pull/715) Update xcm-onboarding and release templates 
--[\#701](https://github.com/Manta-Network/Manta/pull/701) switch runtime to wasm only 
--[\#720](https://github.com/Manta-Network/Manta/pull/720) Update deps from v0.9.22 to v0.9.26 
--[\#726](https://github.com/Manta-Network/Manta/pull/726) support STORAGE_VERSION for our pallets 
--[\#738](https://github.com/Manta-Network/Manta/pull/738) Add changelog verification. Remove old changelog workflow 
--[\#582](https://github.com/Manta-Network/Manta/pull/582) Consensus migration stage 1: Enable Nimbus-Aura [CADO]
--[\#752](https://github.com/Manta-Network/Manta/pull/752) v3.3.0 bump versions and weights 
+- [\#681](https://github.com/Manta-Network/Manta/pull/681) CI Ledger RPC Tests
+- [\#682](https://github.com/Manta-Network/Manta/pull/682) Use `LengthToFee` in the `congested_chain_simulation`'s fee calculation
+- [\#695](https://github.com/Manta-Network/Manta/pull/695) Refactor fungible ledger mint/burn
+- [\#715](https://github.com/Manta-Network/Manta/pull/715) Update xcm-onboarding and release templates
+- [\#701](https://github.com/Manta-Network/Manta/pull/701) switch runtime to wasm only
+- [\#720](https://github.com/Manta-Network/Manta/pull/720) Update deps from v0.9.22 to v0.9.26
+- [\#726](https://github.com/Manta-Network/Manta/pull/726) support STORAGE_VERSION for our pallets
+- [\#738](https://github.com/Manta-Network/Manta/pull/738) Add changelog verification. Remove old changelog workflow
+- [\#582](https://github.com/Manta-Network/Manta/pull/582) Consensus migration stage 1: Enable Nimbus-Aura [CADO]
+- [\#752](https://github.com/Manta-Network/Manta/pull/752) v3.3.0 bump versions and weights
 
 ### Fixed
--[\#694](https://github.com/Manta-Network/Manta/pull/694) Use u128::MAX in fungible ledger transfer test 
--[\#703](https://github.com/Manta-Network/Manta/pull/703) Fix double spend reclaim test 
--[\#723](https://github.com/Manta-Network/Manta/pull/723) fix: upgrade to `manta-rs` v0.5.4 
+- [\#694](https://github.com/Manta-Network/Manta/pull/694) Use u128::MAX in fungible ledger transfer test
+- [\#703](https://github.com/Manta-Network/Manta/pull/703) Fix double spend reclaim test
+- [\#723](https://github.com/Manta-Network/Manta/pull/723) fix: upgrade to `manta-rs` v0.5.4
 
 ### Removed
--[\#737](https://github.com/Manta-Network/Manta/pull/737) Remove v3.2.1 SessionKey migration code [CADO]
+- [\#737](https://github.com/Manta-Network/Manta/pull/737) Remove v3.2.1 SessionKey migration code [CADO]
 
 ## v3.2.1
 ### Breaking changes

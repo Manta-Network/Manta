@@ -27,13 +27,12 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub use frame_support::traits::Get;
 use manta_collator_selection::IdentityCollator;
 use sp_api::impl_runtime_apis;
-use sp_arithmetic::FixedU128;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Percent, Permill,
+    ApplyExtrinsicResult, Perbill, Percent, Permill,
 };
 use sp_std::{cmp::Ordering, prelude::*};
 
@@ -123,10 +122,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 3300,
+    spec_version: 3402,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 7,
+    transaction_version: 9,
     state_version: 0,
 };
 
@@ -564,14 +563,13 @@ impl pallet_aura_style_filter::Config for Runtime {
     /// for each slot in round-robin fashion
     type PotentialAuthors = ParachainStaking;
 }
-use sp_runtime::traits::UniqueSaturatedInto;
 parameter_types! {
     /// Fixed percentage a collator takes off the top of due rewards
     pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(10);
     /// Default percent of inflation set aside for parachain bond every round
     pub const DefaultParachainBondReservePercent: Percent = Percent::zero();
     pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(6 * HOURS ,15,"CALAMARI_DEFAULTBLOCKSPERROUND");
-    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(FixedU128::checked_from_rational(7u32.saturating_mul(DAYS),DefaultBlocksPerRound::get()).unwrap_or(FixedU128::from_inner(1u128)).into_inner().unique_saturated_into(),1,"CALAMARI_LEAVEDELAYROUNDS");
+    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(28 ,1 ,"CALAMARI_LEAVEDELAYROUNDS"); // == 7 * DAYS / 6 * HOURS
 }
 impl pallet_parachain_staking::Config for Runtime {
     type Event = Event;
@@ -1178,6 +1176,8 @@ impl_runtime_apis! {
                 hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a").to_vec().into(),
                 // Event Count
                 hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef70a98fdbe9ce6c55837576c60c7af3850").to_vec().into(),
+                // ParachainStaking Round
+                hex_literal::hex!("a686a3043d0adcf2fa655e57bc595a7813792e785168f725b60e2969c7fc2552").to_vec().into(),
                 // System Events
                 hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7").to_vec().into(),
                 // Treasury Account

@@ -27,8 +27,9 @@ pub use calamari_runtime::{
     fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
     xcm_config::XcmFeesAccount,
     AssetManager, Assets, Authorship, Balances, CalamariVesting, Council, DefaultBlocksPerRound,
-    Democracy, EnactmentPeriod, LaunchPeriod, NativeTokenExistentialDeposit, Origin, Period,
-    PolkadotXcm, Runtime, TechnicalCommittee, Timestamp, Treasury, Utility, VotingPeriod,
+    Democracy, EnactmentPeriod, LaunchPeriod, LeaveDelayRounds, NativeTokenExistentialDeposit,
+    Origin, ParachainStaking, Period, PolkadotXcm, Runtime, TechnicalCommittee, Timestamp,
+    Treasury, Utility, VotingPeriod,
 };
 
 use calamari_runtime::opaque::SessionKeys;
@@ -182,6 +183,39 @@ fn sanity_check_governance_periods() {
     assert_eq!(LaunchPeriod::get(), 7 * DAYS);
     assert_eq!(VotingPeriod::get(), 7 * DAYS);
     assert_eq!(EnactmentPeriod::get(), 1 * DAYS);
+}
+
+#[test]
+fn ensure_block_per_round_and_leave_delays_equal_7days() {
+    // NOTE: If you change one, change the other as well
+    type LeaveCandidatesDelay =
+        <calamari_runtime::Runtime as pallet_parachain_staking::Config>::LeaveCandidatesDelay;
+    type LeaveDelegatorsDelay =
+        <calamari_runtime::Runtime as pallet_parachain_staking::Config>::LeaveDelegatorsDelay;
+    type CandidateBondLessDelay =
+        <calamari_runtime::Runtime as pallet_parachain_staking::Config>::CandidateBondLessDelay;
+    type DelegationBondLessDelay =
+        <calamari_runtime::Runtime as pallet_parachain_staking::Config>::DelegationBondLessDelay;
+    assert_eq!(
+        7 * DAYS,
+        DefaultBlocksPerRound::get() * LeaveDelayRounds::get()
+    );
+    assert_eq!(
+        7 * DAYS,
+        DefaultBlocksPerRound::get() * LeaveCandidatesDelay::get()
+    );
+    assert_eq!(
+        7 * DAYS,
+        DefaultBlocksPerRound::get() * LeaveDelegatorsDelay::get()
+    );
+    assert_eq!(
+        7 * DAYS,
+        DefaultBlocksPerRound::get() * CandidateBondLessDelay::get()
+    );
+    assert_eq!(
+        7 * DAYS,
+        DefaultBlocksPerRound::get() * DelegationBondLessDelay::get()
+    );
 }
 
 #[test]
@@ -671,6 +705,7 @@ fn verify_pallet_prefixes() {
     is_pallet_prefix::<calamari_runtime::CalamariVesting>("CalamariVesting");
     is_pallet_prefix::<calamari_runtime::AuthorInherent>("AuthorInherent");
     is_pallet_prefix::<calamari_runtime::AuraAuthorFilter>("AuraAuthorFilter");
+    is_pallet_prefix::<calamari_runtime::ParachainStaking>("ParachainStaking");
 
     let prefix = |pallet_name, storage_name| {
         let mut res = [0u8; 32];
@@ -791,6 +826,7 @@ fn verify_pallet_indices() {
     is_pallet_index::<calamari_runtime::Multisig>(41);
     is_pallet_index::<calamari_runtime::Assets>(45);
     is_pallet_index::<calamari_runtime::AssetManager>(46);
+    is_pallet_index::<calamari_runtime::ParachainStaking>(48);
     is_pallet_index::<calamari_runtime::CalamariVesting>(50);
     is_pallet_index::<calamari_runtime::AuthorInherent>(60);
     is_pallet_index::<calamari_runtime::AuraAuthorFilter>(63);
