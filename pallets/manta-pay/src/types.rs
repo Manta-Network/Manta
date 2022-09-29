@@ -265,7 +265,7 @@ impl TryFrom<SenderPost> for config::SenderPost {
 }
 
 /// Incoming Ciphertext Type
-pub type IncomingCiphertext = [[u8; 32]; 4];
+pub type IncomingCiphertext = [[u8; 32]; 3];
 
 /// Incoming Note
 #[cfg_attr(

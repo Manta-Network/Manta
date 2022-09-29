@@ -133,6 +133,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ark-bn254"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea691771ebbb28aea556c044e2e5c5227398d840cee0c34d4d20fa8eb2689e8c"
+dependencies = [
+ "ark-ec",
+ "ark-ff",
+ "ark-std",
+]
+
+[[package]]
 name = "ark-crypto-primitives"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -170,6 +181,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43b7ada17db3854f5994e74e60b18e10e818594935ee7e1d329800c117b32970"
 dependencies = [
  "ark-bls12-381",
+ "ark-ec",
+ "ark-ff",
+ "ark-r1cs-std",
+ "ark-std",
+]
+
+[[package]]
+name = "ark-ed-on-bn254"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fdc786b806fdbff4abebb08ec2fcb50cfe3941918e57120ab121228452903fd"
+dependencies = [
+ "ark-bn254",
  "ark-ec",
  "ark-ff",
  "ark-r1cs-std",
@@ -532,14 +556,15 @@ checksum = "065374052e7df7ee4047b1160cca5e1467a12351a40b3da123c870ba0b8eda2a"
 
 [[package]]
 name = "attohttpc"
-version = "0.19.1"
+version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "262c3f7f5d61249d8c00e5546e2685cd15ebeeb1bc0f3cc5449350a1cb07319e"
+checksum = "1fcf00bc6d5abb29b5f97e3c61a90b6d3caa12f3faf897d4a3e3607c050a35a7"
 dependencies = [
+ "flate2",
  "http",
  "log",
+ "native-tls",
  "url",
- "wildmatch",
 ]
 
 [[package]]
@@ -2508,6 +2533,7 @@ version = "1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e9c280362032ea4203659fc489832d0204ef09f247a0506f170dafcac08c369"
 dependencies = [
+ "serde",
  "signature",
 ]
 
@@ -2521,6 +2547,7 @@ dependencies = [
  "ed25519",
  "rand 0.7.3",
  "serde",
+ "serde_bytes",
  "sha2 0.9.9",
  "zeroize",
 ]
@@ -5002,7 +5029,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9ef273c19299fd70c5cc1006649a60a60256500c"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#b416b2cd9e09058aed5439a5e89420fe723f320f"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5045,14 +5072,19 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9ef273c19299fd70c5cc1006649a60a60256500c"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#b416b2cd9e09058aed5439a5e89420fe723f320f"
 dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
  "ark-ec",
+ "ark-ed-on-bls12-381",
+ "ark-ed-on-bn254",
  "ark-ff",
  "ark-r1cs-std",
  "ark-relations",
  "ark-serialize",
  "derivative",
+ "ed25519-dalek",
  "manta-util",
  "rand 0.8.5",
  "rand_chacha 0.3.1",
@@ -5062,7 +5094,7 @@ dependencies = [
 [[package]]
 name = "manta-parameters"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9ef273c19299fd70c5cc1006649a60a60256500c"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#b416b2cd9e09058aed5439a5e89420fe723f320f"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5075,11 +5107,9 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9ef273c19299fd70c5cc1006649a60a60256500c"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#b416b2cd9e09058aed5439a5e89420fe723f320f"
 dependencies = [
  "aes-gcm",
- "ark-bls12-381",
- "ark-ed-on-bls12-381",
  "ark-groth16",
  "ark-snark",
  "ark-std",
@@ -5092,7 +5122,6 @@ dependencies = [
  "num-bigint 0.4.3",
  "num-integer",
  "parity-scale-codec",
- "rand_chacha 0.3.1",
  "scale-info",
  "tempfile",
 ]
@@ -5186,7 +5215,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#9ef273c19299fd70c5cc1006649a60a60256500c"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#b416b2cd9e09058aed5439a5e89420fe723f320f"
 dependencies = [
  "crossbeam-channel",
  "serde",
@@ -10504,6 +10533,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_bytes"
+version = "0.11.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfc50e8183eeeb6178dcb167ae34a8051d63535023ae38b5d8d12beae193d37b"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "serde_cbor"
 version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -12330,7 +12368,7 @@ checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
  "cfg-if 0.1.10",
  "digest 0.10.5",
- "rand 0.7.3",
+ "rand 0.8.5",
  "static_assertions",
 ]
 
@@ -12990,12 +13028,6 @@ name = "widestring"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17882f045410753661207383517a6f62ec3dbeb6a4ed2acce01f0728238d1983"
-
-[[package]]
-name = "wildmatch"
-version = "2.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee583bdc5ff1cf9db20e9db5bb3ff4c3089a8f6b8b31aff265c9aba85812db86"
 
 [[package]]
 name = "winapi"

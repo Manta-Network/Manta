@@ -19,8 +19,8 @@ use crate::{
         new_test_ext, MantaAssetConfig, MantaAssetRegistry, MantaPayPallet, Origin as MockOrigin,
         Test,
     },
-    types::{Asset, AssetId, AssetValue},
-    Error, FungibleLedger,
+    types::{decode, encode, Asset, AssetId, AssetValue},
+    Error, FungibleLedger, StandardAssetId,
 };
 use frame_support::{assert_noop, assert_ok};
 use frame_system::Origin;
@@ -32,10 +32,10 @@ use manta_crypto::{
 };
 use manta_pay::{
     config::{
-        utxo::v1::MerkleTreeConfiguration, FullParametersRef, MultiProvingContext, Parameters,
-        PrivateTransfer, ProvingContext, TransferPost, UtxoAccumulatorModel,
+        utxo::v1::MerkleTreeConfiguration, ConstraintField, FullParametersRef, MultiProvingContext,
+        Parameters, PrivateTransfer, ProvingContext, TransferPost, UtxoAccumulatorModel,
     },
-    constraint::arkworks::Fp,
+    crypto::constraint::arkworks::Fp,
     parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
     test,
 };
@@ -60,12 +60,12 @@ lazy_static::lazy_static! {
 }
 
 ///
-const RANDOMIZED_TESTS_ITERATIONS: usize = 10;
+// TODO: back to 10
+const RANDOMIZED_TESTS_ITERATIONS: usize = 1;
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
-pub const NATIVE_ASSET_ID: AssetId = [
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-]; // TODO: <MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get();
+pub const NATIVE_ASSET_ID: StandardAssetId =
+    <MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get();
 
 /// Loads the [`MultiProvingContext`].
 #[inline]
@@ -79,7 +79,7 @@ fn load_proving_context() -> MultiProvingContext {
 
 /// Samples a [`Mint`] transaction of `asset` with a random secret.
 #[inline]
-fn sample_mint<R>(asset: Asset, rng: &mut R) -> TransferPost
+fn sample_to_private<R>(asset: Asset, rng: &mut R) -> TransferPost
 where
     R: CryptoRng + RngCore + ?Sized,
 {
@@ -93,14 +93,14 @@ where
 
 /// Mints many assets with the given `id` and `value`.
 #[inline]
-fn mint_tokens<R>(id: AssetId, values: &[AssetValue], rng: &mut R)
+fn mint_private_tokens<R>(id: StandardAssetId, values: &[AssetValue], rng: &mut R)
 where
     R: CryptoRng + RngCore + ?Sized,
 {
     for value in values {
         assert_ok!(MantaPayPallet::to_private(
             MockOrigin::signed(ALICE),
-            sample_mint(Asset::new(id, *value), rng).into()
+            sample_to_private(Asset::new(MantaPayPallet::field_from_id(id), *value), rng).into()
         ));
     }
 }
@@ -109,17 +109,20 @@ where
 #[inline]
 fn private_transfer_test<R>(
     count: usize,
-    asset_id_option: Option<AssetId>,
+    asset_id_option: Option<StandardAssetId>,
     rng: &mut R,
 ) -> Vec<TransferPost>
 where
     R: CryptoRng + RngCore + ?Sized,
 {
-    let asset_id = match asset_id_option {
+    let mut asset_id = match asset_id_option {
         Some(id) => id,
         None => rng.gen(),
     };
-    let total_free_balance = rng.gen();
+    // for index in 0..16 {
+    //     asset_id[index] = 0u8;
+    // }
+    let total_free_balance: AssetValue = rng.gen();
     let balances = value_distribution(count, total_free_balance, rng);
     initialize_test(asset_id, total_free_balance + TEST_DEFAULT_ASSET_ED);
     let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
@@ -180,11 +183,23 @@ where
             test::payment::private_transfer::prove_full(
                 &PROVING_CONTEXT,
                 &PARAMETERS,
-                &mut UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone()),
-                Fp::from_field(asset_id),
+                &mut utxo_accumulator,
+                Fp::from(asset_id),
                 [10_000, 20_000],
                 rng,
             );
+        assert_ok!(MantaPayPallet::to_private(
+            MockOrigin::signed(ALICE),
+            to_private_0.into()
+        ));
+        assert_ok!(MantaPayPallet::to_private(
+            MockOrigin::signed(ALICE),
+            to_private_1.into()
+        ));
+        assert_ok!(MantaPayPallet::private_transfer(
+            MockOrigin::signed(ALICE),
+            private_transfer.clone().into(),
+        ));
         posts.push(private_transfer)
     }
     posts
@@ -195,7 +210,7 @@ where
 fn reclaim_test<R>(
     count: usize,
     total_supply: AssetValue,
-    id_option: Option<AssetId>,
+    id_option: Option<StandardAssetId>,
     rng: &mut R,
 ) -> Vec<TransferPost>
 where
@@ -265,8 +280,7 @@ where
 
 /// Initializes a test by allocating `value`-many assets of the given `id` to the default account.
 #[inline]
-fn initialize_test(id: AssetId, value: AssetValue) {
-    let id = MantaPayPallet::id_from_field(id).unwrap();
+fn initialize_test(id: StandardAssetId, value: AssetValue) {
     let metadata = AssetRegistryMetadata {
         metadata: AssetStorageMetadata {
             name: b"Calamari".to_vec(),
@@ -299,13 +313,13 @@ fn to_private_should_work() {
     let mut rng = OsRng;
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
-            let mut asset_id: [u8; 32] = rng.gen();
-            for index in 0..16 {
-                asset_id[index] = 0u8;
-            }
+            let mut asset_id = rng.gen();
+            // for index in 0..16 {
+            //     asset_id[index] = 0u8;
+            // }
             let total_free_supply = rng.gen();
             initialize_test(asset_id, total_free_supply + TEST_DEFAULT_ASSET_ED);
-            mint_tokens(
+            mint_private_tokens(
                 asset_id,
                 &value_distribution(5, total_free_supply, &mut rng),
                 &mut rng,
@@ -323,7 +337,7 @@ fn native_asset_to_private_should_work() {
         new_test_ext().execute_with(|| {
             let total_free_supply = rng.gen();
             initialize_test(NATIVE_ASSET_ID, total_free_supply + TEST_DEFAULT_ASSET_ED);
-            mint_tokens(
+            mint_private_tokens(
                 NATIVE_ASSET_ID,
                 &value_distribution(5, total_free_supply, &mut rng),
                 &mut rng,
@@ -338,17 +352,20 @@ fn overdrawn_mint_should_not_work() {
     let mut rng = OsRng;
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
-            let mut asset_id: [u8; 32] = rng.gen();
-            for index in 0..16 {
-                asset_id[index] = 0u8;
-            }
+            let mut asset_id = rng.gen();
+            // for index in 0..16 {
+            //     asset_id[index] = 0u8;
+            // }
             let total_supply: AssetValue = rng.gen();
             initialize_test(asset_id, total_supply + TEST_DEFAULT_ASSET_ED);
             assert_noop!(
                 MantaPayPallet::to_private(
                     MockOrigin::signed(ALICE),
-                    sample_mint(
-                        Asset::new(asset_id, total_supply + TEST_DEFAULT_ASSET_ED + 1),
+                    sample_to_private(
+                        Asset::new(
+                            MantaPayPallet::field_from_id(asset_id),
+                            total_supply + TEST_DEFAULT_ASSET_ED + 1
+                        ),
                         &mut rng
                     )
                     .into()
@@ -368,7 +385,7 @@ fn to_private_without_init_should_not_work() {
             assert_noop!(
                 MantaPayPallet::to_private(
                     MockOrigin::signed(ALICE),
-                    sample_mint(Asset::new(rng.gen(), 100), &mut rng).into()
+                    sample_to_private(Asset::new(rng.gen(), 100), &mut rng).into()
                 ),
                 Error::<Test>::InvalidSourceAccount,
             );
@@ -379,23 +396,28 @@ fn to_private_without_init_should_not_work() {
 /// Tests that a double-spent [`Mint`] will fail.
 #[test]
 fn mint_existing_coin_should_not_work() {
-    // let mut rng = OsRng;
-    // for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
-    //     new_test_ext().execute_with(|| {
-    //         let asset_id = rng.gen();
-    //         initialize_test(asset_id, AssetValue::from(32579u128));
-    //         let mint_post = sample_mint(Asset::new(asset_id, 100), &mut rng);
-    //         assert_ok!(MantaPayPallet::to_private(
-    //             MockOrigin::signed(ALICE),
-    //             mint_post.clone().into()
-    //         ));
-    //         assert_noop!(
-    //             MantaPayPallet::to_private(MockOrigin::signed(ALICE), mint_post.into()),
-    //             Error::<Test>::AssetRegistered
-    //         );
-    //     });
-    // }
-    todo!()
+    let mut rng = OsRng;
+    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+        new_test_ext().execute_with(|| {
+            let asset_id = rng.gen();
+            // for index in 0..16 {
+            //     asset_id[index] = 0u8;
+            // }
+            initialize_test(asset_id, AssetValue::from(32579u128));
+            let mint_post = sample_to_private(
+                Asset::new(MantaPayPallet::field_from_id(asset_id), 100),
+                &mut rng,
+            );
+            assert_ok!(MantaPayPallet::to_private(
+                MockOrigin::signed(ALICE),
+                mint_post.clone().into()
+            ));
+            assert_noop!(
+                MantaPayPallet::to_private(MockOrigin::signed(ALICE), mint_post.into()),
+                Error::<Test>::AssetRegistered
+            );
+        });
+    }
 }
 
 /// Tests a [`PrivateTransfer`] transaction.
@@ -486,4 +508,22 @@ fn double_spend_in_reclaim_should_not_work() {
             }
         });
     }
+}
+
+#[test]
+fn check_number_conversions() {
+    let mut rng = OsRng;
+
+    let start = rng.gen();
+    let expected = MantaPayPallet::field_from_id(start);
+
+    let fp = Fp::<ConstraintField>::from(start);
+    let encoded = encode(fp);
+
+    assert_eq!(expected, encoded);
+
+    let id_from_field = MantaPayPallet::id_from_field(encoded).unwrap();
+    let decoded: Fp<ConstraintField> = decode(expected).unwrap();
+    assert_eq!(start, id_from_field);
+    assert_eq!(fp, decoded);
 }
