@@ -106,7 +106,7 @@ lazy_static = "1.4.0"
 manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", features = ["test"] }
 manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", features = ["getrandom"] }
 manta-parameters = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", features = ["download"] }
-manta-pay = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", default-features = false, features = ["groth16", "parameters", "scale", "download"] }
+manta-pay = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", default-features = false, features = ["groth16", "parameters", "scale", "download", "test"] }
 manta-util = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", features = ["std"] }
 pallet-asset-manager = { path = "../asset-manager" }
 pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
