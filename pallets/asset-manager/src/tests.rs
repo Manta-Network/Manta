@@ -25,9 +25,9 @@ use frame_support::{
     traits::{fungibles::InspectMetadata, Contains},
     WeakBoundedVec,
 };
-use manta_primitives::assets::{AssetConfig, AssetLocation, FungibleLedger};
+use manta_primitives::assets::{AssetConfig, AssetId, AssetLocation, FungibleLedger};
 use orml_traits::GetByKey;
-use sp_runtime::traits::BadOrigin;
+use sp_runtime::traits::{BadOrigin, Get};
 use xcm::{latest::prelude::*, VersionedMultiLocation};
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
@@ -99,8 +99,7 @@ fn register_asset_should_work() {
         X2(Parachain(para_id), PalletInstance(PALLET_BALANCES_INDEX)),
     )));
     new_test_ext().execute_with(|| {
-        let mut counter: u32 =
-            <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get();
+        let mut counter = <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get();
         // Register relay chain native token
         assert_ok!(AssetManager::register_asset(
             Origin::root(),
@@ -148,9 +147,9 @@ fn update_asset() {
     let new_name = b"NotKusama".to_vec();
     let new_symbol = b"NotKSM".to_vec();
     let new_decimals = original_decimals + 1;
-    new_metadata.name = new_name.clone();
-    new_metadata.symbol = new_symbol.clone();
-    new_metadata.decimals = new_decimals;
+    new_metadata.metadata.name = new_name.clone();
+    new_metadata.metadata.symbol = new_symbol.clone();
+    new_metadata.metadata.decimals = new_decimals;
     let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let new_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
         1,
@@ -207,7 +206,7 @@ fn update_asset() {
                 next_asset_id,
                 new_location.clone()
             ),
-            Error::<Runtime>::UpdateNonExistAsset
+            Error::<Runtime>::UpdateNonExistentAsset
         );
         assert_noop!(
             AssetManager::update_asset_metadata(
@@ -215,7 +214,7 @@ fn update_asset() {
                 next_asset_id,
                 new_metadata.clone()
             ),
-            Error::<Runtime>::UpdateNonExistAsset
+            Error::<Runtime>::UpdateNonExistentAsset
         );
         // Re-registering the original location and metadata should work,
         // as we modified the previous asset.
@@ -367,7 +366,7 @@ fn mint_asset() {
         // mint native asset
         let native_asset_id = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
         assert_ok!(
-            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::deposit_can_mint(
+            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::deposit_minting(
                 native_asset_id,
                 &ALICE,
                 1_000_000
@@ -385,7 +384,7 @@ fn mint_asset() {
             asset_metadata
         ));
         assert_ok!(
-            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::deposit_can_mint(
+            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::deposit_minting(
                 non_native_asset_id,
                 &ALICE,
                 1_000_000
