@@ -98,7 +98,7 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                             "4294b2a716cea91dd008d694d264feeaf9f0baf9c0b8cbe3e107515947ed440d"
                         ]
                         .into(),
-                        SessionKeys::new(
+                        SessionKeys::new((
                             hex_literal::hex![
                                 "10814b2b41bf39155ef7b38bb2431056894ba71acc35cf0101c999fd69f9c357"
                             ]
@@ -111,7 +111,7 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                                 "10814b2b41bf39155ef7b38bb2431056894ba71acc35cf0101c999fd69f9c357"
                             ]
                             .unchecked_into(),
-                        ),
+                        )),
                     ),
                     (
                         // account id: dmxvZaMQir24EPxvFiCzkhDZaiScPB7ZWpHXUv5x8uct2A3du
@@ -119,7 +119,7 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                             "b06e5d852078f64ab74af9b31add10e36d0438b847bc925fbacbf1e14963e379"
                         ]
                         .into(),
-                        SessionKeys::new(
+                        SessionKeys::new((
                             hex_literal::hex![
                                 "f2ac4141fee9f9ba42e830f39f00f316e45d280db1464a9148702ab7c4fcde52"
                             ]
@@ -132,7 +132,7 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                                 "f2ac4141fee9f9ba42e830f39f00f316e45d280db1464a9148702ab7c4fcde52"
                             ]
                             .unchecked_into(),
-                        ),
+                        )),
                     ),
                     (
                         // account id: dmud2BmjLyMtbAX2FaVTUtvmutoCKvR3GbARLc4crzGvVMCwu
@@ -140,7 +140,7 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                             "1e58d3c3900c7ce6c6d82152becb45bf7bd3453fb2d267e5f72ca51285bca173"
                         ]
                         .into(),
-                        SessionKeys::new(
+                        SessionKeys::new((
                             hex_literal::hex![
                                 "f6284f9446db8f895c6cf02d0d6de6e67885a1e55c880ccac640ff4bc076df68"
                             ]
@@ -153,7 +153,7 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                                 "f6284f9446db8f895c6cf02d0d6de6e67885a1e55c880ccac640ff4bc076df68"
                             ]
                             .unchecked_into(),
-                        ),
+                        )),
                     ),
                     (
                         // account id: dmx4vuA3PnQmraqJqeJaKRydUjP1AW4wMVTPLQWgZSpDyQUrp
@@ -161,7 +161,7 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                             "8a93e0f756448030dcb3018d25d75c7bf97a2e2ff15d02fd1f55bf3f2104fb5b"
                         ]
                         .into(),
-                        SessionKeys::new(
+                        SessionKeys::new((
                             hex_literal::hex![
                                 "741101a186479f4f28aa40fc78f02d7307ed3574e829aed76fdede5876e46a43"
                             ]
@@ -174,7 +174,7 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                                 "741101a186479f4f28aa40fc78f02d7307ed3574e829aed76fdede5876e46a43"
                             ]
                             .unchecked_into(),
-                        ),
+                        )),
                     ),
                     (
                         // account id: dmtwRyEeNyRW3KApnTxjHahWCjN5b9gDjdvxpizHt6E9zYkXj
@@ -182,7 +182,7 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                             "0027131c176c0d19a2a5cc475ecc657f936085912b846839319249e700f37e79"
                         ]
                         .into(),
-                        SessionKeys::new(
+                        SessionKeys::new((
                             hex_literal::hex![
                                 "8ebf03bda1702d719f428bc0a4c7cfca010c44a48ef79752490818c901548d20"
                             ]
@@ -195,27 +195,31 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                                 "8ebf03bda1702d719f428bc0a4c7cfca010c44a48ef79752490818c901548d20"
                             ]
                             .unchecked_into(),
-                        ),
+                        )),
                     ),
                 ],
                 vec![
                     hex_literal::hex![
                         "4294b2a716cea91dd008d694d264feeaf9f0baf9c0b8cbe3e107515947ed440d"
-                    ],
+                    ]
+                    .into(),
                     hex_literal::hex![
                         "b06e5d852078f64ab74af9b31add10e36d0438b847bc925fbacbf1e14963e379"
-                    ],
+                    ]
+                    .into(),
                     hex_literal::hex![
                         "1e58d3c3900c7ce6c6d82152becb45bf7bd3453fb2d267e5f72ca51285bca173"
-                    ],
+                    ]
+                    .into(),
                     hex_literal::hex![
                         "8a93e0f756448030dcb3018d25d75c7bf97a2e2ff15d02fd1f55bf3f2104fb5b"
-                    ],
+                    ]
+                    .into(),
                     hex_literal::hex![
                         "0027131c176c0d19a2a5cc475ecc657f936085912b846839319249e700f37e79"
-                    ],
-                ]
-                .into(),
+                    ]
+                    .into(),
+                ],
             )
         },
         vec![],
