@@ -25,7 +25,7 @@ use manta_primitives::{
         AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, DOLPHIN_DECIMAL, MANTA_PAY_PALLET_ID},
-    types::{AccountId, AssetId, Balance},
+    types::{AccountId, Balance, DolphinAssetId},
 };
 
 use frame_support::{pallet_prelude::DispatchResult, parameter_types, PalletId};
@@ -44,7 +44,7 @@ parameter_types! {
 impl pallet_assets::Config for Runtime {
     type Event = Event;
     type Balance = Balance;
-    type AssetId = AssetId;
+    type AssetId = DolphinAssetId;
     type Currency = Balances;
     type ForceOrigin = EnsureRoot<AccountId>;
     type AssetDeposit = AssetDeposit;
@@ -63,14 +63,14 @@ impl BalanceType for MantaAssetRegistry {
     type Balance = Balance;
 }
 impl AssetIdType for MantaAssetRegistry {
-    type AssetId = AssetId;
+    type AssetId = DolphinAssetId;
 }
 impl AssetRegistry for MantaAssetRegistry {
     type Metadata = AssetStorageMetadata;
     type Error = sp_runtime::DispatchError;
 
     fn create_asset(
-        asset_id: AssetId,
+        asset_id: DolphinAssetId,
         metadata: AssetStorageMetadata,
         min_balance: Balance,
         is_sufficient: bool,
@@ -105,7 +105,10 @@ impl AssetRegistry for MantaAssetRegistry {
         )
     }
 
-    fn update_asset_metadata(asset_id: &AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
+    fn update_asset_metadata(
+        asset_id: &DolphinAssetId,
+        metadata: AssetStorageMetadata,
+    ) -> DispatchResult {
         Assets::force_set_metadata(
             Origin::root(),
             *asset_id,
@@ -118,8 +121,8 @@ impl AssetRegistry for MantaAssetRegistry {
 }
 
 parameter_types! {
-    pub const StartNonNativeAssetId: AssetId = 8;
-    pub const NativeAssetId: AssetId = 1;
+    pub const StartNonNativeAssetId: DolphinAssetId = 8;
+    pub const NativeAssetId: DolphinAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(SelfReserve::get()));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
@@ -148,7 +151,7 @@ impl BalanceType for DolphinAssetConfig {
     type Balance = Balance;
 }
 impl AssetIdType for DolphinAssetConfig {
-    type AssetId = AssetId;
+    type AssetId = DolphinAssetId;
 }
 impl AssetConfig<Runtime> for DolphinAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
@@ -163,7 +166,7 @@ impl AssetConfig<Runtime> for DolphinAssetConfig {
 
 impl pallet_asset_manager::Config for Runtime {
     type Event = Event;
-    type AssetId = AssetId;
+    type AssetId = DolphinAssetId;
     type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = DolphinAssetConfig;

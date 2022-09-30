@@ -47,7 +47,7 @@ use manta_primitives::{
         FungibleLedgerError,
     },
     constants::time::{DAYS, HOURS},
-    types::{AccountId, AssetId, Balance, Header},
+    types::{AccountId, Balance, CalamariAssetId, Header},
 };
 use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
 use xcm::{
@@ -1118,7 +1118,7 @@ fn concrete_fungible_ledger_transfers_work() {
             // Transferring unregistered asset ID should not work.
             assert_err!(
                 CalamariConcreteFungibleLedger::transfer(
-                    AssetId::MAX,
+                    CalamariAssetId::MAX,
                     &alice.clone(),
                     &charlie.clone(),
                     transfer_amount,

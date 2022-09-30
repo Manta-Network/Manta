@@ -27,7 +27,7 @@ use manta_primitives::{
         AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, MANTA_PAY_PALLET_ID},
-    types::{AssetId, Balance},
+    types::Balance,
 };
 use sp_core::H256;
 use sp_runtime::{
@@ -40,6 +40,8 @@ use xcm::{
     v1::MultiLocation,
     VersionedMultiLocation,
 };
+
+use crate::StandardAssetId;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -122,7 +124,7 @@ parameter_types! {
 impl pallet_assets::Config for Test {
     type Event = Event;
     type Balance = Balance;
-    type AssetId = AssetId;
+    type AssetId = StandardAssetId;
     type Currency = Balances;
     type ForceOrigin = EnsureRoot<AccountId32>;
     type AssetDeposit = AssetDeposit;
@@ -141,14 +143,14 @@ impl BalanceType for MantaAssetRegistry {
     type Balance = Balance;
 }
 impl AssetIdType for MantaAssetRegistry {
-    type AssetId = AssetId;
+    type AssetId = StandardAssetId;
 }
 impl AssetRegistry for MantaAssetRegistry {
     type Metadata = AssetStorageMetadata;
     type Error = sp_runtime::DispatchError;
 
     fn create_asset(
-        asset_id: AssetId,
+        asset_id: StandardAssetId,
         metadata: AssetStorageMetadata,
         min_balance: Balance,
         is_sufficient: bool,
@@ -183,7 +185,10 @@ impl AssetRegistry for MantaAssetRegistry {
         )
     }
 
-    fn update_asset_metadata(asset_id: &AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
+    fn update_asset_metadata(
+        asset_id: &StandardAssetId,
+        metadata: AssetStorageMetadata,
+    ) -> DispatchResult {
         Assets::force_set_metadata(
             Origin::root(),
             *asset_id,
@@ -196,9 +201,9 @@ impl AssetRegistry for MantaAssetRegistry {
 }
 
 parameter_types! {
-    pub const DummyAssetId: AssetId = 0;
-    pub const NativeAssetId: AssetId = 1;
-    pub const StartNonNativeAssetId: AssetId = 8;
+    pub const DummyAssetId: StandardAssetId = 0;
+    pub const NativeAssetId: StandardAssetId = 1;
+    pub const StartNonNativeAssetId: StandardAssetId = 8;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
@@ -221,7 +226,7 @@ impl LocationType for MantaAssetConfig {
     type Location = AssetLocation;
 }
 impl AssetIdType for MantaAssetConfig {
-    type AssetId = AssetId;
+    type AssetId = StandardAssetId;
 }
 impl BalanceType for MantaAssetConfig {
     type Balance = Balance;
@@ -239,7 +244,7 @@ impl AssetConfig<Test> for MantaAssetConfig {
 
 impl pallet_asset_manager::Config for Test {
     type Event = Event;
-    type AssetId = AssetId;
+    type AssetId = StandardAssetId;
     type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = MantaAssetConfig;

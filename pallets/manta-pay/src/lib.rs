@@ -75,7 +75,7 @@ use manta_crypto::{
 use manta_pay::config;
 use manta_primitives::{
     assets::{self, AssetConfig, FungibleLedger as _},
-    types::{AssetId, Balance},
+    types::Balance,
 };
 use manta_util::codec::Decode as _;
 use scale_codec::{Decode, Encode, MaxEncodedLen};

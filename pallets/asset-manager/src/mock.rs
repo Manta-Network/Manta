@@ -31,7 +31,7 @@ use manta_primitives::{
         AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, ASSET_STRING_LIMIT},
-    types::{AccountId, AssetId, Balance},
+    types::{AccountId, Balance, CalamariAssetId},
 };
 use sp_core::{H160, H256};
 use sp_runtime::{
@@ -88,7 +88,7 @@ parameter_types! {
 impl pallet_assets::Config for Runtime {
     type Event = Event;
     type Balance = Balance;
-    type AssetId = AssetId;
+    type AssetId = CalamariAssetId;
     type Currency = Balances;
     type ForceOrigin = EnsureRoot<AccountId>;
     type AssetDeposit = AssetDeposit;
@@ -125,14 +125,14 @@ impl BalanceType for MantaAssetRegistry {
     type Balance = Balance;
 }
 impl AssetIdType for MantaAssetRegistry {
-    type AssetId = AssetId;
+    type AssetId = CalamariAssetId;
 }
 impl AssetRegistry for MantaAssetRegistry {
     type Metadata = AssetStorageMetadata;
     type Error = sp_runtime::DispatchError;
 
     fn create_asset(
-        asset_id: AssetId,
+        asset_id: CalamariAssetId,
         metadata: AssetStorageMetadata,
         min_balance: Balance,
         is_sufficient: bool,
@@ -155,7 +155,10 @@ impl AssetRegistry for MantaAssetRegistry {
         )
     }
 
-    fn update_asset_metadata(asset_id: &AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
+    fn update_asset_metadata(
+        asset_id: &CalamariAssetId,
+        metadata: AssetStorageMetadata,
+    ) -> DispatchResult {
         Assets::force_set_metadata(
             Origin::root(),
             *asset_id,
@@ -168,8 +171,8 @@ impl AssetRegistry for MantaAssetRegistry {
 }
 
 parameter_types! {
-    pub const StartNonNativeAssetId: AssetId = 8;
-    pub const NativeAssetId: AssetId = 1;
+    pub const StartNonNativeAssetId: CalamariAssetId = 8;
+    pub const NativeAssetId: CalamariAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
@@ -193,7 +196,7 @@ impl LocationType for MantaAssetConfig {
     type Location = AssetLocation;
 }
 impl AssetIdType for MantaAssetConfig {
-    type AssetId = AssetId;
+    type AssetId = CalamariAssetId;
 }
 impl BalanceType for MantaAssetConfig {
     type Balance = Balance;
@@ -211,7 +214,7 @@ impl AssetConfig<Runtime> for MantaAssetConfig {
 
 impl pallet_asset_manager::Config for Runtime {
     type Event = Event;
-    type AssetId = AssetId;
+    type AssetId = CalamariAssetId;
     type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = MantaAssetConfig;
