@@ -15,10 +15,9 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    assets_config::{DolphinAssetConfig, DolphinConcreteFungibleLedger},
-    AssetManager, Assets, Call, DmpQueue, EnsureRootOrMoreThanHalfCouncil, Event, Origin,
-    ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, Treasury, XcmpQueue,
-    MAXIMUM_BLOCK_WEIGHT,
+    assets_config::DolphinAssetConfig, AssetManager, Assets, Call, DmpQueue,
+    EnsureRootOrMoreThanHalfCouncil, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm,
+    Runtime, Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
 use codec::{Decode, Encode};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
@@ -29,7 +28,7 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use manta_primitives::{
-    assets::{AssetIdLocationConvert, AssetLocation},
+    assets::AssetIdLocationConvert,
     types::{AccountId, AssetId, Balance},
     xcm::{
         AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,

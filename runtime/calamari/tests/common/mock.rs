@@ -35,7 +35,6 @@ pub struct ExtBuilder {
     desired_candidates: u32,
     safe_xcm_version: Option<u32>,
 }
-use sp_std::marker::PhantomData;
 
 impl Default for ExtBuilder {
     fn default() -> ExtBuilder {

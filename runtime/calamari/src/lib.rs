@@ -813,7 +813,7 @@ construct_runtime!(
         // Treasury
         Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,
 
-        // Preimage registrar.
+        // Preimage registry.
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 28,
         // System scheduler.
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 29,

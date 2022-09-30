@@ -22,7 +22,7 @@ use super::{
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
-        AssetStorageMetadata, BalanceType, FungibleLedger, LocationType, NativeAndNonNative,
+        AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, DOLPHIN_DECIMAL, MANTA_PAY_PALLET_ID},
     types::{AccountId, AssetId, Balance},
@@ -58,14 +58,14 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
 }
 
-pub struct MantaAssetRegistrar;
-impl BalanceType for MantaAssetRegistrar {
+pub struct MantaAssetRegistry;
+impl BalanceType for MantaAssetRegistry {
     type Balance = Balance;
 }
-impl AssetIdType for MantaAssetRegistrar {
+impl AssetIdType for MantaAssetRegistry {
     type AssetId = AssetId;
 }
-impl AssetRegistry for MantaAssetRegistrar {
+impl AssetRegistry for MantaAssetRegistry {
     type Metadata = AssetStorageMetadata;
     type Error = sp_runtime::DispatchError;
 
@@ -157,7 +157,7 @@ impl AssetConfig<Runtime> for DolphinAssetConfig {
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
-    type AssetRegistry = MantaAssetRegistrar;
+    type AssetRegistry = MantaAssetRegistry;
     type FungibleLedger = DolphinConcreteFungibleLedger;
 }
 

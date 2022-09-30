@@ -38,7 +38,6 @@ use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
 };
-use sp_std::marker::PhantomData;
 use xcm::{
     prelude::{Parachain, X1},
     v1::MultiLocation,
@@ -121,14 +120,14 @@ impl pallet_balances::Config for Runtime {
     type ReserveIdentifier = [u8; 8];
 }
 
-pub struct MantaAssetRegistrar;
-impl BalanceType for MantaAssetRegistrar {
+pub struct MantaAssetRegistry;
+impl BalanceType for MantaAssetRegistry {
     type Balance = Balance;
 }
-impl AssetIdType for MantaAssetRegistrar {
+impl AssetIdType for MantaAssetRegistry {
     type AssetId = AssetId;
 }
-impl AssetRegistry for MantaAssetRegistrar {
+impl AssetRegistry for MantaAssetRegistry {
     type Metadata = AssetStorageMetadata;
     type Error = sp_runtime::DispatchError;
 
@@ -206,7 +205,7 @@ impl AssetConfig<Runtime> for MantaAssetConfig {
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
-    type AssetRegistry = MantaAssetRegistrar;
+    type AssetRegistry = MantaAssetRegistry;
     type FungibleLedger = NativeAndNonNative<Runtime, MantaAssetConfig, Balances, Assets>;
 }
 

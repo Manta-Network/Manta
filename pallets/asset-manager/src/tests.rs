@@ -25,9 +25,9 @@ use frame_support::{
     traits::{fungibles::InspectMetadata, Contains},
     WeakBoundedVec,
 };
-use manta_primitives::assets::{AssetConfig, AssetId, AssetLocation, FungibleLedger};
+use manta_primitives::assets::{AssetConfig, AssetLocation, FungibleLedger};
 use orml_traits::GetByKey;
-use sp_runtime::traits::{BadOrigin, Get};
+use sp_runtime::traits::BadOrigin;
 use xcm::{latest::prelude::*, VersionedMultiLocation};
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);

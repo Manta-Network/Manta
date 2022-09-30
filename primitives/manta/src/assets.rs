@@ -77,7 +77,7 @@ pub trait AssetMetadata: BalanceType {
 
 /// Asset Registry
 ///
-/// The registrar trait: defines the interface of creating an asset in the asset implementation
+/// The registry trait: defines the interface of creating an asset in the asset implementation
 /// layer. We may revisit this interface design (e.g. add change asset interface). However, change
 /// in StorageMetadata should be rare.
 pub trait AssetRegistry: AssetIdType + BalanceType {
@@ -208,7 +208,7 @@ pub struct AssetRegistryMetadata<B> {
 }
 
 /*
-impl Default for AssetRegistrarMetadata {
+impl Default for AssetRegistryMetadata {
     fn default() -> Self {
         Self {
             name: b"Dolphin".to_vec(),

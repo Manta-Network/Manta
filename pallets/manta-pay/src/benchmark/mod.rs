@@ -23,7 +23,7 @@ use crate::{
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
 use manta_primitives::{
-    assets::{AssetConfig, AssetRegistrar, FungibleLedger},
+    assets::{AssetConfig, AssetRegistry, FungibleLedger},
     constants::DEFAULT_ASSET_ED,
     types::{AssetId, Balance},
 };
@@ -48,9 +48,9 @@ pub fn init_asset<T>(owner: &T::AccountId, id: AssetId, value: Balance)
 where
     T: Config,
 {
-    let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistrarMetadata::default();
+    let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::default();
     let storage_metadata: <T::AssetConfig as AssetConfig<T>>::StorageMetadata = metadata.into();
-    <T::AssetConfig as AssetConfig<T>>::AssetRegistrar::create_asset(
+    <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
         id,
         DEFAULT_ASSET_ED,
         storage_metadata,

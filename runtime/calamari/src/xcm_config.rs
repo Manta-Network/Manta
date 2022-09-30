@@ -15,10 +15,9 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},
-    AssetManager, Assets, Call, DmpQueue, EnsureRootOrMoreThanHalfCouncil, Event, Origin,
-    ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, Treasury, XcmpQueue,
-    MAXIMUM_BLOCK_WEIGHT,
+    assets_config::CalamariAssetConfig, AssetManager, Assets, Call, DmpQueue,
+    EnsureRootOrMoreThanHalfCouncil, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm,
+    Runtime, Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
 use codec::{Decode, Encode};
 use core::marker::PhantomData;
@@ -30,7 +29,7 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use manta_primitives::{
-    assets::{AssetIdLocationConvert, AssetLocation},
+    assets::AssetIdLocationConvert,
     types::{AccountId, AssetId, Balance},
     xcm::{
         AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,

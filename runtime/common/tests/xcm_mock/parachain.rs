@@ -477,14 +477,14 @@ pub(crate) fn set_current_xcm_version(version: XcmVersion) {
     CurrentXcmVersion::set(version);
 }
 
-pub struct CalamariAssetRegistrar;
-impl BalanceType for CalamariAssetRegistrar {
+pub struct CalamariAssetRegistry;
+impl BalanceType for CalamariAssetRegistry {
     type Balance = Balance;
 }
-impl AssetIdType for CalamariAssetRegistrar {
+impl AssetIdType for CalamariAssetRegistry {
     type AssetId = AssetId;
 }
-impl AssetRegistry for CalamariAssetRegistrar {
+impl AssetRegistry for CalamariAssetRegistry {
     type Metadata = AssetStorageMetadata;
     type Error = sp_runtime::DispatchError;
 
@@ -562,7 +562,7 @@ impl AssetConfig<Runtime> for ParachainAssetConfig {
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
-    type AssetRegistry = CalamariAssetRegistrar;
+    type AssetRegistry = CalamariAssetRegistry;
     type FungibleLedger = NativeAndNonNative<Runtime, ParachainAssetConfig, Balances, Assets>;
 }
 

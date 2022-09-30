@@ -22,7 +22,7 @@ use super::{
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
-        AssetStorageMetadata, BalanceType, FungibleLedger, LocationType, NativeAndNonNative,
+        AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
     types::{AccountId, AssetId, Balance},
@@ -60,14 +60,14 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
 }
 
-pub struct CalamariAssetRegistrar;
-impl BalanceType for CalamariAssetRegistrar {
+pub struct CalamariAssetRegistry;
+impl BalanceType for CalamariAssetRegistry {
     type Balance = Balance;
 }
-impl AssetIdType for CalamariAssetRegistrar {
+impl AssetIdType for CalamariAssetRegistry {
     type AssetId = AssetId;
 }
-impl AssetRegistry for CalamariAssetRegistrar {
+impl AssetRegistry for CalamariAssetRegistry {
     type Metadata = AssetStorageMetadata;
     type Error = sp_runtime::DispatchError;
 
@@ -147,7 +147,7 @@ impl AssetConfig<Runtime> for CalamariAssetConfig {
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
-    type AssetRegistry = CalamariAssetRegistrar;
+    type AssetRegistry = CalamariAssetRegistry;
     type FungibleLedger = CalamariConcreteFungibleLedger;
 }
 

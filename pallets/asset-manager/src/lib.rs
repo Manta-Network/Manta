@@ -321,7 +321,7 @@ pub mod pallet {
     pub(super) type LocationAssetId<T: Config> =
         StorageMap<_, Blake2_128Concat, T::Location, T::AssetId>;
 
-    /// AssetId to AssetRegistrar Map.
+    /// AssetId to AssetRegistry Map.
     #[pallet::storage]
     #[pallet::getter(fn asset_id_metadata)]
     pub(super) type AssetIdMetadata<T: Config> = StorageMap<
