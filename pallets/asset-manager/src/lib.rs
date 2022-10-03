@@ -40,6 +40,16 @@ mod tests;
 pub use crate::weights::WeightInfo;
 pub use pallet::*;
 
+use frame_support::traits::Currency;
+pub type DepositBalanceOf<T, I = ()> = <<T as pallet_assets::Config<I>>::Currency as Currency<
+    <T as frame_system::Config>::AccountId,
+>>::Balance;
+pub type AssetAccountOf<T, I> = pallet_assets::AssetAccount<
+    <T as pallet_assets::Config<I>>::Balance,
+    DepositBalanceOf<T, I>,
+    <T as pallet_assets::Config<I>>::Extra,
+>;
+
 /// Asset Manager Pallet
 #[frame_support::pallet]
 pub mod pallet {
@@ -298,10 +308,10 @@ pub mod pallet {
         /// Asset Already Registered
         AssetAlreadyRegistered,
 
-        /// An error occured while minting an asset.
+        /// An error occurred while minting an asset.
         MintError,
 
-        /// An error occured while updating the parachain id.
+        /// An error occurred while updating the parachain id.
         UpdateParaIdError,
     }
 
