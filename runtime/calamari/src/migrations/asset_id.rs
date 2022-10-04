@@ -194,13 +194,13 @@ where
         .drain()
         .collect();
         for ((asset_id_key, account_id_key), value) in stored_data {
-            let new_key: NewAssetId = asset_id_key as NewAssetId;
-            let key1: Vec<u8> = Blake2_128Concat::hash(&new_key.encode());
-            let key1_plus_key2: Vec<u8> = key1
-                .into_iter()
-                .chain(Blake2_128Concat::hash(&account_id_key.encode()).into_iter())
-                .collect();
-            put_storage_value(pallet_prefix, storage_item_prefix, &key1_plus_key2, value);
+            let new_asset_id_key: NewAssetId = asset_id_key as NewAssetId;
+            let key1: Vec<u8> = new_asset_id_key.using_encoded(Blake2_128Concat::hash);
+            let key2: Vec<u8> = account_id_key.using_encoded(Blake2_128Concat::hash);
+            let mut final_key: Vec<u8> = Vec::with_capacity(key1.len() + key2.len());
+            final_key.extend_from_slice(key1.as_ref());
+            final_key.extend_from_slice(key2.as_ref());
+            put_storage_value(pallet_prefix, storage_item_prefix, &final_key, value);
             num_reads += 1;
             num_writes += 1;
         }
@@ -392,6 +392,9 @@ where
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
+        for (asset_id_key, value) in stored_data_old.clone() {
+            log::info!(target: "OnRuntimeUpgrade", "\n asset map asset_id_key: {:?}, value: {:?} \n", asset_id_key, value);
+        }
         let asset_map_count = stored_data_old.len() as u32;
         log::info!(target: "OnRuntimeUpgrade", "asset_map_count: {:?} ", asset_map_count);
         Self::set_temp_storage(asset_map_count, "asset_map_count");
@@ -414,6 +417,9 @@ where
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
+        for ((asset_id_key, account_id_key), value) in stored_data_old.clone() {
+            log::info!(target: "OnRuntimeUpgrade", "\n account map asset_id_key: {:?}, account_id_key: {:?},  account_id_key_hex: {:?} \n", asset_id_key, account_id_key, account_id_key.using_encoded(Blake2_128Concat::hash));
+        }
         let account_map_count = stored_data_old.len() as u32;
         log::info!(target: "OnRuntimeUpgrade", "account_map_count: {:?} ", account_map_count);
         Self::set_temp_storage(account_map_count, "account_map_count");
@@ -612,6 +618,9 @@ where
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
+        for (asset_id_key, value) in stored_data_new.clone() {
+            log::info!(target: "OnRuntimeUpgrade", "\n asset map asset_id_key: {:?}, value: {:?} \n", asset_id_key, value);
+        }
         let asset_map_count = stored_data_new.len() as u32;
         assert_eq!(
             Self::get_temp_storage("asset_map_count"),
@@ -636,6 +645,9 @@ where
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
+        for ((asset_id_key, account_id_key), value) in stored_data_new.clone() {
+            log::info!(target: "OnRuntimeUpgrade", "\n account map asset_id_key: {:?}, account_id_key: {:?},  account_id_key_hex: {:?} \n", asset_id_key, account_id_key, account_id_key.using_encoded(Blake2_128Concat::hash));
+        }
         let account_map_count = stored_data_new.len() as u32;
         assert_eq!(
             Self::get_temp_storage("account_map_count"),
