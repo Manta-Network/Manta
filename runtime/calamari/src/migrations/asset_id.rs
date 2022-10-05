@@ -26,7 +26,7 @@ use frame_support::migration::{
 use frame_support::{
     pallet_prelude::Weight,
     storage_alias,
-    traits::{Get, OnRuntimeUpgrade},
+    traits::{Currency, Get, OnRuntimeUpgrade},
     Blake2_128Concat,
 };
 use manta_primitives::{
@@ -35,6 +35,15 @@ use manta_primitives::{
 };
 use sp_runtime::BoundedVec;
 use sp_std::vec::Vec;
+
+pub type DepositBalanceOf<T, I = ()> = <<T as pallet_assets::Config<I>>::Currency as Currency<
+    <T as frame_system::Config>::AccountId,
+>>::Balance;
+pub type AssetAccountOf<T, I> = pallet_assets::AssetAccount<
+    <T as pallet_assets::Config<I>>::Balance,
+    DepositBalanceOf<T, I>,
+    <T as pallet_assets::Config<I>>::Extra,
+>;
 
 type OldAssetId = u32;
 type NewAssetId = u128;
@@ -50,7 +59,7 @@ pub mod old {
         OldAssetId,
         Blake2_128Concat,
         <T as frame_system::Config>::AccountId,
-        pallet_asset_manager::AssetAccountOf<T, I>,
+        super::AssetAccountOf<T, I>,
     >;
 }
 
@@ -61,7 +70,7 @@ type Account<T: frame_system::Config<I>, I: 'static = ()> = StorageDoubleMap<
     NewAssetId,
     Blake2_128Concat,
     <T as frame_system::Config>::AccountId,
-    pallet_asset_manager::AssetAccountOf<T, I>,
+    AssetAccountOf<T, I>,
 >;
 
 pub struct AssetIdMigration<T>(PhantomData<T>);
@@ -188,7 +197,7 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
             pallet_assets::AssetDetails<
                 <T as pallet_assets::Config>::Balance,
                 <T as frame_system::Config>::AccountId,
-                pallet_asset_manager::DepositBalanceOf<T>,
+                DepositBalanceOf<T>,
             >,
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
@@ -226,7 +235,7 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
         let stored_data: Vec<_> = storage_key_iter::<
             OldAssetId,
             pallet_assets::AssetMetadata<
-                pallet_asset_manager::DepositBalanceOf<T>,
+                DepositBalanceOf<T>,
                 BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
             >,
             Blake2_128Concat,
@@ -353,7 +362,7 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
             pallet_assets::AssetDetails<
                 <T as pallet_assets::Config>::Balance,
                 <T as frame_system::Config>::AccountId,
-                pallet_asset_manager::DepositBalanceOf<T>,
+                DepositBalanceOf<T>,
             >,
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
@@ -364,7 +373,7 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
             pallet_assets::AssetDetails<
                 <T as pallet_assets::Config>::Balance,
                 <T as frame_system::Config>::AccountId,
-                pallet_asset_manager::DepositBalanceOf<T>,
+                DepositBalanceOf<T>,
             >,
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
@@ -391,7 +400,7 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
         let stored_data_new: Vec<_> = storage_key_iter::<
             NewAssetId,
             pallet_assets::AssetMetadata<
-                pallet_asset_manager::DepositBalanceOf<T>,
+                DepositBalanceOf<T>,
                 BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
             >,
             Blake2_128Concat,
@@ -401,7 +410,7 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
         let stored_data_old: Vec<_> = storage_key_iter::<
             OldAssetId,
             pallet_assets::AssetMetadata<
-                pallet_asset_manager::DepositBalanceOf<T>,
+                DepositBalanceOf<T>,
                 BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
             >,
             Blake2_128Concat,
@@ -510,7 +519,7 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
             pallet_assets::AssetDetails<
                 <T as pallet_assets::Config>::Balance,
                 <T as frame_system::Config>::AccountId,
-                pallet_asset_manager::DepositBalanceOf<T>,
+                DepositBalanceOf<T>,
             >,
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
@@ -520,7 +529,7 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
             pallet_assets::AssetDetails<
                 <T as pallet_assets::Config>::Balance,
                 <T as frame_system::Config>::AccountId,
-                pallet_asset_manager::DepositBalanceOf<T>,
+                DepositBalanceOf<T>,
             >,
         )> = Self::get_temp_storage("asset_map_stored_data_old").unwrap();
         assert_eq!(stored_data_old.len(), stored_data_new.len());
@@ -538,7 +547,7 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
         let stored_data_old: Vec<(
             OldAssetId,
             <T as frame_system::Config>::AccountId,
-            pallet_asset_manager::AssetAccountOf<T, ()>,
+            AssetAccountOf<T, ()>,
         )> = Self::get_temp_storage("account_map_stored_data_old").unwrap();
         assert_eq!(stored_data_old.len(), stored_data_new.len());
         stored_data_old
@@ -559,7 +568,7 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
         let stored_data_new: Vec<_> = storage_key_iter::<
             NewAssetId,
             pallet_assets::AssetMetadata<
-                pallet_asset_manager::DepositBalanceOf<T>,
+                DepositBalanceOf<T>,
                 BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
             >,
             Blake2_128Concat,
@@ -568,7 +577,7 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
         let stored_data_old: Vec<(
             OldAssetId,
             pallet_assets::AssetMetadata<
-                pallet_asset_manager::DepositBalanceOf<T>,
+                DepositBalanceOf<T>,
                 BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
             >,
         )> = Self::get_temp_storage("metadata_map_stored_data_old").unwrap();

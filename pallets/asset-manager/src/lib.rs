@@ -40,16 +40,6 @@ mod tests;
 pub use crate::weights::WeightInfo;
 pub use pallet::*;
 
-use frame_support::traits::Currency;
-pub type DepositBalanceOf<T, I = ()> = <<T as pallet_assets::Config<I>>::Currency as Currency<
-    <T as frame_system::Config>::AccountId,
->>::Balance;
-pub type AssetAccountOf<T, I> = pallet_assets::AssetAccount<
-    <T as pallet_assets::Config<I>>::Balance,
-    DepositBalanceOf<T, I>,
-    <T as pallet_assets::Config<I>>::Extra,
->;
-
 /// Asset Manager Pallet
 #[frame_support::pallet]
 pub mod pallet {
@@ -648,6 +638,7 @@ pub mod pallet {
         }
     }
 
+    /// Check the multilocation destination is supported by calamari/manta.
     impl<T> Contains<MultiLocation> for Pallet<T>
     where
         T: Config,
@@ -673,6 +664,7 @@ pub mod pallet {
         }
     }
 
+    /// Get min-xcm-fee for reserve chain by multilocation.
     impl<T> GetByKey<MultiLocation, Option<u128>> for Pallet<T>
     where
         T: Config,

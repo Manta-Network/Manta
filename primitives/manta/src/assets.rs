@@ -293,7 +293,8 @@ pub trait UnitsPerSecond: AssetIdType {
     fn units_per_second(asset_id: &Self::AssetId) -> Option<u128>;
 }
 
-///
+/// Converter struct implementing `Convert`.
+/// This enforces that `AssetInfoGetter` implements `AssetIdLocationGetter`
 pub struct AssetIdLocationConvert<M>(PhantomData<M>);
 
 impl<M> Convert<MultiLocation, M::AssetId> for AssetIdLocationConvert<M>
