@@ -210,26 +210,6 @@ where
 
         // Account
 
-        // let pallet_prefix: &[u8] = b"Assets";
-        // let storage_item_prefix: &[u8] = b"Account";
-        // let stored_data: Vec<_> = storage_key_iter::<
-        //     (OldAssetId, <T as frame_system::Config>::AccountId),
-        //     pallet_asset_manager::AssetAccountOf<T, ()>,
-        //     Blake2_128Concat,
-        // >(pallet_prefix, storage_item_prefix)
-        // .drain()
-        // .collect();
-        // for ((asset_id_key, account_id_key), value) in stored_data {
-        //     let new_asset_id_key: NewAssetId = asset_id_key as NewAssetId;
-        //     let key1: Vec<u8> = new_asset_id_key.using_encoded(Blake2_128Concat::hash);
-        //     let key2: Vec<u8> = account_id_key.using_encoded(Blake2_128Concat::hash);
-        //     let mut final_key: Vec<u8> = Vec::with_capacity(key1.len() + key2.len());
-        //     final_key.extend_from_slice(key1.as_ref());
-        //     final_key.extend_from_slice(key2.as_ref());
-        //     put_storage_value(pallet_prefix, storage_item_prefix, &final_key, value);
-        //     num_reads += 1;
-        //     num_writes += 1;
-        // }
         let mut stored_data: Vec<_> = Vec::new();
         old::Account::<T, ()>::drain().for_each(|(asset_id_key, account_id_key, value)| {
             let new_asset_id_key: NewAssetId = asset_id_key as NewAssetId;
@@ -267,36 +247,6 @@ where
             num_writes += 1;
         }
 
-        // Approvals
-
-        let pallet_prefix: &[u8] = b"Assets";
-        let storage_item_prefix: &[u8] = b"Approvals";
-        let stored_data: Vec<_> = storage_key_iter::<
-            (
-                OldAssetId,
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::AccountId,
-            ),
-            pallet_asset_manager::AssetAccountOf<T, ()>,
-            Blake2_128Concat,
-        >(pallet_prefix, storage_item_prefix)
-        .drain()
-        .collect();
-        for ((asset_id_key, owner_account_id_key, delegator_account_id_key), value) in stored_data {
-            let new_key: NewAssetId = asset_id_key as NewAssetId;
-            let c: Vec<u8> = Blake2_128Concat::hash(&new_key.encode())
-                .into_iter()
-                .chain(Blake2_128Concat::hash(&owner_account_id_key.encode()).into_iter())
-                .collect();
-            let c: Vec<u8> = c
-                .into_iter()
-                .chain(Blake2_128Concat::hash(&delegator_account_id_key.encode()).into_iter())
-                .collect();
-            put_storage_value(pallet_prefix, storage_item_prefix, &c, value);
-            num_reads += 1;
-            num_writes += 1;
-        }
-
         T::DbWeight::get()
             .reads(num_reads as Weight)
             .saturating_add(T::DbWeight::get().writes(num_writes as Weight))
@@ -308,7 +258,7 @@ where
 
         // We want to test that:
         // There are no entries in the new storage beforehand
-        // The same number of mappings exist before and after
+        // The same mappings exist before and after
         // There are no entries in the old storage afterward
 
         // AssetIdLocation
@@ -328,9 +278,7 @@ where
                 storage_item_prefix,
             )
             .collect();
-        let asset_id_location_map_count = stored_data_old.len() as u32;
-        log::info!(target: "OnRuntimeUpgrade", "asset_id_location_map_count: {:?} ", asset_id_location_map_count);
-        Self::set_temp_storage(asset_id_location_map_count, "asset_id_location_map_count");
+        Self::set_temp_storage(stored_data_old, "asset_id_location_stored_data_old");
 
         // LocationAssetId
 
@@ -349,9 +297,7 @@ where
                 storage_item_prefix,
             )
             .collect();
-        let location_asset_id_map_count = stored_data_old.len() as u32;
-        log::info!(target: "OnRuntimeUpgrade", "location_asset_id_map_count: {:?} ", location_asset_id_map_count);
-        Self::set_temp_storage(location_asset_id_map_count, "location_asset_id_map_count");
+        Self::set_temp_storage(stored_data_old, "location_asset_id_stored_data_old");
 
         // AssetIdMetadata
 
@@ -370,9 +316,7 @@ where
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
-        let asset_id_metadata_map_count = stored_data_old.len() as u32;
-        log::info!(target: "OnRuntimeUpgrade", "asset_id_metadata_map_count: {:?} ", asset_id_metadata_map_count);
-        Self::set_temp_storage(asset_id_metadata_map_count, "asset_id_metadata_map_count");
+        Self::set_temp_storage(stored_data_old, "asset_id_metadata_stored_data_old");
 
         // UnitsPerSecond
 
@@ -389,9 +333,7 @@ where
             storage_item_prefix,
         )
         .collect();
-        let units_per_sec_map_count = stored_data_old.len() as u32;
-        log::info!(target: "OnRuntimeUpgrade", "units_per_sec_map_count: {:?} ", units_per_sec_map_count);
-        Self::set_temp_storage(units_per_sec_map_count, "units_per_sec_map_count");
+        Self::set_temp_storage(stored_data_old, "units_per_sec_stored_data_old");
 
         // NextAssetId
 
@@ -400,7 +342,6 @@ where
         assert!(get_storage_value::<NewAssetId>(pallet_prefix, storage_item_prefix, &[]).is_none());
         let next_asset_id: OldAssetId =
             get_storage_value::<OldAssetId>(pallet_prefix, storage_item_prefix, &[]).unwrap();
-        log::info!(target: "OnRuntimeUpgrade", "next_asset_id: {:?} ", next_asset_id);
         Self::set_temp_storage(next_asset_id, "next_asset_id");
 
         // Asset
@@ -428,43 +369,22 @@ where
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
-        for (asset_id_key, value) in stored_data_old.clone() {
-            log::info!(target: "OnRuntimeUpgrade", "\n asset map asset_id_key: {:?}, value: {:?} \n", asset_id_key, value);
-        }
-        let asset_map_count = stored_data_old.len() as u32;
-        log::info!(target: "OnRuntimeUpgrade", "asset_map_count: {:?} ", asset_map_count);
-        Self::set_temp_storage(asset_map_count, "asset_map_count");
+        Self::set_temp_storage(stored_data_old, "asset_map_stored_data_old");
 
         // Account
 
         let pallet_prefix: &[u8] = b"Assets";
         let storage_item_prefix: &[u8] = b"Account";
-        // // TODO:
-        // let stored_data_new: Vec<_> = storage_key_iter::<
-        //     (NewAssetId, <T as frame_system::Config>::AccountId),
-        //     pallet_asset_manager::AssetAccountOf<T, ()>,
-        //     Blake2_128Concat,
-        // >(pallet_prefix, storage_item_prefix)
-        // .collect();
-        // assert_eq!(stored_data_new.len() as u32, 0u32);
-        // let stored_data_old: Vec<_> = storage_key_iter::<
-        //     (OldAssetId, <T as frame_system::Config>::AccountId),
-        //     pallet_asset_manager::AssetAccountOf<T, ()>,
-        //     Blake2_128Concat,
-        // >(pallet_prefix, storage_item_prefix)
-        // .collect();
+        let mut stored_data_new: Vec<_> = Vec::new();
+        Account::<T, ()>::iter().for_each(|kvp| {
+            stored_data_new.push(kvp);
+        });
+        assert_eq!(stored_data_new.len(), 0);
         let mut stored_data_old: Vec<_> = Vec::new();
-        old::Account::<T, ()>::iter().for_each(|(asset_id_key, account_id_key, value)| {
-            stored_data_old.push((asset_id_key, account_id_key, value));
+        old::Account::<T, ()>::iter().for_each(|kvp| {
+            stored_data_old.push(kvp);
         });
-        stored_data_old
-            .iter()
-            .for_each(|(asset_id_key, account_id_key, value)| {
-            log::info!(target: "OnRuntimeUpgrade", "\n account map asset_id_key: {:?}, account_id_key: {:?},  value: {:?} \n", asset_id_key, account_id_key, value);
-        });
-        // let account_map_count = stored_data_old.len() as u32;
-        // log::info!(target: "OnRuntimeUpgrade", "account_map_stored_data_old: {:?} ", stored_data_old);
-        Self::set_temp_storage(stored_data_old, "stored_data_old");
+        Self::set_temp_storage(stored_data_old, "account_map_stored_data_old");
 
         // Metadata
 
@@ -489,37 +409,7 @@ where
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
-        let metadata_map_count = stored_data_old.len() as u32;
-        log::info!(target: "OnRuntimeUpgrade", "metadata_map_count: {:?} ", metadata_map_count);
-        Self::set_temp_storage(metadata_map_count, "metadata_map_count");
-
-        // Approvals
-
-        let pallet_prefix: &[u8] = b"Assets";
-        let storage_item_prefix: &[u8] = b"Approvals";
-        let stored_data_new: Vec<_> = storage_key_iter::<
-            (
-                NewAssetId,
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::AccountId,
-            ),
-            pallet_asset_manager::AssetAccountOf<T, ()>,
-            Blake2_128Concat,
-        >(pallet_prefix, storage_item_prefix)
-        .collect();
-        assert!(stored_data_new.len() == 0);
-        let stored_data_old: Vec<_> = storage_key_iter::<
-            OldAssetId,
-            pallet_assets::AssetMetadata<
-                pallet_asset_manager::DepositBalanceOf<T>,
-                BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
-            >,
-            Blake2_128Concat,
-        >(pallet_prefix, storage_item_prefix)
-        .collect();
-        let approvals_map_count = stored_data_old.len() as u32;
-        log::info!(target: "OnRuntimeUpgrade", "approvals_map_count: {:?} ", approvals_map_count);
-        Self::set_temp_storage(approvals_map_count, "approvals_map_count");
+        Self::set_temp_storage(stored_data_old, "metadata_map_stored_data_old");
 
         Ok(())
     }
@@ -551,10 +441,13 @@ where
                 storage_item_prefix,
             )
             .collect();
-        assert_eq!(
-            Self::get_temp_storage("asset_id_location_map_count"),
-            Some(stored_data_new.len() as u32)
-        );
+        let stored_data_old: Vec<(OldAssetId, AssetLocation)> =
+            Self::get_temp_storage("asset_id_location_stored_data_old").unwrap();
+        assert_eq!(stored_data_old.len(), stored_data_new.len());
+        stored_data_old.iter().for_each(|(key, value)| {
+            let check = (*key as NewAssetId, value.clone());
+            assert!(stored_data_new.contains(&check));
+        });
 
         let pallet_prefix: &[u8] = b"AssetManager";
         let storage_item_prefix: &[u8] = b"LocationAssetId";
@@ -572,10 +465,13 @@ where
                 storage_item_prefix,
             )
             .collect();
-        assert_eq!(
-            Self::get_temp_storage("location_asset_id_map_count",),
-            Some(stored_data_new.len() as u32)
-        );
+        let stored_data_old: Vec<(AssetLocation, OldAssetId)> =
+            Self::get_temp_storage("location_asset_id_stored_data_old").unwrap();
+        assert_eq!(stored_data_old.len(), stored_data_new.len());
+        stored_data_old.iter().for_each(|(key, value)| {
+            let check = (key.clone(), *value as NewAssetId);
+            assert!(stored_data_new.contains(&check));
+        });
 
         // AssetIdMetadata
 
@@ -595,10 +491,13 @@ where
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
-        assert_eq!(
-            Self::get_temp_storage("asset_id_metadata_map_count",),
-            Some(stored_data_new.len() as u32)
-        );
+        let stored_data_old: Vec<(OldAssetId, AssetRegistryMetadata<Balance>)> =
+            Self::get_temp_storage("asset_id_metadata_stored_data_old").unwrap();
+        assert_eq!(stored_data_old.len(), stored_data_new.len());
+        stored_data_old.iter().for_each(|(key, value)| {
+            let check = (*key as NewAssetId, value.clone());
+            assert!(stored_data_new.contains(&check));
+        });
 
         // UnitsPerSecond
 
@@ -616,10 +515,13 @@ where
             storage_item_prefix,
         )
         .collect();
-        assert_eq!(
-            Self::get_temp_storage("units_per_sec_map_count"),
-            Some(stored_data_new.len() as u32)
-        );
+        let stored_data_old: Vec<(OldAssetId, u128)> =
+            Self::get_temp_storage("units_per_sec_stored_data_old").unwrap();
+        assert_eq!(stored_data_old.len(), stored_data_new.len());
+        stored_data_old.iter().for_each(|(key, value)| {
+            let check = (*key as NewAssetId, value.clone());
+            assert!(stored_data_new.contains(&check));
+        });
 
         // NextAssetId
 
@@ -629,8 +531,8 @@ where
         // assert!(get_storage_value::<OldAssetId>(pallet_prefix, storage_item_prefix, &[]).is_none());
         let next_asset_id: NewAssetId =
             get_storage_value::<NewAssetId>(pallet_prefix, storage_item_prefix, &[]).unwrap();
-        let temp: u32 = Self::get_temp_storage("next_asset_id").unwrap();
-        assert_eq!(temp as u128, next_asset_id);
+        let old_next_asset_id: u32 = Self::get_temp_storage("next_asset_id").unwrap();
+        assert_eq!(old_next_asset_id as u128, next_asset_id);
 
         // Asset
 
@@ -658,67 +560,66 @@ where
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
-        for (asset_id_key, value) in stored_data_new.clone() {
-            log::info!(target: "OnRuntimeUpgrade", "\n asset map asset_id_key: {:?}, value: {:?} \n", asset_id_key, value);
-        }
-        let asset_map_count = stored_data_new.len() as u32;
-        assert_eq!(
-            Self::get_temp_storage("asset_map_count"),
-            Some(asset_map_count)
-        );
+        let stored_data_old: Vec<(
+            OldAssetId,
+            pallet_assets::AssetDetails<
+                <T as pallet_assets::Config>::Balance,
+                <T as frame_system::Config>::AccountId,
+                pallet_asset_manager::DepositBalanceOf<T>,
+            >,
+        )> = Self::get_temp_storage("asset_map_stored_data_old").unwrap();
+        assert_eq!(stored_data_old.len(), stored_data_new.len());
+        stored_data_old.iter().for_each(|(key, value)| {
+            let check = (*key as NewAssetId, value.clone());
+            assert!(stored_data_new.contains(&check));
+        });
 
         // Account
 
         let pallet_prefix: &[u8] = b"Assets";
         let storage_item_prefix: &[u8] = b"Account";
-        // // TODO:
-        // let stored_data_old: Vec<_> = storage_key_iter::<
-        //     (OldAssetId, <T as frame_system::Config>::AccountId),
-        //     pallet_asset_manager::AssetAccountOf<T, ()>,
-        //     Blake2_128Concat,
-        // >(pallet_prefix, storage_item_prefix)
-        // .collect();
-        // assert!(stored_data_old.len() == 0);
-        // let stored_data_new: Vec<_> = storage_key_iter::<
-        //     (NewAssetId, <T as frame_system::Config>::AccountId),
-        //     pallet_asset_manager::AssetAccountOf<T, ()>,
-        //     Blake2_128Concat,
-        // >(pallet_prefix, storage_item_prefix)
-        // .collect();
-        // for ((asset_id_key, account_id_key), value) in stored_data_new.clone() {
-        //     log::info!(target: "OnRuntimeUpgrade", "\n account map asset_id_key: {:?}, account_id_key: {:?},  value: {:?} \n", asset_id_key, account_id_key, value);
-        // }
+        // // // TODO:
+        // let mut old_storage_count = 0;
+        // old::Account::<T, ()>::iter().for_each(|_| {
+        //     old_storage_count += 1;
+        // });
+        // assert!(old_storage_count == 0);
         let mut stored_data_new: Vec<_> = Vec::new();
         Account::<T, ()>::iter().for_each(|(asset_id_key, account_id_key, value)| {
             stored_data_new.push((asset_id_key, account_id_key, value));
-        });
-        stored_data_new
-            .iter()
-            .for_each(|(asset_id_key, account_id_key, value)| {
-            log::info!(target: "OnRuntimeUpgrade", "\n account map asset_id_key: {:?}, account_id_key: {:?},  value: {:?} \n", asset_id_key, account_id_key, value);
         });
         let stored_data_old: Vec<(
             OldAssetId,
             <T as frame_system::Config>::AccountId,
             pallet_asset_manager::AssetAccountOf<T, ()>,
-        )> = Self::get_temp_storage("stored_data_old").unwrap();
+        )> = Self::get_temp_storage("account_map_stored_data_old").unwrap();
         assert_eq!(stored_data_old.len(), stored_data_new.len());
+        stored_data_old
+            .iter()
+            .for_each(|(asset_id_key, account_id_key, value)| {
+                let check = (
+                    *asset_id_key as NewAssetId,
+                    account_id_key.clone(),
+                    value.clone(),
+                );
+                assert!(stored_data_new.contains(&check));
+            });
 
         // Metadata
 
         let pallet_prefix: &[u8] = b"Assets";
         let storage_item_prefix: &[u8] = b"Metadata";
-        // TODO:
-        let stored_data_old: Vec<_> = storage_key_iter::<
-            OldAssetId,
-            pallet_assets::AssetMetadata<
-                pallet_asset_manager::DepositBalanceOf<T>,
-                BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
-            >,
-            Blake2_128Concat,
-        >(pallet_prefix, storage_item_prefix)
-        .collect();
-        assert_eq!(stored_data_old.len(), 0);
+        // // TODO:
+        // let stored_data_old: Vec<_> = storage_key_iter::<
+        //     OldAssetId,
+        //     pallet_assets::AssetMetadata<
+        //         pallet_asset_manager::DepositBalanceOf<T>,
+        //         BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
+        //     >,
+        //     Blake2_128Concat,
+        // >(pallet_prefix, storage_item_prefix)
+        // .collect();
+        // assert_eq!(stored_data_old.len(), 0);
         let stored_data_new: Vec<_> = storage_key_iter::<
             NewAssetId,
             pallet_assets::AssetMetadata<
@@ -728,43 +629,18 @@ where
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
-        let metadata_map_count = stored_data_new.len() as u32;
-        assert_eq!(
-            Self::get_temp_storage("metadata_map_count"),
-            Some(metadata_map_count)
-        );
-
-        // Approvals
-
-        let pallet_prefix: &[u8] = b"Assets";
-        let storage_item_prefix: &[u8] = b"Approvals";
-        // // TODO:
-        // let stored_data_old: Vec<_> = storage_key_iter::<
-        //     (
-        //         OldAssetId,
-        //         <T as frame_system::Config>::AccountId,
-        //         <T as frame_system::Config>::AccountId,
-        //     ),
-        //     pallet_asset_manager::AssetAccountOf<T, ()>,
-        //     Blake2_128Concat,
-        // >(pallet_prefix, storage_item_prefix)
-        // .collect();
-        // assert!(stored_data_old.len() == 0);
-        let stored_data_new: Vec<_> = storage_key_iter::<
-            (
-                NewAssetId,
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::AccountId,
-            ),
-            pallet_asset_manager::AssetAccountOf<T, ()>,
-            Blake2_128Concat,
-        >(pallet_prefix, storage_item_prefix)
-        .collect();
-        let approvals_map_count = stored_data_new.len() as u32;
-        assert_eq!(
-            Self::get_temp_storage("approvals_map_count"),
-            Some(approvals_map_count)
-        );
+        let stored_data_old: Vec<(
+            OldAssetId,
+            pallet_assets::AssetMetadata<
+                pallet_asset_manager::DepositBalanceOf<T>,
+                BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
+            >,
+        )> = Self::get_temp_storage("metadata_map_stored_data_old").unwrap();
+        assert_eq!(stored_data_old.len(), stored_data_new.len());
+        stored_data_old.iter().for_each(|(key, value)| {
+            let check = (*key as NewAssetId, value.clone());
+            assert!(stored_data_new.contains(&check));
+        });
 
         Ok(())
     }
