@@ -25,6 +25,7 @@ use frame_support::migration::{
 };
 use frame_support::{
     pallet_prelude::Weight,
+    storage_alias,
     traits::{Get, OnRuntimeUpgrade},
     Blake2_128Concat,
 };
@@ -37,6 +38,31 @@ use sp_std::vec::Vec;
 
 type OldAssetId = u32;
 type NewAssetId = u128;
+
+pub mod old {
+    use crate::migrations::asset_id::OldAssetId;
+    use frame_support::{storage_alias, Blake2_128Concat};
+
+    #[storage_alias]
+    pub type Account<T: frame_system::Config<I>, I: 'static = ()> = StorageDoubleMap<
+        Assets,
+        Blake2_128Concat,
+        OldAssetId,
+        Blake2_128Concat,
+        <T as frame_system::Config>::AccountId,
+        pallet_asset_manager::AssetAccountOf<T, I>,
+    >;
+}
+
+#[storage_alias]
+type Account<T: frame_system::Config<I>, I: 'static = ()> = StorageDoubleMap<
+    Assets,
+    Blake2_128Concat,
+    NewAssetId,
+    Blake2_128Concat,
+    <T as frame_system::Config>::AccountId,
+    pallet_asset_manager::AssetAccountOf<T, I>,
+>;
 
 pub struct AssetIdMigration<T>(PhantomData<T>);
 impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
@@ -184,26 +210,36 @@ where
 
         // Account
 
-        let pallet_prefix: &[u8] = b"Assets";
-        let storage_item_prefix: &[u8] = b"Account";
-        let stored_data: Vec<_> = storage_key_iter::<
-            (OldAssetId, <T as frame_system::Config>::AccountId),
-            pallet_asset_manager::AssetAccountOf<T, ()>,
-            Blake2_128Concat,
-        >(pallet_prefix, storage_item_prefix)
-        .drain()
-        .collect();
-        for ((asset_id_key, account_id_key), value) in stored_data {
+        // let pallet_prefix: &[u8] = b"Assets";
+        // let storage_item_prefix: &[u8] = b"Account";
+        // let stored_data: Vec<_> = storage_key_iter::<
+        //     (OldAssetId, <T as frame_system::Config>::AccountId),
+        //     pallet_asset_manager::AssetAccountOf<T, ()>,
+        //     Blake2_128Concat,
+        // >(pallet_prefix, storage_item_prefix)
+        // .drain()
+        // .collect();
+        // for ((asset_id_key, account_id_key), value) in stored_data {
+        //     let new_asset_id_key: NewAssetId = asset_id_key as NewAssetId;
+        //     let key1: Vec<u8> = new_asset_id_key.using_encoded(Blake2_128Concat::hash);
+        //     let key2: Vec<u8> = account_id_key.using_encoded(Blake2_128Concat::hash);
+        //     let mut final_key: Vec<u8> = Vec::with_capacity(key1.len() + key2.len());
+        //     final_key.extend_from_slice(key1.as_ref());
+        //     final_key.extend_from_slice(key2.as_ref());
+        //     put_storage_value(pallet_prefix, storage_item_prefix, &final_key, value);
+        //     num_reads += 1;
+        //     num_writes += 1;
+        // }
+        let mut stored_data: Vec<_> = Vec::new();
+        old::Account::<T, ()>::drain().for_each(|(asset_id_key, account_id_key, value)| {
             let new_asset_id_key: NewAssetId = asset_id_key as NewAssetId;
-            let key1: Vec<u8> = new_asset_id_key.using_encoded(Blake2_128Concat::hash);
-            let key2: Vec<u8> = account_id_key.using_encoded(Blake2_128Concat::hash);
-            let mut final_key: Vec<u8> = Vec::with_capacity(key1.len() + key2.len());
-            final_key.extend_from_slice(key1.as_ref());
-            final_key.extend_from_slice(key2.as_ref());
-            put_storage_value(pallet_prefix, storage_item_prefix, &final_key, value);
-            num_reads += 1;
-            num_writes += 1;
-        }
+            stored_data.push((new_asset_id_key, account_id_key, value));
+        });
+        stored_data
+            .iter()
+            .for_each(|(new_asset_id_key, account_id_key, value)| {
+                Account::<T, ()>::insert(new_asset_id_key, account_id_key, value);
+            });
 
         // Metadata
 
@@ -411,18 +447,24 @@ where
         // >(pallet_prefix, storage_item_prefix)
         // .collect();
         // assert_eq!(stored_data_new.len() as u32, 0u32);
-        let stored_data_old: Vec<_> = storage_key_iter::<
-            (OldAssetId, <T as frame_system::Config>::AccountId),
-            pallet_asset_manager::AssetAccountOf<T, ()>,
-            Blake2_128Concat,
-        >(pallet_prefix, storage_item_prefix)
-        .collect();
-        for ((asset_id_key, account_id_key), value) in stored_data_old.clone() {
-            log::info!(target: "OnRuntimeUpgrade", "\n account map asset_id_key: {:?}, account_id_key: {:?},  account_id_key_hex: {:?} \n", asset_id_key, account_id_key, account_id_key.using_encoded(Blake2_128Concat::hash));
-        }
-        let account_map_count = stored_data_old.len() as u32;
-        log::info!(target: "OnRuntimeUpgrade", "account_map_count: {:?} ", account_map_count);
-        Self::set_temp_storage(account_map_count, "account_map_count");
+        // let stored_data_old: Vec<_> = storage_key_iter::<
+        //     (OldAssetId, <T as frame_system::Config>::AccountId),
+        //     pallet_asset_manager::AssetAccountOf<T, ()>,
+        //     Blake2_128Concat,
+        // >(pallet_prefix, storage_item_prefix)
+        // .collect();
+        let mut stored_data_old: Vec<_> = Vec::new();
+        old::Account::<T, ()>::iter().for_each(|(asset_id_key, account_id_key, value)| {
+            stored_data_old.push((asset_id_key, account_id_key, value));
+        });
+        stored_data_old
+            .iter()
+            .for_each(|(asset_id_key, account_id_key, value)| {
+            log::info!(target: "OnRuntimeUpgrade", "\n account map asset_id_key: {:?}, account_id_key: {:?},  value: {:?} \n", asset_id_key, account_id_key, value);
+        });
+        // let account_map_count = stored_data_old.len() as u32;
+        // log::info!(target: "OnRuntimeUpgrade", "account_map_stored_data_old: {:?} ", stored_data_old);
+        Self::set_temp_storage(stored_data_old, "stored_data_old");
 
         // Metadata
 
@@ -513,8 +555,6 @@ where
             Self::get_temp_storage("asset_id_location_map_count"),
             Some(stored_data_new.len() as u32)
         );
-
-        // LocationAssetId
 
         let pallet_prefix: &[u8] = b"AssetManager";
         let storage_item_prefix: &[u8] = b"LocationAssetId";
@@ -639,36 +679,46 @@ where
         // >(pallet_prefix, storage_item_prefix)
         // .collect();
         // assert!(stored_data_old.len() == 0);
-        let stored_data_new: Vec<_> = storage_key_iter::<
-            (NewAssetId, <T as frame_system::Config>::AccountId),
+        // let stored_data_new: Vec<_> = storage_key_iter::<
+        //     (NewAssetId, <T as frame_system::Config>::AccountId),
+        //     pallet_asset_manager::AssetAccountOf<T, ()>,
+        //     Blake2_128Concat,
+        // >(pallet_prefix, storage_item_prefix)
+        // .collect();
+        // for ((asset_id_key, account_id_key), value) in stored_data_new.clone() {
+        //     log::info!(target: "OnRuntimeUpgrade", "\n account map asset_id_key: {:?}, account_id_key: {:?},  value: {:?} \n", asset_id_key, account_id_key, value);
+        // }
+        let mut stored_data_new: Vec<_> = Vec::new();
+        Account::<T, ()>::iter().for_each(|(asset_id_key, account_id_key, value)| {
+            stored_data_new.push((asset_id_key, account_id_key, value));
+        });
+        stored_data_new
+            .iter()
+            .for_each(|(asset_id_key, account_id_key, value)| {
+            log::info!(target: "OnRuntimeUpgrade", "\n account map asset_id_key: {:?}, account_id_key: {:?},  value: {:?} \n", asset_id_key, account_id_key, value);
+        });
+        let stored_data_old: Vec<(
+            OldAssetId,
+            <T as frame_system::Config>::AccountId,
             pallet_asset_manager::AssetAccountOf<T, ()>,
-            Blake2_128Concat,
-        >(pallet_prefix, storage_item_prefix)
-        .collect();
-        for ((asset_id_key, account_id_key), value) in stored_data_new.clone() {
-            log::info!(target: "OnRuntimeUpgrade", "\n account map asset_id_key: {:?}, account_id_key: {:?},  account_id_key_hex: {:?} \n", asset_id_key, account_id_key, account_id_key.using_encoded(Blake2_128Concat::hash));
-        }
-        let account_map_count = stored_data_new.len() as u32;
-        assert_eq!(
-            Self::get_temp_storage("account_map_count"),
-            Some(account_map_count)
-        );
+        )> = Self::get_temp_storage("stored_data_old").unwrap();
+        assert_eq!(stored_data_old.len(), stored_data_new.len());
 
         // Metadata
 
         let pallet_prefix: &[u8] = b"Assets";
         let storage_item_prefix: &[u8] = b"Metadata";
-        // // TODO:
-        // let stored_data_old: Vec<_> = storage_key_iter::<
-        //     OldAssetId,
-        //     pallet_assets::AssetMetadata<
-        //         pallet_asset_manager::DepositBalanceOf<T>,
-        //         BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
-        //     >,
-        //     Blake2_128Concat,
-        // >(pallet_prefix, storage_item_prefix)
-        // .collect();
-        // assert!(stored_data_old.len() == 0);
+        // TODO:
+        let stored_data_old: Vec<_> = storage_key_iter::<
+            OldAssetId,
+            pallet_assets::AssetMetadata<
+                pallet_asset_manager::DepositBalanceOf<T>,
+                BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
+            >,
+            Blake2_128Concat,
+        >(pallet_prefix, storage_item_prefix)
+        .collect();
+        assert_eq!(stored_data_old.len(), 0);
         let stored_data_new: Vec<_> = storage_key_iter::<
             NewAssetId,
             pallet_assets::AssetMetadata<
