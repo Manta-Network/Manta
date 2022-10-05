@@ -24,8 +24,8 @@ use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_call
 use frame_system::RawOrigin;
 use manta_primitives::{
     assets::{AssetConfig, AssetRegistry, FungibleLedger},
-    constants::DEFAULT_ASSET_ED,
-    types::{AssetId, Balance},
+    constants::TEST_DEFAULT_ASSET_ED,
+    types::Balance,
 };
 use scale_codec::Decode;
 
@@ -44,30 +44,30 @@ where
 
 /// Init assets for manta-pay
 #[inline]
-pub fn init_asset<T>(owner: &T::AccountId, id: AssetId, value: Balance)
+pub fn init_asset<T>(owner: &T::AccountId, id: u128, value: Balance)
 where
     T: Config,
 {
     let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::default();
     let storage_metadata: <T::AssetConfig as AssetConfig<T>>::StorageMetadata = metadata.into();
     <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
-        id,
-        DEFAULT_ASSET_ED,
+        id.try_into().unwrap(),
         storage_metadata,
+        TEST_DEFAULT_ASSET_ED,
         true,
     )
     .expect("Unable to create asset.");
     let pallet_account: T::AccountId = Pallet::<T>::account_id();
-    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_mint(
-        id,
+    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
+        id.try_into().unwrap(),
         owner,
-        value + DEFAULT_ASSET_ED,
+        value + TEST_DEFAULT_ASSET_ED,
     )
     .expect("Unable to mint asset to its new owner.");
-    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_mint(
-        id,
+    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
+        id.try_into().unwrap(),
         &pallet_account,
-        DEFAULT_ASSET_ED,
+        TEST_DEFAULT_ASSET_ED,
     )
     .expect("Unable to mint existential deposit to pallet account.");
 }
@@ -76,7 +76,7 @@ benchmarks! {
     to_private {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, 8u32, 1_000_000u128);
+        init_asset::<T>(&caller, 8u128, 1_000_000u128);
         let mint_post = TransferPost::decode(&mut &*MINT).unwrap();
         let asset = Asset::new(mint_post.asset_id.unwrap(), mint_post.sources[0]);
     }: to_private (
@@ -90,7 +90,7 @@ benchmarks! {
     to_public {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, 8u32, 1_000_000u128);
+        init_asset::<T>(&caller, 8u128, 1_000_000u128);
         for coin in RECLAIM_INPUT {
             Pallet::<T>::to_private(
                 origin.clone(),
@@ -109,7 +109,7 @@ benchmarks! {
     private_transfer {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, 8u32, 1_000_000u128);
+        init_asset::<T>(&caller, 8u128, 1_000_000u128);
         for coin in PRIVATE_TRANSFER_INPUT {
             Pallet::<T>::to_private(
                 origin.clone(),
@@ -127,7 +127,7 @@ benchmarks! {
     public_transfer {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, 8u32, 1_000_000u128);
+        init_asset::<T>(&caller, 8u128, 1_000_000u128);
         let asset = Asset::new(8, 100);
         let sink = Pallet::<T>::account_id();
     }: public_transfer (

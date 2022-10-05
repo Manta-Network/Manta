@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Asset Utilities
-
+use crate::{constants::TEST_DEFAULT_ASSET_ED, types::Balance as MantaBalance};
 use alloc::vec::Vec;
 use codec::{Decode, Encode};
 use core::{borrow::Borrow, marker::PhantomData};
@@ -124,7 +124,7 @@ where
     type StorageMetadata: From<Self::AssetRegistryMetadata>;
 
     /// The Asset Metadata type stored in this pallet.
-    type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance> + Parameter;
+    type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance> + Parameter + Default;
 
     /// The AssetId that the non-native asset starts from.
     ///
@@ -207,21 +207,21 @@ pub struct AssetRegistryMetadata<B> {
     pub is_sufficient: bool,
 }
 
-/*
-impl Default for AssetRegistryMetadata {
+impl Default for AssetRegistryMetadata<MantaBalance> {
     fn default() -> Self {
         Self {
-            name: b"Dolphin".to_vec(),
-            symbol: b"DOL".to_vec(),
-            decimals: 12,
+            metadata: AssetStorageMetadata {
+                name: b"Default".to_vec(),
+                symbol: b"DEF".to_vec(),
+                decimals: 12,
+                is_frozen: false,
+            },
             evm_address: None,
-            is_frozen: false,
             min_balance: TEST_DEFAULT_ASSET_ED,
             is_sufficient: true,
         }
     }
 }
-*/
 
 impl<B> BalanceType for AssetRegistryMetadata<B> {
     type Balance = B;

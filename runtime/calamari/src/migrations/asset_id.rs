@@ -496,8 +496,6 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
 
         let pallet_prefix: &[u8] = b"AssetManager";
         let storage_item_prefix: &[u8] = b"NextAssetId";
-        // TODO:
-        // assert!(get_storage_value::<OldAssetId>(pallet_prefix, storage_item_prefix, &[]).is_none());
         let next_asset_id: NewAssetId =
             get_storage_value::<NewAssetId>(pallet_prefix, storage_item_prefix, &[]).unwrap();
         let old_next_asset_id: u32 = Self::get_temp_storage("next_asset_id").unwrap();
