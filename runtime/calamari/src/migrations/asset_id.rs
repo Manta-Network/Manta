@@ -73,6 +73,23 @@ type Account<T: frame_system::Config<I>, I: 'static = ()> = StorageDoubleMap<
     AssetAccountOf<T, I>,
 >;
 
+type AssetMapKVP<T> = (
+    OldAssetId,
+    pallet_assets::AssetDetails<
+        <T as pallet_assets::Config>::Balance,
+        <T as frame_system::Config>::AccountId,
+        DepositBalanceOf<T>,
+    >,
+);
+
+type MetadataMapKVP<T> = (
+    OldAssetId,
+    pallet_assets::AssetMetadata<
+        DepositBalanceOf<T>,
+        BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
+    >,
+);
+
 pub struct AssetIdMigration<T>(PhantomData<T>);
 impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
     for AssetIdMigration<T>
@@ -274,13 +291,14 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
 
         let pallet_prefix: &[u8] = b"AssetManager";
         let storage_item_prefix: &[u8] = b"AssetIdLocation";
-        let stored_data_new: Vec<_> =
+        assert_eq!(
             storage_key_iter::<NewAssetId, AssetLocation, Blake2_128Concat>(
                 pallet_prefix,
                 storage_item_prefix,
             )
-            .collect();
-        assert!(stored_data_new.len() == 0);
+            .count(),
+            0
+        );
         let stored_data_old: Vec<_> =
             storage_key_iter::<OldAssetId, AssetLocation, Blake2_128Concat>(
                 pallet_prefix,
@@ -293,13 +311,14 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
 
         let pallet_prefix: &[u8] = b"AssetManager";
         let storage_item_prefix: &[u8] = b"LocationAssetId";
-        let stored_data_new: Vec<_> =
+        assert_eq!(
             storage_key_iter::<AssetLocation, NewAssetId, Blake2_128Concat>(
                 pallet_prefix,
                 storage_item_prefix,
             )
-            .collect();
-        assert!(stored_data_new.len() == 0);
+            .count(),
+            0
+        );
         let stored_data_old: Vec<_> =
             storage_key_iter::<AssetLocation, OldAssetId, Blake2_128Concat>(
                 pallet_prefix,
@@ -312,13 +331,14 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
 
         let pallet_prefix: &[u8] = b"AssetManager";
         let storage_item_prefix: &[u8] = b"AssetIdMetadata";
-        let stored_data_new: Vec<_> = storage_key_iter::<
-            NewAssetId,
-            AssetRegistryMetadata<Balance>,
-            Blake2_128Concat,
-        >(pallet_prefix, storage_item_prefix)
-        .collect();
-        assert!(stored_data_new.len() == 0);
+        assert_eq!(
+            storage_key_iter::<NewAssetId, AssetRegistryMetadata<Balance>, Blake2_128Concat>(
+                pallet_prefix,
+                storage_item_prefix
+            )
+            .count(),
+            0
+        );
         let stored_data_old: Vec<_> = storage_key_iter::<
             OldAssetId,
             AssetRegistryMetadata<Balance>,
@@ -331,12 +351,14 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
 
         let pallet_prefix: &[u8] = b"AssetManager";
         let storage_item_prefix: &[u8] = b"UnitsPerSecond";
-        let stored_data_new: Vec<_> = storage_key_iter::<NewAssetId, u128, Blake2_128Concat>(
-            pallet_prefix,
-            storage_item_prefix,
-        )
-        .collect();
-        assert!(stored_data_new.len() == 0);
+        assert_eq!(
+            storage_key_iter::<NewAssetId, u128, Blake2_128Concat>(
+                pallet_prefix,
+                storage_item_prefix,
+            )
+            .count(),
+            0
+        );
         let stored_data_old: Vec<_> = storage_key_iter::<OldAssetId, u128, Blake2_128Concat>(
             pallet_prefix,
             storage_item_prefix,
@@ -357,17 +379,19 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
 
         let pallet_prefix: &[u8] = b"Assets";
         let storage_item_prefix: &[u8] = b"Asset";
-        let stored_data_new: Vec<_> = storage_key_iter::<
-            NewAssetId,
-            pallet_assets::AssetDetails<
-                <T as pallet_assets::Config>::Balance,
-                <T as frame_system::Config>::AccountId,
-                DepositBalanceOf<T>,
-            >,
-            Blake2_128Concat,
-        >(pallet_prefix, storage_item_prefix)
-        .collect();
-        assert!(stored_data_new.len() == 0);
+        assert_eq!(
+            storage_key_iter::<
+                NewAssetId,
+                pallet_assets::AssetDetails<
+                    <T as pallet_assets::Config>::Balance,
+                    <T as frame_system::Config>::AccountId,
+                    DepositBalanceOf<T>,
+                >,
+                Blake2_128Concat,
+            >(pallet_prefix, storage_item_prefix)
+            .count(),
+            0
+        );
         let stored_data_old: Vec<_> = storage_key_iter::<
             OldAssetId,
             pallet_assets::AssetDetails<
@@ -397,16 +421,18 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
 
         let pallet_prefix: &[u8] = b"Assets";
         let storage_item_prefix: &[u8] = b"Metadata";
-        let stored_data_new: Vec<_> = storage_key_iter::<
-            NewAssetId,
-            pallet_assets::AssetMetadata<
-                DepositBalanceOf<T>,
-                BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
-            >,
-            Blake2_128Concat,
-        >(pallet_prefix, storage_item_prefix)
-        .collect();
-        assert!(stored_data_new.len() == 0);
+        assert_eq!(
+            storage_key_iter::<
+                NewAssetId,
+                pallet_assets::AssetMetadata<
+                    DepositBalanceOf<T>,
+                    BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
+                >,
+                Blake2_128Concat,
+            >(pallet_prefix, storage_item_prefix)
+            .count(),
+            0
+        );
         let stored_data_old: Vec<_> = storage_key_iter::<
             OldAssetId,
             pallet_assets::AssetMetadata<
@@ -497,7 +523,7 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
             Self::get_temp_storage("units_per_sec_stored_data_old").unwrap();
         assert_eq!(stored_data_old.len(), stored_data_new.len());
         stored_data_old.iter().for_each(|(key, value)| {
-            let check = (*key as NewAssetId, value.clone());
+            let check = (*key as NewAssetId, *value);
             assert!(stored_data_new.contains(&check));
         });
 
@@ -524,14 +550,8 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
-        let stored_data_old: Vec<(
-            OldAssetId,
-            pallet_assets::AssetDetails<
-                <T as pallet_assets::Config>::Balance,
-                <T as frame_system::Config>::AccountId,
-                DepositBalanceOf<T>,
-            >,
-        )> = Self::get_temp_storage("asset_map_stored_data_old").unwrap();
+        let stored_data_old: Vec<AssetMapKVP<T>> =
+            Self::get_temp_storage("asset_map_stored_data_old").unwrap();
         assert_eq!(stored_data_old.len(), stored_data_new.len());
         stored_data_old.iter().for_each(|(key, value)| {
             let check = (*key as NewAssetId, value.clone());
@@ -574,13 +594,8 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
-        let stored_data_old: Vec<(
-            OldAssetId,
-            pallet_assets::AssetMetadata<
-                DepositBalanceOf<T>,
-                BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
-            >,
-        )> = Self::get_temp_storage("metadata_map_stored_data_old").unwrap();
+        let stored_data_old: Vec<MetadataMapKVP<T>> =
+            Self::get_temp_storage("metadata_map_stored_data_old").unwrap();
         assert_eq!(stored_data_old.len(), stored_data_new.len());
         stored_data_old.iter().for_each(|(key, value)| {
             let check = (*key as NewAssetId, value.clone());
