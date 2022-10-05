@@ -258,8 +258,10 @@ where
 
         // We want to test that:
         // There are no entries in the new storage beforehand
-        // The same mappings exist before and after
-        // There are no entries in the old storage afterward
+        // The same number of mappings exist before and after
+        //
+        // We have to manually check that there are no entries
+        // in the old storage afterward due to a potential try-runtime bug
 
         // AssetIdLocation
 
@@ -373,8 +375,6 @@ where
 
         // Account
 
-        let pallet_prefix: &[u8] = b"Assets";
-        let storage_item_prefix: &[u8] = b"Account";
         let mut stored_data_new: Vec<_> = Vec::new();
         Account::<T, ()>::iter().for_each(|kvp| {
             stored_data_new.push(kvp);
@@ -421,20 +421,14 @@ where
         // We want to test that:
         // There are no entries in the new storage beforehand
         // The same number of mappings exist before and after
-        // There are no entries in the old storage afterward
+        //
+        // We have to manually check that there are no entries
+        // in the old storage afterward due to a potential try-runtime bug
 
         // AssetIdLocation
 
         let pallet_prefix: &[u8] = b"AssetManager";
         let storage_item_prefix: &[u8] = b"AssetIdLocation";
-        // // TODO:
-        // let stored_data_old: Vec<_> =
-        //     storage_key_iter::<OldAssetId, AssetLocation, Blake2_128Concat>(
-        //         pallet_prefix,
-        //         storage_item_prefix,
-        //     )
-        //     .collect();
-        // assert!(stored_data_old.len() as u32 == 0u32);
         let stored_data_new: Vec<_> =
             storage_key_iter::<NewAssetId, AssetLocation, Blake2_128Concat>(
                 pallet_prefix,
@@ -451,14 +445,6 @@ where
 
         let pallet_prefix: &[u8] = b"AssetManager";
         let storage_item_prefix: &[u8] = b"LocationAssetId";
-        // // TODO:
-        // let stored_data_old: Vec<_> =
-        //     storage_key_iter::<AssetLocation, OldAssetId, Blake2_128Concat>(
-        //         pallet_prefix,
-        //         storage_item_prefix,
-        //     )
-        //     .collect();
-        // assert!(stored_data_old.len() == 0);
         let stored_data_new: Vec<_> =
             storage_key_iter::<AssetLocation, NewAssetId, Blake2_128Concat>(
                 pallet_prefix,
@@ -477,14 +463,6 @@ where
 
         let pallet_prefix: &[u8] = b"AssetManager";
         let storage_item_prefix: &[u8] = b"AssetIdMetadata";
-        // // TODO:
-        // let stored_data_old: Vec<_> = storage_key_iter::<
-        //     OldAssetId,
-        //     AssetRegistryMetadata<Balance>,
-        //     Blake2_128Concat,
-        // >(pallet_prefix, storage_item_prefix)
-        // .collect();
-        // assert!(stored_data_old.len() == 0);
         let stored_data_new: Vec<_> = storage_key_iter::<
             NewAssetId,
             AssetRegistryMetadata<Balance>,
@@ -503,13 +481,6 @@ where
 
         let pallet_prefix: &[u8] = b"AssetManager";
         let storage_item_prefix: &[u8] = b"UnitsPerSecond";
-        // // TODO:
-        // let stored_data_old: Vec<_> = storage_key_iter::<OldAssetId, u128, Blake2_128Concat>(
-        //     pallet_prefix,
-        //     storage_item_prefix,
-        // )
-        // .collect();
-        // assert!(stored_data_old.len() == 0);
         let stored_data_new: Vec<_> = storage_key_iter::<NewAssetId, u128, Blake2_128Concat>(
             pallet_prefix,
             storage_item_prefix,
@@ -538,18 +509,6 @@ where
 
         let pallet_prefix: &[u8] = b"Assets";
         let storage_item_prefix: &[u8] = b"Asset";
-        // // TODO:
-        // let stored_data_old: Vec<_> = storage_key_iter::<
-        //     OldAssetId,
-        //     pallet_assets::AssetDetails<
-        //         <T as pallet_assets::Config>::Balance,
-        //         <T as frame_system::Config>::AccountId,
-        //         pallet_asset_manager::DepositBalanceOf<T>,
-        //     >,
-        //     Blake2_128Concat,
-        // >(pallet_prefix, storage_item_prefix)
-        // .collect();
-        // assert!(stored_data_old.len() == 0);
         let stored_data_new: Vec<_> = storage_key_iter::<
             NewAssetId,
             pallet_assets::AssetDetails<
@@ -576,14 +535,6 @@ where
 
         // Account
 
-        let pallet_prefix: &[u8] = b"Assets";
-        let storage_item_prefix: &[u8] = b"Account";
-        // // // TODO:
-        // let mut old_storage_count = 0;
-        // old::Account::<T, ()>::iter().for_each(|_| {
-        //     old_storage_count += 1;
-        // });
-        // assert!(old_storage_count == 0);
         let mut stored_data_new: Vec<_> = Vec::new();
         Account::<T, ()>::iter().for_each(|(asset_id_key, account_id_key, value)| {
             stored_data_new.push((asset_id_key, account_id_key, value));
@@ -609,17 +560,6 @@ where
 
         let pallet_prefix: &[u8] = b"Assets";
         let storage_item_prefix: &[u8] = b"Metadata";
-        // // TODO:
-        // let stored_data_old: Vec<_> = storage_key_iter::<
-        //     OldAssetId,
-        //     pallet_assets::AssetMetadata<
-        //         pallet_asset_manager::DepositBalanceOf<T>,
-        //         BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
-        //     >,
-        //     Blake2_128Concat,
-        // >(pallet_prefix, storage_item_prefix)
-        // .collect();
-        // assert_eq!(stored_data_old.len(), 0);
         let stored_data_new: Vec<_> = storage_key_iter::<
             NewAssetId,
             pallet_assets::AssetMetadata<
