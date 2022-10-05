@@ -602,21 +602,13 @@ pub mod pallet {
 
         /// Returns the [`ParaId`] associated to `location`.
         pub fn para_id_from_multilocation(location: Option<&MultiLocation>) -> Option<&ParaId> {
-            if let Some(MultiLocation { interior, .. }) = location {
-                match interior {
-                    Junctions::X1(Junction::Parachain(para_id))
-                    | Junctions::X2(Junction::Parachain(para_id), ..)
-                    | Junctions::X3(Junction::Parachain(para_id), ..)
-                    | Junctions::X4(Junction::Parachain(para_id), ..)
-                    | Junctions::X5(Junction::Parachain(para_id), ..)
-                    | Junctions::X6(Junction::Parachain(para_id), ..)
-                    | Junctions::X7(Junction::Parachain(para_id), ..)
-                    | Junctions::X8(Junction::Parachain(para_id), ..) => Some(para_id),
-                    _ => None,
+            location.and_then(|location| {
+                if let Some(Parachain(para_id)) = location.first_interior() {
+                    Some(para_id)
+                } else {
+                    None
                 }
-            } else {
-                None
-            }
+            })
         }
 
         /// Increases the count of associated assets for the para id.
