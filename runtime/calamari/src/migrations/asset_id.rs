@@ -67,8 +67,6 @@ type Account<T: frame_system::Config<I>, I: 'static = ()> = StorageDoubleMap<
 pub struct AssetIdMigration<T>(PhantomData<T>);
 impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
     for AssetIdMigration<T>
-where
-    NewAssetId: From<<T as pallet_asset_manager::Config>::AssetId>,
 {
     fn on_runtime_upgrade() -> Weight {
         let mut num_reads = 0;
