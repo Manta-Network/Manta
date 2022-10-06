@@ -124,7 +124,7 @@ where
     type StorageMetadata: From<Self::AssetRegistryMetadata>;
 
     /// The Asset Metadata type stored in this pallet.
-    type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance> + Parameter + Default;
+    type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance> + Parameter + TestingDefault;
 
     /// The AssetId that the non-native asset starts from.
     ///
@@ -207,8 +207,15 @@ pub struct AssetRegistryMetadata<B> {
     pub is_sufficient: bool,
 }
 
-impl Default for AssetRegistryMetadata<MantaBalance> {
-    fn default() -> Self {
+/// Because there is no obvious defaults for an asset's metadata, we explicitly
+/// name a trait to carry this logic for testing and benchmarking
+pub trait TestingDefault {
+    /// Returns some default asset metadata
+    fn testing_default() -> Self;
+}
+
+impl TestingDefault for AssetRegistryMetadata<MantaBalance> {
+    fn testing_default() -> Self {
         Self {
             metadata: AssetStorageMetadata {
                 name: b"Default".to_vec(),
