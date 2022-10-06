@@ -24,9 +24,10 @@ use frame_support::migration::{
     get_storage_value, put_storage_value, storage_key_iter, take_storage_value,
 };
 use frame_support::{
+    dispatch::GetStorageVersion,
     pallet_prelude::Weight,
     storage_alias,
-    traits::{Currency, Get, OnRuntimeUpgrade},
+    traits::{Currency, Get, OnRuntimeUpgrade, PalletInfoAccess, StorageVersion},
     Blake2_128Concat,
 };
 use manta_primitives::{
@@ -90,13 +91,23 @@ type MetadataMapKVP<T> = (
     >,
 );
 
-pub struct AssetIdMigration<T>(PhantomData<T>);
-impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
-    for AssetIdMigration<T>
+pub struct AssetIdMigration<T, M, A>(PhantomData<T>, PhantomData<M>, PhantomData<A>);
+impl<T, M, A> OnRuntimeUpgrade for AssetIdMigration<T, M, A>
+where
+    T: pallet_asset_manager::Config + pallet_assets::Config,
+    M: GetStorageVersion + PalletInfoAccess,
+    A: GetStorageVersion + PalletInfoAccess,
 {
     fn on_runtime_upgrade() -> Weight {
         let mut num_reads = 0;
         let mut num_writes = 0;
+
+        let asset_manager_storage_version = <M as GetStorageVersion>::on_chain_storage_version();
+        let assets_storage_version = <A as GetStorageVersion>::on_chain_storage_version();
+        num_reads += 2;
+        if asset_manager_storage_version != 1 || assets_storage_version != 0 {
+            return T::DbWeight::get().reads(num_reads as Weight);
+        }
 
         // AssetIdLocation
 
@@ -205,6 +216,8 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
         let new_value: NewAssetId = value as NewAssetId;
         put_storage_value(pallet_prefix, storage_item_prefix, &[], new_value);
 
+        StorageVersion::new(2u16).put::<M>();
+
         // Asset
 
         let pallet_prefix: &[u8] = b"Assets";
@@ -271,6 +284,8 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
             num_writes += 1;
         }
 
+        StorageVersion::new(1u16).put::<A>();
+
         T::DbWeight::get()
             .reads(num_reads as Weight)
             .saturating_add(T::DbWeight::get().writes(num_writes as Weight))
@@ -279,6 +294,16 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
     #[cfg(feature = "try-runtime")]
     fn pre_upgrade() -> Result<(), &'static str> {
         use frame_support::traits::OnRuntimeUpgradeHelpersExt;
+
+        let asset_manager_storage_version = <M as GetStorageVersion>::on_chain_storage_version();
+        if asset_manager_storage_version != 1 {
+            return Err("AssetManager storage version is not 1, the migration won't be executed.");
+        }
+
+        let assets_storage_version = <A as GetStorageVersion>::on_chain_storage_version();
+        if assets_storage_version != 0 {
+            return Err("Assets storage version is not 0, the migration won't be executed.");
+        }
 
         // We want to test that:
         // There are no entries in the new storage beforehand
@@ -450,6 +475,16 @@ impl<T: pallet_asset_manager::Config + pallet_assets::Config> OnRuntimeUpgrade
     #[cfg(feature = "try-runtime")]
     fn post_upgrade() -> Result<(), &'static str> {
         use frame_support::traits::OnRuntimeUpgradeHelpersExt;
+
+        let asset_manager_storage_version = <M as GetStorageVersion>::on_chain_storage_version();
+        if asset_manager_storage_version != 2 {
+            return Err("AssetManager storage version is not 2, the migration wasn't executed.");
+        }
+
+        let assets_storage_version = <A as GetStorageVersion>::on_chain_storage_version();
+        if assets_storage_version != 1 {
+            return Err("Assets storage version is not 1, the migration wasn't executed.");
+        }
 
         // We want to test that:
         // There are no entries in the new storage beforehand
