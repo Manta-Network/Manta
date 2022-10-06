@@ -58,7 +58,7 @@
 extern crate alloc;
 
 use crate::types::{
-    encode, Asset, AssetValue, IncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk,
+    encode, Asset, AssetValue, FullIncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk,
     SenderChunk, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
 };
 use alloc::{vec, vec::Vec};
@@ -156,8 +156,15 @@ pub mod pallet {
 
     /// UTXOs and Incoming Notes Grouped by Shard
     #[pallet::storage]
-    pub(super) type Shards<T: Config> =
-        StorageDoubleMap<_, Twox64Concat, u8, Twox64Concat, u64, (Utxo, IncomingNote), ValueQuery>;
+    pub(super) type Shards<T: Config> = StorageDoubleMap<
+        _,
+        Twox64Concat,
+        u8,
+        Twox64Concat,
+        u64,
+        (Utxo, FullIncomingNote),
+        ValueQuery,
+    >;
 
     /// Shard Merkle Tree Paths
     #[pallet::storage]
@@ -854,7 +861,11 @@ where
                 let next_index = current_path.leaf_index().0 as u64;
                 let utxo = Utxo::from(utxo);
                 UtxoSet::<T>::insert(utxo, ());
-                Shards::<T>::insert(shard_index, next_index, (utxo, IncomingNote::from(note)));
+                Shards::<T>::insert(
+                    shard_index,
+                    next_index,
+                    (utxo, FullIncomingNote::from(note)),
+                );
             }
             tree.current_path = current_path.into();
             if let Some(next_root) = next_root {

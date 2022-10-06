@@ -48,6 +48,7 @@ pub fn init_asset<T>(owner: &T::AccountId, id: AssetId, value: AssetValue)
 where
     T: Config,
 {
+    /* TODO:
     let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::default();
     let storage_metadata: <T::AssetConfig as AssetConfig<T>>::StorageMetadata = metadata.into();
     <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
@@ -70,6 +71,8 @@ where
         TEST_DEFAULT_ASSET_ED,
     )
     .expect("Unable to mint existential deposit to pallet account.");
+    */
+    todo!()
 }
 
 benchmarks! {

@@ -323,6 +323,43 @@ impl TryFrom<IncomingNote> for v1::IncomingNote {
     }
 }
 
+/// Full Incoming Note
+#[cfg_attr(
+    feature = "rpc",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
+pub struct FullIncomingNote {
+    /// Address Partition
+    pub address_partition: u8,
+
+    /// Incoming Note
+    pub incoming_note: IncomingNote,
+}
+
+impl From<v1::FullIncomingNote> for FullIncomingNote {
+    #[inline]
+    fn from(note: v1::FullIncomingNote) -> Self {
+        Self {
+            address_partition: note.address_partition,
+            incoming_note: IncomingNote::from(note.incoming_note),
+        }
+    }
+}
+
+impl TryFrom<FullIncomingNote> for v1::FullIncomingNote {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(note: FullIncomingNote) -> Result<Self, Self::Error> {
+        Ok(Self {
+            address_partition: note.address_partition,
+            incoming_note: note.incoming_note.try_into()?,
+        })
+    }
+}
+
 /// UTXO
 #[cfg_attr(
     feature = "rpc",
@@ -371,8 +408,8 @@ pub struct ReceiverPost {
     /// Unspent Transaction Output
     pub utxo: Utxo,
 
-    /// Incoming Note
-    pub incoming_note: IncomingNote,
+    /// Full Incoming Note
+    pub full_incoming_note: FullIncomingNote,
 }
 
 impl From<config::ReceiverPost> for ReceiverPost {
@@ -380,7 +417,7 @@ impl From<config::ReceiverPost> for ReceiverPost {
     fn from(post: config::ReceiverPost) -> Self {
         Self {
             utxo: Utxo::from(post.utxo),
-            incoming_note: IncomingNote::from(post.note),
+            full_incoming_note: FullIncomingNote::from(post.note),
         }
     }
 }
@@ -392,7 +429,7 @@ impl TryFrom<ReceiverPost> for config::ReceiverPost {
     fn try_from(post: ReceiverPost) -> Result<Self, Self::Error> {
         Ok(Self {
             utxo: post.utxo.try_into()?,
-            note: post.incoming_note.try_into()?,
+            note: post.full_incoming_note.try_into()?,
         })
     }
 }
@@ -601,7 +638,7 @@ pub struct UtxoMerkleTreePath {
 }
 
 /// Receiver Chunk Data Type
-pub type ReceiverChunk = Vec<(Utxo, IncomingNote)>;
+pub type ReceiverChunk = Vec<(Utxo, FullIncomingNote)>;
 
 /// Sender Chunk Data Type
 pub type SenderChunk = Vec<(NullifierCommitment, OutgoingNote)>;
