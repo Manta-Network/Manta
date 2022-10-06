@@ -204,13 +204,13 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         #[inline]
         fn build(&self) {
-            NextAssetId::<T>::set(self.start_id.clone());
+            NextAssetId::<T>::set(self.start_id);
             let asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
             let metadata = <T::AssetConfig as AssetConfig<T>>::NativeAssetMetadata::get();
             let location = <T::AssetConfig as AssetConfig<T>>::NativeAssetLocation::get();
-            AssetIdLocation::<T>::insert(&asset_id, &location);
-            AssetIdMetadata::<T>::insert(&asset_id, &metadata);
-            LocationAssetId::<T>::insert(&location, &asset_id);
+            AssetIdLocation::<T>::insert(asset_id, &location);
+            AssetIdMetadata::<T>::insert(asset_id, &metadata);
+            LocationAssetId::<T>::insert(&location, asset_id);
         }
     }
 
@@ -374,15 +374,15 @@ pub mod pallet {
             );
             let asset_id = Self::next_asset_id_and_increment()?;
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
-                asset_id.clone(),
+                asset_id,
                 metadata.clone().into(),
                 metadata.min_balance().clone(),
                 metadata.is_sufficient(),
             )
             .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
-            AssetIdLocation::<T>::insert(&asset_id, &location);
-            AssetIdMetadata::<T>::insert(&asset_id, &metadata);
-            LocationAssetId::<T>::insert(&location, &asset_id);
+            AssetIdLocation::<T>::insert(asset_id, &location);
+            AssetIdMetadata::<T>::insert(asset_id, &metadata);
+            LocationAssetId::<T>::insert(&location, asset_id);
 
             // If it's a new para id, which will be inserted with AssetCount as 1.
             // If not, AssetCount will increased by 1.
@@ -416,7 +416,7 @@ pub mod pallet {
             // checks validity
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
-                AssetIdLocation::<T>::contains_key(&asset_id),
+                AssetIdLocation::<T>::contains_key(asset_id),
                 Error::<T>::UpdateNonExistentAsset
             );
             ensure!(
@@ -425,10 +425,10 @@ pub mod pallet {
             );
             // change the ledger state.
             let old_location =
-                AssetIdLocation::<T>::get(&asset_id).ok_or(Error::<T>::UpdateNonExistentAsset)?;
+                AssetIdLocation::<T>::get(asset_id).ok_or(Error::<T>::UpdateNonExistentAsset)?;
             LocationAssetId::<T>::remove(&old_location);
-            LocationAssetId::<T>::insert(&location, &asset_id);
-            AssetIdLocation::<T>::insert(&asset_id, &location);
+            LocationAssetId::<T>::insert(&location, asset_id);
+            AssetIdLocation::<T>::insert(asset_id, &location);
 
             // 1. If the new location has new para id, insert the new para id,
             // the old para id will be deleted if AssetCount <= 1, or decreased by 1.
@@ -481,14 +481,14 @@ pub mod pallet {
                 Error::<T>::CannotUpdateNativeAssetMetadata
             );
             ensure!(
-                AssetIdLocation::<T>::contains_key(&asset_id),
+                AssetIdLocation::<T>::contains_key(asset_id),
                 Error::<T>::UpdateNonExistentAsset
             );
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::update_asset_metadata(
                 &asset_id,
                 metadata.clone().into(),
             )?;
-            AssetIdMetadata::<T>::insert(&asset_id, &metadata);
+            AssetIdMetadata::<T>::insert(asset_id, &metadata);
             Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata });
             Ok(())
         }
@@ -508,10 +508,10 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
-                AssetIdLocation::<T>::contains_key(&asset_id),
+                AssetIdLocation::<T>::contains_key(asset_id),
                 Error::<T>::UpdateNonExistentAsset
             );
-            UnitsPerSecond::<T>::insert(&asset_id, units_per_second);
+            UnitsPerSecond::<T>::insert(asset_id, units_per_second);
             Self::deposit_event(Event::<T>::UnitsPerSecondUpdated {
                 asset_id,
                 units_per_second,
@@ -536,11 +536,11 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
-                AssetIdLocation::<T>::contains_key(&asset_id),
+                AssetIdLocation::<T>::contains_key(asset_id),
                 Error::<T>::UpdateNonExistentAsset
             );
             <T::AssetConfig as AssetConfig<T>>::FungibleLedger::try_deposit_minting(
-                asset_id.clone(),
+                asset_id,
                 &beneficiary,
                 amount.clone(),
                 true,
@@ -585,7 +585,7 @@ pub mod pallet {
         #[inline]
         fn next_asset_id_and_increment() -> Result<T::AssetId, DispatchError> {
             NextAssetId::<T>::try_mutate(|current| {
-                let id = current.clone();
+                let id = *current;
                 current
                     .checked_increment()
                     .ok_or(ArithmeticError::Overflow)?;
