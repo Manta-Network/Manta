@@ -58,9 +58,8 @@ pub mod pallet {
         util::num::CheckedIncrement,
     };
     use orml_traits::GetByKey;
-    use serde::{Deserialize, Serialize};
     use sp_runtime::{
-        traits::{AccountIdConversion, One},
+        traits::{AccountIdConversion, MaybeSerializeDeserialize, One},
         ArithmeticError,
     };
     use xcm::latest::prelude::*;
@@ -81,12 +80,7 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// Asset Id Type
-        type AssetId: CheckedIncrement
-            + Default
-            + Parameter
-            + Serialize
-            + for<'de> Deserialize<'de>
-            + TypeInfo;
+        type AssetId: CheckedIncrement + Default + Parameter + MaybeSerializeDeserialize + TypeInfo;
 
         /// Balance Type
         type Balance: Default + Member + Parameter + TypeInfo;
