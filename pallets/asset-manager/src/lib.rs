@@ -80,7 +80,12 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// Asset Id Type
-        type AssetId: CheckedIncrement + Default + Parameter + MaybeSerializeDeserialize + TypeInfo;
+        type AssetId: CheckedIncrement
+            + Default
+            + Parameter
+            + MaybeSerializeDeserialize
+            + TypeInfo
+            + Copy;
 
         /// Balance Type
         type Balance: Default + Member + Parameter + TypeInfo;
