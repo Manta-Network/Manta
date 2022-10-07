@@ -1837,7 +1837,7 @@ pub mod pallet {
             nimbus_primitives::CanAuthor<T::AccountId> + Get<Vec<T::AccountId>>,
     {
         fn can_author(account: &T::AccountId, _slot: &u32) -> bool {
-                Self::is_selected_candidate(account)
+            Self::is_selected_candidate(account)
         }
         #[cfg(feature = "runtime-benchmarks")]
         fn get_authors(_slot: &u32) -> Vec<T::AccountId> {
