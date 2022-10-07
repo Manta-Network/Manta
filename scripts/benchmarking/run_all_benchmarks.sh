@@ -104,10 +104,6 @@ rm -R ${FRAME_WEIGHTS_OUTPUT}
 # Create the weights output folders.
 mkdir ${FRAME_WEIGHTS_OUTPUT}
 
-XCM_WEIGHTS_OUTPUT="scripts/benchmarking/xcm-weights-output"
-rm -R ${XCM_WEIGHTS_OUTPUT}
-mkdir ${XCM_WEIGHTS_OUTPUT}
-
 STORAGE_WEIGHTS_OUTPUT="scripts/benchmarking/rocksdb_weights.rs"
 rm -f ${STORAGE_WEIGHTS_OUTPUT}
 
@@ -129,13 +125,6 @@ for PALLET in "${PALLETS[@]}"; do
   WEIGHT_FILE="./${FRAME_WEIGHTS_OUTPUT}/${PALLET}.rs"
   TEMPLATE_FILE=".github/resources/frame-weight-template.hbs"
   echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE";
-
-  if [ "$PALLET" == "pallet_xcm_benchmarks::fungible" ] || [ "$PALLET" == "pallet_xcm_benchmarks::generic" ]
-  then
-    OUTPUT_NAME=$(echo $PALLET | sed -r 's/[:]+/_/g')
-    WEIGHT_FILE="./${XCM_WEIGHTS_OUTPUT}/${OUTPUT_NAME}.rs"
-    TEMPLATE_FILE=".github/resources/xcm-weight-template.hbs"
-  fi
 
   OUTPUT=$(
     $MANTA benchmark pallet \

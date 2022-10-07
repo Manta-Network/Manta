@@ -58,7 +58,7 @@ pub const MANTA_PARACHAIN_ID: u32 = 2015;
 pub const CALAMARI_PARACHAIN_ID: u32 = 2084;
 
 /// Dolphin Parachain ID
-pub const DOLPHIN_PARACHAIN_ID: u32 = 2084;
+pub const DOLPHIN_PARACHAIN_ID: u32 = 2085;
 /// Dolphin on Baikal Parachain ID. Can't be 2084 because Calamari @ Baikal already uses it.
 pub const DOLPHIN_ON_BAIKAL_PARACHAIN_ID: u32 = 2085;
 
