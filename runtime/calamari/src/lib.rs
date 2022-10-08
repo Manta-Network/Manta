@@ -625,7 +625,7 @@ impl pallet_author_inherent::Config for Runtime {
     type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
     /// Nimbus filter pipeline step 1:
     /// Filters out NimbusIds not registered as SessionKeys of some AccountId
-    type CanAuthor = ParachainStaking;
+    type CanAuthor = AuraAuthorFilter;
 }
 
 parameter_types! {
