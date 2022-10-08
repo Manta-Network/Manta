@@ -335,3 +335,45 @@ impl orml_xtokens::Config for Runtime {
     type MultiLocationsFilter = AssetManager;
     type ReserveProvider = AbsoluteReserveProvider;
 }
+
+use xcm_executor::traits::WeightBounds;
+#[test]
+fn test_receiver_weight() {
+    let mut msg = Xcm(vec![
+        ReserveAssetDeposited(MultiAssets::from(vec![MultiAsset {
+            id: Concrete(MultiLocation {
+                parents: 1,
+                interior: X1(Parachain(1)),
+            }),
+            fun: Fungible(10000000000000),
+        }])),
+        ClearOrigin,
+        BuyExecution {
+            fees: MultiAsset {
+                id: Concrete(MultiLocation {
+                    parents: 1,
+                    interior: X1(Parachain(1)),
+                }),
+                fun: Fungible(10000000000000),
+            },
+            weight_limit: Limited(3999999999),
+        },
+        DepositAsset {
+            assets: Wild(All),
+            max_assets: 1,
+            beneficiary: MultiLocation {
+                parents: 0,
+                interior: X1(AccountId32 {
+                    network: Any,
+                    id: [
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0,
+                    ],
+                }),
+            },
+        },
+    ]);
+
+    let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
+    assert!(weight < 4_000_000_000);
+}
