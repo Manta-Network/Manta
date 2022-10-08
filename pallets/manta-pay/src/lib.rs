@@ -549,7 +549,7 @@ pub mod pallet {
                 }
             }
             (
-                VoidNumberSetInsertionOrder::<T>::contains_key(max_sender_index as u64),
+                VoidNumberSetInsertionOrder::<T>::contains_key(max_sender_index),
                 senders,
             )
         }

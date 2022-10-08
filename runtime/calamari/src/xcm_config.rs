@@ -335,3 +335,107 @@ impl orml_xtokens::Config for Runtime {
     type MultiLocationsFilter = AssetManager;
     type ReserveProvider = AbsoluteReserveProvider;
 }
+
+#[test]
+fn test_receiver_weight() {
+    use xcm_executor::traits::WeightBounds;
+
+    let dummy_assets = MultiAssets::from(vec![MultiAsset {
+        id: Concrete(MultiLocation {
+            parents: 1,
+            interior: X1(Parachain(1)),
+        }),
+        fun: Fungible(10000000000000),
+    }]);
+    // format of self_reserve message received from a chain using xTokens
+    let mut msg = Xcm(vec![
+        ReserveAssetDeposited(dummy_assets.clone()),
+        ClearOrigin,
+        BuyExecution {
+            fees: MultiAsset {
+                id: Concrete(MultiLocation {
+                    parents: 1,
+                    interior: X1(Parachain(1)),
+                }),
+                fun: Fungible(10000000000000),
+            },
+            weight_limit: Limited(3999999999),
+        },
+        DepositAsset {
+            assets: Wild(All),
+            max_assets: 1,
+            beneficiary: MultiLocation {
+                parents: 0,
+                interior: X1(AccountId32 {
+                    network: Any,
+                    id: [
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0,
+                    ],
+                }),
+            },
+        },
+    ]);
+
+    let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
+    // 4_000_000_000 is a typical configuration value provided to dApp developers for `dest_weight`
+    // argument when sending xcm message to Calamari. ie moonbeam, sub=wallet, phala, etc
+    assert!(weight < 4_000_000_000);
+
+    // format of to_reserve message received from a chain using xTokens
+    msg.0[0] = WithdrawAsset(dummy_assets);
+    let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
+    assert!(weight < 4_000_000_000);
+}
+
+#[test]
+fn test_sender_xcm_weight() {
+    use xcm_executor::traits::WeightBounds;
+
+    let dummy_multi_location = MultiLocation {
+        parents: 1,
+        interior: X1(Parachain(1)),
+    };
+    let dummy_assets = MultiAssets::from(vec![MultiAsset {
+        id: Concrete(MultiLocation {
+            parents: 1,
+            interior: X1(Parachain(1)),
+        }),
+        fun: Fungible(10000000000000),
+    }]);
+    // format of to_reserve message composed by xTokens
+    let mut msg = Xcm(vec![
+        WithdrawAsset(dummy_assets),
+        InitiateReserveWithdraw {
+            assets: Wild(All),
+            reserve: dummy_multi_location.clone(),
+            xcm: Xcm(vec![
+                BuyExecution {
+                    fees: MultiAsset {
+                        id: Concrete(dummy_multi_location),
+                        fun: Fungible(10000000000000),
+                    },
+                    weight_limit: Limited(3999999999),
+                },
+                DepositAsset {
+                    assets: Wild(All),
+                    max_assets: 1,
+                    beneficiary: MultiLocation {
+                        parents: 0,
+                        interior: X1(AccountId32 {
+                            network: Any,
+                            id: [
+                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                            ],
+                        }),
+                    },
+                },
+            ]),
+        },
+    ]);
+
+    let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
+    // 4_000_000_000 is a typical configuration we use on the manta dApps
+    assert!(weight < 4_000_000_000);
+}
