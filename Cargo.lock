@@ -6545,7 +6545,6 @@ dependencies = [
  "log",
  "manta-collator-selection",
  "manta-primitives",
- "nimbus-primitives",
  "pallet-balances",
  "pallet-session",
  "parity-scale-codec",

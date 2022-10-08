@@ -23,9 +23,6 @@ sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "po
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
 substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", tag = "v0.5.9", default-features = false }
 
-# Nimbus
-nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v3.3.0", default-features = false }
-
 # Manta
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 # TODO: remove after whitelist period
@@ -54,7 +51,6 @@ std = [
   "log/std",
   "manta-primitives/std",
   "manta-collator-selection/std",
-  "nimbus-primitives/std",
   'pallet-session/std',
   "parity-scale-codec/std",
   "scale-info/std",
