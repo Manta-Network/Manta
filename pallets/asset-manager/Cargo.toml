@@ -47,7 +47,6 @@ std = [
   "sp-runtime/std",
   "sp-std/std",
   "xcm/std",
-  "pallet-assets/std",
 ]
 try-runtime = [
   "frame-support/try-runtime",

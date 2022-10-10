@@ -17,7 +17,7 @@
 #![allow(clippy::unnecessary_cast)]
 
 use crate::sp_api_hidden_includes_construct_runtime::hidden_include::StorageHasher;
-use codec::Encode;
+use codec::{Decode, Encode};
 use core::marker::PhantomData;
 #[allow(deprecated)]
 use frame_support::migration::{
@@ -31,9 +31,11 @@ use frame_support::{
     Blake2_128Concat,
 };
 use manta_primitives::{
-    assets::{AssetLocation, AssetRegistryMetadata},
+    assets::{AssetLocation, AssetRegistryMetadata, AssetStorageMetadata},
     types::Balance,
 };
+use scale_info::TypeInfo;
+use sp_core::H160;
 use sp_runtime::BoundedVec;
 use sp_std::vec::Vec;
 
@@ -90,6 +92,17 @@ type MetadataMapKVP<T> = (
         BoundedVec<u8, <T as pallet_assets::Config>::StringLimit>,
     >,
 );
+
+#[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
+pub struct OldAssetRegistrarMetadata {
+    pub name: Vec<u8>,
+    pub symbol: Vec<u8>,
+    pub decimals: u8,
+    pub evm_address: Option<H160>,
+    pub is_frozen: bool,
+    pub min_balance: Balance,
+    pub is_sufficient: bool,
+}
 
 pub struct AssetIdMigration<T, M, A>(PhantomData<T>, PhantomData<M>, PhantomData<A>);
 impl<T, M, A> OnRuntimeUpgrade for AssetIdMigration<T, M, A>
@@ -159,18 +172,30 @@ where
         let storage_item_prefix: &[u8] = b"AssetIdMetadata";
         let stored_data: Vec<_> = storage_key_iter::<
             OldAssetId,
-            AssetRegistryMetadata<Balance>,
+            OldAssetRegistrarMetadata,
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .drain()
         .collect();
-        for (old_key, value) in stored_data {
+        for (old_key, old_value) in stored_data {
             let new_key: NewAssetId = old_key as NewAssetId;
+            let new_value: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
+                metadata: AssetStorageMetadata {
+                    name: old_value.name,
+                    symbol: old_value.symbol,
+                    decimals: old_value.decimals,
+                    is_frozen: old_value.is_frozen,
+                },
+                min_balance: old_value.min_balance,
+                evm_address: old_value.evm_address,
+                is_sufficient: old_value.is_sufficient,
+            };
+
             put_storage_value(
                 pallet_prefix,
                 storage_item_prefix,
                 &Blake2_128Concat::hash(&new_key.encode()),
-                value,
+                new_value,
             );
             num_reads += 1;
             num_writes += 1;
@@ -366,7 +391,7 @@ where
         );
         let stored_data_old: Vec<_> = storage_key_iter::<
             OldAssetId,
-            AssetRegistryMetadata<Balance>,
+            OldAssetRegistrarMetadata,
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
@@ -537,12 +562,25 @@ where
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
-        let stored_data_old: Vec<(OldAssetId, AssetRegistryMetadata<Balance>)> =
+        let stored_data_old: Vec<(OldAssetId, OldAssetRegistrarMetadata)> =
             Self::get_temp_storage("asset_id_metadata_stored_data_old").unwrap();
         assert_eq!(stored_data_old.len(), stored_data_new.len());
         stored_data_old.iter().for_each(|(key, value)| {
-            let check = (*key as NewAssetId, value.clone());
-            assert!(stored_data_new.contains(&check));
+            let new_storage = (
+                *key as NewAssetId,
+                AssetRegistryMetadata {
+                    metadata: AssetStorageMetadata {
+                        name: value.name.clone(),
+                        symbol: value.symbol.clone(),
+                        decimals: value.decimals,
+                        is_frozen: value.is_frozen,
+                    },
+                    min_balance: value.min_balance,
+                    evm_address: value.evm_address,
+                    is_sufficient: value.is_sufficient,
+                },
+            );
+            assert!(stored_data_new.contains(&new_storage));
         });
 
         // UnitsPerSecond
