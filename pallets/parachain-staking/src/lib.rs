@@ -1830,38 +1830,13 @@ pub mod pallet {
         }
     }
 
-    impl<T> nimbus_primitives::CanAuthor<T::AccountId> for Pallet<T>
-    where
-        T: Config + manta_collator_selection::Config,
-        manta_collator_selection::Pallet<T>:
-            nimbus_primitives::CanAuthor<T::AccountId> + Get<Vec<T::AccountId>>,
-    {
-        fn can_author(account: &T::AccountId, _slot: &u32) -> bool {
-            // Migration specifics: If we have no eligible block producers yet, use the old selection method
-            if Self::selected_candidates().is_empty() {
-                manta_collator_selection::Pallet::<T>::can_author(account, _slot)
-            } else {
-                Self::is_selected_candidate(account)
-            }
-        }
-        #[cfg(feature = "runtime-benchmarks")]
-        fn get_authors(_slot: &u32) -> Vec<T::AccountId> {
-            Self::get()
-        }
-    }
-
     impl<T> Get<Vec<T::AccountId>> for Pallet<T>
     where
         T: Config + manta_collator_selection::Config,
         manta_collator_selection::Pallet<T>: Get<Vec<T::AccountId>>,
     {
         fn get() -> Vec<T::AccountId> {
-            // Migration specifics: If we have no eligible block producers yet, use the old selection method
-            if Self::selected_candidates().is_empty() {
-                manta_collator_selection::Pallet::<T>::get()
-            } else {
-                Self::selected_candidates()
-            }
+            Self::selected_candidates()
         }
     }
 }

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v3.4.1
+### Fixed
+- [\#822](https://github.com/Manta-Network/Manta/pull/822) Hardcode weight for instructions with  MultiAssetFilter params [CADO]
+- [\#818](https://github.com/Manta-Network/Manta/pull/818) Fix Block Producer Selection [CA]
+
 ## v3.4.0
 ### Added
 - [\#745](https://github.com/Manta-Network/Manta/pull/745) Workflow to check for labels

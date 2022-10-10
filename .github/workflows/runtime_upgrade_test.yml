@@ -274,7 +274,7 @@ jobs:
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch previous ${{ matrix.runtime.name }}_runtime.compact.compressed.wasm
         run: |
-          wget -cO - https://github.com/Manta-Network/Manta/releases/download/v3.3.0/${{ matrix.runtime.name }}-runtime-v3300.compact.compressed.wasm > ${{ github.workspace }}/${{ matrix.runtime.name }}_runtime_previous.compact.compressed.wasm
+          wget -cO - https://github.com/Manta-Network/Manta/releases/download/v3.4.0/${{ matrix.runtime.name }}-runtime-v3402.compact.compressed.wasm > ${{ github.workspace }}/${{ matrix.runtime.name }}_runtime_previous.compact.compressed.wasm
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch new ${{ matrix.runtime.name }}_runtime.compact.compressed.wasm
         uses: actions/download-artifact@v2

@@ -122,7 +122,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 3402,
+    spec_version: 3410,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 9,
@@ -603,7 +603,7 @@ impl pallet_parachain_staking::Config for Runtime {
     type DefaultCollatorCommission = DefaultCollatorCommission;
     type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
     /// Minimum stake on a collator to be considered for block production
-    // WHITELIST: Temporarily 400k to accomodate whitelisted collators
+    // WHITELIST: Temporarily 400k to accommodate whitelisted collators
     type MinCollatorStk = ConstU128<{ 400_000 * KMA }>;
     /// Minimum stake the collator runner must bond to register as collator candidate
     type MinCandidateStk = ConstU128<{ 4_000_000 * KMA }>;
@@ -625,7 +625,7 @@ impl pallet_author_inherent::Config for Runtime {
     type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
     /// Nimbus filter pipeline step 1:
     /// Filters out NimbusIds not registered as SessionKeys of some AccountId
-    type CanAuthor = ParachainStaking;
+    type CanAuthor = AuraAuthorFilter;
 }
 
 parameter_types! {
@@ -871,7 +871,6 @@ pub type OnRuntimeUpgradeHooks = (
         pallet_assets::Pallet<Runtime>,
     >,
 );
-
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
