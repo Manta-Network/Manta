@@ -58,10 +58,8 @@ frame_support::construct_runtime!(
     }
 );
 
-type BlockNumber = u32;
-
 parameter_types! {
-    pub const BlockHashCount: BlockNumber = 250;
+    pub const BlockHashCount: u64 = 250;
     pub const SS58Prefix: u8 = 42;
 }
 
@@ -73,7 +71,7 @@ impl frame_system::Config for Test {
     type Origin = Origin;
     type Call = Call;
     type Index = u64;
-    type BlockNumber = BlockNumber;
+    type BlockNumber = u32;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId32;

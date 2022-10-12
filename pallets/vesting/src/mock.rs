@@ -31,7 +31,6 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 pub type AccountId = u128;
-pub type BlockNumber = u32;
 pub type Balance = u128;
 
 pub const ALICE: AccountId = 1;
@@ -61,7 +60,7 @@ impl frame_system::Config for Test {
     type BaseCallFilter = frame_support::traits::Everything;
     type BlockHashCount = ConstU64<250>;
     type BlockLength = ();
-    type BlockNumber = BlockNumber;
+    type BlockNumber = u32;
     type BlockWeights = ();
     type Call = Call;
     type DbWeight = ();

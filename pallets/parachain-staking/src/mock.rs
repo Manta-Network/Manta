@@ -34,7 +34,6 @@ use sp_runtime::{
 
 pub type AccountId = u64;
 pub type Balance = u128;
-pub type BlockNumber = u32;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -68,7 +67,7 @@ impl frame_system::Config for Test {
     type DbWeight = ();
     type Origin = Origin;
     type Index = u64;
-    type BlockNumber = BlockNumber;
+    type BlockNumber = u32;
     type Call = Call;
     type Hash = H256;
     type Hashing = BlakeTwo256;
