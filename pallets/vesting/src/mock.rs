@@ -16,17 +16,18 @@
 
 use frame_support::{
     parameter_types,
-    traits::{ConstU32, ConstU64},
+    traits::ConstU32,
 };
 use sp_core::H256;
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
 };
 
 use super::*;
 use crate as calamari_vesting;
 
+type BlockNumber = u32;
+type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -58,9 +59,9 @@ impl frame_system::Config for Test {
     type AccountData = pallet_balances::AccountData<Balance>;
     type AccountId = AccountId;
     type BaseCallFilter = frame_support::traits::Everything;
-    type BlockHashCount = ConstU64<250>;
+    type BlockHashCount = ConstU32<250>;
     type BlockLength = ();
-    type BlockNumber = u32;
+    type BlockNumber = BlockNumber;
     type BlockWeights = ();
     type Call = Call;
     type DbWeight = ();
@@ -156,6 +157,6 @@ impl ExtBuilder {
     }
 }
 
-pub(crate) fn run_to_block(n: u64) {
+pub(crate) fn run_to_block(n: u32) {
     System::set_block_number(n);
 }

@@ -27,7 +27,6 @@ use frame_support::{
 use sp_core::H256;
 use sp_io;
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
     Perbill, Percent,
 };
@@ -37,6 +36,8 @@ pub type Balance = u128;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
+type BlockNumber = u32;
+type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
 
 // Configure a mock runtime to test the pallet.
 // WHITELIST: Remove Session and CollatorSelection after end of whitelist-period
@@ -56,7 +57,7 @@ construct_runtime!(
 );
 
 parameter_types! {
-    pub const BlockHashCount: u64 = 250;
+    pub const BlockHashCount: BlockNumber = 250;
     pub const MaximumBlockWeight: Weight = 1024;
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::one();
@@ -67,7 +68,7 @@ impl frame_system::Config for Test {
     type DbWeight = ();
     type Origin = Origin;
     type Index = u64;
-    type BlockNumber = u32;
+    type BlockNumber = BlockNumber;
     type Call = Call;
     type Hash = H256;
     type Hashing = BlakeTwo256;
@@ -211,7 +212,7 @@ impl pallet_session::SessionHandler<u64> for TestSessionHandler {
         SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
     }
     fn on_new_session<Ks: OpaqueKeys>(_: bool, keys: &[(u64, Ks)], _: &[(u64, Ks)]) {
-        SessionChangeBlock::set(System::block_number());
+        SessionChangeBlock::set(System::block_number() as u64);
         SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
     }
     fn on_before_session_ending() {}
@@ -232,8 +233,8 @@ impl From<UintAuthorityId> for MockSessionKeys {
 }
 
 parameter_types! {
-    pub const Offset: u64 = 0;
-    pub const Period: u64 = 10;
+    pub const Offset: BlockNumber = 0;
+    pub const Period: BlockNumber = 10;
 }
 impl pallet_session::Config for Test {
     type Event = Event;
@@ -339,7 +340,7 @@ impl ExtBuilder {
 }
 
 /// Rolls forward one block. Returns the new block number.
-pub(crate) fn roll_one_block() -> u64 {
+pub(crate) fn roll_one_block() -> u32 {
     Balances::on_finalize(System::block_number());
     System::on_finalize(System::block_number());
     System::set_block_number(System::block_number() + 1);
@@ -350,7 +351,7 @@ pub(crate) fn roll_one_block() -> u64 {
 }
 
 /// Rolls to the desired block. Returns the number of blocks played.
-pub(crate) fn roll_to(n: u64) -> u64 {
+pub(crate) fn roll_to(n: u32) -> u32 {
     let mut num_blocks = 0;
     let mut block = System::block_number();
     while block < n {
@@ -363,15 +364,15 @@ pub(crate) fn roll_to(n: u64) -> u64 {
 /// Rolls block-by-block to the beginning of the specified round.
 /// This will complete the block in which the round change occurs.
 /// Returns the number of blocks played.
-pub(crate) fn roll_to_round_begin(round: u64) -> u64 {
-    let block = (round - 1) * DefaultBlocksPerRound::get() as u64;
+pub(crate) fn roll_to_round_begin(round: u32) -> u32 {
+    let block = (round - 1) * DefaultBlocksPerRound::get();
     roll_to(block)
 }
 
 /// Rolls block-by-block to the end of the specified round.
 /// The block following will be the one in which the specified round change occurs.
-pub(crate) fn roll_to_round_end(round: u64) -> u64 {
-    let block = round * DefaultBlocksPerRound::get() as u64 - 1;
+pub(crate) fn roll_to_round_end(round: u32) -> u32 {
+    let block = round * DefaultBlocksPerRound::get() - 1;
     roll_to(block)
 }
 

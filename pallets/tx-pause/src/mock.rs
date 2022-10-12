@@ -24,13 +24,16 @@
 use super::*;
 use frame_support::{
     construct_runtime, ord_parameter_types, parameter_types,
-    traits::{ConstU32, ConstU64},
+    traits::ConstU32,
 };
 use frame_system::EnsureRoot;
 use manta_primitives::types::Balance;
 
 use sp_core::H256;
-use sp_runtime::{testing::Header, traits::IdentityLookup};
+use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
+
+type BlockNumber = u32;
+type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
 
 pub type AccountId = u128;
 pub const ALICE: AccountId = 1;
@@ -50,7 +53,7 @@ impl Contains<Call> for BaseFilter {
 impl frame_system::Config for Runtime {
     type Origin = Origin;
     type Index = u64;
-    type BlockNumber = u32;
+    type BlockNumber = BlockNumber;
     type Call = Call;
     type Hash = H256;
     type Hashing = ::sp_runtime::traits::BlakeTwo256;
@@ -58,7 +61,7 @@ impl frame_system::Config for Runtime {
     type Lookup = IdentityLookup<AccountId>;
     type Header = Header;
     type Event = Event;
-    type BlockHashCount = ConstU64<250>;
+    type BlockHashCount = ConstU32<250>;
     type BlockWeights = ();
     type BlockLength = ();
     type Version = ();

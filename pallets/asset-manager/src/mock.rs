@@ -35,7 +35,6 @@ use manta_primitives::{
 };
 use sp_core::{H160, H256};
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
 };
 use sp_std::marker::PhantomData;
@@ -45,8 +44,10 @@ use xcm::{
     VersionedMultiLocation,
 };
 
+type BlockNumber = u32;
+type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
+
 parameter_types! {
-    pub const BlockHashCount: u64 = 250;
     pub const SS58Prefix: u8 = 78;
 }
 
@@ -58,14 +59,14 @@ impl system::Config for Runtime {
     type Origin = Origin;
     type Call = Call;
     type Index = u64;
-    type BlockNumber = u32;
+    type BlockNumber = BlockNumber;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
     type Event = Event;
-    type BlockHashCount = BlockHashCount;
+    type BlockHashCount = ConstU32<250>;
     type Version = ();
     type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
