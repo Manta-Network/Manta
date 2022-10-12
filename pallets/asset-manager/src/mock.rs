@@ -43,7 +43,8 @@ use xcm::{
 };
 
 parameter_types! {
-    pub const SS58Prefix: u8 = 78;
+    pub const BlockHashCount: u64 = 250;
+    pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
 }
 
 impl system::Config for Runtime {
