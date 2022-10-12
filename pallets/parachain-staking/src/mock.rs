@@ -61,7 +61,7 @@ parameter_types! {
     pub const MaximumBlockWeight: Weight = 1024;
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::one();
-    pub const SS58Prefix: u8 = 42;
+    pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
 }
 impl frame_system::Config for Test {
     type BaseCallFilter = Everything;

@@ -76,6 +76,7 @@ pub mod fee;
 pub mod impls;
 pub mod migrations;
 mod nimbus_session_adapter;
+pub mod staking;
 pub mod xcm_config;
 
 use currency::*;
@@ -568,8 +569,8 @@ parameter_types! {
     pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(10);
     /// Default percent of inflation set aside for parachain bond every round
     pub const DefaultParachainBondReservePercent: Percent = Percent::zero();
-    pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(6 * HOURS ,15,"CALAMARI_DEFAULTBLOCKSPERROUND");
-    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(28 ,1 ,"CALAMARI_LEAVEDELAYROUNDS"); // == 7 * DAYS / 6 * HOURS
+    pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(6 * HOURS,15,"CALAMARI_DEFAULTBLOCKSPERROUND");
+    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(28,1,"CALAMARI_LEAVEDELAYROUNDS"); // == 7 * DAYS / 6 * HOURS
 }
 impl pallet_parachain_staking::Config for Runtime {
     type Event = Event;
@@ -603,12 +604,11 @@ impl pallet_parachain_staking::Config for Runtime {
     type DefaultCollatorCommission = DefaultCollatorCommission;
     type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
     /// Minimum stake on a collator to be considered for block production
-    // WHITELIST: Temporarily 400k to accomodate whitelisted collators
-    type MinCollatorStk = ConstU128<{ 400_000 * KMA }>;
+    type MinCollatorStk = ConstU128<{ crate::staking::MIN_BOND_TO_BE_CONSIDERED_COLLATOR }>;
     /// Minimum stake the collator runner must bond to register as collator candidate
-    type MinCandidateStk = ConstU128<{ 4_000_000 * KMA }>;
+    type MinCandidateStk = ConstU128<{ crate::staking::NORMAL_COLLATOR_MINIMUM_STAKE }>;
     /// WHITELIST: Minimum stake required for *a whitelisted* account to be a collator candidate
-    type MinWhitelistCandidateStk = ConstU128<{ 400_000 * KMA }>;
+    type MinWhitelistCandidateStk = ConstU128<{ crate::staking::EARLY_COLLATOR_MINIMUM_STAKE }>;
     /// Smallest amount that can be delegated
     type MinDelegation = ConstU128<{ 5_000 * KMA }>;
     /// Minimum stake required to be reserved to be a delegator
