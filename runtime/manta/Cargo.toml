@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'manta-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '3.4.0'
+version = '3.4.2'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
