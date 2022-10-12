@@ -21,12 +21,10 @@
 mod xcm_mock;
 
 use codec::Encode;
-use frame_support::{
-    assert_err, assert_noop, assert_ok, weights::constants::WEIGHT_PER_SECOND, WeakBoundedVec,
-};
+use frame_support::{assert_err, assert_noop, assert_ok, weights::constants::WEIGHT_PER_SECOND};
 use manta_primitives::assets::AssetLocation;
 use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
-use xcm_executor::traits::{Convert, WeightBounds};
+use xcm_executor::traits::WeightBounds;
 use xcm_mock::{parachain::PALLET_ASSET_INDEX, *};
 use xcm_simulator::TestExt;
 

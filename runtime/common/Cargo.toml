@@ -55,8 +55,8 @@ orml-traits = { git = "https://github.com/manta-network/open-runtime-module-libr
 orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.26" }
 
 # Self dependencies
-pallet-asset-manager = { path = '../../pallets/asset-manager' }
 calamari-runtime = { path = '../calamari' }
+pallet-asset-manager = { path = '../../pallets/asset-manager' }
 
 [features]
 default = ["std"]
