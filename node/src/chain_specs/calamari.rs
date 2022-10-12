@@ -178,7 +178,7 @@ fn calamari_dev_genesis(
                         account,
                         calamari_runtime::staking::NORMAL_COLLATOR_MINIMUM_STAKE,
                     )
-                }) // TODO: Change to use constant from primitives
+                })
                 .collect(),
             delegations,
             inflation_config: calamari_runtime::staking::inflation_config::<
