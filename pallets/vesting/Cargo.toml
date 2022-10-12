@@ -21,6 +21,7 @@ sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features
 
 [dev-dependencies]
 chrono = "0.4"
+manta-primitives = { path = "../../primitives/manta" }
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
