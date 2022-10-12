@@ -115,7 +115,7 @@ pub mod opaque {
 }
 
 // Weights used in the runtime.
-mod weights;
+pub mod weights;
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
