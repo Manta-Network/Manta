@@ -41,7 +41,7 @@ use manta_primitives::{
         AssetStorageMetadata, ConcreteFungibleLedger,
     },
     constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
-    types::AssetId,
+    types::{AssetId, BlockNumber, Header},
     xcm::{FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter, MultiNativeAsset},
 };
 use pallet_xcm::XcmPassthrough;
@@ -73,7 +73,7 @@ impl frame_system::Config for Runtime {
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Hash = H256;
-    type Hashing = ::sp_runtime::traits::BlakeTwo256;
+    type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;

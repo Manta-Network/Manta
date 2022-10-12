@@ -27,6 +27,7 @@ use sp_runtime::{
     AccountId32,
 };
 
+use manta_primitives::types::{BlockNumber, Header};
 use polkadot_parachain::primitives::Id as ParaId;
 use polkadot_runtime_parachains::{configuration, origin, shared, ump};
 use xcm::latest::prelude::*;
