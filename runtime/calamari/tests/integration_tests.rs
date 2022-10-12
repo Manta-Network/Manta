@@ -18,8 +18,8 @@
 
 #![allow(clippy::identity_op)] // keep e.g. 1 * DAYS for legibility
 
-mod common;
-use common::{info_from_weight, last_event, mock::*, root_origin, INITIAL_BALANCE};
+mod integrations_mock;
+use integrations_mock::{info_from_weight, last_event, mock::*, root_origin, INITIAL_BALANCE};
 
 pub use calamari_runtime::{
     assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},
