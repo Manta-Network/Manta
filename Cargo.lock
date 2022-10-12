@@ -9065,6 +9065,7 @@ dependencies = [
 name = "runtime-common"
 version = "3.4.0"
 dependencies = [
+ "calamari-runtime",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",

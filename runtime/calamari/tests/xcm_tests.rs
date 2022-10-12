@@ -21,12 +21,10 @@
 mod xcm_mock;
 
 use codec::Encode;
-use frame_support::{
-    assert_err, assert_noop, assert_ok, weights::constants::WEIGHT_PER_SECOND, WeakBoundedVec,
-};
+use frame_support::{assert_err, assert_noop, assert_ok, weights::constants::WEIGHT_PER_SECOND};
 use manta_primitives::assets::AssetLocation;
 use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
-use xcm_executor::traits::{Convert, WeightBounds};
+use xcm_executor::traits::WeightBounds;
 use xcm_mock::{parachain::PALLET_ASSET_INDEX, *};
 use xcm_simulator::TestExt;
 
@@ -47,9 +45,48 @@ fn calculate_fee(units_per_seconds: u128, weight: u64) -> u128 {
     units_per_seconds * (weight as u128) / (WEIGHT_PER_SECOND as u128)
 }
 
-fn weight_of_four_xcm_instructions_on_para() -> u64 {
+fn self_reserve_xtokens_weight_on_receiver() -> u64 {
     let mut msg = Xcm(vec![
         ReserveAssetDeposited(MultiAssets::from(vec![MultiAsset {
+            id: Concrete(MultiLocation {
+                parents: 1,
+                interior: X1(Parachain(1)),
+            }),
+            fun: Fungible(10000000000000),
+        }])),
+        ClearOrigin,
+        BuyExecution {
+            fees: MultiAsset {
+                id: Concrete(MultiLocation {
+                    parents: 1,
+                    interior: X1(Parachain(1)),
+                }),
+                fun: Fungible(10000000000000),
+            },
+            weight_limit: Limited(3999999999),
+        },
+        DepositAsset {
+            assets: Wild(All),
+            max_assets: 1,
+            beneficiary: MultiLocation {
+                parents: 0,
+                interior: X1(AccountId32 {
+                    network: Any,
+                    id: [
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0,
+                    ],
+                }),
+            },
+        },
+    ]);
+
+    <ParaXcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap()
+}
+
+fn non_self_reserve_xtokens_weight_on_receiver() -> u64 {
+    let mut msg = Xcm(vec![
+        WithdrawAsset(MultiAssets::from(vec![MultiAsset {
             id: Concrete(MultiLocation {
                 parents: 1,
                 interior: X1(Parachain(1)),
@@ -314,7 +351,7 @@ fn send_para_a_native_asset_to_para_b() {
     let para_b_source_location = create_asset_location(1, PARA_B_ID);
 
     let amount = INITIAL_BALANCE;
-    let weight = weight_of_four_xcm_instructions_on_para();
+    let weight = self_reserve_xtokens_weight_on_receiver();
 
     let para_a_asset_metadata =
         create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, false);
@@ -437,7 +474,7 @@ fn send_para_a_native_asset_to_para_b_barriers_should_work() {
     };
 
     // AllowTopLevelPaidExecutionFrom<Everything> should fail because weight is not enough
-    let weight = weight_of_four_xcm_instructions_on_para() - 1;
+    let weight = self_reserve_xtokens_weight_on_receiver() - 1;
     ParaA::execute_with(|| {
         assert_ok!(parachain::XTokens::transfer(
             parachain::Origin::signed(ALICE),
@@ -481,7 +518,7 @@ fn send_insufficient_asset_from_para_a_to_para_b() {
 
     let amount = 8888888u128;
     let units_per_second_at_b = 1_250_000u128;
-    let dest_weight = weight_of_four_xcm_instructions_on_para();
+    let dest_weight = self_reserve_xtokens_weight_on_receiver();
     let fee_at_b = calculate_fee(units_per_second_at_b, dest_weight);
 
     let para_a_asset_metadata =
@@ -648,7 +685,7 @@ fn send_para_a_native_asset_to_para_b_must_fail_cases() {
     };
 
     // High amount should fail on the sender side
-    let weight = weight_of_four_xcm_instructions_on_para() * 100_000_000;
+    let weight = self_reserve_xtokens_weight_on_receiver() * 100_000_000;
     ParaA::execute_with(|| {
         assert_err!(
             parachain::XTokens::transfer(
@@ -722,7 +759,7 @@ fn register_insufficient_with_zero_min_balance_should_fail() {
 #[test]
 fn send_para_a_custom_asset_to_para_b() {
     let amount = 321;
-    let weight_at_most = weight_of_four_xcm_instructions_on_para();
+    let weight_at_most = self_reserve_xtokens_weight_on_receiver();
 
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
     let para_a_doge_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
@@ -825,7 +862,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
     let para_b_source_location = create_asset_location(1, PARA_B_ID);
 
     let amount = 5000000u128;
-    let weight = weight_of_four_xcm_instructions_on_para();
+    let weight = non_self_reserve_xtokens_weight_on_receiver();
     let fee_on_b_when_send_back = calculate_fee(ParaTokenPerSecond::get().1, weight);
     assert!(fee_on_b_when_send_back < amount);
 
@@ -932,7 +969,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
     let para_c_source_location = create_asset_location(1, PARA_C_ID);
 
     let amount = 8888888u128;
-    let weight = weight_of_four_xcm_instructions_on_para();
+    let weight = non_self_reserve_xtokens_weight_on_receiver();
     let fee_at_reserve = calculate_fee(ParaTokenPerSecond::get().1, weight);
     assert!(amount >= fee_at_reserve * 2_u128);
 
@@ -1124,7 +1161,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 
     let amount = 222u128;
     let units_per_second = 1_250_000u128;
-    let dest_weight = weight_of_four_xcm_instructions_on_para();
+    let dest_weight = self_reserve_xtokens_weight_on_receiver();
     let fee = calculate_fee(units_per_second, dest_weight);
 
     let para_a_asset_metadata =
@@ -1199,9 +1236,10 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 
     let mut amount = 8888888u128;
     let units_per_second = 1_250_000u128;
-    let dest_weight = weight_of_four_xcm_instructions_on_para();
-    let fee_at_b = calculate_fee(units_per_second, dest_weight);
-    let fee_at_a = calculate_fee(ParaTokenPerSecond::get().1, dest_weight);
+    let dest_weight2 = self_reserve_xtokens_weight_on_receiver();
+    let dest_weight1 = non_self_reserve_xtokens_weight_on_receiver();
+    let fee_at_b = calculate_fee(units_per_second, dest_weight2);
+    let fee_at_a = calculate_fee(ParaTokenPerSecond::get().1, dest_weight1);
 
     let para_a_asset_metadata =
         create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
@@ -1274,7 +1312,8 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             amount,
             Box::new(VersionedMultiLocation::V1(alice_on_b.clone())),
-            dest_weight
+            // dest_weight
+            4_000_000_000
         ));
         assert_eq!(
             parachain::Balances::free_balance(&ALICE),
@@ -1307,7 +1346,8 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_b),
             amount,
             Box::new(VersionedMultiLocation::V1(alice_on_c)),
-            dest_weight
+            // dest_weight
+            4_000_000_000
         ));
         assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), 0);
     });
@@ -2066,7 +2106,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             100,
             Box::new(VersionedMultiLocation::V1(dest)),
-            weight_of_four_xcm_instructions_on_para()
+            self_reserve_xtokens_weight_on_receiver()
         ));
         // free execution, full amount received
         assert_eq!(
@@ -2305,739 +2345,5 @@ fn filtered_multilocation_should_not_work() {
             Box::new(VersionedMultiLocation::V1(sibling_chain_dest)),
             80
         ));
-    });
-}
-
-#[test]
-fn less_than_min_xcm_fee_should_not_work() {
-    MockNet::reset();
-
-    let para_a_source_location = create_asset_location(1, PARA_A_ID);
-    let para_b_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
-        1,
-        X2(
-            Parachain(PARA_B_ID),
-            GeneralKey(WeakBoundedVec::force_from(b"ParaBToken".to_vec(), None)),
-        ),
-    )));
-    let para_b_as_reserve_chain = create_asset_location(1, PARA_B_ID);
-
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
-
-    let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
-
-    let _ = register_assets_on_parachain::<ParaA>(
-        &para_a_source_location,
-        &para_a_asset_metadata,
-        Some(0u128),
-        None,
-    );
-    let relay_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        &relay_source_location,
-        &relay_asset_metadata,
-        Some(0u128),
-        None,
-    );
-    let b_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        &para_b_source_location,
-        &para_b_asset_metadata,
-        Some(0u128),
-        None,
-    );
-
-    let _ = register_assets_on_parachain::<ParaB>(
-        &para_b_source_location,
-        &para_b_asset_metadata,
-        Some(0u128),
-        None,
-    );
-    let _ = register_assets_on_parachain::<ParaB>(
-        &para_a_source_location,
-        &para_a_asset_metadata,
-        Some(0u128),
-        None,
-    );
-    let _ = register_assets_on_parachain::<ParaB>(
-        &relay_source_location,
-        &relay_asset_metadata,
-        Some(0u128),
-        None,
-    );
-
-    // Initialize some tokens for alice
-    assert_ok!(ParaA::execute_with(|| {
-        parachain::Assets::mint(
-            parachain::Origin::signed(parachain::AssetManager::account_id()),
-            b_asset_id_on_a,
-            ALICE,
-            1000,
-        )
-    }));
-    assert_ok!(ParaA::execute_with(|| {
-        parachain::Assets::mint(
-            parachain::Origin::signed(parachain::AssetManager::account_id()),
-            relay_asset_id_on_a,
-            ALICE,
-            1000,
-        )
-    }));
-
-    let dest = MultiLocation {
-        parents: 1,
-        interior: X2(
-            Parachain(2),
-            AccountId32 {
-                network: NetworkId::Any,
-                id: ALICE.into(),
-            },
-        ),
-    };
-
-    let amount = 450;
-    let fee_amount: u128 = 200;
-    // Minimum xcm execution fee paid on destination chain.
-    // Current only support `ToReserve` with relay-chain asset as fee. other case
-    // like `NonReserve` or `SelfReserve` with relay-chain fee is not support.
-    // And our `MaxAssetsForTransfer` for xtokens is 1,
-    // so `transfer_multicurrencies` is not supported on calamari.
-    // If min-xcm-fee is not set, no one can pay xcm fee(MinXcmFeeNotDefined).
-    ParaA::execute_with(|| {
-        assert_noop!(
-            parachain::XTokens::transfer_multicurrencies(
-                Some(ALICE).into(),
-                vec![
-                    (
-                        parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
-                        amount
-                    ),
-                    (
-                        parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a),
-                        fee_amount
-                    )
-                ],
-                1,
-                Box::new(VersionedMultiLocation::V1(dest.clone())),
-                40,
-            ),
-            orml_xtokens::Error::<parachain::Runtime>::MinXcmFeeNotDefined
-        );
-    });
-
-    // set min xcm fee on ParaA
-    let min_xcm_fee = 40;
-    ParaA::execute_with(|| {
-        assert_ok!(AssetManager::set_min_xcm_fee(
-            parachain::Origin::root(),
-            para_b_as_reserve_chain,
-            min_xcm_fee,
-        ));
-    });
-
-    // fee is bigger than min-xcm-fee should work(39 < 40).
-    ParaA::execute_with(|| {
-        assert_noop!(
-            parachain::XTokens::transfer_multicurrencies(
-                Some(ALICE).into(),
-                vec![
-                    (
-                        parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
-                        amount
-                    ),
-                    (
-                        parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a),
-                        39
-                    )
-                ],
-                1,
-                Box::new(VersionedMultiLocation::V1(dest.clone())),
-                40,
-            ),
-            orml_xtokens::Error::<parachain::Runtime>::FeeNotEnough
-        );
-    });
-
-    // fee is bigger than min-xcm-fee should work
-    ParaA::execute_with(|| {
-        assert_ok!(parachain::XTokens::transfer_multicurrencies(
-            Some(ALICE).into(),
-            vec![
-                (
-                    parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
-                    amount
-                ),
-                (
-                    parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a),
-                    fee_amount
-                )
-            ],
-            1,
-            Box::new(VersionedMultiLocation::V1(dest.clone())),
-            40,
-        ));
-    });
-}
-
-#[test]
-fn transfer_multicurrencies_should_work_scenarios() {
-    MockNet::reset();
-
-    let para_a_id = 1;
-    let para_b_id = 2;
-    let para_a_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
-        1,
-        X1(Parachain(para_a_id)),
-    )));
-    let para_b_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
-        1,
-        X1(Parachain(para_b_id)),
-    )));
-    let units_per_sec = 0;
-
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
-
-    let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
-
-    let _ = register_assets_on_parachain::<ParaA>(
-        &para_a_source_location,
-        &para_a_asset_metadata,
-        Some(units_per_sec),
-        None,
-    );
-    let relay_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        &relay_source_location,
-        &relay_asset_metadata,
-        Some(units_per_sec),
-        None,
-    );
-    let b_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        &para_b_source_location,
-        &para_b_asset_metadata,
-        Some(units_per_sec),
-        None,
-    );
-
-    let b_asset_id_on_b = register_assets_on_parachain::<ParaB>(
-        &para_b_source_location,
-        &para_b_asset_metadata,
-        Some(units_per_sec),
-        None,
-    );
-    let _ = register_assets_on_parachain::<ParaB>(
-        &para_a_source_location,
-        &para_a_asset_metadata,
-        Some(units_per_sec),
-        None,
-    );
-    let relay_asset_id_on_b = register_assets_on_parachain::<ParaB>(
-        &relay_source_location,
-        &relay_asset_metadata,
-        Some(units_per_sec),
-        None,
-    );
-
-    let relay_asset_amount_minted_on_a = 10000000;
-    // Initialize some relay chain tokens for alice
-    assert_ok!(ParaA::execute_with(|| {
-        parachain::Assets::mint(
-            parachain::Origin::signed(parachain::AssetManager::account_id()),
-            relay_asset_id_on_a,
-            ALICE,
-            relay_asset_amount_minted_on_a,
-        )
-    }));
-
-    let dest = MultiLocation {
-        parents: 1,
-        interior: X2(
-            Parachain(para_a_id),
-            AccountId32 {
-                network: NetworkId::Any,
-                id: ALICE.into(),
-            },
-        ),
-    };
-
-    // Send some ParaB tokens from Alice on B to Alice on A
-    let amount_to_a = 10000000;
-    let weight = weight_of_four_xcm_instructions_on_para();
-    ParaB::execute_with(|| {
-        assert_ok!(parachain::XTokens::transfer(
-            Some(ALICE).into(),
-            parachain::CurrencyId::MantaCurrency(b_asset_id_on_b),
-            amount_to_a,
-            Box::new(VersionedMultiLocation::V1(dest.clone())),
-            weight,
-        ));
-    });
-
-    let dest = MultiLocation {
-        parents: 1,
-        interior: X2(
-            Parachain(para_b_id),
-            AccountId32 {
-                network: NetworkId::Any,
-                id: ALICE.into(),
-            },
-        ),
-    };
-
-    let amount_back_to_b = 100;
-    let fee_amount: u128 = 50;
-    let min_xcm_fee = 10;
-    // Send some ParaB tokens from Alice on A back to Alice on B
-    ParaA::execute_with(|| {
-        assert_ok!(AssetManager::set_min_xcm_fee(
-            parachain::Origin::root(),
-            para_b_source_location,
-            min_xcm_fee,
-        ));
-
-        assert_ok!(parachain::XTokens::transfer_multicurrencies(
-            Some(ALICE).into(),
-            vec![
-                (
-                    parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
-                    amount_back_to_b
-                ),
-                (
-                    parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a),
-                    fee_amount
-                )
-            ],
-            1,
-            Box::new(VersionedMultiLocation::V1(dest.clone())),
-            weight,
-        ));
-
-        assert_eq!(
-            parachain::Assets::balance(relay_asset_id_on_a, &ALICE),
-            relay_asset_amount_minted_on_a - fee_amount
-        );
-        assert_eq!(
-            // Notice that total supply between the two chains is:
-            // `(relay_asset_amount_minted_on_a - fee_amount) + (fee_amount - min_xcm_fee)`
-            // `relay_asset_amount_minted_on_a - fee_amount` is still on ParaA
-            // `fee_amount - min_xcm_fee` is on ParaB. (min_xcm_fee is subtracted in the ORML code)
-            // The total comes out to `relay_asset_amount_minted_on_a - min_xcm_fee`, meaning one `min_xcm_fee` is destroyed
-            // This is a design choice by ORML to make these kinds of transfers possible.
-            // Practically some of tokens held as reserve on the reserve chain, will become unwithdrawable.
-            parachain::Assets::total_supply(relay_asset_id_on_a),
-            relay_asset_amount_minted_on_a - fee_amount
-        );
-
-        assert_eq!(
-            parachain::Assets::balance(b_asset_id_on_a, &ALICE),
-            amount_to_a - amount_back_to_b
-        );
-    });
-
-    Relay::execute_with(|| {
-        let para_a_sovereign_on_relay = para_account_id(1);
-        let para_b_sovereign_on_relay = para_account_id(2);
-        assert_eq!(
-            relay_chain::Balances::free_balance(&para_a_sovereign_on_relay),
-            INITIAL_BALANCE - (fee_amount - min_xcm_fee)
-        );
-        assert_eq!(
-            relay_chain::Balances::free_balance(&para_b_sovereign_on_relay),
-            // 0 because transfer_multicurrencies uses a Teleport for this case
-            0
-        );
-    });
-
-    ParaB::execute_with(|| {
-        assert_eq!(
-            parachain::Balances::free_balance(&ALICE),
-            // because transfer_multicurrencies uses a Teleport for this case
-            // we no longer expect the amount_back_to_b to be in the sovereign account
-            INITIAL_BALANCE - amount_to_a
-        );
-
-        // Parachain A sovereign account on Parachain B should receive: 0
-        // because transfer_multicurrencies uses Teleport in this case
-        let para_a_sovereign_on_para_b = parachain::LocationToAccountId::convert_ref(
-            MultiLocation::new(1, X1(Parachain(para_a_id))),
-        )
-        .unwrap();
-        assert_eq!(
-            parachain::Assets::balance(relay_asset_id_on_b, &para_a_sovereign_on_para_b),
-            0
-        );
-
-        assert_eq!(
-            // min_xcm_fee will be just enough to pay for execution so
-            // no change from BuyExecution will be deposited in Alice's account.
-            parachain::Assets::balance(relay_asset_id_on_b, &ALICE),
-            0
-        );
-        assert_eq!(
-            parachain::Assets::total_supply(relay_asset_id_on_b),
-            // Since all of the fee is used the total supply should be 0
-            0
-        );
-    });
-}
-
-/// Checks only must-fail cases related to transfer_multicurrencies
-/// First part is for testing cases on the sender side.
-/// Second part is for testing cases on the receiver side.
-#[test]
-fn transfer_multicurrencies_should_fail_scenarios() {
-    MockNet::reset();
-
-    let para_a_id = 1;
-    let para_b_id = 2;
-    let para_c_id = 3;
-    let para_a_source_location = create_asset_location(1, para_a_id);
-    let para_b_source_location = create_asset_location(1, para_b_id);
-    let para_c_source_location = create_asset_location(1, para_c_id);
-
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
-    let para_c_asset_metadata =
-        create_asset_metadata("ParaCToken", "ParaC", 18, 1, None, false, true);
-
-    let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
-    let units_per_sec = 0;
-
-    let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        &para_a_source_location,
-        &para_a_asset_metadata,
-        Some(units_per_sec),
-        None,
-    );
-    let relay_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        &relay_source_location,
-        &relay_asset_metadata,
-        Some(units_per_sec),
-        None,
-    );
-    let b_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        &para_b_source_location,
-        &para_b_asset_metadata,
-        Some(units_per_sec),
-        None,
-    );
-    let c_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        &para_c_source_location,
-        &para_c_asset_metadata,
-        Some(units_per_sec),
-        None,
-    );
-
-    let b_asset_id_on_b = register_assets_on_parachain::<ParaB>(
-        &para_b_source_location,
-        &para_b_asset_metadata,
-        Some(units_per_sec),
-        None,
-    );
-    let _ = register_assets_on_parachain::<ParaB>(
-        &para_a_source_location,
-        &para_a_asset_metadata,
-        Some(units_per_sec),
-        None,
-    );
-    let relay_asset_id_on_b = register_assets_on_parachain::<ParaB>(
-        &relay_source_location,
-        &relay_asset_metadata,
-        Some(units_per_sec),
-        None,
-    );
-
-    let c_asset_id_on_c = register_assets_on_parachain::<ParaC>(
-        &para_c_source_location,
-        &para_c_asset_metadata,
-        Some(units_per_sec),
-        None,
-    );
-    let _ = register_assets_on_parachain::<ParaC>(
-        &para_a_source_location,
-        &para_a_asset_metadata,
-        Some(units_per_sec),
-        None,
-    );
-    let _ = register_assets_on_parachain::<ParaC>(
-        &relay_source_location,
-        &relay_asset_metadata,
-        Some(units_per_sec),
-        None,
-    );
-
-    let amount = 1000;
-    let weight = weight_of_four_xcm_instructions_on_para();
-    assert_ok!(ParaA::execute_with(|| {
-        parachain::Assets::mint(
-            parachain::Origin::signed(parachain::AssetManager::account_id()),
-            relay_asset_id_on_a,
-            ALICE,
-            amount,
-        )
-    }));
-
-    let dest = MultiLocation {
-        parents: 1,
-        interior: X2(
-            Parachain(para_a_id),
-            AccountId32 {
-                network: NetworkId::Any,
-                id: ALICE.into(),
-            },
-        ),
-    };
-    ParaC::execute_with(|| {
-        assert_ok!(parachain::XTokens::transfer(
-            Some(ALICE).into(),
-            parachain::CurrencyId::MantaCurrency(c_asset_id_on_c),
-            amount,
-            Box::new(VersionedMultiLocation::V1(dest.clone())),
-            weight,
-        ));
-    });
-    ParaB::execute_with(|| {
-        assert_ok!(parachain::XTokens::transfer(
-            Some(ALICE).into(),
-            parachain::CurrencyId::MantaCurrency(b_asset_id_on_b),
-            amount,
-            Box::new(VersionedMultiLocation::V1(dest)),
-            weight,
-        ));
-    });
-
-    let dest = MultiLocation {
-        parents: 1,
-        interior: X2(
-            Parachain(para_b_id),
-            AccountId32 {
-                network: NetworkId::Any,
-                id: ALICE.into(),
-            },
-        ),
-    };
-
-    // Sender Side Tests:
-
-    let fee_amount: u128 = 50;
-    let min_xcm_fee = 10;
-    ParaA::execute_with(|| {
-        assert_ok!(AssetManager::set_min_xcm_fee(
-            parachain::Origin::root(),
-            para_b_source_location.clone(),
-            min_xcm_fee,
-        ));
-        assert_ok!(AssetManager::set_min_xcm_fee(
-            parachain::Origin::root(),
-            para_c_source_location,
-            min_xcm_fee,
-        ));
-
-        assert_err!(
-            parachain::XTokens::transfer_multicurrencies(
-                Some(ALICE).into(),
-                vec![
-                    (
-                        parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
-                        amount
-                    ),
-                    (
-                        parachain::CurrencyId::MantaCurrency(c_asset_id_on_a),
-                        fee_amount
-                    ),
-                    (
-                        parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a),
-                        fee_amount
-                    )
-                ],
-                2,
-                Box::new(VersionedMultiLocation::V1(dest.clone())),
-                weight,
-            ),
-            // Assets and fee must have the same reserve
-            orml_xtokens::Error::<parachain::Runtime>::DistinctReserveForAssetAndFee
-        );
-
-        assert_err!(
-            parachain::XTokens::transfer_multicurrencies(
-                Some(ALICE).into(),
-                vec![
-                    (
-                        parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
-                        amount
-                    ),
-                    (
-                        parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a),
-                        fee_amount
-                    ),
-                    (
-                        parachain::CurrencyId::MantaCurrency(c_asset_id_on_a),
-                        fee_amount
-                    ),
-                    (
-                        parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
-                        fee_amount
-                    )
-                ],
-                2,
-                Box::new(VersionedMultiLocation::V1(dest.clone())),
-                weight,
-            ),
-            // MaxAssetsForTransfer is set to 3 in the mock
-            orml_xtokens::Error::<parachain::Runtime>::TooManyAssetsBeingSent
-        );
-
-        assert_err!(
-            parachain::XTokens::transfer_multicurrencies(
-                Some(ALICE).into(),
-                vec![
-                    (
-                        parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
-                        amount
-                    ),
-                    (
-                        parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a),
-                        fee_amount
-                    )
-                ],
-                2,
-                Box::new(VersionedMultiLocation::V1(dest.clone())),
-                weight,
-            ),
-            orml_xtokens::Error::<parachain::Runtime>::AssetIndexNonExistent
-        );
-
-        assert_err!(
-            parachain::XTokens::transfer_multicurrencies(
-                Some(ALICE).into(),
-                vec![
-                    (
-                        parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
-                        amount
-                    ),
-                    (parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a), 0)
-                ],
-                1,
-                Box::new(VersionedMultiLocation::V1(dest.clone())),
-                weight,
-            ),
-            // 0 fees should not work
-            orml_xtokens::Error::<parachain::Runtime>::ZeroAmount
-        );
-
-        assert_err!(
-            parachain::XTokens::transfer_multicurrencies(
-                Some(ALICE).into(),
-                vec![
-                    (parachain::CurrencyId::MantaCurrency(b_asset_id_on_a), 0),
-                    (
-                        parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a),
-                        fee_amount
-                    )
-                ],
-                1,
-                Box::new(VersionedMultiLocation::V1(dest.clone())),
-                weight,
-            ),
-            // 0 assets should not work
-            orml_xtokens::Error::<parachain::Runtime>::ZeroAmount
-        );
-    });
-
-    // Receiver Side Tests:
-
-    let amount_back_to_b = 100;
-    let fee_amount: u128 = 50;
-    let min_xcm_fee = 40;
-    // Setup to succeed on the sender side, but fail on the receiver side due to not enough fees.
-    ParaA::execute_with(|| {
-        assert_ok!(AssetManager::set_min_xcm_fee(
-            parachain::Origin::root(),
-            para_b_source_location,
-            min_xcm_fee,
-        ));
-
-        assert_eq!(parachain::Assets::balance(b_asset_id_on_a, &ALICE), amount);
-        assert_eq!(
-            parachain::Assets::balance(relay_asset_id_on_a, &ALICE),
-            amount
-        );
-
-        assert_ok!(parachain::XTokens::transfer_multicurrencies(
-            Some(ALICE).into(),
-            vec![
-                (
-                    parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
-                    amount_back_to_b
-                ),
-                (
-                    parachain::CurrencyId::MantaCurrency(relay_asset_id_on_a),
-                    fee_amount
-                )
-            ],
-            1,
-            Box::new(VersionedMultiLocation::V1(dest.clone())),
-            weight,
-        ));
-
-        assert_eq!(
-            parachain::Assets::balance(relay_asset_id_on_a, &ALICE),
-            amount - fee_amount
-        );
-
-        assert_eq!(
-            parachain::Assets::balance(b_asset_id_on_a, &ALICE),
-            amount - amount_back_to_b
-        );
-    });
-
-    Relay::execute_with(|| {
-        let para_a_sovereign_on_relay = para_account_id(1);
-        let para_b_sovereign_on_relay = para_account_id(2);
-        assert_eq!(
-            relay_chain::Balances::free_balance(&para_a_sovereign_on_relay),
-            INITIAL_BALANCE - (fee_amount - min_xcm_fee)
-        );
-        assert_eq!(
-            relay_chain::Balances::free_balance(&para_b_sovereign_on_relay),
-            // 0 because transfer_multicurrencies uses a Teleport for this case
-            0
-        );
-    });
-
-    ParaB::execute_with(|| {
-        // Parachain A sovereign account on Parachain B should receive: 0
-        // because transfer_multicurrencies uses Teleport in this case
-        let para_a_sovereign_on_para_b = parachain::LocationToAccountId::convert_ref(
-            MultiLocation::new(1, X1(Parachain(para_a_id))),
-        )
-        .unwrap();
-        assert_eq!(
-            parachain::Assets::balance(relay_asset_id_on_b, &para_a_sovereign_on_para_b),
-            0
-        );
-
-        assert_eq!(
-            // The BuyExecution failed so no change to deposit in Alice's account.
-            parachain::Assets::balance(relay_asset_id_on_b, &ALICE),
-            0
-        );
-        // Since BuyExecution failed so no change to deposit in Alice's account
-        // the total_supply will remain 0.
-        assert_eq!(parachain::Assets::total_supply(relay_asset_id_on_b), 0);
-
-        assert_eq!(
-            parachain::Balances::free_balance(&ALICE),
-            // Did not receive amount_back_to_b, because there was not enough of the relay fee
-            INITIAL_BALANCE - amount
-        );
     });
 }
