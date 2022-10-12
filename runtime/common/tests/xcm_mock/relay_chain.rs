@@ -40,8 +40,6 @@ use xcm_builder::{
 };
 use xcm_executor::{Config, XcmExecutor};
 
-pub type BlockNumber = u32;
-pub type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 

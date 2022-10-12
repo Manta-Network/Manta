@@ -24,13 +24,10 @@
 use super::*;
 use frame_support::{construct_runtime, ord_parameter_types, parameter_types, traits::ConstU32};
 use frame_system::EnsureRoot;
-use manta_primitives::types::Balance;
+use manta_primitives::types::{Balance, BlockNumber, Header};
 
 use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
-
-type BlockNumber = u32;
-type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
 
 pub type AccountId = u128;
 pub const ALICE: AccountId = 1;
@@ -53,7 +50,7 @@ impl frame_system::Config for Runtime {
     type BlockNumber = BlockNumber;
     type Call = Call;
     type Hash = H256;
-    type Hashing = ::sp_runtime::traits::BlakeTwo256;
+    type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<AccountId>;
     type Header = Header;

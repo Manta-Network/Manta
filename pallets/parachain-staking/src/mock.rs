@@ -24,6 +24,7 @@ use frame_support::{
     traits::{Everything, GenesisBuild, LockIdentifier, OnFinalize, OnInitialize},
     weights::Weight,
 };
+use manta_primitives::types::{BlockNumber, Header};
 use sp_core::H256;
 use sp_io;
 use sp_runtime::{
@@ -36,8 +37,6 @@ pub type Balance = u128;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
-type BlockNumber = u32;
-type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
 
 // Configure a mock runtime to test the pallet.
 // WHITELIST: Remove Session and CollatorSelection after end of whitelist-period

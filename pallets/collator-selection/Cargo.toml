@@ -39,6 +39,7 @@ sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = "polka
 sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sp-tracing = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
+manta-primitives = { path = "../../primitives/manta" }
 
 [features]
 default = ['std']

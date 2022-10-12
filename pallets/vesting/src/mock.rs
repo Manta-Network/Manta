@@ -14,15 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+use super::*;
+use crate as calamari_vesting;
 use frame_support::{parameter_types, traits::ConstU32};
+use manta_primitives::types::{BlockNumber, Header};
 use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
-use super::*;
-use crate as calamari_vesting;
-
-type BlockNumber = u32;
-type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 

@@ -31,7 +31,7 @@ use manta_primitives::{
         ConcreteFungibleLedger,
     },
     constants::{ASSET_MANAGER_PALLET_ID, ASSET_STRING_LIMIT},
-    types::{AccountId, AssetId, Balance},
+    types::{AccountId, AssetId, Balance, BlockNumber, Header},
 };
 use sp_core::{H160, H256};
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
@@ -41,9 +41,6 @@ use xcm::{
     v1::MultiLocation,
     VersionedMultiLocation,
 };
-
-type BlockNumber = u32;
-type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
 
 parameter_types! {
     pub const SS58Prefix: u8 = 78;

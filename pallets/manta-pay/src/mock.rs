@@ -27,7 +27,7 @@ use manta_primitives::{
         ConcreteFungibleLedger,
     },
     constants::{ASSET_MANAGER_PALLET_ID, MANTA_PAY_PALLET_ID},
-    types::{AssetId, Balance},
+    types::{AssetId, Balance, BlockNumber, Header},
 };
 use sp_core::H256;
 use sp_runtime::{
@@ -42,8 +42,6 @@ use xcm::{
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
-type BlockNumber = u32;
-type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
 
 frame_support::construct_runtime!(
     pub enum Test where

@@ -60,8 +60,6 @@ use xcm_builder::{
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
 
-pub type BlockNumber = u32;
-pub type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 

@@ -23,8 +23,8 @@ use frame_support::{
     },
     PalletId,
 };
-
 use frame_system::EnsureSignedBy;
+use manta_primitives::types::{BlockNumber, Header};
 use sp_arithmetic::Percent;
 use sp_core::H256;
 use sp_runtime::{
@@ -35,8 +35,6 @@ use sp_runtime::{
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
-type BlockNumber = u32;
-type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
