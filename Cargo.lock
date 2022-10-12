@@ -968,8 +968,10 @@ dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
+ "cumulus-test-relay-sproof-builder",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1009,8 +1011,10 @@ dependencies = [
  "pallet-xcm-benchmarks",
  "parachain-info",
  "parity-scale-codec",
+ "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-primitives",
+ "polkadot-runtime-parachains",
  "reqwest",
  "runtime-common",
  "scale-info",
@@ -1037,6 +1041,7 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "xcm-simulator",
 ]
 
 [[package]]
@@ -9065,37 +9070,12 @@ dependencies = [
 name = "runtime-common"
 version = "3.4.0"
 dependencies = [
- "cumulus-pallet-dmp-queue",
- "cumulus-pallet-parachain-system",
- "cumulus-pallet-xcm",
- "cumulus-pallet-xcmp-queue",
- "cumulus-primitives-parachain-inherent",
- "cumulus-test-relay-sproof-builder",
  "frame-support",
- "frame-system",
  "manta-primitives",
- "orml-traits",
- "orml-xtokens",
- "pallet-asset-manager",
- "pallet-assets",
- "pallet-balances",
  "pallet-transaction-payment",
- "pallet-utility",
- "pallet-xcm",
- "parachain-info",
- "parity-scale-codec",
- "polkadot-core-primitives",
- "polkadot-parachain",
- "polkadot-runtime-parachains",
- "scale-info",
- "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
- "xcm",
- "xcm-builder",
- "xcm-executor",
- "xcm-simulator",
 ]
 
 [[package]]
