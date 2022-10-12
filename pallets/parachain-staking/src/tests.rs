@@ -7377,10 +7377,10 @@ fn deferred_payment_steady_state_event_flow() {
         .execute_with(|| {
             // convenience to set the round points consistently
             let set_round_points = |round: u32| {
-                set_author(round as u32, 1, 1);
-                set_author(round as u32, 2, 1);
-                set_author(round as u32, 3, 1);
-                set_author(round as u32, 4, 1);
+                set_author(round, 1, 1);
+                set_author(round, 2, 1);
+                set_author(round, 3, 1);
+                set_author(round, 4, 1);
             };
 
             // grab initial issuance -- we will reset it before round issuance is calculated so that
@@ -7424,28 +7424,28 @@ fn deferred_payment_steady_state_event_flow() {
 
                 let expected = vec![
                     Event::CollatorChosen {
-                        round: round as u32,
+                        round,
                         collator_account: 1,
                         total_exposed_amount: 400,
                     },
                     Event::CollatorChosen {
-                        round: round as u32,
+                        round,
                         collator_account: 2,
                         total_exposed_amount: 400,
                     },
                     Event::CollatorChosen {
-                        round: round as u32,
+                        round,
                         collator_account: 3,
                         total_exposed_amount: 400,
                     },
                     Event::CollatorChosen {
-                        round: round as u32,
+                        round,
                         collator_account: 4,
                         total_exposed_amount: 400,
                     },
                     Event::NewRound {
                         starting_block: (round - 1) * 5,
-                        round: round as u32,
+                        round,
                         selected_collators_number: 4,
                         total_balance: 1600,
                     },

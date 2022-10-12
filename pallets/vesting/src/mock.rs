@@ -152,6 +152,6 @@ impl ExtBuilder {
     }
 }
 
-pub(crate) fn run_to_block(n: u32) {
+pub(crate) fn run_to_block(n: BlockNumber) {
     System::set_block_number(n);
 }

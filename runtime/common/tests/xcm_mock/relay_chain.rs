@@ -53,7 +53,7 @@ impl frame_system::Config for Runtime {
     type Origin = Origin;
     type Call = Call;
     type Index = u64;
-    type BlockNumber = u32;
+    type BlockNumber = BlockNumber;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
@@ -227,7 +227,7 @@ pub(crate) fn relay_events() -> Vec<Event> {
 }
 
 use frame_support::traits::{OnFinalize, OnInitialize};
-pub(crate) fn relay_roll_to(n: u32) {
+pub(crate) fn relay_roll_to(n: BlockNumber) {
     while System::block_number() < n {
         XcmPallet::on_finalize(System::block_number());
         Balances::on_finalize(System::block_number());
