@@ -53,9 +53,9 @@ use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, Ver
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, LocationInverter, ParentIsPreset,
+    EnsureXcmOrigin, FixedRateOfFungible, LocationInverter, ParentIsPreset,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SovereignSignedViaLocation, TakeWeightCredit,
+    SovereignSignedViaLocation, TakeWeightCredit, WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
@@ -270,7 +270,11 @@ impl Config for XcmExecutorConfig {
     type IsTeleporter = ();
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = Barrier;
-    type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+    type Weigher = WeightInfoBounds<
+        calamari_runtime::weights::xcm::CalamariXcmWeight<Call>,
+        Call,
+        MaxInstructions,
+    >;
     // Trader is the means to purchasing weight credit for XCM execution.
     // We define two traders:
     // The first one will charge parachain's native currency, who's `MultiLocation`
@@ -471,7 +475,11 @@ impl pallet_xcm::Config for Runtime {
     // Do not allow teleports
     type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Nothing;
-    type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+    type Weigher = WeightInfoBounds<
+        calamari_runtime::weights::xcm::CalamariXcmWeight<Call>,
+        Call,
+        MaxInstructions,
+    >;
     type LocationInverter = LocationInverter<Ancestry>;
     type Origin = Origin;
     type Call = Call;
@@ -611,7 +619,11 @@ impl orml_xtokens::Config for Runtime {
         CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type SelfLocation = SelfReserve;
-    type Weigher = xcm_builder::FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+    type Weigher = WeightInfoBounds<
+        calamari_runtime::weights::xcm::CalamariXcmWeight<Call>,
+        Call,
+        MaxInstructions,
+    >;
     type BaseXcmWeight = BaseXcmWeight;
     type LocationInverter = LocationInverter<Ancestry>;
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
