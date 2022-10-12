@@ -31,7 +31,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 pub type AccountId = u128;
-pub type BlockNumber = u64;
+pub type BlockNumber = u32;
 pub type Balance = u128;
 
 pub const ALICE: AccountId = 1;

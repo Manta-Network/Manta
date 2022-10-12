@@ -50,7 +50,7 @@ impl Contains<Call> for BaseFilter {
 impl frame_system::Config for Runtime {
     type Origin = Origin;
     type Index = u64;
-    type BlockNumber = u64;
+    type BlockNumber = u32;
     type Call = Call;
     type Hash = H256;
     type Hashing = ::sp_runtime::traits::BlakeTwo256;

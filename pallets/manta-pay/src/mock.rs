@@ -58,7 +58,7 @@ frame_support::construct_runtime!(
     }
 );
 
-type BlockNumber = u64;
+type BlockNumber = u32;
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
