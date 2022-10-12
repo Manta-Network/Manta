@@ -14,14 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use frame_support::{
-    parameter_types,
-    traits::ConstU32,
-};
+use frame_support::{parameter_types, traits::ConstU32};
 use sp_core::H256;
-use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
-};
+use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
 use super::*;
 use crate as calamari_vesting;

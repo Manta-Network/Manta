@@ -34,9 +34,7 @@ use manta_primitives::{
     types::{AccountId, AssetId, Balance},
 };
 use sp_core::{H160, H256};
-use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
-};
+use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 use sp_std::marker::PhantomData;
 use xcm::{
     prelude::{Parachain, X1},
