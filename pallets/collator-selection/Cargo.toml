@@ -31,6 +31,7 @@ sp-staking = { git = 'https://github.com/paritytech/substrate.git', default-feat
 sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.26" }
 
 [dev-dependencies]
+manta-primitives = { path = "../../primitives/manta" }
 pallet-aura = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }

@@ -60,8 +60,3 @@ pub const MANTA_PAY_PALLET_ID: PalletId = PalletId(*b"mantapay");
 
 /// Default Asset Existential Deposit: Should only be used in TEST
 pub const DEFAULT_ASSET_ED: Balance = 1;
-
-pub mod calamari_staking {
-    // TODO
-    // pub const MinCollatorStake: u32 = 4_000_000;
-}

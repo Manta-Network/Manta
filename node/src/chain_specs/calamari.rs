@@ -173,10 +173,15 @@ fn calamari_dev_genesis(
             candidates: invulnerables
                 .iter()
                 .cloned()
-                .map(|(account, _)| (account, 4_000_000 * KMA)) // TODO: Change to use constant from primitives
+                .map(|(account, _)| {
+                    (
+                        account,
+                        calamari_runtime::staking::NORMAL_COLLATOR_MINIMUM_STAKE,
+                    )
+                })
                 .collect(),
             delegations,
-            inflation_config: calamari_runtime::currency::inflation_config::<
+            inflation_config: calamari_runtime::staking::inflation_config::<
                 calamari_runtime::Runtime,
             >(),
         },
