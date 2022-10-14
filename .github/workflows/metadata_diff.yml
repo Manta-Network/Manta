@@ -153,4 +153,3 @@ jobs:
           aws-instance-id: ${{ needs.start-checks.outputs.aws-instance-id }}
       - name: discard stopper success/failure
         run: true
-2
