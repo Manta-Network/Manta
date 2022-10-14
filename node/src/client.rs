@@ -17,7 +17,7 @@
 //! RuntimeApi for client
 
 use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
-use session_key_primitives::{AuraId, NimbusId};
+use session_key_primitives::NimbusId;
 use sp_runtime::traits::BlakeTwo256;
 
 /// RuntimeApiCommon + RuntimeApiNimbus: nimbus
@@ -40,7 +40,6 @@ pub trait RuntimeApiNimbus:
     pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
     + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
     + cumulus_primitives_core::CollectCollationInfo<Block>
-    + sp_consensus_aura::AuraApi<Block, AuraId>
     + nimbus_primitives::AuthorFilterAPI<Block, NimbusId>
     + nimbus_primitives::NimbusApi<Block>
 {
@@ -62,7 +61,6 @@ impl<Api> RuntimeApiNimbus for Api where
     Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + cumulus_primitives_core::CollectCollationInfo<Block>
-        + sp_consensus_aura::AuraApi<Block, AuraId>
         + nimbus_primitives::AuthorFilterAPI<Block, NimbusId>
         + nimbus_primitives::NimbusApi<Block>
 {

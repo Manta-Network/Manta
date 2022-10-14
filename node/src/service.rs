@@ -221,7 +221,9 @@ async fn start_node_impl<RuntimeApi, BIC, FullRpc>(
 ) -> sc_service::error::Result<(TaskManager, Arc<Client<RuntimeApi>>)>
 where
     RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend> + RuntimeApiNimbus,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend>
+        + RuntimeApiNimbus
+        + sp_consensus_aura::AuraApi<Block, AuraId>,
     FullRpc: Fn(
             rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
         ) -> Result<RpcModule<()>, Error>
@@ -373,7 +375,9 @@ pub async fn start_parachain_node<RuntimeApi, FullRpc>(
 ) -> sc_service::error::Result<(TaskManager, Arc<Client<RuntimeApi>>)>
 where
     RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend> + RuntimeApiNimbus,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend>
+        + RuntimeApiNimbus
+        + sp_consensus_aura::AuraApi<Block, AuraId>,
     FullRpc: Fn(
             rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
         ) -> Result<RpcModule<()>, Error>
