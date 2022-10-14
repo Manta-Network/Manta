@@ -1,13 +1,13 @@
 name: Changelog Verification
 on:
   pull_request:
-    branches:
-      - 'release-**'
+  #   branches:
+  #     - 'release-**'
   push:
-    branches:
-      - 'release-**'
-    tags:
-      - 'v[0-9]+\.[0-9]+\.[0-9]+*'
+  #   branches:
+  #     - 'release-**'
+  #   tags:
+  #     - 'v[0-9]+\.[0-9]+\.[0-9]+*'
 jobs:
   verify_changelog:
     runs-on: ubuntu-20.04
@@ -22,7 +22,7 @@ jobs:
           cd manta
           sudo cp CHANGELOG.md CHANGELOG_ORIGIN.md
       - name: get Changelog Generator
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: Manta-Network/Dev-Tools
           path: dev-tools
@@ -37,5 +37,4 @@ jobs:
       - name: Diff changelogs
         run: |
           cd ${{ github.workspace }}/manta
-          res=$(diff CHANGELOG.md CHANGELOG_ORIGIN.md)
-          exit $res
+          diff -y CHANGELOG.md CHANGELOG_ORIGIN.md

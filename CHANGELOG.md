@@ -1,7 +1,8 @@
 # CHANGELOG
 
-## v3.4.2
+## v0.0.0
 ### Changed
+- [\#833](https://github.com/Manta-Network/Manta/pull/833) Run live benchmarks as test in CI [CADO]
 - [\#834](https://github.com/Manta-Network/Manta/pull/834) Followups to Staking [CA]
 - [\#840](https://github.com/Manta-Network/Manta/pull/840) Improve mock xcm [CADO]
 
