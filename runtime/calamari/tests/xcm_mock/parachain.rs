@@ -30,8 +30,7 @@ use frame_system::EnsureRoot;
 use scale_info::TypeInfo;
 use sp_core::{H160, H256};
 use sp_runtime::{
-    testing::Header,
-    traits::{Hash, IdentityLookup},
+    traits::{BlakeTwo256, Hash, IdentityLookup},
     AccountId32,
 };
 use sp_std::prelude::*;
@@ -42,7 +41,7 @@ use manta_primitives::{
         AssetStorageMetadata, ConcreteFungibleLedger,
     },
     constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
-    types::AssetId,
+    types::{AssetId, BlockNumber, Header},
     xcm::{FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter, MultiNativeAsset},
 };
 use pallet_xcm::XcmPassthrough;
@@ -54,26 +53,27 @@ use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, Ver
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, LocationInverter, ParentIsPreset,
+    EnsureXcmOrigin, FixedRateOfFungible, LocationInverter, ParentIsPreset,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SovereignSignedViaLocation, TakeWeightCredit,
+    SovereignSignedViaLocation, TakeWeightCredit, WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
+
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 
 parameter_types! {
-    pub const BlockHashCount: u64 = 250;
+    pub const BlockHashCount: BlockNumber = 250;
 }
 
 impl frame_system::Config for Runtime {
     type Origin = Origin;
     type Call = Call;
     type Index = u64;
-    type BlockNumber = u64;
+    type BlockNumber = BlockNumber;
     type Hash = H256;
-    type Hashing = ::sp_runtime::traits::BlakeTwo256;
+    type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
@@ -270,7 +270,11 @@ impl Config for XcmExecutorConfig {
     type IsTeleporter = ();
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = Barrier;
-    type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+    type Weigher = WeightInfoBounds<
+        calamari_runtime::weights::xcm::CalamariXcmWeight<Call>,
+        Call,
+        MaxInstructions,
+    >;
     // Trader is the means to purchasing weight credit for XCM execution.
     // We define two traders:
     // The first one will charge parachain's native currency, who's `MultiLocation`
@@ -471,7 +475,11 @@ impl pallet_xcm::Config for Runtime {
     // Do not allow teleports
     type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Nothing;
-    type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+    type Weigher = WeightInfoBounds<
+        calamari_runtime::weights::xcm::CalamariXcmWeight<Call>,
+        Call,
+        MaxInstructions,
+    >;
     type LocationInverter = LocationInverter<Ancestry>;
     type Origin = Origin;
     type Call = Call;
@@ -611,7 +619,11 @@ impl orml_xtokens::Config for Runtime {
         CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type SelfLocation = SelfReserve;
-    type Weigher = xcm_builder::FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+    type Weigher = WeightInfoBounds<
+        calamari_runtime::weights::xcm::CalamariXcmWeight<Call>,
+        Call,
+        MaxInstructions,
+    >;
     type BaseXcmWeight = BaseXcmWeight;
     type LocationInverter = LocationInverter<Ancestry>;
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
@@ -660,7 +672,7 @@ pub(crate) fn on_runtime_upgrade() {
     PolkadotXcm::on_runtime_upgrade();
 }
 
-pub(crate) fn para_roll_to(n: u64) {
+pub(crate) fn para_roll_to(n: u32) {
     while System::block_number() < n {
         PolkadotXcm::on_finalize(System::block_number());
         Balances::on_finalize(System::block_number());

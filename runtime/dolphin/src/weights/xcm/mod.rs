@@ -57,7 +57,7 @@ impl<Call> XcmWeightInfo<Call> for DolphinXcmWeight<Call> {
         assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::reserve_asset_deposited())
     }
     fn receive_teleported_asset(_assets: &MultiAssets) -> Weight {
-        unimplemented!()
+        u64::MAX // disable teleport
     }
     fn query_response(_query_id: &u64, _response: &Response, _max_weight: &u64) -> Weight {
         XcmGeneric::<Runtime>::query_response()

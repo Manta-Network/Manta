@@ -82,6 +82,16 @@ jobs:
         run: |
           source ${HOME}/.cargo/env
           RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime -- --test-threads=2
+      - name: run live benchmarks test
+        run: |
+          RUSTC_BOOTSTRAP=1 cargo run --release --features runtime-benchmarks,try-runtime \
+          benchmark \
+            pallet \
+            --chain=calamari-dev \
+            --pallet=* \
+            --extrinsic=* \
+            --repeat=1 \
+            --steps=1
       - name: stop sccache server
         run: sccache --stop-server || true
   stop-unit-test-checks:
