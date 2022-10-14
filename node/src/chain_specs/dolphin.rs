@@ -19,7 +19,8 @@
 use super::*;
 use crate::command::{DOLPHIN_ON_BAIKAL_PARACHAIN_ID, DOLPHIN_PARACHAIN_ID};
 use dolphin_runtime::{
-    opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
+    opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, MaintenanceModeConfig,
+    TechnicalCommitteeConfig,
 };
 use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 /// Dolphin Protocol Identifier
@@ -199,6 +200,9 @@ fn dolphin_dev_genesis(
         parachain_system: Default::default(),
         polkadot_xcm: dolphin_runtime::PolkadotXcmConfig {
             safe_xcm_version: Some(SAFE_XCM_VERSION),
+        },
+        maintenance_mode: MaintenanceModeConfig {
+            start_in_maintenance_mode: false,
         },
     }
 }

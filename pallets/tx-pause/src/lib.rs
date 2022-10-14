@@ -77,10 +77,16 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(fn deposit_event)]
     pub enum Event<T: Config> {
-        /// Paused transaction . \[pallet_name_bytes, function_name_bytes\]
-        TransactionPaused(Vec<u8>, Vec<u8>),
-        /// Unpaused transaction . \[pallet_name_bytes, function_name_bytes\]
-        TransactionUnpaused(Vec<u8>, Vec<u8>),
+        /// Paused transaction.
+        TransactionPaused {
+            pallet_name: Vec<u8>,
+            function_name: Vec<u8>,
+        },
+        /// Unpaused transaction.
+        TransactionUnpaused {
+            pallet_name: Vec<u8>,
+            function_name: Vec<u8>,
+        },
     }
 
     /// The paused transaction map
@@ -131,7 +137,10 @@ pub mod pallet {
                 |maybe_paused| {
                     if maybe_paused.is_none() {
                         *maybe_paused = Some(());
-                        Self::deposit_event(Event::TransactionPaused(pallet_name, function_name));
+                        Self::deposit_event(Event::TransactionPaused {
+                            pallet_name,
+                            function_name,
+                        });
                     }
                 },
             );
@@ -149,8 +158,12 @@ pub mod pallet {
             function_name: Vec<u8>,
         ) -> DispatchResult {
             T::UnpauseOrigin::ensure_origin(origin)?;
+
             if PausedTransactions::<T>::take((&pallet_name, &function_name)).is_some() {
-                Self::deposit_event(Event::TransactionUnpaused(pallet_name, function_name));
+                Self::deposit_event(Event::TransactionUnpaused {
+                    pallet_name,
+                    function_name,
+                });
             };
             Ok(())
         }
@@ -187,10 +200,10 @@ pub mod pallet {
                     |maybe_paused| {
                         if maybe_paused.is_none() {
                             *maybe_paused = Some(());
-                            Self::deposit_event(Event::TransactionPaused(
+                            Self::deposit_event(Event::TransactionPaused {
                                 pallet_name,
                                 function_name,
-                            ));
+                            });
                         }
                     },
                 );

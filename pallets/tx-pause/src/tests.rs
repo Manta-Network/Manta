@@ -56,10 +56,10 @@ fn pause_transaction_work() {
             b"System".to_vec(),
             b"remark".to_vec()
         ));
-        System::assert_last_event(Event::TransactionPause(crate::Event::TransactionPaused(
-            b"System".to_vec(),
-            b"remark".to_vec(),
-        )));
+        System::assert_last_event(Event::TransactionPause(crate::Event::TransactionPaused {
+            pallet_name: b"System".to_vec(),
+            function_name: b"remark".to_vec(),
+        }));
         assert_eq!(
             TransactionPause::paused_transactions((b"System".to_vec(), b"remark".to_vec())),
             Some(())
@@ -137,10 +137,10 @@ fn unpause_transaction_work() {
             b"System".to_vec(),
             b"remark".to_vec()
         ));
-        System::assert_last_event(Event::TransactionPause(crate::Event::TransactionUnpaused(
-            b"System".to_vec(),
-            b"remark".to_vec(),
-        )));
+        System::assert_last_event(Event::TransactionPause(crate::Event::TransactionUnpaused {
+            pallet_name: b"System".to_vec(),
+            function_name: b"remark".to_vec(),
+        }));
         assert_eq!(
             TransactionPause::paused_transactions((b"System".to_vec(), b"remark".to_vec())),
             None

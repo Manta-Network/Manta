@@ -23,14 +23,15 @@ use sp_runtime::traits::{CheckedConversion, Convert, Zero};
 use sp_std::{marker::PhantomData, result};
 
 use frame_support::{
+    ensure,
     pallet_prelude::Get,
-    traits::{fungibles::Mutate, tokens::ExistenceRequirement},
+    traits::{fungibles::Mutate, tokens::ExistenceRequirement, Contains},
     weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 
 use crate::assets::{AssetIdLocationGetter, UnitsToWeightRatio};
 use xcm::{
-    latest::{prelude::Concrete, Error as XcmError, Result as XcmResult},
+    latest::{prelude::Concrete, Error as XcmError, Result as XcmResult, Xcm},
     v1::{
         AssetId as xcmAssetId, Fungibility,
         Fungibility::*,
@@ -41,8 +42,8 @@ use xcm::{
 };
 use xcm_builder::TakeRevenue;
 use xcm_executor::traits::{
-    Convert as XcmConvert, FilterAssetLocation, MatchesFungible, MatchesFungibles, TransactAsset,
-    WeightTrader,
+    Convert as XcmConvert, FilterAssetLocation, MatchesFungible, MatchesFungibles, ShouldExecute,
+    TransactAsset, WeightTrader,
 };
 
 pub trait Reserve {
@@ -444,5 +445,25 @@ impl<
         };
 
         Ok((asset_id, amount, receiver))
+    }
+}
+
+pub struct SiblingParachainHackedBarrier<T>(PhantomData<T>);
+impl<T: Contains<MultiLocation>> ShouldExecute for SiblingParachainHackedBarrier<T> {
+    fn should_execute<Call>(
+        origin: &MultiLocation,
+        message: &mut Xcm<Call>,
+        _max_weight: Weight,
+        _weight_credit: &mut Weight,
+    ) -> Result<(), ()> {
+        log::trace!(
+            target: "xcm::barriers",
+            "SiblingParachainHackedBarrier origin: {:?}, message: {:?}",
+            origin, message
+        );
+        // If `origin` is in `hacked_siblings` by maintenance mode, return Ok
+        ensure!(!T::contains(origin), ());
+        // Return Error, then go to next Barrier
+        Err(())
     }
 }

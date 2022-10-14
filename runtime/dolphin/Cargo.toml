@@ -90,6 +90,7 @@ manta-primitives = { path = '../../primitives/manta', default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
 pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
+pallet-maintenance-mode = { path = '../../pallets/maintenance-mode', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
 
@@ -107,6 +108,8 @@ substrate-wasm-builder = { git = 'https://github.com/paritytech/substrate.git', 
 default = ['std']
 runtime-benchmarks = [
   'cumulus-pallet-session-benchmarking/runtime-benchmarks',
+  'cumulus-pallet-xcmp-queue/runtime-benchmarks',
+  'cumulus-pallet-parachain-system/runtime-benchmarks',
   'hex-literal',
   'sp-runtime/runtime-benchmarks',
   'xcm-builder/runtime-benchmarks',
@@ -130,10 +133,9 @@ runtime-benchmarks = [
   'pallet-tx-pause/runtime-benchmarks',
   'pallet-treasury/runtime-benchmarks',
   'pallet-assets/runtime-benchmarks',
-  'pallet-manta-pay/runtime-benchmarks',
   'pallet-asset-manager/runtime-benchmarks',
-  'cumulus-pallet-xcmp-queue/runtime-benchmarks',
-  'cumulus-pallet-parachain-system/runtime-benchmarks',
+  'pallet-manta-pay/runtime-benchmarks',
+  #  'pallet-maintenance-mode/runtime-benchmarks',
 ]
 try-runtime = [
   'frame-executive/try-runtime',
@@ -156,6 +158,7 @@ try-runtime = [
   'pallet-assets/try-runtime',
   'pallet-tx-pause/try-runtime',
   'pallet-asset-manager/try-runtime',
+  #  'pallet-maintenance-mode/try-runtime',
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
@@ -175,6 +178,7 @@ std = [
   'sp-block-builder/std',
   'sp-transaction-pool/std',
   'sp-inherents/std',
+  'sp-application-crypto/std',
   'frame-support/std',
   'frame-executive/std',
   'frame-system/std',
@@ -209,7 +213,6 @@ std = [
   "pallet-aura-style-filter/std",
   'session-key-primitives/std',
   'xcm/std',
-  'sp-application-crypto/std',
   'xcm-builder/std',
   'xcm-executor/std',
   'polkadot-primitives/std',
@@ -221,4 +224,5 @@ std = [
   'pallet-treasury/std',
   'pallet-assets/std',
   'pallet-manta-pay/std',
+  'pallet-maintenance-mode/std',
 ]
