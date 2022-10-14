@@ -18,12 +18,9 @@
 
 use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
 use session_key_primitives::{AuraId, NimbusId};
-use sp_application_crypto::AppKey;
-use sp_core::Pair;
 use sp_runtime::traits::BlakeTwo256;
 
 /// RuntimeApiCommon + RuntimeApiNimbus: nimbus
-/// RuntimeApiCommon + RuntimeApiAura: aura
 ///
 /// Common RuntimeApi trait bound
 pub trait RuntimeApiCommon:
@@ -49,18 +46,6 @@ pub trait RuntimeApiNimbus:
 {
 }
 
-/// Extend RuntimeApi trait bound for Aura
-pub trait RuntimeApiAura<AuraId: AppKey>:
-    pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-    + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
-    + cumulus_primitives_core::CollectCollationInfo<Block>
-    + sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>
-where
-    <<AuraId as AppKey>::Pair as Pair>::Signature:
-        TryFrom<Vec<u8>> + std::hash::Hash + sp_runtime::traits::Member + codec::Codec,
-{
-}
-
 impl<Api> RuntimeApiCommon for Api
 where
     Api: sp_api::Metadata<Block>
@@ -80,17 +65,5 @@ impl<Api> RuntimeApiNimbus for Api where
         + sp_consensus_aura::AuraApi<Block, AuraId>
         + nimbus_primitives::AuthorFilterAPI<Block, NimbusId>
         + nimbus_primitives::NimbusApi<Block>
-{
-}
-
-impl<Api> RuntimeApiAura<AuraId> for Api
-where
-    AuraId: AppKey,
-    Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-        + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
-        + cumulus_primitives_core::CollectCollationInfo<Block>
-        + sp_consensus_aura::AuraApi<Block, <<AuraId as AppKey>::Pair as Pair>::Public>,
-    <<AuraId as AppKey>::Pair as Pair>::Signature:
-        TryFrom<Vec<u8>> + std::hash::Hash + sp_runtime::traits::Member + codec::Codec,
 {
 }
