@@ -72,9 +72,9 @@ parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-fe
 
 # Nimbus Dependencies
 # `manta-v3.4.3` is a temporary branch until the official v0.9.26 Nimbus release.
-nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v3.4.3", default-features = false }
-pallet-aura-style-filter = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v3.4.3", default-features = false }
-pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v3.4.3", default-features = false }
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v3.4.3", default-features = false }
+pallet-aura-style-filter = { git = "https://github.com/manta-network/nimbus.git", tag = "v3.4.3", default-features = false }
+pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", tag = "v3.4.3", default-features = false }
 
 # Polkadot dependencies
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
