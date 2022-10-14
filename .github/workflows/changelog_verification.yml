@@ -1,13 +1,13 @@
 name: Changelog Verification
 on:
   pull_request:
-    branches:
-      - 'release-**'
+  #   branches:
+  #     - 'release-**'
   push:
-    branches:
-      - 'release-**'
-    tags:
-      - 'v[0-9]+\.[0-9]+\.[0-9]+*'
+  #   branches:
+  #     - 'release-**'
+  #   tags:
+  #     - 'v[0-9]+\.[0-9]+\.[0-9]+*'
 jobs:
   verify_changelog:
     runs-on: ubuntu-20.04
@@ -37,5 +37,6 @@ jobs:
       - name: Diff changelogs
         run: |
           cd ${{ github.workspace }}/manta
-          res=$(diff CHANGELOG.md CHANGELOG_ORIGIN.md)
-          exit $res
+          $DIFF=$(diff -y CHANGELOG.md CHANGELOG_ORIGIN.md)
+          echo $DIFF
+          exit $DIFF
