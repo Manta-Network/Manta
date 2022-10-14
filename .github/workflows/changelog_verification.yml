@@ -22,7 +22,7 @@ jobs:
           cd manta
           sudo cp CHANGELOG.md CHANGELOG_ORIGIN.md
       - name: get Changelog Generator
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: Manta-Network/Dev-Tools
           path: dev-tools
@@ -37,5 +37,4 @@ jobs:
       - name: Diff changelogs
         run: |
           cd ${{ github.workspace }}/manta
-          res=$(diff CHANGELOG.md CHANGELOG_ORIGIN.md)
-          exit $res
+          diff --color -u CHANGELOG.md CHANGELOG_ORIGIN.md
