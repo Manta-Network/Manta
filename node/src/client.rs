@@ -30,6 +30,8 @@ pub trait RuntimeApiCommon:
     + sp_offchain::OffchainWorkerApi<Block>
     + sp_session::SessionKeys<Block>
     + sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
+    + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+    + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
 where
     <Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
 {
@@ -37,9 +39,7 @@ where
 
 /// Extend RuntimeApi trait bound for Nimbus
 pub trait RuntimeApiNimbus:
-    pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-    + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
-    + cumulus_primitives_core::CollectCollationInfo<Block>
+    cumulus_primitives_core::CollectCollationInfo<Block>
     + nimbus_primitives::AuthorFilterAPI<Block, NimbusId>
     + nimbus_primitives::NimbusApi<Block>
 {
@@ -52,15 +52,15 @@ where
         + sp_block_builder::BlockBuilder<Block>
         + sp_offchain::OffchainWorkerApi<Block>
         + sp_session::SessionKeys<Block>
-        + sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>,
+        + sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
+        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+        + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     <Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
 {
 }
 
 impl<Api> RuntimeApiNimbus for Api where
-    Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-        + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
-        + cumulus_primitives_core::CollectCollationInfo<Block>
+    Api: cumulus_primitives_core::CollectCollationInfo<Block>
         + nimbus_primitives::AuthorFilterAPI<Block, NimbusId>
         + nimbus_primitives::NimbusApi<Block>
 {
