@@ -37,4 +37,4 @@ jobs:
       - name: Diff changelogs
         run: |
           cd ${{ github.workspace }}/manta
-          diff -y CHANGELOG.md CHANGELOG_ORIGIN.md
+          diff -u CHANGELOG.md CHANGELOG_ORIGIN.md
