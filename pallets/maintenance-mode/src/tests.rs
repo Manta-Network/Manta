@@ -19,8 +19,8 @@
 use super::*;
 use crate::{
     mock::{
-        events, mock_events, Assets, Call as OuterCall, ExtBuilder, MaintenanceMode,
-        Origin, Test, ALICE, BOB,
+        events, mock_events, AssetOwner, Assets, Balances, Call as OuterCall, ExtBuilder,
+        MaintenanceMode, Origin, Test, ALICE, BOB,
     },
     Call, Error, Event, ExecutiveHooks,
 };
@@ -51,6 +51,24 @@ fn cannot_remark_during_maintenance_mode() {
                 call.dispatch(Origin::signed(ALICE)),
                 frame_system::Error::<Test>::CallFiltered
             );
+        })
+}
+
+#[test]
+fn can_balances_during_maintenance_mode() {
+    ExtBuilder::default()
+        .with_maintenance_mode(true)
+        .with_balances(vec![(BOB, 1000)])
+        .build()
+        .execute_with(|| {
+            let call: OuterCall = pallet_balances::Call::transfer {
+                dest: ALICE,
+                value: 100,
+            }
+            .into();
+            assert_ok!(call.dispatch(Origin::signed(BOB)));
+            assert_eq!(900, Balances::free_balance(BOB));
+            assert_eq!(100, Balances::free_balance(ALICE));
         })
 }
 
@@ -207,8 +225,7 @@ fn maintenance_hooks_in_maintenance() {
 }
 
 #[test]
-fn enter_sibling_hack_mode_none_asset() {
-    // TODO: affected_assets is none, should disable all asset belong to parachain.
+fn sibling_enter_maintenance_and_resume_normal_works() {
     ExtBuilder::default().build().execute_with(|| {
         assert!(!Pallet::<Test>::hacked_sibling_id(&ParaId::new(1000)));
 
@@ -219,8 +236,68 @@ fn enter_sibling_hack_mode_none_asset() {
         .into();
         assert_ok!(call.dispatch(Origin::root()));
 
+        // enter mode events works
+        assert_eq!(
+            events(),
+            vec![Event::EnteredSiblingHackMode {
+                id: ParaId::new(1000),
+                assets: None
+            }]
+        );
+
+        // enter mode storage works
         assert!(Pallet::<Test>::hacked_sibling_id(&ParaId::new(1000)));
         assert!(!Pallet::<Test>::hacked_sibling_id(&ParaId::new(2000)));
+
+        // duplicate enter
+        let call: OuterCall = Call::enter_sibling_hack_mode {
+            hacked_chain_id: ParaId::new(1000),
+            affected_assets: None,
+        }
+        .into();
+        assert_noop!(
+            call.dispatch(Origin::root()),
+            Error::<Test>::AlreadyInSiblingHackMode
+        );
+
+        let call: OuterCall = Call::resume_sibling_normal_mode {
+            normal_chain_id: ParaId::new(1000),
+            affected_assets: None,
+        }
+        .into();
+        assert_ok!(call.dispatch(Origin::root()));
+
+        // resume mode events works
+        assert_eq!(
+            events(),
+            vec![Event::ResumedSiblingNormalMode {
+                id: ParaId::new(1000),
+            }]
+        );
+
+        // resume mode storage works
+        assert!(!Pallet::<Test>::hacked_sibling_id(&ParaId::new(1000)));
+
+        // duplicate resume
+        let call: OuterCall = Call::resume_sibling_normal_mode {
+            normal_chain_id: ParaId::new(1000),
+            affected_assets: None,
+        }
+        .into();
+        assert_noop!(call.dispatch(Origin::root()), Error::<Test>::SiblingNotHack);
+    });
+}
+
+#[test]
+fn enter_sibling_hack_mode_none_asset() {
+    // TODO: If affected_assets is none, should disable all asset belong to parachain.
+    ExtBuilder::default().build().execute_with(|| {
+        let call: OuterCall = Call::enter_sibling_hack_mode {
+            hacked_chain_id: ParaId::new(1000),
+            affected_assets: None,
+        }
+        .into();
+        assert_ok!(call.dispatch(Origin::root()));
 
         let call: OuterCall = Call::enter_sibling_hack_mode {
             hacked_chain_id: ParaId::new(1000),
@@ -235,33 +312,91 @@ fn enter_sibling_hack_mode_none_asset() {
 }
 
 #[test]
-fn enter_sibling_hack_mode_some_asset() {
+fn enter_sibling_hack_mode_asset_owner_not_matched() {
     ExtBuilder::default().build().execute_with(|| {
         let asset_id: AssetId = 0;
-        let sender: AccountId = ALICE;
         let receiver: AccountId = BOB;
-        assert_ok!(Assets::force_create(
-            Origin::root(),
+
+        // `AssetsFreezer` use `ALICE` as asset owner.
+        // Here we use `Bob` as asset owner, then freeze will failed.
+        assert_ok!(Assets::force_create(Origin::root(), asset_id, BOB, true, 1));
+        assert_ok!(Assets::mint(
+            Origin::signed(BOB),
             asset_id,
-            sender.clone(), // owner
-            true,
-            1
+            receiver.clone(),
+            100
         ));
-        assert_ok!(Assets::mint(Origin::signed(sender.clone()), asset_id, sender.clone(), 100));
-        assert_eq!(Assets::balance(asset_id, sender.clone()), 100);
+        assert_eq!(Assets::balance(asset_id, receiver.clone()), 100);
 
         let call: OuterCall = Call::enter_sibling_hack_mode {
             hacked_chain_id: ParaId::new(1000),
             affected_assets: Some(vec![asset_id]),
         }
         .into();
+        // As `enter_sibling_hack_mode` invoke `freeze_asset`, but `freeze_asset` failed because of
+        // asset owner not matched, so the `enter_sibling_hack_mode` failed!
+        assert_noop!(
+            call.dispatch(Origin::root()),
+            pallet_assets::Error::<Test>::NoPermission
+        );
+    });
+}
+
+#[test]
+fn enter_resume_sibling_hack_mode_some_asset() {
+    ExtBuilder::default().build().execute_with(|| {
+        let asset_id: AssetId = 0;
+        let receiver1: AccountId = BOB;
+        let receiver2: AccountId = ALICE;
+
+        // create asset
+        assert_ok!(Assets::force_create(
+            Origin::root(),
+            asset_id,
+            AssetOwner::get(),
+            true,
+            1
+        ));
+        assert_ok!(Assets::mint(
+            Origin::signed(AssetOwner::get()),
+            asset_id,
+            receiver1.clone(),
+            100
+        ));
+        assert_eq!(Assets::balance(asset_id, receiver1.clone()), 100);
+
+        // enter sibling hack mode will freeze parachain asset
+        let call: OuterCall = Call::enter_sibling_hack_mode {
+            hacked_chain_id: ParaId::new(1000),
+            affected_assets: Some(vec![asset_id]),
+        }
+        .into();
         assert_ok!(call.dispatch(Origin::root()));
-        // assert_ok!(call.dispatch(Origin::signed(ALICE)));
-        // assert_ok!(call.dispatch(Origin::signed(BOB)));
 
         assert_noop!(
-            Assets::transfer(Origin::signed(sender), asset_id, receiver, 50),
+            Assets::transfer(
+                Origin::signed(receiver1.clone()),
+                asset_id,
+                receiver2.clone(),
+                50
+            ),
             pallet_assets::Error::<Test>::Frozen
         );
+
+        // resume sibling normal mode will unfreeze parachain asset
+        let call: OuterCall = Call::resume_sibling_normal_mode {
+            normal_chain_id: ParaId::new(1000),
+            affected_assets: Some(vec![asset_id]),
+        }
+        .into();
+        assert_ok!(call.dispatch(Origin::root()));
+        assert_ok!(Assets::transfer(
+            Origin::signed(receiver1.clone()),
+            asset_id.clone(),
+            receiver2.clone(),
+            50
+        ));
+        assert_eq!(Assets::balance(asset_id, receiver1), 50);
+        assert_eq!(Assets::balance(asset_id, receiver2), 50);
     });
 }

@@ -49,9 +49,9 @@ pub mod pallet {
         },
     };
     use frame_system::pallet_prelude::*;
+    use manta_primitives::types::{AccountId, AssetId};
     use sp_runtime::DispatchResult;
     use sp_std::vec::Vec;
-    use manta_primitives::types::{AccountId, AssetId};
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -72,10 +72,13 @@ pub mod pallet {
         }
     }
 
-    ///
+    /// Freeze asset when sibling parachain was hacked
+    /// TODO: move to primitives/assets?
     pub trait AssetFreezer {
         fn freeze_asset(asset_id: AssetId) -> DispatchResult;
         fn freeze(asset_id: AssetId, account: AccountId) -> DispatchResult;
+        fn thaw_asset(asset_id: AssetId) -> DispatchResult;
+        fn thaw(asset_id: AssetId, account: AccountId) -> DispatchResult;
     }
 
     /// Configuration trait of this pallet.
@@ -93,11 +96,14 @@ pub mod pallet {
         /// something like sudo or other emergency processes
         type MaintenanceCallFilter: Contains<Self::Call>;
 
-        /// The origin from which the call to enter or exit maintenance mode must come
+        /// The origin from which the call to enter maintenance mode must come
         /// Take care when choosing your maintenance call filter to ensure that you'll still be
-        /// able to return to normal mode. For example, if your MaintenanceOrigin is a council, make
+        /// able to return to normal mode. For example, if your EnterMaintenanceOrigin is a council, make
         /// sure that your councilors can still cast votes.
-        type MaintenanceOrigin: EnsureOrigin<Self::Origin>;
+        type EnterMaintenanceOrigin: EnsureOrigin<Self::Origin>;
+
+        /// The origin from which the call to exit maintenance mode.
+        type ResumeNormalOrigin: EnsureOrigin<Self::Origin>;
 
         /// Handler to suspend and resume XCM execution
         type XcmExecutionManager: PauseXcmExecution;
@@ -126,8 +132,10 @@ pub mod pallet {
             + OnFinalize<Self::BlockNumber>
             + OffchainWorker<Self::BlockNumber>;
 
+        /// The asset freeze/thaw hook when enter sibling parachain hack mode or resume normal mode.
         type AssetFreezer: AssetFreezer;
 
+        /// The asset should belong to registered parachain on asset manager.
         type AssetIdInParachain: Contains<AssetId>;
     }
 
@@ -137,7 +145,10 @@ pub mod pallet {
         /// The chain was put into Maintenance Mode
         EnteredMaintenanceMode,
         /// Sibling was hacked.
-        EnteredSiblingHackMode { id: ParaId },
+        EnteredSiblingHackMode {
+            id: ParaId,
+            assets: Option<Vec<AssetId>>,
+        },
         /// Sibling was resumed.
         ResumedSiblingNormalMode { id: ParaId },
         /// The chain returned to its normal operating state
@@ -176,9 +187,10 @@ pub mod pallet {
         /// Weight cost is:
         /// * One DB read to ensure we're not already in maintenance mode
         /// * Three DB writes - 1 for the mode, 1 for suspending xcm execution, 1 for the event
+        #[pallet::call_index(0)]
         #[pallet::weight(T::DbWeight::get().read + 3 * T::DbWeight::get().write)]
         pub fn enter_maintenance_mode(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            T::MaintenanceOrigin::ensure_origin(origin)?;
+            T::EnterMaintenanceOrigin::ensure_origin(origin)?;
 
             // Ensure we're not aleady in maintenance mode.
             // This test is not strictly necessary, but seeing the error may help a confused chain
@@ -204,9 +216,10 @@ pub mod pallet {
         /// Weight cost is:
         /// * One DB read to ensure we're in maintenance mode
         /// * Three DB writes - 1 for the mode, 1 for resuming xcm execution, 1 for the event
+        #[pallet::call_index(1)]
         #[pallet::weight(T::DbWeight::get().read + 3 * T::DbWeight::get().write)]
         pub fn resume_normal_operation(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            T::MaintenanceOrigin::ensure_origin(origin)?;
+            T::EnterMaintenanceOrigin::ensure_origin(origin)?;
 
             // Ensure we're actually in maintenance mode.
             // This test is not strictly necessary, but seeing the error may help a confused chain
@@ -228,13 +241,15 @@ pub mod pallet {
 
         /// Place the sibling parachain in maintenance mode.
         ///
+        #[pallet::call_index(2)]
         #[pallet::weight(T::DbWeight::get().read + 3 * T::DbWeight::get().write)]
         pub fn enter_sibling_hack_mode(
             origin: OriginFor<T>,
+            // TODO: use MultiLocation?
             hacked_chain_id: ParaId,
             affected_assets: Option<Vec<AssetId>>,
         ) -> DispatchResultWithPostInfo {
-            T::MaintenanceOrigin::ensure_origin(origin.clone())?;
+            T::EnterMaintenanceOrigin::ensure_origin(origin.clone())?;
 
             ensure!(
                 !HackedSiblingId::<T>::get(&hacked_chain_id),
@@ -243,8 +258,9 @@ pub mod pallet {
             HackedSiblingId::<T>::insert(&hacked_chain_id, true);
 
             // freeze sibling parachain asset
-            if let Some(assets) = affected_assets {
+            if let Some(assets) = affected_assets.clone() {
                 for asset in assets {
+                    // TODO: AssetId should belong to specific Parachain
                     if T::AssetIdInParachain::contains(&asset) {
                         T::AssetFreezer::freeze_asset(asset)?;
                     }
@@ -253,17 +269,20 @@ pub mod pallet {
 
             <Pallet<T>>::deposit_event(Event::EnteredSiblingHackMode {
                 id: hacked_chain_id,
+                assets: affected_assets,
             });
             Ok(().into())
         }
 
+        #[pallet::call_index(3)]
         #[pallet::weight(T::DbWeight::get().read + 3 * T::DbWeight::get().write)]
         pub fn resume_sibling_normal_mode(
             origin: OriginFor<T>,
+            // TODO: use MultiLocation?
             normal_chain_id: ParaId,
             affected_assets: Option<Vec<AssetId>>,
         ) -> DispatchResultWithPostInfo {
-            T::MaintenanceOrigin::ensure_origin(origin.clone())?;
+            T::EnterMaintenanceOrigin::ensure_origin(origin.clone())?;
 
             ensure!(
                 HackedSiblingId::<T>::contains_key(&normal_chain_id),
@@ -273,12 +292,11 @@ pub mod pallet {
 
             // unfreeze sibling parachain asset
             if let Some(assets) = affected_assets {
-                for _asset in assets {
-                    // TODO: make sure origin can do `freeze_asset`
-                    // TODO: More check, asset must has registered
+                for asset in assets {
+                    if T::AssetIdInParachain::contains(&asset) {
+                        T::AssetFreezer::thaw_asset(asset)?;
+                    }
                 }
-            } else {
-                // TODO: should freeze all asset belong to this sibling asset
             }
 
             <Pallet<T>>::deposit_event(Event::ResumedSiblingNormalMode {
@@ -286,6 +304,8 @@ pub mod pallet {
             });
             Ok(().into())
         }
+
+        // TODO: Do we need freeze and thaw to some specific account/hacker?
     }
 
     /// Genesis config for maintenance mode pallet

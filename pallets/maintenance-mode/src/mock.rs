@@ -22,8 +22,9 @@ use super::*;
 use crate as pallet_maintenance_mode;
 use cumulus_primitives_core::{relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler};
 use frame_support::{
-    construct_runtime, ord_parameter_types, parameter_types,
+    construct_runtime,
     dispatch::RawOrigin,
+    ord_parameter_types, parameter_types,
     traits::{
         Contains, Everything, GenesisBuild, OffchainWorker, OnFinalize, OnIdle, OnInitialize,
         OnRuntimeUpgrade,
@@ -33,7 +34,10 @@ use frame_support::{
 use frame_system::EnsureRoot;
 use manta_primitives::types::{AccountId, AssetId, Balance, BlockNumber};
 use sp_core::H256;
-use sp_runtime::{traits::{BlakeTwo256, ConstU32, IdentityLookup}, Perbill, DispatchResult};
+use sp_runtime::{
+    traits::{BlakeTwo256, ConstU32, IdentityLookup},
+    DispatchResult, Perbill,
+};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -90,15 +94,12 @@ impl frame_system::Config for Test {
     type MaxConsumers = ConstU32<16>;
 }
 
-ord_parameter_types! {
-    pub const ListingOrigin: AccountId = ALICE;
-}
 impl Config for Test {
     type Event = Event;
     type NormalCallFilter = Everything;
     type MaintenanceCallFilter = MaintenanceCallFilter;
-    type MaintenanceOrigin = EnsureRoot<AccountId>;
-    // type MaintenanceOrigin = EnsureSignedBy<ListingOrigin, AccountId>;
+    type EnterMaintenanceOrigin = EnsureRoot<AccountId>;
+    type ResumeNormalOrigin = EnsureRoot<AccountId>;
     type XcmExecutionManager = ();
     type NormalDmpHandler = NormalDmpHandler;
     type MaintenanceDmpHandler = MaintenanceDmpHandler;
@@ -108,15 +109,34 @@ impl Config for Test {
     type AssetIdInParachain = Everything;
 }
 
+ord_parameter_types! {
+    pub const AssetOwner: AccountId = ALICE;
+}
+
 pub struct AssetsFreezer;
 impl AssetFreezer for AssetsFreezer {
     fn freeze_asset(asset_id: AssetId) -> DispatchResult {
-        Assets::freeze_asset(RawOrigin::Signed(ListingOrigin::get()).into(), asset_id)
-        // Assets::freeze_asset(Origin::signed(ListingOrigin::get()), asset_id)
+        Assets::freeze_asset(RawOrigin::Signed(AssetOwner::get()).into(), asset_id)
     }
 
     fn freeze(asset_id: AssetId, account: AccountId) -> DispatchResult {
-        Assets::freeze(RawOrigin::Signed(ListingOrigin::get()).into(), asset_id, account)
+        Assets::freeze(
+            RawOrigin::Signed(AssetOwner::get()).into(),
+            asset_id,
+            account,
+        )
+    }
+
+    fn thaw_asset(asset_id: AssetId) -> DispatchResult {
+        Assets::thaw_asset(RawOrigin::Signed(AssetOwner::get()).into(), asset_id)
+    }
+
+    fn thaw(asset_id: AssetId, account: AccountId) -> DispatchResult {
+        Assets::thaw(
+            RawOrigin::Signed(AssetOwner::get()).into(),
+            asset_id,
+            account,
+        )
     }
 }
 
@@ -167,8 +187,9 @@ impl pallet_balances::Config for Test {
 /// During maintenance mode we will not allow any calls.
 pub struct MaintenanceCallFilter;
 impl Contains<Call> for MaintenanceCallFilter {
-    fn contains(_: &Call) -> bool {
-        false
+    // Allow Balances calls, Don't allow Assets calls.
+    fn contains(call: &Call) -> bool {
+        matches!(call, Call::Balances(_))
     }
 }
 
@@ -327,17 +348,24 @@ impl OffchainWorker<BlockNumber> for NormalHooks {
 /// Externality builder for pallet maintenance mode's mock runtime
 pub(crate) struct ExtBuilder {
     maintenance_mode: bool,
+    balances: Vec<(AccountId, Balance)>,
 }
 
 impl Default for ExtBuilder {
     fn default() -> ExtBuilder {
         ExtBuilder {
             maintenance_mode: false,
+            balances: vec![],
         }
     }
 }
 
 impl ExtBuilder {
+    pub fn with_balances(mut self, balances: Vec<(AccountId, Balance)>) -> Self {
+        self.balances = balances;
+        self
+    }
+
     pub(crate) fn with_maintenance_mode(mut self, m: bool) -> Self {
         self.maintenance_mode = m;
         self
@@ -348,6 +376,12 @@ impl ExtBuilder {
             .build_storage::<Test>()
             .expect("Frame system builds valid default genesis config");
 
+        pallet_balances::GenesisConfig::<Test> {
+            balances: self.balances,
+        }
+        .assimilate_storage(&mut t)
+        .unwrap();
+
         GenesisBuild::<Test>::assimilate_storage(
             &pallet_maintenance_mode::GenesisConfig {
                 start_in_maintenance_mode: self.maintenance_mode,
@@ -356,28 +390,6 @@ impl ExtBuilder {
         )
         .expect("Pallet maintenance mode storage can be assimilated");
 
-        // GenesisBuild::<Test>::assimilate_storage(
-        //     &pallet_assets::GenesisConfig {
-        //         assets: vec![
-        //             // id, owner, is_sufficient, min_balance
-        //             (999, 0, true, 1),
-        //             (888, 0, true, 1),
-        //         ],
-        //         metadata: vec![
-        //             // id, name, symbol, decimals
-        //             (999, "Token Name".into(), "TOKEN".into(), 10),
-        //             (888, "Token Name".into(), "TOKEN".into(), 10),
-        //         ],
-        //         accounts: vec![
-        //             // id, account_id, balance
-        //             (999, 1, 100),
-        //             (888, 1, 100),
-        //         ],
-        //     },
-        //     &mut t,
-        // )
-        // .expect("Pallet maintenance mode storage can be assimilated");
-
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
         ext
@@ -385,7 +397,7 @@ impl ExtBuilder {
 }
 
 pub(crate) fn events() -> Vec<pallet_maintenance_mode::Event> {
-    System::events()
+    let events = System::events()
         .into_iter()
         .map(|r| r.event)
         .filter_map(|e| {
@@ -395,7 +407,9 @@ pub(crate) fn events() -> Vec<pallet_maintenance_mode::Event> {
                 None
             }
         })
-        .collect::<Vec<_>>()
+        .collect::<Vec<_>>();
+    System::reset_events();
+    events
 }
 
 pub(crate) fn mock_events() -> Vec<mock_pallet_maintenance_hooks::Event> {

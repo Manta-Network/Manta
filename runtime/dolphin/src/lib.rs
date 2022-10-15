@@ -27,7 +27,12 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use manta_collator_selection::IdentityCollator;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{AccountIdLookup, BlakeTwo256, Block as BlockT}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, Perbill, Permill, MultiAddress};
+use sp_runtime::{
+    create_runtime_str, generic, impl_opaque_keys,
+    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+    transaction_validity::{TransactionSource, TransactionValidity},
+    ApplyExtrinsicResult, MultiAddress, Perbill, Permill,
+};
 use sp_std::{cmp::Ordering, prelude::*};
 
 #[cfg(feature = "std")]
@@ -40,7 +45,7 @@ use frame_support::{
     pallet_prelude::DispatchResult,
     parameter_types,
     traits::{
-        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec,
+        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, Everything, IsInVec,
         NeverEnsureOrigin, OffchainWorker, OnFinalize, OnIdle, OnInitialize, OnRuntimeUpgrade,
         PrivilegeCmp,
     },
@@ -50,7 +55,6 @@ use frame_support::{
     },
     PalletId,
 };
-use frame_support::traits::Everything;
 use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureRoot,
@@ -253,8 +257,11 @@ impl pallet_maintenance_mode::Config for Runtime {
     type Event = Event;
     type NormalCallFilter = NormalCallFilter;
     type MaintenanceCallFilter = MaintenanceCallFilter;
-    type MaintenanceOrigin =
-        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>;
+    type EnterMaintenanceOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 2, 6>,
+    >;
+    type ResumeNormalOrigin = EnsureRoot<AccountId>;
     type XcmExecutionManager = XcmExecutionManager;
     type NormalDmpHandler = DmpQueue;
     type MaintenanceDmpHandler = MaintenanceDmpHandler;
@@ -270,16 +277,46 @@ use frame_support::dispatch::RawOrigin;
 pub struct AssetsFreezer;
 impl pallet_maintenance_mode::AssetFreezer for AssetsFreezer {
     fn freeze_asset(asset_id: AssetId) -> DispatchResult {
-        Assets::freeze_asset(RawOrigin::Signed(AssetManager::account_id()).into(), asset_id)
+        // The origin/account value `AssetManager::account_id()` should match the owner of `pallet_assets`
+        // when create an asset by `force_create` on `AssetRegistrar` implementations.
+        Assets::freeze_asset(
+            RawOrigin::Signed(AssetManager::account_id()).into(),
+            asset_id,
+        )
     }
 
     fn freeze(asset_id: AssetId, account: AccountId) -> DispatchResult {
-        Assets::freeze(RawOrigin::Signed(AssetManager::account_id()).into(), asset_id, MultiAddress::Id(account))
+        // The origin/account value `AssetManager::account_id()` should match the owner of `pallet_assets`
+        // when create an asset by `force_create` on `AssetRegistrar` implementations.
+        Assets::freeze(
+            RawOrigin::Signed(AssetManager::account_id()).into(),
+            asset_id,
+            MultiAddress::Id(account),
+        )
+    }
+
+    fn thaw_asset(asset_id: AssetId) -> sp_runtime::DispatchResult {
+        // The origin/account value `AssetManager::account_id()` should match the owner of `pallet_assets`
+        // when create an asset by `force_create` on `AssetRegistrar` implementations.
+        Assets::thaw_asset(
+            RawOrigin::Signed(AssetManager::account_id()).into(),
+            asset_id,
+        )
+    }
+
+    fn thaw(asset_id: AssetId, account: AccountId) -> sp_runtime::DispatchResult {
+        // The origin/account value `AssetManager::account_id()` should match the owner of `pallet_assets`
+        // when create an asset by `force_create` on `AssetRegistrar` implementations.
+        Assets::thaw(
+            RawOrigin::Signed(AssetManager::account_id()).into(),
+            asset_id,
+            MultiAddress::Id(account),
+        )
     }
 }
 
 parameter_types! {
-    // `UnpausablePallets` is used for `pallet_tx_pause` in case admin mistake make them as pausable.
+    // `UnpausablePallets` is used for `pallet_tx_pause` in case `PauseOrigin` mistake make them as pausable.
     pub UnpausablePallets: Vec<Vec<u8>> = vec![
         // `MaintenanceMode` should always unpausable. we don't need add `TransactionPause` here because
         // `TransactionPause` itself was checked inside pause action, so it's unpausable naturally.
