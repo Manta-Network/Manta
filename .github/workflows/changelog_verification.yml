@@ -37,4 +37,4 @@ jobs:
       - name: Diff changelogs
         run: |
           cd ${{ github.workspace }}/manta
-          diff --color -u CHANGELOG.md CHANGELOG_ORIGIN.md
+          diff --color -u CHANGELOG_ORIGIN.md CHANGELOG.md
