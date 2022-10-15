@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## v3.4.3
+### Changed
+- [\#836](https://github.com/Manta-Network/Manta/pull/836) client trait bound refactor [CA]
+- [\#848](https://github.com/Manta-Network/Manta/pull/848) Fix XCM tests [CADO]
+
+### Fixed
+- [\#846](https://github.com/Manta-Network/Manta/pull/846) Fix sequence skipping when a collator misses its slot [CA]
+
 ## v3.4.2
 ### Changed
 - [\#834](https://github.com/Manta-Network/Manta/pull/834) Followups to Staking [CA]
