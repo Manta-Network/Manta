@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Unit tests for the transaction pause pallet.
+//! Unit tests for the maintenance mode pallet.
 
 use super::*;
 use crate::{
     mock::{
-        events, mock_events, AccountId, Assets, Call as OuterCall, ExtBuilder, MaintenanceMode,
-        Origin, Test, ALICE,
+        events, mock_events, Assets, Call as OuterCall, ExtBuilder, MaintenanceMode,
+        Origin, Test, ALICE, BOB,
     },
     Call, Error, Event, ExecutiveHooks,
 };
@@ -30,13 +30,13 @@ use frame_support::{
     dispatch::Dispatchable,
     traits::{OffchainWorker, OnFinalize, OnIdle, OnInitialize, OnRuntimeUpgrade},
 };
-use manta_primitives::types::AssetId;
+use manta_primitives::types::{AccountId, AssetId};
 
 #[test]
 fn can_remark_during_normal_operation() {
     ExtBuilder::default().build().execute_with(|| {
         let call: OuterCall = frame_system::Call::remark { remark: vec![] }.into();
-        assert_ok!(call.dispatch(Origin::signed(1)));
+        assert_ok!(call.dispatch(Origin::signed(ALICE)));
     })
 }
 
@@ -48,7 +48,7 @@ fn cannot_remark_during_maintenance_mode() {
         .execute_with(|| {
             let call: OuterCall = frame_system::Call::remark { remark: vec![] }.into();
             assert_noop!(
-                call.dispatch(Origin::signed(1)),
+                call.dispatch(Origin::signed(ALICE)),
                 frame_system::Error::<Test>::CallFiltered
             );
         })
@@ -72,7 +72,7 @@ fn cannot_enter_maintenance_mode_from_wrong_origin() {
         .execute_with(|| {
             let call: OuterCall = Call::enter_maintenance_mode {}.into();
             assert_noop!(
-                call.dispatch(Origin::signed(1)),
+                call.dispatch(Origin::signed(ALICE)),
                 frame_system::Error::<Test>::CallFiltered
             );
         })
@@ -113,7 +113,7 @@ fn cannot_resume_normal_operation_from_wrong_origin() {
         .execute_with(|| {
             let call: OuterCall = Call::resume_normal_operation {}.into();
             assert_noop!(
-                call.dispatch(Origin::signed(1)),
+                call.dispatch(Origin::signed(ALICE)),
                 frame_system::Error::<Test>::CallFiltered
             );
         })
@@ -217,8 +217,7 @@ fn enter_sibling_hack_mode_none_asset() {
             affected_assets: None,
         }
         .into();
-        // assert_ok!(call.dispatch(Origin::root()));
-        assert_ok!(call.dispatch(Origin::signed(ALICE)));
+        assert_ok!(call.dispatch(Origin::root()));
 
         assert!(Pallet::<Test>::hacked_sibling_id(&ParaId::new(1000)));
         assert!(!Pallet::<Test>::hacked_sibling_id(&ParaId::new(2000)));
@@ -229,8 +228,7 @@ fn enter_sibling_hack_mode_none_asset() {
         }
         .into();
         assert_noop!(
-            // call.dispatch(Origin::root()),
-            call.dispatch(Origin::signed(ALICE)),
+            call.dispatch(Origin::root()),
             Error::<Test>::AlreadyInSiblingHackMode
         );
     });
@@ -240,26 +238,26 @@ fn enter_sibling_hack_mode_none_asset() {
 fn enter_sibling_hack_mode_some_asset() {
     ExtBuilder::default().build().execute_with(|| {
         let asset_id: AssetId = 0;
-        let sender: AccountId = 1;
-        let receiver: AccountId = 2;
+        let sender: AccountId = ALICE;
+        let receiver: AccountId = BOB;
         assert_ok!(Assets::force_create(
             Origin::root(),
             asset_id,
-            sender, // owner
+            sender.clone(), // owner
             true,
             1
         ));
-        assert_ok!(Assets::mint(Origin::signed(sender), asset_id, sender, 100));
-        assert_eq!(Assets::balance(asset_id, sender), 100);
+        assert_ok!(Assets::mint(Origin::signed(sender.clone()), asset_id, sender.clone(), 100));
+        assert_eq!(Assets::balance(asset_id, sender.clone()), 100);
 
         let call: OuterCall = Call::enter_sibling_hack_mode {
             hacked_chain_id: ParaId::new(1000),
             affected_assets: Some(vec![asset_id]),
         }
         .into();
-        // assert_ok!(call.dispatch(Origin::root()));
-        assert_ok!(call.dispatch(Origin::signed(ALICE)));
-        // assert_ok!(call.dispatch(Origin::signed(2)));
+        assert_ok!(call.dispatch(Origin::root()));
+        // assert_ok!(call.dispatch(Origin::signed(ALICE)));
+        // assert_ok!(call.dispatch(Origin::signed(BOB)));
 
         assert_noop!(
             Assets::transfer(Origin::signed(sender), asset_id, receiver, 50),

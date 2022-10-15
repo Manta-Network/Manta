@@ -55,13 +55,14 @@ use frame_support::{
     },
     PalletId,
 };
+use frame_support::traits::Everything;
 use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureRoot,
 };
 use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
-    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
+    types::{AccountId, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
@@ -266,6 +267,19 @@ impl pallet_maintenance_mode::Config for Runtime {
     // use `AllPalletsReversedWithSystemFirst` that not change hooks in normal operation
     type NormalExecutiveHooks = AllPalletsReversedWithSystemFirst;
     type MaintenanceExecutiveHooks = MaintenanceHooks;
+    type AssetFreezer = Assets;
+    type AssetIdInParachain = Everything;
+}
+
+pub struct AssetsFreezer;
+impl pallet_maintenance_mode::AssetFreezer for AssetsFreezer {
+    fn freeze_asset(asset_id: AssetId) -> DispatchResult {
+        Assets::freeze_asset(asset_id)
+    }
+
+    fn freeze(asset_id: AssetId, account: AccountId) -> DispatchResult {
+        Assets::freeze(asset_id, account)
+    }
 }
 
 parameter_types! {

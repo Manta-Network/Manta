@@ -51,6 +51,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use sp_runtime::DispatchResult;
     use sp_std::vec::Vec;
+    use manta_primitives::types::{AccountId, AssetId};
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -71,9 +72,15 @@ pub mod pallet {
         }
     }
 
+    ///
+    pub trait AssetFreezer {
+        fn freeze_asset(asset_id: AssetId) -> DispatchResult;
+        fn freeze(asset_id: AssetId, account: AccountId) -> DispatchResult;
+    }
+
     /// Configuration trait of this pallet.
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_assets::Config {
+    pub trait Config: frame_system::Config {
         /// Overarching event type
         type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 
@@ -118,6 +125,10 @@ pub mod pallet {
             + OnIdle<Self::BlockNumber>
             + OnFinalize<Self::BlockNumber>
             + OffchainWorker<Self::BlockNumber>;
+
+        type AssetFreezer: AssetFreezer;
+
+        type AssetIdInParachain: Contains<AssetId>;
     }
 
     #[pallet::event]
@@ -221,7 +232,7 @@ pub mod pallet {
         pub fn enter_sibling_hack_mode(
             origin: OriginFor<T>,
             hacked_chain_id: ParaId,
-            affected_assets: Option<Vec<T::AssetId>>,
+            affected_assets: Option<Vec<AssetId>>,
         ) -> DispatchResultWithPostInfo {
             T::MaintenanceOrigin::ensure_origin(origin.clone())?;
 
@@ -231,13 +242,12 @@ pub mod pallet {
             );
             HackedSiblingId::<T>::insert(&hacked_chain_id, true);
 
-            // let origin = <T as pallet_assets::Config>::ForceOrigin::from(origin);
-
             // freeze sibling parachain asset
             if let Some(assets) = affected_assets {
                 for asset in assets {
-                    // TODO: make sure origin can do `freeze_asset`
-                    pallet_assets::Pallet::<T>::freeze_asset(origin.clone(), asset)?;
+                    if T::AssetIdInParachain::contains(&asset) {
+                        T::AssetFreezer::freeze_asset(asset)?;
+                    }
                 }
             }
 
@@ -251,7 +261,7 @@ pub mod pallet {
         pub fn resume_sibling_normal_mode(
             origin: OriginFor<T>,
             normal_chain_id: ParaId,
-            affected_assets: Option<Vec<T::AssetId>>,
+            affected_assets: Option<Vec<AssetId>>,
         ) -> DispatchResultWithPostInfo {
             T::MaintenanceOrigin::ensure_origin(origin.clone())?;
 
@@ -263,10 +273,9 @@ pub mod pallet {
 
             // unfreeze sibling parachain asset
             if let Some(assets) = affected_assets {
-                for asset in assets {
+                for _asset in assets {
                     // TODO: make sure origin can do `freeze_asset`
                     // TODO: More check, asset must has registered
-                    pallet_assets::Pallet::<T>::thaw_asset(origin.clone(), asset)?;
                 }
             } else {
                 // TODO: should freeze all asset belong to this sibling asset

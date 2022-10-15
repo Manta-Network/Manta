@@ -29,22 +29,20 @@ use frame_support::{
     },
     weights::Weight,
 };
-use frame_system::{EnsureRoot, EnsureSignedBy};
-use manta_primitives::types::{AssetId, Balance};
+use frame_support::dispatch::RawOrigin;
+use frame_system::EnsureRoot;
+use manta_primitives::types::{AccountId, AssetId, Balance};
 use sp_core::H256;
-use sp_runtime::{
-    testing::Header,
-    traits::{BlakeTwo256, ConstU32, IdentityLookup},
-    Perbill,
-};
+use sp_runtime::{testing::Header, traits::{BlakeTwo256, ConstU32, IdentityLookup}, Perbill, DispatchResult};
 
-pub type AccountId = u64;
+// pub type AccountId = u32;
 pub type BlockNumber = u32;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
-pub const ALICE: AccountId = 1;
+pub const ALICE: AccountId = AccountId::new([1u8; 32]);
+pub const BOB: AccountId = AccountId::new([2u8; 32]);
 
 // Configure a mock runtime to test the pallet.
 construct_runtime!(
@@ -102,13 +100,27 @@ impl Config for Test {
     type Event = Event;
     type NormalCallFilter = Everything;
     type MaintenanceCallFilter = MaintenanceCallFilter;
-    // type MaintenanceOrigin = EnsureRoot<AccountId>;
-    type MaintenanceOrigin = EnsureSignedBy<ListingOrigin, AccountId>;
+    type MaintenanceOrigin = EnsureRoot<AccountId>;
+    // type MaintenanceOrigin = EnsureSignedBy<ListingOrigin, AccountId>;
     type XcmExecutionManager = ();
     type NormalDmpHandler = NormalDmpHandler;
     type MaintenanceDmpHandler = MaintenanceDmpHandler;
     type NormalExecutiveHooks = NormalHooks;
     type MaintenanceExecutiveHooks = MaintenanceHooks;
+    type AssetFreezer = AssetsFreezer;
+    type AssetIdInParachain = Everything;
+}
+
+pub struct AssetsFreezer;
+impl AssetFreezer for AssetsFreezer {
+    fn freeze_asset(asset_id: AssetId) -> DispatchResult {
+        // Assets::freeze_asset(RawOrigin::Signed(ListingOrigin::get()).into(), asset_id)
+        Assets::freeze_asset(Origin::signed(ListingOrigin::get()), asset_id)
+    }
+
+    fn freeze(asset_id: AssetId, account: AccountId) -> DispatchResult {
+        Assets::freeze(RawOrigin::Signed(ListingOrigin::get()).into(), asset_id, account)
+    }
 }
 
 parameter_types! {
@@ -347,27 +359,27 @@ impl ExtBuilder {
         )
         .expect("Pallet maintenance mode storage can be assimilated");
 
-        GenesisBuild::<Test>::assimilate_storage(
-            &pallet_assets::GenesisConfig {
-                assets: vec![
-                    // id, owner, is_sufficient, min_balance
-                    (999, 0, true, 1),
-                    (888, 0, true, 1),
-                ],
-                metadata: vec![
-                    // id, name, symbol, decimals
-                    (999, "Token Name".into(), "TOKEN".into(), 10),
-                    (888, "Token Name".into(), "TOKEN".into(), 10),
-                ],
-                accounts: vec![
-                    // id, account_id, balance
-                    (999, 1, 100),
-                    (888, 1, 100),
-                ],
-            },
-            &mut t,
-        )
-        .expect("Pallet maintenance mode storage can be assimilated");
+        // GenesisBuild::<Test>::assimilate_storage(
+        //     &pallet_assets::GenesisConfig {
+        //         assets: vec![
+        //             // id, owner, is_sufficient, min_balance
+        //             (999, 0, true, 1),
+        //             (888, 0, true, 1),
+        //         ],
+        //         metadata: vec![
+        //             // id, name, symbol, decimals
+        //             (999, "Token Name".into(), "TOKEN".into(), 10),
+        //             (888, "Token Name".into(), "TOKEN".into(), 10),
+        //         ],
+        //         accounts: vec![
+        //             // id, account_id, balance
+        //             (999, 1, 100),
+        //             (888, 1, 100),
+        //         ],
+        //     },
+        //     &mut t,
+        // )
+        // .expect("Pallet maintenance mode storage can be assimilated");
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
