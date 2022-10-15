@@ -959,7 +959,7 @@ checksum = "c1db59621ec70f09c5e9b597b220c7a2b43611f4710dc03ceb8748637775692c"
 
 [[package]]
 name = "calamari-runtime"
-version = "3.3.0"
+version = "3.4.3"
 dependencies = [
  "calamari-vesting",
  "cumulus-pallet-dmp-queue",
@@ -968,8 +968,10 @@ dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
+ "cumulus-test-relay-sproof-builder",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -995,6 +997,7 @@ dependencies = [
  "pallet-democracy",
  "pallet-membership",
  "pallet-multisig",
+ "pallet-parachain-staking",
  "pallet-preimage",
  "pallet-scheduler",
  "pallet-session",
@@ -1005,10 +1008,13 @@ dependencies = [
  "pallet-tx-pause",
  "pallet-utility",
  "pallet-xcm",
+ "pallet-xcm-benchmarks",
  "parachain-info",
  "parity-scale-codec",
+ "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-primitives",
+ "polkadot-runtime-parachains",
  "reqwest",
  "runtime-common",
  "scale-info",
@@ -1030,20 +1036,23 @@ dependencies = [
  "sp-std",
  "sp-transaction-pool",
  "sp-version",
+ "substrate-fixed",
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "xcm-simulator",
 ]
 
 [[package]]
 name = "calamari-vesting"
-version = "3.3.0"
+version = "3.4.2"
 dependencies = [
  "chrono",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "manta-primitives",
  "pallet-balances",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -1299,6 +1308,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "30ed07550be01594c6026cff2a1d7fe9c8f683caa798e12b68694ac9e88286a3"
 dependencies = [
  "cache-padded",
+]
+
+[[package]]
+name = "console"
+version = "0.15.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "89eab4d20ce20cea182308bca13088fecea9c05f6776cf287205d41a0ed3c847"
+dependencies = [
+ "encode_unicode",
+ "libc",
+ "once_cell",
+ "terminal_size",
+ "winapi",
 ]
 
 [[package]]
@@ -1583,7 +1605,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57952ca27b5e3606ff4dd79b0020231aaf9d6aa76dc05fd30137538c50bd3ce8"
 dependencies = [
  "generic-array 0.14.5",
- "typenum",
+ "typenum 1.15.0",
 ]
 
 [[package]]
@@ -2351,7 +2373,7 @@ dependencies = [
 
 [[package]]
 name = "dolphin-runtime"
-version = "3.3.0"
+version = "3.4.3"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -2399,6 +2421,7 @@ dependencies = [
  "pallet-tx-pause",
  "pallet-utility",
  "pallet-xcm",
+ "pallet-xcm-benchmarks",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
@@ -2525,6 +2548,12 @@ dependencies = [
  "subtle",
  "zeroize",
 ]
+
+[[package]]
+name = "encode_unicode"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a357d28ed41a50f9c765dbfe56cbc04a64e53e5fc58ba79fbc34c10ef3df831f"
 
 [[package]]
 name = "encoding_rs"
@@ -3257,7 +3286,7 @@ version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ffdf9f34f1447443d37393cc6c2b8313aebddcd96906caf34e54c68d8e57d7bd"
 dependencies = [
- "typenum",
+ "typenum 1.15.0",
 ]
 
 [[package]]
@@ -3266,7 +3295,7 @@ version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd48d33ec7f05fbfa152300fdad764757cbded343c1aa1cff2fbaf4134851803"
 dependencies = [
- "typenum",
+ "typenum 1.15.0",
  "version_check",
 ]
 
@@ -4703,7 +4732,7 @@ dependencies = [
  "rand 0.8.5",
  "serde",
  "sha2 0.9.9",
- "typenum",
+ "typenum 1.15.0",
 ]
 
 [[package]]
@@ -4861,7 +4890,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "3.3.0"
+version = "3.4.3"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -4890,6 +4919,7 @@ dependencies = [
  "nimbus-primitives",
  "pallet-author-inherent",
  "pallet-manta-pay",
+ "pallet-parachain-staking",
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",
  "polkadot-cli",
@@ -4917,6 +4947,7 @@ dependencies = [
  "session-key-primitives",
  "sp-api",
  "sp-application-crypto",
+ "sp-arithmetic",
  "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
@@ -4955,12 +4986,13 @@ dependencies = [
 
 [[package]]
 name = "manta-collator-selection"
-version = "3.3.0"
+version = "3.4.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
+ "manta-primitives",
  "nimbus-primitives",
  "pallet-aura",
  "pallet-authorship",
@@ -5037,7 +5069,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "3.3.0"
+version = "3.4.2"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5058,7 +5090,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "3.3.0"
+version = "3.4.3"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -5392,7 +5424,7 @@ dependencies = [
  "rand 0.8.5",
  "rand_distr",
  "simba",
- "typenum",
+ "typenum 1.15.0",
 ]
 
 [[package]]
@@ -5507,7 +5539,7 @@ dependencies = [
 [[package]]
 name = "nimbus-consensus"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=manta-v3.3.0#13df4c6fc654d9f76c925078a4fd2bdaadeb18cd"
+source = "git+https://github.com/manta-network/nimbus.git?tag=v3.4.3#fdd2ff5f9f57a22b343c5d2dec54a0582dc95b33"
 dependencies = [
  "async-trait",
  "cumulus-client-consensus-common",
@@ -5538,7 +5570,7 @@ dependencies = [
 [[package]]
 name = "nimbus-primitives"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=manta-v3.3.0#13df4c6fc654d9f76c925078a4fd2bdaadeb18cd"
+source = "git+https://github.com/manta-network/nimbus.git?tag=v3.4.3#fdd2ff5f9f57a22b343c5d2dec54a0582dc95b33"
 dependencies = [
  "async-trait",
  "frame-benchmarking",
@@ -5886,7 +5918,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-manager"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5938,7 +5970,7 @@ dependencies = [
 [[package]]
 name = "pallet-aura-style-filter"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=manta-v3.3.0#13df4c6fc654d9f76c925078a4fd2bdaadeb18cd"
+source = "git+https://github.com/manta-network/nimbus.git?tag=v3.4.3#fdd2ff5f9f57a22b343c5d2dec54a0582dc95b33"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5954,7 +5986,7 @@ dependencies = [
 [[package]]
 name = "pallet-author-inherent"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=manta-v3.3.0#13df4c6fc654d9f76c925078a4fd2bdaadeb18cd"
+source = "git+https://github.com/manta-network/nimbus.git?tag=v3.4.3#fdd2ff5f9f57a22b343c5d2dec54a0582dc95b33"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6531,6 +6563,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-parachain-staking"
+version = "3.4.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "manta-collator-selection",
+ "manta-primitives",
+ "pallet-balances",
+ "pallet-session",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "similar-asserts",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+ "substrate-fixed",
+]
+
+[[package]]
 name = "pallet-preimage"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26#e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"
@@ -6798,7 +6855,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "3.3.0"
+version = "3.4.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -9031,39 +9088,14 @@ dependencies = [
 
 [[package]]
 name = "runtime-common"
-version = "3.3.0"
+version = "3.4.3"
 dependencies = [
- "cumulus-pallet-dmp-queue",
- "cumulus-pallet-parachain-system",
- "cumulus-pallet-xcm",
- "cumulus-pallet-xcmp-queue",
- "cumulus-primitives-parachain-inherent",
- "cumulus-test-relay-sproof-builder",
  "frame-support",
- "frame-system",
  "manta-primitives",
- "orml-traits",
- "orml-xtokens",
- "pallet-asset-manager",
- "pallet-assets",
- "pallet-balances",
  "pallet-transaction-payment",
- "pallet-utility",
- "pallet-xcm",
- "parachain-info",
- "parity-scale-codec",
- "polkadot-core-primitives",
- "polkadot-parachain",
- "polkadot-runtime-parachains",
- "scale-info",
- "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
- "xcm",
- "xcm-builder",
- "xcm-executor",
- "xcm-simulator",
 ]
 
 [[package]]
@@ -10511,7 +10543,7 @@ dependencies = [
 
 [[package]]
 name = "session-key-primitives"
-version = "3.3.0"
+version = "3.4.0"
 dependencies = [
  "manta-primitives",
  "nimbus-primitives",
@@ -10660,6 +10692,26 @@ dependencies = [
  "num-complex",
  "num-traits",
  "paste",
+]
+
+[[package]]
+name = "similar"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62ac7f900db32bf3fd12e0117dd3dc4da74bc52ebaac97f39668446d89694803"
+dependencies = [
+ "bstr",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "similar-asserts"
+version = "1.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbf644ad016b75129f01a34a355dcb8d66a5bc803e417c7a77cc5d5ee9fa0f18"
+dependencies = [
+ "console",
+ "similar",
 ]
 
 [[package]]
@@ -11608,6 +11660,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "substrate-fixed"
+version = "0.5.9"
+source = "git+https://github.com/Manta-Network/substrate-fixed.git?tag=v0.5.9#a4fb461aae6205ffc55bed51254a40c52be04e5d"
+dependencies = [
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "typenum 1.16.0",
+]
+
+[[package]]
 name = "substrate-frame-rpc-system"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26#e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"
@@ -11762,6 +11825,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bab24d30b911b2376f3a13cc2cd443142f0c81dda04c118693e35b3835757755"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "terminal_size"
+version = "0.1.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "633c1a546cee861a1a6d0dc69ebeca693bf4296661ba7852b9d21d159e0506df"
+dependencies = [
+ "libc",
+ "winapi",
 ]
 
 [[package]]
@@ -12226,6 +12299,15 @@ name = "typenum"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dcf81ac59edc17cc8697ff311e8f5ef2d99fcbd9817b34cec66f90b6c3dfd987"
+
+[[package]]
+name = "typenum"
+version = "1.16.0"
+source = "git+https://github.com/encointer/typenum?tag=v1.16.0#4c8dddaa8bdd13130149e43b4085ad14e960617f"
+dependencies = [
+ "parity-scale-codec",
+ "scale-info",
+]
 
 [[package]]
 name = "ucd-trie"

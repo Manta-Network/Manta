@@ -27,12 +27,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use manta_collator_selection::IdentityCollator;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
-    transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, Perbill, Permill,
-};
+use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{AccountIdLookup, BlakeTwo256, Block as BlockT}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, Perbill, Permill, MultiAddress};
 use sp_std::{cmp::Ordering, prelude::*};
 
 #[cfg(feature = "std")]
@@ -81,7 +76,6 @@ pub mod xcm_config;
 use currency::*;
 use fee::WeightToFee;
 use impls::DealWithFees;
-use runtime_common::migration::MigratePalletPv2Sv;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -123,7 +117,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("dolphin"),
     impl_name: create_runtime_str!("dolphin"),
     authoring_version: 2,
-    spec_version: 3300,
+    spec_version: 3430,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 4,
@@ -267,18 +261,20 @@ impl pallet_maintenance_mode::Config for Runtime {
     // use `AllPalletsReversedWithSystemFirst` that not change hooks in normal operation
     type NormalExecutiveHooks = AllPalletsReversedWithSystemFirst;
     type MaintenanceExecutiveHooks = MaintenanceHooks;
-    type AssetFreezer = Assets;
+    type AssetFreezer = AssetsFreezer;
     type AssetIdInParachain = Everything;
 }
+
+use frame_support::dispatch::RawOrigin;
 
 pub struct AssetsFreezer;
 impl pallet_maintenance_mode::AssetFreezer for AssetsFreezer {
     fn freeze_asset(asset_id: AssetId) -> DispatchResult {
-        Assets::freeze_asset(asset_id)
+        Assets::freeze_asset(RawOrigin::Signed(AssetManager::account_id()).into(), asset_id)
     }
 
     fn freeze(asset_id: AssetId, account: AccountId) -> DispatchResult {
-        Assets::freeze(asset_id, account)
+        Assets::freeze(RawOrigin::Signed(AssetManager::account_id()).into(), asset_id, MultiAddress::Id(account))
     }
 }
 
@@ -931,12 +927,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExt
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = (
-    MigratePalletPv2Sv<pallet_asset_manager::Pallet<Runtime>>,
-    MigratePalletPv2Sv<pallet_tx_pause::Pallet<Runtime>>,
-    MigratePalletPv2Sv<manta_collator_selection::Pallet<Runtime>>,
-    MigratePalletPv2Sv<pallet_manta_pay::Pallet<Runtime>>,
-);
+pub type OnRuntimeUpgradeHooks = ();
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -971,6 +962,8 @@ mod benches {
         [pallet_assets, Assets]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]
+        [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
+        [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
         // Manta pallets
         [pallet_tx_pause, TransactionPause]
         [manta_collator_selection, CollatorSelection]
@@ -1150,13 +1143,101 @@ impl_runtime_apis! {
         fn dispatch_benchmark(
             config: frame_benchmarking::BenchmarkConfig
         ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-            use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey};
+            use frame_benchmarking::{Benchmarking, BenchmarkBatch, TrackedStorageKey, BenchmarkError};
 
             use frame_system_benchmarking::Pallet as SystemBench;
             impl frame_system_benchmarking::Config for Runtime {}
 
             use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
             impl cumulus_pallet_session_benchmarking::Config for Runtime {}
+
+            use pallet_xcm_benchmarks::asset_instance_from;
+            use xcm_config::{LocationToAccountId, XcmExecutorConfig};
+
+            parameter_types! {
+            pub const TrustedTeleporter: Option<(MultiLocation, MultiAsset)> = None;
+                pub const TrustedReserve: Option<(MultiLocation, MultiAsset)> = Some((
+                    RocLocation::get(),
+                    // Random amount for the benchmark.
+                    MultiAsset { fun: Fungible(1_000_000_000_000_000_000), id: Concrete(RocLocation::get()) },
+                ));
+                pub const CheckedAccount: Option<AccountId> = None;
+                pub const RocLocation: MultiLocation = MultiLocation::parent();
+                pub DolLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(2084)));
+            }
+
+            impl pallet_xcm_benchmarks::Config for Runtime {
+                type XcmConfig = XcmExecutorConfig;
+                type AccountIdConverter = LocationToAccountId;
+
+                fn valid_destination() -> Result<MultiLocation, BenchmarkError> {
+                 Ok(RocLocation::get())
+                }
+
+                fn worst_case_holding() -> MultiAssets {
+                    // A mix of fungible, non-fungible, and concrete assets.
+                    const HOLDING_FUNGIBLES: u32 = 100;
+                    const HOLDING_NON_FUNGIBLES: u32 = 100;
+                    let fungibles_amount: u128 = 100;
+                    let mut assets = (0..HOLDING_FUNGIBLES)
+                        .map(|i| {
+                            MultiAsset {
+                                id: Concrete(GeneralIndex(i as u128).into()),
+                                fun: Fungible(fungibles_amount * i as u128),
+                            }
+                        })
+                        .chain(core::iter::once(MultiAsset { id: Concrete(Here.into()), fun: Fungible(u128::MAX) }))
+                        .chain((0..HOLDING_NON_FUNGIBLES).map(|i| MultiAsset {
+                            id: Concrete(GeneralIndex(i as u128).into()),
+                            fun: NonFungible(asset_instance_from(i)),
+                        }))
+                        .collect::<Vec<_>>();
+
+                        assets.push(MultiAsset{
+                            id: Concrete(DolLocation::get()),
+                            fun: Fungible(1_000_000 * DOL),
+                        });
+                        assets.into()
+                }
+            }
+
+            impl pallet_xcm_benchmarks::fungible::Config for Runtime {
+                type TransactAsset = Balances;
+
+                type CheckedAccount = CheckedAccount;
+                type TrustedTeleporter = TrustedTeleporter;
+                type TrustedReserve = TrustedReserve;
+
+                fn get_multi_asset() -> MultiAsset {
+                    MultiAsset {
+                        id: Concrete(DolLocation::get()),
+                        fun: Fungible(1 * DOL),
+                    }
+                }
+            }
+
+            impl pallet_xcm_benchmarks::generic::Config for Runtime {
+                type Call = Call;
+
+                fn worst_case_response() -> (u64, Response) {
+                    (0u64, Response::Version(Default::default()))
+                }
+
+                fn transact_origin() -> Result<MultiLocation, BenchmarkError> {
+                    Ok(RocLocation::get())
+                }
+
+                fn subscribe_origin() -> Result<MultiLocation, BenchmarkError> {
+                    Ok(RocLocation::get())
+                }
+
+                fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
+                    let origin = DolLocation::get();
+                    let assets: MultiAssets = (Concrete(DolLocation::get()), 1_000 * DOL).into();
+                    let ticket = MultiLocation { parents: 0, interior: Here };
+                    Ok((origin, ticket, assets))
+                }
+            }
 
             let whitelist: Vec<TrackedStorageKey> = vec![
                 // Block Number
@@ -1177,7 +1258,6 @@ impl_runtime_apis! {
             let params = (&config, &whitelist);
             add_benchmarks!(params, batches);
 
-            if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)
         }
     }

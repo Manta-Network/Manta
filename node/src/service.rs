@@ -16,7 +16,10 @@
 
 //! Nimbus-based Parachain Node Service
 
-use crate::rpc;
+use crate::{
+    client::{RuntimeApiCommon, RuntimeApiNimbus},
+    rpc,
+};
 use cumulus_client_cli::CollatorOptions;
 use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_client_network::BlockAnnounceValidator;
@@ -37,13 +40,9 @@ use sc_network::NetworkService;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_service::{Configuration, Error, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
-use session_key_primitives::{AuraId, NimbusId};
-use sp_api::{ApiExt, ConstructRuntimeApi};
+use session_key_primitives::AuraId;
+use sp_api::ConstructRuntimeApi;
 use sp_keystore::SyncCryptoStorePtr;
-use sp_offchain::OffchainWorkerApi;
-use sp_runtime::traits::BlakeTwo256;
-use sp_session::SessionKeys;
-use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
 
@@ -118,14 +117,8 @@ pub fn new_partial<RuntimeApi>(
 ) -> Result<PartialComponents<RuntimeApi>, Error>
 where
     RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: TaggedTransactionQueue<Block>
-        + sp_api::Metadata<Block>
-        + SessionKeys<Block>
-        + ApiExt<Block, StateBackend = StateBackend>
-        + sp_consensus_aura::AuraApi<Block, AuraId>
-        + OffchainWorkerApi<Block>
-        + sp_block_builder::BlockBuilder<Block>,
-    StateBackend: sp_api::StateBackend<BlakeTwo256>,
+    RuntimeApi::RuntimeApi:
+        RuntimeApiCommon<StateBackend = StateBackend> + sp_consensus_aura::AuraApi<Block, AuraId>,
 {
     let telemetry = config
         .telemetry_endpoints
@@ -228,19 +221,9 @@ async fn start_node_impl<RuntimeApi, BIC, FullRpc>(
 ) -> sc_service::error::Result<(TaskManager, Arc<Client<RuntimeApi>>)>
 where
     RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: TaggedTransactionQueue<Block>
-        + sp_api::Metadata<Block>
-        + SessionKeys<Block>
-        + ApiExt<Block, StateBackend = StateBackend>
-        + OffchainWorkerApi<Block>
-        + sp_block_builder::BlockBuilder<Block>
-        + cumulus_primitives_core::CollectCollationInfo<Block>
-        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-        + nimbus_primitives::AuthorFilterAPI<Block, NimbusId>
-        + nimbus_primitives::NimbusApi<Block>
-        + sp_consensus_aura::AuraApi<Block, AuraId>
-        + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
-    StateBackend: sp_api::StateBackend<BlakeTwo256>,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend>
+        + RuntimeApiNimbus
+        + sp_consensus_aura::AuraApi<Block, AuraId>,
     FullRpc: Fn(
             rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
         ) -> Result<RpcModule<()>, Error>
@@ -392,19 +375,9 @@ pub async fn start_parachain_node<RuntimeApi, FullRpc>(
 ) -> sc_service::error::Result<(TaskManager, Arc<Client<RuntimeApi>>)>
 where
     RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-    RuntimeApi::RuntimeApi: TaggedTransactionQueue<Block>
-        + sp_api::Metadata<Block>
-        + SessionKeys<Block>
-        + ApiExt<Block, StateBackend = StateBackend>
-        + OffchainWorkerApi<Block>
-        + sp_block_builder::BlockBuilder<Block>
-        + cumulus_primitives_core::CollectCollationInfo<Block>
-        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-        + nimbus_primitives::AuthorFilterAPI<Block, NimbusId>
-        + nimbus_primitives::NimbusApi<Block>
-        + sp_consensus_aura::AuraApi<Block, AuraId>
-        + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
-    StateBackend: sp_api::StateBackend<BlakeTwo256>,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend>
+        + RuntimeApiNimbus
+        + sp_consensus_aura::AuraApi<Block, AuraId>,
     FullRpc: Fn(
             rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
         ) -> Result<RpcModule<()>, Error>

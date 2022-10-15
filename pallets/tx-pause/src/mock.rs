@@ -27,10 +27,10 @@ use frame_support::{
     traits::{ConstU32, ConstU64, IsInVec},
 };
 use frame_system::EnsureRoot;
-use manta_primitives::types::Balance;
+use manta_primitives::types::{Balance, BlockNumber, Header};
 
 use sp_core::H256;
-use sp_runtime::{testing::Header, traits::IdentityLookup};
+use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
 pub type AccountId = u128;
 
@@ -49,15 +49,15 @@ impl Contains<Call> for BaseFilter {
 impl frame_system::Config for Runtime {
     type Origin = Origin;
     type Index = u64;
-    type BlockNumber = u64;
+    type BlockNumber = BlockNumber;
     type Call = Call;
     type Hash = H256;
-    type Hashing = ::sp_runtime::traits::BlakeTwo256;
+    type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<AccountId>;
     type Header = Header;
     type Event = Event;
-    type BlockHashCount = ConstU64<250>;
+    type BlockHashCount = ConstU32<250>;
     type BlockWeights = ();
     type BlockLength = ();
     type Version = ();

@@ -23,20 +23,17 @@ use crate as pallet_maintenance_mode;
 use cumulus_primitives_core::{relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler};
 use frame_support::{
     construct_runtime, ord_parameter_types, parameter_types,
+    dispatch::RawOrigin,
     traits::{
         Contains, Everything, GenesisBuild, OffchainWorker, OnFinalize, OnIdle, OnInitialize,
         OnRuntimeUpgrade,
     },
     weights::Weight,
 };
-use frame_support::dispatch::RawOrigin;
 use frame_system::EnsureRoot;
-use manta_primitives::types::{AccountId, AssetId, Balance};
+use manta_primitives::types::{AccountId, AssetId, Balance, BlockNumber};
 use sp_core::H256;
-use sp_runtime::{testing::Header, traits::{BlakeTwo256, ConstU32, IdentityLookup}, Perbill, DispatchResult};
-
-// pub type AccountId = u32;
-pub type BlockNumber = u32;
+use sp_runtime::{traits::{BlakeTwo256, ConstU32, IdentityLookup}, Perbill, DispatchResult};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -114,8 +111,8 @@ impl Config for Test {
 pub struct AssetsFreezer;
 impl AssetFreezer for AssetsFreezer {
     fn freeze_asset(asset_id: AssetId) -> DispatchResult {
-        // Assets::freeze_asset(RawOrigin::Signed(ListingOrigin::get()).into(), asset_id)
-        Assets::freeze_asset(Origin::signed(ListingOrigin::get()), asset_id)
+        Assets::freeze_asset(RawOrigin::Signed(ListingOrigin::get()).into(), asset_id)
+        // Assets::freeze_asset(Origin::signed(ListingOrigin::get()), asset_id)
     }
 
     fn freeze(asset_id: AssetId, account: AccountId) -> DispatchResult {

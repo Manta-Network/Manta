@@ -94,17 +94,23 @@ jobs:
           name: manta
           path: ./target/production/manta
       - if: always()
-        name: upload pallets' weights
+        name: upload frame weights
         uses: actions/upload-artifact@v3
         with:
-          name: weights-output
-          path: ./scripts/benchmarking/weights-output/
+          name: frame-weights-output
+          path: ./scripts/benchmarking/frame-weights-output/
+      - if: always()
+        name: upload xcm weights
+        uses: actions/upload-artifact@v3
+        with:
+          name: xcm-weights-output
+          path: ./scripts/benchmarking/xcm-weights-output/
       - if: always()
         name: upload benchmarking errors
         uses: actions/upload-artifact@v3
         with:
           name: benchmarks-errors
-          path: ./scripts/benchmarking/benchmark_errors.txt
+          path: ./scripts/benchmarking/benchmarking_errors.txt
       - if: always()
         name: upload machine benchmark result
         uses: actions/upload-artifact@v3
@@ -142,7 +148,8 @@ jobs:
     runs-on: ubuntu-20.04
     if: ${{ always() }}
     steps:
-      - uses: audacious-network/aws-github-runner@v1.0.33
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
         with:
           mode: stop
           github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
@@ -151,3 +158,5 @@ jobs:
           aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
           runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
           aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
+      - name: discard stopper success/failure
+        run: true
