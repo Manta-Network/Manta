@@ -32,7 +32,10 @@ use frame_support::{
     weights::Weight,
 };
 use frame_system::EnsureRoot;
-use manta_primitives::types::{AccountId, AssetId, Balance, BlockNumber};
+use manta_primitives::{
+    assets::{AssetFreezer, AssetIdQuerier},
+    types::{AccountId, AssetId, Balance, BlockNumber, ParaId},
+};
 use sp_core::H256;
 use sp_runtime::{
     traits::{BlakeTwo256, ConstU32, IdentityLookup},
@@ -106,7 +109,25 @@ impl Config for Test {
     type NormalExecutiveHooks = NormalHooks;
     type MaintenanceExecutiveHooks = MaintenanceHooks;
     type AssetFreezer = AssetsFreezer;
-    type AssetIdInParachain = Everything;
+    type AssetIdQuerier = MockAssetIdQuerier;
+}
+
+// TODO: use real asset manager?
+pub struct MockAssetIdQuerier;
+impl AssetIdQuerier for MockAssetIdQuerier {
+    fn contains(para_id: &ParaId, asset_id: &AssetId) -> bool {
+        match para_id {
+            1000 if *asset_id == 0 => true,
+            _ => false,
+        }
+    }
+
+    fn asset_ids(para_id: &ParaId) -> Vec<AssetId> {
+        match para_id {
+            1000 => vec![0],
+            _ => vec![],
+        }
+    }
 }
 
 ord_parameter_types! {
@@ -119,24 +140,8 @@ impl AssetFreezer for AssetsFreezer {
         Assets::freeze_asset(RawOrigin::Signed(AssetOwner::get()).into(), asset_id)
     }
 
-    fn freeze(asset_id: AssetId, account: AccountId) -> DispatchResult {
-        Assets::freeze(
-            RawOrigin::Signed(AssetOwner::get()).into(),
-            asset_id,
-            account,
-        )
-    }
-
     fn thaw_asset(asset_id: AssetId) -> DispatchResult {
         Assets::thaw_asset(RawOrigin::Signed(AssetOwner::get()).into(), asset_id)
-    }
-
-    fn thaw(asset_id: AssetId, account: AccountId) -> DispatchResult {
-        Assets::thaw(
-            RawOrigin::Signed(AssetOwner::get()).into(),
-            asset_id,
-            account,
-        )
     }
 }
 

@@ -31,7 +31,7 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, MultiAddress, Perbill, Permill,
+    ApplyExtrinsicResult, Perbill, Permill,
 };
 use sp_std::{cmp::Ordering, prelude::*};
 
@@ -42,10 +42,11 @@ use sp_version::RuntimeVersion;
 use cumulus_primitives_core::{relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler};
 use frame_support::{
     construct_runtime,
+    dispatch::RawOrigin,
     pallet_prelude::DispatchResult,
     parameter_types,
     traits::{
-        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, Everything, IsInVec,
+        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec,
         NeverEnsureOrigin, OffchainWorker, OnFinalize, OnIdle, OnInitialize, OnRuntimeUpgrade,
         PrivilegeCmp,
     },
@@ -60,6 +61,7 @@ use frame_system::{
     EnsureRoot,
 };
 use manta_primitives::{
+    assets::AssetFreezer,
     constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
     types::{AccountId, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
@@ -269,13 +271,11 @@ impl pallet_maintenance_mode::Config for Runtime {
     type NormalExecutiveHooks = AllPalletsReversedWithSystemFirst;
     type MaintenanceExecutiveHooks = MaintenanceHooks;
     type AssetFreezer = AssetsFreezer;
-    type AssetIdInParachain = Everything;
+    type AssetIdQuerier = AssetManager;
 }
 
-use frame_support::dispatch::RawOrigin;
-
 pub struct AssetsFreezer;
-impl pallet_maintenance_mode::AssetFreezer for AssetsFreezer {
+impl AssetFreezer for AssetsFreezer {
     fn freeze_asset(asset_id: AssetId) -> DispatchResult {
         // The origin/account value `AssetManager::account_id()` should match the owner of `pallet_assets`
         // when create an asset by `force_create` on `AssetRegistrar` implementations.
@@ -285,32 +285,12 @@ impl pallet_maintenance_mode::AssetFreezer for AssetsFreezer {
         )
     }
 
-    fn freeze(asset_id: AssetId, account: AccountId) -> DispatchResult {
-        // The origin/account value `AssetManager::account_id()` should match the owner of `pallet_assets`
-        // when create an asset by `force_create` on `AssetRegistrar` implementations.
-        Assets::freeze(
-            RawOrigin::Signed(AssetManager::account_id()).into(),
-            asset_id,
-            MultiAddress::Id(account),
-        )
-    }
-
     fn thaw_asset(asset_id: AssetId) -> sp_runtime::DispatchResult {
         // The origin/account value `AssetManager::account_id()` should match the owner of `pallet_assets`
         // when create an asset by `force_create` on `AssetRegistrar` implementations.
         Assets::thaw_asset(
             RawOrigin::Signed(AssetManager::account_id()).into(),
             asset_id,
-        )
-    }
-
-    fn thaw(asset_id: AssetId, account: AccountId) -> sp_runtime::DispatchResult {
-        // The origin/account value `AssetManager::account_id()` should match the owner of `pallet_assets`
-        // when create an asset by `force_create` on `AssetRegistrar` implementations.
-        Assets::thaw(
-            RawOrigin::Signed(AssetManager::account_id()).into(),
-            asset_id,
-            MultiAddress::Id(account),
         )
     }
 }
@@ -340,7 +320,7 @@ impl Contains<Call> for MaintenanceCallFilter {
         // except that using dynamic whitelist.
         // Or we could change `MaintenanceCallFilter` using blacklist, together with tx-pause.
         // TODO: MaintenanceMode will freeze asset
-        // TODO: should Utility enabled?
+        // TODO: should Utility/Scheduler/AuthorInherent enabled?
         matches!(
             call,
             // TxPause and MaintenanceMode should always not filter out.
@@ -1002,10 +982,11 @@ mod benches {
         [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
         [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
         // Manta pallets
-        [pallet_tx_pause, TransactionPause]
         [manta_collator_selection, CollatorSelection]
         [pallet_manta_pay, MantaPay]
         [pallet_asset_manager, AssetManager]
+        [pallet_tx_pause, TransactionPause]
+        [pallet_maintenance_mode, MaintenanceMode]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );

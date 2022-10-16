@@ -135,7 +135,7 @@ runtime-benchmarks = [
   'pallet-assets/runtime-benchmarks',
   'pallet-asset-manager/runtime-benchmarks',
   'pallet-manta-pay/runtime-benchmarks',
-  #'pallet-maintenance-mode/runtime-benchmarks',
+  'pallet-maintenance-mode/runtime-benchmarks',
   'pallet-xcm-benchmarks',
 ]
 try-runtime = [
@@ -159,7 +159,7 @@ try-runtime = [
   'pallet-assets/try-runtime',
   'pallet-tx-pause/try-runtime',
   'pallet-asset-manager/try-runtime',
-  #  'pallet-maintenance-mode/try-runtime',
+  'pallet-maintenance-mode/try-runtime',
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []

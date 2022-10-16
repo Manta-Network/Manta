@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+use crate::types::ParaId;
 ///! Manta/Calamari/Dolphin Asset
 use crate::{
     constants::DEFAULT_ASSET_ED,
@@ -116,6 +117,20 @@ where
 
     /// The Fungible ledger implementation of this trait
     type FungibleLedger: FungibleLedger<C>;
+}
+
+/// Freeze asset when sibling parachain was hacked
+pub trait AssetFreezer {
+    // We don't need `freeze` and `thaw` method for some specific account.
+    // We can support this feature on `AssetManager` if we want.
+    fn freeze_asset(asset_id: AssetId) -> DispatchResult;
+    fn thaw_asset(asset_id: AssetId) -> DispatchResult;
+}
+
+/// Query parachain asset_id info
+pub trait AssetIdQuerier {
+    fn contains(para_id: &ParaId, asset_id: &AssetId) -> bool;
+    fn asset_ids(para_id: &ParaId) -> Vec<AssetId>;
 }
 
 /// The metadata of a Manta Asset

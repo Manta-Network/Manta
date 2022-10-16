@@ -22,17 +22,17 @@
 
 // Executed Command:
 // manta
-// benchmark
-// --chain=manta-local
-// --pallet=pallet_tx_pause
-// --extrinsic=*
-// --execution=Wasm
-// --wasm-execution=Compiled
-// --heap-pages=4096
-// --repeat=20
-// --steps=50
-// --template=.github/resources/frame-weight-template.hbs
-// --output=pallet_tx_pause.rs
+// benchmark \
+// --chain=manta-local \
+// --pallet=pallet_maintenance_mode \
+// --extrinsic=* \
+// --execution=Wasm \
+// --wasm-execution=Compiled \
+// --heap-pages=4096 \
+// --repeat=20 \
+// --steps=50 \
+// --template=.github/resources/frame-weight-template.hbs \
+// --output=pallet_maintenance_mode.rs
 
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
@@ -43,23 +43,33 @@
 use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use sp_std::marker::PhantomData;
 
-/// Weight functions needed for pallet_tx_pause.
+/// Weight functions needed for pallet_maintenance_mode.
 pub trait WeightInfo {
-    fn pause_transaction() -> Weight;
-    fn unpause_transaction() -> Weight;
+    fn enter_maintenance_mode() -> Weight;
+    fn resume_normal_operation() -> Weight;
+    fn enter_sibling_hack_mode() -> Weight;
+    fn resume_sibling_normal_mode() -> Weight;
 }
 
 /// Weights for pallet_tx_pause using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-    // Storage: TransactionPause PausedTransactions (r:1 w:1)
-    fn pause_transaction() -> Weight {
+    fn enter_maintenance_mode() -> Weight {
         (42_000_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(1 as Weight))
             .saturating_add(T::DbWeight::get().writes(1 as Weight))
     }
-    // Storage: TransactionPause PausedTransactions (r:1 w:1)
-    fn unpause_transaction() -> Weight {
+    fn resume_normal_operation() -> Weight {
+        (42_450_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(1 as Weight))
+            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    }
+    fn enter_sibling_hack_mode() -> Weight {
+        (42_000_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(1 as Weight))
+            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    }
+    fn resume_sibling_normal_mode() -> Weight {
         (42_450_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(1 as Weight))
             .saturating_add(T::DbWeight::get().writes(1 as Weight))
@@ -68,14 +78,22 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-    // Storage: TransactionPause PausedTransactions (r:1 w:1)
-    fn pause_transaction() -> Weight {
+    fn enter_maintenance_mode() -> Weight {
         (42_000_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(1 as Weight))
             .saturating_add(RocksDbWeight::get().writes(1 as Weight))
     }
-    // Storage: TransactionPause PausedTransactions (r:1 w:1)
-    fn unpause_transaction() -> Weight {
+    fn resume_normal_operation() -> Weight {
+        (42_450_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    }
+    fn enter_sibling_hack_mode() -> Weight {
+        (42_000_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    }
+    fn resume_sibling_normal_mode() -> Weight {
         (42_450_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(1 as Weight))
             .saturating_add(RocksDbWeight::get().writes(1 as Weight))

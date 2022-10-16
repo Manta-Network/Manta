@@ -41,7 +41,7 @@ benchmarks! {
     }: pause_transaction(RawOrigin::Root, pallet_name.clone(), function_name.clone())
     verify {
         assert_last_event::<T>(
-            Event::TransactionPaused(pallet_name.clone(), function_name).into()
+            Event::TransactionPaused { pallet_name, function_name }.into()
         );
     }
 
@@ -54,7 +54,7 @@ benchmarks! {
     }: unpause_transaction(RawOrigin::Root, pallet_name.clone(), function_name.clone())
     verify {
         assert_last_event::<T>(
-            Event::TransactionUnpaused(pallet_name, function_name).into()
+            Event::TransactionUnpaused {pallet_name, function_name }.into()
         );
     }
 }

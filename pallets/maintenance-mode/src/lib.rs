@@ -20,8 +20,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::unused_unit)]
 
-// #[cfg(feature = "runtime-benchmarks")]
-// mod benchmarking;
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 
 #[cfg(test)]
 mod mock;
@@ -39,7 +39,7 @@ pub use weights::WeightInfo;
 #[pallet]
 pub mod pallet {
     use cumulus_primitives_core::{
-        relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler, ParaId,
+        relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler,
     };
     use frame_support::{
         pallet_prelude::*,
@@ -49,7 +49,10 @@ pub mod pallet {
         },
     };
     use frame_system::pallet_prelude::*;
-    use manta_primitives::types::{AccountId, AssetId};
+    use manta_primitives::{
+        assets::{AssetFreezer, AssetIdQuerier},
+        types::{AssetId, ParaId},
+    };
     use sp_runtime::DispatchResult;
     use sp_std::vec::Vec;
 
@@ -70,15 +73,6 @@ pub mod pallet {
         fn resume_xcm_execution() -> DispatchResult {
             Ok(())
         }
-    }
-
-    /// Freeze asset when sibling parachain was hacked
-    /// TODO: move to primitives/assets?
-    pub trait AssetFreezer {
-        fn freeze_asset(asset_id: AssetId) -> DispatchResult;
-        fn freeze(asset_id: AssetId, account: AccountId) -> DispatchResult;
-        fn thaw_asset(asset_id: AssetId) -> DispatchResult;
-        fn thaw(asset_id: AssetId, account: AccountId) -> DispatchResult;
     }
 
     /// Configuration trait of this pallet.
@@ -136,7 +130,7 @@ pub mod pallet {
         type AssetFreezer: AssetFreezer;
 
         /// The asset should belong to registered parachain on asset manager.
-        type AssetIdInParachain: Contains<AssetId>;
+        type AssetIdQuerier: AssetIdQuerier;
     }
 
     #[pallet::event]
@@ -147,10 +141,13 @@ pub mod pallet {
         /// Sibling was hacked.
         EnteredSiblingHackMode {
             id: ParaId,
-            assets: Option<Vec<AssetId>>,
+            affected_assets: Vec<AssetId>,
         },
         /// Sibling was resumed.
-        ResumedSiblingNormalMode { id: ParaId },
+        ResumedSiblingNormalMode {
+            id: ParaId,
+            affected_assets: Vec<AssetId>,
+        },
         /// The chain returned to its normal operating state
         NormalOperationResumed,
         /// The call to suspend on_idle XCM execution failed with inner error
@@ -164,10 +161,14 @@ pub mod pallet {
     pub enum Error<T> {
         /// The chain cannot enter maintenance mode because it is already in maintenance mode
         AlreadyInMaintenanceMode,
-        AlreadyInSiblingHackMode,
-        SiblingNotHack,
         /// The chain cannot resume normal operation because it is not in maintenance mode
         NotInMaintenanceMode,
+        /// The sibling chain is already in hack mode
+        AlreadyInSiblingHackMode,
+        /// The sibling chain is not in hack mode
+        SiblingNotHack,
+        /// The parachain asset is not register to asset manager
+        NoAssetRegistForParachain,
     }
 
     /// Whether the site is in maintenance mode.
@@ -182,6 +183,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        // TODO: weight benchmark
         /// Place the chain in maintenance mode, Either we're hack or we manual enter maintain.
         ///
         /// Weight cost is:
@@ -199,7 +201,6 @@ pub mod pallet {
                 !MaintenanceMode::<T>::get(),
                 Error::<T>::AlreadyInMaintenanceMode
             );
-
             MaintenanceMode::<T>::put(true);
 
             // Suspend XCM execution
@@ -219,7 +220,7 @@ pub mod pallet {
         #[pallet::call_index(1)]
         #[pallet::weight(T::DbWeight::get().read + 3 * T::DbWeight::get().write)]
         pub fn resume_normal_operation(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            T::EnterMaintenanceOrigin::ensure_origin(origin)?;
+            T::ResumeNormalOrigin::ensure_origin(origin)?;
 
             // Ensure we're actually in maintenance mode.
             // This test is not strictly necessary, but seeing the error may help a confused chain
@@ -228,8 +229,8 @@ pub mod pallet {
                 MaintenanceMode::<T>::get(),
                 Error::<T>::NotInMaintenanceMode
             );
-
             MaintenanceMode::<T>::put(false);
+
             // Resume XCM execution
             if let Err(error) = T::XcmExecutionManager::resume_xcm_execution() {
                 <Pallet<T>>::deposit_event(Event::FailedToResumeIdleXcmExecution { error });
@@ -239,13 +240,13 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Place the sibling parachain in maintenance mode.
+        /// Place the sibling parachain enter hack mode.
+        /// The storage `HackedSiblingId` is used by `Barrier` for intercept xcm from parachain.
         ///
         #[pallet::call_index(2)]
         #[pallet::weight(T::DbWeight::get().read + 3 * T::DbWeight::get().write)]
         pub fn enter_sibling_hack_mode(
             origin: OriginFor<T>,
-            // TODO: use MultiLocation?
             hacked_chain_id: ParaId,
             affected_assets: Option<Vec<AssetId>>,
         ) -> DispatchResultWithPostInfo {
@@ -257,32 +258,28 @@ pub mod pallet {
             );
             HackedSiblingId::<T>::insert(&hacked_chain_id, true);
 
-            // freeze sibling parachain asset
-            if let Some(assets) = affected_assets.clone() {
-                for asset in assets {
-                    // TODO: AssetId should belong to specific Parachain
-                    if T::AssetIdInParachain::contains(&asset) {
-                        T::AssetFreezer::freeze_asset(asset)?;
-                    }
-                }
+            let affected_assets = Self::get_affected_assets(hacked_chain_id, affected_assets)?;
+            for asset in affected_assets.clone() {
+                T::AssetFreezer::freeze_asset(asset)?;
             }
 
             <Pallet<T>>::deposit_event(Event::EnteredSiblingHackMode {
                 id: hacked_chain_id,
-                assets: affected_assets,
+                affected_assets,
             });
             Ok(().into())
         }
 
+        /// Return the sibling parachain to normal operating mode.
+        ///
         #[pallet::call_index(3)]
         #[pallet::weight(T::DbWeight::get().read + 3 * T::DbWeight::get().write)]
         pub fn resume_sibling_normal_mode(
             origin: OriginFor<T>,
-            // TODO: use MultiLocation?
             normal_chain_id: ParaId,
             affected_assets: Option<Vec<AssetId>>,
         ) -> DispatchResultWithPostInfo {
-            T::EnterMaintenanceOrigin::ensure_origin(origin.clone())?;
+            T::ResumeNormalOrigin::ensure_origin(origin.clone())?;
 
             ensure!(
                 HackedSiblingId::<T>::contains_key(&normal_chain_id),
@@ -290,22 +287,37 @@ pub mod pallet {
             );
             HackedSiblingId::<T>::remove(&normal_chain_id);
 
-            // unfreeze sibling parachain asset
-            if let Some(assets) = affected_assets {
-                for asset in assets {
-                    if T::AssetIdInParachain::contains(&asset) {
-                        T::AssetFreezer::thaw_asset(asset)?;
-                    }
-                }
+            let affected_assets = Self::get_affected_assets(normal_chain_id, affected_assets)?;
+            for asset in affected_assets.clone() {
+                T::AssetFreezer::thaw_asset(asset)?;
             }
 
             <Pallet<T>>::deposit_event(Event::ResumedSiblingNormalMode {
                 id: normal_chain_id,
+                affected_assets,
             });
             Ok(().into())
         }
+    }
 
-        // TODO: Do we need freeze and thaw to some specific account/hacker?
+    impl<T: Config> Pallet<T> {
+        /// User provided `assets` maybe invalid or not belong to this `parachain_id`.
+        /// We only filter out assets belong to `parachain_id`.
+        fn get_affected_assets(
+            parachain_id: ParaId,
+            assets: Option<Vec<AssetId>>,
+        ) -> Result<Vec<AssetId>, DispatchError> {
+            let assets = if let Some(assets) = assets {
+                assets
+                    .into_iter()
+                    .filter(|asset| T::AssetIdQuerier::contains(&parachain_id, asset))
+                    .collect::<Vec<AssetId>>()
+            } else {
+                T::AssetIdQuerier::asset_ids(&parachain_id)
+            };
+            ensure!(!assets.is_empty(), Error::<T>::NoAssetRegistForParachain);
+            Ok(assets)
+        }
     }
 
     /// Genesis config for maintenance mode pallet
