@@ -488,8 +488,7 @@ impl pallet_xcm::Config for Runtime {
 }
 
 parameter_types! {
-    /// An implementation of `Get<u32>` returns the latest XCM version which we can
-    /// support.
+    /// An implementation of `Get<u32>` returns the latest XCM version which we can support.
     pub static CurrentXcmVersion: u32 = 0;
 }
 

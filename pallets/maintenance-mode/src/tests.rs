@@ -235,14 +235,15 @@ fn sibling_enter_maintenance_and_resume_normal_works() {
             true,
             1
         ));
+        let empty: Vec<AssetId> = vec![];
 
-        assert!(!Pallet::<Test>::hacked_sibling_id(&1000));
-        assert!(!Pallet::<Test>::hacked_sibling_id(&2000));
+        assert_eq!(Pallet::<Test>::hacked_sibling_id(&1000), empty);
+        assert_eq!(Pallet::<Test>::hacked_sibling_id(&2000), empty);
 
-        // hacked chain:2000 dont have asset registered, enter failed
+        // error case: hacked chain:2000 dont have asset registered, enter failed
         let call: OuterCall = Call::enter_sibling_hack_mode {
             hacked_chain_id: 2000,
-            affected_assets: None,
+            affected_assets: vec![0],
         }
         .into();
         assert_noop!(
@@ -250,29 +251,19 @@ fn sibling_enter_maintenance_and_resume_normal_works() {
             Error::<Test>::NoAssetRegistForParachain
         );
 
-        // hacked chain:2000 not enter before, resume failed
+        // error case: hacked chain:2000 not enter before, resume failed
         let call: OuterCall = Call::resume_sibling_normal_mode {
             normal_chain_id: 2000,
-            affected_assets: None,
+            affected_assets: vec![0],
         }
         .into();
-        assert_noop!(call.dispatch(Origin::root()), Error::<Test>::SiblingNotHack);
+        assert_noop!(call.dispatch(Origin::root()), Error::<Test>::AssetNotMarkedAsHack);
 
-        // specified asset is not register
-        let call: OuterCall = Call::enter_sibling_hack_mode {
-            hacked_chain_id: 2000,
-            affected_assets: Some(vec![0]),
-        }
-        .into();
-        assert_noop!(
-            call.dispatch(Origin::root()),
-            Error::<Test>::NoAssetRegistForParachain
-        );
-
-        // hacked chain has registered asset, enter success
+        // ok case: hacked chain has registered asset, enter success
+        let affected_assets: Vec<AssetId> = vec![0];
         let call: OuterCall = Call::enter_sibling_hack_mode {
             hacked_chain_id: 1000,
-            affected_assets: None,
+            affected_assets: affected_assets.clone(),
         }
         .into();
         assert_ok!(call.dispatch(Origin::root()));
@@ -280,26 +271,26 @@ fn sibling_enter_maintenance_and_resume_normal_works() {
             events(),
             vec![Event::EnteredSiblingHackMode {
                 id: 1000,
-                affected_assets: vec![asset_id]
+                affected_assets: affected_assets.clone()
             }]
         );
-        assert!(Pallet::<Test>::hacked_sibling_id(&1000));
+        assert_eq!(Pallet::<Test>::hacked_sibling_id(&1000), affected_assets.clone());
 
-        // duplicate enter failed
+        // error case: duplicate enter with existed asset failed
         let call: OuterCall = Call::enter_sibling_hack_mode {
             hacked_chain_id: 1000,
-            affected_assets: None,
+            affected_assets: affected_assets.clone(),
         }
         .into();
         assert_noop!(
             call.dispatch(Origin::root()),
-            Error::<Test>::AlreadyInSiblingHackMode
+            Error::<Test>::AssetAlreadyMarkedAsHack
         );
 
-        // hacked chain enter before, resume success
+        // ok case: hacked chain enter before, resume success
         let call: OuterCall = Call::resume_sibling_normal_mode {
             normal_chain_id: 1000,
-            affected_assets: None,
+            affected_assets: affected_assets.clone(),
         }
         .into();
         assert_ok!(call.dispatch(Origin::root()));
@@ -307,21 +298,19 @@ fn sibling_enter_maintenance_and_resume_normal_works() {
             events(),
             vec![Event::ResumedSiblingNormalMode {
                 id: 1000,
-                affected_assets: vec![asset_id]
+                affected_assets: affected_assets.clone()
             }]
         );
-        assert!(!Pallet::<Test>::hacked_sibling_id(&1000));
+        assert_eq!(Pallet::<Test>::hacked_sibling_id(&1000), empty);
 
-        // duplicate resume failed
+        // error case: duplicate resume failed because asset not exist anymore
         let call: OuterCall = Call::resume_sibling_normal_mode {
             normal_chain_id: 1000,
-            affected_assets: None,
+            affected_assets: affected_assets.clone()
         }
         .into();
-        assert_noop!(call.dispatch(Origin::root()), Error::<Test>::SiblingNotHack);
+        assert_noop!(call.dispatch(Origin::root()), Error::<Test>::AssetNotMarkedAsHack);
 
-        // hacked chain has registered asset, invalid asset will be filter out
-        // We need to create asset even its not belonging to hacked chain.
         for i in 1..5 {
             assert_ok!(Assets::force_create(
                 Origin::root(),
@@ -331,9 +320,11 @@ fn sibling_enter_maintenance_and_resume_normal_works() {
                 1
             ));
         }
+        // ok case: more than one asset marked as hack mode
+        let affected_assets: Vec<AssetId> = vec![0, 1];
         let call: OuterCall = Call::enter_sibling_hack_mode {
             hacked_chain_id: 1000,
-            affected_assets: Some(vec![0, 1, 2, 3, 4]),
+            affected_assets: affected_assets.clone(),
         }
         .into();
         assert_ok!(call.dispatch(Origin::root()));
@@ -341,38 +332,33 @@ fn sibling_enter_maintenance_and_resume_normal_works() {
             events(),
             vec![Event::EnteredSiblingHackMode {
                 id: 1000,
-                // asset_id:0 is valid, other asset is invalid
-                affected_assets: vec![0]
+                affected_assets: affected_assets.clone()
             }]
         );
-        assert!(Pallet::<Test>::hacked_sibling_id(&1000));
+        assert_eq!(Pallet::<Test>::hacked_sibling_id(&1000), affected_assets.clone());
 
-        let call: OuterCall = Call::resume_sibling_normal_mode {
-            normal_chain_id: 1000,
-            affected_assets: Some(vec![0, 1, 2, 3, 4]),
-        }
-        .into();
-        assert_ok!(call.dispatch(Origin::root()));
-        assert_eq!(
-            events(),
-            vec![Event::ResumedSiblingNormalMode {
-                id: 1000,
-                // asset_id:0 is valid, other asset is invalid
-                affected_assets: vec![0]
-            }]
-        );
-        assert!(!Pallet::<Test>::hacked_sibling_id(&1000));
-
+        // error case: duplicate enter with existed asset failed
         let call: OuterCall = Call::enter_sibling_hack_mode {
             hacked_chain_id: 1000,
-            affected_assets: Some(vec![1, 2, 3, 4, 5]),
+            affected_assets: affected_assets.clone(),
         }
-        .into();
+            .into();
+        assert_noop!(
+            call.dispatch(Origin::root()),
+            Error::<Test>::AssetAlreadyMarkedAsHack
+        );
+
+        // error case: duplicate enter with non-existed asset but not in asset manager failed
+        let affected_assets2: Vec<AssetId> = vec![2];
+        let call: OuterCall = Call::enter_sibling_hack_mode {
+            hacked_chain_id: 1000,
+            affected_assets: affected_assets2.clone(),
+        }
+            .into();
         assert_noop!(
             call.dispatch(Origin::root()),
             Error::<Test>::NoAssetRegistForParachain
         );
-        assert!(!Pallet::<Test>::hacked_sibling_id(&1000));
     });
 }
 
@@ -395,7 +381,7 @@ fn enter_sibling_hack_mode_asset_owner_not_matched() {
 
         let call: OuterCall = Call::enter_sibling_hack_mode {
             hacked_chain_id: 1000,
-            affected_assets: Some(vec![asset_id]),
+            affected_assets: vec![asset_id],
         }
         .into();
         assert_noop!(
@@ -431,7 +417,7 @@ fn enter_resume_sibling_hack_mode_some_asset() {
         // enter sibling hack mode will freeze parachain asset
         let call: OuterCall = Call::enter_sibling_hack_mode {
             hacked_chain_id: 1000,
-            affected_assets: Some(vec![asset_id]),
+            affected_assets: vec![asset_id],
         }
         .into();
         assert_ok!(call.dispatch(Origin::root()));
@@ -449,7 +435,7 @@ fn enter_resume_sibling_hack_mode_some_asset() {
         // resume sibling normal mode will unfreeze parachain asset
         let call: OuterCall = Call::resume_sibling_normal_mode {
             normal_chain_id: 1000,
-            affected_assets: Some(vec![asset_id]),
+            affected_assets: vec![asset_id],
         }
         .into();
         assert_ok!(call.dispatch(Origin::root()));

@@ -28,9 +28,7 @@ use frame_support::{
     weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 
-use crate::{
-    assets::{AssetIdLocationGetter, UnitsToWeightRatio},
-};
+use crate::assets::{AssetIdLocationGetter, UnitsToWeightRatio};
 use xcm::{
     latest::{
         prelude::{
@@ -49,8 +47,8 @@ use xcm::{
 };
 use xcm_builder::TakeRevenue;
 use xcm_executor::traits::{
-    Convert as XcmConvert, FilterAssetLocation, MatchesFungible, MatchesFungibles,
-    TransactAsset, WeightTrader,
+    Convert as XcmConvert, FilterAssetLocation, MatchesFungible, MatchesFungibles, TransactAsset,
+    WeightTrader,
 };
 
 pub trait Reserve {

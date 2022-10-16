@@ -118,14 +118,8 @@ impl AssetIdQuerier for MockAssetIdQuerier {
     fn contains(para_id: &ParaId, asset_id: &AssetId) -> bool {
         match para_id {
             1000 if *asset_id == 0 => true,
+            1000 if *asset_id == 1 => true,
             _ => false,
-        }
-    }
-
-    fn asset_ids(para_id: &ParaId) -> Vec<AssetId> {
-        match para_id {
-            1000 => vec![0],
-            _ => vec![],
         }
     }
 }

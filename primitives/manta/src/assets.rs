@@ -130,7 +130,6 @@ pub trait AssetFreezer {
 /// Query parachain asset_id info
 pub trait AssetIdQuerier {
     fn contains(para_id: &ParaId, asset_id: &AssetId) -> bool;
-    fn asset_ids(para_id: &ParaId) -> Vec<AssetId>;
 }
 
 /// The metadata of a Manta Asset

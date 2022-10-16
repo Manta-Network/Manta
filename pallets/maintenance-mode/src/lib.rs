@@ -164,9 +164,9 @@ pub mod pallet {
         /// The chain cannot resume normal operation because it is not in maintenance mode
         NotInMaintenanceMode,
         /// The sibling chain is already in hack mode
-        AlreadyInSiblingHackMode,
+        AssetAlreadyMarkedAsHack,
         /// The sibling chain is not in hack mode
-        SiblingNotHack,
+        AssetNotMarkedAsHack,
         /// The parachain asset is not register to asset manager
         NoAssetRegistForParachain,
     }
@@ -179,7 +179,7 @@ pub mod pallet {
     /// Sibling parachain is hacked, use Barrier to failed the cross chain transfer.
     #[pallet::storage]
     #[pallet::getter(fn hacked_sibling_id)]
-    type HackedSiblingId<T: Config> = StorageMap<_, Blake2_128Concat, ParaId, bool, ValueQuery>;
+    type HackedSiblingId<T: Config> = StorageMap<_, Blake2_128Concat, ParaId, Vec<AssetId>, ValueQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
@@ -240,25 +240,36 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Place the sibling parachain enter hack mode.
-        /// The storage `HackedSiblingId` is used by `Barrier` for intercept xcm from parachain.
+        /// Place the sibling parachain of specify assets enter hack mode.
+        ///
+        /// TODO: The weight needs consider `freeze_asset` on pallet_assets.
         ///
         #[pallet::call_index(2)]
         #[pallet::weight(T::DbWeight::get().read + 3 * T::DbWeight::get().write)]
         pub fn enter_sibling_hack_mode(
             origin: OriginFor<T>,
             hacked_chain_id: ParaId,
-            affected_assets: Option<Vec<AssetId>>,
+            affected_assets: Vec<AssetId>,
         ) -> DispatchResultWithPostInfo {
             T::EnterMaintenanceOrigin::ensure_origin(origin.clone())?;
 
-            ensure!(
-                !HackedSiblingId::<T>::get(&hacked_chain_id),
-                Error::<T>::AlreadyInSiblingHackMode
-            );
-            HackedSiblingId::<T>::insert(&hacked_chain_id, true);
+            HackedSiblingId::<T>::try_mutate(&hacked_chain_id, |asset_ids| {
+                let mut new_asset_ids = asset_ids.clone();
+                for asset in affected_assets.clone() {
+                    // hack asset should not exist in old asset_ids
+                    if asset_ids.contains(&asset) {
+                        return Err(Error::<T>::AssetAlreadyMarkedAsHack);
+                    }
+                    // also make sure asset exist in asset manager
+                    if !T::AssetIdQuerier::contains(&hacked_chain_id, &asset) {
+                        return Err(Error::<T>::NoAssetRegistForParachain);
+                    }
+                    new_asset_ids.push(asset);
+                }
+                *asset_ids = new_asset_ids;
+                Ok(())
+            })?;
 
-            let affected_assets = Self::get_affected_assets(hacked_chain_id, affected_assets)?;
             for asset in affected_assets.clone() {
                 T::AssetFreezer::freeze_asset(asset)?;
             }
@@ -270,24 +281,35 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Return the sibling parachain to normal operating mode.
+        /// Return the sibling parachain of specify assets to normal operating mode.
         ///
         #[pallet::call_index(3)]
         #[pallet::weight(T::DbWeight::get().read + 3 * T::DbWeight::get().write)]
         pub fn resume_sibling_normal_mode(
             origin: OriginFor<T>,
             normal_chain_id: ParaId,
-            affected_assets: Option<Vec<AssetId>>,
+            affected_assets: Vec<AssetId>,
         ) -> DispatchResultWithPostInfo {
             T::ResumeNormalOrigin::ensure_origin(origin.clone())?;
 
-            ensure!(
-                HackedSiblingId::<T>::contains_key(&normal_chain_id),
-                Error::<T>::SiblingNotHack
-            );
-            HackedSiblingId::<T>::remove(&normal_chain_id);
+            HackedSiblingId::<T>::try_mutate(&normal_chain_id, |asset_ids| {
+                let mut new_asset_ids= asset_ids.clone();
+                for asset in affected_assets.clone() {
+                    // resume asset should exist in old asset_ids
+                    if !asset_ids.contains(&asset) {
+                        return Err(Error::<T>::AssetNotMarkedAsHack);
+                    }
+                    // also make sure asset exist in asset manager
+                    if !T::AssetIdQuerier::contains(&normal_chain_id, &asset) {
+                        return Err(Error::<T>::NoAssetRegistForParachain);
+                    }
+                }
+                // only keep hacked asset that not affected
+                new_asset_ids.retain(|x| !affected_assets.contains(x));
+                *asset_ids = new_asset_ids;
+                Ok(())
+            })?;
 
-            let affected_assets = Self::get_affected_assets(normal_chain_id, affected_assets)?;
             for asset in affected_assets.clone() {
                 T::AssetFreezer::thaw_asset(asset)?;
             }
@@ -297,26 +319,6 @@ pub mod pallet {
                 affected_assets,
             });
             Ok(().into())
-        }
-    }
-
-    impl<T: Config> Pallet<T> {
-        /// User provided `assets` maybe invalid or not belong to this `parachain_id`.
-        /// We only filter out assets belong to `parachain_id`.
-        fn get_affected_assets(
-            parachain_id: ParaId,
-            assets: Option<Vec<AssetId>>,
-        ) -> Result<Vec<AssetId>, DispatchError> {
-            let assets = if let Some(assets) = assets {
-                assets
-                    .into_iter()
-                    .filter(|asset| T::AssetIdQuerier::contains(&parachain_id, asset))
-                    .collect::<Vec<AssetId>>()
-            } else {
-                T::AssetIdQuerier::asset_ids(&parachain_id)
-            };
-            ensure!(!assets.is_empty(), Error::<T>::NoAssetRegistForParachain);
-            Ok(assets)
         }
     }
 

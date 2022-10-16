@@ -572,26 +572,16 @@ pub mod pallet {
             let location = AssetIdLocation::<T>::get(asset_id);
             if let Some(location) = location {
                 if let Some(multilocation) = location.into() {
+                    // Also support Relaychain query.
+                    if multilocation == Parent.into() {
+                        return true;
+                    }
                     if let Some(Parachain(id)) = multilocation.first_interior() {
                         return id == para_id;
                     }
                 }
             }
             false
-        }
-
-        fn asset_ids(para_id: &ParaId) -> Vec<AssetId> {
-            let mut assets: Vec<AssetId> = vec![];
-            LocationAssetId::<T>::iter().for_each(|(location, asset_id)| {
-                if let Some(multilocation) = location.into() {
-                    if let Some(Parachain(id)) = multilocation.first_interior() {
-                        if id == para_id {
-                            assets.push(asset_id);
-                        }
-                    }
-                }
-            });
-            assets
         }
     }
 
