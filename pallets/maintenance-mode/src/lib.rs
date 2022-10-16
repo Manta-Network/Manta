@@ -347,6 +347,13 @@ pub mod pallet {
         }
     }
 
+    pub struct IsInHackedSibling<T>(PhantomData<T>);
+    impl<T: Config> Contains<ParaId> for IsInHackedSibling<T> {
+        fn contains(t: &ParaId) -> bool {
+            HackedSiblingId::<T>::get(t)
+        }
+    }
+
     impl<T: Config> DmpMessageHandler for Pallet<T> {
         fn handle_dmp_messages(
             iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,

@@ -49,6 +49,8 @@ pub use sp_runtime::BuildStorage;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 
+use manta_primitives::xcm::SiblingParachainHackedBarrier;
+use pallet_maintenance_mode::IsInHackedSibling;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -169,6 +171,8 @@ match_types! {
 pub type Barrier = (
     // Allows local origin messages which call weight_credit >= weight_limit.
     TakeWeightCredit,
+    // Put this Barrier in front of normal Barrier otherwise it may take effect.
+    SiblingParachainHackedBarrier<IsInHackedSibling<Runtime>>,
     // Allows non-local origin messages, for example from from the xcmp queue,
     // which have the ability to deposit assets and pay for their own execution.
     AllowTopLevelPaidExecutionFrom<Everything>,

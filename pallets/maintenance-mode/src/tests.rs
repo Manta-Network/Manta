@@ -28,7 +28,7 @@ use cumulus_primitives_core::DmpMessageHandler;
 use frame_support::{
     assert_noop, assert_ok,
     dispatch::Dispatchable,
-    traits::{OffchainWorker, OnFinalize, OnIdle, OnInitialize, OnRuntimeUpgrade},
+    traits::{Contains, OffchainWorker, OnFinalize, OnIdle, OnInitialize, OnRuntimeUpgrade},
 };
 use manta_primitives::types::{AccountId, AssetId};
 
@@ -238,6 +238,8 @@ fn sibling_enter_maintenance_and_resume_normal_works() {
 
         assert!(!Pallet::<Test>::hacked_sibling_id(&1000));
         assert!(!Pallet::<Test>::hacked_sibling_id(&2000));
+        assert!(!IsInHackedSibling::<Test>::contains(&1000));
+        assert!(!IsInHackedSibling::<Test>::contains(&2000));
 
         // hacked chain:2000 dont have asset registered, enter failed
         let call: OuterCall = Call::enter_sibling_hack_mode {
@@ -284,6 +286,7 @@ fn sibling_enter_maintenance_and_resume_normal_works() {
             }]
         );
         assert!(Pallet::<Test>::hacked_sibling_id(&1000));
+        assert!(IsInHackedSibling::<Test>::contains(&1000));
 
         // duplicate enter failed
         let call: OuterCall = Call::enter_sibling_hack_mode {
@@ -311,6 +314,7 @@ fn sibling_enter_maintenance_and_resume_normal_works() {
             }]
         );
         assert!(!Pallet::<Test>::hacked_sibling_id(&1000));
+        assert!(!IsInHackedSibling::<Test>::contains(&1000));
 
         // duplicate resume failed
         let call: OuterCall = Call::resume_sibling_normal_mode {

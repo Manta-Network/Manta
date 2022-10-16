@@ -29,7 +29,10 @@ use frame_support::{
     weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 
-use crate::assets::{AssetIdLocationGetter, UnitsToWeightRatio};
+use crate::{
+    assets::{AssetIdLocationGetter, UnitsToWeightRatio},
+    types::ParaId,
+};
 use xcm::{
     latest::{
         prelude::{
@@ -454,8 +457,13 @@ impl<
     }
 }
 
+/// When sibling parachain is in hack mode, we don't allow sibling parachain transfer xcm to our
+/// chain, but the cost of this Barrier is we need some kind of refund strategy as user's asset is
+/// lost which may not what we and user wanted.
+/// We may need another precisely barrier only for hacked asset for sibling parachain instead here
+/// act on whole sibling parachain.
 pub struct SiblingParachainHackedBarrier<T>(PhantomData<T>);
-impl<T: Contains<MultiLocation>> ShouldExecute for SiblingParachainHackedBarrier<T> {
+impl<T: Contains<ParaId>> ShouldExecute for SiblingParachainHackedBarrier<T> {
     fn should_execute<Call>(
         origin: &MultiLocation,
         message: &mut Xcm<Call>,
@@ -467,9 +475,12 @@ impl<T: Contains<MultiLocation>> ShouldExecute for SiblingParachainHackedBarrier
             "SiblingParachainHackedBarrier origin: {:?}, message: {:?}",
             origin, message
         );
-        // If `origin` is in `hacked_siblings` by maintenance mode, return Ok
-        ensure!(!T::contains(origin), ());
-        // Return Error, then go to next Barrier
+        // If `origin` is in `hacked_siblings` by maintenance mode, return Ok(()) directly.
+        // If `origin` is not in `hacked_siblings`, which means sibling is not in hack mode,
+        // Then we continue processing, while here we return Err(()) means go to next Barrier.
+        if let Some(Parachain(id)) = origin.interior.first() {
+            ensure!(!T::contains(id), ());
+        }
         Err(())
     }
 }
