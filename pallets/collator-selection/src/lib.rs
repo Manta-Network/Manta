@@ -99,7 +99,6 @@ pub mod pallet {
     use pallet_session::SessionManager;
     use sp_arithmetic::Percent;
     use sp_staking::SessionIndex;
-    use sp_std::vec;
 
     type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
@@ -279,10 +278,10 @@ pub mod pallet {
                 self.eviction_tolerance <= Percent::one(),
                 "Eviction tolerance must be given as a percentage - number between 0 and 100",
             );
-            <DesiredCandidates<T>>::put(&self.desired_candidates);
-            <CandidacyBond<T>>::put(&self.candidacy_bond);
-            <EvictionBaseline<T>>::put(&self.eviction_baseline);
-            <EvictionTolerance<T>>::put(&self.eviction_tolerance);
+            <DesiredCandidates<T>>::put(self.desired_candidates);
+            <CandidacyBond<T>>::put(self.candidacy_bond);
+            <EvictionBaseline<T>>::put(self.eviction_baseline);
+            <EvictionTolerance<T>>::put(self.eviction_tolerance);
             <Invulnerables<T>>::put(&self.invulnerables);
         }
     }
@@ -362,7 +361,7 @@ pub mod pallet {
             if max > T::MaxCandidates::get() {
                 log::warn!("max > T::MaxCandidates; you might need to run benchmarks again");
             }
-            <DesiredCandidates<T>>::put(&max);
+            <DesiredCandidates<T>>::put(max);
             Self::deposit_event(Event::NewDesiredCandidates(max));
             Ok(().into())
         }
@@ -377,7 +376,7 @@ pub mod pallet {
             bond: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             T::UpdateOrigin::ensure_origin(origin)?;
-            <CandidacyBond<T>>::put(&bond);
+            <CandidacyBond<T>>::put(bond);
             Self::deposit_event(Event::NewCandidacyBond(bond));
             Ok(().into())
         }
@@ -654,7 +653,7 @@ pub mod pallet {
             let validators = T::ValidatorRegistration::validators();
             let validators_len = validators.len() as u32;
             let mut clear_res = <BlocksPerCollatorThisSession<T>>::clear(validators_len, None);
-            let mut old_cursor = vec![];
+            let mut old_cursor = Vec::new();
             while let Some(cursor) = clear_res.maybe_cursor {
                 clear_res = <BlocksPerCollatorThisSession<T>>::clear(validators_len, Some(&cursor));
                 if cursor == old_cursor {
@@ -692,8 +691,6 @@ pub mod pallet {
     }
 
     /// Fetch list of all possibly eligible authors to use in nimbus consensus filters
-    ///
-    /// This is currently the static set registered with pallet_session and will be superseded by parachain_staking
     ///
     /// NOTE: This should really be in pallet_session as we only use its storage, but since we haven't
     /// forked that one, this is the next best place.

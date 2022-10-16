@@ -28,14 +28,14 @@ The following checks can be performed after we have frozen our release candidate
 
 - [ ] Code freeze should typically happen one week prior to release, to ensure we have enough time for related testing.
 - [ ] Notify everyone, especially people with merge rights to `manta` (stechu, Dengjianping) that a release is ongoing and no more merges to `manta` should happen until told otherwise
-- [ ] Complete the following [manual QA workflow](https://hackmd.io/TbFmorG2RnOPmLuFcg9JOQ?view).
+- [ ] Complete the [manual QA workflow](https://www.notion.so/mantanetwork/d55be01354bb4f579b16d6e34df9e2e1?v=dcfa54e2b4a343ad9b899574ddb94a1c).
 - [ ] Verify Polkadot JS API are up to date with the latest
     runtime changes.
 - [ ] Execute runtime upgrade to Baikal relay and verify network stability.
 - [ ] Execute runtime upgrade to Calamari @ Baikal and verify network stability.
 - [ ] Execute runtime upgrade to Calamari @ Moonbase-Relay and verify network stability.
 - [ ] Execute runtime upgrade to Dolphin @ Baikal and verify network stability.
-- [ ] Prepare a governance post and submit to our forum with description and motivation for changes.
+- [ ] Check network health metrics like average block times, block authors, etc with this tool https://parachain-utilities.vercel.app/
 
 Note: Usually update client first then runtime.
 
@@ -63,15 +63,22 @@ Note: Usually update client first then runtime.
 
 Note: Do not publish draft releases from PR branches, because those branches will be deleted when the PR is merged.
 
-### After Runtime Upgrade
-- [ ] Notify subscan team. Ensure subscan service can continue to scan calamari blocks.
+### Before Runtime Upgrade Vote
+- [ ] Prepare a governance post and submit to our forum with description and motivation for changes.
+
+### During Runtime Upgrade Vote
+- Notify all external users of `manta`, include the block number the upgrade is enacted!
+  - [ ] [Calamari Network Forum](https://forum.manta.network/c/calamari-network-governance/6)
+  - [ ] Manta/Calamari Discord Announcement
+  - [ ] [Exchange Integration Teams](https://www.notion.so/mantanetwork/Exchanges-3rd-Infrastructures-b089e136a14b430ea405400311b362cb)
+  - [ ] Subscan team. Ensure subscan service can continue to scan calamari blocks.
 
 ## Notes
 
 ### Burn In
 
-Ensure that Manta DevOps has run the new release on Baikal nodes
-for at least 3 days prior to publishing the release.
+- [ ] Ensure that Manta DevOps has run the new release on Baikal nodes for at least 3 days prior to publishing the release.
+- [ ] Check all testnet nodes [on Grafana](https://grafana.pulse.pelagos.systems/d/rYdddlPWk/node-exporter-full?orgId=1&refresh=1m&var-DS_PROMETHEUS=default&var-job=calamari-testnet%20invulnerable%20collator%20(ssl)&var-node=crunchy.baikal.testnet.calamari.systems:443&var-diskdevices=%5Ba-z%5D%2B%7Cnvme%5B0-9%5D%2Bn%5B0-9%5D%2B%7Cmmcblk%5B0-9%5D%2B) for irregularities since the upgrade
 
 ### Release notes
 
@@ -117,7 +124,7 @@ as long as the indexes did not change.
 ### Benchmarks
 
 There is a manually deployed github action that runs all benchmarks on a bare-metal AWS machine. In order to use go to :
-* Go to [Run All Benchmarks Github Action](https://github.com/Manta-Network/Manta/actions/workflows/run_all_benchmarks.yml) 
+* Go to [Run All Benchmarks Github Action](https://github.com/Manta-Network/Manta/actions/workflows/run_all_benchmarks.yml)
 * Open `Run workflow` drop-down menu.
 * Choose your branch.
 * Choose a chain-spec. You'll have to run the workflow multiple times usually with `dolphin-dev`, `calamari-dev`, `manta-dev`.

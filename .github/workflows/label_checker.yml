@@ -2,6 +2,7 @@ name: Labels Checker
 on:
   pull_request:
     branches: [manta]
+    types: [opened, reopened, synchronize, labeled, unlabeled]
 jobs:
   check_l_labels:
     name: L- Labels Check

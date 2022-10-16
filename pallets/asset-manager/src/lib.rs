@@ -141,9 +141,9 @@ pub mod pallet {
             let asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
             let metadata = <T::AssetConfig as AssetConfig<T>>::NativeAssetMetadata::get();
             let location = <T::AssetConfig as AssetConfig<T>>::NativeAssetLocation::get();
-            AssetIdLocation::<T>::insert(&asset_id, &location);
-            AssetIdMetadata::<T>::insert(&asset_id, &metadata);
-            LocationAssetId::<T>::insert(&location, &asset_id);
+            AssetIdLocation::<T>::insert(asset_id, &location);
+            AssetIdMetadata::<T>::insert(asset_id, &metadata);
+            LocationAssetId::<T>::insert(&location, asset_id);
         }
     }
 
@@ -278,9 +278,9 @@ pub mod pallet {
                 metadata.is_sufficient(),
             )
             .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
-            AssetIdLocation::<T>::insert(&asset_id, &location);
-            AssetIdMetadata::<T>::insert(&asset_id, &metadata);
-            LocationAssetId::<T>::insert(&location, &asset_id);
+            AssetIdLocation::<T>::insert(asset_id, &location);
+            AssetIdMetadata::<T>::insert(asset_id, &metadata);
+            LocationAssetId::<T>::insert(&location, asset_id);
 
             // If it's a new para id, which will be inserted with AssetCount as 1.
             // If not, AssetCount will increased by 1.
@@ -314,7 +314,7 @@ pub mod pallet {
             // checks validity
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
-                AssetIdLocation::<T>::contains_key(&asset_id),
+                AssetIdLocation::<T>::contains_key(asset_id),
                 Error::<T>::UpdateNonExistAsset
             );
             ensure!(
@@ -323,10 +323,10 @@ pub mod pallet {
             );
             // change the ledger state.
             let old_location =
-                AssetIdLocation::<T>::get(&asset_id).ok_or(Error::<T>::UpdateNonExistAsset)?;
+                AssetIdLocation::<T>::get(asset_id).ok_or(Error::<T>::UpdateNonExistAsset)?;
             LocationAssetId::<T>::remove(&old_location);
-            LocationAssetId::<T>::insert(&location, &asset_id);
-            AssetIdLocation::<T>::insert(&asset_id, &location);
+            LocationAssetId::<T>::insert(&location, asset_id);
+            AssetIdLocation::<T>::insert(asset_id, &location);
 
             // 1. If the new location has new para id, insert the new para id,
             // the old para id will be deleted if AssetCount <= 1, or decreased by 1.
@@ -379,14 +379,14 @@ pub mod pallet {
                 Error::<T>::CannotUpdateNativeAssetMetadata
             );
             ensure!(
-                AssetIdLocation::<T>::contains_key(&asset_id),
+                AssetIdLocation::<T>::contains_key(asset_id),
                 Error::<T>::UpdateNonExistAsset
             );
             <T::AssetConfig as AssetConfig<T>>::AssetRegistrar::update_asset_metadata(
                 asset_id,
                 metadata.clone().into(),
             )?;
-            AssetIdMetadata::<T>::insert(&asset_id, &metadata);
+            AssetIdMetadata::<T>::insert(asset_id, &metadata);
             Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata });
             Ok(())
         }
@@ -406,10 +406,10 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
-                AssetIdLocation::<T>::contains_key(&asset_id),
+                AssetIdLocation::<T>::contains_key(asset_id),
                 Error::<T>::UpdateNonExistAsset
             );
-            UnitsPerSecond::<T>::insert(&asset_id, &units_per_second);
+            UnitsPerSecond::<T>::insert(asset_id, units_per_second);
             Self::deposit_event(Event::<T>::UnitsPerSecondUpdated {
                 asset_id,
                 units_per_second,
@@ -434,7 +434,7 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
-                AssetIdLocation::<T>::contains_key(&asset_id),
+                AssetIdLocation::<T>::contains_key(asset_id),
                 Error::<T>::UpdateNonExistAsset
             );
 
@@ -475,7 +475,7 @@ pub mod pallet {
             #[pallet::compact] min_xcm_fee: u128,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
-            MinXcmFee::<T>::insert(&reserve_chain, &min_xcm_fee);
+            MinXcmFee::<T>::insert(&reserve_chain, min_xcm_fee);
             Self::deposit_event(Event::<T>::MinXcmFeeUpdated {
                 reserve_chain,
                 min_xcm_fee,

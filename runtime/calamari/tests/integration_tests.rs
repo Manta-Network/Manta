@@ -18,20 +18,18 @@
 
 #![allow(clippy::identity_op)] // keep e.g. 1 * DAYS for legibility
 
-mod common;
-use common::{info_from_weight, last_event, mock::*, root_origin, BOND_AMOUNT, INITIAL_BALANCE};
+mod integrations_mock;
+use integrations_mock::{info_from_weight, last_event, mock::*, root_origin, INITIAL_BALANCE};
 
 pub use calamari_runtime::{
     assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},
     currency::KMA,
-    fee::{
-        FEES_PERCENTAGE_TO_BURN, FEES_PERCENTAGE_TO_TREASURY, TIPS_PERCENTAGE_TO_AUTHOR,
-        TIPS_PERCENTAGE_TO_TREASURY,
-    },
+    fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
     xcm_config::XcmFeesAccount,
-    AssetManager, Assets, Authorship, Balances, CalamariVesting, Council, Democracy,
-    EnactmentPeriod, LaunchPeriod, NativeTokenExistentialDeposit, Origin, Period, PolkadotXcm,
-    Runtime, TechnicalCommittee, Timestamp, Treasury, Utility, VotingPeriod,
+    AssetManager, Assets, Authorship, Balances, CalamariVesting, Council, DefaultBlocksPerRound,
+    Democracy, EnactmentPeriod, LaunchPeriod, LeaveDelayRounds, NativeTokenExistentialDeposit,
+    Origin, ParachainStaking, Period, PolkadotXcm, Runtime, TechnicalCommittee, Timestamp,
+    Treasury, Utility, VotingPeriod,
 };
 
 use calamari_runtime::opaque::SessionKeys;
@@ -39,9 +37,7 @@ use frame_support::{
     assert_err, assert_ok,
     codec::Encode,
     dispatch::Dispatchable,
-    traits::{
-        tokens::ExistenceRequirement, PalletInfo, StorageInfo, StorageInfoTrait, ValidatorSet,
-    },
+    traits::{tokens::ExistenceRequirement, PalletInfo, StorageInfo, StorageInfoTrait},
     weights::constants::*,
     StorageHasher, Twox128,
 };
@@ -186,6 +182,39 @@ fn sanity_check_governance_periods() {
     assert_eq!(LaunchPeriod::get(), 7 * DAYS);
     assert_eq!(VotingPeriod::get(), 7 * DAYS);
     assert_eq!(EnactmentPeriod::get(), 1 * DAYS);
+}
+
+#[test]
+fn ensure_block_per_round_and_leave_delays_equal_7days() {
+    // NOTE: If you change one, change the other as well
+    type LeaveCandidatesDelay =
+        <calamari_runtime::Runtime as pallet_parachain_staking::Config>::LeaveCandidatesDelay;
+    type LeaveDelegatorsDelay =
+        <calamari_runtime::Runtime as pallet_parachain_staking::Config>::LeaveDelegatorsDelay;
+    type CandidateBondLessDelay =
+        <calamari_runtime::Runtime as pallet_parachain_staking::Config>::CandidateBondLessDelay;
+    type DelegationBondLessDelay =
+        <calamari_runtime::Runtime as pallet_parachain_staking::Config>::DelegationBondLessDelay;
+    assert_eq!(
+        7 * DAYS,
+        DefaultBlocksPerRound::get() * LeaveDelayRounds::get()
+    );
+    assert_eq!(
+        7 * DAYS,
+        DefaultBlocksPerRound::get() * LeaveCandidatesDelay::get()
+    );
+    assert_eq!(
+        7 * DAYS,
+        DefaultBlocksPerRound::get() * LeaveDelegatorsDelay::get()
+    );
+    assert_eq!(
+        7 * DAYS,
+        DefaultBlocksPerRound::get() * CandidateBondLessDelay::get()
+    );
+    assert_eq!(
+        7 * DAYS,
+        DefaultBlocksPerRound::get() * DelegationBondLessDelay::get()
+    );
 }
 
 #[test]
@@ -445,12 +474,6 @@ fn seal_header(mut header: Header, author: AccountId) -> Header {
 }
 
 #[test]
-fn sanity_check_fees_and_tips_splits() {
-    assert_eq!(100, TIPS_PERCENTAGE_TO_AUTHOR + TIPS_PERCENTAGE_TO_TREASURY);
-    assert_eq!(100, FEES_PERCENTAGE_TO_BURN + FEES_PERCENTAGE_TO_TREASURY);
-}
-
-#[test]
 fn reward_fees_to_block_author_and_treasury() {
     let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
     let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
@@ -515,8 +538,8 @@ fn reward_fees_to_block_author_and_treasury() {
             let author_received_reward = Balances::free_balance(alice) - INITIAL_BALANCE;
             println!("The rewarded_amount is: {:?}", author_received_reward);
 
-            // Author should get none of the fees - 50% burned, 50% to treasury.
-            let author_percent = Percent::from_percent(0);
+            // Fees split: 40% burned, 40% to treasury, 10% to author.
+            let author_percent = Percent::from_percent(FEES_PERCENTAGE_TO_AUTHOR);
             let expected_fee =
                 TransactionPayment::compute_actual_fee(len as u32, &info, &post_info, 0);
             assert_eq!(author_received_reward, author_percent * expected_fee);
@@ -541,189 +564,64 @@ fn root_can_change_default_xcm_vers() {
 }
 
 #[test]
-fn sanity_check_session_period() {
-    assert_eq!(Period::get(), 6 * HOURS);
+fn sanity_check_round_duration() {
+    assert_eq!(DefaultBlocksPerRound::get(), 6 * HOURS);
 }
 
-fn advance_session_assertions(session_index: &mut u32, advance_by: u32) {
-    *session_index += advance_by;
+// TODO: Full integration test for staking
+// fn advance_session_assertions(session_index: &mut u32, advance_by: u32) {
+//     *session_index += advance_by;
 
-    run_to_block(*session_index * Period::get() - 1);
-    assert_eq!(Session::session_index(), *session_index - 1);
+//     run_to_block(*session_index * Period::get() - 1);
+//     assert_eq!(Session::session_index(), *session_index - 1);
 
-    run_to_block(*session_index * Period::get());
-    assert_eq!(Session::session_index(), *session_index);
-}
+//     run_to_block(*session_index * Period::get());
+//     assert_eq!(Session::session_index(), *session_index);
+// }
 
-#[test]
-fn session_and_collator_selection_work() {
-    let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
-    let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
-    let alice_session_keys = SessionKeys::new(get_collator_keys_from_seed("Alice"));
-    let bob_session_keys = SessionKeys::new(get_collator_keys_from_seed("Bob"));
-    let desired_candidates = 1;
+// #[test]
+// fn session_and_collator_selection_work() {
+//     let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+//     let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
+//     let alice_session_keys = SessionKeys::new(get_collator_keys_from_seed("Alice"));
+//     let bob_session_keys = SessionKeys::new(get_collator_keys_from_seed("Bob"));
+//     let desired_candidates = 1;
 
-    ExtBuilder::default()
-        .with_collators(vec![alice.clone()], desired_candidates)
-        .with_balances(vec![
-            (alice.clone(), INITIAL_BALANCE),
-            (bob.clone(), INITIAL_BALANCE),
-        ])
-        .build()
-        .execute_with(|| {
-            // Alice is in the invulnerables set, so not part of the candidates set.
-            assert_eq!(CollatorSelection::candidates(), vec![]);
+//     ExtBuilder::default()
+//         .with_collators(vec![alice.clone()], desired_candidates)
+//         .with_balances(vec![
+//             (alice.clone(), INITIAL_BALANCE),
+//             (bob.clone(), INITIAL_BALANCE),
+//         ])
+//         .build()
+//         .execute_with(|| {
+//             // Create and bond session keys to Bob's account.
+//             assert_ok!(Session::set_keys(
+//                 Origin::signed(bob.clone()),
+//                 bob_session_keys.clone(),
+//                 vec![]
+//             ));
+//             assert_eq!(
+//                 Session::next_keys(bob.clone()),
+//                 // TODO: Something
+//             );
 
-            // Create and bond session keys to Bob's account.
-            assert_ok!(Session::set_keys(
-                Origin::signed(bob.clone()),
-                bob_session_keys.clone(),
-                vec![]
-            ));
+//             assert_ok!(ParachainStaking::join_candidates(
+//                 Origin::signed(bob.clone()),
+//                 Config::MinCandidateStk,
+//                 3u32
+//             ));
 
-            assert_ok!(CollatorSelection::register_candidate(
-                root_origin(),
-                bob.clone()
-            ));
-            let candidate = manta_collator_selection::CandidateInfo {
-                who: bob.clone(),
-                deposit: BOND_AMOUNT,
-            };
+//             // Bob is now a candidate
+//             assert_eq!(ParachainStaking::candidate_pool().contains(bob.clone()));
 
-            // Bob is a candidate but only Alice is queued as a collator in this session.
-            assert_eq!(CollatorSelection::candidates(), vec![candidate]);
-            assert_eq!(
-                Session::queued_keys(),
-                vec![(alice.clone(), alice_session_keys.clone())]
-            );
-            assert_eq!(Session::validators(), vec![alice.clone()]);
+//             // After one round
 
-            let mut session_index = 0;
-            assert_eq!(Session::session_index(), session_index);
+//             // bob becomes part of the selected candidates set
 
-            advance_session_assertions(&mut session_index, 1);
-
-            // After 1 sessions both Alice and Bob are queued for collators
-            // But only Alice is actually a collator for now.
-            assert_eq!(
-                Session::queued_keys(),
-                vec![
-                    (alice.clone(), alice_session_keys.clone()),
-                    (bob.clone(), bob_session_keys.clone())
-                ]
-            );
-            assert_eq!(Session::validators(), vec![alice.clone()]);
-
-            advance_session_assertions(&mut session_index, 1);
-
-            // Bob has finally been included as a collator
-            // Note that we started from block 1, so the delay period of 1 full session
-            // required us to wait until session index 2.
-            assert_eq!(Session::validators(), vec![alice.clone(), bob.clone()]);
-
-            // Once Bob decides to leave he will be removed from the candidates set immediately.
-            assert_ok!(CollatorSelection::leave_intent(Origin::signed(bob.clone())));
-            assert_eq!(CollatorSelection::candidates(), vec![]);
-
-            // But will not leave as a validator until after one full session.
-            assert_eq!(Session::validators(), vec![alice.clone(), bob.clone()]);
-
-            advance_session_assertions(&mut session_index, 1);
-
-            assert_eq!(Session::validators(), vec![alice.clone(), bob.clone()]);
-
-            advance_session_assertions(&mut session_index, 1);
-
-            // Bob was removed as a collator.
-            assert_eq!(Session::validators(), vec![alice.clone()]);
-        });
-}
-
-#[test]
-fn batched_registration_of_collator_candidates_works() {
-    let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
-    let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
-    let charlie = get_account_id_from_seed::<sr25519::Public>("Charlie");
-    let alice_session_keys = SessionKeys::new(get_collator_keys_from_seed("Alice"));
-    let bob_session_keys = SessionKeys::new(get_collator_keys_from_seed("Bob"));
-    let charlie_session_keys = SessionKeys::new(get_collator_keys_from_seed("Charlie"));
-    let desired_candidates = 2;
-
-    ExtBuilder::default()
-        .with_balances(vec![
-            (alice.clone(), INITIAL_BALANCE),
-            (bob.clone(), INITIAL_BALANCE),
-            (charlie.clone(), INITIAL_BALANCE),
-        ])
-        .with_collators(vec![alice.clone()], desired_candidates)
-        .build()
-        .execute_with(|| {
-            assert_ok!(Session::set_keys(
-                Origin::signed(bob.clone()),
-                bob_session_keys.clone(),
-                vec![]
-            ));
-
-            assert_ok!(Session::set_keys(
-                Origin::signed(charlie.clone()),
-                charlie_session_keys.clone(),
-                vec![]
-            ));
-
-            assert_eq!(CollatorSelection::candidates(), vec![]);
-
-            assert_ok!(Utility::batch(
-                root_origin(),
-                vec![
-                    Call::CollatorSelection(manta_collator_selection::Call::register_candidate {
-                        new_candidate: bob.clone(),
-                    }),
-                    Call::CollatorSelection(manta_collator_selection::Call::register_candidate {
-                        new_candidate: charlie.clone(),
-                    }),
-                ],
-            ));
-
-            let candidate_bob = manta_collator_selection::CandidateInfo {
-                who: bob.clone(),
-                deposit: BOND_AMOUNT,
-            };
-            let candidate_charlie = manta_collator_selection::CandidateInfo {
-                who: charlie.clone(),
-                deposit: BOND_AMOUNT,
-            };
-            assert_eq!(
-                CollatorSelection::candidates(),
-                vec![candidate_bob, candidate_charlie]
-            );
-            assert_eq!(
-                Session::queued_keys(),
-                vec![(alice.clone(), alice_session_keys.clone()),]
-            );
-            assert_eq!(Session::validators(), vec![alice.clone()]);
-
-            let mut session_index = 1;
-            run_to_block(session_index * Period::get());
-
-            let all_collator_pairs = vec![
-                (alice.clone(), alice_session_keys.clone()),
-                (bob.clone(), bob_session_keys.clone()),
-                (charlie.clone(), charlie_session_keys.clone()),
-            ];
-
-            assert_eq!(Session::queued_keys(), all_collator_pairs);
-            assert_eq!(Session::validators(), vec![alice.clone()]);
-
-            session_index += 1;
-            run_to_block(session_index * Period::get());
-
-            assert_eq!(Session::queued_keys(), all_collator_pairs);
-            assert_eq!(
-                Session::validators(),
-                vec![alice.clone(), bob.clone(), charlie.clone()]
-            );
-        });
-}
+//             // TODO: Unstaking
+//         });
+// }
 
 #[test]
 fn sanity_check_weight_per_time_constants_are_as_expected() {
@@ -806,6 +704,7 @@ fn verify_pallet_prefixes() {
     is_pallet_prefix::<calamari_runtime::CalamariVesting>("CalamariVesting");
     is_pallet_prefix::<calamari_runtime::AuthorInherent>("AuthorInherent");
     is_pallet_prefix::<calamari_runtime::AuraAuthorFilter>("AuraAuthorFilter");
+    is_pallet_prefix::<calamari_runtime::ParachainStaking>("ParachainStaking");
 
     let prefix = |pallet_name, storage_name| {
         let mut res = [0u8; 32];
@@ -926,6 +825,7 @@ fn verify_pallet_indices() {
     is_pallet_index::<calamari_runtime::Multisig>(41);
     is_pallet_index::<calamari_runtime::Assets>(45);
     is_pallet_index::<calamari_runtime::AssetManager>(46);
+    is_pallet_index::<calamari_runtime::ParachainStaking>(48);
     is_pallet_index::<calamari_runtime::CalamariVesting>(50);
     is_pallet_index::<calamari_runtime::AuthorInherent>(60);
     is_pallet_index::<calamari_runtime::AuraAuthorFilter>(63);

@@ -23,12 +23,12 @@ use frame_support::{
     },
     PalletId,
 };
-
 use frame_system::EnsureSignedBy;
+use manta_primitives::types::{BlockNumber, Header};
 use sp_arithmetic::Percent;
 use sp_core::H256;
 use sp_runtime::{
-    testing::{Header, UintAuthorityId},
+    testing::UintAuthorityId,
     traits::{BlakeTwo256, IdentityLookup, OpaqueKeys},
     RuntimeAppPublic,
 };
@@ -61,14 +61,14 @@ impl frame_system::Config for Test {
     type Origin = Origin;
     type Call = Call;
     type Index = u64;
-    type BlockNumber = u64;
+    type BlockNumber = BlockNumber;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
     type Event = Event;
-    type BlockHashCount = ConstU64<250>;
+    type BlockHashCount = ConstU32<250>;
     type Version = ();
     type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<u64>;
@@ -147,7 +147,7 @@ impl pallet_session::SessionHandler<u64> for TestSessionHandler {
         SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
     }
     fn on_new_session<Ks: OpaqueKeys>(_: bool, keys: &[(u64, Ks)], _: &[(u64, Ks)]) {
-        SessionChangeBlock::set(System::block_number());
+        SessionChangeBlock::set(System::block_number() as u64);
         SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
     }
     fn on_before_session_ending() {}
@@ -155,8 +155,8 @@ impl pallet_session::SessionHandler<u64> for TestSessionHandler {
 }
 
 parameter_types! {
-    pub const Offset: u64 = 0;
-    pub const Period: u64 = 10;
+    pub const Offset: BlockNumber = 0;
+    pub const Period: BlockNumber = 10;
 }
 
 impl pallet_session::Config for Test {
@@ -251,9 +251,9 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     t.into()
 }
 
-pub fn initialize_to_block(n: u64) {
+pub fn initialize_to_block(n: BlockNumber) {
     for i in System::block_number() + 1..=n {
         System::set_block_number(i);
-        <AllPalletsReversedWithSystemFirst as frame_support::traits::OnInitialize<u64>>::on_initialize(i);
+        <AllPalletsReversedWithSystemFirst as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(i);
     }
 }
