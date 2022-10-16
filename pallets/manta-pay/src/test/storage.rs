@@ -72,8 +72,3 @@ fn double_map_iterator_test() {
         );
     })
 }
-
-#[test]
-fn account_test() {
-    println!("{}", crate::mock::MantaPayPallet::account_id());
-}

@@ -23,15 +23,13 @@ use sp_runtime::traits::{CheckedConversion, Convert, Zero};
 use sp_std::{marker::PhantomData, result, vec};
 
 use frame_support::{
-    ensure,
     pallet_prelude::Get,
-    traits::{fungibles::Mutate, tokens::ExistenceRequirement, Contains},
+    traits::{fungibles::Mutate, tokens::ExistenceRequirement},
     weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 
 use crate::{
     assets::{AssetIdLocationGetter, UnitsToWeightRatio},
-    types::ParaId,
 };
 use xcm::{
     latest::{
@@ -51,7 +49,7 @@ use xcm::{
 };
 use xcm_builder::TakeRevenue;
 use xcm_executor::traits::{
-    Convert as XcmConvert, FilterAssetLocation, MatchesFungible, MatchesFungibles, ShouldExecute,
+    Convert as XcmConvert, FilterAssetLocation, MatchesFungible, MatchesFungibles,
     TransactAsset, WeightTrader,
 };
 
@@ -454,34 +452,6 @@ impl<
         };
 
         Ok((asset_id, amount, receiver))
-    }
-}
-
-/// When sibling parachain is in hack mode, we don't allow sibling parachain transfer xcm to our
-/// chain, but the cost of this Barrier is we need some kind of refund strategy as user's asset is
-/// lost which may not what we and user wanted.
-/// We may need another precisely barrier only for hacked asset for sibling parachain instead here
-/// act on whole sibling parachain.
-pub struct SiblingParachainHackedBarrier<T>(PhantomData<T>);
-impl<T: Contains<ParaId>> ShouldExecute for SiblingParachainHackedBarrier<T> {
-    fn should_execute<Call>(
-        origin: &MultiLocation,
-        message: &mut Xcm<Call>,
-        _max_weight: Weight,
-        _weight_credit: &mut Weight,
-    ) -> Result<(), ()> {
-        log::trace!(
-            target: "xcm::barriers",
-            "SiblingParachainHackedBarrier origin: {:?}, message: {:?}",
-            origin, message
-        );
-        // If `origin` is in `hacked_siblings` by maintenance mode, return Ok(()) directly.
-        // If `origin` is not in `hacked_siblings`, which means sibling is not in hack mode,
-        // Then we continue processing, while here we return Err(()) means go to next Barrier.
-        if let Some(Parachain(id)) = origin.interior.first() {
-            ensure!(!T::contains(id), ());
-        }
-        Err(())
     }
 }
 

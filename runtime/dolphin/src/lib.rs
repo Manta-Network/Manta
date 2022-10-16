@@ -174,6 +174,34 @@ parameter_types! {
     pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
 }
 
+parameter_types! {
+    // `UnpausablePallets` is used for `pallet_tx_pause` in case `PauseOrigin` mistake make them as pausable.
+    pub UnpausablePallets: Vec<Vec<u8>> = vec![
+        // `MaintenanceMode` should always unpausable. we don't need add `TransactionPause` here because
+        // `TransactionPause` itself was checked inside pause action, so it's unpausable naturally.
+        b"MaintenanceMode".to_vec(),
+        // Balances is unpausable.
+        b"Balances".to_vec(),
+        // Governance is unpausable.
+        b"Democracy".to_vec(),
+        b"Council".to_vec(),
+        b"CouncilMembership".to_vec(),
+        b"TechnicalCommittee".to_vec(),
+        b"TechnicalMembership".to_vec()
+    ];
+}
+
+impl pallet_tx_pause::Config for Runtime {
+    type Event = Event;
+    type PauseOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 2, 6>,
+    >;
+    type UnpauseOrigin = EnsureRoot<AccountId>;
+    type UnpausablePallets = IsInVec<UnpausablePallets>;
+    type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
+}
+
 pub struct XcmExecutionManager;
 impl pallet_maintenance_mode::PauseXcmExecution for XcmExecutionManager {
     fn suspend_xcm_execution() -> DispatchResult {
@@ -244,36 +272,6 @@ impl OffchainWorker<BlockNumber> for MaintenanceHooks {
     }
 }
 
-impl pallet_tx_pause::Config for Runtime {
-    type Event = Event;
-    type PauseOrigin = EitherOfDiverse<
-        EnsureRoot<AccountId>,
-        pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 2, 6>,
-    >;
-    type UnpauseOrigin = EnsureRoot<AccountId>;
-    type UnpausablePallets = IsInVec<UnpausablePallets>;
-    type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
-}
-
-impl pallet_maintenance_mode::Config for Runtime {
-    type Event = Event;
-    type NormalCallFilter = NormalCallFilter;
-    type MaintenanceCallFilter = MaintenanceCallFilter;
-    type EnterMaintenanceOrigin = EitherOfDiverse<
-        EnsureRoot<AccountId>,
-        pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 2, 6>,
-    >;
-    type ResumeNormalOrigin = EnsureRoot<AccountId>;
-    type XcmExecutionManager = XcmExecutionManager;
-    type NormalDmpHandler = DmpQueue;
-    type MaintenanceDmpHandler = MaintenanceDmpHandler;
-    // use `AllPalletsReversedWithSystemFirst` that not change hooks in normal operation
-    type NormalExecutiveHooks = AllPalletsReversedWithSystemFirst;
-    type MaintenanceExecutiveHooks = MaintenanceHooks;
-    type AssetFreezer = AssetsFreezer;
-    type AssetIdQuerier = AssetManager;
-}
-
 pub struct AssetsFreezer;
 impl AssetFreezer for AssetsFreezer {
     fn freeze_asset(asset_id: AssetId) -> DispatchResult {
@@ -295,21 +293,23 @@ impl AssetFreezer for AssetsFreezer {
     }
 }
 
-parameter_types! {
-    // `UnpausablePallets` is used for `pallet_tx_pause` in case `PauseOrigin` mistake make them as pausable.
-    pub UnpausablePallets: Vec<Vec<u8>> = vec![
-        // `MaintenanceMode` should always unpausable. we don't need add `TransactionPause` here because
-        // `TransactionPause` itself was checked inside pause action, so it's unpausable naturally.
-        b"MaintenanceMode".to_vec(),
-        // Balances is unpausable.
-        b"Balances".to_vec(),
-        // Governance is unpausable.
-        b"Democracy".to_vec(),
-        b"Council".to_vec(),
-        b"CouncilMembership".to_vec(),
-        b"TechnicalCommittee".to_vec(),
-        b"TechnicalMembership".to_vec()
-    ];
+impl pallet_maintenance_mode::Config for Runtime {
+    type Event = Event;
+    type NormalCallFilter = NormalCallFilter;
+    type MaintenanceCallFilter = MaintenanceCallFilter;
+    type EnterMaintenanceOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 2, 6>,
+    >;
+    type ResumeNormalOrigin = EnsureRoot<AccountId>;
+    type XcmExecutionManager = XcmExecutionManager;
+    type NormalDmpHandler = DmpQueue;
+    type MaintenanceDmpHandler = MaintenanceDmpHandler;
+    // use `AllPalletsReversedWithSystemFirst` that not change hooks in normal operation
+    type NormalExecutiveHooks = AllPalletsReversedWithSystemFirst;
+    type MaintenanceExecutiveHooks = MaintenanceHooks;
+    type AssetFreezer = AssetsFreezer;
+    type AssetIdQuerier = AssetManager;
 }
 
 /// Maintenance mode call filter, When we're hacked, using this filter to only reserve normal operation.
@@ -868,8 +868,8 @@ construct_runtime!(
         } = 1,
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
         ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
+        MaintenanceMode: pallet_maintenance_mode::{Pallet, Call, Config, Storage, Event} = 8,
         TransactionPause: pallet_tx_pause::{Pallet, Call, Storage, Event<T>} = 9,
-        MaintenanceMode: pallet_maintenance_mode::{Pallet, Call, Config, Storage, Event} = 48,
 
         // Monetary stuff.
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,

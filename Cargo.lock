@@ -995,6 +995,7 @@ dependencies = [
  "pallet-balances",
  "pallet-collective",
  "pallet-democracy",
+ "pallet-maintenance-mode",
  "pallet-membership",
  "pallet-multisig",
  "pallet-parachain-staking",

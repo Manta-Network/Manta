@@ -131,6 +131,14 @@ impl ExtBuilder {
         )
         .unwrap();
 
+        <pallet_maintenance_mode::GenesisConfig as GenesisBuild<Runtime>>::assimilate_storage(
+            &pallet_maintenance_mode::GenesisConfig {
+                start_in_maintenance_mode: false,
+            },
+            &mut t,
+        )
+        .unwrap();
+
         let mut ext = sp_io::TestExternalities::new(t);
 
         ext.execute_with(|| {
