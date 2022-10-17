@@ -27,17 +27,17 @@ pub use calamari_runtime::{
     fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
     xcm_config::XcmFeesAccount,
     AssetManager, Assets, Authorship, Balances, CalamariVesting, Council, DefaultBlocksPerRound,
-    Democracy, EnactmentPeriod, LaunchPeriod, LeaveDelayRounds, NativeTokenExistentialDeposit,
-    Origin, ParachainStaking, Period, PolkadotXcm, Runtime, TechnicalCommittee, Timestamp,
-    Treasury, Utility, VotingPeriod,
+    Democracy, EnactmentPeriod, LaunchPeriod, LeaveDelayRounds, MaintenanceMode,
+    NativeTokenExistentialDeposit, Origin, ParachainStaking, Period, PolkadotXcm, Runtime,
+    TechnicalCommittee, Timestamp, Treasury, Utility, VotingPeriod,
 };
 
 use calamari_runtime::opaque::SessionKeys;
 use frame_support::{
-    assert_err, assert_ok,
+    assert_err, assert_noop, assert_ok,
     codec::Encode,
     dispatch::Dispatchable,
-    traits::{tokens::ExistenceRequirement, PalletInfo, StorageInfo, StorageInfoTrait},
+    traits::{tokens::ExistenceRequirement, Len, PalletInfo, StorageInfo, StorageInfoTrait},
     weights::constants::*,
     StorageHasher, Twox128,
 };
@@ -60,13 +60,15 @@ use xcm::{
 
 use pallet_transaction_payment::ChargeTransactionPayment;
 
+use manta_primitives::types::{AssetId, ParaId};
 use nimbus_primitives::NIMBUS_ENGINE_ID;
 use sp_core::{sr25519, H256};
 use sp_runtime::{
     generic::DigestItem,
-    traits::{BlakeTwo256, Hash, Header as HeaderT, SignedExtension},
-    DispatchError, ModuleError, Percent,
+    traits::{BlakeTwo256, ConstU32, Hash, Header as HeaderT, SignedExtension},
+    DispatchError, ModuleError, Percent, WeakBoundedVec,
 };
+use xcm::prelude::GeneralKey;
 
 fn note_preimage(proposer: &AccountId, proposal_call: &Call) -> H256 {
     let preimage = proposal_call.encode();
@@ -801,6 +803,7 @@ fn verify_pallet_indices() {
     is_pallet_index::<calamari_runtime::ParachainSystem>(1);
     is_pallet_index::<calamari_runtime::Timestamp>(2);
     is_pallet_index::<calamari_runtime::ParachainInfo>(3);
+    is_pallet_index::<calamari_runtime::MaintenanceMode>(8);
     is_pallet_index::<calamari_runtime::TransactionPause>(9);
     is_pallet_index::<calamari_runtime::Balances>(10);
     is_pallet_index::<calamari_runtime::TransactionPayment>(11);
@@ -1413,4 +1416,139 @@ fn concrete_fungible_ledger_can_reduce_by_amount_works() {
                 FungibleLedgerError::CannotWithdrawMoreThan(0)
             );
         });
+}
+
+fn native_currency_location(para_id: u32, key: Vec<u8>) -> MultiLocation {
+    MultiLocation::new(
+        1,
+        X2(
+            Parachain(para_id),
+            GeneralKey(WeakBoundedVec::<u8, ConstU32<32>>::force_from(key, None)),
+        ),
+    )
+}
+
+#[test]
+fn maintenance_mode_call_works() {
+    ExtBuilder::default().build().execute_with(|| {
+        assert_ok!(MaintenanceMode::enter_maintenance_mode(root_origin()));
+        assert!(MaintenanceMode::maintenance_mode());
+
+        assert_ok!(MaintenanceMode::resume_normal_operation(root_origin()));
+        assert!(!MaintenanceMode::maintenance_mode());
+    });
+}
+
+#[test]
+fn sibling_hack_mode_works() {
+    ExtBuilder::default().build().execute_with(|| {
+        // sibling parachain hack mode freeze asset works
+        let asset_metadata = AssetRegistrarMetadata {
+            name: b"Karura".to_vec(),
+            symbol: b"KAR".to_vec(),
+            decimals: 12,
+            min_balance: 10u128,
+            evm_address: None,
+            is_frozen: false,
+            is_sufficient: true,
+        };
+        let multi_location = native_currency_location(2000, "KAR".as_bytes().to_vec());
+        let source_location = AssetLocation(VersionedMultiLocation::V1(multi_location));
+        assert_ok!(AssetManager::register_asset(
+            root_origin(),
+            source_location,
+            asset_metadata
+        ));
+
+        let chain_id: ParaId = 2000;
+        hack_mode_works(chain_id);
+    });
+}
+
+fn register_ksm() {
+    let asset_metadata = AssetRegistrarMetadata {
+        name: b"Kusama".to_vec(),
+        symbol: b"KSM".to_vec(),
+        decimals: 12,
+        min_balance: 10u128,
+        evm_address: None,
+        is_frozen: false,
+        is_sufficient: true,
+    };
+    let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+    assert_ok!(AssetManager::register_asset(
+        root_origin(),
+        source_location,
+        asset_metadata
+    ));
+}
+
+#[test]
+fn relay_hack_mode_works() {
+    ExtBuilder::default().build().execute_with(|| {
+        // relaychain hack mode freeze asset works
+        register_ksm();
+        let chain_id: ParaId = 0;
+        hack_mode_works(chain_id);
+    });
+}
+
+fn hack_mode_works(chain_id: ParaId) {
+    let start_asset_id =
+        <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get();
+    let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+    let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
+    let charlie = get_account_id_from_seed::<sr25519::Public>("Charlie");
+    assert_ok!(CalamariConcreteFungibleLedger::deposit_can_mint(
+        start_asset_id,
+        &alice.clone(),
+        1000,
+    ));
+
+    let affected_assets = vec![start_asset_id];
+    let empty: Vec<AssetId> = vec![];
+    assert_ok!(MaintenanceMode::enter_sibling_hack_mode(
+        root_origin(),
+        chain_id,
+        affected_assets.clone()
+    ));
+    assert_eq!(
+        MaintenanceMode::hacked_sibling_id(chain_id),
+        affected_assets.clone()
+    );
+
+    // deposit_can_mint can still processing
+    assert_ok!(CalamariConcreteFungibleLedger::deposit_can_mint(
+        start_asset_id,
+        &charlie.clone(),
+        1000,
+    ));
+    // transfer asset not allowed
+    assert_noop!(
+        CalamariConcreteFungibleLedger::transfer(
+            start_asset_id,
+            &alice.clone(),
+            &bob.clone(),
+            100,
+            ExistenceRequirement::KeepAlive
+        ),
+        FungibleLedgerError::InvalidTransfer(pallet_assets::Error::<Runtime>::Frozen.into())
+    );
+
+    assert_ok!(MaintenanceMode::resume_sibling_normal_mode(
+        root_origin(),
+        chain_id,
+        affected_assets.clone()
+    ));
+    assert_eq!(MaintenanceMode::hacked_sibling_id(chain_id), empty);
+
+    assert_ok!(CalamariConcreteFungibleLedger::transfer(
+        start_asset_id,
+        &alice.clone(),
+        &bob.clone(),
+        100,
+        ExistenceRequirement::KeepAlive
+    ));
+    assert_eq!(Assets::balance(start_asset_id, alice.clone()), 900);
+    assert_eq!(Assets::balance(start_asset_id, bob.clone()), 100);
 }

@@ -51,22 +51,21 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use manta_primitives::{
         assets::{
-            AssetConfig, AssetIdLocationGetter, AssetMetadata, AssetRegistrar, FungibleLedger,
-            UnitsToWeightRatio,
+            AssetConfig, AssetIdLocationGetter, AssetIdQuerier, AssetMetadata, AssetRegistrar,
+            FungibleLedger, UnitsToWeightRatio,
         },
-        types::{AssetId, Balance},
+        types::{AssetId, Balance, ParaId},
     };
     use orml_traits::GetByKey;
     use sp_runtime::{
         traits::{AccountIdConversion, One},
         ArithmeticError,
     };
+    use sp_std::prelude::*;
     use xcm::latest::prelude::*;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
-    /// Alias for the junction Parachain(#[codec(compact)] u32),
-    pub(crate) type ParaId = u32;
     pub(crate) type AssetCount = u32;
 
     #[pallet::pallet]
@@ -565,6 +564,24 @@ pub mod pallet {
             let location =
                 <T::AssetConfig as AssetConfig<T>>::AssetLocation::from(location.clone());
             MinXcmFee::<T>::get(&location)
+        }
+    }
+
+    impl<T: Config> AssetIdQuerier for Pallet<T> {
+        fn contains(para_id: &ParaId, asset_id: &AssetId) -> bool {
+            let location = AssetIdLocation::<T>::get(asset_id);
+            if let Some(location) = location {
+                if let Some(multilocation) = location.into() {
+                    // Also support Relaychain query.
+                    if multilocation == Parent.into() {
+                        return true;
+                    }
+                    if let Some(Parachain(id)) = multilocation.first_interior() {
+                        return id == para_id;
+                    }
+                }
+            }
+            false
         }
     }
 

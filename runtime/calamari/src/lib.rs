@@ -40,11 +40,15 @@ use sp_std::{cmp::Ordering, prelude::*};
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+use cumulus_primitives_core::{relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler};
 use frame_support::{
-    construct_runtime, parameter_types,
+    construct_runtime,
+    dispatch::{DispatchResult, RawOrigin},
+    parameter_types,
     traits::{
-        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse,
-        NeverEnsureOrigin, PrivilegeCmp,
+        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec,
+        NeverEnsureOrigin, OffchainWorker, OnFinalize, OnIdle, OnInitialize, OnRuntimeUpgrade,
+        PrivilegeCmp,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -58,7 +62,7 @@ use frame_system::{
 };
 use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
-    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
+    types::{AccountId, AssetId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
@@ -82,6 +86,7 @@ pub mod xcm_config;
 use currency::*;
 use fee::WeightToFee;
 use impls::DealWithFees;
+use manta_primitives::assets::AssetFreezer;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -173,18 +178,159 @@ parameter_types! {
     pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
 }
 
+parameter_types! {
+    pub UnpausablePallets: Vec<Vec<u8>> = vec![
+        b"Democracy".to_vec(),
+        b"Balances".to_vec(),
+        b"Council".to_vec(),
+        b"CouncilCollective".to_vec(),
+        b"TechnicalCommittee".to_vec(),
+        b"TechnicalCollective".to_vec()
+    ];
+}
+
 impl pallet_tx_pause::Config for Runtime {
     type Event = Event;
-    type UpdateOrigin = EitherOfDiverse<
+    type PauseOrigin = EitherOfDiverse<
         EnsureRoot<AccountId>,
-        pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 1, 2>,
+        pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 2, 6>,
     >;
+    type UnpauseOrigin = EnsureRoot<AccountId>;
+    type UnpausablePallets = IsInVec<UnpausablePallets>;
     type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
+pub struct XcmExecutionManager;
+impl pallet_maintenance_mode::PauseXcmExecution for XcmExecutionManager {
+    fn suspend_xcm_execution() -> DispatchResult {
+        XcmpQueue::suspend_xcm_execution(Origin::root())
+    }
+    fn resume_xcm_execution() -> DispatchResult {
+        XcmpQueue::resume_xcm_execution(Origin::root())
+    }
+}
+
+pub struct MaintenanceDmpHandler;
+impl DmpMessageHandler for MaintenanceDmpHandler {
+    // This implementation makes messages be queued
+    // Since the limit is 0, messages are queued for next iteration
+    fn handle_dmp_messages(
+        iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
+        _limit: Weight,
+    ) -> Weight {
+        DmpQueue::handle_dmp_messages(iter, 0)
+    }
+}
+
+/// The hooks we want to run in Maintenance Mode
+pub struct MaintenanceHooks;
+
+impl OnInitialize<BlockNumber> for MaintenanceHooks {
+    fn on_initialize(n: BlockNumber) -> Weight {
+        AllPalletsReversedWithSystemFirst::on_initialize(n)
+    }
+}
+
+// return 0
+// For some reason using empty tuple () isnt working
+// There exist only two pallets that use onIdle and these are xcmp and dmp queues
+// For some reason putting an empty tuple does not work (transaction never finishes)
+// We use an empty onIdle, if on the future we want one of the pallets to execute it
+// we need to provide it here
+impl OnIdle<BlockNumber> for MaintenanceHooks {
+    fn on_idle(_n: BlockNumber, _max_weight: Weight) -> Weight {
+        0
+    }
+}
+
+impl OnRuntimeUpgrade for MaintenanceHooks {
+    fn on_runtime_upgrade() -> Weight {
+        AllPalletsReversedWithSystemFirst::on_runtime_upgrade()
+    }
+    #[cfg(feature = "try-runtime")]
+    fn pre_upgrade() -> Result<(), &'static str> {
+        AllPalletsReversedWithSystemFirst::pre_upgrade()
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade() -> Result<(), &'static str> {
+        AllPalletsReversedWithSystemFirst::post_upgrade()
+    }
+}
+
+impl OnFinalize<BlockNumber> for MaintenanceHooks {
+    fn on_finalize(n: BlockNumber) {
+        AllPalletsReversedWithSystemFirst::on_finalize(n)
+    }
+}
+
+impl OffchainWorker<BlockNumber> for MaintenanceHooks {
+    fn offchain_worker(n: BlockNumber) {
+        AllPalletsReversedWithSystemFirst::offchain_worker(n)
+    }
+}
+
+pub struct AssetsFreezer;
+impl AssetFreezer for AssetsFreezer {
+    fn freeze_asset(asset_id: AssetId) -> DispatchResult {
+        // The origin/account value `AssetManager::account_id()` should match the owner of `pallet_assets`
+        // when create an asset by `force_create` on `AssetRegistrar` implementations.
+        Assets::freeze_asset(
+            RawOrigin::Signed(AssetManager::account_id()).into(),
+            asset_id,
+        )
+    }
+
+    fn thaw_asset(asset_id: AssetId) -> sp_runtime::DispatchResult {
+        // The origin/account value `AssetManager::account_id()` should match the owner of `pallet_assets`
+        // when create an asset by `force_create` on `AssetRegistrar` implementations.
+        Assets::thaw_asset(
+            RawOrigin::Signed(AssetManager::account_id()).into(),
+            asset_id,
+        )
+    }
+}
+
+impl pallet_maintenance_mode::Config for Runtime {
+    type Event = Event;
+    type NormalCallFilter = NormalCallFilter;
+    type MaintenanceCallFilter = MaintenanceCallFilter;
+    type EnterMaintenanceOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 2, 6>,
+    >;
+    type ResumeNormalOrigin = EnsureRoot<AccountId>;
+    type XcmExecutionManager = XcmExecutionManager;
+    type NormalDmpHandler = DmpQueue;
+    type MaintenanceDmpHandler = MaintenanceDmpHandler;
+    // use `AllPalletsReversedWithSystemFirst` that not change hooks in normal operation
+    type NormalExecutiveHooks = AllPalletsReversedWithSystemFirst;
+    type MaintenanceExecutiveHooks = MaintenanceHooks;
+    type AssetFreezer = AssetsFreezer;
+    type AssetIdQuerier = AssetManager;
+}
+
+/// Maintenance mode blacklist call filter.
+pub struct MaintenanceCallFilter;
+impl Contains<Call> for MaintenanceCallFilter {
+    fn contains(call: &Call) -> bool {
+        !matches!(
+            call,
+            Call::Assets(_)
+            | Call::AssetManager(_)
+            // | Call::MantaPay(_)
+            | Call::XTokens(_)
+            | Call::Treasury(_)
+            | Call::XcmpQueue(_)
+            | Call::PolkadotXcm(_)
+            | Call::DmpQueue(_)
+        )
+    }
+}
+
 // Don't allow permission-less asset creation.
-pub struct BaseFilter;
-impl Contains<Call> for BaseFilter {
+pub struct NormalCallFilter;
+impl Contains<Call> for NormalCallFilter {
     fn contains(call: &Call) -> bool {
         if matches!(
             call,
@@ -291,7 +437,7 @@ impl Contains<Call> for BaseFilter {
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
-    type BaseCallFilter = BaseFilter; // Let filter activate.
+    type BaseCallFilter = MaintenanceMode; // Let filter activate.
     type BlockWeights = RuntimeBlockWeights;
     type BlockLength = RuntimeBlockLength;
     type AccountId = AccountId;
@@ -786,6 +932,7 @@ construct_runtime!(
         } = 1,
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
         ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
+        MaintenanceMode: pallet_maintenance_mode::{Pallet, Call, Config, Storage, Event} = 8,
         TransactionPause: pallet_tx_pause::{Pallet, Call, Storage, Event<T>} = 9,
 
         // Monetary stuff.

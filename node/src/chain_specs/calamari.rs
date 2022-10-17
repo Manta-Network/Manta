@@ -21,7 +21,7 @@ use crate::command::CALAMARI_PARACHAIN_ID;
 #[allow(unused_imports)]
 use calamari_runtime::{
     currency::KMA, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig,
-    ParachainStakingConfig, TechnicalCommitteeConfig,
+    MaintenanceModeConfig, ParachainStakingConfig, TechnicalCommitteeConfig,
 };
 use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
 /// Calamari Protocol Identifier
@@ -221,6 +221,9 @@ fn calamari_dev_genesis(
         parachain_system: Default::default(),
         polkadot_xcm: calamari_runtime::PolkadotXcmConfig {
             safe_xcm_version: Some(SAFE_XCM_VERSION),
+        },
+        maintenance_mode: MaintenanceModeConfig {
+            start_in_maintenance_mode: false,
         },
     }
 }

@@ -27,17 +27,14 @@ use frame_system::RawOrigin;
 use mock::{Event, *};
 use sp_runtime::traits::BadOrigin;
 
-const BALANCE_TRANSFER: &<Runtime as frame_system::Config>::Call =
-    &mock::Call::Balances(pallet_balances::Call::transfer {
-        dest: ALICE,
-        value: 10,
-    });
+const REMARK_CALL: &<Runtime as frame_system::Config>::Call =
+    &mock::Call::System(frame_system::Call::remark { remark: vec![] });
 
 #[test]
 fn pause_transaction_work() {
     ExtBuilder::default().build().execute_with(|| {
         assert!(<Runtime as frame_system::Config>::BaseCallFilter::contains(
-            BALANCE_TRANSFER
+            REMARK_CALL
         ));
 
         System::set_block_number(1);
@@ -51,24 +48,36 @@ fn pause_transaction_work() {
         );
 
         assert_eq!(
-            TransactionPause::paused_transactions((b"Balances".to_vec(), b"transfer".to_vec())),
+            TransactionPause::paused_transactions((b"System".to_vec(), b"remark".to_vec())),
             None
         );
         assert_ok!(TransactionPause::pause_transaction(
             RawOrigin::Root.into(),
-            b"Balances".to_vec(),
-            b"transfer".to_vec()
+            b"System".to_vec(),
+            b"remark".to_vec()
         ));
-        System::assert_last_event(Event::TransactionPause(crate::Event::TransactionPaused(
-            b"Balances".to_vec(),
-            b"transfer".to_vec(),
-        )));
+        System::assert_last_event(Event::TransactionPause(crate::Event::TransactionPaused {
+            pallet_name: b"System".to_vec(),
+            function_name: b"remark".to_vec(),
+        }));
         assert_eq!(
-            TransactionPause::paused_transactions((b"Balances".to_vec(), b"transfer".to_vec())),
+            TransactionPause::paused_transactions((b"System".to_vec(), b"remark".to_vec())),
             Some(())
         );
-        assert!(!<Runtime as frame_system::Config>::BaseCallFilter::contains(BALANCE_TRANSFER));
+        assert!(!<Runtime as frame_system::Config>::BaseCallFilter::contains(REMARK_CALL));
 
+        assert_eq!(
+            TransactionPause::paused_transactions((b"Balances".to_vec(), b"transfer".to_vec())),
+            None
+        );
+        assert_noop!(
+            TransactionPause::pause_transaction(
+                RawOrigin::Root.into(),
+                b"Balances".to_vec(),
+                b"transfer".to_vec()
+            ),
+            Error::<Runtime>::CannotPause
+        );
         assert_noop!(
             TransactionPause::pause_transaction(
                 RawOrigin::Root.into(),
@@ -80,7 +89,7 @@ fn pause_transaction_work() {
         assert_noop!(
             TransactionPause::pause_transaction(
                 RawOrigin::Root.into(),
-                b"TransactionPause".to_vec(),
+                b"Democracy".to_vec(),
                 b"some_other_call".to_vec()
             ),
             Error::<Runtime>::CannotPause
@@ -97,48 +106,48 @@ fn pause_transaction_work() {
 fn unpause_transaction_work() {
     ExtBuilder::default().build().execute_with(|| {
         assert!(<Runtime as frame_system::Config>::BaseCallFilter::contains(
-            BALANCE_TRANSFER
+            REMARK_CALL
         ));
 
         System::set_block_number(1);
 
         assert_ok!(TransactionPause::pause_transaction(
             RawOrigin::Root.into(),
-            b"Balances".to_vec(),
-            b"transfer".to_vec()
+            b"System".to_vec(),
+            b"remark".to_vec()
         ));
         assert_eq!(
-            TransactionPause::paused_transactions((b"Balances".to_vec(), b"transfer".to_vec())),
+            TransactionPause::paused_transactions((b"System".to_vec(), b"remark".to_vec())),
             Some(())
         );
 
-        assert!(!<Runtime as frame_system::Config>::BaseCallFilter::contains(BALANCE_TRANSFER));
+        assert!(!<Runtime as frame_system::Config>::BaseCallFilter::contains(REMARK_CALL));
 
         assert_noop!(
             TransactionPause::unpause_transaction(
                 Origin::signed(1),
-                b"Balances".to_vec(),
-                b"transfer".to_vec()
+                b"System".to_vec(),
+                b"remark".to_vec()
             ),
             BadOrigin
         );
 
         assert_ok!(TransactionPause::unpause_transaction(
             RawOrigin::Root.into(),
-            b"Balances".to_vec(),
-            b"transfer".to_vec()
+            b"System".to_vec(),
+            b"remark".to_vec()
         ));
-        System::assert_last_event(Event::TransactionPause(crate::Event::TransactionUnpaused(
-            b"Balances".to_vec(),
-            b"transfer".to_vec(),
-        )));
+        System::assert_last_event(Event::TransactionPause(crate::Event::TransactionUnpaused {
+            pallet_name: b"System".to_vec(),
+            function_name: b"remark".to_vec(),
+        }));
         assert_eq!(
-            TransactionPause::paused_transactions((b"Balances".to_vec(), b"transfer".to_vec())),
+            TransactionPause::paused_transactions((b"System".to_vec(), b"remark".to_vec())),
             None
         );
 
         assert!(<Runtime as frame_system::Config>::BaseCallFilter::contains(
-            BALANCE_TRANSFER
+            REMARK_CALL
         ));
     });
 }
@@ -146,24 +155,18 @@ fn unpause_transaction_work() {
 #[test]
 fn paused_transaction_filter_work() {
     ExtBuilder::default().build().execute_with(|| {
-        assert!(!PausedTransactionFilter::<Runtime>::contains(
-            BALANCE_TRANSFER
-        ));
+        assert!(!PausedTransactionFilter::<Runtime>::contains(REMARK_CALL));
         assert_ok!(TransactionPause::pause_transaction(
             RawOrigin::Root.into(),
-            b"Balances".to_vec(),
-            b"transfer".to_vec()
+            b"System".to_vec(),
+            b"remark".to_vec()
         ));
-        assert!(PausedTransactionFilter::<Runtime>::contains(
-            BALANCE_TRANSFER
-        ));
+        assert!(PausedTransactionFilter::<Runtime>::contains(REMARK_CALL));
         assert_ok!(TransactionPause::unpause_transaction(
             RawOrigin::Root.into(),
-            b"Balances".to_vec(),
-            b"transfer".to_vec()
+            b"System".to_vec(),
+            b"remark".to_vec()
         ));
-        assert!(!PausedTransactionFilter::<Runtime>::contains(
-            BALANCE_TRANSFER
-        ));
+        assert!(!PausedTransactionFilter::<Runtime>::contains(REMARK_CALL));
     });
 }

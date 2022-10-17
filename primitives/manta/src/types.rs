@@ -53,3 +53,6 @@ pub type Moment = u64;
 
 // AssetId
 pub type AssetId = AssetIdType;
+
+/// Alias for the junction Parachain(#[codec(compact)] u32),
+pub type ParaId = u32;
