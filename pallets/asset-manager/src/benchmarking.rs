@@ -20,10 +20,8 @@ use crate::{Call, Config, Event, Pallet};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::traits::Get;
 use frame_system::{EventRecord, RawOrigin};
-use manta_primitives::{
-    assets::{AssetConfig, TestingDefault, UnitsPerSecond},
-    util::num::CheckedIncrement,
-};
+use manta_primitives::assets::{AssetConfig, TestingDefault, UnitsPerSecond};
+use sp_runtime::traits::CheckedAdd;
 use xcm::latest::prelude::*;
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
@@ -34,7 +32,7 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 }
 
 benchmarks! {
-    where_clause { where T::Location: From<MultiLocation>, <T as Config>::Balance: From<u32> }
+    where_clause { where T::Location: From<MultiLocation>, <T as Config>::Balance: From<u32>, <T as Config>::AssetId: From<u32> }
 
     register_asset {
         let location = T::Location::default();
@@ -52,7 +50,7 @@ benchmarks! {
             let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
             Pallet::<T>::set_units_per_second(RawOrigin::Root.into(), next, 0)?;
-            next.checked_increment().unwrap();
+            next = next.checked_add(&<T as Config>::AssetId::from(1u32)).unwrap();
         }
         // does not really matter what we register, as long as it is different than the previous
         let location = T::Location::default();
@@ -71,7 +69,7 @@ benchmarks! {
             let location = T::Location::from(location.clone());
             let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
-            next.checked_increment().unwrap();
+            next = next.checked_add(&<T as Config>::AssetId::from(1u32)).unwrap();
         }
         // does not really matter what we register, as long as it is different than the previous
         let location = T::Location::default();
@@ -90,7 +88,7 @@ benchmarks! {
             let location = T::Location::from(location.clone());
             let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
-            next.checked_increment().unwrap();
+            next = next.checked_add(&<T as Config>::AssetId::from(1u32)).unwrap();
         }
         // does not really matter what we register, as long as it is different than the previous
         let location = T::Location::default();
@@ -107,7 +105,7 @@ benchmarks! {
             let location = T::Location::from(MultiLocation::new(0, X1(Parachain(i))));
             let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
-            next.checked_increment().unwrap();
+            next = next.checked_add(&<T as Config>::AssetId::from(1u32)).unwrap();
         }
         let beneficiary: T::AccountId = whitelisted_caller();
         let amount = 100;
@@ -130,7 +128,7 @@ benchmarks! {
 
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
             Pallet::<T>::set_units_per_second(RawOrigin::Root.into(), next, 0)?;
-            next.checked_increment().unwrap();
+            next = next.checked_add(&<T as Config>::AssetId::from(1u32)).unwrap();
         }
 
         // does not really matter what we register, as long as it is different than the previous

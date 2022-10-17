@@ -50,16 +50,15 @@ pub mod pallet {
         transactional, PalletId,
     };
     use frame_system::pallet_prelude::*;
-    use manta_primitives::{
-        assets::{
-            self, AssetConfig, AssetIdLocationMap, AssetIdType, AssetMetadata, AssetRegistry,
-            FungibleLedger, LocationType,
-        },
-        util::num::CheckedIncrement,
+    use manta_primitives::assets::{
+        self, AssetConfig, AssetIdLocationMap, AssetIdType, AssetMetadata, AssetRegistry,
+        FungibleLedger, LocationType,
     };
     use orml_traits::GetByKey;
     use sp_runtime::{
-        traits::{AccountIdConversion, MaybeSerializeDeserialize, One},
+        traits::{
+            AccountIdConversion, AtLeast32BitUnsigned, CheckedAdd, MaybeSerializeDeserialize, One,
+        },
         ArithmeticError,
     };
     use xcm::latest::prelude::*;
@@ -80,7 +79,7 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// Asset Id Type
-        type AssetId: CheckedIncrement
+        type AssetId: AtLeast32BitUnsigned
             + Default
             + Parameter
             + MaybeSerializeDeserialize
@@ -586,8 +585,8 @@ pub mod pallet {
         fn next_asset_id_and_increment() -> Result<T::AssetId, DispatchError> {
             NextAssetId::<T>::try_mutate(|current| {
                 let id = *current;
-                current
-                    .checked_increment()
+                *current = current
+                    .checked_add(&<T as Config>::AssetId::from(1u32))
                     .ok_or(ArithmeticError::Overflow)?;
                 Ok(id)
             })
