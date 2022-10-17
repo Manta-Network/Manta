@@ -109,7 +109,7 @@ where
         pallet_parachain_staking::Pallet::<T>::initialize_pallet(
             current_block,
             invulnerables,
-            crate::currency::inflation_config::<T>(),
+            crate::staking::inflation_config::<T>(),
         )
         .unwrap_or_else(|err| {
             log::error!(

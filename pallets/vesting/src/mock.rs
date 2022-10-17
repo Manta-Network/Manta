@@ -14,24 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use frame_support::{
-    parameter_types,
-    traits::{ConstU32, ConstU64},
-};
-use sp_core::H256;
-use sp_runtime::{
-    testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
-};
-
 use super::*;
 use crate as calamari_vesting;
+use frame_support::{parameter_types, traits::ConstU32};
+use manta_primitives::types::{BlockNumber, Header};
+use sp_core::H256;
+use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 pub type AccountId = u128;
-pub type BlockNumber = u64;
 pub type Balance = u128;
 
 pub const ALICE: AccountId = 1;
@@ -59,7 +52,7 @@ impl frame_system::Config for Test {
     type AccountData = pallet_balances::AccountData<Balance>;
     type AccountId = AccountId;
     type BaseCallFilter = frame_support::traits::Everything;
-    type BlockHashCount = ConstU64<250>;
+    type BlockHashCount = ConstU32<250>;
     type BlockLength = ();
     type BlockNumber = BlockNumber;
     type BlockWeights = ();
@@ -157,6 +150,6 @@ impl ExtBuilder {
     }
 }
 
-pub(crate) fn run_to_block(n: u64) {
+pub(crate) fn run_to_block(n: BlockNumber) {
     System::set_block_number(n);
 }

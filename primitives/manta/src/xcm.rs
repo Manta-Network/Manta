@@ -14,19 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! XCM Primitives
+use super::assets::{AssetConfig, FungibleLedger};
 
-use crate::assets::{AssetConfig, AssetIdLocationMap, FungibleLedger, UnitsPerSecond};
-use core::marker::PhantomData;
+use sp_runtime::traits::{CheckedConversion, Convert, Zero};
+use sp_std::{marker::PhantomData, vec};
+
+use crate::assets::{AssetIdLocationMap, UnitsPerSecond};
 use frame_support::{
     pallet_prelude::Get,
     traits::{fungibles::Mutate, tokens::ExistenceRequirement},
     weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 use frame_system::Config;
-use sp_runtime::traits::{CheckedConversion, Convert, Zero};
 use xcm::{
-    latest::{prelude::Concrete, Error},
+    latest::{
+        prelude::{
+            All, Any, BuyExecution, ClearOrigin, Concrete, DepositAsset, InitiateReserveWithdraw,
+            Limited, MultiAssets, ReserveAssetDeposited, TransferReserveAsset, Wild, WithdrawAsset,
+        },
+        Error as XcmError, Xcm,
+    },
     v1::{
         AssetId as XcmAssetId, Fungibility,
         Junction::{AccountId32, Parachain},
@@ -44,7 +51,7 @@ use xcm_executor::{
 };
 
 /// XCM Result
-pub type Result<T = (), E = Error> = core::result::Result<T, E>;
+pub type Result<T = (), E = XcmError> = core::result::Result<T, E>;
 
 /// Reserve Location
 pub trait Reserve {
@@ -151,7 +158,7 @@ where
                 "no assets in payment: {:?}",
                 payment,
             );
-            Error::TooExpensive
+            XcmError::TooExpensive
         })?;
 
         // Check the first asset
@@ -163,7 +170,7 @@ where
                         "asset_id missing for asset location with id: {:?}",
                         id,
                     );
-                    Error::TooExpensive
+                    XcmError::TooExpensive
                 })?;
                 let units_per_second = M::units_per_second(&asset_id).ok_or({
                     log::debug!(
@@ -171,7 +178,7 @@ where
                         "units_per_second missing for asset with id: {:?}",
                         id,
                     );
-                    Error::TooExpensive
+                    XcmError::TooExpensive
                 })?;
 
                 let amount = units_per_second * (weight as u128) / (WEIGHT_PER_SECOND as u128);
@@ -196,7 +203,7 @@ where
                         target: "FirstAssetTrader::buy_weight",
                         "not enough required assets in payment",
                     );
-                    Error::TooExpensive
+                    XcmError::TooExpensive
                 })?;
                 self.weight = self.weight.saturating_add(weight);
 
@@ -232,7 +239,7 @@ where
                     "no matching XcmAssetId for first_asset in payment: {:?}",
                     payment,
                 );
-                Err(Error::TooExpensive)
+                Err(XcmError::TooExpensive)
             }
         }
     }
@@ -341,8 +348,9 @@ where
         asset: &MultiAsset,
         location: &MultiLocation,
     ) -> Result<(A::AssetId, T::AccountId, A::Balance)> {
-        let receiver = AccountIdConverter::convert_ref(location)
-            .map_err(|_| Error::FailedToTransactAsset("Failed Location to AccountId Conversion"))?;
+        let receiver = AccountIdConverter::convert_ref(location).map_err(|_| {
+            XcmError::FailedToTransactAsset("Failed Location to AccountId Conversion")
+        })?;
         let (asset_id, amount) = match (
             Native::matches_fungible(asset),
             NonNative::matches_fungibles(asset),
@@ -352,7 +360,7 @@ where
             // assets asset
             (_, Ok((asset_id, amount))) => (asset_id, amount),
             // unknown asset
-            _ => return Err(Error::FailedToTransactAsset("Unknown Asset")),
+            _ => return Err(XcmError::FailedToTransactAsset("Unknown Asset")),
         };
         Ok((asset_id, receiver, amount))
     }
@@ -380,7 +388,7 @@ where
         // NOTE: If it's non-native asset we want to check with increase in total supply. Otherwise
         //       it will just use false, as it is assumed the native asset supply cannot be changed.
         A::FungibleLedger::try_deposit_minting(asset_id, &who, amount, true)
-            .map_err(|_| Error::FailedToTransactAsset("Failed deposit minting"))
+            .map_err(|_| XcmError::FailedToTransactAsset("Failed deposit minting"))
     }
 
     #[inline]
@@ -397,7 +405,174 @@ where
             amount,
             ExistenceRequirement::AllowDeath,
         )
-        .map_err(|_| Error::FailedToTransactAsset("Failed Burn"))?;
+        .map_err(|_| XcmError::FailedToTransactAsset("Failed Burn"))?;
         Ok(asset.clone().into())
     }
+}
+
+/// 4_000_000_000 is a typical configuration value provided to dApp developers for `dest_weight`
+/// argument when sending xcm message to Calamari. ie moonbeam, sub-wallet, phala, etc
+pub const ADVERTISED_DEST_WEIGHT: u64 = 4_000_000_000;
+
+/// Composition of self_reserve message composed by xTokens on the sender side
+pub fn self_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
+    Xcm(vec![
+        ReserveAssetDeposited(MultiAssets::from(vec![MultiAsset {
+            id: Concrete(MultiLocation {
+                parents: 1,
+                interior: X1(Parachain(1)),
+            }),
+            fun: Fungibility::Fungible(10000000000000),
+        }])),
+        ClearOrigin,
+        BuyExecution {
+            fees: MultiAsset {
+                id: Concrete(MultiLocation {
+                    parents: 1,
+                    interior: X1(Parachain(1)),
+                }),
+                fun: Fungibility::Fungible(10000000000000),
+            },
+            weight_limit: Limited(3999999999),
+        },
+        DepositAsset {
+            assets: Wild(All),
+            max_assets: 1,
+            beneficiary: MultiLocation {
+                parents: 0,
+                interior: X1(AccountId32 {
+                    network: Any,
+                    id: [
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0,
+                    ],
+                }),
+            },
+        },
+    ])
+}
+
+/// Composition of to_reserve message composed by xTokens on the receiver side
+pub fn to_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
+    Xcm(vec![
+        WithdrawAsset(MultiAssets::from(vec![MultiAsset {
+            id: Concrete(MultiLocation {
+                parents: 1,
+                interior: X1(Parachain(1)),
+            }),
+            fun: Fungibility::Fungible(10000000000000),
+        }])),
+        ClearOrigin,
+        BuyExecution {
+            fees: MultiAsset {
+                id: Concrete(MultiLocation {
+                    parents: 1,
+                    interior: X1(Parachain(1)),
+                }),
+                fun: Fungibility::Fungible(10000000000000),
+            },
+            weight_limit: Limited(3999999999),
+        },
+        DepositAsset {
+            assets: Wild(All),
+            max_assets: 1,
+            beneficiary: MultiLocation {
+                parents: 0,
+                interior: X1(AccountId32 {
+                    network: Any,
+                    id: [
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0,
+                    ],
+                }),
+            },
+        },
+    ])
+}
+
+/// Composition of to_reserve message composed by xTokens on the sender side
+pub fn to_reserve_xcm_message_sender_side<T>() -> Xcm<T> {
+    let dummy_multi_location = MultiLocation {
+        parents: 1,
+        interior: X1(Parachain(1)),
+    };
+    let dummy_assets = MultiAssets::from(vec![MultiAsset {
+        id: Concrete(MultiLocation {
+            parents: 1,
+            interior: X1(Parachain(1)),
+        }),
+        fun: Fungibility::Fungible(10000000000000),
+    }]);
+    Xcm(vec![
+        WithdrawAsset(dummy_assets),
+        InitiateReserveWithdraw {
+            assets: Wild(All),
+            reserve: dummy_multi_location.clone(),
+            xcm: Xcm(vec![
+                BuyExecution {
+                    fees: MultiAsset {
+                        id: Concrete(dummy_multi_location),
+                        fun: Fungibility::Fungible(10000000000000),
+                    },
+                    weight_limit: Limited(3999999999),
+                },
+                DepositAsset {
+                    assets: Wild(All),
+                    max_assets: 1,
+                    beneficiary: MultiLocation {
+                        parents: 0,
+                        interior: X1(AccountId32 {
+                            network: Any,
+                            id: [
+                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                            ],
+                        }),
+                    },
+                },
+            ]),
+        },
+    ])
+}
+
+/// Composition of self_reserve message composed by xTokens on the sender side
+pub fn self_reserve_xcm_message_sender_side<T>() -> Xcm<T> {
+    let dummy_multi_location = MultiLocation {
+        parents: 1,
+        interior: X1(Parachain(1)),
+    };
+    let dummy_assets = MultiAssets::from(vec![MultiAsset {
+        id: Concrete(MultiLocation {
+            parents: 1,
+            interior: X1(Parachain(1)),
+        }),
+        fun: Fungibility::Fungible(10000000000000),
+    }]);
+    Xcm(vec![TransferReserveAsset {
+        assets: dummy_assets,
+        dest: dummy_multi_location.clone(),
+        xcm: Xcm(vec![
+            BuyExecution {
+                fees: MultiAsset {
+                    id: Concrete(dummy_multi_location),
+                    fun: Fungibility::Fungible(10000000000000),
+                },
+                weight_limit: Limited(3999999999),
+            },
+            DepositAsset {
+                assets: Wild(All),
+                max_assets: 1,
+                beneficiary: MultiLocation {
+                    parents: 0,
+                    interior: X1(AccountId32 {
+                        network: Any,
+                        id: [
+                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0, 0, 0, 0,
+                        ],
+                    }),
+                },
+            },
+        ]),
+    }])
 }

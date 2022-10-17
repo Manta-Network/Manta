@@ -96,9 +96,3 @@ pub const MANTA_PAY_PALLET_ID: PalletId = PalletId(*b"mantapay");
 ///
 /// This should only be used for testing and should not be used in production.
 pub const TEST_DEFAULT_ASSET_ED: Balance = 1;
-
-/// Calamari Staking Constants
-pub mod calamari_staking {
-    // TODO
-    // pub const MinCollatorStake: u32 = 4_000_000;
-}

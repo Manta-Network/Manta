@@ -27,11 +27,10 @@ use manta_primitives::{
         AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, MANTA_PAY_PALLET_ID},
-    types::Balance,
+    types::{Balance, BlockNumber, Header},
 };
 use sp_core::H256;
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
     AccountId32,
 };
@@ -60,11 +59,9 @@ frame_support::construct_runtime!(
     }
 );
 
-type BlockNumber = u64;
-
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
-    pub const SS58Prefix: u8 = 42;
+    pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
 }
 
 impl frame_system::Config for Test {
