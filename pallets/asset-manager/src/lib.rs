@@ -65,7 +65,7 @@ pub mod pallet {
     use xcm::latest::prelude::*;
 
     /// Storage Version
-    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
     /// Alias for the junction type `Parachain(#[codec(compact)] u32)`
     pub(crate) type ParaId = u32;
