@@ -24,7 +24,7 @@
 use super::*;
 use frame_support::{
     construct_runtime, ord_parameter_types, parameter_types,
-    traits::{ConstU32, ConstU64, IsInVec},
+    traits::{ConstU32, IsInVec},
 };
 use frame_system::EnsureRoot;
 use manta_primitives::types::{Balance, BlockNumber, Header};

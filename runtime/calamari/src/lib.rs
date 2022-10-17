@@ -310,32 +310,20 @@ impl pallet_maintenance_mode::Config for Runtime {
     type AssetIdQuerier = AssetManager;
 }
 
-/// Maintenance mode call filter, When we're hacked, using this filter to only reserve normal operation.
+/// Maintenance mode blacklist call filter.
 pub struct MaintenanceCallFilter;
 impl Contains<Call> for MaintenanceCallFilter {
     fn contains(call: &Call) -> bool {
-        // TODO: If we found Pallets needs to be whitelist, then we need mechanism like tx-pause
-        // except that using dynamic whitelist.
-        // Or we could change `MaintenanceCallFilter` using blacklist, together with tx-pause.
-        // TODO: MaintenanceMode will freeze asset
-        // TODO: should Utility/Scheduler/AuthorInherent enabled?
-        matches!(
+        !matches!(
             call,
-            // TxPause and MaintenanceMode should always not filter out.
-            Call::TransactionPause(_) |
-            Call::MaintenanceMode(_) |
-            // always allow core call
-            // pallet-timestamp and parachainSystem could not be filtered because
-            // they are used in communication between relaychain and parachain.
-            Call::Timestamp(_) |
-            Call::System(_) |
-            Call::ParachainSystem(_) |
-            Call::Balances(_) |
-            Call::Democracy(_) |
-            Call::Council(_) |
-            Call::CouncilMembership(_) |
-            Call::TechnicalCommittee(_) |
-            Call::TechnicalMembership(_)
+            Call::Assets(_)
+            | Call::AssetManager(_)
+            // | Call::MantaPay(_)
+            | Call::XTokens(_)
+            | Call::Treasury(_)
+            | Call::XcmpQueue(_)
+            | Call::PolkadotXcm(_)
+            | Call::DmpQueue(_)
         )
     }
 }

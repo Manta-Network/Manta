@@ -60,6 +60,7 @@ use xcm::{
 
 use pallet_transaction_payment::ChargeTransactionPayment;
 
+use manta_primitives::types::{AssetId, ParaId};
 use nimbus_primitives::NIMBUS_ENGINE_ID;
 use sp_core::{sr25519, H256};
 use sp_runtime::{
@@ -68,7 +69,6 @@ use sp_runtime::{
     DispatchError, ModuleError, Percent, WeakBoundedVec,
 };
 use xcm::prelude::GeneralKey;
-use manta_primitives::types::{AssetId, ParaId};
 
 fn note_preimage(proposer: &AccountId, proposal_call: &Call) -> H256 {
     let preimage = proposal_call.encode();
@@ -1429,14 +1429,13 @@ fn native_currency_location(para_id: u32, key: Vec<u8>) -> MultiLocation {
 }
 
 #[test]
-fn maintenance_mode_call_filter_works() {
+fn maintenance_mode_call_works() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(MaintenanceMode::enter_maintenance_mode(root_origin()));
         assert!(MaintenanceMode::maintenance_mode());
 
         assert_ok!(MaintenanceMode::resume_normal_operation(root_origin()));
         assert!(!MaintenanceMode::maintenance_mode());
-
     });
 }
 
@@ -1466,27 +1465,29 @@ fn sibling_hack_mode_works() {
     });
 }
 
+fn register_ksm() {
+    let asset_metadata = AssetRegistrarMetadata {
+        name: b"Kusama".to_vec(),
+        symbol: b"KSM".to_vec(),
+        decimals: 12,
+        min_balance: 10u128,
+        evm_address: None,
+        is_frozen: false,
+        is_sufficient: true,
+    };
+    let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
+    assert_ok!(AssetManager::register_asset(
+        root_origin(),
+        source_location,
+        asset_metadata
+    ));
+}
+
 #[test]
 fn relay_hack_mode_works() {
     ExtBuilder::default().build().execute_with(|| {
         // relaychain hack mode freeze asset works
-        let asset_metadata = AssetRegistrarMetadata {
-            name: b"Kusama".to_vec(),
-            symbol: b"KSM".to_vec(),
-            decimals: 12,
-            min_balance: 10u128,
-            evm_address: None,
-            is_frozen: false,
-            is_sufficient: true,
-        };
-        let source_location =
-            AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-        assert_ok!(AssetManager::register_asset(
-            root_origin(),
-            source_location,
-            asset_metadata
-        ));
-
+        register_ksm();
         let chain_id: ParaId = 0;
         hack_mode_works(chain_id);
     });
@@ -1499,52 +1500,55 @@ fn hack_mode_works(chain_id: ParaId) {
     let bob = get_account_id_from_seed::<sr25519::Public>("Bob");
     let charlie = get_account_id_from_seed::<sr25519::Public>("Charlie");
     assert_ok!(CalamariConcreteFungibleLedger::deposit_can_mint(
-            start_asset_id,
-            &alice.clone(),
-            1000,
-        ));
+        start_asset_id,
+        &alice.clone(),
+        1000,
+    ));
 
     let affected_assets = vec![start_asset_id];
     let empty: Vec<AssetId> = vec![];
     assert_ok!(MaintenanceMode::enter_sibling_hack_mode(
-            root_origin(),
-            chain_id,
-            affected_assets.clone()
-        ));
-    assert_eq!(MaintenanceMode::hacked_sibling_id(chain_id), affected_assets.clone());
+        root_origin(),
+        chain_id,
+        affected_assets.clone()
+    ));
+    assert_eq!(
+        MaintenanceMode::hacked_sibling_id(chain_id),
+        affected_assets.clone()
+    );
 
     // deposit_can_mint can still processing
     assert_ok!(CalamariConcreteFungibleLedger::deposit_can_mint(
-            start_asset_id,
-            &charlie.clone(),
-            1000,
-        ));
+        start_asset_id,
+        &charlie.clone(),
+        1000,
+    ));
     // transfer asset not allowed
     assert_noop!(
-            CalamariConcreteFungibleLedger::transfer(
-                start_asset_id,
-                &alice.clone(),
-                &bob.clone(),
-                100,
-                ExistenceRequirement::KeepAlive
-            ),
-            FungibleLedgerError::InvalidTransfer(pallet_assets::Error::<Runtime>::Frozen.into())
-        );
-
-    assert_ok!(MaintenanceMode::resume_sibling_normal_mode(
-            root_origin(),
-            chain_id,
-            affected_assets.clone()
-        ));
-    assert_eq!(MaintenanceMode::hacked_sibling_id(chain_id), empty);
-
-    assert_ok!(CalamariConcreteFungibleLedger::transfer(
+        CalamariConcreteFungibleLedger::transfer(
             start_asset_id,
             &alice.clone(),
             &bob.clone(),
             100,
             ExistenceRequirement::KeepAlive
-        ));
+        ),
+        FungibleLedgerError::InvalidTransfer(pallet_assets::Error::<Runtime>::Frozen.into())
+    );
+
+    assert_ok!(MaintenanceMode::resume_sibling_normal_mode(
+        root_origin(),
+        chain_id,
+        affected_assets.clone()
+    ));
+    assert_eq!(MaintenanceMode::hacked_sibling_id(chain_id), empty);
+
+    assert_ok!(CalamariConcreteFungibleLedger::transfer(
+        start_asset_id,
+        &alice.clone(),
+        &bob.clone(),
+        100,
+        ExistenceRequirement::KeepAlive
+    ));
     assert_eq!(Assets::balance(start_asset_id, alice.clone()), 900);
     assert_eq!(Assets::balance(start_asset_id, bob.clone()), 100);
 }

@@ -179,7 +179,8 @@ pub mod pallet {
     /// Sibling parachain is hacked, use Barrier to failed the cross chain transfer.
     #[pallet::storage]
     #[pallet::getter(fn hacked_sibling_id)]
-    type HackedSiblingId<T: Config> = StorageMap<_, Blake2_128Concat, ParaId, Vec<AssetId>, ValueQuery>;
+    type HackedSiblingId<T: Config> =
+        StorageMap<_, Blake2_128Concat, ParaId, Vec<AssetId>, ValueQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
@@ -293,7 +294,7 @@ pub mod pallet {
             T::ResumeNormalOrigin::ensure_origin(origin.clone())?;
 
             HackedSiblingId::<T>::try_mutate(&normal_chain_id, |asset_ids| {
-                let mut new_asset_ids= asset_ids.clone();
+                let mut new_asset_ids = asset_ids.clone();
                 for asset in affected_assets.clone() {
                     // resume asset should exist in old asset_ids
                     if !asset_ids.contains(&asset) {

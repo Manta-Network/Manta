@@ -257,7 +257,10 @@ fn sibling_enter_maintenance_and_resume_normal_works() {
             affected_assets: vec![0],
         }
         .into();
-        assert_noop!(call.dispatch(Origin::root()), Error::<Test>::AssetNotMarkedAsHack);
+        assert_noop!(
+            call.dispatch(Origin::root()),
+            Error::<Test>::AssetNotMarkedAsHack
+        );
 
         // ok case: hacked chain has registered asset, enter success
         let affected_assets: Vec<AssetId> = vec![0];
@@ -274,7 +277,10 @@ fn sibling_enter_maintenance_and_resume_normal_works() {
                 affected_assets: affected_assets.clone()
             }]
         );
-        assert_eq!(Pallet::<Test>::hacked_sibling_id(&1000), affected_assets.clone());
+        assert_eq!(
+            Pallet::<Test>::hacked_sibling_id(&1000),
+            affected_assets.clone()
+        );
 
         // error case: duplicate enter with existed asset failed
         let call: OuterCall = Call::enter_sibling_hack_mode {
@@ -306,10 +312,13 @@ fn sibling_enter_maintenance_and_resume_normal_works() {
         // error case: duplicate resume failed because asset not exist anymore
         let call: OuterCall = Call::resume_sibling_normal_mode {
             normal_chain_id: 1000,
-            affected_assets: affected_assets.clone()
+            affected_assets: affected_assets.clone(),
         }
         .into();
-        assert_noop!(call.dispatch(Origin::root()), Error::<Test>::AssetNotMarkedAsHack);
+        assert_noop!(
+            call.dispatch(Origin::root()),
+            Error::<Test>::AssetNotMarkedAsHack
+        );
 
         for i in 1..5 {
             assert_ok!(Assets::force_create(
@@ -335,14 +344,17 @@ fn sibling_enter_maintenance_and_resume_normal_works() {
                 affected_assets: affected_assets.clone()
             }]
         );
-        assert_eq!(Pallet::<Test>::hacked_sibling_id(&1000), affected_assets.clone());
+        assert_eq!(
+            Pallet::<Test>::hacked_sibling_id(&1000),
+            affected_assets.clone()
+        );
 
         // error case: duplicate enter with existed asset failed
         let call: OuterCall = Call::enter_sibling_hack_mode {
             hacked_chain_id: 1000,
             affected_assets: affected_assets.clone(),
         }
-            .into();
+        .into();
         assert_noop!(
             call.dispatch(Origin::root()),
             Error::<Test>::AssetAlreadyMarkedAsHack
@@ -354,7 +366,7 @@ fn sibling_enter_maintenance_and_resume_normal_works() {
             hacked_chain_id: 1000,
             affected_assets: affected_assets2.clone(),
         }
-            .into();
+        .into();
         assert_noop!(
             call.dispatch(Origin::root()),
             Error::<Test>::NoAssetRegistForParachain
@@ -369,7 +381,7 @@ fn enter_sibling_hack_mode_asset_owner_not_matched() {
         let receiver: AccountId = BOB;
 
         // `AssetsFreezer` use `ALICE` as asset owner in mock.
-        // But gere we use `Bob` as asset owner, so freeze asset will failed.
+        // But here we use `Bob` as asset owner, so freeze asset will failed.
         assert_ok!(Assets::force_create(Origin::root(), asset_id, BOB, true, 1));
         assert_ok!(Assets::mint(
             Origin::signed(BOB),
