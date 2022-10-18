@@ -146,7 +146,6 @@ orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-lib
 
 # Self dependencies
 pallet-asset-manager = { path = '../../pallets/asset-manager' }
-manta-primitives = { path = '../../primitives/manta' }
 
 
 [features]
