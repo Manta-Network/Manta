@@ -103,6 +103,61 @@ fn pause_transaction_work() {
 }
 
 #[test]
+fn pause_pallets_unpause_transaction_work() {
+    ExtBuilder::default().build().execute_with(|| {
+        System::set_block_number(1);
+        assert_noop!(
+            TransactionPause::pause_pallets(Origin::signed(1), vec![b"Balances".to_vec()]),
+            BadOrigin
+        );
+
+        assert_eq!(
+            TransactionPause::paused_transactions((b"System".to_vec(), b"txp_pause_all".to_vec())),
+            None
+        );
+        assert_noop!(
+            TransactionPause::pause_pallets(RawOrigin::Root.into(), vec![b"Balances".to_vec()]),
+            Error::<Runtime>::CannotPause
+        );
+        // Although we can pause System in testcase, but BaseCallFilter still works because System is in front of TransactionPause.
+        assert_ok!(TransactionPause::pause_pallets(
+            RawOrigin::Root.into(),
+            vec![b"System".to_vec()]
+        ));
+        System::assert_last_event(Event::TransactionPause(crate::Event::TransactionPaused(
+            b"System".to_vec(),
+            b"txp_pause_all".to_vec(),
+        )));
+        assert_eq!(
+            TransactionPause::paused_transactions((b"System".to_vec(), b"txp_pause_all".to_vec())),
+            Some(())
+        );
+
+        assert_noop!(
+            TransactionPause::unpause_transaction(
+                Origin::signed(1),
+                b"System".to_vec(),
+                b"txp_pause_all".to_vec()
+            ),
+            BadOrigin
+        );
+        assert_ok!(TransactionPause::unpause_transaction(
+            RawOrigin::Root.into(),
+            b"System".to_vec(),
+            b"txp_pause_all".to_vec()
+        ));
+        System::assert_last_event(Event::TransactionPause(crate::Event::TransactionUnpaused(
+            b"System".to_vec(),
+            b"txp_pause_all".to_vec(),
+        )));
+        assert_eq!(
+            TransactionPause::paused_transactions((b"System".to_vec(), b"txp_pause_all".to_vec())),
+            None
+        );
+    });
+}
+
+#[test]
 fn unpause_transaction_work() {
     ExtBuilder::default().build().execute_with(|| {
         assert!(<Runtime as frame_system::Config>::BaseCallFilter::contains(
@@ -162,11 +217,20 @@ fn paused_transaction_filter_work() {
             b"remark".to_vec()
         ));
         assert!(PausedTransactionFilter::<Runtime>::contains(REMARK_CALL));
+
         assert_ok!(TransactionPause::unpause_transaction(
             RawOrigin::Root.into(),
             b"System".to_vec(),
             b"remark".to_vec()
         ));
         assert!(!PausedTransactionFilter::<Runtime>::contains(REMARK_CALL));
+
+        assert_ok!(TransactionPause::pause_pallets(
+            RawOrigin::Root.into(),
+            vec![b"System".to_vec()]
+        ));
+        // The real call on storage is `PAUSE_ALL_PALLET_CALLS`, but the `contains` will ignore the function_name.
+        // As we can't mock a `PAUSE_ALL_PALLET_CALLS` call, so we use `REMARK_CALL`.
+        assert!(PausedTransactionFilter::<Runtime>::contains(REMARK_CALL));
     });
 }

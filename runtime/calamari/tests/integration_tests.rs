@@ -27,14 +27,14 @@ pub use calamari_runtime::{
     fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
     xcm_config::XcmFeesAccount,
     AssetManager, Assets, Authorship, Balances, CalamariVesting, Council, DefaultBlocksPerRound,
-    Democracy, EnactmentPeriod, LaunchPeriod, LeaveDelayRounds, NativeTokenExistentialDeposit,
-    Origin, ParachainStaking, Period, PolkadotXcm, Runtime, TechnicalCommittee, Timestamp,
-    Treasury, Utility, VotingPeriod,
+    Democracy, EnactmentPeriod, Event, LaunchPeriod, LeaveDelayRounds,
+    NativeTokenExistentialDeposit, Origin, ParachainStaking, Period, PolkadotXcm, Runtime,
+    TechnicalCommittee, Timestamp, TransactionPause, Treasury, Utility, VotingPeriod,
 };
 
 use calamari_runtime::opaque::SessionKeys;
 use frame_support::{
-    assert_err, assert_ok,
+    assert_err, assert_noop, assert_ok,
     codec::Encode,
     dispatch::Dispatchable,
     traits::{tokens::ExistenceRequirement, PalletInfo, StorageInfo, StorageInfoTrait},
@@ -64,7 +64,7 @@ use nimbus_primitives::NIMBUS_ENGINE_ID;
 use sp_core::{sr25519, H256};
 use sp_runtime::{
     generic::DigestItem,
-    traits::{BlakeTwo256, Hash, Header as HeaderT, SignedExtension},
+    traits::{BadOrigin, BlakeTwo256, Hash, Header as HeaderT, SignedExtension},
     DispatchError, ModuleError, Percent,
 };
 
@@ -1413,4 +1413,98 @@ fn concrete_fungible_ledger_can_reduce_by_amount_works() {
                 FungibleLedgerError::CannotWithdrawMoreThan(0)
             );
         });
+}
+
+#[test]
+fn tx_pause_works() {
+    let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+    ExtBuilder::default().build().execute_with(|| {
+        assert_noop!(
+            TransactionPause::pause_transaction(
+                Origin::signed(alice),
+                b"Balances".to_vec(),
+                b"transfer".to_vec()
+            ),
+            BadOrigin
+        );
+        assert_noop!(
+            TransactionPause::pause_pallets(root_origin(), vec![b"Balances".to_vec()]),
+            pallet_tx_pause::Error::<Runtime>::CannotPause
+        );
+
+        assert_ok!(TransactionPause::pause_transaction(
+            root_origin(),
+            b"MantaPay".to_vec(),
+            b"public_transfer".to_vec()
+        ));
+        System::assert_last_event(Event::TransactionPause(
+            pallet_tx_pause::Event::<Runtime>::TransactionPaused(
+                b"MantaPay".to_vec(),
+                b"public_transfer".to_vec(),
+            ),
+        ));
+        assert_eq!(
+            TransactionPause::paused_transactions((
+                b"MantaPay".to_vec(),
+                b"public_transfer".to_vec()
+            )),
+            Some(())
+        );
+
+        assert_ok!(TransactionPause::pause_pallets(
+            root_origin(),
+            vec![b"MantaPay".to_vec()]
+        ));
+        System::assert_last_event(Event::TransactionPause(
+            pallet_tx_pause::Event::<Runtime>::TransactionPaused(
+                b"MantaPay".to_vec(),
+                b"txp_pause_all".to_vec(),
+            ),
+        ));
+        assert_eq!(
+            TransactionPause::paused_transactions((
+                b"MantaPay".to_vec(),
+                b"txp_pause_all".to_vec()
+            )),
+            Some(())
+        );
+
+        assert_ok!(TransactionPause::unpause_transaction(
+            root_origin(),
+            b"MantaPay".to_vec(),
+            b"public_transfer".to_vec()
+        ));
+        System::assert_last_event(Event::TransactionPause(
+            pallet_tx_pause::Event::<Runtime>::TransactionUnpaused(
+                b"MantaPay".to_vec(),
+                b"public_transfer".to_vec(),
+            ),
+        ));
+        assert_eq!(
+            TransactionPause::paused_transactions((
+                b"MantaPay".to_vec(),
+                b"public_transfer".to_vec()
+            )),
+            None
+        );
+
+        assert_ok!(TransactionPause::unpause_transaction(
+            root_origin(),
+            b"MantaPay".to_vec(),
+            b"txp_pause_all".to_vec()
+        ));
+        System::assert_last_event(Event::TransactionPause(
+            pallet_tx_pause::Event::<Runtime>::TransactionUnpaused(
+                b"MantaPay".to_vec(),
+                b"txp_pause_all".to_vec(),
+            ),
+        ));
+        assert_eq!(
+            TransactionPause::paused_transactions((
+                b"MantaPay".to_vec(),
+                b"txp_pause_all".to_vec()
+            )),
+            None
+        );
+    });
 }

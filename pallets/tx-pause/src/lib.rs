@@ -72,6 +72,8 @@ pub mod pallet {
         CannotPause,
         /// invalid character encoding
         InvalidCharacter,
+        /// call already paused
+        AlreadyPaused,
     }
 
     #[pallet::event]
