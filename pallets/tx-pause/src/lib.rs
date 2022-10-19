@@ -55,6 +55,8 @@ pub mod pallet {
 
         type Call: Parameter + GetCallMetadata;
 
+        type MaxCallNames: Get<u32>;
+
         /// The origin which may add to filter.
         type PauseOrigin: EnsureOrigin<Self::Origin>;
 
@@ -76,6 +78,8 @@ pub mod pallet {
         InvalidCharacter,
         /// can not resume
         CannotResume,
+        /// call of pallet too many
+        TooManyCalls,
     }
 
     #[pallet::event]
@@ -148,9 +152,10 @@ pub mod pallet {
         /// Pause extrinsics by passing the extrinsic and corresponding pallet names.
         /// Use names as they are written in the source code of the pallet.
         #[pallet::call_index(2)]
-        #[pallet::weight(T::WeightInfo::pause_transactions(
-            pallet_and_funcs.into_iter().flat_map(|item| {item.clone().1}).collect::<Vec<_>>().len()
-        ))]
+        #[pallet::weight({
+            let len = pallet_and_funcs.into_iter().flat_map(|item| {item.clone().1}).collect::<Vec<_>>().len();
+            T::WeightInfo::pause_transaction().saturating_mul(len as Weight)
+        })]
         #[transactional]
         pub fn pause_transactions(
             origin: OriginFor<T>,
@@ -172,9 +177,10 @@ pub mod pallet {
         /// Unpause extrinsics by passing the extrinsic and corresponding pallet names.
         /// Use names as they are written in the source code of the pallet.
         #[pallet::call_index(3)]
-        #[pallet::weight(T::WeightInfo::unpause_transactions(
-            pallet_and_funcs.into_iter().flat_map(|item| {item.clone().1}).collect::<Vec<_>>().len()
-        ))]
+        #[pallet::weight({
+            let len = pallet_and_funcs.into_iter().flat_map(|item| {item.clone().1}).collect::<Vec<_>>().len();
+            T::WeightInfo::unpause_transaction().saturating_mul(len as Weight)
+        })]
         #[transactional]
         pub fn unpause_transactions(
             origin: OriginFor<T>,
@@ -193,12 +199,16 @@ pub mod pallet {
 
         /// Pause all the calls of the listed pallets in `pallet_names`.
         /// This logic is in its own extrinsic in order to not have to pause calls 1 by 1.
-        /// TODO: benchmark and weight, maybe need extra MaxCallName config?
         #[pallet::call_index(4)]
-        #[pallet::weight(T::WeightInfo::pause_transaction())]
+        #[pallet::weight({
+            let len = pallet_names.len();
+            let max = T::MaxCallNames::get();
+            T::WeightInfo::pause_transaction().saturating_mul(len as Weight).saturating_mul(max as Weight)
+        })]
         #[transactional]
-        pub fn pause_pallets(origin: OriginFor<T>, pallet_names: Vec<Vec<u8>>) -> DispatchResult {
+        pub fn pause_pallets(origin: OriginFor<T>, pallet_names: Vec<Vec<u8>>) -> DispatchResultWithPostInfo {
             T::PauseOrigin::ensure_origin(origin)?;
+            let mut sum = 0;
 
             for pallet_name in pallet_names {
                 Self::validate_pause(&pallet_name)?;
@@ -208,27 +218,35 @@ pub mod pallet {
 
                 let function_name =
                     <CallOf<T> as GetCallMetadata>::get_call_names(pallet_name_string);
+                ensure!(function_name.len() < T::MaxCallNames::get() as usize, Error::<T>::TooManyCalls);
+
                 for call_name in function_name.to_vec() {
                     let call_name = call_name.as_bytes().to_vec();
 
                     Self::pause_one(&pallet_name, &call_name, false)?;
+
+                    sum += 1;
                 }
 
                 // deposit event for each pallet
                 Self::deposit_event(Event::PalletPaused(pallet_name));
             }
 
-            Ok(())
+            Ok(Some(T::WeightInfo::pause_transaction().saturating_mul(sum as Weight)).into())
         }
 
         /// Unpause all the calls of the listed pallets in `pallet_names`.
         /// This logic is in its own extrinsic in order to not have to pause calls 1 by 1.
-        /// TODO: benchmark and weight, maybe need extra MaxCallName config?
         #[pallet::call_index(5)]
-        #[pallet::weight(T::WeightInfo::pause_transaction())]
+        #[pallet::weight({
+            let len = pallet_names.len();
+            let max = T::MaxCallNames::get();
+            T::WeightInfo::pause_transaction().saturating_mul(len as Weight).saturating_mul(max as Weight)
+        })]
         #[transactional]
-        pub fn unpause_pallets(origin: OriginFor<T>, pallet_names: Vec<Vec<u8>>) -> DispatchResult {
+        pub fn unpause_pallets(origin: OriginFor<T>, pallet_names: Vec<Vec<u8>>) -> DispatchResultWithPostInfo {
             T::UnpauseOrigin::ensure_origin(origin)?;
+            let mut sum = 0;
 
             for pallet_name in pallet_names {
                 let pallet_name_string = sp_std::str::from_utf8(&pallet_name)
@@ -240,13 +258,15 @@ pub mod pallet {
                     let call_name = call_name.as_bytes().to_vec();
 
                     PausedTransactions::<T>::take((&pallet_name, call_name));
+
+                    sum += 1;
                 }
 
                 // deposit event for each pallet
                 Self::deposit_event(Event::PalletUnpaused(pallet_name));
             }
 
-            Ok(())
+            Ok(Some(T::WeightInfo::pause_transaction().saturating_mul(sum as Weight)).into())
         }
     }
 }
