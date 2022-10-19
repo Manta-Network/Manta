@@ -40,7 +40,7 @@ pub mod weights;
 pub use pallet::*;
 pub use weights::WeightInfo;
 
-const PAUSE_ALL_PALLET_CALLS: &str = "txp_pause_all";
+type CallOf<T> = <T as Config>::Call;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -52,6 +52,8 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+        type Call: Parameter + GetCallMetadata;
 
         /// The origin which may add to filter.
         type PauseOrigin: EnsureOrigin<Self::Origin>;
@@ -72,17 +74,21 @@ pub mod pallet {
         CannotPause,
         /// invalid character encoding
         InvalidCharacter,
-        /// call already paused
-        AlreadyPaused,
+        /// can not resume
+        CannotResume,
     }
 
     #[pallet::event]
-    #[pallet::generate_deposit(fn deposit_event)]
+    #[pallet::generate_deposit(pub fn deposit_event)]
     pub enum Event<T: Config> {
         /// Paused transaction . \[pallet_name_bytes, function_name_bytes\]
         TransactionPaused(Vec<u8>, Vec<u8>),
         /// Unpaused transaction . \[pallet_name_bytes, function_name_bytes\]
         TransactionUnpaused(Vec<u8>, Vec<u8>),
+        /// Paused pallet
+        PalletPaused(Vec<u8>),
+        /// Unpaused pallet
+        PalletUnpaused(Vec<u8>),
     }
 
     /// The paused transaction map
@@ -115,28 +121,10 @@ pub mod pallet {
         ) -> DispatchResult {
             T::PauseOrigin::ensure_origin(origin)?;
 
-            // not allowed to pause calls of this pallet to ensure safe
-            let pallet_name_string =
-                sp_std::str::from_utf8(&pallet_name).map_err(|_| Error::<T>::InvalidCharacter)?;
-            ensure!(
-                pallet_name_string != <Self as PalletInfoAccess>::name(),
-                Error::<T>::CannotPause
-            );
+            Self::validate_pause(&pallet_name)?;
 
-            ensure!(
-                !T::UnpausablePallets::contains(&pallet_name),
-                Error::<T>::CannotPause
-            );
+            Self::pause_one(&pallet_name, &function_name, true)?;
 
-            PausedTransactions::<T>::mutate_exists(
-                (pallet_name.clone(), function_name.clone()),
-                |maybe_paused| {
-                    if maybe_paused.is_none() {
-                        *maybe_paused = Some(());
-                        Self::deposit_event(Event::TransactionPaused(pallet_name, function_name));
-                    }
-                },
-            );
             Ok(())
         }
 
@@ -151,51 +139,111 @@ pub mod pallet {
             function_name: Vec<u8>,
         ) -> DispatchResult {
             T::UnpauseOrigin::ensure_origin(origin)?;
-            if PausedTransactions::<T>::take((&pallet_name, &function_name)).is_some() {
-                Self::deposit_event(Event::TransactionUnpaused(pallet_name, function_name));
-            };
+
+            Self::unpause_one(&pallet_name, &function_name)?;
+
+            Ok(())
+        }
+
+        /// Pause extrinsics by passing the extrinsic and corresponding pallet names.
+        /// Use names as they are written in the source code of the pallet.
+        #[pallet::call_index(2)]
+        #[pallet::weight(T::WeightInfo::pause_transactions(
+            pallet_and_funcs.into_iter().flat_map(|item| {item.clone().1}).collect::<Vec<_>>().len()
+        ))]
+        #[transactional]
+        pub fn pause_transactions(
+            origin: OriginFor<T>,
+            pallet_and_funcs: Vec<(Vec<u8>, Vec<Vec<u8>>)>,
+        ) -> DispatchResult {
+            T::PauseOrigin::ensure_origin(origin)?;
+
+            for (pallet_name, function_name) in pallet_and_funcs {
+                Self::validate_pause(&pallet_name)?;
+
+                for call_name in function_name.to_vec() {
+                    Self::pause_one(&pallet_name, &call_name, true)?;
+                }
+            }
+
+            Ok(())
+        }
+
+        /// Unpause extrinsics by passing the extrinsic and corresponding pallet names.
+        /// Use names as they are written in the source code of the pallet.
+        #[pallet::call_index(3)]
+        #[pallet::weight(T::WeightInfo::unpause_transactions(
+            pallet_and_funcs.into_iter().flat_map(|item| {item.clone().1}).collect::<Vec<_>>().len()
+        ))]
+        #[transactional]
+        pub fn unpause_transactions(
+            origin: OriginFor<T>,
+            pallet_and_funcs: Vec<(Vec<u8>, Vec<Vec<u8>>)>,
+        ) -> DispatchResult {
+            T::UnpauseOrigin::ensure_origin(origin)?;
+
+            for (pallet_name, function_name) in pallet_and_funcs {
+                for call_name in function_name.to_vec() {
+                    Self::unpause_one(&pallet_name, &call_name)?;
+                }
+            }
+
             Ok(())
         }
 
         /// Pause all the calls of the listed pallets in `pallet_names`.
         /// This logic is in its own extrinsic in order to not have to pause calls 1 by 1.
-        /// It uses PAUSE_ALL_PALLET_CALLS special function, which the contains implementation checks.
-        /// All calls can be unpaused by calling the `unpause_transaction` extrinsic,
-        /// with PAUSE_ALL_PALLET_CALLS for a function name.
-        #[pallet::call_index(2)]
+        /// TODO: benchmark and weight, maybe need extra MaxCallName config?
+        #[pallet::call_index(4)]
         #[pallet::weight(T::WeightInfo::pause_transaction())]
         #[transactional]
         pub fn pause_pallets(origin: OriginFor<T>, pallet_names: Vec<Vec<u8>>) -> DispatchResult {
             T::PauseOrigin::ensure_origin(origin)?;
 
-            for pallet_name in pallet_names.clone() {
-                // not allowed to pause calls of this pallet to ensure safe
+            for pallet_name in pallet_names {
+                Self::validate_pause(&pallet_name)?;
+
                 let pallet_name_string = sp_std::str::from_utf8(&pallet_name)
                     .map_err(|_| Error::<T>::InvalidCharacter)?;
-                ensure!(
-                    pallet_name_string != <Self as PalletInfoAccess>::name(),
-                    Error::<T>::CannotPause
-                );
-                ensure!(
-                    !T::UnpausablePallets::contains(&pallet_name),
-                    Error::<T>::CannotPause
-                );
+
+                let function_name =
+                    <CallOf<T> as GetCallMetadata>::get_call_names(pallet_name_string);
+                for call_name in function_name.to_vec() {
+                    let call_name = call_name.as_bytes().to_vec();
+
+                    Self::pause_one(&pallet_name, &call_name, false)?;
+                }
+
+                // deposit event for each pallet
+                Self::deposit_event(Event::PalletPaused(pallet_name));
             }
 
+            Ok(())
+        }
+
+        /// Unpause all the calls of the listed pallets in `pallet_names`.
+        /// This logic is in its own extrinsic in order to not have to pause calls 1 by 1.
+        /// TODO: benchmark and weight, maybe need extra MaxCallName config?
+        #[pallet::call_index(5)]
+        #[pallet::weight(T::WeightInfo::pause_transaction())]
+        #[transactional]
+        pub fn unpause_pallets(origin: OriginFor<T>, pallet_names: Vec<Vec<u8>>) -> DispatchResult {
+            T::UnpauseOrigin::ensure_origin(origin)?;
+
             for pallet_name in pallet_names {
-                let function_name = PAUSE_ALL_PALLET_CALLS.as_bytes().to_vec();
-                PausedTransactions::<T>::mutate_exists(
-                    (pallet_name.clone(), function_name.clone()),
-                    |maybe_paused| {
-                        if maybe_paused.is_none() {
-                            *maybe_paused = Some(());
-                            Self::deposit_event(Event::TransactionPaused(
-                                pallet_name,
-                                function_name,
-                            ));
-                        }
-                    },
-                );
+                let pallet_name_string = sp_std::str::from_utf8(&pallet_name)
+                    .map_err(|_| Error::<T>::InvalidCharacter)?;
+
+                let function_name =
+                    <CallOf<T> as GetCallMetadata>::get_call_names(pallet_name_string);
+                for call_name in function_name.to_vec() {
+                    let call_name = call_name.as_bytes().to_vec();
+
+                    PausedTransactions::<T>::take((&pallet_name, call_name));
+                }
+
+                // deposit event for each pallet
+                Self::deposit_event(Event::PalletUnpaused(pallet_name));
             }
 
             Ok(())
@@ -203,22 +251,66 @@ pub mod pallet {
     }
 }
 
+impl<T: Config> Pallet<T> {
+    fn validate_pause(pallet_name: &Vec<u8>) -> DispatchResult {
+        let pallet_name_string =
+            sp_std::str::from_utf8(pallet_name).map_err(|_| Error::<T>::InvalidCharacter)?;
+
+        // not allowed to pause calls of this pallet to ensure safe
+        ensure!(
+            pallet_name_string != <Self as PalletInfoAccess>::name(),
+            Error::<T>::CannotPause
+        );
+
+        // not allowed to pause `UnpausablePallets`
+        ensure!(
+            !T::UnpausablePallets::contains(pallet_name),
+            Error::<T>::CannotPause
+        );
+
+        Ok(())
+    }
+
+    fn pause_one(
+        pallet_name: &Vec<u8>,
+        function_name: &Vec<u8>,
+        deposit_event: bool,
+    ) -> DispatchResult {
+        PausedTransactions::<T>::mutate_exists((pallet_name, function_name), |maybe_paused| {
+            if maybe_paused.is_none() {
+                *maybe_paused = Some(());
+                if deposit_event {
+                    Self::deposit_event(Event::TransactionPaused(
+                        pallet_name.clone(),
+                        function_name.clone(),
+                    ));
+                }
+            }
+        });
+        Ok(())
+    }
+
+    fn unpause_one(pallet_name: &Vec<u8>, function_name: &Vec<u8>) -> DispatchResult {
+        if PausedTransactions::<T>::take((pallet_name, function_name)).is_some() {
+            Self::deposit_event(Event::TransactionUnpaused(
+                pallet_name.clone(),
+                function_name.clone(),
+            ));
+        };
+        Ok(())
+    }
+}
+
 pub struct PausedTransactionFilter<T>(sp_std::marker::PhantomData<T>);
-impl<T: Config> Contains<T::Call> for PausedTransactionFilter<T>
+impl<T: Config> Contains<CallOf<T>> for PausedTransactionFilter<T>
 where
-    <T as frame_system::Config>::Call: GetCallMetadata,
+    CallOf<T>: GetCallMetadata,
 {
-    fn contains(call: &T::Call) -> bool {
+    fn contains(call: &CallOf<T>) -> bool {
         let CallMetadata {
             function_name,
             pallet_name,
         } = call.get_call_metadata();
-        if PausedTransactions::<T>::contains_key((
-            pallet_name.as_bytes(),
-            PAUSE_ALL_PALLET_CALLS.as_bytes(),
-        )) {
-            return true;
-        }
         PausedTransactions::<T>::contains_key((pallet_name.as_bytes(), function_name.as_bytes()))
     }
 }

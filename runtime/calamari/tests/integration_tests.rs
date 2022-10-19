@@ -1415,6 +1415,83 @@ fn concrete_fungible_ledger_can_reduce_by_amount_works() {
         });
 }
 
+const PALLET_NAME: &[u8] = b"Utility";
+const FUNCTION_NAME: &[u8] = b"batch";
+
+fn pause_transaction_storage_event_works(pause: bool) {
+    if pause {
+        System::assert_last_event(Event::TransactionPause(
+            pallet_tx_pause::Event::<Runtime>::TransactionPaused(
+                PALLET_NAME.to_vec(),
+                FUNCTION_NAME.to_vec(),
+            ),
+        ));
+        assert_eq!(
+            TransactionPause::paused_transactions((PALLET_NAME.to_vec(), FUNCTION_NAME.to_vec(),)),
+            Some(())
+        );
+    } else {
+        System::assert_has_event(Event::TransactionPause(
+            pallet_tx_pause::Event::<Runtime>::TransactionUnpaused(
+                PALLET_NAME.to_vec(),
+                FUNCTION_NAME.to_vec(),
+            ),
+        ));
+        assert_eq!(
+            TransactionPause::paused_transactions((PALLET_NAME.to_vec(), FUNCTION_NAME.to_vec(),)),
+            None
+        );
+    }
+}
+
+fn pause_transactions_storage_event_works(pause: bool, pallet: bool) {
+    let function_names: Vec<Vec<u8>> = vec![b"batch".to_vec(), b"batch_all".to_vec()];
+
+    if pause {
+        if pallet {
+            System::assert_last_event(Event::TransactionPause(
+                pallet_tx_pause::Event::<Runtime>::PalletPaused(PALLET_NAME.to_vec()),
+            ));
+        } else {
+            for function_name in function_names.clone() {
+                System::assert_has_event(Event::TransactionPause(
+                    pallet_tx_pause::Event::<Runtime>::TransactionPaused(
+                        PALLET_NAME.to_vec(),
+                        function_name,
+                    ),
+                ));
+            }
+        }
+        for function_name in function_names {
+            assert_eq!(
+                TransactionPause::paused_transactions((PALLET_NAME.to_vec(), function_name)),
+                Some(())
+            );
+        }
+    } else {
+        if pallet {
+            System::assert_last_event(Event::TransactionPause(
+                pallet_tx_pause::Event::<Runtime>::PalletUnpaused(PALLET_NAME.to_vec()),
+            ));
+        } else {
+            for function_name in function_names.clone() {
+                System::assert_has_event(Event::TransactionPause(
+                    pallet_tx_pause::Event::<Runtime>::TransactionUnpaused(
+                        PALLET_NAME.to_vec(),
+                        function_name,
+                    ),
+                ));
+            }
+        }
+        for function_name in function_names {
+            assert_eq!(
+                TransactionPause::paused_transactions((PALLET_NAME.to_vec(), function_name)),
+                None
+            );
+        }
+    }
+}
+
 #[test]
 fn tx_pause_works() {
     let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
@@ -1431,80 +1508,56 @@ fn tx_pause_works() {
             TransactionPause::pause_pallets(root_origin(), vec![b"Balances".to_vec()]),
             pallet_tx_pause::Error::<Runtime>::CannotPause
         );
+        assert_noop!(
+            TransactionPause::pause_pallets(root_origin(), vec![b"TransactionPause".to_vec()]),
+            pallet_tx_pause::Error::<Runtime>::CannotPause
+        );
 
+        let function_names: Vec<Vec<u8>> = vec![b"batch".to_vec(), b"batch_all".to_vec()];
+
+        // pause transaction
         assert_ok!(TransactionPause::pause_transaction(
             root_origin(),
-            b"MantaPay".to_vec(),
-            b"public_transfer".to_vec()
+            PALLET_NAME.to_vec(),
+            FUNCTION_NAME.to_vec(),
         ));
-        System::assert_last_event(Event::TransactionPause(
-            pallet_tx_pause::Event::<Runtime>::TransactionPaused(
-                b"MantaPay".to_vec(),
-                b"public_transfer".to_vec(),
-            ),
-        ));
-        assert_eq!(
-            TransactionPause::paused_transactions((
-                b"MantaPay".to_vec(),
-                b"public_transfer".to_vec()
-            )),
-            Some(())
-        );
+        pause_transaction_storage_event_works(true);
 
+        // unpause transaction
+        assert_ok!(TransactionPause::unpause_transaction(
+            root_origin(),
+            PALLET_NAME.to_vec(),
+            FUNCTION_NAME.to_vec(),
+        ));
+        pause_transaction_storage_event_works(false);
+
+        // pause transactions
+        System::reset_events();
+        assert_ok!(TransactionPause::pause_transactions(
+            root_origin(),
+            vec![(PALLET_NAME.to_vec(), function_names.clone())]
+        ));
+        pause_transactions_storage_event_works(true, false);
+
+        // unpause transactions
+        assert_ok!(TransactionPause::unpause_transactions(
+            root_origin(),
+            vec![(PALLET_NAME.to_vec(), function_names)]
+        ));
+        pause_transactions_storage_event_works(false, false);
+
+        // pause pallet
         assert_ok!(TransactionPause::pause_pallets(
             root_origin(),
-            vec![b"MantaPay".to_vec()]
+            vec![PALLET_NAME.to_vec()]
         ));
-        System::assert_last_event(Event::TransactionPause(
-            pallet_tx_pause::Event::<Runtime>::TransactionPaused(
-                b"MantaPay".to_vec(),
-                b"txp_pause_all".to_vec(),
-            ),
-        ));
-        assert_eq!(
-            TransactionPause::paused_transactions((
-                b"MantaPay".to_vec(),
-                b"txp_pause_all".to_vec()
-            )),
-            Some(())
-        );
+        pause_transactions_storage_event_works(true, true);
 
-        assert_ok!(TransactionPause::unpause_transaction(
+        // unpause pallet
+        assert_ok!(TransactionPause::unpause_pallets(
             root_origin(),
-            b"MantaPay".to_vec(),
-            b"public_transfer".to_vec()
+            vec![PALLET_NAME.to_vec()]
         ));
-        System::assert_last_event(Event::TransactionPause(
-            pallet_tx_pause::Event::<Runtime>::TransactionUnpaused(
-                b"MantaPay".to_vec(),
-                b"public_transfer".to_vec(),
-            ),
-        ));
-        assert_eq!(
-            TransactionPause::paused_transactions((
-                b"MantaPay".to_vec(),
-                b"public_transfer".to_vec()
-            )),
-            None
-        );
-
-        assert_ok!(TransactionPause::unpause_transaction(
-            root_origin(),
-            b"MantaPay".to_vec(),
-            b"txp_pause_all".to_vec()
-        ));
-        System::assert_last_event(Event::TransactionPause(
-            pallet_tx_pause::Event::<Runtime>::TransactionUnpaused(
-                b"MantaPay".to_vec(),
-                b"txp_pause_all".to_vec(),
-            ),
-        ));
-        assert_eq!(
-            TransactionPause::paused_transactions((
-                b"MantaPay".to_vec(),
-                b"txp_pause_all".to_vec()
-            )),
-            None
-        );
+        pause_transactions_storage_event_works(false, true);
     });
 }

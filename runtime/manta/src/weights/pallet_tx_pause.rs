@@ -46,6 +46,8 @@ use sp_std::marker::PhantomData;
 pub trait WeightInfo {
     fn pause_transaction() -> Weight;
     fn unpause_transaction() -> Weight;
+    fn pause_transactions(len: usize) -> Weight;
+    fn unpause_transactions(len: usize) -> Weight;
 }
 
 /// Weights for pallet_tx_pause using the Substrate node and recommended hardware.
@@ -63,6 +65,17 @@ impl<T: frame_system::Config> pallet_tx_pause::WeightInfo for SubstrateWeight<T>
             .saturating_add(T::DbWeight::get().reads(1 as Weight))
             .saturating_add(T::DbWeight::get().writes(1 as Weight))
     }
+
+    fn pause_transactions(len: usize) -> Weight {
+        (12_947_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(len as Weight))
+            .saturating_add(T::DbWeight::get().writes(len as Weight))
+    }
+    fn unpause_transactions(len: usize) -> Weight {
+        (14_530_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(len as Weight))
+            .saturating_add(T::DbWeight::get().writes(len as Weight))
+    }
 }
 
 // For backwards compatibility and tests
@@ -78,5 +91,16 @@ impl WeightInfo for () {
         (14_530_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(1 as Weight))
             .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    }
+
+    fn pause_transactions(len: usize) -> Weight {
+        (12_947_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(len as Weight))
+            .saturating_add(RocksDbWeight::get().writes(len as Weight))
+    }
+    fn unpause_transactions(len: usize) -> Weight {
+        (14_530_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(len as Weight))
+            .saturating_add(RocksDbWeight::get().writes(len as Weight))
     }
 }

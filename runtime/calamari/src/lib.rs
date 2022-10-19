@@ -179,6 +179,7 @@ parameter_types! {
 
 impl pallet_tx_pause::Config for Runtime {
     type Event = Event;
+    type Call = Call;
     type PauseOrigin = EitherOfDiverse<
         EnsureRoot<AccountId>,
         pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 2, 6>,
