@@ -307,6 +307,31 @@ fn pause_unpause_pallets_work() {
 }
 
 #[test]
+fn pause_pallets_weight_works() {
+    ExtBuilder::default().build().execute_with(|| {
+        let ps: DispatchResultWithPostInfo =
+            TransactionPause::pause_pallets(RawOrigin::Root.into(), vec![b"System".to_vec()]);
+        let size: u32 = PausedTransactions::<Runtime>::iter().map(|_x| 1).sum();
+
+        let max_call_len: u32 =
+            <<Runtime as Config>::MaxCallNames as sp_runtime::traits::Get<u32>>::get();
+        let weight_per_tx: Weight = <Runtime as Config>::WeightInfo::pause_transaction();
+        let initial_weight = weight_per_tx.saturating_mul(max_call_len as Weight);
+
+        let ps = ps.unwrap();
+        let actual_weight = ps.actual_weight.unwrap();
+        assert_eq!(actual_weight, weight_per_tx.saturating_mul(size as Weight));
+        assert!(actual_weight < initial_weight);
+
+        let ps2: DispatchResultWithPostInfo =
+            TransactionPause::unpause_pallets(RawOrigin::Root.into(), vec![b"System".to_vec()]);
+        let ps2 = ps2.unwrap();
+        let actual_weight2 = ps2.actual_weight.unwrap();
+        assert_eq!(actual_weight, actual_weight2);
+    });
+}
+
+#[test]
 fn paused_transaction_filter_work() {
     ExtBuilder::default().build().execute_with(|| {
         assert!(!PausedTransactionFilter::<Runtime>::contains(REMARK_CALL));

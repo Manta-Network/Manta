@@ -125,7 +125,7 @@ pub mod pallet {
         ) -> DispatchResult {
             T::PauseOrigin::ensure_origin(origin)?;
 
-            Self::validate_pause(&pallet_name)?;
+            Self::ensure_can_pause(&pallet_name)?;
 
             Self::pause_one(&pallet_name, &function_name, true)?;
 
@@ -164,7 +164,7 @@ pub mod pallet {
             T::PauseOrigin::ensure_origin(origin)?;
 
             for (pallet_name, function_name) in pallet_and_funcs {
-                Self::validate_pause(&pallet_name)?;
+                Self::ensure_can_pause(&pallet_name)?;
 
                 for call_name in function_name.to_vec() {
                     Self::pause_one(&pallet_name, &call_name, true)?;
@@ -206,19 +206,25 @@ pub mod pallet {
             T::WeightInfo::pause_transaction().saturating_mul(len as Weight).saturating_mul(max as Weight)
         })]
         #[transactional]
-        pub fn pause_pallets(origin: OriginFor<T>, pallet_names: Vec<Vec<u8>>) -> DispatchResultWithPostInfo {
+        pub fn pause_pallets(
+            origin: OriginFor<T>,
+            pallet_names: Vec<Vec<u8>>,
+        ) -> DispatchResultWithPostInfo {
             T::PauseOrigin::ensure_origin(origin)?;
             let mut sum = 0;
 
             for pallet_name in pallet_names {
-                Self::validate_pause(&pallet_name)?;
+                Self::ensure_can_pause(&pallet_name)?;
 
                 let pallet_name_string = sp_std::str::from_utf8(&pallet_name)
                     .map_err(|_| Error::<T>::InvalidCharacter)?;
 
                 let function_name =
                     <CallOf<T> as GetCallMetadata>::get_call_names(pallet_name_string);
-                ensure!(function_name.len() < T::MaxCallNames::get() as usize, Error::<T>::TooManyCalls);
+                ensure!(
+                    function_name.len() < T::MaxCallNames::get() as usize,
+                    Error::<T>::TooManyCalls
+                );
 
                 for call_name in function_name.to_vec() {
                     let call_name = call_name.as_bytes().to_vec();
@@ -244,7 +250,10 @@ pub mod pallet {
             T::WeightInfo::pause_transaction().saturating_mul(len as Weight).saturating_mul(max as Weight)
         })]
         #[transactional]
-        pub fn unpause_pallets(origin: OriginFor<T>, pallet_names: Vec<Vec<u8>>) -> DispatchResultWithPostInfo {
+        pub fn unpause_pallets(
+            origin: OriginFor<T>,
+            pallet_names: Vec<Vec<u8>>,
+        ) -> DispatchResultWithPostInfo {
             T::UnpauseOrigin::ensure_origin(origin)?;
             let mut sum = 0;
 
@@ -272,7 +281,7 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-    fn validate_pause(pallet_name: &Vec<u8>) -> DispatchResult {
+    fn ensure_can_pause(pallet_name: &Vec<u8>) -> DispatchResult {
         let pallet_name_string =
             sp_std::str::from_utf8(pallet_name).map_err(|_| Error::<T>::InvalidCharacter)?;
 
