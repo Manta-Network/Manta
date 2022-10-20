@@ -14,6 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+#![cfg(test)]
+
+pub mod integration_tests;
 pub mod mock;
 
 pub use calamari_runtime::{currency::KMA, Event, Origin, Runtime, System};

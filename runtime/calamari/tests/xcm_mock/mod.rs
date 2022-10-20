@@ -14,8 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+#![cfg(test)]
+
 pub mod parachain;
 pub mod relay_chain;
+pub mod xcm_tests;
 
 use frame_support::traits::GenesisBuild;
 use polkadot_parachain::primitives::Id as ParaId;
