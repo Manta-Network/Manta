@@ -5538,7 +5538,7 @@ dependencies = [
 [[package]]
 name = "nimbus-consensus"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?tag=v3.4.3#fdd2ff5f9f57a22b343c5d2dec54a0582dc95b33"
+source = "git+https://github.com/manta-network/nimbus.git?tag=v3.4.3#e55102cfedce5af8cf040ecbe4c47b480a837031"
 dependencies = [
  "async-trait",
  "cumulus-client-consensus-common",
@@ -5569,7 +5569,7 @@ dependencies = [
 [[package]]
 name = "nimbus-primitives"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?tag=v3.4.3#fdd2ff5f9f57a22b343c5d2dec54a0582dc95b33"
+source = "git+https://github.com/manta-network/nimbus.git?tag=v3.4.3#e55102cfedce5af8cf040ecbe4c47b480a837031"
 dependencies = [
  "async-trait",
  "frame-benchmarking",
@@ -5969,7 +5969,7 @@ dependencies = [
 [[package]]
 name = "pallet-aura-style-filter"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?tag=v3.4.3#fdd2ff5f9f57a22b343c5d2dec54a0582dc95b33"
+source = "git+https://github.com/manta-network/nimbus.git?tag=v3.4.3#e55102cfedce5af8cf040ecbe4c47b480a837031"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5985,7 +5985,7 @@ dependencies = [
 [[package]]
 name = "pallet-author-inherent"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?tag=v3.4.3#fdd2ff5f9f57a22b343c5d2dec54a0582dc95b33"
+source = "git+https://github.com/manta-network/nimbus.git?tag=v3.4.3#e55102cfedce5af8cf040ecbe4c47b480a837031"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
