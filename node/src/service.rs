@@ -372,10 +372,12 @@ pub async fn start_dev_nimbus_node<RuntimeApi, FullRpc>(
     config: Configuration,
     full_rpc: FullRpc,
 ) -> sc_service::error::Result<TaskManager>
-    where
-        RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-        RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend> + RuntimeApiNimbus + sp_consensus_aura::AuraApi<Block, AuraId>,
-        FullRpc: Fn(
+where
+    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend>
+        + RuntimeApiNimbus
+        + sp_consensus_aura::AuraApi<Block, AuraId>,
+    FullRpc: Fn(
             rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
         ) -> Result<RpcModule<()>, Error>
         + 'static,
