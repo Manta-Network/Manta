@@ -18,28 +18,22 @@
 
 #![cfg(test)]
 
-mod xcm_mock;
-
 use codec::Encode;
 use frame_support::{
     assert_err, assert_noop, assert_ok, weights::constants::WEIGHT_PER_SECOND, WeakBoundedVec,
 };
-use manta_primitives::{
-    assets::AssetLocation,
-    xcm::{
-        self_reserve_xcm_message_receiver_side, self_reserve_xcm_message_sender_side,
-        to_reserve_xcm_message_receiver_side, to_reserve_xcm_message_sender_side,
-        ADVERTISED_DEST_WEIGHT,
-    },
-};
+use manta_primitives::assets::AssetLocation;
 use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
 use xcm_executor::traits::{Convert, WeightBounds};
-use xcm_mock::{parachain::PALLET_ASSET_INDEX, *};
 use xcm_simulator::TestExt;
 
-use crate::xcm_mock::parachain::{
-    create_asset_location, create_asset_metadata, register_assets_on_parachain, AssetManager,
-    ParaTokenPerSecond, XcmExecutorConfig as ParaXcmExecutorConfig,
+use super::{
+    super::*,
+    parachain::{
+        create_asset_location, create_asset_metadata, register_assets_on_parachain, AssetManager,
+        ParaTokenPerSecond, XcmExecutorConfig as ParaXcmExecutorConfig, PALLET_ASSET_INDEX,
+    },
+    *,
 };
 
 // `reserved_transfer_asset` contains the following 4 instructions
@@ -3022,8 +3016,6 @@ fn transfer_multicurrencies_should_fail_scenarios() {
 
 #[test]
 fn test_receiver_side_weight() {
-    use xcm_executor::traits::WeightBounds;
-
     let weight = <ParaXcmExecutorConfig as xcm_executor::Config>::Weigher::weight(
         &mut self_reserve_xcm_message_receiver_side::<parachain::Call>(),
     )
@@ -3039,8 +3031,6 @@ fn test_receiver_side_weight() {
 
 #[test]
 fn test_sender_side_xcm_weight() {
-    use xcm_executor::traits::WeightBounds;
-
     let mut msg = self_reserve_xcm_message_sender_side::<parachain::Call>();
     let weight =
         <ParaXcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
