@@ -4,6 +4,8 @@
 ### Changed
 - [\#836](https://github.com/Manta-Network/Manta/pull/836) client trait bound refactor [CA]
 - [\#848](https://github.com/Manta-Network/Manta/pull/848) Fix XCM tests [CADO]
+- [\#860](https://github.com/Manta-Network/Manta/pull/860) Don't include testing helpers in release code [CA]
+- [\#865](https://github.com/Manta-Network/Manta/pull/865) Aura slot skip fix v2 [CA]
 
 ### Fixed
 - [\#846](https://github.com/Manta-Network/Manta/pull/846) Fix sequence skipping when a collator misses its slot [CA]
