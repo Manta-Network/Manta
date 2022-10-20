@@ -1682,7 +1682,7 @@ pub mod pallet {
             let mut candidates = <CandidatePool<T>>::get().0;
             // order candidates by stake (least to greatest so requires `rev()`)
             candidates.sort_by(|a, b| a.amount.cmp(&b.amount));
-            let mut top_n = <TotalSelected<T>>::get() as usize;
+            let top_n = <TotalSelected<T>>::get() as usize;
             // choose the top TotalSelected qualified candidates, ordered by stake
             let mut collators = candidates
                 .into_iter()
