@@ -50,7 +50,7 @@ benchmarks! {
             let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
             Pallet::<T>::set_units_per_second(RawOrigin::Root.into(), next, 0)?;
-            next = next.checked_add(&One::()).unwrap();
+            next = next.checked_add(&One::one()).unwrap();
         }
         // does not really matter what we register, as long as it is different than the previous
         let location = T::Location::default();
@@ -69,7 +69,7 @@ benchmarks! {
             let location = T::Location::from(location.clone());
             let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
-            next = next.checked_add(&One::()).unwrap();
+            next = next.checked_add(&One::one()).unwrap();
         }
         // does not really matter what we register, as long as it is different than the previous
         let location = T::Location::default();
@@ -88,7 +88,7 @@ benchmarks! {
             let location = T::Location::from(location.clone());
             let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
-            next = next.checked_add(&One::()).unwrap();
+            next = next.checked_add(&One::one()).unwrap();
         }
         // does not really matter what we register, as long as it is different than the previous
         let location = T::Location::default();
@@ -105,7 +105,7 @@ benchmarks! {
             let location = T::Location::from(MultiLocation::new(0, X1(Parachain(i))));
             let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
-            next = next.checked_add(&One::()).unwrap();
+            next = next.checked_add(&One::one()).unwrap();
         }
         let beneficiary: T::AccountId = whitelisted_caller();
         let amount = 100;
@@ -128,7 +128,7 @@ benchmarks! {
 
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
             Pallet::<T>::set_units_per_second(RawOrigin::Root.into(), next, 0)?;
-            next = next.checked_add(&One::()).unwrap();
+            next = next.checked_add(&One::one()).unwrap();
         }
 
         // does not really matter what we register, as long as it is different than the previous
