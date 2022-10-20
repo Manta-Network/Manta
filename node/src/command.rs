@@ -116,7 +116,9 @@ fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         // dolphin chainspec
         "dolphin-dev" => Ok(Box::new(chain_specs::dolphin_development_config())),
         "dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config("dolphin_local"))),
-        "dolphin-localdev" => Ok(Box::new(chain_specs::dolphin_local_config("dolphin_localdev"))),
+        "dolphin-localdev" => Ok(Box::new(chain_specs::dolphin_local_config(
+            "dolphin_localdev",
+        ))),
         "dolphin-testnet" => Ok(Box::new(chain_specs::dolphin_testnet_config()?)),
         "dolphin-2085" => Ok(Box::new(chain_specs::dolphin_2085_config()?)),
         "dolphin-testnet-ci" => Ok(Box::new(chain_specs::dolphin_testnet_ci_config()?)),

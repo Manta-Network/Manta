@@ -90,9 +90,11 @@ pub fn build_nimbus_consensus<RuntimeApi>(
     keystore: SyncCryptoStorePtr,
     force_authoring: bool,
 ) -> Result<Box<dyn ParachainConsensus<Block>>, Error>
-    where
-        RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-        RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend> + RuntimeApiNimbus + sp_consensus_aura::AuraApi<Block, AuraId>,
+where
+    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend>
+        + RuntimeApiNimbus
+        + sp_consensus_aura::AuraApi<Block, AuraId>,
 {
     let spawn_handle = task_manager.spawn_handle();
     let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
@@ -114,7 +116,7 @@ pub fn build_nimbus_consensus<RuntimeApi>(
                     &validation_data,
                     id,
                 )
-                    .await;
+                .await;
 
             let time = sp_timestamp::InherentDataProvider::from_system_time();
 
@@ -149,9 +151,9 @@ pub fn start_dev_nimbus_instant_seal_consensus<RuntimeApi>(
     select_chain: LongestChain<TFullBackend<Block>, Block>,
     task_manager: &TaskManager,
 ) -> Result<(), Error>
-    where
-        RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
-        RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend> + RuntimeApiNimbus,
+where
+    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend> + RuntimeApiNimbus,
 {
     use futures::{Stream, StreamExt};
     use sc_consensus_manual_seal::{run_manual_seal, EngineCommand, ManualSealParams};
