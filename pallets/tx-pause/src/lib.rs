@@ -83,7 +83,7 @@ pub mod pallet {
     }
 
     #[pallet::event]
-    #[pallet::generate_deposit(pub fn deposit_event)]
+    #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// Paused transaction . \[pallet_name_bytes, function_name_bytes\]
         TransactionPaused(Vec<u8>, Vec<u8>),
@@ -153,7 +153,7 @@ pub mod pallet {
         /// Use names as they are written in the source code of the pallet.
         #[pallet::call_index(2)]
         #[pallet::weight({
-            let len = pallet_and_funcs.into_iter().flat_map(|item| {item.clone().1}).collect::<Vec<_>>().len();
+            let len = pallet_and_funcs.iter().flat_map(|item| {item.clone().1}).count();
             T::WeightInfo::pause_transaction().saturating_mul(len as Weight)
         })]
         #[transactional]
@@ -166,7 +166,7 @@ pub mod pallet {
             for (pallet_name, function_name) in pallet_and_funcs {
                 Self::ensure_can_pause(&pallet_name)?;
 
-                for call_name in function_name.to_vec() {
+                for call_name in function_name {
                     Self::pause_one(&pallet_name, &call_name, true)?;
                 }
             }
@@ -178,7 +178,7 @@ pub mod pallet {
         /// Use names as they are written in the source code of the pallet.
         #[pallet::call_index(3)]
         #[pallet::weight({
-            let len = pallet_and_funcs.into_iter().flat_map(|item| {item.clone().1}).collect::<Vec<_>>().len();
+            let len = pallet_and_funcs.iter().flat_map(|item| {item.clone().1}).count();
             T::WeightInfo::unpause_transaction().saturating_mul(len as Weight)
         })]
         #[transactional]
@@ -189,7 +189,7 @@ pub mod pallet {
             T::UnpauseOrigin::ensure_origin(origin)?;
 
             for (pallet_name, function_name) in pallet_and_funcs {
-                for call_name in function_name.to_vec() {
+                for call_name in function_name {
                     Self::unpause_one(&pallet_name, &call_name)?;
                 }
             }
@@ -226,7 +226,7 @@ pub mod pallet {
                     Error::<T>::TooManyCalls
                 );
 
-                for call_name in function_name.to_vec() {
+                for call_name in function_name {
                     let call_name = call_name.as_bytes().to_vec();
 
                     Self::pause_one(&pallet_name, &call_name, false)?;
@@ -263,7 +263,7 @@ pub mod pallet {
 
                 let function_name =
                     <CallOf<T> as GetCallMetadata>::get_call_names(pallet_name_string);
-                for call_name in function_name.to_vec() {
+                for call_name in function_name {
                     let call_name = call_name.as_bytes().to_vec();
 
                     PausedTransactions::<T>::take((&pallet_name, call_name));
