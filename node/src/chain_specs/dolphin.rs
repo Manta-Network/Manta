@@ -79,10 +79,10 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
 }
 
 /// Returns the Dolphin local chainspec.
-pub fn dolphin_local_config() -> DolphinChainSpec {
+pub fn dolphin_local_config(id: &str) -> DolphinChainSpec {
     DolphinChainSpec::from_genesis(
         "Dolphin Parachain Local",
-        "dolphin_local",
+        id,
         ChainType::Local,
         move || {
             dolphin_dev_genesis(
