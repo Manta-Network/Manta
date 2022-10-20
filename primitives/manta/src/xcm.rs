@@ -446,5 +446,3 @@ impl<
         Ok((asset_id, amount, receiver))
     }
 }
-
-pub mod weights_testing {}
