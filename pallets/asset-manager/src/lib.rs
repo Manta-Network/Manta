@@ -586,7 +586,7 @@ pub mod pallet {
             NextAssetId::<T>::try_mutate(|current| {
                 let id = *current;
                 *current = current
-                    .checked_add(&<T as Config>::AssetId::from(1u32))
+                    .checked_add(&One::one())
                     .ok_or(ArithmeticError::Overflow)?;
                 Ok(id)
             })
