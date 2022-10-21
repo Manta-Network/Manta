@@ -224,6 +224,7 @@ impl Contains<Call> for MantaFilter {
             // Sudo also cannot be filtered because it is used in runtime upgrade.
             | Call::Sudo(_)
             | Call::Multisig(_)
+            | Call::TransactionPause(_)
             | Call::Balances(_) => true,
 
             // DISALLOW anything else

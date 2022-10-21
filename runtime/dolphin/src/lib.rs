@@ -278,6 +278,7 @@ impl Contains<Call> for BaseFilter {
                 | orml_xtokens::Call::transfer_multicurrencies  {..})
             | Call::MantaPay(_)
             | Call::Preimage(_)
+            | Call::TransactionPause(_)
             | Call::Utility(_) => true,
 
             // DISALLOW anything else
