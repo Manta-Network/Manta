@@ -100,6 +100,7 @@ pub mod pallet {
         Perbill, Percent,
     };
     use sp_std::{collections::btree_map::BTreeMap, prelude::*};
+
     /// Pallet for parachain staking
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -1681,14 +1682,7 @@ pub mod pallet {
             let mut candidates = <CandidatePool<T>>::get().0;
             // order candidates by stake (least to greatest so requires `rev()`)
             candidates.sort_by(|a, b| a.amount.cmp(&b.amount));
-            let mut top_n = <TotalSelected<T>>::get() as usize;
-            // BEGIN MANTA WORKAROUND: remove the smallest-stake collator to get the set to be odd ( if possible )
-            if top_n % 2 == 0 {
-                if top_n > T::MinSelectedCandidates::get() as usize {
-                    top_n -= 1;
-                }
-            }
-            // END MANTA WORKAROUND
+            let top_n = <TotalSelected<T>>::get() as usize;
             // choose the top TotalSelected qualified candidates, ordered by stake
             let mut collators = candidates
                 .into_iter()

@@ -16,6 +16,8 @@
 
 //! Parachain runtime mock.
 
+#![cfg(test)]
+
 use codec::{Decode, Encode};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{

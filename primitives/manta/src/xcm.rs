@@ -17,7 +17,7 @@
 use super::assets::{AssetConfig, FungibleLedger};
 
 use sp_runtime::traits::{CheckedConversion, Convert, Zero};
-use sp_std::{marker::PhantomData, vec};
+use sp_std::marker::PhantomData;
 
 use crate::assets::{AssetIdLocationMap, UnitsPerSecond};
 use frame_support::{
@@ -27,13 +27,7 @@ use frame_support::{
 };
 use frame_system::Config;
 use xcm::{
-    latest::{
-        prelude::{
-            All, Any, BuyExecution, ClearOrigin, Concrete, DepositAsset, InitiateReserveWithdraw,
-            Limited, MultiAssets, ReserveAssetDeposited, TransferReserveAsset, Wild, WithdrawAsset,
-        },
-        Error as XcmError, Xcm,
-    },
+    latest::{prelude::Concrete, Error as XcmError},
     v1::{
         AssetId as XcmAssetId, Fungibility,
         Junction::{AccountId32, Parachain},
@@ -408,171 +402,4 @@ where
         .map_err(|_| XcmError::FailedToTransactAsset("Failed Burn"))?;
         Ok(asset.clone().into())
     }
-}
-
-/// 4_000_000_000 is a typical configuration value provided to dApp developers for `dest_weight`
-/// argument when sending xcm message to Calamari. ie moonbeam, sub-wallet, phala, etc
-pub const ADVERTISED_DEST_WEIGHT: u64 = 4_000_000_000;
-
-/// Composition of self_reserve message composed by xTokens on the sender side
-pub fn self_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
-    Xcm(vec![
-        ReserveAssetDeposited(MultiAssets::from(vec![MultiAsset {
-            id: Concrete(MultiLocation {
-                parents: 1,
-                interior: X1(Parachain(1)),
-            }),
-            fun: Fungibility::Fungible(10000000000000),
-        }])),
-        ClearOrigin,
-        BuyExecution {
-            fees: MultiAsset {
-                id: Concrete(MultiLocation {
-                    parents: 1,
-                    interior: X1(Parachain(1)),
-                }),
-                fun: Fungibility::Fungible(10000000000000),
-            },
-            weight_limit: Limited(3999999999),
-        },
-        DepositAsset {
-            assets: Wild(All),
-            max_assets: 1,
-            beneficiary: MultiLocation {
-                parents: 0,
-                interior: X1(AccountId32 {
-                    network: Any,
-                    id: [
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0,
-                    ],
-                }),
-            },
-        },
-    ])
-}
-
-/// Composition of to_reserve message composed by xTokens on the receiver side
-pub fn to_reserve_xcm_message_receiver_side<T>() -> Xcm<T> {
-    Xcm(vec![
-        WithdrawAsset(MultiAssets::from(vec![MultiAsset {
-            id: Concrete(MultiLocation {
-                parents: 1,
-                interior: X1(Parachain(1)),
-            }),
-            fun: Fungibility::Fungible(10000000000000),
-        }])),
-        ClearOrigin,
-        BuyExecution {
-            fees: MultiAsset {
-                id: Concrete(MultiLocation {
-                    parents: 1,
-                    interior: X1(Parachain(1)),
-                }),
-                fun: Fungibility::Fungible(10000000000000),
-            },
-            weight_limit: Limited(3999999999),
-        },
-        DepositAsset {
-            assets: Wild(All),
-            max_assets: 1,
-            beneficiary: MultiLocation {
-                parents: 0,
-                interior: X1(AccountId32 {
-                    network: Any,
-                    id: [
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0,
-                    ],
-                }),
-            },
-        },
-    ])
-}
-
-/// Composition of to_reserve message composed by xTokens on the sender side
-pub fn to_reserve_xcm_message_sender_side<T>() -> Xcm<T> {
-    let dummy_multi_location = MultiLocation {
-        parents: 1,
-        interior: X1(Parachain(1)),
-    };
-    let dummy_assets = MultiAssets::from(vec![MultiAsset {
-        id: Concrete(MultiLocation {
-            parents: 1,
-            interior: X1(Parachain(1)),
-        }),
-        fun: Fungibility::Fungible(10000000000000),
-    }]);
-    Xcm(vec![
-        WithdrawAsset(dummy_assets),
-        InitiateReserveWithdraw {
-            assets: Wild(All),
-            reserve: dummy_multi_location.clone(),
-            xcm: Xcm(vec![
-                BuyExecution {
-                    fees: MultiAsset {
-                        id: Concrete(dummy_multi_location),
-                        fun: Fungibility::Fungible(10000000000000),
-                    },
-                    weight_limit: Limited(3999999999),
-                },
-                DepositAsset {
-                    assets: Wild(All),
-                    max_assets: 1,
-                    beneficiary: MultiLocation {
-                        parents: 0,
-                        interior: X1(AccountId32 {
-                            network: Any,
-                            id: [
-                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                            ],
-                        }),
-                    },
-                },
-            ]),
-        },
-    ])
-}
-
-/// Composition of self_reserve message composed by xTokens on the sender side
-pub fn self_reserve_xcm_message_sender_side<T>() -> Xcm<T> {
-    let dummy_multi_location = MultiLocation {
-        parents: 1,
-        interior: X1(Parachain(1)),
-    };
-    let dummy_assets = MultiAssets::from(vec![MultiAsset {
-        id: Concrete(MultiLocation {
-            parents: 1,
-            interior: X1(Parachain(1)),
-        }),
-        fun: Fungibility::Fungible(10000000000000),
-    }]);
-    Xcm(vec![TransferReserveAsset {
-        assets: dummy_assets,
-        dest: dummy_multi_location.clone(),
-        xcm: Xcm(vec![
-            BuyExecution {
-                fees: MultiAsset {
-                    id: Concrete(dummy_multi_location),
-                    fun: Fungibility::Fungible(10000000000000),
-                },
-                weight_limit: Limited(3999999999),
-            },
-            DepositAsset {
-                assets: Wild(All),
-                max_assets: 1,
-                beneficiary: MultiLocation {
-                    parents: 0,
-                    interior: X1(AccountId32 {
-                        network: Any,
-                        id: [
-                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                            0, 0, 0, 0, 0, 0, 0, 0,
-                        ],
-                    }),
-                },
-            },
-        ]),
-    }])
 }
