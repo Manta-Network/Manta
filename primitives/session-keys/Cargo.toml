@@ -4,7 +4,7 @@ description = "Primitives for session keys"
 edition = "2021"
 license = 'GPL-3.0'
 name = "session-key-primitives"
-version = "3.4.0"
+version = '3.4.3'
 
 [dependencies]
 manta-primitives = { path = "../manta", default-features = false }
