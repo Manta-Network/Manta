@@ -1045,7 +1045,7 @@ impl_runtime_apis! {
                 // mirrors logic in `aura_style_filter`
                 let truncated_half_slot = (slot >> 1) as usize;
                 let active: Vec<AccountId> = pallet_parachain_staking::Pallet::<Self>::compute_top_candidates();
-                return account == active[truncated_half_slot % active.len()];
+                account == active[truncated_half_slot % active.len()]
             } else {
                 // We're not changing rounds, `PotentialAuthors` is not changing, just use can_author
                 <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
