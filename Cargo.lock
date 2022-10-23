@@ -1046,7 +1046,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-vesting"
-version = "3.4.2"
+version = "3.4.3"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -5068,7 +5068,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "3.4.2"
+version = "3.4.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5917,7 +5917,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-manager"
-version = "3.4.0"
+version = "3.4.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6544,7 +6544,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-parachain-staking"
-version = "3.4.0"
+version = "3.4.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -10523,7 +10523,7 @@ dependencies = [
 
 [[package]]
 name = "session-key-primitives"
-version = "3.4.0"
+version = "3.4.3"
 dependencies = [
  "manta-primitives",
  "nimbus-primitives",
