@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+#![cfg(test)]
+
 use crate::integrations_mock::*;
 
 use calamari_runtime::opaque::SessionKeys;
