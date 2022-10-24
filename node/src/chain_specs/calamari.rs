@@ -90,8 +90,8 @@ pub fn calamari_development_config() -> CalamariChainSpec {
 /// Returns the Calamari local chainspec.
 pub fn calamari_local_config() -> CalamariChainSpec {
     CalamariChainSpec::from_genesis(
-        "Calamari Parachain Staging",
-        "calamari_staging",
+        "Calamari Parachain on Moonbase",
+        "calamari_moonbase",
         ChainType::Live,
         move || {
             calamari_dev_genesis(
@@ -158,49 +158,7 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                             ]
                             .unchecked_into(),
                         )),
-                    ),
-                    (
-                        // account id: dmx4vuA3PnQmraqJqeJaKRydUjP1AW4wMVTPLQWgZSpDyQUrp
-                        hex_literal::hex![
-                            "8a93e0f756448030dcb3018d25d75c7bf97a2e2ff15d02fd1f55bf3f2104fb5b"
-                        ]
-                        .into(),
-                        SessionKeys::new((
-                            hex_literal::hex![
-                                "741101a186479f4f28aa40fc78f02d7307ed3574e829aed76fdede5876e46a43"
-                            ]
-                            .unchecked_into(),
-                            hex_literal::hex![
-                                "741101a186479f4f28aa40fc78f02d7307ed3574e829aed76fdede5876e46a43"
-                            ]
-                            .unchecked_into(),
-                            hex_literal::hex![
-                                "741101a186479f4f28aa40fc78f02d7307ed3574e829aed76fdede5876e46a43"
-                            ]
-                            .unchecked_into(),
-                        )),
-                    ),
-                    (
-                        // account id: dmtwRyEeNyRW3KApnTxjHahWCjN5b9gDjdvxpizHt6E9zYkXj
-                        hex_literal::hex![
-                            "0027131c176c0d19a2a5cc475ecc657f936085912b846839319249e700f37e79"
-                        ]
-                        .into(),
-                        SessionKeys::new((
-                            hex_literal::hex![
-                                "8ebf03bda1702d719f428bc0a4c7cfca010c44a48ef79752490818c901548d20"
-                            ]
-                            .unchecked_into(),
-                            hex_literal::hex![
-                                "8ebf03bda1702d719f428bc0a4c7cfca010c44a48ef79752490818c901548d20"
-                            ]
-                            .unchecked_into(),
-                            hex_literal::hex![
-                                "8ebf03bda1702d719f428bc0a4c7cfca010c44a48ef79752490818c901548d20"
-                            ]
-                            .unchecked_into(),
-                        )),
-                    ),
+                    )
                 ],
                 // Delegations
                 vec![],
@@ -217,30 +175,20 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                         "1e58d3c3900c7ce6c6d82152becb45bf7bd3453fb2d267e5f72ca51285bca173"
                     ]
                     .into(),
-                    hex_literal::hex![
-                        "8a93e0f756448030dcb3018d25d75c7bf97a2e2ff15d02fd1f55bf3f2104fb5b"
-                    ]
-                    .into(),
-                    hex_literal::hex![
-                        "0027131c176c0d19a2a5cc475ecc657f936085912b846839319249e700f37e79"
-                    ]
-                    .into(),
                 ],
             )
         },
         vec![
-            "/dns/crispy.kusama-internal.testnet.calamari.systems/tcp/30333/p2p/12D3KooWHUpYD9BSiQuMQfzNb3Dw75BxZT4qxmhqgV2Sr7xPFmWW".parse().unwrap(),
-            "/dns/crunchy.kusama-internal.testnet.calamari.systems/tcp/30333/p2p/12D3KooWHmRLMqv97ekjuGnuZpHEdKttFFG3NMp9rWDqXKRDrquN".parse().unwrap(),
-            "/dns/falafel.kusama-internal.testnet.calamari.systems/tcp/30333/p2p/12D3KooWAaJ2D4stMe3Yuegw5AmxnPFN8MgwMtyVAAkcMf65taPi".parse().unwrap(),
-            "/dns/hotdog.kusama-internal.testnet.calamari.systems/tcp/30333/p2p/12D3KooWHQP3VNMaUS8z38SfiFhk3iWw2CARLGUv4WPvrPeV9ijR".parse().unwrap(),
-            "/dns/tasty.kusama-internal.testnet.calamari.systems/tcp/30333/p2p/12D3KooWDzwzNhzASBtq6jV1VHs7SHbJ7b4Dvccy75GSVJAhsfaX".parse().unwrap(),
+            "/dns/c1.calamari.moonsea.systems/tcp/30333/p2p/12D3KooWNTiNHj8kxreK2z2esb4mu77QcHo7Xc9THPF8AH45uiGQ".parse().unwrap(),
+            "/dns/c2.calamari.moonsea.systems/tcp/30333/p2p/12D3KooWSouhKTjj2Fj5vauWCwKDWboU8kGzqFZBDqB6LNL3Snvw".parse().unwrap(),
+            "/dns/c3.calamari.moonsea.systems/tcp/30333/p2p/12D3KooWGWq7dgB3CJEpeBPvTA89B3Eb3uVo4Q895MCcuBbPgbGU".parse().unwrap(),
         ],
         None,
         Some(CALAMARI_PROTOCOL_ID),
         None,
         Some(calamari_properties()),
         Extensions {
-            relay_chain: "kusama-staging".into(),
+            relay_chain: "westend_moonbase_relay_testnet".into(),
             para_id: CALAMARI_PARACHAIN_ID,
         },
     )
