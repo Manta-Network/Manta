@@ -109,16 +109,14 @@ fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         "manta" => Ok(Box::new(chain_specs::manta_config()?)),
         // calamari chainspec
         "calamari-dev" => Ok(Box::new(chain_specs::calamari_development_config())),
-        "calamari-local" => Ok(Box::new(chain_specs::calamari_local_config())),
+        "calamari-local" => Ok(Box::new(chain_specs::calamari_local_config(false))),
+        "calamari-localdev" => Ok(Box::new(chain_specs::calamari_local_config(true))),
         "calamari-testnet" => Ok(Box::new(chain_specs::calamari_testnet_config()?)),
         "calamari-testnet-ci" => Ok(Box::new(chain_specs::calamari_testnet_ci_config()?)),
         "calamari" => Ok(Box::new(chain_specs::calamari_config()?)),
         // dolphin chainspec
         "dolphin-dev" => Ok(Box::new(chain_specs::dolphin_development_config())),
-        "dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config("dolphin_local"))),
-        "dolphin-localdev" => Ok(Box::new(chain_specs::dolphin_local_config(
-            "dolphin_localdev",
-        ))),
+        "dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config())),
         "dolphin-testnet" => Ok(Box::new(chain_specs::dolphin_testnet_config()?)),
         "dolphin-2085" => Ok(Box::new(chain_specs::dolphin_2085_config()?)),
         "dolphin-testnet-ci" => Ok(Box::new(chain_specs::dolphin_testnet_ci_config()?)),
