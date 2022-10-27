@@ -124,7 +124,7 @@ where
     type StorageMetadata: From<Self::AssetRegistryMetadata>;
 
     /// The Asset Metadata type stored in this pallet.
-    type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance> + Parameter;
+    type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance> + Parameter + Default;
 
     /// The AssetId that the non-native asset starts from.
     ///
@@ -156,6 +156,22 @@ where
         AssetId = Self::AssetId,
         Balance = Self::Balance,
     >;
+}
+
+impl Default for AssetRegistryMetadata<u128> {
+    fn default() -> Self {
+        Self {
+            metadata: AssetStorageMetadata {
+                name: b"Default".to_vec(),
+                symbol: b"DEF".to_vec(),
+                decimals: 12,
+                is_frozen: false,
+            },
+            evm_address: None,
+            min_balance: 1,
+            is_sufficient: true,
+        }
+    }
 }
 
 /// Asset Storage Metadata

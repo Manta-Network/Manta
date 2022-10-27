@@ -44,15 +44,14 @@ where
 
 /// Init assets for manta-pay
 #[inline]
-pub fn init_asset<T>(owner: &T::AccountId, id: AssetId, value: AssetValue)
+pub fn init_asset<T>(owner: &T::AccountId, id: u128, value: u128)
 where
     T: Config,
 {
-    /* TODO:
     let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::default();
     let storage_metadata: <T::AssetConfig as AssetConfig<T>>::StorageMetadata = metadata.into();
     <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
-        Pallet::<T>::id_from_field(id).expect("FIXME"),
+        id.try_into().unwrap(),
         storage_metadata,
         TEST_DEFAULT_ASSET_ED,
         true,
@@ -60,19 +59,17 @@ where
     .expect("Unable to create asset.");
     let pallet_account: T::AccountId = Pallet::<T>::account_id();
     <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
-        Pallet::<T>::id_from_field(id).expect("FIXME"),
+        id.try_into().unwrap(),
         owner,
         value + TEST_DEFAULT_ASSET_ED,
     )
     .expect("Unable to mint asset to its new owner.");
     <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
-        Pallet::<T>::id_from_field(id).expect("FIXME"),
+        id.try_into().unwrap(),
         &pallet_account,
         TEST_DEFAULT_ASSET_ED,
     )
     .expect("Unable to mint existential deposit to pallet account.");
-    */
-    todo!()
 }
 
 pub const COINS_SIZE: usize = 87250004;
@@ -117,7 +114,7 @@ benchmarks! {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
         for i in 8 .. 4000 {
-            init_asset::<T>(&caller, Pallet::<T>::field_from_id(i), 1_000_000_000_000_000_000_000_000_000_000u128);
+            init_asset::<T>(&caller, i, 1_000_000_000_000_000_000_000_000_000_000u128);
         }
 
         for coin in PRIVATE_TRANSFER_INPUT {
