@@ -15,7 +15,9 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    benchmark::precomputed_coins::{PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT},
+    benchmark::precomputed_coins::{
+        PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, TO_PUBLIC, TO_PUBLIC_INPUT,
+    },
     types::{Asset, AssetId, AssetValue},
     Call, Config, Event, Pallet, TransferPost,
 };
@@ -70,44 +72,92 @@ where
     .expect("Unable to mint existential deposit to pallet account.");
 }
 
-// pub const COINS_SIZE: usize = 87250004; // 250k
-pub const COINS_SIZE: usize = 977;
+// pub const COINS_SIZE: usize = 87250004; // 250k v0
+// pub const COINS_SIZE: usize = 977; // 2 v1
+// pub const COINS_SIZE: usize = 4880002; // 10k v1
+pub const COINS_SIZE: usize = 48802; // 100 v1
+                                     // pub const COINS_SIZE: usize = 488002; // 1000 v1
 pub const COINS: &'static [u8; COINS_SIZE] = include_bytes!("./precomputed_mints");
+pub const V0_SIZE: usize = 349;
+pub const V1_SIZE: usize = 488;
+pub const COINS_COUNT: usize = 100;
 
 benchmarks! {
-    // to_private {
-    //     let caller: T::AccountId = whitelisted_caller();
-    //     let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-    //     let mint_post = TransferPost::decode(&mut &*MINT).unwrap();
-    //     let asset = mint_post.source(0).unwrap();
-    //     init_asset::<T>(&caller, asset.id, asset.value);
-    // }: to_private (
-    //     RawOrigin::Signed(caller.clone()),
-    //     mint_post
-    // ) verify {
-    //     // FIXME: add balance checking
-    //     assert_last_event::<T, _>(Event::ToPrivate { asset, source: caller });
-    // }
+    to_private {
+        let caller: T::AccountId = whitelisted_caller();
+        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        // let mint_post = TransferPost::decode(&mut &*MINT).unwrap();
+        // let asset = mint_post.source(0).unwrap();
+        // init_asset::<T>(&caller, asset.id, asset.value);
 
-    // to_public {
-    //     let caller: T::AccountId = whitelisted_caller();
-    //     let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-    //     for coin in RECLAIM_INPUT {
-    //         Pallet::<T>::to_private(
-    //             origin.clone(),
-    //             TransferPost::decode(&mut &**coin).unwrap()
-    //         ).unwrap();
-    //     }
-    //     let reclaim_post = TransferPost::decode(&mut &*RECLAIM).unwrap();
-    //     let asset = reclaim_post.sink(0).unwrap();
-    //     init_asset::<T>(&caller, asset.id, asset.value);
-    // }: to_public (
-    //     RawOrigin::Signed(caller.clone()),
-    //     reclaim_post
-    // ) verify {
-    //     // FIXME: add balance checking
-    //     assert_last_event::<T, _>(Event::ToPublic { asset, sink: caller });
-    // }
+        for i in 8 .. 4000 {
+            init_asset::<T>(&caller, i, 1_000_000_000_000_000_000_000_000_000_000u128);
+        }
+
+        for coin in TO_PUBLIC_INPUT {
+            Pallet::<T>::to_private(
+                origin.clone(),
+                TransferPost::decode(&mut &**coin).unwrap()
+            ).unwrap();
+        }
+
+        for i in 0 .. COINS_COUNT - 1 {
+            let start = 2 + i * V1_SIZE;
+            let end = start + V1_SIZE;
+            let coin: TransferPost = TransferPost::decode(&mut &COINS[start..end]).unwrap();
+            Pallet::<T>::to_private(
+                origin.clone(),
+                coin
+            ).unwrap();
+        }
+        let start = 2 + (COINS_COUNT - 1) * V1_SIZE;
+        let end = start + V1_SIZE;
+        let mint_post = TransferPost::decode(&mut &COINS[start..end]).unwrap();
+        let asset = mint_post.source(0).unwrap();
+
+    }: to_private (
+        RawOrigin::Signed(caller.clone()),
+        mint_post
+    ) verify {
+        // FIXME: add balance checking
+        assert_last_event::<T, _>(Event::ToPrivate { asset, source: caller });
+    }
+
+    to_public {
+        let caller: T::AccountId = whitelisted_caller();
+        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+
+        for i in 8 .. 4000 {
+            init_asset::<T>(&caller, i, 1_000_000_000_000_000_000_000_000_000_000u128);
+        }
+
+        for coin in TO_PUBLIC_INPUT {
+            Pallet::<T>::to_private(
+                origin.clone(),
+                TransferPost::decode(&mut &**coin).unwrap()
+            ).unwrap();
+        }
+
+        for i in 0 .. COINS_COUNT {
+            let start = 2 + i * V1_SIZE;
+            let end = start + V1_SIZE;
+            let coin: TransferPost = TransferPost::decode(&mut &COINS[start..end]).unwrap();
+            Pallet::<T>::to_private(
+                origin.clone(),
+                coin
+            ).unwrap();
+        }
+
+        let reclaim_post = TransferPost::decode(&mut &*TO_PUBLIC).unwrap();
+        let asset = reclaim_post.sink(0).unwrap();
+        // init_asset::<T>(&caller, Pallet::<T>::id_from_field(asset.id).unwrap(), asset.value);
+    }: to_public (
+        RawOrigin::Signed(caller.clone()),
+        reclaim_post
+    ) verify {
+        // FIXME: add balance checking
+        // assert_last_event::<T, _>(Event::ToPublic { asset, sink: caller });
+    }
 
     private_transfer {
         let caller: T::AccountId = whitelisted_caller();
@@ -123,10 +173,9 @@ benchmarks! {
             ).unwrap();
         }
 
-        for i in 0 .. 2 {
-            // 349 fo v0
-            let start = 1 + i * 488;
-            let end = start + 488;
+        for i in 0 .. COINS_COUNT {
+            let start = 2 + i * V1_SIZE;
+            let end = start + V1_SIZE;
             let coin: TransferPost = TransferPost::decode(&mut &COINS[start..end]).unwrap();
             Pallet::<T>::to_private(
                 origin.clone(),
