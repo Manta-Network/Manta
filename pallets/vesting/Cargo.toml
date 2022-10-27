@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = "calamari-vesting"
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '3.4.0'
+version = '3.4.3'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
@@ -21,6 +21,7 @@ sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features
 
 [dev-dependencies]
 chrono = "0.4"
+manta-primitives = { path = "../../primitives/manta" }
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }

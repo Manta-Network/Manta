@@ -6,7 +6,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = "pallet-parachain-staking"
 repository = 'https://github.com/Manta-Network/Manta/'
-version = "3.4.0"
+version = '3.4.3'
 
 [dependencies]
 log = { version = "0.4", default-features = false }
@@ -22,9 +22,6 @@ sp-arithmetic = { git = "https://github.com/paritytech/substrate.git", branch = 
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
 substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", tag = "v0.5.9", default-features = false }
-
-# Nimbus
-nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v3.3.0", default-features = false }
 
 # Manta
 manta-primitives = { path = '../../primitives/manta', default-features = false }
@@ -54,7 +51,6 @@ std = [
   "log/std",
   "manta-primitives/std",
   "manta-collator-selection/std",
-  "nimbus-primitives/std",
   'pallet-session/std',
   "parity-scale-codec/std",
   "scale-info/std",

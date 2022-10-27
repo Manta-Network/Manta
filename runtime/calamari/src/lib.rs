@@ -76,6 +76,7 @@ pub mod fee;
 pub mod impls;
 pub mod migrations;
 mod nimbus_session_adapter;
+pub mod staking;
 pub mod xcm_config;
 
 use currency::*;
@@ -115,14 +116,14 @@ pub mod opaque {
 }
 
 // Weights used in the runtime.
-mod weights;
+pub mod weights;
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 3402,
+    spec_version: 3432,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 9,
@@ -568,8 +569,8 @@ parameter_types! {
     pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(10);
     /// Default percent of inflation set aside for parachain bond every round
     pub const DefaultParachainBondReservePercent: Percent = Percent::zero();
-    pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(6 * HOURS ,15,"CALAMARI_DEFAULTBLOCKSPERROUND");
-    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(28 ,1 ,"CALAMARI_LEAVEDELAYROUNDS"); // == 7 * DAYS / 6 * HOURS
+    pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(6 * HOURS,15,"CALAMARI_DEFAULTBLOCKSPERROUND");
+    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(28,1,"CALAMARI_LEAVEDELAYROUNDS"); // == 7 * DAYS / 6 * HOURS
 }
 impl pallet_parachain_staking::Config for Runtime {
     type Event = Event;
@@ -603,12 +604,11 @@ impl pallet_parachain_staking::Config for Runtime {
     type DefaultCollatorCommission = DefaultCollatorCommission;
     type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
     /// Minimum stake on a collator to be considered for block production
-    // WHITELIST: Temporarily 400k to accomodate whitelisted collators
-    type MinCollatorStk = ConstU128<{ 400_000 * KMA }>;
+    type MinCollatorStk = ConstU128<{ crate::staking::MIN_BOND_TO_BE_CONSIDERED_COLLATOR }>;
     /// Minimum stake the collator runner must bond to register as collator candidate
-    type MinCandidateStk = ConstU128<{ 4_000_000 * KMA }>;
+    type MinCandidateStk = ConstU128<{ crate::staking::NORMAL_COLLATOR_MINIMUM_STAKE }>;
     /// WHITELIST: Minimum stake required for *a whitelisted* account to be a collator candidate
-    type MinWhitelistCandidateStk = ConstU128<{ 400_000 * KMA }>;
+    type MinWhitelistCandidateStk = ConstU128<{ crate::staking::EARLY_COLLATOR_MINIMUM_STAKE }>;
     /// Smallest amount that can be delegated
     type MinDelegation = ConstU128<{ 5_000 * KMA }>;
     /// Minimum stake required to be reserved to be a delegator
@@ -625,7 +625,7 @@ impl pallet_author_inherent::Config for Runtime {
     type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
     /// Nimbus filter pipeline step 1:
     /// Filters out NimbusIds not registered as SessionKeys of some AccountId
-    type CanAuthor = ParachainStaking;
+    type CanAuthor = AuraAuthorFilter;
 }
 
 parameter_types! {
@@ -864,7 +864,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExt
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = (migrations::staking::InitializeStakingPallet<Runtime>,);
+pub type OnRuntimeUpgradeHooks = ();
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -1023,10 +1023,33 @@ impl_runtime_apis! {
 
     impl nimbus_primitives::NimbusApi<Block> for Runtime {
         fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool {
-            System::initialize(&(parent_header.number + 1), &parent_header.hash(), &parent_header.digest);
-
-            // And now the actual prediction call
-            <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
+            let next_block_number = parent_header.number + 1;
+            let slot = relay_parent;
+            // Because the staking solution calculates the next staking set at the beginning
+            // of the first block in the new round, the only way to accurately predict the
+            // authors is to compute the selection during prediction.
+            // NOTE: This logic must manually be kept in sync with the nimbus filter pipeline
+            if pallet_parachain_staking::Pallet::<Self>::round().should_update(next_block_number)
+            {
+                // lookup account from nimbusId
+                // mirrors logic in `pallet_author_inherent`
+                use nimbus_primitives::AccountLookup;
+                let account = match manta_collator_selection::Pallet::<Self>::lookup_account(&author) {
+                    Some(account) => account,
+                    // Authors whose account lookups fail will not be eligible
+                    None => {
+                        return false;
+                    }
+                };
+                // manually check aura eligibility (in the new round)
+                // mirrors logic in `aura_style_filter`
+                let truncated_half_slot = (slot >> 1) as usize;
+                let active: Vec<AccountId> = pallet_parachain_staking::Pallet::<Self>::compute_top_candidates();
+                account == active[truncated_half_slot % active.len()]
+            } else {
+                // We're not changing rounds, `PotentialAuthors` is not changing, just use can_author
+                <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
+            }
         }
     }
 

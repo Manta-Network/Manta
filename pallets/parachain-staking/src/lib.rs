@@ -100,6 +100,7 @@ pub mod pallet {
         Perbill, Percent,
     };
     use sp_std::{collections::btree_map::BTreeMap, prelude::*};
+
     /// Pallet for parachain staking
     #[pallet::pallet]
     #[pallet::storage_version(STORAGE_VERSION)]
@@ -1681,14 +1682,7 @@ pub mod pallet {
             let mut candidates = <CandidatePool<T>>::get().0;
             // order candidates by stake (least to greatest so requires `rev()`)
             candidates.sort_by(|a, b| a.amount.cmp(&b.amount));
-            let mut top_n = <TotalSelected<T>>::get() as usize;
-            // BEGIN MANTA WORKAROUND: remove the smallest-stake collator to get the set to be odd ( if possible )
-            if top_n % 2 == 0 {
-                if top_n > T::MinSelectedCandidates::get() as usize {
-                    top_n -= 1;
-                }
-            }
-            // END MANTA WORKAROUND
+            let top_n = <TotalSelected<T>>::get() as usize;
             // choose the top TotalSelected qualified candidates, ordered by stake
             let mut collators = candidates
                 .into_iter()
@@ -1830,38 +1824,13 @@ pub mod pallet {
         }
     }
 
-    impl<T> nimbus_primitives::CanAuthor<T::AccountId> for Pallet<T>
-    where
-        T: Config + manta_collator_selection::Config,
-        manta_collator_selection::Pallet<T>:
-            nimbus_primitives::CanAuthor<T::AccountId> + Get<Vec<T::AccountId>>,
-    {
-        fn can_author(account: &T::AccountId, _slot: &u32) -> bool {
-            // Migration specifics: If we have no eligible block producers yet, use the old selection method
-            if Self::selected_candidates().is_empty() {
-                manta_collator_selection::Pallet::<T>::can_author(account, _slot)
-            } else {
-                Self::is_selected_candidate(account)
-            }
-        }
-        #[cfg(feature = "runtime-benchmarks")]
-        fn get_authors(_slot: &u32) -> Vec<T::AccountId> {
-            Self::get()
-        }
-    }
-
     impl<T> Get<Vec<T::AccountId>> for Pallet<T>
     where
         T: Config + manta_collator_selection::Config,
         manta_collator_selection::Pallet<T>: Get<Vec<T::AccountId>>,
     {
         fn get() -> Vec<T::AccountId> {
-            // Migration specifics: If we have no eligible block producers yet, use the old selection method
-            if Self::selected_candidates().is_empty() {
-                manta_collator_selection::Pallet::<T>::get()
-            } else {
-                Self::selected_candidates()
-            }
+            Self::selected_candidates()
         }
     }
 }

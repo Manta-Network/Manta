@@ -4,12 +4,11 @@ description = "Primitives for session keys"
 edition = "2021"
 license = "GPL-3.0"
 name = "session-key-primitives"
-version = "3.4.0"
+version = '3.4.3'
 
 [dependencies]
 manta-primitives = { path = "../manta", default-features = false }
-# `manta-v3.3.0` is a temporary branch until the official v0.9.26 Nimbus release.
-nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", branch = "manta-v3.3.0", default-features = false }
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v3.4.3", default-features = false }
 parity-scale-codec = { version = "3.1.2", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }

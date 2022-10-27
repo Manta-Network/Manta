@@ -19,6 +19,7 @@ mod pallet_xcm_benchmarks_generic;
 
 use crate::Runtime;
 use frame_support::weights::Weight;
+use sp_std::cmp;
 use xcm::{latest::prelude::*, DoubleEncoded};
 
 use pallet_xcm_benchmarks_fungible::WeightInfo as XcmFungibleWeight;
@@ -56,7 +57,7 @@ impl<Call> XcmWeightInfo<Call> for CalamariXcmWeight<Call> {
         assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::reserve_asset_deposited())
     }
     fn receive_teleported_asset(_assets: &MultiAssets) -> Weight {
-        unimplemented!()
+        u64::MAX // disable teleport
     }
     fn query_response(_query_id: &u64, _response: &Response, _max_weight: &u64) -> Weight {
         XcmGeneric::<Runtime>::query_response()
@@ -113,7 +114,10 @@ impl<Call> XcmWeightInfo<Call> for CalamariXcmWeight<Call> {
         _max_assets: &u32,
         _dest: &MultiLocation,
     ) -> Weight {
-        assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_asset())
+        // Hardcoded until better understanding how to deal with worst case scenario of holding register
+        let hardcoded_weight: u64 = 1_000_000_000;
+        let weight = assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_asset());
+        cmp::min(hardcoded_weight, weight)
     }
     fn deposit_reserve_asset(
         assets: &MultiAssetFilter,
@@ -121,7 +125,11 @@ impl<Call> XcmWeightInfo<Call> for CalamariXcmWeight<Call> {
         _dest: &MultiLocation,
         _xcm: &Xcm<()>,
     ) -> Weight {
-        assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_reserve_asset())
+        // Hardcoded until better understanding how to deal with worst case scenario of holding register
+        let hardcoded_weight: u64 = 1_000_000_000;
+        let weight =
+            assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_reserve_asset());
+        cmp::min(hardcoded_weight, weight)
     }
     fn exchange_asset(_give: &MultiAssetFilter, _receive: &MultiAssets) -> Weight {
         Weight::MAX
@@ -131,14 +139,20 @@ impl<Call> XcmWeightInfo<Call> for CalamariXcmWeight<Call> {
         _reserve: &MultiLocation,
         _xcm: &Xcm<()>,
     ) -> Weight {
-        assets.weigh_multi_assets(XcmGeneric::<Runtime>::initiate_reserve_withdraw())
+        // Hardcoded until better understanding how to deal with worst case scenario of holding register
+        let hardcoded_weight: u64 = 1_000_000_000;
+        let weight = assets.weigh_multi_assets(XcmGeneric::<Runtime>::initiate_reserve_withdraw());
+        cmp::min(hardcoded_weight, weight)
     }
     fn initiate_teleport(
         assets: &MultiAssetFilter,
         _dest: &MultiLocation,
         _xcm: &Xcm<()>,
     ) -> Weight {
-        assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_teleport())
+        // Hardcoded until better understanding how to deal with worst case scenario of holding register
+        let hardcoded_weight: u64 = 1_000_000_000;
+        let weight = assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_teleport());
+        cmp::min(hardcoded_weight, weight)
     }
     fn query_holding(
         _query_id: &u64,
@@ -146,7 +160,10 @@ impl<Call> XcmWeightInfo<Call> for CalamariXcmWeight<Call> {
         _assets: &MultiAssetFilter,
         _max_response_weight: &u64,
     ) -> Weight {
-        XcmGeneric::<Runtime>::query_holding()
+        // Hardcoded until better understanding how to deal with worst case scenario of holding register
+        let hardcoded_weight: u64 = 1_000_000_000;
+        let weight = XcmGeneric::<Runtime>::query_holding();
+        cmp::min(hardcoded_weight, weight)
     }
     fn buy_execution(_fees: &MultiAsset, _weight_limit: &WeightLimit) -> Weight {
         XcmGeneric::<Runtime>::buy_execution()

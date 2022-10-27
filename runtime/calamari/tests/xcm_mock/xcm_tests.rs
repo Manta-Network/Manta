@@ -18,8 +18,6 @@
 
 #![cfg(test)]
 
-mod xcm_mock;
-
 use codec::Encode;
 use frame_support::{
     assert_err, assert_noop, assert_ok, weights::constants::WEIGHT_PER_SECOND, WeakBoundedVec,
@@ -27,12 +25,15 @@ use frame_support::{
 use manta_primitives::assets::AssetLocation;
 use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
 use xcm_executor::traits::{Convert, WeightBounds};
-use xcm_mock::{parachain::PALLET_ASSET_INDEX, *};
 use xcm_simulator::TestExt;
 
-use crate::xcm_mock::parachain::{
-    create_asset_location, create_asset_metadata, register_assets_on_parachain, AssetManager,
-    ParaTokenPerSecond, XcmExecutorConfig as ParaXcmExecutorConfig,
+use super::{
+    super::*,
+    parachain::{
+        create_asset_location, create_asset_metadata, register_assets_on_parachain, AssetManager,
+        ParaTokenPerSecond, XcmExecutorConfig as ParaXcmExecutorConfig, PALLET_ASSET_INDEX,
+    },
+    *,
 };
 
 // `reserved_transfer_asset` contains the following 4 instructions
@@ -47,42 +48,13 @@ fn calculate_fee(units_per_seconds: u128, weight: u64) -> u128 {
     units_per_seconds * (weight as u128) / (WEIGHT_PER_SECOND as u128)
 }
 
-fn weight_of_four_xcm_instructions_on_para() -> u64 {
-    let mut msg = Xcm(vec![
-        ReserveAssetDeposited(MultiAssets::from(vec![MultiAsset {
-            id: Concrete(MultiLocation {
-                parents: 1,
-                interior: X1(Parachain(1)),
-            }),
-            fun: Fungible(10000000000000),
-        }])),
-        ClearOrigin,
-        BuyExecution {
-            fees: MultiAsset {
-                id: Concrete(MultiLocation {
-                    parents: 1,
-                    interior: X1(Parachain(1)),
-                }),
-                fun: Fungible(10000000000000),
-            },
-            weight_limit: Limited(3999999999),
-        },
-        DepositAsset {
-            assets: Wild(All),
-            max_assets: 1,
-            beneficiary: MultiLocation {
-                parents: 0,
-                interior: X1(AccountId32 {
-                    network: Any,
-                    id: [
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0,
-                    ],
-                }),
-            },
-        },
-    ]);
+fn self_reserve_xtokens_weight_on_receiver() -> u64 {
+    let mut msg = self_reserve_xcm_message_receiver_side();
+    <ParaXcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap()
+}
 
+fn non_self_reserve_xtokens_weight_on_receiver() -> u64 {
+    let mut msg = to_reserve_xcm_message_receiver_side();
     <ParaXcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap()
 }
 
@@ -314,7 +286,6 @@ fn send_para_a_native_asset_to_para_b() {
     let para_b_source_location = create_asset_location(1, PARA_B_ID);
 
     let amount = INITIAL_BALANCE;
-    let weight = weight_of_four_xcm_instructions_on_para();
 
     let para_a_asset_metadata =
         create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, false);
@@ -366,7 +337,7 @@ fn send_para_a_native_asset_to_para_b() {
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             amount,
             Box::new(VersionedMultiLocation::V1(dest)),
-            weight
+            ADVERTISED_DEST_WEIGHT
         ));
         assert_eq!(
             parachain::Balances::free_balance(&ALICE),
@@ -437,7 +408,8 @@ fn send_para_a_native_asset_to_para_b_barriers_should_work() {
     };
 
     // AllowTopLevelPaidExecutionFrom<Everything> should fail because weight is not enough
-    let weight = weight_of_four_xcm_instructions_on_para() - 1;
+    let weight = self_reserve_xtokens_weight_on_receiver() - 1;
+    assert!(weight <= ADVERTISED_DEST_WEIGHT);
     ParaA::execute_with(|| {
         assert_ok!(parachain::XTokens::transfer(
             parachain::Origin::signed(ALICE),
@@ -481,8 +453,10 @@ fn send_insufficient_asset_from_para_a_to_para_b() {
 
     let amount = 8888888u128;
     let units_per_second_at_b = 1_250_000u128;
-    let dest_weight = weight_of_four_xcm_instructions_on_para();
-    let fee_at_b = calculate_fee(units_per_second_at_b, dest_weight);
+    let fee_at_b = calculate_fee(
+        units_per_second_at_b,
+        self_reserve_xtokens_weight_on_receiver(),
+    );
 
     let para_a_asset_metadata =
         create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, false);
@@ -534,7 +508,7 @@ fn send_insufficient_asset_from_para_a_to_para_b() {
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             amount,
             Box::new(VersionedMultiLocation::V1(dest.clone())),
-            dest_weight
+            ADVERTISED_DEST_WEIGHT
         ));
         assert_eq!(
             parachain::Balances::free_balance(&ALICE),
@@ -573,7 +547,7 @@ fn send_insufficient_asset_from_para_a_to_para_b() {
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             amount,
             Box::new(VersionedMultiLocation::V1(dest.clone())),
-            dest_weight
+            ADVERTISED_DEST_WEIGHT
         ));
         assert_eq!(
             parachain::Balances::free_balance(&ALICE),
@@ -648,7 +622,7 @@ fn send_para_a_native_asset_to_para_b_must_fail_cases() {
     };
 
     // High amount should fail on the sender side
-    let weight = weight_of_four_xcm_instructions_on_para() * 100_000_000;
+    let weight = self_reserve_xtokens_weight_on_receiver() * 100_000_000;
     ParaA::execute_with(|| {
         assert_err!(
             parachain::XTokens::transfer(
@@ -722,7 +696,6 @@ fn register_insufficient_with_zero_min_balance_should_fail() {
 #[test]
 fn send_para_a_custom_asset_to_para_b() {
     let amount = 321;
-    let weight_at_most = weight_of_four_xcm_instructions_on_para();
 
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
     let para_a_doge_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
@@ -799,7 +772,7 @@ fn send_para_a_custom_asset_to_para_b() {
             parachain::CurrencyId::MantaCurrency(doge_currency_id_on_a),
             amount,
             Box::new(VersionedMultiLocation::V1(alice_on_b)),
-            weight_at_most
+            ADVERTISED_DEST_WEIGHT
         ));
         assert_eq!(
             parachain::Assets::balance(doge_currency_id_on_a, &ALICE),
@@ -825,7 +798,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
     let para_b_source_location = create_asset_location(1, PARA_B_ID);
 
     let amount = 5000000u128;
-    let weight = weight_of_four_xcm_instructions_on_para();
+    let weight = non_self_reserve_xtokens_weight_on_receiver();
     let fee_on_b_when_send_back = calculate_fee(ParaTokenPerSecond::get().1, weight);
     assert!(fee_on_b_when_send_back < amount);
 
@@ -932,7 +905,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
     let para_c_source_location = create_asset_location(1, PARA_C_ID);
 
     let amount = 8888888u128;
-    let weight = weight_of_four_xcm_instructions_on_para();
+    let weight = non_self_reserve_xtokens_weight_on_receiver();
     let fee_at_reserve = calculate_fee(ParaTokenPerSecond::get().1, weight);
     assert!(amount >= fee_at_reserve * 2_u128);
 
@@ -1124,8 +1097,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 
     let amount = 222u128;
     let units_per_second = 1_250_000u128;
-    let dest_weight = weight_of_four_xcm_instructions_on_para();
-    let fee = calculate_fee(units_per_second, dest_weight);
+    let fee = calculate_fee(units_per_second, self_reserve_xtokens_weight_on_receiver());
 
     let para_a_asset_metadata =
         create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
@@ -1176,7 +1148,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
             amount,
             fee,
             Box::new(VersionedMultiLocation::V1(dest)),
-            dest_weight,
+            ADVERTISED_DEST_WEIGHT,
         ));
         assert_eq!(
             parachain::Balances::free_balance(&ALICE),
@@ -1199,9 +1171,11 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
 
     let mut amount = 8888888u128;
     let units_per_second = 1_250_000u128;
-    let dest_weight = weight_of_four_xcm_instructions_on_para();
-    let fee_at_b = calculate_fee(units_per_second, dest_weight);
-    let fee_at_a = calculate_fee(ParaTokenPerSecond::get().1, dest_weight);
+    let fee_at_b = calculate_fee(units_per_second, self_reserve_xtokens_weight_on_receiver());
+    let fee_at_a = calculate_fee(
+        ParaTokenPerSecond::get().1,
+        non_self_reserve_xtokens_weight_on_receiver(),
+    );
 
     let para_a_asset_metadata =
         create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
@@ -1274,7 +1248,7 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             amount,
             Box::new(VersionedMultiLocation::V1(alice_on_b.clone())),
-            dest_weight
+            ADVERTISED_DEST_WEIGHT
         ));
         assert_eq!(
             parachain::Balances::free_balance(&ALICE),
@@ -1307,7 +1281,7 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_b),
             amount,
             Box::new(VersionedMultiLocation::V1(alice_on_c)),
-            dest_weight
+            ADVERTISED_DEST_WEIGHT
         ));
         assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), 0);
     });
@@ -2066,7 +2040,7 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
             parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
             100,
             Box::new(VersionedMultiLocation::V1(dest)),
-            weight_of_four_xcm_instructions_on_para()
+            ADVERTISED_DEST_WEIGHT
         ));
         // free execution, full amount received
         assert_eq!(
@@ -2567,14 +2541,13 @@ fn transfer_multicurrencies_should_work_scenarios() {
 
     // Send some ParaB tokens from Alice on B to Alice on A
     let amount_to_a = 10000000;
-    let weight = weight_of_four_xcm_instructions_on_para();
     ParaB::execute_with(|| {
         assert_ok!(parachain::XTokens::transfer(
             Some(ALICE).into(),
             parachain::CurrencyId::MantaCurrency(b_asset_id_on_b),
             amount_to_a,
             Box::new(VersionedMultiLocation::V1(dest.clone())),
-            weight,
+            ADVERTISED_DEST_WEIGHT,
         ));
     });
 
@@ -2614,7 +2587,7 @@ fn transfer_multicurrencies_should_work_scenarios() {
             ],
             1,
             Box::new(VersionedMultiLocation::V1(dest.clone())),
-            weight,
+            ADVERTISED_DEST_WEIGHT,
         ));
 
         assert_eq!(
@@ -2775,7 +2748,6 @@ fn transfer_multicurrencies_should_fail_scenarios() {
     );
 
     let amount = 1000;
-    let weight = weight_of_four_xcm_instructions_on_para();
     assert_ok!(ParaA::execute_with(|| {
         parachain::Assets::mint(
             parachain::Origin::signed(parachain::AssetManager::account_id()),
@@ -2801,7 +2773,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
             parachain::CurrencyId::MantaCurrency(c_asset_id_on_c),
             amount,
             Box::new(VersionedMultiLocation::V1(dest.clone())),
-            weight,
+            ADVERTISED_DEST_WEIGHT,
         ));
     });
     ParaB::execute_with(|| {
@@ -2810,7 +2782,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
             parachain::CurrencyId::MantaCurrency(b_asset_id_on_b),
             amount,
             Box::new(VersionedMultiLocation::V1(dest)),
-            weight,
+            ADVERTISED_DEST_WEIGHT,
         ));
     });
 
@@ -2860,7 +2832,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
                 ],
                 2,
                 Box::new(VersionedMultiLocation::V1(dest.clone())),
-                weight,
+                ADVERTISED_DEST_WEIGHT,
             ),
             // Assets and fee must have the same reserve
             orml_xtokens::Error::<parachain::Runtime>::DistinctReserveForAssetAndFee
@@ -2889,7 +2861,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
                 ],
                 2,
                 Box::new(VersionedMultiLocation::V1(dest.clone())),
-                weight,
+                ADVERTISED_DEST_WEIGHT,
             ),
             // MaxAssetsForTransfer is set to 3 in the mock
             orml_xtokens::Error::<parachain::Runtime>::TooManyAssetsBeingSent
@@ -2910,7 +2882,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
                 ],
                 2,
                 Box::new(VersionedMultiLocation::V1(dest.clone())),
-                weight,
+                ADVERTISED_DEST_WEIGHT,
             ),
             orml_xtokens::Error::<parachain::Runtime>::AssetIndexNonExistent
         );
@@ -2927,7 +2899,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
                 ],
                 1,
                 Box::new(VersionedMultiLocation::V1(dest.clone())),
-                weight,
+                ADVERTISED_DEST_WEIGHT,
             ),
             // 0 fees should not work
             orml_xtokens::Error::<parachain::Runtime>::ZeroAmount
@@ -2945,7 +2917,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
                 ],
                 1,
                 Box::new(VersionedMultiLocation::V1(dest.clone())),
-                weight,
+                ADVERTISED_DEST_WEIGHT,
             ),
             // 0 assets should not work
             orml_xtokens::Error::<parachain::Runtime>::ZeroAmount
@@ -2985,7 +2957,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
             ],
             1,
             Box::new(VersionedMultiLocation::V1(dest.clone())),
-            weight,
+            ADVERTISED_DEST_WEIGHT,
         ));
 
         assert_eq!(
@@ -3040,4 +3012,32 @@ fn transfer_multicurrencies_should_fail_scenarios() {
             INITIAL_BALANCE - amount
         );
     });
+}
+
+#[test]
+fn test_receiver_side_weight() {
+    let weight = <ParaXcmExecutorConfig as xcm_executor::Config>::Weigher::weight(
+        &mut self_reserve_xcm_message_receiver_side::<parachain::Call>(),
+    )
+    .unwrap();
+    assert!(weight <= ADVERTISED_DEST_WEIGHT);
+
+    let weight = <ParaXcmExecutorConfig as xcm_executor::Config>::Weigher::weight(
+        &mut to_reserve_xcm_message_receiver_side::<parachain::Call>(),
+    )
+    .unwrap();
+    assert!(weight <= ADVERTISED_DEST_WEIGHT);
+}
+
+#[test]
+fn test_sender_side_xcm_weight() {
+    let mut msg = self_reserve_xcm_message_sender_side::<parachain::Call>();
+    let weight =
+        <ParaXcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
+    assert!(weight < ADVERTISED_DEST_WEIGHT);
+
+    let mut msg = to_reserve_xcm_message_sender_side::<parachain::Call>();
+    let weight =
+        <ParaXcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
+    assert!(weight < ADVERTISED_DEST_WEIGHT);
 }

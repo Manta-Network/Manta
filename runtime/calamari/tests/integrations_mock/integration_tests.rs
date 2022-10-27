@@ -16,16 +16,16 @@
 
 //! Calamari Parachain Integration Tests.
 
+#![cfg(test)]
 #![allow(clippy::identity_op)] // keep e.g. 1 * DAYS for legibility
 
-mod common;
-use common::{info_from_weight, last_event, mock::*, root_origin, INITIAL_BALANCE};
+use super::{super::*, info_from_weight, last_event, mock::*, root_origin, INITIAL_BALANCE};
 
 pub use calamari_runtime::{
     assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},
     currency::KMA,
     fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
-    xcm_config::XcmFeesAccount,
+    xcm_config::{XcmExecutorConfig, XcmFeesAccount},
     AssetManager, Assets, Authorship, Balances, CalamariVesting, Council, DefaultBlocksPerRound,
     Democracy, EnactmentPeriod, LaunchPeriod, LeaveDelayRounds, NativeTokenExistentialDeposit,
     Origin, ParachainStaking, Period, PolkadotXcm, Runtime, TechnicalCommittee, Timestamp,
@@ -58,6 +58,7 @@ use xcm::{
     },
     VersionedMultiLocation,
 };
+use xcm_executor::traits::WeightBounds;
 
 use pallet_transaction_payment::ChargeTransactionPayment;
 
@@ -1405,4 +1406,30 @@ fn concrete_fungible_ledger_can_withdraw_works() {
                 FungibleLedgerError::CannotWithdrawMoreThan(0)
             );
         });
+}
+
+#[test]
+fn test_receiver_side_weights() {
+    let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(
+        &mut self_reserve_xcm_message_receiver_side::<Call>(),
+    )
+    .unwrap();
+    assert!(weight <= ADVERTISED_DEST_WEIGHT);
+
+    let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(
+        &mut to_reserve_xcm_message_receiver_side::<Call>(),
+    )
+    .unwrap();
+    assert!(weight <= ADVERTISED_DEST_WEIGHT);
+}
+
+#[test]
+fn test_sender_side_xcm_weights() {
+    let mut msg = self_reserve_xcm_message_sender_side::<Call>();
+    let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
+    assert!(weight < ADVERTISED_DEST_WEIGHT);
+
+    let mut msg = to_reserve_xcm_message_sender_side::<Call>();
+    let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
+    assert!(weight < ADVERTISED_DEST_WEIGHT);
 }

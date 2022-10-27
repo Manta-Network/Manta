@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## v3.4.3
+### Changed
+- [\#836](https://github.com/Manta-Network/Manta/pull/836) client trait bound refactor [CA]
+- [\#848](https://github.com/Manta-Network/Manta/pull/848) Fix XCM tests [CADO]
+- [\#860](https://github.com/Manta-Network/Manta/pull/860) Don't include testing helpers in release code [CA]
+- [\#865](https://github.com/Manta-Network/Manta/pull/865) Aura slot skip fix v2 [CA]
+
+### Fixed
+- [\#846](https://github.com/Manta-Network/Manta/pull/846) Fix sequence skipping when a collator misses its slot [CA]
+- [\#867](https://github.com/Manta-Network/Manta/pull/867) Fix round changes [CA]
+
+## v3.4.2
+### Changed
+- [\#834](https://github.com/Manta-Network/Manta/pull/834) Followups to Staking [CA]
+- [\#840](https://github.com/Manta-Network/Manta/pull/840) Improve mock xcm [CADO]
+
+### Fixed
+- [\#835](https://github.com/Manta-Network/Manta/pull/835) align block number type in tests [CADO]
+
+## v3.4.1
+### Fixed
+- [\#822](https://github.com/Manta-Network/Manta/pull/822) Hardcode weight for instructions with  MultiAssetFilter params [CADO]
+- [\#818](https://github.com/Manta-Network/Manta/pull/818) Fix Block Producer Selection [CA]
+
 ## v3.4.0
 ### Added
 - [\#745](https://github.com/Manta-Network/Manta/pull/745) Workflow to check for labels
