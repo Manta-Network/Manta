@@ -15,9 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    benchmark::precomputed_coins::{
-        MINT, PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, RECLAIM, RECLAIM_INPUT,
-    },
+    benchmark::precomputed_coins::{PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT},
     types::{Asset, AssetId, AssetValue},
     Call, Config, Event, Pallet, TransferPost,
 };
@@ -72,7 +70,8 @@ where
     .expect("Unable to mint existential deposit to pallet account.");
 }
 
-pub const COINS_SIZE: usize = 87250004;
+// pub const COINS_SIZE: usize = 87250004; // 250k
+pub const COINS_SIZE: usize = 977;
 pub const COINS: &'static [u8; COINS_SIZE] = include_bytes!("./precomputed_mints");
 
 benchmarks! {
@@ -124,9 +123,10 @@ benchmarks! {
             ).unwrap();
         }
 
-        for i in 0 .. 250000 {
-            let start = 4 + i * 349;
-            let end = start + 349;
+        for i in 0 .. 2 {
+            // 349 fo v0
+            let start = 1 + i * 488;
+            let end = start + 488;
             let coin: TransferPost = TransferPost::decode(&mut &COINS[start..end]).unwrap();
             Pallet::<T>::to_private(
                 origin.clone(),
