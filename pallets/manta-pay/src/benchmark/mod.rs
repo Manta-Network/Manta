@@ -75,51 +75,68 @@ where
     todo!()
 }
 
-benchmarks! {
-    to_private {
-        let caller: T::AccountId = whitelisted_caller();
-        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        let mint_post = TransferPost::decode(&mut &*MINT).unwrap();
-        let asset = mint_post.source(0).unwrap();
-        init_asset::<T>(&caller, asset.id, asset.value);
-    }: to_private (
-        RawOrigin::Signed(caller.clone()),
-        mint_post
-    ) verify {
-        // FIXME: add balance checking
-        assert_last_event::<T, _>(Event::ToPrivate { asset, source: caller });
-    }
+pub const COINS_SIZE: usize = 87250004;
+pub const COINS: &'static [u8; COINS_SIZE] = include_bytes!("./precomputed_mints");
 
-    to_public {
-        let caller: T::AccountId = whitelisted_caller();
-        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        for coin in RECLAIM_INPUT {
-            Pallet::<T>::to_private(
-                origin.clone(),
-                TransferPost::decode(&mut &**coin).unwrap()
-            ).unwrap();
-        }
-        let reclaim_post = TransferPost::decode(&mut &*RECLAIM).unwrap();
-        let asset = reclaim_post.sink(0).unwrap();
-        init_asset::<T>(&caller, asset.id, asset.value);
-    }: to_public (
-        RawOrigin::Signed(caller.clone()),
-        reclaim_post
-    ) verify {
-        // FIXME: add balance checking
-        assert_last_event::<T, _>(Event::ToPublic { asset, sink: caller });
-    }
+benchmarks! {
+    // to_private {
+    //     let caller: T::AccountId = whitelisted_caller();
+    //     let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+    //     let mint_post = TransferPost::decode(&mut &*MINT).unwrap();
+    //     let asset = mint_post.source(0).unwrap();
+    //     init_asset::<T>(&caller, asset.id, asset.value);
+    // }: to_private (
+    //     RawOrigin::Signed(caller.clone()),
+    //     mint_post
+    // ) verify {
+    //     // FIXME: add balance checking
+    //     assert_last_event::<T, _>(Event::ToPrivate { asset, source: caller });
+    // }
+
+    // to_public {
+    //     let caller: T::AccountId = whitelisted_caller();
+    //     let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+    //     for coin in RECLAIM_INPUT {
+    //         Pallet::<T>::to_private(
+    //             origin.clone(),
+    //             TransferPost::decode(&mut &**coin).unwrap()
+    //         ).unwrap();
+    //     }
+    //     let reclaim_post = TransferPost::decode(&mut &*RECLAIM).unwrap();
+    //     let asset = reclaim_post.sink(0).unwrap();
+    //     init_asset::<T>(&caller, asset.id, asset.value);
+    // }: to_public (
+    //     RawOrigin::Signed(caller.clone()),
+    //     reclaim_post
+    // ) verify {
+    //     // FIXME: add balance checking
+    //     assert_last_event::<T, _>(Event::ToPublic { asset, sink: caller });
+    // }
 
     private_transfer {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, Pallet::<T>::field_from_id(8), 1_000_000u128);
+        for i in 8 .. 4000 {
+            init_asset::<T>(&caller, Pallet::<T>::field_from_id(i), 1_000_000_000_000_000_000_000_000_000_000u128);
+        }
+
         for coin in PRIVATE_TRANSFER_INPUT {
             Pallet::<T>::to_private(
                 origin.clone(),
                 TransferPost::decode(&mut &**coin).unwrap(),
             ).unwrap();
         }
+
+        for i in 0 .. 250000 {
+            let start = 4 + i * 349;
+            let end = start + 349;
+            let coin: TransferPost = TransferPost::decode(&mut &COINS[start..end]).unwrap();
+            Pallet::<T>::to_private(
+                origin.clone(),
+                coin
+            ).unwrap();
+        }
+
         let private_transfer_post = TransferPost::decode(&mut &*PRIVATE_TRANSFER).unwrap();
     }: private_transfer (
         RawOrigin::Signed(caller.clone()),
@@ -128,21 +145,21 @@ benchmarks! {
         assert_last_event::<T, _>(Event::PrivateTransfer { origin: caller });
     }
 
-    public_transfer {
-        let caller: T::AccountId = whitelisted_caller();
-        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        let id = Pallet::<T>::field_from_id(8);
-        init_asset::<T>(&caller, id, 1_000_000u128);
-        let asset = Asset::new(id, 100);
-        let sink =  Pallet::<T>::account_id();
-    }: public_transfer (
-        RawOrigin::Signed(caller.clone()),
-        asset,
-        sink.clone()
-    ) verify {
-        // FIXME: add balance checking
-        assert_last_event::<T, _>(Event::Transfer { asset, source: caller.clone(), sink });
-    }
+    // public_transfer {
+    //     let caller: T::AccountId = whitelisted_caller();
+    //     let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+    //     let id = Pallet::<T>::field_from_id(8);
+    //     init_asset::<T>(&caller, id, 1_000_000u128);
+    //     let asset = Asset::new(id, 100);
+    //     let sink =  Pallet::<T>::account_id();
+    // }: public_transfer (
+    //     RawOrigin::Signed(caller.clone()),
+    //     asset,
+    //     sink.clone()
+    // ) verify {
+    //     // FIXME: add balance checking
+    //     assert_last_event::<T, _>(Event::Transfer { asset, source: caller.clone(), sink });
+    // }
 }
 
 // TODO: impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
