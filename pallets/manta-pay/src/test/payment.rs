@@ -32,7 +32,7 @@ use manta_crypto::{
 };
 use manta_pay::{
     config::{
-        utxo::v1::MerkleTreeConfiguration, ConstraintField, FullParametersRef, MultiProvingContext,
+        utxo::v2::MerkleTreeConfiguration, ConstraintField, FullParametersRef, MultiProvingContext,
         Parameters, PrivateTransfer, ProvingContext, TransferPost, UtxoAccumulatorModel,
     },
     crypto::constraint::arkworks::Fp,

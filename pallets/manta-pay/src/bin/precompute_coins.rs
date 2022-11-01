@@ -24,7 +24,7 @@ use manta_crypto::{
 };
 use manta_pay::{
     config::{
-        utxo::v1::MerkleTreeConfiguration, AssetId, AssetValue, MultiProvingContext, Parameters,
+        utxo::v2::MerkleTreeConfiguration, AssetId, AssetValue, MultiProvingContext, Parameters,
         ProvingContext, UtxoAccumulatorModel,
     },
     parameters::load_parameters,

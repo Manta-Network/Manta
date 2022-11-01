@@ -21,7 +21,7 @@ use manta_crypto::merkle_tree;
 use manta_pay::{
     config::{
         self,
-        utxo::v1::{self, MerkleTreeConfiguration},
+        utxo::v2::{self, MerkleTreeConfiguration},
     },
     crypto::poseidon::encryption::{self, BlockArray, CiphertextBlock},
     manta_crypto::{
@@ -38,7 +38,7 @@ use scale_info::TypeInfo;
 #[cfg(feature = "rpc")]
 use manta_pay::manta_util::serde::{Deserialize, Serialize};
 
-pub use manta_pay::config::utxo::v1::{Checkpoint, RawCheckpoint};
+pub use manta_pay::config::utxo::v2::{Checkpoint, RawCheckpoint};
 
 /// Encodes the SCALE encodable `value` into a byte array with the given length `N`.
 #[inline]
