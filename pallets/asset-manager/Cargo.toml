@@ -4,8 +4,8 @@ edition = "2021"
 homepage = "https://manta.network"
 license = "GPL-3.0"
 name = "pallet-asset-manager"
-repository = "https://github.com/Manta-Network/Manta/"
-version = "3.4.0"
+repository = 'https://github.com/Manta-Network/Manta/'
+version = '3.4.3'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.1.2", default-features = false }
