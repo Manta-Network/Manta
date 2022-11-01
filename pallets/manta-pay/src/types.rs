@@ -187,9 +187,9 @@ pub struct OutgoingNote {
     pub ciphertext: OutgoingCiphertext,
 }
 
-impl From<v1::OutgoingNote> for OutgoingNote {
+impl From<v2::OutgoingNote> for OutgoingNote {
     #[inline]
-    fn from(note: v1::OutgoingNote) -> Self {
+    fn from(note: v2::OutgoingNote) -> Self {
         Self {
             ephemeral_public_key: encode(note.ciphertext.ephemeral_public_key),
             tag: encode(note.ciphertext.ciphertext.tag.0),
@@ -201,7 +201,7 @@ impl From<v1::OutgoingNote> for OutgoingNote {
     }
 }
 
-impl TryFrom<OutgoingNote> for v1::OutgoingNote {
+impl TryFrom<OutgoingNote> for v2::OutgoingNote {
     type Error = Error;
 
     #[inline]
@@ -285,9 +285,9 @@ pub struct IncomingNote {
     pub ciphertext: IncomingCiphertext,
 }
 
-impl From<v1::IncomingNote> for IncomingNote {
+impl From<v2::IncomingNote> for IncomingNote {
     #[inline]
-    fn from(note: v1::IncomingNote) -> Self {
+    fn from(note: v2::IncomingNote) -> Self {
         Self {
             ephemeral_public_key: encode(note.ciphertext.ephemeral_public_key),
             tag: encode(note.ciphertext.ciphertext.tag.0),
@@ -299,7 +299,7 @@ impl From<v1::IncomingNote> for IncomingNote {
     }
 }
 
-impl TryFrom<IncomingNote> for v1::IncomingNote {
+impl TryFrom<IncomingNote> for v2::IncomingNote {
     type Error = Error;
 
     #[inline]
@@ -338,9 +338,9 @@ pub struct FullIncomingNote {
     pub incoming_note: IncomingNote,
 }
 
-impl From<v1::FullIncomingNote> for FullIncomingNote {
+impl From<v2::FullIncomingNote> for FullIncomingNote {
     #[inline]
-    fn from(note: v1::FullIncomingNote) -> Self {
+    fn from(note: v2::FullIncomingNote) -> Self {
         Self {
             address_partition: note.address_partition,
             incoming_note: IncomingNote::from(note.incoming_note),
@@ -348,7 +348,7 @@ impl From<v1::FullIncomingNote> for FullIncomingNote {
     }
 }
 
-impl TryFrom<FullIncomingNote> for v1::FullIncomingNote {
+impl TryFrom<FullIncomingNote> for v2::FullIncomingNote {
     type Error = Error;
 
     #[inline]
@@ -383,7 +383,7 @@ pub struct Utxo {
 impl Utxo {
     ///
     #[inline]
-    pub fn from(utxo: v1::Utxo) -> Utxo {
+    pub fn from(utxo: v2::Utxo) -> Utxo {
         Self {
             is_transparent: utxo.is_transparent,
             public_asset: utxo.public_asset.into(),
@@ -393,8 +393,8 @@ impl Utxo {
 
     ///
     #[inline]
-    pub fn try_into(self) -> Result<v1::Utxo, Error> {
-        Ok(v1::Utxo {
+    pub fn try_into(self) -> Result<v2::Utxo, Error> {
+        Ok(v2::Utxo {
             is_transparent: self.is_transparent,
             public_asset: self.public_asset.try_into()?,
             commitment: decode(self.commitment)?,
@@ -444,9 +444,9 @@ pub struct AuthorizationSignature {
     pub signature: (Scalar, Group),
 }
 
-impl From<v1::AuthorizationSignature> for AuthorizationSignature {
+impl From<v2::AuthorizationSignature> for AuthorizationSignature {
     #[inline]
-    fn from(signature: v1::AuthorizationSignature) -> Self {
+    fn from(signature: v2::AuthorizationSignature) -> Self {
         Self {
             authorization_key: encode(signature.authorization_key),
             signature: (
@@ -457,7 +457,7 @@ impl From<v1::AuthorizationSignature> for AuthorizationSignature {
     }
 }
 
-impl TryFrom<AuthorizationSignature> for v1::AuthorizationSignature {
+impl TryFrom<AuthorizationSignature> for v2::AuthorizationSignature {
     type Error = Error;
 
     #[inline]
