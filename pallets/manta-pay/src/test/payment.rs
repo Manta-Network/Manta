@@ -499,20 +499,6 @@ fn double_spend_in_reclaim_should_not_work() {
 }
 
 #[test]
-fn singile_tst() {
-    let mut rng = OsRng;
-    new_test_ext().execute_with(|| {
-        let total_free_supply = AssetValue(rng.gen());
-        initialize_test(NATIVE_ASSET_ID, total_free_supply + DEFAULT_ASSET_ED);
-        mint_tokens(
-            NATIVE_ASSET_ID,
-            &value_distribution(5, total_free_supply, &mut rng),
-            &mut rng,
-        );
-    });
-}
-
-#[test]
 fn to_private_lower_thant_asset_limit_should_works() {
     new_test_ext().execute_with(|| {
         initialize_test(NATIVE_ASSET_ID, AssetValue(10_000));
