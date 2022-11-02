@@ -182,6 +182,15 @@ impl pallet_tx_pause::Config for Runtime {
     type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
+impl pallet_tx_limit::Config for Runtime {
+    type Event = Event;
+    type UpdateOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 1, 2>,
+    >;
+    type WeightInfo = weights::pallet_tx_limit::SubstrateWeight<Runtime>;
+}
+
 // Don't allow permission-less asset creation.
 pub struct BaseFilter;
 impl Contains<Call> for BaseFilter {
@@ -833,6 +842,7 @@ construct_runtime!(
         // Assets management
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
+        TransactionLimit: pallet_tx_limit::{Pallet, Call, Storage, Event<T>} = 47,
 
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
@@ -904,6 +914,7 @@ mod benches {
         // Manta pallets
         [calamari_vesting, CalamariVesting]
         [pallet_tx_pause, TransactionPause]
+        [pallet_tx_limit, TransactionLimit]
         [manta_collator_selection, CollatorSelection]
         [pallet_asset_manager, AssetManager]
         [pallet_parachain_staking, ParachainStaking]

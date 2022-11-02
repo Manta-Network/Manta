@@ -95,6 +95,7 @@ manta-primitives = { path = '../../primitives/manta', default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
+pallet-tx-limit = { path = '../../pallets/tx-limit', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
 
@@ -174,6 +175,7 @@ runtime-benchmarks = [
   'pallet-membership/runtime-benchmarks',
   'calamari-vesting/runtime-benchmarks',
   'pallet-tx-pause/runtime-benchmarks',
+  'pallet-tx-limit/runtime-benchmarks',
   'pallet-treasury/runtime-benchmarks',
   'pallet-parachain-staking/runtime-benchmarks',
   'pallet-preimage/runtime-benchmarks',
@@ -204,6 +206,7 @@ try-runtime = [
   'pallet-treasury/try-runtime',
   'pallet-assets/try-runtime',
   'pallet-tx-pause/try-runtime',
+  'pallet-tx-limit/try-runtime',
   'pallet-asset-manager/try-runtime',
   'runtime-common/try-runtime',
 ]
@@ -268,6 +271,7 @@ std = [
   'manta-collator-selection/std',
   'calamari-vesting/std',
   'pallet-tx-pause/std',
+  'pallet-tx-limit/std',
   'pallet-treasury/std',
   'pallet-assets/std',
   'pallet-asset-manager/std',

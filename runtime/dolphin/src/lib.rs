@@ -174,6 +174,12 @@ impl pallet_tx_pause::Config for Runtime {
     type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
+impl pallet_tx_limit::Config for Runtime {
+    type Event = Event;
+    type UpdateOrigin = EnsureRoot<AccountId>;
+    type WeightInfo = weights::pallet_tx_limit::SubstrateWeight<Runtime>;
+}
+
 // Don't allow permission-less asset creation.
 pub struct BaseFilter;
 impl Contains<Call> for BaseFilter {
@@ -747,6 +753,7 @@ construct_runtime!(
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
+        TransactionLimit: pallet_tx_limit::{Pallet, Call, Storage, Event<T>} = 48,
     }
 );
 
@@ -817,6 +824,7 @@ mod benches {
         [manta_collator_selection, CollatorSelection]
         [pallet_manta_pay, MantaPay]
         [pallet_asset_manager, AssetManager]
+        [pallet_tx_limit, TransactionLimit]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );

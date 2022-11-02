@@ -1005,6 +1005,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
+ "pallet-tx-limit",
  "pallet-tx-pause",
  "pallet-utility",
  "pallet-xcm",
@@ -2417,6 +2418,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
+ "pallet-tx-limit",
  "pallet-tx-pause",
  "pallet-utility",
  "pallet-xcm",
@@ -6388,6 +6390,7 @@ dependencies = [
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",
+ "pallet-tx-limit",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
  "scale-info",
@@ -6829,6 +6832,23 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-tx-limit"
+version = "3.4.3"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "manta-primitives",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]

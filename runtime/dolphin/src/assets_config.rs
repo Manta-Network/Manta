@@ -162,4 +162,5 @@ impl pallet_manta_pay::Config for Runtime {
     type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
     type AssetConfig = DolphinAssetConfig;
     type PalletId = MantaPayPalletId;
+    type TransactionLimit = TransactionLimit;
 }

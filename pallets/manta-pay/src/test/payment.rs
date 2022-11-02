@@ -497,3 +497,76 @@ fn double_spend_in_reclaim_should_not_work() {
         });
     }
 }
+
+#[test]
+fn singile_tst() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        let total_free_supply = AssetValue(rng.gen());
+        initialize_test(NATIVE_ASSET_ID, total_free_supply + DEFAULT_ASSET_ED);
+        mint_tokens(
+            NATIVE_ASSET_ID,
+            &value_distribution(5, total_free_supply, &mut rng),
+            &mut rng,
+        );
+    });
+}
+
+#[test]
+fn to_private_lower_thant_asset_limit_should_works() {
+    new_test_ext().execute_with(|| {
+        initialize_test(NATIVE_ASSET_ID, AssetValue(10_000));
+        let mut rng = OsRng;
+        let value = AssetValue(1000);
+        let id = NATIVE_ASSET_ID;
+        assert_ok!(MantaPayPallet::to_private(
+            Origin::signed(ALICE),
+            sample_mint(value.with(id), &mut rng).into()
+        ));
+
+        assert_ok!(pallet_tx_limit::Pallet::<Test>::set_asset_limit(
+            Origin::root(),
+            1,
+            500
+        ));
+
+        assert_noop!(
+            MantaPayPallet::to_private(
+                Origin::signed(ALICE),
+                sample_mint(AssetValue(501).with(id), &mut rng).into()
+            ),
+            Error::<Test>::InvalidSourceAccount
+        );
+        assert_ok!(MantaPayPallet::to_private(
+            Origin::signed(ALICE),
+            sample_mint(AssetValue(499).with(id), &mut rng).into()
+        ));
+
+        assert_ok!(pallet_tx_limit::Pallet::<Test>::set_asset_limit(
+            Origin::root(),
+            1,
+            1000
+        ));
+        assert_noop!(
+            MantaPayPallet::to_private(
+                Origin::signed(ALICE),
+                sample_mint(AssetValue(1001).with(id), &mut rng).into()
+            ),
+            Error::<Test>::InvalidSourceAccount
+        );
+        assert_ok!(MantaPayPallet::to_private(
+            Origin::signed(ALICE),
+            sample_mint(AssetValue(999).with(id), &mut rng).into()
+        ));
+
+        assert_ok!(pallet_tx_limit::Pallet::<Test>::unset_asset_limit(
+            Origin::root(),
+            1
+        ));
+
+        assert_ok!(MantaPayPallet::to_private(
+            Origin::signed(ALICE),
+            sample_mint(AssetValue(500).with(id), &mut rng).into()
+        ));
+    });
+}

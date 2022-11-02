@@ -48,6 +48,17 @@ pub trait AssetMetadata {
     fn is_sufficient(&self) -> bool;
 }
 
+/// The limitation of asset
+pub trait TransactionLimitation {
+    fn ensure_valid(asset_id: AssetId, amount: Balance) -> bool;
+}
+
+impl TransactionLimitation for () {
+    fn ensure_valid(_asset_id: AssetId, _amount: Balance) -> bool {
+        true
+    }
+}
+
 /// The registrar trait: defines the interface of creating an asset in the asset implementation
 /// layer. We may revisit this interface design (e.g. add change asset interface). However, change
 /// in StorageMetadata should be rare.

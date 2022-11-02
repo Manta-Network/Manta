@@ -110,6 +110,7 @@ manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.
 pallet-asset-manager = { path = "../asset-manager" }
 pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
+pallet-tx-limit = { path = "../tx-limit" }
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 tempfile = "3.3.0"
