@@ -95,8 +95,9 @@ pub const UTXO_ACCUMULATOR_OUTPUT_LENGTH: usize = 32;
 /// UTXO Accumulator Output Type
 pub type UtxoAccumulatorOutput = [u8; UTXO_ACCUMULATOR_OUTPUT_LENGTH];
 
-///
-pub const PROOF_LENGTH: usize = 192;
+/// Compressed size of 2 g1 curve points + 1 g2 curve point
+/// A, C from g1 curve, B from g2 curve
+pub const PROOF_LENGTH: usize = 128;
 
 /// Transfer Proof Type
 pub type Proof = [u8; PROOF_LENGTH];
@@ -524,19 +525,32 @@ impl TransferPost {
 impl From<config::TransferPost> for TransferPost {
     #[inline]
     fn from(post: config::TransferPost) -> Self {
+        let authorization_signature = post.authorization_signature.map(Into::into);
+        println!(
+            "from TransferPost authorization_signature {:?} \n",
+            authorization_signature
+        );
+        let asset_id = post.body.asset_id.map(encode);
+        println!("from TransferPost asset_id {:?} \n", asset_id);
+        let sender_posts = post.body.sender_posts.into_iter().map(Into::into).collect();
+        println!("try_from TransferPost sender_posts \n");
+        let receiver_posts = post
+            .body
+            .receiver_posts
+            .into_iter()
+            .map(Into::into)
+            .collect();
+        println!("try_from TransferPost receiver_posts \n");
+        let proof = encode(post.body.proof);
+        println!("try_from TransferPost proof encode \n");
         Self {
-            authorization_signature: post.authorization_signature.map(Into::into),
-            asset_id: post.body.asset_id.map(encode),
+            authorization_signature,
+            asset_id,
             sources: post.body.sources,
-            sender_posts: post.body.sender_posts.into_iter().map(Into::into).collect(),
-            receiver_posts: post
-                .body
-                .receiver_posts
-                .into_iter()
-                .map(Into::into)
-                .collect(),
+            sender_posts,
+            receiver_posts,
             sinks: post.body.sinks,
-            proof: encode(post.body.proof),
+            proof,
         }
     }
 }
@@ -546,6 +560,11 @@ impl TryFrom<TransferPost> for config::TransferPost {
 
     #[inline]
     fn try_from(post: TransferPost) -> Result<Self, Self::Error> {
+        // let asset_id = post.asset_id.map(decode).transpose()?;
+        // println!("try_from TransferPost asset_id \n");
+        println!("try_from TransferPost proof_len {:?} \n", post.proof);
+        let proof = decode(post.proof)?;
+        println!("try_from TransferPost proof \n");
         Ok(Self {
             authorization_signature: post
                 .authorization_signature
@@ -565,7 +584,7 @@ impl TryFrom<TransferPost> for config::TransferPost {
                     .map(TryInto::try_into)
                     .collect::<Result<_, _>>()?,
                 sinks: post.sinks.into_iter().map(Into::into).collect(),
-                proof: decode(post.proof)?,
+                proof,
             },
         })
     }
