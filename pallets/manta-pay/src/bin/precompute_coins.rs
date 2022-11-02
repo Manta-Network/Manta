@@ -50,15 +50,19 @@ fn sample_to_private<R>(
     proving_context: &ProvingContext,
     parameters: &Parameters,
     utxo_accumulator_model: &UtxoAccumulatorModel,
+    asset_id: AssetId,
+    value: AssetValue,
     rng: &mut R,
 ) -> TransferPost
 where
     R: CryptoRng + RngCore + ?Sized,
 {
-    TransferPost::from(test::payment::to_private::prove(
+    TransferPost::from(test::payment::unsafe_to_private::unsafe_no_prove_full(
         proving_context,
         parameters,
         utxo_accumulator_model,
+        asset_id,
+        value,
         rng,
     ))
 }
@@ -185,6 +189,8 @@ fn main() -> Result<()> {
         &proving_context.to_private,
         &parameters,
         &utxo_accumulator_model,
+        asset_id,
+        10_000,
         &mut rng,
     );
     let (private_transfer_input, private_transfer) = sample_private_transfer(
