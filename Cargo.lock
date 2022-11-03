@@ -764,6 +764,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "bip32"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "873faa4363bfc54c36a48321da034c92a0645a363eed34d948683ffc1706e37f"
+dependencies = [
+ "bs58",
+ "hmac 0.11.0",
+ "k256",
+ "once_cell",
+ "pbkdf2 0.9.0",
+ "rand_core 0.6.4",
+ "ripemd160",
+ "sha2 0.9.9",
+ "subtle",
+ "zeroize",
+]
+
+[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -921,6 +939,9 @@ name = "bs58"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "771fe0050b883fcc3ea2359b1a96bcfbc090b7116eae7c3c512c7a083fdf23d3"
+dependencies = [
+ "sha2 0.9.9",
+]
 
 [[package]]
 name = "bstr"
@@ -4044,6 +4065,8 @@ dependencies = [
  "ecdsa",
  "elliptic-curve",
  "sec1",
+ "sha2 0.9.9",
+ "sha3 0.9.1",
 ]
 
 [[package]]
@@ -5032,8 +5055,8 @@ dependencies = [
 
 [[package]]
 name = "manta-accounting"
-version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#af757af1d3d951ea82fce51dfe0eb59a449ffb88"
+version = "0.5.6"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#82401beac45378c64674afb83a76d6713b547d96"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5076,8 +5099,8 @@ dependencies = [
 
 [[package]]
 name = "manta-crypto"
-version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#af757af1d3d951ea82fce51dfe0eb59a449ffb88"
+version = "0.5.6"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#82401beac45378c64674afb83a76d6713b547d96"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -5098,8 +5121,8 @@ dependencies = [
 
 [[package]]
 name = "manta-parameters"
-version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#af757af1d3d951ea82fce51dfe0eb59a449ffb88"
+version = "0.5.6"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#82401beac45378c64674afb83a76d6713b547d96"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5111,13 +5134,14 @@ dependencies = [
 
 [[package]]
 name = "manta-pay"
-version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#af757af1d3d951ea82fce51dfe0eb59a449ffb88"
+version = "0.5.6"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#82401beac45378c64674afb83a76d6713b547d96"
 dependencies = [
  "aes-gcm",
  "ark-groth16",
  "ark-snark",
  "ark-std",
+ "bip32",
  "blake2 0.10.4",
  "derivative",
  "manta-accounting",
@@ -5219,8 +5243,8 @@ dependencies = [
 
 [[package]]
 name = "manta-util"
-version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#af757af1d3d951ea82fce51dfe0eb59a449ffb88"
+version = "0.5.6"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#82401beac45378c64674afb83a76d6713b547d96"
 dependencies = [
  "crossbeam-channel",
  "serde",
@@ -7161,6 +7185,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "pbkdf2"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f05894bce6a1ba4be299d0c5f29563e08af2bc18bb7d48313113bed71e904739"
+dependencies = [
+ "crypto-mac 0.11.1",
+]
+
+[[package]]
 name = "peeking_take_while"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9013,6 +9046,17 @@ dependencies = [
  "untrusted",
  "web-sys",
  "winapi",
+]
+
+[[package]]
+name = "ripemd160"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2eca4ecc81b7f313189bf73ce724400a07da2a6dac19588b03c8bd76a2dcc251"
+dependencies = [
+ "block-buffer 0.9.0",
+ "digest 0.9.0",
+ "opaque-debug 0.3.0",
 ]
 
 [[package]]
@@ -12344,7 +12388,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.5",
  "rand 0.8.5",
  "static_assertions",

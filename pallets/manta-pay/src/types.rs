@@ -526,23 +526,15 @@ impl From<config::TransferPost> for TransferPost {
     #[inline]
     fn from(post: config::TransferPost) -> Self {
         let authorization_signature = post.authorization_signature.map(Into::into);
-        println!(
-            "from TransferPost authorization_signature {:?} \n",
-            authorization_signature
-        );
         let asset_id = post.body.asset_id.map(encode);
-        println!("from TransferPost asset_id {:?} \n", asset_id);
         let sender_posts = post.body.sender_posts.into_iter().map(Into::into).collect();
-        println!("try_from TransferPost sender_posts \n");
         let receiver_posts = post
             .body
             .receiver_posts
             .into_iter()
             .map(Into::into)
             .collect();
-        println!("try_from TransferPost receiver_posts \n");
         let proof = encode(post.body.proof);
-        println!("try_from TransferPost proof encode \n");
         Self {
             authorization_signature,
             asset_id,
@@ -560,11 +552,7 @@ impl TryFrom<TransferPost> for config::TransferPost {
 
     #[inline]
     fn try_from(post: TransferPost) -> Result<Self, Self::Error> {
-        // let asset_id = post.asset_id.map(decode).transpose()?;
-        // println!("try_from TransferPost asset_id \n");
-        println!("try_from TransferPost proof_len {:?} \n", post.proof);
         let proof = decode(post.proof)?;
-        println!("try_from TransferPost proof \n");
         Ok(Self {
             authorization_signature: post
                 .authorization_signature
