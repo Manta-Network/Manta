@@ -16,7 +16,7 @@
 
 use super::{
     weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
-    NativeTokenExistentialDeposit, Origin, Runtime,
+    NativeTokenExistentialDeposit, Origin, Runtime, TransactionLimit,
 };
 
 use manta_primitives::{
