@@ -40,7 +40,7 @@ use rand_chacha::ChaCha20Rng;
 use scale_codec::Encode;
 use std::{
     env,
-    fs::{self, OpenOptions},
+    fs::{self, File, OpenOptions},
     io::Write,
     path::PathBuf,
 };
@@ -270,6 +270,54 @@ fn main() -> Result<()> {
         AssetId(asset_id).value(20_000),
         &mut rng,
     );
+
+    let mut mints = Vec::new();
+    let mut transfers = Vec::new();
+    let mut reclaims = Vec::new();
+    for i in 0..100 {
+        let asset_id = 8.into();
+        // let asset_id = (8 + (i % 10)).into();
+
+        let to_private = sample_to_private(
+            &proving_context.to_private,
+            &parameters,
+            &utxo_accumulator_model,
+            asset_id,
+            1_000,
+            &mut rng,
+        );
+        mints.push(to_private.clone());
+
+        let (private_transfer_input, private_transfer) = sample_private_transfer(
+            &proving_context,
+            &parameters,
+            &utxo_accumulator_model,
+            asset_id,
+            [1_000, 2_000],
+            &mut rng,
+        );
+        transfers.push(private_transfer_input[0].clone());
+        transfers.push(private_transfer_input[1].clone());
+        transfers.push(to_private.clone());
+
+        let (to_public_input, to_public) = sample_to_public(
+            &proving_context,
+            &parameters,
+            &utxo_accumulator_model,
+            asset_id,
+            [1_000, 2_000],
+            &mut rng,
+        );
+        reclaims.push(private_transfer_input[0].clone());
+        reclaims.push(private_transfer_input[1].clone());
+        reclaims.push(to_private.clone());
+    }
+    let mut file = File::create("precomputed_mints_v2_50000")?;
+    file.write_all(&<[TransferPost]>::encode(&mints))?;
+    let mut file = File::create("precomputed_transfers_v2_50000")?;
+    file.write_all(&<[TransferPost]>::encode(&mints))?;
+    let mut file = File::create("precomputed_reclaims_v2_50000")?;
+    file.write_all(&<[TransferPost]>::encode(&mints))?;
 
     let mut target_file = OpenOptions::new()
         .create_new(true)
