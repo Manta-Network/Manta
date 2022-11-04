@@ -1,3 +1,5 @@
-Simple pallet to pause further executom of any extrinsic in the runtime. Provide pallet name and extrinsic name required to be paused. Use the name of the extrinsics as they are declared in the source code.
+Simple pallet to limit transfer amount of specify asset. Current support:
+
+- maximum limitation on `to_private` call of `pallet_manta_pay`.
 
 License: GPL-3.0

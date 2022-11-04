@@ -93,7 +93,7 @@ pub mod pallet {
         ) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
 
-            AssetLimits::<T>::try_mutate(&asset_id, |maybe_limit| -> DispatchResult {
+            AssetLimits::<T>::try_mutate(asset_id, |maybe_limit| -> DispatchResult {
                 *maybe_limit = amount;
                 Self::deposit_event(Event::TransactionLimitSet { asset_id, amount });
                 Ok(())
@@ -112,7 +112,7 @@ pub mod pallet {
         ) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
 
-            AssetLimits::<T>::remove(&asset_id);
+            AssetLimits::<T>::remove(asset_id);
             Self::deposit_event(Event::TransactionLimitUnset { asset_id });
 
             Ok(())
@@ -122,6 +122,6 @@ pub mod pallet {
 
 impl<T: Config> TransactionLimitation for Pallet<T> {
     fn ensure_valid(asset_id: AssetId, amount: Balance) -> bool {
-        !AssetLimits::<T>::contains_key(&asset_id) || amount < AssetLimits::<T>::get(&asset_id)
+        !AssetLimits::<T>::contains_key(asset_id) || amount < AssetLimits::<T>::get(asset_id)
     }
 }
