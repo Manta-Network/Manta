@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+//! XCM primitives and implementations
+
 use super::assets::{AssetConfig, FungibleLedger};
 
 use sp_runtime::traits::{CheckedConversion, Convert, Zero};
@@ -381,7 +383,7 @@ where
         let (asset_id, who, amount) = Self::match_asset_and_location(asset, location)?;
         // NOTE: If it's non-native asset we want to check with increase in total supply. Otherwise
         //       it will just use false, as it is assumed the native asset supply cannot be changed.
-        A::FungibleLedger::try_deposit_minting(asset_id, &who, amount, true)
+        A::FungibleLedger::deposit_minting_with_check(asset_id, &who, amount, true)
             .map_err(|_| XcmError::FailedToTransactAsset("Failed deposit minting"))
     }
 

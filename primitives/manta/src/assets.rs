@@ -414,7 +414,7 @@ pub trait FungibleLedger: AssetIdType + BalanceType {
 
     /// Checks if `amount` of `asset_id` can be deposited into `account` and then deposits it if
     /// that is successful.
-    fn try_deposit_minting(
+    fn deposit_minting_with_check(
         asset_id: Self::AssetId,
         account: &Self::AccountId,
         amount: Self::Balance,
@@ -533,7 +533,7 @@ where
     }
 
     #[inline]
-    fn try_deposit_minting(
+    fn deposit_minting_with_check(
         asset_id: Self::AssetId,
         account: &Self::AccountId,
         amount: Self::Balance,

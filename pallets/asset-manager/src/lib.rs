@@ -538,7 +538,7 @@ pub mod pallet {
                 AssetIdLocation::<T>::contains_key(asset_id),
                 Error::<T>::UpdateNonExistentAsset
             );
-            <T::AssetConfig as AssetConfig<T>>::FungibleLedger::try_deposit_minting(
+            <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(
                 asset_id,
                 &beneficiary,
                 amount.clone(),
