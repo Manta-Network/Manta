@@ -101,7 +101,7 @@ manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.
 
 [dev-dependencies]
 bencher = "0.1.5"
-criterion = "0.3.4"
+criterion = "0.4.0"
 lazy_static = "1.4.0"
 manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.4", features = ["test"] }
 manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.4", features = ["getrandom"] }
