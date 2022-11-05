@@ -178,7 +178,7 @@ impl pallet_tx_pause::Config for Runtime {
     type MaxCallNames = ConstU32<25>;
     type PauseOrigin = EitherOfDiverse<
         EnsureRoot<AccountId>,
-        pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 2, 6>,
+        pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,
     >;
     type UnpauseOrigin = EnsureRoot<AccountId>;
     type NonPausablePallets = IsInVec<NonPausablePallets>;

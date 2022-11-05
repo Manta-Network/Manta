@@ -184,10 +184,7 @@ impl pallet_tx_pause::Config for Runtime {
     type Event = Event;
     type Call = Call;
     type MaxCallNames = ConstU32<25>;
-    type PauseOrigin = EitherOfDiverse<
-        EnsureRoot<AccountId>,
-        pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,
-    >;
+    type PauseOrigin = EnsureRoot<AccountId>;
     type UnpauseOrigin = EnsureRoot<AccountId>;
     type NonPausablePallets = IsInVec<NonPausablePallets>;
     type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
