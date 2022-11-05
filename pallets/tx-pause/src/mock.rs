@@ -94,7 +94,7 @@ ord_parameter_types! {
 }
 
 parameter_types! {
-    pub UnpausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilCollective".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalCollective".to_vec()];
+    pub NonPausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilCollective".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalCollective".to_vec()];
 }
 
 impl Config for Runtime {
@@ -103,7 +103,7 @@ impl Config for Runtime {
     type MaxCallNames = ConstU32<10>;
     type PauseOrigin = EnsureRoot<AccountId>;
     type UnpauseOrigin = EnsureRoot<AccountId>;
-    type UnpausablePallets = IsInVec<UnpausablePallets>;
+    type NonPausablePallets = IsInVec<NonPausablePallets>;
     type WeightInfo = ();
 }
 

@@ -64,7 +64,7 @@ pub mod pallet {
         type UnpauseOrigin: EnsureOrigin<Self::Origin>;
 
         /// Names of pallets which cannot be paused.
-        type UnpausablePallets: Contains<Vec<u8>>;
+        type NonPausablePallets: Contains<Vec<u8>>;
 
         /// Weight information for the extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -76,8 +76,6 @@ pub mod pallet {
         CannotPause,
         /// invalid character encoding
         InvalidCharacter,
-        /// can not resume
-        CannotResume,
         /// call of pallet too many
         TooManyCalls,
     }
@@ -291,9 +289,9 @@ impl<T: Config> Pallet<T> {
             Error::<T>::CannotPause
         );
 
-        // not allowed to pause `UnpausablePallets`
+        // not allowed to pause `NonPausablePallets`
         ensure!(
-            !T::UnpausablePallets::contains(pallet_name),
+            !T::NonPausablePallets::contains(pallet_name),
             Error::<T>::CannotPause
         );
 

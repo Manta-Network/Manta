@@ -169,7 +169,7 @@ parameter_types! {
 }
 
 parameter_types! {
-    pub UnpausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilCollective".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalCollective".to_vec()];
+    pub NonPausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilCollective".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalCollective".to_vec()];
 }
 
 impl pallet_tx_pause::Config for Runtime {
@@ -181,7 +181,7 @@ impl pallet_tx_pause::Config for Runtime {
         pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 2, 6>,
     >;
     type UnpauseOrigin = EnsureRoot<AccountId>;
-    type UnpausablePallets = IsInVec<UnpausablePallets>;
+    type NonPausablePallets = IsInVec<NonPausablePallets>;
     type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
