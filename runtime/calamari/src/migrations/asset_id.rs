@@ -335,7 +335,8 @@ where
         // The same number of mappings exist before and after
         //
         // We have to manually check that there are no entries
-        // in the old storage afterward due to a potential try-runtime bug
+        // with the old storage keys, as the new u128 asset-id
+        // would still decode into the old u32 values.
 
         // AssetIdLocation
 
@@ -516,7 +517,8 @@ where
         // The same number of mappings exist before and after
         //
         // We have to manually check that there are no entries
-        // in the old storage afterward due to a potential try-runtime bug
+        // with the old storage keys, as the new u128 asset-id
+        // would still decode into the old u32 values.
 
         // AssetIdLocation
 

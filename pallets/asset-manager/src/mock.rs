@@ -20,6 +20,7 @@
 //! Mock runtime for asset-manager
 
 use crate as pallet_asset_manager;
+use crate::mock::sp_api_hidden_includes_construct_runtime::hidden_include::traits::GenesisBuild;
 use frame_support::{
     construct_runtime, pallet_prelude::DispatchResult, parameter_types, traits::ConstU32, PalletId,
 };
@@ -40,7 +41,6 @@ use xcm::{
     v1::MultiLocation,
     VersionedMultiLocation,
 };
-
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
     pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;

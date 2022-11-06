@@ -18,7 +18,7 @@ use crate::{
     benchmark::precomputed_coins::{
         MINT, PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, RECLAIM, RECLAIM_INPUT,
     },
-    Asset, Call, Config, Event, Pallet, TransferPost,
+    Asset, Call, Config, Event, Pallet, StandardAssetId, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
@@ -44,7 +44,7 @@ where
 
 /// Init assets for manta-pay
 #[inline]
-pub fn init_asset<T>(owner: &T::AccountId, id: u128, value: Balance)
+pub fn init_asset<T>(owner: &T::AccountId, id: StandardAssetId, value: Balance)
 where
     T: Config,
 {
@@ -76,7 +76,7 @@ benchmarks! {
     to_private {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, 8u128, 1_000_000u128);
+        init_asset::<T>(&caller, 8u32, 1_000_000u128);
         let mint_post = TransferPost::decode(&mut &*MINT).unwrap();
         let asset = Asset::new(mint_post.asset_id.unwrap(), mint_post.sources[0]);
     }: to_private (
@@ -90,7 +90,7 @@ benchmarks! {
     to_public {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, 8u128, 1_000_000u128);
+        init_asset::<T>(&caller, 8u32, 1_000_000u128);
         for coin in RECLAIM_INPUT {
             Pallet::<T>::to_private(
                 origin.clone(),
@@ -109,7 +109,7 @@ benchmarks! {
     private_transfer {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, 8u128, 1_000_000u128);
+        init_asset::<T>(&caller, 8u32, 1_000_000u128);
         for coin in PRIVATE_TRANSFER_INPUT {
             Pallet::<T>::to_private(
                 origin.clone(),
@@ -127,7 +127,7 @@ benchmarks! {
     public_transfer {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, 8u128, 1_000_000u128);
+        init_asset::<T>(&caller, 8u32, 1_000_000u128);
         let asset = Asset::new(8, 100);
         let sink = Pallet::<T>::account_id();
     }: public_transfer (

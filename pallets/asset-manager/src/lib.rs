@@ -117,7 +117,6 @@ pub mod pallet {
 
     /// Asset Manager Pallet
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     #[pallet::storage_version(STORAGE_VERSION)]
     pub struct Pallet<T>(_);
@@ -165,28 +164,6 @@ pub mod pallet {
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         pub start_id: T::AssetId,
-    }
-
-    #[cfg(feature = "std")]
-    impl<T> GenesisConfig<T>
-    where
-        T: Config,
-    {
-        /// Direct implementation of [`GenesisBuild::build_storage`].
-        ///
-        /// Kept in order not to break dependency.
-        #[inline]
-        pub fn build_storage(&self) -> Result<sp_runtime::Storage, String> {
-            <Self as GenesisBuild<T>>::build_storage(self)
-        }
-
-        /// Direct implementation of `GenesisBuild::assimilate_storage`.
-        ///
-        /// Kept in order not to break dependency.
-        #[inline]
-        pub fn assimilate_storage(&self, storage: &mut sp_runtime::Storage) -> Result<(), String> {
-            <Self as GenesisBuild<T>>::assimilate_storage(self, storage)
-        }
     }
 
     #[cfg(feature = "std")]
