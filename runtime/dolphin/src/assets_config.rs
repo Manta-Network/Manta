@@ -142,6 +142,7 @@ parameter_types! {
 pub type DolphinConcreteFungibleLedger =
     NativeAndNonNative<Runtime, DolphinAssetConfig, Balances, Assets>;
 
+/// AssetConfig implementations for this runtime
 #[derive(Clone, Eq, PartialEq)]
 pub struct DolphinAssetConfig;
 impl LocationType for DolphinAssetConfig {

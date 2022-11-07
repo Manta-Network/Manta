@@ -566,7 +566,7 @@ parameter_types! {
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
 }
 
-///
+/// AssetConfig implementations for this runtime
 #[derive(Clone, Eq, PartialEq)]
 pub struct ParachainAssetConfig;
 impl LocationType for ParachainAssetConfig {

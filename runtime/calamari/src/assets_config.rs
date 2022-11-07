@@ -132,6 +132,7 @@ parameter_types! {
 pub type CalamariConcreteFungibleLedger =
     NativeAndNonNative<Runtime, CalamariAssetConfig, Balances, Assets>;
 
+/// AssetConfig implementations for this runtime
 #[derive(Clone, Eq, PartialEq)]
 pub struct CalamariAssetConfig;
 impl LocationType for CalamariAssetConfig {
