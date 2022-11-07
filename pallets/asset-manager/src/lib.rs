@@ -386,7 +386,7 @@ pub mod pallet {
         #[transactional]
         pub fn update_asset_location(
             origin: OriginFor<T>,
-            asset_id: T::AssetId,
+            #[pallet::compact] asset_id: T::AssetId,
             location: T::Location,
         ) -> DispatchResult {
             // checks validity
@@ -479,7 +479,7 @@ pub mod pallet {
         #[transactional]
         pub fn set_units_per_second(
             origin: OriginFor<T>,
-            asset_id: T::AssetId,
+            #[pallet::compact] asset_id: T::AssetId,
             #[pallet::compact] units_per_second: u128,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
@@ -506,7 +506,7 @@ pub mod pallet {
         #[transactional]
         pub fn mint_asset(
             origin: OriginFor<T>,
-            asset_id: T::AssetId,
+            #[pallet::compact] asset_id: T::AssetId,
             beneficiary: T::AccountId,
             amount: T::Balance,
         ) -> DispatchResult {
