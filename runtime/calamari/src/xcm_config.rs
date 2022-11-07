@@ -281,11 +281,11 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 /// We wrap AssetId for XToken
 #[derive(Clone, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
 pub enum CurrencyId {
-    ///
+    /// Assets registered in pallet-assets
     MantaCurrency(CalamariAssetId),
 }
 
-///
+/// Maps a xTokens CurrencyId to a xcm MultiLocation implemented by some asset manager
 pub struct CurrencyIdtoMultiLocation<AssetXConverter>(PhantomData<AssetXConverter>);
 
 impl<AssetXConverter> sp_runtime::traits::Convert<CurrencyId, Option<MultiLocation>>
