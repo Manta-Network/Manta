@@ -32,7 +32,6 @@ use frame_support::{
 };
 use frame_system::Config;
 use scale_info::TypeInfo;
-use sp_core::H160;
 use xcm::{
     v1::{Junctions, MultiLocation},
     VersionedMultiLocation,
@@ -189,9 +188,6 @@ pub struct AssetRegistryMetadata<B> {
     /// Asset Storage Metadata
     pub metadata: AssetStorageMetadata,
 
-    /// Optional EVM Address for the Asset
-    pub evm_address: Option<H160>,
-
     /// Minimum Balance
     pub min_balance: B,
 
@@ -223,7 +219,6 @@ impl TestingDefault for AssetRegistryMetadata<MantaBalance> {
                 decimals: 12,
                 is_frozen: false,
             },
-            evm_address: None,
             min_balance: TEST_DEFAULT_ASSET_ED,
             is_sufficient: true,
         }

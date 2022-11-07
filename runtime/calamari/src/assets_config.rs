@@ -123,7 +123,6 @@ parameter_types! {
             is_frozen: false,
         },
         min_balance: NativeTokenExistentialDeposit::get(),
-        evm_address: None,
         is_sufficient: true,
     };
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;

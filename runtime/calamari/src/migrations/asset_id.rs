@@ -201,7 +201,6 @@ where
                     is_frozen: old_value.is_frozen,
                 },
                 min_balance: old_value.min_balance,
-                evm_address: old_value.evm_address,
                 is_sufficient: old_value.is_sufficient,
             };
 
@@ -623,7 +622,6 @@ where
                         is_frozen: value.is_frozen,
                     },
                     min_balance: value.min_balance,
-                    evm_address: value.evm_address,
                     is_sufficient: value.is_sufficient,
                 },
             );

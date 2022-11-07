@@ -34,7 +34,7 @@ use manta_primitives::{
     constants::{ASSET_MANAGER_PALLET_ID, ASSET_STRING_LIMIT},
     types::{AccountId, Balance, BlockNumber, CalamariAssetId, Header},
 };
-use sp_core::{H160, H256};
+use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 use xcm::{
     prelude::{Parachain, X1},
@@ -180,7 +180,6 @@ parameter_types! {
             is_frozen: false,
         },
         min_balance: 1u128,
-        evm_address: None,
         is_sufficient: true,
     };
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
@@ -255,7 +254,6 @@ pub(crate) fn create_asset_metadata(
     symbol: &str,
     decimals: u8,
     min_balance: u128,
-    evm_address: Option<H160>,
     is_frozen: bool,
     is_sufficient: bool,
 ) -> AssetRegistryMetadata<Balance> {
@@ -267,7 +265,6 @@ pub(crate) fn create_asset_metadata(
             is_frozen,
         },
         min_balance,
-        evm_address,
         is_sufficient,
     }
 }

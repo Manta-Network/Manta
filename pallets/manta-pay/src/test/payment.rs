@@ -305,7 +305,6 @@ fn initialize_test(id: AssetId, value: AssetValue) {
             is_frozen: false,
         },
         min_balance: TEST_DEFAULT_ASSET_ED,
-        evm_address: None,
         is_sufficient: true,
     };
     assert_ok!(MantaAssetRegistry::create_asset(

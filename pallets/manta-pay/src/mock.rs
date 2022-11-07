@@ -211,7 +211,6 @@ parameter_types! {
             is_frozen: false,
         },
         min_balance: 1u128,
-        evm_address: None,
         is_sufficient: true,
     };
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
