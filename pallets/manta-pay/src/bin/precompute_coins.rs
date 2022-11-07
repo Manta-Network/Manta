@@ -275,37 +275,39 @@ fn main() -> Result<()> {
     let mut transfers = Vec::new();
     let mut reclaims = Vec::new();
     for i in 0..100 {
-        let asset_id = 8.into();
+        let asset_id = 8;
         // let asset_id = (8 + (i % 10)).into();
 
-        let to_private = sample_to_private(
-            &proving_context.to_private,
+        let to_private = sample_mint(
+            &proving_context.mint,
+            &verifying_context.mint,
             &parameters,
             &utxo_accumulator_model,
-            asset_id,
-            1_000,
+            AssetId(asset_id).value(1_000),
             &mut rng,
         );
         mints.push(to_private.clone());
 
         let (private_transfer_input, private_transfer) = sample_private_transfer(
             &proving_context,
+            &verifying_context,
             &parameters,
             &utxo_accumulator_model,
-            asset_id,
-            [1_000, 2_000],
+            AssetId(asset_id).value(1_000),
+            AssetId(asset_id).value(2_000),
             &mut rng,
         );
         transfers.push(private_transfer_input[0].clone());
         transfers.push(private_transfer_input[1].clone());
         transfers.push(to_private.clone());
 
-        let (to_public_input, to_public) = sample_to_public(
+        let (to_public_input, to_public) = sample_reclaim(
             &proving_context,
+            &verifying_context,
             &parameters,
             &utxo_accumulator_model,
-            asset_id,
-            [1_000, 2_000],
+            AssetId(asset_id).value(1_000),
+            AssetId(asset_id).value(2_000),
             &mut rng,
         );
         reclaims.push(private_transfer_input[0].clone());
