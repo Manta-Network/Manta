@@ -21,7 +21,6 @@ use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_call
 use frame_support::traits::Get;
 use frame_system::{EventRecord, RawOrigin};
 use manta_primitives::assets::{AssetConfig, TestingDefault, UnitsPerSecond};
-use sp_runtime::traits::{CheckedAdd, One};
 use xcm::latest::prelude::*;
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
@@ -44,7 +43,7 @@ benchmarks! {
 
     set_units_per_second {
         let assets_count = 1000;
-        for i in 0..1000 {
+        for i in 8..assets_count + 8 {
             let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
             let location = T::Location::from(location.clone());
             let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
@@ -56,10 +55,10 @@ benchmarks! {
         let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
         let amount = 10;
         Pallet::<T>::register_asset(RawOrigin::Root.into(), location, metadata)?;
-        let next = <T as Config>::AssetId::from(assets_count);
-    }: _(RawOrigin::Root, next, amount)
+        let some_valid_asset_id = <T as Config>::AssetId::from(assets_count + 8);
+    }: _(RawOrigin::Root, some_valid_asset_id, amount)
     verify {
-        assert_eq!(Pallet::<T>::units_per_second(&next), Some(amount));
+        assert_eq!(Pallet::<T>::units_per_second(&some_valid_asset_id), Some(amount));
     }
 
     update_asset_location {
@@ -75,10 +74,10 @@ benchmarks! {
         let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
         Pallet::<T>::register_asset(RawOrigin::Root.into(), location, metadata)?;
         let new_location = T::Location::from(MultiLocation::new(0, X1(Parachain(1000))));
-        let next = <T as Config>::AssetId::from(assets_count);
-    }: _(RawOrigin::Root, next, new_location.clone())
+        let some_valid_asset_id = <T as Config>::AssetId::from(assets_count);
+    }: _(RawOrigin::Root, some_valid_asset_id, new_location.clone())
     verify {
-        assert_eq!(Pallet::<T>::asset_id_location(next), Some(new_location));
+        assert_eq!(Pallet::<T>::asset_id_location(some_valid_asset_id), Some(new_location));
     }
 
     update_asset_metadata {
@@ -93,10 +92,10 @@ benchmarks! {
         let location = T::Location::default();
         let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
         Pallet::<T>::register_asset(RawOrigin::Root.into(), location, metadata.clone())?;
-        let next = <T as Config>::AssetId::from(assets_count);
-    }: _(RawOrigin::Root, next, metadata.clone())
+        let some_valid_asset_id = <T as Config>::AssetId::from(assets_count);
+    }: _(RawOrigin::Root, some_valid_asset_id, metadata.clone())
     verify {
-        assert_last_event::<T>(Event::AssetMetadataUpdated { asset_id: next, metadata }.into());
+        assert_last_event::<T>(Event::AssetMetadataUpdated { asset_id: some_valid_asset_id, metadata }.into());
     }
 
     mint_asset {
@@ -112,15 +111,15 @@ benchmarks! {
         let location = T::Location::default();
         let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
         Pallet::<T>::register_asset(RawOrigin::Root.into(), location, metadata)?;
-        let next = <T as Config>::AssetId::from(assets_count);
+        let some_valid_asset_id = <T as Config>::AssetId::from(assets_count);
     }: _(RawOrigin::Root, <T as Config>::AssetId::from(assets_count), beneficiary.clone(), <T as Config>::Balance::from(amount) )
     verify {
-        assert_last_event::<T>(Event::AssetMinted { asset_id: next, beneficiary, amount: <T as Config>::Balance::from(amount) }.into());
+        assert_last_event::<T>(Event::AssetMinted { asset_id: some_valid_asset_id, beneficiary, amount: <T as Config>::Balance::from(amount) }.into());
     }
 
     set_min_xcm_fee {
         let assets_count = 1000;
-        for i in 0..assets_count {
+        for i in 8..assets_count + 8 {
 
             let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
             let location = T::Location::from(location.clone());
