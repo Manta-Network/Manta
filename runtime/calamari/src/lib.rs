@@ -864,13 +864,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExt
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = (
-    migrations::asset_id::AssetIdMigration<
-        Runtime,
-        pallet_asset_manager::Pallet<Runtime>,
-        pallet_assets::Pallet<Runtime>,
-    >,
-);
+pub type OnRuntimeUpgradeHooks = (migrations::asset_id::AssetIdMigration<Runtime>,);
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,

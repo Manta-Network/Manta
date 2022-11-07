@@ -27,7 +27,7 @@ use frame_support::{
     dispatch::GetStorageVersion,
     pallet_prelude::Weight,
     storage_alias,
-    traits::{Currency, Get, OnRuntimeUpgrade, PalletInfoAccess, StorageVersion},
+    traits::{Currency, Get, OnRuntimeUpgrade, StorageVersion},
     Blake2_128Concat,
 };
 use manta_primitives::{
@@ -104,21 +104,26 @@ pub struct OldAssetRegistrarMetadata {
     pub is_sufficient: bool,
 }
 
-pub struct AssetIdMigration<T, M, A>(PhantomData<T>, PhantomData<M>, PhantomData<A>);
-impl<T, M, A> OnRuntimeUpgrade for AssetIdMigration<T, M, A>
+pub const INITIAL_PALLET_ASSETS_MANAGER_VERSION: u16 = 1;
+pub const INITIAL_PALLET_ASSETS_VERSION: u16 = 0;
+
+pub struct AssetIdMigration<T>(PhantomData<T>);
+impl<T> OnRuntimeUpgrade for AssetIdMigration<T>
 where
     T: pallet_asset_manager::Config + pallet_assets::Config,
-    M: GetStorageVersion + PalletInfoAccess,
-    A: GetStorageVersion + PalletInfoAccess,
 {
     fn on_runtime_upgrade() -> Weight {
         let mut num_reads = 0;
         let mut num_writes = 0;
 
-        let asset_manager_storage_version = <M as GetStorageVersion>::on_chain_storage_version();
-        let assets_storage_version = <A as GetStorageVersion>::on_chain_storage_version();
+        let asset_manager_storage_version =
+            <pallet_asset_manager::Pallet<T> as GetStorageVersion>::on_chain_storage_version();
+        let assets_storage_version =
+            <pallet_assets::Pallet<T> as GetStorageVersion>::on_chain_storage_version();
         num_reads += 2;
-        if asset_manager_storage_version != 1 || assets_storage_version != 0 {
+        if asset_manager_storage_version != INITIAL_PALLET_ASSETS_MANAGER_VERSION
+            || assets_storage_version != INITIAL_PALLET_ASSETS_VERSION
+        {
             return T::DbWeight::get().reads(num_reads as Weight);
         }
 
@@ -241,7 +246,8 @@ where
         let new_value: NewAssetId = value as NewAssetId;
         put_storage_value(pallet_prefix, storage_item_prefix, &[], new_value);
 
-        StorageVersion::new(2u16).put::<M>();
+        StorageVersion::new(INITIAL_PALLET_ASSETS_MANAGER_VERSION + 1)
+            .put::<pallet_asset_manager::Pallet<T>>();
 
         // Asset
 
@@ -309,7 +315,7 @@ where
             num_writes += 1;
         }
 
-        StorageVersion::new(1u16).put::<A>();
+        StorageVersion::new(INITIAL_PALLET_ASSETS_VERSION + 1).put::<pallet_assets::Pallet<T>>();
 
         T::DbWeight::get()
             .reads(num_reads as Weight)
@@ -320,13 +326,15 @@ where
     fn pre_upgrade() -> Result<(), &'static str> {
         use frame_support::traits::OnRuntimeUpgradeHelpersExt;
 
-        let asset_manager_storage_version = <M as GetStorageVersion>::on_chain_storage_version();
-        if asset_manager_storage_version != 1 {
+        let asset_manager_storage_version =
+            <pallet_asset_manager::Pallet<T> as GetStorageVersion>::on_chain_storage_version();
+        if asset_manager_storage_version != INITIAL_PALLET_ASSETS_MANAGER_VERSION {
             return Err("AssetManager storage version is not 1, the migration won't be executed.");
         }
 
-        let assets_storage_version = <A as GetStorageVersion>::on_chain_storage_version();
-        if assets_storage_version != 0 {
+        let assets_storage_version =
+            <pallet_assets::Pallet<T> as GetStorageVersion>::on_chain_storage_version();
+        if assets_storage_version != INITIAL_PALLET_ASSETS_VERSION {
             return Err("Assets storage version is not 0, the migration won't be executed.");
         }
 
@@ -502,13 +510,15 @@ where
     fn post_upgrade() -> Result<(), &'static str> {
         use frame_support::traits::OnRuntimeUpgradeHelpersExt;
 
-        let asset_manager_storage_version = <M as GetStorageVersion>::on_chain_storage_version();
-        if asset_manager_storage_version != 2 {
+        let asset_manager_storage_version =
+            <pallet_asset_manager::Pallet<T> as GetStorageVersion>::on_chain_storage_version();
+        if asset_manager_storage_version != INITIAL_PALLET_ASSETS_MANAGER_VERSION + 1 {
             return Err("AssetManager storage version is not 2, the migration wasn't executed.");
         }
 
-        let assets_storage_version = <A as GetStorageVersion>::on_chain_storage_version();
-        if assets_storage_version != 1 {
+        let assets_storage_version =
+            <pallet_assets::Pallet<T> as GetStorageVersion>::on_chain_storage_version();
+        if assets_storage_version != INITIAL_PALLET_ASSETS_MANAGER_VERSION + 1 {
             return Err("Assets storage version is not 1, the migration wasn't executed.");
         }
 
