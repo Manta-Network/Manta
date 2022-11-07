@@ -550,7 +550,7 @@ where
 
         let assets_storage_version =
             <pallet_assets::Pallet<T> as GetStorageVersion>::on_chain_storage_version();
-        if assets_storage_version != INITIAL_PALLET_ASSETS_MANAGER_VERSION + 1 {
+        if assets_storage_version != INITIAL_PALLET_ASSETS_VERSION + 1 {
             return Err("Assets storage version is not 1, the migration wasn't executed.");
         }
 
