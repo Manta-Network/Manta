@@ -124,10 +124,13 @@ where
         if asset_manager_storage_version != INITIAL_PALLET_ASSETS_MANAGER_VERSION
             || assets_storage_version != INITIAL_PALLET_ASSETS_VERSION
         {
+            log::info!("Aborting migration due to unexpected on-chain storage versions for pallet-assets-manager: {:?} and pallet-assets: {:?}. Expectation was: {:?} and {:?}.", asset_manager_storage_version, assets_storage_version, INITIAL_PALLET_ASSETS_MANAGER_VERSION, INITIAL_PALLET_ASSETS_VERSION );
             return T::DbWeight::get().reads(num_reads as Weight);
         }
 
         // AssetIdLocation
+
+        log::info!(target: "asset-manager", "Starting migration for AssetManager...");
 
         let pallet_prefix: &[u8] = b"AssetManager";
         let storage_item_prefix: &[u8] = b"AssetIdLocation";
@@ -148,6 +151,9 @@ where
             num_reads += 1;
             num_writes += 1;
         }
+        log::info!(
+            target: "asset-manager", "Storage migration for AssetManager's AssetIdLocation storage item has been executed."
+        );
 
         // LocationAssetId
 
@@ -170,6 +176,9 @@ where
             num_reads += 1;
             num_writes += 1;
         }
+        log::info!(
+            target: "asset-manager", "Storage migration for AssetManager's LocationAssetId storage item has been executed."
+        );
 
         // AssetIdMetadata
 
@@ -205,6 +214,9 @@ where
             num_reads += 1;
             num_writes += 1;
         }
+        log::info!(
+            target: "asset-manager", "Storage migration for AssetManager's AssetIdMetadata storage item has been executed."
+        );
 
         // UnitsPerSecond
 
@@ -227,6 +239,9 @@ where
             num_reads += 1;
             num_writes += 1;
         }
+        log::info!(
+            target: "asset-manager", "Storage migration for AssetManager's UnitsPerSecond storage item has been executed."
+        );
 
         // NextAssetId
 
@@ -245,9 +260,16 @@ where
         };
         let new_value: NewAssetId = value as NewAssetId;
         put_storage_value(pallet_prefix, storage_item_prefix, &[], new_value);
+        log::info!(
+            target: "asset-manager", "Storage migration for AssetManager's NextAssetId storage item has been executed."
+        );
 
         StorageVersion::new(INITIAL_PALLET_ASSETS_MANAGER_VERSION + 1)
             .put::<pallet_asset_manager::Pallet<T>>();
+
+        log::info!(target: "asset-manager", "✅ Storage migration for AssetManager has been executed successfully and storage version has been update to: {:?}.", INITIAL_PALLET_ASSETS_MANAGER_VERSION + 1);
+
+        log::info!(target: "assets", "Starting migration for pallet-assets...");
 
         // Asset
 
@@ -275,6 +297,9 @@ where
             num_reads += 1;
             num_writes += 1;
         }
+        log::info!(
+            target: "assets", "Storage migration for Assets' Asset storage item has been executed."
+        );
 
         // Account
 
@@ -288,6 +313,9 @@ where
             .for_each(|(new_asset_id_key, account_id_key, value)| {
                 Account::<T, ()>::insert(new_asset_id_key, account_id_key, value);
             });
+        log::info!(
+            target: "assets", "Storage migration for Assets' Account storage item has been executed."
+        );
 
         // Metadata
 
@@ -314,8 +342,13 @@ where
             num_reads += 1;
             num_writes += 1;
         }
+        log::info!(
+            target: "assets", "Storage migration for Assets' Metadata storage item has been executed."
+        );
 
         StorageVersion::new(INITIAL_PALLET_ASSETS_VERSION + 1).put::<pallet_assets::Pallet<T>>();
+
+        log::info!(target: "assets", "✅ Storage migration for Assets has been executed successfully and storage version has been update to: {:?}.", INITIAL_PALLET_ASSETS_VERSION + 1);
 
         T::DbWeight::get()
             .reads(num_reads as Weight)
@@ -547,6 +580,7 @@ where
             let check = (*key as NewAssetId, value.clone());
             assert!(stored_data_new.contains(&check));
         });
+        log::info!("✅ Storage migration for AssetManager's AssetIdLocation storage item has been executed successfully.");
 
         let pallet_prefix: &[u8] = b"AssetManager";
         let storage_item_prefix: &[u8] = b"LocationAssetId";
@@ -563,6 +597,7 @@ where
             let check = (key.clone(), *value as NewAssetId);
             assert!(stored_data_new.contains(&check));
         });
+        log::info!("✅ Storage migration for AssetManager's LocationAssetId storage item has been executed successfully.");
 
         // AssetIdMetadata
 
@@ -594,6 +629,7 @@ where
             );
             assert!(stored_data_new.contains(&new_storage));
         });
+        log::info!("✅ Storage migration for AssetManager's AssetIdMetadata storage item has been executed successfully.");
 
         // UnitsPerSecond
 
@@ -611,6 +647,7 @@ where
             let check = (*key as NewAssetId, *value);
             assert!(stored_data_new.contains(&check));
         });
+        log::info!("✅ Storage migration for AssetManager's UnitsPerSecond storage item has been executed successfully.");
 
         // NextAssetId
 
@@ -620,6 +657,7 @@ where
             get_storage_value::<NewAssetId>(pallet_prefix, storage_item_prefix, &[]).unwrap();
         let old_next_asset_id: u32 = Self::get_temp_storage("next_asset_id").unwrap();
         assert_eq!(old_next_asset_id as u128, next_asset_id);
+        log::info!("✅ Storage migration for AssetManager's NextAssetId storage item has been executed successfully.");
 
         // Asset
 
@@ -642,6 +680,9 @@ where
             let check = (*key as NewAssetId, value.clone());
             assert!(stored_data_new.contains(&check));
         });
+        log::info!(
+            "✅ Storage migration for Assets' Asset storage item has been executed successfully."
+        );
 
         // Account
 
@@ -665,6 +706,9 @@ where
                 );
                 assert!(stored_data_new.contains(&check));
             });
+        log::info!(
+            "✅ Storage migration for Assets' Account storage item has been executed successfully."
+        );
 
         // Metadata
 
@@ -686,6 +730,9 @@ where
             let check = (*key as NewAssetId, value.clone());
             assert!(stored_data_new.contains(&check));
         });
+        log::info!(
+            "✅ Storage migration for Assets' Metadata storage item has been executed successfully."
+        );
 
         Ok(())
     }
