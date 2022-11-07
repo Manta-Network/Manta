@@ -25,7 +25,8 @@ use frame_support::{
     traits::{Get, OnRuntimeUpgrade, PalletInfoAccess, StorageVersion},
 };
 
-///
+/// Storage migration to populate the existing assets'
+/// entries in the new AllowedDestParaIds storage item
 pub struct AllowedDestParaIdsMigration<T>(PhantomData<T>);
 
 impl<T> OnRuntimeUpgrade for AllowedDestParaIdsMigration<T>
