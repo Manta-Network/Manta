@@ -15,18 +15,12 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    assets_config::{DolphinAssetConfig, DolphinConcreteFungibleLedger},
-    AssetManager, Assets, Call, DmpQueue, EnsureRootOrMoreThanHalfCouncil, Event, Origin,
-    ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, Treasury, XcmpQueue,
-    MAXIMUM_BLOCK_WEIGHT,
+    assets_config::DolphinAssetConfig, AssetManager, Assets, Call, DmpQueue,
+    EnsureRootOrMoreThanHalfCouncil, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm,
+    Runtime, Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
-
 use codec::{Decode, Encode};
-use scale_info::TypeInfo;
-
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-use sp_std::prelude::*;
-
 use frame_support::{
     match_types, parameter_types,
     traits::{Everything, Nothing},
@@ -34,21 +28,17 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use manta_primitives::{
-    assets::{AssetIdLocationConvert, AssetLocation},
-    types::{AccountId, AssetId, Balance},
+    assets::AssetIdLocationConvert,
+    types::{AccountId, Balance, DolphinAssetId},
     xcm::{
         AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
         MultiNativeAsset,
     },
 };
-
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-
-// Polkadot imports
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
-
+use scale_info::TypeInfo;
+use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -58,6 +48,9 @@ use xcm_builder::{
     SignedAccountId32AsNative, SovereignSignedViaLocation, TakeWeightCredit, WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
+
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
 
 parameter_types! {
     pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
@@ -137,21 +130,19 @@ parameter_types! {
 /// Transactor for assets in pallet-assets, i.e. implements `fungibles` trait
 pub type MultiAssetTransactor = MultiAssetAdapter<
     Runtime,
+    // Used to find the query the native asset id of the chain.
+    DolphinAssetConfig,
     // "default" implementation of converting a `MultiLocation` to an `AccountId`
     LocationToAccountId,
     // Used when the incoming asset is a fungible concrete asset matching the given location or name:
     IsNativeConcrete<SelfReserve>,
     // Used to match incoming assets which are not the native asset.
     ConvertedConcreteAssetId<
-        AssetId,
+        DolphinAssetId,
         Balance,
-        AssetIdLocationConvert<AssetLocation, AssetManager>,
+        AssetIdLocationConvert<AssetManager>,
         JustTry,
     >,
-    // Precondition checks and actual implementations of mint and burn logic.
-    DolphinConcreteFungibleLedger,
-    // Used to find the query the native asset id of the chain.
-    DolphinAssetConfig,
 >;
 
 match_types! {
@@ -188,14 +179,14 @@ parameter_types! {
 }
 
 pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
+    AccountId,
     Assets,
     ConvertedConcreteAssetId<
-        AssetId,
+        DolphinAssetId,
         Balance,
-        AssetIdLocationConvert<AssetLocation, AssetManager>,
+        AssetIdLocationConvert<AssetManager>,
         JustTry,
     >,
-    AccountId,
     XcmFeesAccount,
 >;
 
@@ -221,7 +212,7 @@ impl Config for XcmExecutorConfig {
     // i.e. units_per_second in `AssetManager`
     type Trader = (
         FixedRateOfFungible<ParaTokenPerSecond, ()>,
-        FirstAssetTrader<AssetId, AssetLocation, AssetManager, XcmFeesToAccount>,
+        FirstAssetTrader<AssetManager, XcmFeesToAccount>,
     );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
@@ -288,14 +279,15 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 // We wrap AssetId for XToken
 #[derive(Clone, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
 pub enum CurrencyId {
-    MantaCurrency(AssetId),
+    MantaCurrency(DolphinAssetId),
 }
 
+/// Maps a xTokens CurrencyId to a xcm MultiLocation implemented by some asset manager
 pub struct CurrencyIdtoMultiLocation<AssetXConverter>(sp_std::marker::PhantomData<AssetXConverter>);
 impl<AssetXConverter> sp_runtime::traits::Convert<CurrencyId, Option<MultiLocation>>
     for CurrencyIdtoMultiLocation<AssetXConverter>
 where
-    AssetXConverter: xcm_executor::traits::Convert<MultiLocation, AssetId>,
+    AssetXConverter: xcm_executor::traits::Convert<MultiLocation, DolphinAssetId>,
 {
     fn convert(currency: CurrencyId) -> Option<MultiLocation> {
         match currency {
@@ -317,9 +309,8 @@ impl orml_xtokens::Config for Runtime {
     type Event = Event;
     type Balance = Balance;
     type CurrencyId = CurrencyId;
-    type AccountIdToMultiLocation = AccountIdToMultiLocation<AccountId>;
-    type CurrencyIdConvert =
-        CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
+    type AccountIdToMultiLocation = AccountIdToMultiLocation;
+    type CurrencyIdConvert = CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetManager>>;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type SelfLocation = SelfReserve;
     // Take note that this pallet does not have the typical configurable WeightInfo.
