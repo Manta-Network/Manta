@@ -86,7 +86,7 @@ pub type Proof = [u8; PROOF_LENGTH];
 )]
 pub struct Asset {
     /// Asset Id
-    pub id: AssetId,
+    pub id: StandardAssetId,
 
     /// Asset Value
     pub value: Balance,
@@ -95,7 +95,7 @@ pub struct Asset {
 impl Asset {
     /// Builds a new [`Asset`] from `id` and `value`.
     #[inline]
-    pub fn new(id: AssetId, value: Balance) -> Self {
+    pub fn new(id: StandardAssetId, value: Balance) -> Self {
         Self { id, value }
     }
 }
@@ -225,7 +225,7 @@ impl TryFrom<ReceiverPost> for config::ReceiverPost {
 #[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, TypeInfo)]
 pub struct TransferPost {
     /// Asset Id
-    pub asset_id: Option<AssetId>,
+    pub asset_id: Option<StandardAssetId>,
 
     /// Sources
     pub sources: Vec<Balance>,

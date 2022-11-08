@@ -58,9 +58,9 @@ extern crate alloc;
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use frame_support::{traits::tokens::ExistenceRequirement, transactional, PalletId};
-
 use manta_accounting::{
     asset,
+    asset::AssetValueType,
     transfer::{
         canonical::TransferShape, InvalidSinkAccount, InvalidSourceAccount, Proof, ReceiverLedger,
         ReceiverPostError, ReceiverPostingKey, SenderLedger, SenderPostError, SenderPostingKey,
@@ -74,8 +74,8 @@ use manta_crypto::{
 };
 use manta_pay::config;
 use manta_primitives::{
-    assets::{AssetConfig, FungibleLedger as _, FungibleLedgerError},
-    types::{AssetId, Balance},
+    assets::{self, AssetConfig, FungibleLedger as _},
+    types::Balance,
 };
 use manta_util::codec::Decode as _;
 use scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -105,6 +105,12 @@ pub mod rpc;
 #[cfg(feature = "runtime")]
 pub mod runtime;
 
+/// Standard Asset Id
+pub type StandardAssetId = u32;
+
+/// Fungible Ledger Error
+pub type FungibleLedgerError = assets::FungibleLedgerError<StandardAssetId, AssetValueType>;
+
 /// MantaPay Pallet
 #[frame_support::pallet]
 pub mod pallet {
@@ -128,7 +134,7 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// Asset Configuration
-        type AssetConfig: AssetConfig<Self>;
+        type AssetConfig: AssetConfig<Self, AssetId = StandardAssetId, Balance = AssetValueType>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -431,7 +437,7 @@ pub mod pallet {
         #[inline]
         fn from(err: FungibleLedgerError) -> Self {
             match err {
-                FungibleLedgerError::InvalidAssetId => Self::PublicUpdateInvalidAssetId,
+                FungibleLedgerError::InvalidAssetId(_) => Self::PublicUpdateInvalidAssetId,
                 FungibleLedgerError::BelowMinimum => Self::PublicUpdateBelowMinimum,
                 FungibleLedgerError::CannotCreate => Self::PublicUpdateCannotCreate,
                 FungibleLedgerError::UnknownAsset => Self::PublicUpdateUnknownAsset,
@@ -820,10 +826,10 @@ where
     {
         sources
             .map(move |(account_id, withdraw)| {
-                FungibleLedger::<T>::can_reduce_by_amount(
+                FungibleLedger::<T>::can_withdraw(
                     asset_id.0,
                     &account_id,
-                    withdraw.0,
+                    &withdraw.0,
                     ExistenceRequirement::KeepAlive,
                 )
                 .map(|_| WrapPair(account_id.clone(), withdraw))

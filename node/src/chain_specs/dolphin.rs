@@ -21,7 +21,7 @@ use crate::command::{DOLPHIN_ON_BAIKAL_PARACHAIN_ID, DOLPHIN_PARACHAIN_ID};
 use dolphin_runtime::{
     opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
 };
-use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
+use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
 /// Dolphin Protocol Identifier
 pub const DOLPHIN_PROTOCOL_ID: &str = "dolphin";
 /// Kusama Relaychain Local Network Identifier
@@ -54,15 +54,15 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
         move || {
             dolphin_dev_genesis(
                 vec![(
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    SessionKeys::new(get_collator_keys_from_seed("Alice")),
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    SessionKeys::new(unchecked_collator_keys("Alice")),
                 )],
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                unchecked_account_id::<sr25519::Public>("Alice"),
                 vec![
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    unchecked_account_id::<sr25519::Public>("Bob"),
+                    unchecked_account_id::<sr25519::Public>("Alice//stash"),
+                    unchecked_account_id::<sr25519::Public>("Bob//stash"),
                 ],
             )
         },
@@ -88,38 +88,38 @@ pub fn dolphin_local_config() -> DolphinChainSpec {
             dolphin_dev_genesis(
                 vec![
                     (
-                        get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        SessionKeys::new(get_collator_keys_from_seed("Alice")),
+                        unchecked_account_id::<sr25519::Public>("Alice"),
+                        SessionKeys::new(unchecked_collator_keys("Alice")),
                     ),
                     (
-                        get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        SessionKeys::new(get_collator_keys_from_seed("Bob")),
+                        unchecked_account_id::<sr25519::Public>("Bob"),
+                        SessionKeys::new(unchecked_collator_keys("Bob")),
                     ),
                     (
-                        get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                        SessionKeys::new(get_collator_keys_from_seed("Charlie")),
+                        unchecked_account_id::<sr25519::Public>("Charlie"),
+                        SessionKeys::new(unchecked_collator_keys("Charlie")),
                     ),
                     (
-                        get_account_id_from_seed::<sr25519::Public>("Dave"),
-                        SessionKeys::new(get_collator_keys_from_seed("Dave")),
+                        unchecked_account_id::<sr25519::Public>("Dave"),
+                        SessionKeys::new(unchecked_collator_keys("Dave")),
                     ),
                     (
-                        get_account_id_from_seed::<sr25519::Public>("Eve"),
-                        SessionKeys::new(get_collator_keys_from_seed("Eve")),
+                        unchecked_account_id::<sr25519::Public>("Eve"),
+                        SessionKeys::new(unchecked_collator_keys("Eve")),
                     ),
                 ],
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                unchecked_account_id::<sr25519::Public>("Alice"),
                 vec![
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve"),
-                    get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    unchecked_account_id::<sr25519::Public>("Bob"),
+                    unchecked_account_id::<sr25519::Public>("Charlie"),
+                    unchecked_account_id::<sr25519::Public>("Dave"),
+                    unchecked_account_id::<sr25519::Public>("Eve"),
+                    unchecked_account_id::<sr25519::Public>("Alice//stash"),
+                    unchecked_account_id::<sr25519::Public>("Bob//stash"),
+                    unchecked_account_id::<sr25519::Public>("Charlie//stash"),
+                    unchecked_account_id::<sr25519::Public>("Dave//stash"),
+                    unchecked_account_id::<sr25519::Public>("Eve//stash"),
                 ],
             )
         },

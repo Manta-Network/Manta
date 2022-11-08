@@ -191,8 +191,8 @@ fn reserve_transfer_relaychain_to_parachain_a_then_back() {
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
 
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
-    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, None, false, true);
+    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, false, true);
 
     let _ = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -287,10 +287,8 @@ fn send_para_a_native_asset_to_para_b() {
 
     let amount = INITIAL_BALANCE;
 
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, false);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, false);
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, false);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, false);
 
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -365,10 +363,8 @@ fn send_para_a_native_asset_to_para_b_barriers_should_work() {
     let amount = 10000000000000u128;
     let units_per_sec = 125000000000;
 
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, false);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, false);
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, false);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, false);
 
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -458,10 +454,8 @@ fn send_insufficient_asset_from_para_a_to_para_b() {
         self_reserve_xtokens_weight_on_receiver(),
     );
 
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, false);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, false);
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, false);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, false);
 
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -579,10 +573,8 @@ fn send_para_a_native_asset_to_para_b_must_fail_cases() {
     let amount = 1u128;
     let units_per_sec = 125000000000;
 
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, false);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, false);
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, false);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, false);
 
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -678,8 +670,7 @@ fn register_insufficient_with_zero_min_balance_should_fail() {
     MockNet::reset();
 
     let a_source_location = create_asset_location(1, PARA_A_ID);
-    let a_asset_metadata_on_b =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 0, None, false, false);
+    let a_asset_metadata_on_b = create_asset_metadata("ParaAToken", "ParaA", 18, 0, false, false);
 
     ParaB::execute_with(|| {
         assert_err!(
@@ -709,12 +700,10 @@ fn send_para_a_custom_asset_to_para_b() {
 
     let para_b_source_location = create_asset_location(1, PARA_B_ID);
 
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
     let para_a_doge_asset_metadata =
-        create_asset_metadata("ParaADogeToken", "ParaADoge", 18, 1, None, false, true);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, false);
+        create_asset_metadata("ParaADogeToken", "ParaADoge", 18, 1, false, true);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, false);
 
     let _ = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -802,10 +791,8 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
     let fee_on_b_when_send_back = calculate_fee(ParaTokenPerSecond::get().1, weight);
     assert!(fee_on_b_when_send_back < amount);
 
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
 
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -909,12 +896,9 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
     let fee_at_reserve = calculate_fee(ParaTokenPerSecond::get().1, weight);
     assert!(amount >= fee_at_reserve * 2_u128);
 
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, false);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, false);
-    let para_c_asset_metadata =
-        create_asset_metadata("ParaCToken", "ParaC", 18, 1, None, false, false);
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, false);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, false);
+    let para_c_asset_metadata = create_asset_metadata("ParaCToken", "ParaC", 18, 1, false, false);
 
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -1032,8 +1016,8 @@ fn receive_relay_asset_with_trader_on_parachain() {
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
 
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
-    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, None, false, true);
+    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, false, true);
 
     let amount = 666u128;
     // We charge 10^9 as units per second on ParaA
@@ -1099,10 +1083,8 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
     let units_per_second = 1_250_000u128;
     let fee = calculate_fee(units_per_second, self_reserve_xtokens_weight_on_receiver());
 
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
 
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -1177,12 +1159,9 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
         non_self_reserve_xtokens_weight_on_receiver(),
     );
 
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
-    let para_c_asset_metadata =
-        create_asset_metadata("ParaCToken", "ParaC", 18, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
+    let para_c_asset_metadata = create_asset_metadata("ParaCToken", "ParaC", 18, 1, false, true);
 
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -1300,8 +1279,8 @@ fn receive_relay_asset_on_parachain_with_insufficient_fee_payment_should_fail() 
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
 
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
-    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, None, false, true);
+    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, false, true);
 
     let amount = 20u128;
     // We charge 2 x 10^10 as units per second on ParaA
@@ -1360,8 +1339,8 @@ fn receive_relay_should_fail_without_specifying_units_per_second() {
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
 
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
-    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, None, false, true);
+    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, false, true);
 
     let amount = 333u128;
 
@@ -1422,10 +1401,8 @@ fn send_para_a_asset_to_para_b_with_insufficient_fee() {
     let fee = calculate_fee(units_per_second, dest_weight);
     assert!(fee > amount);
 
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
 
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -1495,10 +1472,8 @@ fn send_para_a_asset_to_para_b_without_specifying_units_per_second() {
     let amount = 567u128;
     let dest_weight = 800_000u64;
 
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
 
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -1567,8 +1542,8 @@ fn receive_insufficient_relay_asset_on_parachain() {
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
 
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, false);
-    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, None, false, true);
+    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, false);
+    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, false, true);
 
     let amount = 123u128;
     let units_per_sec = 0u128;
@@ -1656,8 +1631,8 @@ fn receive_sufficient_relay_asset_on_parachain() {
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
 
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
-    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, None, false, true);
+    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, false, true);
 
     let amount = 123u128;
     let units_per_sec = 0;
@@ -1808,8 +1783,8 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
 
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
-    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, None, false, true);
+    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, false, true);
 
     // register relay asset in parachain A (XCM version 1)
     ParaA::execute_with(|| {
@@ -1939,10 +1914,8 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
     let para_b_source_location = create_asset_location(1, PARA_B_ID);
 
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
     let response = Response::Version(2);
 
     // This is irrelevant, nothing will be done with this message,
@@ -2098,10 +2071,8 @@ fn test_automatic_versioning_on_runtime_upgrade_with_para_b() {
 fn filtered_multilocation_should_not_work() {
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
     let para_b_source_location = create_asset_location(1, PARA_B_ID);
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
 
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -2296,13 +2267,11 @@ fn less_than_min_xcm_fee_should_not_work() {
     )));
     let para_b_as_reserve_chain = create_asset_location(1, PARA_B_ID);
 
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
 
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
+    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
 
     let _ = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -2471,13 +2440,11 @@ fn transfer_multicurrencies_should_work_scenarios() {
     )));
     let units_per_sec = 0;
 
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
 
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
+    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
 
     let _ = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -2673,15 +2640,12 @@ fn transfer_multicurrencies_should_fail_scenarios() {
     let para_b_source_location = create_asset_location(1, para_b_id);
     let para_c_source_location = create_asset_location(1, para_c_id);
 
-    let para_a_asset_metadata =
-        create_asset_metadata("ParaAToken", "ParaA", 18, 1, None, false, true);
-    let para_b_asset_metadata =
-        create_asset_metadata("ParaBToken", "ParaB", 18, 1, None, false, true);
-    let para_c_asset_metadata =
-        create_asset_metadata("ParaCToken", "ParaC", 18, 1, None, false, true);
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
+    let para_c_asset_metadata = create_asset_metadata("ParaCToken", "ParaC", 18, 1, false, true);
 
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, None, false, true);
+    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
     let units_per_sec = 0;
 
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(

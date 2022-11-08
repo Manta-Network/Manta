@@ -16,9 +16,6 @@ log = "0.4.16"
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 smallvec = "1.8.0"
 
-# manta-rs dependencies
-manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.4", default-features = false }
-
 # Substrate primitives
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26", default-features = false, optional = true }
 frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.26" }
@@ -44,7 +41,6 @@ std = [
   'scale-info/std',
   'sp-io/std',
   'sp-std/std',
-  'manta-accounting/std',
   'log/std',
   'frame-support/std',
   'frame-system/std',
