@@ -6,7 +6,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = "pallet-parachain-staking"
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '3.4.3'
+version = '4.0.0-alpha.1'
 
 [dependencies]
 log = { version = "0.4", default-features = false }
