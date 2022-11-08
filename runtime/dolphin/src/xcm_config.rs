@@ -15,10 +15,9 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    assets_config::{DolphinAssetConfig, DolphinConcreteFungibleLedger},
-    AssetManager, Assets, Call, DmpQueue, EnsureRootOrMoreThanHalfCouncil, Event, Origin,
-    ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, Treasury, XcmpQueue,
-    MAXIMUM_BLOCK_WEIGHT,
+    assets_config::DolphinAssetConfig, AssetManager, Assets, Call, DmpQueue,
+    EnsureRootOrMoreThanHalfCouncil, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm,
+    Runtime, Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
 use codec::{Decode, Encode};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
@@ -29,8 +28,8 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use manta_primitives::{
-    assets::{AssetIdLocationConvert, AssetLocation},
-    types::{AccountId, AssetId, Balance},
+    assets::AssetIdLocationConvert,
+    types::{AccountId, Balance, DolphinAssetId},
     xcm::{
         AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
         MultiNativeAsset,
@@ -138,7 +137,12 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
     // Used when the incoming asset is a fungible concrete asset matching the given location or name:
     IsNativeConcrete<SelfReserve>,
     // Used to match incoming assets which are not the native asset.
-    ConvertedConcreteAssetId<AssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
+    ConvertedConcreteAssetId<
+        DolphinAssetId,
+        Balance,
+        AssetIdLocationConvert<AssetManager>,
+        JustTry,
+    >,
 >;
 
 match_types! {
@@ -177,7 +181,12 @@ parameter_types! {
 pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
     AccountId,
     Assets,
-    ConvertedConcreteAssetId<AssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
+    ConvertedConcreteAssetId<
+        DolphinAssetId,
+        Balance,
+        AssetIdLocationConvert<AssetManager>,
+        JustTry,
+    >,
     XcmFeesAccount,
 >;
 
@@ -270,14 +279,15 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 // We wrap AssetId for XToken
 #[derive(Clone, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
 pub enum CurrencyId {
-    MantaCurrency(AssetId),
+    MantaCurrency(DolphinAssetId),
 }
 
+/// Maps a xTokens CurrencyId to a xcm MultiLocation implemented by some asset manager
 pub struct CurrencyIdtoMultiLocation<AssetXConverter>(sp_std::marker::PhantomData<AssetXConverter>);
 impl<AssetXConverter> sp_runtime::traits::Convert<CurrencyId, Option<MultiLocation>>
     for CurrencyIdtoMultiLocation<AssetXConverter>
 where
-    AssetXConverter: xcm_executor::traits::Convert<MultiLocation, AssetId>,
+    AssetXConverter: xcm_executor::traits::Convert<MultiLocation, DolphinAssetId>,
 {
     fn convert(currency: CurrencyId) -> Option<MultiLocation> {
         match currency {

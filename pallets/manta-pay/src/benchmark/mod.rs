@@ -16,7 +16,7 @@
 
 use crate::{
     benchmark::precomputed_coins::{
-        MINT, PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, RECLAIM, RECLAIM_INPUT,
+        PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, TO_PRIVATE, TO_PUBLIC, TO_PUBLIC_INPUT,
     },
     types::{Asset, AssetId, AssetValue},
     Call, Config, Event, Pallet, TransferPost,
@@ -79,7 +79,7 @@ benchmarks! {
     to_private {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        let mint_post = TransferPost::decode(&mut &*MINT).unwrap();
+        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
         let asset = mint_post.source(0).unwrap();
         init_asset::<T>(&caller, asset.id, asset.value);
     }: to_private (
@@ -93,13 +93,13 @@ benchmarks! {
     to_public {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        for coin in RECLAIM_INPUT {
+        for coin in TO_PUBLIC_INPUT {
             Pallet::<T>::to_private(
                 origin.clone(),
                 TransferPost::decode(&mut &**coin).unwrap()
             ).unwrap();
         }
-        let reclaim_post = TransferPost::decode(&mut &*RECLAIM).unwrap();
+        let reclaim_post = TransferPost::decode(&mut &*TO_PUBLIC).unwrap();
         let asset = reclaim_post.sink(0).unwrap();
         init_asset::<T>(&caller, asset.id, asset.value);
     }: to_public (

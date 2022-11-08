@@ -16,6 +16,7 @@ log = { version = "0.4.0", default-features = false }
 manta-primitives = { path = "../../primitives/manta", default-features = false }
 manta-util = { git = "https://github.com/manta-network/manta-rs", branch = "feat/new-circuits", default-features = false }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
 xcm = { git = "https://github.com/paritytech/polkadot.git", default-features = false, branch = "release-v0.9.26" }
@@ -48,7 +49,9 @@ std = [
   "scale-info/std",
   "sp-runtime/std",
   "sp-std/std",
+  "sp-arithmetic/std",
   "xcm/std",
+  "serde/std",
 ]
 try-runtime = [
   "frame-support/try-runtime",

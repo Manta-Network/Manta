@@ -47,7 +47,7 @@ use manta_primitives::{
         FungibleLedgerError,
     },
     constants::time::{DAYS, HOURS},
-    types::{AccountId, AssetId, Balance, Header},
+    types::{AccountId, Balance, CalamariAssetId, Header},
 };
 use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
 use xcm::{
@@ -1005,7 +1005,6 @@ fn concrete_fungible_ledger_transfers_work() {
                     is_frozen: false,
                 },
                 min_balance,
-                evm_address: None,
                 is_sufficient: true,
             };
             let source_location =
@@ -1119,7 +1118,7 @@ fn concrete_fungible_ledger_transfers_work() {
             // Transferring unregistered asset ID should not work.
             assert_err!(
                 CalamariConcreteFungibleLedger::transfer(
-                    AssetId::MAX,
+                    CalamariAssetId::MAX,
                     &alice.clone(),
                     &charlie.clone(),
                     transfer_amount,
@@ -1169,7 +1168,6 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     is_frozen: false,
                 },
                 min_balance,
-                evm_address: None,
                 is_sufficient: true,
             };
             let source_location =
@@ -1228,7 +1226,6 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                     is_frozen: false,
                 },
                 min_balance,
-                evm_address: None,
                 is_sufficient: false,
             };
 
@@ -1322,7 +1319,6 @@ fn concrete_fungible_ledger_can_withdraw_works() {
                     is_frozen: false,
                 },
                 min_balance,
-                evm_address: None,
                 is_sufficient: true,
             };
             let source_location =

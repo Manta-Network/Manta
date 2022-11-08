@@ -20,6 +20,7 @@
 //! Mock runtime for asset-manager
 
 use crate as pallet_asset_manager;
+use crate::mock::sp_api_hidden_includes_construct_runtime::hidden_include::traits::GenesisBuild;
 use frame_support::{
     construct_runtime, pallet_prelude::DispatchResult, parameter_types, traits::ConstU32, PalletId,
 };
@@ -31,17 +32,15 @@ use manta_primitives::{
         AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, ASSET_STRING_LIMIT},
-    types::{AccountId, AssetId, Balance, BlockNumber, Header},
+    types::{AccountId, Balance, BlockNumber, CalamariAssetId, Header},
 };
-use sp_core::{H160, H256};
+use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
-use sp_std::marker::PhantomData;
 use xcm::{
     prelude::{Parachain, X1},
     v1::MultiLocation,
     VersionedMultiLocation,
 };
-
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
     pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
@@ -86,7 +85,7 @@ parameter_types! {
 impl pallet_assets::Config for Runtime {
     type Event = Event;
     type Balance = Balance;
-    type AssetId = AssetId;
+    type AssetId = CalamariAssetId;
     type Currency = Balances;
     type ForceOrigin = EnsureRoot<AccountId>;
     type AssetDeposit = AssetDeposit;
@@ -118,19 +117,19 @@ impl pallet_balances::Config for Runtime {
     type ReserveIdentifier = [u8; 8];
 }
 
-pub struct MantaAssetRegistrar;
-impl BalanceType for MantaAssetRegistrar {
+pub struct MantaAssetRegistry;
+impl BalanceType for MantaAssetRegistry {
     type Balance = Balance;
 }
-impl AssetIdType for MantaAssetRegistrar {
-    type AssetId = AssetId;
+impl AssetIdType for MantaAssetRegistry {
+    type AssetId = CalamariAssetId;
 }
-impl AssetRegistry for MantaAssetRegistrar {
+impl AssetRegistry for MantaAssetRegistry {
     type Metadata = AssetStorageMetadata;
     type Error = sp_runtime::DispatchError;
 
     fn create_asset(
-        asset_id: AssetId,
+        asset_id: CalamariAssetId,
         metadata: AssetStorageMetadata,
         min_balance: Balance,
         is_sufficient: bool,
@@ -153,7 +152,10 @@ impl AssetRegistry for MantaAssetRegistrar {
         )
     }
 
-    fn update_asset_metadata(asset_id: &AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
+    fn update_asset_metadata(
+        asset_id: &CalamariAssetId,
+        metadata: AssetStorageMetadata,
+    ) -> DispatchResult {
         Assets::force_set_metadata(
             Origin::root(),
             *asset_id,
@@ -166,8 +168,8 @@ impl AssetRegistry for MantaAssetRegistrar {
 }
 
 parameter_types! {
-    pub const StartNonNativeAssetId: AssetId = 8;
-    pub const NativeAssetId: AssetId = 1;
+    pub const StartNonNativeAssetId: CalamariAssetId = 8;
+    pub const NativeAssetId: CalamariAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
@@ -178,20 +180,19 @@ parameter_types! {
             is_frozen: false,
         },
         min_balance: 1u128,
-        evm_address: None,
         is_sufficient: true,
     };
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
 }
 
-///
+/// AssetConfig implementations for this runtime
 #[derive(Clone, Eq, PartialEq)]
 pub struct MantaAssetConfig;
 impl LocationType for MantaAssetConfig {
     type Location = AssetLocation;
 }
 impl AssetIdType for MantaAssetConfig {
-    type AssetId = AssetId;
+    type AssetId = CalamariAssetId;
 }
 impl BalanceType for MantaAssetConfig {
     type Balance = Balance;
@@ -203,13 +204,13 @@ impl AssetConfig<Runtime> for MantaAssetConfig {
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
-    type AssetRegistry = MantaAssetRegistrar;
+    type AssetRegistry = MantaAssetRegistry;
     type FungibleLedger = NativeAndNonNative<Runtime, MantaAssetConfig, Balances, Assets>;
 }
 
 impl pallet_asset_manager::Config for Runtime {
     type Event = Event;
-    type AssetId = AssetId;
+    type AssetId = CalamariAssetId;
     type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = MantaAssetConfig;
@@ -253,7 +254,6 @@ pub(crate) fn create_asset_metadata(
     symbol: &str,
     decimals: u8,
     min_balance: u128,
-    evm_address: Option<H160>,
     is_frozen: bool,
     is_sufficient: bool,
 ) -> AssetRegistryMetadata<Balance> {
@@ -265,7 +265,6 @@ pub(crate) fn create_asset_metadata(
             is_frozen,
         },
         min_balance,
-        evm_address,
         is_sufficient,
     }
 }

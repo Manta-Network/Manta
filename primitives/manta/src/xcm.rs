@@ -14,19 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! XCM Primitives
+//! XCM primitives and implementations
 
-use crate::assets::{AssetConfig, AssetIdLocationMap, FungibleLedger, UnitsPerSecond};
-use core::marker::PhantomData;
+use super::assets::{AssetConfig, FungibleLedger};
+
+use sp_runtime::traits::{CheckedConversion, Convert, Zero};
+use sp_std::marker::PhantomData;
+
+use crate::assets::{AssetIdLocationMap, UnitsPerSecond};
 use frame_support::{
     pallet_prelude::Get,
     traits::{fungibles::Mutate, tokens::ExistenceRequirement},
     weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 use frame_system::Config;
-use sp_runtime::traits::{CheckedConversion, Convert, Zero};
 use xcm::{
-    latest::{prelude::Concrete, Error},
+    latest::{prelude::Concrete, Error as XcmError},
     v1::{
         AssetId as XcmAssetId, Fungibility,
         Junction::{AccountId32, Parachain},
@@ -44,7 +47,7 @@ use xcm_executor::{
 };
 
 /// XCM Result
-pub type Result<T = (), E = Error> = core::result::Result<T, E>;
+pub type Result<T = (), E = XcmError> = core::result::Result<T, E>;
 
 /// Reserve Location
 pub trait Reserve {
@@ -151,7 +154,7 @@ where
                 "no assets in payment: {:?}",
                 payment,
             );
-            Error::TooExpensive
+            XcmError::TooExpensive
         })?;
 
         // Check the first asset
@@ -163,7 +166,7 @@ where
                         "asset_id missing for asset location with id: {:?}",
                         id,
                     );
-                    Error::TooExpensive
+                    XcmError::TooExpensive
                 })?;
                 let units_per_second = M::units_per_second(&asset_id).ok_or({
                     log::debug!(
@@ -171,7 +174,15 @@ where
                         "units_per_second missing for asset with id: {:?}",
                         id,
                     );
-                    Error::TooExpensive
+                    XcmError::TooExpensive
+                })?;
+                let units_per_second = M::units_per_second(&asset_id).ok_or({
+                    log::debug!(
+                        target: "FirstAssetTrader::buy_weight",
+                        "units_per_second missing for asset with id: {:?}",
+                        id,
+                    );
+                    XcmError::TooExpensive
                 })?;
 
                 let amount = units_per_second * (weight as u128) / (WEIGHT_PER_SECOND as u128);
@@ -196,7 +207,7 @@ where
                         target: "FirstAssetTrader::buy_weight",
                         "not enough required assets in payment",
                     );
-                    Error::TooExpensive
+                    XcmError::TooExpensive
                 })?;
                 self.weight = self.weight.saturating_add(weight);
 
@@ -232,7 +243,7 @@ where
                     "no matching XcmAssetId for first_asset in payment: {:?}",
                     payment,
                 );
-                Err(Error::TooExpensive)
+                Err(XcmError::TooExpensive)
             }
         }
     }
@@ -341,8 +352,9 @@ where
         asset: &MultiAsset,
         location: &MultiLocation,
     ) -> Result<(A::AssetId, T::AccountId, A::Balance)> {
-        let receiver = AccountIdConverter::convert_ref(location)
-            .map_err(|_| Error::FailedToTransactAsset("Failed Location to AccountId Conversion"))?;
+        let receiver = AccountIdConverter::convert_ref(location).map_err(|_| {
+            XcmError::FailedToTransactAsset("Failed Location to AccountId Conversion")
+        })?;
         let (asset_id, amount) = match (
             Native::matches_fungible(asset),
             NonNative::matches_fungibles(asset),
@@ -352,7 +364,7 @@ where
             // assets asset
             (_, Ok((asset_id, amount))) => (asset_id, amount),
             // unknown asset
-            _ => return Err(Error::FailedToTransactAsset("Unknown Asset")),
+            _ => return Err(XcmError::FailedToTransactAsset("Unknown Asset")),
         };
         Ok((asset_id, receiver, amount))
     }
@@ -379,8 +391,8 @@ where
         let (asset_id, who, amount) = Self::match_asset_and_location(asset, location)?;
         // NOTE: If it's non-native asset we want to check with increase in total supply. Otherwise
         //       it will just use false, as it is assumed the native asset supply cannot be changed.
-        A::FungibleLedger::try_deposit_minting(asset_id, &who, amount, true)
-            .map_err(|_| Error::FailedToTransactAsset("Failed deposit minting"))
+        A::FungibleLedger::deposit_minting_with_check(asset_id, &who, amount, true)
+            .map_err(|_| XcmError::FailedToTransactAsset("Failed deposit minting"))
     }
 
     #[inline]
@@ -397,7 +409,7 @@ where
             amount,
             ExistenceRequirement::AllowDeath,
         )
-        .map_err(|_| Error::FailedToTransactAsset("Failed Burn"))?;
+        .map_err(|_| XcmError::FailedToTransactAsset("Failed Burn"))?;
         Ok(asset.clone().into())
     }
 }

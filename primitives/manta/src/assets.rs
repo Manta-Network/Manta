@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Asset Utilities
-
+use crate::{constants::TEST_DEFAULT_ASSET_ED, types::Balance as MantaBalance};
 use alloc::vec::Vec;
 use codec::{Decode, Encode};
 use core::{borrow::Borrow, marker::PhantomData};
@@ -32,7 +32,6 @@ use frame_support::{
 };
 use frame_system::Config;
 use scale_info::TypeInfo;
-use sp_core::H160;
 use xcm::{
     v1::{Junctions, MultiLocation},
     VersionedMultiLocation,
@@ -77,7 +76,7 @@ pub trait AssetMetadata: BalanceType {
 
 /// Asset Registry
 ///
-/// The registrar trait: defines the interface of creating an asset in the asset implementation
+/// The registry trait: defines the interface of creating an asset in the asset implementation
 /// layer. We may revisit this interface design (e.g. add change asset interface). However, change
 /// in StorageMetadata should be rare.
 pub trait AssetRegistry: AssetIdType + BalanceType {
@@ -124,7 +123,7 @@ where
     type StorageMetadata: From<Self::AssetRegistryMetadata>;
 
     /// The Asset Metadata type stored in this pallet.
-    type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance> + Parameter + Default;
+    type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance> + Parameter + TestingDefault;
 
     /// The AssetId that the non-native asset starts from.
     ///
@@ -158,22 +157,6 @@ where
     >;
 }
 
-impl Default for AssetRegistryMetadata<u128> {
-    fn default() -> Self {
-        Self {
-            metadata: AssetStorageMetadata {
-                name: b"Default".to_vec(),
-                symbol: b"DEF".to_vec(),
-                decimals: 12,
-                is_frozen: false,
-            },
-            evm_address: None,
-            min_balance: 1,
-            is_sufficient: true,
-        }
-    }
-}
-
 /// Asset Storage Metadata
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
 pub struct AssetStorageMetadata {
@@ -205,9 +188,6 @@ pub struct AssetRegistryMetadata<B> {
     /// Asset Storage Metadata
     pub metadata: AssetStorageMetadata,
 
-    /// Optional EVM Address for the Asset
-    pub evm_address: Option<H160>,
-
     /// Minimum Balance
     pub min_balance: B,
 
@@ -223,21 +203,27 @@ pub struct AssetRegistryMetadata<B> {
     pub is_sufficient: bool,
 }
 
-/*
-impl Default for AssetRegistrarMetadata {
-    fn default() -> Self {
+/// Because there is no obvious defaults for an asset's metadata, we explicitly
+/// name a trait to carry this logic for testing and benchmarking
+pub trait TestingDefault {
+    /// Returns some default asset metadata
+    fn testing_default() -> Self;
+}
+
+impl TestingDefault for AssetRegistryMetadata<MantaBalance> {
+    fn testing_default() -> Self {
         Self {
-            name: b"Dolphin".to_vec(),
-            symbol: b"DOL".to_vec(),
-            decimals: 12,
-            evm_address: None,
-            is_frozen: false,
+            metadata: AssetStorageMetadata {
+                name: b"Default".to_vec(),
+                symbol: b"DEF".to_vec(),
+                decimals: 12,
+                is_frozen: false,
+            },
             min_balance: TEST_DEFAULT_ASSET_ED,
             is_sufficient: true,
         }
     }
 }
-*/
 
 impl<B> BalanceType for AssetRegistryMetadata<B> {
     type Balance = B;
@@ -309,7 +295,7 @@ pub trait UnitsPerSecond: AssetIdType {
     fn units_per_second(asset_id: &Self::AssetId) -> Option<u128>;
 }
 
-///
+/// Converter struct implementing `Convert`. MultiLocation to AssetId and the reverse.
 pub struct AssetIdLocationConvert<M>(PhantomData<M>);
 
 impl<M> Convert<MultiLocation, M::AssetId> for AssetIdLocationConvert<M>
@@ -423,7 +409,7 @@ pub trait FungibleLedger: AssetIdType + BalanceType {
 
     /// Checks if `amount` of `asset_id` can be deposited into `account` and then deposits it if
     /// that is successful.
-    fn try_deposit_minting(
+    fn deposit_minting_with_check(
         asset_id: Self::AssetId,
         account: &Self::AccountId,
         amount: Self::Balance,
@@ -542,7 +528,7 @@ where
     }
 
     #[inline]
-    fn try_deposit_minting(
+    fn deposit_minting_with_check(
         asset_id: Self::AssetId,
         account: &Self::AccountId,
         amount: Self::Balance,

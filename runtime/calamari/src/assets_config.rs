@@ -22,10 +22,10 @@ use super::{
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
-        AssetStorageMetadata, BalanceType, FungibleLedger, LocationType, NativeAndNonNative,
+        AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
-    types::{AccountId, AssetId, Balance},
+    types::{AccountId, Balance, CalamariAssetId},
 };
 
 use frame_support::{pallet_prelude::DispatchResult, parameter_types, traits::ConstU32, PalletId};
@@ -46,7 +46,7 @@ parameter_types! {
 impl pallet_assets::Config for Runtime {
     type Event = Event;
     type Balance = Balance;
-    type AssetId = AssetId;
+    type AssetId = CalamariAssetId;
     type Currency = Balances;
     type ForceOrigin = EnsureRoot<AccountId>;
     type AssetDeposit = AssetDeposit;
@@ -60,19 +60,19 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
 }
 
-pub struct CalamariAssetRegistrar;
-impl BalanceType for CalamariAssetRegistrar {
+pub struct CalamariAssetRegistry;
+impl BalanceType for CalamariAssetRegistry {
     type Balance = Balance;
 }
-impl AssetIdType for CalamariAssetRegistrar {
-    type AssetId = AssetId;
+impl AssetIdType for CalamariAssetRegistry {
+    type AssetId = CalamariAssetId;
 }
-impl AssetRegistry for CalamariAssetRegistrar {
+impl AssetRegistry for CalamariAssetRegistry {
     type Metadata = AssetStorageMetadata;
     type Error = sp_runtime::DispatchError;
 
     fn create_asset(
-        asset_id: AssetId,
+        asset_id: CalamariAssetId,
         metadata: AssetStorageMetadata,
         min_balance: Balance,
         is_sufficient: bool,
@@ -95,7 +95,10 @@ impl AssetRegistry for CalamariAssetRegistrar {
         )
     }
 
-    fn update_asset_metadata(asset_id: &AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
+    fn update_asset_metadata(
+        asset_id: &CalamariAssetId,
+        metadata: AssetStorageMetadata,
+    ) -> DispatchResult {
         Assets::force_set_metadata(
             Origin::root(),
             *asset_id,
@@ -108,8 +111,8 @@ impl AssetRegistry for CalamariAssetRegistrar {
 }
 
 parameter_types! {
-    pub const StartNonNativeAssetId: AssetId = 8;
-    pub const NativeAssetId: AssetId = 1;
+    pub const StartNonNativeAssetId: CalamariAssetId = 8;
+    pub const NativeAssetId: CalamariAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(SelfReserve::get()));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
@@ -120,7 +123,6 @@ parameter_types! {
             is_frozen: false,
         },
         min_balance: NativeTokenExistentialDeposit::get(),
-        evm_address: None,
         is_sufficient: true,
     };
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
@@ -129,6 +131,7 @@ parameter_types! {
 pub type CalamariConcreteFungibleLedger =
     NativeAndNonNative<Runtime, CalamariAssetConfig, Balances, Assets>;
 
+/// AssetConfig implementations for this runtime
 #[derive(Clone, Eq, PartialEq)]
 pub struct CalamariAssetConfig;
 impl LocationType for CalamariAssetConfig {
@@ -138,7 +141,7 @@ impl BalanceType for CalamariAssetConfig {
     type Balance = Balance;
 }
 impl AssetIdType for CalamariAssetConfig {
-    type AssetId = AssetId;
+    type AssetId = CalamariAssetId;
 }
 impl AssetConfig<Runtime> for CalamariAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
@@ -147,13 +150,13 @@ impl AssetConfig<Runtime> for CalamariAssetConfig {
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
-    type AssetRegistry = CalamariAssetRegistrar;
+    type AssetRegistry = CalamariAssetRegistry;
     type FungibleLedger = CalamariConcreteFungibleLedger;
 }
 
 impl pallet_asset_manager::Config for Runtime {
     type Event = Event;
-    type AssetId = AssetId;
+    type AssetId = CalamariAssetId;
     type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = CalamariAssetConfig;

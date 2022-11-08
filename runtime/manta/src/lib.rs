@@ -633,7 +633,7 @@ construct_runtime!(
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
         AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
 
-        // Preimage registrar.
+        // Preimage registry.
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 28,
         // System scheduler
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 29,

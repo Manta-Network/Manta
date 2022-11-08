@@ -41,13 +41,16 @@ pub type AccountId = <Signer as IdentifyAccount>::AccountId;
 /// This index is used to look up accounts.
 pub type AccountIndex = u32;
 
-/// Asset Id Type
-pub type AssetId = u128;
+/// Calamari Asset Id Type
+pub type CalamariAssetId = u128;
+
+/// Dolphin Asset Id Type
+pub type DolphinAssetId = u128;
 
 /// Balance of an Account
 pub type Balance = u128;
 
-/// Transaciton Index Type
+/// Transaction Index Type
 pub type Index = u32;
 
 /// A hash of some data used by the chain.
