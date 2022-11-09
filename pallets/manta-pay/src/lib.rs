@@ -588,7 +588,7 @@ pub mod pallet {
                 }
             }
             (
-                NullifierSetInsertionOrder::<T>::contains_key(max_sender_index as u64),
+                NullifierSetInsertionOrder::<T>::contains_key(max_sender_index),
                 senders,
             )
         }

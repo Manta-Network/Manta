@@ -184,9 +184,9 @@ pub mod pallet {
             let asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
             let metadata = <T::AssetConfig as AssetConfig<T>>::NativeAssetMetadata::get();
             let location = <T::AssetConfig as AssetConfig<T>>::NativeAssetLocation::get();
-            AssetIdLocation::<T>::insert(&asset_id, &location);
-            AssetIdMetadata::<T>::insert(&asset_id, &metadata);
-            LocationAssetId::<T>::insert(&location, &asset_id);
+            AssetIdLocation::<T>::insert(asset_id, &location);
+            AssetIdMetadata::<T>::insert(asset_id, &metadata);
+            LocationAssetId::<T>::insert(&location, asset_id);
         }
     }
 
@@ -356,9 +356,9 @@ pub mod pallet {
                 metadata.is_sufficient(),
             )
             .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
-            AssetIdLocation::<T>::insert(&asset_id, &location);
-            AssetIdMetadata::<T>::insert(&asset_id, &metadata);
-            LocationAssetId::<T>::insert(&location, &asset_id);
+            AssetIdLocation::<T>::insert(asset_id, &location);
+            AssetIdMetadata::<T>::insert(asset_id, &metadata);
+            LocationAssetId::<T>::insert(&location, asset_id);
 
             // If it's a new para id, which will be inserted with AssetCount as 1.
             // If not, AssetCount will increased by 1.
@@ -403,8 +403,8 @@ pub mod pallet {
             let old_location =
                 AssetIdLocation::<T>::get(asset_id).ok_or(Error::<T>::UpdateNonExistentAsset)?;
             LocationAssetId::<T>::remove(&old_location);
-            LocationAssetId::<T>::insert(&location, &asset_id);
-            AssetIdLocation::<T>::insert(&asset_id, &location);
+            LocationAssetId::<T>::insert(&location, asset_id);
+            AssetIdLocation::<T>::insert(asset_id, &location);
 
             // 1. If the new location has new para id, insert the new para id,
             // the old para id will be deleted if AssetCount <= 1, or decreased by 1.
@@ -464,7 +464,7 @@ pub mod pallet {
                 &asset_id,
                 metadata.clone().into(),
             )?;
-            AssetIdMetadata::<T>::insert(&asset_id, &metadata);
+            AssetIdMetadata::<T>::insert(asset_id, &metadata);
             Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata });
             Ok(())
         }
@@ -487,7 +487,7 @@ pub mod pallet {
                 AssetIdLocation::<T>::contains_key(asset_id),
                 Error::<T>::UpdateNonExistentAsset
             );
-            UnitsPerSecond::<T>::insert(&asset_id, units_per_second);
+            UnitsPerSecond::<T>::insert(asset_id, units_per_second);
             Self::deposit_event(Event::<T>::UnitsPerSecondUpdated {
                 asset_id,
                 units_per_second,
