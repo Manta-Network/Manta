@@ -904,7 +904,7 @@ mod benches {
         [calamari_vesting, CalamariVesting]
         [pallet_tx_pause, TransactionPause]
         [manta_collator_selection, CollatorSelection]
-        // [pallet_asset_manager, AssetManager]
+        [pallet_asset_manager, AssetManager]
         [pallet_parachain_staking, ParachainStaking]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
