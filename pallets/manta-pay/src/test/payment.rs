@@ -56,7 +56,7 @@ lazy_static::lazy_static! {
 }
 
 /// Loop randomized tests at least 10 times to reduce the change of false positives.
-const RANDOMIZED_TESTS_ITERATIONS: usize = 1;
+const RANDOMIZED_TESTS_ITERATIONS: usize = 10;
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
 pub const NATIVE_ASSET_ID: StandardAssetId =

@@ -19,7 +19,7 @@ use crate::{
         PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, TO_PRIVATE, TO_PUBLIC, TO_PUBLIC_INPUT,
     },
     types::Asset,
-    Call, Config, Event, Pallet, TransferPost,
+    Call, Config, Event, Pallet, StandardAssetId, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::traits::Get;
@@ -28,6 +28,7 @@ use frame_system::RawOrigin;
 use manta_primitives::{
     assets::{AssetConfig, AssetRegistry, FungibleLedger, TestingDefault},
     constants::TEST_DEFAULT_ASSET_ED,
+    types::Balance,
 };
 use scale_codec::Decode;
 
@@ -35,7 +36,7 @@ mod precomputed_coins;
 
 pub const INITIAL_VALUE: u128 = 1_000_000_000_000_000_000_000u128;
 
-/// Asserts that the last event that has occured is the same as `event`.
+/// Asserts that the last event that has occurred is the same as `event`.
 #[inline]
 pub fn assert_last_event<T, E>(event: E)
 where
@@ -48,7 +49,7 @@ where
 
 /// Init assets for manta-pay
 #[inline]
-pub fn init_asset<T>(owner: &T::AccountId, id: u128, value: u128)
+pub fn init_asset<T>(owner: &T::AccountId, id: StandardAssetId, value: Balance)
 where
     T: Config,
 {
