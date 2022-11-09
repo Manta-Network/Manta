@@ -57,7 +57,7 @@ fn sample_to_private<R>(
 where
     R: CryptoRng + RngCore + ?Sized,
 {
-    TransferPost::from(test::payment::unsafe_to_private::unsafe_no_prove_full(
+    TransferPost::from(test::payment::to_private::prove_full(
         proving_context,
         parameters,
         utxo_accumulator_model,
@@ -111,7 +111,7 @@ fn sample_to_public<R>(
 where
     R: CryptoRng + RngCore + ?Sized,
 {
-    let ([to_private_0, to_private_1], to_public) = test::payment::private_transfer::prove_full(
+    let ([to_private_0, to_private_1], to_public) = test::payment::to_public::prove_full(
         proving_context,
         parameters,
         &mut UtxoAccumulator::new(utxo_accumulator_model.clone()),

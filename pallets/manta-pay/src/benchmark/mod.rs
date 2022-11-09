@@ -18,15 +18,22 @@ use crate::{
     benchmark::precomputed_coins::{
         PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, TO_PRIVATE, TO_PUBLIC, TO_PUBLIC_INPUT,
     },
-    types::{Asset, AssetId, AssetValue},
+    types::Asset,
     Call, Config, Event, Pallet, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use frame_support::traits::Get;
 use frame_system::RawOrigin;
-use manta_primitives::constants::TEST_DEFAULT_ASSET_ED;
+
+use manta_primitives::{
+    assets::{AssetConfig, AssetRegistry, FungibleLedger, TestingDefault},
+    constants::TEST_DEFAULT_ASSET_ED,
+};
 use scale_codec::Decode;
 
 mod precomputed_coins;
+
+pub const INITIAL_VALUE: u128 = 1_000_000_000_000_000_000_000u128;
 
 /// Asserts that the last event that has occured is the same as `event`.
 #[inline]
@@ -41,15 +48,14 @@ where
 
 /// Init assets for manta-pay
 #[inline]
-pub fn init_asset<T>(owner: &T::AccountId, id: AssetId, value: AssetValue)
+pub fn init_asset<T>(owner: &T::AccountId, id: u128, value: u128)
 where
     T: Config,
 {
-    /* TODO:
-    let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::default();
+    let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
     let storage_metadata: <T::AssetConfig as AssetConfig<T>>::StorageMetadata = metadata.into();
     <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
-        Pallet::<T>::id_from_field(id).expect("FIXME"),
+        id.try_into().unwrap(),
         storage_metadata,
         TEST_DEFAULT_ASSET_ED,
         true,
@@ -57,19 +63,17 @@ where
     .expect("Unable to create asset.");
     let pallet_account: T::AccountId = Pallet::<T>::account_id();
     <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
-        Pallet::<T>::id_from_field(id).expect("FIXME"),
+        id.try_into().unwrap(),
         owner,
         value + TEST_DEFAULT_ASSET_ED,
     )
     .expect("Unable to mint asset to its new owner.");
     <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
-        Pallet::<T>::id_from_field(id).expect("FIXME"),
+        id.try_into().unwrap(),
         &pallet_account,
         TEST_DEFAULT_ASSET_ED,
     )
     .expect("Unable to mint existential deposit to pallet account.");
-    */
-    todo!()
 }
 
 benchmarks! {
@@ -78,7 +82,7 @@ benchmarks! {
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
         let asset = mint_post.source(0).unwrap();
-        init_asset::<T>(&caller, asset.id, asset.value);
+        init_asset::<T>(&caller, Pallet::<T>::id_from_field(asset.id).unwrap(), asset.value);
     }: to_private (
         RawOrigin::Signed(caller.clone()),
         mint_post
@@ -90,6 +94,7 @@ benchmarks! {
     to_public {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         for coin in TO_PUBLIC_INPUT {
             Pallet::<T>::to_private(
                 origin.clone(),
@@ -98,7 +103,6 @@ benchmarks! {
         }
         let reclaim_post = TransferPost::decode(&mut &*TO_PUBLIC).unwrap();
         let asset = reclaim_post.sink(0).unwrap();
-        init_asset::<T>(&caller, asset.id, asset.value);
     }: to_public (
         RawOrigin::Signed(caller.clone()),
         reclaim_post
@@ -110,7 +114,7 @@ benchmarks! {
     private_transfer {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, Pallet::<T>::field_from_id(8), 1_000_000u128);
+        init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         for coin in PRIVATE_TRANSFER_INPUT {
             Pallet::<T>::to_private(
                 origin.clone(),
@@ -128,9 +132,8 @@ benchmarks! {
     public_transfer {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        let id = Pallet::<T>::field_from_id(8);
-        init_asset::<T>(&caller, id, 1_000_000u128);
-        let asset = Asset::new(id, 100);
+        init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
+        let asset = Asset::new(Pallet::<T>::field_from_id(8u128), 100);
         let sink =  Pallet::<T>::account_id();
     }: public_transfer (
         RawOrigin::Signed(caller.clone()),
@@ -142,4 +145,4 @@ benchmarks! {
     }
 }
 
-// TODO: impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
+impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
