@@ -197,7 +197,7 @@ pub mod pallet {
             for source in post.sources.iter() {
                 ensure!(
                     T::TransactionLimit::ensure_valid(asset_id, *source),
-                    Error::<T>::InvalidSourceAccount
+                    Error::<T>::TransferAmountExceedsLimit
                 );
             }
 
@@ -398,6 +398,9 @@ pub mod pallet {
         ///
         /// This is caused by some internal error in the ledger and should never occur.
         InternalLedgerError,
+
+        /// Transfer asset amount exceeds limit
+        TransferAmountExceedsLimit,
     }
 
     impl<T> From<InvalidSourceAccount<T::AccountId>> for Error<T>

@@ -83,7 +83,9 @@ fn transaction_limitation_validity_check_works() {
             1,
             100
         ));
-
+        assert!(<TransactionLimit as TransactionLimitation>::ensure_valid(
+            1, 0
+        ));
         assert!(<TransactionLimit as TransactionLimitation>::ensure_valid(
             1, 99
         ));
@@ -104,6 +106,14 @@ fn transaction_limitation_validity_check_works() {
             1, 100
         ));
         assert!(!<TransactionLimit as TransactionLimitation>::ensure_valid(
+            1, 1000
+        ));
+
+        assert_ok!(TransactionLimit::unset_asset_limit(
+            RawOrigin::Root.into(),
+            1
+        ));
+        assert!(<TransactionLimit as TransactionLimitation>::ensure_valid(
             1, 1000
         ));
     });

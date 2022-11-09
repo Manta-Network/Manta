@@ -521,11 +521,15 @@ fn to_private_lower_thant_asset_limit_should_works() {
                 Origin::signed(ALICE),
                 sample_mint(AssetValue(501).with(id), &mut rng).into()
             ),
-            Error::<Test>::InvalidSourceAccount
+            Error::<Test>::TransferAmountExceedsLimit
         );
         assert_ok!(MantaPayPallet::to_private(
             Origin::signed(ALICE),
             sample_mint(AssetValue(499).with(id), &mut rng).into()
+        ));
+        assert_ok!(MantaPayPallet::to_private(
+            Origin::signed(ALICE),
+            sample_mint(AssetValue(0).with(id), &mut rng).into()
         ));
 
         assert_ok!(pallet_tx_limit::Pallet::<Test>::set_asset_limit(
@@ -538,7 +542,7 @@ fn to_private_lower_thant_asset_limit_should_works() {
                 Origin::signed(ALICE),
                 sample_mint(AssetValue(1001).with(id), &mut rng).into()
             ),
-            Error::<Test>::InvalidSourceAccount
+            Error::<Test>::TransferAmountExceedsLimit
         );
         assert_ok!(MantaPayPallet::to_private(
             Origin::signed(ALICE),
@@ -553,6 +557,10 @@ fn to_private_lower_thant_asset_limit_should_works() {
         assert_ok!(MantaPayPallet::to_private(
             Origin::signed(ALICE),
             sample_mint(AssetValue(500).with(id), &mut rng).into()
+        ));
+        assert_ok!(MantaPayPallet::to_private(
+            Origin::signed(ALICE),
+            sample_mint(AssetValue(0).with(id), &mut rng).into()
         ));
     });
 }

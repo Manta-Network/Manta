@@ -46,7 +46,7 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-        /// The origin which may set filter.
+        /// The origin which may set asset limit.
         type UpdateOrigin: EnsureOrigin<Self::Origin>;
 
         /// Weight information for the extrinsics in this pallet.
@@ -93,11 +93,8 @@ pub mod pallet {
         ) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
 
-            AssetLimits::<T>::try_mutate(asset_id, |maybe_limit| -> DispatchResult {
-                *maybe_limit = amount;
-                Self::deposit_event(Event::TransactionLimitSet { asset_id, amount });
-                Ok(())
-            })?;
+            AssetLimits::<T>::insert(asset_id, amount);
+            Self::deposit_event(Event::TransactionLimitSet { asset_id, amount });
 
             Ok(())
         }
