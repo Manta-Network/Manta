@@ -5150,7 +5150,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.5.6"
-source = "git+https://github.com/manta-network/manta-rs.git?rev=115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb#115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#fac2be54fb9cbb89f1f98d53be38878b42c10187"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5194,7 +5194,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.5.6"
-source = "git+https://github.com/manta-network/manta-rs.git?rev=115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb#115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#fac2be54fb9cbb89f1f98d53be38878b42c10187"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -5216,7 +5216,7 @@ dependencies = [
 [[package]]
 name = "manta-parameters"
 version = "0.5.6"
-source = "git+https://github.com/manta-network/manta-rs.git?rev=115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb#115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#fac2be54fb9cbb89f1f98d53be38878b42c10187"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5229,7 +5229,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.5.6"
-source = "git+https://github.com/manta-network/manta-rs.git?rev=115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb#115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#fac2be54fb9cbb89f1f98d53be38878b42c10187"
 dependencies = [
  "aes-gcm",
  "ark-groth16",
@@ -5337,7 +5337,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.5.6"
-source = "git+https://github.com/manta-network/manta-rs.git?rev=115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb#115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#fac2be54fb9cbb89f1f98d53be38878b42c10187"
 dependencies = [
  "crossbeam-channel",
  "serde",
@@ -12486,7 +12486,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.5",
  "rand 0.8.5",
  "static_assertions",
