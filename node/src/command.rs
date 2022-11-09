@@ -112,6 +112,7 @@ fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         "dolphin-testnet" => Ok(Box::new(chain_specs::dolphin_testnet_config()?)),
         "dolphin-2085" => Ok(Box::new(chain_specs::dolphin_2085_config()?)),
         "dolphin-testnet-ci" => Ok(Box::new(chain_specs::dolphin_testnet_ci_config()?)),
+        "dolphin_v3_staging" => Ok(Box::new(chain_specs::dolphin_v3_staging_config())),
         path => {
             let chain_spec = chain_specs::ChainSpec::from_json_file(path.into())?;
             if chain_spec.is_manta() {
