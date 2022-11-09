@@ -56,7 +56,7 @@ where
     let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
     let storage_metadata: <T::AssetConfig as AssetConfig<T>>::StorageMetadata = metadata.into();
     <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
-        id.try_into().unwrap(),
+        id,
         storage_metadata,
         TEST_DEFAULT_ASSET_ED,
         true,
@@ -64,13 +64,13 @@ where
     .expect("Unable to create asset.");
     let pallet_account: T::AccountId = Pallet::<T>::account_id();
     <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
-        id.try_into().unwrap(),
+        id,
         owner,
         value + TEST_DEFAULT_ASSET_ED,
     )
     .expect("Unable to mint asset to its new owner.");
     <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
-        id.try_into().unwrap(),
+        id,
         &pallet_account,
         TEST_DEFAULT_ASSET_ED,
     )

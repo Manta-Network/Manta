@@ -180,7 +180,7 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         #[inline]
         fn build(&self) {
-            NextAssetId::<T>::set(self.start_id.clone());
+            NextAssetId::<T>::set(self.start_id);
             let asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
             let metadata = <T::AssetConfig as AssetConfig<T>>::NativeAssetMetadata::get();
             let location = <T::AssetConfig as AssetConfig<T>>::NativeAssetLocation::get();
