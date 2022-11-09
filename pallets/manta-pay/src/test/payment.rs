@@ -19,21 +19,19 @@ use crate::{
         new_test_ext, MantaAssetConfig, MantaAssetRegistry, MantaPayPallet, Origin as MockOrigin,
         Test,
     },
-    types::{decode, encode, Asset, AssetId, AssetValue},
+    types::{decode, encode, AssetId, AssetValue},
     Error, FungibleLedger, StandardAssetId,
 };
 use frame_support::{assert_noop, assert_ok};
-use frame_system::Origin;
-use manta_accounting::transfer::{self, test::value_distribution, SpendingKey};
+use manta_accounting::transfer::test::value_distribution;
 use manta_crypto::{
-    accumulator::Accumulator,
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
-    rand::{CryptoRng, OsRng, Rand, RngCore, Sample},
+    rand::{CryptoRng, OsRng, Rand, RngCore},
 };
 use manta_pay::{
     config::{
-        utxo::v2::MerkleTreeConfiguration, ConstraintField, FullParametersRef, MultiProvingContext,
-        Parameters, PrivateTransfer, ProvingContext, TransferPost, UtxoAccumulatorModel,
+        utxo::v2::MerkleTreeConfiguration, ConstraintField, MultiProvingContext, Parameters,
+        TransferPost, UtxoAccumulatorModel,
     },
     crypto::constraint::arkworks::Fp,
     parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
@@ -46,8 +44,6 @@ use manta_primitives::{
     },
     constants::TEST_DEFAULT_ASSET_ED,
 };
-use manta_util::codec::{Decode, IoReader};
-use std::fs::File;
 
 /// UTXO Accumulator for Building Circuits
 type UtxoAccumulator =
@@ -59,8 +55,7 @@ lazy_static::lazy_static! {
     static ref UTXO_ACCUMULATOR_MODEL: UtxoAccumulatorModel = load_utxo_accumulator_model();
 }
 
-///
-// TODO: back to 10
+/// Loop randomized tests at least 10 times to reduce the change of false positives.
 const RANDOMIZED_TESTS_ITERATIONS: usize = 1;
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
@@ -117,13 +112,10 @@ fn private_transfer_test<R>(
 where
     R: CryptoRng + RngCore + ?Sized,
 {
-    let mut asset_id = match asset_id_option {
+    let asset_id = match asset_id_option {
         Some(id) => id,
         None => rng.gen(),
     };
-    // for index in 0..16 {
-    //     asset_id[index] = 0u8;
-    // }
     let total_free_balance: AssetValue = rng.gen();
     let balances = value_distribution(count, total_free_balance, rng);
     initialize_test(asset_id, total_free_balance + TEST_DEFAULT_ASSET_ED);
@@ -136,7 +128,8 @@ where
                 &PARAMETERS,
                 &mut utxo_accumulator,
                 Fp::from(asset_id),
-                [balance, balance],
+                // Divide by 2 in order to not exceed total_supply
+                [balance / 2, balance / 2],
                 rng,
             );
         assert_ok!(MantaPayPallet::to_private(
@@ -176,14 +169,14 @@ where
     initialize_test(asset_id, total_supply + TEST_DEFAULT_ASSET_ED);
     let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
     let mut posts = Vec::new();
-    // TODO: maybe use these balances
     for balance in balances {
         let ([to_private_0, to_private_1], to_public) = test::payment::to_public::prove_full(
             &PROVING_CONTEXT,
             &PARAMETERS,
             &mut utxo_accumulator,
             Fp::from(asset_id),
-            [10_000, 20_000],
+            // Divide by 2 in order to not exceed total_supply
+            [balance / 2, balance / 2],
             rng,
         );
         assert_ok!(MantaPayPallet::to_private(
@@ -253,7 +246,6 @@ fn to_private_should_work() {
 fn native_asset_to_private_should_work() {
     let mut rng = OsRng;
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
-        let mut rng = OsRng;
         new_test_ext().execute_with(|| {
             let total_free_supply = rng.gen();
             initialize_test(NATIVE_ASSET_ID, total_free_supply + TEST_DEFAULT_ASSET_ED);
@@ -316,9 +308,6 @@ fn mint_existing_coin_should_not_work() {
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
             let asset_id = rng.gen();
-            // for index in 0..16 {
-            //     asset_id[index] = 0u8;
-            // }
             initialize_test(asset_id, AssetValue::from(32579u128));
             let mint_post =
                 sample_to_private(MantaPayPallet::field_from_id(asset_id), 100, &mut rng);
@@ -411,9 +400,8 @@ fn double_spend_in_reclaim_should_not_work() {
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
             let mut rng = OsRng;
-            // Divide by two because otherwise we might fail for a different reason (Overflow)
-            // than what we are testing for (AssetSpent)
             let total_supply: u128 = rng.gen();
+            // TODO: maybe change all teh count: 1 tests to count: 10
             for reclaim in reclaim_test(1, AssetValue::from(total_supply / 2), None, &mut rng) {
                 assert_noop!(
                     MantaPayPallet::to_public(MockOrigin::signed(ALICE), reclaim.into()),

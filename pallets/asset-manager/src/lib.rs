@@ -54,9 +54,7 @@ pub mod pallet {
         self, AssetConfig, AssetIdLocationMap, AssetIdType, AssetMetadata, AssetRegistry,
         FungibleLedger, LocationType,
     };
-    use manta_util::num::CheckedIncrement;
     use orml_traits::GetByKey;
-    use serde::{Deserialize, Serialize};
     use sp_runtime::{
         traits::{
             AccountIdConversion, AtLeast32BitUnsigned, CheckedAdd, MaybeSerializeDeserialize, One,

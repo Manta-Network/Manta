@@ -176,14 +176,6 @@ where
                     );
                     XcmError::TooExpensive
                 })?;
-                let units_per_second = M::units_per_second(&asset_id).ok_or({
-                    log::debug!(
-                        target: "FirstAssetTrader::buy_weight",
-                        "units_per_second missing for asset with id: {:?}",
-                        id,
-                    );
-                    XcmError::TooExpensive
-                })?;
 
                 let amount = units_per_second * (weight as u128) / (WEIGHT_PER_SECOND as u128);
                 // we don't need to proceed if amount is zero.

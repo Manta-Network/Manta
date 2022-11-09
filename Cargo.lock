@@ -5157,7 +5157,7 @@ dependencies = [
  "futures 0.3.25",
  "indexmap",
  "manta-crypto",
- "manta-util 0.5.6 (git+https://github.com/manta-network/manta-rs.git?rev=115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb)",
+ "manta-util",
  "parking_lot 0.12.1",
  "statrs",
 ]
@@ -5207,7 +5207,7 @@ dependencies = [
  "ark-serialize",
  "derivative",
  "ed25519-dalek",
- "manta-util 0.5.6 (git+https://github.com/manta-network/manta-rs.git?rev=115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb)",
+ "manta-util",
  "rand 0.8.5",
  "rand_chacha 0.3.1",
  "rand_core 0.6.4",
@@ -5241,7 +5241,7 @@ dependencies = [
  "manta-accounting",
  "manta-crypto",
  "manta-parameters",
- "manta-util 0.5.6 (git+https://github.com/manta-network/manta-rs.git?rev=115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb)",
+ "manta-util",
  "num-bigint 0.4.3",
  "num-integer",
  "parity-scale-codec",
@@ -5333,11 +5333,6 @@ dependencies = [
  "xcm-builder",
  "xcm-executor",
 ]
-
-[[package]]
-name = "manta-util"
-version = "0.5.6"
-source = "git+https://github.com/manta-network/manta-rs?branch=feat/new-circuits#b048b1a415a3e63d3f80ec76de5a949ff019932c"
 
 [[package]]
 name = "manta-util"
@@ -6104,13 +6099,11 @@ dependencies = [
  "frame-system",
  "log",
  "manta-primitives",
- "manta-util 0.5.6 (git+https://github.com/manta-network/manta-rs?branch=feat/new-circuits)",
  "orml-traits",
  "pallet-assets",
  "pallet-balances",
  "parity-scale-codec",
  "scale-info",
- "serde",
  "sp-arithmetic",
  "sp-core",
  "sp-io",
@@ -6567,7 +6560,7 @@ dependencies = [
  "manta-parameters",
  "manta-pay",
  "manta-primitives",
- "manta-util 0.5.6 (git+https://github.com/manta-network/manta-rs.git?rev=115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb)",
+ "manta-util",
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",
