@@ -650,7 +650,7 @@ pub mod pallet {
         ///
         #[inline]
         pub fn id_from_field(id: [u8; 32]) -> Option<StandardAssetId> {
-            if u128::from_le_bytes(Array::from_iter(id[16..32].iter().copied()).into()) == 0 {
+            if 0u128.to_le_bytes() == id[16..32] {
                 Some(u128::from_le_bytes(
                     Array::from_iter(id[0..16].iter().copied()).into(),
                 ))
