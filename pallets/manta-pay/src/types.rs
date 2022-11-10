@@ -381,6 +381,11 @@ pub struct Utxo {
     pub commitment: UtxoCommitment,
 }
 
+#[cfg_attr(
+    feature = "rpc",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
 #[derive(
     Clone, Copy, Debug, Decode, Default, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo,
 )]
@@ -394,7 +399,7 @@ impl Utxo {
     ///
     #[inline]
     pub fn from(utxo: v2::Utxo) -> Utxo {
-        let utxo_transparency = if utxo.is_transparent == true {
+        let utxo_transparency = if utxo.is_transparent {
             UtxoTransparency::Transparent
         } else {
             UtxoTransparency::Opaque
