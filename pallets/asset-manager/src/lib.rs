@@ -30,8 +30,6 @@
 mod benchmarking;
 pub mod migrations;
 pub mod weights;
-pub use crate::weights::WeightInfo;
-pub use pallet::*;
 
 #[cfg(test)]
 mod mock;
@@ -39,9 +37,12 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+pub use crate::weights::WeightInfo;
+pub use pallet::*;
+
+/// Asset Manager Pallet
 #[frame_support::pallet]
 pub mod pallet {
-
     use crate::weights::WeightInfo;
     use frame_support::{
         pallet_prelude::*,
@@ -49,63 +50,59 @@ pub mod pallet {
         transactional, PalletId,
     };
     use frame_system::pallet_prelude::*;
-    use manta_primitives::{
-        assets::{
-            AssetConfig, AssetIdLocationGetter, AssetMetadata, AssetRegistrar, FungibleLedger,
-            UnitsToWeightRatio,
-        },
-        types::{AssetId, Balance},
+    use manta_primitives::assets::{
+        self, AssetConfig, AssetIdLocationMap, AssetIdType, AssetMetadata, AssetRegistry,
+        FungibleLedger, LocationType,
     };
     use orml_traits::GetByKey;
     use sp_runtime::{
-        traits::{AccountIdConversion, One},
+        traits::{
+            AccountIdConversion, AtLeast32BitUnsigned, CheckedAdd, MaybeSerializeDeserialize, One,
+        },
         ArithmeticError,
     };
     use xcm::latest::prelude::*;
 
-    const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+    /// Storage Version
+    pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
-    /// Alias for the junction Parachain(#[codec(compact)] u32),
+    /// Alias for the junction type `Parachain(#[codec(compact)] u32)`
     pub(crate) type ParaId = u32;
+
+    /// Asset Count Type
     pub(crate) type AssetCount = u32;
 
-    #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
-    #[pallet::without_storage_info]
-    #[pallet::storage_version(STORAGE_VERSION)]
-    pub struct Pallet<T>(_);
-
-    /// Convert AssetId and AssetLocation
-    impl<T: Config> AssetIdLocationGetter<<T::AssetConfig as AssetConfig<T>>::AssetLocation>
-        for Pallet<T>
-    {
-        fn get_asset_id(
-            loc: &<T::AssetConfig as AssetConfig<T>>::AssetLocation,
-        ) -> Option<AssetId> {
-            LocationAssetId::<T>::get(loc)
-        }
-
-        fn get_asset_location(
-            id: AssetId,
-        ) -> Option<<T::AssetConfig as AssetConfig<T>>::AssetLocation> {
-            AssetIdLocation::<T>::get(id)
-        }
-    }
-
-    /// Get unit per second from `AssetId`
-    impl<T: Config> UnitsToWeightRatio for Pallet<T> {
-        fn get_units_per_second(id: AssetId) -> Option<u128> {
-            UnitsPerSecond::<T>::get(id)
-        }
-    }
-
+    /// Pallet Configuration
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-        /// Asset configuration, e.g. AssetId, Balance, Metadata
-        type AssetConfig: AssetConfig<Self>;
+        /// Asset Id Type
+        type AssetId: AtLeast32BitUnsigned
+            + Default
+            + Parameter
+            + MaybeSerializeDeserialize
+            + TypeInfo
+            + Copy;
+
+        /// Balance Type
+        type Balance: Default + Member + Parameter + TypeInfo;
+
+        /// Location Type
+        type Location: Default
+            + Parameter
+            + TypeInfo
+            + From<MultiLocation>
+            + Into<Option<MultiLocation>>;
+
+        /// Asset Configuration
+        type AssetConfig: AssetConfig<
+            Self,
+            AssetId = Self::AssetId,
+            Balance = Self::Balance,
+            Location = Self::Location,
+        >;
 
         /// The origin which may forcibly create or destroy an asset or otherwise alter privileged
         /// attributes.
@@ -118,24 +115,70 @@ pub mod pallet {
         type WeightInfo: crate::weights::WeightInfo;
     }
 
+    /// Asset Manager Pallet
+    #[pallet::pallet]
+    #[pallet::without_storage_info]
+    #[pallet::storage_version(STORAGE_VERSION)]
+    pub struct Pallet<T>(_);
+
+    impl<T> AssetIdType for Pallet<T>
+    where
+        T: Config,
+    {
+        type AssetId = T::AssetId;
+    }
+
+    impl<T> LocationType for Pallet<T>
+    where
+        T: Config,
+    {
+        type Location = T::Location;
+    }
+
+    impl<T> AssetIdLocationMap for Pallet<T>
+    where
+        T: Config,
+    {
+        #[inline]
+        fn location(asset_id: &Self::AssetId) -> Option<Self::Location> {
+            AssetIdLocation::<T>::get(asset_id)
+        }
+
+        #[inline]
+        fn asset_id(location: &Self::Location) -> Option<Self::AssetId> {
+            LocationAssetId::<T>::get(location)
+        }
+    }
+
+    impl<T> assets::UnitsPerSecond for Pallet<T>
+    where
+        T: Config,
+    {
+        #[inline]
+        fn units_per_second(id: &Self::AssetId) -> Option<u128> {
+            UnitsPerSecond::<T>::get(id)
+        }
+    }
+
+    /// Genesis Configuration
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub start_id: AssetId,
-        pub _marker: PhantomData<T>,
+        pub start_id: T::AssetId,
     }
 
     #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
+        #[inline]
         fn default() -> Self {
             Self {
                 start_id: <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(),
-                _marker: PhantomData,
             }
         }
     }
 
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+        #[inline]
         fn build(&self) {
             NextAssetId::<T>::set(self.start_id);
             let asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
@@ -147,100 +190,135 @@ pub mod pallet {
         }
     }
 
+    /// Asset Manager Event
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// A new asset registered.
+        /// A new asset was registered
         AssetRegistered {
-            asset_id: AssetId,
-            asset_address: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistrarMetadata,
+            /// Asset Id of new Asset
+            asset_id: T::AssetId,
+
+            /// Location of the new Asset
+            location: T::Location,
+
+            /// Metadata Registered to Asset Manager
+            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
         },
-        /// An asset's location has been updated.
+
+        /// Updated the location of an asset
         AssetLocationUpdated {
-            asset_id: AssetId,
-            location: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
+            /// Asset Id of the updated Asset
+            asset_id: T::AssetId,
+
+            /// Updated Location for the Asset
+            location: T::Location,
         },
-        /// An asset;s metadata has been updated.
+
+        /// Updated the metadata of an asset
         AssetMetadataUpdated {
-            asset_id: AssetId,
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistrarMetadata,
+            /// Asset Id of the updated Asset
+            asset_id: T::AssetId,
+
+            /// Updated Metadata for the Asset
+            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
         },
-        /// Update units per second of an asset
+
+        /// Updated the units-per-second for an asset
         UnitsPerSecondUpdated {
-            asset_id: AssetId,
+            /// Asset Id of the updated Asset
+            asset_id: T::AssetId,
+
+            /// Updated units-per-second for the Asset
             units_per_second: u128,
         },
-        /// Asset minted.
+
+        /// An asset was minted
         AssetMinted {
-            asset_id: AssetId,
+            /// Asset Id of the minted Asset
+            asset_id: T::AssetId,
+
+            /// Beneficiary Account
             beneficiary: T::AccountId,
-            amount: Balance,
+
+            /// Amount Minted
+            amount: T::Balance,
         },
-        /// Update min xcm fee of an asset
+
+        /// Updated the minimum XCM fee for an asset
         MinXcmFeeUpdated {
-            reserve_chain: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
+            /// Reserve Chain Location
+            reserve_chain: T::Location,
+
+            /// Updated Minimum XCM Fee
             min_xcm_fee: u128,
         },
     }
 
-    /// Error.
+    /// Asset Manager Error
     #[pallet::error]
     pub enum Error<T> {
-        /// Location already exists.
+        /// Location Already Exists
         LocationAlreadyExists,
-        /// Error creating asset, e.g. error returned from the implementation layer.
+
+        /// An error occured while creating a new asset at the [`AssetRegistry`].
         ErrorCreatingAsset,
-        /// Update a non-exist asset.
-        UpdateNonExistAsset,
-        /// Cannot update reserved assets metadata (0 and 1)
+
+        /// There was an attempt to update a non-existent asset.
+        UpdateNonExistentAsset,
+
+        /// Cannot Update Native Asset Metadata
         CannotUpdateNativeAssetMetadata,
-        /// Asset already registered.
+
+        /// Asset Already Registered
         AssetAlreadyRegistered,
-        /// Error on minting asset.
+
+        /// An error occurred while minting an asset.
         MintError,
-        /// Fail to update para id.
+
+        /// An error occurred while updating the parachain id.
         UpdateParaIdError,
     }
 
-    /// AssetId to MultiLocation Map.
+    /// [`AssetId`](AssetConfig::AssetId) to [`MultiLocation`] Map
+    ///
     /// This is mostly useful when sending an asset to a foreign location.
     #[pallet::storage]
     #[pallet::getter(fn asset_id_location)]
     pub(super) type AssetIdLocation<T: Config> =
-        StorageMap<_, Blake2_128Concat, AssetId, <T::AssetConfig as AssetConfig<T>>::AssetLocation>;
+        StorageMap<_, Blake2_128Concat, T::AssetId, T::Location>;
 
-    /// MultiLocation to AssetId Map.
+    /// [`MultiLocation`] to [`AssetId`](AssetConfig::AssetId) Map
+    ///
     /// This is mostly useful when receiving an asset from a foreign location.
     #[pallet::storage]
     #[pallet::getter(fn location_asset_id)]
     pub(super) type LocationAssetId<T: Config> =
-        StorageMap<_, Blake2_128Concat, <T::AssetConfig as AssetConfig<T>>::AssetLocation, AssetId>;
+        StorageMap<_, Blake2_128Concat, T::Location, T::AssetId>;
 
-    /// AssetId to AssetRegistrar Map.
+    /// AssetId to AssetRegistry Map.
     #[pallet::storage]
     #[pallet::getter(fn asset_id_metadata)]
     pub(super) type AssetIdMetadata<T: Config> = StorageMap<
         _,
         Blake2_128Concat,
-        AssetId,
-        <T::AssetConfig as AssetConfig<T>>::AssetRegistrarMetadata,
+        T::AssetId,
+        <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
     >;
 
-    /// Get the next available AssetId.
+    /// The Next Available [`AssetId`](AssetConfig::AssetId)
     #[pallet::storage]
     #[pallet::getter(fn next_asset_id)]
-    pub type NextAssetId<T: Config> = StorageValue<_, AssetId, ValueQuery>;
+    pub type NextAssetId<T: Config> = StorageValue<_, T::AssetId, ValueQuery>;
 
-    /// XCM transfer cost for different asset.
+    /// XCM transfer cost for each [`AssetId`](AssetConfig::AssetId)
     #[pallet::storage]
-    pub type UnitsPerSecond<T: Config> = StorageMap<_, Blake2_128Concat, AssetId, u128>;
+    pub type UnitsPerSecond<T: Config> = StorageMap<_, Blake2_128Concat, T::AssetId, u128>;
 
     /// Minimum xcm execution fee paid on destination chain.
     #[pallet::storage]
     #[pallet::getter(fn get_min_xcm_fee)]
-    pub type MinXcmFee<T: Config> =
-        StorageMap<_, Blake2_128Concat, <T::AssetConfig as AssetConfig<T>>::AssetLocation, u128>;
+    pub type MinXcmFee<T: Config> = StorageMap<_, Blake2_128Concat, T::Location, u128>;
 
     /// The count of associated assets for each para id except relaychain.
     #[pallet::storage]
@@ -262,19 +340,19 @@ pub mod pallet {
         #[transactional]
         pub fn register_asset(
             origin: OriginFor<T>,
-            location: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistrarMetadata,
+            location: T::Location,
+            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
                 !LocationAssetId::<T>::contains_key(&location),
                 Error::<T>::LocationAlreadyExists
             );
-            let asset_id = Self::get_next_asset_id()?;
-            <T::AssetConfig as AssetConfig<T>>::AssetRegistrar::create_asset(
+            let asset_id = Self::next_asset_id_and_increment()?;
+            <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
                 asset_id,
-                metadata.min_balance(),
                 metadata.clone().into(),
+                metadata.min_balance().clone(),
                 metadata.is_sufficient(),
             )
             .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
@@ -285,14 +363,14 @@ pub mod pallet {
             // If it's a new para id, which will be inserted with AssetCount as 1.
             // If not, AssetCount will increased by 1.
             if let Some(para_id) =
-                Self::get_para_id_from_multilocation(location.clone().into().as_ref())
+                Self::para_id_from_multilocation(location.clone().into().as_ref())
             {
-                Self::increase_count_of_associated_assets(para_id)?;
+                Self::increase_count_of_associated_assets(*para_id)?;
             }
 
             Self::deposit_event(Event::<T>::AssetRegistered {
                 asset_id,
-                asset_address: location,
+                location,
                 metadata,
             });
             Ok(())
@@ -308,14 +386,14 @@ pub mod pallet {
         #[transactional]
         pub fn update_asset_location(
             origin: OriginFor<T>,
-            #[pallet::compact] asset_id: AssetId,
-            location: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
+            #[pallet::compact] asset_id: T::AssetId,
+            location: T::Location,
         ) -> DispatchResult {
             // checks validity
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
                 AssetIdLocation::<T>::contains_key(asset_id),
-                Error::<T>::UpdateNonExistAsset
+                Error::<T>::UpdateNonExistentAsset
             );
             ensure!(
                 !LocationAssetId::<T>::contains_key(&location),
@@ -323,7 +401,7 @@ pub mod pallet {
             );
             // change the ledger state.
             let old_location =
-                AssetIdLocation::<T>::get(asset_id).ok_or(Error::<T>::UpdateNonExistAsset)?;
+                AssetIdLocation::<T>::get(asset_id).ok_or(Error::<T>::UpdateNonExistentAsset)?;
             LocationAssetId::<T>::remove(&old_location);
             LocationAssetId::<T>::insert(&location, asset_id);
             AssetIdLocation::<T>::insert(asset_id, &location);
@@ -332,7 +410,7 @@ pub mod pallet {
             // the old para id will be deleted if AssetCount <= 1, or decreased by 1.
             // 2. If the new location doesn't contain a new para id, do nothing to AssetCount
             if let Some(old_para_id) =
-                Self::get_para_id_from_multilocation(old_location.into().as_ref())
+                Self::para_id_from_multilocation(old_location.into().as_ref())
             {
                 if AllowedDestParaIds::<T>::get(old_para_id) <= Some(<AssetCount as One>::one()) {
                     AllowedDestParaIds::<T>::remove(old_para_id);
@@ -350,9 +428,9 @@ pub mod pallet {
             // If it's a new para id, which will be inserted with AssetCount as 1.
             // If not, AssetCount will increased by 1.
             if let Some(para_id) =
-                Self::get_para_id_from_multilocation(location.clone().into().as_ref())
+                Self::para_id_from_multilocation(location.clone().into().as_ref())
             {
-                Self::increase_count_of_associated_assets(para_id)?;
+                Self::increase_count_of_associated_assets(*para_id)?;
             }
 
             // deposit event.
@@ -370,8 +448,8 @@ pub mod pallet {
         #[transactional]
         pub fn update_asset_metadata(
             origin: OriginFor<T>,
-            #[pallet::compact] asset_id: AssetId,
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistrarMetadata,
+            asset_id: T::AssetId,
+            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
@@ -380,10 +458,10 @@ pub mod pallet {
             );
             ensure!(
                 AssetIdLocation::<T>::contains_key(asset_id),
-                Error::<T>::UpdateNonExistAsset
+                Error::<T>::UpdateNonExistentAsset
             );
-            <T::AssetConfig as AssetConfig<T>>::AssetRegistrar::update_asset_metadata(
-                asset_id,
+            <T::AssetConfig as AssetConfig<T>>::AssetRegistry::update_asset_metadata(
+                &asset_id,
                 metadata.clone().into(),
             )?;
             AssetIdMetadata::<T>::insert(asset_id, &metadata);
@@ -401,13 +479,13 @@ pub mod pallet {
         #[transactional]
         pub fn set_units_per_second(
             origin: OriginFor<T>,
-            #[pallet::compact] asset_id: AssetId,
+            #[pallet::compact] asset_id: T::AssetId,
             #[pallet::compact] units_per_second: u128,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
                 AssetIdLocation::<T>::contains_key(asset_id),
-                Error::<T>::UpdateNonExistAsset
+                Error::<T>::UpdateNonExistentAsset
             );
             UnitsPerSecond::<T>::insert(asset_id, units_per_second);
             Self::deposit_event(Event::<T>::UnitsPerSecondUpdated {
@@ -428,31 +506,22 @@ pub mod pallet {
         #[transactional]
         pub fn mint_asset(
             origin: OriginFor<T>,
-            #[pallet::compact] asset_id: AssetId,
+            #[pallet::compact] asset_id: T::AssetId,
             beneficiary: T::AccountId,
-            amount: Balance,
+            amount: T::Balance,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
                 AssetIdLocation::<T>::contains_key(asset_id),
-                Error::<T>::UpdateNonExistAsset
+                Error::<T>::UpdateNonExistentAsset
             );
-
-            <T::AssetConfig as AssetConfig<T>>::FungibleLedger::can_deposit(
+            <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(
                 asset_id,
                 &beneficiary,
-                amount,
+                amount.clone(),
                 true,
             )
             .map_err(|_| Error::<T>::MintError)?;
-
-            <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_mint(
-                asset_id,
-                &beneficiary,
-                amount,
-            )
-            .map_err(|_| Error::<T>::MintError)?;
-
             Self::deposit_event(Event::<T>::AssetMinted {
                 asset_id,
                 beneficiary,
@@ -471,7 +540,7 @@ pub mod pallet {
         #[transactional]
         pub fn set_min_xcm_fee(
             origin: OriginFor<T>,
-            reserve_chain: <T::AssetConfig as AssetConfig<T>>::AssetLocation,
+            reserve_chain: T::Location,
             #[pallet::compact] min_xcm_fee: u128,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
@@ -484,38 +553,37 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> Pallet<T> {
-        /// Get and increment the `NextAssetID` by one.
-        fn get_next_asset_id() -> Result<AssetId, DispatchError> {
-            NextAssetId::<T>::try_mutate(|current| -> Result<AssetId, DispatchError> {
+    impl<T> Pallet<T>
+    where
+        T: Config,
+    {
+        /// Returns and increments the [`NextAssetId`] by one.
+        #[inline]
+        fn next_asset_id_and_increment() -> Result<T::AssetId, DispatchError> {
+            NextAssetId::<T>::try_mutate(|current| {
                 let id = *current;
-                *current = current.checked_add(1u32).ok_or(ArithmeticError::Overflow)?;
+                *current = current
+                    .checked_add(&One::one())
+                    .ok_or(ArithmeticError::Overflow)?;
                 Ok(id)
             })
         }
 
-        /// The account ID of AssetManager
+        /// Returns the account identifier of the [`AssetManager`] pallet.
+        #[inline]
         pub fn account_id() -> T::AccountId {
             T::PalletId::get().into_account_truncating()
         }
 
-        /// Get para id from asset location
-        pub fn get_para_id_from_multilocation(location: Option<&MultiLocation>) -> Option<ParaId> {
-            if let Some(MultiLocation { interior, .. }) = location {
-                match interior {
-                    Junctions::X1(Junction::Parachain(para_id))
-                    | Junctions::X2(Junction::Parachain(para_id), ..)
-                    | Junctions::X3(Junction::Parachain(para_id), ..)
-                    | Junctions::X4(Junction::Parachain(para_id), ..)
-                    | Junctions::X5(Junction::Parachain(para_id), ..)
-                    | Junctions::X6(Junction::Parachain(para_id), ..)
-                    | Junctions::X7(Junction::Parachain(para_id), ..)
-                    | Junctions::X8(Junction::Parachain(para_id), ..) => Some(*para_id),
-                    _ => None,
+        /// Returns the [`ParaId`] associated to `location`.
+        pub fn para_id_from_multilocation(location: Option<&MultiLocation>) -> Option<&ParaId> {
+            location.and_then(|location| {
+                if let Some(Parachain(para_id)) = location.first_interior() {
+                    Some(para_id)
+                } else {
+                    None
                 }
-            } else {
-                None
-            }
+            })
         }
 
         /// Increases the count of associated assets for the para id.
@@ -537,8 +605,12 @@ pub mod pallet {
         }
     }
 
-    /// Check the multilocation is supported by calamari/manta.
-    impl<T: Config> Contains<MultiLocation> for Pallet<T> {
+    /// Check the multilocation destination is supported by calamari/manta.
+    impl<T> Contains<MultiLocation> for Pallet<T>
+    where
+        T: Config,
+    {
+        #[inline]
         fn contains(location: &MultiLocation) -> bool {
             // check parents
             if location.parents != 1 {
@@ -559,29 +631,14 @@ pub mod pallet {
         }
     }
 
-    /// Get min-xcm-fee by multilocation.
-    impl<T: Config> GetByKey<MultiLocation, Option<u128>> for Pallet<T> {
+    /// Get min-xcm-fee for reserve chain by multilocation.
+    impl<T> GetByKey<MultiLocation, Option<u128>> for Pallet<T>
+    where
+        T: Config,
+    {
+        #[inline]
         fn get(location: &MultiLocation) -> Option<u128> {
-            let location =
-                <T::AssetConfig as AssetConfig<T>>::AssetLocation::from(location.clone());
-            MinXcmFee::<T>::get(&location)
-        }
-    }
-
-    #[cfg(feature = "std")]
-    impl<T: Config> GenesisConfig<T> {
-        /// Direct implementation of `GenesisBuild::build_storage`.
-        ///
-        /// Kept in order not to break dependency.
-        pub fn build_storage(&self) -> Result<sp_runtime::Storage, String> {
-            <Self as GenesisBuild<T>>::build_storage(self)
-        }
-
-        /// Direct implementation of `GenesisBuild::assimilate_storage`.
-        ///
-        /// Kept in order not to break dependency.
-        pub fn assimilate_storage(&self, storage: &mut sp_runtime::Storage) -> Result<(), String> {
-            <Self as GenesisBuild<T>>::assimilate_storage(self, storage)
+            MinXcmFee::<T>::get(&T::Location::from(location.clone()))
         }
     }
 }

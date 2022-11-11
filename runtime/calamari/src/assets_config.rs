@@ -21,11 +21,11 @@ use super::{
 
 use manta_primitives::{
     assets::{
-        AssetConfig, AssetLocation, AssetRegistrar, AssetRegistrarMetadata, AssetStorageMetadata,
-        ConcreteFungibleLedger,
+        AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
+        AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
-    types::{AccountId, AssetId, Balance},
+    types::{AccountId, Balance, CalamariAssetId},
 };
 
 use frame_support::{pallet_prelude::DispatchResult, parameter_types, traits::ConstU32, PalletId};
@@ -46,7 +46,7 @@ parameter_types! {
 impl pallet_assets::Config for Runtime {
     type Event = Event;
     type Balance = Balance;
-    type AssetId = AssetId;
+    type AssetId = CalamariAssetId;
     type Currency = Balances;
     type ForceOrigin = EnsureRoot<AccountId>;
     type AssetDeposit = AssetDeposit;
@@ -60,12 +60,21 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
 }
 
-pub struct CalamariAssetRegistrar;
-impl AssetRegistrar<Runtime, CalamariAssetConfig> for CalamariAssetRegistrar {
+pub struct CalamariAssetRegistry;
+impl BalanceType for CalamariAssetRegistry {
+    type Balance = Balance;
+}
+impl AssetIdType for CalamariAssetRegistry {
+    type AssetId = CalamariAssetId;
+}
+impl AssetRegistry for CalamariAssetRegistry {
+    type Metadata = AssetStorageMetadata;
+    type Error = sp_runtime::DispatchError;
+
     fn create_asset(
-        asset_id: AssetId,
-        min_balance: Balance,
+        asset_id: CalamariAssetId,
         metadata: AssetStorageMetadata,
+        min_balance: Balance,
         is_sufficient: bool,
     ) -> DispatchResult {
         Assets::force_create(
@@ -86,10 +95,13 @@ impl AssetRegistrar<Runtime, CalamariAssetConfig> for CalamariAssetRegistrar {
         )
     }
 
-    fn update_asset_metadata(asset_id: AssetId, metadata: AssetStorageMetadata) -> DispatchResult {
+    fn update_asset_metadata(
+        asset_id: &CalamariAssetId,
+        metadata: AssetStorageMetadata,
+    ) -> DispatchResult {
         Assets::force_set_metadata(
             Origin::root(),
-            asset_id,
+            *asset_id,
             metadata.name,
             metadata.symbol,
             metadata.decimals,
@@ -99,44 +111,54 @@ impl AssetRegistrar<Runtime, CalamariAssetConfig> for CalamariAssetRegistrar {
 }
 
 parameter_types! {
-    pub const DummyAssetId: AssetId = 0;
-    pub const NativeAssetId: AssetId = 1;
-    pub const StartNonNativeAssetId: AssetId = 8;
+    pub const StartNonNativeAssetId: CalamariAssetId = 8;
+    pub const NativeAssetId: CalamariAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(SelfReserve::get()));
-    pub NativeAssetMetadata: AssetRegistrarMetadata = AssetRegistrarMetadata {
-        name: b"Calamari".to_vec(),
-        symbol: b"KMA".to_vec(),
-        decimals: CALAMARI_DECIMAL,
+    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
+        metadata: AssetStorageMetadata {
+            name: b"Calamari".to_vec(),
+            symbol: b"KMA".to_vec(),
+            decimals: CALAMARI_DECIMAL,
+            is_frozen: false,
+        },
         min_balance: NativeTokenExistentialDeposit::get(),
-        evm_address: None,
-        is_frozen: false,
         is_sufficient: true,
     };
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
 }
 
 pub type CalamariConcreteFungibleLedger =
-    ConcreteFungibleLedger<Runtime, CalamariAssetConfig, Balances, Assets>;
+    NativeAndNonNative<Runtime, CalamariAssetConfig, Balances, Assets>;
 
+/// AssetConfig implementations for this runtime
 #[derive(Clone, Eq, PartialEq)]
 pub struct CalamariAssetConfig;
-
+impl LocationType for CalamariAssetConfig {
+    type Location = AssetLocation;
+}
+impl BalanceType for CalamariAssetConfig {
+    type Balance = Balance;
+}
+impl AssetIdType for CalamariAssetConfig {
+    type AssetId = CalamariAssetId;
+}
 impl AssetConfig<Runtime> for CalamariAssetConfig {
-    type DummyAssetId = DummyAssetId;
-    type NativeAssetId = NativeAssetId;
     type StartNonNativeAssetId = StartNonNativeAssetId;
-    type AssetRegistrarMetadata = AssetRegistrarMetadata;
+    type NativeAssetId = NativeAssetId;
+    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
-    type AssetLocation = AssetLocation;
-    type AssetRegistrar = CalamariAssetRegistrar;
+    type AssetRegistry = CalamariAssetRegistry;
     type FungibleLedger = CalamariConcreteFungibleLedger;
 }
 
 impl pallet_asset_manager::Config for Runtime {
     type Event = Event;
+    type AssetId = CalamariAssetId;
+    type Balance = Balance;
+    type Location = AssetLocation;
     type AssetConfig = CalamariAssetConfig;
     type ModifierOrigin = EnsureRoot<AccountId>;
     type PalletId = AssetManagerPalletId;

@@ -14,55 +14,58 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! VRF Key type, which is sr25519
-use crate::AuraId;
-use sp_application_crypto::{sr25519, KeyTypeId, UncheckedFrom};
+//! VRF Keys
+
+use sp_application_crypto::KeyTypeId;
 use sp_runtime::{BoundToRuntimeAppPublic, ConsensusEngineId};
 
-/// Struct to implement `BoundToRuntimeAppPublic` by assigning Public = VrfId
+/// Implementation of [`BoundToRuntimeAppPublic`] with the public key set to [`VrfId`]
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct VrfSessionKey;
 
 impl BoundToRuntimeAppPublic for VrfSessionKey {
     type Public = VrfId;
 }
 
-/// Reinterprets Aura public key as a VRFId.
-/// NO CORRESPONDING PRIVATE KEY TO THAT KEY WILL EXIST
-pub fn dummy_key_from(aura_id: AuraId) -> VrfId {
-    let aura_as_sr25519: sr25519::Public = aura_id.into();
-    let sr25519_as_bytes: [u8; 32] = aura_as_sr25519.into();
-    sr25519::Public::unchecked_from(sr25519_as_bytes).into()
-}
-
-/// The ConsensusEngineId for VRF keys
+/// Consensus Engine Identifier for the [`VrfId`] Key
 pub const VRF_ENGINE_ID: ConsensusEngineId = *b"rand";
 
-/// The KeyTypeId used for VRF keys
+/// Key Type Identifier for the [`VrfId`] Key
 pub const VRF_KEY_ID: KeyTypeId = KeyTypeId(VRF_ENGINE_ID);
 
-// The strongly-typed crypto wrappers to be used by VRF in the keystore
+/// The strongly-typed crypto wrappers to be used by VRF in the keystore.
 mod vrf_crypto {
     use sp_application_crypto::{app_crypto, sr25519};
     app_crypto!(sr25519, crate::vrf::VRF_KEY_ID);
 }
 
-/// A vrf public key.
+/// Public Key for VRF
 pub type VrfId = vrf_crypto::Public;
 
-/// A vrf signature.
+/// Signature for the [`VrfId`] Key
 pub type VrfSignature = vrf_crypto::Signature;
 
 sp_application_crypto::with_pair! {
-    /// A vrf key pair
+    /// Key Pair for the [`VrfId`] Key
     pub type VrfPair = vrf_crypto::Pair;
 }
 
-#[test]
-fn creating_dummy_vrf_id_from_aura_id_is_sane() {
-    for x in 0u8..10u8 {
-        let aura_id: AuraId = sr25519::Public::unchecked_from([x; 32]).into();
-        let expected_vrf_id: VrfId = sr25519::Public::unchecked_from([x; 32]).into();
-        let aura_to_vrf_id: VrfId = dummy_key_from(aura_id);
-        assert_eq!(expected_vrf_id, aura_to_vrf_id);
+/// Testing Suite
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::{util::dummy_key, AuraId};
+    use sp_application_crypto::{sr25519, UncheckedFrom};
+
+    /// Checks that the dummy [`VrfId`] created from an [`AuraId`] is of the expected form.
+    #[test]
+    fn creating_dummy_vrf_id_from_aura_id_is_sane() {
+        for x in 0..0xFF {
+            let raw_key = sr25519::Public::unchecked_from([x; 32]);
+            assert_eq!(
+                VrfId::from(raw_key),
+                dummy_key::<VrfId>(AuraId::from(raw_key))
+            );
+        }
     }
 }
