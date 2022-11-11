@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    mock::{new_test_ext, MantaAssetConfig, MantaAssetRegistrar, MantaPayPallet, Origin, Test},
+    mock::{new_test_ext, MantaAssetConfig, MantaAssetRegistry, MantaPayPallet, Origin, Test},
     Error, FungibleLedger,
 };
 use frame_support::{assert_noop, assert_ok};
@@ -34,8 +34,11 @@ use manta_pay::config::{
     UtxoCommitmentScheme, VoidNumberCommitmentScheme,
 };
 use manta_primitives::{
-    assets::{AssetConfig, AssetRegistrar, AssetRegistrarMetadata, FungibleLedger as _},
-    constants::DEFAULT_ASSET_ED,
+    assets::{
+        AssetConfig, AssetRegistry, AssetRegistryMetadata, AssetStorageMetadata,
+        FungibleLedger as _,
+    },
+    constants::TEST_DEFAULT_ASSET_ED,
 };
 use manta_util::codec::{Decode, IoReader};
 use std::fs::File;
@@ -163,7 +166,7 @@ where
     };
     let total_free_balance = AssetValue(rng.gen());
     let balances = value_distribution(count, total_free_balance, rng);
-    initialize_test(asset_id, total_free_balance + DEFAULT_ASSET_ED);
+    initialize_test(asset_id, total_free_balance + TEST_DEFAULT_ASSET_ED);
     let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
     let mut posts = Vec::new();
     for balance in balances {
@@ -237,7 +240,7 @@ where
         None => rng.gen(),
     };
     let balances = value_distribution(count, total_supply, rng);
-    initialize_test(asset_id, total_supply + DEFAULT_ASSET_ED);
+    initialize_test(asset_id, total_supply + TEST_DEFAULT_ASSET_ED);
     let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
     let mut posts = Vec::new();
     for balance in balances {
@@ -294,20 +297,29 @@ where
 /// Initializes a test by allocating `value`-many assets of the given `id` to the default account.
 #[inline]
 fn initialize_test(id: AssetId, value: AssetValue) {
-    let metadata = AssetRegistrarMetadata::default();
-    assert_ok!(MantaAssetRegistrar::create_asset(
+    let metadata = AssetRegistryMetadata {
+        metadata: AssetStorageMetadata {
+            name: b"Calamari".to_vec(),
+            symbol: b"KMA".to_vec(),
+            decimals: 12,
+            is_frozen: false,
+        },
+        min_balance: TEST_DEFAULT_ASSET_ED,
+        is_sufficient: true,
+    };
+    assert_ok!(MantaAssetRegistry::create_asset(
         id.0,
-        DEFAULT_ASSET_ED,
         metadata.into(),
+        TEST_DEFAULT_ASSET_ED,
         true
     ));
-    assert_ok!(FungibleLedger::<Test>::deposit_can_mint(
+    assert_ok!(FungibleLedger::<Test>::deposit_minting(
         id.0, &ALICE, value.0
     ));
-    assert_ok!(FungibleLedger::<Test>::deposit_can_mint(
+    assert_ok!(FungibleLedger::<Test>::deposit_minting(
         id.0,
         &MantaPayPallet::account_id(),
-        DEFAULT_ASSET_ED
+        TEST_DEFAULT_ASSET_ED
     ));
 }
 
@@ -319,7 +331,7 @@ fn to_private_should_work() {
         new_test_ext().execute_with(|| {
             let asset_id = rng.gen();
             let total_free_supply = AssetValue(rng.gen());
-            initialize_test(asset_id, total_free_supply + DEFAULT_ASSET_ED);
+            initialize_test(asset_id, total_free_supply + TEST_DEFAULT_ASSET_ED);
             mint_tokens(
                 asset_id,
                 &value_distribution(5, total_free_supply, &mut rng),
@@ -335,7 +347,7 @@ fn native_asset_to_private_should_work() {
         let mut rng = OsRng;
         new_test_ext().execute_with(|| {
             let total_free_supply = AssetValue(rng.gen());
-            initialize_test(NATIVE_ASSET_ID, total_free_supply + DEFAULT_ASSET_ED);
+            initialize_test(NATIVE_ASSET_ID, total_free_supply + TEST_DEFAULT_ASSET_ED);
             mint_tokens(
                 NATIVE_ASSET_ID,
                 &value_distribution(5, total_free_supply, &mut rng),
@@ -353,12 +365,15 @@ fn overdrawn_mint_should_not_work() {
         new_test_ext().execute_with(|| {
             let asset_id = rng.gen();
             let total_supply = AssetValue(rng.gen());
-            initialize_test(asset_id, total_supply + DEFAULT_ASSET_ED);
+            initialize_test(asset_id, total_supply + TEST_DEFAULT_ASSET_ED);
             assert_noop!(
                 MantaPayPallet::to_private(
                     Origin::signed(ALICE),
-                    sample_mint(asset_id.with(total_supply + DEFAULT_ASSET_ED + 1), &mut rng)
-                        .into()
+                    sample_mint(
+                        asset_id.with(total_supply + TEST_DEFAULT_ASSET_ED + 1),
+                        &mut rng
+                    )
+                    .into()
                 ),
                 Error::<Test>::InvalidSourceAccount
             );
