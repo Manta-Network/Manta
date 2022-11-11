@@ -6,6 +6,8 @@
   "scripts": {
     "correctness_test": "mocha -r ts-node/register rpc_correctness_test.ts",
     "performance_test": "mocha -r ts-node/register rpc_performance_test.ts",
+    "asset_price_test": "mocha -r ts-node/register asset_limit.ts -g 'Asset Price test' --exit",
+    "asset_limit_test": "mocha -r ts-node/register asset_limit.ts -g 'Asset Limit test' --exit",
     "lint": "eslint ."
   },
   "keywords": [],
@@ -18,7 +20,9 @@
     "@types/yargs": "^17.0.0",
     "minimist": "^1.2.5",
     "ts-node": "^10.8.0",
-    "typescript": "^4.7.4"
+    "typescript": "^4.7.4",
+    "axios": "^0.27.2",
+    "moment": "2.29.4"
   },
   "devDependencies": {
     "@types/chai": "^4.3.1",
