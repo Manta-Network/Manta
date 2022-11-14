@@ -144,7 +144,6 @@ where
             MockOrigin::signed(ALICE),
             private_transfer.clone().into(),
         ));
-
         posts.push(private_transfer)
     }
     posts
