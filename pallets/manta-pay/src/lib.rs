@@ -763,7 +763,7 @@ where
         output: config::UtxoAccumulatorOutput,
     ) -> Option<Self::ValidUtxoAccumulatorOutput> {
         if UtxoAccumulatorOutputs::<T>::contains_key(encode(output)) {
-            Some(Wrap(output))
+            return Some(Wrap(output));
         }
         None
     }

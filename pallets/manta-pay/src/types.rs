@@ -357,6 +357,7 @@ impl TryFrom<FullIncomingNote> for v2::FullIncomingNote {
         Ok(Self {
             address_partition: note.address_partition,
             incoming_note: note.incoming_note.try_into()?,
+            light_incoming_note: Default::default(),
         })
     }
 }
