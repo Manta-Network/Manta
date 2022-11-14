@@ -59,7 +59,7 @@ impl frame_system::Config for Runtime {
     type SystemWeightInfo = ();
     type SS58Prefix = ();
     type OnSetCode = ();
-    type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type MaxConsumers = ConstU32<16>;
 }
 
 parameter_types! {
@@ -84,6 +84,8 @@ ord_parameter_types! {
 
 impl Config for Runtime {
     type Event = Event;
+    type AssetId = manta_primitives::types::DolphinAssetId;
+    type Balance = Balance;
     type UpdateOrigin = EnsureRoot<AccountId>;
     type WeightInfo = ();
 }

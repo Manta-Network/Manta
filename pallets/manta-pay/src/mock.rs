@@ -254,6 +254,8 @@ impl pallet_asset_manager::Config for Test {
 impl pallet_tx_limit::Config for Test {
     type Event = Event;
     type UpdateOrigin = EnsureRoot<AccountId32>;
+    type AssetId = StandardAssetId;
+    type Balance = Balance;
     type WeightInfo = ();
 }
 

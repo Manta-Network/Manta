@@ -75,14 +75,9 @@ pub trait AssetMetadata: BalanceType {
 }
 
 /// The limitation of asset
-pub trait TransactionLimitation {
+pub trait TransactionLimitation<AssetId, Balance> {
+    /// ensure asset and amount is valid
     fn ensure_valid(asset_id: AssetId, amount: Balance) -> bool;
-}
-
-impl TransactionLimitation for () {
-    fn ensure_valid(_asset_id: AssetId, _amount: Balance) -> bool {
-        true
-    }
 }
 
 /// Asset Registry

@@ -21,6 +21,7 @@
 use super::*;
 use frame_support::{assert_noop, assert_ok};
 use frame_system::RawOrigin;
+use manta_primitives::types::{Balance, DolphinAssetId};
 use mock::{Event, *};
 use sp_runtime::traits::BadOrigin;
 
@@ -74,27 +75,32 @@ fn set_asset_limit_and_unset_work() {
 #[test]
 fn transaction_limitation_validity_check_works() {
     ExtBuilder::default().build().execute_with(|| {
-        assert!(<TransactionLimit as TransactionLimitation>::ensure_valid(
-            1, 100
-        ));
+        assert!(<TransactionLimit as TransactionLimitation<
+            DolphinAssetId,
+            Balance,
+        >>::ensure_valid(1, 100));
 
         assert_ok!(TransactionLimit::set_asset_limit(
             RawOrigin::Root.into(),
             1,
             100
         ));
-        assert!(<TransactionLimit as TransactionLimitation>::ensure_valid(
-            1, 0
-        ));
-        assert!(<TransactionLimit as TransactionLimitation>::ensure_valid(
-            1, 99
-        ));
-        assert!(!<TransactionLimit as TransactionLimitation>::ensure_valid(
-            1, 100
-        ));
-        assert!(!<TransactionLimit as TransactionLimitation>::ensure_valid(
-            1, 101
-        ));
+        assert!(<TransactionLimit as TransactionLimitation<
+            DolphinAssetId,
+            Balance,
+        >>::ensure_valid(1, 0));
+        assert!(<TransactionLimit as TransactionLimitation<
+            DolphinAssetId,
+            Balance,
+        >>::ensure_valid(1, 99));
+        assert!(!<TransactionLimit as TransactionLimitation<
+            DolphinAssetId,
+            Balance,
+        >>::ensure_valid(1, 100));
+        assert!(!<TransactionLimit as TransactionLimitation<
+            DolphinAssetId,
+            Balance,
+        >>::ensure_valid(1, 101));
 
         assert_ok!(TransactionLimit::set_asset_limit(
             RawOrigin::Root.into(),
@@ -102,19 +108,22 @@ fn transaction_limitation_validity_check_works() {
             1000
         ));
 
-        assert!(<TransactionLimit as TransactionLimitation>::ensure_valid(
-            1, 100
-        ));
-        assert!(!<TransactionLimit as TransactionLimitation>::ensure_valid(
-            1, 1000
-        ));
+        assert!(<TransactionLimit as TransactionLimitation<
+            DolphinAssetId,
+            Balance,
+        >>::ensure_valid(1, 100));
+        assert!(!<TransactionLimit as TransactionLimitation<
+            DolphinAssetId,
+            Balance,
+        >>::ensure_valid(1, 1000));
 
         assert_ok!(TransactionLimit::unset_asset_limit(
             RawOrigin::Root.into(),
             1
         ));
-        assert!(<TransactionLimit as TransactionLimitation>::ensure_valid(
-            1, 1000
-        ));
+        assert!(<TransactionLimit as TransactionLimitation<
+            DolphinAssetId,
+            Balance,
+        >>::ensure_valid(1, 1000));
     });
 }

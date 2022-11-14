@@ -76,6 +76,7 @@ pub mod xcm_config;
 use currency::*;
 use fee::WeightToFee;
 use impls::DealWithFees;
+use manta_primitives::types::DolphinAssetId;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -177,6 +178,8 @@ impl pallet_tx_pause::Config for Runtime {
 impl pallet_tx_limit::Config for Runtime {
     type Event = Event;
     type UpdateOrigin = EnsureRoot<AccountId>;
+    type AssetId = DolphinAssetId;
+    type Balance = Balance;
     type WeightInfo = weights::pallet_tx_limit::SubstrateWeight<Runtime>;
 }
 

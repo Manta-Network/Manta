@@ -22,7 +22,6 @@ use super::*;
 use crate::Pallet as TransactionLimit;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 use frame_system::{EventRecord, RawOrigin};
-use manta_primitives::types::{AssetId, Balance};
 
 pub fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
     let events = frame_system::Pallet::<T>::events();
@@ -34,9 +33,9 @@ pub fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 benchmarks! {
     // Benchmark `set_asset_limit` extrinsic:
     set_asset_limit {
-        let asset_id: AssetId = 1;
-        let amount: Balance = 100;
-    }: set_asset_limit(RawOrigin::Root, asset_id, amount)
+        let asset_id: T::AssetId = T::AssetId::default();
+        let amount: T::Balance = <T as Config>::Balance::from(100 as u32);
+    }: set_asset_limit(RawOrigin::Root, asset_id, amount.clone())
     verify {
         assert_last_event::<T>(
             Event::TransactionLimitSet {
@@ -49,8 +48,8 @@ benchmarks! {
     // Benchmark `unset_asset_limit` extrinsic:
     unset_asset_limit {
         let origin: T::Origin = T::Origin::from(RawOrigin::Root);
-        let asset_id: AssetId = 1;
-        let amount: Balance = 100;
+        let asset_id: T::AssetId = T::AssetId::default();
+        let amount: T::Balance = <T as Config>::Balance::from(100 as u32);
 
         TransactionLimit::<T>::set_asset_limit(origin, asset_id, amount)?;
     }: unset_asset_limit(RawOrigin::Root, asset_id)

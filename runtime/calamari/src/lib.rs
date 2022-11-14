@@ -82,6 +82,7 @@ pub mod xcm_config;
 use currency::*;
 use fee::WeightToFee;
 use impls::DealWithFees;
+use manta_primitives::types::CalamariAssetId;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -188,6 +189,8 @@ impl pallet_tx_limit::Config for Runtime {
         EnsureRoot<AccountId>,
         pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 1, 2>,
     >;
+    type AssetId = CalamariAssetId;
+    type Balance = Balance;
     type WeightInfo = weights::pallet_tx_limit::SubstrateWeight<Runtime>;
 }
 

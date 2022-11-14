@@ -138,7 +138,7 @@ pub mod pallet {
         type AssetConfig: AssetConfig<Self, AssetId = StandardAssetId, Balance = AssetValueType>;
 
         /// Asset limitation check
-        type TransactionLimit: TransactionLimitation;
+        type TransactionLimit: TransactionLimitation<StandardAssetId, AssetValueType>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;

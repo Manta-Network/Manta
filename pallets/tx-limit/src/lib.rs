@@ -22,11 +22,8 @@ mod benchmarking;
 
 use frame_support::{pallet_prelude::*, transactional};
 use frame_system::pallet_prelude::*;
-use manta_primitives::{
-    assets::TransactionLimitation,
-    types::{AssetId, Balance},
-};
-use sp_runtime::DispatchResult;
+use manta_primitives::assets::TransactionLimitation;
+use sp_runtime::{traits::AtLeast32BitUnsigned, DispatchResult};
 
 mod mock;
 mod tests;
@@ -49,6 +46,17 @@ pub mod pallet {
         /// The origin which may set asset limit.
         type UpdateOrigin: EnsureOrigin<Self::Origin>;
 
+        /// Asset Id Type
+        type AssetId: AtLeast32BitUnsigned
+            + Default
+            + Parameter
+            + MaybeSerializeDeserialize
+            + TypeInfo
+            + Copy;
+
+        /// Balance Type
+        type Balance: AtLeast32BitUnsigned + Default + Member + Parameter + TypeInfo;
+
         /// Weight information for the extrinsics in this pallet.
         type WeightInfo: WeightInfo;
     }
@@ -60,9 +68,12 @@ pub mod pallet {
     #[pallet::generate_deposit(fn deposit_event)]
     pub enum Event<T: Config> {
         /// Setting asset limit on each tx
-        TransactionLimitSet { asset_id: AssetId, amount: Balance },
+        TransactionLimitSet {
+            asset_id: T::AssetId,
+            amount: T::Balance,
+        },
         /// Unset asset limit on each tx
-        TransactionLimitUnset { asset_id: AssetId },
+        TransactionLimitUnset { asset_id: T::AssetId },
     }
 
     /// The asset limitation map
@@ -70,7 +81,8 @@ pub mod pallet {
     /// map AssetId => Option<Balance>
     #[pallet::storage]
     #[pallet::getter(fn asset_limits)]
-    pub type AssetLimits<T: Config> = StorageMap<_, Twox64Concat, AssetId, Balance, ValueQuery>;
+    pub type AssetLimits<T: Config> =
+        StorageMap<_, Twox64Concat, T::AssetId, T::Balance, ValueQuery>;
 
     #[pallet::pallet]
     #[pallet::without_storage_info]
@@ -88,12 +100,12 @@ pub mod pallet {
         #[transactional]
         pub fn set_asset_limit(
             origin: OriginFor<T>,
-            #[pallet::compact] asset_id: AssetId,
-            #[pallet::compact] amount: Balance,
+            asset_id: T::AssetId,
+            amount: T::Balance,
         ) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
 
-            AssetLimits::<T>::insert(asset_id, amount);
+            AssetLimits::<T>::insert(asset_id, amount.clone());
             Self::deposit_event(Event::TransactionLimitSet { asset_id, amount });
 
             Ok(())
@@ -103,10 +115,7 @@ pub mod pallet {
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::unset_asset_limit())]
         #[transactional]
-        pub fn unset_asset_limit(
-            origin: OriginFor<T>,
-            #[pallet::compact] asset_id: AssetId,
-        ) -> DispatchResult {
+        pub fn unset_asset_limit(origin: OriginFor<T>, asset_id: T::AssetId) -> DispatchResult {
             T::UpdateOrigin::ensure_origin(origin)?;
 
             AssetLimits::<T>::remove(asset_id);
@@ -117,8 +126,8 @@ pub mod pallet {
     }
 }
 
-impl<T: Config> TransactionLimitation for Pallet<T> {
-    fn ensure_valid(asset_id: AssetId, amount: Balance) -> bool {
-        !AssetLimits::<T>::contains_key(asset_id) || amount < AssetLimits::<T>::get(asset_id)
+impl<T: Config> TransactionLimitation<T::AssetId, T::Balance> for Pallet<T> {
+    fn ensure_valid(asset_id: T::AssetId, amount: T::Balance) -> bool {
+        !AssetLimits::<T>::contains_key(&asset_id) || amount < AssetLimits::<T>::get(asset_id)
     }
 }
