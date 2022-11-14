@@ -97,22 +97,21 @@ sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkad
 jsonrpsee = { version = "0.14.0", features = ["server", "macros"], optional = true }
 
 # manta dependencies
-# TODO: don't use rev
-manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", rev = "115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb", default-features = false }
-manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", rev = "115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb", default-features = false }
-manta-pay = { git = "https://github.com/manta-network/manta-rs.git", rev = "115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb", default-features = false, features = ["groth16", "parameters", "scale"] }
+manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", default-features = false }
+manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", default-features = false }
+manta-pay = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", default-features = false, features = ["groth16", "parameters", "scale"] }
 manta-primitives = { path = "../../primitives/manta", default-features = false }
-manta-util = { git = "https://github.com/manta-network/manta-rs.git", rev = "115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb", default-features = false }
+manta-util = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", default-features = false }
 
 [dev-dependencies]
 bencher = "0.1.5"
 criterion = "0.3.4"
 lazy_static = "1.4.0"
-manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", rev = "115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb", features = ["test"] }
-manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", rev = "115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb", features = ["getrandom"] }
-manta-parameters = { git = "https://github.com/manta-network/manta-rs.git", rev = "115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb", features = ["download"] }
-manta-pay = { git = "https://github.com/manta-network/manta-rs.git", rev = "115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb", default-features = false, features = ["groth16", "parameters", "scale", "download", "test"] }
-manta-util = { git = "https://github.com/manta-network/manta-rs.git", rev = "115cc4c2c1b7b24621abd243d1b1e4d74a2f96cb", features = ["std"] }
+manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", features = ["test"] }
+manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", features = ["getrandom"] }
+manta-parameters = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", features = ["download"] }
+manta-pay = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", default-features = false, features = ["groth16", "parameters", "scale", "download", "test"] }
+manta-util = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", features = ["std"] }
 pallet-asset-manager = { path = "../asset-manager" }
 pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }

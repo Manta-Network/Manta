@@ -19,7 +19,7 @@ use crate::{
         PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, TO_PRIVATE, TO_PUBLIC, TO_PUBLIC_INPUT,
     },
     types::Asset,
-    Call, Config, Event, Pallet, TransferPost,
+    Call, Config, Event, Pallet, StandardAssetId, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::traits::Get;
@@ -28,6 +28,7 @@ use frame_system::RawOrigin;
 use manta_primitives::{
     assets::{AssetConfig, AssetRegistry, FungibleLedger, TestingDefault},
     constants::TEST_DEFAULT_ASSET_ED,
+    types::Balance,
 };
 use scale_codec::Decode;
 
@@ -35,7 +36,7 @@ mod precomputed_coins;
 
 pub const INITIAL_VALUE: u128 = 1_000_000_000_000_000_000_000u128;
 
-/// Asserts that the last event that has occured is the same as `event`.
+/// Asserts that the last event that has occurred is the same as `event`.
 #[inline]
 pub fn assert_last_event<T, E>(event: E)
 where
@@ -48,14 +49,14 @@ where
 
 /// Init assets for manta-pay
 #[inline]
-pub fn init_asset<T>(owner: &T::AccountId, id: u128, value: u128)
+pub fn init_asset<T>(owner: &T::AccountId, id: StandardAssetId, value: Balance)
 where
     T: Config,
 {
     let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
     let storage_metadata: <T::AssetConfig as AssetConfig<T>>::StorageMetadata = metadata.into();
     <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
-        id.try_into().unwrap(),
+        id,
         storage_metadata,
         TEST_DEFAULT_ASSET_ED,
         true,
@@ -63,13 +64,13 @@ where
     .expect("Unable to create asset.");
     let pallet_account: T::AccountId = Pallet::<T>::account_id();
     <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
-        id.try_into().unwrap(),
+        id,
         owner,
         value + TEST_DEFAULT_ASSET_ED,
     )
     .expect("Unable to mint asset to its new owner.");
     <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
-        id.try_into().unwrap(),
+        id,
         &pallet_account,
         TEST_DEFAULT_ASSET_ED,
     )

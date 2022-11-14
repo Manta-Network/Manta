@@ -816,7 +816,7 @@ mod benches {
         [pallet_tx_pause, TransactionPause]
         [manta_collator_selection, CollatorSelection]
         [pallet_manta_pay, MantaPay]
-        // [pallet_asset_manager, AssetManager]
+        [pallet_asset_manager, AssetManager]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );
