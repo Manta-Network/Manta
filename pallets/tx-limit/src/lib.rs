@@ -128,6 +128,6 @@ pub mod pallet {
 
 impl<T: Config> TransactionLimitation<T::AssetId, T::Balance> for Pallet<T> {
     fn ensure_valid(asset_id: T::AssetId, amount: T::Balance) -> bool {
-        !AssetLimits::<T>::contains_key(&asset_id) || amount < AssetLimits::<T>::get(asset_id)
+        !AssetLimits::<T>::contains_key(asset_id) || amount < AssetLimits::<T>::get(asset_id)
     }
 }

@@ -34,7 +34,7 @@ benchmarks! {
     // Benchmark `set_asset_limit` extrinsic:
     set_asset_limit {
         let asset_id: T::AssetId = T::AssetId::default();
-        let amount: T::Balance = <T as Config>::Balance::from(100 as u32);
+        let amount: T::Balance = <T as Config>::Balance::from(100_u32);
     }: set_asset_limit(RawOrigin::Root, asset_id, amount.clone())
     verify {
         assert_last_event::<T>(
@@ -49,7 +49,7 @@ benchmarks! {
     unset_asset_limit {
         let origin: T::Origin = T::Origin::from(RawOrigin::Root);
         let asset_id: T::AssetId = T::AssetId::default();
-        let amount: T::Balance = <T as Config>::Balance::from(100 as u32);
+        let amount: T::Balance = <T as Config>::Balance::from(100_u32);
 
         TransactionLimit::<T>::set_asset_limit(origin, asset_id, amount)?;
     }: unset_asset_limit(RawOrigin::Root, asset_id)
