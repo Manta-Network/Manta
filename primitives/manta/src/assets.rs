@@ -74,6 +74,12 @@ pub trait AssetMetadata: BalanceType {
     fn is_sufficient(&self) -> bool;
 }
 
+/// The limitation of asset
+pub trait TransactionLimitation<AssetId, Balance> {
+    /// ensure asset and amount is valid
+    fn ensure_valid(asset_id: AssetId, amount: Balance) -> bool;
+}
+
 /// Asset Registry
 ///
 /// The registry trait: defines the interface of creating an asset in the asset implementation

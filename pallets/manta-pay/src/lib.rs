@@ -117,6 +117,7 @@ pub mod pallet {
     use super::*;
     use frame_support::{pallet_prelude::*, traits::StorageVersion};
     use frame_system::pallet_prelude::*;
+    use manta_primitives::assets::TransactionLimitation;
     use sp_runtime::traits::AccountIdConversion;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -135,6 +136,9 @@ pub mod pallet {
 
         /// Asset Configuration
         type AssetConfig: AssetConfig<Self, AssetId = StandardAssetId, Balance = AssetValueType>;
+
+        /// Asset limitation check
+        type TransactionLimit: TransactionLimitation<StandardAssetId, AssetValueType>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -192,6 +196,17 @@ pub mod pallet {
         #[transactional]
         pub fn to_private(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
+
+            let asset_id = post
+                .asset_id
+                .ok_or(Error::<T>::PublicUpdateInvalidAssetId)?;
+            for source in post.sources.iter() {
+                ensure!(
+                    T::TransactionLimit::ensure_valid(asset_id, *source),
+                    Error::<T>::TransferAmountExceedsLimit
+                );
+            }
+
             Self::post_transaction(None, vec![origin], vec![], post)
         }
 
@@ -389,6 +404,9 @@ pub mod pallet {
         ///
         /// This is caused by some internal error in the ledger and should never occur.
         InternalLedgerError,
+
+        /// Transfer asset amount exceeds limit
+        TransferAmountExceedsLimit,
     }
 
     impl<T> From<InvalidSourceAccount<T::AccountId>> for Error<T>

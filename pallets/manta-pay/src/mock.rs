@@ -56,6 +56,7 @@ frame_support::construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Assets: pallet_assets::{Pallet, Storage, Event<T>},
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>},
+        TransactionLimit: pallet_tx_limit::{Pallet, Call, Storage, Event<T>},
     }
 );
 
@@ -250,6 +251,14 @@ impl pallet_asset_manager::Config for Test {
     type WeightInfo = ();
 }
 
+impl pallet_tx_limit::Config for Test {
+    type Event = Event;
+    type UpdateOrigin = EnsureRoot<AccountId32>;
+    type AssetId = StandardAssetId;
+    type Balance = Balance;
+    type WeightInfo = ();
+}
+
 parameter_types! {
     pub const MantaPayPalletId: PalletId = MANTA_PAY_PALLET_ID;
 }
@@ -259,6 +268,7 @@ impl crate::Config for Test {
     type WeightInfo = crate::weights::SubstrateWeight<Self>;
     type PalletId = MantaPayPalletId;
     type AssetConfig = MantaAssetConfig;
+    type TransactionLimit = TransactionLimit;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

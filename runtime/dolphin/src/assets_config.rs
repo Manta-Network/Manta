@@ -16,7 +16,7 @@
 
 use super::{
     weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
-    NativeTokenExistentialDeposit, Origin, Runtime,
+    NativeTokenExistentialDeposit, Origin, Runtime, TransactionLimit,
 };
 
 use manta_primitives::{
@@ -184,4 +184,5 @@ impl pallet_manta_pay::Config for Runtime {
     type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
     type AssetConfig = DolphinAssetConfig;
     type PalletId = MantaPayPalletId;
+    type TransactionLimit = TransactionLimit;
 }
