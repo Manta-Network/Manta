@@ -348,7 +348,7 @@ impl From<v2::LightIncomingNote> for LightIncomingNote {
         let mut outer_ind: usize = 0;
         for i in encoded_arrays {
             let mut inner_ind: usize = 0;
-            for j in i {
+            for _ in i {
                 encoded_arrays[outer_ind][inner_ind] = encoded[outer_ind * 32 + inner_ind];
                 inner_ind += 1;
             }

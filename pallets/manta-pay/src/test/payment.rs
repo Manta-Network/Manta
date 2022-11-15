@@ -78,10 +78,11 @@ fn sample_to_private<R>(asset_id: AssetId, value: AssetValue, rng: &mut R) -> Pa
 where
     R: CryptoRng + RngCore + ?Sized,
 {
+    let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
     PalletTransferPost::from(test::payment::to_private::prove_full(
         &PROVING_CONTEXT.to_private,
         &PARAMETERS,
-        &UTXO_ACCUMULATOR_MODEL,
+        &mut utxo_accumulator,
         MantaPayPallet::id_from_field(asset_id).unwrap().into(),
         value,
         rng,
@@ -152,6 +153,83 @@ where
 
 /// Builds `count`-many [`Reclaim`] tests.
 #[inline]
+fn combined_test<R>(rng: &mut R)
+where
+    R: CryptoRng + RngCore + ?Sized,
+{
+    for asset_id in 8u128..18u128 {
+        initialize_test(
+            asset_id.into(),
+            100_000_000_000_000_000_000 + TEST_DEFAULT_ASSET_ED,
+        );
+    }
+    let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
+    let mut asset_id = 8u128;
+    for _ in 0..50 {
+        let mint0 = PalletTransferPost::from(test::payment::to_private::prove_full(
+            &PROVING_CONTEXT.to_private,
+            &PARAMETERS,
+            &mut utxo_accumulator,
+            asset_id.into(),
+            1000,
+            rng,
+        ));
+
+        let ([transfer_input_0, transfer_input_1], private_transfer) =
+            test::payment::private_transfer::prove_full(
+                &PROVING_CONTEXT,
+                &PARAMETERS,
+                &mut utxo_accumulator,
+                Fp::from(asset_id),
+                [100, 100],
+                rng,
+            );
+
+        let ([to_public_input_0, to_public_input_1], to_public) =
+            test::payment::to_public::prove_full(
+                &PROVING_CONTEXT,
+                &PARAMETERS,
+                &mut utxo_accumulator,
+                Fp::from(asset_id),
+                [100, 100],
+                rng,
+            );
+
+        assert_ok!(MantaPayPallet::to_private(MockOrigin::signed(ALICE), mint0));
+
+        assert_ok!(MantaPayPallet::to_private(
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(transfer_input_0)
+        ));
+        assert_ok!(MantaPayPallet::to_private(
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(transfer_input_1)
+        ));
+        assert_ok!(MantaPayPallet::private_transfer(
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(private_transfer.clone()),
+        ));
+
+        assert_ok!(MantaPayPallet::to_private(
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(to_public_input_0)
+        ));
+        assert_ok!(MantaPayPallet::to_private(
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(to_public_input_1)
+        ));
+        assert_ok!(MantaPayPallet::to_public(
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(to_public.clone())
+        ));
+
+        asset_id += 1;
+        if asset_id == 18 {
+            asset_id = 8;
+        }
+    }
+}
+
 fn reclaim_test<R>(
     count: usize,
     total_supply: AssetValue,
@@ -387,6 +465,13 @@ fn reclaim_10_times_should_work() {
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| reclaim_test(10, rng.gen(), None, &mut rng));
     }
+}
+
+/// Tests multiple sequences of ToPrivate, ToPrivate, ToPrivate, ToPrivateTransfer, ToPrivate, ToPrivate, ToPublic
+#[test]
+fn combined_should_work() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| combined_test(&mut rng));
 }
 
 /// Tests that a double-spent [`Reclaim`] will fail.
