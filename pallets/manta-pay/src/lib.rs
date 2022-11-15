@@ -851,17 +851,6 @@ where
             let cloned_tree = tree.clone();
             let mut next_root = Option::<config::UtxoAccumulatorOutput>::None;
             let mut current_path = cloned_tree.current_path.into();
-            println!("Tree index {shard_index}");
-            if cloned_tree.leaf_digest.is_some() {
-                let old_root = merkle_tree::path::CurrentPath::root(
-                    &current_path,
-                    &utxo_accumulator_model,
-                    &cloned_tree.leaf_digest.unwrap(),
-                );
-                println!("Old Root: {:#?}", old_root);
-            } else {
-                println!("Old root is None");
-            }
             for (utxo, note) in insertions {
                 next_root = Some(
                     merkle_tree::single_path::raw::insert(
@@ -872,7 +861,6 @@ where
                     )
                     .expect("If this errors, then we have run out of Merkle Tree capacity."),
                 );
-                println!("Root: {:#?}", next_root.unwrap());
                 let next_index = current_path.leaf_index().0 as u64;
                 let utxo = Utxo::from(utxo);
                 UtxoSet::<T>::insert(utxo, ());

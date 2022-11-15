@@ -344,7 +344,6 @@ impl From<v2::LightIncomingNote> for LightIncomingNote {
     #[inline]
     fn from(note: v2::LightIncomingNote) -> Self {
         let encoded = note.ciphertext.ciphertext.encode();
-        println!("Encoded length {:?}", encoded.len());
         let mut encoded_arrays = [[0u8; 32]; 3];
         let mut outer_ind: usize = 0;
         for i in encoded_arrays {
