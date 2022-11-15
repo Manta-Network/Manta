@@ -267,6 +267,7 @@ impl TryFrom<SenderPost> for config::SenderPost {
 
 /// Incoming Ciphertext Type
 pub type IncomingCiphertext = [[u8; 32]; 3];
+pub type LightIncomingCiphertext = [[u8; 32]; 3];
 
 /// Incoming Note
 #[cfg_attr(
@@ -324,6 +325,67 @@ impl TryFrom<IncomingNote> for v2::IncomingNote {
     }
 }
 
+/// Incoming Note
+#[cfg_attr(
+    feature = "rpc",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
+pub struct LightIncomingNote {
+    /// Ephemeral Public Key
+    pub ephemeral_public_key: Group,
+
+    /// Ciphertext
+    pub ciphertext: LightIncomingCiphertext,
+}
+
+impl From<v2::LightIncomingNote> for LightIncomingNote {
+    #[inline]
+    fn from(note: v2::LightIncomingNote) -> Self {
+        let encoded = note.ciphertext.ciphertext.encode();
+        println!("Encoded length {:?}", encoded.len());
+        let mut encoded_arrays = [[0u8; 32]; 3];
+        let mut outer_ind: usize = 0;
+        for i in encoded_arrays {
+            let mut inner_ind: usize = 0;
+            for j in i {
+                encoded_arrays[outer_ind][inner_ind] = encoded[outer_ind * 32 + inner_ind];
+                inner_ind += 1;
+            }
+            outer_ind += 1;
+        }
+        Self {
+            ephemeral_public_key: encode(note.ciphertext.ephemeral_public_key),
+            ciphertext: encoded_arrays,
+        }
+    }
+}
+
+impl TryFrom<LightIncomingNote> for v2::LightIncomingNote {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(note: LightIncomingNote) -> Result<Self, Self::Error> {
+        let mut array_ = [0u8; 96];
+        let mut ind = 0;
+        for i in note.ciphertext {
+            for j in i {
+                array_[ind as usize] = j;
+                ind += 1;
+            }
+        }
+        let decoded: [u8; 96] = decode(array_).unwrap();
+        Ok(Self {
+            header: EmptyHeader::default(),
+            ciphertext: hybrid::Ciphertext {
+                ephemeral_public_key: decode(note.ephemeral_public_key)?,
+                ciphertext: decoded.into(),
+            },
+        })
+    }
+}
+
 /// Full Incoming Note
 #[cfg_attr(
     feature = "rpc",
@@ -337,6 +399,8 @@ pub struct FullIncomingNote {
 
     /// Incoming Note
     pub incoming_note: IncomingNote,
+
+    pub light_incoming_note: LightIncomingNote,
 }
 
 impl From<v2::FullIncomingNote> for FullIncomingNote {
@@ -345,6 +409,7 @@ impl From<v2::FullIncomingNote> for FullIncomingNote {
         Self {
             address_partition: note.address_partition,
             incoming_note: IncomingNote::from(note.incoming_note),
+            light_incoming_note: LightIncomingNote::from(note.light_incoming_note),
         }
     }
 }
@@ -357,7 +422,7 @@ impl TryFrom<FullIncomingNote> for v2::FullIncomingNote {
         Ok(Self {
             address_partition: note.address_partition,
             incoming_note: note.incoming_note.try_into()?,
-            light_incoming_note: Default::default(),
+            light_incoming_note: note.light_incoming_note.try_into().unwrap(),
         })
     }
 }
