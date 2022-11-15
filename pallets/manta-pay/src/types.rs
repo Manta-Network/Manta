@@ -373,7 +373,7 @@ impl TryFrom<FullIncomingNote> for v2::FullIncomingNote {
 )]
 pub struct Utxo {
     /// Transparency Flag
-    pub is_transparent: UtxoTransparency,
+    pub transparency: UtxoTransparency,
 
     /// Public Asset
     pub public_asset: Asset,
@@ -406,7 +406,7 @@ impl Utxo {
             UtxoTransparency::Opaque
         };
         Self {
-            is_transparent: utxo_transparency,
+            transparency: utxo_transparency,
             public_asset: utxo.public_asset.into(),
             commitment: encode(utxo.commitment),
         }
@@ -415,7 +415,7 @@ impl Utxo {
     ///
     #[inline]
     pub fn try_into(self) -> Result<v2::Utxo, Error> {
-        let utxo_transparency = match self.is_transparent {
+        let utxo_transparency = match self.transparency {
             UtxoTransparency::Transparent => true,
             UtxoTransparency::Opaque => false,
         };
