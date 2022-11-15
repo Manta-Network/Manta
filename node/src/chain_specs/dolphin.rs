@@ -381,7 +381,7 @@ pub fn dolphin_v3_staging_config() -> DolphinChainSpec {
         None,
         Some(DOLPHIN_PROTOCOL_ID),
         None,
-        Some(calamari_properties()),
+        Some(dolphin_properties()),
         Extensions {
             relay_chain: "kusama-staging".into(),
             para_id: DOLPHIN_ON_BAIKAL_PARACHAIN_ID,
