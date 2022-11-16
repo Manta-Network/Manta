@@ -135,7 +135,7 @@ benchmarks! {
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         let asset = Asset::new(Pallet::<T>::field_from_id(8u128), 100);
-        let sink =  Pallet::<T>::account_id();
+        let sink = Pallet::<T>::account_id();
     }: public_transfer (
         RawOrigin::Signed(caller.clone()),
         asset,
