@@ -15,7 +15,6 @@ version = '0.4.0'
 all-features = true
 rustdoc-args = ["--cfg", "doc_cfg"]
 
-# TODO
 [[bin]]
 name = "precompute_coins"
 required-features = ["precompute-coins"]

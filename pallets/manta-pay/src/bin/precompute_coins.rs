@@ -25,7 +25,7 @@ use manta_crypto::{
 use manta_pay::{
     config::{
         utxo::v2::MerkleTreeConfiguration, AssetId, AssetValue, MultiProvingContext, Parameters,
-        ProvingContext, UtxoAccumulatorModel,
+        ProvingContext,
     },
     parameters::load_parameters,
     test,
@@ -35,11 +35,10 @@ use rand_chacha::ChaCha20Rng;
 use scale_codec::Encode;
 use std::{
     env,
-    fs::{self, OpenOptions},
+    fs::{self, File, OpenOptions},
     io::Write,
     path::PathBuf,
 };
-
 /// UTXO Accumulator for Building Circuits
 type UtxoAccumulator =
     TreeArrayMerkleForest<MerkleTreeConfiguration, Full<MerkleTreeConfiguration>, 256>;
@@ -49,7 +48,7 @@ type UtxoAccumulator =
 fn sample_to_private<R>(
     proving_context: &ProvingContext,
     parameters: &Parameters,
-    utxo_accumulator_model: &UtxoAccumulatorModel,
+    utxo_accumulator: &mut UtxoAccumulator,
     asset_id: AssetId,
     value: AssetValue,
     rng: &mut R,
@@ -60,7 +59,7 @@ where
     TransferPost::from(test::payment::to_private::prove_full(
         proving_context,
         parameters,
-        utxo_accumulator_model,
+        utxo_accumulator,
         asset_id,
         value,
         rng,
@@ -72,7 +71,7 @@ where
 fn sample_private_transfer<R>(
     proving_context: &MultiProvingContext,
     parameters: &Parameters,
-    utxo_accumulator_model: &UtxoAccumulatorModel,
+    utxo_accumulator: &mut UtxoAccumulator,
     asset_id: AssetId,
     values: [AssetValue; 2],
     rng: &mut R,
@@ -84,7 +83,7 @@ where
         test::payment::private_transfer::prove_full(
             proving_context,
             parameters,
-            &mut UtxoAccumulator::new(utxo_accumulator_model.clone()),
+            utxo_accumulator,
             asset_id,
             values,
             rng,
@@ -103,7 +102,7 @@ where
 fn sample_to_public<R>(
     proving_context: &MultiProvingContext,
     parameters: &Parameters,
-    utxo_accumulator_model: &UtxoAccumulatorModel,
+    utxo_accumulator: &mut UtxoAccumulator,
     asset_id: AssetId,
     values: [AssetValue; 2],
     rng: &mut R,
@@ -114,7 +113,7 @@ where
     let ([to_private_0, to_private_1], to_public) = test::payment::to_public::prove_full(
         proving_context,
         parameters,
-        &mut UtxoAccumulator::new(utxo_accumulator_model.clone()),
+        utxo_accumulator,
         asset_id,
         values,
         rng,
@@ -183,12 +182,13 @@ fn main() -> Result<()> {
     let mut rng = ChaCha20Rng::from_seed([0; 32]);
     let (proving_context, _, parameters, utxo_accumulator_model) =
         load_parameters(directory.path()).expect("Unable to load parameters.");
+    let mut utxo_accumulator = UtxoAccumulator::new(utxo_accumulator_model.clone());
     let asset_id = 8.into();
 
     let to_private = sample_to_private(
         &proving_context.to_private,
         &parameters,
-        &utxo_accumulator_model,
+        &mut utxo_accumulator,
         asset_id,
         10_000,
         &mut rng,
@@ -196,7 +196,7 @@ fn main() -> Result<()> {
     let (private_transfer_input, private_transfer) = sample_private_transfer(
         &proving_context,
         &parameters,
-        &utxo_accumulator_model,
+        &mut utxo_accumulator,
         asset_id,
         [10_000, 20_000],
         &mut rng,
@@ -204,7 +204,7 @@ fn main() -> Result<()> {
     let (to_public_input, to_public) = sample_to_public(
         &proving_context,
         &parameters,
-        &utxo_accumulator_model,
+        &mut utxo_accumulator,
         asset_id,
         [10_000, 20_000],
         &mut rng,
