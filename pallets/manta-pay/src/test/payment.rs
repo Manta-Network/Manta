@@ -153,11 +153,11 @@ where
 
 /// Builds `count`-many [`Reclaim`] tests.
 #[inline]
-fn combined_test<R>(rng: &mut R)
+fn combined_test<R>(rng: &mut R, from: u128, to: u128, total: u128)
 where
     R: CryptoRng + RngCore + ?Sized,
 {
-    for asset_id in 8u128..18u128 {
+    for asset_id in from..to {
         initialize_test(
             asset_id.into(),
             100_000_000_000_000_000_000 + TEST_DEFAULT_ASSET_ED,
@@ -165,7 +165,8 @@ where
     }
     let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
     let mut asset_id = 8u128;
-    for _ in 0..50 {
+    for i in 0..total {
+        println!("Current: {:?}", i);
         let mint0 = PalletTransferPost::from(test::payment::to_private::prove_full(
             &PROVING_CONTEXT.to_private,
             &PARAMETERS,
@@ -224,8 +225,8 @@ where
         ));
 
         asset_id += 1;
-        if asset_id == 18 {
-            asset_id = 8;
+        if asset_id == to {
+            asset_id = from;
         }
     }
 }
@@ -471,7 +472,7 @@ fn reclaim_10_times_should_work() {
 #[test]
 fn combined_should_work() {
     let mut rng = OsRng;
-    new_test_ext().execute_with(|| combined_test(&mut rng));
+    new_test_ext().execute_with(|| combined_test(&mut rng, 8u128, 18u128, 50));
 }
 
 /// Tests that a double-spent [`Reclaim`] will fail.
