@@ -120,16 +120,16 @@ jobs:
                 relay: 25
                 para: 6
               peer-count:
-                relay: 5
-                para: 2
+                relay: 7
+                para: 4
           - id: dolphin-local
             expected:
               block-count:
                 relay: 25
                 para: 6
               peer-count:
-                relay: 5
-                para: 2
+                relay: 7
+                para: 4
     steps:
       - run: |
           mkdir -p $HOME/.local/share/calamari-pc
