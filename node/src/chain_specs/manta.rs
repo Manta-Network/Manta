@@ -19,7 +19,7 @@
 use super::*;
 use crate::command::MANTA_PARACHAIN_ID;
 use manta_runtime::opaque::SessionKeys;
-use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
+use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
 /// Manta Protocol Identifier
 pub const MANTA_PROTOCOL_ID: &str = "manta";
 
@@ -60,15 +60,15 @@ pub fn manta_development_config() -> MantaChainSpec {
         move || {
             manta_dev_genesis(
                 vec![(
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_collator_keys_from_seed("Alice").0,
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    unchecked_collator_keys("Alice").0,
                 )],
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                unchecked_account_id::<sr25519::Public>("Alice"),
                 vec![
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    unchecked_account_id::<sr25519::Public>("Bob"),
+                    unchecked_account_id::<sr25519::Public>("Alice//stash"),
+                    unchecked_account_id::<sr25519::Public>("Bob//stash"),
                 ],
             )
         },
@@ -94,26 +94,26 @@ pub fn manta_local_config() -> MantaChainSpec {
             manta_dev_genesis(
                 vec![
                     (
-                        get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        get_collator_keys_from_seed("Alice").0,
+                        unchecked_account_id::<sr25519::Public>("Alice"),
+                        unchecked_collator_keys("Alice").0,
                     ),
                     (
-                        get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        get_collator_keys_from_seed("Bob").0,
+                        unchecked_account_id::<sr25519::Public>("Bob"),
+                        unchecked_collator_keys("Bob").0,
                     ),
                 ],
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                unchecked_account_id::<sr25519::Public>("Alice"),
                 vec![
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve"),
-                    get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    unchecked_account_id::<sr25519::Public>("Bob"),
+                    unchecked_account_id::<sr25519::Public>("Charlie"),
+                    unchecked_account_id::<sr25519::Public>("Dave"),
+                    unchecked_account_id::<sr25519::Public>("Eve"),
+                    unchecked_account_id::<sr25519::Public>("Alice//stash"),
+                    unchecked_account_id::<sr25519::Public>("Bob//stash"),
+                    unchecked_account_id::<sr25519::Public>("Charlie//stash"),
+                    unchecked_account_id::<sr25519::Public>("Dave//stash"),
+                    unchecked_account_id::<sr25519::Public>("Eve//stash"),
                 ],
             )
         },

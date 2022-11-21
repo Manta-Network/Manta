@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Dolphin Parachain runtime.
+//! Dolphin Parachain Runtime
 
 #![allow(clippy::identity_op)] // keep e.g. 1 * DAYS for legibility
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -117,7 +117,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("dolphin"),
     impl_name: create_runtime_str!("dolphin"),
     authoring_version: 2,
-    spec_version: 3430,
+    spec_version: 3432,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 4,
@@ -726,7 +726,7 @@ construct_runtime!(
         // Treasury
         Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,
 
-        // Preimage registrar.
+        // Preimage registry.
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 28,
         // System scheduler.
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 29,
