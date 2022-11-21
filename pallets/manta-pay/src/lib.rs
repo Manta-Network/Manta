@@ -65,7 +65,7 @@ use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use frame_support::{traits::tokens::ExistenceRequirement, transactional, PalletId};
 use manta_pay::{
-    config::{self, utxo::v2::MerkleTreeConfiguration},
+    config::{self, utxo::v3::MerkleTreeConfiguration},
     manta_accounting::transfer::{
         self,
         canonical::TransferShape,
@@ -750,7 +750,7 @@ where
 
     #[inline]
     fn is_unspent(&self, nullifier: config::Nullifier) -> Option<Self::ValidNullifier> {
-        if NullifierCommitmentSet::<T>::contains_key(encode(nullifier.commitment)) {
+        if NullifierCommitmentSet::<T>::contains_key(encode(nullifier.nullifier.commitment)) {
             None
         } else {
             Some(Wrap(nullifier))
@@ -777,7 +777,7 @@ where
         let index = NullifierSetSize::<T>::get();
         let mut i = 0;
         for (_, nullifier) in iter {
-            let nullifier_commitment = encode(nullifier.0.commitment);
+            let nullifier_commitment = encode(nullifier.0.nullifier.commitment);
             NullifierCommitmentSet::<T>::insert(nullifier_commitment, ());
             NullifierSetInsertionOrder::<T>::insert(
                 index + i,
@@ -821,7 +821,7 @@ where
                 .expect("Checksum did not match."),
         )
         .expect("Unable to decode the Merkle Tree Parameters.");
-        let utxo_accumulator_item_hash = config::utxo::v2::UtxoAccumulatorItemHash::decode(
+        let utxo_accumulator_item_hash = config::utxo::v3::UtxoAccumulatorItemHash::decode(
             manta_parameters::pay::testnet::parameters::UtxoAccumulatorItemHash::get()
                 .expect("Checksum did not match."),
         )
