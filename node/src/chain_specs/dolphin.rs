@@ -82,7 +82,7 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
 pub fn dolphin_local_config() -> DolphinChainSpec {
     DolphinChainSpec::from_genesis(
         "Dolphin Parachain Local",
-        "dolphin_local",
+        "dolphin_localdev",
         ChainType::Local,
         move || {
             dolphin_dev_genesis(
@@ -91,22 +91,22 @@ pub fn dolphin_local_config() -> DolphinChainSpec {
                         unchecked_account_id::<sr25519::Public>("Alice"),
                         SessionKeys::new(unchecked_collator_keys("Alice")),
                     ),
-                    (
-                        unchecked_account_id::<sr25519::Public>("Bob"),
-                        SessionKeys::new(unchecked_collator_keys("Bob")),
-                    ),
-                    (
-                        unchecked_account_id::<sr25519::Public>("Charlie"),
-                        SessionKeys::new(unchecked_collator_keys("Charlie")),
-                    ),
-                    (
-                        unchecked_account_id::<sr25519::Public>("Dave"),
-                        SessionKeys::new(unchecked_collator_keys("Dave")),
-                    ),
-                    (
-                        unchecked_account_id::<sr25519::Public>("Eve"),
-                        SessionKeys::new(unchecked_collator_keys("Eve")),
-                    ),
+                    // (
+                    //     unchecked_account_id::<sr25519::Public>("Bob"),
+                    //     SessionKeys::new(unchecked_collator_keys("Bob")),
+                    // ),
+                    // (
+                    //     unchecked_account_id::<sr25519::Public>("Charlie"),
+                    //     SessionKeys::new(unchecked_collator_keys("Charlie")),
+                    // ),
+                    // (
+                    //     unchecked_account_id::<sr25519::Public>("Dave"),
+                    //     SessionKeys::new(unchecked_collator_keys("Dave")),
+                    // ),
+                    // (
+                    //     unchecked_account_id::<sr25519::Public>("Eve"),
+                    //     SessionKeys::new(unchecked_collator_keys("Eve")),
+                    // ),
                 ],
                 unchecked_account_id::<sr25519::Public>("Alice"),
                 vec![
