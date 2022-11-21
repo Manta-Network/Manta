@@ -5029,7 +5029,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.5.6"
-source = "git+https://github.com/manta-network/manta-rs.git?rev=7d564e0fbea90bcabf51048c36220fc8a53a3643#7d564e0fbea90bcabf51048c36220fc8a53a3643"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=ghzlatarev/feat/new-circuits#6b7b3424df2b2152ebe7c42b674b4fcbc4bfa70e"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5073,7 +5073,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.5.6"
-source = "git+https://github.com/manta-network/manta-rs.git?rev=7d564e0fbea90bcabf51048c36220fc8a53a3643#7d564e0fbea90bcabf51048c36220fc8a53a3643"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=ghzlatarev/feat/new-circuits#6b7b3424df2b2152ebe7c42b674b4fcbc4bfa70e"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -5095,7 +5095,7 @@ dependencies = [
 [[package]]
 name = "manta-parameters"
 version = "0.5.6"
-source = "git+https://github.com/manta-network/manta-rs.git?rev=7d564e0fbea90bcabf51048c36220fc8a53a3643#7d564e0fbea90bcabf51048c36220fc8a53a3643"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=ghzlatarev/feat/new-circuits#6b7b3424df2b2152ebe7c42b674b4fcbc4bfa70e"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5108,7 +5108,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.5.6"
-source = "git+https://github.com/manta-network/manta-rs.git?rev=7d564e0fbea90bcabf51048c36220fc8a53a3643#7d564e0fbea90bcabf51048c36220fc8a53a3643"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=ghzlatarev/feat/new-circuits#6b7b3424df2b2152ebe7c42b674b4fcbc4bfa70e"
 dependencies = [
  "aes-gcm",
  "ark-groth16",
@@ -5216,7 +5216,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.5.6"
-source = "git+https://github.com/manta-network/manta-rs.git?rev=7d564e0fbea90bcabf51048c36220fc8a53a3643#7d564e0fbea90bcabf51048c36220fc8a53a3643"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=ghzlatarev/feat/new-circuits#6b7b3424df2b2152ebe7c42b674b4fcbc4bfa70e"
 dependencies = [
  "crossbeam-channel",
  "serde",
