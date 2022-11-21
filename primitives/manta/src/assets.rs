@@ -79,12 +79,24 @@ pub trait AssetMetadata: BalanceType {
 /// The registry trait: defines the interface of creating an asset in the asset implementation
 /// layer. We may revisit this interface design (e.g. add change asset interface). However, change
 /// in StorageMetadata should be rare.
-pub trait AssetRegistry: AssetIdType + BalanceType {
+pub trait AssetRegistry<C>: AssetIdType + BalanceType
+where
+    C: Config,
+{
     /// Metadata Type
     type Metadata;
 
     /// Error Type
     type Error;
+
+    /// TODO: docs
+    fn create_asset(
+        origin: C::Origin,
+        asset_id: Self::AssetId,
+        admin: C::AccountId,
+        metadata: Self::Metadata,
+        min_balance: Self::Balance,
+    ) -> Result<(), Self::Error>;
 
     /// Creates an new asset.
     ///
@@ -97,20 +109,35 @@ pub trait AssetRegistry: AssetIdType + BalanceType {
     ///     balance storage. If set to `true`, then non-zero balances may be stored without a
     ///     `consumer` reference (and thus an ED in the Balances pallet or whatever else is used to
     ///     control user-account state growth).
-    fn create_asset(
+    fn force_create_asset(
         asset_id: Self::AssetId,
         metadata: Self::Metadata,
         min_balance: Self::Balance,
         is_sufficient: bool,
     ) -> Result<(), Self::Error>;
 
+    /// docs
+    fn update_metadata(
+        origin: C::Origin,
+        asset_id: &Self::AssetId,
+        metadata: Self::Metadata,
+    ) -> Result<(), Self::Error>;
+
     /// Update asset metadata by `AssetId`.
     ///
     /// * `asset_id`: the asset id to be created.
     /// * `metadata`: the metadata that the implementation layer stores.
-    fn update_asset_metadata(
+    fn force_update_metadata(
         asset_id: &Self::AssetId,
         metadata: Self::Metadata,
+    ) -> Result<(), Self::Error>;
+
+    /// docs
+    fn mint_asset(
+        origin: C::Origin,
+        asset_id: &Self::AssetId,
+        beneficiary: C::AccountId,
+        amount: Self::Balance,
     ) -> Result<(), Self::Error>;
 }
 
@@ -143,6 +170,7 @@ where
     ///
     /// The trait we use to register Assets and mint assets.
     type AssetRegistry: AssetRegistry<
+        C,
         AssetId = Self::AssetId,
         Balance = Self::Balance,
         Metadata = Self::StorageMetadata,

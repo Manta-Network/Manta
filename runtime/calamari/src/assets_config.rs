@@ -15,8 +15,8 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
-    NativeTokenExistentialDeposit, Origin, Runtime,
+    cKMA, weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
+    NativeTokenExistentialDeposit, Origin, Runtime, KMA,
 };
 
 use manta_primitives::{
@@ -36,11 +36,11 @@ use xcm::VersionedMultiLocation;
 
 parameter_types! {
     // Does not really matter as this will be only called by root
-    pub const AssetDeposit: Balance = 0;
-    pub const AssetAccountDeposit: Balance = 0;
-    pub const ApprovalDeposit: Balance = 0;
-    pub const MetadataDepositBase: Balance = 0;
-    pub const MetadataDepositPerByte: Balance = 0;
+    pub const AssetDeposit: Balance = 1_000 * KMA;
+    pub const AssetAccountDeposit: Balance = NativeTokenExistentialDeposit::get();
+    pub const ApprovalDeposit: Balance = 10 * cKMA;
+    pub const MetadataDepositBase: Balance = KMA;
+    pub const MetadataDepositPerByte: Balance = cKMA;
 }
 
 impl pallet_assets::Config for Runtime {
@@ -67,11 +67,34 @@ impl BalanceType for CalamariAssetRegistry {
 impl AssetIdType for CalamariAssetRegistry {
     type AssetId = CalamariAssetId;
 }
-impl AssetRegistry for CalamariAssetRegistry {
+impl AssetRegistry<Runtime> for CalamariAssetRegistry {
     type Metadata = AssetStorageMetadata;
     type Error = sp_runtime::DispatchError;
 
     fn create_asset(
+        who: Origin,
+        asset_id: CalamariAssetId,
+        admin: AccountId,
+        metadata: AssetStorageMetadata,
+        min_balance: Balance,
+    ) -> DispatchResult {
+        Assets::create(
+            who.clone(),
+            asset_id,
+            sp_runtime::MultiAddress::Id(admin),
+            min_balance,
+        )?;
+
+        Assets::set_metadata(
+            who,
+            asset_id,
+            metadata.name,
+            metadata.symbol,
+            metadata.decimals,
+        )
+    }
+
+    fn force_create_asset(
         asset_id: CalamariAssetId,
         metadata: AssetStorageMetadata,
         min_balance: Balance,
@@ -95,7 +118,21 @@ impl AssetRegistry for CalamariAssetRegistry {
         )
     }
 
-    fn update_asset_metadata(
+    fn update_metadata(
+        origin: Origin,
+        asset_id: &CalamariAssetId,
+        metadata: AssetStorageMetadata,
+    ) -> DispatchResult {
+        Assets::set_metadata(
+            origin,
+            *asset_id,
+            metadata.name,
+            metadata.symbol,
+            metadata.decimals,
+        )
+    }
+
+    fn force_update_metadata(
         asset_id: &CalamariAssetId,
         metadata: AssetStorageMetadata,
     ) -> DispatchResult {
@@ -106,6 +143,20 @@ impl AssetRegistry for CalamariAssetRegistry {
             metadata.symbol,
             metadata.decimals,
             metadata.is_frozen,
+        )
+    }
+
+    fn mint_asset(
+        origin: Origin,
+        asset_id: &CalamariAssetId,
+        beneficiary: AccountId,
+        amount: Balance,
+    ) -> DispatchResult {
+        Assets::mint(
+            origin,
+            *asset_id,
+            sp_runtime::MultiAddress::Id(beneficiary),
+            amount,
         )
     }
 }

@@ -674,7 +674,7 @@ fn register_insufficient_with_zero_min_balance_should_fail() {
 
     ParaB::execute_with(|| {
         assert_err!(
-            AssetManager::register_asset(
+            AssetManager::force_register_asset(
                 parachain::Origin::root(),
                 a_source_location.clone(),
                 a_asset_metadata_on_b.clone()

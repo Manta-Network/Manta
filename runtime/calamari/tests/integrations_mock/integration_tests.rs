@@ -1009,7 +1009,7 @@ fn concrete_fungible_ledger_transfers_work() {
             };
             let source_location =
                 AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-            assert_ok!(AssetManager::register_asset(
+            assert_ok!(AssetManager::force_register_asset(
                 root_origin(),
                 source_location,
                 asset_metadata
@@ -1172,7 +1172,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
             };
             let source_location =
                 AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-            assert_ok!(AssetManager::register_asset(
+            assert_ok!(AssetManager::force_register_asset(
                 root_origin(),
                 source_location,
                 asset_metadata
@@ -1233,7 +1233,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                 1,
                 X2(Parachain(1), PalletInstance(1)),
             )));
-            assert_ok!(AssetManager::register_asset(
+            assert_ok!(AssetManager::force_register_asset(
                 root_origin(),
                 source_location,
                 asset_metadata
@@ -1323,7 +1323,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
             };
             let source_location =
                 AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-            assert_ok!(AssetManager::register_asset(
+            assert_ok!(AssetManager::force_register_asset(
                 root_origin(),
                 source_location,
                 asset_metadata

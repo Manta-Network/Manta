@@ -504,11 +504,29 @@ impl BalanceType for CalamariAssetRegistry {
 impl AssetIdType for CalamariAssetRegistry {
     type AssetId = CalamariAssetId;
 }
-impl AssetRegistry for CalamariAssetRegistry {
+impl AssetRegistry<Runtime> for CalamariAssetRegistry {
     type Metadata = AssetStorageMetadata;
     type Error = sp_runtime::DispatchError;
 
     fn create_asset(
+        who: Origin,
+        asset_id: CalamariAssetId,
+        admin: AccountId,
+        metadata: AssetStorageMetadata,
+        min_balance: Balance,
+    ) -> DispatchResult {
+        Assets::create(who.clone(), asset_id, admin, min_balance)?;
+
+        Assets::set_metadata(
+            who,
+            asset_id,
+            metadata.name,
+            metadata.symbol,
+            metadata.decimals,
+        )
+    }
+
+    fn force_create_asset(
         asset_id: CalamariAssetId,
         metadata: AssetStorageMetadata,
         min_balance: Balance,
@@ -532,7 +550,21 @@ impl AssetRegistry for CalamariAssetRegistry {
         )
     }
 
-    fn update_asset_metadata(
+    fn update_metadata(
+        origin: Origin,
+        asset_id: &CalamariAssetId,
+        metadata: AssetStorageMetadata,
+    ) -> DispatchResult {
+        Assets::set_metadata(
+            origin,
+            *asset_id,
+            metadata.name,
+            metadata.symbol,
+            metadata.decimals,
+        )
+    }
+
+    fn force_update_metadata(
         asset_id: &CalamariAssetId,
         metadata: AssetStorageMetadata,
     ) -> DispatchResult {
@@ -544,6 +576,15 @@ impl AssetRegistry for CalamariAssetRegistry {
             metadata.decimals,
             metadata.is_frozen,
         )
+    }
+
+    fn mint_asset(
+        origin: Origin,
+        asset_id: &CalamariAssetId,
+        beneficiary: AccountId,
+        amount: Balance,
+    ) -> DispatchResult {
+        Assets::mint(origin, *asset_id, beneficiary, amount)
     }
 }
 
@@ -742,7 +783,7 @@ fn insert_dummy_data(
     let mut next_asset_id = start_from;
     let mut next_dummy_mult_loc = dummy_mult_loc;
     while next_asset_id < insert_until {
-        assert_ok!(AssetManager::register_asset(
+        assert_ok!(AssetManager::force_register_asset(
             self::Origin::root(),
             AssetLocation::from(next_dummy_mult_loc.clone()),
             dummy_asset_metadata.clone()
@@ -788,7 +829,7 @@ where
 
         asset_id = AssetManager::next_asset_id();
 
-        assert_ok!(AssetManager::register_asset(
+        assert_ok!(AssetManager::force_register_asset(
             self::Origin::root(),
             source_location.clone(),
             asset_metadata.clone()
