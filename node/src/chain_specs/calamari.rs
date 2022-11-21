@@ -99,8 +99,8 @@ pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
         move || {
             let invulnerables = if localdev {
                 vec![(
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    SessionKeys::new(get_collator_keys_from_seed("Alice")),
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    SessionKeys::new(unchecked_collator_keys("Alice")),
                 )]
             } else {
                 vec![
