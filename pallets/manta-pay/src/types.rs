@@ -262,7 +262,9 @@ impl TryFrom<SenderPost> for config::SenderPost {
         Ok(Self {
             utxo_accumulator_output: decode(post.utxo_accumulator_output)?,
             nullifier: config::Nullifier {
-                nullifier: decode(post.nullifier_commitment)?,
+                nullifier: manta_accounting::transfer::utxo::v3::Nullifier {
+                    commitment: decode(post.nullifier_commitment)?,
+                },
                 outgoing_note: TryFrom::try_from(post.outgoing_note)?,
             },
         })
