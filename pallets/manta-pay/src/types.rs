@@ -223,7 +223,7 @@ impl TryFrom<OutgoingNote> for v3::OutgoingNote {
                 index += 1;
             }
         }
-        let decoded_outgoing_ciphertext: [u8; 64] = decode(flat_outgoing_ciphertext).unwrap();
+        let decoded_outgoing_ciphertext: [u8; 64] = decode(flat_outgoing_ciphertext)?;
         Ok(Self {
             header: EmptyHeader::default(),
             ciphertext: hybrid::Ciphertext {
@@ -392,7 +392,7 @@ impl TryFrom<LightIncomingNote> for v3::LightIncomingNote {
                 ind += 1;
             }
         }
-        let decoded_incoming_ciphertext: [u8; 96] = decode(encoded_incoming_ciphertext).unwrap();
+        let decoded_incoming_ciphertext: [u8; 96] = decode(encoded_incoming_ciphertext)?;
         Ok(Self {
             header: EmptyHeader::default(),
             ciphertext: hybrid::Ciphertext {
@@ -439,7 +439,7 @@ impl TryFrom<FullIncomingNote> for v3::FullIncomingNote {
         Ok(Self {
             address_partition: note.address_partition,
             incoming_note: note.incoming_note.try_into()?,
-            light_incoming_note: note.light_incoming_note.try_into().unwrap(),
+            light_incoming_note: note.light_incoming_note.try_into()?,
         })
     }
 }
