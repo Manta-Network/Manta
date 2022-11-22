@@ -167,8 +167,14 @@ impl TryFrom<Asset> for config::Asset {
     }
 }
 
+/// AssetId and (AssetValue + AESTag)
+pub const OUTGOING_CIPHER_TEXT_COMPONENTS_COUNT: usize = 2;
+/// AssetId is BN254 field element, so 32 bytes
+/// AssetValue is u128 so 16 bytes and AESTag is 16 bytes, so combined is 32 bytes
+pub const OUTGOING_CIPHER_TEXT_COMPONENT_SIZE: usize = 32;
 /// Outgoing Ciphertext
-pub type OutgoingCiphertext = [[u8; 32]; 2];
+pub type OutgoingCiphertext =
+    [[u8; OUTGOING_CIPHER_TEXT_COMPONENT_SIZE]; OUTGOING_CIPHER_TEXT_COMPONENTS_COUNT];
 
 /// Outgoing Note
 #[cfg_attr(
@@ -189,15 +195,16 @@ impl From<v3::OutgoingNote> for OutgoingNote {
     #[inline]
     fn from(note: v3::OutgoingNote) -> Self {
         let encoded = note.ciphertext.ciphertext.encode();
-        let mut encoded_arrays = [[0u8; 32]; 2];
-        for (outer_ind, array) in encoded_arrays.into_iter().enumerate() {
+        let mut encoded_ciphertext =
+            [[0u8; OUTGOING_CIPHER_TEXT_COMPONENT_SIZE]; OUTGOING_CIPHER_TEXT_COMPONENTS_COUNT];
+        for (outer_ind, array) in encoded_ciphertext.into_iter().enumerate() {
             for (inner_ind, _) in array.into_iter().enumerate() {
-                encoded_arrays[outer_ind][inner_ind] = encoded[outer_ind * 32 + inner_ind];
+                encoded_ciphertext[outer_ind][inner_ind] = encoded[outer_ind * 32 + inner_ind];
             }
         }
         Self {
             ephemeral_public_key: encode(note.ciphertext.ephemeral_public_key),
-            ciphertext: encoded_arrays,
+            ciphertext: encoded_ciphertext,
         }
     }
 }
@@ -207,20 +214,21 @@ impl TryFrom<OutgoingNote> for v3::OutgoingNote {
 
     #[inline]
     fn try_from(note: OutgoingNote) -> Result<Self, Self::Error> {
-        let mut array_ = [0u8; 64];
-        let mut ind = 0;
-        for i in note.ciphertext {
-            for j in i {
-                array_[ind as usize] = j;
-                ind += 1;
+        let mut flat_outgoing_ciphertext =
+            [0u8; OUTGOING_CIPHER_TEXT_COMPONENT_SIZE * OUTGOING_CIPHER_TEXT_COMPONENTS_COUNT];
+        let mut index = 0;
+        for component in note.ciphertext {
+            for byte in component {
+                flat_outgoing_ciphertext[index as usize] = byte;
+                index += 1;
             }
         }
-        let decoded: [u8; 64] = decode(array_).unwrap();
+        let decoded_outgoing_ciphertext: [u8; 64] = decode(flat_outgoing_ciphertext).unwrap();
         Ok(Self {
             header: EmptyHeader::default(),
             ciphertext: hybrid::Ciphertext {
                 ephemeral_public_key: decode(note.ephemeral_public_key)?,
-                ciphertext: decoded.into(),
+                ciphertext: decoded_outgoing_ciphertext.into(),
             },
         })
     }
@@ -267,9 +275,18 @@ impl TryFrom<SenderPost> for config::SenderPost {
     }
 }
 
+/// AssetId and (AssetValue + AESTag) and UTXORandomness
+pub const INCOMING_CIPHER_TEXT_COMPONENTS_COUNT: usize = 3;
+/// AssetId is BN254 field element, so 32 bytes
+/// AssetValue is u128 so 16 bytes and AESTag is 16 bytes, so combined is 32 bytes
+/// UTXORandomness is 32 bytes
+pub const INCOMING_CIPHER_TEXT_COMPONENT_SIZE: usize = 32;
 /// Incoming Ciphertext Type
-pub type IncomingCiphertext = [[u8; 32]; 3];
-pub type LightIncomingCiphertext = [[u8; 32]; 3];
+pub type IncomingCiphertext =
+    [[u8; INCOMING_CIPHER_TEXT_COMPONENT_SIZE]; INCOMING_CIPHER_TEXT_COMPONENTS_COUNT];
+/// Light Incoming Ciphertext Type
+pub type LightIncomingCiphertext =
+    [[u8; INCOMING_CIPHER_TEXT_COMPONENT_SIZE]; INCOMING_CIPHER_TEXT_COMPONENTS_COUNT];
 
 /// Incoming Note
 #[cfg_attr(
@@ -346,10 +363,12 @@ impl From<v3::LightIncomingNote> for LightIncomingNote {
     #[inline]
     fn from(note: v3::LightIncomingNote) -> Self {
         let encoded = note.ciphertext.ciphertext.encode();
-        let mut encoded_arrays = [[0u8; 32]; 3];
+        let mut encoded_arrays =
+            [[0u8; INCOMING_CIPHER_TEXT_COMPONENT_SIZE]; INCOMING_CIPHER_TEXT_COMPONENTS_COUNT];
         for (outer_ind, array) in encoded_arrays.into_iter().enumerate() {
             for (inner_ind, _) in array.into_iter().enumerate() {
-                encoded_arrays[outer_ind][inner_ind] = encoded[outer_ind * 32 + inner_ind];
+                encoded_arrays[outer_ind][inner_ind] =
+                    encoded[outer_ind * INCOMING_CIPHER_TEXT_COMPONENT_SIZE + inner_ind];
             }
         }
         Self {
@@ -364,20 +383,21 @@ impl TryFrom<LightIncomingNote> for v3::LightIncomingNote {
 
     #[inline]
     fn try_from(note: LightIncomingNote) -> Result<Self, Self::Error> {
-        let mut array_ = [0u8; 96];
+        let mut encoded_incoming_ciphertext =
+            [0u8; INCOMING_CIPHER_TEXT_COMPONENT_SIZE * INCOMING_CIPHER_TEXT_COMPONENTS_COUNT];
         let mut ind = 0;
-        for i in note.ciphertext {
-            for j in i {
-                array_[ind as usize] = j;
+        for component in note.ciphertext {
+            for byte in component {
+                encoded_incoming_ciphertext[ind as usize] = byte;
                 ind += 1;
             }
         }
-        let decoded: [u8; 96] = decode(array_).unwrap();
+        let decoded_incoming_ciphertext: [u8; 96] = decode(encoded_incoming_ciphertext).unwrap();
         Ok(Self {
             header: EmptyHeader::default(),
             ciphertext: hybrid::Ciphertext {
                 ephemeral_public_key: decode(note.ephemeral_public_key)?,
-                ciphertext: decoded.into(),
+                ciphertext: decoded_incoming_ciphertext.into(),
             },
         })
     }
