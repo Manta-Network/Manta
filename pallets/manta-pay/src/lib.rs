@@ -903,7 +903,11 @@ where
         sources
             .map(move |(account_id, withdraw)| {
                 FungibleLedger::<T>::can_withdraw(
-                    Pallet::<T>::id_from_field(encode(asset_id)).expect("FIXME"),
+                    Pallet::<T>::id_from_field(encode(asset_id)).ok_or(InvalidSourceAccount {
+                        account_id: account_id.clone(),
+                        asset_id: *asset_id,
+                        withdraw,
+                    })?,
                     &account_id,
                     &withdraw,
                     ExistenceRequirement::KeepAlive,
@@ -932,7 +936,11 @@ where
         sinks
             .map(move |(account_id, deposit)| {
                 FungibleLedger::<T>::can_deposit(
-                    Pallet::<T>::id_from_field(encode(asset_id)).expect("FIXME"),
+                    Pallet::<T>::id_from_field(encode(asset_id)).ok_or(InvalidSinkAccount {
+                        account_id: account_id.clone(),
+                        asset_id: *asset_id,
+                        deposit,
+                    })?,
                     &account_id,
                     deposit,
                     false,
@@ -1003,7 +1011,8 @@ where
         let _ = (proof, super_key);
         for WrapPair(account_id, withdraw) in sources {
             FungibleLedger::<T>::transfer(
-                Pallet::<T>::id_from_field(encode(asset_id)).expect("FIXME"),
+                Pallet::<T>::id_from_field(encode(asset_id))
+                    .ok_or(FungibleLedgerError::UnknownAsset)?,
                 &account_id,
                 &Pallet::<T>::account_id(),
                 withdraw,
@@ -1012,7 +1021,8 @@ where
         }
         for WrapPair(account_id, deposit) in sinks {
             FungibleLedger::<T>::transfer(
-                Pallet::<T>::id_from_field(encode(asset_id)).expect("FIXME"),
+                Pallet::<T>::id_from_field(encode(asset_id))
+                    .ok_or(FungibleLedgerError::UnknownAsset)?,
                 &Pallet::<T>::account_id(),
                 &account_id,
                 deposit,
