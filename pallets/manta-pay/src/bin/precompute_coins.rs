@@ -35,7 +35,7 @@ use rand_chacha::ChaCha20Rng;
 use scale_codec::Encode;
 use std::{
     env,
-    fs::{self, File, OpenOptions},
+    fs::{self, OpenOptions},
     io::Write,
     path::PathBuf,
 };
@@ -182,7 +182,7 @@ fn main() -> Result<()> {
     let mut rng = ChaCha20Rng::from_seed([0; 32]);
     let (proving_context, _, parameters, utxo_accumulator_model) =
         load_parameters(directory.path()).expect("Unable to load parameters.");
-    let mut utxo_accumulator = UtxoAccumulator::new(utxo_accumulator_model.clone());
+    let mut utxo_accumulator = UtxoAccumulator::new(utxo_accumulator_model);
     let asset_id = 8.into();
 
     let to_private = sample_to_private(

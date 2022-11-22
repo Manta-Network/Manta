@@ -190,14 +190,10 @@ impl From<v3::OutgoingNote> for OutgoingNote {
     fn from(note: v3::OutgoingNote) -> Self {
         let encoded = note.ciphertext.ciphertext.encode();
         let mut encoded_arrays = [[0u8; 32]; 2];
-        let mut outer_ind: usize = 0;
-        for i in encoded_arrays {
-            let mut inner_ind: usize = 0;
-            for _ in i {
+        for (outer_ind, array) in encoded_arrays.into_iter().enumerate() {
+            for (inner_ind, _) in array.into_iter().enumerate() {
                 encoded_arrays[outer_ind][inner_ind] = encoded[outer_ind * 32 + inner_ind];
-                inner_ind += 1;
             }
-            outer_ind += 1;
         }
         Self {
             ephemeral_public_key: encode(note.ciphertext.ephemeral_public_key),
@@ -351,14 +347,10 @@ impl From<v3::LightIncomingNote> for LightIncomingNote {
     fn from(note: v3::LightIncomingNote) -> Self {
         let encoded = note.ciphertext.ciphertext.encode();
         let mut encoded_arrays = [[0u8; 32]; 3];
-        let mut outer_ind: usize = 0;
-        for i in encoded_arrays {
-            let mut inner_ind: usize = 0;
-            for _ in i {
+        for (outer_ind, array) in encoded_arrays.into_iter().enumerate() {
+            for (inner_ind, _) in array.into_iter().enumerate() {
                 encoded_arrays[outer_ind][inner_ind] = encoded[outer_ind * 32 + inner_ind];
-                inner_ind += 1;
             }
-            outer_ind += 1;
         }
         Self {
             ephemeral_public_key: encode(note.ciphertext.ephemeral_public_key),

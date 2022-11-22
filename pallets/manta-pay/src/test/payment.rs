@@ -159,7 +159,7 @@ where
 {
     for asset_id in from..to {
         initialize_test(
-            asset_id.into(),
+            asset_id,
             100_000_000_000_000_000_000 + TEST_DEFAULT_ASSET_ED,
         );
     }
