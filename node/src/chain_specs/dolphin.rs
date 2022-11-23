@@ -302,48 +302,6 @@ pub fn dolphin_v3_staging_config() -> DolphinChainSpec {
                             .unchecked_into(),
                         )),
                     ),
-                    (
-                        // account id: dmx4vuA3PnQmraqJqeJaKRydUjP1AW4wMVTPLQWgZSpDyQUrp
-                        hex_literal::hex![
-                            "8a93e0f756448030dcb3018d25d75c7bf97a2e2ff15d02fd1f55bf3f2104fb5b"
-                        ]
-                        .into(),
-                        SessionKeys::new((
-                            hex_literal::hex![
-                                "741101a186479f4f28aa40fc78f02d7307ed3574e829aed76fdede5876e46a43"
-                            ]
-                            .unchecked_into(),
-                            hex_literal::hex![
-                                "741101a186479f4f28aa40fc78f02d7307ed3574e829aed76fdede5876e46a43"
-                            ]
-                            .unchecked_into(),
-                            hex_literal::hex![
-                                "741101a186479f4f28aa40fc78f02d7307ed3574e829aed76fdede5876e46a43"
-                            ]
-                            .unchecked_into(),
-                        )),
-                    ),
-                    (
-                        // account id: dmtwRyEeNyRW3KApnTxjHahWCjN5b9gDjdvxpizHt6E9zYkXj
-                        hex_literal::hex![
-                            "0027131c176c0d19a2a5cc475ecc657f936085912b846839319249e700f37e79"
-                        ]
-                        .into(),
-                        SessionKeys::new((
-                            hex_literal::hex![
-                                "8ebf03bda1702d719f428bc0a4c7cfca010c44a48ef79752490818c901548d20"
-                            ]
-                            .unchecked_into(),
-                            hex_literal::hex![
-                                "8ebf03bda1702d719f428bc0a4c7cfca010c44a48ef79752490818c901548d20"
-                            ]
-                            .unchecked_into(),
-                            hex_literal::hex![
-                                "8ebf03bda1702d719f428bc0a4c7cfca010c44a48ef79752490818c901548d20"
-                            ]
-                            .unchecked_into(),
-                        )),
-                    ),
                 ],
                 hex_literal::hex!["bc153ffd4c96de7496df009c6f4ecde6f95bf67b60e0c1025a7552d0b6926e04"]
                 .into(),
@@ -358,14 +316,6 @@ pub fn dolphin_v3_staging_config() -> DolphinChainSpec {
                     .into(),
                     hex_literal::hex![
                         "1e58d3c3900c7ce6c6d82152becb45bf7bd3453fb2d267e5f72ca51285bca173"
-                    ]
-                    .into(),
-                    hex_literal::hex![
-                        "8a93e0f756448030dcb3018d25d75c7bf97a2e2ff15d02fd1f55bf3f2104fb5b"
-                    ]
-                    .into(),
-                    hex_literal::hex![
-                        "0027131c176c0d19a2a5cc475ecc657f936085912b846839319249e700f37e79"
                     ]
                     .into(),
                 ],
