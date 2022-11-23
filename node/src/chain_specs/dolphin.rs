@@ -22,7 +22,6 @@ use dolphin_runtime::{
     opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
 };
 use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
-use sp_core::crypto::UncheckedInto;
 
 /// Dolphin Protocol Identifier
 pub const DOLPHIN_PROTOCOL_ID: &str = "dolphin";
