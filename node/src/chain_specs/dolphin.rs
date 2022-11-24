@@ -234,6 +234,6 @@ pub fn dolphin_v3_2085_staging_config() -> Result<DolphinChainSpec, String> {
     let mut spec = DolphinChainSpec::from_json_bytes(
         &include_bytes!("../../../genesis/dolphin-v3-2085-genesis.json")[..],
     )?;
-    spec.extensions_mut().para_id = DOLPHIN_ON_BAIKAL_PARACHAIN_ID;
+    spec.extensions_mut().para_id = 9997;
     Ok(spec)
 }
