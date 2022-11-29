@@ -21,16 +21,16 @@ use super::{
 
 use manta_primitives::{
     assets::{
-        AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
-        AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
+        AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata, FungibleAssetStorageMetadata,
+        AssetStorageMetadata, AssetStorageMetadata::{Fungible, NonFungible}, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
     types::{AccountId, Balance, CalamariAssetId},
 };
 
-use frame_support::{pallet_prelude::DispatchResult, parameter_types, traits::ConstU32, PalletId};
+use frame_support::{pallet_prelude::DispatchResult, parameter_types, traits::{ConstU32, AsEnsureOriginWithArg}, PalletId};
 
-use frame_system::EnsureRoot;
+use frame_system::{EnsureSigned, EnsureRoot};
 
 use xcm::VersionedMultiLocation;
 
@@ -68,82 +68,108 @@ impl AssetIdType for CalamariAssetRegistry {
     type AssetId = CalamariAssetId;
 }
 impl AssetRegistry<Runtime> for CalamariAssetRegistry {
-    type Metadata = AssetStorageMetadata;
+    type Metadata = AssetStorageMetadata<Balance>;
     type Error = sp_runtime::DispatchError;
 
     fn create_asset(
         who: Origin,
         asset_id: CalamariAssetId,
         admin: AccountId,
-        metadata: AssetStorageMetadata,
+        metadata: Self::Metadata,
         min_balance: Balance,
     ) -> DispatchResult {
-        Assets::create(
-            who.clone(),
-            asset_id,
-            sp_runtime::MultiAddress::Id(admin),
-            min_balance,
-        )?;
+        match metadata {
+            Fungible(meta_registry) => {
+                let meta = meta_registry.metadata;
+                Assets::create(
+                    who.clone(),
+                    asset_id,
+                    sp_runtime::MultiAddress::Id(admin),
+                    min_balance,
+                )?;
 
-        Assets::set_metadata(
-            who,
-            asset_id,
-            metadata.name,
-            metadata.symbol,
-            metadata.decimals,
-        )
+                Assets::set_metadata(
+                    who,
+                    asset_id,
+                    meta.name,
+                    meta.symbol,
+                    meta.decimals,
+                )
+            },
+            NonFungible(meta) => {
+                Ok(())
+            }
+        }
     }
 
     fn force_create_asset(
         asset_id: CalamariAssetId,
-        metadata: AssetStorageMetadata,
+        metadata: Self::Metadata,
         min_balance: Balance,
         is_sufficient: bool,
     ) -> DispatchResult {
-        Assets::force_create(
-            Origin::root(),
-            asset_id,
-            sp_runtime::MultiAddress::Id(AssetManager::account_id()),
-            is_sufficient,
-            min_balance,
-        )?;
+        match metadata {
+            Fungible(meta_registry) => {
+                let meta = meta_registry.metadata;
+                Assets::force_create(
+                    Origin::root(),
+                    asset_id,
+                    sp_runtime::MultiAddress::Id(AssetManager::account_id()),
+                    is_sufficient,
+                    min_balance,
+                )?;
 
-        Assets::force_set_metadata(
-            Origin::root(),
-            asset_id,
-            metadata.name,
-            metadata.symbol,
-            metadata.decimals,
-            metadata.is_frozen,
-        )
+                Assets::force_set_metadata(
+                    Origin::root(),
+                    asset_id,
+                    meta.name,
+                    meta.symbol,
+                    meta.decimals,
+                    meta.is_frozen,
+                )
+            },
+            NonFungible(meta) => {Ok(())}
+        }
     }
 
     fn update_metadata(
         origin: Origin,
         asset_id: &CalamariAssetId,
-        metadata: AssetStorageMetadata,
+        metadata: Self::Metadata,
     ) -> DispatchResult {
-        Assets::set_metadata(
-            origin,
-            *asset_id,
-            metadata.name,
-            metadata.symbol,
-            metadata.decimals,
-        )
+        match metadata {
+            Fungible(meta_registry) => {
+                let meta = meta_registry.metadata;
+                Assets::set_metadata(
+                    origin,
+                    *asset_id,
+                    meta.name,
+                    meta.symbol,
+                    meta.decimals,
+                )
+            },
+            NonFungible(meta) => {Ok(())}
+        }
     }
 
     fn force_update_metadata(
         asset_id: &CalamariAssetId,
-        metadata: AssetStorageMetadata,
+        metadata: Self::Metadata,
     ) -> DispatchResult {
-        Assets::force_set_metadata(
-            Origin::root(),
-            *asset_id,
-            metadata.name,
-            metadata.symbol,
-            metadata.decimals,
-            metadata.is_frozen,
-        )
+         match metadata {
+            Fungible(meta_registry) => {
+                let meta = meta_registry.metadata;
+                Assets::force_set_metadata(
+                    Origin::root(),
+                    *asset_id,
+                    meta.name,
+                    meta.symbol,
+                    meta.decimals,
+                    meta.is_frozen,
+                )
+            },
+            NonFungible(meta) => {Ok(())}
+        }
     }
 
     fn mint_asset(
@@ -166,16 +192,17 @@ parameter_types! {
     pub const NativeAssetId: CalamariAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(SelfReserve::get()));
-    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
-        metadata: AssetStorageMetadata {
-            name: b"Calamari".to_vec(),
-            symbol: b"KMA".to_vec(),
-            decimals: CALAMARI_DECIMAL,
-            is_frozen: false,
-        },
-        min_balance: NativeTokenExistentialDeposit::get(),
-        is_sufficient: true,
-    };
+    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> =
+        AssetRegistryMetadata {
+            metadata: FungibleAssetStorageMetadata {
+                name: b"Calamari".to_vec(),
+                symbol: b"KMA".to_vec(),
+                decimals: CALAMARI_DECIMAL,
+                is_frozen: false,
+            },
+            min_balance: NativeTokenExistentialDeposit::get(),
+            is_sufficient: true,
+        };
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
 }
 
@@ -200,9 +227,37 @@ impl AssetConfig<Runtime> for CalamariAssetConfig {
     type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
-    type StorageMetadata = AssetStorageMetadata;
+    type StorageMetadata = AssetStorageMetadata<Balance>;
     type AssetRegistry = CalamariAssetRegistry;
     type FungibleLedger = CalamariConcreteFungibleLedger;
+}
+
+parameter_types! {
+    pub const CollectionDeposit: Balance = 100;
+    pub const ItemDeposit: Balance = 1;
+    pub const KeyLimit: u32 = 32;
+    pub const ValueLimit: u32 = 256;
+}
+
+impl pallet_uniques::Config for Runtime {
+    type Event = Event;
+    type CollectionId = CalamariAssetId;
+    type ItemId = CalamariAssetId;
+    type Currency = Balances;
+    type ForceOrigin = EnsureRoot<AccountId>;
+    type CollectionDeposit = CollectionDeposit;
+    type ItemDeposit = ItemDeposit;
+    type MetadataDepositBase = MetadataDepositBase;
+    type AttributeDepositBase = MetadataDepositBase;
+    type DepositPerByte = MetadataDepositPerByte;
+    type StringLimit = ConstU32<50>;
+    type KeyLimit = KeyLimit;
+    type ValueLimit = ValueLimit;
+    type WeightInfo = pallet_uniques::weights::SubstrateWeight<Runtime>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type Helper = ();
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+    type Locker = ();
 }
 
 impl pallet_asset_manager::Config for Runtime {

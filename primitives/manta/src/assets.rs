@@ -185,9 +185,9 @@ where
     >;
 }
 
-/// Asset Storage Metadata
+/// Fungible Asset Storage Metadata
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
-pub struct AssetStorageMetadata {
+pub struct FungibleAssetStorageMetadata {
     /// Asset Name
     pub name: Vec<u8>,
 
@@ -203,18 +203,37 @@ pub struct AssetStorageMetadata {
     pub is_frozen: bool,
 }
 
-impl<B> From<AssetRegistryMetadata<B>> for AssetStorageMetadata {
+/// Non Fungible Asset Storage Metadata
+#[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
+pub struct NonFungibleAssetStorageMetadata {
+    /// Asset Name
+    pub name: Vec<u8>,
+
+    /// Asset Symbol
+    pub info: Vec<u8>,
+}
+
+/// Asset Storage Metadata
+#[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
+pub enum AssetStorageMetadata<Balance> {
+    /// Metadata for Fungible Assets
+    Fungible(AssetRegistryMetadata<Balance>),
+    /// Metadata for NonFungible Assets
+    NonFungible(NonFungibleAssetStorageMetadata)
+}
+
+impl<B> From<AssetRegistryMetadata<B>> for AssetStorageMetadata<B> {
     #[inline]
     fn from(source: AssetRegistryMetadata<B>) -> Self {
-        source.metadata
+        Self::Fungible(source)
     }
 }
 
-/// Asset Registry Metadata
+/// Asset Registry Metadata for Fungibles
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
 pub struct AssetRegistryMetadata<B> {
-    /// Asset Storage Metadata
-    pub metadata: AssetStorageMetadata,
+    /// Asset Storage Metadata for fungible assets
+    pub metadata: FungibleAssetStorageMetadata,
 
     /// Minimum Balance
     pub min_balance: B,
@@ -241,7 +260,7 @@ pub trait TestingDefault {
 impl TestingDefault for AssetRegistryMetadata<MantaBalance> {
     fn testing_default() -> Self {
         Self {
-            metadata: AssetStorageMetadata {
+            metadata: FungibleAssetStorageMetadata {
                 name: b"Default".to_vec(),
                 symbol: b"DEF".to_vec(),
                 decimals: 12,

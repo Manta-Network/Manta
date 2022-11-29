@@ -31,7 +31,7 @@ use frame_support::{
     Blake2_128Concat,
 };
 use manta_primitives::{
-    assets::{AssetLocation, AssetRegistryMetadata, AssetStorageMetadata},
+    assets::{AssetLocation, AssetRegistryMetadata, FungibleAssetStorageMetadata, AssetStorageMetadata},
     types::Balance,
 };
 use scale_info::TypeInfo;
@@ -193,16 +193,18 @@ where
         .collect();
         for (old_key, old_value) in stored_data {
             let new_key: NewAssetId = old_key as NewAssetId;
-            let new_value: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
-                metadata: AssetStorageMetadata {
-                    name: old_value.name,
-                    symbol: old_value.symbol,
-                    decimals: old_value.decimals,
-                    is_frozen: old_value.is_frozen,
-                },
-                min_balance: old_value.min_balance,
-                is_sufficient: old_value.is_sufficient,
-            };
+            let new_value: AssetStorageMetadata<Balance> = AssetStorageMetadata::Fungible(
+                AssetRegistryMetadata {
+                    metadata: FungibleAssetStorageMetadata {
+                        name: old_value.name,
+                        symbol: old_value.symbol,
+                        decimals: old_value.decimals,
+                        is_frozen: old_value.is_frozen,
+                    },
+                    min_balance: old_value.min_balance,
+                    is_sufficient: old_value.is_sufficient,
+                }
+            );
 
             put_storage_value(
                 pallet_prefix,

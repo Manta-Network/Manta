@@ -25,5 +25,6 @@ extern crate alloc;
 
 pub mod assets;
 pub mod constants;
+pub mod nft;
 pub mod types;
 pub mod xcm;

@@ -57,6 +57,7 @@ pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.gi
 pallet-transaction-payment-rpc-runtime-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.26" }
 pallet-treasury = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.26" }
 pallet-utility = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.26" }
+pallet-uniques = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.26" }
 substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", tag = "v0.5.9", default-features = false }
 
 # Cumulus dependencies
@@ -175,6 +176,7 @@ runtime-benchmarks = [
   'calamari-vesting/runtime-benchmarks',
   'pallet-tx-pause/runtime-benchmarks',
   'pallet-treasury/runtime-benchmarks',
+  'pallet-uniques/runtime-benchmarks',
   'pallet-parachain-staking/runtime-benchmarks',
   'pallet-preimage/runtime-benchmarks',
   'pallet-assets/runtime-benchmarks',
@@ -204,6 +206,7 @@ try-runtime = [
   'pallet-treasury/try-runtime',
   'pallet-assets/try-runtime',
   'pallet-tx-pause/try-runtime',
+  'pallet-uniques/try-runtime',
   'pallet-asset-manager/try-runtime',
   'runtime-common/try-runtime',
 ]
@@ -237,6 +240,7 @@ std = [
   'substrate-fixed/std',
   'pallet-preimage/std',
   'pallet-utility/std',
+  'pallet-uniques/std',
   'pallet-transaction-payment-rpc-runtime-api/std',
   'pallet-timestamp/std',
   'pallet-session/std',
