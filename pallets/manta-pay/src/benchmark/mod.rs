@@ -16,12 +16,15 @@
 
 use crate::{
     benchmark::precomputed_coins::{
-        MINT, PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, RECLAIM, RECLAIM_INPUT,
+        PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, TO_PRIVATE, TO_PUBLIC, TO_PUBLIC_INPUT,
     },
-    Asset, Call, Config, Event, Pallet, StandardAssetId, TransferPost,
+    types::Asset,
+    Call, Config, Event, Pallet, StandardAssetId, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use frame_support::traits::Get;
 use frame_system::RawOrigin;
+
 use manta_primitives::{
     assets::{AssetConfig, AssetRegistry, FungibleLedger, TestingDefault},
     constants::TEST_DEFAULT_ASSET_ED,
@@ -31,7 +34,9 @@ use scale_codec::Decode;
 
 mod precomputed_coins;
 
-/// Asserts that the last event that has occured is the same as `event`.
+pub const INITIAL_VALUE: u128 = 1_000_000_000_000_000_000_000u128;
+
+/// Asserts that the last event that has occurred is the same as `event`.
 #[inline]
 pub fn assert_last_event<T, E>(event: E)
 where
@@ -76,9 +81,9 @@ benchmarks! {
     to_private {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, 8u32, 1_000_000u128);
-        let mint_post = TransferPost::decode(&mut &*MINT).unwrap();
-        let asset = Asset::new(mint_post.asset_id.unwrap(), mint_post.sources[0]);
+        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
+        let asset = mint_post.source(0).unwrap();
+        init_asset::<T>(&caller, Pallet::<T>::id_from_field(asset.id).unwrap(), asset.value);
     }: to_private (
         RawOrigin::Signed(caller.clone()),
         mint_post
@@ -90,26 +95,27 @@ benchmarks! {
     to_public {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, 8u32, 1_000_000u128);
-        for coin in RECLAIM_INPUT {
+        init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
+        for coin in TO_PUBLIC_INPUT {
             Pallet::<T>::to_private(
                 origin.clone(),
                 TransferPost::decode(&mut &**coin).unwrap()
             ).unwrap();
         }
-        let reclaim_post = TransferPost::decode(&mut &*RECLAIM).unwrap();
+        let reclaim_post = TransferPost::decode(&mut &*TO_PUBLIC).unwrap();
+        let asset = reclaim_post.sink(0).unwrap();
     }: to_public (
         RawOrigin::Signed(caller.clone()),
         reclaim_post
     ) verify {
         // FIXME: add balance checking
-        assert_last_event::<T, _>(Event::ToPublic { asset: Asset::new(8, 10_000), sink: caller });
+        assert_last_event::<T, _>(Event::ToPublic { asset, sink: caller });
     }
 
     private_transfer {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, 8u32, 1_000_000u128);
+        init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         for coin in PRIVATE_TRANSFER_INPUT {
             Pallet::<T>::to_private(
                 origin.clone(),
@@ -127,8 +133,8 @@ benchmarks! {
     public_transfer {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, 8u32, 1_000_000u128);
-        let asset = Asset::new(8, 100);
+        init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
+        let asset = Asset::new(Pallet::<T>::field_from_id(8u128), 100);
         let sink = Pallet::<T>::account_id();
     }: public_transfer (
         RawOrigin::Signed(caller.clone()),
@@ -136,7 +142,7 @@ benchmarks! {
         sink.clone()
     ) verify {
         // FIXME: add balance checking
-        assert_last_event::<T, _>(Event::Transfer { asset, source: caller.clone(), sink, });
+        assert_last_event::<T, _>(Event::Transfer { asset, source: caller.clone(), sink });
     }
 }
 

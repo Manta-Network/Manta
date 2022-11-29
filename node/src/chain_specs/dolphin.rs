@@ -22,6 +22,7 @@ use dolphin_runtime::{
     opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
 };
 use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
+
 /// Dolphin Protocol Identifier
 pub const DOLPHIN_PROTOCOL_ID: &str = "dolphin";
 /// Kusama Relaychain Local Network Identifier
@@ -225,5 +226,14 @@ pub fn dolphin_testnet_ci_config() -> Result<DolphinChainSpec, String> {
         &include_bytes!("../../../genesis/dolphin-testnet-ci-genesis.json")[..],
     )?;
     spec.extensions_mut().para_id = DOLPHIN_PARACHAIN_ID;
+    Ok(spec)
+}
+
+/// Returns the Dolphin V3 2085 staging chainspec.
+pub fn dolphin_v3_2085_staging_config() -> Result<DolphinChainSpec, String> {
+    let mut spec = DolphinChainSpec::from_json_bytes(
+        &include_bytes!("../../../genesis/dolphin-v3-2085-genesis.json")[..],
+    )?;
+    spec.extensions_mut().para_id = 9997;
     Ok(spec)
 }

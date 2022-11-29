@@ -8,7 +8,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'manta'
 repository = 'https://github.com/Manta-Network/Manta/'
-rust-version = '1.59'
+rust-version = '1.62'
 version = '3.4.3'
 
 [package.metadata.docs.rs]

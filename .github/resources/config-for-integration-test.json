@@ -36,8 +36,8 @@
           "runtime_genesis_config": {
             "configuration": {
               "config": {
-                "validation_upgrade_frequency": 1,
-                "validation_upgrade_delay": 10
+                "validation_upgrade_frequency": 5,
+                "validation_upgrade_delay": 5
               }
             }
           }
@@ -77,6 +77,32 @@
             "name": "charlie",
             "wsPort": 9923,
             "port": 32333,
+            "flags": [
+              "--rpc-cors=all",
+              "--execution=wasm",
+              "--wasm-execution=compiled",
+              "--",
+              "--execution=wasm",
+              "--wasm-execution=compiled"
+            ]
+          },
+          {
+            "name": "dave",
+            "wsPort": 9924,
+            "port": 32444,
+            "flags": [
+              "--rpc-cors=all",
+              "--execution=wasm",
+              "--wasm-execution=compiled",
+              "--",
+              "--execution=wasm",
+              "--wasm-execution=compiled"
+            ]
+          },
+          {
+            "name": "eve",
+            "wsPort": 9925,
+            "port": 32555,
             "flags": [
               "--rpc-cors=all",
               "--execution=wasm",

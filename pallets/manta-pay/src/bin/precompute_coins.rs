@@ -18,22 +18,17 @@
 
 use anyhow::Result;
 use indoc::indoc;
-use manta_accounting::{
-    asset::{Asset, AssetId},
-    transfer::{self, test::assert_valid_proof, SpendingKey},
-};
 use manta_crypto::{
-    accumulator::Accumulator,
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
-    rand::{CryptoRng, Rand, RngCore, Sample, SeedableRng},
+    rand::{CryptoRng, RngCore, SeedableRng},
 };
 use manta_pay::{
     config::{
-        FullParameters, MerkleTreeConfiguration, Mint, MultiProvingContext, MultiVerifyingContext,
-        Parameters, PrivateTransfer, ProvingContext, Reclaim, UtxoAccumulatorModel,
-        VerifyingContext,
+        utxo::v3::MerkleTreeConfiguration, AssetId, AssetValue, MultiProvingContext, Parameters,
+        ProvingContext,
     },
     parameters::load_parameters,
+    test,
 };
 use pallet_manta_pay::types::TransferPost;
 use rand_chacha::ChaCha20Rng;
@@ -44,147 +39,92 @@ use std::{
     io::Write,
     path::PathBuf,
 };
-
 /// UTXO Accumulator for Building Circuits
 type UtxoAccumulator =
     TreeArrayMerkleForest<MerkleTreeConfiguration, Full<MerkleTreeConfiguration>, 256>;
 
-/// Samples a [`Mint`] transaction.
+///
 #[inline]
-fn sample_mint<R>(
+fn sample_to_private<R>(
     proving_context: &ProvingContext,
-    verifying_context: &VerifyingContext,
     parameters: &Parameters,
-    utxo_accumulator_model: &UtxoAccumulatorModel,
-    asset: Asset,
+    utxo_accumulator: &mut UtxoAccumulator,
+    asset_id: AssetId,
+    value: AssetValue,
     rng: &mut R,
 ) -> TransferPost
 where
     R: CryptoRng + RngCore + ?Sized,
 {
-    let mint = Mint::from_spending_key(parameters, &SpendingKey::gen(rng), asset, rng)
-        .into_post(
-            FullParameters::new(parameters, utxo_accumulator_model),
-            proving_context,
-            rng,
-        )
-        .expect("Unable to build MINT proof.");
-    assert_valid_proof(verifying_context, &mint);
-    mint.into()
+    TransferPost::from(test::payment::to_private::prove_full(
+        proving_context,
+        parameters,
+        utxo_accumulator,
+        asset_id,
+        value,
+        rng,
+    ))
 }
 
-/// Samples a [`PrivateTransfer`] transaction under two [`Mint`]s.
+/// Samples a [`PrivateTransfer`] transaction under two [`ToPrivate`]s.
 #[inline]
 fn sample_private_transfer<R>(
     proving_context: &MultiProvingContext,
-    verifying_context: &MultiVerifyingContext,
     parameters: &Parameters,
-    utxo_accumulator_model: &UtxoAccumulatorModel,
-    asset_0: Asset,
-    asset_1: Asset,
+    utxo_accumulator: &mut UtxoAccumulator,
+    asset_id: AssetId,
+    values: [AssetValue; 2],
     rng: &mut R,
 ) -> ([TransferPost; 2], TransferPost)
 where
     R: CryptoRng + RngCore + ?Sized,
 {
-    let mut utxo_accumulator = UtxoAccumulator::new(utxo_accumulator_model.clone());
-    let spending_key_0 = SpendingKey::new(rng.gen(), rng.gen());
-    let (mint_0, pre_sender_0) = transfer::test::sample_mint(
-        &proving_context.mint,
-        FullParameters::new(parameters, utxo_accumulator.model()),
-        &spending_key_0,
-        asset_0,
-        rng,
-    )
-    .expect("Unable to build MINT proof.");
-    assert_valid_proof(&verifying_context.mint, &mint_0);
-    let sender_0 = pre_sender_0
-        .insert_and_upgrade(&mut utxo_accumulator)
-        .expect("Just inserted so this should not fail.");
-    let spending_key_1 = SpendingKey::new(rng.gen(), rng.gen());
-    let (mint_1, pre_sender_1) = transfer::test::sample_mint(
-        &proving_context.mint,
-        FullParameters::new(parameters, utxo_accumulator.model()),
-        &spending_key_1,
-        asset_1,
-        rng,
-    )
-    .expect("Unable to build MINT proof.");
-    assert_valid_proof(&verifying_context.mint, &mint_1);
-    let sender_1 = pre_sender_1
-        .insert_and_upgrade(&mut utxo_accumulator)
-        .expect("Just inserted so this should not fail.");
-    let private_transfer = PrivateTransfer::build(
-        [sender_0, sender_1],
+    let ([to_private_0, to_private_1], private_transfer) =
+        test::payment::private_transfer::prove_full(
+            proving_context,
+            parameters,
+            utxo_accumulator,
+            asset_id,
+            values,
+            rng,
+        );
+    (
         [
-            spending_key_0.receiver(parameters, rng.gen(), asset_1),
-            spending_key_1.receiver(parameters, rng.gen(), asset_0),
+            TransferPost::from(to_private_0),
+            TransferPost::from(to_private_1),
         ],
+        TransferPost::from(private_transfer),
     )
-    .into_post(
-        FullParameters::new(parameters, utxo_accumulator.model()),
-        &proving_context.private_transfer,
-        rng,
-    )
-    .expect("Unable to build PRIVATE_TRANSFER proof.");
-    assert_valid_proof(&verifying_context.private_transfer, &private_transfer);
-    ([mint_0.into(), mint_1.into()], private_transfer.into())
 }
 
-/// Samples a [`Reclaim`] transaction under two [`Mint`]s.
+/// Samples a [`ToPublic`] transaction under two [`ToPrivate`]s.
 #[inline]
-fn sample_reclaim<R>(
+fn sample_to_public<R>(
     proving_context: &MultiProvingContext,
-    verifying_context: &MultiVerifyingContext,
     parameters: &Parameters,
-    utxo_accumulator_model: &UtxoAccumulatorModel,
-    asset_0: Asset,
-    asset_1: Asset,
+    utxo_accumulator: &mut UtxoAccumulator,
+    asset_id: AssetId,
+    values: [AssetValue; 2],
     rng: &mut R,
 ) -> ([TransferPost; 2], TransferPost)
 where
     R: CryptoRng + RngCore + ?Sized,
 {
-    let mut utxo_accumulator = UtxoAccumulator::new(utxo_accumulator_model.clone());
-    let spending_key_0 = SpendingKey::new(rng.gen(), rng.gen());
-    let (mint_0, pre_sender_0) = transfer::test::sample_mint(
-        &proving_context.mint,
-        FullParameters::new(parameters, utxo_accumulator.model()),
-        &spending_key_0,
-        asset_0,
+    let ([to_private_0, to_private_1], to_public) = test::payment::to_public::prove_full(
+        proving_context,
+        parameters,
+        utxo_accumulator,
+        asset_id,
+        values,
         rng,
+    );
+    (
+        [
+            TransferPost::from(to_private_0),
+            TransferPost::from(to_private_1),
+        ],
+        TransferPost::from(to_public),
     )
-    .expect("Unable to build MINT proof.");
-    assert_valid_proof(&verifying_context.mint, &mint_0);
-    let sender_0 = pre_sender_0
-        .insert_and_upgrade(&mut utxo_accumulator)
-        .expect("Just inserted so this should not fail.");
-    let spending_key_1 = SpendingKey::new(rng.gen(), rng.gen());
-    let (mint_1, pre_sender_1) = transfer::test::sample_mint(
-        &proving_context.mint,
-        FullParameters::new(parameters, utxo_accumulator.model()),
-        &spending_key_1,
-        asset_1,
-        rng,
-    )
-    .expect("Unable to build MINT proof.");
-    assert_valid_proof(&verifying_context.mint, &mint_1);
-    let sender_1 = pre_sender_1
-        .insert_and_upgrade(&mut utxo_accumulator)
-        .expect("Just inserted so this should not fail.");
-    let reclaim = Reclaim::build(
-        [sender_0, sender_1],
-        [spending_key_0.receiver(parameters, rng.gen(), asset_1)],
-        asset_0,
-    )
-    .into_post(
-        FullParameters::new(parameters, utxo_accumulator.model()),
-        &proving_context.reclaim,
-        rng,
-    )
-    .expect("Unable to build RECLAIM proof.");
-    assert_valid_proof(&verifying_context.reclaim, &reclaim);
-    ([mint_0.into(), mint_1.into()], reclaim.into())
 }
 
 /// Writes a new `const` definition to `$writer`.
@@ -240,34 +180,33 @@ fn main() -> Result<()> {
     println!("[INFO] Temporary Directory: {:?}", directory);
 
     let mut rng = ChaCha20Rng::from_seed([0; 32]);
-    let (proving_context, verifying_context, parameters, utxo_accumulator_model) =
+    let (proving_context, _, parameters, utxo_accumulator_model) =
         load_parameters(directory.path()).expect("Unable to load parameters.");
-    let asset_id: u32 = 8;
+    let mut utxo_accumulator = UtxoAccumulator::new(utxo_accumulator_model);
+    let asset_id = 8.into();
 
-    let mint = sample_mint(
-        &proving_context.mint,
-        &verifying_context.mint,
+    let to_private = sample_to_private(
+        &proving_context.to_private,
         &parameters,
-        &utxo_accumulator_model,
-        AssetId(asset_id).value(100_000),
+        &mut utxo_accumulator,
+        asset_id,
+        10_000,
         &mut rng,
     );
     let (private_transfer_input, private_transfer) = sample_private_transfer(
         &proving_context,
-        &verifying_context,
         &parameters,
-        &utxo_accumulator_model,
-        AssetId(asset_id).value(10_000),
-        AssetId(asset_id).value(20_000),
+        &mut utxo_accumulator,
+        asset_id,
+        [10_000, 20_000],
         &mut rng,
     );
-    let (reclaim_input, reclaim) = sample_reclaim(
+    let (to_public_input, to_public) = sample_to_public(
         &proving_context,
-        &verifying_context,
         &parameters,
-        &utxo_accumulator_model,
-        AssetId(asset_id).value(10_000),
-        AssetId(asset_id).value(20_000),
+        &mut utxo_accumulator,
+        asset_id,
+        [10_000, 20_000],
         &mut rng,
     );
 
@@ -301,15 +240,11 @@ fn main() -> Result<()> {
         "}
     )?;
 
-    write_const_array!(target_file, MINT, mint)?;
+    write_const_array!(target_file, TO_PRIVATE, to_private)?;
     write_const_nested_array!(target_file, PRIVATE_TRANSFER_INPUT, private_transfer_input)?;
     write_const_array!(target_file, PRIVATE_TRANSFER, private_transfer)?;
-    write_const_nested_array!(target_file, RECLAIM_INPUT, reclaim_input)?;
-    write_const_array!(target_file, RECLAIM, reclaim)?;
+    write_const_nested_array!(target_file, TO_PUBLIC_INPUT, to_public_input)?;
+    write_const_array!(target_file, TO_PUBLIC, to_public)?;
 
-    directory
-        .close()
-        .expect("Unable to delete temporary test directory.");
-
-    Ok(())
+    Ok(directory.close()?)
 }
