@@ -16,21 +16,29 @@
 
 use super::{
     cKMA, weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
-    NativeTokenExistentialDeposit, Origin, Runtime, KMA,
+    NativeTokenExistentialDeposit, Origin, Runtime, Uniques, KMA,
 };
 
 use manta_primitives::{
     assets::{
-        AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata, FungibleAssetStorageMetadata,
-        AssetStorageMetadata, AssetStorageMetadata::{Fungible, NonFungible}, BalanceType, LocationType, NativeAndNonNative,
+        AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
+        AssetStorageMetadata,
+        AssetStorageMetadata::{Fungible, NonFungible},
+        BalanceType, FungibleAssetStorageMetadata, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
+    nft::NonFungibleAsset,
     types::{AccountId, Balance, CalamariAssetId},
 };
 
-use frame_support::{pallet_prelude::DispatchResult, parameter_types, traits::{ConstU32, AsEnsureOriginWithArg}, PalletId};
+use frame_support::{
+    pallet_prelude::DispatchResult,
+    parameter_types,
+    traits::{AsEnsureOriginWithArg, ConstU32},
+    PalletId,
+};
 
-use frame_system::{EnsureSigned, EnsureRoot};
+use frame_system::{EnsureRoot, EnsureSigned};
 
 use xcm::VersionedMultiLocation;
 
@@ -68,7 +76,7 @@ impl AssetIdType for CalamariAssetRegistry {
     type AssetId = CalamariAssetId;
 }
 impl AssetRegistry<Runtime> for CalamariAssetRegistry {
-    type Metadata = AssetStorageMetadata<Balance>;
+    type Metadata = AssetStorageMetadata<Balance, CalamariAssetId, CalamariAssetId>;
     type Error = sp_runtime::DispatchError;
 
     fn create_asset(
@@ -76,7 +84,6 @@ impl AssetRegistry<Runtime> for CalamariAssetRegistry {
         asset_id: CalamariAssetId,
         admin: AccountId,
         metadata: Self::Metadata,
-        min_balance: Balance,
     ) -> DispatchResult {
         match metadata {
             Fungible(meta_registry) => {
@@ -85,29 +92,16 @@ impl AssetRegistry<Runtime> for CalamariAssetRegistry {
                     who.clone(),
                     asset_id,
                     sp_runtime::MultiAddress::Id(admin),
-                    min_balance,
+                    meta_registry.min_balance,
                 )?;
 
-                Assets::set_metadata(
-                    who,
-                    asset_id,
-                    meta.name,
-                    meta.symbol,
-                    meta.decimals,
-                )
-            },
-            NonFungible(meta) => {
-                Ok(())
+                Assets::set_metadata(who, asset_id, meta.name, meta.symbol, meta.decimals)
             }
+            NonFungible(meta) => Ok(()),
         }
     }
 
-    fn force_create_asset(
-        asset_id: CalamariAssetId,
-        metadata: Self::Metadata,
-        min_balance: Balance,
-        is_sufficient: bool,
-    ) -> DispatchResult {
+    fn force_create_asset(asset_id: CalamariAssetId, metadata: Self::Metadata) -> DispatchResult {
         match metadata {
             Fungible(meta_registry) => {
                 let meta = meta_registry.metadata;
@@ -115,8 +109,8 @@ impl AssetRegistry<Runtime> for CalamariAssetRegistry {
                     Origin::root(),
                     asset_id,
                     sp_runtime::MultiAddress::Id(AssetManager::account_id()),
-                    is_sufficient,
-                    min_balance,
+                    meta_registry.is_sufficient,
+                    meta_registry.min_balance,
                 )?;
 
                 Assets::force_set_metadata(
@@ -127,8 +121,8 @@ impl AssetRegistry<Runtime> for CalamariAssetRegistry {
                     meta.decimals,
                     meta.is_frozen,
                 )
-            },
-            NonFungible(meta) => {Ok(())}
+            }
+            NonFungible(meta) => Ok(()),
         }
     }
 
@@ -140,15 +134,9 @@ impl AssetRegistry<Runtime> for CalamariAssetRegistry {
         match metadata {
             Fungible(meta_registry) => {
                 let meta = meta_registry.metadata;
-                Assets::set_metadata(
-                    origin,
-                    *asset_id,
-                    meta.name,
-                    meta.symbol,
-                    meta.decimals,
-                )
-            },
-            NonFungible(meta) => {Ok(())}
+                Assets::set_metadata(origin, *asset_id, meta.name, meta.symbol, meta.decimals)
+            }
+            NonFungible(meta) => Ok(()),
         }
     }
 
@@ -156,7 +144,7 @@ impl AssetRegistry<Runtime> for CalamariAssetRegistry {
         asset_id: &CalamariAssetId,
         metadata: Self::Metadata,
     ) -> DispatchResult {
-         match metadata {
+        match metadata {
             Fungible(meta_registry) => {
                 let meta = meta_registry.metadata;
                 Assets::force_set_metadata(
@@ -167,8 +155,8 @@ impl AssetRegistry<Runtime> for CalamariAssetRegistry {
                     meta.decimals,
                     meta.is_frozen,
                 )
-            },
-            NonFungible(meta) => {Ok(())}
+            }
+            NonFungible(meta) => Ok(()),
         }
     }
 
@@ -209,6 +197,8 @@ parameter_types! {
 pub type CalamariConcreteFungibleLedger =
     NativeAndNonNative<Runtime, CalamariAssetConfig, Balances, Assets>;
 
+pub type CalamariNonFungibleLedger = NonFungibleAsset<Runtime, CalamariAssetId, Balance, Uniques>;
+
 /// AssetConfig implementations for this runtime
 #[derive(Clone, Eq, PartialEq)]
 pub struct CalamariAssetConfig;
@@ -227,9 +217,10 @@ impl AssetConfig<Runtime> for CalamariAssetConfig {
     type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
-    type StorageMetadata = AssetStorageMetadata<Balance>;
+    type StorageMetadata = AssetStorageMetadata<Balance, CalamariAssetId, CalamariAssetId>;
     type AssetRegistry = CalamariAssetRegistry;
     type FungibleLedger = CalamariConcreteFungibleLedger;
+    type NonFungibleLedger = CalamariNonFungibleLedger;
 }
 
 parameter_types! {

@@ -352,7 +352,6 @@ pub mod pallet {
                 asset_id,
                 admin,
                 metadata.clone().into(),
-                metadata.min_balance().clone(),
             )
             .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
 
@@ -392,8 +391,6 @@ pub mod pallet {
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::force_create_asset(
                 asset_id,
                 metadata.clone().into(),
-                metadata.min_balance().clone(),
-                metadata.is_sufficient(),
             )
             .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
 

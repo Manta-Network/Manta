@@ -13,7 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
-
+/*
 #![allow(clippy::unnecessary_cast)]
 
 use crate::sp_api_hidden_includes_construct_runtime::hidden_include::StorageHasher;
@@ -737,3 +737,4 @@ where
         Ok(())
     }
 }
+*/

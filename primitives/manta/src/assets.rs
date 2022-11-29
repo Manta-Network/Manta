@@ -15,7 +15,9 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Asset Utilities
-use crate::{constants::TEST_DEFAULT_ASSET_ED, types::Balance as MantaBalance};
+use crate::{
+    constants::TEST_DEFAULT_ASSET_ED, nft::NonFungibleLedger, types::Balance as MantaBalance,
+};
 use alloc::vec::Vec;
 use codec::{Decode, Encode};
 use core::{borrow::Borrow, marker::PhantomData};
@@ -95,7 +97,6 @@ where
         asset_id: Self::AssetId,
         admin: C::AccountId,
         metadata: Self::Metadata,
-        min_balance: Self::Balance,
     ) -> Result<(), Self::Error>;
 
     /// Creates an new asset.
@@ -112,8 +113,6 @@ where
     fn force_create_asset(
         asset_id: Self::AssetId,
         metadata: Self::Metadata,
-        min_balance: Self::Balance,
-        is_sufficient: bool,
     ) -> Result<(), Self::Error>;
 
     /// docs
@@ -183,6 +182,13 @@ where
         AssetId = Self::AssetId,
         Balance = Self::Balance,
     >;
+
+    /// Fungible Ledger
+    type NonFungibleLedger: NonFungibleLedger<
+        AccountId = C::AccountId,
+        AssetId = Self::AssetId,
+        Balance = Self::Balance,
+    >;
 }
 
 /// Fungible Asset Storage Metadata
@@ -205,24 +211,30 @@ pub struct FungibleAssetStorageMetadata {
 
 /// Non Fungible Asset Storage Metadata
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
-pub struct NonFungibleAssetStorageMetadata {
+pub struct NonFungibleAssetStorageMetadata<CollectionId, ItemId> {
     /// Asset Name
     pub name: Vec<u8>,
 
-    /// Asset Symbol
+    /// Asset info
     pub info: Vec<u8>,
+
+    /// Collection Id
+    pub collection_id: CollectionId,
+
+    /// Item Id
+    pub item_id: ItemId,
 }
 
 /// Asset Storage Metadata
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
-pub enum AssetStorageMetadata<Balance> {
+pub enum AssetStorageMetadata<Balance, CollectionId, ItemId> {
     /// Metadata for Fungible Assets
     Fungible(AssetRegistryMetadata<Balance>),
     /// Metadata for NonFungible Assets
-    NonFungible(NonFungibleAssetStorageMetadata)
+    NonFungible(NonFungibleAssetStorageMetadata<CollectionId, ItemId>),
 }
 
-impl<B> From<AssetRegistryMetadata<B>> for AssetStorageMetadata<B> {
+impl<B, C, I> From<AssetRegistryMetadata<B>> for AssetStorageMetadata<B, C, I> {
     #[inline]
     fn from(source: AssetRegistryMetadata<B>) -> Self {
         Self::Fungible(source)
