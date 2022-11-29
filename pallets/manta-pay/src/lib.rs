@@ -65,7 +65,7 @@ use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use frame_support::{traits::tokens::ExistenceRequirement, transactional, PalletId};
 use manta_pay::{
-    config::{self, utxo::v3::MerkleTreeConfiguration},
+    config::{self, utxo::MerkleTreeConfiguration},
     manta_accounting::transfer::{
         self,
         canonical::TransferShape,
@@ -818,7 +818,7 @@ where
                 .expect("Checksum did not match."),
         )
         .expect("Unable to decode the Merkle Tree Parameters.");
-        let utxo_accumulator_item_hash = config::utxo::v3::UtxoAccumulatorItemHash::decode(
+        let utxo_accumulator_item_hash = config::utxo::UtxoAccumulatorItemHash::decode(
             manta_parameters::pay::testnet::parameters::UtxoAccumulatorItemHash::get()
                 .expect("Checksum did not match."),
         )
