@@ -16,7 +16,7 @@
 
 //! MantaPay RPC Interfaces
 
-use crate::{runtime::PullLedgerDiffApi, PullResponse};
+use crate::{runtime::PullLedgerDiffApi, Checkpoint, PullResponse};
 use alloc::sync::Arc;
 use core::marker::PhantomData;
 use jsonrpsee::{
@@ -24,7 +24,6 @@ use jsonrpsee::{
     proc_macros::rpc,
     types::error::{CallError, ErrorObject},
 };
-use manta_pay::signer::Checkpoint;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block};

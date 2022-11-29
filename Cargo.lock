@@ -124,6 +124,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ark-bn254"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea691771ebbb28aea556c044e2e5c5227398d840cee0c34d4d20fa8eb2689e8c"
+dependencies = [
+ "ark-ec",
+ "ark-ff",
+ "ark-std",
+]
+
+[[package]]
 name = "ark-crypto-primitives"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -161,6 +172,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43b7ada17db3854f5994e74e60b18e10e818594935ee7e1d329800c117b32970"
 dependencies = [
  "ark-bls12-381",
+ "ark-ec",
+ "ark-ff",
+ "ark-r1cs-std",
+ "ark-std",
+]
+
+[[package]]
+name = "ark-ed-on-bn254"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fdc786b806fdbff4abebb08ec2fcb50cfe3941918e57120ab121228452903fd"
+dependencies = [
+ "ark-bn254",
  "ark-ec",
  "ark-ff",
  "ark-r1cs-std",
@@ -260,6 +284,7 @@ dependencies = [
  "ark-ff",
  "ark-std",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -521,17 +546,15 @@ checksum = "065374052e7df7ee4047b1160cca5e1467a12351a40b3da123c870ba0b8eda2a"
 
 [[package]]
 name = "attohttpc"
-version = "0.19.1"
+version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "262c3f7f5d61249d8c00e5546e2685cd15ebeeb1bc0f3cc5449350a1cb07319e"
+checksum = "1fcf00bc6d5abb29b5f97e3c61a90b6d3caa12f3faf897d4a3e3607c050a35a7"
 dependencies = [
  "flate2",
  "http",
  "log",
  "native-tls",
- "openssl",
  "url",
- "wildmatch",
 ]
 
 [[package]]
@@ -731,6 +754,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "bip32"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "873faa4363bfc54c36a48321da034c92a0645a363eed34d948683ffc1706e37f"
+dependencies = [
+ "bs58",
+ "hmac 0.11.0",
+ "k256",
+ "once_cell",
+ "pbkdf2 0.9.0",
+ "rand_core 0.6.3",
+ "ripemd160",
+ "sha2 0.9.9",
+ "subtle",
+ "zeroize",
+]
+
+[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -888,6 +929,9 @@ name = "bs58"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "771fe0050b883fcc3ea2359b1a96bcfbc090b7116eae7c3c512c7a083fdf23d3"
+dependencies = [
+ "sha2 0.9.9",
+]
 
 [[package]]
 name = "bstr"
@@ -2507,6 +2551,7 @@ version = "1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e9c280362032ea4203659fc489832d0204ef09f247a0506f170dafcac08c369"
 dependencies = [
+ "serde",
  "signature",
 ]
 
@@ -2520,6 +2565,7 @@ dependencies = [
  "ed25519",
  "rand 0.7.3",
  "serde",
+ "serde_bytes",
  "sha2 0.9.9",
  "zeroize",
 ]
@@ -3354,6 +3400,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "gitignore"
+version = "1.0.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "78aa90e4620c1498ac434c06ba6e521b525794bbdacf085d490cc794b4a2f9a4"
+dependencies = [
+ "glob",
+]
+
+[[package]]
 name = "glob"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3981,6 +4036,8 @@ dependencies = [
  "ecdsa",
  "elliptic-curve",
  "sec1",
+ "sha2 0.9.9",
+ "sha3 0.9.1",
 ]
 
 [[package]]
@@ -4969,8 +5026,8 @@ dependencies = [
 
 [[package]]
 name = "manta-accounting"
-version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.4#aef233ce1b57c265b70b7fca6d951556eb97c715"
+version = "0.5.6"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#3faef38ff0d656a2a36b639261af5a1eb6e70f2d"
 dependencies = [
  "derivative",
  "derive_more",
@@ -4980,7 +5037,6 @@ dependencies = [
  "manta-util",
  "parking_lot 0.12.1",
  "statrs",
- "workspace-hack",
 ]
 
 [[package]]
@@ -5014,56 +5070,60 @@ dependencies = [
 
 [[package]]
 name = "manta-crypto"
-version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.4#aef233ce1b57c265b70b7fca6d951556eb97c715"
+version = "0.5.6"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#3faef38ff0d656a2a36b639261af5a1eb6e70f2d"
 dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-ec",
+ "ark-ed-on-bls12-381",
+ "ark-ed-on-bn254",
+ "ark-ff",
+ "ark-r1cs-std",
+ "ark-relations",
+ "ark-serialize",
  "derivative",
+ "ed25519-dalek",
  "manta-util",
  "rand 0.8.5",
+ "rand_chacha 0.3.1",
  "rand_core 0.6.3",
- "workspace-hack",
 ]
 
 [[package]]
 name = "manta-parameters"
-version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.4#aef233ce1b57c265b70b7fca6d951556eb97c715"
+version = "0.5.6"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#3faef38ff0d656a2a36b639261af5a1eb6e70f2d"
 dependencies = [
  "anyhow",
  "attohttpc",
  "blake3",
+ "gitignore",
  "hex",
  "walkdir",
- "workspace-hack",
 ]
 
 [[package]]
 name = "manta-pay"
-version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.4#aef233ce1b57c265b70b7fca6d951556eb97c715"
+version = "0.5.6"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#3faef38ff0d656a2a36b639261af5a1eb6e70f2d"
 dependencies = [
  "aes-gcm",
- "ark-bls12-381",
- "ark-ec",
- "ark-ed-on-bls12-381",
- "ark-ff",
  "ark-groth16",
- "ark-r1cs-std",
- "ark-relations",
- "ark-serialize",
  "ark-snark",
  "ark-std",
+ "bip32",
  "blake2 0.10.4",
  "derivative",
  "manta-accounting",
  "manta-crypto",
  "manta-parameters",
  "manta-util",
+ "num-bigint 0.4.3",
+ "num-integer",
  "parity-scale-codec",
- "rand_chacha 0.3.1",
  "scale-info",
  "tempfile",
- "workspace-hack",
 ]
 
 [[package]]
@@ -5153,12 +5213,12 @@ dependencies = [
 
 [[package]]
 name = "manta-util"
-version = "0.5.4"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.4#aef233ce1b57c265b70b7fca6d951556eb97c715"
+version = "0.5.6"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#3faef38ff0d656a2a36b639261af5a1eb6e70f2d"
 dependencies = [
+ "crossbeam-channel",
  "serde",
  "serde_with",
- "workspace-hack",
 ]
 
 [[package]]
@@ -7101,6 +7161,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "pbkdf2"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f05894bce6a1ba4be299d0c5f29563e08af2bc18bb7d48313113bed71e904739"
+dependencies = [
+ "crypto-mac 0.11.1",
+]
+
+[[package]]
 name = "peeking_take_while"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8656,6 +8725,7 @@ checksum = "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88"
 dependencies = [
  "ppv-lite86",
  "rand_core 0.6.3",
+ "serde",
 ]
 
 [[package]]
@@ -8948,6 +9018,17 @@ dependencies = [
  "untrusted",
  "web-sys",
  "winapi",
+]
+
+[[package]]
+name = "ripemd160"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2eca4ecc81b7f313189bf73ce724400a07da2a6dac19588b03c8bd76a2dcc251"
+dependencies = [
+ "block-buffer 0.9.0",
+ "digest 0.9.0",
+ "opaque-debug 0.3.0",
 ]
 
 [[package]]
@@ -10444,6 +10525,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc855a42c7967b7c369eb5860f7164ef1f6f81c20c7cc1141f2a604e18723b03"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde_bytes"
+version = "0.11.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfc50e8183eeeb6178dcb167ae34a8051d63535023ae38b5d8d12beae193d37b"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -12268,7 +12358,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.3",
  "rand 0.8.5",
  "static_assertions",
@@ -12933,12 +13023,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17882f045410753661207383517a6f62ec3dbeb6a4ed2acce01f0728238d1983"
 
 [[package]]
-name = "wildmatch"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6c48bd20df7e4ced539c12f570f937c6b4884928a87fee70a479d72f031d4e0"
-
-[[package]]
 name = "winapi"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -13072,11 +13156,6 @@ checksum = "80d0f4e272c85def139476380b12f9ac60926689dd2e01d4923222f40580869d"
 dependencies = [
  "winapi",
 ]
-
-[[package]]
-name = "workspace-hack"
-version = "0.1.0"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.4#aef233ce1b57c265b70b7fca6d951556eb97c715"
 
 [[package]]
 name = "wyz"

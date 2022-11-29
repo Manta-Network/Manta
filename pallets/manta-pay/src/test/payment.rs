@@ -15,23 +15,27 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    mock::{new_test_ext, MantaAssetConfig, MantaAssetRegistry, MantaPayPallet, Origin, Test},
-    Error, FungibleLedger,
+    mock::{
+        new_test_ext, MantaAssetConfig, MantaAssetRegistry, MantaPayPallet, Origin as MockOrigin,
+        Test,
+    },
+    types::{decode, encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
+    Error, FungibleLedger, StandardAssetId,
 };
 use frame_support::{assert_noop, assert_ok};
-use manta_accounting::{
-    asset::{Asset, AssetId, AssetValue},
-    transfer::{self, test::value_distribution, SpendingKey},
-};
+use manta_accounting::transfer::test::value_distribution;
 use manta_crypto::{
-    accumulator::Accumulator,
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
-    rand::{CryptoRng, OsRng, Rand, RngCore, Sample},
+    rand::{CryptoRng, OsRng, Rand, RngCore},
 };
-use manta_pay::config::{
-    FullParameters, MerkleTreeConfiguration, Mint, MultiProvingContext, NoteEncryptionScheme,
-    Parameters, PrivateTransfer, ProvingContext, Reclaim, TransferPost, UtxoAccumulatorModel,
-    UtxoCommitmentScheme, VoidNumberCommitmentScheme,
+use manta_pay::{
+    config::{
+        utxo::v3::MerkleTreeConfiguration, ConstraintField, MultiProvingContext, Parameters,
+        UtxoAccumulatorModel,
+    },
+    crypto::constraint::arkworks::Fp,
+    parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
+    test,
 };
 use manta_primitives::{
     assets::{
@@ -40,8 +44,6 @@ use manta_primitives::{
     },
     constants::TEST_DEFAULT_ASSET_ED,
 };
-use manta_util::codec::{Decode, IoReader};
-use std::fs::File;
 
 /// UTXO Accumulator for Building Circuits
 type UtxoAccumulator =
@@ -49,103 +51,54 @@ type UtxoAccumulator =
 
 lazy_static::lazy_static! {
     static ref PROVING_CONTEXT: MultiProvingContext = load_proving_context();
-    static ref PARAMETERS: Parameters = load_parameters();
+    static ref PARAMETERS: Parameters = load_transfer_parameters();
     static ref UTXO_ACCUMULATOR_MODEL: UtxoAccumulatorModel = load_utxo_accumulator_model();
 }
 
-pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
-pub const NATIVE_ASSET_ID: AssetId =
-    AssetId(<MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get());
+/// Loop randomized tests at least 10 times to reduce the change of false positives.
 const RANDOMIZED_TESTS_ITERATIONS: usize = 10;
+
+pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
+pub const NATIVE_ASSET_ID: StandardAssetId =
+    <MantaAssetConfig as AssetConfig<Test>>::NativeAssetId::get();
 
 /// Loads the [`MultiProvingContext`].
 #[inline]
 fn load_proving_context() -> MultiProvingContext {
-    let directory = tempfile::tempdir().expect("Unable to create temporary directory.");
-    let path = directory.path();
-    let mint_path = path.join("mint.dat");
-    manta_parameters::pay::testnet::proving::Mint::download(&mint_path)
-        .expect("Unable to download MINT proving context.");
-    let private_transfer_path = path.join("private-transfer.dat");
-    manta_parameters::pay::testnet::proving::PrivateTransfer::download(&private_transfer_path)
-        .expect("Unable to download PRIVATE_TRANSFER proving context.");
-    let reclaim_path = path.join("reclaim.dat");
-    manta_parameters::pay::testnet::proving::Reclaim::download(&reclaim_path)
-        .expect("Unable to download RECLAIM proving context.");
-    MultiProvingContext {
-        mint: ProvingContext::decode(IoReader(
-            File::open(mint_path).expect("Unable to open MINT proving context file."),
-        ))
-        .expect("Unable to decode MINT proving context."),
-        private_transfer: ProvingContext::decode(IoReader(
-            File::open(private_transfer_path)
-                .expect("Unable to open PRIVATE_TRANSFER proving context file."),
-        ))
-        .expect("Unable to decode PRIVATE_TRANSFER proving context."),
-        reclaim: ProvingContext::decode(IoReader(
-            File::open(reclaim_path).expect("Unable to open RECLAIM proving context file."),
-        ))
-        .expect("Unable to decode RECLAIM proving context."),
-    }
-}
-
-/// Loads the [`Parameters`].
-#[inline]
-fn load_parameters() -> Parameters {
-    Parameters {
-        note_encryption_scheme: NoteEncryptionScheme::decode(
-            manta_parameters::pay::testnet::parameters::NoteEncryptionScheme::get()
-                .expect("Checksum did not match."),
-        )
-        .expect("Unable to decode NOTE_ENCRYPTION_SCHEME parameters."),
-        utxo_commitment: UtxoCommitmentScheme::decode(
-            manta_parameters::pay::testnet::parameters::UtxoCommitmentScheme::get()
-                .expect("Checksum did not match."),
-        )
-        .expect("Unable to decode UTXO_COMMITMENT_SCHEME parameters."),
-        void_number_commitment: VoidNumberCommitmentScheme::decode(
-            manta_parameters::pay::testnet::parameters::VoidNumberCommitmentScheme::get()
-                .expect("Checksum did not match."),
-        )
-        .expect("Unable to decode VOID_NUMBER_COMMITMENT_SCHEME parameters."),
-    }
-}
-
-/// Loads the [`UtxoAccumulatorModel`].
-#[inline]
-fn load_utxo_accumulator_model() -> UtxoAccumulatorModel {
-    UtxoAccumulatorModel::decode(
-        manta_parameters::pay::testnet::parameters::UtxoAccumulatorModel::get()
-            .expect("Checksum did not match."),
+    parameters::load_proving_context(
+        tempfile::tempdir()
+            .expect("Unable to create temporary directory.")
+            .path(),
     )
-    .expect("Unable to decode UTXO_ACCUMULATOR_MODEL.")
 }
 
 /// Samples a [`Mint`] transaction of `asset` with a random secret.
 #[inline]
-fn sample_mint<R>(asset: Asset, rng: &mut R) -> TransferPost
+fn sample_to_private<R>(asset_id: AssetId, value: AssetValue, rng: &mut R) -> PalletTransferPost
 where
     R: CryptoRng + RngCore + ?Sized,
 {
-    Mint::from_spending_key(&PARAMETERS, &rng.gen(), asset, rng)
-        .into_post(
-            FullParameters::new(&PARAMETERS, &UTXO_ACCUMULATOR_MODEL),
-            &PROVING_CONTEXT.mint,
-            rng,
-        )
-        .expect("Unable to build MINT proof.")
+    let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
+    PalletTransferPost::from(test::payment::to_private::prove_full(
+        &PROVING_CONTEXT.to_private,
+        &PARAMETERS,
+        &mut utxo_accumulator,
+        MantaPayPallet::id_from_field(asset_id).unwrap().into(),
+        value,
+        rng,
+    ))
 }
 
 /// Mints many assets with the given `id` and `value`.
 #[inline]
-fn mint_tokens<R>(id: AssetId, values: &[AssetValue], rng: &mut R)
+fn mint_private_tokens<R>(id: StandardAssetId, values: &[AssetValue], rng: &mut R)
 where
     R: CryptoRng + RngCore + ?Sized,
 {
     for value in values {
         assert_ok!(MantaPayPallet::to_private(
-            Origin::signed(ALICE),
-            sample_mint(value.with(id), rng).into()
+            MockOrigin::signed(ALICE),
+            sample_to_private(MantaPayPallet::field_from_id(id), *value, rng)
         ));
     }
 }
@@ -154,9 +107,9 @@ where
 #[inline]
 fn private_transfer_test<R>(
     count: usize,
-    asset_id_option: Option<AssetId>,
+    asset_id_option: Option<StandardAssetId>,
     rng: &mut R,
-) -> Vec<TransferPost>
+) -> Vec<PalletTransferPost>
 where
     R: CryptoRng + RngCore + ?Sized,
 {
@@ -164,74 +117,126 @@ where
         Some(id) => id,
         None => rng.gen(),
     };
-    let total_free_balance = AssetValue(rng.gen());
+    let total_free_balance: AssetValue = rng.gen();
     let balances = value_distribution(count, total_free_balance, rng);
     initialize_test(asset_id, total_free_balance + TEST_DEFAULT_ASSET_ED);
     let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
     let mut posts = Vec::new();
     for balance in balances {
-        let spending_key = SpendingKey::gen(rng);
-        let (mint_0, pre_sender_0) = transfer::test::sample_mint(
-            &PROVING_CONTEXT.mint,
-            FullParameters::new(&PARAMETERS, utxo_accumulator.model()),
-            &spending_key,
-            asset_id.with(balance),
-            rng,
-        )
-        .unwrap();
+        let ([to_private_0, to_private_1], private_transfer) =
+            test::payment::private_transfer::prove_full(
+                &PROVING_CONTEXT,
+                &PARAMETERS,
+                &mut utxo_accumulator,
+                Fp::from(asset_id),
+                // Divide by 2 in order to not exceed total_supply
+                [balance / 2, balance / 2],
+                rng,
+            );
         assert_ok!(MantaPayPallet::to_private(
-            Origin::signed(ALICE),
-            mint_0.into()
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(to_private_0)
         ));
-        let sender_0 = pre_sender_0
-            .insert_and_upgrade(&mut utxo_accumulator)
-            .expect("Just inserted so this should not fail.");
-        let (mint_1, pre_sender_1) = transfer::test::sample_mint(
-            &PROVING_CONTEXT.mint,
-            FullParameters::new(&PARAMETERS, utxo_accumulator.model()),
-            &spending_key,
-            asset_id.value(0),
-            rng,
-        )
-        .unwrap();
         assert_ok!(MantaPayPallet::to_private(
-            Origin::signed(ALICE),
-            mint_1.into()
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(to_private_1)
         ));
-        let sender_1 = pre_sender_1
-            .insert_and_upgrade(&mut utxo_accumulator)
-            .expect("Just inserted so this should not fail.");
-        let (receiver_0, pre_sender_0) =
-            spending_key.internal_pair(&PARAMETERS, rng.gen(), asset_id.value(0));
-        let (receiver_1, pre_sender_1) =
-            spending_key.internal_pair(&PARAMETERS, rng.gen(), asset_id.with(balance));
-        let private_transfer =
-            PrivateTransfer::build([sender_0, sender_1], [receiver_0, receiver_1])
-                .into_post(
-                    FullParameters::new(&PARAMETERS, utxo_accumulator.model()),
-                    &PROVING_CONTEXT.private_transfer,
-                    rng,
-                )
-                .unwrap();
         assert_ok!(MantaPayPallet::private_transfer(
-            Origin::signed(ALICE),
-            private_transfer.clone().into(),
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(private_transfer.clone()),
         ));
-        pre_sender_0.insert_utxo(&mut utxo_accumulator);
-        pre_sender_1.insert_utxo(&mut utxo_accumulator);
-        posts.push(private_transfer)
+
+        posts.push(PalletTransferPost::from(private_transfer))
     }
     posts
 }
 
 /// Builds `count`-many [`Reclaim`] tests.
 #[inline]
+fn combined_test<R>(rng: &mut R, from: u128, to: u128, total: u128)
+where
+    R: CryptoRng + RngCore + ?Sized,
+{
+    for asset_id in from..to {
+        initialize_test(
+            asset_id,
+            100_000_000_000_000_000_000 + TEST_DEFAULT_ASSET_ED,
+        );
+    }
+    let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
+    let mut asset_id = 8u128;
+    for i in 0..total {
+        println!("Current: {:?}", i);
+        let mint0 = PalletTransferPost::from(test::payment::to_private::prove_full(
+            &PROVING_CONTEXT.to_private,
+            &PARAMETERS,
+            &mut utxo_accumulator,
+            asset_id.into(),
+            1000,
+            rng,
+        ));
+
+        let ([transfer_input_0, transfer_input_1], private_transfer) =
+            test::payment::private_transfer::prove_full(
+                &PROVING_CONTEXT,
+                &PARAMETERS,
+                &mut utxo_accumulator,
+                Fp::from(asset_id),
+                [100, 100],
+                rng,
+            );
+
+        let ([to_public_input_0, to_public_input_1], to_public) =
+            test::payment::to_public::prove_full(
+                &PROVING_CONTEXT,
+                &PARAMETERS,
+                &mut utxo_accumulator,
+                Fp::from(asset_id),
+                [100, 100],
+                rng,
+            );
+
+        assert_ok!(MantaPayPallet::to_private(MockOrigin::signed(ALICE), mint0));
+
+        assert_ok!(MantaPayPallet::to_private(
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(transfer_input_0)
+        ));
+        assert_ok!(MantaPayPallet::to_private(
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(transfer_input_1)
+        ));
+        assert_ok!(MantaPayPallet::private_transfer(
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(private_transfer.clone()),
+        ));
+
+        assert_ok!(MantaPayPallet::to_private(
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(to_public_input_0)
+        ));
+        assert_ok!(MantaPayPallet::to_private(
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(to_public_input_1)
+        ));
+        assert_ok!(MantaPayPallet::to_public(
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(to_public.clone())
+        ));
+
+        asset_id += 1;
+        if asset_id == to {
+            asset_id = from;
+        }
+    }
+}
+
 fn reclaim_test<R>(
     count: usize,
     total_supply: AssetValue,
-    id_option: Option<AssetId>,
+    id_option: Option<StandardAssetId>,
     rng: &mut R,
-) -> Vec<TransferPost>
+) -> Vec<PalletTransferPost>
 where
     R: CryptoRng + RngCore + ?Sized,
 {
@@ -244,59 +249,35 @@ where
     let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
     let mut posts = Vec::new();
     for balance in balances {
-        let spending_key = SpendingKey::gen(rng);
-        let (mint_0, pre_sender_0) = transfer::test::sample_mint(
-            &PROVING_CONTEXT.mint,
-            FullParameters::new(&PARAMETERS, utxo_accumulator.model()),
-            &spending_key,
-            asset_id.with(balance),
+        let ([to_private_0, to_private_1], to_public) = test::payment::to_public::prove_full(
+            &PROVING_CONTEXT,
+            &PARAMETERS,
+            &mut utxo_accumulator,
+            Fp::from(asset_id),
+            // Divide by 2 in order to not exceed total_supply
+            [balance / 2, balance / 2],
             rng,
-        )
-        .unwrap();
+        );
         assert_ok!(MantaPayPallet::to_private(
-            Origin::signed(ALICE),
-            mint_0.into()
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(to_private_0)
         ));
-        let sender_0 = pre_sender_0
-            .insert_and_upgrade(&mut utxo_accumulator)
-            .expect("Just inserted so this should not fail.");
-        let (mint_1, pre_sender_1) = transfer::test::sample_mint(
-            &PROVING_CONTEXT.mint,
-            FullParameters::new(&PARAMETERS, utxo_accumulator.model()),
-            &spending_key,
-            asset_id.value(0),
-            rng,
-        )
-        .unwrap();
         assert_ok!(MantaPayPallet::to_private(
-            Origin::signed(ALICE),
-            mint_1.into()
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(to_private_1)
         ));
-        let sender_1 = pre_sender_1
-            .insert_and_upgrade(&mut utxo_accumulator)
-            .expect("Just inserted so this should not fail.");
-        let (receiver, pre_sender) =
-            spending_key.internal_pair(&PARAMETERS, rng.gen(), asset_id.value(0));
-        let reclaim = Reclaim::build([sender_0, sender_1], [receiver], asset_id.with(balance))
-            .into_post(
-                FullParameters::new(&PARAMETERS, utxo_accumulator.model()),
-                &PROVING_CONTEXT.reclaim,
-                rng,
-            )
-            .unwrap();
         assert_ok!(MantaPayPallet::to_public(
-            Origin::signed(ALICE),
-            reclaim.clone().into()
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::from(to_public.clone())
         ));
-        pre_sender.insert_utxo(&mut utxo_accumulator);
-        posts.push(reclaim);
+        posts.push(PalletTransferPost::from(to_public));
     }
     posts
 }
 
 /// Initializes a test by allocating `value`-many assets of the given `id` to the default account.
 #[inline]
-fn initialize_test(id: AssetId, value: AssetValue) {
+fn initialize_test(id: StandardAssetId, value: AssetValue) {
     let metadata = AssetRegistryMetadata {
         metadata: AssetStorageMetadata {
             name: b"Calamari".to_vec(),
@@ -308,16 +289,14 @@ fn initialize_test(id: AssetId, value: AssetValue) {
         is_sufficient: true,
     };
     assert_ok!(MantaAssetRegistry::create_asset(
-        id.0,
+        id,
         metadata.into(),
         TEST_DEFAULT_ASSET_ED,
         true
     ));
+    assert_ok!(FungibleLedger::<Test>::deposit_minting(id, &ALICE, value));
     assert_ok!(FungibleLedger::<Test>::deposit_minting(
-        id.0, &ALICE, value.0
-    ));
-    assert_ok!(FungibleLedger::<Test>::deposit_minting(
-        id.0,
+        id,
         &MantaPayPallet::account_id(),
         TEST_DEFAULT_ASSET_ED
     ));
@@ -326,13 +305,13 @@ fn initialize_test(id: AssetId, value: AssetValue) {
 /// Tests multiple to_private from some total supply.
 #[test]
 fn to_private_should_work() {
-    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
-        let mut rng = OsRng;
+    let mut rng = OsRng;
+    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
             let asset_id = rng.gen();
-            let total_free_supply = AssetValue(rng.gen());
+            let total_free_supply = rng.gen();
             initialize_test(asset_id, total_free_supply + TEST_DEFAULT_ASSET_ED);
-            mint_tokens(
+            mint_private_tokens(
                 asset_id,
                 &value_distribution(5, total_free_supply, &mut rng),
                 &mut rng,
@@ -341,14 +320,15 @@ fn to_private_should_work() {
     }
 }
 
+///
 #[test]
 fn native_asset_to_private_should_work() {
-    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
-        let mut rng = OsRng;
+    let mut rng = OsRng;
+    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
-            let total_free_supply = AssetValue(rng.gen());
+            let total_free_supply = rng.gen();
             initialize_test(NATIVE_ASSET_ID, total_free_supply + TEST_DEFAULT_ASSET_ED);
-            mint_tokens(
+            mint_private_tokens(
                 NATIVE_ASSET_ID,
                 &value_distribution(5, total_free_supply, &mut rng),
                 &mut rng,
@@ -360,20 +340,20 @@ fn native_asset_to_private_should_work() {
 /// Tests a mint that would overdraw the total supply.
 #[test]
 fn overdrawn_mint_should_not_work() {
-    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
-        let mut rng = OsRng;
+    let mut rng = OsRng;
+    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
             let asset_id = rng.gen();
-            let total_supply = AssetValue(rng.gen());
+            let total_supply: u128 = rng.gen();
             initialize_test(asset_id, total_supply + TEST_DEFAULT_ASSET_ED);
             assert_noop!(
                 MantaPayPallet::to_private(
-                    Origin::signed(ALICE),
-                    sample_mint(
-                        asset_id.with(total_supply + TEST_DEFAULT_ASSET_ED + 1),
+                    MockOrigin::signed(ALICE),
+                    sample_to_private(
+                        MantaPayPallet::field_from_id(asset_id),
+                        total_supply + TEST_DEFAULT_ASSET_ED + 1,
                         &mut rng
                     )
-                    .into()
                 ),
                 Error::<Test>::InvalidSourceAccount
             );
@@ -384,13 +364,13 @@ fn overdrawn_mint_should_not_work() {
 /// Tests a mint that would overdraw from a non-existent supply.
 #[test]
 fn to_private_without_init_should_not_work() {
-    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
-        let mut rng = OsRng;
+    let mut rng = OsRng;
+    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
             assert_noop!(
                 MantaPayPallet::to_private(
-                    Origin::signed(ALICE),
-                    sample_mint(rng.gen(), &mut rng).into()
+                    MockOrigin::signed(ALICE),
+                    sample_to_private(MantaPayPallet::field_from_id(rng.gen()), 100, &mut rng)
                 ),
                 Error::<Test>::InvalidSourceAccount,
             );
@@ -401,18 +381,19 @@ fn to_private_without_init_should_not_work() {
 /// Tests that a double-spent [`Mint`] will fail.
 #[test]
 fn mint_existing_coin_should_not_work() {
-    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
-        let mut rng = OsRng;
+    let mut rng = OsRng;
+    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
             let asset_id = rng.gen();
-            initialize_test(asset_id, AssetValue(32579));
-            let mint_post = sample_mint(asset_id.value(100), &mut rng);
+            initialize_test(asset_id, 32579u128);
+            let mint_post =
+                sample_to_private(MantaPayPallet::field_from_id(asset_id), 100, &mut rng);
             assert_ok!(MantaPayPallet::to_private(
-                Origin::signed(ALICE),
-                mint_post.clone().into()
+                MockOrigin::signed(ALICE),
+                mint_post.clone()
             ));
             assert_noop!(
-                MantaPayPallet::to_private(Origin::signed(ALICE), mint_post.into()),
+                MantaPayPallet::to_private(MockOrigin::signed(ALICE), mint_post),
                 Error::<Test>::AssetRegistered
             );
         });
@@ -422,7 +403,7 @@ fn mint_existing_coin_should_not_work() {
 /// Tests a [`PrivateTransfer`] transaction.
 #[test]
 fn private_transfer_should_work() {
-    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| private_transfer_test(1, None, &mut OsRng));
     }
 }
@@ -430,7 +411,7 @@ fn private_transfer_should_work() {
 /// Test a [`PrivateTransfer`] transaction with native currency
 #[test]
 fn private_transfer_native_asset_should_work() {
-    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
             private_transfer_test(1, Some(NATIVE_ASSET_ID), &mut OsRng);
         });
@@ -440,7 +421,7 @@ fn private_transfer_native_asset_should_work() {
 /// Tests multiple [`PrivateTransfer`] transactions.
 #[test]
 fn private_transfer_10_times_should_work() {
-    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| private_transfer_test(10, None, &mut OsRng));
     }
 }
@@ -448,14 +429,11 @@ fn private_transfer_10_times_should_work() {
 /// Tests that a double-spent [`PrivateTransfer`] will fail.
 #[test]
 fn double_spend_in_private_transfer_should_not_work() {
-    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
             for private_transfer in private_transfer_test(1, None, &mut OsRng) {
                 assert_noop!(
-                    MantaPayPallet::private_transfer(
-                        Origin::signed(ALICE),
-                        private_transfer.into()
-                    ),
+                    MantaPayPallet::private_transfer(MockOrigin::signed(ALICE), private_transfer),
                     Error::<Test>::AssetSpent,
                 );
             }
@@ -466,49 +444,69 @@ fn double_spend_in_private_transfer_should_not_work() {
 /// Tests a [`Reclaim`] transaction.
 #[test]
 fn reclaim_should_work() {
-    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
-        let mut rng = OsRng;
-        let total_supply = AssetValue(rng.gen());
-        new_test_ext().execute_with(|| reclaim_test(1, total_supply, None, &mut rng));
+    let mut rng = OsRng;
+    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+        new_test_ext().execute_with(|| reclaim_test(1, rng.gen(), None, &mut rng));
     }
 }
 
 /// Test a [`Reclaim`] of native currency
 #[test]
 fn reclaim_native_should_work() {
-    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
-        let mut rng = OsRng;
-        let total_supply = AssetValue(rng.gen());
-        new_test_ext()
-            .execute_with(|| reclaim_test(1, total_supply, Some(NATIVE_ASSET_ID), &mut rng));
+    let mut rng = OsRng;
+    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+        new_test_ext().execute_with(|| reclaim_test(1, rng.gen(), Some(NATIVE_ASSET_ID), &mut rng));
     }
 }
 
 /// Tests multiple [`Reclaim`] transactions.
 #[test]
 fn reclaim_10_times_should_work() {
-    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
-        let mut rng = OsRng;
-        let total_supply = AssetValue(rng.gen());
-        new_test_ext().execute_with(|| reclaim_test(10, total_supply, None, &mut rng));
+    let mut rng = OsRng;
+    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
+        new_test_ext().execute_with(|| reclaim_test(10, rng.gen(), None, &mut rng));
     }
+}
+
+/// Tests multiple sequences of ToPrivate, ToPrivate, ToPrivate, ToPrivateTransfer, ToPrivate, ToPrivate, ToPublic
+#[test]
+fn combined_should_work() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| combined_test(&mut rng, 8u128, 18u128, 50));
 }
 
 /// Tests that a double-spent [`Reclaim`] will fail.
 #[test]
 fn double_spend_in_reclaim_should_not_work() {
-    for _ in 1..RANDOMIZED_TESTS_ITERATIONS {
+    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
             let mut rng = OsRng;
-            // Divide by two because otherwise we might fail for a different reason (Overflow)
-            // than what we are testing for (AssetSpent)
             let total_supply: u128 = rng.gen();
-            for reclaim in reclaim_test(1, AssetValue(total_supply / 2), None, &mut rng) {
+            // TODO: maybe change all teh count: 1 tests to count: 10
+            for reclaim in reclaim_test(1, total_supply / 2, None, &mut rng) {
                 assert_noop!(
-                    MantaPayPallet::to_public(Origin::signed(ALICE), reclaim.into()),
+                    MantaPayPallet::to_public(MockOrigin::signed(ALICE), reclaim),
                     Error::<Test>::AssetSpent,
                 );
             }
         });
     }
+}
+
+#[test]
+fn check_number_conversions() {
+    let mut rng = OsRng;
+
+    let start = rng.gen();
+    let expected = MantaPayPallet::field_from_id(start);
+
+    let fp = Fp::<ConstraintField>::from(start);
+    let encoded = encode(fp);
+
+    assert_eq!(expected, encoded);
+
+    let id_from_field = MantaPayPallet::id_from_field(encoded).unwrap();
+    let decoded: Fp<ConstraintField> = decode(expected).unwrap();
+    assert_eq!(start, id_from_field);
+    assert_eq!(fp, decoded);
 }

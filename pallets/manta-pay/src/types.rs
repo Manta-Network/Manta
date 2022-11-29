@@ -16,20 +16,29 @@
 
 //! Type Definitions for Manta Pay
 
-use super::*;
-use manta_crypto::encryption::hybrid;
-use manta_util::into_array_unchecked;
-use scale_codec::Error;
+use alloc::{boxed::Box, vec::Vec};
+use manta_crypto::merkle_tree;
+use manta_pay::{
+    config::{
+        self,
+        utxo::v3::{self, MerkleTreeConfiguration},
+    },
+    crypto::poseidon::encryption::{self, BlockArray, CiphertextBlock},
+    manta_crypto::{
+        encryption::{hybrid, EmptyHeader},
+        permutation::duplex,
+        signature::schnorr,
+    },
+    manta_util::into_array_unchecked,
+};
+use manta_util::{Array, BoxArray};
+use scale_codec::{Decode, Encode, Error, MaxEncodedLen};
+use scale_info::TypeInfo;
 
 #[cfg(feature = "rpc")]
-use manta_util::serde::{Deserialize, Serialize};
+use manta_pay::manta_util::serde::{Deserialize, Serialize};
 
-pub(crate) const CIPHER_TEXT_LENGTH: usize = 68;
-pub(crate) const EPHEMERAL_PUBLIC_KEY_LENGTH: usize = 32;
-pub(crate) const UTXO_ACCUMULATOR_OUTPUT_LENGTH: usize = 32;
-pub(crate) const UTXO_LENGTH: usize = 32;
-pub(crate) const VOID_NUMBER_LENGTH: usize = 32;
-pub(crate) const PROOF_LENGTH: usize = 192;
+pub use manta_pay::config::utxo::v3::{Checkpoint, RawCheckpoint};
 
 /// Encodes the SCALE encodable `value` into a byte array with the given length `N`.
 #[inline]
@@ -50,25 +59,61 @@ where
     T::decode(&mut bytes.as_slice())
 }
 
+///
+pub const TAG_LENGTH: usize = 32;
+
+/// Tag Type
+pub type Tag = [u8; TAG_LENGTH];
+
+///
+pub const SCALAR_LENGTH: usize = 32;
+
+/// Scalar Type
+pub type Scalar = [u8; SCALAR_LENGTH];
+
+///
+pub const GROUP_LENGTH: usize = 32;
+
 /// Group Type
-pub type Group = [u8; EPHEMERAL_PUBLIC_KEY_LENGTH];
+pub type Group = [u8; GROUP_LENGTH];
 
-/// UTXO Type
-pub type Utxo = [u8; UTXO_LENGTH];
+///
+pub const UTXO_COMMITMENT_LENGTH: usize = 32;
 
-/// Void Number Type
-pub type VoidNumber = [u8; VOID_NUMBER_LENGTH];
+/// UTXO Commitment Type
+pub type UtxoCommitment = [u8; UTXO_COMMITMENT_LENGTH];
+
+///
+pub const NULLIFIER_COMMITMENT_LENGTH: usize = 32;
+
+/// Nullifier Commitment Type
+pub type NullifierCommitment = [u8; NULLIFIER_COMMITMENT_LENGTH];
+
+///
+pub const UTXO_ACCUMULATOR_OUTPUT_LENGTH: usize = 32;
 
 /// UTXO Accumulator Output Type
 pub type UtxoAccumulatorOutput = [u8; UTXO_ACCUMULATOR_OUTPUT_LENGTH];
 
-/// Ciphertext Type
-pub type Ciphertext = [u8; CIPHER_TEXT_LENGTH];
+/// Compressed size of 2 g1 curve points + 1 g2 curve point
+/// A, C from g1 curve, B from g2 curve
+pub const PROOF_LENGTH: usize = 128;
 
 /// Transfer Proof Type
 pub type Proof = [u8; PROOF_LENGTH];
 
+///
+pub type AssetId = [u8; 32];
+
+///
+pub type AssetValue = u128;
+
 /// Asset
+#[cfg_attr(
+    feature = "rpc",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
 #[derive(
     Clone,
     Copy,
@@ -86,72 +131,104 @@ pub type Proof = [u8; PROOF_LENGTH];
 )]
 pub struct Asset {
     /// Asset Id
-    pub id: StandardAssetId,
+    pub id: AssetId,
 
     /// Asset Value
-    pub value: Balance,
+    pub value: AssetValue,
 }
 
 impl Asset {
     /// Builds a new [`Asset`] from `id` and `value`.
     #[inline]
-    pub fn new(id: StandardAssetId, value: Balance) -> Self {
+    pub fn new(id: AssetId, value: AssetValue) -> Self {
         Self { id, value }
     }
 }
 
-/// Encrypted Note
+impl From<config::Asset> for Asset {
+    #[inline]
+    fn from(asset: config::Asset) -> Self {
+        Self {
+            id: encode(asset.id),
+            value: asset.value,
+        }
+    }
+}
+
+impl TryFrom<Asset> for config::Asset {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(asset: Asset) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: decode(asset.id)?,
+            value: asset.value,
+        })
+    }
+}
+
+/// AssetId and (AssetValue + AESTag)
+pub const OUTGOING_CIPHER_TEXT_COMPONENTS_COUNT: usize = 2;
+/// AssetId is BN254 field element, so 32 bytes
+/// AssetValue is u128 so 16 bytes and AESTag is 16 bytes, so combined is 32 bytes
+pub const OUTGOING_CIPHER_TEXT_COMPONENT_SIZE: usize = 32;
+/// Outgoing Ciphertext
+pub type OutgoingCiphertext =
+    [[u8; OUTGOING_CIPHER_TEXT_COMPONENT_SIZE]; OUTGOING_CIPHER_TEXT_COMPONENTS_COUNT];
+
+/// Outgoing Note
 #[cfg_attr(
     feature = "rpc",
     derive(Deserialize, Serialize),
     serde(crate = "manta_util::serde", deny_unknown_fields)
 )]
-#[derive(Clone, Debug, Decode, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
-pub struct EncryptedNote {
+#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
+pub struct OutgoingNote {
     /// Ephemeral Public Key
     pub ephemeral_public_key: Group,
 
     /// Ciphertext
-    #[cfg_attr(
-        feature = "rpc",
-        serde(
-            with = "manta_util::serde_with::As::<[manta_util::serde_with::Same; CIPHER_TEXT_LENGTH]>"
-        )
-    )]
-    pub ciphertext: Ciphertext,
+    pub ciphertext: OutgoingCiphertext,
 }
 
-impl Default for EncryptedNote {
+impl From<v3::OutgoingNote> for OutgoingNote {
     #[inline]
-    fn default() -> Self {
+    fn from(note: v3::OutgoingNote) -> Self {
+        let encoded = note.ciphertext.ciphertext.encode();
+        let mut encoded_ciphertext =
+            [[0u8; OUTGOING_CIPHER_TEXT_COMPONENT_SIZE]; OUTGOING_CIPHER_TEXT_COMPONENTS_COUNT];
+        for (outer_ind, array) in encoded_ciphertext.into_iter().enumerate() {
+            for (inner_ind, _) in array.into_iter().enumerate() {
+                encoded_ciphertext[outer_ind][inner_ind] = encoded[outer_ind * 32 + inner_ind];
+            }
+        }
         Self {
-            ephemeral_public_key: [0; EPHEMERAL_PUBLIC_KEY_LENGTH],
-            ciphertext: [0; CIPHER_TEXT_LENGTH],
+            ephemeral_public_key: encode(note.ciphertext.ephemeral_public_key),
+            ciphertext: encoded_ciphertext,
         }
     }
 }
 
-impl From<config::EncryptedNote> for EncryptedNote {
-    #[inline]
-    fn from(encrypted_note: config::EncryptedNote) -> Self {
-        let encrypted_note = encrypted_note.ciphertext;
-        Self {
-            ephemeral_public_key: encode(encrypted_note.ephemeral_public_key),
-            ciphertext: encrypted_note.ciphertext.into(),
-        }
-    }
-}
-
-impl TryFrom<EncryptedNote> for config::EncryptedNote {
+impl TryFrom<OutgoingNote> for v3::OutgoingNote {
     type Error = Error;
 
     #[inline]
-    fn try_from(encrypted_note: EncryptedNote) -> Result<Self, Self::Error> {
+    fn try_from(note: OutgoingNote) -> Result<Self, Self::Error> {
+        let mut flat_outgoing_ciphertext =
+            [0u8; OUTGOING_CIPHER_TEXT_COMPONENT_SIZE * OUTGOING_CIPHER_TEXT_COMPONENTS_COUNT];
+        let mut index = 0;
+        for component in note.ciphertext {
+            for byte in component {
+                flat_outgoing_ciphertext[index as usize] = byte;
+                index += 1;
+            }
+        }
+        let decoded_outgoing_ciphertext: [u8; 64] = decode(flat_outgoing_ciphertext)?;
         Ok(Self {
-            header: (),
+            header: EmptyHeader::default(),
             ciphertext: hybrid::Ciphertext {
-                ephemeral_public_key: decode(encrypted_note.ephemeral_public_key)?,
-                ciphertext: encrypted_note.ciphertext.into(),
+                ephemeral_public_key: decode(note.ephemeral_public_key)?,
+                ciphertext: decoded_outgoing_ciphertext.into(),
             },
         })
     }
@@ -163,8 +240,11 @@ pub struct SenderPost {
     /// UTXO Accumulator Output
     pub utxo_accumulator_output: UtxoAccumulatorOutput,
 
-    /// Void Number
-    pub void_number: VoidNumber,
+    /// Nullifier Commitment
+    pub nullifier_commitment: NullifierCommitment,
+
+    /// Outgoing Note
+    pub outgoing_note: OutgoingNote,
 }
 
 impl From<config::SenderPost> for SenderPost {
@@ -172,7 +252,8 @@ impl From<config::SenderPost> for SenderPost {
     fn from(post: config::SenderPost) -> Self {
         Self {
             utxo_accumulator_output: encode(post.utxo_accumulator_output),
-            void_number: encode(post.void_number),
+            nullifier_commitment: encode(post.nullifier.nullifier.commitment),
+            outgoing_note: From::from(post.nullifier.outgoing_note),
         }
     }
 }
@@ -184,7 +265,246 @@ impl TryFrom<SenderPost> for config::SenderPost {
     fn try_from(post: SenderPost) -> Result<Self, Self::Error> {
         Ok(Self {
             utxo_accumulator_output: decode(post.utxo_accumulator_output)?,
-            void_number: decode(post.void_number)?,
+            nullifier: config::Nullifier {
+                nullifier: manta_accounting::transfer::utxo::v3::Nullifier {
+                    commitment: decode(post.nullifier_commitment)?,
+                },
+                outgoing_note: TryFrom::try_from(post.outgoing_note)?,
+            },
+        })
+    }
+}
+
+/// AssetId and (AssetValue + AESTag) and UTXORandomness
+pub const INCOMING_CIPHER_TEXT_COMPONENTS_COUNT: usize = 3;
+/// AssetId is BN254 field element, so 32 bytes
+/// AssetValue is u128 so 16 bytes and AESTag is 16 bytes, so combined is 32 bytes
+/// UTXORandomness is 32 bytes
+pub const INCOMING_CIPHER_TEXT_COMPONENT_SIZE: usize = 32;
+/// Incoming Ciphertext Type
+pub type IncomingCiphertext =
+    [[u8; INCOMING_CIPHER_TEXT_COMPONENT_SIZE]; INCOMING_CIPHER_TEXT_COMPONENTS_COUNT];
+/// Light Incoming Ciphertext Type
+pub type LightIncomingCiphertext =
+    [[u8; INCOMING_CIPHER_TEXT_COMPONENT_SIZE]; INCOMING_CIPHER_TEXT_COMPONENTS_COUNT];
+
+/// Incoming Note
+#[cfg_attr(
+    feature = "rpc",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
+pub struct IncomingNote {
+    /// Ephemeral Public Key
+    pub ephemeral_public_key: Group,
+
+    /// Tag
+    pub tag: Tag,
+
+    /// Ciphertext
+    pub ciphertext: IncomingCiphertext,
+}
+
+impl From<v3::IncomingNote> for IncomingNote {
+    #[inline]
+    fn from(note: v3::IncomingNote) -> Self {
+        Self {
+            ephemeral_public_key: encode(note.ciphertext.ephemeral_public_key),
+            tag: encode(note.ciphertext.ciphertext.tag.0),
+            ciphertext: Array::from_iter(
+                note.ciphertext.ciphertext.message[0].0.iter().map(encode),
+            )
+            .into(),
+        }
+    }
+}
+
+impl TryFrom<IncomingNote> for v3::IncomingNote {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(note: IncomingNote) -> Result<Self, Self::Error> {
+        Ok(Self {
+            header: EmptyHeader::default(),
+            ciphertext: hybrid::Ciphertext {
+                ephemeral_public_key: decode(note.ephemeral_public_key)?,
+                ciphertext: duplex::Ciphertext {
+                    tag: encryption::Tag(decode(note.tag)?),
+                    message: BlockArray(BoxArray(Box::new([CiphertextBlock(
+                        note.ciphertext
+                            .into_iter()
+                            .map(decode)
+                            .collect::<Result<Vec<_>, _>>()?
+                            .into(),
+                    )]))),
+                },
+            },
+        })
+    }
+}
+
+/// Incoming Note
+#[cfg_attr(
+    feature = "rpc",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
+pub struct LightIncomingNote {
+    /// Ephemeral Public Key
+    pub ephemeral_public_key: Group,
+
+    /// Ciphertext
+    pub ciphertext: LightIncomingCiphertext,
+}
+
+impl From<v3::LightIncomingNote> for LightIncomingNote {
+    #[inline]
+    fn from(note: v3::LightIncomingNote) -> Self {
+        let encoded = note.ciphertext.ciphertext.encode();
+        let mut encoded_arrays =
+            [[0u8; INCOMING_CIPHER_TEXT_COMPONENT_SIZE]; INCOMING_CIPHER_TEXT_COMPONENTS_COUNT];
+        for (outer_ind, array) in encoded_arrays.into_iter().enumerate() {
+            for (inner_ind, _) in array.into_iter().enumerate() {
+                encoded_arrays[outer_ind][inner_ind] =
+                    encoded[outer_ind * INCOMING_CIPHER_TEXT_COMPONENT_SIZE + inner_ind];
+            }
+        }
+        Self {
+            ephemeral_public_key: encode(note.ciphertext.ephemeral_public_key),
+            ciphertext: encoded_arrays,
+        }
+    }
+}
+
+impl TryFrom<LightIncomingNote> for v3::LightIncomingNote {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(note: LightIncomingNote) -> Result<Self, Self::Error> {
+        let mut encoded_incoming_ciphertext =
+            [0u8; INCOMING_CIPHER_TEXT_COMPONENT_SIZE * INCOMING_CIPHER_TEXT_COMPONENTS_COUNT];
+        let mut ind = 0;
+        for component in note.ciphertext {
+            for byte in component {
+                encoded_incoming_ciphertext[ind as usize] = byte;
+                ind += 1;
+            }
+        }
+        let decoded_incoming_ciphertext: [u8; 96] = decode(encoded_incoming_ciphertext)?;
+        Ok(Self {
+            header: EmptyHeader::default(),
+            ciphertext: hybrid::Ciphertext {
+                ephemeral_public_key: decode(note.ephemeral_public_key)?,
+                ciphertext: decoded_incoming_ciphertext.into(),
+            },
+        })
+    }
+}
+
+/// Full Incoming Note
+#[cfg_attr(
+    feature = "rpc",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo)]
+pub struct FullIncomingNote {
+    /// Address Partition
+    pub address_partition: u8,
+
+    /// Incoming Note
+    pub incoming_note: IncomingNote,
+
+    pub light_incoming_note: LightIncomingNote,
+}
+
+impl From<v3::FullIncomingNote> for FullIncomingNote {
+    #[inline]
+    fn from(note: v3::FullIncomingNote) -> Self {
+        Self {
+            address_partition: note.address_partition,
+            incoming_note: IncomingNote::from(note.incoming_note),
+            light_incoming_note: LightIncomingNote::from(note.light_incoming_note),
+        }
+    }
+}
+
+impl TryFrom<FullIncomingNote> for v3::FullIncomingNote {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(note: FullIncomingNote) -> Result<Self, Self::Error> {
+        Ok(Self {
+            address_partition: note.address_partition,
+            incoming_note: note.incoming_note.try_into()?,
+            light_incoming_note: note.light_incoming_note.try_into()?,
+        })
+    }
+}
+
+/// UTXO
+#[cfg_attr(
+    feature = "rpc",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(
+    Clone, Copy, Debug, Decode, Default, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo,
+)]
+pub struct Utxo {
+    /// Transparency Flag
+    pub transparency: UtxoTransparency,
+
+    /// Public Asset
+    pub public_asset: Asset,
+
+    /// UTXO Commitment
+    pub commitment: UtxoCommitment,
+}
+
+#[cfg_attr(
+    feature = "rpc",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(
+    Clone, Copy, Debug, Decode, Default, Encode, Eq, Hash, MaxEncodedLen, PartialEq, TypeInfo,
+)]
+pub enum UtxoTransparency {
+    Transparent,
+    #[default]
+    Opaque,
+}
+
+impl Utxo {
+    ///
+    #[inline]
+    pub fn from(utxo: v3::Utxo) -> Utxo {
+        let utxo_transparency = if utxo.is_transparent {
+            UtxoTransparency::Transparent
+        } else {
+            UtxoTransparency::Opaque
+        };
+        Self {
+            transparency: utxo_transparency,
+            public_asset: utxo.public_asset.into(),
+            commitment: encode(utxo.commitment),
+        }
+    }
+
+    ///
+    #[inline]
+    pub fn try_into(self) -> Result<v3::Utxo, Error> {
+        let utxo_transparency = match self.transparency {
+            UtxoTransparency::Transparent => true,
+            UtxoTransparency::Opaque => false,
+        };
+        Ok(v3::Utxo {
+            is_transparent: utxo_transparency,
+            public_asset: self.public_asset.try_into()?,
+            commitment: decode(self.commitment)?,
         })
     }
 }
@@ -195,16 +515,16 @@ pub struct ReceiverPost {
     /// Unspent Transaction Output
     pub utxo: Utxo,
 
-    /// Encrypted Note
-    pub encrypted_note: EncryptedNote,
+    /// Full Incoming Note
+    pub full_incoming_note: FullIncomingNote,
 }
 
 impl From<config::ReceiverPost> for ReceiverPost {
     #[inline]
     fn from(post: config::ReceiverPost) -> Self {
         Self {
-            utxo: encode(post.utxo),
-            encrypted_note: EncryptedNote::from(post.encrypted_note),
+            utxo: Utxo::from(post.utxo),
+            full_incoming_note: FullIncomingNote::from(post.note),
         }
     }
 }
@@ -215,8 +535,46 @@ impl TryFrom<ReceiverPost> for config::ReceiverPost {
     #[inline]
     fn try_from(post: ReceiverPost) -> Result<Self, Self::Error> {
         Ok(Self {
-            utxo: decode(post.utxo)?,
-            encrypted_note: post.encrypted_note.try_into()?,
+            utxo: post.utxo.try_into()?,
+            note: post.full_incoming_note.try_into()?,
+        })
+    }
+}
+
+/// Authorization Signature
+#[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, TypeInfo)]
+pub struct AuthorizationSignature {
+    /// Authorization Key
+    pub authorization_key: Group,
+
+    /// Signature
+    pub signature: (Scalar, Group),
+}
+
+impl From<v3::AuthorizationSignature> for AuthorizationSignature {
+    #[inline]
+    fn from(signature: v3::AuthorizationSignature) -> Self {
+        Self {
+            authorization_key: encode(signature.authorization_key),
+            signature: (
+                encode(signature.signature.scalar),
+                encode(signature.signature.nonce_point),
+            ),
+        }
+    }
+}
+
+impl TryFrom<AuthorizationSignature> for v3::AuthorizationSignature {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(signature: AuthorizationSignature) -> Result<Self, Self::Error> {
+        Ok(Self {
+            authorization_key: decode(signature.authorization_key)?,
+            signature: schnorr::Signature {
+                scalar: decode(signature.signature.0)?,
+                nonce_point: decode(signature.signature.1)?,
+            },
         })
     }
 }
@@ -224,11 +582,14 @@ impl TryFrom<ReceiverPost> for config::ReceiverPost {
 /// Transfer Post
 #[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, TypeInfo)]
 pub struct TransferPost {
+    /// Authorization Signature
+    pub authorization_signature: Option<AuthorizationSignature>,
+
     /// Asset Id
-    pub asset_id: Option<StandardAssetId>,
+    pub asset_id: Option<AssetId>,
 
     /// Sources
-    pub sources: Vec<Balance>,
+    pub sources: Vec<AssetValue>,
 
     /// Sender Posts
     pub sender_posts: Vec<SenderPost>,
@@ -237,22 +598,57 @@ pub struct TransferPost {
     pub receiver_posts: Vec<ReceiverPost>,
 
     /// Sinks
-    pub sinks: Vec<Balance>,
+    pub sinks: Vec<AssetValue>,
 
-    /// Validity Proof
-    pub validity_proof: Proof,
+    /// Proof
+    pub proof: Proof,
+}
+
+impl TransferPost {
+    /// Constructs an [`Asset`] against the `asset_id` of `self` and `value`.
+    #[inline]
+    fn construct_asset(&self, value: &AssetValue) -> Option<Asset> {
+        Some(Asset::new(self.asset_id?, *value))
+    }
+
+    /// Returns the `k`-th source in the transfer.
+    #[inline]
+    pub fn source(&self, k: usize) -> Option<Asset> {
+        self.sources
+            .get(k)
+            .and_then(|value| self.construct_asset(value))
+    }
+
+    /// Returns the `k`-th sink in the transfer.
+    #[inline]
+    pub fn sink(&self, k: usize) -> Option<Asset> {
+        self.sinks
+            .get(k)
+            .and_then(|value| self.construct_asset(value))
+    }
 }
 
 impl From<config::TransferPost> for TransferPost {
     #[inline]
     fn from(post: config::TransferPost) -> Self {
+        let authorization_signature = post.authorization_signature.map(Into::into);
+        let asset_id = post.body.asset_id.map(encode);
+        let sender_posts = post.body.sender_posts.into_iter().map(Into::into).collect();
+        let receiver_posts = post
+            .body
+            .receiver_posts
+            .into_iter()
+            .map(Into::into)
+            .collect();
+        let proof = encode(post.body.proof);
         Self {
-            asset_id: post.asset_id.map(|id| id.0),
-            sources: post.sources.into_iter().map(|s| s.0).collect(),
-            sender_posts: post.sender_posts.into_iter().map(Into::into).collect(),
-            receiver_posts: post.receiver_posts.into_iter().map(Into::into).collect(),
-            sinks: post.sinks.into_iter().map(|s| s.0).collect(),
-            validity_proof: encode(post.validity_proof),
+            authorization_signature,
+            asset_id,
+            sources: post.body.sources,
+            sender_posts,
+            receiver_posts,
+            sinks: post.body.sinks,
+            proof,
         }
     }
 }
@@ -262,30 +658,37 @@ impl TryFrom<TransferPost> for config::TransferPost {
 
     #[inline]
     fn try_from(post: TransferPost) -> Result<Self, Self::Error> {
+        let proof = decode(post.proof)?;
         Ok(Self {
-            asset_id: post.asset_id.map(asset::AssetId),
-            sources: post.sources.into_iter().map(asset::AssetValue).collect(),
-            sender_posts: post
-                .sender_posts
-                .into_iter()
+            authorization_signature: post
+                .authorization_signature
                 .map(TryInto::try_into)
-                .collect::<Result<_, _>>()?,
-            receiver_posts: post
-                .receiver_posts
-                .into_iter()
-                .map(TryInto::try_into)
-                .collect::<Result<_, _>>()?,
-            sinks: post.sinks.into_iter().map(asset::AssetValue).collect(),
-            validity_proof: decode(post.validity_proof)?,
+                .transpose()?,
+            body: config::TransferPostBody {
+                asset_id: post.asset_id.map(decode).transpose()?,
+                sources: post.sources.into_iter().map(Into::into).collect(),
+                sender_posts: post
+                    .sender_posts
+                    .into_iter()
+                    .map(TryInto::try_into)
+                    .collect::<Result<_, _>>()?,
+                receiver_posts: post
+                    .receiver_posts
+                    .into_iter()
+                    .map(TryInto::try_into)
+                    .collect::<Result<_, _>>()?,
+                sinks: post.sinks.into_iter().map(Into::into).collect(),
+                proof,
+            },
         })
     }
 }
 
 /// Leaf Digest Type
-pub type LeafDigest = merkle_tree::LeafDigest<config::MerkleTreeConfiguration>;
+pub type LeafDigest = merkle_tree::LeafDigest<MerkleTreeConfiguration>;
 
 /// Inner Digest Type
-pub type InnerDigest = merkle_tree::InnerDigest<config::MerkleTreeConfiguration>;
+pub type InnerDigest = merkle_tree::InnerDigest<MerkleTreeConfiguration>;
 
 /// Merkle Tree Current Path
 #[derive(Clone, Debug, Decode, Default, Encode, Eq, PartialEq, TypeInfo)]
@@ -309,15 +712,15 @@ impl MaxEncodedLen for CurrentPath {
             .saturating_add(
                 // NOTE: We know that these paths don't exceed the path length.
                 InnerDigest::max_encoded_len().saturating_mul(
-                    manta_crypto::merkle_tree::path_length::<config::MerkleTreeConfiguration, ()>(),
+                    manta_crypto::merkle_tree::path_length::<MerkleTreeConfiguration, ()>(),
                 ),
             )
     }
 }
 
-impl From<merkle_tree::CurrentPath<config::MerkleTreeConfiguration>> for CurrentPath {
+impl From<merkle_tree::CurrentPath<MerkleTreeConfiguration>> for CurrentPath {
     #[inline]
-    fn from(path: merkle_tree::CurrentPath<config::MerkleTreeConfiguration>) -> Self {
+    fn from(path: merkle_tree::CurrentPath<MerkleTreeConfiguration>) -> Self {
         Self {
             sibling_digest: path.sibling_digest,
             leaf_index: path.inner_path.leaf_index.0 as u32,
@@ -326,7 +729,7 @@ impl From<merkle_tree::CurrentPath<config::MerkleTreeConfiguration>> for Current
     }
 }
 
-impl From<CurrentPath> for merkle_tree::CurrentPath<config::MerkleTreeConfiguration> {
+impl From<CurrentPath> for merkle_tree::CurrentPath<MerkleTreeConfiguration> {
     #[inline]
     fn from(path: CurrentPath) -> Self {
         Self::new(
@@ -348,10 +751,10 @@ pub struct UtxoMerkleTreePath {
 }
 
 /// Receiver Chunk Data Type
-pub type ReceiverChunk = Vec<(Utxo, EncryptedNote)>;
+pub type ReceiverChunk = Vec<(Utxo, FullIncomingNote)>;
 
 /// Sender Chunk Data Type
-pub type SenderChunk = Vec<VoidNumber>;
+pub type SenderChunk = Vec<(NullifierCommitment, OutgoingNote)>;
 
 /// Ledger Source Pull Response
 #[cfg_attr(
