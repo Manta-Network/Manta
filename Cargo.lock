@@ -1571,9 +1571,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-channel"
-version = "0.5.4"
+version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5aaa7bd5fb665c6864b5f963dd9097905c54125909c7aa94c9e18507cdbe6c53"
+checksum = "c2dd04ddaf88237dc3b8d8f9a3c1004b506b54b3313403944054d23c0870c521"
 dependencies = [
  "cfg-if 1.0.0",
  "crossbeam-utils",
@@ -5027,8 +5027,8 @@ dependencies = [
 
 [[package]]
 name = "manta-accounting"
-version = "0.5.6"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#3faef38ff0d656a2a36b639261af5a1eb6e70f2d"
+version = "0.5.7"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/mantapay-v1#7eda1b110a5d940f761dcc92934b74765abd06a0"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5071,8 +5071,8 @@ dependencies = [
 
 [[package]]
 name = "manta-crypto"
-version = "0.5.6"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#3faef38ff0d656a2a36b639261af5a1eb6e70f2d"
+version = "0.5.7"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/mantapay-v1#7eda1b110a5d940f761dcc92934b74765abd06a0"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -5080,12 +5080,16 @@ dependencies = [
  "ark-ed-on-bls12-381",
  "ark-ed-on-bn254",
  "ark-ff",
+ "ark-groth16",
  "ark-r1cs-std",
  "ark-relations",
  "ark-serialize",
+ "ark-snark",
+ "ark-std",
  "derivative",
  "ed25519-dalek",
  "manta-util",
+ "num-integer",
  "rand 0.8.5",
  "rand_chacha 0.3.1",
  "rand_core 0.6.3",
@@ -5094,7 +5098,7 @@ dependencies = [
 [[package]]
 name = "manta-parameters"
 version = "0.5.6"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#3faef38ff0d656a2a36b639261af5a1eb6e70f2d"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/mantapay-v1#7eda1b110a5d940f761dcc92934b74765abd06a0"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5107,10 +5111,9 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.5.6"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#3faef38ff0d656a2a36b639261af5a1eb6e70f2d"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/mantapay-v1#7eda1b110a5d940f761dcc92934b74765abd06a0"
 dependencies = [
  "aes-gcm",
- "ark-groth16",
  "ark-snark",
  "ark-std",
  "bip32",
@@ -5214,8 +5217,8 @@ dependencies = [
 
 [[package]]
 name = "manta-util"
-version = "0.5.6"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#3faef38ff0d656a2a36b639261af5a1eb6e70f2d"
+version = "0.5.7"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/mantapay-v1#7eda1b110a5d940f761dcc92934b74765abd06a0"
 dependencies = [
  "crossbeam-channel",
  "serde",
@@ -8530,9 +8533,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.42"
+version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c278e965f1d8cf32d6e0e96de3d3e79712178ae67986d9cf9151f51e95aac89b"
+checksum = "5ea3d908b0e36316caf9e9e2c4625cdde190a7e6f440d794667ed17a1855e725"
 dependencies = [
  "unicode-ident",
 ]
@@ -10521,9 +10524,9 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.140"
+version = "1.0.148"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc855a42c7967b7c369eb5860f7164ef1f6f81c20c7cc1141f2a604e18723b03"
+checksum = "e53f64bb4ba0191d6d0676e1b141ca55047d83b74f5607e6d8eb88126c52c2dc"
 dependencies = [
  "serde_derive",
 ]
@@ -10549,9 +10552,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.140"
+version = "1.0.148"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f2122636b9fe3b81f1cb25099fcf2d3f542cdb1d45940d56c713158884a05da"
+checksum = "a55492425aa53521babf6137309e7d34c20bbfbbfcfe2c7f3a047fd1f6b92c0c"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -11821,9 +11824,9 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "syn"
-version = "1.0.98"
+version = "1.0.104"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c50aef8a904de4c23c788f104b7dddc7d6f79c647c7c8ce4cc8f73eb0ca773dd"
+checksum = "4ae548ec36cf198c0ef7710d3c230987c2d6d7bd98ad6edc0274462724c585ce"
 dependencies = [
  "proc-macro2",
  "quote",
