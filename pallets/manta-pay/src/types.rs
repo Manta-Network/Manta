@@ -734,34 +734,28 @@ impl TryFrom<TransferPost> for config::TransferPost {
     }
 }
 
-/// Leaf Digest Type
-pub type LeafDigest = merkle_tree::LeafDigest<MerkleTreeConfiguration>;
-
-/// Inner Digest Type
-pub type InnerDigest = merkle_tree::InnerDigest<MerkleTreeConfiguration>;
-
 /// Merkle Tree Current Path
 #[derive(Clone, Debug, Decode, Default, Encode, Eq, PartialEq, TypeInfo)]
 pub struct CurrentPath {
     /// Sibling Digest
-    pub sibling_digest: LeafDigest,
+    pub sibling_digest: [u8; 32],
 
     /// Leaf Index
     pub leaf_index: u32,
 
     /// Inner Path
-    pub inner_path: Vec<InnerDigest>,
+    pub inner_path: Vec<[u8; 32]>,
 }
 
 impl MaxEncodedLen for CurrentPath {
     #[inline]
     fn max_encoded_len() -> usize {
         0_usize
-            .saturating_add(LeafDigest::max_encoded_len())
+            .saturating_add(<[u8; 32]>::max_encoded_len())
             .saturating_add(u32::max_encoded_len())
             .saturating_add(
                 // NOTE: We know that these paths don't exceed the path length.
-                InnerDigest::max_encoded_len().saturating_mul(
+                <[u8; 32]>::max_encoded_len().saturating_mul(
                     manta_crypto::merkle_tree::path_length::<MerkleTreeConfiguration, ()>(),
                 ),
             )
@@ -772,9 +766,14 @@ impl From<merkle_tree::CurrentPath<MerkleTreeConfiguration>> for CurrentPath {
     #[inline]
     fn from(path: merkle_tree::CurrentPath<MerkleTreeConfiguration>) -> Self {
         Self {
-            sibling_digest: path.sibling_digest,
+            sibling_digest: fp_encode(path.sibling_digest).expect(FP_ENCODE),
             leaf_index: path.inner_path.leaf_index.0 as u32,
-            inner_path: path.inner_path.path,
+            inner_path: path
+                .inner_path
+                .path
+                .into_iter()
+                .map(|x| fp_encode(x).expect(FP_ENCODE))
+                .collect::<Vec<[u8; 32]>>(),
         }
     }
 }
@@ -783,9 +782,12 @@ impl From<CurrentPath> for merkle_tree::CurrentPath<MerkleTreeConfiguration> {
     #[inline]
     fn from(path: CurrentPath) -> Self {
         Self::new(
-            path.sibling_digest,
+            fp_decode(path.sibling_digest.to_vec()).expect(FP_DECODE),
             (path.leaf_index as usize).into(),
-            path.inner_path,
+            path.inner_path
+                .into_iter()
+                .map(|x| fp_decode(x.to_vec()).expect(FP_DECODE))
+                .collect(),
         )
     }
 }
@@ -794,7 +796,7 @@ impl From<CurrentPath> for merkle_tree::CurrentPath<MerkleTreeConfiguration> {
 #[derive(Clone, Debug, Decode, Default, Encode, Eq, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct UtxoMerkleTreePath {
     /// Current Leaf Digest
-    pub leaf_digest: Option<LeafDigest>,
+    pub leaf_digest: Option<[u8; 32]>,
 
     /// Current Path
     pub current_path: CurrentPath,
