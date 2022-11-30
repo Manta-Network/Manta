@@ -281,7 +281,7 @@ pub mod pallet {
         /// Private Transfer Event
         PrivateTransfer {
             /// Origin Account
-            origin: T::AccountId,
+            origin: Option<T::AccountId>,
         },
 
         /// Public Transfer Event
@@ -704,10 +704,7 @@ where
     fn convert(self, origin: Option<T::AccountId>) -> Event<T> {
         match self {
             Self::ToPrivate { asset, source } => Event::ToPrivate { asset, source },
-            Self::PrivateTransfer => Event::PrivateTransfer {
-                // FIXME: get rid of unwrap eventually.
-                origin: origin.unwrap(),
-            },
+            Self::PrivateTransfer => Event::PrivateTransfer { origin },
             Self::ToPublic { asset, sink } => Event::ToPublic { asset, sink },
         }
     }
