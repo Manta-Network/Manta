@@ -282,7 +282,7 @@ impl Contains<Call> for BaseFilter {
             | Call::MantaPay(_)
             | Call::XTokens(orml_xtokens::Call::transfer {..}
                 | orml_xtokens::Call::transfer_multicurrencies {..})
-                | Call::Utility(_) => true,
+            | Call::Utility(_) => true,
 
             // DISALLOW anything else
             | _ => false
