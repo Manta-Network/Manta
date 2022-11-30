@@ -58,9 +58,9 @@
 extern crate alloc;
 
 use crate::types::{
-    encode, fp_decode, fp_encode, Asset, AssetValue, FullIncomingNote, NullifierCommitment,
-    OutgoingNote, ReceiverChunk, SenderChunk, TransferPost, Utxo, UtxoAccumulatorOutput,
-    UtxoMerkleTreePath, FP_ENCODE,
+    fp_decode, fp_encode, Asset, AssetValue, FullIncomingNote, NullifierCommitment, OutgoingNote,
+    ReceiverChunk, SenderChunk, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
+    FP_ENCODE,
 };
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;

@@ -44,16 +44,7 @@ use manta_crypto::arkworks::{
     ec::{PairingEngine, ProjectiveCurve},
     groth16::Proof as CryptoProof,
 };
-pub use manta_pay::config::utxo::{Checkpoint, RawCheckpoint};
-
-/// Encodes the SCALE encodable `value` into a byte array with the given length `N`.
-#[inline]
-pub(crate) fn encode<T, const N: usize>(value: T) -> [u8; N]
-where
-    T: Encode,
-{
-    into_array_unchecked(value.encode())
-}
+pub use manta_pay::config::utxo::Checkpoint;
 
 /// Decodes the `bytes` array of the given length `N` into the SCALE decodable type `T` returning a
 /// blanket error if decoding fails.
@@ -72,7 +63,7 @@ pub const GROUP_DECODE: &str = "Group decode should not failed.";
 pub const PROOF_ENCODE: &str = "Proof encode should not failed.";
 pub const PROOF_DECODE: &str = "Proof decode should not failed.";
 
-///
+/// Field encode to byte array
 pub fn fp_encode<T>(fp: Fp<T>) -> Result<[u8; 32], scale_codec::Error>
 where
     T: manta_crypto::arkworks::ff::Field,
@@ -83,6 +74,7 @@ where
         .map_err(|_e| scale_codec::Error::from(FP_ENCODE))
 }
 
+/// Field decode from byte array
 pub fn fp_decode<T>(bytes: Vec<u8>) -> Result<Fp<T>, scale_codec::Error>
 where
     T: manta_crypto::arkworks::ff::Field,
@@ -90,6 +82,7 @@ where
     Fp::try_from(bytes).map_err(|_e| scale_codec::Error::from(FP_DECODE))
 }
 
+/// Group encode to byte array
 pub fn group_encode<T>(group: CryptoGroup<T>) -> Result<[u8; 32], scale_codec::Error>
 where
     T: ProjectiveCurve,
@@ -101,6 +94,7 @@ where
         .map_err(|_e| scale_codec::Error::from(GROUP_ENCODE))
 }
 
+/// Group decode from byte array
 pub fn group_decode<T>(bytes: Vec<u8>) -> Result<CryptoGroup<T>, scale_codec::Error>
 where
     T: ProjectiveCurve,
@@ -108,6 +102,7 @@ where
     CryptoGroup::try_from(bytes).map_err(|_e| scale_codec::Error::from(GROUP_DECODE))
 }
 
+/// Proof encode to byte array
 pub fn proof_encode<T>(group: CryptoProof<T>) -> Result<[u8; 128], scale_codec::Error>
 where
     T: PairingEngine,
@@ -119,6 +114,7 @@ where
         .map_err(|_e| scale_codec::Error::from(PROOF_ENCODE))
 }
 
+/// Proof decode from byte array
 pub fn proof_decode<T>(bytes: Vec<u8>) -> Result<CryptoProof<T>, scale_codec::Error>
 where
     T: PairingEngine,
@@ -830,4 +826,55 @@ pub struct PullResponse {
 
     /// Total Number of Senders/Receivers in Ledger
     pub senders_receivers_total: u128,
+}
+
+/// Raw Checkpoint for Encoding and Decoding
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Decode, Encode)]
+pub struct RawCheckpoint {
+    /// Receiver Index
+    pub receiver_index: [u64; MerkleTreeConfiguration::FOREST_WIDTH],
+
+    /// Sender Index
+    pub sender_index: u64,
+}
+
+impl RawCheckpoint {
+    /// Builds a new [`RawCheckpoint`] from `receiver_index` and `sender_index`.
+    #[inline]
+    pub fn new(
+        receiver_index: [u64; MerkleTreeConfiguration::FOREST_WIDTH],
+        sender_index: u64,
+    ) -> Self {
+        Self {
+            receiver_index,
+            sender_index,
+        }
+    }
+}
+
+impl Default for RawCheckpoint {
+    #[inline]
+    fn default() -> Self {
+        Self::new([0; MerkleTreeConfiguration::FOREST_WIDTH], 0)
+    }
+}
+
+impl From<Checkpoint> for RawCheckpoint {
+    #[inline]
+    fn from(checkpoint: Checkpoint) -> Self {
+        Self::new(
+            (*checkpoint.receiver_index).map(|i| i as u64),
+            checkpoint.sender_index as u64,
+        )
+    }
+}
+
+impl From<RawCheckpoint> for Checkpoint {
+    #[inline]
+    fn from(checkpoint: RawCheckpoint) -> Self {
+        Self::new(
+            checkpoint.receiver_index.map(|i| i as usize).into(),
+            checkpoint.sender_index as usize,
+        )
+    }
 }
