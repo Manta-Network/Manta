@@ -62,7 +62,7 @@ impl<T: frame_system::Config> pallet_manta_pay::WeightInfo for SubstrateWeight<T
     // Storage: MantaPay UtxoAccumulatorOutputs (r:0 w:1)
     // Storage: MantaPay Shards (r:0 w:1)
     fn to_private() -> Weight {
-        (55_360_088_000 as Weight)
+        (12_360_088_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(6 as Weight))
             .saturating_add(T::DbWeight::get().writes(7 as Weight))
     }
