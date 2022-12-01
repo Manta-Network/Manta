@@ -15,30 +15,36 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
-    NativeTokenExistentialDeposit, Origin, Runtime,
+    cDOL, weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
+    NativeTokenExistentialDeposit, Origin, Runtime, Uniques, DOL,
 };
 
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
-        AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
+        AssetStorageMetadata,
+        AssetStorageMetadata::{Fungible, NonFungible},
+        BalanceType, FungibleAssetStorageMetadata, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, DOLPHIN_DECIMAL, MANTA_PAY_PALLET_ID},
+    nft::NonFungibleAsset,
     types::{AccountId, Balance, DolphinAssetId},
 };
 
-use frame_support::{pallet_prelude::DispatchResult, parameter_types, PalletId};
-use frame_system::EnsureRoot;
+use frame_support::{
+    pallet_prelude::DispatchResult, parameter_types, traits::AsEnsureOriginWithArg, PalletId,
+};
+use frame_system::{EnsureRoot, EnsureSigned};
+use sp_runtime::traits::ConstU32;
 use xcm::VersionedMultiLocation;
 
 parameter_types! {
-    pub const AssetDeposit: Balance = 0; // Does not really matter as this will be only called by root
-    pub const AssetAccountDeposit: Balance = 0;
-    pub const ApprovalDeposit: Balance = 0;
+    pub const AssetDeposit: Balance = 1000 * DOL;
+    pub const AssetAccountDeposit: Balance = NativeTokenExistentialDeposit::get();
+    pub const ApprovalDeposit: Balance = 10 * cDOL;
     pub const AssetsStringLimit: u32 = 50;
-    pub const MetadataDepositBase: Balance = 0;
-    pub const MetadataDepositPerByte: Balance = 0;
+    pub const MetadataDepositBase: Balance = DOL;
+    pub const MetadataDepositPerByte: Balance = cDOL;
 }
 
 impl pallet_assets::Config for Runtime {
@@ -65,58 +71,110 @@ impl BalanceType for MantaAssetRegistry {
 impl AssetIdType for MantaAssetRegistry {
     type AssetId = DolphinAssetId;
 }
-impl AssetRegistry for MantaAssetRegistry {
-    type Metadata = AssetStorageMetadata;
+
+impl AssetRegistry<Runtime> for MantaAssetRegistry {
+    type Metadata = AssetStorageMetadata<Balance, DolphinAssetId, DolphinAssetId, DolphinAssetId>;
     type Error = sp_runtime::DispatchError;
 
     fn create_asset(
+        who: Origin,
         asset_id: DolphinAssetId,
-        metadata: AssetStorageMetadata,
-        min_balance: Balance,
-        is_sufficient: bool,
+        admin: AccountId,
+        metadata: Self::Metadata,
     ) -> DispatchResult {
-        Assets::force_create(
-            Origin::root(),
-            asset_id,
-            sp_runtime::MultiAddress::Id(AssetManager::account_id()),
-            is_sufficient,
-            min_balance,
-        )?;
+        match metadata {
+            Fungible(meta_registry) => {
+                let meta = meta_registry.metadata;
+                Assets::create(
+                    who.clone(),
+                    asset_id,
+                    sp_runtime::MultiAddress::Id(admin),
+                    meta_registry.min_balance,
+                )?;
 
-        Assets::force_set_metadata(
-            Origin::root(),
-            asset_id,
-            metadata.name,
-            metadata.symbol,
-            metadata.decimals,
-            metadata.is_frozen,
-        )?;
+                Assets::set_metadata(who, asset_id, meta.name, meta.symbol, meta.decimals)
+            }
+            NonFungible(meta) => Ok(()),
+        }
+    }
 
-        Assets::force_asset_status(
-            Origin::root(),
-            asset_id,
-            AssetManager::account_id().into(),
-            AssetManager::account_id().into(),
-            AssetManager::account_id().into(),
-            AssetManager::account_id().into(),
-            min_balance,
-            is_sufficient,
-            metadata.is_frozen,
+    fn force_create_asset(asset_id: DolphinAssetId, metadata: Self::Metadata) -> DispatchResult {
+        match metadata {
+            Fungible(meta_registry) => {
+                let meta = meta_registry.metadata;
+                Assets::force_create(
+                    Origin::root(),
+                    asset_id,
+                    sp_runtime::MultiAddress::Id(AssetManager::account_id()),
+                    meta_registry.is_sufficient,
+                    meta_registry.min_balance,
+                )?;
+
+                Assets::force_set_metadata(
+                    Origin::root(),
+                    asset_id,
+                    meta.name,
+                    meta.symbol,
+                    meta.decimals,
+                    meta.is_frozen,
+                )
+            }
+            NonFungible(meta) => Ok(()),
+        }
+    }
+
+    fn update_metadata(
+        origin: Origin,
+        asset_id: &DolphinAssetId,
+        metadata: Self::Metadata,
+    ) -> DispatchResult {
+        match metadata {
+            Fungible(meta_registry) => {
+                let meta = meta_registry.metadata;
+                Assets::set_metadata(origin, *asset_id, meta.name, meta.symbol, meta.decimals)
+            }
+            NonFungible(meta) => Ok(()),
+        }
+    }
+
+    fn force_update_metadata(
+        asset_id: &DolphinAssetId,
+        metadata: Self::Metadata,
+    ) -> DispatchResult {
+        match metadata {
+            Fungible(meta_registry) => {
+                let meta = meta_registry.metadata;
+                Assets::force_set_metadata(
+                    Origin::root(),
+                    *asset_id,
+                    meta.name,
+                    meta.symbol,
+                    meta.decimals,
+                    meta.is_frozen,
+                )
+            }
+            NonFungible(meta) => Ok(()),
+        }
+    }
+
+    fn mint_asset(
+        origin: Origin,
+        asset_id: &DolphinAssetId,
+        beneficiary: AccountId,
+        amount: Balance,
+    ) -> DispatchResult {
+        Assets::mint(
+            origin,
+            *asset_id,
+            sp_runtime::MultiAddress::Id(beneficiary),
+            amount,
         )
     }
 
-    fn update_asset_metadata(
+    fn get_metadata(
         asset_id: &DolphinAssetId,
-        metadata: AssetStorageMetadata,
-    ) -> DispatchResult {
-        Assets::force_set_metadata(
-            Origin::root(),
-            *asset_id,
-            metadata.name,
-            metadata.symbol,
-            metadata.decimals,
-            metadata.is_frozen,
-        )
+    ) -> Option<AssetStorageMetadata<Balance, DolphinAssetId, DolphinAssetId, DolphinAssetId>> {
+        AssetManager::get_metadata(asset_id)
     }
 }
 
@@ -125,21 +183,25 @@ parameter_types! {
     pub const NativeAssetId: DolphinAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(SelfReserve::get()));
-    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
-        metadata: AssetStorageMetadata {
-            name: b"Dolphin".to_vec(),
-            symbol: b"DOL".to_vec(),
-            decimals: DOLPHIN_DECIMAL,
-            is_frozen: false,
-        },
-        min_balance: NativeTokenExistentialDeposit::get(),
-        is_sufficient: true,
-    };
+    pub NativeAssetMetadata: AssetRegistryMetadata<Balance, DolphinAssetId> =
+        AssetRegistryMetadata {
+            metadata: FungibleAssetStorageMetadata {
+                name: b"Dolphin".to_vec(),
+                symbol: b"DOL".to_vec(),
+                decimals: DOLPHIN_DECIMAL,
+                is_frozen: false,
+            },
+            asset_id: 1,
+            min_balance: NativeTokenExistentialDeposit::get(),
+            is_sufficient: true,
+        };
     pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
 }
 
 pub type DolphinConcreteFungibleLedger =
     NativeAndNonNative<Runtime, DolphinAssetConfig, Balances, Assets>;
+
+pub type DolphinNonFungibleLedger = NonFungibleAsset<Runtime, DolphinAssetId, Balance, Uniques>;
 
 /// AssetConfig implementations for this runtime
 #[derive(Clone, Eq, PartialEq)]
@@ -156,12 +218,15 @@ impl AssetIdType for DolphinAssetConfig {
 impl AssetConfig<Runtime> for DolphinAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetId = NativeAssetId;
-    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
+    type AssetRegistryMetadata =
+        AssetStorageMetadata<Balance, DolphinAssetId, DolphinAssetId, DolphinAssetId>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
-    type StorageMetadata = AssetStorageMetadata;
+    type StorageMetadata =
+        AssetStorageMetadata<Balance, DolphinAssetId, DolphinAssetId, DolphinAssetId>;
     type AssetRegistry = MantaAssetRegistry;
     type FungibleLedger = DolphinConcreteFungibleLedger;
+    type NonFungibleLedger = DolphinNonFungibleLedger;
 }
 
 impl pallet_asset_manager::Config for Runtime {
@@ -184,4 +249,32 @@ impl pallet_manta_pay::Config for Runtime {
     type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
     type AssetConfig = DolphinAssetConfig;
     type PalletId = MantaPayPalletId;
+}
+
+parameter_types! {
+    pub const CollectionDeposit: Balance = 100;
+    pub const ItemDeposit: Balance = 1;
+    pub const KeyLimit: u32 = 32;
+    pub const ValueLimit: u32 = 256;
+}
+
+impl pallet_uniques::Config for Runtime {
+    type Event = Event;
+    type CollectionId = DolphinAssetId;
+    type ItemId = DolphinAssetId;
+    type Currency = Balances;
+    type ForceOrigin = EnsureRoot<AccountId>;
+    type CollectionDeposit = CollectionDeposit;
+    type ItemDeposit = ItemDeposit;
+    type MetadataDepositBase = MetadataDepositBase;
+    type AttributeDepositBase = MetadataDepositBase;
+    type DepositPerByte = MetadataDepositPerByte;
+    type StringLimit = ConstU32<50>;
+    type KeyLimit = KeyLimit;
+    type ValueLimit = ValueLimit;
+    type WeightInfo = pallet_uniques::weights::SubstrateWeight<Runtime>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type Helper = ();
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+    type Locker = ();
 }

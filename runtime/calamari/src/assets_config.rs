@@ -76,7 +76,8 @@ impl AssetIdType for CalamariAssetRegistry {
     type AssetId = CalamariAssetId;
 }
 impl AssetRegistry<Runtime> for CalamariAssetRegistry {
-    type Metadata = AssetStorageMetadata<Balance, CalamariAssetId, CalamariAssetId>;
+    type Metadata =
+        AssetStorageMetadata<Balance, CalamariAssetId, CalamariAssetId, CalamariAssetId>;
     type Error = sp_runtime::DispatchError;
 
     fn create_asset(
@@ -173,6 +174,13 @@ impl AssetRegistry<Runtime> for CalamariAssetRegistry {
             amount,
         )
     }
+
+    fn get_metadata(
+        asset_id: &CalamariAssetId,
+    ) -> Option<AssetStorageMetadata<Balance, CalamariAssetId, CalamariAssetId, CalamariAssetId>>
+    {
+        AssetManager::get_metadata(asset_id)
+    }
 }
 
 parameter_types! {
@@ -180,7 +188,7 @@ parameter_types! {
     pub const NativeAssetId: CalamariAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(SelfReserve::get()));
-    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> =
+    pub NativeAssetMetadata: AssetRegistryMetadata<Balance, CalamariAssetId> =
         AssetRegistryMetadata {
             metadata: FungibleAssetStorageMetadata {
                 name: b"Calamari".to_vec(),
@@ -188,6 +196,7 @@ parameter_types! {
                 decimals: CALAMARI_DECIMAL,
                 is_frozen: false,
             },
+            asset_id: 1,
             min_balance: NativeTokenExistentialDeposit::get(),
             is_sufficient: true,
         };
@@ -214,10 +223,12 @@ impl AssetIdType for CalamariAssetConfig {
 impl AssetConfig<Runtime> for CalamariAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetId = NativeAssetId;
-    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
+    type AssetRegistryMetadata =
+        AssetStorageMetadata<Balance, CalamariAssetId, CalamariAssetId, CalamariAssetId>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
-    type StorageMetadata = AssetStorageMetadata<Balance, CalamariAssetId, CalamariAssetId>;
+    type StorageMetadata =
+        AssetStorageMetadata<Balance, CalamariAssetId, CalamariAssetId, CalamariAssetId>;
     type AssetRegistry = CalamariAssetRegistry;
     type FungibleLedger = CalamariConcreteFungibleLedger;
     type NonFungibleLedger = CalamariNonFungibleLedger;

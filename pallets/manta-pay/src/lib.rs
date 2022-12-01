@@ -79,7 +79,14 @@ use manta_pay::{
     manta_util::codec::Decode as _,
     parameters::load_transfer_parameters,
 };
-use manta_primitives::assets::{self, AssetConfig, FungibleLedger as _};
+use manta_primitives::{
+    assets::{
+        self, AssetConfig, AssetRegistry, AssetStorageMetadata,
+        AssetStorageMetadata::{Fungible, NonFungible},
+        FungibleLedger as _, IsFungible,
+    },
+    nft::NonFungibleLedger as _,
+};
 use manta_util::{into_array_unchecked, Array};
 
 pub use crate::types::{Checkpoint, RawCheckpoint};
@@ -146,6 +153,9 @@ pub mod pallet {
     /// Fungible Ledger Implementation for [`Config`]
     pub(crate) type FungibleLedger<T> =
         <<T as Config>::AssetConfig as AssetConfig<T>>::FungibleLedger;
+
+    pub(crate) type NonFungibleLedger<T> =
+        <<T as Config>::AssetConfig as AssetConfig<T>>::NonFungibleLedger;
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
@@ -239,20 +249,39 @@ pub mod pallet {
             sink: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
-            FungibleLedger::<T>::transfer(
-                Self::id_from_field(asset.id).ok_or(Error::<T>::InvalidAssetId)?,
-                &origin,
-                &sink,
-                asset.value,
-                ExistenceRequirement::KeepAlive,
-            )
-            .map_err(Error::<T>::from)?;
-            Self::deposit_event(Event::Transfer {
-                asset,
-                source: origin,
-                sink,
-            });
-            Ok(().into())
+            let id = Pallet::<T>::id_from_field(encode(asset))
+                .ok_or(Error::<T>::PublicUpdateUnknownAsset)?;
+            let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistry::get_metadata(&id)
+                .ok_or(Error::<T>::PublicUpdateUnknownAsset)?;
+            if metadata.is_fungible() {
+                FungibleLedger::<T>::transfer(
+                    *metadata
+                        .get_fungible_id()
+                        .ok_or(Error::<T>::PublicUpdateUnknownAsset)?,
+                    &origin,
+                    &sink,
+                    asset.value,
+                    ExistenceRequirement::KeepAlive,
+                )
+                .map_err(Error::<T>::from)?;
+                Self::deposit_event(Event::Transfer {
+                    asset,
+                    source: origin,
+                    sink,
+                });
+                Ok(().into())
+            } else {
+                let (collection_id, item_id) = metadata
+                    .get_non_fungible_id()
+                    .ok_or(Error::<T>::PublicUpdateUnknownAsset)?;
+                NonFungibleLedger::<T>::transfer(
+                    collection_id,
+                    item_id,
+                    &Pallet::<T>::account_id(),
+                )
+                .map_err(Error::<T>::from)?;
+                Ok(().into())
+            }
         }
     }
 
@@ -1009,26 +1038,49 @@ where
         proof: Self::ValidProof,
     ) -> Result<(), Self::UpdateError> {
         let _ = (proof, super_key);
-        for WrapPair(account_id, withdraw) in sources {
-            FungibleLedger::<T>::transfer(
-                Pallet::<T>::id_from_field(encode(asset_id))
-                    .ok_or(FungibleLedgerError::UnknownAsset)?,
-                &account_id,
-                &Pallet::<T>::account_id(),
-                withdraw,
-                ExistenceRequirement::KeepAlive,
-            )?;
+        let id = Pallet::<T>::id_from_field(encode(asset_id))
+            .ok_or(FungibleLedgerError::UnknownAsset)?;
+        let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistry::get_metadata(&id)
+            .ok_or(FungibleLedgerError::UnknownAsset)?;
+        if metadata.is_fungible() {
+            for WrapPair(account_id, withdraw) in sources {
+                FungibleLedger::<T>::transfer(
+                    *metadata
+                        .get_fungible_id()
+                        .ok_or(FungibleLedgerError::UnknownAsset)?,
+                    &account_id,
+                    &Pallet::<T>::account_id(),
+                    withdraw,
+                    ExistenceRequirement::KeepAlive,
+                )?;
+            }
+            for WrapPair(account_id, deposit) in sinks {
+                FungibleLedger::<T>::transfer(
+                    *metadata
+                        .get_fungible_id()
+                        .ok_or(FungibleLedgerError::UnknownAsset)?,
+                    &Pallet::<T>::account_id(),
+                    &account_id,
+                    deposit,
+                    ExistenceRequirement::KeepAlive,
+                )?;
+            }
+            Ok(())
+        } else {
+            let (collection_id, item_id) = metadata
+                .get_non_fungible_id()
+                .ok_or(FungibleLedgerError::UnknownAsset)?;
+            for WrapPair(account_id, _withdraw) in sources {
+                NonFungibleLedger::<T>::transfer(collection_id, item_id, &account_id)?;
+            }
+            for WrapPair(_account_id, _deposit) in sinks {
+                NonFungibleLedger::<T>::transfer(
+                    collection_id,
+                    item_id,
+                    &Pallet::<T>::account_id(),
+                )?;
+            }
+            Ok(())
         }
-        for WrapPair(account_id, deposit) in sinks {
-            FungibleLedger::<T>::transfer(
-                Pallet::<T>::id_from_field(encode(asset_id))
-                    .ok_or(FungibleLedgerError::UnknownAsset)?,
-                &Pallet::<T>::account_id(),
-                &account_id,
-                deposit,
-                ExistenceRequirement::KeepAlive,
-            )?;
-        }
-        Ok(())
     }
 }

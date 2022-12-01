@@ -198,8 +198,6 @@ impl Contains<Call> for BaseFilter {
         match call {
             // Explicitly DISALLOWED calls
             | Call::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
-            | Call::AssetManager(_) // AssetManager is also filtered because all of its extrinsics
-                                    // are callable only by Root, and Root calls skip this whole filter.
             // Currently, we filter `register_as_candidate` as this call is not yet ready for community.
             | Call::CollatorSelection( manta_collator_selection::Call::register_as_candidate{..})
             // For now disallow public proposal workflows, treasury workflows,
@@ -267,6 +265,8 @@ impl Contains<Call> for BaseFilter {
                 | orml_xtokens::Call::transfer_multicurrencies  {..})
             | Call::MantaPay(_)
             | Call::Preimage(_)
+            | Call::AssetManager(_)
+            | Call::Uniques(_)
             | Call::Utility(_) => true,
 
             // DISALLOW anything else
@@ -747,6 +747,7 @@ construct_runtime!(
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
+        Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 48,
     }
 );
 

@@ -706,6 +706,12 @@ pub mod pallet {
                 Ok(())
             }
         }
+
+        pub fn get_metadata(
+            asset_id: &T::AssetId,
+        ) -> Option<<T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata> {
+            AssetIdMetadata::<T>::get(asset_id)
+        }
     }
 
     /// Check the multilocation destination is supported by calamari/manta.
