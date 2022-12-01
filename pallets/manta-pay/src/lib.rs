@@ -765,7 +765,10 @@ where
         &self,
         output: config::UtxoAccumulatorOutput,
     ) -> Option<Self::ValidUtxoAccumulatorOutput> {
-        if UtxoAccumulatorOutputs::<T>::contains_key(fp_encode(output).expect(FP_ENCODE)) {
+        let accumulator_output = fp_encode(output).expect(FP_ENCODE);
+        if accumulator_output == [0u8; 32]
+            || UtxoAccumulatorOutputs::<T>::contains_key(accumulator_output)
+        {
             return Some(Wrap(output));
         }
         None
