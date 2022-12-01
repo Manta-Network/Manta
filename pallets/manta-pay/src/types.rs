@@ -29,7 +29,6 @@ use manta_pay::{
         permutation::duplex,
         signature::schnorr,
     },
-    manta_util::into_array_unchecked,
 };
 use manta_util::{Array, BoxArray};
 use scale_codec::{Decode, Encode, Error, MaxEncodedLen};

@@ -19,7 +19,7 @@ use crate::{
         new_test_ext, MantaAssetConfig, MantaAssetRegistry, MantaPayPallet, Origin as MockOrigin,
         Test,
     },
-    types::{decode, encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
+    types::{decode, fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
     Error, FungibleLedger, StandardAssetId,
 };
 use frame_support::{assert_noop, assert_ok};
@@ -27,13 +27,13 @@ use manta_accounting::transfer::test::value_distribution;
 use manta_crypto::{
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
     rand::{CryptoRng, OsRng, Rand, RngCore},
+    arkworks::constraint::fp::Fp,
 };
 use manta_pay::{
     config::{
-        utxo::v3::MerkleTreeConfiguration, ConstraintField, MultiProvingContext, Parameters,
+        utxo::MerkleTreeConfiguration, ConstraintField, MultiProvingContext, Parameters,
         UtxoAccumulatorModel,
     },
-    crypto::constraint::arkworks::Fp,
     parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
     test,
 };
@@ -501,7 +501,7 @@ fn check_number_conversions() {
     let expected = MantaPayPallet::field_from_id(start);
 
     let fp = Fp::<ConstraintField>::from(start);
-    let encoded = encode(fp);
+    let encoded = fp_encode(fp);
 
     assert_eq!(expected, encoded);
 
