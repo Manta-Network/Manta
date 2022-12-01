@@ -25,9 +25,9 @@ use crate::{
 use frame_support::{assert_noop, assert_ok};
 use manta_accounting::transfer::test::value_distribution;
 use manta_crypto::{
+    arkworks::constraint::fp::Fp,
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
     rand::{CryptoRng, OsRng, Rand, RngCore},
-    arkworks::constraint::fp::Fp,
 };
 use manta_pay::{
     config::{
