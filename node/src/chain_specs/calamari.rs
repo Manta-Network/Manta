@@ -88,9 +88,9 @@ pub fn calamari_development_config() -> CalamariChainSpec {
 /// Returns the Calamari local chainspec.
 pub fn calamari_local_config() -> CalamariChainSpec {
     CalamariChainSpec::from_genesis(
-        "Calamari Parachain Local",
-        "calamari_local",
-        ChainType::Local,
+        "Calamari Parachain Live On Moonbase",
+        "calamari on Moonbase",
+        ChainType::Live,
         move || {
             calamari_dev_genesis(
                 vec![
@@ -105,14 +105,6 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                     (
                         unchecked_account_id::<sr25519::Public>("Charlie"),
                         SessionKeys::new(unchecked_collator_keys("Charlie")),
-                    ),
-                    (
-                        unchecked_account_id::<sr25519::Public>("Dave"),
-                        SessionKeys::new(unchecked_collator_keys("Dave")),
-                    ),
-                    (
-                        unchecked_account_id::<sr25519::Public>("Eve"),
-                        SessionKeys::new(unchecked_collator_keys("Eve")),
                     ),
                 ],
                 // Delegations
@@ -133,11 +125,11 @@ pub fn calamari_local_config() -> CalamariChainSpec {
         },
         vec![],
         None,
-        Some(CALAMARI_PROTOCOL_ID),
+        Some("calamari-on-moonbase"),
         None,
         Some(calamari_properties()),
         Extensions {
-            relay_chain: KUSAMA_RELAYCHAIN_LOCAL_NET.into(),
+            relay_chain: "".into(),
             para_id: CALAMARI_PARACHAIN_ID,
         },
     )
