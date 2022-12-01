@@ -4987,7 +4987,6 @@ dependencies = [
  "sc-client-api",
  "sc-consensus",
  "sc-consensus-aura",
- "sc-consensus-manual-seal",
  "sc-consensus-slots",
  "sc-executor",
  "sc-keystore",
