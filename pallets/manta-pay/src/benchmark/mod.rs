@@ -18,6 +18,7 @@ use crate::{
     benchmark::precomputed_coins::{
         PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, TO_PRIVATE, TO_PUBLIC, TO_PUBLIC_INPUT,
     },
+    mock::Balances,
     types::Asset,
     Call, Config, Event, Pallet, StandardAssetId, TransferPost,
 };
@@ -78,12 +79,15 @@ where
 }
 
 benchmarks! {
+    where_clause {  where sp_runtime::AccountId32: From<<T as frame_system::Config>::AccountId>  }
     to_private {
+        let x in 0 .. 1;
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
+        let _ = Balances::set_balance(RawOrigin::Root.into(), caller.clone().into(), INITIAL_VALUE, 0);
+        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE[x as usize]).unwrap();
         let asset = mint_post.source(0).unwrap();
-        init_asset::<T>(&caller, Pallet::<T>::id_from_field(asset.id).unwrap(), asset.value);
+        init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
     }: to_private (
         RawOrigin::Signed(caller.clone()),
         mint_post
@@ -93,16 +97,34 @@ benchmarks! {
     }
 
     to_public {
+        let x in 0 .. 1;
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        let _ = Balances::set_balance(RawOrigin::Root.into(), caller.clone().into(), INITIAL_VALUE, 0);
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
-        for coin in TO_PUBLIC_INPUT {
+        Pallet::<T>::to_private(
+            origin.clone(),
+            TransferPost::decode(&mut &*TO_PUBLIC_INPUT[0 as usize]).unwrap()
+        ).unwrap();
+        Pallet::<T>::to_private(
+            origin.clone(),
+            TransferPost::decode(&mut &*TO_PUBLIC_INPUT[1 as usize]).unwrap()
+        ).unwrap();
+        if x == 1 {
+            Pallet::<T>::to_public(
+                origin.clone(),
+                TransferPost::decode(&mut &*TO_PUBLIC[0 as usize]).unwrap()
+            ).unwrap();
             Pallet::<T>::to_private(
                 origin.clone(),
-                TransferPost::decode(&mut &**coin).unwrap()
+                TransferPost::decode(&mut &*TO_PUBLIC_INPUT[2 as usize]).unwrap()
+            ).unwrap();
+            Pallet::<T>::to_private(
+                origin.clone(),
+                TransferPost::decode(&mut &*TO_PUBLIC_INPUT[3 as usize]).unwrap()
             ).unwrap();
         }
-        let reclaim_post = TransferPost::decode(&mut &*TO_PUBLIC).unwrap();
+        let reclaim_post = TransferPost::decode(&mut &*TO_PUBLIC[x as usize]).unwrap();
         let asset = reclaim_post.sink(0).unwrap();
     }: to_public (
         RawOrigin::Signed(caller.clone()),
@@ -113,16 +135,34 @@ benchmarks! {
     }
 
     private_transfer {
+        let x in 0 .. 1;
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        let _ = Balances::set_balance(RawOrigin::Root.into(), caller.clone().into(), INITIAL_VALUE, 0);
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
-        for coin in PRIVATE_TRANSFER_INPUT {
+        Pallet::<T>::to_private(
+            origin.clone(),
+            TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[0 as usize]).unwrap()
+        ).unwrap();
+        Pallet::<T>::to_private(
+            origin.clone(),
+            TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[1 as usize]).unwrap()
+        ).unwrap();
+        if x == 1 {
+            Pallet::<T>::private_transfer(
+                origin.clone(),
+                TransferPost::decode(&mut &*PRIVATE_TRANSFER[0 as usize]).unwrap()
+            ).unwrap();
             Pallet::<T>::to_private(
                 origin.clone(),
-                TransferPost::decode(&mut &**coin).unwrap(),
+                TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[2 as usize]).unwrap()
+            ).unwrap();
+            Pallet::<T>::to_private(
+                origin.clone(),
+                TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[3 as usize]).unwrap()
             ).unwrap();
         }
-        let private_transfer_post = TransferPost::decode(&mut &*PRIVATE_TRANSFER).unwrap();
+        let private_transfer_post = TransferPost::decode(&mut &*PRIVATE_TRANSFER[x as usize]).unwrap();
     }: private_transfer (
         RawOrigin::Signed(caller.clone()),
         private_transfer_post
