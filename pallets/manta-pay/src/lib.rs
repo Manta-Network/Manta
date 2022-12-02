@@ -58,14 +58,15 @@
 extern crate alloc;
 
 use crate::types::{
-    encode, Asset, AssetValue, FullIncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk,
-    SenderChunk, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
+    fp_decode, fp_encode, Asset, AssetValue, FullIncomingNote, NullifierCommitment, OutgoingNote,
+    ReceiverChunk, SenderChunk, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
+    FP_ENCODE,
 };
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use frame_support::{traits::tokens::ExistenceRequirement, transactional, PalletId};
 use manta_pay::{
-    config::{self, utxo::v3::MerkleTreeConfiguration},
+    config::{self, utxo::MerkleTreeConfiguration},
     manta_accounting::transfer::{
         self,
         canonical::TransferShape,
@@ -249,7 +250,7 @@ pub mod pallet {
             sink: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
-            let id = Pallet::<T>::id_from_field(encode(asset.id))
+            let id = Pallet::<T>::id_from_field(fp_encode(asset.id).expect("bla"))
                 .ok_or(Error::<T>::PublicUpdateUnknownAsset)?;
             let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistry::get_metadata(&id)
                 .ok_or(Error::<T>::PublicUpdateUnknownAsset)?;
@@ -779,7 +780,9 @@ where
 
     #[inline]
     fn is_unspent(&self, nullifier: config::Nullifier) -> Option<Self::ValidNullifier> {
-        if NullifierCommitmentSet::<T>::contains_key(encode(nullifier.nullifier.commitment)) {
+        if NullifierCommitmentSet::<T>::contains_key(
+            fp_encode(nullifier.nullifier.commitment).expect(FP_ENCODE),
+        ) {
             None
         } else {
             Some(Wrap(nullifier))
@@ -791,7 +794,13 @@ where
         &self,
         output: config::UtxoAccumulatorOutput,
     ) -> Option<Self::ValidUtxoAccumulatorOutput> {
-        if UtxoAccumulatorOutputs::<T>::contains_key(encode(output)) {
+        let accumulator_output = fp_encode(output).expect(FP_ENCODE);
+        // Checking for an empty(zeroed) byte array.
+        // This happens for UTXOs with value = 0, for which you dont need
+        // a membership proof, but you still need a root(in this case zeroed).
+        if accumulator_output == [0u8; 32]
+            || UtxoAccumulatorOutputs::<T>::contains_key(accumulator_output)
+        {
             return Some(Wrap(output));
         }
         None
@@ -806,7 +815,8 @@ where
         let index = NullifierSetSize::<T>::get();
         let mut i = 0;
         for (_, nullifier) in iter {
-            let nullifier_commitment = encode(nullifier.0.nullifier.commitment);
+            let nullifier_commitment =
+                fp_encode(nullifier.0.nullifier.commitment).expect(FP_ENCODE);
             NullifierCommitmentSet::<T>::insert(nullifier_commitment, ());
             NullifierSetInsertionOrder::<T>::insert(
                 index + i,
@@ -850,7 +860,7 @@ where
                 .expect("Checksum did not match."),
         )
         .expect("Unable to decode the Merkle Tree Parameters.");
-        let utxo_accumulator_item_hash = config::utxo::v3::UtxoAccumulatorItemHash::decode(
+        let utxo_accumulator_item_hash = config::utxo::UtxoAccumulatorItemHash::decode(
             manta_parameters::pay::testnet::parameters::UtxoAccumulatorItemHash::get()
                 .expect("Checksum did not match."),
         )
@@ -884,7 +894,9 @@ where
                 next_root = Some(
                     merkle_tree::single_path::raw::insert(
                         &utxo_accumulator_model,
-                        &mut tree.leaf_digest,
+                        &mut tree
+                            .leaf_digest
+                            .map(|x| fp_decode(x.to_vec()).expect(FP_ENCODE)),
                         &mut current_path,
                         utxo.item_hash(&utxo_accumulator_item_hash, &mut ()),
                     )
@@ -902,7 +914,7 @@ where
             tree.current_path = current_path.into();
             if let Some(next_root) = next_root {
                 ShardTrees::<T>::insert(shard_index, tree);
-                UtxoAccumulatorOutputs::<T>::insert(encode(next_root), ());
+                UtxoAccumulatorOutputs::<T>::insert(fp_encode(next_root).expect(FP_ENCODE), ());
             }
         }
     }
@@ -932,11 +944,13 @@ where
         sources
             .map(move |(account_id, withdraw)| {
                 FungibleLedger::<T>::can_withdraw(
-                    Pallet::<T>::id_from_field(encode(asset_id)).ok_or(InvalidSourceAccount {
-                        account_id: account_id.clone(),
-                        asset_id: *asset_id,
-                        withdraw,
-                    })?,
+                    Pallet::<T>::id_from_field(fp_encode(*asset_id).expect(FP_ENCODE)).ok_or(
+                        InvalidSourceAccount {
+                            account_id: account_id.clone(),
+                            asset_id: *asset_id,
+                            withdraw,
+                        },
+                    )?,
                     &account_id,
                     &withdraw,
                     ExistenceRequirement::KeepAlive,
@@ -965,11 +979,13 @@ where
         sinks
             .map(move |(account_id, deposit)| {
                 FungibleLedger::<T>::can_deposit(
-                    Pallet::<T>::id_from_field(encode(asset_id)).ok_or(InvalidSinkAccount {
-                        account_id: account_id.clone(),
-                        asset_id: *asset_id,
-                        deposit,
-                    })?,
+                    Pallet::<T>::id_from_field(fp_encode(*asset_id).expect(FP_ENCODE)).ok_or(
+                        InvalidSinkAccount {
+                            account_id: account_id.clone(),
+                            asset_id: *asset_id,
+                            deposit,
+                        },
+                    )?,
                     &account_id,
                     deposit,
                     false,
@@ -996,7 +1012,7 @@ where
                         .expect("Checksum did not match."),
                     PreprocessedEvent::<T>::ToPrivate {
                         asset: Asset::new(
-                            encode(posting_key.asset_id.unwrap()),
+                            fp_encode(posting_key.asset_id.unwrap()).expect(FP_ENCODE),
                             posting_key.sources[0].1,
                         ),
                         source: posting_key.sources[0].0.clone(),
@@ -1012,7 +1028,7 @@ where
                         .expect("Checksum did not match."),
                     PreprocessedEvent::<T>::ToPublic {
                         asset: Asset::new(
-                            encode(posting_key.asset_id.unwrap()),
+                            fp_encode(posting_key.asset_id.unwrap()).expect(FP_ENCODE),
                             posting_key.sinks[0].1,
                         ),
                         sink: posting_key.sinks[0].0.clone(),
@@ -1038,7 +1054,7 @@ where
         proof: Self::ValidProof,
     ) -> Result<(), Self::UpdateError> {
         let _ = (proof, super_key);
-        let id = Pallet::<T>::id_from_field(encode(asset_id))
+        let id = Pallet::<T>::id_from_field(fp_encode(asset_id).expect("bla"))
             .ok_or(FungibleLedgerError::UnknownAsset)?;
         let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistry::get_metadata(&id)
             .ok_or(FungibleLedgerError::UnknownAsset)?;
