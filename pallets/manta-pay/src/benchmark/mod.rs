@@ -102,24 +102,24 @@ benchmarks! {
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         Pallet::<T>::to_private(
             origin.clone(),
-            TransferPost::decode(&mut &*TO_PUBLIC_INPUT[0 as usize]).unwrap()
+            TransferPost::decode(&mut &*TO_PUBLIC_INPUT[0_usize]).unwrap()
         ).unwrap();
         Pallet::<T>::to_private(
             origin.clone(),
-            TransferPost::decode(&mut &*TO_PUBLIC_INPUT[1 as usize]).unwrap()
+            TransferPost::decode(&mut &*TO_PUBLIC_INPUT[1_usize]).unwrap()
         ).unwrap();
         if x == 1 {
             Pallet::<T>::to_public(
                 origin.clone(),
-                TransferPost::decode(&mut &*TO_PUBLIC[0 as usize]).unwrap()
+                TransferPost::decode(&mut &*TO_PUBLIC[0_usize]).unwrap()
             ).unwrap();
             Pallet::<T>::to_private(
                 origin.clone(),
-                TransferPost::decode(&mut &*TO_PUBLIC_INPUT[2 as usize]).unwrap()
+                TransferPost::decode(&mut &*TO_PUBLIC_INPUT[2_usize]).unwrap()
             ).unwrap();
             Pallet::<T>::to_private(
-                origin.clone(),
-                TransferPost::decode(&mut &*TO_PUBLIC_INPUT[3 as usize]).unwrap()
+                origin,
+                TransferPost::decode(&mut &*TO_PUBLIC_INPUT[3_usize]).unwrap()
             ).unwrap();
         }
         let reclaim_post = TransferPost::decode(&mut &*TO_PUBLIC[x as usize]).unwrap();
@@ -140,24 +140,24 @@ benchmarks! {
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         Pallet::<T>::to_private(
             origin.clone(),
-            TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[0 as usize]).unwrap()
+            TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[0_usize]).unwrap()
         ).unwrap();
         Pallet::<T>::to_private(
             origin.clone(),
-            TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[1 as usize]).unwrap()
+            TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[1_usize]).unwrap()
         ).unwrap();
         if x == 1 {
             Pallet::<T>::private_transfer(
                 origin.clone(),
-                TransferPost::decode(&mut &*PRIVATE_TRANSFER[0 as usize]).unwrap()
+                TransferPost::decode(&mut &*PRIVATE_TRANSFER[0_usize]).unwrap()
             ).unwrap();
             Pallet::<T>::to_private(
                 origin.clone(),
-                TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[2 as usize]).unwrap()
+                TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[2_usize]).unwrap()
             ).unwrap();
             Pallet::<T>::to_private(
-                origin.clone(),
-                TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[3 as usize]).unwrap()
+                origin,
+                TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[3_usize]).unwrap()
             ).unwrap();
         }
         let private_transfer_post = TransferPost::decode(&mut &*PRIVATE_TRANSFER[x as usize]).unwrap();
