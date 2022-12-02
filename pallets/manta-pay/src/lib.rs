@@ -249,7 +249,7 @@ pub mod pallet {
             sink: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
-            let id = Pallet::<T>::id_from_field(encode(asset))
+            let id = Pallet::<T>::id_from_field(encode(asset.id))
                 .ok_or(Error::<T>::PublicUpdateUnknownAsset)?;
             let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistry::get_metadata(&id)
                 .ok_or(Error::<T>::PublicUpdateUnknownAsset)?;
@@ -274,12 +274,12 @@ pub mod pallet {
                 let (collection_id, item_id) = metadata
                     .get_non_fungible_id()
                     .ok_or(Error::<T>::PublicUpdateUnknownAsset)?;
-                NonFungibleLedger::<T>::transfer(
-                    collection_id,
-                    item_id,
-                    &Pallet::<T>::account_id(),
-                )
-                .map_err(Error::<T>::from)?;
+                let owner = NonFungibleLedger::<T>::owner(collection_id, item_id)
+                    .ok_or(Error::<T>::PublicUpdateUnknownAsset)?;
+                ensure!(owner == origin, Error::<T>::PublicUpdateInvalidTransfer);
+
+                NonFungibleLedger::<T>::transfer(collection_id, item_id, &sink)
+                    .map_err(Error::<T>::from)?;
                 Ok(().into())
             }
         }

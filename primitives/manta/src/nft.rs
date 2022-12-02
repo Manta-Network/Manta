@@ -45,6 +45,9 @@ pub trait NonFungibleLedger: AssetIdType + BalanceType {
         account: &Self::AccountId,
     ) -> Result<(), FungibleLedgerError<Self::AssetId, Self::Balance>>;
 
+    /// Owner of nft
+    fn owner(collection_id: &Self::AssetId, asset_id: &Self::AssetId) -> Option<Self::AccountId>;
+
     /// Performs a NFT transfer to `destination` of `asset_id`
     fn transfer(
         collection_id: &Self::AssetId,
@@ -101,6 +104,10 @@ impl<A, B> NonFungibleLedger for MockNonFungibleLedger<A, B> {
         todo!()
     }
 
+    fn owner(collection_id: &Self::AssetId, asset_id: &Self::AssetId) -> Option<Self::AccountId> {
+        todo!()
+    }
+
     fn transfer(
         collection_id: &Self::AssetId,
         asset_id: &Self::AssetId,
@@ -150,10 +157,6 @@ where
 {
     type AccountId = C::AccountId;
 
-    // type AssetId = A;
-
-    // type CollectionId = A;
-
     #[inline]
     fn deposit_minting(
         collection_id: &Self::AssetId,
@@ -163,6 +166,11 @@ where
         NFT::mint_into(collection_id, asset_id, account)
             .map_err(FungibleLedgerError::InvalidMint)?;
         Ok(())
+    }
+
+    #[inline]
+    fn owner(collection_id: &Self::AssetId, asset_id: &Self::AssetId) -> Option<C::AccountId> {
+        NFT::owner(collection_id, asset_id)
     }
 
     #[inline]
