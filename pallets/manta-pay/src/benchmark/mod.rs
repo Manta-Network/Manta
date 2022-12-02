@@ -18,7 +18,6 @@ use crate::{
     benchmark::precomputed_coins::{
         PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, TO_PRIVATE, TO_PUBLIC, TO_PUBLIC_INPUT,
     },
-    mock::Balances,
     types::Asset,
     Call, Config, Event, Pallet, StandardAssetId, TransferPost,
 };
@@ -77,14 +76,13 @@ where
     )
     .expect("Unable to mint existential deposit to pallet account.");
 }
-
 benchmarks! {
     where_clause {  where sp_runtime::AccountId32: From<<T as frame_system::Config>::AccountId>  }
     to_private {
         let x in 0 .. 1;
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        let _ = Balances::set_balance(RawOrigin::Root.into(), caller.clone().into(), INITIAL_VALUE, 0);
+        let _ =<T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(1, &caller, INITIAL_VALUE, true);
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE[x as usize]).unwrap();
         let asset = mint_post.source(0).unwrap();
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
@@ -100,7 +98,7 @@ benchmarks! {
         let x in 0 .. 1;
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        let _ = Balances::set_balance(RawOrigin::Root.into(), caller.clone().into(), INITIAL_VALUE, 0);
+        let _ =<T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(1, &caller, INITIAL_VALUE, true);
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         Pallet::<T>::to_private(
             origin.clone(),
@@ -138,7 +136,7 @@ benchmarks! {
         let x in 0 .. 1;
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        let _ = Balances::set_balance(RawOrigin::Root.into(), caller.clone().into(), INITIAL_VALUE, 0);
+        let _ =<T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(1, &caller, INITIAL_VALUE, true);
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         Pallet::<T>::to_private(
             origin.clone(),
