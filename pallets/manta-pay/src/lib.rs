@@ -250,8 +250,7 @@ pub mod pallet {
             sink: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
-            let id = Pallet::<T>::id_from_field(fp_encode(asset.id).expect("bla"))
-                .ok_or(Error::<T>::PublicUpdateUnknownAsset)?;
+            let id = Self::id_from_field(asset.id).ok_or(Error::<T>::InvalidAssetId)?;
             let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistry::get_metadata(&id)
                 .ok_or(Error::<T>::PublicUpdateUnknownAsset)?;
             if metadata.is_fungible() {

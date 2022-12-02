@@ -26,6 +26,7 @@ pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index
 use polkadot_service::CollatorPair;
 use session_key_primitives::AuraId;
 use std::sync::Arc;
+use std::marker::PhantomData;
 
 use sc_consensus::LongestChain;
 use sc_network::NetworkService;
@@ -44,7 +45,7 @@ use cumulus_primitives_parachain_inherent::{
 };
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
+use cumulus_relay_chain_rpc_interface::RelayChainRpcInterface;
 
 use nimbus_consensus::{
     BuildNimbusConsensusParams, NimbusConsensus, NimbusManualSealConsensusDataProvider,
@@ -62,20 +63,15 @@ pub async fn build_relay_chain_interface(
     Arc<(dyn RelayChainInterface + 'static)>,
     Option<CollatorPair>,
 )> {
-    match collator_options.relay_chain_rpc_url {
-        Some(relay_chain_url) => Ok((
-            Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>,
-            None,
-        )),
-        None => build_inprocess_relay_chain(
+        build_inprocess_relay_chain(
             polkadot_config,
             parachain_config,
             telemetry_worker_handle,
             task_manager,
             hwbench,
-        ),
+        )
     }
-}
+
 
 /// build parachain nimbus consensus
 pub fn build_nimbus_consensus<RuntimeApi>(
@@ -194,6 +190,7 @@ where
             keystore: keystore_container.sync_keystore(),
             client,
             additional_digests_provider: (),
+            _phantom: PhantomData::<()>,
         })),
         create_inherent_data_providers: move |block: Hash, ()| {
             let current_para_block = client_set_aside_for_cidp
