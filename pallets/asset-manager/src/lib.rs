@@ -51,8 +51,8 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use manta_primitives::assets::{
-        self, AssetConfig, AssetIdLocationMap, AssetIdType, AssetMetadata, AssetRegistry,
-        FungibleLedger, LocationType,
+        self, AssetConfig, AssetIdLocationMap, AssetIdType, AssetRegistry, FungibleLedger,
+        LocationType,
     };
     use orml_traits::GetByKey;
     use sp_runtime::{
@@ -306,6 +306,14 @@ pub mod pallet {
         <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
     >;
 
+    #[pallet::storage]
+    pub(super) type RegisteredAssetId<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        <T::AssetConfig as AssetConfig<T>>::IdentifierMapping,
+        T::AssetId,
+    >;
+
     /// The Next Available [`AssetId`](AssetConfig::AssetId)
     #[pallet::storage]
     #[pallet::getter(fn next_asset_id)]
@@ -357,6 +365,14 @@ pub mod pallet {
 
             AssetIdLocation::<T>::insert(asset_id, &location);
             AssetIdMetadata::<T>::insert(asset_id, &metadata);
+
+            let identifier_mapping: <T::AssetConfig as AssetConfig<T>>::IdentifierMapping =
+                metadata.clone().into();
+            ensure!(
+                RegisteredAssetId::<T>::contains_key(&identifier_mapping),
+                Error::<T>::ErrorCreatingAsset
+            );
+            RegisteredAssetId::<T>::insert(identifier_mapping, asset_id);
 
             Self::deposit_event(Event::<T>::AssetRegistered {
                 asset_id,
@@ -476,41 +492,12 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::call_index(3)]
-        #[pallet::weight(T::WeightInfo::update_asset_metadata())]
-        #[transactional]
-        pub fn update_asset_metadata(
-            origin: OriginFor<T>,
-            asset_id: T::AssetId,
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
-        ) -> DispatchResult {
-            let _ = ensure_signed(origin.clone())?;
-            ensure!(
-                asset_id != <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(),
-                Error::<T>::CannotUpdateNativeAssetMetadata
-            );
-            ensure!(
-                AssetIdLocation::<T>::contains_key(asset_id),
-                Error::<T>::UpdateNonExistentAsset
-            );
-
-            <T::AssetConfig as AssetConfig<T>>::AssetRegistry::update_metadata(
-                origin,
-                &asset_id,
-                metadata.clone().into(),
-            )?;
-            AssetIdMetadata::<T>::insert(asset_id, &metadata);
-
-            Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata });
-            Ok(())
-        }
-
         /// Update an asset's metadata by its `asset_id`
         ///
         /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
         /// * `asset_id`: AssetId to be updated.
         /// * `metadata`: new `metadata` to be associated with `asset_id`.
-        #[pallet::call_index(4)]
+        #[pallet::call_index(3)]
         #[pallet::weight(T::WeightInfo::update_asset_metadata())]
         #[transactional]
         pub fn force_update_asset_metadata(
@@ -541,7 +528,7 @@ pub mod pallet {
         /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
         /// * `asset_id`: AssetId to be updated.
         /// * `units_per_second`: units per second for `asset_id`
-        #[pallet::call_index(5)]
+        #[pallet::call_index(4)]
         #[pallet::weight(T::WeightInfo::set_units_per_second())]
         #[transactional]
         pub fn set_units_per_second(
@@ -568,43 +555,7 @@ pub mod pallet {
         /// * `asset_id`: AssetId to be updated.
         /// * `beneficiary`: Account to mint the asset.
         /// * `amount`: Amount of asset being minted.
-        #[pallet::call_index(6)]
-        #[pallet::weight(T::WeightInfo::mint_asset())]
-        #[transactional]
-        pub fn mint_asset(
-            origin: OriginFor<T>,
-            #[pallet::compact] asset_id: T::AssetId,
-            beneficiary: T::AccountId,
-            amount: T::Balance,
-        ) -> DispatchResult {
-            let __ = ensure_signed(origin.clone())?;
-            ensure!(
-                AssetIdLocation::<T>::contains_key(asset_id),
-                Error::<T>::UpdateNonExistentAsset
-            );
-
-            <T::AssetConfig as AssetConfig<T>>::AssetRegistry::mint_asset(
-                origin,
-                &asset_id,
-                beneficiary.clone(),
-                amount.clone(),
-            )?;
-
-            Self::deposit_event(Event::<T>::AssetMinted {
-                asset_id,
-                beneficiary,
-                amount,
-            });
-            Ok(())
-        }
-
-        /// Mint asset by its asset id to a beneficiary.
-        ///
-        /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
-        /// * `asset_id`: AssetId to be updated.
-        /// * `beneficiary`: Account to mint the asset.
-        /// * `amount`: Amount of asset being minted.
-        #[pallet::call_index(7)]
+        #[pallet::call_index(5)]
         #[pallet::weight(T::WeightInfo::mint_asset())]
         #[transactional]
         pub fn force_mint_asset(
@@ -638,7 +589,7 @@ pub mod pallet {
         /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
         /// * `reserve_chain`: Multilocation to be haven min xcm fee.
         /// * `min_xcm_fee`: Amount of min_xcm_fee.
-        #[pallet::call_index(8)]
+        #[pallet::call_index(6)]
         #[pallet::weight(T::WeightInfo::set_min_xcm_fee())]
         #[transactional]
         pub fn set_min_xcm_fee(

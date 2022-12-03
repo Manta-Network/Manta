@@ -120,13 +120,6 @@ where
         metadata: Self::Metadata,
     ) -> Result<(), Self::Error>;
 
-    /// docs
-    fn update_metadata(
-        origin: C::Origin,
-        asset_id: &Self::AssetId,
-        metadata: Self::Metadata,
-    ) -> Result<(), Self::Error>;
-
     /// Update asset metadata by `AssetId`.
     ///
     /// * `asset_id`: the asset id to be created.
@@ -134,14 +127,6 @@ where
     fn force_update_metadata(
         asset_id: &Self::AssetId,
         metadata: Self::Metadata,
-    ) -> Result<(), Self::Error>;
-
-    /// docs
-    fn mint_asset(
-        origin: C::Origin,
-        asset_id: &Self::AssetId,
-        beneficiary: C::AccountId,
-        amount: Self::Balance,
     ) -> Result<(), Self::Error>;
 
     /// docs
@@ -159,6 +144,12 @@ where
 
     /// The Asset Metadata type stored in this pallet.
     type AssetRegistryMetadata: Parameter + IsFungible<Self::AssetId, Self::AssetId, Self::AssetId>;
+
+    /// The identifier of asset id in manta pay to id within pallet
+    type IdentifierMapping: Parameter
+        + IsFungible<Self::AssetId, Self::AssetId, Self::AssetId>
+        + IdentifierMapping<Self::AssetId, Self::AssetId, Self::AssetId>
+        + From<Self::AssetRegistryMetadata>;
 
     /// The AssetId that the non-native asset starts from.
     ///
@@ -246,6 +237,15 @@ pub trait IsFungible<AssetId, CollectionId, ItemId> {
     fn get_non_fungible_id(&self) -> Option<(&CollectionId, &ItemId)>;
 }
 
+/// Identifiew in the `pallet-assets` and `pallet-uniques`
+pub trait IdentifierMapping<AssetId, CollectionId, ItemId> {
+    /// new fungible asset
+    fn new_fungible(asset_id: AssetId) -> Self;
+
+    /// new non-fungible asset
+    fn new_non_fungible(collection_id: CollectionId, item_id: ItemId) -> Self;
+}
+
 /// Asset Storage Metadata
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
 pub enum AssetStorageMetadata<Balance, AssetId, CollectionId, ItemId> {
@@ -253,6 +253,59 @@ pub enum AssetStorageMetadata<Balance, AssetId, CollectionId, ItemId> {
     Fungible(AssetRegistryMetadata<Balance, AssetId>),
     /// Metadata for NonFungible Assets
     NonFungible(NonFungibleAssetStorageMetadata<CollectionId, ItemId>),
+}
+
+/// Asset Id in `pallet-assets` or `pallets-uniques`
+#[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
+pub enum AssetIdMapping<AssetId, CollectionId, ItemId> {
+    /// Metadata for Fungible Assets
+    Fungible(AssetId),
+    /// Metadata for NonFungible Assets
+    NonFungible((CollectionId, ItemId)),
+}
+
+impl<B, A, C, I> From<AssetStorageMetadata<B, A, C, I>> for AssetIdMapping<A, C, I> {
+    fn from(asset_metadata: AssetStorageMetadata<B, A, C, I>) -> Self {
+        match asset_metadata {
+            AssetStorageMetadata::<B, A, C, I>::Fungible(meta) => Self::Fungible(meta.asset_id),
+            AssetStorageMetadata::<B, A, C, I>::NonFungible(meta) => {
+                Self::NonFungible((meta.collection_id, meta.item_id))
+            }
+        }
+    }
+}
+
+impl<A, C, I> IdentifierMapping<A, C, I> for AssetIdMapping<A, C, I> {
+    fn new_fungible(asset_id: A) -> Self {
+        Self::Fungible(asset_id)
+    }
+
+    fn new_non_fungible(collection_id: C, item_id: I) -> Self {
+        Self::NonFungible((collection_id, item_id))
+    }
+}
+
+impl<A, C, I> IsFungible<A, C, I> for AssetIdMapping<A, C, I> {
+    fn is_fungible(&self) -> bool {
+        match self {
+            Self::Fungible(_) => true,
+            Self::NonFungible(_) => true,
+        }
+    }
+
+    fn get_fungible_id(&self) -> Option<&A> {
+        match self {
+            Self::Fungible(asset_id) => Some(asset_id),
+            Self::NonFungible(_) => None,
+        }
+    }
+
+    fn get_non_fungible_id(&self) -> Option<(&C, &I)> {
+        match self {
+            Self::Fungible(_) => None,
+            Self::NonFungible((collection_id, item_id)) => Some((&collection_id, &item_id)),
+        }
+    }
 }
 
 impl<B, A, C, I> IsFungible<A, C, I> for AssetStorageMetadata<B, A, C, I> {

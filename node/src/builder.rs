@@ -25,8 +25,7 @@ use crate::{
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
 use polkadot_service::CollatorPair;
 use session_key_primitives::AuraId;
-use std::sync::Arc;
-use std::marker::PhantomData;
+use std::{marker::PhantomData, sync::Arc};
 
 use sc_consensus::LongestChain;
 use sc_network::NetworkService;
@@ -63,15 +62,14 @@ pub async fn build_relay_chain_interface(
     Arc<(dyn RelayChainInterface + 'static)>,
     Option<CollatorPair>,
 )> {
-        build_inprocess_relay_chain(
-            polkadot_config,
-            parachain_config,
-            telemetry_worker_handle,
-            task_manager,
-            hwbench,
-        )
-    }
-
+    build_inprocess_relay_chain(
+        polkadot_config,
+        parachain_config,
+        telemetry_worker_handle,
+        task_manager,
+        hwbench,
+    )
+}
 
 /// build parachain nimbus consensus
 pub fn build_nimbus_consensus<RuntimeApi>(

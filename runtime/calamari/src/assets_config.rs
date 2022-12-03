@@ -21,8 +21,8 @@ use super::{
 
 use manta_primitives::{
     assets::{
-        AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
-        AssetStorageMetadata,
+        AssetConfig, AssetIdMapping, AssetIdType, AssetLocation, AssetRegistry,
+        AssetRegistryMetadata, AssetStorageMetadata,
         AssetStorageMetadata::{Fungible, NonFungible},
         BalanceType, FungibleAssetStorageMetadata, LocationType, NativeAndNonNative,
     },
@@ -98,7 +98,7 @@ impl AssetRegistry<Runtime> for CalamariAssetRegistry {
 
                 Assets::set_metadata(who, asset_id, meta.name, meta.symbol, meta.decimals)
             }
-            NonFungible(meta) => Ok(()),
+            NonFungible(_meta) => Ok(()),
         }
     }
 
@@ -123,21 +123,7 @@ impl AssetRegistry<Runtime> for CalamariAssetRegistry {
                     meta.is_frozen,
                 )
             }
-            NonFungible(meta) => Ok(()),
-        }
-    }
-
-    fn update_metadata(
-        origin: Origin,
-        asset_id: &CalamariAssetId,
-        metadata: Self::Metadata,
-    ) -> DispatchResult {
-        match metadata {
-            Fungible(meta_registry) => {
-                let meta = meta_registry.metadata;
-                Assets::set_metadata(origin, *asset_id, meta.name, meta.symbol, meta.decimals)
-            }
-            NonFungible(meta) => Ok(()),
+            NonFungible(_meta) => Ok(()),
         }
     }
 
@@ -157,22 +143,8 @@ impl AssetRegistry<Runtime> for CalamariAssetRegistry {
                     meta.is_frozen,
                 )
             }
-            NonFungible(meta) => Ok(()),
+            NonFungible(_meta) => Ok(()),
         }
-    }
-
-    fn mint_asset(
-        origin: Origin,
-        asset_id: &CalamariAssetId,
-        beneficiary: AccountId,
-        amount: Balance,
-    ) -> DispatchResult {
-        Assets::mint(
-            origin,
-            *asset_id,
-            sp_runtime::MultiAddress::Id(beneficiary),
-            amount,
-        )
     }
 
     fn get_metadata(
@@ -225,6 +197,7 @@ impl AssetConfig<Runtime> for CalamariAssetConfig {
     type NativeAssetId = NativeAssetId;
     type AssetRegistryMetadata =
         AssetStorageMetadata<Balance, CalamariAssetId, CalamariAssetId, CalamariAssetId>;
+    type IdentifierMapping = AssetIdMapping<CalamariAssetId, CalamariAssetId, CalamariAssetId>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
     type StorageMetadata =

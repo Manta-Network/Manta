@@ -17,17 +17,8 @@
 //! NFT Utilities
 
 use crate::assets::{AssetIdType, BalanceType, FungibleLedgerError};
-use codec::{Decode, Encode};
 use core::marker::PhantomData;
-use frame_support::{
-    dispatch::{DispatchError, TypeInfo},
-    pallet_prelude::Get,
-    traits::{
-        tokens::nonfungibles::{Inspect, Mutate, Transfer},
-        ExistenceRequirement,
-    },
-    Parameter,
-};
+use frame_support::traits::tokens::nonfungibles::{Inspect, Mutate, Transfer};
 use frame_system::Config;
 
 ///
@@ -74,54 +65,6 @@ pub trait NonFungibleLedger: AssetIdType + BalanceType {
         asset_id: Self::AssetId,
     ) -> Result<Self::AssetId, FungibleLedgerError<Self::AssetId, Self::Balance>> {
         Ok(asset_id)
-    }
-}
-
-///
-pub struct MockNonFungibleLedger<A, B>(sp_std::marker::PhantomData<(A, B)>);
-
-///
-impl<A, B> AssetIdType for MockNonFungibleLedger<A, B> {
-    type AssetId = A;
-}
-
-///
-impl<A, B> BalanceType for MockNonFungibleLedger<A, B> {
-    type Balance = B;
-}
-
-///
-impl<A, B> NonFungibleLedger for MockNonFungibleLedger<A, B> {
-    type AccountId = ();
-    // type AssetId = ();
-    // type CollectionId = ();
-
-    fn deposit_minting(
-        collection_id: &Self::AssetId,
-        asset_id: &Self::AssetId,
-        account: &Self::AccountId,
-    ) -> Result<(), FungibleLedgerError<Self::AssetId, B>> {
-        todo!()
-    }
-
-    fn owner(collection_id: &Self::AssetId, asset_id: &Self::AssetId) -> Option<Self::AccountId> {
-        todo!()
-    }
-
-    fn transfer(
-        collection_id: &Self::AssetId,
-        asset_id: &Self::AssetId,
-        destination: &Self::AccountId,
-    ) -> Result<(), FungibleLedgerError<Self::AssetId, B>> {
-        todo!()
-    }
-
-    fn withdraw_burning(
-        collection_id: &Self::AssetId,
-        asset_id: &Self::AssetId,
-        who: &Self::AccountId,
-    ) -> Result<(), FungibleLedgerError<Self::AssetId, B>> {
-        todo!()
     }
 }
 

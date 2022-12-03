@@ -81,11 +81,7 @@ use manta_pay::{
     parameters::load_transfer_parameters,
 };
 use manta_primitives::{
-    assets::{
-        self, AssetConfig, AssetRegistry, AssetStorageMetadata,
-        AssetStorageMetadata::{Fungible, NonFungible},
-        FungibleLedger as _, IsFungible,
-    },
+    assets::{self, AssetConfig, AssetRegistry, FungibleLedger as _, IsFungible},
     nft::NonFungibleLedger as _,
 };
 use manta_util::{into_array_unchecked, Array};
