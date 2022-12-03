@@ -369,7 +369,7 @@ pub mod pallet {
             let identifier_mapping: <T::AssetConfig as AssetConfig<T>>::IdentifierMapping =
                 metadata.clone().into();
             ensure!(
-                RegisteredAssetId::<T>::contains_key(&identifier_mapping),
+                !RegisteredAssetId::<T>::contains_key(&identifier_mapping),
                 Error::<T>::ErrorCreatingAsset
             );
             RegisteredAssetId::<T>::insert(identifier_mapping, asset_id);
