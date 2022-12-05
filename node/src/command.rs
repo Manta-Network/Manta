@@ -453,7 +453,7 @@ pub fn run_with(cli: Cli) -> Result {
 
                 let block: crate::service::Block =
                     generate_genesis_block(&*config.chain_spec, state_version)
-                    .map_err(|e| format!("{e:?}"))?;
+                        .map_err(|e| format!("{e:?}"))?;
                 let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
                 let tokio_handle = config.tokio_handle.clone();
