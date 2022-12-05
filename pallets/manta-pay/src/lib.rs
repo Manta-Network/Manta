@@ -405,6 +405,9 @@ pub mod pallet {
         ///
         /// This is caused by some internal error in the ledger and should never occur.
         InternalLedgerError,
+
+        /// Encode Error
+        EncodeError,
     }
 
     impl<T> From<InvalidAuthorizationSignature> for Error<T>
@@ -472,6 +475,7 @@ pub mod pallet {
                 FungibleLedgerError::InvalidMint(_) => Self::PublicUpdateInvalidMint,
                 FungibleLedgerError::InvalidBurn(_) => Self::PublicUpdateInvalidBurn,
                 FungibleLedgerError::InvalidTransfer(_) => Self::PublicUpdateInvalidTransfer,
+                FungibleLedgerError::EncodeError => Self::EncodeError,
             }
         }
     }
@@ -790,7 +794,8 @@ where
                 index + i,
                 (
                     nullifier_commitment,
-                    OutgoingNote::from(nullifier.0.outgoing_note),
+                    OutgoingNote::try_from(nullifier.0.outgoing_note)
+                        .expect("Unable to decode the Outgoing Note."),
                 ),
             );
             i += 1;
@@ -810,7 +815,7 @@ where
 
     #[inline]
     fn is_not_registered(&self, utxo: config::Utxo) -> Option<Self::ValidUtxo> {
-        if UtxoSet::<T>::contains_key(Utxo::from(utxo)) {
+        if UtxoSet::<T>::contains_key(Utxo::try_from(utxo).expect("Unable to decode the Utxo.")) {
             None
         } else {
             Some(Wrap(utxo))
@@ -857,7 +862,10 @@ where
             let mut tree = ShardTrees::<T>::get(shard_index);
             let cloned_tree = tree.clone();
             let mut next_root = Option::<config::UtxoAccumulatorOutput>::None;
-            let mut current_path = cloned_tree.current_path.into();
+            let mut current_path = cloned_tree
+                .current_path
+                .try_into()
+                .expect("Unable to decode the Current Path.");
             for (utxo, note) in insertions {
                 next_root = Some(
                     merkle_tree::single_path::raw::insert(
@@ -871,15 +879,21 @@ where
                     .expect("If this errors, then we have run out of Merkle Tree capacity."),
                 );
                 let next_index = current_path.leaf_index().0 as u64;
-                let utxo = Utxo::from(utxo);
+                let utxo = Utxo::try_from(utxo).expect("Unable to decode the Utxo");
                 UtxoSet::<T>::insert(utxo, ());
                 Shards::<T>::insert(
                     shard_index,
                     next_index,
-                    (utxo, FullIncomingNote::from(note)),
+                    (
+                        utxo,
+                        FullIncomingNote::try_from(note)
+                            .expect("Unable to decode the Full Incoming Note."),
+                    ),
                 );
             }
-            tree.current_path = current_path.into();
+            tree.current_path = current_path
+                .try_into()
+                .expect("Unable to decode the Current Path.");
             if let Some(next_root) = next_root {
                 ShardTrees::<T>::insert(shard_index, tree);
                 UtxoAccumulatorOutputs::<T>::insert(fp_encode(next_root).expect(FP_ENCODE), ());
@@ -912,13 +926,18 @@ where
         sources
             .map(move |(account_id, withdraw)| {
                 FungibleLedger::<T>::can_withdraw(
-                    Pallet::<T>::id_from_field(fp_encode(*asset_id).expect(FP_ENCODE)).ok_or(
+                    Pallet::<T>::id_from_field(fp_encode(*asset_id).map_err(|_e| {
                         InvalidSourceAccount {
                             account_id: account_id.clone(),
                             asset_id: *asset_id,
                             withdraw,
-                        },
-                    )?,
+                        }
+                    })?)
+                    .ok_or(InvalidSourceAccount {
+                        account_id: account_id.clone(),
+                        asset_id: *asset_id,
+                        withdraw,
+                    })?,
                     &account_id,
                     &withdraw,
                     ExistenceRequirement::KeepAlive,
@@ -947,13 +966,18 @@ where
         sinks
             .map(move |(account_id, deposit)| {
                 FungibleLedger::<T>::can_deposit(
-                    Pallet::<T>::id_from_field(fp_encode(*asset_id).expect(FP_ENCODE)).ok_or(
+                    Pallet::<T>::id_from_field(fp_encode(*asset_id).map_err(|_e| {
                         InvalidSinkAccount {
                             account_id: account_id.clone(),
                             asset_id: *asset_id,
                             deposit,
-                        },
-                    )?,
+                        }
+                    })?)
+                    .ok_or(InvalidSinkAccount {
+                        account_id: account_id.clone(),
+                        asset_id: *asset_id,
+                        deposit,
+                    })?,
                     &account_id,
                     deposit,
                     false,
@@ -1022,10 +1046,13 @@ where
         proof: Self::ValidProof,
     ) -> Result<(), Self::UpdateError> {
         let _ = (proof, super_key);
+        let asset_id_type = Pallet::<T>::id_from_field(
+            fp_encode(asset_id).map_err(|_e| FungibleLedgerError::EncodeError)?,
+        )
+        .ok_or(FungibleLedgerError::UnknownAsset)?;
         for WrapPair(account_id, withdraw) in sources {
             FungibleLedger::<T>::transfer(
-                Pallet::<T>::id_from_field(fp_encode(asset_id).expect(FP_ENCODE))
-                    .ok_or(FungibleLedgerError::UnknownAsset)?,
+                asset_id_type,
                 &account_id,
                 &Pallet::<T>::account_id(),
                 withdraw,
@@ -1034,8 +1061,7 @@ where
         }
         for WrapPair(account_id, deposit) in sinks {
             FungibleLedger::<T>::transfer(
-                Pallet::<T>::id_from_field(fp_encode(asset_id).expect(FP_ENCODE))
-                    .ok_or(FungibleLedgerError::UnknownAsset)?,
+                asset_id_type,
                 &Pallet::<T>::account_id(),
                 &account_id,
                 deposit,

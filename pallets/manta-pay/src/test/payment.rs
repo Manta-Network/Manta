@@ -80,7 +80,7 @@ where
     R: CryptoRng + RngCore + ?Sized,
 {
     let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
-    PalletTransferPost::from(test::payment::to_private::prove_full(
+    PalletTransferPost::try_from(test::payment::to_private::prove_full(
         &PROVING_CONTEXT.to_private,
         &PARAMETERS,
         &mut utxo_accumulator,
@@ -88,6 +88,7 @@ where
         value,
         rng,
     ))
+    .unwrap()
 }
 
 /// Mints many assets with the given `id` and `value`.
@@ -136,18 +137,18 @@ where
             );
         assert_ok!(MantaPayPallet::to_private(
             MockOrigin::signed(ALICE),
-            PalletTransferPost::from(to_private_0)
+            PalletTransferPost::try_from(to_private_0).unwrap()
         ));
         assert_ok!(MantaPayPallet::to_private(
             MockOrigin::signed(ALICE),
-            PalletTransferPost::from(to_private_1)
+            PalletTransferPost::try_from(to_private_1).unwrap()
         ));
         assert_ok!(MantaPayPallet::private_transfer(
             MockOrigin::signed(ALICE),
-            PalletTransferPost::from(private_transfer.clone()),
+            PalletTransferPost::try_from(private_transfer.clone()).unwrap(),
         ));
 
-        posts.push(PalletTransferPost::from(private_transfer))
+        posts.push(PalletTransferPost::try_from(private_transfer).unwrap())
     }
     posts
 }
@@ -175,7 +176,8 @@ where
             asset_id.into(),
             1000,
             rng,
-        ));
+        ))
+        .unwrap();
 
         let ([transfer_input_0, transfer_input_1], private_transfer) =
             test::payment::private_transfer::prove_full(
@@ -201,28 +203,28 @@ where
 
         assert_ok!(MantaPayPallet::to_private(
             MockOrigin::signed(ALICE),
-            PalletTransferPost::from(transfer_input_0)
+            PalletTransferPost::try_from(transfer_input_0).unwrap()
         ));
         assert_ok!(MantaPayPallet::to_private(
             MockOrigin::signed(ALICE),
-            PalletTransferPost::from(transfer_input_1)
+            PalletTransferPost::try_from(transfer_input_1).unwrap()
         ));
         assert_ok!(MantaPayPallet::private_transfer(
             MockOrigin::signed(ALICE),
-            PalletTransferPost::from(private_transfer.clone()),
+            PalletTransferPost::try_from(private_transfer.clone()).unwrap(),
         ));
 
         assert_ok!(MantaPayPallet::to_private(
             MockOrigin::signed(ALICE),
-            PalletTransferPost::from(to_public_input_0)
+            PalletTransferPost::try_from(to_public_input_0).unwrap()
         ));
         assert_ok!(MantaPayPallet::to_private(
             MockOrigin::signed(ALICE),
-            PalletTransferPost::from(to_public_input_1)
+            PalletTransferPost::try_from(to_public_input_1).unwrap()
         ));
         assert_ok!(MantaPayPallet::to_public(
             MockOrigin::signed(ALICE),
-            PalletTransferPost::from(to_public.clone())
+            PalletTransferPost::try_from(to_public.clone()).unwrap()
         ));
 
         asset_id += 1;
@@ -261,17 +263,17 @@ where
         );
         assert_ok!(MantaPayPallet::to_private(
             MockOrigin::signed(ALICE),
-            PalletTransferPost::from(to_private_0)
+            PalletTransferPost::try_from(to_private_0).unwrap()
         ));
         assert_ok!(MantaPayPallet::to_private(
             MockOrigin::signed(ALICE),
-            PalletTransferPost::from(to_private_1)
+            PalletTransferPost::try_from(to_private_1).unwrap()
         ));
         assert_ok!(MantaPayPallet::to_public(
             MockOrigin::signed(ALICE),
-            PalletTransferPost::from(to_public.clone())
+            PalletTransferPost::try_from(to_public.clone()).unwrap()
         ));
-        posts.push(PalletTransferPost::from(to_public));
+        posts.push(PalletTransferPost::try_from(to_public).unwrap());
     }
     posts
 }

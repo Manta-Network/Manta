@@ -99,9 +99,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.57"
+version = "1.0.66"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08f9b8508dccb7687a1d6c4ce66b2b0ecef467c94667de27d8d7fe1f8d2a9cdc"
+checksum = "216261ddc8289130e551ddcd5ce8a064710c0d064a4d2895c67151c92b5443f6"
 
 [[package]]
 name = "approx"
@@ -4941,8 +4941,12 @@ version = "0.5.6"
 source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#32d51ba9e385ee49b07ba0309acdac7a4f8aaf82"
 =======
 version = "0.5.7"
+<<<<<<< HEAD
 source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/mantapay-v1#7eda1b110a5d940f761dcc92934b74765abd06a0"
 >>>>>>> dd6c3fcf (update encode decode part1)
+=======
+source = "git+https://github.com/manta-network/manta-rs.git?branch=main#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
+>>>>>>> 552b5d0b (update manta-rs to main,change to TryFrom and fix tests)
 dependencies = [
  "derivative",
  "derive_more",
@@ -4990,8 +4994,12 @@ version = "0.5.6"
 source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#32d51ba9e385ee49b07ba0309acdac7a4f8aaf82"
 =======
 version = "0.5.7"
+<<<<<<< HEAD
 source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/mantapay-v1#7eda1b110a5d940f761dcc92934b74765abd06a0"
 >>>>>>> dd6c3fcf (update encode decode part1)
+=======
+source = "git+https://github.com/manta-network/manta-rs.git?branch=main#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
+>>>>>>> 552b5d0b (update manta-rs to main,change to TryFrom and fix tests)
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -5016,12 +5024,17 @@ dependencies = [
 
 [[package]]
 name = "manta-parameters"
+<<<<<<< HEAD
 version = "0.5.6"
 <<<<<<< HEAD
 source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#32d51ba9e385ee49b07ba0309acdac7a4f8aaf82"
 =======
 source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/mantapay-v1#7eda1b110a5d940f761dcc92934b74765abd06a0"
 >>>>>>> dd6c3fcf (update encode decode part1)
+=======
+version = "0.5.7"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=main#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
+>>>>>>> 552b5d0b (update manta-rs to main,change to TryFrom and fix tests)
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5033,16 +5046,19 @@ dependencies = [
 
 [[package]]
 name = "manta-pay"
+<<<<<<< HEAD
 version = "0.5.6"
 <<<<<<< HEAD
 source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#32d51ba9e385ee49b07ba0309acdac7a4f8aaf82"
 =======
 source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/mantapay-v1#7eda1b110a5d940f761dcc92934b74765abd06a0"
 >>>>>>> dd6c3fcf (update encode decode part1)
+=======
+version = "0.5.7"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=main#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
+>>>>>>> 552b5d0b (update manta-rs to main,change to TryFrom and fix tests)
 dependencies = [
  "aes-gcm",
- "ark-snark",
- "ark-std",
  "bip32",
  "blake2 0.10.4",
  "derivative",
@@ -5051,7 +5067,6 @@ dependencies = [
  "manta-parameters",
  "manta-util",
  "num-bigint 0.4.3",
- "num-integer",
  "parity-scale-codec",
  "scale-info",
  "tempfile",
@@ -5149,8 +5164,12 @@ version = "0.5.6"
 source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#32d51ba9e385ee49b07ba0309acdac7a4f8aaf82"
 =======
 version = "0.5.7"
+<<<<<<< HEAD
 source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/mantapay-v1#7eda1b110a5d940f761dcc92934b74765abd06a0"
 >>>>>>> dd6c3fcf (update encode decode part1)
+=======
+source = "git+https://github.com/manta-network/manta-rs.git?branch=main#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
+>>>>>>> 552b5d0b (update manta-rs to main,change to TryFrom and fix tests)
 dependencies = [
  "crossbeam-channel",
  "serde",
