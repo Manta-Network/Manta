@@ -15,11 +15,12 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
+    fp_decode,
     mock::{
         new_test_ext, MantaAssetConfig, MantaAssetRegistry, MantaPayPallet, Origin as MockOrigin,
         Test,
     },
-    types::{decode, fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
+    types::{fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
     Error, FungibleLedger, StandardAssetId,
 };
 use frame_support::{assert_noop, assert_ok};
@@ -501,12 +502,12 @@ fn check_number_conversions() {
     let expected = MantaPayPallet::field_from_id(start);
 
     let fp = Fp::<ConstraintField>::from(start);
-    let encoded = fp_encode(fp);
+    let encoded = fp_encode(fp).unwrap();
 
     assert_eq!(expected, encoded);
 
     let id_from_field = MantaPayPallet::id_from_field(encoded).unwrap();
-    let decoded: Fp<ConstraintField> = decode(expected).unwrap();
+    let decoded: Fp<ConstraintField> = fp_decode(expected.to_vec()).unwrap();
     assert_eq!(start, id_from_field);
     assert_eq!(fp, decoded);
 }
