@@ -86,7 +86,7 @@ where
                 CallError::Custom(ErrorObject::owned(
                     PULL_LEDGER_DIFF_ERROR,
                     "Unable to compute state diff for pull",
-                    Some(format!("{:?}", err)),
+                    Some(format!("{err:?}")),
                 ))
                 .into()
             })
