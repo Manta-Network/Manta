@@ -32,7 +32,7 @@ pub fn unchecked_public_key<T>(seed: &str) -> PublicKey<T>
 where
     T: CryptoType,
 {
-    T::Pair::from_string(&format!("//{}", seed), None)
+    T::Pair::from_string(&format!("//{seed}"), None)
         .expect("The validity of the seed is unchecked.")
         .public()
 }
