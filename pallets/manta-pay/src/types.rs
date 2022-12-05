@@ -207,13 +207,15 @@ impl Asset {
     }
 }
 
-impl From<config::Asset> for Asset {
+impl TryFrom<config::Asset> for Asset {
+    type Error = Error;
+
     #[inline]
-    fn from(asset: config::Asset) -> Self {
-        Self {
-            id: fp_encode(asset.id).expect(FP_ENCODE),
+    fn try_from(asset: config::Asset) -> Result<Self, Error> {
+        Ok(Self {
+            id: fp_encode(asset.id)?,
             value: asset.value,
-        }
+        })
     }
 }
 
@@ -253,9 +255,11 @@ pub struct OutgoingNote {
     pub ciphertext: OutgoingCiphertext,
 }
 
-impl From<utxo::OutgoingNote> for OutgoingNote {
+impl TryFrom<utxo::OutgoingNote> for OutgoingNote {
+    type Error = Error;
+
     #[inline]
-    fn from(note: utxo::OutgoingNote) -> Self {
+    fn try_from(note: utxo::OutgoingNote) -> Result<Self, Error> {
         let encoded = note.ciphertext.ciphertext.encode();
         let mut encoded_ciphertext =
             [[0u8; OUTGOING_CIPHER_TEXT_COMPONENT_SIZE]; OUTGOING_CIPHER_TEXT_COMPONENTS_COUNT];
@@ -264,11 +268,10 @@ impl From<utxo::OutgoingNote> for OutgoingNote {
                 encoded_ciphertext[outer_ind][inner_ind] = encoded[outer_ind * 32 + inner_ind];
             }
         }
-        Self {
-            ephemeral_public_key: group_encode(note.ciphertext.ephemeral_public_key)
-                .expect(GROUP_ENCODE),
+        Ok(Self {
+            ephemeral_public_key: group_encode(note.ciphertext.ephemeral_public_key)?,
             ciphertext: encoded_ciphertext,
-        }
+        })
     }
 }
 
@@ -310,14 +313,16 @@ pub struct SenderPost {
     pub outgoing_note: OutgoingNote,
 }
 
-impl From<config::SenderPost> for SenderPost {
+impl TryFrom<config::SenderPost> for SenderPost {
+    type Error = Error;
+
     #[inline]
-    fn from(post: config::SenderPost) -> Self {
-        Self {
-            utxo_accumulator_output: fp_encode(post.utxo_accumulator_output).expect(FP_ENCODE),
-            nullifier_commitment: fp_encode(post.nullifier.nullifier.commitment).expect(FP_ENCODE),
-            outgoing_note: From::from(post.nullifier.outgoing_note),
-        }
+    fn try_from(post: config::SenderPost) -> Result<Self, Error> {
+        Ok(Self {
+            utxo_accumulator_output: fp_encode(post.utxo_accumulator_output)?,
+            nullifier_commitment: fp_encode(post.nullifier.nullifier.commitment)?,
+            outgoing_note: TryFrom::try_from(post.nullifier.outgoing_note)?,
+        })
     }
 }
 
@@ -369,21 +374,23 @@ pub struct IncomingNote {
     pub ciphertext: IncomingCiphertext,
 }
 
-impl From<utxo::IncomingNote> for IncomingNote {
+impl TryFrom<utxo::IncomingNote> for IncomingNote {
+    type Error = Error;
+
     #[inline]
-    fn from(note: utxo::IncomingNote) -> Self {
-        Self {
-            ephemeral_public_key: group_encode(note.ciphertext.ephemeral_public_key)
-                .expect(GROUP_ENCODE),
-            tag: fp_encode(note.ciphertext.ciphertext.tag.0).expect(FP_ENCODE),
+    fn try_from(note: utxo::IncomingNote) -> Result<Self, Error> {
+        Ok(Self {
+            ephemeral_public_key: group_encode(note.ciphertext.ephemeral_public_key)?,
+            tag: fp_encode(note.ciphertext.ciphertext.tag.0)?,
             ciphertext: Array::from_iter(
                 note.ciphertext.ciphertext.message[0]
                     .0
                     .iter()
-                    .map(|fp| fp_encode(*fp).expect(FP_ENCODE)),
+                    .map(|fp| fp_encode(*fp))
+                    .collect::<Result<Vec<_>, _>>()?,
             )
             .into(),
-        }
+        })
     }
 }
 
@@ -426,9 +433,11 @@ pub struct LightIncomingNote {
     pub ciphertext: LightIncomingCiphertext,
 }
 
-impl From<utxo::LightIncomingNote> for LightIncomingNote {
+impl TryFrom<utxo::LightIncomingNote> for LightIncomingNote {
+    type Error = Error;
+
     #[inline]
-    fn from(note: utxo::LightIncomingNote) -> Self {
+    fn try_from(note: utxo::LightIncomingNote) -> Result<Self, Error> {
         let encoded = note.ciphertext.ciphertext.encode();
         let mut encoded_arrays =
             [[0u8; INCOMING_CIPHER_TEXT_COMPONENT_SIZE]; INCOMING_CIPHER_TEXT_COMPONENTS_COUNT];
@@ -438,11 +447,10 @@ impl From<utxo::LightIncomingNote> for LightIncomingNote {
                     encoded[outer_ind * INCOMING_CIPHER_TEXT_COMPONENT_SIZE + inner_ind];
             }
         }
-        Self {
-            ephemeral_public_key: group_encode(note.ciphertext.ephemeral_public_key)
-                .expect(GROUP_ENCODE),
+        Ok(Self {
+            ephemeral_public_key: group_encode(note.ciphertext.ephemeral_public_key)?,
             ciphertext: encoded_arrays,
-        }
+        })
     }
 }
 
@@ -488,14 +496,16 @@ pub struct FullIncomingNote {
     pub light_incoming_note: LightIncomingNote,
 }
 
-impl From<utxo::FullIncomingNote> for FullIncomingNote {
+impl TryFrom<utxo::FullIncomingNote> for FullIncomingNote {
+    type Error = Error;
+
     #[inline]
-    fn from(note: utxo::FullIncomingNote) -> Self {
-        Self {
+    fn try_from(note: utxo::FullIncomingNote) -> Result<Self, Error> {
+        Ok(Self {
             address_partition: note.address_partition,
-            incoming_note: IncomingNote::from(note.incoming_note),
-            light_incoming_note: LightIncomingNote::from(note.light_incoming_note),
-        }
+            incoming_note: IncomingNote::try_from(note.incoming_note)?,
+            light_incoming_note: LightIncomingNote::try_from(note.light_incoming_note)?,
+        })
     }
 }
 
@@ -535,12 +545,12 @@ pub struct Utxo {
 impl Utxo {
     ///
     #[inline]
-    pub fn from(utxo: utxo::Utxo) -> Utxo {
-        Self {
+    pub fn try_from(utxo: utxo::Utxo) -> Result<Utxo, Error> {
+        Ok(Self {
             is_transparent: utxo.is_transparent,
-            public_asset: utxo.public_asset.into(),
-            commitment: fp_encode(utxo.commitment).expect(FP_ENCODE),
-        }
+            public_asset: utxo.public_asset.try_into()?,
+            commitment: fp_encode(utxo.commitment)?,
+        })
     }
 
     ///
@@ -564,13 +574,15 @@ pub struct ReceiverPost {
     pub full_incoming_note: FullIncomingNote,
 }
 
-impl From<config::ReceiverPost> for ReceiverPost {
+impl TryFrom<config::ReceiverPost> for ReceiverPost {
+    type Error = Error;
+
     #[inline]
-    fn from(post: config::ReceiverPost) -> Self {
-        Self {
-            utxo: Utxo::from(post.utxo),
-            full_incoming_note: FullIncomingNote::from(post.note),
-        }
+    fn try_from(post: config::ReceiverPost) -> Result<Self, Error> {
+        Ok(Self {
+            utxo: Utxo::try_from(post.utxo)?,
+            full_incoming_note: FullIncomingNote::try_from(post.note)?,
+        })
     }
 }
 
@@ -596,16 +608,18 @@ pub struct AuthorizationSignature {
     pub signature: (Scalar, Group),
 }
 
-impl From<utxo::AuthorizationSignature> for AuthorizationSignature {
+impl TryFrom<utxo::AuthorizationSignature> for AuthorizationSignature {
+    type Error = Error;
+
     #[inline]
-    fn from(signature: utxo::AuthorizationSignature) -> Self {
-        Self {
-            authorization_key: group_encode(signature.authorization_key).expect(GROUP_ENCODE),
+    fn try_from(signature: utxo::AuthorizationSignature) -> Result<Self, Error> {
+        Ok(Self {
+            authorization_key: group_encode(signature.authorization_key)?,
             signature: (
-                fp_encode(signature.signature.scalar).expect(FP_ENCODE),
-                group_encode(signature.signature.nonce_point).expect(GROUP_ENCODE),
+                fp_encode(signature.signature.scalar)?,
+                group_encode(signature.signature.nonce_point)?,
             ),
-        }
+        })
     }
 }
 
@@ -673,20 +687,34 @@ impl TransferPost {
     }
 }
 
-impl From<config::TransferPost> for TransferPost {
+impl TryFrom<config::TransferPost> for TransferPost {
+    type Error = Error;
+
     #[inline]
-    fn from(post: config::TransferPost) -> Self {
-        let authorization_signature = post.authorization_signature.map(Into::into);
-        let asset_id = post.body.asset_id.map(|x| fp_encode(x).expect(FP_ENCODE));
-        let sender_posts = post.body.sender_posts.into_iter().map(Into::into).collect();
+    fn try_from(post: config::TransferPost) -> Result<Self, Error> {
+        let authorization_signature = post
+            .authorization_signature
+            .map(TryInto::try_into)
+            .map_or(Ok(None), |r| r.map(Some))?;
+        let asset_id = post
+            .body
+            .asset_id
+            .map(fp_encode)
+            .map_or(Ok(None), |r| r.map(Some))?;
+        let sender_posts = post
+            .body
+            .sender_posts
+            .into_iter()
+            .map(TryInto::try_into)
+            .collect::<Result<_, _>>()?;
         let receiver_posts = post
             .body
             .receiver_posts
             .into_iter()
-            .map(Into::into)
-            .collect();
-        let proof = proof_encode(post.body.proof).expect(PROOF_ENCODE);
-        Self {
+            .map(TryInto::try_into)
+            .collect::<Result<_, _>>()?;
+        let proof = proof_encode(post.body.proof)?;
+        Ok(Self {
             authorization_signature,
             asset_id,
             sources: post.body.sources,
@@ -694,7 +722,7 @@ impl From<config::TransferPost> for TransferPost {
             receiver_posts,
             sinks: post.body.sinks,
             proof,
-        }
+        })
     }
 }
 
@@ -757,33 +785,37 @@ impl MaxEncodedLen for CurrentPath {
     }
 }
 
-impl From<merkle_tree::CurrentPath<MerkleTreeConfiguration>> for CurrentPath {
+impl TryFrom<merkle_tree::CurrentPath<MerkleTreeConfiguration>> for CurrentPath {
+    type Error = Error;
+
     #[inline]
-    fn from(path: merkle_tree::CurrentPath<MerkleTreeConfiguration>) -> Self {
-        Self {
-            sibling_digest: fp_encode(path.sibling_digest).expect(FP_ENCODE),
+    fn try_from(path: merkle_tree::CurrentPath<MerkleTreeConfiguration>) -> Result<Self, Error> {
+        Ok(Self {
+            sibling_digest: fp_encode(path.sibling_digest)?,
             leaf_index: path.inner_path.leaf_index.0 as u32,
             inner_path: path
                 .inner_path
                 .path
                 .into_iter()
-                .map(|x| fp_encode(x).expect(FP_ENCODE))
-                .collect::<Vec<[u8; 32]>>(),
-        }
+                .map(fp_encode)
+                .collect::<Result<_, _>>()?,
+        })
     }
 }
 
-impl From<CurrentPath> for merkle_tree::CurrentPath<MerkleTreeConfiguration> {
+impl TryFrom<CurrentPath> for merkle_tree::CurrentPath<MerkleTreeConfiguration> {
+    type Error = Error;
+
     #[inline]
-    fn from(path: CurrentPath) -> Self {
-        Self::new(
-            fp_decode(path.sibling_digest.to_vec()).expect(FP_DECODE),
+    fn try_from(path: CurrentPath) -> Result<Self, Error> {
+        Ok(Self::new(
+            fp_decode(path.sibling_digest.to_vec())?,
             (path.leaf_index as usize).into(),
             path.inner_path
                 .into_iter()
-                .map(|x| fp_decode(x.to_vec()).expect(FP_DECODE))
-                .collect(),
-        )
+                .map(|x| fp_decode(x.to_vec()))
+                .collect::<Result<_, _>>()?,
+        ))
     }
 }
 
