@@ -80,7 +80,7 @@ where
         max_senders: u64,
     ) -> RpcResult<PullResponse> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(self.client.info().best_hash);
+        let at = BlockId::hash(self.client.info().finalized_hash);
         api.pull_ledger_diff(&at, checkpoint.into(), max_receivers, max_senders)
             .map_err(|err| {
                 CallError::Custom(ErrorObject::owned(
