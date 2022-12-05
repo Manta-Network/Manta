@@ -753,7 +753,7 @@ where
     #[inline]
     fn is_unspent(&self, nullifier: config::Nullifier) -> Option<Self::ValidNullifier> {
         if NullifierCommitmentSet::<T>::contains_key(
-            fp_encode(nullifier.nullifier.commitment).expect(FP_ENCODE),
+            fp_encode(nullifier.nullifier.commitment).ok()?,
         ) {
             None
         } else {
@@ -766,7 +766,7 @@ where
         &self,
         output: config::UtxoAccumulatorOutput,
     ) -> Option<Self::ValidUtxoAccumulatorOutput> {
-        let accumulator_output = fp_encode(output).expect(FP_ENCODE);
+        let accumulator_output = fp_encode(output).ok()?;
         // Checking for an empty(zeroed) byte array.
         // This happens for UTXOs with value = 0, for which you dont need
         // a membership proof, but you still need a root(in this case zeroed).
@@ -815,7 +815,7 @@ where
 
     #[inline]
     fn is_not_registered(&self, utxo: config::Utxo) -> Option<Self::ValidUtxo> {
-        if UtxoSet::<T>::contains_key(Utxo::try_from(utxo).expect("Unable to decode the Utxo.")) {
+        if UtxoSet::<T>::contains_key(Utxo::try_from(utxo).ok()?) {
             None
         } else {
             Some(Wrap(utxo))
@@ -1004,7 +1004,7 @@ where
                         .expect("Checksum did not match."),
                     PreprocessedEvent::<T>::ToPrivate {
                         asset: Asset::new(
-                            fp_encode(posting_key.asset_id.unwrap()).expect(FP_ENCODE),
+                            fp_encode(posting_key.asset_id.unwrap()).ok()?,
                             posting_key.sources[0].1,
                         ),
                         source: posting_key.sources[0].0.clone(),
@@ -1020,7 +1020,7 @@ where
                         .expect("Checksum did not match."),
                     PreprocessedEvent::<T>::ToPublic {
                         asset: Asset::new(
-                            fp_encode(posting_key.asset_id.unwrap()).expect(FP_ENCODE),
+                            fp_encode(posting_key.asset_id.unwrap()).ok()?,
                             posting_key.sinks[0].1,
                         ),
                         sink: posting_key.sinks[0].0.clone(),
