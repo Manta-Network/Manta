@@ -81,7 +81,7 @@ use manta_pay::{
     parameters::load_transfer_parameters,
 };
 use manta_primitives::assets::{self, AssetConfig, FungibleLedger as _};
-use manta_util::{into_array_unchecked, Array};
+use manta_util::{codec::Encode, into_array_unchecked, Array};
 
 pub use crate::types::{Checkpoint, RawCheckpoint};
 pub use pallet::*;
@@ -1004,7 +1004,7 @@ where
                         .expect("Checksum did not match."),
                     PreprocessedEvent::<T>::ToPrivate {
                         asset: Asset::new(
-                            fp_encode(posting_key.asset_id.unwrap()).ok()?,
+                            fp_encode(posting_key.asset_id.or(None)?).ok()?,
                             posting_key.sources[0].1,
                         ),
                         source: posting_key.sources[0].0.clone(),
@@ -1020,7 +1020,7 @@ where
                         .expect("Checksum did not match."),
                     PreprocessedEvent::<T>::ToPublic {
                         asset: Asset::new(
-                            fp_encode(posting_key.asset_id.unwrap()).ok()?,
+                            fp_encode(posting_key.asset_id.or(None)?).ok()?,
                             posting_key.sinks[0].1,
                         ),
                         sink: posting_key.sinks[0].0.clone(),
