@@ -27,14 +27,10 @@ use cumulus_client_service::{
     prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
-use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
-use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
+use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
 use jsonrpsee::RpcModule;
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
-use polkadot_service::CollatorPair;
 
-use nimbus_consensus::{BuildNimbusConsensusParams, NimbusConsensus};
 use sc_executor::WasmExecutor;
 use sc_network::NetworkService;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
@@ -180,32 +176,6 @@ where
     })
 }
 
-async fn build_relay_chain_interface(
-    polkadot_config: Configuration,
-    parachain_config: &Configuration,
-    telemetry_worker_handle: Option<TelemetryWorkerHandle>,
-    task_manager: &mut TaskManager,
-    collator_options: CollatorOptions,
-    hwbench: Option<sc_sysinfo::HwBench>,
-) -> RelayChainResult<(
-    Arc<(dyn RelayChainInterface + 'static)>,
-    Option<CollatorPair>,
-)> {
-    match collator_options.relay_chain_rpc_url {
-        Some(relay_chain_url) => Ok((
-            Arc::new(RelayChainRPCInterface::new(relay_chain_url).await?) as Arc<_>,
-            None,
-        )),
-        None => build_inprocess_relay_chain(
-            polkadot_config,
-            parachain_config,
-            telemetry_worker_handle,
-            task_manager,
-            hwbench,
-        ),
-    }
-}
-
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
@@ -229,6 +199,7 @@ where
         ) -> Result<RpcModule<()>, Error>
         + 'static,
     BIC: FnOnce(
+        ParaId,
         Arc<Client<RuntimeApi>>,
         Option<&Registry>,
         Option<TelemetryHandle>,
@@ -250,7 +221,7 @@ where
     let (mut telemetry, telemetry_worker_handle) = params.other;
 
     let mut task_manager = params.task_manager;
-    let (relay_chain_interface, collator_key) = build_relay_chain_interface(
+    let (relay_chain_interface, collator_key) = crate::builder::build_relay_chain_interface(
         polkadot_config,
         &parachain_config,
         telemetry_worker_handle,
@@ -322,6 +293,7 @@ where
     let relay_chain_slot_duration = core::time::Duration::from_secs(6);
     if collator {
         let parachain_consensus = build_consensus(
+            id,
             client.clone(),
             prometheus_registry.as_ref(),
             telemetry.as_ref().map(|t| t.handle()),
@@ -389,62 +361,93 @@ where
         collator_options,
         id,
         full_rpc,
-        |client,
-         prometheus_registry,
-         telemetry,
-         task_manager,
-         relay_chain_interface,
-         transaction_pool,
-         _sync_oracle,
-         keystore,
-         force_authoring| {
-            let spawn_handle = task_manager.spawn_handle();
-            let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
-                spawn_handle,
-                client.clone(),
-                transaction_pool,
-                prometheus_registry,
-                telemetry,
-            );
-
-            // NOTE: In nimbus, author_id is unused as it is the RuntimeAPI that identifies the block author
-            let provider = move |_, (relay_parent, validation_data, _author_id)| {
-                let relay_chain_interface = relay_chain_interface.clone();
-                async move {
-                    let parachain_inherent =
-                        cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
-                            relay_parent,
-                            &relay_chain_interface,
-                            &validation_data,
-                            id,
-                        )
-                        .await;
-
-                    let time = sp_timestamp::InherentDataProvider::from_system_time();
-
-                    let parachain_inherent = parachain_inherent.ok_or_else(|| {
-                        Box::<dyn std::error::Error + Send + Sync>::from(
-                            "Failed to create parachain inherent",
-                        )
-                    })?;
-
-                    let nimbus_inherent = nimbus_primitives::InherentDataProvider;
-                    Ok((time, parachain_inherent, nimbus_inherent))
-                }
-            };
-
-            Ok(NimbusConsensus::build(BuildNimbusConsensusParams {
-                additional_digests_provider: (),
-                para_id: id,
-                proposer_factory,
-                block_import: client.clone(),
-                parachain_client: client,
-                keystore,
-                skip_prediction: force_authoring,
-                create_inherent_data_providers: provider,
-            }))
-        },
+        crate::builder::build_nimbus_consensus,
         hwbench,
     )
     .await
+}
+
+/// Start a dev node using nimbus instant-sealing consensus without relaychain attached.
+pub async fn start_dev_nimbus_node<RuntimeApi, FullRpc>(
+    config: Configuration,
+    full_rpc: FullRpc,
+) -> sc_service::error::Result<TaskManager>
+where
+    RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
+    RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend>
+        + RuntimeApiNimbus
+        + sp_consensus_aura::AuraApi<Block, AuraId>,
+    FullRpc: Fn(
+            rpc::FullDeps<Client<RuntimeApi>, TransactionPool<RuntimeApi>>,
+        ) -> Result<RpcModule<()>, Error>
+        + 'static,
+{
+    use sc_consensus::LongestChain;
+
+    let sc_service::PartialComponents {
+        client,
+        backend,
+        mut task_manager,
+        import_queue,
+        keystore_container,
+        select_chain: _maybe_select_chain,
+        transaction_pool,
+        other: (_, _),
+    } = new_partial::<RuntimeApi>(&config)?;
+
+    let (network, system_rpc_tx, network_starter) =
+        sc_service::build_network(sc_service::BuildNetworkParams {
+            config: &config,
+            client: client.clone(),
+            transaction_pool: transaction_pool.clone(),
+            spawn_handle: task_manager.spawn_handle(),
+            import_queue,
+            block_announce_validator_builder: None,
+            warp_sync: None,
+        })?;
+
+    let role = config.role.clone();
+    let select_chain = LongestChain::new(backend.clone());
+
+    if role.is_authority() {
+        crate::builder::start_dev_nimbus_instant_seal_consensus(
+            client.clone(),
+            transaction_pool.clone(),
+            &keystore_container,
+            select_chain,
+            &task_manager,
+        )?;
+    }
+
+    let rpc_builder = {
+        let client = client.clone();
+        let transaction_pool = transaction_pool.clone();
+
+        Box::new(move |deny_unsafe, _| {
+            let deps = rpc::FullDeps {
+                client: client.clone(),
+                pool: transaction_pool.clone(),
+                deny_unsafe,
+            };
+
+            full_rpc(deps)
+        })
+    };
+
+    sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+        rpc_builder,
+        client,
+        transaction_pool,
+        task_manager: &mut task_manager,
+        config,
+        keystore: keystore_container.sync_keystore(),
+        backend,
+        network,
+        system_rpc_tx,
+        telemetry: None,
+    })?;
+
+    network_starter.start_network();
+
+    Ok(task_manager)
 }
