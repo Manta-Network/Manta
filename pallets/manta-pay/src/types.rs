@@ -55,12 +55,12 @@ where
     T::decode(&mut bytes.as_slice())
 }
 
-pub const FP_ENCODE: &str = "Fp encode should not failed.";
-pub const FP_DECODE: &str = "Fp decode should not failed.";
-pub const GROUP_ENCODE: &str = "Group encode should not failed.";
-pub const GROUP_DECODE: &str = "Group decode should not failed.";
-pub const PROOF_ENCODE: &str = "Proof encode should not failed.";
-pub const PROOF_DECODE: &str = "Proof decode should not failed.";
+pub const FP_ENCODE: &str = "Fp encoding to [u8; 32] failed.";
+pub const FP_DECODE: &str = "Vec<u8>(u8; 32) decoding to Fp failed.";
+pub const GROUP_ENCODE: &str = "Group encoding to [u8; 32] failed.";
+pub const GROUP_DECODE: &str = "Vec<u8>(u8; 32) decoding to Group failed.";
+pub const PROOF_ENCODE: &str = "Proof encoding to [u8; 128] failed.";
+pub const PROOF_DECODE: &str = "Vec<u8>(u8; 128) decoding to Proof failed.";
 
 /// Field encode to byte array
 pub fn fp_encode<T>(fp: Fp<T>) -> Result<[u8; 32], scale_codec::Error>
@@ -121,6 +121,16 @@ where
     CryptoProof::try_from(bytes).map_err(|_e| scale_codec::Error::from(PROOF_DECODE))
 }
 
+/// AssetValue(u128) to byte array [u8; 16]
+pub fn asset_value_encode(asset_value: AssetValue) -> [u8; 16] {
+    asset_value.to_le_bytes()
+}
+
+/// Byte array [u8; 16] to AssetValue(u128)
+pub fn asset_value_decode(bytes: [u8; 16]) -> AssetValue {
+    u128::from_le_bytes(bytes)
+}
+
 ///
 pub const TAG_LENGTH: usize = 32;
 
@@ -169,6 +179,10 @@ pub type AssetId = [u8; 32];
 
 ///
 pub type AssetValue = u128;
+
+/// Transfer Proof encoded value
+/// Compatability for JS u128 and Encode/Decode from parity_scale_codec
+pub type EncodedAssetValue = [u8; 16];
 
 /// Asset
 #[cfg_attr(
@@ -648,7 +662,8 @@ pub struct TransferPost {
     pub asset_id: Option<AssetId>,
 
     /// Sources
-    pub sources: Vec<AssetValue>,
+    /// Using EncodedAssetValue as JS/JSON does not handle u128 well
+    pub sources: Vec<EncodedAssetValue>,
 
     /// Sender Posts
     pub sender_posts: Vec<SenderPost>,
@@ -675,7 +690,7 @@ impl TransferPost {
     pub fn source(&self, k: usize) -> Option<Asset> {
         self.sources
             .get(k)
-            .and_then(|value| self.construct_asset(value))
+            .and_then(|value| self.construct_asset(&asset_value_decode(*value)))
     }
 
     /// Returns the `k`-th sink in the transfer.
@@ -701,6 +716,12 @@ impl TryFrom<config::TransferPost> for TransferPost {
             .asset_id
             .map(fp_encode)
             .map_or(Ok(None), |r| r.map(Some))?;
+        let sources = post
+            .body
+            .sources
+            .into_iter()
+            .map(|v| Ok::<[u8; 16], Self::Error>(v.to_le_bytes()))
+            .collect::<Result<_, _>>()?;
         let sender_posts = post
             .body
             .sender_posts
@@ -717,7 +738,7 @@ impl TryFrom<config::TransferPost> for TransferPost {
         Ok(Self {
             authorization_signature,
             asset_id,
-            sources: post.body.sources,
+            sources,
             sender_posts,
             receiver_posts,
             sinks: post.body.sinks,
@@ -739,7 +760,13 @@ impl TryFrom<TransferPost> for config::TransferPost {
                 .transpose()?,
             body: config::TransferPostBody {
                 asset_id: post.asset_id.map(|x| fp_decode(x.to_vec())).transpose()?,
-                sources: post.sources.into_iter().map(Into::into).collect(),
+                sources: post
+                    .sources
+                    .into_iter()
+                    .map(|ev| {
+                        u128::from_le_bytes(ev)
+                    })
+                    .collect(),
                 sender_posts: post
                     .sender_posts
                     .into_iter()
