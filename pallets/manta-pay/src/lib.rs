@@ -770,14 +770,17 @@ where
         output: config::UtxoAccumulatorOutput,
     ) -> Option<Self::ValidUtxoAccumulatorOutput> {
         let accumulator_output = fp_encode(output).ok()?;
+        println!("We made it here with output: {accumulator_output:?}");
         // Checking for an empty(zeroed) byte array.
         // This happens for UTXOs with value = 0, for which you dont need
         // a membership proof, but you still need a root(in this case zeroed).
         if accumulator_output == [0u8; 32]
             || UtxoAccumulatorOutputs::<T>::contains_key(accumulator_output)
         {
+            println!("The output is correct");
             return Some(Wrap(output));
         }
+        println!("There was a problem");
         None
     }
 
@@ -818,7 +821,11 @@ where
 
     #[inline]
     fn is_not_registered(&self, utxo: config::Utxo) -> Option<Self::ValidUtxo> {
-        if UtxoSet::<T>::contains_key(Utxo::try_from(utxo).ok()?) {
+        let utxo_try = Utxo::try_from(utxo).ok();
+        println!("Is the UTXO None? {:?}", utxo_try.is_none());
+        let is_registered = UtxoSet::<T>::contains_key(utxo_try?);
+        println!("Is the UTXO registered? {is_registered:?}");
+        if is_registered {
             None
         } else {
             Some(Wrap(utxo))
@@ -830,6 +837,7 @@ where
     where
         I: IntoIterator<Item = (Self::ValidUtxo, config::Note)>,
     {
+        println!("Calling register");
         let _ = super_key;
         let utxo_accumulator_model = config::UtxoAccumulatorModel::decode(
             manta_parameters::pay::testnet::parameters::UtxoAccumulatorModel::get()
@@ -844,13 +852,11 @@ where
         let mut shard_indices = iter
             .into_iter()
             .map(|(utxo, note)| {
-                (
-                    MerkleTreeConfiguration::tree_index(
-                        &utxo.0.item_hash(&utxo_accumulator_item_hash, &mut ()),
-                    ),
-                    utxo.0,
-                    note,
-                )
+                let index = MerkleTreeConfiguration::tree_index(
+                    &utxo.0.item_hash(&utxo_accumulator_item_hash, &mut ()),
+                );
+                println!("Tree index: {index:?}");
+                (index, utxo.0, note)
             })
             .collect::<Vec<_>>();
         shard_indices.sort_by_key(|(s, _, _)| *s);
@@ -899,7 +905,9 @@ where
                 .expect("Unable to decode the Current Path.");
             if let Some(next_root) = next_root {
                 ShardTrees::<T>::insert(shard_index, tree);
-                UtxoAccumulatorOutputs::<T>::insert(fp_encode(next_root).expect(FP_ENCODE), ());
+                let encoding = fp_encode(next_root).expect(FP_ENCODE);
+                println!("Inserting root: {encoding:?}");
+                UtxoAccumulatorOutputs::<T>::insert(encoding, ());
             }
         }
     }

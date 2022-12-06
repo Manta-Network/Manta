@@ -429,6 +429,8 @@ fn private_transfer_10_times_should_work() {
     }
 }
 
+// cargo test --release --package pallet-manta-pay --lib --all-features -- test::payment::private_transfer_10_times_should_work --exact --nocapture
+
 /// Tests that a double-spent [`PrivateTransfer`] will fail.
 #[test]
 fn double_spend_in_private_transfer_should_not_work() {
