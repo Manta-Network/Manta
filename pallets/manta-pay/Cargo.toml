@@ -51,11 +51,20 @@ serde = [
 
 # Standard Library
 std = [
+  "anyhow/std",
   "frame-benchmarking/std",
+  "frame-support/std",
   "frame-system/std",
+  "scale-codec/std",
+  "scale-info/std",
   "sp-runtime/std",
+  "sp-api/std",
   "sp-std/std",
   "manta-primitives/std",
+  "manta-accounting/std",
+  "manta-crypto/std",
+  "manta-util/std",
+  "manta-pay/std",
 ]
 
 # Precompute Benchmark Transactions
@@ -76,10 +85,10 @@ precompute-coins = [
 
 [dependencies]
 # utils
-anyhow = { version = "1.0.55", optional = true }
+anyhow = { version = "1.0.55", optional = true, default-features = false }
 indoc = { version = "1.0.3", optional = true, default-features = false }
 rand_chacha = { version = "0.3.1", optional = true, default-features = false }
-tempfile = { version = "3.3.0", optional = true }
+tempfile = { version = "3.3.0", optional = true, default-features = false }
 
 # substrate dependencies
 frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false, optional = true }
@@ -103,14 +112,9 @@ manta-primitives = { path = "../../primitives/manta", default-features = false }
 manta-util = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", default-features = false }
 
 [dev-dependencies]
-bencher = "0.1.5"
-criterion = "0.3.4"
 lazy_static = "1.4.0"
-manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", features = ["test"] }
 manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", features = ["getrandom"] }
-manta-parameters = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", features = ["download"] }
 manta-pay = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", default-features = false, features = ["groth16", "parameters", "scale", "download", "test"] }
-manta-util = { git = "https://github.com/manta-network/manta-rs.git", branch = "feat/new-circuits", features = ["std"] }
 pallet-asset-manager = { path = "../asset-manager" }
 pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }

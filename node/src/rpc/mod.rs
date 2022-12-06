@@ -25,9 +25,11 @@ use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use std::sync::Arc;
 
+mod calamari;
 mod common;
 mod dolphin;
 
+pub use calamari::create_calamari_full;
 pub use common::create_common_full;
 pub use dolphin::create_dolphin_full;
 

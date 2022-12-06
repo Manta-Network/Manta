@@ -127,7 +127,7 @@ benchmarks! {
         RawOrigin::Signed(caller.clone()),
         private_transfer_post
     ) verify {
-        assert_last_event::<T, _>(Event::PrivateTransfer { origin: caller });
+        assert_last_event::<T, _>(Event::PrivateTransfer { origin: Some(caller) });
     }
 
     public_transfer {
