@@ -169,7 +169,7 @@ where
     let mut asset_id = 8u128;
     for i in 0..total {
         println!("Current: {i:?}");
-        let mint0 = PalletTransferPost::try_from(test::payment::to_private::prove_full(
+        let mint0 = PalletTransferPost::from(test::payment::to_private::prove_full(
             &PROVING_CONTEXT.to_private,
             &PARAMETERS,
             &mut utxo_accumulator,
