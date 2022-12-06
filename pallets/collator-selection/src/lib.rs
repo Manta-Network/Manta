@@ -639,7 +639,7 @@ pub mod pallet {
                             })
                             .unwrap_or_else(|why| {
                                 log::warn!("Failed to remove candidate due to underperformance {:?}", why);
-                                debug_assert!(false, "failed to remove candidate {:?}", why);
+                                debug_assert!(false, "failed to remove candidate {why:?}");
                             });
                     }
                 }
