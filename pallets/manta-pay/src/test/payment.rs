@@ -407,7 +407,7 @@ fn mint_existing_coin_should_not_work() {
 #[test]
 fn private_transfer_should_work() {
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
-        new_test_ext().execute_with(|| private_transfer_test(1, None, &mut OsRng));
+        new_test_ext().execute_with(|| private_transfer_test(10, None, &mut OsRng));
     }
 }
 
@@ -416,7 +416,7 @@ fn private_transfer_should_work() {
 fn private_transfer_native_asset_should_work() {
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
-            private_transfer_test(1, Some(NATIVE_ASSET_ID), &mut OsRng);
+            private_transfer_test(10, Some(NATIVE_ASSET_ID), &mut OsRng);
         });
     }
 }
@@ -434,7 +434,7 @@ fn private_transfer_10_times_should_work() {
 fn double_spend_in_private_transfer_should_not_work() {
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
-            for private_transfer in private_transfer_test(1, None, &mut OsRng) {
+            for private_transfer in private_transfer_test(10, None, &mut OsRng) {
                 assert_noop!(
                     MantaPayPallet::private_transfer(MockOrigin::signed(ALICE), private_transfer),
                     Error::<Test>::AssetSpent,
@@ -449,7 +449,7 @@ fn double_spend_in_private_transfer_should_not_work() {
 fn reclaim_should_work() {
     let mut rng = OsRng;
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
-        new_test_ext().execute_with(|| reclaim_test(1, rng.gen(), None, &mut rng));
+        new_test_ext().execute_with(|| reclaim_test(10, rng.gen(), None, &mut rng));
     }
 }
 
@@ -458,7 +458,8 @@ fn reclaim_should_work() {
 fn reclaim_native_should_work() {
     let mut rng = OsRng;
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
-        new_test_ext().execute_with(|| reclaim_test(1, rng.gen(), Some(NATIVE_ASSET_ID), &mut rng));
+        new_test_ext()
+            .execute_with(|| reclaim_test(10, rng.gen(), Some(NATIVE_ASSET_ID), &mut rng));
     }
 }
 
@@ -485,8 +486,7 @@ fn double_spend_in_reclaim_should_not_work() {
         new_test_ext().execute_with(|| {
             let mut rng = OsRng;
             let total_supply: u128 = rng.gen();
-            // TODO: maybe change all teh count: 1 tests to count: 10
-            for reclaim in reclaim_test(1, total_supply / 2, None, &mut rng) {
+            for reclaim in reclaim_test(10, total_supply / 2, None, &mut rng) {
                 assert_noop!(
                     MantaPayPallet::to_public(MockOrigin::signed(ALICE), reclaim),
                     Error::<Test>::AssetSpent,
