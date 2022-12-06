@@ -60,7 +60,7 @@ extern crate alloc;
 use crate::types::{
     asset_value_decode, asset_value_encode, fp_decode, fp_encode, Asset, AssetValue,
     FullIncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk, SenderChunk, TransferPost,
-    Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath, FP_ENCODE, FP_DECODE,
+    Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath, FP_DECODE, FP_ENCODE,
 };
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
@@ -617,7 +617,7 @@ pub mod pallet {
                 should_continue: more_receivers || more_senders,
                 receivers,
                 senders,
-                senders_receivers_total,
+                senders_receivers_total: asset_value_encode(senders_receivers_total),
             }
         }
 
