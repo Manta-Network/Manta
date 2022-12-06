@@ -4942,11 +4942,15 @@ source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circ
 =======
 version = "0.5.7"
 <<<<<<< HEAD
+<<<<<<< HEAD
 source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/mantapay-v1#7eda1b110a5d940f761dcc92934b74765abd06a0"
 >>>>>>> dd6c3fcf (update encode decode part1)
 =======
 source = "git+https://github.com/manta-network/manta-rs.git?branch=main#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
 >>>>>>> 552b5d0b (update manta-rs to main,change to TryFrom and fix tests)
+=======
+source = "git+https://github.com/manta-network/manta-rs.git#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
+>>>>>>> 8e4a6d7a (bugfix)
 dependencies = [
  "derivative",
  "derive_more",
@@ -4995,11 +4999,15 @@ source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circ
 =======
 version = "0.5.7"
 <<<<<<< HEAD
+<<<<<<< HEAD
 source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/mantapay-v1#7eda1b110a5d940f761dcc92934b74765abd06a0"
 >>>>>>> dd6c3fcf (update encode decode part1)
 =======
 source = "git+https://github.com/manta-network/manta-rs.git?branch=main#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
 >>>>>>> 552b5d0b (update manta-rs to main,change to TryFrom and fix tests)
+=======
+source = "git+https://github.com/manta-network/manta-rs.git#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
+>>>>>>> 8e4a6d7a (bugfix)
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -5033,8 +5041,12 @@ source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/mantapay
 >>>>>>> dd6c3fcf (update encode decode part1)
 =======
 version = "0.5.7"
+<<<<<<< HEAD
 source = "git+https://github.com/manta-network/manta-rs.git?branch=main#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
 >>>>>>> 552b5d0b (update manta-rs to main,change to TryFrom and fix tests)
+=======
+source = "git+https://github.com/manta-network/manta-rs.git#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
+>>>>>>> 8e4a6d7a (bugfix)
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5047,6 +5059,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "0.5.6"
 <<<<<<< HEAD
 source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circuits#32d51ba9e385ee49b07ba0309acdac7a4f8aaf82"
@@ -5057,6 +5070,10 @@ source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/mantapay
 version = "0.5.7"
 source = "git+https://github.com/manta-network/manta-rs.git?branch=main#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
 >>>>>>> 552b5d0b (update manta-rs to main,change to TryFrom and fix tests)
+=======
+version = "0.5.7"
+source = "git+https://github.com/manta-network/manta-rs.git#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
+>>>>>>> 8e4a6d7a (bugfix)
 dependencies = [
  "aes-gcm",
  "bip32",
@@ -5165,11 +5182,15 @@ source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/new-circ
 =======
 version = "0.5.7"
 <<<<<<< HEAD
+<<<<<<< HEAD
 source = "git+https://github.com/manta-network/manta-rs.git?branch=feat/mantapay-v1#7eda1b110a5d940f761dcc92934b74765abd06a0"
 >>>>>>> dd6c3fcf (update encode decode part1)
 =======
 source = "git+https://github.com/manta-network/manta-rs.git?branch=main#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
 >>>>>>> 552b5d0b (update manta-rs to main,change to TryFrom and fix tests)
+=======
+source = "git+https://github.com/manta-network/manta-rs.git#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
+>>>>>>> 8e4a6d7a (bugfix)
 dependencies = [
  "crossbeam-channel",
  "serde",
@@ -6388,6 +6409,7 @@ dependencies = [
  "lazy_static",
  "manta-accounting",
  "manta-crypto",
+ "manta-parameters",
  "manta-pay",
  "manta-primitives",
  "manta-util",
