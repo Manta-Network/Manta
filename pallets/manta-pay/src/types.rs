@@ -41,7 +41,7 @@ use manta_crypto::arkworks::{
     algebra::Group as CryptoGroup,
     constraint::fp::Fp,
     ec::{PairingEngine, ProjectiveCurve},
-    groth16::Proof as CryptoProof,
+    groth16::{proof_as_bytes, Proof as CryptoProof},
 };
 pub use manta_pay::config::utxo::Checkpoint;
 
@@ -107,8 +107,7 @@ where
     T: PairingEngine,
 {
     use manta_util::codec::Encode;
-    proof
-        .to_vec()
+    proof_as_bytes(&proof)
         .try_into()
         .map_err(|_e| scale_codec::Error::from(PROOF_ENCODE))
 }
