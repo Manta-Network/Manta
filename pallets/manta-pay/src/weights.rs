@@ -97,8 +97,9 @@ where
             .saturating_add(T::DbWeight::get().writes(13 as Weight))
     }
 
-    /// FIXME: PLACEHOLDER WEIGHT
+    // Storage: Assets Asset (r:1 w:1)
+    // Storage: Assets Account (r:2 w:2)
     fn public_transfer() -> Weight {
-        (100_000_000_000 as Weight)
+        (46_629_000 as Weight)
     }
 }
