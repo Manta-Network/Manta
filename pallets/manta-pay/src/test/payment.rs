@@ -153,7 +153,7 @@ where
     posts
 }
 
-/// Builds `count`-many [`Reclaim`] tests.
+/// Builds `total`-many combined tests.
 #[inline]
 fn combined_test<R>(rng: &mut R, from: u128, to: u128, total: u128)
 where
@@ -234,6 +234,7 @@ where
     }
 }
 
+/// Builds `count`-many [`Reclaim`] tests.
 fn reclaim_test<R>(
     count: usize,
     total_supply: AssetValue,
@@ -323,7 +324,7 @@ fn to_private_should_work() {
     }
 }
 
-///
+/// Tests a [`ToPrivate`] transaction with native currency.
 #[test]
 fn native_asset_to_private_should_work() {
     let mut rng = OsRng;
