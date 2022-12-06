@@ -74,11 +74,11 @@ where
 }
 
 /// Field decode from byte array
-pub fn fp_decode<T>(bytes: Vec<u8>) -> Result<Fp<T>, scale_codec::Error>
+pub fn fp_decode<T>(fp_bytes: Vec<u8>) -> Result<Fp<T>, scale_codec::Error>
 where
     T: manta_crypto::arkworks::ff::Field,
 {
-    Fp::try_from(bytes).map_err(|_e| scale_codec::Error::from(FP_DECODE))
+    Fp::try_from(fp_bytes).map_err(|_e| scale_codec::Error::from(FP_DECODE))
 }
 
 /// Group encode to byte array
@@ -94,31 +94,31 @@ where
 }
 
 /// Group decode from byte array
-pub fn group_decode<T>(bytes: Vec<u8>) -> Result<CryptoGroup<T>, scale_codec::Error>
+pub fn group_decode<T>(group_bytes: Vec<u8>) -> Result<CryptoGroup<T>, scale_codec::Error>
 where
     T: ProjectiveCurve,
 {
-    CryptoGroup::try_from(bytes).map_err(|_e| scale_codec::Error::from(GROUP_DECODE))
+    CryptoGroup::try_from(group_bytes).map_err(|_e| scale_codec::Error::from(GROUP_DECODE))
 }
 
 /// Proof encode to byte array
-pub fn proof_encode<T>(group: CryptoProof<T>) -> Result<[u8; 128], scale_codec::Error>
+pub fn proof_encode<T>(proof: CryptoProof<T>) -> Result<[u8; 128], scale_codec::Error>
 where
     T: PairingEngine,
 {
     use manta_util::codec::Encode;
-    group
+    proof
         .to_vec()
         .try_into()
         .map_err(|_e| scale_codec::Error::from(PROOF_ENCODE))
 }
 
 /// Proof decode from byte array
-pub fn proof_decode<T>(bytes: Vec<u8>) -> Result<CryptoProof<T>, scale_codec::Error>
+pub fn proof_decode<T>(proof_bytes: Vec<u8>) -> Result<CryptoProof<T>, scale_codec::Error>
 where
     T: PairingEngine,
 {
-    CryptoProof::try_from(bytes).map_err(|_e| scale_codec::Error::from(PROOF_DECODE))
+    CryptoProof::try_from(proof_bytes).map_err(|_e| scale_codec::Error::from(PROOF_DECODE))
 }
 
 /// AssetValue(u128) to byte array [u8; 16]
