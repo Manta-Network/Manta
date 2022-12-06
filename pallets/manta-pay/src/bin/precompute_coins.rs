@@ -167,8 +167,7 @@ fn main() -> Result<()> {
         .unwrap_or(env::current_dir()?.join("precomputed_coins.rs"));
     assert!(
         !target_file.exists(),
-        "Specify a file to place the generated files: {:?}.",
-        target_file,
+        "Specify a file to place the generated files: {target_file:?}.",
     );
     fs::create_dir_all(
         target_file
@@ -177,7 +176,7 @@ fn main() -> Result<()> {
     )?;
 
     let directory = tempfile::tempdir().expect("Unable to generate temporary test directory.");
-    println!("[INFO] Temporary Directory: {:?}", directory);
+    println!("[INFO] Temporary Directory: {directory:?}");
 
     let mut rng = ChaCha20Rng::from_seed([0; 32]);
     let (proving_context, _, parameters, utxo_accumulator_model) =

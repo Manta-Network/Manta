@@ -140,7 +140,7 @@ mod multiplier_tests {
         // Configure the target cost depending on the current state of the network.
         let target_daily_congestion_cost_usd = 250000;
         let kma_price = fetch_kma_price().unwrap();
-        println!("KMA/USD price as read from CoinGecko = {}", kma_price);
+        println!("KMA/USD price as read from CoinGecko = {kma_price}");
         let target_daily_congestion_cost_kma =
             (target_daily_congestion_cost_usd as f32 * kma_price * KMA as f32) as u128;
 
@@ -181,8 +181,8 @@ mod multiplier_tests {
                 let next = runtime_multiplier_update(fee_adjustment);
                 // if no change or less, panic. This should never happen in this case.
                 if fee_adjustment >= next {
-                    println!("final fee_adjustment: {}", fee_adjustment);
-                    println!("final next: {}", next);
+                    println!("final fee_adjustment: {fee_adjustment}");
+                    println!("final next: {next}");
                     panic!("The fee should ever increase");
                 }
                 fee_adjustment = next;
@@ -225,9 +225,7 @@ mod multiplier_tests {
             let next = SlowAdjustingFeeUpdate::<Runtime>::convert(minimum_multiplier);
             assert!(
                 next > minimum_multiplier,
-                "{:?} !>= {:?}",
-                next,
-                minimum_multiplier
+                "{next:?} !>= {minimum_multiplier:?}",
             );
         })
     }
@@ -249,11 +247,11 @@ mod multiplier_tests {
             run_with_system_weight(block_weight, || {
                 let next = SlowAdjustingFeeUpdate::<Runtime>::convert(multiplier);
                 // ensure that it is growing as well.
-                assert!(next > multiplier, "{:?} !>= {:?}", next, multiplier);
+                assert!(next > multiplier, "{next:?} !>= {multiplier:?}");
                 multiplier = next;
             });
             blocks += 1;
-            println!("block = {} multiplier {:?}", blocks, multiplier);
+            println!("block = {blocks} multiplier {multiplier:?}");
         }
     }
 }
