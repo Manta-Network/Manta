@@ -105,11 +105,11 @@ sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkad
 jsonrpsee = { version = "0.14.0", features = ["server", "macros"], optional = true }
 
 # manta dependencies
-manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", branch = "main", default-features = false }
-manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", branch = "main", default-features = false }
-manta-pay = { git = "https://github.com/manta-network/manta-rs.git", branch = "main", default-features = false, features = ["groth16", "parameters", "scale"] }
+manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", default-features = false }
+manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", default-features = false }
+manta-pay = { git = "https://github.com/manta-network/manta-rs.git", default-features = false, features = ["groth16", "parameters", "scale"] }
 manta-primitives = { path = "../../primitives/manta", default-features = false }
-manta-util = { git = "https://github.com/manta-network/manta-rs.git", branch = "main", default-features = false }
+manta-util = { git = "https://github.com/manta-network/manta-rs.git", default-features = false }
 
 [dev-dependencies]
 lazy_static = "1.4.0"
