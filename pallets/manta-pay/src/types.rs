@@ -767,11 +767,7 @@ impl TryFrom<TransferPost> for config::TransferPost {
                 .transpose()?,
             body: config::TransferPostBody {
                 asset_id: post.asset_id.map(|x| fp_decode(x.to_vec())).transpose()?,
-                sources: post
-                    .sources
-                    .into_iter()
-                    .map(u128::from_le_bytes)
-                    .collect(),
+                sources: post.sources.into_iter().map(u128::from_le_bytes).collect(),
                 sender_posts: post
                     .sender_posts
                     .into_iter()
