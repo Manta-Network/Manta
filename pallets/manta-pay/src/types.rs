@@ -770,9 +770,7 @@ impl TryFrom<TransferPost> for config::TransferPost {
                 sources: post
                     .sources
                     .into_iter()
-                    .map(|ev| {
-                        u128::from_le_bytes(ev)
-                    })
+                    .map(|ev| u128::from_le_bytes(ev))
                     .collect(),
                 sender_posts: post
                     .sender_posts
