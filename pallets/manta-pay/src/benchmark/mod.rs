@@ -18,8 +18,7 @@ use crate::{
     benchmark::precomputed_coins::{
         PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, TO_PRIVATE, TO_PUBLIC, TO_PUBLIC_INPUT,
     },
-    types::Asset,
-    types::{asset_value_decode, asset_value_encode},
+    types::{asset_value_decode, asset_value_encode, Asset},
     Call, Config, Event, Pallet, StandardAssetId, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
