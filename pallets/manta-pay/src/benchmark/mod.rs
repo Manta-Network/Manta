@@ -82,7 +82,7 @@ benchmarks! {
         let x in 0 .. 1;
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        let _ =<T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(1, &caller, INITIAL_VALUE, true);
+        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(1, &caller, INITIAL_VALUE, true);
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE[x as usize]).unwrap();
         let asset = mint_post.source(0).unwrap();
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
@@ -98,7 +98,7 @@ benchmarks! {
         let x in 0 .. 1;
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        let _ =<T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(1, &caller, INITIAL_VALUE, true);
+        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(1, &caller, INITIAL_VALUE, true);
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         Pallet::<T>::to_private(
             origin.clone(),
@@ -136,7 +136,7 @@ benchmarks! {
         let x in 0 .. 1;
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        let _ =<T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(1, &caller, INITIAL_VALUE, true);
+        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(1, &caller, INITIAL_VALUE, true);
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         Pallet::<T>::to_private(
             origin.clone(),
