@@ -617,7 +617,7 @@ pub mod pallet {
                 should_continue: more_receivers || more_senders,
                 receivers,
                 senders,
-                senders_receivers_total,
+                senders_receivers_total: asset_value_encode(senders_receivers_total),
             }
         }
 

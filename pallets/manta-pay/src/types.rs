@@ -17,6 +17,7 @@
 //! Type Definitions for Manta Pay
 
 use alloc::{boxed::Box, vec::Vec};
+use frame_support::log;
 use manta_crypto::merkle_tree;
 use manta_pay::{
     config::{
@@ -765,6 +766,7 @@ impl TryFrom<TransferPost> for config::TransferPost {
 
     #[inline]
     fn try_from(post: TransferPost) -> Result<Self, Self::Error> {
+        log::info!("Transfer Post sources:{:?}", post);
         let proof = proof_decode(post.proof.to_vec())?;
         Ok(Self {
             authorization_signature: post
@@ -890,7 +892,7 @@ pub struct PullResponse {
     pub senders: SenderChunk,
 
     /// Total Number of Senders/Receivers in Ledger
-    pub senders_receivers_total: u128,
+    pub senders_receivers_total: [u8; 16],
 }
 
 /// Raw Checkpoint for Encoding and Decoding
