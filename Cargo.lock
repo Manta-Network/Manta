@@ -5060,8 +5060,13 @@ dependencies = [
 
 [[package]]
 name = "manta-accounting"
+<<<<<<< HEAD
 version = "0.5.8"
 source = "git+https://github.com/manta-network/manta-rs.git?branch=main#d819725840da0621795ffcdfb87b2adb32b222ba"
+=======
+version = "0.5.7"
+source = "git+https://github.com/manta-network/manta-rs.git#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
+>>>>>>> 8e4a6d7a (bugfix)
 dependencies = [
  "derivative",
  "derive_more",
@@ -5104,8 +5109,13 @@ dependencies = [
 
 [[package]]
 name = "manta-crypto"
+<<<<<<< HEAD
 version = "0.5.8"
 source = "git+https://github.com/manta-network/manta-rs.git?branch=main#d819725840da0621795ffcdfb87b2adb32b222ba"
+=======
+version = "0.5.7"
+source = "git+https://github.com/manta-network/manta-rs.git#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
+>>>>>>> 8e4a6d7a (bugfix)
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -5130,8 +5140,13 @@ dependencies = [
 
 [[package]]
 name = "manta-parameters"
+<<<<<<< HEAD
 version = "0.5.8"
 source = "git+https://github.com/manta-network/manta-rs.git?branch=main#d819725840da0621795ffcdfb87b2adb32b222ba"
+=======
+version = "0.5.7"
+source = "git+https://github.com/manta-network/manta-rs.git#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
+>>>>>>> 8e4a6d7a (bugfix)
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5143,8 +5158,13 @@ dependencies = [
 
 [[package]]
 name = "manta-pay"
+<<<<<<< HEAD
 version = "0.5.8"
 source = "git+https://github.com/manta-network/manta-rs.git?branch=main#d819725840da0621795ffcdfb87b2adb32b222ba"
+=======
+version = "0.5.7"
+source = "git+https://github.com/manta-network/manta-rs.git#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
+>>>>>>> 8e4a6d7a (bugfix)
 dependencies = [
  "aes-gcm",
  "bip32",
@@ -5247,8 +5267,13 @@ dependencies = [
 
 [[package]]
 name = "manta-util"
+<<<<<<< HEAD
 version = "0.5.8"
 source = "git+https://github.com/manta-network/manta-rs.git?branch=main#d819725840da0621795ffcdfb87b2adb32b222ba"
+=======
+version = "0.5.7"
+source = "git+https://github.com/manta-network/manta-rs.git#6572219b4793a5fed9ae4c8ecc1281eadbc038a4"
+>>>>>>> 8e4a6d7a (bugfix)
 dependencies = [
  "crossbeam-channel",
  "serde",
@@ -6478,6 +6503,7 @@ dependencies = [
  "lazy_static",
  "manta-accounting",
  "manta-crypto",
+ "manta-parameters",
  "manta-pay",
  "manta-primitives",
  "manta-util",
