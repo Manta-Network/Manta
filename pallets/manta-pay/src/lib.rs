@@ -58,9 +58,9 @@
 extern crate alloc;
 
 use crate::types::{
-    fp_decode, fp_encode, Asset, AssetValue, FullIncomingNote, NullifierCommitment, OutgoingNote,
-    ReceiverChunk, SenderChunk, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
-    FP_ENCODE,
+    asset_value_decode, asset_value_encode, fp_decode, fp_encode, Asset, AssetValue,
+    FullIncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk, SenderChunk, TransferPost,
+    Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath, FP_ENCODE,
 };
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
@@ -244,7 +244,7 @@ pub mod pallet {
                 Self::id_from_field(asset.id).ok_or(Error::<T>::InvalidAssetId)?,
                 &origin,
                 &sink,
-                asset.value,
+                asset_value_decode(asset.value),
                 ExistenceRequirement::KeepAlive,
             )
             .map_err(Error::<T>::from)?;
@@ -1005,7 +1005,7 @@ where
                     PreprocessedEvent::<T>::ToPrivate {
                         asset: Asset::new(
                             fp_encode(posting_key.asset_id.or(None)?).ok()?,
-                            posting_key.sources[0].1,
+                            asset_value_encode(posting_key.sources[0].1),
                         ),
                         source: posting_key.sources[0].0.clone(),
                     },
@@ -1021,7 +1021,7 @@ where
                     PreprocessedEvent::<T>::ToPublic {
                         asset: Asset::new(
                             fp_encode(posting_key.asset_id.or(None)?).ok()?,
-                            posting_key.sinks[0].1,
+                            asset_value_encode(posting_key.sinks[0].1),
                         ),
                         sink: posting_key.sinks[0].0.clone(),
                     },

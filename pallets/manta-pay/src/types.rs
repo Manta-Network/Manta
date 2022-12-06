@@ -217,13 +217,13 @@ pub struct Asset {
     pub id: AssetId,
 
     /// Asset Value
-    pub value: AssetValue,
+    pub value: EncodedAssetValue,
 }
 
 impl Asset {
     /// Builds a new [`Asset`] from `id` and `value`.
     #[inline]
-    pub fn new(id: AssetId, value: AssetValue) -> Self {
+    pub fn new(id: AssetId, value: EncodedAssetValue) -> Self {
         Self { id, value }
     }
 }
@@ -235,7 +235,7 @@ impl TryFrom<config::Asset> for Asset {
     fn try_from(asset: config::Asset) -> Result<Self, Error> {
         Ok(Self {
             id: fp_encode(asset.id)?,
-            value: asset.value,
+            value: asset_value_encode(asset.value),
         })
     }
 }
@@ -247,7 +247,7 @@ impl TryFrom<Asset> for config::Asset {
     fn try_from(asset: Asset) -> Result<Self, Self::Error> {
         Ok(Self {
             id: fp_decode(asset.id.to_vec())?,
-            value: asset.value,
+            value: asset_value_decode(asset.value),
         })
     }
 }
@@ -679,7 +679,7 @@ pub struct TransferPost {
     pub receiver_posts: Vec<ReceiverPost>,
 
     /// Sinks
-    pub sinks: Vec<AssetValue>,
+    pub sinks: Vec<EncodedAssetValue>,
 
     /// Proof
     pub proof: Proof,
@@ -688,7 +688,7 @@ pub struct TransferPost {
 impl TransferPost {
     /// Constructs an [`Asset`] against the `asset_id` of `self` and `value`.
     #[inline]
-    fn construct_asset(&self, value: &AssetValue) -> Option<Asset> {
+    fn construct_asset(&self, value: &EncodedAssetValue) -> Option<Asset> {
         Some(Asset::new(self.asset_id?, *value))
     }
 
@@ -697,7 +697,7 @@ impl TransferPost {
     pub fn source(&self, k: usize) -> Option<Asset> {
         self.sources
             .get(k)
-            .and_then(|value| self.construct_asset(&asset_value_decode(*value)))
+            .and_then(|value| self.construct_asset(value))
     }
 
     /// Returns the `k`-th sink in the transfer.
@@ -741,6 +741,12 @@ impl TryFrom<config::TransferPost> for TransferPost {
             .into_iter()
             .map(TryInto::try_into)
             .collect::<Result<_, _>>()?;
+        let sinks = post
+            .body
+            .sinks
+            .into_iter()
+            .map(|v| Ok::<[u8; 16], Self::Error>(v.to_le_bytes()))
+            .collect::<Result<_, _>>()?;
         let proof = proof_encode(post.body.proof)?;
         Ok(Self {
             authorization_signature,
@@ -748,7 +754,7 @@ impl TryFrom<config::TransferPost> for TransferPost {
             sources,
             sender_posts,
             receiver_posts,
-            sinks: post.body.sinks,
+            sinks,
             proof,
         })
     }
@@ -767,11 +773,7 @@ impl TryFrom<TransferPost> for config::TransferPost {
                 .transpose()?,
             body: config::TransferPostBody {
                 asset_id: post.asset_id.map(|x| fp_decode(x.to_vec())).transpose()?,
-                sources: post
-                    .sources
-                    .into_iter()
-                    .map(u128::from_le_bytes)
-                    .collect(),
+                sources: post.sources.into_iter().map(u128::from_le_bytes).collect(),
                 sender_posts: post
                     .sender_posts
                     .into_iter()
@@ -782,7 +784,7 @@ impl TryFrom<TransferPost> for config::TransferPost {
                     .into_iter()
                     .map(TryInto::try_into)
                     .collect::<Result<_, _>>()?,
-                sinks: post.sinks.into_iter().map(Into::into).collect(),
+                sinks: post.sinks.into_iter().map(u128::from_le_bytes).collect(),
                 proof,
             },
         })
