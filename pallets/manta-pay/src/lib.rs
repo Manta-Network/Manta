@@ -1081,15 +1081,15 @@ where
             let (collection_id, item_id) = metadata
                 .get_non_fungible_id()
                 .ok_or(FungibleLedgerError::UnknownAsset)?;
-            for WrapPair(account_id, _withdraw) in sources {
-                NonFungibleLedger::<T>::transfer(collection_id, item_id, &account_id)?;
-            }
-            for WrapPair(_account_id, _deposit) in sinks {
+            for WrapPair(_account_id, _withdraw) in sources {
                 NonFungibleLedger::<T>::transfer(
                     collection_id,
                     item_id,
                     &Pallet::<T>::account_id(),
                 )?;
+            }
+            for WrapPair(account_id, _deposit) in sinks {
+                NonFungibleLedger::<T>::transfer(collection_id, item_id, &account_id)?;
             }
             Ok(())
         }
