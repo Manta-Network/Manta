@@ -41,7 +41,7 @@ use manta_crypto::arkworks::{
     algebra::Group as CryptoGroup,
     constraint::fp::Fp,
     ec::{PairingEngine, ProjectiveCurve},
-    groth16::{proof_as_bytes, Proof as CryptoProof},
+    groth16::Proof as CryptoProof,
 };
 pub use manta_pay::config::utxo::Checkpoint;
 
