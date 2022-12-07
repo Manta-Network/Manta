@@ -58,9 +58,9 @@
 extern crate alloc;
 
 use crate::types::{
-    fp_decode, fp_encode, Asset, AssetValue, FullIncomingNote, NullifierCommitment, OutgoingNote,
-    ReceiverChunk, SenderChunk, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
-    FP_ENCODE,
+    asset_value_decode, asset_value_encode, fp_decode, fp_encode, Asset, AssetValue,
+    FullIncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk, SenderChunk, TransferPost,
+    Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath, FP_DECODE, FP_ENCODE,
 };
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
@@ -256,7 +256,7 @@ pub mod pallet {
                         .ok_or(Error::<T>::PublicUpdateUnknownAsset)?,
                     &origin,
                     &sink,
-                    asset.value,
+                    asset_value_decode(asset.value),
                     ExistenceRequirement::KeepAlive,
                 )
                 .map_err(Error::<T>::from)?;
@@ -276,6 +276,12 @@ pub mod pallet {
 
                 NonFungibleLedger::<T>::transfer(collection_id, item_id, &sink)
                     .map_err(Error::<T>::from)?;
+
+                Self::deposit_event(Event::Transfer {
+                    asset,
+                    source: origin,
+                    sink,
+                });
                 Ok(().into())
             }
         }
@@ -306,7 +312,7 @@ pub mod pallet {
         /// Private Transfer Event
         PrivateTransfer {
             /// Origin Account
-            origin: T::AccountId,
+            origin: Option<T::AccountId>,
         },
 
         /// Public Transfer Event
@@ -429,6 +435,9 @@ pub mod pallet {
         ///
         /// This is caused by some internal error in the ledger and should never occur.
         InternalLedgerError,
+
+        /// Encode Error
+        EncodeError,
     }
 
     impl<T> From<InvalidAuthorizationSignature> for Error<T>
@@ -496,6 +505,7 @@ pub mod pallet {
                 FungibleLedgerError::InvalidMint(_) => Self::PublicUpdateInvalidMint,
                 FungibleLedgerError::InvalidBurn(_) => Self::PublicUpdateInvalidBurn,
                 FungibleLedgerError::InvalidTransfer(_) => Self::PublicUpdateInvalidTransfer,
+                FungibleLedgerError::EncodeError => Self::EncodeError,
             }
         }
     }
@@ -637,7 +647,7 @@ pub mod pallet {
                 should_continue: more_receivers || more_senders,
                 receivers,
                 senders,
-                senders_receivers_total,
+                senders_receivers_total: asset_value_encode(senders_receivers_total),
             }
         }
 
@@ -729,10 +739,7 @@ where
     fn convert(self, origin: Option<T::AccountId>) -> Event<T> {
         match self {
             Self::ToPrivate { asset, source } => Event::ToPrivate { asset, source },
-            Self::PrivateTransfer => Event::PrivateTransfer {
-                // FIXME: get rid of unwrap eventually.
-                origin: origin.unwrap(),
-            },
+            Self::PrivateTransfer => Event::PrivateTransfer { origin },
             Self::ToPublic { asset, sink } => Event::ToPublic { asset, sink },
         }
     }
@@ -776,7 +783,7 @@ where
     #[inline]
     fn is_unspent(&self, nullifier: config::Nullifier) -> Option<Self::ValidNullifier> {
         if NullifierCommitmentSet::<T>::contains_key(
-            fp_encode(nullifier.nullifier.commitment).expect(FP_ENCODE),
+            fp_encode(nullifier.nullifier.commitment).ok()?,
         ) {
             None
         } else {
@@ -789,7 +796,7 @@ where
         &self,
         output: config::UtxoAccumulatorOutput,
     ) -> Option<Self::ValidUtxoAccumulatorOutput> {
-        let accumulator_output = fp_encode(output).expect(FP_ENCODE);
+        let accumulator_output = fp_encode(output).ok()?;
         // Checking for an empty(zeroed) byte array.
         // This happens for UTXOs with value = 0, for which you dont need
         // a membership proof, but you still need a root(in this case zeroed).
@@ -817,7 +824,8 @@ where
                 index + i,
                 (
                     nullifier_commitment,
-                    OutgoingNote::from(nullifier.0.outgoing_note),
+                    OutgoingNote::try_from(nullifier.0.outgoing_note)
+                        .expect("Unable to decode the Outgoing Note."),
                 ),
             );
             i += 1;
@@ -837,7 +845,7 @@ where
 
     #[inline]
     fn is_not_registered(&self, utxo: config::Utxo) -> Option<Self::ValidUtxo> {
-        if UtxoSet::<T>::contains_key(Utxo::from(utxo)) {
+        if UtxoSet::<T>::contains_key(Utxo::try_from(utxo).ok()?) {
             None
         } else {
             Some(Wrap(utxo))
@@ -884,29 +892,40 @@ where
             let mut tree = ShardTrees::<T>::get(shard_index);
             let cloned_tree = tree.clone();
             let mut next_root = Option::<config::UtxoAccumulatorOutput>::None;
-            let mut current_path = cloned_tree.current_path.into();
+            let mut current_path = cloned_tree
+                .current_path
+                .try_into()
+                .expect("Unable to decode the Current Path.");
+            let mut leaf_digest = tree
+                .leaf_digest
+                .map(|x| fp_decode(x.to_vec()).expect(FP_DECODE));
             for (utxo, note) in insertions {
                 next_root = Some(
                     merkle_tree::single_path::raw::insert(
                         &utxo_accumulator_model,
-                        &mut tree
-                            .leaf_digest
-                            .map(|x| fp_decode(x.to_vec()).expect(FP_ENCODE)),
+                        &mut leaf_digest,
                         &mut current_path,
                         utxo.item_hash(&utxo_accumulator_item_hash, &mut ()),
                     )
                     .expect("If this errors, then we have run out of Merkle Tree capacity."),
                 );
                 let next_index = current_path.leaf_index().0 as u64;
-                let utxo = Utxo::from(utxo);
+                let utxo = Utxo::try_from(utxo).expect("Unable to decode the Utxo");
                 UtxoSet::<T>::insert(utxo, ());
                 Shards::<T>::insert(
                     shard_index,
                     next_index,
-                    (utxo, FullIncomingNote::from(note)),
+                    (
+                        utxo,
+                        FullIncomingNote::try_from(note)
+                            .expect("Unable to decode the Full Incoming Note."),
+                    ),
                 );
             }
-            tree.current_path = current_path.into();
+            tree.current_path = current_path
+                .try_into()
+                .expect("Unable to decode the Current Path.");
+            tree.leaf_digest = leaf_digest.map(|x| fp_encode(x).expect(FP_DECODE));
             if let Some(next_root) = next_root {
                 ShardTrees::<T>::insert(shard_index, tree);
                 UtxoAccumulatorOutputs::<T>::insert(fp_encode(next_root).expect(FP_ENCODE), ());
@@ -1021,8 +1040,8 @@ where
                         .expect("Checksum did not match."),
                     PreprocessedEvent::<T>::ToPrivate {
                         asset: Asset::new(
-                            fp_encode(posting_key.asset_id.unwrap()).expect(FP_ENCODE),
-                            posting_key.sources[0].1,
+                            fp_encode(posting_key.asset_id.or(None)?).ok()?,
+                            asset_value_encode(posting_key.sources[0].1),
                         ),
                         source: posting_key.sources[0].0.clone(),
                     },
@@ -1037,8 +1056,8 @@ where
                         .expect("Checksum did not match."),
                     PreprocessedEvent::<T>::ToPublic {
                         asset: Asset::new(
-                            fp_encode(posting_key.asset_id.unwrap()).expect(FP_ENCODE),
-                            posting_key.sinks[0].1,
+                            fp_encode(posting_key.asset_id.or(None)?).ok()?,
+                            asset_value_encode(posting_key.sinks[0].1),
                         ),
                         sink: posting_key.sinks[0].0.clone(),
                     },
