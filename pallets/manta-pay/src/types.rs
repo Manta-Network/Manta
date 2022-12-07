@@ -864,7 +864,7 @@ impl TryFrom<CurrentPath> for merkle_tree::CurrentPath<MerkleTreeConfiguration> 
 #[derive(Clone, Debug, Decode, Default, Encode, Eq, MaxEncodedLen, PartialEq, TypeInfo)]
 pub struct UtxoMerkleTreePath {
     /// Current Leaf Digest
-    pub leaf_digest: Option<[u8; 32]>,
+    pub leaf_digest: Option<LeafDigest>,
 
     /// Current Path
     pub current_path: CurrentPath,
