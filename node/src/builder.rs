@@ -19,6 +19,7 @@
 
 use crate::{
     client::{RuntimeApiCommon, RuntimeApiNimbus},
+    instant_finalize::InstantFinalizeBlockImport,
     service::{Client, StateBackend, TransactionPool},
 };
 
@@ -184,7 +185,7 @@ where
     let client_set_aside_for_cidp = client.clone();
 
     let consensus = run_manual_seal(ManualSealParams {
-        block_import: client.clone(),
+        block_import: InstantFinalizeBlockImport::new(client.clone()),
         env: proposer_factory,
         client: client.clone(),
         pool: transaction_pool,
