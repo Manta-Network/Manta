@@ -17,7 +17,6 @@
 //! Type Definitions for Manta Pay
 
 use alloc::{boxed::Box, vec::Vec};
-use frame_support::log;
 use manta_crypto::merkle_tree;
 use manta_pay::{
     config::{
