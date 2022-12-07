@@ -766,7 +766,6 @@ impl TryFrom<TransferPost> for config::TransferPost {
 
     #[inline]
     fn try_from(post: TransferPost) -> Result<Self, Self::Error> {
-        log::info!("Transfer Post sources:{:?}", post);
         let proof = proof_decode(post.proof.to_vec())?;
         Ok(Self {
             authorization_signature: post
@@ -793,28 +792,34 @@ impl TryFrom<TransferPost> for config::TransferPost {
     }
 }
 
+/// Leaf Digest Type
+pub type LeafDigest = [u8; 32];
+
+/// Inner Digest Type
+pub type InnerDigest = [u8; 32];
+
 /// Merkle Tree Current Path
 #[derive(Clone, Debug, Decode, Default, Encode, Eq, PartialEq, TypeInfo)]
 pub struct CurrentPath {
     /// Sibling Digest
-    pub sibling_digest: [u8; 32],
+    pub sibling_digest: LeafDigest,
 
     /// Leaf Index
     pub leaf_index: u32,
 
     /// Inner Path
-    pub inner_path: Vec<[u8; 32]>,
+    pub inner_path: Vec<InnerDigest>,
 }
 
 impl MaxEncodedLen for CurrentPath {
     #[inline]
     fn max_encoded_len() -> usize {
         0_usize
-            .saturating_add(<[u8; 32]>::max_encoded_len())
+            .saturating_add(<LeafDigest>::max_encoded_len())
             .saturating_add(u32::max_encoded_len())
             .saturating_add(
                 // NOTE: We know that these paths don't exceed the path length.
-                <[u8; 32]>::max_encoded_len().saturating_mul(
+                <InnerDigest>::max_encoded_len().saturating_mul(
                     manta_crypto::merkle_tree::path_length::<MerkleTreeConfiguration, ()>(),
                 ),
             )

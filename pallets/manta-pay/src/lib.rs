@@ -868,7 +868,7 @@ where
                 .expect("Unable to decode the Current Path.");
             let mut leaf_digest = tree
                 .leaf_digest
-                .map(|x| fp_decode(x.to_vec()).expect(FP_ENCODE));
+                .map(|x| fp_decode(x.to_vec()).expect(FP_DECODE));
             for (utxo, note) in insertions {
                 next_root = Some(
                     merkle_tree::single_path::raw::insert(
