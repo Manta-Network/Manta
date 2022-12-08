@@ -67,11 +67,19 @@ async function main() {
                                 transactions.push(reclaim);
                                 collected_for_batch += 3;
 
-                                if(collected_for_batch % 42 == 0){
-                                    await api.tx.utility.forceBatch(transactions).signAndSend(sender, {nonce: -1});
+                                if(collected_for_batch % 7 == 0){
+                                    await api.tx.utility.forceBatch(transactions).signAndSend(sender, {nonce: -1}, ({ events = [], status }) => {
+                                        if (status.isFinalized) {
+                                             console.log("tx %i success.", status.nonce);
+                                         }
+                                         if (status.isDropped) {
+                                            console.log("tx %i dropped.", status.nonce);
+                                            unsub();
+                                        }
+                                     });
                                     batches_sent++;
                                     console.log("\n Batches sent: ", batches_sent);
-                                    if (batches_sent % 20 == 0) {
+                                    if (batches_sent % 2 == 0) {
                                         await new Promise(resolve => setTimeout(resolve, 12000));
                                     }
                                     transactions = [];
