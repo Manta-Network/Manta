@@ -14,23 +14,23 @@ export const manta_pay_config = {
  * generate utxo deterministically using shard_idx and utxo_idx.
  * @param shard_idx shard_idx of generated utxo. 
  * @param utxo_idx utxo_idx within shard
- * @returns a utxo of 32 + 32 + 68 bytes
+ * @returns a Shards entry of size 370 bytes
  */
-export function generate_utxo(shard_idx: number, utxo_idx: number): Uint8Array {
+export function generate_shards_entry(shard_idx: number, utxo_idx: number): Uint8Array {
     return new Uint8Array([
         ...numberToU8a(shard_idx, 32 * 8),
         ...numberToU8a(utxo_idx, 64 * 8),
-        ...numberToU8a(0, 36 * 8)
+        ...numberToU8a(0, 274 * 8)
     ]);
 }
 
 /**
  * generate void number according to index.
  * @param index index of void number.
- * @returns a 32 byte array.
+ * @returns a 128 byte array.
  */
-export function generate_void_number(index: number): Uint8Array {
-    return numberToU8a(index, 32 * 8);
+export function generate_nullifier_set_entry(index: number): Uint8Array {
+    return numberToU8a(index, 128 * 8);
 }
 
 /**
@@ -67,7 +67,7 @@ function generate_batched_utxos(per_shard_amount: number, checkpoint: Array<numb
         for(let utxo_idx  = checkpoint[shard_idx]; utxo_idx < checkpoint[shard_idx] + per_shard_amount; ++ utxo_idx) {
             const shards_storage_key = double_map_storage_key(
                 "MantaPay", "Shards", shard_idx, 8, HashType.TwoxConcat, utxo_idx, 64, HashType.TwoxConcat);
-            const value_str = u8aToHex(generate_utxo(shard_idx, utxo_idx));
+            const value_str = u8aToHex(generate_shards_entry(shard_idx, utxo_idx));
             data.push([shards_storage_key, value_str]);
         }
     }
@@ -136,8 +136,8 @@ function generate_vn_insertion_data(
     const data = [];    
     for (let idx = start_index; idx < start_index + amount_per_batch; idx ++){
         const vn_storage_key = single_map_storage_key(
-            "MantaPay", "VoidNumberSetInsertionOrder", idx, 64, HashType.TwoxConcat);
-        data.push([vn_storage_key, u8aToHex(generate_void_number(idx))]);
+            "MantaPay", "NullifierSetInsertionOrder", idx, 64, HashType.TwoxConcat);
+        data.push([vn_storage_key, u8aToHex(generate_nullifier_set_entry(idx))]);
     }
     return data;
 }
