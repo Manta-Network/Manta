@@ -225,7 +225,7 @@ impl pallet_uniques::Config for Runtime {
     type MetadataDepositBase = MetadataDepositBase;
     type AttributeDepositBase = MetadataDepositBase;
     type DepositPerByte = MetadataDepositPerByte;
-    type StringLimit = ConstU32<50>;
+    type StringLimit = ConstU32<1000>;
     type KeyLimit = KeyLimit;
     type ValueLimit = ValueLimit;
     type WeightInfo = pallet_uniques::weights::SubstrateWeight<Runtime>;
