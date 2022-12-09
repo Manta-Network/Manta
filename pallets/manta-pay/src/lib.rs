@@ -265,7 +265,11 @@ pub mod pallet {
         /// Transfers public `asset` from `origin` to the `sink` account.
         #[pallet::call_index(3)]
         #[pallet::weight({
-            T::WeightInfo::public_transfer()
+            let _native_asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
+            match pallet::Pallet::<T>::id_from_field(asset.id) {
+                Some(_native_asset_id) => T::WeightInfo::public_transfer_native(),
+                _ => T::WeightInfo::public_transfer_non_native(),
+            }
         })]
         #[transactional]
         pub fn public_transfer(

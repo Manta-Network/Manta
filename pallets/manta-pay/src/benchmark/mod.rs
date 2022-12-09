@@ -188,11 +188,27 @@ benchmarks! {
         assert_last_event::<T, _>(Event::PrivateTransfer { origin: Some(caller) });
     }
 
-    public_transfer {
+    public_transfer_native {
+        let caller: T::AccountId = whitelisted_caller();
+        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(<T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(), &caller, INITIAL_VALUE, true);
+        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(<T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(), &Pallet::<T>::account_id(), INITIAL_VALUE, true);
+        let asset = Asset::new(Pallet::<T>::field_from_id(<T::AssetConfig as AssetConfig<T>>::NativeAssetId::get()), asset_value_encode(100));
+        let sink = Pallet::<T>::account_id();
+    }: public_transfer (
+        RawOrigin::Signed(caller.clone()),
+        asset,
+        sink.clone()
+    ) verify {
+        // FIXME: add balance checking
+        assert_last_event::<T, _>(Event::Transfer { asset, source: caller.clone(), sink });
+    }
+
+    public_transfer_non_native {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
-        let asset = Asset::new(Pallet::<T>::field_from_id(8u128), asset_value_encode(100));
+        let asset = Asset::new(Pallet::<T>::field_from_id(<T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get()), asset_value_encode(100));
         let sink = Pallet::<T>::account_id();
     }: public_transfer (
         RawOrigin::Signed(caller.clone()),
