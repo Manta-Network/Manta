@@ -24,10 +24,10 @@ use manta_crypto::{
 };
 use manta_pay::{
     config::{
-        utxo::v3::MerkleTreeConfiguration, AssetId, AssetValue, MultiProvingContext, Parameters,
-        ProvingContext, UtxoAccumulatorModel,
+        utxo::MerkleTreeConfiguration, AssetId, AssetValue, MultiProvingContext, Parameters,
+        ProvingContext,
     },
-    parameters::{load_parameters, load_transfer_parameters, load_utxo_accumulator_model},
+    parameters::load_parameters,
     test,
 };
 use pallet_manta_pay::types::TransferPost;
@@ -56,7 +56,7 @@ fn sample_to_private<R>(
 where
     R: CryptoRng + RngCore + ?Sized,
 {
-    TransferPost::from(test::payment::to_private::prove_full(
+    TransferPost::try_from(test::payment::to_private::prove_full(
         proving_context,
         parameters,
         utxo_accumulator,
@@ -64,6 +64,7 @@ where
         value,
         rng,
     ))
+    .unwrap()
 }
 
 /// Samples a [`PrivateTransfer`] transaction under two [`ToPrivate`]s.
@@ -90,10 +91,10 @@ where
         );
     (
         [
-            TransferPost::from(to_private_0),
-            TransferPost::from(to_private_1),
+            TransferPost::try_from(to_private_0).unwrap(),
+            TransferPost::try_from(to_private_1).unwrap(),
         ],
-        TransferPost::from(private_transfer),
+        TransferPost::try_from(private_transfer).unwrap(),
     )
 }
 
@@ -120,10 +121,10 @@ where
     );
     (
         [
-            TransferPost::from(to_private_0),
-            TransferPost::from(to_private_1),
+            TransferPost::try_from(to_private_0).unwrap(),
+            TransferPost::try_from(to_private_1).unwrap(),
         ],
-        TransferPost::from(to_public),
+        TransferPost::try_from(to_public).unwrap(),
     )
 }
 
@@ -175,80 +176,89 @@ fn load_proving_context() -> MultiProvingContext {
 /// Builds sample transactions for testing.
 #[inline]
 fn main() -> Result<()> {
-    use std::time::Instant;
-    let now = Instant::now();
+    let target_file = env::args()
+        .nth(1)
+        .map(PathBuf::from)
+        .unwrap_or(env::current_dir()?.join("precomputed_coins.rs"));
+    assert!(
+        !target_file.exists(),
+        "Specify a file to place the generated files: {target_file:?}.",
+    );
+    fs::create_dir_all(
+        target_file
+            .parent()
+            .expect("This file should have a parent."),
+    )?;
 
     let directory = tempfile::tempdir().expect("Unable to generate temporary test directory.");
-    println!("[INFO] Temporary Directory: {:?}", directory);
+    println!("[INFO] Temporary Directory: {directory:?}");
 
     let mut rng = ChaCha20Rng::from_seed([0; 32]);
-    // let (proving_context, _, parameters, utxo_accumulator_model) =
-    //     load_parameters(directory.path()).expect("Unable to load parameters.");
+    let (proving_context, _, parameters, utxo_accumulator_model) =
+        load_parameters(directory.path()).expect("Unable to load parameters.");
+    let mut utxo_accumulator = UtxoAccumulator::new(utxo_accumulator_model);
+    let asset_id = 8.into();
 
-    let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
+    let to_private = sample_to_private(
+        &proving_context.to_private,
+        &parameters,
+        &mut utxo_accumulator,
+        asset_id,
+        10_000,
+        &mut rng,
+    );
+    let (private_transfer_input, private_transfer) = sample_private_transfer(
+        &proving_context,
+        &parameters,
+        &mut utxo_accumulator,
+        asset_id,
+        [10_000, 20_000],
+        &mut rng,
+    );
+    let (to_public_input, to_public) = sample_to_public(
+        &proving_context,
+        &parameters,
+        &mut utxo_accumulator,
+        asset_id,
+        [10_000, 20_000],
+        &mut rng,
+    );
 
-    let mut mints = Vec::new();
-    let mut transfers = Vec::new();
-    let mut reclaims = Vec::new();
-    for i in 0..10 {
-        // let asset_id = 8.into();
-        let asset_id = (8 + (i % 2)).into();
-        println!("Iteration count: {:?}", i);
+    let mut target_file = OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .open(target_file)?;
 
-        let to_private = sample_to_private(
-            &PROVING_CONTEXT.to_private,
-            &PARAMETERS,
-            &mut utxo_accumulator,
-            asset_id,
-            10_000,
-            &mut rng,
-        );
-        mints.push(to_private.clone());
-        println!("to_private size: {:?}", to_private.encode().len());
+    writeln!(
+        target_file,
+        indoc! {r"
+            // Copyright 2020-2022 Manta Network.
+            // This file is part of Manta.
+            //
+            // Manta is free software: you can redistribute it and/or modify
+            // it under the terms of the GNU General Public License as published by
+            // the Free Software Foundation, either version 3 of the License, or
+            // (at your option) any later version.
+            //
+            // Manta is distributed in the hope that it will be useful,
+            // but WITHOUT ANY WARRANTY; without even the implied warranty of
+            // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+            // GNU General Public License for more details.
+            //
+            // You should have received a copy of the GNU General Public License
+            // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-        let (private_transfer_input, private_transfer) = sample_private_transfer(
-            &PROVING_CONTEXT,
-            &PARAMETERS,
-            &mut utxo_accumulator,
-            asset_id,
-            [1_000, 2_000],
-            &mut rng,
-        );
-        transfers.push(private_transfer_input[0].clone());
-        transfers.push(private_transfer_input[1].clone());
-        transfers.push(private_transfer.clone());
-        println!(
-            "private_transfer_input size: {:?}",
-            private_transfer_input.encode().len()
-        );
-        println!(
-            "private_transfer size: {:?}",
-            private_transfer.encode().len()
-        );
+            //! Precomputed Coins
+            //!
+            //! THIS FILE IS AUTOMATICALLY GENERATED by `src/bin/precompute_coins.rs`. DO NOT EDIT.
+        "}
+    )?;
 
-        let (to_public_input, to_public) = sample_to_public(
-            &PROVING_CONTEXT,
-            &PARAMETERS,
-            &mut utxo_accumulator,
-            asset_id,
-            [1_000, 2_000],
-            &mut rng,
-        );
-        reclaims.push(to_public_input[0].clone());
-        reclaims.push(to_public_input[1].clone());
-        reclaims.push(to_public.clone());
-        println!("to_public_input size: {:?}", to_public_input.encode().len());
-        println!("to_public size: {:?}", to_public.encode().len());
-    }
-    let mut file = File::create("./precomputed-10-iterations/precomputed_mints_v3")?;
-    file.write_all(&<[TransferPost]>::encode(&mints))?;
-    let mut file = File::create("./precomputed-10-iterations/precomputed_transfers_v3")?;
-    file.write_all(&<[TransferPost]>::encode(&transfers))?;
-    let mut file = File::create("./precomputed-10-iterations/precomputed_reclaims_v3")?;
-    file.write_all(&<[TransferPost]>::encode(&reclaims))?;
-
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2?}", elapsed);
+    write_const_array!(target_file, TO_PRIVATE, to_private)?;
+    write_const_nested_array!(target_file, PRIVATE_TRANSFER_INPUT, private_transfer_input)?;
+    write_const_array!(target_file, PRIVATE_TRANSFER, private_transfer)?;
+    write_const_nested_array!(target_file, TO_PUBLIC_INPUT, to_public_input)?;
+    write_const_array!(target_file, TO_PUBLIC, to_public)?;
 
     Ok(directory.close()?)
 }

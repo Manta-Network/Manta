@@ -32,7 +32,7 @@ pub fn unchecked_public_key<T>(seed: &str) -> PublicKey<T>
 where
     T: CryptoType,
 {
-    T::Pair::from_string(&format!("//{}", seed), None)
+    T::Pair::from_string(&format!("//{seed}"), None)
         .expect("The validity of the seed is unchecked.")
         .public()
 }
@@ -64,7 +64,7 @@ pub fn unchecked_collator_keys(seed: &str) -> (AuraId, NimbusId, VrfId) {
 
 /// Reinterprets `aura_id` as a key of type `K`.
 ///
-/// # Safety
+/// # Safety Note
 ///
 /// No corresponding private key will exist for the returned `K`.
 #[inline]

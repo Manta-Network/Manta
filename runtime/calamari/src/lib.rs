@@ -123,7 +123,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 3434,
+    spec_version: 4000,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 9,
@@ -280,6 +280,7 @@ impl Contains<Call> for BaseFilter {
             | Call::Balances(_)
             | Call::MantaPay(_)
             | Call::Preimage(_)
+            | Call::MantaPay(_)
             | Call::XTokens(orml_xtokens::Call::transfer {..}
                 | orml_xtokens::Call::transfer_multicurrencies {..})
             | Call::Utility(_) => true,
