@@ -18,7 +18,7 @@ use crate::{
     benchmark::precomputed_coins::{
         PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, TO_PRIVATE, TO_PUBLIC, TO_PUBLIC_INPUT,
     },
-    types::Asset,
+    types::{asset_value_decode, asset_value_encode, Asset},
     Call, Config, Event, Pallet, StandardAssetId, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
@@ -85,7 +85,7 @@ benchmarks! {
         let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(1, &caller, INITIAL_VALUE, true);
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE[x as usize]).unwrap();
         let asset = mint_post.source(0).unwrap();
-        init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
+        init_asset::<T>(&caller, Pallet::<T>::id_from_field(asset.id).unwrap(), asset_value_decode(asset.value));
     }: to_private (
         RawOrigin::Signed(caller.clone()),
         mint_post
@@ -172,7 +172,7 @@ benchmarks! {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
-        let asset = Asset::new(Pallet::<T>::field_from_id(8u128), 100);
+        let asset = Asset::new(Pallet::<T>::field_from_id(8u128), asset_value_encode(100));
         let sink = Pallet::<T>::account_id();
     }: public_transfer (
         RawOrigin::Signed(caller.clone()),

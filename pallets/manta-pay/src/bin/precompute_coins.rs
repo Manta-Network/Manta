@@ -24,7 +24,7 @@ use manta_crypto::{
 };
 use manta_pay::{
     config::{
-        utxo::v3::MerkleTreeConfiguration, AssetId, AssetValue, MultiProvingContext, Parameters,
+        utxo::MerkleTreeConfiguration, AssetId, AssetValue, MultiProvingContext, Parameters,
         ProvingContext,
     },
     parameters::load_parameters,
@@ -56,7 +56,7 @@ fn sample_to_private<R>(
 where
     R: CryptoRng + RngCore + ?Sized,
 {
-    TransferPost::from(test::payment::to_private::prove_full(
+    TransferPost::try_from(test::payment::to_private::prove_full(
         proving_context,
         parameters,
         utxo_accumulator,
@@ -64,6 +64,7 @@ where
         value,
         rng,
     ))
+    .unwrap()
 }
 
 /// Samples a [`PrivateTransfer`] transaction under two [`ToPrivate`]s.
@@ -90,10 +91,10 @@ where
         );
     (
         [
-            TransferPost::from(to_private_0),
-            TransferPost::from(to_private_1),
+            TransferPost::try_from(to_private_0).unwrap(),
+            TransferPost::try_from(to_private_1).unwrap(),
         ],
-        TransferPost::from(private_transfer),
+        TransferPost::try_from(private_transfer).unwrap(),
     )
 }
 
@@ -120,10 +121,10 @@ where
     );
     (
         [
-            TransferPost::from(to_private_0),
-            TransferPost::from(to_private_1),
+            TransferPost::try_from(to_private_0).unwrap(),
+            TransferPost::try_from(to_private_1).unwrap(),
         ],
-        TransferPost::from(to_public),
+        TransferPost::try_from(to_public).unwrap(),
     )
 }
 

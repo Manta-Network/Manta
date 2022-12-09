@@ -518,8 +518,8 @@ fn check_vesting_schedule() {
 
             for ((p, s), ds) in schedule.iter().zip(default_schedule.iter()) {
                 let dt = Utc
-                    .ymd(ds.1 .0, ds.1 .1, ds.1 .2)
-                    .and_hms(ds.1 .3, ds.1 .4, ds.1 .5);
+                    .with_ymd_and_hms(ds.1 .0, ds.1 .1, ds.1 .2, ds.1 .3, ds.1 .4, ds.1 .5)
+                    .unwrap();
 
                 // Check each percentage is correct.
                 assert_eq!(ds.0, *p);
