@@ -199,7 +199,7 @@ pub mod pallet {
         #[pallet::weight({
             let _native_asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
 			match post.asset_id {
-                Some(x) => { 
+                Some(x) => {
                     match pallet::Pallet::<T>::id_from_field(x) {
                         Some(_native_asset_id) => T::WeightInfo::to_private_native(),
                         _ => T::WeightInfo::to_private_non_native(),
@@ -219,7 +219,7 @@ pub mod pallet {
         #[pallet::weight({
             let _native_asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
             match post.asset_id {
-                Some(x) => { 
+                Some(x) => {
                     match pallet::Pallet::<T>::id_from_field(x) {
                         Some(_native_asset_id) => T::WeightInfo::to_public_native(),
                         _ => T::WeightInfo::to_public_non_native(),
@@ -244,7 +244,7 @@ pub mod pallet {
         #[pallet::weight({
             let _native_asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
             match post.asset_id {
-                Some(x) => { 
+                Some(x) => {
                     match pallet::Pallet::<T>::id_from_field(x) {
                         Some(_native_asset_id) => T::WeightInfo::to_private_native(),
                         _ => T::WeightInfo::to_private_non_native(),

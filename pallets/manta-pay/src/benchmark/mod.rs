@@ -84,7 +84,7 @@ benchmarks! {
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
         let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(<T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(), &caller, INITIAL_VALUE, true);
         let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(<T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(), &Pallet::<T>::account_id(), INITIAL_VALUE, true);
-        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE[0 as usize]).unwrap();
+        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE[0_usize]).unwrap();
         let asset = mint_post.source(0).unwrap();
     }: {
         Pallet::<T>::to_private(origin.clone(), mint_post).unwrap();
@@ -119,7 +119,7 @@ benchmarks! {
             origin.clone(),
             TransferPost::decode(&mut &*TO_PUBLIC_INPUT[1_usize]).unwrap()
         ).unwrap();
-        let reclaim_post = TransferPost::decode(&mut &*TO_PUBLIC[0 as usize]).unwrap();
+        let reclaim_post = TransferPost::decode(&mut &*TO_PUBLIC[0_usize]).unwrap();
         let asset = reclaim_post.sink(0).unwrap();
     }: {
         Pallet::<T>::to_public(origin.clone(), reclaim_post).unwrap();
@@ -140,7 +140,7 @@ benchmarks! {
             origin.clone(),
             TransferPost::decode(&mut &*TO_PUBLIC_INPUT[3_usize]).unwrap()
         ).unwrap();
-        let reclaim_post = TransferPost::decode(&mut &*TO_PUBLIC[1 as usize]).unwrap();
+        let reclaim_post = TransferPost::decode(&mut &*TO_PUBLIC[1_usize]).unwrap();
         let asset = reclaim_post.sink(0).unwrap();
     }: {
         Pallet::<T>::to_public(origin.clone(), reclaim_post).unwrap();
@@ -162,7 +162,7 @@ benchmarks! {
             origin.clone(),
             TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[1_usize]).unwrap()
         ).unwrap();
-        let private_transfer_post = TransferPost::decode(&mut &*PRIVATE_TRANSFER[0 as usize]).unwrap();
+        let private_transfer_post = TransferPost::decode(&mut &*PRIVATE_TRANSFER[0_usize]).unwrap();
     }: {
         Pallet::<T>::private_transfer(origin.clone(), private_transfer_post).unwrap();
     } verify {
@@ -181,7 +181,7 @@ benchmarks! {
             origin.clone(),
             TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[3_usize]).unwrap()
         ).unwrap();
-        let private_transfer_post = TransferPost::decode(&mut &*PRIVATE_TRANSFER[1 as usize]).unwrap();
+        let private_transfer_post = TransferPost::decode(&mut &*PRIVATE_TRANSFER[1_usize]).unwrap();
     }: {
         Pallet::<T>::private_transfer(origin.clone(), private_transfer_post).unwrap();
     } verify {
