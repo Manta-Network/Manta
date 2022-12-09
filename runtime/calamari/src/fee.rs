@@ -225,7 +225,7 @@ mod multiplier_tests {
             let next = SlowAdjustingFeeUpdate::<Runtime>::convert(minimum_multiplier);
             assert!(
                 next > minimum_multiplier,
-                "{next:?} !>= {minimum_multiplier:?}",
+                "{next:?} !>= {minimum_multiplier:?}"
             );
         })
     }

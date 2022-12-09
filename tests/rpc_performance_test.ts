@@ -18,7 +18,7 @@ const test_config = {
     },
     storage_setup_phase_timeout: 750000,
     sync_iterations: 50,
-    expected_average_sync_time: 650,
+    expected_average_sync_time: 1500,
     testing_phase_timeout_tolerance: 1.5
 }
 
@@ -30,7 +30,7 @@ async function single_rpc_performance(api:ApiPromise) {
         const before_rpc = performance.now();
         const data = await (api.rpc as any).mantaPay.pull_ledger_diff(
             {receiver_index: new Array<number>(manta_pay_config.shard_number).fill(0), sender_index: 0},
-            BigInt(16384), BigInt(16384));
+            BigInt(8192), BigInt(8192));
         const after_rpc = performance.now();
         const sync_time = after_rpc - before_rpc;
         console.log("ledger diff receiver size: %i", data.receivers.length);
