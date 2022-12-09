@@ -1001,7 +1001,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-runtime"
-version = "3.4.3"
+version = "4.0.0-alpha.1"
 dependencies = [
  "calamari-vesting",
  "cumulus-pallet-dmp-queue",
@@ -1089,7 +1089,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-vesting"
-version = "3.4.3"
+version = "4.0.0-alpha.1"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -2408,7 +2408,7 @@ dependencies = [
 
 [[package]]
 name = "dolphin-runtime"
-version = "3.4.3"
+version = "4.0.0-alpha.1"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -4979,7 +4979,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "3.4.3"
+version = "4.0.0-alpha.1"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -5075,7 +5075,7 @@ dependencies = [
 
 [[package]]
 name = "manta-collator-selection"
-version = "3.4.3"
+version = "4.0.0-alpha.1"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5162,7 +5162,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "3.4.3"
+version = "4.0.0-alpha.1"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5182,7 +5182,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "3.4.3"
+version = "4.0.0-alpha.1"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -6015,7 +6015,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-manager"
-version = "3.4.3"
+version = "4.0.0-alpha.1"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6640,7 +6640,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-parachain-staking"
-version = "3.4.3"
+version = "4.0.0-alpha.1"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6931,7 +6931,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "3.4.3"
+version = "4.0.0-alpha.1"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -9160,7 +9160,7 @@ dependencies = [
 
 [[package]]
 name = "runtime-common"
-version = "3.4.3"
+version = "4.0.0-alpha.1"
 dependencies = [
  "frame-support",
  "manta-primitives",
@@ -10620,7 +10620,7 @@ dependencies = [
 
 [[package]]
 name = "session-key-primitives"
-version = "3.4.3"
+version = "4.0.0-alpha.1"
 dependencies = [
  "manta-primitives",
  "nimbus-primitives",
