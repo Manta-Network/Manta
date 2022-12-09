@@ -196,17 +196,38 @@ pub mod pallet {
         /// Transforms some public assets into private ones using `post`, withdrawing the public
         /// assets from the `origin` account.
         #[pallet::call_index(0)]
-        #[pallet::weight(T::WeightInfo::to_private())]
+        #[pallet::weight({
+            let _native_asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
+			match post.asset_id {
+                Some(x) => { 
+                    match pallet::Pallet::<T>::id_from_field(x) {
+                        Some(_native_asset_id) => T::WeightInfo::to_private_native(),
+                        _ => T::WeightInfo::to_private_non_native(),
+                    }
+                },
+                None => T::WeightInfo::to_private_non_native()
+            }
+        })]
         #[transactional]
         pub fn to_private(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
             Self::post_transaction(None, vec![origin], vec![], post)
         }
-
         /// Transforms some private assets into public ones using `post`, depositing the public
         /// assets in the `origin` account.
         #[pallet::call_index(1)]
-        #[pallet::weight(T::WeightInfo::to_public())]
+        #[pallet::weight({
+            let _native_asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
+            match post.asset_id {
+                Some(x) => { 
+                    match pallet::Pallet::<T>::id_from_field(x) {
+                        Some(_native_asset_id) => T::WeightInfo::to_public_native(),
+                        _ => T::WeightInfo::to_public_non_native(),
+                    }
+                },
+                None => T::WeightInfo::to_public_non_native()
+            }
+        })]
         #[transactional]
         pub fn to_public(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
@@ -220,7 +241,18 @@ pub mod pallet {
         /// In this transaction, `origin` is just signing the `post` and is not necessarily related
         /// to any of the participants in the transaction itself.
         #[pallet::call_index(2)]
-        #[pallet::weight(T::WeightInfo::private_transfer())]
+        #[pallet::weight({
+            let _native_asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
+            match post.asset_id {
+                Some(x) => { 
+                    match pallet::Pallet::<T>::id_from_field(x) {
+                        Some(_native_asset_id) => T::WeightInfo::to_private_native(),
+                        _ => T::WeightInfo::to_private_non_native(),
+                    }
+                },
+                None => T::WeightInfo::to_private_non_native()
+            }
+        })]
         #[transactional]
         pub fn private_transfer(
             origin: OriginFor<T>,
@@ -232,7 +264,9 @@ pub mod pallet {
 
         /// Transfers public `asset` from `origin` to the `sink` account.
         #[pallet::call_index(3)]
-        #[pallet::weight(T::WeightInfo::public_transfer())]
+        #[pallet::weight({
+            T::WeightInfo::public_transfer()
+        })]
         #[transactional]
         pub fn public_transfer(
             origin: OriginFor<T>,

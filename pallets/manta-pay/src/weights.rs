@@ -34,13 +34,18 @@ use frame_system::Config;
 /// Weight functions needed for pallet_manta_pay.
 pub trait WeightInfo {
     /// Returns the [`Weight`] of the [`crate::Pallet::to_private`] extrinsic.
-    fn to_private() -> Weight;
+    fn to_private_native() -> Weight;
+
+    /// Returns the [`Weight`] of the [`crate::Pallet::to_private`] extrinsic.
+    fn to_private_non_native() -> Weight;
 
     /// Returns the [`Weight`] of the [`crate::Pallet::to_public`] extrinsic.
-    fn to_public() -> Weight;
+    fn to_public_native() -> Weight;
+    fn to_public_non_native() -> Weight;
 
     /// Returns the [`Weight`] of the [`crate::Pallet::private_transfer`] extrinsic.
-    fn private_transfer() -> Weight;
+    fn private_transfer_native() -> Weight;
+    fn private_transfer_non_native() -> Weight;
 
     /// Returns the [`Weight`] of the [`crate::Pallet::public_transfer`] extrinsic.
     fn public_transfer() -> Weight;
@@ -53,53 +58,86 @@ impl<T> WeightInfo for SubstrateWeight<T>
 where
     T: Config,
 {
-    /// ```text
-    /// Storage: MantaPay Balances (r:1 w:1)
-    /// Storage: MantaPay UtxoSet (r:1 w:1)
-    /// Storage: MantaPay ShardTrees (r:1 w:1)
-    /// Storage: MantaPay UtxoSetOutputs (r:0 w:1)
-    /// Storage: MantaPay Shards (r:0 w:1)
-    /// ```
-    fn to_private() -> Weight {
-        (36_400_000_000 as Weight)
+    // Storage: MantaPay UtxoSet (r:1 w:1)
+    // Storage: MantaPay NullifierSetSize (r:1 w:0)
+    // Storage: MantaPay ShardTrees (r:1 w:1)
+    // Storage: System Account (r:1 w:1)
+    // Storage: MantaPay UtxoAccumulatorOutputs (r:0 w:1)
+    // Storage: MantaPay Shards (r:0 w:1)
+    fn to_private_native() -> Weight {
+        (5_359_655_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(4 as Weight))
+            .saturating_add(T::DbWeight::get().writes(5 as Weight))
+    }
+    // Storage: Assets Asset (r:1 w:1)
+    // Storage: Assets Account (r:2 w:2)
+    // Storage: MantaPay UtxoSet (r:1 w:1)
+    // Storage: MantaPay NullifierSetSize (r:1 w:0)
+    // Storage: MantaPay ShardTrees (r:1 w:1)
+    // Storage: MantaPay UtxoAccumulatorOutputs (r:0 w:1)
+    // Storage: MantaPay Shards (r:0 w:1)
+    fn to_private_non_native() -> Weight {
+        (5_342_482_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(6 as Weight))
             .saturating_add(T::DbWeight::get().writes(7 as Weight))
     }
-
-    /// ```text
-    /// Storage: MantaPay UtxoSetOutputs (r:2 w:1)
-    /// Storage: MantaPay VoidNumberSet (r:2 w:2)
-    /// Storage: MantaPay UtxoSet (r:1 w:1)
-    /// Storage: MantaPay VoidNumberSetSize (r:1 w:1)
-    /// Storage: MantaPay ShardTrees (r:1 w:1)
-    /// Storage: MantaPay Balances (r:1 w:1)
-    /// Storage: MantaPay VoidNumberSetInsertionOrder (r:0 w:2)
-    /// Storage: MantaPay Shards (r:0 w:1)
-    /// ```
-    fn to_public() -> Weight {
-        (44_100_000_000 as Weight)
+    // Storage: MantaPay UtxoAccumulatorOutputs (r:2 w:1)
+    // Storage: MantaPay NullifierCommitmentSet (r:2 w:2)
+    // Storage: MantaPay UtxoSet (r:1 w:1)
+    // Storage: MantaPay NullifierSetSize (r:1 w:1)
+    // Storage: MantaPay ShardTrees (r:1 w:1)
+    // Storage: System Account (r:1 w:1)
+    // Storage: MantaPay NullifierSetInsertionOrder (r:0 w:2)
+    // Storage: MantaPay Shards (r:0 w:1)
+    fn to_public_native() -> Weight {
+        (6_922_713_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(8 as Weight))
+            .saturating_add(T::DbWeight::get().writes(10 as Weight))
+    }
+    // Storage: Assets Asset (r:1 w:1)
+    // Storage: Assets Account (r:2 w:2)
+    // Storage: MantaPay UtxoAccumulatorOutputs (r:2 w:1)
+    // Storage: MantaPay NullifierCommitmentSet (r:2 w:2)
+    // Storage: MantaPay UtxoSet (r:1 w:1)
+    // Storage: MantaPay NullifierSetSize (r:1 w:1)
+    // Storage: MantaPay ShardTrees (r:1 w:1)
+    // Storage: MantaPay NullifierSetInsertionOrder (r:0 w:2)
+    // Storage: MantaPay Shards (r:0 w:1)
+    fn to_public_non_native() -> Weight {
+        (6_895_522_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(10 as Weight))
             .saturating_add(T::DbWeight::get().writes(12 as Weight))
     }
-
-    /// ```text
-    /// Storage: MantaPay UtxoSetOutputs (r:2 w:2)
-    /// Storage: MantaPay VoidNumberSet (r:2 w:2)
-    /// Storage: MantaPay UtxoSet (r:2 w:2)
-    /// Storage: MantaPay VoidNumberSetSize (r:1 w:1)
-    /// Storage: MantaPay ShardTrees (r:2 w:2)
-    /// Storage: MantaPay VoidNumberSetInsertionOrder (r:0 w:2)
-    /// Storage: MantaPay Shards (r:0 w:2)
-    /// ```
-    fn private_transfer() -> Weight {
-        (51_500_000_000 as Weight)
+    // Storage: MantaPay UtxoAccumulatorOutputs (r:2 w:2)
+    // Storage: MantaPay NullifierCommitmentSet (r:2 w:2)
+    // Storage: MantaPay UtxoSet (r:2 w:2)
+    // Storage: MantaPay NullifierSetSize (r:1 w:1)
+    // Storage: MantaPay ShardTrees (r:2 w:2)
+    // Storage: MantaPay NullifierSetInsertionOrder (r:0 w:2)
+    // Storage: MantaPay Shards (r:0 w:2)
+    fn private_transfer_native() -> Weight {
+        (9_089_355_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(9 as Weight))
             .saturating_add(T::DbWeight::get().writes(13 as Weight))
     }
-
+    // Storage: MantaPay UtxoAccumulatorOutputs (r:2 w:2)
+    // Storage: MantaPay NullifierCommitmentSet (r:2 w:2)
+    // Storage: MantaPay UtxoSet (r:2 w:2)
+    // Storage: MantaPay NullifierSetSize (r:1 w:1)
+    // Storage: MantaPay ShardTrees (r:2 w:2)
+    // Storage: MantaPay NullifierSetInsertionOrder (r:0 w:2)
+    // Storage: MantaPay Shards (r:0 w:2)
+    fn private_transfer_non_native() -> Weight {
+        (9_071_864_000 as Weight)
+            // Standard Error: 4_322_000
+            .saturating_add(T::DbWeight::get().reads(9 as Weight))
+            .saturating_add(T::DbWeight::get().writes(13 as Weight))
+    }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:2 w:2)
     fn public_transfer() -> Weight {
-        (46_629_000 as Weight)
+        (21_841_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(3 as Weight))
+            .saturating_add(T::DbWeight::get().writes(3 as Weight))
     }
 }

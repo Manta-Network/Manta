@@ -78,28 +78,39 @@ where
 }
 benchmarks! {
     where_clause {  where sp_runtime::AccountId32: From<<T as frame_system::Config>::AccountId>  }
-    to_private {
-        let x in 0 .. 1;
+
+    to_private_native {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(1, &caller, INITIAL_VALUE, true);
-        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE[x as usize]).unwrap();
+        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(<T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(), &caller, INITIAL_VALUE, true);
+        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(<T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(), &Pallet::<T>::account_id(), INITIAL_VALUE, true);
+        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE[0 as usize]).unwrap();
         let asset = mint_post.source(0).unwrap();
-        init_asset::<T>(&caller, Pallet::<T>::id_from_field(asset.id).unwrap(), asset_value_decode(asset.value));
-    }: to_private (
-        RawOrigin::Signed(caller.clone()),
-        mint_post
-    ) verify {
+    }: {
+        Pallet::<T>::to_private(origin.clone(), mint_post).unwrap();
+    } verify {
         // FIXME: add balance checking
         assert_last_event::<T, _>(Event::ToPrivate { asset, source: caller });
     }
 
-    to_public {
-        let x in 0 .. 1;
+    to_private_non_native {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(1, &caller, INITIAL_VALUE, true);
-        init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
+        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE[1usize]).unwrap();
+        let asset = mint_post.source(0).unwrap();
+        init_asset::<T>(&caller, Pallet::<T>::id_from_field(asset.id).unwrap(), asset_value_decode(asset.value));
+    }: {
+        Pallet::<T>::to_private(origin.clone(), mint_post).unwrap();
+    } verify {
+        // FIXME: add balance checking
+        assert_last_event::<T, _>(Event::ToPrivate { asset, source: caller });
+    }
+
+    to_public_native {
+        let caller: T::AccountId = whitelisted_caller();
+        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(<T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(), &caller, INITIAL_VALUE, true);
+        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(<T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(), &Pallet::<T>::account_id(), INITIAL_VALUE, true);
         Pallet::<T>::to_private(
             origin.clone(),
             TransferPost::decode(&mut &*TO_PUBLIC_INPUT[0_usize]).unwrap()
@@ -108,36 +119,41 @@ benchmarks! {
             origin.clone(),
             TransferPost::decode(&mut &*TO_PUBLIC_INPUT[1_usize]).unwrap()
         ).unwrap();
-        if x == 1 {
-            Pallet::<T>::to_public(
-                origin.clone(),
-                TransferPost::decode(&mut &*TO_PUBLIC[0_usize]).unwrap()
-            ).unwrap();
-            Pallet::<T>::to_private(
-                origin.clone(),
-                TransferPost::decode(&mut &*TO_PUBLIC_INPUT[2_usize]).unwrap()
-            ).unwrap();
-            Pallet::<T>::to_private(
-                origin,
-                TransferPost::decode(&mut &*TO_PUBLIC_INPUT[3_usize]).unwrap()
-            ).unwrap();
-        }
-        let reclaim_post = TransferPost::decode(&mut &*TO_PUBLIC[x as usize]).unwrap();
+        let reclaim_post = TransferPost::decode(&mut &*TO_PUBLIC[0 as usize]).unwrap();
         let asset = reclaim_post.sink(0).unwrap();
-    }: to_public (
-        RawOrigin::Signed(caller.clone()),
-        reclaim_post
-    ) verify {
+    }: {
+        Pallet::<T>::to_public(origin.clone(), reclaim_post).unwrap();
+    } verify {
         // FIXME: add balance checking
         assert_last_event::<T, _>(Event::ToPublic { asset, sink: caller });
     }
 
-    private_transfer {
-        let x in 0 .. 1;
+    to_public_non_native {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(1, &caller, INITIAL_VALUE, true);
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
+        Pallet::<T>::to_private(
+            origin.clone(),
+            TransferPost::decode(&mut &*TO_PUBLIC_INPUT[2_usize]).unwrap()
+        ).unwrap();
+        Pallet::<T>::to_private(
+            origin.clone(),
+            TransferPost::decode(&mut &*TO_PUBLIC_INPUT[3_usize]).unwrap()
+        ).unwrap();
+        let reclaim_post = TransferPost::decode(&mut &*TO_PUBLIC[1 as usize]).unwrap();
+        let asset = reclaim_post.sink(0).unwrap();
+    }: {
+        Pallet::<T>::to_public(origin.clone(), reclaim_post).unwrap();
+    } verify {
+        // FIXME: add balance checking
+        assert_last_event::<T, _>(Event::ToPublic { asset, sink: caller });
+    }
+
+    private_transfer_native {
+        let caller: T::AccountId = whitelisted_caller();
+        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(<T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(), &caller, INITIAL_VALUE, true);
+        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting_with_check(<T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(), &Pallet::<T>::account_id(), INITIAL_VALUE, true);
         Pallet::<T>::to_private(
             origin.clone(),
             TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[0_usize]).unwrap()
@@ -146,25 +162,29 @@ benchmarks! {
             origin.clone(),
             TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[1_usize]).unwrap()
         ).unwrap();
-        if x == 1 {
-            Pallet::<T>::private_transfer(
-                origin.clone(),
-                TransferPost::decode(&mut &*PRIVATE_TRANSFER[0_usize]).unwrap()
-            ).unwrap();
-            Pallet::<T>::to_private(
-                origin.clone(),
-                TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[2_usize]).unwrap()
-            ).unwrap();
-            Pallet::<T>::to_private(
-                origin,
-                TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[3_usize]).unwrap()
-            ).unwrap();
-        }
-        let private_transfer_post = TransferPost::decode(&mut &*PRIVATE_TRANSFER[x as usize]).unwrap();
-    }: private_transfer (
-        RawOrigin::Signed(caller.clone()),
-        private_transfer_post
-    ) verify {
+        let private_transfer_post = TransferPost::decode(&mut &*PRIVATE_TRANSFER[0 as usize]).unwrap();
+    }: {
+        Pallet::<T>::private_transfer(origin.clone(), private_transfer_post).unwrap();
+    } verify {
+        assert_last_event::<T, _>(Event::PrivateTransfer { origin: Some(caller) });
+    }
+
+    private_transfer_non_native {
+        let caller: T::AccountId = whitelisted_caller();
+        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
+        Pallet::<T>::to_private(
+            origin.clone(),
+            TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[2_usize]).unwrap()
+        ).unwrap();
+        Pallet::<T>::to_private(
+            origin.clone(),
+            TransferPost::decode(&mut &*PRIVATE_TRANSFER_INPUT[3_usize]).unwrap()
+        ).unwrap();
+        let private_transfer_post = TransferPost::decode(&mut &*PRIVATE_TRANSFER[1 as usize]).unwrap();
+    }: {
+        Pallet::<T>::private_transfer(origin.clone(), private_transfer_post).unwrap();
+    } verify {
         assert_last_event::<T, _>(Event::PrivateTransfer { origin: Some(caller) });
     }
 
