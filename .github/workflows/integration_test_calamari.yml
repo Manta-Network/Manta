@@ -255,6 +255,10 @@ jobs:
             --no-autorestart \
             -- \
             --address=ws://127.0.0.1:9921
+      - uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Manta
+          path: Manta
       - name: run test suites
         run: |
           # TODO: implement moonbeam-like js test suite triggers here
