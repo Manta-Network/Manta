@@ -118,13 +118,13 @@ async function insert_utxos_in_batches(
         }).signAndSend(keyring, {nonce: -1});
 
         // https://substrate.stackexchange.com/questions/1776/how-to-use-polkadot-api-to-send-multiple-transactions-simultaneously
-        const unsub = await api.tx.sudo.sudo(call_data).signAndSend(keyring, {nonce: -1}, ({ events = [], status }) => {
-           if (status.isFinalized) {
-                success_batch ++;
-                console.log("%s %i batch utxos insertion finalized.", emojis.write, success_batch);
-                unsub();
-            }
-        });
+        // const unsub = await api.tx.sudo.sudo(call_data).signAndSend(keyring, {nonce: -1}, ({ events = [], status }) => {
+        //    if (status.isFinalized) {
+        //         success_batch ++;
+        //         console.log("%s %i batch utxos insertion finalized.", emojis.write, success_batch);
+        //         unsub();
+        //     }
+        // });
     }
     
     // wait all txs finalized
