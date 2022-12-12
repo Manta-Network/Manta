@@ -1,6 +1,7 @@
 import { ApiPromise } from '@polkadot/api';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { u8aToHex, numberToU8a } from '@polkadot/util';
+import { blake2AsHex } from "@polkadot/util-crypto";
 import { single_map_storage_key, double_map_storage_key, delay, emojis, HashType } from './test-util';
 
 // number of shards at MantaPay
@@ -102,7 +103,20 @@ async function insert_utxos_in_batches(
     for (let batch_idx = 0; batch_idx < batch_number; batch_idx ++){
         const {data, checkpoint} = generate_batched_utxos(per_shard_amount, cur_checkpoint);
         cur_checkpoint = checkpoint;
+
+        /// governance
         const call_data = api.tx.system.setStorage(data);
+        const proposal = api.tx.democracy.externalProposeDefault(call_data);
+        const encodedProposal = proposal.method.toHex() || "";
+        await api.tx.preimage.notePreimage(encodedProposal).signAndSend(keyring, {nonce: -1});
+        let proposal_hash = blake2AsHex(encodedProposal);
+        await api.tx.council.propose(1, proposal_hash, proposal_hash.length).signAndSend(keyring, {nonce: -1});
+        let fastTrackCall = api.tx.democracy.fastTrack(proposal_hash, 2, 1)
+        api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
+        api.tx.democracy.vote(0, {
+            Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
+        }).signAndSend(keyring, {nonce: -1});
+
         // https://substrate.stackexchange.com/questions/1776/how-to-use-polkadot-api-to-send-multiple-transactions-simultaneously
         const unsub = await api.tx.sudo.sudo(call_data).signAndSend(keyring, {nonce: -1}, ({ events = [], status }) => {
            if (status.isFinalized) {
@@ -114,7 +128,7 @@ async function insert_utxos_in_batches(
     }
     
     // wait all txs finalized
-    for(let i =0; i < max_wait_time_sec; i ++){
+    for(let i = 0; i < max_wait_time_sec; i ++){
         await delay(1000);
         if (success_batch === batch_number) {
             console.log("total wait: %i sec.", i + 1);
@@ -165,14 +179,27 @@ async function insert_void_numbers_in_batch(
     for(let batch_idx = 0; batch_idx < batch_number; batch_idx ++) {
         console.log("start vn batch %i", batch_idx);
         const data = generate_vn_insertion_data(sender_idx, amount_per_batch);
+
+        /// governance
         const call_data = api.tx.system.setStorage(data);
-        const unsub = await api.tx.sudo.sudo(call_data).signAndSend(keyring, {nonce: -1}, ({ events = [], status }) => {
-            if (status.isFinalized) {
-                success_batch ++;
-                console.log("%s %i batch void number insertion finalized.", emojis.write, success_batch);
-                unsub();
-            }
-        });
+        const proposal = api.tx.democracy.externalProposeDefault(call_data);
+        const encodedProposal = proposal.method.toHex() || "";
+        await api.tx.preimage.notePreimage(encodedProposal).signAndSend(keyring, {nonce: -1});
+        let proposal_hash = blake2AsHex(encodedProposal);
+        await api.tx.council.propose(1, proposal_hash, proposal_hash.length).signAndSend(keyring, {nonce: -1});
+        let fastTrackCall = api.tx.democracy.fastTrack(proposal_hash, 2, 1)
+        api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
+        api.tx.democracy.vote(0, {
+            Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
+        }).signAndSend(keyring, {nonce: -1});
+
+        // const unsub = await api.tx.sudo.sudo(call_data).signAndSend(keyring, {nonce: -1}, ({ events = [], status }) => {
+        //     if (status.isFinalized) {
+        //         success_batch ++;
+        //         console.log("%s %i batch void number insertion finalized.", emojis.write, success_batch);
+        //         unsub();
+        //     }
+        // });
         sender_idx += amount_per_batch;
     }
     // wait all txs finalized

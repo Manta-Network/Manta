@@ -5,6 +5,7 @@ import { StoragePrepareConfig, setup_storage, manta_pay_config} from './manta_pa
 import minimist, { ParsedArgs } from 'minimist';
 import { performance } from 'perf_hooks';
 import { expect } from 'chai';
+import { setTimeout } from "timers/promises";
 
 const test_config = {
     ws_address: "ws://127.0.0.1:9800",
@@ -65,6 +66,7 @@ describe('Node RPC Performance Test', () => {
         const keyring = new Keyring({ type: 'sr25519' });
         const sudo_key_pair = keyring.addFromMnemonic(test_config.mnemonic);
         await setup_storage(api, sudo_key_pair, 0, test_config.storage_prepare_config);
+        await setTimeout(24000);
         await single_rpc_performance(api);
 
         api.disconnect();
