@@ -639,8 +639,8 @@ pub mod pallet {
                 + NullifierSetSize::<T>::get() as u128;
             DensePullResponse {
                 should_continue: more_receivers || more_senders,
-                receivers: base64::encode(&receivers.encode()),
-                senders: base64::encode(&senders.encode()),
+                receivers: base64::encode(receivers.encode()),
+                senders: base64::encode(senders.encode()),
                 senders_receivers_total: asset_value_encode(senders_receivers_total),
             }
         }
