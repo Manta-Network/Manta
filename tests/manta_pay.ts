@@ -4,6 +4,8 @@ import { u8aToHex, numberToU8a } from '@polkadot/util';
 import { blake2AsHex } from "@polkadot/util-crypto";
 import { single_map_storage_key, double_map_storage_key, delay, emojis, HashType } from './test-util';
 
+let democracy_counter = 0;
+
 // number of shards at MantaPay
 export const manta_pay_config = {
     shard_number: 256,
@@ -106,17 +108,22 @@ async function insert_utxos_in_batches(
 
         /// governance
         const call_data = api.tx.system.setStorage(data);
-        const proposal = api.tx.democracy.externalProposeDefault(call_data);
-        const encodedProposal = proposal.method.toHex() || "";
-        await api.tx.preimage.notePreimage(encodedProposal).signAndSend(keyring, {nonce: -1});
-        let proposal_hash = blake2AsHex(encodedProposal);
-        await api.tx.council.propose(1, proposal_hash, proposal_hash.length).signAndSend(keyring, {nonce: -1});
-        let fastTrackCall = api.tx.democracy.fastTrack(proposal_hash, 2, 1)
-        api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
-        api.tx.democracy.vote(0, {
+        const encodedRemark = call_data.method.toHex();
+        // console.log("encodedRemark:",encodedRemark);
+        await api.tx.democracy.notePreimage(encodedRemark).signAndSend(keyring, {nonce: -1});
+        let encodedRemarkHash = blake2AsHex(encodedRemark);
+        // console.log("encodedRemarkHash:",encodedRemarkHash);
+        let externalProposeDefault = await api.tx.democracy.externalProposeDefault(encodedRemarkHash);
+        // console.log("externalProposeDefault:",externalProposeDefault);
+        const encodedExternalProposeDefault = externalProposeDefault.method.toHex();
+        // console.log("encodedExternalProposeDefault:",encodedExternalProposeDefault);
+        await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce: -1});
+        let fastTrackCall = await api.tx.democracy.fastTrack(encodedRemarkHash, 1, 1);
+        await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
+        await api.tx.democracy.vote(democracy_counter, {
             Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
         }).signAndSend(keyring, {nonce: -1});
-
+        democracy_counter++;
         // https://substrate.stackexchange.com/questions/1776/how-to-use-polkadot-api-to-send-multiple-transactions-simultaneously
         // const unsub = await api.tx.sudo.sudo(call_data).signAndSend(keyring, {nonce: -1}, ({ events = [], status }) => {
         //    if (status.isFinalized) {
@@ -182,16 +189,22 @@ async function insert_void_numbers_in_batch(
 
         /// governance
         const call_data = api.tx.system.setStorage(data);
-        const proposal = api.tx.democracy.externalProposeDefault(call_data);
-        const encodedProposal = proposal.method.toHex() || "";
-        await api.tx.preimage.notePreimage(encodedProposal).signAndSend(keyring, {nonce: -1});
-        let proposal_hash = blake2AsHex(encodedProposal);
-        await api.tx.council.propose(1, proposal_hash, proposal_hash.length).signAndSend(keyring, {nonce: -1});
-        let fastTrackCall = api.tx.democracy.fastTrack(proposal_hash, 2, 1)
-        api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
-        api.tx.democracy.vote(0, {
+        const encodedRemark = call_data.method.toHex();
+        // console.log("encodedRemark:",encodedRemark);
+        await api.tx.democracy.notePreimage(encodedRemark).signAndSend(keyring, {nonce: -1});
+        let encodedRemarkHash = blake2AsHex(encodedRemark);
+        // console.log("encodedRemarkHash:",encodedRemarkHash);
+        let externalProposeDefault = await api.tx.democracy.externalProposeDefault(encodedRemarkHash);
+        // console.log("externalProposeDefault:",externalProposeDefault);
+        const encodedExternalProposeDefault = externalProposeDefault.method.toHex();
+        // console.log("encodedExternalProposeDefault:",encodedExternalProposeDefault);
+        await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce: -1});
+        let fastTrackCall = await api.tx.democracy.fastTrack(encodedRemarkHash, 1, 1);
+        await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
+        await api.tx.democracy.vote(democracy_counter, {
             Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
         }).signAndSend(keyring, {nonce: -1});
+        democracy_counter++;
 
         // const unsub = await api.tx.sudo.sudo(call_data).signAndSend(keyring, {nonce: -1}, ({ events = [], status }) => {
         //     if (status.isFinalized) {

@@ -9,7 +9,7 @@ import { setTimeout } from "timers/promises";
 import { blake2AsHex } from "@polkadot/util-crypto";
 
 const test_config = {
-    ws_address: "ws://127.0.0.1:9801",
+    ws_address: "ws://127.0.0.1:9800",
     mnemonic: 'bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice',
     storage_prepare_config: {
         utxo_batch_number: 4,
@@ -66,23 +66,27 @@ describe('Node RPC Performance Test', () => {
     
         const keyring = new Keyring({ type: 'sr25519' });
         const sudo_key_pair = keyring.addFromMnemonic(test_config.mnemonic);
-        // await setup_storage(api, sudo_key_pair, 0, test_config.storage_prepare_config);
+        await setup_storage(api, sudo_key_pair, 0, test_config.storage_prepare_config);
 
         /// governance
-        const remark = await api.tx.system.remark([1,2,3,4,5]);
-        const encodedRemark = remark.method.toHex() || "";
-        await api.tx.preimage.notePreimage(encodedRemark).signAndSend(sudo_key_pair, {nonce: -1});
-        let encodedRemarkHash = blake2AsHex(encodedRemark);
-        let externalProposeDefault = await api.tx.democracy.externalProposeDefault(encodedRemarkHash);
-        const encodedExternalProposeDefault = remark.method.toHex() || "";
-        await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(sudo_key_pair, {nonce: -1});
-        let fastTrackCall = await api.tx.democracy.fastTrack(encodedRemarkHash, 5, 1);
-        await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(sudo_key_pair, {nonce: -1});
-        await api.tx.democracy.vote(0, {
-            Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
-        }).signAndSend(sudo_key_pair, {nonce: -1});
+        // const remark = await api.tx.system.remark([4]);
+        // const encodedRemark = remark.method.toHex();
+        // console.log("encodedRemark:",encodedRemark);
+        // await api.tx.democracy.notePreimage(encodedRemark).signAndSend(sudo_key_pair, {nonce: -1});
+        // let encodedRemarkHash = blake2AsHex(encodedRemark);
+        // console.log("encodedRemarkHash:",encodedRemarkHash);
+        // let externalProposeDefault = await api.tx.democracy.externalProposeDefault(encodedRemarkHash);
+        // console.log("externalProposeDefault:",externalProposeDefault);
+        // const encodedExternalProposeDefault = externalProposeDefault.method.toHex();
+        // console.log("encodedExternalProposeDefault:",encodedExternalProposeDefault);
+        // await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(sudo_key_pair, {nonce: -1});
+        // let fastTrackCall = await api.tx.democracy.fastTrack(encodedRemarkHash, 1, 1);
+        // await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(sudo_key_pair, {nonce: -1});
+        // await api.tx.democracy.vote(3, {
+         //    Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
+        // }).signAndSend(sudo_key_pair, {nonce: -1});
 
-        await setTimeout(24000);
+        await setTimeout(60000);
         await single_rpc_performance(api);
 
         api.disconnect();
