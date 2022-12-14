@@ -57,7 +57,7 @@ function next_checkpoint(
 }
 
 /**
- * geenrate a utxo batch from a checkpoint
+ * generate a utxo batch from a checkpoint
  * @param per_shard_amount number of utxo per shard generated.
  * @param checkpoint the starting indices of each shard.
  * @returns an array of pair: [(storage_key, utxo_data)]
@@ -76,6 +76,8 @@ function generate_batched_utxos(per_shard_amount: number, checkpoint: Array<numb
     return {data: data, checkpoint: new_checkpoint};
 }
 
+let referendumIndex = 0;
+
 /**
  *  Insert utxos in batches
  * @param api api object connecting to node.
@@ -84,7 +86,7 @@ function generate_batched_utxos(per_shard_amount: number, checkpoint: Array<numb
  * @param per_shard_amount number of utxos per shard per batch.
  * @param init_checkpoint initial checkpoint (an array of starting indices in shard).
  * @param max_wait_time_sec maximum waiting time (in second).
- * @returns number of batches sucessfully inserted.
+ * @returns number of batches successfully inserted.
  */
 async function insert_utxos_in_batches(
     api: ApiPromise, 
@@ -103,7 +105,8 @@ async function insert_utxos_in_batches(
     for (let batch_idx = 0; batch_idx < batch_number; batch_idx ++){
         const {data, checkpoint} = generate_batched_utxos(per_shard_amount, cur_checkpoint);
         cur_checkpoint = checkpoint;
-        inject_data_via_governance(api, keyring, data);
+        const callData = api.tx.system.setStorage(data);
+        execute_with_root_via_governance(api, keyring, callData, referendumIndex);
         await delay(5000);
     }
     
@@ -143,7 +146,7 @@ function generate_vn_insertion_data(
  * @param amount_per_batch amount of void numbers per batch.
  * @param batch_number number of batch inserted.
  * @param start_index starting index.
- * @param max_wait_time_sec maxium time before timeout (in sec).
+ * @param max_wait_time_sec maximum time before timeout (in sec).
  * @returns number of batches successfully inserted before timeout.
  */
 async function insert_void_numbers_in_batch(
@@ -159,7 +162,8 @@ async function insert_void_numbers_in_batch(
     for(let batch_idx = 0; batch_idx < batch_number; batch_idx ++) {
         console.log("start vn batch %i", batch_idx);
         const data = generate_vn_insertion_data(sender_idx, amount_per_batch);
-        inject_data_via_governance(api, keyring, data);
+        const callData = api.tx.system.setStorage(data);
+        execute_with_root_via_governance(api, keyring, callData, referendumIndex);
         sender_idx += amount_per_batch;
         await delay(5000);
     }
@@ -215,21 +219,20 @@ export async function setup_storage(
     console.log(">>>> Complete inserting %i void numbers", vn_batch_done * config.vn_batch_size);
 }
 
-let democracy_counter = 0;
-
 /**
- * Inject some data into storage with system.setStorage and governance.
+ * Execute an extrinsic with Root origin via governance.
  * @param api API object connecting to node.
  * @param keyring keyring to sign extrinsics.
- * @param data the data which needs to be injected
+ * @param extrinsicData the callData of the extrinsic that will be executed
+ * @param referendumIndex the index of the referendum that will be executed
  */
-export async function inject_data_via_governance(
+ export async function execute_with_root_via_governance(
     api: ApiPromise, 
-    keyring: KeyringPair, 
-    data: any
+    keyring: KeyringPair,
+    extrinsicData: any,
+    referendumIndex: &any
 ) {
-    const callData = api.tx.system.setStorage(data);
-    const encodedCallData = callData.method.toHex();
+    const encodedCallData = extrinsicData.method.toHex();
     await api.tx.democracy.notePreimage(encodedCallData).signAndSend(keyring, {nonce: -1});
     let encodedCallDataHash = blake2AsHex(encodedCallData);
     let externalProposeDefault = await api.tx.democracy.externalProposeDefault(encodedCallDataHash);
@@ -237,8 +240,8 @@ export async function inject_data_via_governance(
     await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce: -1});
     let fastTrackCall = await api.tx.democracy.fastTrack(encodedCallDataHash, 1, 1);
     await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
-    await api.tx.democracy.vote(democracy_counter, {
+    await api.tx.democracy.vote(referendumIndex, {
         Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
     }).signAndSend(keyring, {nonce: -1});
-    democracy_counter++;
+    referendumIndex++;
 }
