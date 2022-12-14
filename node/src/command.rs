@@ -98,20 +98,17 @@ fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         "manta-dev" => Ok(Box::new(chain_specs::manta_development_config())),
         "manta-local" => Ok(Box::new(chain_specs::manta_local_config())),
         "manta-testnet" => Ok(Box::new(chain_specs::manta_testnet_config()?)),
-        "manta-testnet-ci" => Ok(Box::new(chain_specs::manta_testnet_ci_config()?)),
         "manta" => Ok(Box::new(chain_specs::manta_config()?)),
         // calamari chainspec
         "calamari-dev" => Ok(Box::new(chain_specs::calamari_development_config())),
         "calamari-local" => Ok(Box::new(chain_specs::calamari_local_config())),
         "calamari-testnet" => Ok(Box::new(chain_specs::calamari_testnet_config()?)),
-        "calamari-testnet-ci" => Ok(Box::new(chain_specs::calamari_testnet_ci_config()?)),
         "calamari" => Ok(Box::new(chain_specs::calamari_config()?)),
         // dolphin chainspec
         "dolphin-dev" => Ok(Box::new(chain_specs::dolphin_development_config())),
         "dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config())),
         "dolphin-testnet" => Ok(Box::new(chain_specs::dolphin_testnet_config()?)),
         "dolphin-2085" => Ok(Box::new(chain_specs::dolphin_2085_config()?)),
-        "dolphin-testnet-ci" => Ok(Box::new(chain_specs::dolphin_testnet_ci_config()?)),
         "dolphin-v3-staging" => Ok(Box::new(chain_specs::dolphin_v3_2085_staging_config()?)),
         path => {
             let chain_spec = chain_specs::ChainSpec::from_json_file(path.into())?;
