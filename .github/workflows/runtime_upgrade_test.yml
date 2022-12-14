@@ -77,6 +77,12 @@ jobs:
           path: |
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
+      - if: always()
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: config-for-runtime-upgrade-test
+          path: .github/resources/config-for-runtime-upgrade-test.json
   runtime-upgrade-test:
     if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
     needs: [build-runtimes, start-runtime-upgrade-tester, check-for-runtime-upgrade, parse-runtimes]
@@ -194,10 +200,6 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: ${{ matrix.runtime.name }}-runtime
-      - uses: actions/checkout@v2
-        with:
-          repository: Manta-Network/Manta
-          path: Manta
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: run test suites
         run: |
