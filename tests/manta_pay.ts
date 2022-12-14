@@ -228,14 +228,14 @@ export async function inject_data_via_governance(
     keyring: KeyringPair, 
     data: any
 ) {
-    const call_data = api.tx.system.setStorage(data);
-    const encodedRemark = call_data.method.toHex();
-    await api.tx.democracy.notePreimage(encodedRemark).signAndSend(keyring, {nonce: -1});
-    let encodedRemarkHash = blake2AsHex(encodedRemark);
-    let externalProposeDefault = await api.tx.democracy.externalProposeDefault(encodedRemarkHash);
+    const callData = api.tx.system.setStorage(data);
+    const encodedCallData = callData.method.toHex();
+    await api.tx.democracy.notePreimage(encodedCallData).signAndSend(keyring, {nonce: -1});
+    let encodedCallDataHash = blake2AsHex(encodedCallData);
+    let externalProposeDefault = await api.tx.democracy.externalProposeDefault(encodedCallDataHash);
     const encodedExternalProposeDefault = externalProposeDefault.method.toHex();
     await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce: -1});
-    let fastTrackCall = await api.tx.democracy.fastTrack(encodedRemarkHash, 1, 1);
+    let fastTrackCall = await api.tx.democracy.fastTrack(encodedCallDataHash, 1, 1);
     await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
     await api.tx.democracy.vote(democracy_counter, {
         Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
