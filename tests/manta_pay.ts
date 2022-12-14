@@ -255,7 +255,7 @@ export async function setup_storage(
         receiver_checkpoint.fill(check_idx);
         console.log("starting utxo idx: %i", receiver_checkpoint[0]);
         const utxo_batch_done = await insert_utxos_in_batches(
-            api, keyring, config.utxo_batch_number, config.utxo_batch_size_per_shard, receiver_checkpoint, 1000);
+            api, keyring, config.utxo_batch_number, config.utxo_batch_size_per_shard, receiver_checkpoint, 250);
         console.log(">>>> Complete %i big batch with %i UTXOs", 
             big_batch_idx + 1 , utxo_batch_done * config.utxo_batch_size_per_shard * manta_pay_config.shard_number);
     }
@@ -263,7 +263,7 @@ export async function setup_storage(
 
     console.log(">>>> Inserting void numbers: %i per batch, %i batch", 
         config.vn_batch_size, config.vn_batch_number);
-    const vn_batch_done = await insert_void_numbers_in_batch(api, keyring, config.vn_batch_size, config.vn_batch_number, 0, 1000);
+    const vn_batch_done = await insert_void_numbers_in_batch(api, keyring, config.vn_batch_size, config.vn_batch_number, 0, 250);
     console.log(">>>> Complete inserting %i void numbers", vn_batch_done * config.vn_batch_size);
 }
 

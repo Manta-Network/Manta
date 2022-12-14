@@ -9,7 +9,7 @@ import { setTimeout } from "timers/promises";
 import { blake2AsHex } from "@polkadot/util-crypto";
 
 const test_config = {
-    ws_address: "ws://127.0.0.1:9800",
+    ws_address: "ws://127.0.0.1:9801",
     mnemonic: 'bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice',
     storage_prepare_config: {
         utxo_batch_number: 4,
@@ -18,7 +18,7 @@ const test_config = {
         vn_batch_number: 2,
         vn_batch_size: 4096,
     },
-    storage_setup_phase_timeout: 750000,
+    storage_setup_phase_timeout: 7500000,
     sync_iterations: 50,
     expected_average_sync_time: 1500,
     testing_phase_timeout_tolerance: 1.5
@@ -35,6 +35,8 @@ async function single_rpc_performance(api:ApiPromise) {
             BigInt(8192), BigInt(8192));
         const after_rpc = performance.now();
         const sync_time = after_rpc - before_rpc;
+        expect(data.receivers.length).to.not.equal(0);
+        expect(data.senders.length).to.not.equal(0);
         console.log("ledger diff receiver size: %i", data.receivers.length);
         console.log("ledger diff void number size: %i", data.senders.length);
         console.log("single rpc sync time: %i ms", after_rpc - before_rpc);
@@ -86,7 +88,6 @@ describe('Node RPC Performance Test', () => {
          //    Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
         // }).signAndSend(sudo_key_pair, {nonce: -1});
 
-        await setTimeout(60000);
         await single_rpc_performance(api);
 
         api.disconnect();
