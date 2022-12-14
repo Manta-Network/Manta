@@ -913,14 +913,10 @@ pub struct DensePullResponse {
     // we decode the receivers/senders with our own way
     #[codec(skip)]
     pub receivers: String,
-    /// Total amount of dense `ReceiverChunk`
-    pub receivers_len: u32,
 
     /// Ledger Sender Chunk
     #[codec(skip)]
     pub senders: String,
-    /// Total amount of dense `SenderChunk`
-    pub senders_len: u32,
 
     /// Total Number of Senders/Receivers in Ledger
     pub senders_receivers_total: [u8; 16],

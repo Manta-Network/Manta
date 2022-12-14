@@ -640,9 +640,7 @@ pub mod pallet {
             DensePullResponse {
                 should_continue: more_receivers || more_senders,
                 receivers: base64::encode(receivers.encode()),
-                receivers_len: receivers.len() as u32,
                 senders: base64::encode(senders.encode()),
-                senders_len: senders.len() as u32,
                 senders_receivers_total: asset_value_encode(senders_receivers_total),
                 next_checkpoint: None,
             }
