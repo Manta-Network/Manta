@@ -204,7 +204,7 @@ jobs:
         name: run test suites
         run: |
           sleep 120
-          cp ${{ github.workspace }}/${{ matrix.runtime.name }}_runtime.compact.compressed.wasm ${{ github.workspace }}/Manta/tests/calamari.wasm
+          cp ${{ github.workspace }}/${{ matrix.runtime.name }}_runtime.compact.compressed.wasm ${{ github.workspace }}/tests/calamari.wasm
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
