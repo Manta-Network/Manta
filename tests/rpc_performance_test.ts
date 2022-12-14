@@ -18,7 +18,7 @@ const test_config = {
     },
     storage_setup_phase_timeout: 7500000,
     sync_iterations: 50,
-    expected_average_sync_time: 1500,
+    expected_average_sync_time: 250,
     testing_phase_timeout_tolerance: 1.5
 }
 
