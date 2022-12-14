@@ -229,19 +229,19 @@ export async function setup_storage(
 }
 
 /**
- * Inject some data into storage with system.setStorage and governance.
+ * Execute an extrinsic with Root origin via governance.
  * @param api API object connecting to node.
  * @param keyring keyring to sign extrinsics.
- * @param data the data which needs to be injected
+ * @param extrinsicData the call data of the extrinsic that will be executed
  * @param referendumIndex the index of the referendum that will be executed
  */
- export async function inject_data_via_governance(
+ export async function execute_with_root_via_governance(
     api: ApiPromise, 
     keyring: KeyringPair,
-    callData: any,
+    extrinsicData: any,
     referendumIndex: &any
 ) {
-    const encodedCallData = callData.method.toHex();
+    const encodedCallData = extrinsicData.method.toHex();
     await api.tx.democracy.notePreimage(encodedCallData).signAndSend(keyring, {nonce: -1});
     let encodedCallDataHash = blake2AsHex(encodedCallData);
     let externalProposeDefault = await api.tx.democracy.externalProposeDefault(encodedCallDataHash);
