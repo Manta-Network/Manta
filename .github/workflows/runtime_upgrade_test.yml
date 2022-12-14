@@ -101,7 +101,7 @@ jobs:
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: fetch, mv and chmod manta-base
         run: |
-          wget -cO - https://github.com/Manta-Network/Manta/releases/download/v3.4.3/manta
+          wget https://github.com/Manta-Network/Manta/releases/download/v3.4.3/manta
           ls -ahl ${{ github.workspace }}/
           mv ${{ github.workspace }}/manta $HOME/.local/bin/manta-base
           chmod +x $HOME/.local/bin/manta-base
