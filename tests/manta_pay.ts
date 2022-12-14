@@ -4,8 +4,6 @@ import { u8aToHex, numberToU8a } from '@polkadot/util';
 import { blake2AsHex } from "@polkadot/util-crypto";
 import { single_map_storage_key, double_map_storage_key, delay, emojis, HashType } from './test-util';
 
-let democracy_counter = 0;
-
 // number of shards at MantaPay
 export const manta_pay_config = {
     shard_number: 256,
@@ -105,33 +103,7 @@ async function insert_utxos_in_batches(
     for (let batch_idx = 0; batch_idx < batch_number; batch_idx ++){
         const {data, checkpoint} = generate_batched_utxos(per_shard_amount, cur_checkpoint);
         cur_checkpoint = checkpoint;
-
-        /// governance
-        const call_data = api.tx.system.setStorage(data);
-        const encodedRemark = call_data.method.toHex();
-        // console.log("encodedRemark:",encodedRemark);
-        await api.tx.democracy.notePreimage(encodedRemark).signAndSend(keyring, {nonce: -1});
-        let encodedRemarkHash = blake2AsHex(encodedRemark);
-        // console.log("encodedRemarkHash:",encodedRemarkHash);
-        let externalProposeDefault = await api.tx.democracy.externalProposeDefault(encodedRemarkHash);
-        // console.log("externalProposeDefault:",externalProposeDefault);
-        const encodedExternalProposeDefault = externalProposeDefault.method.toHex();
-        // console.log("encodedExternalProposeDefault:",encodedExternalProposeDefault);
-        await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce: -1});
-        let fastTrackCall = await api.tx.democracy.fastTrack(encodedRemarkHash, 1, 1);
-        await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
-        await api.tx.democracy.vote(democracy_counter, {
-            Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
-        }).signAndSend(keyring, {nonce: -1});
-        democracy_counter++;
-        // https://substrate.stackexchange.com/questions/1776/how-to-use-polkadot-api-to-send-multiple-transactions-simultaneously
-        // const unsub = await api.tx.sudo.sudo(call_data).signAndSend(keyring, {nonce: -1}, ({ events = [], status }) => {
-        //    if (status.isFinalized) {
-        //         success_batch ++;
-        //         console.log("%s %i batch utxos insertion finalized.", emojis.write, success_batch);
-        //         unsub();
-        //     }
-        // });
+        inject_data_via_governance(api, keyring, data);
     }
     
     // wait all txs finalized
@@ -186,33 +158,7 @@ async function insert_void_numbers_in_batch(
     for(let batch_idx = 0; batch_idx < batch_number; batch_idx ++) {
         console.log("start vn batch %i", batch_idx);
         const data = generate_vn_insertion_data(sender_idx, amount_per_batch);
-
-        /// governance
-        const call_data = api.tx.system.setStorage(data);
-        const encodedRemark = call_data.method.toHex();
-        // console.log("encodedRemark:",encodedRemark);
-        await api.tx.democracy.notePreimage(encodedRemark).signAndSend(keyring, {nonce: -1});
-        let encodedRemarkHash = blake2AsHex(encodedRemark);
-        // console.log("encodedRemarkHash:",encodedRemarkHash);
-        let externalProposeDefault = await api.tx.democracy.externalProposeDefault(encodedRemarkHash);
-        // console.log("externalProposeDefault:",externalProposeDefault);
-        const encodedExternalProposeDefault = externalProposeDefault.method.toHex();
-        // console.log("encodedExternalProposeDefault:",encodedExternalProposeDefault);
-        await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce: -1});
-        let fastTrackCall = await api.tx.democracy.fastTrack(encodedRemarkHash, 1, 1);
-        await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
-        await api.tx.democracy.vote(democracy_counter, {
-            Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
-        }).signAndSend(keyring, {nonce: -1});
-        democracy_counter++;
-
-        // const unsub = await api.tx.sudo.sudo(call_data).signAndSend(keyring, {nonce: -1}, ({ events = [], status }) => {
-        //     if (status.isFinalized) {
-        //         success_batch ++;
-        //         console.log("%s %i batch void number insertion finalized.", emojis.write, success_batch);
-        //         unsub();
-        //     }
-        // });
+        inject_data_via_governance(api, keyring, data);
         sender_idx += amount_per_batch;
     }
     // wait all txs finalized
@@ -267,3 +213,30 @@ export async function setup_storage(
     console.log(">>>> Complete inserting %i void numbers", vn_batch_done * config.vn_batch_size);
 }
 
+let democracy_counter = 0;
+
+/**
+ * Inject some data into storage with system.setStorage and governance.
+ * @param api API object connecting to node.
+ * @param keyring keyring to sign extrinsics.
+ * @param data the data which needs to be injected
+ */
+export async function inject_data_via_governance(
+    api: ApiPromise, 
+    keyring: KeyringPair, 
+    data: any
+) {
+    const call_data = api.tx.system.setStorage(data);
+    const encodedRemark = call_data.method.toHex();
+    await api.tx.democracy.notePreimage(encodedRemark).signAndSend(keyring, {nonce: -1});
+    let encodedRemarkHash = blake2AsHex(encodedRemark);
+    let externalProposeDefault = await api.tx.democracy.externalProposeDefault(encodedRemarkHash);
+    const encodedExternalProposeDefault = externalProposeDefault.method.toHex();
+    await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce: -1});
+    let fastTrackCall = await api.tx.democracy.fastTrack(encodedRemarkHash, 1, 1);
+    await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
+    await api.tx.democracy.vote(democracy_counter, {
+        Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
+    }).signAndSend(keyring, {nonce: -1});
+    democracy_counter++;
+}
