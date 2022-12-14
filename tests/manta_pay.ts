@@ -1,5 +1,6 @@
 import { ApiPromise } from '@polkadot/api';
 import { KeyringPair } from '@polkadot/keyring/types';
+import { blake2AsHex } from "@polkadot/util-crypto";
 import { u8aToHex, numberToU8a } from '@polkadot/util';
 import { single_map_storage_key, double_map_storage_key, delay, emojis, HashType } from './test-util';
 
@@ -227,3 +228,29 @@ export async function setup_storage(
     console.log(">>>> Complete inserting %i void numbers", vn_batch_done * config.vn_batch_size);
 }
 
+/**
+ * Inject some data into storage with system.setStorage and governance.
+ * @param api API object connecting to node.
+ * @param keyring keyring to sign extrinsics.
+ * @param data the data which needs to be injected
+ * @param referendumIndex the index of the referendum that will be executed
+ */
+ export async function inject_data_via_governance(
+    api: ApiPromise, 
+    keyring: KeyringPair,
+    callData: any,
+    referendumIndex: &any
+) {
+    const encodedCallData = callData.method.toHex();
+    await api.tx.democracy.notePreimage(encodedCallData).signAndSend(keyring, {nonce: -1});
+    let encodedCallDataHash = blake2AsHex(encodedCallData);
+    let externalProposeDefault = await api.tx.democracy.externalProposeDefault(encodedCallDataHash);
+    const encodedExternalProposeDefault = externalProposeDefault.method.toHex();
+    await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(keyring, {nonce: -1});
+    let fastTrackCall = await api.tx.democracy.fastTrack(encodedCallDataHash, 1, 1);
+    await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(keyring, {nonce: -1});
+    await api.tx.democracy.vote(referendumIndex, {
+        Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
+    }).signAndSend(keyring, {nonce: -1});
+    referendumIndex++;
+}

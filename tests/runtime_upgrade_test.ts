@@ -2,11 +2,13 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { numberToU8a } from '@polkadot/util';
 import { Keyring } from '@polkadot/keyring';
 import { manta_pay_types, rpc_api } from './types';
+import {inject_data_via_governance } from './manta_pay';
 import { delay } from './test-util';
 import { expect } from 'chai';
 import minimist, { ParsedArgs } from 'minimist';
 import { blake2AsHex } from "@polkadot/util-crypto";
 import * as fs from 'fs';
+import { democracy } from '@polkadot/types/interfaces/definitions';
 
 const test_config = {
     ws_address: "ws://127.0.0.1:9800",
@@ -41,27 +43,17 @@ describe('Node RPC Test', () => {
             types: manta_pay_types,
             rpc: rpc_api});
         const keyring = new Keyring({ type: 'sr25519' });
-        const sudo_key_pair = keyring.addFromMnemonic(test_config.mnemonic);
+        const aliceKeyPair = keyring.addFromMnemonic(test_config.mnemonic);
        
         const old_runtime_version = await api.rpc.state.getRuntimeVersion();
         const old_spec_version = old_runtime_version["specVersion"];
 
         const code = fs.readFileSync('calamari.wasm').toString('hex');
         const call_data = api.tx.parachainSystem.authorizeUpgrade(`0x${code}`);
-        const encodedRemark = call_data.method.toHex();
-        await api.tx.democracy.notePreimage(encodedRemark).signAndSend(sudo_key_pair, {nonce: -1});
-        let encodedRemarkHash = blake2AsHex(encodedRemark);
-        let externalProposeDefault = await api.tx.democracy.externalProposeDefault(encodedRemarkHash);
-        const encodedExternalProposeDefault = externalProposeDefault.method.toHex();
-        await api.tx.council.propose(1, encodedExternalProposeDefault, encodedExternalProposeDefault.length).signAndSend(sudo_key_pair, {nonce: -1});
-        let fastTrackCall = await api.tx.democracy.fastTrack(encodedRemarkHash, 1, 1);
-        await api.tx.technicalCommittee.propose(1, fastTrackCall, fastTrackCall.encodedLength).signAndSend(sudo_key_pair, {nonce: -1});
-        await api.tx.democracy.vote(0, {
-            Standard: { balance: 1_000_000_000_000, vote: { aye: true, conviction: 1 } },
-        }).signAndSend(sudo_key_pair, {nonce: -1});
+        inject_data_via_governance(api, aliceKeyPair, call_data, 0);
         delay(60000);
         // Perform the actual chain upgrade via the sudo module
-        api.tx.parachainSystem.enactAuthorizedUpgrade(`0x${code}`).signAndSend(sudo_key_pair, {nonce: -1});
+        api.tx.parachainSystem.enactAuthorizedUpgrade(`0x${code}`).signAndSend(aliceKeyPair, {nonce: -1});
         delay(60000);
 
         let new_runtime_versions = await api.rpc.state.getRuntimeVersion();
