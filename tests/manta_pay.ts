@@ -2,8 +2,7 @@ import { ApiPromise } from '@polkadot/api';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { u8aToHex, numberToU8a } from '@polkadot/util';
 import { blake2AsHex } from "@polkadot/util-crypto";
-import { single_map_storage_key, double_map_storage_key, delay, emojis, HashType } from './test-util';
-import { setTimeout } from "timers/promises";
+import { single_map_storage_key, double_map_storage_key, delay, HashType } from './test-util';
 
 // number of shards at MantaPay
 export const manta_pay_config = {
@@ -105,7 +104,7 @@ async function insert_utxos_in_batches(
         const {data, checkpoint} = generate_batched_utxos(per_shard_amount, cur_checkpoint);
         cur_checkpoint = checkpoint;
         inject_data_via_governance(api, keyring, data);
-        await delay(10000);
+        await delay(5000);
     }
     
     // wait all txs finalized
@@ -162,7 +161,7 @@ async function insert_void_numbers_in_batch(
         const data = generate_vn_insertion_data(sender_idx, amount_per_batch);
         inject_data_via_governance(api, keyring, data);
         sender_idx += amount_per_batch;
-        await delay(10000);
+        await delay(5000);
     }
     // wait all txs finalized
     for(let i =0; i < max_wait_time_sec; i++){
