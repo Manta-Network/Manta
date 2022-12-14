@@ -1,12 +1,10 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
 import { manta_pay_types, rpc_api } from './types';
-import { StoragePrepareConfig, setup_storage, manta_pay_config} from './manta_pay';
+import { setup_storage, manta_pay_config} from './manta_pay';
 import minimist, { ParsedArgs } from 'minimist';
 import { performance } from 'perf_hooks';
 import { expect } from 'chai';
-import { setTimeout } from "timers/promises";
-import { blake2AsHex } from "@polkadot/util-crypto";
 
 const test_config = {
     ws_address: "ws://127.0.0.1:9800",

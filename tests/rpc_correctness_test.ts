@@ -18,7 +18,7 @@ const test_config = {
     },
     timeout: 2000000
 }
-let counter = 0;
+
 describe('Node RPC Test', () => { 
     it('Check RPC result', async () => {
 
