@@ -63,7 +63,7 @@ describe('Node RPC Test', () => {
 
                 ]);
                 let size_per_shard = test_config.storage_prepare_config.utxo_batch_size_per_shard;
-                // this uses the fact that the RPC request is filled greedly
+                // this uses the fact that the RPC request is filled greedily
                 expect(payload).to.deep.equal(generate_shards_entry(~~(index/size_per_shard), index % size_per_shard));
         });
         expect(data.senders.length).to.not.equal(0);
