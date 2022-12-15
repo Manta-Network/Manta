@@ -110,6 +110,7 @@ manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v
 manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.8", default-features = false, features = ["groth16", "parameters", "scale"] }
 manta-primitives = { path = "../../primitives/manta", default-features = false }
 manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.8", default-features = false }
+lazy_static = "1.4.0"
 
 [dev-dependencies]
 lazy_static = "1.4.0"
