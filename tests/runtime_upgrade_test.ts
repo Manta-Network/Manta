@@ -2,7 +2,7 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { numberToU8a } from '@polkadot/util';
 import { Keyring } from '@polkadot/keyring';
 import { manta_pay_types, rpc_api } from './types';
-import {inject_data_via_governance } from './manta_pay';
+import {execute_with_root_via_governance } from './manta_pay';
 import { delay } from './test-util';
 import { expect } from 'chai';
 import minimist, { ParsedArgs } from 'minimist';
@@ -49,9 +49,9 @@ describe('Node RPC Test', () => {
         const old_spec_version = old_runtime_version["specVersion"];
 
         const code = fs.readFileSync('calamari.wasm').toString('hex');
-        const call_data = api.tx.parachainSystem.authorizeUpgrade(`0x${code}`);
+        const callData = api.tx.parachainSystem.authorizeUpgrade(`0x${code}`);
         var referendumIndexObject = { referendumIndex: 0 };
-        inject_data_via_governance(api, aliceKeyPair, call_data, referendumIndexObject);
+        execute_with_root_via_governance(api, aliceKeyPair, callData, referendumIndexObject);
         delay(60000);
         // Perform the actual chain upgrade via the sudo module
         api.tx.parachainSystem.enactAuthorizedUpgrade(`0x${code}`).signAndSend(aliceKeyPair, {nonce: -1});
