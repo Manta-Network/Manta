@@ -51,7 +51,6 @@ describe('Node RPC Test', () => {
         var referendumIndexObject = { referendumIndex: 0 };
         execute_with_root_via_governance(api, aliceKeyPair, callData, referendumIndexObject);
         delay(60000);
-        // Perform the actual chain upgrade via the sudo module
         api.tx.parachainSystem.enactAuthorizedUpgrade(`0x${code}`).signAndSend(aliceKeyPair, {nonce: -1});
         delay(60000);
 
