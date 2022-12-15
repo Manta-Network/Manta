@@ -44,6 +44,7 @@ jobs:
           - name: dolphin
             chain-spec: dolphin-dev
     steps:
+      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: init measure-block-time ${{ matrix.runtime.name }}
         run: |
           cd ${{ github.workspace }}/dev-tools/measure-block-time
