@@ -46,10 +46,9 @@ describe('Node RPC Test', () => {
 
         const code = fs.readFileSync('calamari.wasm').toString('hex');
         let codeHash = blake2AsHex(`0x${code}`);
-        const callData = api.tx.parachainSystem.authorizeUpgrade(codeHash);
+        const authorizeUpgradeCallData = api.tx.parachainSystem.authorizeUpgrade(codeHash);
         var referendumIndexObject = { referendumIndex: 0 };
-        execute_with_root_via_governance(api, aliceKeyPair, callData, referendumIndexObject);
-
+        execute_with_root_via_governance(api, aliceKeyPair, authorizeUpgradeCallData, referendumIndexObject);
         await delay(60000);
         api.tx.parachainSystem.enactAuthorizedUpgrade(`0x${code}`).signAndSend(aliceKeyPair, {nonce: -1});
         await delay(120000);
