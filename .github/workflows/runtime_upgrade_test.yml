@@ -45,18 +45,6 @@ jobs:
             chain-spec: dolphin-dev
     steps:
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: init measure-block-time ${{ matrix.runtime.name }}
-        run: |
-          cd ${{ github.workspace }}/dev-tools/measure-block-time
-          yarn install
-          pm2 start index.js \
-            --name measure-block-time-${{ matrix.runtime.chain-spec }} \
-            --output ${{ github.workspace }}/measure-block-time-${{ matrix.runtime.chain-spec }}-stdout.log \
-            --error ${{ github.workspace }}/measure-block-time-${{ matrix.runtime.chain-spec }}-stderr.log \
-            --no-autorestart \
-            -- \
-            --address=ws://127.0.0.1:9921
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: run test suites
         run: |
           sleep 120
