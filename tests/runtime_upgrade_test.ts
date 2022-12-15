@@ -48,6 +48,8 @@ describe('Node RPC Test', () => {
 
         let newRuntimeVersions = await api.rpc.state.getRuntimeVersion();
         const newSpecVersion = newRuntimeVersions["specVersion"];
+        console.log("oldSpecVersion:", oldSpecVersion);
+        console.log("newSpecVersion:", newSpecVersion);
 
         assert(newSpecVersion > oldSpecVersion);
 
