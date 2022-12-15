@@ -1,7 +1,7 @@
 name: runtime upgrade test
 on:
   push:
-    branches: [manta, release-**]
+    branches: [ghzlatarev/update-rtu, release-**]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 concurrency:
@@ -18,7 +18,6 @@ env:
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
 jobs:
   print-rust-versions:
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
     runs-on: ubuntu-20.04
     container:
       image: paritytech/ci-linux:production
@@ -32,60 +31,8 @@ jobs:
         run: |
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
-  build-runtimes:
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
-    needs: check-for-runtime-upgrade
-    runs-on: ubuntu-20.04
-    env:
-      CARGO_TERM_COLOR: always
-    strategy:
-      matrix:
-        runtime:
-          - name: calamari
-          - name: manta
-          - name: dolphin
-    steps:
-      - uses: actions/checkout@v2
-      - name: cache target dir
-        uses: actions/cache@v2
-        with:
-          path: "${{ github.workspace }}/runtime/${{ matrix.runtime.name }}/target"
-          key: srtool-target-${{ matrix.runtime.name }}-${{ github.sha }}
-          restore-keys: |
-            srtool-target-${{ matrix.runtime.name }}
-      - name: build runtime
-        id: srtool-build
-        uses: chevdor/srtool-actions@v0.4.0
-        with:
-          image: paritytech/srtool
-          chain: ${{ matrix.runtime.name }}
-      - name: persist srtool digest
-        run: >
-          echo '${{ steps.srtool-build.outputs.json }}' |
-          jq > ${{ matrix.runtime.name }}-srtool-output.json
-      - if: always()
-        name: upload srtool json
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.runtime.name }}-srtool-json
-          path: ${{ matrix.runtime.name }}-srtool-output.json
-      - if: always()
-        name: upload runtime
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.runtime.name }}-runtime
-          path: |
-            ${{ steps.srtool-build.outputs.wasm }}
-            ${{ steps.srtool-build.outputs.wasm_compressed }}
-      - if: always()
-        name: upload
-        uses: actions/upload-artifact@v2
-        with:
-          name: config-for-runtime-upgrade-test
-          path: .github/resources/config-for-runtime-upgrade-test.json
   runtime-upgrade-test:
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
-    needs: [build-runtimes, start-runtime-upgrade-tester, check-for-runtime-upgrade, parse-runtimes]
+    needs: [start-runtime-upgrade-tester, check-for-runtime-upgrade, parse-runtimes]
     runs-on: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
     timeout-minutes: 90
     strategy:
@@ -196,15 +143,10 @@ jobs:
             -- \
             --address=ws://127.0.0.1:9921
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: fetch new ${{ matrix.runtime.name }}_runtime.compact.compressed.wasm
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ matrix.runtime.name }}-runtime
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: run test suites
         run: |
           sleep 120
-          cp ${{ github.workspace }}/${{ matrix.runtime.name }}_runtime.compact.compressed.wasm ${{ github.workspace }}/tests/calamari.wasm
+          ls -a
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
@@ -236,7 +178,6 @@ jobs:
           if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv ]; then echo "block times not detected"; exit 1; fi
           jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv > ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.json
   parse-runtimes:
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -277,7 +218,6 @@ jobs:
           echo "::set-output name=${{ matrix.runtime.name }}-runtime-base::$runtime_base"
           echo ....................
   check-for-runtime-upgrade:
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
     needs: parse-runtimes
     runs-on: ubuntu-20.04
     outputs:
