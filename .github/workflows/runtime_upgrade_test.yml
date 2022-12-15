@@ -1,7 +1,7 @@
 name: runtime upgrade test
 on:
   push:
-    branches: [ghzlatarev/update-rtu, release-**]
+    branches: [manta, release-**]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 concurrency:
@@ -18,6 +18,7 @@ env:
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
 jobs:
   print-rust-versions:
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
     runs-on: ubuntu-20.04
     container:
       image: paritytech/ci-linux:production
@@ -31,8 +32,60 @@ jobs:
         run: |
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
+  build-runtimes:
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
+    needs: check-for-runtime-upgrade
+    runs-on: ubuntu-20.04
+    env:
+      CARGO_TERM_COLOR: always
+    strategy:
+      matrix:
+        runtime:
+          - name: calamari
+          - name: manta
+          - name: dolphin
+    steps:
+      - uses: actions/checkout@v2
+      - name: cache target dir
+        uses: actions/cache@v2
+        with:
+          path: "${{ github.workspace }}/runtime/${{ matrix.runtime.name }}/target"
+          key: srtool-target-${{ matrix.runtime.name }}-${{ github.sha }}
+          restore-keys: |
+            srtool-target-${{ matrix.runtime.name }}
+      - name: build runtime
+        id: srtool-build
+        uses: chevdor/srtool-actions@v0.4.0
+        with:
+          image: paritytech/srtool
+          chain: ${{ matrix.runtime.name }}
+      - name: persist srtool digest
+        run: >
+          echo '${{ steps.srtool-build.outputs.json }}' |
+          jq > ${{ matrix.runtime.name }}-srtool-output.json
+      - if: always()
+        name: upload srtool json
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.runtime.name }}-srtool-json
+          path: ${{ matrix.runtime.name }}-srtool-output.json
+      - if: always()
+        name: upload runtime
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.runtime.name }}-runtime
+          path: |
+            ${{ steps.srtool-build.outputs.wasm }}
+            ${{ steps.srtool-build.outputs.wasm_compressed }}
+      - if: always()
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: config-for-runtime-upgrade-test
+          path: .github/resources/config-for-runtime-upgrade-test.json
   runtime-upgrade-test:
-    needs: [start-runtime-upgrade-tester, check-for-runtime-upgrade, parse-runtimes]
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
+    needs: [build-runtimes, start-runtime-upgrade-tester, check-for-runtime-upgrade, parse-runtimes]
     runs-on: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
     timeout-minutes: 90
     strategy:
@@ -45,10 +98,117 @@ jobs:
             chain-spec: dolphin-dev
     steps:
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
+        run: |
+          ls -ahl ${{ github.workspace }}/
+          mkdir -p $HOME/.local/share/${{ matrix.runtime.name }}-pc
+          mkdir -p $HOME/.local/bin
+          echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
+        name: fetch, mv and chmod manta-base
+        run: |
+          wget https://github.com/Manta-Network/Manta/releases/download/v3.4.3/manta
+          ls -ahl ${{ github.workspace }}/
+          mv ${{ github.workspace }}/manta $HOME/.local/bin/manta-base
+          chmod +x $HOME/.local/bin/manta-base
+          ls -ahl ${{ github.workspace }}/
+          ls -ahl $HOME/.local/bin/
+      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
+        name: fetch and chmod polkadot
+        run: |
+          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.26/polkadot
+          chmod +x $HOME/.local/bin/polkadot
+          ls -ahl $HOME/.local/bin/
+      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
+        id: create-chainspec
+        run: |
+          manta-base build-spec --chain ${{ matrix.runtime.chain-spec }} --disable-default-bootnode --raw > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json
+          jq \
+            --sort-keys \
+            --arg name "${{ matrix.runtime.name }} testnet base" \
+            --arg id ${{ matrix.runtime.chain-spec }}-base \
+            --arg relay_chain rococo-local-base \
+            '. |
+              .name = $name |
+              .id = $id |
+              .relay_chain = $relay_chain |
+              .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
+            ' $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json
+          ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-pc/
+          manta-base export-state --chain $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-state.json || true
+      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
+        name: fetch config-for-runtime-upgrade-test
+        uses: actions/download-artifact@v2
+        with:
+          name: config-for-runtime-upgrade-test
+      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
+        name: create launch config
+        run: |
+          ls -a
+          cat config-for-runtime-upgrade-test.json | \
+          jq \
+            --arg relaychain_bin $HOME/.local/bin/polkadot \
+            --arg relaychain_id rococo-local-base \
+            --arg relaychain_name "rococo local base" \
+            --arg parachains_bin $HOME/.local/bin/manta-base \
+            --arg parachains_spec $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json \
+            '.
+              | .relaychain.bin = $relaychain_bin
+              | .relaychain.mutation.id = $relaychain_id
+              | .relaychain.mutation.name = $relaychain_name
+              | .parachains[].bin = $parachains_bin
+              | .parachains[].chain = $parachains_spec
+            ' > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
+          jq . $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
+          ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-pc/
+      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
+        uses: actions/checkout@v2
+        with:
+          repository: paritytech/polkadot-launch
+          path: polkadot-launch
+      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
+        uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Dev-Tools
+          path: dev-tools
+      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
+        name: launch testnet
+        run: |
+          cd ${{ github.workspace }}/polkadot-launch
+          yarn install
+          yarn build
+          pm2 start dist/cli.js \
+            --name polkadot-launch \
+            --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.runtime.chain-spec }}-stdout.log \
+            --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.runtime.chain-spec }}-stderr.log \
+            --no-autorestart \
+            -- $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
+      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
+        name: init measure-block-time ${{ matrix.runtime.name }}
+        run: |
+          cd ${{ github.workspace }}/dev-tools/measure-block-time
+          yarn install
+          pm2 start index.js \
+            --name measure-block-time-${{ matrix.runtime.chain-spec }} \
+            --output ${{ github.workspace }}/measure-block-time-${{ matrix.runtime.chain-spec }}-stdout.log \
+            --error ${{ github.workspace }}/measure-block-time-${{ matrix.runtime.chain-spec }}-stderr.log \
+            --no-autorestart \
+            -- \
+            --address=ws://127.0.0.1:9921
+      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
+        name: fetch new ${{ matrix.runtime.name }}_runtime.compact.compressed.wasm
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ matrix.runtime.name }}-runtime
+      - uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Manta
+          path: Manta
+      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: run test suites
         run: |
           sleep 120
-          ls -a
+          cp ${{ github.workspace }}/${{ matrix.runtime.name }}_runtime.compact.compressed.wasm ${{ github.workspace }}/Manta/tests/calamari.wasm
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
@@ -80,6 +240,7 @@ jobs:
           if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv ]; then echo "block times not detected"; exit 1; fi
           jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv > ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.json
   parse-runtimes:
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -120,6 +281,7 @@ jobs:
           echo "::set-output name=${{ matrix.runtime.name }}-runtime-base::$runtime_base"
           echo ....................
   check-for-runtime-upgrade:
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
     needs: parse-runtimes
     runs-on: ubuntu-20.04
     outputs:
@@ -136,6 +298,7 @@ jobs:
           if [[  ${{ needs.parse-runtimes.outputs.manta-runtime-current }} != ${{ needs.parse-runtimes.outputs.calamari-runtime-current }} ]]; then exit 1; fi
   # HELPER JOBS BELOW
   start-runtime-upgrade-tester:
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
