@@ -11,7 +11,7 @@ import * as fs from 'fs';
 const test_config = {
     ws_address: "ws://127.0.0.1:9800",
     mnemonic: 'bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice',
-    timeout: 200000
+    timeout: 2000000
 }
 
 describe('Node RPC Test', () => { 
