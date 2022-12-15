@@ -23,8 +23,6 @@ const test_config = {
     timeout: 200000
 }
 
-let democracy_counter = 0;
-
 describe('Node RPC Test', () => { 
     it('Check RPC result', async () => {
 
@@ -45,8 +43,8 @@ describe('Node RPC Test', () => {
         const keyring = new Keyring({ type: 'sr25519' });
         const aliceKeyPair = keyring.addFromMnemonic(test_config.mnemonic);
        
-        const old_runtime_version = await api.rpc.state.getRuntimeVersion();
-        const old_spec_version = old_runtime_version["specVersion"];
+        const oldRuntimeVersion = await api.rpc.state.getRuntimeVersion();
+        const oldSpecVersion = oldRuntimeVersion["specVersion"];
 
         const code = fs.readFileSync('calamari.wasm').toString('hex');
         const callData = api.tx.parachainSystem.authorizeUpgrade(`0x${code}`);
@@ -58,9 +56,9 @@ describe('Node RPC Test', () => {
         delay(60000);
 
         let new_runtime_versions = await api.rpc.state.getRuntimeVersion();
-        const new_spec_version = new_runtime_versions["specVersion"];
+        const newSpecVersion = new_runtime_versions["specVersion"];
 
-        expect(new_spec_version).to.equal(old_spec_version as any + 1);
+        expect(newSpecVersion).to.equal(oldSpecVersion as any + 1);
         
         api.disconnect();
     }).timeout(test_config.timeout);
