@@ -44,15 +44,13 @@ jobs:
           - name: dolphin
             chain-spec: dolphin-dev
     steps:
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        run: |
+      - run: |
           ls -ahl ${{ github.workspace }}/
           mkdir -p $HOME/.local/share/${{ matrix.runtime.name }}-pc
           mkdir -p $HOME/.local/bin
           echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: fetch, mv and chmod manta-base
+      - name: fetch, mv and chmod manta-base
         run: |
           wget https://github.com/Manta-Network/Manta/releases/download/v3.4.3/manta
           ls -ahl ${{ github.workspace }}/
@@ -66,8 +64,7 @@ jobs:
           curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.26/polkadot
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        id: create-chainspec
+      - id: create-chainspec
         run: |
           manta-base build-spec --chain ${{ matrix.runtime.chain-spec }} --disable-default-bootnode --raw > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json
           jq \
@@ -83,13 +80,11 @@ jobs:
             ' $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json
           ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-pc/
           manta-base export-state --chain $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-state.json || true
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: fetch config-for-runtime-upgrade-test
+      - name: fetch config-for-runtime-upgrade-test
         uses: actions/download-artifact@v2
         with:
           name: config-for-runtime-upgrade-test
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: create launch config
+      - name: create launch config
         run: |
           ls -a
           cat config-for-runtime-upgrade-test.json | \
@@ -108,18 +103,15 @@ jobs:
             ' > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
           jq . $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
           ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-pc/
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
         with:
           repository: paritytech/polkadot-launch
           path: polkadot-launch
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
         with:
           repository: Manta-Network/Dev-Tools
           path: dev-tools
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: launch testnet
+      - name: launch testnet
         run: |
           cd ${{ github.workspace }}/polkadot-launch
           yarn install
@@ -130,8 +122,7 @@ jobs:
             --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.runtime.chain-spec }}-stderr.log \
             --no-autorestart \
             -- $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: init measure-block-time ${{ matrix.runtime.name }}
+      - name: init measure-block-time ${{ matrix.runtime.name }}
         run: |
           cd ${{ github.workspace }}/dev-tools/measure-block-time
           yarn install
@@ -142,8 +133,7 @@ jobs:
             --no-autorestart \
             -- \
             --address=ws://127.0.0.1:9921
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: run test suites
+      - name: run test suites
         run: |
           sleep 120
           ls -a
@@ -153,26 +143,22 @@ jobs:
           yarn runtime_upgrade_test --address=ws://127.0.0.1:9921 --exit
           echo $?
           if [ $? != 0 ]; then echo "Runtime upgrade failed!"; exit 1; fi
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: stop testnet
+      - name: stop testnet
         run: |
           cd ${{ github.workspace }}/polkadot-launch
           pm2 stop measure-block-time-${{ matrix.runtime.chain-spec }}
           pm2 stop polkadot-launch
           pm2 stop test-previous-runtime-upgrade-${{ matrix.runtime.chain-spec }}
           pm2 stop test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v2
         with:
           name: runtime-upgrade-test-for-${{ matrix.runtime.chain-spec }}-stdout.log
           path: ${{ github.workspace }}/test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v2
         with:
           name: runtime-upgrade-test-for-${{ matrix.runtime.chain-spec }}-stderr.log
           path: ${{ github.workspace }}/test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        name: parse ${{ matrix.runtime.name }} block times
+      - name: parse ${{ matrix.runtime.name }} block times
         run: |
           grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.runtime.chain-spec }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv; done
           if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.runtime.chain-spec }}.csv ]; then echo "block times not detected"; exit 1; fi
