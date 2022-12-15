@@ -95,9 +95,9 @@ jobs:
       matrix:
         runtime:
           - name: calamari
-            chain-spec: calamari-dev
+            chain-spec: calamari-local
           - name: dolphin
-            chain-spec: dolphin-dev
+            chain-spec: dolphin-local
     steps:
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         run: |
