@@ -148,7 +148,7 @@ jobs:
           ls -ahl $HOME/.local/bin/
       - name: fetch and chmod polkadot
         run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.26/polkadot
+          curl -L -o $HOME/.local/bin/polkadot ${{ env.POLKADOT_BINARY }}
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       - id: create-chainspec
