@@ -11,13 +11,6 @@ import * as fs from 'fs';
 const test_config = {
     ws_address: "ws://127.0.0.1:9800",
     mnemonic: 'bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice',
-    storage_prepare_config: {
-        utxo_batch_number: 1,
-        utxo_batch_size_per_shard: 4,
-        utxo_big_batch_number: 1,
-        vn_batch_number: 1,
-        vn_batch_size: 1024,
-    },
     timeout: 200000
 }
 
