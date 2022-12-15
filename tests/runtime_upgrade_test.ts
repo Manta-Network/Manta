@@ -50,7 +50,8 @@ describe('Node RPC Test', () => {
 
         const code = fs.readFileSync('calamari.wasm').toString('hex');
         const call_data = api.tx.parachainSystem.authorizeUpgrade(`0x${code}`);
-        inject_data_via_governance(api, aliceKeyPair, call_data, 0);
+        var referendumIndexObject = { referendumIndex: 0 };
+        inject_data_via_governance(api, aliceKeyPair, call_data, referendumIndexObject);
         delay(60000);
         // Perform the actual chain upgrade via the sudo module
         api.tx.parachainSystem.enactAuthorizedUpgrade(`0x${code}`).signAndSend(aliceKeyPair, {nonce: -1});
