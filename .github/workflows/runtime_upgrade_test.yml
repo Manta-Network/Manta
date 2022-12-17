@@ -217,7 +217,7 @@ jobs:
           yarn runtime_upgrade_test --address=ws://127.0.0.1:9921 --exit
           echo $?
           if [ $? != 0 ]; then echo "Runtime upgrade failed!"; exit 1; fi
-      - if: always()
+      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-alice.log
@@ -228,18 +228,6 @@ jobs:
           cd ${{ github.workspace }}/polkadot-launch
           pm2 stop measure-block-time-${{ matrix.runtime.chain-spec }}
           pm2 stop polkadot-launch
-          pm2 stop test-previous-runtime-upgrade-${{ matrix.runtime.chain-spec }}
-          pm2 stop test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: runtime-upgrade-test-for-${{ matrix.runtime.chain-spec }}-stdout.log
-          path: ${{ github.workspace }}/test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stdout.log
-      - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: runtime-upgrade-test-for-${{ matrix.runtime.chain-spec }}-stderr.log
-          path: ${{ github.workspace }}/test-new-runtime-upgrade-${{ matrix.runtime.chain-spec }}-stderr.log
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: parse ${{ matrix.runtime.name }} block times
         run: |
