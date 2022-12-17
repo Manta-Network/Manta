@@ -217,6 +217,11 @@ jobs:
           yarn runtime_upgrade_test --address=ws://127.0.0.1:9921 --exit
           echo $?
           if [ $? != 0 ]; then echo "Runtime upgrade failed!"; exit 1; fi
+      - if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.chain-spec.id }}-alice.log
+          path: ${{ github.workspace }}/polkadot-launch/9921.log
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         name: stop testnet
         run: |
