@@ -42,9 +42,9 @@ describe('Node RPC Test', () => {
         const authorizeUpgradeCallData = api.tx.parachainSystem.authorizeUpgrade(codeHash);
         var referendumIndexObject = { referendumIndex: 0 };
         execute_with_root_via_governance(api, aliceKeyPair, authorizeUpgradeCallData, referendumIndexObject);
-        await delay(120000);
+        await delay(60000);
         api.tx.parachainSystem.enactAuthorizedUpgrade(`0x${code}`).signAndSend(aliceKeyPair, {nonce: -1});
-        await delay(240000);
+        await delay(120000);
 
         let newRuntimeVersions = await api.rpc.state.getRuntimeVersion();
         const newSpecVersion = newRuntimeVersions["specVersion"];
