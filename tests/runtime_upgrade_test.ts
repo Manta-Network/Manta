@@ -48,10 +48,14 @@ describe('Node RPC Test', () => {
 
         let newRuntimeVersions = await api.rpc.state.getRuntimeVersion();
         const newSpecVersion = newRuntimeVersions["specVersion"];
-        console.log("oldSpecVersion:", oldSpecVersion);
-        console.log("newSpecVersion:", newSpecVersion);
-
         assert(newSpecVersion > oldSpecVersion);
+
+        let blockNow = await api.rpc.chain.getBlock();
+        let blockNumberNow = blockNow.block.header.number;
+        await delay(60000);
+        let blockLater = await api.rpc.chain.getBlock();
+        let blockNumberLater = blockLater.block.header.number;
+        assert(blockNumberLater > blockNumberNow);
 
         api.disconnect();
     }).timeout(test_config.timeout);
