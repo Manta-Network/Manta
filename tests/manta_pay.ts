@@ -2,7 +2,8 @@ import { ApiPromise } from '@polkadot/api';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { blake2AsHex } from "@polkadot/util-crypto";
 import { u8aToHex, numberToU8a } from '@polkadot/util';
-import { single_map_storage_key, double_map_storage_key, delay, emojis, HashType } from './test-util';
+import { blake2AsHex } from "@polkadot/util-crypto";
+import { single_map_storage_key, double_map_storage_key, delay, HashType } from './test-util';
 
 // number of shards at MantaPay
 export const manta_pay_config = {
@@ -76,6 +77,8 @@ function generate_batched_utxos(per_shard_amount: number, checkpoint: Array<numb
     return {data: data, checkpoint: new_checkpoint};
 }
 
+var referendumIndexObject = { referendumIndex: 0 };
+
 /**
  *  Insert utxos in batches
  * @param api api object connecting to node.
@@ -103,19 +106,13 @@ async function insert_utxos_in_batches(
     for (let batch_idx = 0; batch_idx < batch_number; batch_idx ++){
         const {data, checkpoint} = generate_batched_utxos(per_shard_amount, cur_checkpoint);
         cur_checkpoint = checkpoint;
-        const call_data = api.tx.system.setStorage(data);
-        // https://substrate.stackexchange.com/questions/1776/how-to-use-polkadot-api-to-send-multiple-transactions-simultaneously
-        const unsub = await api.tx.sudo.sudo(call_data).signAndSend(keyring, {nonce: -1}, ({ events = [], status }) => {
-           if (status.isFinalized) {
-                success_batch ++;
-                console.log("%s %i batch utxos insertion finalized.", emojis.write, success_batch);
-                unsub();
-            }
-        });
+        const callData = api.tx.system.setStorage(data);
+        execute_with_root_via_governance(api, keyring, callData, referendumIndexObject);
+        await delay(5000);
     }
     
     // wait all txs finalized
-    for(let i =0; i < max_wait_time_sec; i ++){
+    for(let i = 0; i < max_wait_time_sec; i ++){
         await delay(1000);
         if (success_batch === batch_number) {
             console.log("total wait: %i sec.", i + 1);
@@ -166,15 +163,10 @@ async function insert_void_numbers_in_batch(
     for(let batch_idx = 0; batch_idx < batch_number; batch_idx ++) {
         console.log("start vn batch %i", batch_idx);
         const data = generate_vn_insertion_data(sender_idx, amount_per_batch);
-        const call_data = api.tx.system.setStorage(data);
-        const unsub = await api.tx.sudo.sudo(call_data).signAndSend(keyring, {nonce: -1}, ({ events = [], status }) => {
-            if (status.isFinalized) {
-                success_batch ++;
-                console.log("%s %i batch void number insertion finalized.", emojis.write, success_batch);
-                unsub();
-            }
-        });
+        const callData = api.tx.system.setStorage(data);
+        execute_with_root_via_governance(api, keyring, callData, referendumIndexObject);
         sender_idx += amount_per_batch;
+        await delay(5000);
     }
     // wait all txs finalized
     for(let i =0; i < max_wait_time_sec; i++){
@@ -216,7 +208,7 @@ export async function setup_storage(
         receiver_checkpoint.fill(check_idx);
         console.log("starting utxo idx: %i", receiver_checkpoint[0]);
         const utxo_batch_done = await insert_utxos_in_batches(
-            api, keyring, config.utxo_batch_number, config.utxo_batch_size_per_shard, receiver_checkpoint, 1000);
+            api, keyring, config.utxo_batch_number, config.utxo_batch_size_per_shard, receiver_checkpoint, 250);
         console.log(">>>> Complete %i big batch with %i UTXOs", 
             big_batch_idx + 1 , utxo_batch_done * config.utxo_batch_size_per_shard * manta_pay_config.shard_number);
     }
@@ -224,7 +216,7 @@ export async function setup_storage(
 
     console.log(">>>> Inserting void numbers: %i per batch, %i batch", 
         config.vn_batch_size, config.vn_batch_number);
-    const vn_batch_done = await insert_void_numbers_in_batch(api, keyring, config.vn_batch_size, config.vn_batch_number, 0, 1000);
+    const vn_batch_done = await insert_void_numbers_in_batch(api, keyring, config.vn_batch_size, config.vn_batch_number, 0, 250);
     console.log(">>>> Complete inserting %i void numbers", vn_batch_done * config.vn_batch_size);
 }
 
