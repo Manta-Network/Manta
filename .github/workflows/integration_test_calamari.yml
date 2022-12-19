@@ -1,7 +1,7 @@
 name: calamari integration test
 on:
   push:
-    branches: [manta]
+    branches: [ghzlatarev/stress-benchmark-test]
   pull_request:
     branches: [manta]
     types: [opened, reopened, synchronize, labeled]
