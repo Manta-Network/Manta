@@ -24,7 +24,8 @@ pub use calamari_runtime::{currency::KMA, Event, Origin, Runtime, System};
 use frame_support::weights::{DispatchInfo, Weight};
 use manta_primitives::types::Balance;
 
-pub const BOND_AMOUNT: Balance = 1_000 * KMA;
+pub const COLLATOR_MIN_BOND: Balance = 4_000_000 * KMA;
+pub const WHITELIST_MIN_BOND: Balance = 400_000 * KMA;
 pub const INITIAL_BALANCE: Balance = 1_000_000_000_000 * KMA;
 
 /// create a transaction info struct from weight. Handy to avoid building the whole struct.
