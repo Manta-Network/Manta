@@ -40,25 +40,25 @@ describe('Node RPC Test', () => {
         let mints_offset = 2;
         let transfers_offset = 4;
         let reclaims_offset = 4;
-        let total_iterations = 15000;
-        let start_iteration = 14000;
+        let total_iterations = 13000;
+        let start_iteration = 12100;
     
         let mint_size = 552;
-        const mints_content = await readFile("/home/georgi/Desktop/workspace/Manta/precomputed-15k-iterations/precomputed_mints_v3-4");
+        const mints_content = await readFile("./precomputed_mints");
         const mints_buffer = mints_content.subarray(
           mints_offset,
           mint_size * total_iterations
         );
         let transfer_size = 1290;
         let full_transfer_size = (mint_size * 2 + transfer_size);
-        const transfers_content = await readFile("/home/georgi/Desktop/workspace/Manta/precomputed-15k-iterations/precomputed_transfers_v3-4");
+        const transfers_content = await readFile("./precomputed_transfers");
         const transfers_buffer = transfers_content.subarray(
           transfers_offset,
           full_transfer_size * total_iterations
         );
         let reclaim_size = 968;
         let full_reclaim_size = (mint_size * 2 + reclaim_size);
-        const reclaims_content = await readFile("/home/georgi/Desktop/workspace/Manta/precomputed-15k-iterations/precomputed_reclaims_v3-4");
+        const reclaims_content = await readFile("./precomputed_reclaims");
         const reclaims_buffer = reclaims_content.subarray(
           reclaims_offset,
           full_reclaim_size * total_iterations
