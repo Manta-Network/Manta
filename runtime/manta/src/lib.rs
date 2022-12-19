@@ -41,7 +41,8 @@ use sp_version::RuntimeVersion;
 use frame_support::{
     construct_runtime, match_types, parameter_types,
     traits::{
-        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, Everything, Nothing,
+        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, Everything, IsInVec,
+        Nothing,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -175,9 +176,17 @@ parameter_types! {
     pub const SS58Prefix: u8 = manta_primitives::constants::MANTA_SS58PREFIX;
 }
 
+parameter_types! {
+    pub NonPausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilCollective".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalCollective".to_vec()];
+}
+
 impl pallet_tx_pause::Config for Runtime {
     type Event = Event;
-    type UpdateOrigin = EnsureRoot<AccountId>;
+    type Call = Call;
+    type MaxCallNames = ConstU32<25>;
+    type PauseOrigin = EnsureRoot<AccountId>;
+    type UnpauseOrigin = EnsureRoot<AccountId>;
+    type NonPausablePallets = IsInVec<NonPausablePallets>;
     type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
@@ -215,6 +224,7 @@ impl Contains<Call> for MantaFilter {
             // Sudo also cannot be filtered because it is used in runtime upgrade.
             | Call::Sudo(_)
             | Call::Multisig(_)
+            | Call::TransactionPause(_)
             | Call::Balances(_) => true,
 
             // DISALLOW anything else
