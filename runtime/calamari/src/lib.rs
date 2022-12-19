@@ -126,7 +126,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_version: 4000,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 9,
+    transaction_version: 10,
     state_version: 0,
 };
 
@@ -1030,6 +1030,14 @@ impl_runtime_apis! {
             max_sender: u64
         ) -> pallet_manta_pay::PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+
+        fn dense_pull_ledger_diff(
+            checkpoint: pallet_manta_pay::RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> pallet_manta_pay::DensePullResponse {
+            MantaPay::dense_pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
     }
 
