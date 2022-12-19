@@ -1,0 +1,126 @@
+[package]
+authors = ['Manta Network']
+description = 'Pallet implementing the MantaPay protocol.'
+edition = "2021"
+homepage = 'https://manta.network'
+license = 'GPL-3.0'
+name = 'pallet-manta-sbt'
+readme = 'README.md'
+repository = 'https://github.com/Manta-Network/Manta/'
+version = '0.4.0'
+
+[package.metadata.docs.rs]
+# To build locally:
+# RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features --open
+all-features = true
+rustdoc-args = ["--cfg", "doc_cfg"]
+
+[[bin]]
+name = "precompute_coins"
+required-features = ["precompute-coins"]
+
+[features]
+# Default Features
+default = ["std"]
+
+# RPC Interface
+rpc = [
+  "jsonrpsee",
+  "serde",
+  "sp-api",
+  "sp-blockchain",
+]
+
+# Runtime API
+runtime = ["sp-api"]
+
+# Runtime Benchmarks
+runtime-benchmarks = [
+  "frame-benchmarking",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "manta-primitives/runtime-benchmarks",
+]
+
+# Serde Serialization
+serde = [
+  "manta-pay/serde",
+  "manta-util/serde",
+  "manta-util/serde_with",
+]
+
+# Standard Library
+std = [
+  "anyhow/std",
+  "frame-benchmarking/std",
+  "frame-support/std",
+  "frame-system/std",
+  "scale-codec/std",
+  "scale-info/std",
+  "sp-runtime/std",
+  "sp-api/std",
+  "sp-std/std",
+  "manta-primitives/std",
+  "manta-accounting/std",
+  "manta-crypto/std",
+  "manta-util/std",
+  "manta-pay/std",
+]
+
+# Precompute Benchmark Transactions
+precompute-coins = [
+  "anyhow",
+  "indoc",
+  "manta-accounting/test",
+  "manta-pay/download",
+  "manta-pay/test",
+  "manta-pay/serde",
+  "manta-pay/groth16",
+  "manta-pay/bip32",
+  "manta-pay/arkworks",
+  "manta-util/std",
+  "rand_chacha",
+  "tempfile",
+]
+
+[dependencies]
+# utils
+anyhow = { version = "1.0.55", optional = true, default-features = false }
+base64 = { version = "0.20", default-features = false, features = ["alloc"] }
+indoc = { version = "1.0.3", optional = true, default-features = false }
+rand_chacha = { version = "0.3.1", optional = true, default-features = false }
+tempfile = { version = "3.3.0", optional = true, default-features = false }
+
+# substrate dependencies
+frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false, optional = true }
+frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
+scale-codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
+scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+sp-api = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26", optional = true, default-features = false }
+sp-blockchain = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26", optional = true, default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26", default-features = false }
+
+# JSON-RPC
+jsonrpsee = { version = "0.14.0", features = ["server", "macros"], optional = true }
+
+# manta dependencies
+manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.8", default-features = false }
+manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.8", default-features = false }
+manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.8", default-features = false, features = ["groth16", "parameters", "scale"] }
+manta-primitives = { path = "../../primitives/manta", default-features = false }
+manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.8", default-features = false }
+
+[dev-dependencies]
+lazy_static = "1.4.0"
+manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.8", features = ["getrandom"] }
+manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.8", default-features = false, features = ["groth16", "parameters", "scale", "download", "test"] }
+pallet-asset-manager = { path = "../asset-manager" }
+pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
+pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+tempfile = "3.3.0"
+xcm = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.26" }
+#pallet-uniques = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
