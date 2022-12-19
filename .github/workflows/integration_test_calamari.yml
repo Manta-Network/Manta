@@ -168,6 +168,19 @@ jobs:
           ls -ahl $HOME/.local/share/calamari-pc/
           echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
           manta export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
+      - uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Manta
+          path: Manta
+      - name: inject manta-pay storage
+        run: |
+          mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/fork.json
+          cd ${{ github.workspace }}/Manta/tests
+          yarn install
+          yarn
+          node inject_storage.json
+          cd ../../
+          mv ${{ github.workspace }}/Manta/tests/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
       - if: always()
         uses: actions/upload-artifact@v2
         with:
