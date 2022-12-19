@@ -35,15 +35,6 @@ use frame_system::Config;
 pub trait WeightInfo {
     /// Returns the [`Weight`] of the [`crate::Pallet::to_private`] extrinsic.
     fn to_private() -> Weight;
-
-    /// Returns the [`Weight`] of the [`crate::Pallet::to_public`] extrinsic.
-    fn to_public() -> Weight;
-
-    /// Returns the [`Weight`] of the [`crate::Pallet::private_transfer`] extrinsic.
-    fn private_transfer() -> Weight;
-
-    /// Returns the [`Weight`] of the [`crate::Pallet::public_transfer`] extrinsic.
-    fn public_transfer() -> Weight;
 }
 
 /// Concrete Weight Functions

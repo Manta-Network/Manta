@@ -113,7 +113,13 @@ pub type StandardAssetId = u128;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::{pallet_prelude::*, traits::{tokens::nonfungibles::{Create, Mutate}, StorageVersion}};
+    use frame_support::{
+        pallet_prelude::*,
+        traits::{
+            tokens::nonfungibles::{Create, Inspect, Mutate},
+            StorageVersion,
+        },
+    };
     use frame_system::pallet_prelude::*;
     use scale_codec::Encode;
     use sp_runtime::traits::AccountIdConversion;
@@ -136,9 +142,10 @@ pub mod pallet {
         type WeightInfo: WeightInfo;
 
         /// NFT Interface
-        type NFT: Create<Self::AccountId> + Mutate<Self::AccountId>;
+        type NFT: Create<Self::AccountId> + Mutate<Self::AccountId> + Inspect<Self::AccountId>;
 
-        type CollectionId: Get<Self::CollectionId>;
+        /// System CollectionId
+        type CollectionIdentifier: Get<StandardAssetId>;
 
         /// Pallet ID
         type PalletId: Get<PalletId>;
@@ -214,21 +221,6 @@ pub mod pallet {
     /// Error
     #[pallet::error]
     pub enum Error<T> {
-        /// Uninitialized Supply
-        ///
-        /// Supply of the given Asset Id has not yet been initialized.
-        UninitializedSupply,
-
-        /// Zero Transfer
-        ///
-        /// Public transfers cannot include amounts equal to zero.
-        ZeroTransfer,
-
-        /// Balance Low
-        ///
-        /// Attempted to withdraw from balance which was smaller than the withdrawal amount.
-        BalanceLow,
-
         /// Invalid Serialized Form
         ///
         /// The transfer could not be interpreted because of an issue during deserialization.
@@ -287,38 +279,6 @@ pub mod pallet {
         /// At least one of the sink accounts in invalid.
         InvalidSinkAccount,
 
-        /// [`InvalidAssetId`](FungibleLedgerError::InvalidAssetId) from [`FungibleLedgerError`]
-        PublicUpdateInvalidAssetId,
-
-        /// [`BelowMinimum`](FungibleLedgerError::BelowMinimum) from [`FungibleLedgerError`]
-        PublicUpdateBelowMinimum,
-
-        /// [`CannotCreate`](FungibleLedgerError::CannotCreate) from [`FungibleLedgerError`]
-        PublicUpdateCannotCreate,
-
-        /// [`UnknownAsset`](FungibleLedgerError::UnknownAsset) from [`FungibleLedgerError`]
-        PublicUpdateUnknownAsset,
-
-        /// [`Overflow`](FungibleLedgerError::Overflow) from [`FungibleLedgerError`]
-        PublicUpdateOverflow,
-
-        /// [`CannotWithdraw`](FungibleLedgerError::CannotWithdrawMoreThan) from [`FungibleLedgerError`]
-        PublicUpdateCannotWithdraw,
-
-        /// [`InvalidMint`](FungibleLedgerError::InvalidMint) from [`FungibleLedgerError`]
-        PublicUpdateInvalidMint,
-
-        /// [`InvalidBurn`](FungibleLedgerError::InvalidBurn) from [`FungibleLedgerError`]
-        PublicUpdateInvalidBurn,
-
-        /// [`InvalidTransfer`](FungibleLedgerError::InvalidTransfer) from [`FungibleLedgerError`]
-        PublicUpdateInvalidTransfer,
-
-        /// Internal Ledger Error
-        ///
-        /// This is caused by some internal error in the ledger and should never occur.
-        InternalLedgerError,
-
         /// Encode Error
         EncodeError,
     }
@@ -368,6 +328,34 @@ pub mod pallet {
         fn from(err: ReceiverPostError) -> Self {
             match err {
                 ReceiverPostError::AssetRegistered => Self::AssetRegistered,
+            }
+        }
+    }
+
+    /// Transfer Post Error
+    pub type TransferPostError<T> = transfer::TransferPostError<
+        config::Config,
+        <T as frame_system::Config>::AccountId,
+        Error<T>,
+    >;
+
+    impl<T> From<TransferPostError<T>> for Error<T>
+    where
+        T: Config,
+    {
+        #[inline]
+        fn from(err: TransferPostError<T>) -> Self {
+            match err {
+                TransferPostError::<T>::InvalidShape => Self::InvalidShape,
+                TransferPostError::<T>::InvalidAuthorizationSignature(err) => err.into(),
+                TransferPostError::<T>::InvalidSourceAccount(err) => err.into(),
+                TransferPostError::<T>::InvalidSinkAccount(err) => err.into(),
+                TransferPostError::<T>::Sender(err) => err.into(),
+                TransferPostError::<T>::Receiver(err) => err.into(),
+                TransferPostError::<T>::DuplicateMint => Self::DuplicateRegister,
+                TransferPostError::<T>::DuplicateSpend => Self::DuplicateSpend,
+                TransferPostError::<T>::InvalidProof => Self::InvalidProof,
+                TransferPostError::<T>::UpdateError(err) => err.into(),
             }
         }
     }
@@ -531,7 +519,7 @@ pub mod pallet {
                         &mut Ledger(PhantomData),
                         &(),
                         sources,
-                        sinks,
+                        Vec::new(),
                     )
                     .map_err(Error::<T>::from)?
                     .convert(origin),
@@ -572,18 +560,6 @@ where
         /// Source Account
         source: T::AccountId,
     },
-
-    /// Private Transfer Event
-    PrivateTransfer,
-
-    /// To Public Event
-    ToPublic {
-        /// Asset Reclaimed
-        asset: Asset,
-
-        /// Sink Account
-        sink: T::AccountId,
-    },
 }
 
 impl<T> PreprocessedEvent<T>
@@ -596,8 +572,6 @@ where
     fn convert(self, origin: Option<T::AccountId>) -> Event<T> {
         match self {
             Self::ToPrivate { asset, source } => Event::ToPrivate { asset, source },
-            Self::PrivateTransfer => Event::PrivateTransfer { origin },
-            Self::ToPublic { asset, sink } => Event::ToPublic { asset, sink },
         }
     }
 }
@@ -798,7 +772,7 @@ where
     type SuperPostingKey = ();
     type AccountId = T::AccountId;
     type Event = PreprocessedEvent<T>;
-    type UpdateError = FungibleLedgerError;
+    type UpdateError = Error<T>;
     type ValidSourceAccount = WrapPair<Self::AccountId, AssetValue>;
     type ValidSinkAccount = WrapPair<Self::AccountId, AssetValue>;
     type ValidProof = Wrap<()>;
@@ -812,33 +786,9 @@ where
     where
         I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
     {
-        sources
-            .map(move |(account_id, withdraw)| {
-                FungibleLedger::<T>::can_withdraw(
-                    Pallet::<T>::id_from_field(fp_encode(*asset_id).map_err(|_e| {
-                        InvalidSourceAccount {
-                            account_id: account_id.clone(),
-                            asset_id: *asset_id,
-                            withdraw,
-                        }
-                    })?)
-                    .ok_or(InvalidSourceAccount {
-                        account_id: account_id.clone(),
-                        asset_id: *asset_id,
-                        withdraw,
-                    })?,
-                    &account_id,
-                    &withdraw,
-                    ExistenceRequirement::KeepAlive,
-                )
-                .map(|_| WrapPair(account_id.clone(), withdraw))
-                .map_err(|_| InvalidSourceAccount {
-                    account_id,
-                    asset_id: *asset_id,
-                    withdraw,
-                })
-            })
-            .collect()
+        Ok(sources
+            .map(move |(account_id, withdraw)| WrapPair(account_id, withdraw))
+            .collect())
     }
 
     #[inline]
@@ -850,35 +800,8 @@ where
     where
         I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
     {
-        // NOTE: Existence of accounts is type-checked so we don't need to do anything here, just
-        // pass the data forward.
-        sinks
-            .map(move |(account_id, deposit)| {
-                FungibleLedger::<T>::can_deposit(
-                    Pallet::<T>::id_from_field(fp_encode(*asset_id).map_err(|_e| {
-                        InvalidSinkAccount {
-                            account_id: account_id.clone(),
-                            asset_id: *asset_id,
-                            deposit,
-                        }
-                    })?)
-                    .ok_or(InvalidSinkAccount {
-                        account_id: account_id.clone(),
-                        asset_id: *asset_id,
-                        deposit,
-                    })?,
-                    &account_id,
-                    deposit,
-                    false,
-                )
-                .map(|_| WrapPair(account_id.clone(), deposit))
-                .map_err(|_| InvalidSinkAccount {
-                    account_id,
-                    asset_id: *asset_id,
-                    deposit,
-                })
-            })
-            .collect()
+        // No Sinks in this pallet
+        Ok(Vec::new())
     }
 
     #[inline]
@@ -899,22 +822,8 @@ where
                         source: posting_key.sources[0].0.clone(),
                     },
                 ),
-                TransferShape::PrivateTransfer => (
-                    manta_parameters::pay::testnet::verifying::PrivateTransfer::get()
-                        .expect("Checksum did not match."),
-                    PreprocessedEvent::<T>::PrivateTransfer,
-                ),
-                TransferShape::ToPublic => (
-                    manta_parameters::pay::testnet::verifying::ToPublic::get()
-                        .expect("Checksum did not match."),
-                    PreprocessedEvent::<T>::ToPublic {
-                        asset: Asset::new(
-                            fp_encode(posting_key.asset_id.or(None)?).ok()?,
-                            asset_value_encode(posting_key.sinks[0].1),
-                        ),
-                        sink: posting_key.sinks[0].0.clone(),
-                    },
-                ),
+                TransferShape::PrivateTransfer => return None,
+                TransferShape::ToPublic => return None,
             };
         posting_key
             .has_valid_proof(
@@ -935,28 +844,11 @@ where
         proof: Self::ValidProof,
     ) -> Result<(), Self::UpdateError> {
         let _ = (proof, super_key);
-        let asset_id_type = Pallet::<T>::id_from_field(
-            fp_encode(asset_id).map_err(|_e| FungibleLedgerError::EncodeError)?,
-        )
-        .ok_or(FungibleLedgerError::UnknownAsset)?;
-        for WrapPair(account_id, withdraw) in sources {
-            FungibleLedger::<T>::transfer(
-                asset_id_type,
-                &account_id,
-                &Pallet::<T>::account_id(),
-                withdraw,
-                ExistenceRequirement::KeepAlive,
-            )?;
-        }
-        for WrapPair(account_id, deposit) in sinks {
-            FungibleLedger::<T>::transfer(
-                asset_id_type,
-                &Pallet::<T>::account_id(),
-                &account_id,
-                deposit,
-                ExistenceRequirement::KeepAlive,
-            )?;
-        }
+        let asset_id_type =
+            Pallet::<T>::id_from_field(fp_encode(asset_id).map_err(|_e| Error::<T>::EncodeError)?)
+                .ok_or(Error::<T>::InvalidAssetId)?;
+        for WrapPair(account_id, withdraw) in sources {}
+        for WrapPair(account_id, deposit) in sinks {}
         Ok(())
     }
 }

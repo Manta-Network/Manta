@@ -17,21 +17,21 @@
 use frame_support::{
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{ConstU32, Everything},
+    traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, Everything},
     PalletId,
 };
-use frame_system::EnsureRoot;
+use frame_system::{EnsureRoot, EnsureSigned};
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
         AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
-    constants::{ASSET_MANAGER_PALLET_ID, MANTA_PAY_PALLET_ID},
+    constants::MANTA_SBT_PALLET_ID,
     types::{Balance, BlockNumber, Header},
 };
 use sp_core::H256;
 use sp_runtime::{
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{BlakeTwo256, Get, IdentityLookup},
     AccountId32,
 };
 use xcm::{
@@ -52,10 +52,9 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        MantaPayPallet: crate::{Pallet, Call, Storage, Event<T>},
+        MantaSBTPallet: crate::{Pallet, Call, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Assets: pallet_assets::{Pallet, Storage, Event<T>},
-        AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>},
+        Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>},
     }
 );
 
@@ -110,156 +109,45 @@ impl pallet_balances::Config for Test {
 }
 
 parameter_types! {
-    // Does not really matter as this will be only called by root
-    pub const AssetDeposit: Balance = 0;
-    pub const AssetAccountDeposit: Balance = 0;
-    pub const ApprovalDeposit: Balance = 0;
-    pub const AssetsStringLimit: u32 = 50;
-    pub const MetadataDepositBase: Balance = 0;
-    pub const MetadataDepositPerByte: Balance = 0;
+    pub const CollectionDeposit: Balance = 100;
+    pub const ItemDeposit: Balance = 1;
+    pub const KeyLimit: u32 = 32;
+    pub const ValueLimit: u32 = 256;
+    pub const MetadataDepositBase: Balance = 1_000;
+    pub const MetadataDepositPerByte: Balance = 10;
 }
 
-impl pallet_assets::Config for Test {
+impl pallet_uniques::Config for Test {
     type Event = Event;
-    type Balance = Balance;
-    type AssetId = StandardAssetId;
+    type CollectionId = StandardAssetId;
+    type ItemId = StandardAssetId;
     type Currency = Balances;
     type ForceOrigin = EnsureRoot<AccountId32>;
-    type AssetDeposit = AssetDeposit;
-    type AssetAccountDeposit = AssetAccountDeposit;
+    type CollectionDeposit = CollectionDeposit;
+    type ItemDeposit = ItemDeposit;
     type MetadataDepositBase = MetadataDepositBase;
-    type MetadataDepositPerByte = MetadataDepositPerByte;
-    type ApprovalDeposit = ApprovalDeposit;
-    type StringLimit = AssetsStringLimit;
-    type Freezer = ();
-    type Extra = ();
-    type WeightInfo = pallet_assets::weights::SubstrateWeight<Test>;
-}
-
-pub struct MantaAssetRegistry;
-impl BalanceType for MantaAssetRegistry {
-    type Balance = Balance;
-}
-impl AssetIdType for MantaAssetRegistry {
-    type AssetId = StandardAssetId;
-}
-impl AssetRegistry for MantaAssetRegistry {
-    type Metadata = AssetStorageMetadata;
-    type Error = sp_runtime::DispatchError;
-
-    fn create_asset(
-        asset_id: StandardAssetId,
-        metadata: AssetStorageMetadata,
-        min_balance: Balance,
-        is_sufficient: bool,
-    ) -> DispatchResult {
-        Assets::force_create(
-            Origin::root(),
-            asset_id,
-            AssetManager::account_id(),
-            is_sufficient,
-            min_balance,
-        )?;
-
-        Assets::force_set_metadata(
-            Origin::root(),
-            asset_id,
-            metadata.name,
-            metadata.symbol,
-            metadata.decimals,
-            metadata.is_frozen,
-        )?;
-
-        Assets::force_asset_status(
-            Origin::root(),
-            asset_id,
-            AssetManager::account_id(),
-            AssetManager::account_id(),
-            AssetManager::account_id(),
-            AssetManager::account_id(),
-            min_balance,
-            is_sufficient,
-            metadata.is_frozen,
-        )
-    }
-
-    fn update_asset_metadata(
-        asset_id: &StandardAssetId,
-        metadata: AssetStorageMetadata,
-    ) -> DispatchResult {
-        Assets::force_set_metadata(
-            Origin::root(),
-            *asset_id,
-            metadata.name,
-            metadata.symbol,
-            metadata.decimals,
-            metadata.is_frozen,
-        )
-    }
-}
-
-parameter_types! {
-    pub const DummyAssetId: StandardAssetId = 0;
-    pub const NativeAssetId: StandardAssetId = 1;
-    pub const StartNonNativeAssetId: StandardAssetId = 8;
-    pub NativeAssetLocation: AssetLocation = AssetLocation(
-        VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
-    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
-        metadata: AssetStorageMetadata {
-            name: b"Dolphin".to_vec(),
-            symbol: b"DOL".to_vec(),
-            decimals: 18,
-            is_frozen: false,
-        },
-        min_balance: 1u128,
-        is_sufficient: true,
-    };
-    pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
-}
-
-/// AssetConfig implementations for this runtime
-#[derive(Clone, Eq, PartialEq)]
-pub struct MantaAssetConfig;
-impl LocationType for MantaAssetConfig {
-    type Location = AssetLocation;
-}
-impl AssetIdType for MantaAssetConfig {
-    type AssetId = StandardAssetId;
-}
-impl BalanceType for MantaAssetConfig {
-    type Balance = Balance;
-}
-impl AssetConfig<Test> for MantaAssetConfig {
-    type NativeAssetId = NativeAssetId;
-    type StartNonNativeAssetId = StartNonNativeAssetId;
-    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
-    type NativeAssetLocation = NativeAssetLocation;
-    type NativeAssetMetadata = NativeAssetMetadata;
-    type StorageMetadata = AssetStorageMetadata;
-    type AssetRegistry = MantaAssetRegistry;
-    type FungibleLedger = NativeAndNonNative<Test, MantaAssetConfig, Balances, Assets>;
-}
-
-impl pallet_asset_manager::Config for Test {
-    type Event = Event;
-    type AssetId = StandardAssetId;
-    type Balance = Balance;
-    type Location = AssetLocation;
-    type AssetConfig = MantaAssetConfig;
-    type ModifierOrigin = EnsureRoot<AccountId32>;
-    type PalletId = AssetManagerPalletId;
+    type AttributeDepositBase = MetadataDepositBase;
+    type DepositPerByte = MetadataDepositPerByte;
+    type StringLimit = ConstU32<1000>;
+    type KeyLimit = KeyLimit;
+    type ValueLimit = ValueLimit;
     type WeightInfo = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type Helper = ();
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId32>>;
+    type Locker = ();
 }
 
 parameter_types! {
-    pub const MantaPayPalletId: PalletId = MANTA_PAY_PALLET_ID;
+    pub const MantaSBTPalletId: PalletId = MANTA_SBT_PALLET_ID;
 }
 
 impl crate::Config for Test {
     type Event = Event;
-    type WeightInfo = crate::weights::SubstrateWeight<Self>;
-    type PalletId = MantaPayPalletId;
-    type AssetConfig = MantaAssetConfig;
+    type WeightInfo = crate::weights::SubstrateWeight<Test>;
+    type CollectionIdentifier = ConstU128<0>;
+    type PalletId = MantaSBTPalletId;
+    type NFT = Uniques;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

@@ -16,12 +16,9 @@
 
 use crate::{
     fp_decode,
-    mock::{
-        new_test_ext, MantaAssetConfig, MantaAssetRegistry, MantaPayPallet, Origin as MockOrigin,
-        Test,
-    },
+    mock::{new_test_ext, MantaSBTPallet, Origin as MockOrigin, Test},
     types::{fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
-    Error, FungibleLedger, StandardAssetId,
+    Error, StandardAssetId,
 };
 use frame_support::{assert_noop, assert_ok};
 use manta_accounting::transfer::test::value_distribution;
@@ -38,14 +35,9 @@ use manta_pay::{
     parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
     test,
 };
-use manta_primitives::{
-    assets::{
-        AssetConfig, AssetRegistry, AssetRegistryMetadata, AssetStorageMetadata,
-        FungibleLedger as _,
-    },
-    constants::TEST_DEFAULT_ASSET_ED,
-};
+use manta_primitives::constants::TEST_DEFAULT_ASSET_ED;
 
+/*
 /// UTXO Accumulator for Building Circuits
 type UtxoAccumulator =
     TreeArrayMerkleForest<MerkleTreeConfiguration, Full<MerkleTreeConfiguration>, 256>;
@@ -561,3 +553,4 @@ fn pull_ledger_diff_should_work() {
         assert_eq!(pull_response.senders, decoded_senders);
     });
 }
+*/

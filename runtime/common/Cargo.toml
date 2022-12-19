@@ -9,16 +9,16 @@ version = '4.0.0-alpha.1'
 
 [dependencies]
 # Substrate dependencies
-frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26", default-features = false }
-pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26", default-features = false }
-sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26", default-features = false }
-sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26", default-features = false }
+frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", default-features = false }
+pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", default-features = false }
+sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", default-features = false }
 
 # Self dependencies
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 
 [dev-dependencies]
-sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
+sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
 
 [features]
 default = ["std"]
