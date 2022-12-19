@@ -16,7 +16,7 @@
 
 //! MantaPay RPC Interfaces
 
-use crate::{runtime::PullLedgerDiffApi, PullResponse};
+use crate::{runtime::PullLedgerDiffApi, Checkpoint, DensePullResponse, PullResponse};
 use alloc::sync::Arc;
 use core::marker::PhantomData;
 use jsonrpsee::{
@@ -24,7 +24,6 @@ use jsonrpsee::{
     proc_macros::rpc,
     types::error::{CallError, ErrorObject},
 };
-use manta_pay::signer::Checkpoint;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block};
@@ -44,6 +43,14 @@ pub trait PullApi {
         max_receivers: u64,
         max_senders: u64,
     ) -> RpcResult<PullResponse>;
+
+    #[method(name = "mantaPay_dense_pull_ledger_diff", blocking)]
+    fn dense_pull_ledger_diff(
+        &self,
+        checkpoint: Checkpoint,
+        max_receivers: u64,
+        max_senders: u64,
+    ) -> RpcResult<DensePullResponse>;
 }
 
 /// Pull RPC API Implementation
@@ -81,13 +88,33 @@ where
         max_senders: u64,
     ) -> RpcResult<PullResponse> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(self.client.info().best_hash);
+        let at = BlockId::hash(self.client.info().finalized_hash);
         api.pull_ledger_diff(&at, checkpoint.into(), max_receivers, max_senders)
             .map_err(|err| {
                 CallError::Custom(ErrorObject::owned(
                     PULL_LEDGER_DIFF_ERROR,
                     "Unable to compute state diff for pull",
-                    Some(format!("{:?}", err)),
+                    Some(format!("{err:?}")),
+                ))
+                .into()
+            })
+    }
+
+    #[inline]
+    fn dense_pull_ledger_diff(
+        &self,
+        checkpoint: Checkpoint,
+        max_receivers: u64,
+        max_senders: u64,
+    ) -> RpcResult<DensePullResponse> {
+        let api = self.client.runtime_api();
+        let at = BlockId::hash(self.client.info().finalized_hash);
+        api.dense_pull_ledger_diff(&at, checkpoint.into(), max_receivers, max_senders)
+            .map_err(|err| {
+                CallError::Custom(ErrorObject::owned(
+                    PULL_LEDGER_DIFF_ERROR,
+                    "Unable to compute dense state diff for pull",
+                    Some(format!("{err:?}")),
                 ))
                 .into()
             })

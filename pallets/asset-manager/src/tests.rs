@@ -56,7 +56,7 @@ fn basic_setup_should_work() {
 #[test]
 fn wrong_modifier_origin_should_not_work() {
     new_test_ext().execute_with(|| {
-        let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1u128, None, false, true);
+        let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1u128, false, true);
         let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
         assert_noop!(
             AssetManager::register_asset(
@@ -92,15 +92,14 @@ fn wrong_modifier_origin_should_not_work() {
 #[test]
 fn register_asset_should_work() {
     let para_id = 1;
-    let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1u128, None, false, true);
+    let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1u128, false, true);
     let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let new_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
         1,
         X2(Parachain(para_id), PalletInstance(PALLET_BALANCES_INDEX)),
     )));
     new_test_ext().execute_with(|| {
-        let mut counter: u32 =
-            <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get();
+        let mut counter = <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get();
         // Register relay chain native token
         assert_ok!(AssetManager::register_asset(
             Origin::root(),
@@ -135,22 +134,15 @@ fn register_asset_should_work() {
 fn update_asset() {
     let para_id = 1;
     let original_decimals = 12;
-    let asset_metadata = create_asset_metadata(
-        "Kusama",
-        "KSM",
-        original_decimals,
-        1u128,
-        None,
-        false,
-        false,
-    );
+    let asset_metadata =
+        create_asset_metadata("Kusama", "KSM", original_decimals, 1u128, false, false);
     let mut new_metadata = asset_metadata.clone();
     let new_name = b"NotKusama".to_vec();
     let new_symbol = b"NotKSM".to_vec();
     let new_decimals = original_decimals + 1;
-    new_metadata.name = new_name.clone();
-    new_metadata.symbol = new_symbol.clone();
-    new_metadata.decimals = new_decimals;
+    new_metadata.metadata.name = new_name.clone();
+    new_metadata.metadata.symbol = new_symbol.clone();
+    new_metadata.metadata.decimals = new_decimals;
     let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let new_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
         1,
@@ -207,7 +199,7 @@ fn update_asset() {
                 next_asset_id,
                 new_location.clone()
             ),
-            Error::<Runtime>::UpdateNonExistAsset
+            Error::<Runtime>::UpdateNonExistentAsset
         );
         assert_noop!(
             AssetManager::update_asset_metadata(
@@ -215,7 +207,7 @@ fn update_asset() {
                 next_asset_id,
                 new_metadata.clone()
             ),
-            Error::<Runtime>::UpdateNonExistAsset
+            Error::<Runtime>::UpdateNonExistentAsset
         );
         // Re-registering the original location and metadata should work,
         // as we modified the previous asset.
@@ -259,8 +251,7 @@ fn update_asset() {
 fn check_para_id_info_when_update_asset_location() {
     new_test_ext().execute_with(|| {
         let manta_para_id = 2015;
-        let manta_asset_metadata =
-            create_asset_metadata("Manta", "MANTA", 18, 1u128, None, false, false);
+        let manta_asset_metadata = create_asset_metadata("Manta", "MANTA", 18, 1u128, false, false);
         let mut manta_native_location = AssetLocation(VersionedMultiLocation::V1(
             MultiLocation::new(1, X1(Parachain(manta_para_id))),
         ));
@@ -283,7 +274,7 @@ fn check_para_id_info_when_update_asset_location() {
 
         // create a non manta asset.
         let manta_non_native_asset_metadata =
-            create_asset_metadata("Manta", "eMANTA", 18, 1u128, None, false, false);
+            create_asset_metadata("Manta", "eMANTA", 18, 1u128, false, false);
         let mut manta_non_native_location =
             AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
                 1,
@@ -367,7 +358,7 @@ fn mint_asset() {
         // mint native asset
         let native_asset_id = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
         assert_ok!(
-            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::deposit_can_mint(
+            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::deposit_minting(
                 native_asset_id,
                 &ALICE,
                 1_000_000
@@ -377,7 +368,7 @@ fn mint_asset() {
         // mint non-native asset
         let non_native_asset_id =
             <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get();
-        let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1u128, None, false, true);
+        let asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1u128, false, true);
         let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
         assert_ok!(AssetManager::register_asset(
             Origin::root(),
@@ -385,7 +376,7 @@ fn mint_asset() {
             asset_metadata
         ));
         assert_ok!(
-            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::deposit_can_mint(
+            <MantaAssetConfig as AssetConfig<Runtime>>::FungibleLedger::deposit_minting(
                 non_native_asset_id,
                 &ALICE,
                 1_000_000
@@ -396,13 +387,11 @@ fn mint_asset() {
 
 #[test]
 fn filter_asset_location_should_work() {
-    let kusama_asset_metadata =
-        create_asset_metadata("Kusama", "KSM", 12, 1u128, None, false, false);
+    let kusama_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1u128, false, false);
     let kusama_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 
     let para_id = 2015;
-    let manta_asset_metadata =
-        create_asset_metadata("Manta", "MANTA", 18, 1u128, None, false, false);
+    let manta_asset_metadata = create_asset_metadata("Manta", "MANTA", 18, 1u128, false, false);
     let manta_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
         1,
         X1(Parachain(para_id)),
@@ -492,8 +481,7 @@ fn filter_asset_location_should_work() {
 
 #[test]
 fn set_min_xcm_fee_should_work() {
-    let manta_asset_metadata =
-        create_asset_metadata("Manta", "MANTA", 18, 1u128, None, false, false);
+    let manta_asset_metadata = create_asset_metadata("Manta", "MANTA", 18, 1u128, false, false);
     let manta_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
         1,
         X2(

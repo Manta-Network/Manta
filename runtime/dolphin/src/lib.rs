@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Dolphin Parachain runtime.
+//! Dolphin Parachain Runtime
 
 #![allow(clippy::identity_op)] // keep e.g. 1 * DAYS for legibility
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -117,10 +117,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("dolphin"),
     impl_name: create_runtime_str!("dolphin"),
     authoring_version: 2,
-    spec_version: 3432,
+    spec_version: 4000,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 4,
+    transaction_version: 5,
     state_version: 0,
 };
 
@@ -738,7 +738,7 @@ construct_runtime!(
         // Treasury
         Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,
 
-        // Preimage registrar.
+        // Preimage registry.
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 28,
         // System scheduler.
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 29,
@@ -950,6 +950,14 @@ impl_runtime_apis! {
             max_sender: u64
         ) -> pallet_manta_pay::PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+
+        fn dense_pull_ledger_diff(
+            checkpoint: pallet_manta_pay::RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> pallet_manta_pay::DensePullResponse {
+            MantaPay::dense_pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
     }
 

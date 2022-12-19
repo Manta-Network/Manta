@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'calamari-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '3.4.3'
+version = '4.0.0-alpha.1'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
@@ -93,6 +93,7 @@ calamari-vesting = { path = '../../pallets/vesting', default-features = false }
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
+pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
@@ -181,6 +182,7 @@ runtime-benchmarks = [
   'pallet-asset-manager/runtime-benchmarks',
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
   'cumulus-pallet-parachain-system/runtime-benchmarks',
+  'pallet-manta-pay/runtime-benchmarks',
   'pallet-xcm-benchmarks',
 ]
 try-runtime = [
@@ -273,4 +275,5 @@ std = [
   'pallet-asset-manager/std',
   'orml-traits/std',
   'orml-xtokens/std',
+  'pallet-manta-pay/std',
 ]

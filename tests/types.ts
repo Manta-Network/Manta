@@ -3,15 +3,38 @@ export const manta_pay_types = {
         receiver_index: '[u64; 256]',
         sender_index: 'u64'
     },
-    EncryptedNote: {
+    FullIncomingNote: {
+        address_partition: 'u8',
+        incoming_note: 'IncomingNote',
+        light_incoming_note: 'LightIncomingNote',
+    },
+    IncomingNote: {
         ephemeral_public_key: '[u8; 32]',
-        ciphertext: '[u8; 68]'
+        tag: '[u8; 32]',
+        ciphertext: '[[u8;32]; 3]',
+    },
+    LightIncomingNote: {
+        ephemeral_public_key: '[u8; 32]',
+        ciphertext: '[[u8;32]; 3]',
+    },
+    Utxo: {
+        is_transparent: 'bool',
+        public_asset: 'Asset',
+        commitment: '[u8; 32]',
+    },
+    Asset: {
+        id: '[u8; 32]',
+        value: '[u8; 16]',
+    },
+    OutgoingNote: {
+        ephemeral_public_key: '[u8; 32]',
+        ciphertext: '[[u8;32]; 2]',
     },
     PullResponse: {
         should_continue: 'bool',
-        receivers: 'Vec<([u8; 32], EncryptedNote)>',
-        senders: 'Vec<[u8; 32]>',
-        senders_receivers_total: 'u128',
+        receivers: 'Vec<(Utxo, FullIncomingNote)>',
+        senders: 'Vec<([u8; 32], OutgoingNote)>',
+        senders_receivers_total: '[u8; 16]',
     }
 };
 
@@ -25,11 +48,11 @@ export const rpc_api = {
                     type: 'Checkpoint'
                 },
                 {
-                    name: 'max_receiver',
+                    name: 'max_receivers',
                     type: 'u64'
                 },
                 {
-                    name: 'max_sender',
+                    name: 'max_senders',
                     type: 'u64'
                 }
             ],

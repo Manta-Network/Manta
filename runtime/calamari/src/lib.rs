@@ -123,10 +123,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 3432,
+    spec_version: 4000,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 9,
+    transaction_version: 10,
     state_version: 0,
 };
 
@@ -287,6 +287,7 @@ impl Contains<Call> for BaseFilter {
                 | pallet_parachain_staking::Call::cancel_delegation_request{..})
             | Call::Balances(_)
             | Call::Preimage(_)
+            | Call::MantaPay(_)
             | Call::XTokens(orml_xtokens::Call::transfer {..}
                 | orml_xtokens::Call::transfer_multicurrencies {..})
             | Call::TransactionPause(_)
@@ -822,7 +823,7 @@ construct_runtime!(
         // Treasury
         Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,
 
-        // Preimage registrar.
+        // Preimage registry.
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 28,
         // System scheduler.
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 29,
@@ -842,6 +843,7 @@ construct_runtime!(
         // Assets management
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
+        MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
 
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
@@ -873,8 +875,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExt
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = ();
-
+pub type OnRuntimeUpgradeHooks = (migrations::asset_id::AssetIdMigration<Runtime>,);
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -916,6 +917,7 @@ mod benches {
         [manta_collator_selection, CollatorSelection]
         [pallet_asset_manager, AssetManager]
         [pallet_parachain_staking, ParachainStaking]
+        [pallet_manta_pay, MantaPay]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );
@@ -1027,6 +1029,24 @@ impl_runtime_apis! {
     impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
         fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
             ParachainSystem::collect_collation_info(header)
+        }
+    }
+
+    impl pallet_manta_pay::runtime::PullLedgerDiffApi<Block> for Runtime {
+        fn pull_ledger_diff(
+            checkpoint: pallet_manta_pay::RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> pallet_manta_pay::PullResponse {
+            MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+
+        fn dense_pull_ledger_diff(
+            checkpoint: pallet_manta_pay::RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> pallet_manta_pay::DensePullResponse {
+            MantaPay::dense_pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
     }
 
