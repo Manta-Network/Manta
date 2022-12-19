@@ -1509,7 +1509,7 @@ fn pause_transactions_storage_event_works(pause: bool, pallet: bool) {
 
 #[test]
 fn tx_pause_works() {
-    let alice = get_account_id_from_seed::<sr25519::Public>("Alice");
+    let alice = unchecked_account_id::<sr25519::Public>("Alice");
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
             TransactionPause::pause_transaction(
