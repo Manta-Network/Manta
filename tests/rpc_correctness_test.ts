@@ -16,7 +16,7 @@ const test_config = {
         vn_batch_number: 1,
         vn_batch_size: 1024,
     },
-    timeout: 200000
+    timeout: 2000000
 }
 
 describe('Node RPC Test', () => { 
@@ -44,27 +44,27 @@ describe('Node RPC Test', () => {
             BigInt(1024), BigInt(1024));
             expect(data.receivers.length).to.not.equal(0);
             data.receivers.forEach((value: any, index:number) => {
-            let is_transparent = 0;
-            let payload = new Uint8Array([
-                ...numberToU8a(is_transparent), 
-                ...value[0].public_asset.id,
-                ...value[0].public_asset.value,
-                ...value[0].commitment, 
-                ...numberToU8a(value[1].address_partition, 1 * 8), 
-                ... value[1].incoming_note.ephemeral_public_key,
-                ... value[1].incoming_note.tag,
-                ... value[1].incoming_note.ciphertext[0],
-                ... value[1].incoming_note.ciphertext[1],
-                ... value[1].incoming_note.ciphertext[2],
-                ... value[1].light_incoming_note.ephemeral_public_key,
-                ... value[1].light_incoming_note.ciphertext[0],
-                ... value[1].light_incoming_note.ciphertext[1],
-                ... value[1].light_incoming_note.ciphertext[2],
+                let is_transparent = 0;
+                let payload = new Uint8Array([
+                    ...numberToU8a(is_transparent), 
+                    ...value[0].public_asset.id,
+                    ...value[0].public_asset.value,
+                    ...value[0].commitment, 
+                    ...numberToU8a(value[1].address_partition, 1 * 8), 
+                    ... value[1].incoming_note.ephemeral_public_key,
+                    ... value[1].incoming_note.tag,
+                    ... value[1].incoming_note.ciphertext[0],
+                    ... value[1].incoming_note.ciphertext[1],
+                    ... value[1].incoming_note.ciphertext[2],
+                    ... value[1].light_incoming_note.ephemeral_public_key,
+                    ... value[1].light_incoming_note.ciphertext[0],
+                    ... value[1].light_incoming_note.ciphertext[1],
+                    ... value[1].light_incoming_note.ciphertext[2],
 
-            ]);
-            let size_per_shard = test_config.storage_prepare_config.utxo_batch_size_per_shard;
-            // this uses the fact that the RPC request is filled greedly
-            expect(payload).to.deep.equal(generate_shards_entry(~~(index/size_per_shard), index % size_per_shard));
+                ]);
+                let size_per_shard = test_config.storage_prepare_config.utxo_batch_size_per_shard;
+                // this uses the fact that the RPC request is filled greedily
+                expect(payload).to.deep.equal(generate_shards_entry(~~(index/size_per_shard), index % size_per_shard));
         });
         expect(data.senders.length).to.not.equal(0);
         data.senders.forEach((value: any, index: number)=>{
