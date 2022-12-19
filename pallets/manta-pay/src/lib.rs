@@ -441,22 +441,38 @@ pub mod pallet {
         }
     }
 
-    impl<T> From<SenderPostError> for Error<T> {
+    impl<T> From<SenderPostError<SenderLedgerError>> for Error<T> {
         #[inline]
-        fn from(err: SenderPostError) -> Self {
+        fn from(err: SenderPostError<SenderLedgerError>) -> Self {
             match err {
                 SenderPostError::AssetSpent => Self::AssetSpent,
                 SenderPostError::InvalidUtxoAccumulatorOutput => Self::InvalidUtxoAccumulatorOutput,
+                _ => todo!(),
             }
         }
     }
 
-    impl<T> From<ReceiverPostError> for Error<T> {
+    impl<T> From<ReceiverPostError<ReceiverLedgerError>> for Error<T> {
         #[inline]
-        fn from(err: ReceiverPostError) -> Self {
+        fn from(err: ReceiverPostError<ReceiverLedgerError>) -> Self {
             match err {
                 ReceiverPostError::AssetRegistered => Self::AssetRegistered,
+                _ => todo!(),
             }
+        }
+    }
+
+    impl From<SenderLedgerError> for TransferLedgerError {
+        #[inline]
+        fn from(err: SenderLedgerError) -> Self {
+            todo!()
+        }
+    }
+
+    impl From<ReceiverLedgerError> for TransferLedgerError {
+        #[inline]
+        fn from(err: ReceiverLedgerError) -> Self {
+            todo!()
         }
     }
 
@@ -485,7 +501,9 @@ pub mod pallet {
     pub type TransferPostError<T> = transfer::TransferPostError<
         config::Config,
         <T as frame_system::Config>::AccountId,
-        FungibleLedgerError,
+        SenderLedgerError,
+        ReceiverLedgerError,
+        TransferLedgerError,
     >;
 
     impl<T> From<TransferPostError<T>> for Error<T>
@@ -504,7 +522,7 @@ pub mod pallet {
                 TransferPostError::<T>::DuplicateMint => Self::DuplicateRegister,
                 TransferPostError::<T>::DuplicateSpend => Self::DuplicateSpend,
                 TransferPostError::<T>::InvalidProof => Self::InvalidProof,
-                TransferPostError::<T>::UpdateError(err) => err.into(),
+                _ => todo!(),
             }
         }
     }
@@ -767,6 +785,9 @@ impl<L, R> AsRef<R> for WrapPair<L, R> {
     }
 }
 
+/// Sender Ledger Error
+pub enum SenderLedgerError {}
+
 impl<T> SenderLedger<config::Parameters> for Ledger<T>
 where
     T: Config,
@@ -774,40 +795,55 @@ where
     type SuperPostingKey = (Wrap<()>, ());
     type ValidUtxoAccumulatorOutput = Wrap<config::UtxoAccumulatorOutput>;
     type ValidNullifier = Wrap<config::Nullifier>;
+    type Error = SenderLedgerError;
 
     #[inline]
-    fn is_unspent(&self, nullifier: config::Nullifier) -> Option<Self::ValidNullifier> {
+    fn is_unspent(
+        &self,
+        nullifier: config::Nullifier,
+    ) -> Result<Option<Self::ValidNullifier>, Self::Error> {
+        /*
         if NullifierCommitmentSet::<T>::contains_key(
             fp_encode(nullifier.nullifier.commitment).ok()?,
         ) {
-            None
+            Ok(None)
         } else {
-            Some(Wrap(nullifier))
+            Ok(Some(Wrap(nullifier)))
         }
+        */
+        todo!()
     }
 
     #[inline]
     fn has_matching_utxo_accumulator_output(
         &self,
         output: config::UtxoAccumulatorOutput,
-    ) -> Option<Self::ValidUtxoAccumulatorOutput> {
+    ) -> Result<Option<Self::ValidUtxoAccumulatorOutput>, Self::Error> {
+        /*
         let accumulator_output = fp_encode(output).ok()?;
-        // Checking for an empty(zeroed) byte array.
-        // This happens for UTXOs with value = 0, for which you dont need
-        // a membership proof, but you still need a root(in this case zeroed).
+        // NOTE: Checking for an empty(zeroed) byte array. This happens for UTXOs with `value = 0`,
+        // for which you dont need a membership proof, but you still need a root (in this case
+        // zeroed).
         if accumulator_output == [0u8; 32]
             || UtxoAccumulatorOutputs::<T>::contains_key(accumulator_output)
         {
-            return Some(Wrap(output));
+            return Ok(Some(Wrap(output)));
         }
-        None
+        Ok(None)
+        */
+        todo!()
     }
 
     #[inline]
-    fn spend_all<I>(&mut self, super_key: &Self::SuperPostingKey, iter: I)
+    fn spend_all<I>(
+        &mut self,
+        super_key: &Self::SuperPostingKey,
+        iter: I,
+    ) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = (Self::ValidUtxoAccumulatorOutput, Self::ValidNullifier)>,
     {
+        /*
         let _ = super_key;
         let index = NullifierSetSize::<T>::get();
         let mut i = 0;
@@ -828,8 +864,13 @@ where
         if i != 0 {
             NullifierSetSize::<T>::set(index + i);
         }
+        */
+        todo!()
     }
 }
+
+/// Receiver Ledger Error
+pub enum ReceiverLedgerError {}
 
 impl<T> ReceiverLedger<config::Parameters> for Ledger<T>
 where
@@ -837,21 +878,33 @@ where
 {
     type SuperPostingKey = (Wrap<()>, ());
     type ValidUtxo = Wrap<config::Utxo>;
+    type Error = ReceiverLedgerError;
 
     #[inline]
-    fn is_not_registered(&self, utxo: config::Utxo) -> Option<Self::ValidUtxo> {
+    fn is_not_registered(
+        &self,
+        utxo: config::Utxo,
+    ) -> Result<Option<Self::ValidUtxo>, Self::Error> {
+        /*
         if UtxoSet::<T>::contains_key(Utxo::try_from(utxo).ok()?) {
-            None
+            Ok(None)
         } else {
-            Some(Wrap(utxo))
+            Ok(Some(Wrap(utxo)))
         }
+        */
+        todo!()
     }
 
     #[inline]
-    fn register_all<I>(&mut self, super_key: &Self::SuperPostingKey, iter: I)
+    fn register_all<I>(
+        &mut self,
+        super_key: &Self::SuperPostingKey,
+        iter: I,
+    ) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = (Self::ValidUtxo, config::Note)>,
     {
+        /*
         let _ = super_key;
         let utxo_accumulator_model = config::UtxoAccumulatorModel::decode(
             manta_parameters::pay::testnet::parameters::UtxoAccumulatorModel::get()
@@ -926,8 +979,13 @@ where
                 UtxoAccumulatorOutputs::<T>::insert(fp_encode(next_root).expect(FP_ENCODE), ());
             }
         }
+        */
+        todo!()
     }
 }
+
+/// Transfer Ledger Error
+pub enum TransferLedgerError {}
 
 impl<T> TransferLedger<config::Config> for Ledger<T>
 where
@@ -936,10 +994,10 @@ where
     type SuperPostingKey = ();
     type AccountId = T::AccountId;
     type Event = PreprocessedEvent<T>;
-    type UpdateError = FungibleLedgerError;
     type ValidSourceAccount = WrapPair<Self::AccountId, AssetValue>;
     type ValidSinkAccount = WrapPair<Self::AccountId, AssetValue>;
     type ValidProof = Wrap<()>;
+    type Error = TransferLedgerError;
 
     #[inline]
     fn check_source_accounts<I>(
@@ -1023,7 +1081,8 @@ where
     fn is_valid(
         &self,
         posting_key: TransferPostingKeyRef<config::Config, Self>,
-    ) -> Option<(Self::ValidProof, Self::Event)> {
+    ) -> Result<Option<(Self::ValidProof, Self::Event)>, TransferLedgerError> {
+        /*
         let (mut verifying_context, event) =
             match TransferShape::from_posting_key_ref(&posting_key)? {
                 TransferShape::ToPrivate => (
@@ -1061,6 +1120,8 @@ where
             )
             .ok()?
             .then_some((Wrap(()), event))
+        */
+        todo!()
     }
 
     #[inline]
@@ -1071,10 +1132,11 @@ where
         sources: Vec<SourcePostingKey<config::Config, Self>>,
         sinks: Vec<SinkPostingKey<config::Config, Self>>,
         proof: Self::ValidProof,
-    ) -> Result<(), Self::UpdateError> {
+    ) -> Result<(), TransferLedgerError> {
+        /*
         let _ = (proof, super_key);
         let asset_id_type = Pallet::<T>::id_from_field(
-            fp_encode(asset_id).map_err(|_e| FungibleLedgerError::EncodeError)?,
+            fp_encode(asset_id).map_err(|_| FungibleLedgerError::EncodeError)?,
         )
         .ok_or(FungibleLedgerError::UnknownAsset)?;
         for WrapPair(account_id, withdraw) in sources {
@@ -1096,5 +1158,7 @@ where
             )?;
         }
         Ok(())
+        */
+        todo!()
     }
 }
