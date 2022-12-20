@@ -233,13 +233,6 @@ pub fn calamari_testnet_config() -> Result<CalamariChainSpec, String> {
     Ok(spec)
 }
 
-/// Returns the Calamari testnet for CI chainspec.
-pub fn calamari_testnet_ci_config() -> Result<CalamariChainSpec, String> {
-    CalamariChainSpec::from_json_bytes(
-        &include_bytes!("../../../genesis/calamari-testnet-ci-genesis.json")[..],
-    )
-}
-
 /// Returns the Calamari mainnet chainspec.
 pub fn calamari_config() -> Result<CalamariChainSpec, String> {
     CalamariChainSpec::from_json_bytes(
