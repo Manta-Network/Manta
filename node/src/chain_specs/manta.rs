@@ -195,15 +195,6 @@ pub fn manta_testnet_config() -> Result<MantaChainSpec, String> {
     Ok(spec)
 }
 
-/// Returns the Manta testnet for CI chainspec.
-pub fn manta_testnet_ci_config() -> Result<MantaChainSpec, String> {
-    let mut spec = MantaChainSpec::from_json_bytes(
-        &include_bytes!("../../../genesis/manta-testnet-ci-genesis.json")[..],
-    )?;
-    spec.extensions_mut().para_id = MANTA_PARACHAIN_ID;
-    Ok(spec)
-}
-
 /// Returns the Manta mainnet chainspec.
 pub fn manta_config() -> Result<MantaChainSpec, String> {
     MantaChainSpec::from_json_bytes(&include_bytes!("../../../genesis/manta-genesis.json")[..])
