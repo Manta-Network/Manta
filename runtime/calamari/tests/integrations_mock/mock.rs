@@ -97,6 +97,7 @@ impl ExtBuilder {
         self
     }
 
+    #[allow(dead_code)]
     pub(crate) fn with_delegations(
         mut self,
         delegations: Vec<(AccountId, AccountId, Balance)>,
