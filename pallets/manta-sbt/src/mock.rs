@@ -15,32 +15,22 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use frame_support::{
-    pallet_prelude::DispatchResult,
     parameter_types,
     traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, Everything},
     PalletId,
 };
 use frame_system::{EnsureRoot, EnsureSigned};
 use manta_primitives::{
-    assets::{
-        AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
-        AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
-    },
     constants::MANTA_SBT_PALLET_ID,
     types::{Balance, BlockNumber, Header},
 };
 use sp_core::H256;
 use sp_runtime::{
-    traits::{BlakeTwo256, Get, IdentityLookup},
+    traits::{BlakeTwo256, IdentityLookup},
     AccountId32,
 };
-use xcm::{
-    prelude::{Parachain, X1},
-    v1::MultiLocation,
-    VersionedMultiLocation,
-};
 
-use crate::StandardAssetId;
+use crate::{StandardAssetId, IncrementItemId, ItemIdCounter};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -142,12 +132,26 @@ parameter_types! {
     pub const MantaSBTPalletId: PalletId = MANTA_SBT_PALLET_ID;
 }
 
+pub struct ImplementItemId;
+
+impl IncrementItemId<StandardAssetId> for ImplementItemId {
+    fn get_and_increment_item_id() -> StandardAssetId {
+        let item_id = ItemIdCounter::<Test>::get().unwrap_or(0);
+        ItemIdCounter::<Test>::set(Some(item_id + 1));
+        item_id
+    }
+
+    fn encode_item_id(item: StandardAssetId) -> Option<[u8; 32]> {
+        Some(crate::Pallet::<Test>::field_from_id(item))
+    }
+}
+
 impl crate::Config for Test {
     type Event = Event;
     type WeightInfo = crate::weights::SubstrateWeight<Test>;
-    type CollectionIdentifier = ConstU128<0>;
+    type PalletCollectionId = ConstU128<0>;
     type PalletId = MantaSBTPalletId;
-    type NFT = Uniques;
+    type IncrementItem = ImplementItemId;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

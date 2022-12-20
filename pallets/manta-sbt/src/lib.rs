@@ -14,42 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! # MantaPay Module
+//! # MantaSBT Module
 //!
-//! MantaPay is a Multi-Asset Shielded Payment protocol.
+//! MantaSBT creates non-transferable to
 //!
 //! ## Overview
 //!
 //! The Assets module provides functionality for asset management of fungible asset classes with
 //! a fixed supply, including:
-//!
-//! * To Private Asset Conversion (see [`to_private`])
-//! * To Public Asset Conversion (see [`to_public`])
-//! * Private Asset Transfer (see [`private_transfer`]
-//! * Public Asset Transfer (see [`public_transfer`])
-//!
-//! To use it in your runtime, you need to implement the assets [`Config`].
-//!
-//! The supported dispatchable functions are documented in the [`Call`] enum.
-//!
-//! ## Interface
-//!
-//! ### Dispatchable Functions
-//!
-//! * [`to_public`]: Converts a public asset into a private one.
-//! * [`to_private`]: Converts a private asset back into a public one.
-//! * [`private_transfer`]: Transfers assets between two private accounts.
-//! * [`public_transfer`]: Transfers assets between two public accounts.
-//!
-//! Please refer to the [`Call`] enum and its associated variants for documentation on each
-//! function.
-//!
-//! Please refer to the [`Module`] struct for details on publicly available functions.
-//!
-//! [`to_private`]: Pallet::to_private
-//! [`to_public`]: Pallet::to_public
-//! [`private_transfer`]: Pallet::private_transfer
-//! [`public_transfer`]: Pallet::public_transfer
+
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
@@ -80,7 +53,6 @@ use manta_pay::{
     manta_util::codec::Decode as _,
     parameters::load_transfer_parameters,
 };
-use manta_primitives::assets::{self};
 use manta_util::{codec::Encode, into_array_unchecked, Array};
 
 pub use crate::types::{Checkpoint, RawCheckpoint};
@@ -109,6 +81,14 @@ pub mod runtime;
 /// Standard Asset Id
 pub type StandardAssetId = u128;
 
+/// This is needed because ItemId is very generic and
+/// Cannot be incremented until the type is known to be a UnsignedInt
+pub trait IncrementItemId<ItemId> {
+    fn get_and_increment_item_id() -> ItemId;
+
+    fn encode_item_id(item: ItemId) -> Option<[u8; 32]>;
+}
+
 /// MantaPay Pallet
 #[frame_support::pallet]
 pub mod pallet {
@@ -134,22 +114,25 @@ pub mod pallet {
 
     /// The module configuration trait.
     #[pallet::config]
-    pub trait Config: frame_system::Config {
+    pub trait Config: frame_system::Config + pallet_uniques::Config {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
 
-        /// NFT Interface
-        type NFT: Create<Self::AccountId> + Mutate<Self::AccountId> + Inspect<Self::AccountId>;
+        /// SBT CollectionId
+        type PalletCollectionId: Get<Self::CollectionId>;
 
-        /// System CollectionId
-        type CollectionIdentifier: Get<StandardAssetId>;
+        /// Returns SBT serial number and increments value
+        type IncrementItem: IncrementItemId<Self::ItemId>;
 
         /// Pallet ID
         type PalletId: Get<PalletId>;
     }
+
+    #[pallet::storage]
+    pub type  ItemIdCounter<T: Config> = StorageValue<_, T::ItemId, OptionQuery>;
 
     /// UTXO Set
     #[pallet::storage]
@@ -196,10 +179,15 @@ pub mod pallet {
         /// Transforms some public assets into private ones using `post`, withdrawing the public
         /// assets from the `origin` account.
         #[pallet::call_index(0)]
-        #[pallet::weight(T::WeightInfo::to_private())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::to_private())]
         #[transactional]
         pub fn to_private(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
+
+            let item_id = T::IncrementItem::get_and_increment_item_id();
+            pallet_uniques::Pallet::<T>::mint_into(&T::PalletCollectionId::get(), &item_id, &Self::account_id())?;
+            ensure!(post.asset_id == T::IncrementItem::encode_item_id(item_id), Error::<T>::InvalidAssetId);
+
             Self::post_transaction(None, vec![origin], post)
         }
     }
@@ -613,13 +601,7 @@ where
 
     #[inline]
     fn is_unspent(&self, nullifier: config::Nullifier) -> Option<Self::ValidNullifier> {
-        if NullifierCommitmentSet::<T>::contains_key(
-            fp_encode(nullifier.nullifier.commitment).ok()?,
-        ) {
-            None
-        } else {
-            Some(Wrap(nullifier))
-        }
+        None
     }
 
     #[inline]
@@ -627,15 +609,6 @@ where
         &self,
         output: config::UtxoAccumulatorOutput,
     ) -> Option<Self::ValidUtxoAccumulatorOutput> {
-        let accumulator_output = fp_encode(output).ok()?;
-        // Checking for an empty(zeroed) byte array.
-        // This happens for UTXOs with value = 0, for which you dont need
-        // a membership proof, but you still need a root(in this case zeroed).
-        if accumulator_output == [0u8; 32]
-            || UtxoAccumulatorOutputs::<T>::contains_key(accumulator_output)
-        {
-            return Some(Wrap(output));
-        }
         None
     }
 
@@ -643,28 +616,7 @@ where
     fn spend_all<I>(&mut self, super_key: &Self::SuperPostingKey, iter: I)
     where
         I: IntoIterator<Item = (Self::ValidUtxoAccumulatorOutput, Self::ValidNullifier)>,
-    {
-        let _ = super_key;
-        let index = NullifierSetSize::<T>::get();
-        let mut i = 0;
-        for (_, nullifier) in iter {
-            let nullifier_commitment =
-                fp_encode(nullifier.0.nullifier.commitment).expect(FP_ENCODE);
-            NullifierCommitmentSet::<T>::insert(nullifier_commitment, ());
-            NullifierSetInsertionOrder::<T>::insert(
-                index + i,
-                (
-                    nullifier_commitment,
-                    OutgoingNote::try_from(nullifier.0.outgoing_note)
-                        .expect("Unable to decode the Outgoing Note."),
-                ),
-            );
-            i += 1;
-        }
-        if i != 0 {
-            NullifierSetSize::<T>::set(index + i);
-        }
-    }
+    {}
 }
 
 impl<T> ReceiverLedger<config::Parameters> for Ledger<T>
@@ -786,9 +738,11 @@ where
     where
         I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
     {
-        Ok(sources
-            .map(move |(account_id, withdraw)| WrapPair(account_id, withdraw))
-            .collect())
+        Ok(
+            sources
+                .map(move |(account_id, withdraw)| WrapPair(account_id, withdraw))
+                .collect()
+        )
     }
 
     #[inline]
@@ -843,12 +797,6 @@ where
         sinks: Vec<SinkPostingKey<config::Config, Self>>,
         proof: Self::ValidProof,
     ) -> Result<(), Self::UpdateError> {
-        let _ = (proof, super_key);
-        let asset_id_type =
-            Pallet::<T>::id_from_field(fp_encode(asset_id).map_err(|_e| Error::<T>::EncodeError)?)
-                .ok_or(Error::<T>::InvalidAssetId)?;
-        for WrapPair(account_id, withdraw) in sources {}
-        for WrapPair(account_id, deposit) in sinks {}
         Ok(())
     }
 }

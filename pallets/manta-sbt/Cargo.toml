@@ -55,6 +55,7 @@ std = [
   "frame-benchmarking/std",
   "frame-support/std",
   "frame-system/std",
+  "pallet-uniques/std",
   "scale-codec/std",
   "scale-info/std",
   "sp-runtime/std",
@@ -101,6 +102,7 @@ sp-api = { git = 'https://github.com/paritytech/substrate.git', branch = "polkad
 sp-blockchain = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", optional = true, default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", default-features = false }
 sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", default-features = false }
+pallet-uniques = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
 
 # JSON-RPC
 jsonrpsee = { version = "0.15.0", features = ["server", "macros"], optional = true }
@@ -123,4 +125,3 @@ sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polka
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28" }
 tempfile = "3.3.0"
 xcm = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.28" }
-pallet-uniques = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
