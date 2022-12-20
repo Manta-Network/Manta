@@ -1,7 +1,7 @@
 import { ApiPromise } from '@polkadot/api';
 import { KeyringPair } from '@polkadot/keyring/types';
-import { u8aToHex, numberToU8a } from '@polkadot/util';
 import { blake2AsHex } from "@polkadot/util-crypto";
+import { u8aToHex, numberToU8a } from '@polkadot/util';
 import { single_map_storage_key, double_map_storage_key, delay, HashType } from './test-util';
 
 // number of shards at MantaPay
@@ -13,7 +13,7 @@ export const manta_pay_config = {
 
 /**
  * generate utxo deterministically using shard_idx and utxo_idx.
- * @param shard_idx shard_idx of generated utxo. 
+ * @param shard_idx shard_idx of generated utxo.
  * @param utxo_idx utxo_idx within shard
  * @returns a Shards entry of size 370 bytes
  */
@@ -41,7 +41,7 @@ export function generate_nullifier_set_entry(index: number): Uint8Array {
  * @returns moved checkpoint.
  */
 function next_checkpoint(
-    per_shard_amount: number, 
+    per_shard_amount: number,
     checkpoint: Array<number> ): Array<number>
 {
     if (checkpoint.length !== manta_pay_config.shard_number) {
@@ -72,7 +72,7 @@ function generate_batched_utxos(per_shard_amount: number, checkpoint: Array<numb
             data.push([shards_storage_key, value_str]);
         }
     }
-    const new_checkpoint = next_checkpoint(per_shard_amount, checkpoint); 
+    const new_checkpoint = next_checkpoint(per_shard_amount, checkpoint);
     return {data: data, checkpoint: new_checkpoint};
 }
 
@@ -89,10 +89,10 @@ var referendumIndexObject = { referendumIndex: 0 };
  * @returns number of batches successfully inserted.
  */
 async function insert_utxos_in_batches(
-    api: ApiPromise, 
+    api: ApiPromise,
     keyring: KeyringPair,
     batch_number: number,
-    per_shard_amount: number, 
+    per_shard_amount: number,
     init_checkpoint: Array<number>,
     max_wait_time_sec: number ): Promise<number>
 {
@@ -109,7 +109,7 @@ async function insert_utxos_in_batches(
         execute_with_root_via_governance(api, keyring, callData, referendumIndexObject);
         await delay(5000);
     }
-    
+
     // wait all txs finalized
     for(let i = 0; i < max_wait_time_sec; i ++){
         await delay(1000);
@@ -130,7 +130,7 @@ async function insert_utxos_in_batches(
 function generate_vn_insertion_data(
     start_index: number,
     amount_per_batch: number): string[][] {
-    const data = [];    
+    const data = [];
     for (let idx = start_index; idx < start_index + amount_per_batch; idx ++){
         const vn_storage_key = single_map_storage_key(
             "MantaPay", "NullifierSetInsertionOrder", idx, 64, HashType.TwoxConcat);
@@ -150,15 +150,15 @@ function generate_vn_insertion_data(
  * @returns number of batches successfully inserted before timeout.
  */
 async function insert_void_numbers_in_batch(
-    api:ApiPromise, 
-    keyring: KeyringPair, 
+    api:ApiPromise,
+    keyring: KeyringPair,
     amount_per_batch: number,
-    batch_number: number, 
+    batch_number: number,
     start_index: number,
     max_wait_time_sec: number): Promise<number>{
 
     let success_batch = 0;
-    let sender_idx = start_index; 
+    let sender_idx = start_index;
     for(let batch_idx = 0; batch_idx < batch_number; batch_idx ++) {
         console.log("start vn batch %i", batch_idx);
         const data = generate_vn_insertion_data(sender_idx, amount_per_batch);
@@ -170,8 +170,8 @@ async function insert_void_numbers_in_batch(
     // wait all txs finalized
     for(let i =0; i < max_wait_time_sec; i++){
         await delay(1000);
-        if (success_batch === batch_number) { 
-            console.log("total wait: %i sec.", i + 1); 
+        if (success_batch === batch_number) {
+            console.log("total wait: %i sec.", i + 1);
             return success_batch;
         }
     }
@@ -183,7 +183,7 @@ export type StoragePrepareConfig = {
     utxo_batch_number: number,
     utxo_batch_size_per_shard: number,
     vn_batch_number: number,
-    vn_batch_size: number,  
+    vn_batch_size: number,
 }
 
 /**
@@ -195,10 +195,10 @@ export type StoragePrepareConfig = {
  */
 export async function setup_storage(
     api:ApiPromise,
-    keyring: KeyringPair, 
-    init_utxo_idx: number, 
+    keyring: KeyringPair,
+    init_utxo_idx: number,
     config: StoragePrepareConfig) {
-    
+
     const receiver_checkpoint = new Array<number>(manta_pay_config.shard_number);
     const check_idx = init_utxo_idx;
     console.log(">>>>>>>>> UTXO INSERT START >>>>>>>>");
@@ -208,12 +208,12 @@ export async function setup_storage(
         console.log("starting utxo idx: %i", receiver_checkpoint[0]);
         const utxo_batch_done = await insert_utxos_in_batches(
             api, keyring, config.utxo_batch_number, config.utxo_batch_size_per_shard, receiver_checkpoint, 250);
-        console.log(">>>> Complete %i big batch with %i UTXOs", 
+        console.log(">>>> Complete %i big batch with %i UTXOs",
             big_batch_idx + 1 , utxo_batch_done * config.utxo_batch_size_per_shard * manta_pay_config.shard_number);
     }
     console.log(">>>>>>>>> UTXO INSERT DONE >>>>>>>>");
 
-    console.log(">>>> Inserting void numbers: %i per batch, %i batch", 
+    console.log(">>>> Inserting void numbers: %i per batch, %i batch",
         config.vn_batch_size, config.vn_batch_number);
     const vn_batch_done = await insert_void_numbers_in_batch(api, keyring, config.vn_batch_size, config.vn_batch_number, 0, 250);
     console.log(">>>> Complete inserting %i void numbers", vn_batch_done * config.vn_batch_size);
@@ -227,7 +227,7 @@ export async function setup_storage(
  * @param referendumIndexObject the index of the referendum that will be executed
  */
  export async function execute_with_root_via_governance(
-    api: ApiPromise, 
+    api: ApiPromise,
     keyring: KeyringPair,
     extrinsicData: any,
     referendumIndexObject: any
