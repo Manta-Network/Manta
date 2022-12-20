@@ -27,14 +27,14 @@ pub use calamari_runtime::{
     fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
     xcm_config::{XcmExecutorConfig, XcmFeesAccount},
     AssetManager, Assets, Authorship, Balances, CalamariVesting, Council, DefaultBlocksPerRound,
-    Democracy, EnactmentPeriod, LaunchPeriod, LeaveDelayRounds, NativeTokenExistentialDeposit,
-    Origin, ParachainStaking, Period, PolkadotXcm, Runtime, TechnicalCommittee, Timestamp,
-    Treasury, Utility, VotingPeriod,
+    Democracy, EnactmentPeriod, Event, LaunchPeriod, LeaveDelayRounds,
+    NativeTokenExistentialDeposit, Origin, ParachainStaking, Period, PolkadotXcm, Runtime,
+    TechnicalCommittee, Timestamp, TransactionPause, Treasury, Utility, VotingPeriod,
 };
 
 use calamari_runtime::opaque::SessionKeys;
 use frame_support::{
-    assert_err, assert_ok,
+    assert_err, assert_noop, assert_ok,
     codec::Encode,
     dispatch::Dispatchable,
     traits::{tokens::ExistenceRequirement, PalletInfo, StorageInfo, StorageInfoTrait},
@@ -66,7 +66,7 @@ use nimbus_primitives::NIMBUS_ENGINE_ID;
 use sp_core::{sr25519, H256};
 use sp_runtime::{
     generic::DigestItem,
-    traits::{BlakeTwo256, Hash, Header as HeaderT, SignedExtension},
+    traits::{BadOrigin, BlakeTwo256, Hash, Header as HeaderT, SignedExtension},
     DispatchError, ModuleError, Percent,
 };
 
@@ -1428,4 +1428,151 @@ fn test_sender_side_xcm_weights() {
     let mut msg = to_reserve_xcm_message_sender_side::<Call>();
     let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
     assert!(weight < ADVERTISED_DEST_WEIGHT);
+}
+
+const PALLET_NAME: &[u8] = b"Utility";
+const FUNCTION_NAME: &[u8] = b"batch";
+
+fn pause_transaction_storage_event_works(pause: bool) {
+    if pause {
+        System::assert_last_event(Event::TransactionPause(
+            pallet_tx_pause::Event::<Runtime>::TransactionPaused(
+                PALLET_NAME.to_vec(),
+                FUNCTION_NAME.to_vec(),
+            ),
+        ));
+        assert_eq!(
+            TransactionPause::paused_transactions((PALLET_NAME.to_vec(), FUNCTION_NAME.to_vec(),)),
+            Some(())
+        );
+    } else {
+        System::assert_has_event(Event::TransactionPause(
+            pallet_tx_pause::Event::<Runtime>::TransactionUnpaused(
+                PALLET_NAME.to_vec(),
+                FUNCTION_NAME.to_vec(),
+            ),
+        ));
+        assert_eq!(
+            TransactionPause::paused_transactions((PALLET_NAME.to_vec(), FUNCTION_NAME.to_vec(),)),
+            None
+        );
+    }
+}
+
+fn pause_transactions_storage_event_works(pause: bool, pallet: bool) {
+    let function_names: Vec<Vec<u8>> = vec![b"batch".to_vec(), b"batch_all".to_vec()];
+
+    if pause {
+        if pallet {
+            System::assert_last_event(Event::TransactionPause(
+                pallet_tx_pause::Event::<Runtime>::PalletPaused(PALLET_NAME.to_vec()),
+            ));
+        } else {
+            for function_name in function_names.clone() {
+                System::assert_has_event(Event::TransactionPause(
+                    pallet_tx_pause::Event::<Runtime>::TransactionPaused(
+                        PALLET_NAME.to_vec(),
+                        function_name,
+                    ),
+                ));
+            }
+        }
+        for function_name in function_names {
+            assert_eq!(
+                TransactionPause::paused_transactions((PALLET_NAME.to_vec(), function_name)),
+                Some(())
+            );
+        }
+    } else {
+        if pallet {
+            System::assert_last_event(Event::TransactionPause(
+                pallet_tx_pause::Event::<Runtime>::PalletUnpaused(PALLET_NAME.to_vec()),
+            ));
+        } else {
+            for function_name in function_names.clone() {
+                System::assert_has_event(Event::TransactionPause(
+                    pallet_tx_pause::Event::<Runtime>::TransactionUnpaused(
+                        PALLET_NAME.to_vec(),
+                        function_name,
+                    ),
+                ));
+            }
+        }
+        for function_name in function_names {
+            assert_eq!(
+                TransactionPause::paused_transactions((PALLET_NAME.to_vec(), function_name)),
+                None
+            );
+        }
+    }
+}
+
+#[test]
+fn tx_pause_works() {
+    let alice = unchecked_account_id::<sr25519::Public>("Alice");
+    ExtBuilder::default().build().execute_with(|| {
+        assert_noop!(
+            TransactionPause::pause_transaction(
+                Origin::signed(alice),
+                b"Balances".to_vec(),
+                b"transfer".to_vec()
+            ),
+            BadOrigin
+        );
+        assert_noop!(
+            TransactionPause::pause_pallets(root_origin(), vec![b"Balances".to_vec()]),
+            pallet_tx_pause::Error::<Runtime>::CannotPause
+        );
+        assert_noop!(
+            TransactionPause::pause_pallets(root_origin(), vec![b"TransactionPause".to_vec()]),
+            pallet_tx_pause::Error::<Runtime>::CannotPause
+        );
+
+        let function_names: Vec<Vec<u8>> = vec![b"batch".to_vec(), b"batch_all".to_vec()];
+
+        // pause transaction
+        assert_ok!(TransactionPause::pause_transaction(
+            root_origin(),
+            PALLET_NAME.to_vec(),
+            FUNCTION_NAME.to_vec(),
+        ));
+        pause_transaction_storage_event_works(true);
+
+        // unpause transaction
+        assert_ok!(TransactionPause::unpause_transaction(
+            root_origin(),
+            PALLET_NAME.to_vec(),
+            FUNCTION_NAME.to_vec(),
+        ));
+        pause_transaction_storage_event_works(false);
+
+        // pause transactions
+        System::reset_events();
+        assert_ok!(TransactionPause::pause_transactions(
+            root_origin(),
+            vec![(PALLET_NAME.to_vec(), function_names.clone())]
+        ));
+        pause_transactions_storage_event_works(true, false);
+
+        // unpause transactions
+        assert_ok!(TransactionPause::unpause_transactions(
+            root_origin(),
+            vec![(PALLET_NAME.to_vec(), function_names)]
+        ));
+        pause_transactions_storage_event_works(false, false);
+
+        // pause pallet
+        assert_ok!(TransactionPause::pause_pallets(
+            root_origin(),
+            vec![PALLET_NAME.to_vec()]
+        ));
+        pause_transactions_storage_event_works(true, true);
+
+        // unpause pallet
+        assert_ok!(TransactionPause::unpause_pallets(
+            root_origin(),
+            vec![PALLET_NAME.to_vec()]
+        ));
+        pause_transactions_storage_event_works(false, true);
+    });
 }
