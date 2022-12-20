@@ -19,7 +19,7 @@
 #![cfg(test)]
 #![allow(clippy::identity_op)] // keep e.g. 1 * DAYS for legibility
 
-use super::{super::*, info_from_weight, last_event, mock::*, root_origin, INITIAL_BALANCE};
+use super::{super::*, mock::*, *};
 
 pub use calamari_runtime::{
     assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},
@@ -34,7 +34,7 @@ pub use calamari_runtime::{
 
 use calamari_runtime::opaque::SessionKeys;
 use frame_support::{
-    assert_err, assert_ok,
+    assert_err, assert_noop, assert_ok,
     codec::Encode,
     dispatch::Dispatchable,
     traits::{tokens::ExistenceRequirement, PalletInfo, StorageInfo, StorageInfoTrait},
@@ -60,25 +60,14 @@ use xcm::{
 };
 use xcm_executor::traits::WeightBounds;
 
-use pallet_transaction_payment::ChargeTransactionPayment;
-
 use nimbus_primitives::NIMBUS_ENGINE_ID;
+use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_core::{sr25519, H256};
 use sp_runtime::{
     generic::DigestItem,
     traits::{BlakeTwo256, Hash, Header as HeaderT, SignedExtension},
     DispatchError, ModuleError, Percent,
 };
-use crate::integrations_mock::*;
-
-use lazy_static::lazy_static;
-
-lazy_static! {
-    static ref ALICE : AccountId = unchecked_account_id::<sr25519::Public>("Alice");
-    static ref BOB : AccountId = unchecked_account_id::<sr25519::Public>("Bob");
-    static ref CHARLIE : AccountId = unchecked_account_id::<sr25519::Public>("Charlie");
-    static ref DAVE : AccountId = unchecked_account_id::<sr25519::Public>("Dave");
-}
 
 fn note_preimage(proposer: &AccountId, proposal_call: &Call) -> H256 {
     let preimage = proposal_call.encode();
@@ -231,7 +220,6 @@ fn ensure_block_per_round_and_leave_delays_equal_7days() {
 
 #[test]
 fn slow_governance_works() {
-
     ExtBuilder::default().build().execute_with(|| {
         let _preimage_hash = start_governance_assertions(&ALICE);
 
@@ -273,7 +261,6 @@ fn slow_governance_works() {
 
 #[test]
 fn fast_track_governance_works() {
-
     ExtBuilder::default().build().execute_with(|| {
         let preimage_hash = start_governance_assertions(&ALICE);
 
@@ -377,7 +364,6 @@ fn governance_filters_work() {
 
 #[test]
 fn balances_operations_should_work() {
-
     ExtBuilder::default()
         .with_balances(vec![
             (ALICE.clone(), INITIAL_BALANCE),
@@ -562,14 +548,104 @@ fn sanity_check_round_duration() {
 }
 
 #[test]
-fn collator_with_400k_not_selected_for_block_production()
-{
+fn collator_with_400k_not_selected_for_block_production() {
     ExtBuilder::default()
-        .with_balances(vec![(ALICE.clone(),COLLATOR_MIN_BOND+100), (BOB.clone(),COLLATOR_MIN_BOND+100), (CHARLIE.clone(),WHITELIST_MIN_BOND+100)])
-        .with_collators(vec![(ALICE.clone(),COLLATOR_MIN_BOND),(BOB.clone(),COLLATOR_MIN_BOND),(CHARLIE.clone(),WHITELIST_MIN_BOND)])
+        .with_balances(vec![
+            (ALICE.clone(), COLLATOR_MIN_BOND + 100),
+            (BOB.clone(), COLLATOR_MIN_BOND + 100),
+            (CHARLIE.clone(), WHITELIST_MIN_BOND + 100),
+        ])
+        .with_collators(vec![
+            (ALICE.clone(), COLLATOR_MIN_BOND),
+            (BOB.clone(), COLLATOR_MIN_BOND),
+            (CHARLIE.clone(), WHITELIST_MIN_BOND),
+        ])
         .build()
         .execute_with(|| {
-            assert!( !ParachainStaking::compute_top_candidates().contains(&CHARLIE));
+            assert!(ParachainStaking::compute_top_candidates().contains(&ALICE));
+            assert!(ParachainStaking::compute_top_candidates().contains(&BOB));
+            assert!(!ParachainStaking::compute_top_candidates().contains(&CHARLIE));
+        });
+}
+
+#[test]
+fn collator_cant_join_below_standard_bond() {
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE.clone(), COLLATOR_MIN_BOND + 100),
+            (BOB.clone(), COLLATOR_MIN_BOND + 100),
+            (CHARLIE.clone(), WHITELIST_MIN_BOND + 100),
+        ])
+        .with_collators(vec![(ALICE.clone(), 50)])
+        .build()
+        .execute_with(|| {
+            assert_noop!(
+                ParachainStaking::join_candidates(
+                    Origin::signed(BOB.clone()),
+                    COLLATOR_MIN_BOND - 1,
+                    6u32
+                ),
+                pallet_parachain_staking::Error::<Runtime>::CandidateBondBelowMin
+            );
+        });
+}
+
+#[test]
+fn collator_can_leave_if_below_standard_bond() {
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE.clone(), WHITELIST_MIN_BOND + 100),
+            (BOB.clone(), WHITELIST_MIN_BOND + 100),
+            (CHARLIE.clone(), WHITELIST_MIN_BOND + 100),
+            (DAVE.clone(), WHITELIST_MIN_BOND + 100),
+            (EVE.clone(), WHITELIST_MIN_BOND + 100),
+            (FERDIE.clone(), WHITELIST_MIN_BOND + 100),
+        ])
+        .with_invulnerables(vec![])
+        .with_authorities(vec![
+            (ALICE.clone(), ALICE_SESSION_KEYS.clone()),
+            (BOB.clone(), BOB_SESSION_KEYS.clone()),
+            (CHARLIE.clone(), CHARLIE_SESSION_KEYS.clone()),
+            (DAVE.clone(), DAVE_SESSION_KEYS.clone()),
+            (EVE.clone(), EVE_SESSION_KEYS.clone()),
+            (FERDIE.clone(), FERDIE_SESSION_KEYS.clone()),
+        ])
+        .build()
+        .execute_with(|| {
+            // 0. initialize collators as candidates with manta_collator_selection
+            assert_ok!(CollatorSelection::set_desired_candidates(root_origin(), 6));
+            for aid in [
+                ALICE.clone(),
+                BOB.clone(),
+                CHARLIE.clone(),
+                DAVE.clone(),
+                EVE.clone(),
+                FERDIE.clone(),
+            ] {
+                assert_ok!(CollatorSelection::register_candidate(root_origin(), aid));
+            }
+
+            assert_eq!(CollatorSelection::candidates().len(), 6);
+            // Migrate to staking - reserves (lower) whitelist bond
+            assert_ok!(ParachainStaking::initialize_pallet(
+                1,
+                vec![
+                    ALICE.clone(),
+                    BOB.clone(),
+                    CHARLIE.clone(),
+                    DAVE.clone(),
+                    EVE.clone(),
+                    FERDIE.clone()
+                ],
+                calamari_runtime::staking::inflation_config::<Runtime>()
+            ));
+            assert_eq!(ParachainStaking::candidate_pool().len(), 6);
+
+            // 1. Attempt to leave as whitelist collator
+            assert_ok!(ParachainStaking::schedule_leave_candidates(
+                Origin::signed(FERDIE.clone()),
+                6u32
+            ));
         });
 }
 
@@ -586,11 +662,8 @@ fn collator_with_400k_not_selected_for_block_production()
 
 #[test]
 fn session_and_collator_selection_work() {
-    let alice_session_keys = SessionKeys::new(unchecked_collator_keys("Alice"));
-    let bob_session_keys = SessionKeys::new(unchecked_collator_keys("Bob"));
-
     ExtBuilder::default()
-        .with_collators(vec![(ALICE.clone(),COLLATOR_MIN_BOND)])
+        .with_collators(vec![(ALICE.clone(), COLLATOR_MIN_BOND)])
         .with_balances(vec![
             (ALICE.clone(), INITIAL_BALANCE),
             (BOB.clone(), INITIAL_BALANCE),
@@ -600,12 +673,12 @@ fn session_and_collator_selection_work() {
             // Create and bond session keys to Bob's account.
             assert_ok!(Session::set_keys(
                 Origin::signed(BOB.clone()),
-                bob_session_keys.clone(),
+                BOB_SESSION_KEYS.clone(),
                 vec![]
             ));
             // assert_eq!(
             //     Session::next_keys(bob.clone()),
-            //     bob_session_keys.clone()
+            //     BOB_SESSION_KEYS.clone()
             // );
 
             // assert_ok!(ParachainStaking::join_candidates(

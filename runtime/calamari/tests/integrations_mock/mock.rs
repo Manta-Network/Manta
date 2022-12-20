@@ -20,17 +20,15 @@ use crate::integrations_mock::*;
 
 use calamari_runtime::opaque::SessionKeys;
 pub use calamari_runtime::{
-    assets_config::CalamariAssetConfig, currency::KMA, Call, CollatorSelection, Democracy, Runtime,
-    Scheduler, Session, System, TransactionPayment, InflationInfo,  Range
+    assets_config::CalamariAssetConfig, currency::KMA, Call, CollatorSelection, Democracy,
+    InflationInfo, Range, Runtime, Scheduler, Session, System, TransactionPayment,
 };
-use sp_arithmetic::Perbill;
 use frame_support::traits::{GenesisBuild, OnFinalize, OnInitialize};
 use manta_primitives::{
     assets::AssetConfig,
     types::{AccountId, Balance},
 };
-use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
-use sp_core::sr25519;
+use sp_arithmetic::Perbill;
 pub struct ExtBuilder {
     balances: Vec<(AccountId, Balance)>,
     authorities: Vec<(AccountId, SessionKeys)>,
@@ -48,15 +46,9 @@ pub struct ExtBuilder {
 impl Default for ExtBuilder {
     fn default() -> ExtBuilder {
         ExtBuilder {
-            balances: vec![(
-                unchecked_account_id::<sr25519::Public>("Alice"),
-                INITIAL_BALANCE,
-            )],
-            authorities: vec![(
-                unchecked_account_id::<sr25519::Public>("Alice"),
-                SessionKeys::new(unchecked_collator_keys("Alice")),
-            )],
-            invulnerables: vec![unchecked_account_id::<sr25519::Public>("Alice")],
+            balances: vec![(ALICE.clone(), INITIAL_BALANCE)],
+            authorities: vec![(ALICE.clone(), ALICE_SESSION_KEYS.clone())],
+            invulnerables: vec![ALICE.clone()],
             collators: vec![],
             delegations: vec![],
             inflation: InflationInfo {
@@ -79,7 +71,7 @@ impl Default for ExtBuilder {
                 },
             },
             safe_xcm_version: None,
-            desired_candidates: 1,
+            desired_candidates: 2,
         }
     }
 }
@@ -95,13 +87,20 @@ impl ExtBuilder {
         self
     }
 
-    pub fn with_collators( mut self, collators: Vec<(AccountId, Balance)>) -> Self
-        {
+    pub fn with_invulnerables(mut self, invulnerables: Vec<AccountId>) -> Self {
+        self.invulnerables = invulnerables;
+        self
+    }
+
+    pub fn with_collators(mut self, collators: Vec<(AccountId, Balance)>) -> Self {
         self.collators = collators;
         self
     }
 
-    pub(crate) fn with_delegations( mut self, delegations: Vec<(AccountId, AccountId, Balance)>,) -> Self {
+    pub(crate) fn with_delegations(
+        mut self,
+        delegations: Vec<(AccountId, AccountId, Balance)>,
+    ) -> Self {
         self.delegations = delegations;
         self
     }
@@ -129,7 +128,7 @@ impl ExtBuilder {
                 .eviction_baseline,
             eviction_tolerance: manta_collator_selection::GenesisConfig::<Runtime>::default()
                 .eviction_tolerance,
-            candidacy_bond: COLLATOR_MIN_BOND,
+            candidacy_bond: WHITELIST_MIN_BOND,
             desired_candidates: self.desired_candidates,
         }
         .assimilate_storage(&mut t)
