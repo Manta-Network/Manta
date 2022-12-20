@@ -271,7 +271,7 @@ jobs:
             --address=ws://127.0.0.1:9921
       - name: run test suites
         run: |
-          sleep 120
+          sleep 240
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
