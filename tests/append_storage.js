@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-let prefixes = ['0x26aa394eea5630e07c48ae0c9558cef7b99d880ec681799c0cf30e8886371da9',
+let prefixes = [
 '0x682a59d51ab9e48a8c8cc418ff9708d2',
 '0x4ae7e256f92e5888372d72f3e4db1003',
 '0xa66d1aecfdbd14d785a4d1d8723b4beb'
