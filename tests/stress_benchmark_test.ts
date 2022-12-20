@@ -1,7 +1,6 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
 import { manta_pay_types, rpc_api } from './types';
-import {execute_with_root_via_governance } from './manta_pay';
 import { delay } from './test-util';
 import { assert } from 'chai';
 import minimist, { ParsedArgs } from 'minimist';
@@ -10,13 +9,13 @@ import * as fs from 'fs';
 import { readFile } from 'fs/promises';
 
 const test_config = {
-    ws_address: "ws://127.0.0.1:9800",
+    ws_address: "ws://127.0.0.1:9801",
     mnemonic: 'bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice',
-    timeout: 2000000,
+    timeout: 20000000,
     max_wait_time_sec: 100000,
-    expected_tps: 100000
+    expected_tps: 1.9
 }
-
+ 
 describe('Node RPC Test', () => { 
     it('Check RPC result', async () => {
 
@@ -40,9 +39,10 @@ describe('Node RPC Test', () => {
         let mints_offset = 2;
         let transfers_offset = 4;
         let reclaims_offset = 4;
-        let total_iterations = 13000;
-        let start_iteration = 12100;
-    
+        let total_iterations = 15000;
+        let start_iteration = 13500;
+        let tests_iterations = 100;
+
         let mint_size = 552;
         const mints_content = await readFile("./precomputed_mints");
         const mints_buffer = mints_content.subarray(
@@ -64,32 +64,105 @@ describe('Node RPC Test', () => {
           full_reclaim_size * total_iterations
         );
         let lastFinalized = false;
+        let finalizedCount = 0;
+        let allSuccesses = 0;
         let txs_sent = 0;
-        let timeBefore = console.time();
+        var startTime = performance.now()
         let totalTime = 0;
-        for(let i = start_iteration; i < total_iterations; ++i){
-            await api.tx.mantaPay.toPrivate(mints_buffer.subarray(mint_size * i, mint_size * (i + 1))).signAndSend(sender, {nonce: -1});
+        for(let i = start_iteration; i < start_iteration + tests_iterations; ++i){
+            await api.tx.mantaPay.toPrivate(mints_buffer.subarray(mint_size * i, mint_size * (i + 1))).signAndSend(sender, {nonce: -1}, ({ events = [], status }) => {
+                if (status.isInBlock) {
+                    events.forEach(({ event: { data, method, section }, phase }) => {
+                      if ('mantaPay.ToPrivate' == section + '.' + method ) {
+                        allSuccesses++;
+                      }
+                    });
+                }
+             });
     
             let transfers_start = i * (2 * mint_size + transfer_size);
-            await api.tx.mantaPay.toPrivate(transfers_buffer.subarray(transfers_start, transfers_start + mint_size)).signAndSend(sender, {nonce: -1});
-            await api.tx.mantaPay.toPrivate(transfers_buffer.subarray(transfers_start + mint_size, transfers_start + 2 * mint_size)).signAndSend(sender, {nonce: -1});
-            await api.tx.mantaPay.privateTransfer(transfers_buffer.subarray(transfers_start + 2 * mint_size, transfers_start + 2 * mint_size + transfer_size)).signAndSend(sender, {nonce: -1});
-            await new Promise(resolve => setTimeout(resolve, 12000));
+            await api.tx.mantaPay.toPrivate(transfers_buffer.subarray(transfers_start, transfers_start + mint_size)).signAndSend(sender, {nonce: -1}, ({ events = [], status }) => {
+                if (status.isInBlock) {
+                    events.forEach(({ event: { data, method, section }, phase }) => {
+                      if ('mantaPay.ToPrivate' == section + '.' + method ) {
+                        allSuccesses++;
+                      }
+                    });
+                }
+             });
+             await api.tx.mantaPay.toPrivate(transfers_buffer.subarray(transfers_start + mint_size, transfers_start + 2 * mint_size)).signAndSend(sender, {nonce: -1}, ({ events = [], status }) => {
+                if (status.isInBlock) {
+                    events.forEach(({ event: { data, method, section }, phase }) => {
+                      if ('mantaPay.ToPrivate' == section + '.' + method ) {
+                        allSuccesses++;
+                      }
+                    });
+                }
+             });
+             await api.tx.mantaPay.privateTransfer(transfers_buffer.subarray(transfers_start + 2 * mint_size, transfers_start + 2 * mint_size + transfer_size)).signAndSend(sender, {nonce: -1}, ({ events = [], status }) => {
+                if (status.isInBlock) {
+                    events.forEach(({ event: { data, method, section }, phase }) => {
+                      if ('mantaPay.ToPrivate' == section + '.' + method ) {
+                        allSuccesses++;
+                      }
+                    });
+                }
+             });
     
             let reclaims_start = i * (2 * mint_size + reclaim_size);
-            await api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start, reclaims_start + mint_size)).signAndSend(sender, {nonce: -1});
-            await api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start + mint_size, reclaims_start + 2 * mint_size)).signAndSend(sender, {nonce: -1});
-            if (i == total_iterations - 1) {
+            await api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start, reclaims_start + mint_size)).signAndSend(sender, {nonce: -1}, ({ events = [], status }) => {
+                if (status.isInBlock) {
+                    events.forEach(({ event: { data, method, section }, phase }) => {
+                      if ('mantaPay.ToPrivate' == section + '.' + method ) {
+                        allSuccesses++;
+                      }
+                    });
+                }
+             });
+            await api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start + mint_size, reclaims_start + 2 * mint_size)).signAndSend(sender, {nonce: -1}, ({ events = [], status }) => {
+                if (status.isInBlock) {
+                    events.forEach(({ event: { data, method, section }, phase }) => {
+                      if ('mantaPay.ToPrivate' == section + '.' + method ) {
+                        allSuccesses++;
+                      }
+                    });
+                }
+             });
+            if (i == start_iteration + tests_iterations - 1) {
                 const unsub = await api.tx.mantaPay.toPublic(reclaims_buffer.subarray(reclaims_start + 2 * mint_size, reclaims_start + 2 * mint_size + reclaim_size)).signAndSend(sender, {nonce: -1}, ({ events = [], status }) => {
-                    if (status.isFinalized) {
+                    if (status.isInBlock) {
+                        events.forEach(({ event: { data, method, section }, phase }) => {
+                            let event = section + '.' + method;
+                            console.log('method: ', event);
+                            if ('mantaPay.ToPublic' == event ) {
+                              allSuccesses++;
+                            }
+                          });
+                    } else if (status.isFinalized) {
+                         finalizedCount++;
                          lastFinalized = true;
-                         let timeAfter = console.time();
-                         totalTime = (timeAfter as any) - (timeBefore as any);
+                         var endTime = performance.now()
+                         totalTime = endTime - startTime;
+                         totalTime = totalTime / 1000;
                          unsub();
-                     }
+                    }
                  });
             } else {
-                await api.tx.mantaPay.toPublic(reclaims_buffer.subarray(reclaims_start + 2 * mint_size, reclaims_start + 2 * mint_size + reclaim_size)).signAndSend(sender, {nonce: -1});
+                await api.tx.mantaPay.toPublic(reclaims_buffer.subarray(reclaims_start + 2 * mint_size, reclaims_start + 2 * mint_size + reclaim_size)).signAndSend(sender, {nonce: -1}, ({ events = [], status }) => {
+                    if (status.isInBlock) {
+                        console.log('Included at block hash', status.asInBlock.toHex());
+                        console.log('Events:');
+                        events.forEach(({ event: { data, method, section }, phase }) => {
+                          let event = section + '.' + method;
+                          console.log('method: ', event);
+                          if ('mantaPay.ToPublic' == event ) {
+                            allSuccesses++;
+                        }
+                        });
+                      } else if (status.isFinalized) {
+                        console.log('Finalized block hash', status.asFinalized.toHex());
+                      }
+                 });
             }
             await new Promise(resolve => setTimeout(resolve, 12000));
     
@@ -101,12 +174,19 @@ describe('Node RPC Test', () => {
         for(let i = 0; i < test_config.max_wait_time_sec; i++){
             await delay(1000);
             if (lastFinalized) {
-                let tps = totalTime / (total_iterations - start_iteration);
+                let tps = totalTime / (tests_iterations * 7);
+                console.log("Tps is: ", tps);
                 assert(tps <= test_config.expected_tps);
+                break;
             }
         }
 
         if(lastFinalized == false) {
+            assert(false);
+        }
+
+        if (allSuccesses != tests_iterations * 7) {
+            console.log("allSuccesses Count: ", allSuccesses);
             assert(false);
         }
 

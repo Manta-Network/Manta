@@ -221,14 +221,6 @@ pub fn dolphin_2085_config() -> Result<DolphinChainSpec, String> {
     Ok(spec)
 }
 
-pub fn dolphin_testnet_ci_config() -> Result<DolphinChainSpec, String> {
-    let mut spec = DolphinChainSpec::from_json_bytes(
-        &include_bytes!("../../../genesis/dolphin-testnet-ci-genesis.json")[..],
-    )?;
-    spec.extensions_mut().para_id = DOLPHIN_PARACHAIN_ID;
-    Ok(spec)
-}
-
 /// Returns the Dolphin V3 2085 staging chainspec.
 pub fn dolphin_v3_2085_staging_config() -> Result<DolphinChainSpec, String> {
     let mut spec = DolphinChainSpec::from_json_bytes(
