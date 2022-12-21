@@ -48,6 +48,7 @@
     {
       "nodes": [
         {
+          "name": "alice",
           "wsPort": 9921,
           "port": 32331,
           "flags": [
@@ -61,6 +62,7 @@
           ]
         },
         {
+          "name": "bob",
           "wsPort": 9922,
           "port": 32332,
           "flags": [
@@ -74,6 +76,7 @@
           ]
         },
         {
+          "name": "charlie",
           "wsPort": 9923,
           "port": 32333,
           "flags": [
@@ -87,6 +90,7 @@
           ]
         },
         {
+          "name": "dave",
           "wsPort": 9924,
           "port": 32334,
           "flags": [
@@ -100,6 +104,7 @@
           ]
         },
         {
+          "name": "eve",
           "wsPort": 9925,
           "port": 32335,
           "flags": [

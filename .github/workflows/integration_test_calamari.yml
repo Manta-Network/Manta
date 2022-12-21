@@ -17,6 +17,7 @@ env:
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
+  POLKADOT_BINARY: https://github.com/paritytech/polkadot/releases/download/v0.9.33/polkadot
 jobs:
   print-rust-versions:
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
@@ -148,7 +149,7 @@ jobs:
           ls -ahl $HOME/.local/bin/
       - name: fetch and chmod polkadot
         run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.26/polkadot
+          curl -L -o $HOME/.local/bin/polkadot ${{ env.POLKADOT_BINARY }}
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       - id: create-chainspec
@@ -255,10 +256,23 @@ jobs:
             --no-autorestart \
             -- \
             --address=ws://127.0.0.1:9921
+      - uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Manta
+          path: Manta
       - name: run test suites
         run: |
           # TODO: implement moonbeam-like js test suite triggers here
-          sleep 300
+          sleep 120
+          cd ${{ github.workspace }}/Manta/tests
+          yarn install
+          yarn
+          yarn correctness_test --address=ws://127.0.0.1:9921 --exit
+          echo $?
+          if [ $? != 0 ]; then echo "Ledger RPC correctness test failed!"; exit 1; fi
+          yarn performance_test --address=ws://127.0.0.1:9921 --exit
+          echo $?
+          if [ $? != 0 ]; then echo "Ledger RPC performance test failed!"; exit 1; fi
       - name: check if target block is finalized
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block

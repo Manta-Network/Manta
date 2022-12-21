@@ -16,7 +16,7 @@
 
 //! Type Definitions for Manta Pay
 
-use alloc::{boxed::Box, vec::Vec};
+use alloc::{boxed::Box, string::String, vec::Vec};
 use manta_crypto::merkle_tree;
 use manta_pay::{
     config::{
@@ -893,6 +893,41 @@ pub struct PullResponse {
 
     /// Total Number of Senders/Receivers in Ledger
     pub senders_receivers_total: [u8; 16],
+}
+
+/// Ledger Source Dense Pull Response
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Encode, Default, Eq, Hash, Decode, PartialEq, TypeInfo)]
+pub struct DensePullResponse {
+    /// Pull Continuation Flag
+    ///
+    /// The `should_continue` flag is set to `true` if the client should request more data from the
+    /// ledger to finish the pull.
+    pub should_continue: bool,
+
+    /// Ledger Receiver Chunk
+    // we decode the receivers/senders with our own way
+    #[codec(skip)]
+    pub receivers: String,
+
+    /// Ledger Sender Chunk
+    #[codec(skip)]
+    pub senders: String,
+
+    /// Total Number of Senders/Receivers in Ledger
+    pub senders_receivers_total: [u8; 16],
+
+    /// Next request checkpoint calculated from server.
+    /// If should_continue = false, this data makes no sense.
+    /// Else, the client can just use this one as next request cursor,
+    /// It avoids complex computing on the client side,
+    /// and the potential risk of inconsistent computing rules between the client and server
+    #[codec(skip)]
+    pub next_checkpoint: Option<Checkpoint>,
 }
 
 /// Raw Checkpoint for Encoding and Decoding
