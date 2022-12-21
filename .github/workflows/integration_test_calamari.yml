@@ -279,8 +279,7 @@ jobs:
           path: Manta
       - name: run test suites
         run: |
-          # TODO: implement moonbeam-like js test suite triggers here
-          sleep 240
+          sleep 480
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
