@@ -283,15 +283,15 @@ jobs:
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
-          yarn stress_benchmark_test --address=ws://127.0.0.1:9921 --exit
-          echo $?
-          if [ $? != 0 ]; then echo "Stress benchmark test failed!"; exit 1; fi
           yarn correctness_test --address=ws://127.0.0.1:9921 --exit
           echo $?
           if [ $? != 0 ]; then echo "Ledger RPC correctness test failed!"; exit 1; fi
           yarn performance_test --address=ws://127.0.0.1:9921 --exit
           echo $?
           if [ $? != 0 ]; then echo "Ledger RPC performance test failed!"; exit 1; fi
+          yarn stress_benchmark_test --address=ws://127.0.0.1:9921 --exit
+          echo $?
+          if [ $? != 0 ]; then echo "Stress benchmark test failed!"; exit 1; fi
       - name: check if target block is finalized
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
