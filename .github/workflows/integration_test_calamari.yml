@@ -172,7 +172,7 @@ jobs:
           manta export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
       - name: Install git lfs
         run: |
-          sudo "apt-get install git-lfs"
+          sudo "apt install git-lfs"
       - uses: actions/checkout@v2
         with:
           repository: Manta-Network/Manta
