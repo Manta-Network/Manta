@@ -1,0 +1,312 @@
+name: publish draft releases
+on:
+  push:
+    branches: [manta, release-**]
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+env:
+  AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
+  AWS_REGION: us-east-1
+  AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
+  AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
+  AWS_INSTANCE_TYPE: c5.9xlarge
+  AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
+  AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
+  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
+jobs:
+  get-rust-versions:
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
+    runs-on: ubuntu-20.04
+    container:
+      image: paritytech/ci-linux:production
+    outputs:
+      rustc-stable: ${{ steps.get-rust-versions.outputs.stable }}
+      rustc-nightly: ${{ steps.get-rust-versions.outputs.nightly }}
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - id: get-rust-versions
+        run: |
+          echo "::set-output name=stable::$(rustc +stable --version)"
+          echo "::set-output name=nightly::$(rustc +nightly --version)"
+  build-runtimes:
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
+    runs-on: ubuntu-20.04
+    env:
+      CARGO_TERM_COLOR: always
+    strategy:
+      matrix:
+        runtime:
+          - name: calamari
+          - name: manta
+          - name: dolphin
+    steps:
+      - uses: actions/checkout@v2
+      - name: cache target dir
+        uses: actions/cache@v2
+        with:
+          path: "${{ github.workspace }}/runtime/${{ matrix.runtime.name }}/target"
+          key: srtool-target-${{ matrix.runtime.name }}-${{ github.sha }}
+          restore-keys: |
+            srtool-target-${{ matrix.runtime.name }}
+      - name: build runtime
+        id: srtool-build
+        uses: chevdor/srtool-actions@v0.4.0
+        with:
+          image: paritytech/srtool
+          chain: ${{ matrix.runtime.name }}
+      - name: persist srtool digest
+        run: >
+          echo '${{ steps.srtool-build.outputs.json }}' |
+          jq > ${{ matrix.runtime.name }}-srtool-output.json
+      - if: always()
+        name: upload srtool json
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.runtime.name }}-srtool-json
+          path: ${{ matrix.runtime.name }}-srtool-output.json
+      - if: always()
+        name: upload runtime
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.runtime.name }}-runtime
+          path: |
+            ${{ steps.srtool-build.outputs.wasm }}
+            ${{ steps.srtool-build.outputs.wasm_compressed }}
+  build-node-current:
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
+    needs: start-node-builder-current
+    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v2
+      - name: install sccache
+        env:
+          SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
+          SCCACHE_VERSION: v0.2.15
+        run: |
+          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
+          mkdir -p $HOME/.local/bin
+          curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
+          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
+          chmod +x $HOME/.local/bin/sccache
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-
+      - name: cache sccache
+        uses: actions/cache@v2
+        continue-on-error: false
+        with:
+          path: /home/runner/.cache/sccache
+          key: sccache-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            sccache-
+      - name: start sccache server
+        run: sccache --start-server
+      - name: init
+        run: |
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup default stable
+          rustup update
+          rustup target add wasm32-unknown-unknown
+      - name: build
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+        run: |
+          source ${HOME}/.cargo/env
+          RUSTC_BOOTSTRAP=1 cargo build --profile production --verbose
+      - name: stop sccache server
+        run: sccache --stop-server || true
+      - if: always()
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: manta
+          path: target/production/manta
+      - if: always()
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: config-for-integration-test
+          path: .github/resources/config-for-integration-test.json
+      - if: always()
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: config-for-runtime-upgrade-test
+          path: .github/resources/config-for-runtime-upgrade-test.json
+  # THE FOLLOWING HAPPENS ONLY WHEN TAGGED WITH A vX.Y.Z TAG
+  create-draft-release:
+    runs-on: ubuntu-20.04
+    needs: [build-runtimes]
+    outputs:
+      release_url: ${{ steps.create-release.outputs.html_url }}
+      asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
+    if: startsWith(github.ref, 'refs/tags')
+    steps:
+      - name: create draft release
+        id: create-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: true
+  publish-runtimes:
+    runs-on: ubuntu-20.04
+    needs: create-draft-release
+    strategy:
+      matrix:
+        runtime:
+          - name: calamari
+          - name: manta
+          - name: dolphin
+    if: startsWith(github.ref, 'refs/tags')
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: ${{ matrix.runtime.name }}-runtime
+      - uses: actions/download-artifact@v2
+        with:
+          name: ${{ matrix.runtime.name }}-srtool-json
+      - name: ruby setup
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+      - name: get runtime version
+        id: get-runtime-version
+        run: |
+          runtime_ver="$(ruby -e '
+            require "./scripts/github/lib.rb";
+            puts get_runtime("calamari")
+          ')"
+          echo "::set-output name=runtime_ver::$runtime_ver"
+      - name: upload compact wasm
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+          asset_path: ${{ matrix.runtime.name }}_runtime.compact.wasm
+          asset_name: ${{ matrix.runtime.name }}-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.wasm
+          asset_content_type: application/wasm
+      - name: upload compressed wasm
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+          asset_path: ${{ matrix.runtime.name }}_runtime.compact.compressed.wasm
+          asset_name: ${{ matrix.runtime.name }}-runtime-v${{ steps.get-runtime-version.outputs.runtime_ver }}.compact.compressed.wasm
+          asset_content_type: application/wasm
+      - name: upload types json
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+          asset_path: types.json
+          asset_name: ${{ matrix.runtime.name }}-types-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
+          asset_content_type: application/json
+      - name: upload srtool output json
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+          asset_path: ${{ matrix.runtime.name }}-srtool-output.json
+          asset_name: ${{ matrix.runtime.name }}-srtool-output-v${{ steps.get-runtime-version.outputs.runtime_ver }}.json
+          asset_content_type: application/json
+  publish-node:
+    runs-on: ubuntu-20.04
+    needs: [build-node-current, create-draft-release]
+    outputs:
+      download_url: ${{ steps.upload-manta.outputs.browser_download_url }}
+    if: startsWith(github.ref, 'refs/tags')
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: manta
+      - id: upload-manta
+        name: upload manta
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.asset_upload_url }}
+          asset_path: manta
+          asset_name: manta
+          asset_content_type: application/octet-stream
+  brag:
+    runs-on: ubuntu-20.04
+    needs: create-draft-release
+    if: startsWith(github.ref, 'refs/tags')
+    steps:
+      - env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_USERNAME: raybot
+          DISCORD_AVATAR: https://gist.githubusercontent.com/grenade/66a46007b37778d81ee064394263b16c/raw/raybot.png
+        uses: Ilshidur/action-discord@0.3.2
+        with:
+          args: 'draft runtime release ${{ github.ref }} created at ${{ needs.create-draft-release.outputs.release_url }}'
+  start-node-builder-current:
+    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
+    runs-on: ubuntu-20.04
+    outputs:
+      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    steps:
+      - id: start-self-hosted-runner
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: start
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
+          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
+          aws-instance-root-volume-size: 32
+          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
+  stop-node-builder-current:
+    if: ${{ always() }}
+    needs: [start-node-builder-current, build-node-current]
+    runs-on: ubuntu-20.04
+    steps:
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: stop
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
+          runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
+      - name: discard stopper success/failure
+        run: true
