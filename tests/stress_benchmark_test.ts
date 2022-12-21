@@ -132,7 +132,8 @@ describe('Node RPC Test', () => {
                 const unsub = await api.tx.mantaPay.toPublic(reclaims_buffer.subarray(reclaims_start + 2 * mint_size, reclaims_start + 2 * mint_size + reclaim_size)).signAndSend(sender, {nonce: -1}, ({ events = [], status }) => {
                     if (status.isInBlock) {
                         events.forEach(({ event: { data, method, section }, phase }) => {
-                            if ('mantaPay.ToPublic' == section + '.' + method ) {
+                            let event = section + '.' + method;
+                            if ('mantaPay.ToPublic' == event ) {
                               allSuccesses++;
                             }
                           });
@@ -148,8 +149,12 @@ describe('Node RPC Test', () => {
             } else {
                 await api.tx.mantaPay.toPublic(reclaims_buffer.subarray(reclaims_start + 2 * mint_size, reclaims_start + 2 * mint_size + reclaim_size)).signAndSend(sender, {nonce: -1}, ({ events = [], status }) => {
                     if (status.isInBlock) {
+                        console.log('Included at block hash', status.asInBlock.toHex());
+                        console.log('Events:');
                         events.forEach(({ event: { data, method, section }, phase }) => {
-                          if ('mantaPay.ToPublic' == section + '.' + method ) {
+                          let event = section + '.' + method;
+                          console.log('method: ', event);
+                          if ('mantaPay.ToPublic' == event ) {
                             allSuccesses++;
                         }
                         });

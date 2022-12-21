@@ -279,7 +279,7 @@ jobs:
           path: Manta
       - name: run test suites
         run: |
-          sleep 480
+          sleep 720
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
