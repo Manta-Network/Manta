@@ -172,7 +172,7 @@ jobs:
           manta export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
       - name: Install git lfs
         run: |
-          sudo "apt-get update && apt-get install git-lfs"
+          sudo "apt-get install git-lfs"
       - uses: actions/checkout@v2
         with:
           repository: Manta-Network/Manta
@@ -444,29 +444,29 @@ jobs:
   #         echo $?
   #         if [ $? == 1 ]; then echo "Failed to finalize the target block - 6"; exit 1; fi
   # HELPER JOBS BELOW
-  start-node-builder-current:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
-          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: 32
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
+  # start-node-builder-current:
+  #   if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
+  #   runs-on: ubuntu-20.04
+  #   outputs:
+  #     runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+  #     aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+  #     aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+  #   steps:
+  #     - id: start-self-hosted-runner
+  #       uses: audacious-network/aws-github-runner@v1.0.33
+  #       with:
+  #         mode: start
+  #         github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
+  #         aws-region: ${{ env.AWS_REGION }}
+  #         aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
+  #         aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
+  #         aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
+  #         aws-instance-root-volume-size: 32
+  #         aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+  #         aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   # stop-node-builder-current:
   #   if: ${{ always() }}
   #   needs: [start-node-builder-current, build-node-current]
