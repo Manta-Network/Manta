@@ -1,4 +1,4 @@
-name: calamari integration test
+name: calamari integration test stress
 on:
   push:
     branches: [manta]
@@ -177,6 +177,15 @@ jobs:
           repository: Manta-Network/Manta
           path: Manta
           lfs: true
+      - name: append manta-pay storage
+        run: |
+          mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/fork.json
+          cd ${{ github.workspace }}/Manta/tests
+          yarn install
+          yarn
+          node append_storage.js
+          cd ../../
+          mv ${{ github.workspace }}/Manta/tests/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
       - if: always()
         uses: actions/upload-artifact@v2
         with:
@@ -274,12 +283,9 @@ jobs:
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
-          yarn correctness_test --address=ws://127.0.0.1:9921 --exit
+          yarn stress_benchmark_test --address=ws://127.0.0.1:9921 --exit
           echo $?
-          if [ $? != 0 ]; then echo "Ledger RPC correctness test failed!"; exit 1; fi
-          yarn performance_test --address=ws://127.0.0.1:9921 --exit
-          echo $?
-          if [ $? != 0 ]; then echo "Ledger RPC performance test failed!"; exit 1; fi
+          if [ $? != 0 ]; then echo "Stress benchmark test failed!"; exit 1; fi
       - name: check if target block is finalized
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
