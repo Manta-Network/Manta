@@ -132,9 +132,9 @@ jobs:
                 relay: 7
                 para: 4
     steps:
-      - name: Install git lfs
-        run: |
-          "sudo yum install git-lfs"
+      - run: |
+          sudo apt-get update
+          sudo apt-get install git-lfs
       - run: |
           mkdir -p $HOME/.local/share/calamari-pc
           mkdir -p $HOME/.local/bin
