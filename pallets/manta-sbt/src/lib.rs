@@ -171,9 +171,15 @@ pub mod pallet {
                 &item_id,
                 &Self::account_id(),
             )?;
+            // Ensures asset id is correct
             ensure!(
                 post.asset_id == T::IncrementItem::encode_item_id(item_id),
                 Error::<T>::InvalidAssetId
+            );
+            // Only one UTXO allowed to be inserted per transaction
+            ensure!(
+                post.receiver_posts.len() == 1_usize,
+                Error::<T>::DuplicateRegister
             );
 
             Self::post_transaction(vec![origin], post)

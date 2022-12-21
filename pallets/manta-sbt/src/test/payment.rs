@@ -16,12 +16,14 @@
 
 use crate::{
     fp_decode,
-    mock::{new_test_ext, MantaSBTPallet, Origin as MockOrigin, Test},
+    mock::{
+        new_test_ext, Balances, ImplementItemId, MantaSBTPallet, Origin as MockOrigin, Test,
+        Uniques,
+    },
     types::{fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
-    Error, StandardAssetId,
+    Error, IncrementItemId, ItemIdCounter,
 };
 use frame_support::{assert_noop, assert_ok};
-use manta_accounting::transfer::test::value_distribution;
 use manta_crypto::{
     arkworks::constraint::fp::Fp,
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
@@ -35,7 +37,6 @@ use manta_pay::{
     parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
     test,
 };
-use manta_primitives::constants::TEST_DEFAULT_ASSET_ED;
 
 /// UTXO Accumulator for Building Circuits
 type UtxoAccumulator =
@@ -80,119 +81,59 @@ where
     .unwrap()
 }
 
-/// Mints many assets with the given `id` and `value`.
-#[inline]
-fn mint_private_tokens<R>(id: StandardAssetId, values: &[AssetValue], rng: &mut R)
-where
-    R: CryptoRng + RngCore + ?Sized,
-{
-    for value in values {
-        assert_ok!(MantaSBTPallet::to_private(
-            MockOrigin::signed(ALICE),
-            sample_to_private(MantaSBTPallet::field_from_id(id), *value, rng)
-        ));
-    }
-}
-
 /// Initializes a test by allocating `value`-many assets of the given `id` to the default account.
 #[inline]
-fn initialize_test(id: StandardAssetId, value: AssetValue) {}
+fn initialize_test() {
+    assert_ok!(Balances::set_balance(
+        MockOrigin::root(),
+        ALICE,
+        1_000_000_000_000_000,
+        0
+    ));
+    assert_ok!(Uniques::force_create(
+        MockOrigin::root(),
+        MantaSBTPallet::account_id(),
+        true
+    ));
+}
 
 /// Tests multiple to_private from some total supply.
 #[test]
 fn to_private_should_work() {
     let mut rng = OsRng;
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
-        new_test_ext().execute_with(|| {
-            let asset_id = rng.gen();
-            let total_free_supply = rng.gen();
-            initialize_test(asset_id, total_free_supply + TEST_DEFAULT_ASSET_ED);
-            mint_private_tokens(
-                asset_id,
-                &value_distribution(5, total_free_supply, &mut rng),
-                &mut rng,
-            );
-        });
-    }
-}
 
-/// Tests a [`ToPrivate`] transaction with native currency.
-#[test]
-fn native_asset_to_private_should_work() {
-    let mut rng = OsRng;
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
-            let total_free_supply = rng.gen();
-            mint_private_tokens(
-                0,
-                &value_distribution(5, total_free_supply, &mut rng),
-                &mut rng,
-            );
-        });
-    }
-}
+            initialize_test();
+            let value = rng.gen();
+            let id =
+                ImplementItemId::encode_item_id(ItemIdCounter::<Test>::get().unwrap_or(0)).unwrap();
 
-/// Tests a mint that would overdraw the total supply.
-#[test]
-fn overdrawn_mint_should_not_work() {
-    let mut rng = OsRng;
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
-        new_test_ext().execute_with(|| {
-            let asset_id = rng.gen();
-            let total_supply: u128 = rng.gen();
-            initialize_test(asset_id, total_supply + TEST_DEFAULT_ASSET_ED);
-            assert_noop!(
-                MantaSBTPallet::to_private(
-                    MockOrigin::signed(ALICE),
-                    sample_to_private(
-                        MantaSBTPallet::field_from_id(asset_id),
-                        total_supply + TEST_DEFAULT_ASSET_ED + 1,
-                        &mut rng
-                    )
-                ),
-                Error::<Test>::InvalidSourceAccount
-            );
-        });
-    }
-}
-
-/// Tests a mint that would overdraw from a non-existent supply.
-#[test]
-fn to_private_without_init_should_not_work() {
-    let mut rng = OsRng;
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
-        new_test_ext().execute_with(|| {
-            assert_noop!(
-                MantaSBTPallet::to_private(
-                    MockOrigin::signed(ALICE),
-                    sample_to_private(MantaSBTPallet::field_from_id(rng.gen()), 100, &mut rng)
-                ),
-                Error::<Test>::InvalidSourceAccount,
-            );
-        });
-    }
-}
-
-/// Tests that a double-spent [`Mint`] will fail.
-#[test]
-fn mint_existing_coin_should_not_work() {
-    let mut rng = OsRng;
-    for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
-        new_test_ext().execute_with(|| {
-            let asset_id = rng.gen();
-            initialize_test(asset_id, 32579u128);
-            let mint_post =
-                sample_to_private(MantaSBTPallet::field_from_id(asset_id), 100, &mut rng);
             assert_ok!(MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
-                mint_post.clone()
+                sample_to_private(id, value, &mut rng)
             ));
-            assert_noop!(
-                MantaSBTPallet::to_private(MockOrigin::signed(ALICE), mint_post),
-                Error::<Test>::AssetRegistered
-            );
         });
     }
+}
+
+#[test]
+fn wrong_asset_id_fails() {
+    let mut rng = OsRng;
+
+    new_test_ext().execute_with(|| {
+        initialize_test();
+        let asset_id = MantaSBTPallet::field_from_id(10);
+        let value = rng.gen();
+
+        assert_noop!(
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                sample_to_private(asset_id, value, &mut rng)
+            ),
+            Error::<Test>::InvalidAssetId
+        );
+    })
 }
 
 #[test]
@@ -216,18 +157,13 @@ fn check_number_conversions() {
 #[test]
 fn pull_ledger_diff_should_work() {
     use scale_codec::Decode;
+
     new_test_ext().execute_with(|| {
-        for _ in 0..2 {
+        initialize_test();
+        /*for _ in 0..2 {
             let mut rng = OsRng;
-            let asset_id = rng.gen();
             let total_free_supply = rng.gen();
-            initialize_test(asset_id, total_free_supply + TEST_DEFAULT_ASSET_ED);
-            mint_private_tokens(
-                asset_id,
-                &value_distribution(5, total_free_supply, &mut rng),
-                &mut rng,
-            );
-        }
+        }*/
 
         let (max_receivers, max_senders) = (128, 128);
         let check_point = crate::Checkpoint::default();

@@ -91,59 +91,6 @@ benchmarks! {
         // FIXME: add balance checking
         assert_last_event::<T, _>(Event::ToPrivate { asset, source: caller });
     }
-
-    to_public {
-        let caller: T::AccountId = whitelisted_caller();
-        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
-        for coin in TO_PUBLIC_INPUT {
-            Pallet::<T>::to_private(
-                origin.clone(),
-                TransferPost::decode(&mut &**coin).unwrap()
-            ).unwrap();
-        }
-        let reclaim_post = TransferPost::decode(&mut &*TO_PUBLIC).unwrap();
-        let asset = reclaim_post.sink(0).unwrap();
-    }: to_public (
-        RawOrigin::Signed(caller.clone()),
-        reclaim_post
-    ) verify {
-        // FIXME: add balance checking
-        assert_last_event::<T, _>(Event::ToPublic { asset, sink: caller });
-    }
-
-    private_transfer {
-        let caller: T::AccountId = whitelisted_caller();
-        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
-        for coin in PRIVATE_TRANSFER_INPUT {
-            Pallet::<T>::to_private(
-                origin.clone(),
-                TransferPost::decode(&mut &**coin).unwrap(),
-            ).unwrap();
-        }
-        let private_transfer_post = TransferPost::decode(&mut &*PRIVATE_TRANSFER).unwrap();
-    }: private_transfer (
-        RawOrigin::Signed(caller.clone()),
-        private_transfer_post
-    ) verify {
-        assert_last_event::<T, _>(Event::PrivateTransfer { origin: Some(caller) });
-    }
-
-    public_transfer {
-        let caller: T::AccountId = whitelisted_caller();
-        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
-        let asset = Asset::new(Pallet::<T>::field_from_id(8u128), asset_value_encode(100));
-        let sink = Pallet::<T>::account_id();
-    }: public_transfer (
-        RawOrigin::Signed(caller.clone()),
-        asset,
-        sink.clone()
-    ) verify {
-        // FIXME: add balance checking
-        assert_last_event::<T, _>(Event::Transfer { asset, source: caller.clone(), sink });
-    }
 }
 
 impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
