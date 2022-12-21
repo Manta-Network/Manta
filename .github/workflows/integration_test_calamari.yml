@@ -132,6 +132,9 @@ jobs:
                 relay: 7
                 para: 4
     steps:
+      - name: Install git lfs
+        run: |
+          sudo "apt install git-lfs"
       - run: |
           mkdir -p $HOME/.local/share/calamari-pc
           mkdir -p $HOME/.local/bin
@@ -170,9 +173,6 @@ jobs:
           ls -ahl $HOME/.local/share/calamari-pc/
           echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
           manta export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
-      - name: Install git lfs
-        run: |
-          sudo "apt install git-lfs"
       - uses: actions/checkout@v2
         with:
           repository: Manta-Network/Manta
