@@ -16,13 +16,11 @@
 
 //! # MantaSBT Module
 //!
-//! MantaSBT creates non-transferable to
+//! MantaSBT creates non-transferable nfts as unspendable UTXOs
 //!
 //! ## Overview
 //!
-//! The Assets module provides functionality for asset management of fungible asset classes with
-//! a fixed supply, including:
-
+//! Uses `pallet-uniques` to store NFT data. NFTs are created by pallet account and Ownership is recorded as an UTXO
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
@@ -31,13 +29,13 @@
 extern crate alloc;
 
 use crate::types::{
-    asset_value_decode, asset_value_encode, fp_decode, fp_encode, Asset, AssetValue,
-    FullIncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk, SenderChunk, TransferPost,
-    Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath, FP_DECODE, FP_ENCODE,
+    asset_value_encode, fp_decode, fp_encode, Asset, AssetValue, FullIncomingNote, ReceiverChunk,
+    SenderChunk, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath, FP_DECODE,
+    FP_ENCODE,
 };
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
-use frame_support::{traits::tokens::ExistenceRequirement, transactional, PalletId};
+use frame_support::{transactional, PalletId};
 use manta_pay::{
     config::{self, utxo::MerkleTreeConfiguration},
     manta_accounting::transfer::{
@@ -81,24 +79,21 @@ pub mod runtime;
 /// Standard Asset Id
 pub type StandardAssetId = u128;
 
-/// This is needed because ItemId is very generic and
-/// Cannot be incremented until the type is known to be a UnsignedInt
+/// This is needed because ItemId is generic and
+/// cannot be incremented until the type is known to be an integer
 pub trait IncrementItemId<ItemId> {
     fn get_and_increment_item_id() -> ItemId;
 
     fn encode_item_id(item: ItemId) -> Option<[u8; 32]>;
 }
 
-/// MantaPay Pallet
+/// MantaSBT Pallet
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
     use frame_support::{
         pallet_prelude::*,
-        traits::{
-            tokens::nonfungibles::{Create, Inspect, Mutate},
-            StorageVersion,
-        },
+        traits::{tokens::nonfungibles::Mutate, StorageVersion},
     };
     use frame_system::pallet_prelude::*;
     use scale_codec::Encode;
@@ -132,7 +127,7 @@ pub mod pallet {
     }
 
     #[pallet::storage]
-    pub type  ItemIdCounter<T: Config> = StorageValue<_, T::ItemId, OptionQuery>;
+    pub type ItemIdCounter<T: Config> = StorageValue<_, T::ItemId, OptionQuery>;
 
     /// UTXO Set
     #[pallet::storage]
@@ -160,20 +155,6 @@ pub mod pallet {
     pub(super) type UtxoAccumulatorOutputs<T: Config> =
         StorageMap<_, Twox64Concat, UtxoAccumulatorOutput, (), ValueQuery>;
 
-    /// Nullifier Commitment Set
-    #[pallet::storage]
-    pub(super) type NullifierCommitmentSet<T: Config> =
-        StorageMap<_, Twox64Concat, NullifierCommitment, (), ValueQuery>;
-
-    /// Nullifiers Ordered by Insertion
-    #[pallet::storage]
-    pub(super) type NullifierSetInsertionOrder<T: Config> =
-        StorageMap<_, Twox64Concat, u64, (NullifierCommitment, OutgoingNote), ValueQuery>;
-
-    /// Nullifier Set Size
-    #[pallet::storage]
-    pub(super) type NullifierSetSize<T: Config> = StorageValue<_, u64, ValueQuery>;
-
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Transforms some public assets into private ones using `post`, withdrawing the public
@@ -185,10 +166,17 @@ pub mod pallet {
             let origin = ensure_signed(origin)?;
 
             let item_id = T::IncrementItem::get_and_increment_item_id();
-            pallet_uniques::Pallet::<T>::mint_into(&T::PalletCollectionId::get(), &item_id, &Self::account_id())?;
-            ensure!(post.asset_id == T::IncrementItem::encode_item_id(item_id), Error::<T>::InvalidAssetId);
+            pallet_uniques::Pallet::<T>::mint_into(
+                &T::PalletCollectionId::get(),
+                &item_id,
+                &Self::account_id(),
+            )?;
+            ensure!(
+                post.asset_id == T::IncrementItem::encode_item_id(item_id),
+                Error::<T>::InvalidAssetId
+            );
 
-            Self::post_transaction(None, vec![origin], post)
+            Self::post_transaction(vec![origin], post)
         }
     }
 
@@ -266,9 +254,6 @@ pub mod pallet {
         ///
         /// At least one of the sink accounts in invalid.
         InvalidSinkAccount,
-
-        /// Encode Error
-        EncodeError,
     }
 
     impl<T> From<InvalidAuthorizationSignature> for Error<T>
@@ -355,9 +340,6 @@ pub mod pallet {
         /// Maximum Number of Updates per Shard (based on benchmark result)
         const PULL_MAX_RECEIVER_UPDATE_SIZE: u64 = 32768;
 
-        /// Maximum Size of Sender Data Update (based on benchmark result)
-        const PULL_MAX_SENDER_UPDATE_SIZE: u64 = 32768;
-
         /// Pulls receiver data from the ledger starting at the `receiver_indices`.
         /// The pull algorithm is greedy. It tries to pull as many as possible from each shard
         /// before moving to the next shard.
@@ -419,23 +401,8 @@ pub mod pallet {
 
         /// Pulls sender data from the ledger starting at the `sender_index`.
         #[inline]
-        fn pull_senders(sender_index: usize, max_update_request: u64) -> (bool, SenderChunk) {
-            let mut senders = Vec::new();
-            let max_sender_index = if max_update_request > Self::PULL_MAX_SENDER_UPDATE_SIZE {
-                (sender_index as u64) + Self::PULL_MAX_SENDER_UPDATE_SIZE
-            } else {
-                (sender_index as u64) + max_update_request
-            };
-            for idx in (sender_index as u64)..max_sender_index {
-                match NullifierSetInsertionOrder::<T>::try_get(idx) {
-                    Ok(next) => senders.push(next),
-                    _ => return (false, senders),
-                }
-            }
-            (
-                NullifierSetInsertionOrder::<T>::contains_key(max_sender_index),
-                senders,
-            )
+        fn pull_senders() -> (bool, SenderChunk) {
+            (false, vec![])
         }
 
         /// Returns the diff of ledger state since the given `checkpoint`, `max_receivers`, and
@@ -444,15 +411,14 @@ pub mod pallet {
         pub fn pull_ledger_diff(
             checkpoint: Checkpoint,
             max_receivers: u64,
-            max_senders: u64,
+            _max_senders: u64,
         ) -> PullResponse {
             let (more_receivers, receivers) =
                 Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
-            let (more_senders, senders) = Self::pull_senders(checkpoint.sender_index, max_senders);
+            let (more_senders, senders) = Self::pull_senders();
             let senders_receivers_total = (0..=255)
                 .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
-                .sum::<u128>()
-                + NullifierSetSize::<T>::get() as u128;
+                .sum::<u128>();
             PullResponse {
                 should_continue: more_receivers || more_senders,
                 receivers,
@@ -467,15 +433,14 @@ pub mod pallet {
         pub fn dense_pull_ledger_diff(
             checkpoint: Checkpoint,
             max_receivers: u64,
-            max_senders: u64,
+            _max_senders: u64,
         ) -> DensePullResponse {
             let (more_receivers, receivers) =
                 Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
-            let (more_senders, senders) = Self::pull_senders(checkpoint.sender_index, max_senders);
+            let (more_senders, senders) = Self::pull_senders();
             let senders_receivers_total = (0..=255)
                 .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
-                .sum::<u128>()
-                + NullifierSetSize::<T>::get() as u128;
+                .sum::<u128>();
             DensePullResponse {
                 should_continue: more_receivers || more_senders,
                 receivers: base64::encode(receivers.encode()),
@@ -495,7 +460,6 @@ pub mod pallet {
         /// the public deposit and public withdraw accounts respectively.
         #[inline]
         fn post_transaction(
-            origin: Option<T::AccountId>,
             sources: Vec<T::AccountId>,
             post: TransferPost,
         ) -> DispatchResultWithPostInfo {
@@ -510,7 +474,7 @@ pub mod pallet {
                         Vec::new(),
                     )
                     .map_err(Error::<T>::from)?
-                    .convert(origin),
+                    .convert(),
             );
             Ok(().into())
         }
@@ -557,7 +521,7 @@ where
     /// Converts a [`PreprocessedEvent`] with into an [`Event`] using the given `origin` for
     /// [`PreprocessedEvent::PrivateTransfer`].
     #[inline]
-    fn convert(self, origin: Option<T::AccountId>) -> Event<T> {
+    fn convert(self) -> Event<T> {
         match self {
             Self::ToPrivate { asset, source } => Event::ToPrivate { asset, source },
         }
@@ -600,23 +564,24 @@ where
     type ValidNullifier = Wrap<config::Nullifier>;
 
     #[inline]
-    fn is_unspent(&self, nullifier: config::Nullifier) -> Option<Self::ValidNullifier> {
+    fn is_unspent(&self, _nullifier: config::Nullifier) -> Option<Self::ValidNullifier> {
         None
     }
 
     #[inline]
     fn has_matching_utxo_accumulator_output(
         &self,
-        output: config::UtxoAccumulatorOutput,
+        _output: config::UtxoAccumulatorOutput,
     ) -> Option<Self::ValidUtxoAccumulatorOutput> {
         None
     }
 
     #[inline]
-    fn spend_all<I>(&mut self, super_key: &Self::SuperPostingKey, iter: I)
+    fn spend_all<I>(&mut self, _super_key: &Self::SuperPostingKey, _iter: I)
     where
         I: IntoIterator<Item = (Self::ValidUtxoAccumulatorOutput, Self::ValidNullifier)>,
-    {}
+    {
+    }
 }
 
 impl<T> ReceiverLedger<config::Parameters> for Ledger<T>
@@ -732,24 +697,22 @@ where
     #[inline]
     fn check_source_accounts<I>(
         &self,
-        asset_id: &config::AssetId,
+        _asset_id: &config::AssetId,
         sources: I,
     ) -> Result<Vec<Self::ValidSourceAccount>, InvalidSourceAccount<config::Config, Self::AccountId>>
     where
         I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
     {
-        Ok(
-            sources
-                .map(move |(account_id, withdraw)| WrapPair(account_id, withdraw))
-                .collect()
-        )
+        Ok(sources
+            .map(move |(account_id, withdraw)| WrapPair(account_id, withdraw))
+            .collect())
     }
 
     #[inline]
     fn check_sink_accounts<I>(
         &self,
-        asset_id: &config::AssetId,
-        sinks: I,
+        _asset_id: &config::AssetId,
+        _sinks: I,
     ) -> Result<Vec<Self::ValidSinkAccount>, InvalidSinkAccount<config::Config, Self::AccountId>>
     where
         I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
@@ -791,11 +754,11 @@ where
     #[inline]
     fn update_public_balances(
         &mut self,
-        super_key: &TransferLedgerSuperPostingKey<config::Config, Self>,
-        asset_id: config::AssetId,
-        sources: Vec<SourcePostingKey<config::Config, Self>>,
-        sinks: Vec<SinkPostingKey<config::Config, Self>>,
-        proof: Self::ValidProof,
+        _super_key: &TransferLedgerSuperPostingKey<config::Config, Self>,
+        _asset_id: config::AssetId,
+        _sources: Vec<SourcePostingKey<config::Config, Self>>,
+        _sinks: Vec<SinkPostingKey<config::Config, Self>>,
+        _proof: Self::ValidProof,
     ) -> Result<(), Self::UpdateError> {
         Ok(())
     }

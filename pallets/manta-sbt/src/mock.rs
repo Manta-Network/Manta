@@ -30,7 +30,7 @@ use sp_runtime::{
     AccountId32,
 };
 
-use crate::{StandardAssetId, IncrementItemId, ItemIdCounter};
+use crate::{IncrementItemId, ItemIdCounter, StandardAssetId};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
