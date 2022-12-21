@@ -178,8 +178,6 @@ jobs:
           repository: Manta-Network/Manta
           path: Manta
           lfs: true
-      - name: Checkout LFS objects
-        run: git lfs checkout
       - name: inject manta-pay storage
         run: |
           mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/fork.json
