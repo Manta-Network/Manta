@@ -521,43 +521,43 @@ jobs:
           aws-instance-id: ${{ needs.start-calamari-integration-tester.outputs.aws-instance-id }}
       - name: discard stopper success/failure
         run: true
-  start-docker-image-tester:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
-          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: 64
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
-  stop-docker-image-tester:
-    if: ${{ always() }}
-    needs: [start-docker-image-tester, docker-image-test]
-    runs-on: ubuntu-20.04
-    steps:
-      - continue-on-error: true
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-docker-image-tester.outputs.aws-region }}
-          runner-label: ${{ needs.start-docker-image-tester.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-docker-image-tester.outputs.aws-instance-id }}
-      - name: discard stopper success/failure
-        run: true
+  # start-docker-image-tester:
+  #   if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
+  #   runs-on: ubuntu-20.04
+  #   outputs:
+  #     runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+  #     aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+  #     aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+  #   steps:
+  #     - id: start-self-hosted-runner
+  #       uses: audacious-network/aws-github-runner@v1.0.33
+  #       with:
+  #         mode: start
+  #         github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
+  #         aws-region: ${{ env.AWS_REGION }}
+  #         aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
+  #         aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
+  #         aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
+  #         aws-instance-root-volume-size: 64
+  #         aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+  #         aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
+  # stop-docker-image-tester:
+  #   if: ${{ always() }}
+  #   needs: [start-docker-image-tester, docker-image-test]
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - continue-on-error: true
+  #       uses: audacious-network/aws-github-runner@v1.0.33
+  #       with:
+  #         mode: stop
+  #         github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: ${{ needs.start-docker-image-tester.outputs.aws-region }}
+  #         runner-label: ${{ needs.start-docker-image-tester.outputs.runner-label }}
+  #         aws-instance-id: ${{ needs.start-docker-image-tester.outputs.aws-instance-id }}
+  #     - name: discard stopper success/failure
+  #       run: true
