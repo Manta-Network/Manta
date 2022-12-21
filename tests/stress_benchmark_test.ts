@@ -102,7 +102,7 @@ describe('Node RPC Test', () => {
              await api.tx.mantaPay.privateTransfer(transfers_buffer.subarray(transfers_start + 2 * mint_size, transfers_start + 2 * mint_size + transfer_size)).signAndSend(sender, {nonce: -1}, ({ events = [], status }) => {
                 if (status.isInBlock) {
                     events.forEach(({ event: { data, method, section }, phase }) => {
-                      if ('mantaPay.ToPrivate' == section + '.' + method ) {
+                      if ('mantaPay.PrivateTransfer' == section + '.' + method ) {
                         allSuccesses++;
                       }
                     });
