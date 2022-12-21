@@ -134,7 +134,7 @@ jobs:
     steps:
       - name: Install git lfs
         run: |
-          sudo "apt install git-lfs"
+          "sudo apt install git-lfs"
       - run: |
           mkdir -p $HOME/.local/share/calamari-pc
           mkdir -p $HOME/.local/bin
