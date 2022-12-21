@@ -177,15 +177,6 @@ jobs:
           repository: Manta-Network/Manta
           path: Manta
           lfs: true
-      - name: inject manta-pay storage
-        run: |
-          mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/fork.json
-          cd ${{ github.workspace }}/Manta/tests
-          yarn install
-          yarn
-          node append_storage.js
-          cd ../../
-          mv ${{ github.workspace }}/Manta/tests/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
       - if: always()
         uses: actions/upload-artifact@v2
         with:
@@ -382,6 +373,15 @@ jobs:
         name: test - dolphin alice peered successfully
         run: |
           grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9921.log
+      - name: append manta-pay storage
+        run: |
+          mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/fork.json
+          cd ${{ github.workspace }}/Manta/tests
+          yarn install
+          yarn
+          node append_storage.js
+          cd ../../
+          mv ${{ github.workspace }}/Manta/tests/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
       - name: launch testnet
         run: |
           cd ${{ github.workspace }}/polkadot-launch
