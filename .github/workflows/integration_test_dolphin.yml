@@ -275,7 +275,7 @@ jobs:
             --address=ws://127.0.0.1:9921
       - name: run test suites
         run: |
-          sleep 720
+          sleep 120
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
@@ -285,9 +285,6 @@ jobs:
           yarn performance_test --address=ws://127.0.0.1:9921 --exit
           echo $?
           if [ $? != 0 ]; then echo "Ledger RPC performance test failed!"; exit 1; fi
-          yarn stress_benchmark_test --address=ws://127.0.0.1:9921 --exit
-          echo $?
-          if [ $? != 0 ]; then echo "Stress benchmark test failed!"; exit 1; fi
       - name: check if target block is finalized
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
@@ -385,6 +382,30 @@ jobs:
         name: test - dolphin alice peered successfully
         run: |
           grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9921.log
+      - name: launch testnet
+        run: |
+          cd ${{ github.workspace }}/polkadot-launch
+          yarn install
+          yarn build
+          pm2 start dist/cli.js \
+            --name polkadot-launch \
+            --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
+            --no-autorestart \
+            -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
+      - name: run stress test
+        run: |
+          sleep 720
+          cd ${{ github.workspace }}/Manta/tests
+          yarn install
+          yarn
+          yarn stress_benchmark_test --address=ws://127.0.0.1:9921 --exit
+          echo $?
+          if [ $? != 0 ]; then echo "Stress benchmark test failed!"; exit 1; fi
+      - name: stop testnet
+        run: |
+          cd ${{ github.workspace }}/polkadot-launch
+          pm2 stop polkadot-launch
   # HELPER JOBS BELOW
   start-node-builder-current:
     if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
