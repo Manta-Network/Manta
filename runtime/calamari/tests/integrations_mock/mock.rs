@@ -129,7 +129,7 @@ impl ExtBuilder {
                 .eviction_baseline,
             eviction_tolerance: manta_collator_selection::GenesisConfig::<Runtime>::default()
                 .eviction_tolerance,
-            candidacy_bond: WHITELIST_MIN_BOND,
+            candidacy_bond: EARLY_COLLATOR_MINIMUM_STAKE,
             desired_candidates: self.desired_candidates,
         }
         .assimilate_storage(&mut t)

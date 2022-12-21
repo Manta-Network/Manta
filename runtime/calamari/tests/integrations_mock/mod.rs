@@ -20,9 +20,16 @@ pub mod integration_tests;
 pub mod mock;
 
 use calamari_runtime::opaque::SessionKeys;
-pub use calamari_runtime::{currency::KMA, Event, Origin, Runtime, System};
+pub use calamari_runtime::{
+    currency::KMA,
+    staking::{EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR},
+    CollatorSelection, Event, Origin, ParachainStaking, Runtime, System,
+};
 
-use frame_support::weights::{DispatchInfo, Weight};
+use frame_support::{
+    assert_ok,
+    weights::{DispatchInfo, Weight},
+};
 use lazy_static::lazy_static;
 use manta_primitives::types::{AccountId, Balance};
 use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
@@ -30,8 +37,6 @@ use sp_core::sr25519::Public;
 #[cfg(feature = "std")]
 pub(crate) use std::clone::Clone;
 
-pub const COLLATOR_MIN_BOND: Balance = 4_000_000 * KMA;
-pub const WHITELIST_MIN_BOND: Balance = 400_000 * KMA;
 pub const INITIAL_BALANCE: Balance = 1_000_000_000_000 * KMA;
 
 lazy_static! {
@@ -70,4 +75,30 @@ pub fn last_event() -> Event {
 
 pub fn root_origin() -> <Runtime as frame_system::Config>::Origin {
     <Runtime as frame_system::Config>::Origin::root()
+}
+
+pub fn initialize_collators_through_whitelist(collators: Vec<AccountId>) {
+    // Add collators through the whitelist
+    let candidate_count = collators.len() as u32;
+    assert_ok!(CollatorSelection::set_desired_candidates(
+        root_origin(),
+        candidate_count
+    ));
+    for aid in collators.clone() {
+        assert_ok!(CollatorSelection::register_candidate(root_origin(), aid));
+    }
+    assert_eq!(
+        CollatorSelection::candidates().len(),
+        candidate_count as usize
+    );
+    // Migrate to staking - reserves (lower) whitelist bond
+    assert_ok!(ParachainStaking::initialize_pallet(
+        1,
+        collators,
+        calamari_runtime::staking::inflation_config::<Runtime>()
+    ));
+    assert_eq!(
+        ParachainStaking::candidate_pool().len(),
+        candidate_count as usize
+    );
 }

@@ -551,55 +551,12 @@ fn sanity_check_round_duration() {
 fn collator_with_400k_not_selected_for_block_production() {
     ExtBuilder::default()
         .with_balances(vec![
-            (ALICE.clone(), COLLATOR_MIN_BOND + 100),
-            (BOB.clone(), COLLATOR_MIN_BOND + 100),
-            (CHARLIE.clone(), WHITELIST_MIN_BOND + 100),
-        ])
-        .with_collators(vec![
-            (ALICE.clone(), COLLATOR_MIN_BOND),
-            (BOB.clone(), COLLATOR_MIN_BOND),
-            (CHARLIE.clone(), WHITELIST_MIN_BOND),
-        ])
-        .build()
-        .execute_with(|| {
-            assert!(ParachainStaking::compute_top_candidates().contains(&ALICE));
-            assert!(ParachainStaking::compute_top_candidates().contains(&BOB));
-            assert!(!ParachainStaking::compute_top_candidates().contains(&CHARLIE));
-        });
-}
-
-#[test]
-fn collator_cant_join_below_standard_bond() {
-    ExtBuilder::default()
-        .with_balances(vec![
-            (ALICE.clone(), COLLATOR_MIN_BOND + 100),
-            (BOB.clone(), COLLATOR_MIN_BOND + 100),
-            (CHARLIE.clone(), WHITELIST_MIN_BOND + 100),
-        ])
-        .with_collators(vec![(ALICE.clone(), 50)])
-        .build()
-        .execute_with(|| {
-            assert_noop!(
-                ParachainStaking::join_candidates(
-                    Origin::signed(BOB.clone()),
-                    COLLATOR_MIN_BOND - 1,
-                    6u32
-                ),
-                pallet_parachain_staking::Error::<Runtime>::CandidateBondBelowMin
-            );
-        });
-}
-
-#[test]
-fn collator_can_leave_if_below_standard_bond() {
-    ExtBuilder::default()
-        .with_balances(vec![
-            (ALICE.clone(), WHITELIST_MIN_BOND + 100),
-            (BOB.clone(), WHITELIST_MIN_BOND + 100),
-            (CHARLIE.clone(), WHITELIST_MIN_BOND + 100),
-            (DAVE.clone(), WHITELIST_MIN_BOND + 100),
-            (EVE.clone(), WHITELIST_MIN_BOND + 100),
-            (FERDIE.clone(), WHITELIST_MIN_BOND + 100),
+            (ALICE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (BOB.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (CHARLIE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (DAVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (EVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (FERDIE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
         ])
         .with_invulnerables(vec![])
         .with_authorities(vec![
@@ -612,39 +569,95 @@ fn collator_can_leave_if_below_standard_bond() {
         ])
         .build()
         .execute_with(|| {
-            // 0. initialize collators as candidates with manta_collator_selection
-            assert_ok!(CollatorSelection::set_desired_candidates(root_origin(), 6));
-            for aid in [
+            initialize_collators_through_whitelist(vec![
                 ALICE.clone(),
                 BOB.clone(),
                 CHARLIE.clone(),
                 DAVE.clone(),
                 EVE.clone(),
                 FERDIE.clone(),
+            ]);
+            // Increase bond for everyone but FERDIE
+            for collator in vec![
+                ALICE.clone(),
+                BOB.clone(),
+                CHARLIE.clone(),
+                DAVE.clone(),
+                EVE.clone(),
             ] {
-                assert_ok!(CollatorSelection::register_candidate(root_origin(), aid));
+                assert_ok!(ParachainStaking::candidate_bond_more(
+                    Origin::signed(collator.clone()),
+                    MIN_BOND_TO_BE_CONSIDERED_COLLATOR - EARLY_COLLATOR_MINIMUM_STAKE
+                ));
             }
 
-            assert_eq!(CollatorSelection::candidates().len(), 6);
-            // Migrate to staking - reserves (lower) whitelist bond
-            assert_ok!(ParachainStaking::initialize_pallet(
-                1,
-                vec![
-                    ALICE.clone(),
-                    BOB.clone(),
-                    CHARLIE.clone(),
-                    DAVE.clone(),
-                    EVE.clone(),
-                    FERDIE.clone()
-                ],
-                calamari_runtime::staking::inflation_config::<Runtime>()
-            ));
-            assert_eq!(ParachainStaking::candidate_pool().len(), 6);
+            // Ensure CHARLIE and later are not selected
+            // NOTE: Must use 6 or more collators because 5 is the minimum on calamari
+            assert!(ParachainStaking::compute_top_candidates().contains(&ALICE));
+            assert!(ParachainStaking::compute_top_candidates().contains(&BOB));
+            assert!(ParachainStaking::compute_top_candidates().contains(&CHARLIE));
+            assert!(ParachainStaking::compute_top_candidates().contains(&DAVE));
+            assert!(ParachainStaking::compute_top_candidates().contains(&EVE));
+            assert!(!ParachainStaking::compute_top_candidates().contains(&FERDIE));
+        });
+}
 
-            // 1. Attempt to leave as whitelist collator
+#[test]
+fn collator_cant_join_below_standard_bond() {
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (BOB.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (CHARLIE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+        ])
+        .with_collators(vec![(ALICE.clone(), 50)])
+        .build()
+        .execute_with(|| {
+            assert_noop!(
+                ParachainStaking::join_candidates(
+                    Origin::signed(BOB.clone()),
+                    MIN_BOND_TO_BE_CONSIDERED_COLLATOR - 1,
+                    6u32
+                ),
+                pallet_parachain_staking::Error::<Runtime>::CandidateBondBelowMin
+            );
+        });
+}
+
+#[test]
+fn collator_can_leave_if_below_standard_bond() {
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+            (BOB.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+            (CHARLIE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+            (DAVE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+            (EVE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+            (FERDIE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+        ])
+        .with_invulnerables(vec![])
+        .with_authorities(vec![
+            (ALICE.clone(), ALICE_SESSION_KEYS.clone()),
+            (BOB.clone(), BOB_SESSION_KEYS.clone()),
+            (CHARLIE.clone(), CHARLIE_SESSION_KEYS.clone()),
+            (DAVE.clone(), DAVE_SESSION_KEYS.clone()),
+            (EVE.clone(), EVE_SESSION_KEYS.clone()),
+            (FERDIE.clone(), FERDIE_SESSION_KEYS.clone()),
+        ])
+        .build()
+        .execute_with(|| {
+            initialize_collators_through_whitelist(vec![
+                ALICE.clone(),
+                BOB.clone(),
+                CHARLIE.clone(),
+                DAVE.clone(),
+                EVE.clone(),
+                FERDIE.clone(),
+            ]);
+            // Attempt to leave as whitelist collator
             assert_ok!(ParachainStaking::schedule_leave_candidates(
                 Origin::signed(FERDIE.clone()),
-                6u32
+                6
             ));
         });
 }
@@ -663,7 +676,7 @@ fn collator_can_leave_if_below_standard_bond() {
 #[test]
 fn session_and_collator_selection_work() {
     ExtBuilder::default()
-        .with_collators(vec![(ALICE.clone(), COLLATOR_MIN_BOND)])
+        .with_collators(vec![(ALICE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR)])
         .with_balances(vec![
             (ALICE.clone(), INITIAL_BALANCE),
             (BOB.clone(), INITIAL_BALANCE),
