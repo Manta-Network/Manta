@@ -82,8 +82,12 @@ describe("Node RPC Test", () => {
         )
         .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
           if (status.isInBlock) {
+            console.log("Included at block hash", status.asInBlock.toHex());
+            console.log("Events:");
             events.forEach(({ event: { data, method, section }, phase }) => {
-              if ("mantaPay.ToPrivate" == section + "." + method) {
+              let event = section + "." + method;
+              console.log("event: ", event);
+              if ("mantaPay.ToPrivate" == event) {
                 allSuccesses++;
               }
             });
@@ -101,8 +105,12 @@ describe("Node RPC Test", () => {
         )
         .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
           if (status.isInBlock) {
+            console.log("Included at block hash", status.asInBlock.toHex());
+            console.log("Events:");
             events.forEach(({ event: { data, method, section }, phase }) => {
-              if ("mantaPay.ToPrivate" == section + "." + method) {
+              let event = section + "." + method;
+              console.log("event: ", event);
+              if ("mantaPay.ToPrivate" == event) {
                 allSuccesses++;
               }
             });
@@ -117,8 +125,12 @@ describe("Node RPC Test", () => {
         )
         .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
           if (status.isInBlock) {
+            console.log("Included at block hash", status.asInBlock.toHex());
+            console.log("Events:");
             events.forEach(({ event: { data, method, section }, phase }) => {
-              if ("mantaPay.ToPrivate" == section + "." + method) {
+              let event = section + "." + method;
+              console.log("event: ", event);
+              if ("mantaPay.ToPrivate" == event) {
                 allSuccesses++;
               }
             });
@@ -135,14 +147,17 @@ describe("Node RPC Test", () => {
         )
         .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
           if (status.isInBlock) {
+            console.log("Included at block hash", status.asInBlock.toHex());
+            console.log("Events:");
             events.forEach(({ event: { data, method, section }, phase }) => {
-              if ("mantaPay.PrivateTransfer" == section + "." + method) {
+              let event = section + "." + method;
+              console.log("event: ", event);
+              if ("mantaPay.PrivateTransfer" == event) {
                 allSuccesses++;
               }
             });
           }
         });
-
       let reclaimsStart =
         i * (2 * test_config.mint_size + test_config.reclaim_size);
       await api.tx.mantaPay
@@ -154,8 +169,12 @@ describe("Node RPC Test", () => {
         )
         .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
           if (status.isInBlock) {
+            console.log("Included at block hash", status.asInBlock.toHex());
+            console.log("Events:");
             events.forEach(({ event: { data, method, section }, phase }) => {
-              if ("mantaPay.ToPrivate" == section + "." + method) {
+              let event = section + "." + method;
+              console.log("event: ", event);
+              if ("mantaPay.ToPrivate" == event) {
                 allSuccesses++;
               }
             });
@@ -170,8 +189,12 @@ describe("Node RPC Test", () => {
         )
         .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
           if (status.isInBlock) {
+            console.log("Included at block hash", status.asInBlock.toHex());
+            console.log("Events:");
             events.forEach(({ event: { data, method, section }, phase }) => {
-              if ("mantaPay.ToPrivate" == section + "." + method) {
+              let event = section + "." + method;
+              console.log("event: ", event);
+              if ("mantaPay.ToPrivate" == event) {
                 allSuccesses++;
               }
             });
@@ -189,8 +212,11 @@ describe("Node RPC Test", () => {
           )
           .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
             if (status.isInBlock) {
+              console.log("Included at block hash", status.asInBlock.toHex());
+              console.log("Events:");
               events.forEach(({ event: { data, method, section }, phase }) => {
                 let event = section + "." + method;
+                console.log("event: ", event);
                 if ("mantaPay.ToPublic" == event) {
                   allSuccesses++;
                 }
@@ -220,21 +246,21 @@ describe("Node RPC Test", () => {
               console.log("Events:");
               events.forEach(({ event: { data, method, section }, phase }) => {
                 let event = section + "." + method;
-                console.log("method: ", event);
+                console.log("event: ", event);
                 if ("mantaPay.ToPublic" == event) {
                   allSuccesses++;
                 }
               });
-            } else if (status.isFinalized) {
-              console.log("Finalized block hash", status.asFinalized.toHex());
             }
           });
       }
-      await new Promise((resolve) => setTimeout(resolve, 6000));
+      await new Promise((resolve) => setTimeout(resolve, 9000));
 
       txsCount += 7;
       console.log("\n Transactions sent: ", txsCount);
     }
+
+    console.log("Reached");
 
     // wait all txs finalized
     for (let i = 0; i < test_config.max_wait_time_sec; i++) {
