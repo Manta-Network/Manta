@@ -110,7 +110,7 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
     needs: [build-node-current, start-dolphin-integration-tester]
     runs-on: ${{ needs.start-dolphin-integration-tester.outputs.runner-label }}
-    timeout-minutes: 120
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
