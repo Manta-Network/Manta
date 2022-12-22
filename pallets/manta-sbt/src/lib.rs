@@ -20,7 +20,7 @@
 //!
 //! ## Overview
 //!
-//! Uses `pallet-uniques` to store NFT data. NFTs are created by pallet account and Ownership is recorded as an UTXO
+//! Uses `pallet-uniques` to store NFT data. NFTs are created by the pallet account and Ownership is recorded as an UTXO
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]

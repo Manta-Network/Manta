@@ -6756,8 +6756,6 @@ dependencies = [
  "manta-pay",
  "manta-primitives",
  "manta-util",
- "pallet-asset-manager",
- "pallet-assets",
  "pallet-balances",
  "pallet-uniques",
  "parity-scale-codec",
