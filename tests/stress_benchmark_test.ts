@@ -20,7 +20,7 @@ const test_config = {
     mint_size: 552,
     transfer_size: 1290,
     reclaim_size: 968,
-    expected_tps: 1.9
+    expected_tps: 2.0
 }
  
 describe('Node RPC Test', () => { 
