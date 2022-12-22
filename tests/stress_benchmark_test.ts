@@ -230,7 +230,7 @@ describe("Node RPC Test", () => {
             }
           });
       }
-      await new Promise((resolve) => setTimeout(resolve, 12000));
+      await new Promise((resolve) => setTimeout(resolve, 6000));
 
       txsCount += 7;
       console.log("\n Transactions sent: ", txsCount);
