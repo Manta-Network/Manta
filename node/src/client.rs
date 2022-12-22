@@ -39,8 +39,7 @@ where
 
 /// Extend RuntimeApi trait bound for Nimbus
 pub trait RuntimeApiNimbus:
-    cumulus_primitives_core::CollectCollationInfo<Block>
-    + nimbus_primitives::NimbusApi<Block>
+    cumulus_primitives_core::CollectCollationInfo<Block> + nimbus_primitives::NimbusApi<Block>
 {
 }
 
@@ -59,7 +58,6 @@ where
 }
 
 impl<Api> RuntimeApiNimbus for Api where
-    Api: cumulus_primitives_core::CollectCollationInfo<Block>
-        + nimbus_primitives::NimbusApi<Block>
+    Api: cumulus_primitives_core::CollectCollationInfo<Block> + nimbus_primitives::NimbusApi<Block>
 {
 }
