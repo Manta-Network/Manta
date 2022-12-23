@@ -71,9 +71,9 @@ cumulus-primitives-utility = { git = 'https://github.com/paritytech/cumulus.git'
 parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.26" }
 
 # Nimbus Dependencies
-nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v3.4.3", default-features = false }
-pallet-aura-style-filter = { git = "https://github.com/manta-network/nimbus.git", tag = "v3.4.3", default-features = false }
-pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", tag = "v3.4.3", default-features = false }
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.0", default-features = false }
+pallet-aura-style-filter = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.0", default-features = false }
+pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.0", default-features = false }
 
 # Polkadot dependencies
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
