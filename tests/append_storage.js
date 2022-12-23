@@ -1,5 +1,6 @@
 const fs = require('fs');
 
+// MantaPay, AssetManager and Assets storage items
 let prefixes = [
 '0x682a59d51ab9e48a8c8cc418ff9708d2',
 '0x4ae7e256f92e5888372d72f3e4db1003',

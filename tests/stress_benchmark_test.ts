@@ -49,14 +49,14 @@ describe("Node RPC Test", () => {
       test_config.mints_offset,
       test_config.mint_size * test_config.total_iterations
     );
-    let full_transfer_size =
+    const full_transfer_size =
       test_config.mint_size * 2 + test_config.transfer_size;
     const transfersContent = await readFile("./data/precomputed_transfers");
     const transfersBuffer = transfersContent.subarray(
       test_config.transfers_offset,
       full_transfer_size * test_config.total_iterations
     );
-    let fullReclaimSize = test_config.mint_size * 2 + test_config.reclaim_size;
+    const fullReclaimSize = test_config.mint_size * 2 + test_config.reclaim_size;
     const reclaimsContent = await readFile("./data/precomputed_reclaims");
     const reclaimsBuffer = reclaimsContent.subarray(
       test_config.reclaims_offset,
