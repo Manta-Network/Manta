@@ -373,6 +373,8 @@ jobs:
         name: test - dolphin alice peered successfully
         run: |
           grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9921.log
+      # Add the manta-pay, asset-manager and assets storage items and run stress test separately,
+      # in order to not break the logic of the other integration tests, which don't work with real data yet.
       - name: append manta-pay storage
         run: |
           mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/fork.json
@@ -406,6 +408,11 @@ jobs:
         run: |
           cd ${{ github.workspace }}/polkadot-launch
           pm2 stop polkadot-launch
+      - if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.chain-spec.id }}-alice-stress.log
+          path: ${{ github.workspace }}/polkadot-launch/9921.log
   # HELPER JOBS BELOW
   start-node-builder-current:
     if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')
