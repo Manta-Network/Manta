@@ -133,6 +133,9 @@ jobs:
                 para: 4
     steps:
       - run: |
+          sudo apt-get update
+          sudo apt-get install git-lfs
+      - run: |
           mkdir -p $HOME/.local/share/calamari-pc
           mkdir -p $HOME/.local/bin
           echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
@@ -169,9 +172,6 @@ jobs:
           ls -ahl $HOME/.local/share/calamari-pc/
           echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
           manta export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
-      - run: |
-          sudo apt-get update
-          sudo apt-get install git-lfs
       - uses: actions/checkout@v2
         with:
           repository: Manta-Network/Manta
@@ -377,13 +377,13 @@ jobs:
       # in order to not break the logic of the other integration tests, which don't work with real data yet.
       - name: append manta-pay storage
         run: |
-          mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/fork.json
+          mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/data/fork.json
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
           node append_storage.js
           cd ../../
-          mv ${{ github.workspace }}/Manta/tests/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
+          mv ${{ github.workspace }}/Manta/tests/data/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
       - name: launch testnet
         run: |
           cd ${{ github.workspace }}/polkadot-launch
