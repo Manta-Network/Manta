@@ -34,8 +34,6 @@ use lazy_static::lazy_static;
 use manta_primitives::types::{AccountId, Balance};
 use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
 use sp_core::sr25519::Public;
-#[cfg(feature = "std")]
-pub(crate) use std::clone::Clone;
 
 pub const INITIAL_BALANCE: Balance = 1_000_000_000_000 * KMA;
 
