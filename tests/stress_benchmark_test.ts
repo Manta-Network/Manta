@@ -259,8 +259,6 @@ describe("Node RPC Test", () => {
       console.log("\n Transactions sent: ", txsCount);
     }
 
-    console.log("Reached");
-
     // wait all txs finalized
     for (let i = 0; i < test_config.max_wait_time_sec; i++) {
       await delay(1000);
@@ -272,9 +270,7 @@ describe("Node RPC Test", () => {
       }
     }
 
-    if (lastFinalized == false) {
-      assert(false);
-    }
+    assert(lastFinalized);
 
     if (allSuccesses != test_config.tests_iterations * 7) {
       console.log("allSuccesses Count: ", allSuccesses);
