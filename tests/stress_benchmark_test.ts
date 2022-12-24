@@ -67,7 +67,7 @@ describe("Node RPC Test", () => {
     let txsCount = 0;
     let startTime = performance.now();
     let totalTime = 0;
-
+    
     for (
       let i = test_config.start_iteration;
       i < test_config.start_iteration + test_config.tests_iterations;
@@ -201,7 +201,7 @@ describe("Node RPC Test", () => {
           }
         });
       if (i == test_config.start_iteration + test_config.tests_iterations - 1) {
-        const unsub = await api.tx.mantaPay
+        await api.tx.mantaPay
           .toPublic(
             reclaimsBuffer.subarray(
               reclaimsStart + 2 * test_config.mint_size,
@@ -227,7 +227,6 @@ describe("Node RPC Test", () => {
               totalTime = endTime - startTime;
               // Convert to seconds
               totalTime = totalTime / 1000;
-              unsub();
             }
           });
       } else {
