@@ -19,7 +19,7 @@
 #![cfg(test)]
 #![allow(clippy::identity_op)] // keep e.g. 1 * DAYS for legibility
 
-use super::{super::*, info_from_weight, last_event, mock::*, root_origin, INITIAL_BALANCE};
+use super::{super::*, mock::*, *};
 
 pub use calamari_runtime::{
     assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},
@@ -27,7 +27,7 @@ pub use calamari_runtime::{
     fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
     xcm_config::{XcmExecutorConfig, XcmFeesAccount},
     AssetManager, Assets, Authorship, Balances, CalamariVesting, Council, DefaultBlocksPerRound,
-    Democracy, EnactmentPeriod, Event, LaunchPeriod, LeaveDelayRounds,
+    Democracy, EnactmentPeriod, Event, Get, LaunchPeriod, LeaveDelayRounds,
     NativeTokenExistentialDeposit, Origin, ParachainStaking, Period, PolkadotXcm, Runtime,
     TechnicalCommittee, Timestamp, TransactionPause, Treasury, Utility, VotingPeriod,
 };
@@ -60,9 +60,8 @@ use xcm::{
 };
 use xcm_executor::traits::WeightBounds;
 
-use pallet_transaction_payment::ChargeTransactionPayment;
-
 use nimbus_primitives::NIMBUS_ENGINE_ID;
+use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_core::{sr25519, H256};
 use sp_runtime::{
     generic::DigestItem,
@@ -221,10 +220,8 @@ fn ensure_block_per_round_and_leave_delays_equal_7days() {
 
 #[test]
 fn slow_governance_works() {
-    let alice = unchecked_account_id::<sr25519::Public>("Alice");
-
     ExtBuilder::default().build().execute_with(|| {
-        let _preimage_hash = start_governance_assertions(&alice);
+        let _preimage_hash = start_governance_assertions(&ALICE);
 
         let start_of_referendum = LaunchPeriod::get();
         let referendum_index = 0;
@@ -243,7 +240,7 @@ fn slow_governance_works() {
         );
         // Time to vote for the referendum with some amount
         assert_ok!(Democracy::vote(
-            Origin::signed(alice.clone()),
+            Origin::signed(ALICE.clone()),
             0,
             pallet_democracy::AccountVote::Standard {
                 vote: pallet_democracy::Vote {
@@ -264,10 +261,8 @@ fn slow_governance_works() {
 
 #[test]
 fn fast_track_governance_works() {
-    let alice = unchecked_account_id::<sr25519::Public>("Alice");
-
     ExtBuilder::default().build().execute_with(|| {
-        let preimage_hash = start_governance_assertions(&alice);
+        let preimage_hash = start_governance_assertions(&ALICE);
 
         let voting_period = 5;
         let enactment_period = 5;
@@ -285,7 +280,7 @@ fn fast_track_governance_works() {
             tech_committee_motion.using_encoded(|p| p.len() as u32);
         let tech_committee_motion_hash = BlakeTwo256::hash_of(&tech_committee_motion);
         assert_ok!(TechnicalCommittee::propose(
-            Origin::signed(alice.clone()),
+            Origin::signed(ALICE.clone()),
             1,
             Box::new(tech_committee_motion),
             tech_committee_motion_len
@@ -301,7 +296,7 @@ fn fast_track_governance_works() {
 
         // Time to vote for the referendum with some amount
         assert_ok!(Democracy::vote(
-            Origin::signed(alice.clone()),
+            Origin::signed(ALICE.clone()),
             referendum_index,
             pallet_democracy::AccountVote::Standard {
                 vote: pallet_democracy::Vote {
@@ -325,26 +320,24 @@ fn fast_track_governance_works() {
 fn governance_filters_work() {
     assert!(<calamari_runtime::Runtime as pallet_democracy::Config>::InstantAllowed::get());
 
-    let alice = unchecked_account_id::<sr25519::Public>("Alice");
-
     ExtBuilder::default().build().execute_with(|| {
         // Setup the preimage and preimage hash
         let preimage_hash = note_preimage(
-            &alice,
+            &ALICE,
             &Call::System(frame_system::Call::remark { remark: vec![0] }),
         );
 
         // Setup the Council
         assert_ok!(Council::set_members(
             root_origin(),
-            vec![alice.clone()],
+            vec![ALICE.clone()],
             None,
             0
         ));
 
         // Public proposals should be filtered out.
         assert_proposal_is_filtered(
-            &alice,
+            &ALICE,
             &Call::Democracy(pallet_democracy::Call::propose {
                 proposal_hash: preimage_hash,
                 value: 100 * KMA,
@@ -353,7 +346,7 @@ fn governance_filters_work() {
 
         // External proposals other than external_proposal_default should be filtered out.
         assert_proposal_is_filtered(
-            &alice,
+            &ALICE,
             &Call::Democracy(pallet_democracy::Call::external_propose {
                 proposal_hash: preimage_hash,
             }),
@@ -361,7 +354,7 @@ fn governance_filters_work() {
 
         // External proposals other than external_proposal_default should be filtered out.
         assert_proposal_is_filtered(
-            &alice,
+            &ALICE,
             &Call::Democracy(pallet_democracy::Call::external_propose_majority {
                 proposal_hash: preimage_hash,
             }),
@@ -371,57 +364,47 @@ fn governance_filters_work() {
 
 #[test]
 fn balances_operations_should_work() {
-    let alice = unchecked_account_id::<sr25519::Public>("Alice");
-    let bob = unchecked_account_id::<sr25519::Public>("Bob");
-    let charlie = unchecked_account_id::<sr25519::Public>("Charlie");
-    let dave = unchecked_account_id::<sr25519::Public>("Dave");
-
     ExtBuilder::default()
         .with_balances(vec![
-            (alice.clone(), INITIAL_BALANCE),
-            (bob.clone(), INITIAL_BALANCE),
-            (charlie.clone(), INITIAL_BALANCE),
-            (dave.clone(), INITIAL_BALANCE),
+            (ALICE.clone(), INITIAL_BALANCE),
+            (BOB.clone(), INITIAL_BALANCE),
+            (CHARLIE.clone(), INITIAL_BALANCE),
+            (DAVE.clone(), INITIAL_BALANCE),
         ])
-        .with_authorities(vec![(
-            alice.clone(),
-            SessionKeys::new(unchecked_collator_keys("Alice")),
-        )])
-        .with_collators(vec![alice.clone()], 0)
         .build()
         .execute_with(|| {
             let transfer_amount = 10 * KMA;
 
             // Basic transfer should work
             assert_ok!(Balances::transfer(
-                Origin::signed(alice.clone()),
-                sp_runtime::MultiAddress::Id(charlie.clone()),
+                Origin::signed(ALICE.clone()),
+                sp_runtime::MultiAddress::Id(CHARLIE.clone()),
                 transfer_amount,
             ));
             assert_eq!(
-                Balances::free_balance(alice.clone()),
+                Balances::free_balance(ALICE.clone()),
                 INITIAL_BALANCE - transfer_amount
             );
             assert_eq!(
-                Balances::free_balance(charlie.clone()),
+                Balances::free_balance(CHARLIE.clone()),
                 INITIAL_BALANCE + transfer_amount
             );
 
             // Force transfer some tokens from one account to another with Root
             assert_ok!(Balances::force_transfer(
                 root_origin(),
-                sp_runtime::MultiAddress::Id(charlie.clone()),
-                sp_runtime::MultiAddress::Id(alice.clone()),
+                sp_runtime::MultiAddress::Id(CHARLIE.clone()),
+                sp_runtime::MultiAddress::Id(ALICE.clone()),
                 transfer_amount,
             ));
-            assert_eq!(Balances::free_balance(alice.clone()), INITIAL_BALANCE);
-            assert_eq!(Balances::free_balance(charlie.clone()), INITIAL_BALANCE);
+            assert_eq!(Balances::free_balance(ALICE.clone()), INITIAL_BALANCE);
+            assert_eq!(Balances::free_balance(CHARLIE.clone()), INITIAL_BALANCE);
 
             // Should not be able to transfer all with this call
             assert_err!(
                 Balances::transfer_keep_alive(
-                    Origin::signed(alice.clone()),
-                    sp_runtime::MultiAddress::Id(charlie.clone()),
+                    Origin::signed(ALICE.clone()),
+                    sp_runtime::MultiAddress::Id(CHARLIE.clone()),
                     INITIAL_BALANCE,
                 ),
                 pallet_balances::Error::<Runtime>::KeepAlive
@@ -429,33 +412,33 @@ fn balances_operations_should_work() {
 
             // Transfer all down to zero
             assert_ok!(Balances::transfer_all(
-                Origin::signed(bob.clone()),
-                sp_runtime::MultiAddress::Id(charlie.clone()),
+                Origin::signed(BOB.clone()),
+                sp_runtime::MultiAddress::Id(CHARLIE.clone()),
                 false
             ));
-            assert_eq!(Balances::free_balance(bob.clone()), 0);
-            assert_eq!(Balances::free_balance(charlie.clone()), INITIAL_BALANCE * 2);
+            assert_eq!(Balances::free_balance(BOB.clone()), 0);
+            assert_eq!(Balances::free_balance(CHARLIE.clone()), INITIAL_BALANCE * 2);
 
             // Transfer all but keep alive with ED
             assert_ok!(Balances::transfer_all(
-                Origin::signed(dave.clone()),
-                sp_runtime::MultiAddress::Id(alice.clone()),
+                Origin::signed(DAVE.clone()),
+                sp_runtime::MultiAddress::Id(ALICE.clone()),
                 true
             ));
             assert_eq!(
-                Balances::free_balance(dave.clone()),
+                Balances::free_balance(DAVE.clone()),
                 NativeTokenExistentialDeposit::get()
             );
 
             // Even though keep alive is set to false alice cannot fall below the ED
             // because it has an outstanding consumer reference, from being a collator.
             assert_ok!(Balances::transfer_all(
-                Origin::signed(alice.clone()),
-                sp_runtime::MultiAddress::Id(charlie.clone()),
+                Origin::signed(ALICE.clone()),
+                sp_runtime::MultiAddress::Id(CHARLIE.clone()),
                 false
             ));
             assert_eq!(
-                Balances::free_balance(alice.clone()),
+                Balances::free_balance(ALICE.clone()),
                 NativeTokenExistentialDeposit::get()
             );
         });
@@ -477,25 +460,19 @@ fn seal_header(mut header: Header, author: AccountId) -> Header {
 
 #[test]
 fn reward_fees_to_block_author_and_treasury() {
-    let alice = unchecked_account_id::<sr25519::Public>("Alice");
-    let bob = unchecked_account_id::<sr25519::Public>("Bob");
-    let charlie = unchecked_account_id::<sr25519::Public>("Charlie");
-    let desired_candidates = 0;
-
     ExtBuilder::default()
         .with_balances(vec![
-            (alice.clone(), INITIAL_BALANCE),
-            (bob.clone(), INITIAL_BALANCE),
-            (charlie.clone(), INITIAL_BALANCE),
+            (ALICE.clone(), INITIAL_BALANCE),
+            (BOB.clone(), INITIAL_BALANCE),
+            (CHARLIE.clone(), INITIAL_BALANCE),
         ])
         .with_authorities(vec![(
-            alice.clone(),
+            ALICE.clone(),
             SessionKeys::new(unchecked_collator_keys("Alice")),
         )])
-        .with_collators(vec![alice.clone()], desired_candidates)
         .build()
         .execute_with(|| {
-            let author = alice.clone();
+            let author = ALICE.clone();
             let mut header = seal_header(
                 Header::new(
                     0,
@@ -512,17 +489,17 @@ fn reward_fees_to_block_author_and_treasury() {
             assert_eq!(Authorship::author().unwrap(), author);
 
             let call = Call::Balances(pallet_balances::Call::transfer {
-                dest: sp_runtime::MultiAddress::Id(charlie),
+                dest: sp_runtime::MultiAddress::Id(CHARLIE.clone()),
                 value: 10 * KMA,
             });
 
             let len = 10;
             let info = info_from_weight(100);
             let maybe_pre = ChargeTransactionPayment::<Runtime>::from(0)
-                .pre_dispatch(&bob, &call, &info, len)
+                .pre_dispatch(&BOB, &call, &info, len)
                 .unwrap();
 
-            let res = call.dispatch(Origin::signed(bob));
+            let res = call.dispatch(Origin::signed(BOB.clone()));
 
             let post_info = match res {
                 Ok(info) => info,
@@ -537,7 +514,7 @@ fn reward_fees_to_block_author_and_treasury() {
                 &res.map(|_| ()).map_err(|e| e.error),
             );
 
-            let author_received_reward = Balances::free_balance(alice) - INITIAL_BALANCE;
+            let author_received_reward = Balances::free_balance(ALICE.clone()) - INITIAL_BALANCE;
             println!("The rewarded_amount is: {author_received_reward:?}");
 
             // Fees split: 40% burned, 40% to treasury, 10% to author.
@@ -570,60 +547,155 @@ fn sanity_check_round_duration() {
     assert_eq!(DefaultBlocksPerRound::get(), 6 * HOURS);
 }
 
-// TODO: Full integration test for staking
-// fn advance_session_assertions(session_index: &mut u32, advance_by: u32) {
-//     *session_index += advance_by;
+#[test]
+fn collator_can_join_with_min_bond() {
+    ExtBuilder::default()
+        .with_collators(vec![(ALICE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR)])
+        .with_balances(vec![
+            (ALICE.clone(), INITIAL_BALANCE),
+            (BOB.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+        ])
+        .build()
+        .execute_with(|| {
+            // Create and bond session keys to Bob's account.
+            assert_ok!(Session::set_keys(
+                Origin::signed(BOB.clone()),
+                BOB_SESSION_KEYS.clone(),
+                vec![]
+            ));
+            assert!(<Session as frame_support::traits::ValidatorRegistration<AccountId>>::is_registered(&BOB));
 
-//     run_to_block(*session_index * Period::get() - 1);
-//     assert_eq!(Session::session_index(), *session_index - 1);
+            assert_ok!(ParachainStaking::join_candidates(
+                Origin::signed(BOB.clone()),
+                <calamari_runtime::Runtime as pallet_parachain_staking::Config>::MinCandidateStk::get(),
+                3u32
+            ));
 
-//     run_to_block(*session_index * Period::get());
-//     assert_eq!(Session::session_index(), *session_index);
-// }
+            // BOB is now a candidate
+            assert!(ParachainStaking::candidate_pool().contains(&pallet_parachain_staking::Bond{ owner: BOB.clone(), amount: MIN_BOND_TO_BE_CONSIDERED_COLLATOR }));
 
-// #[test]
-// fn session_and_collator_selection_work() {
-//     let alice = unchecked_account_id::<sr25519::Public>("Alice");
-//     let bob = unchecked_account_id::<sr25519::Public>("Bob");
-//     let alice_session_keys = SessionKeys::new(unchecked_collator_keys("Alice"));
-//     let bob_session_keys = SessionKeys::new(unchecked_collator_keys("Bob"));
-//     let desired_candidates = 1;
+            // After one round
+            run_to_block(<calamari_runtime::Runtime as pallet_parachain_staking::Config>::DefaultBlocksPerRound::get() + 1);
 
-//     ExtBuilder::default()
-//         .with_collators(vec![alice.clone()], desired_candidates)
-//         .with_balances(vec![
-//             (alice.clone(), INITIAL_BALANCE),
-//             (bob.clone(), INITIAL_BALANCE),
-//         ])
-//         .build()
-//         .execute_with(|| {
-//             // Create and bond session keys to Bob's account.
-//             assert_ok!(Session::set_keys(
-//                 Origin::signed(bob.clone()),
-//                 bob_session_keys.clone(),
-//                 vec![]
-//             ));
-//             assert_eq!(
-//                 Session::next_keys(bob.clone()),
-//                 // TODO: Something
-//             );
+            // BOB becomes part of the selected candidates set
+            assert!(ParachainStaking::selected_candidates().contains(&BOB));
+        });
+}
 
-//             assert_ok!(ParachainStaking::join_candidates(
-//                 Origin::signed(bob.clone()),
-//                 Config::MinCandidateStk,
-//                 3u32
-//             ));
+#[test]
+fn collator_cant_join_below_standard_bond() {
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (BOB.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (CHARLIE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+        ])
+        .with_collators(vec![(ALICE.clone(), 50)])
+        .build()
+        .execute_with(|| {
+            assert_noop!(
+                ParachainStaking::join_candidates(
+                    Origin::signed(BOB.clone()),
+                    MIN_BOND_TO_BE_CONSIDERED_COLLATOR - 1,
+                    6u32
+                ),
+                pallet_parachain_staking::Error::<Runtime>::CandidateBondBelowMin
+            );
+        });
+}
 
-//             // Bob is now a candidate
-//             assert_eq!(ParachainStaking::candidate_pool().contains(bob.clone()));
+#[test]
+fn collator_can_leave_if_below_standard_bond() {
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+            (BOB.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+            (CHARLIE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+            (DAVE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+            (EVE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+            (FERDIE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+        ])
+        .with_invulnerables(vec![])
+        .with_authorities(vec![
+            (ALICE.clone(), ALICE_SESSION_KEYS.clone()),
+            (BOB.clone(), BOB_SESSION_KEYS.clone()),
+            (CHARLIE.clone(), CHARLIE_SESSION_KEYS.clone()),
+            (DAVE.clone(), DAVE_SESSION_KEYS.clone()),
+            (EVE.clone(), EVE_SESSION_KEYS.clone()),
+            (FERDIE.clone(), FERDIE_SESSION_KEYS.clone()),
+        ])
+        .build()
+        .execute_with(|| {
+            initialize_collators_through_whitelist(vec![
+                ALICE.clone(),
+                BOB.clone(),
+                CHARLIE.clone(),
+                DAVE.clone(),
+                EVE.clone(),
+                FERDIE.clone(),
+            ]);
+            // Attempt to leave as whitelist collator
+            assert_ok!(ParachainStaking::schedule_leave_candidates(
+                Origin::signed(FERDIE.clone()),
+                6
+            ));
+        });
+}
 
-//             // After one round
+#[test]
+fn collator_with_400k_not_selected_for_block_production() {
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (BOB.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (CHARLIE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (DAVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (EVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (FERDIE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+        ])
+        .with_invulnerables(vec![])
+        .with_authorities(vec![
+            (ALICE.clone(), ALICE_SESSION_KEYS.clone()),
+            (BOB.clone(), BOB_SESSION_KEYS.clone()),
+            (CHARLIE.clone(), CHARLIE_SESSION_KEYS.clone()),
+            (DAVE.clone(), DAVE_SESSION_KEYS.clone()),
+            (EVE.clone(), EVE_SESSION_KEYS.clone()),
+            (FERDIE.clone(), FERDIE_SESSION_KEYS.clone()),
+        ])
+        .build()
+        .execute_with(|| {
+            initialize_collators_through_whitelist(vec![
+                ALICE.clone(),
+                BOB.clone(),
+                CHARLIE.clone(),
+                DAVE.clone(),
+                EVE.clone(),
+                FERDIE.clone(),
+            ]);
+            // Increase bond for everyone but FERDIE
+            for collator in vec![
+                ALICE.clone(),
+                BOB.clone(),
+                CHARLIE.clone(),
+                DAVE.clone(),
+                EVE.clone(),
+            ] {
+                assert_ok!(ParachainStaking::candidate_bond_more(
+                    Origin::signed(collator.clone()),
+                    MIN_BOND_TO_BE_CONSIDERED_COLLATOR - EARLY_COLLATOR_MINIMUM_STAKE
+                ));
+            }
 
-//             // bob becomes part of the selected candidates set
-
-//             // TODO: Unstaking
-//         });
-// }
+            // Ensure CHARLIE and later are not selected
+            // NOTE: Must use 6 or more collators because 5 is the minimum on calamari
+            assert!(ParachainStaking::compute_top_candidates().contains(&ALICE));
+            assert!(ParachainStaking::compute_top_candidates().contains(&BOB));
+            assert!(ParachainStaking::compute_top_candidates().contains(&CHARLIE));
+            assert!(ParachainStaking::compute_top_candidates().contains(&DAVE));
+            assert!(ParachainStaking::compute_top_candidates().contains(&EVE));
+            assert!(!ParachainStaking::compute_top_candidates().contains(&FERDIE));
+        });
+}
 
 #[test]
 fn sanity_check_weight_per_time_constants_are_as_expected() {
@@ -638,18 +710,15 @@ fn sanity_check_weight_per_time_constants_are_as_expected() {
 #[test]
 fn calamari_vesting_works() {
     ExtBuilder::default().build().execute_with(|| {
-        let alice = unchecked_account_id::<sr25519::Public>("Alice");
-        let bob = unchecked_account_id::<sr25519::Public>("Bob");
-
         let unvested = 100 * KMA;
         assert_ok!(CalamariVesting::vested_transfer(
-            Origin::signed(alice),
-            sp_runtime::MultiAddress::Id(bob.clone()),
+            Origin::signed(ALICE.clone()),
+            sp_runtime::MultiAddress::Id(BOB.clone()),
             unvested
         ));
 
-        assert_eq!(Balances::free_balance(&bob), 100 * KMA);
-        assert_eq!(Balances::usable_balance(&bob), 0);
+        assert_eq!(Balances::free_balance(BOB.clone()), 100 * KMA);
+        assert_eq!(Balances::usable_balance(BOB.clone()), 0);
 
         let schedule = calamari_vesting::Pallet::<Runtime>::vesting_schedule();
         let mut vested = 0;
@@ -658,9 +727,9 @@ fn calamari_vesting_works() {
             // Timestamp expects milliseconds, so multiply by 1_000 to convert from seconds.
             let now = schedule[period].1 * 1_000 + 1;
             Timestamp::set_timestamp(now);
-            assert_ok!(CalamariVesting::vest(Origin::signed(bob.clone())));
+            assert_ok!(CalamariVesting::vest(Origin::signed(BOB.clone())));
             vested += schedule[period].0 * unvested;
-            assert_eq!(Balances::usable_balance(&bob), vested);
+            assert_eq!(Balances::usable_balance(BOB.clone()), vested);
         }
     });
 }
@@ -849,15 +918,11 @@ fn verify_pallet_indices() {
 
 #[test]
 fn concrete_fungible_ledger_transfers_work() {
-    let alice = unchecked_account_id::<sr25519::Public>("Alice");
-    let bob = unchecked_account_id::<sr25519::Public>("Bob");
-    let charlie = unchecked_account_id::<sr25519::Public>("Charlie");
-
     ExtBuilder::default()
         .with_balances(vec![
-            (alice.clone(), INITIAL_BALANCE),
-            (bob.clone(), INITIAL_BALANCE),
-            (charlie.clone(), INITIAL_BALANCE),
+            (ALICE.clone(), INITIAL_BALANCE),
+            (BOB.clone(), INITIAL_BALANCE),
+            (CHARLIE.clone(), INITIAL_BALANCE),
         ])
         .build()
         .execute_with(|| {
@@ -871,8 +936,8 @@ fn concrete_fungible_ledger_transfers_work() {
             assert_err!(
                 CalamariConcreteFungibleLedger::transfer(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                    &alice.clone(),
-                    &charlie.clone(),
+                    &ALICE.clone(),
+                    &CHARLIE.clone(),
                     INITIAL_BALANCE + 1,
                     ExistenceRequirement::KeepAlive
                 ),
@@ -885,9 +950,9 @@ fn concrete_fungible_ledger_transfers_work() {
                     message: Some("InsufficientBalance")
                 }))
             );
-            assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
+            assert_eq!(Balances::free_balance(ALICE.clone()), current_balance_alice);
             assert_eq!(
-                Balances::free_balance(charlie.clone()),
+                Balances::free_balance(CHARLIE.clone()),
                 current_balance_charlie
             );
 
@@ -895,8 +960,8 @@ fn concrete_fungible_ledger_transfers_work() {
             assert_err!(
                 CalamariConcreteFungibleLedger::transfer(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                    &alice.clone(),
-                    &charlie.clone(),
+                    &ALICE.clone(),
+                    &CHARLIE.clone(),
                     INITIAL_BALANCE,
                     ExistenceRequirement::KeepAlive
                 ),
@@ -909,25 +974,25 @@ fn concrete_fungible_ledger_transfers_work() {
                     message: Some("KeepAlive")
                 }))
             );
-            assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
+            assert_eq!(Balances::free_balance(ALICE.clone()), current_balance_alice);
             assert_eq!(
-                Balances::free_balance(charlie.clone()),
+                Balances::free_balance(CHARLIE.clone()),
                 current_balance_charlie
             );
 
             // A normal transfer should work
             assert_ok!(CalamariConcreteFungibleLedger::transfer(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                &alice.clone(),
-                &charlie.clone(),
+                &ALICE.clone(),
+                &CHARLIE.clone(),
                 transfer_amount,
                 ExistenceRequirement::KeepAlive
             ));
             current_balance_alice -= transfer_amount;
             current_balance_charlie += transfer_amount;
-            assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
+            assert_eq!(Balances::free_balance(ALICE.clone()), current_balance_alice);
             assert_eq!(
-                Balances::free_balance(charlie.clone()),
+                Balances::free_balance(CHARLIE.clone()),
                 current_balance_charlie
             );
 
@@ -936,7 +1001,7 @@ fn concrete_fungible_ledger_transfers_work() {
             assert_err!(
                 CalamariConcreteFungibleLedger::transfer(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                    &alice.clone(),
+                    &ALICE.clone(),
                     &new_account,
                     NativeTokenExistentialDeposit::get() - 1,
                     ExistenceRequirement::KeepAlive
@@ -954,13 +1019,13 @@ fn concrete_fungible_ledger_transfers_work() {
             // Should be able to create new account with enough balance
             assert_ok!(CalamariConcreteFungibleLedger::transfer(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                &alice.clone(),
+                &ALICE.clone(),
                 &new_account,
                 NativeTokenExistentialDeposit::get(),
                 ExistenceRequirement::KeepAlive
             ));
             current_balance_alice -= NativeTokenExistentialDeposit::get();
-            assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
+            assert_eq!(Balances::free_balance(ALICE.clone()), current_balance_alice);
             assert_eq!(
                 Balances::free_balance(new_account),
                 NativeTokenExistentialDeposit::get()
@@ -969,30 +1034,30 @@ fn concrete_fungible_ledger_transfers_work() {
             // Transfer all of your balance without dropping below ED should work
             assert_ok!(CalamariConcreteFungibleLedger::transfer(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                &bob.clone(),
-                &alice.clone(),
+                &BOB.clone(),
+                &ALICE.clone(),
                 INITIAL_BALANCE - NativeTokenExistentialDeposit::get(),
                 ExistenceRequirement::KeepAlive
             ));
             current_balance_alice += INITIAL_BALANCE - NativeTokenExistentialDeposit::get();
-            assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
+            assert_eq!(Balances::free_balance(ALICE.clone()), current_balance_alice);
             assert_eq!(
-                Balances::free_balance(bob.clone()),
+                Balances::free_balance(BOB.clone()),
                 NativeTokenExistentialDeposit::get()
             );
 
             // Transfer the ED should work if AllowDeath is selected
             assert_ok!(CalamariConcreteFungibleLedger::transfer(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                &bob.clone(),
-                &alice.clone(),
+                &BOB.clone(),
+                &ALICE.clone(),
                 NativeTokenExistentialDeposit::get(),
                 ExistenceRequirement::AllowDeath
             ));
             current_balance_alice += NativeTokenExistentialDeposit::get();
-            assert_eq!(Balances::free_balance(alice.clone()), current_balance_alice);
-            assert_eq!(Balances::free_balance(bob.clone()), 0);
-            assert!(!frame_system::Account::<Runtime>::contains_key(bob.clone()));
+            assert_eq!(Balances::free_balance(ALICE.clone()), current_balance_alice);
+            assert_eq!(Balances::free_balance(BOB.clone()), 0);
+            assert!(!frame_system::Account::<Runtime>::contains_key(BOB.clone()));
 
             // Transfer tests for non-native assets:
 
@@ -1019,13 +1084,13 @@ fn concrete_fungible_ledger_transfers_work() {
             let amount = Balance::MAX;
             assert_ok!(CalamariConcreteFungibleLedger::deposit_minting(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                &alice.clone(),
+                &ALICE.clone(),
                 amount,
             ),);
             assert_eq!(
                 Assets::balance(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    alice.clone()
+                    ALICE.clone()
                 ),
                 amount
             );
@@ -1034,8 +1099,8 @@ fn concrete_fungible_ledger_transfers_work() {
             assert_err!(
                 CalamariConcreteFungibleLedger::transfer(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    &alice.clone(),
-                    &bob.clone(),
+                    &ALICE.clone(),
+                    &BOB.clone(),
                     amount,
                     ExistenceRequirement::KeepAlive
                 ),
@@ -1051,7 +1116,7 @@ fn concrete_fungible_ledger_transfers_work() {
             assert_eq!(
                 Assets::balance(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    alice.clone()
+                    ALICE.clone()
                 ),
                 amount
             );
@@ -1059,8 +1124,8 @@ fn concrete_fungible_ledger_transfers_work() {
             assert_err!(
                 CalamariConcreteFungibleLedger::transfer(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    &alice.clone(),
-                    &bob.clone(),
+                    &ALICE.clone(),
+                    &BOB.clone(),
                     min_balance - 1,
                     ExistenceRequirement::KeepAlive
                 ),
@@ -1071,7 +1136,7 @@ fn concrete_fungible_ledger_transfers_work() {
             assert_eq!(
                 Assets::balance(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    alice.clone()
+                    ALICE.clone()
                 ),
                 amount
             );
@@ -1079,22 +1144,22 @@ fn concrete_fungible_ledger_transfers_work() {
             // Transferring normal amounts should work.
             assert_ok!(CalamariConcreteFungibleLedger::transfer(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                &alice.clone(),
-                &bob.clone(),
+                &ALICE.clone(),
+                &BOB.clone(),
                 transfer_amount,
                 ExistenceRequirement::KeepAlive
             ),);
             assert_eq!(
                 Assets::balance(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    alice.clone()
+                    ALICE.clone()
                 ),
                 u128::MAX - transfer_amount
             );
             assert_eq!(
                 Assets::balance(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    bob.clone()
+                    BOB.clone()
                 ),
                 transfer_amount
             );
@@ -1102,15 +1167,15 @@ fn concrete_fungible_ledger_transfers_work() {
             // Transferring all of the balance of an account should work.
             assert_ok!(CalamariConcreteFungibleLedger::transfer(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                &bob.clone(),
-                &alice.clone(),
+                &BOB.clone(),
+                &ALICE.clone(),
                 transfer_amount,
                 ExistenceRequirement::AllowDeath
             ),);
             assert_eq!(
                 Assets::balance(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    bob.clone()
+                    BOB.clone()
                 ),
                 0
             );
@@ -1119,8 +1184,8 @@ fn concrete_fungible_ledger_transfers_work() {
             assert_err!(
                 CalamariConcreteFungibleLedger::transfer(
                     CalamariAssetId::MAX,
-                    &alice.clone(),
-                    &charlie.clone(),
+                    &ALICE.clone(),
+                    &CHARLIE.clone(),
                     transfer_amount,
                     ExistenceRequirement::KeepAlive
                 ),
@@ -1138,10 +1203,8 @@ fn concrete_fungible_ledger_transfers_work() {
 
 #[test]
 fn concrete_fungible_ledger_can_deposit_and_mint_works() {
-    let alice = unchecked_account_id::<sr25519::Public>("Alice");
-
     ExtBuilder::default()
-        .with_balances(vec![(alice.clone(), INITIAL_BALANCE)])
+        .with_balances(vec![(ALICE.clone(), INITIAL_BALANCE)])
         .build()
         .execute_with(|| {
             // Native asset tests:
@@ -1181,7 +1244,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
             assert_err!(
                 CalamariConcreteFungibleLedger::can_deposit(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    &alice.clone(),
+                    &ALICE.clone(),
                     0,
                     true,
                 ),
@@ -1190,7 +1253,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
             assert_err!(
                 CalamariConcreteFungibleLedger::can_deposit(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get() + 1,
-                    &alice.clone(),
+                    &ALICE.clone(),
                     11,
                     true,
                 ),
@@ -1198,20 +1261,20 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
             );
             assert_ok!(CalamariConcreteFungibleLedger::deposit_minting(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                &alice.clone(),
+                &ALICE.clone(),
                 u128::MAX,
             ),);
             assert_eq!(
                 Assets::balance(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    alice.clone()
+                    ALICE.clone()
                 ),
                 u128::MAX
             );
             assert_err!(
                 CalamariConcreteFungibleLedger::can_deposit(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    &alice.clone(),
+                    &ALICE.clone(),
                     1,
                     true,
                 ),
@@ -1256,12 +1319,8 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
 // are included as comments on top of each case for more clarity.
 #[test]
 fn concrete_fungible_ledger_can_withdraw_works() {
-    let alice = unchecked_account_id::<sr25519::Public>("Alice");
-    let bob = unchecked_account_id::<sr25519::Public>("Bob");
-    let charlie = unchecked_account_id::<sr25519::Public>("Charlie");
-
     ExtBuilder::default()
-        .with_balances(vec![(charlie.clone(), INITIAL_BALANCE)])
+        .with_balances(vec![(CHARLIE.clone(), INITIAL_BALANCE)])
         .build()
         .execute_with(|| {
             let existential_deposit = NativeTokenExistentialDeposit::get();
@@ -1271,7 +1330,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
             assert_err!(
                 CalamariConcreteFungibleLedger::can_withdraw(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                    &charlie.clone(),
+                    &CHARLIE.clone(),
                     &(INITIAL_BALANCE + 1),
                     ExistenceRequirement::KeepAlive
                 ),
@@ -1282,7 +1341,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
             assert_err!(
                 CalamariConcreteFungibleLedger::can_withdraw(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                    &charlie.clone(),
+                    &CHARLIE.clone(),
                     &INITIAL_BALANCE,
                     ExistenceRequirement::KeepAlive
                 ),
@@ -1292,7 +1351,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
 
             assert_ok!(CalamariConcreteFungibleLedger::can_withdraw(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                &charlie.clone(),
+                &CHARLIE.clone(),
                 &INITIAL_BALANCE,
                 ExistenceRequirement::AllowDeath
             ),);
@@ -1300,7 +1359,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
             assert_err!(
                 CalamariConcreteFungibleLedger::can_withdraw(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get(),
-                    &bob.clone(),
+                    &BOB.clone(),
                     &INITIAL_BALANCE,
                     ExistenceRequirement::KeepAlive
                 ),
@@ -1331,13 +1390,13 @@ fn concrete_fungible_ledger_can_withdraw_works() {
 
             assert_ok!(CalamariConcreteFungibleLedger::deposit_minting(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                &alice.clone(),
+                &ALICE.clone(),
                 INITIAL_BALANCE,
             ),);
             assert_eq!(
                 Assets::balance(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    alice.clone()
+                    ALICE.clone()
                 ),
                 INITIAL_BALANCE
             );
@@ -1345,7 +1404,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
             assert_err!(
                 CalamariConcreteFungibleLedger::can_withdraw(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    &alice.clone(),
+                    &ALICE.clone(),
                     &(INITIAL_BALANCE + 1),
                     ExistenceRequirement::AllowDeath
                 ),
@@ -1355,7 +1414,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
 
             assert_ok!(CalamariConcreteFungibleLedger::can_withdraw(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                &alice.clone(),
+                &ALICE.clone(),
                 &INITIAL_BALANCE,
                 ExistenceRequirement::AllowDeath
             ),);
@@ -1363,7 +1422,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
             assert_err!(
                 CalamariConcreteFungibleLedger::can_withdraw(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    &bob.clone(),
+                    &BOB.clone(),
                     &10u128,
                     ExistenceRequirement::AllowDeath
                 ),
@@ -1373,13 +1432,13 @@ fn concrete_fungible_ledger_can_withdraw_works() {
 
             assert_ok!(CalamariConcreteFungibleLedger::deposit_minting(
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                &bob.clone(),
+                &BOB.clone(),
                 INITIAL_BALANCE,
             ),);
             assert_err!(
                 CalamariConcreteFungibleLedger::can_withdraw(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    &alice.clone(),
+                    &ALICE.clone(),
                     &INITIAL_BALANCE,
                     ExistenceRequirement::KeepAlive
                 ),
@@ -1389,12 +1448,12 @@ fn concrete_fungible_ledger_can_withdraw_works() {
             assert_ok!(Assets::freeze(
                 Origin::signed(AssetManager::account_id()),
                 <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                sp_runtime::MultiAddress::Id(alice.clone()),
+                sp_runtime::MultiAddress::Id(ALICE.clone()),
             ));
             assert_err!(
                 CalamariConcreteFungibleLedger::can_withdraw(
                     <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
-                    &alice.clone(),
+                    &ALICE.clone(),
                     &10u128,
                     ExistenceRequirement::AllowDeath
                 ),
