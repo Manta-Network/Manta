@@ -271,19 +271,13 @@ jobs:
           yarn install
           yarn
           yarn correctness_test --address=ws://127.0.0.1:9921 --exit
-          echo $?
-          if [ $? != 0 ]; then echo "Ledger RPC correctness test failed!"; exit 1; fi
           yarn performance_test --address=ws://127.0.0.1:9921 --exit
-          echo $?
-          if [ $? != 0 ]; then echo "Ledger RPC performance test failed!"; exit 1; fi
       - name: check if target block is finalized
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
           yarn install
           yarn
           node index.js --para_address=ws://127.0.0.1:9921 --relay_address=ws://127.0.0.1:9911 --target_block=${{ matrix.chain-spec.expected.block-count.para }}
-          echo $?
-          if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
       - name: stop testnet
         run: |
           cd ${{ github.workspace }}/polkadot-launch
@@ -402,8 +396,6 @@ jobs:
           yarn install
           yarn
           yarn stress_benchmark_test --address=ws://127.0.0.1:9921 --exit
-          echo $?
-          if [ $? != 0 ]; then echo "Stress benchmark test failed!"; exit 1; fi
       - name: stop testnet
         run: |
           cd ${{ github.workspace }}/polkadot-launch
