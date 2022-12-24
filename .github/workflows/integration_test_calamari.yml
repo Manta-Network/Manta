@@ -133,9 +133,6 @@ jobs:
                 para: 4
     steps:
       - run: |
-          sudo apt-get update
-          sudo apt-get install git-lfs
-      - run: |
           mkdir -p $HOME/.local/share/calamari-pc
           mkdir -p $HOME/.local/bin
           echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
@@ -176,7 +173,6 @@ jobs:
         with:
           repository: Manta-Network/Manta
           path: Manta
-          lfs: true
       - if: always()
         uses: actions/upload-artifact@v2
         with:
@@ -376,6 +372,7 @@ jobs:
       # in order to not break the logic of the other integration tests, which don't work with real data yet.
       - name: append manta-pay storage
         run: |
+          wget -P ${{ github.workspace }}/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
           mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/data/fork.json
           cd ${{ github.workspace }}/Manta/tests
           yarn install
