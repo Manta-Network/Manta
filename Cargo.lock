@@ -1028,6 +1028,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "hex-literal",
+ "lazy_static",
  "log",
  "manta-collator-selection",
  "manta-primitives",
