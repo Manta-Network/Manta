@@ -203,7 +203,6 @@ jobs:
           yarn install
           yarn
           yarn runtime_upgrade_test --address=ws://127.0.0.1:9921 --exit
-          echo $?
           if [ $? != 0 ]; then echo "Runtime upgrade failed!"; exit 1; fi
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         uses: actions/upload-artifact@v2
