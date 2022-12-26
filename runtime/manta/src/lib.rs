@@ -42,9 +42,7 @@ use sp_version::RuntimeVersion;
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{
-        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency
-    },
+    traits::{ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, Weight,
@@ -93,6 +91,7 @@ pub mod opaque {
     /// Opaque block identifier type.
     pub type BlockId = generic::BlockId<Block>;
     use nimbus_session_adapter::{AuthorInherentWithNoOpSession, VrfWithNoOpSession};
+    use session_key_primitives::util::unchecked_public_key;
     impl_opaque_keys! {
         pub struct SessionKeys {
             pub nimbus: AuthorInherentWithNoOpSession<Runtime>,
@@ -103,6 +102,12 @@ pub mod opaque {
         pub fn new(tuple: (NimbusId, VrfId)) -> SessionKeys {
             let (nimbus, vrf) = tuple;
             SessionKeys { nimbus, vrf }
+        }
+        pub fn from_seed_unchecked(seed: &str) -> SessionKeys {
+            Self::new((
+                unchecked_public_key::<NimbusId>(seed),
+                unchecked_public_key::<VrfId>(seed),
+            ))
         }
     }
 }
@@ -164,7 +169,6 @@ parameter_types! {
         .build_or_panic();
     pub const SS58Prefix: u8 = manta_primitives::constants::MANTA_SS58PREFIX;
 }
-
 
 // Don't allow permission-less asset creation.
 pub struct MantaFilter;

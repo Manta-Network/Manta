@@ -46,9 +46,9 @@ pub fn inflation_config<T: frame_system::Config + pallet_parachain_staking::Conf
         // staking expectations **per round**
         expect: Range {
             // TODO: Correct this for manta numbers
-            min: (0 * MANTA).unique_saturated_into(),
-            ideal: (0 * MANTA).unique_saturated_into(), // annual inflation / number of rounds
-            max: (0 * MANTA).unique_saturated_into(),
+            min: 0u128.unique_saturated_into(),
+            ideal: 0u128.unique_saturated_into(), // annual inflation / number of rounds
+            max: 0u128.unique_saturated_into(),
         },
         // annual inflation
         annual,

@@ -55,6 +55,20 @@ type HostFunctions = (
     frame_benchmarking::benchmarking::HostFunctions,
 );
 
+/// Native Manta Parachain executor instance.
+pub struct MantaRuntimeExecutor;
+impl sc_executor::NativeExecutionDispatch for MantaRuntimeExecutor {
+    type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+    fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+        manta_runtime::api::dispatch(method, data)
+    }
+
+    fn native_version() -> sc_executor::NativeVersion {
+        manta_runtime::native_version()
+    }
+}
+
 /// Native Calamari Parachain executor instance.
 pub struct CalamariRuntimeExecutor;
 impl sc_executor::NativeExecutionDispatch for CalamariRuntimeExecutor {

@@ -94,6 +94,7 @@ pub mod opaque {
     pub type BlockId = generic::BlockId<Block>;
 
     use nimbus_session_adapter::{AuthorInherentWithNoOpSession, VrfWithNoOpSession};
+    use session_key_primitives::util::unchecked_public_key;
     impl_opaque_keys! {
         pub struct SessionKeys {
             pub aura: Aura,
@@ -105,6 +106,13 @@ pub mod opaque {
         pub fn new(tuple: (AuraId, NimbusId, VrfId)) -> SessionKeys {
             let (aura, nimbus, vrf) = tuple;
             SessionKeys { aura, nimbus, vrf }
+        }
+        pub fn from_seed_unchecked(seed: &str) -> SessionKeys {
+            Self::new((
+                unchecked_public_key::<AuraId>(seed),
+                unchecked_public_key::<NimbusId>(seed),
+                unchecked_public_key::<VrfId>(seed),
+            ))
         }
     }
 }
