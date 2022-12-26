@@ -16,7 +16,7 @@
 
 use frame_support::{
     parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, Everything},
+    traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, Everything, GenesisBuild},
     PalletId,
 };
 use frame_system::{EnsureRoot, EnsureSigned};
@@ -155,8 +155,13 @@ impl crate::Config for Test {
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    frame_system::GenesisConfig::default()
+    let mut t = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
-        .unwrap()
-        .into()
+        .unwrap();
+
+    crate::GenesisConfig::<Test>::default()
+        .assimilate_storage(&mut t)
+        .unwrap();
+
+    sp_io::TestExternalities::new(t)
 }

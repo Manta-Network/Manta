@@ -15,8 +15,8 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
-    NativeTokenExistentialDeposit, Origin, Runtime,
+    cDOL, weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
+    NativeTokenExistentialDeposit, Origin, Runtime, DOL,
 };
 
 use manta_primitives::{
@@ -28,8 +28,8 @@ use manta_primitives::{
     types::{AccountId, Balance, DolphinAssetId},
 };
 
-use frame_support::{pallet_prelude::DispatchResult, parameter_types, PalletId};
-use frame_system::EnsureRoot;
+use frame_support::{pallet_prelude::*, parameter_types, traits::AsEnsureOriginWithArg, PalletId};
+use frame_system::{EnsureRoot, EnsureSigned};
 use xcm::VersionedMultiLocation;
 
 parameter_types! {
@@ -184,4 +184,32 @@ impl pallet_manta_pay::Config for Runtime {
     type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
     type AssetConfig = DolphinAssetConfig;
     type PalletId = MantaPayPalletId;
+}
+
+parameter_types! {
+    pub const CollectionDeposit: Balance = DOL;
+    pub const ItemDeposit: Balance = cDOL;
+    pub const KeyLimit: u32 = 32;
+    pub const ValueLimit: u32 = 256;
+}
+
+impl pallet_uniques::Config for Runtime {
+    type Event = Event;
+    type CollectionId = DolphinAssetId;
+    type ItemId = DolphinAssetId;
+    type Currency = Balances;
+    type ForceOrigin = EnsureRoot<AccountId>;
+    type CollectionDeposit = CollectionDeposit;
+    type ItemDeposit = ItemDeposit;
+    type MetadataDepositBase = MetadataDepositBase;
+    type AttributeDepositBase = MetadataDepositBase;
+    type DepositPerByte = MetadataDepositPerByte;
+    type StringLimit = ConstU32<1000>;
+    type KeyLimit = KeyLimit;
+    type ValueLimit = ValueLimit;
+    type WeightInfo = pallet_uniques::weights::SubstrateWeight<Runtime>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type Helper = ();
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+    type Locker = ();
 }

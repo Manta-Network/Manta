@@ -16,10 +16,7 @@
 
 use crate::{
     fp_decode,
-    mock::{
-        new_test_ext, Balances, ImplementItemId, MantaSBTPallet, Origin as MockOrigin, Test,
-        Uniques,
-    },
+    mock::{new_test_ext, Balances, ImplementItemId, MantaSBTPallet, Origin as MockOrigin, Test},
     types::{fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
     Error, IncrementItemId, ItemIdCounter,
 };
@@ -89,11 +86,6 @@ fn initialize_test() {
         ALICE,
         1_000_000_000_000_000,
         0
-    ));
-    assert_ok!(Uniques::force_create(
-        MockOrigin::root(),
-        MantaSBTPallet::account_id(),
-        true
     ));
 }
 

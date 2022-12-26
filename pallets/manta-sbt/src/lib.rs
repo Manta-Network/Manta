@@ -97,7 +97,7 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use scale_codec::Encode;
-    use sp_runtime::traits::AccountIdConversion;
+    use sp_runtime::traits::{AccountIdConversion, Zero};
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
@@ -198,6 +198,35 @@ pub mod pallet {
             /// Source Account
             source: T::AccountId,
         },
+    }
+
+    #[pallet::genesis_config]
+    pub struct GenesisConfig<T>(PhantomData<T>);
+
+    #[cfg(feature = "std")]
+    impl<T: Config> Default for GenesisConfig<T> {
+        fn default() -> Self {
+            Self(std::marker::PhantomData::<T>)
+        }
+    }
+
+    #[pallet::genesis_build]
+    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+        #[inline]
+        fn build(&self) {
+            pallet_uniques::Pallet::<T>::do_create_collection(
+                T::PalletCollectionId::get(),
+                Pallet::<T>::account_id(),
+                Pallet::<T>::account_id(),
+                Zero::zero(),
+                true,
+                pallet_uniques::Event::<T>::ForceCreated {
+                    collection: T::PalletCollectionId::get(),
+                    owner: Pallet::<T>::account_id(),
+                },
+            )
+            .expect("create SBT collection on genesis failed");
+        }
     }
 
     /// Error

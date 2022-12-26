@@ -42,8 +42,8 @@ use sp_version::RuntimeVersion;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, NeverEnsureOrigin,
-        PrivilegeCmp,
+        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse,
+        NeverEnsureOrigin, PrivilegeCmp,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -56,9 +56,10 @@ use frame_system::{
     EnsureRoot,
 };
 use manta_primitives::{
-    constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
-    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
+    constants::{time::*, MANTA_SBT_PALLET_ID, STAKING_PALLET_ID, TREASURY_PALLET_ID},
+    types::{AccountId, Balance, BlockNumber, DolphinAssetId, Hash, Header, Index, Signature},
 };
+use pallet_manta_sbt::{IncrementItemId, ItemIdCounter};
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
@@ -686,6 +687,32 @@ impl manta_collator_selection::Config for Runtime {
     type CanAuthor = AuraAuthorFilter;
 }
 
+pub struct ImplementItemId;
+
+impl IncrementItemId<DolphinAssetId> for ImplementItemId {
+    fn get_and_increment_item_id() -> DolphinAssetId {
+        let item_id = ItemIdCounter::<Runtime>::get().unwrap_or(0);
+        ItemIdCounter::<Runtime>::set(Some(item_id + 1));
+        item_id
+    }
+
+    fn encode_item_id(item: DolphinAssetId) -> Option<[u8; 32]> {
+        Some(pallet_manta_sbt::Pallet::<Runtime>::field_from_id(item))
+    }
+}
+
+parameter_types! {
+    pub const MantaSBTPalletId: PalletId = MANTA_SBT_PALLET_ID;
+}
+
+impl pallet_manta_sbt::Config for Runtime {
+    type Event = Event;
+    type PalletCollectionId = ConstU128<0>;
+    type PalletId = MantaSBTPalletId;
+    type IncrementItem = ImplementItemId;
+    type WeightInfo = pallet_manta_sbt::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -747,6 +774,8 @@ construct_runtime!(
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
+        Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 48,
+        MantaSBT: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>, Config<T>} = 49,
     }
 );
 
@@ -946,6 +975,24 @@ impl_runtime_apis! {
             max_sender: u64
         ) -> pallet_manta_pay::DensePullResponse {
             MantaPay::dense_pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+    }
+
+    impl pallet_manta_sbt::runtime::SBTPullLedgerDiffApi<Block> for Runtime {
+        fn sbt_pull_ledger_diff(
+            checkpoint: pallet_manta_sbt::RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> pallet_manta_sbt::PullResponse {
+            MantaSBT::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+
+        fn sbt_dense_pull_ledger_diff(
+            checkpoint: pallet_manta_sbt::RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> pallet_manta_sbt::DensePullResponse {
+            MantaSBT::dense_pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
     }
 

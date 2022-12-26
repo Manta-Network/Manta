@@ -19,7 +19,7 @@
 use crate::{DensePullResponse, PullResponse, RawCheckpoint};
 
 sp_api::decl_runtime_apis! {
-    pub trait PullLedgerDiffApi {
+    pub trait SBTPullLedgerDiffApi {
         fn sbt_pull_ledger_diff(checkpoint: RawCheckpoint, max_receivers: u64, max_senders: u64) -> PullResponse;
 
         fn sbt_dense_pull_ledger_diff(checkpoint: RawCheckpoint, max_receivers: u64, max_senders: u64) -> DensePullResponse;

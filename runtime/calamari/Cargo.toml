@@ -56,6 +56,7 @@ pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', defaul
 pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 pallet-transaction-payment-rpc-runtime-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 pallet-treasury = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.28" }
+pallet-uniques = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 pallet-utility = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", tag = "v0.5.9", default-features = false }
 
@@ -94,6 +95,7 @@ manta-collator-selection = { path = '../../pallets/collator-selection', default-
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
 pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
+pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
@@ -183,6 +185,7 @@ runtime-benchmarks = [
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
   'cumulus-pallet-parachain-system/runtime-benchmarks',
   'pallet-manta-pay/runtime-benchmarks',
+  'pallet-manta-sbt/runtime-benchmarks',
   'pallet-xcm-benchmarks',
 ]
 try-runtime = [
@@ -277,4 +280,5 @@ std = [
   'orml-traits/std',
   'orml-xtokens/std',
   'pallet-manta-pay/std',
+  'pallet-manta-sbt/std',
 ]

@@ -201,6 +201,7 @@ fn dolphin_dev_genesis(
         polkadot_xcm: dolphin_runtime::PolkadotXcmConfig {
             safe_xcm_version: Some(SAFE_XCM_VERSION),
         },
+        manta_sbt: Default::default(),
     }
 }
 
