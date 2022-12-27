@@ -91,7 +91,6 @@ pub mod opaque {
     /// Opaque block identifier type.
     pub type BlockId = generic::BlockId<Block>;
     use nimbus_session_adapter::{AuthorInherentWithNoOpSession, VrfWithNoOpSession};
-    use session_key_primitives::util::unchecked_public_key;
     impl_opaque_keys! {
         pub struct SessionKeys {
             pub nimbus: AuthorInherentWithNoOpSession<Runtime>,
@@ -103,10 +102,12 @@ pub mod opaque {
             let (nimbus, vrf) = tuple;
             SessionKeys { nimbus, vrf }
         }
+        /// Derives all collator keys from `seed` without checking that the `seed` is valid.
+        #[cfg(feature = "std")]
         pub fn from_seed_unchecked(seed: &str) -> SessionKeys {
             Self::new((
-                unchecked_public_key::<NimbusId>(seed),
-                unchecked_public_key::<VrfId>(seed),
+                session_key_primitives::util::unchecked_public_key::<NimbusId>(seed),
+                session_key_primitives::util::unchecked_public_key::<VrfId>(seed),
             ))
         }
     }
