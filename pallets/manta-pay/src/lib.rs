@@ -450,7 +450,7 @@ pub mod pallet {
             match err {
                 SenderPostError::AssetSpent => Self::AssetSpent,
                 SenderPostError::InvalidUtxoAccumulatorOutput => Self::InvalidUtxoAccumulatorOutput,
-                _ => todo!(),
+                SenderPostError::UnexpectedError(_) => Self::InternalLedgerError,
             }
         }
     }
@@ -460,7 +460,7 @@ pub mod pallet {
         fn from(err: ReceiverPostError<ReceiverLedgerError>) -> Self {
             match err {
                 ReceiverPostError::AssetRegistered => Self::AssetRegistered,
-                _ => todo!(),
+                ReceiverPostError::UnexpectedError(_) => Self::InternalLedgerError,
             }
         }
     }
@@ -525,7 +525,7 @@ pub mod pallet {
                 TransferPostError::<T>::DuplicateMint => Self::DuplicateRegister,
                 TransferPostError::<T>::DuplicateSpend => Self::DuplicateSpend,
                 TransferPostError::<T>::InvalidProof => Self::InvalidProof,
-                _ => todo!(),
+                TransferPostError::<T>::UnexpectedError(_) => Self::InternalLedgerError,
             }
         }
     }
@@ -1055,6 +1055,9 @@ pub enum TransferLedgerError {
 
     /// Receiver Ledger Error
     ReceiverLedgerError(ReceiverLedgerError),
+
+    /// Invalid Transfer Shape
+    InvalidTransferShape,
 }
 
 impl<T> TransferLedger<config::Config> for Ledger<T>
@@ -1157,7 +1160,7 @@ where
             return Ok(None);
         }
         let (mut verifying_context, event) =
-            match transfer_shape.expect("Check above makes sure transfer_shape is always Some") {
+            match transfer_shape.ok_or(TransferLedgerError::InvalidTransferShape)? {
                 TransferShape::ToPrivate => {
                     if let Some(asset_id) = posting_key.asset_id.or(None) {
                         if let Ok(asset_id) = fp_encode(asset_id) {
