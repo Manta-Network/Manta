@@ -214,6 +214,7 @@ impl Contains<Call> for BaseFilter {
                                 | pallet_democracy::Call::external_propose {..}
                                 | pallet_democracy::Call::external_propose_majority {..})
             | Call::Treasury(_) // Treasury calls are filtered while it is accumulating funds.
+            | Call::Uniques(_) // Disallow uniques calls
             // Everything except transfer() is filtered out until it is practically needed:
             | Call::XTokens(
                                 orml_xtokens::Call::transfer_with_fee {..}
@@ -268,6 +269,7 @@ impl Contains<Call> for BaseFilter {
                 | orml_xtokens::Call::transfer_multicurrencies  {..})
             | Call::MantaPay(_)
             | Call::Preimage(_)
+            | Call::MantaSBT(_)
             | Call::Utility(_) => true,
 
             // DISALLOW anything else
