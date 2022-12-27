@@ -201,6 +201,9 @@ pub mod pallet {
         #[transactional]
         pub fn to_private(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
+            for source in post.sources.iter() {
+                ensure!(asset_value_decode(*source) > 0u128, Error::<T>::BalanceLow);
+            }
             Self::post_transaction(None, vec![origin], vec![], post)
         }
 
@@ -211,6 +214,9 @@ pub mod pallet {
         #[transactional]
         pub fn to_public(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
+            for sink in post.sinks.iter() {
+                ensure!(asset_value_decode(*sink) > 0u128, Error::<T>::BalanceLow);
+            }
             Self::post_transaction(None, vec![], vec![origin], post)
         }
 
