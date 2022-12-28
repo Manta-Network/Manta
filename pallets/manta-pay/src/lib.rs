@@ -202,8 +202,18 @@ pub mod pallet {
         pub fn to_private(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
             for source in post.sources.iter() {
-                ensure!(asset_value_decode(*source) > 0u128, Error::<T>::ZeroTransfer);
+                ensure!(
+                    asset_value_decode(*source) > 0u128,
+                    Error::<T>::ZeroTransfer
+                );
             }
+            ensure!(
+                post.sources.len() == 1
+                    && post.sender_posts.len() == 0
+                    && post.receiver_posts.len() == 1
+                    && post.sinks.len() == 0,
+                Error::<T>::InvalidShape
+            );
             Self::post_transaction(None, vec![origin], vec![], post)
         }
 
@@ -217,6 +227,13 @@ pub mod pallet {
             for sink in post.sinks.iter() {
                 ensure!(asset_value_decode(*sink) > 0u128, Error::<T>::ZeroTransfer);
             }
+            ensure!(
+                post.sources.len() == 0
+                    && post.sender_posts.len() == 2
+                    && post.receiver_posts.len() == 0
+                    && post.sinks.len() == 1,
+                Error::<T>::InvalidShape
+            );
             Self::post_transaction(None, vec![], vec![origin], post)
         }
 
@@ -234,6 +251,13 @@ pub mod pallet {
             post: TransferPost,
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
+            ensure!(
+                post.sources.len() == 0
+                    && post.sender_posts.len() == 2
+                    && post.receiver_posts.len() == 2
+                    && post.sinks.len() == 0,
+                Error::<T>::InvalidShape
+            );
             Self::post_transaction(Some(origin), vec![], vec![], post)
         }
 
