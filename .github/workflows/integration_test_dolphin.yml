@@ -3,7 +3,7 @@ on:
   push:
     branches: [manta]
   pull_request:
-    branches: [manta]
+    branches: [ghzlatarev/split-tests]
     types: [opened, reopened, synchronize, labeled]
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
