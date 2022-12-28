@@ -20,7 +20,6 @@ env:
   POLKADOT_BINARY: https://github.com/paritytech/polkadot/releases/download/v0.9.33/polkadot
 jobs:
   print-rust-versions:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     runs-on: ubuntu-20.04
     container:
       image: paritytech/ci-linux:production
@@ -35,7 +34,6 @@ jobs:
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
   build-node-current:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     needs: start-node-builder-current
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     env:
@@ -107,7 +105,6 @@ jobs:
           name: config-for-integration-test
           path: .github/resources/config-for-integration-test.json
   calamari-integration-test:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     needs: [build-node-current, start-calamari-integration-tester]
     runs-on: ${{ needs.start-calamari-integration-tester.outputs.runner-label }}
     timeout-minutes: 180
@@ -400,7 +397,6 @@ jobs:
           name: ${{ matrix.chain-spec.id }}-alice-stress.log
           path: ${{ github.workspace }}/polkadot-launch/9921.log
   docker-image-test:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     needs: [build-node-current, start-docker-image-tester]
     runs-on: ubuntu-20.04
     strategy:
@@ -450,7 +446,6 @@ jobs:
           if [ $? == 1 ]; then echo "Failed to finalize the target block - 6"; exit 1; fi
   # HELPER JOBS BELOW
   start-node-builder-current:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -490,7 +485,6 @@ jobs:
       - name: discard stopper success/failure
         run: true
   start-calamari-integration-tester:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
@@ -530,7 +524,6 @@ jobs:
       - name: discard stopper success/failure
         run: true
   start-docker-image-tester:
-    if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
