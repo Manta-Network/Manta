@@ -45,6 +45,7 @@ use manta_primitives::{
     },
     constants::TEST_DEFAULT_ASSET_ED,
 };
+use std::{env, path::Path};
 
 /// UTXO Accumulator for Building Circuits
 type UtxoAccumulator =
@@ -66,11 +67,16 @@ pub const NATIVE_ASSET_ID: StandardAssetId =
 /// Loads the [`MultiProvingContext`].
 #[inline]
 fn load_proving_context() -> MultiProvingContext {
-    parameters::load_proving_context(
-        tempfile::tempdir()
-            .expect("Unable to create temporary directory.")
-            .path(),
-    )
+    let env = env::var("MANTA_PROVING_DIR");
+    if let Ok(path) = env {
+        parameters::try_load_proving_context(Path::new(&path))
+    } else {
+        parameters::load_proving_context(
+            tempfile::tempdir()
+                .expect("Unable to create temporary directory.")
+                .path(),
+        )
+    }
 }
 
 /// Samples a [`Mint`] transaction of `asset` with a random secret.
@@ -89,6 +95,25 @@ where
         rng,
     ))
     .unwrap()
+}
+
+/// Samples a [`ToPublic`] transaction of `asset` with a random secret.
+#[inline]
+fn sample_to_public<R>(asset_id: u128, value: [AssetValue; 2], rng: &mut R) -> PalletTransferPost
+where
+    R: CryptoRng + RngCore + ?Sized,
+{
+    let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
+    let ([_to_public_input_0, _to_public_input_1], to_public) =
+        test::payment::to_public::prove_full(
+            &PROVING_CONTEXT,
+            &PARAMETERS,
+            &mut utxo_accumulator,
+            Fp::from(asset_id),
+            value,
+            rng,
+        );
+    PalletTransferPost::try_from(to_public).unwrap()
 }
 
 /// Mints many assets with the given `id` and `value`.
@@ -322,6 +347,42 @@ fn to_private_should_work() {
             );
         });
     }
+}
+
+/// Tests to_private with zero balance should failed.
+#[test]
+fn to_private_with_zero_should_not_work() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        let asset_id = rng.gen();
+        let total_free_supply: AssetValue = rng.gen();
+        initialize_test(asset_id, total_free_supply + TEST_DEFAULT_ASSET_ED);
+        assert_noop!(
+            MantaPayPallet::to_private(
+                MockOrigin::signed(ALICE),
+                sample_to_private(MantaPayPallet::field_from_id(asset_id), 0, &mut rng)
+            ),
+            Error::<Test>::ZeroTransfer
+        );
+    });
+}
+
+/// Tests to_public with zero balance should failed.
+#[test]
+fn to_public_with_zero_should_not_work() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        let asset_id = rng.gen();
+        let total_free_supply: AssetValue = rng.gen();
+        initialize_test(asset_id, total_free_supply + TEST_DEFAULT_ASSET_ED);
+        assert_noop!(
+            MantaPayPallet::to_public(
+                MockOrigin::signed(ALICE),
+                sample_to_public(asset_id, [0, 0], &mut rng)
+            ),
+            Error::<Test>::ZeroTransfer
+        );
+    });
 }
 
 /// Tests a [`ToPrivate`] transaction with native currency.
