@@ -18,10 +18,3 @@ panic = "unwind"
 
 [profile.test]
 debug = true
-
-[patch."https://github.com/manta-network/manta-rs"]
-manta-accounting = { git = "https://github.com/manta-network//manta-rs.git", rev = "249f8d22b9b634602ee5f2c1e6fbad878f33a729" }
-manta-crypto = { git = "https://github.com/manta-network//manta-rs.git", rev = "249f8d22b9b634602ee5f2c1e6fbad878f33a729" }
-manta-pay = { git = "https://github.com/manta-network//manta-rs.git", rev = "249f8d22b9b634602ee5f2c1e6fbad878f33a729" }
-manta-parameters = { git = "https://github.com/manta-network//manta-rs.git", rev = "249f8d22b9b634602ee5f2c1e6fbad878f33a729" }
-manta-util = { git = "https://github.com/manta-network//manta-rs.git", rev = "249f8d22b9b634602ee5f2c1e6fbad878f33a729" }

@@ -5096,7 +5096,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.5.8"
-source = "git+https://github.com/manta-network//manta-rs.git?rev=249f8d22b9b634602ee5f2c1e6fbad878f33a729#249f8d22b9b634602ee5f2c1e6fbad878f33a729"
+source = "git+https://github.com/manta-network/manta-rs.git?rev=249f8d22b9b634602ee5f2c1e6fbad878f33a729#249f8d22b9b634602ee5f2c1e6fbad878f33a729"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5140,7 +5140,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.5.8"
-source = "git+https://github.com/manta-network//manta-rs.git?rev=249f8d22b9b634602ee5f2c1e6fbad878f33a729#249f8d22b9b634602ee5f2c1e6fbad878f33a729"
+source = "git+https://github.com/manta-network/manta-rs.git?rev=249f8d22b9b634602ee5f2c1e6fbad878f33a729#249f8d22b9b634602ee5f2c1e6fbad878f33a729"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -5166,7 +5166,7 @@ dependencies = [
 [[package]]
 name = "manta-parameters"
 version = "0.5.8"
-source = "git+https://github.com/manta-network//manta-rs.git?rev=249f8d22b9b634602ee5f2c1e6fbad878f33a729#249f8d22b9b634602ee5f2c1e6fbad878f33a729"
+source = "git+https://github.com/manta-network/manta-rs.git?rev=249f8d22b9b634602ee5f2c1e6fbad878f33a729#249f8d22b9b634602ee5f2c1e6fbad878f33a729"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5179,7 +5179,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.5.8"
-source = "git+https://github.com/manta-network//manta-rs.git?rev=249f8d22b9b634602ee5f2c1e6fbad878f33a729#249f8d22b9b634602ee5f2c1e6fbad878f33a729"
+source = "git+https://github.com/manta-network/manta-rs.git?rev=249f8d22b9b634602ee5f2c1e6fbad878f33a729#249f8d22b9b634602ee5f2c1e6fbad878f33a729"
 dependencies = [
  "aes-gcm",
  "bip32",
@@ -5283,7 +5283,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.5.8"
-source = "git+https://github.com/manta-network//manta-rs.git?rev=249f8d22b9b634602ee5f2c1e6fbad878f33a729#249f8d22b9b634602ee5f2c1e6fbad878f33a729"
+source = "git+https://github.com/manta-network/manta-rs.git?rev=249f8d22b9b634602ee5f2c1e6fbad878f33a729#249f8d22b9b634602ee5f2c1e6fbad878f33a729"
 dependencies = [
  "crossbeam-channel",
  "serde",
