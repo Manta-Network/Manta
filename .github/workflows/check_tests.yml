@@ -160,13 +160,12 @@ jobs:
           rustup default stable
           rustup update
           rustup target add wasm32-unknown-unknown
-      - name: Run Unit Tests
+      - name: Run live benchmarks test
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
           SCCACHE_CACHE_SIZE: 2G
           SCCACHE_DIR: /home/runner/.cache/sccache
-      - name: run live benchmarks test
         run: |
           RUSTC_BOOTSTRAP=1 cargo run --release --features runtime-benchmarks,try-runtime \
           benchmark \
