@@ -70,6 +70,7 @@ pub mod fee;
 pub mod impls;
 mod nimbus_session_adapter;
 pub mod staking;
+pub mod xcm_config;
 
 use currency::*;
 use fee::WeightToFee;
@@ -504,6 +505,10 @@ construct_runtime!(
 
         // Preimage registry.
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 28,
+
+        // XCM helpers.
+        PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config} = 31,
+        DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
         // Handy utilities.
         Utility: pallet_utility::{Pallet, Call, Event} = 40,

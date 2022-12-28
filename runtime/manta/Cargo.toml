@@ -53,6 +53,7 @@ pallet-transaction-payment-rpc-runtime-api = { git = 'https://github.com/parityt
 pallet-utility = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.26" }
 
 # Cumulus dependencies
+cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.26" }
 cumulus-pallet-parachain-system = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.26" }
 cumulus-pallet-session-benchmarking = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, optional = true, branch = "polkadot-v0.9.26" }
 cumulus-primitives-core = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.26" }
@@ -68,6 +69,10 @@ pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", 
 # Polkadot dependencies
 polkadot-parachain = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
 polkadot-primitives = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
+xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
+xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
+pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
+xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
 
 # Self dependencies
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
@@ -101,6 +106,7 @@ runtime-benchmarks = [
   'pallet-utility/runtime-benchmarks',
   'pallet-timestamp/runtime-benchmarks',
   'pallet-preimage/runtime-benchmarks',
+  'pallet-parachain-staking/runtime-benchmarks',
 ]
 try-runtime = [
   'frame-executive/try-runtime',
@@ -158,9 +164,14 @@ std = [
   "cumulus-primitives-core/std",
   "cumulus-primitives-timestamp/std",
   "cumulus-primitives-utility/std",
+  "cumulus-pallet-dmp-queue/std",
   "pallet-author-inherent/std",
   "pallet-aura-style-filter/std",
   'session-key-primitives/std',
   'polkadot-primitives/std',
   'manta-collator-selection/std',
+  'xcm/std',
+  'pallet-xcm/std',
+  'xcm-executor/std',
+  'xcm-builder/std',
 ]

@@ -203,6 +203,9 @@ fn manta_dev_genesis(
                 .collect(),
         },
         parachain_system: Default::default(),
+        polkadot_xcm: calamari_runtime::PolkadotXcmConfig {
+            safe_xcm_version: Some(SAFE_XCM_VERSION),
+        },
     }
 }
 
