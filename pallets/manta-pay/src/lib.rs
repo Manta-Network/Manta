@@ -204,6 +204,19 @@ pub mod pallet {
         #[transactional]
         pub fn to_private(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
+            ensure!(
+                post.sources.len() == 1
+                    && post.sender_posts.is_empty()
+                    && post.receiver_posts.len() == 1
+                    && post.sinks.is_empty(),
+                Error::<T>::InvalidShape
+            );
+            for source in post.sources.iter() {
+                ensure!(
+                    asset_value_decode(*source) > 0u128,
+                    Error::<T>::ZeroTransfer
+                );
+            }
             Self::post_transaction(None, vec![origin], vec![], post)
         }
 
@@ -214,6 +227,16 @@ pub mod pallet {
         #[transactional]
         pub fn to_public(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
+            ensure!(
+                post.sources.is_empty()
+                    && post.sender_posts.len() == 2
+                    && post.receiver_posts.len() == 1
+                    && post.sinks.len() == 1,
+                Error::<T>::InvalidShape
+            );
+            for sink in post.sinks.iter() {
+                ensure!(asset_value_decode(*sink) > 0u128, Error::<T>::ZeroTransfer);
+            }
             Self::post_transaction(None, vec![], vec![origin], post)
         }
 
@@ -231,6 +254,13 @@ pub mod pallet {
             post: TransferPost,
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
+            ensure!(
+                post.sources.is_empty()
+                    && post.sender_posts.len() == 2
+                    && post.receiver_posts.len() == 2
+                    && post.sinks.is_empty(),
+                Error::<T>::InvalidShape
+            );
             Self::post_transaction(Some(origin), vec![], vec![], post)
         }
 
@@ -312,7 +342,7 @@ pub mod pallet {
 
         /// Zero Transfer
         ///
-        /// Public transfers cannot include amounts equal to zero.
+        /// Transfers cannot include amounts equal to zero.
         ZeroTransfer,
 
         /// Balance Low
