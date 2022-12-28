@@ -203,9 +203,9 @@ pub mod pallet {
             let origin = ensure_signed(origin)?;
             ensure!(
                 post.sources.len() == 1
-                    && post.sender_posts.len() == 0
+                    && post.sender_posts.is_empty()
                     && post.receiver_posts.len() == 1
-                    && post.sinks.len() == 0,
+                    && post.sinks.is_empty(),
                 Error::<T>::InvalidShape
             );
             for source in post.sources.iter() {
@@ -225,7 +225,7 @@ pub mod pallet {
         pub fn to_public(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
             ensure!(
-                post.sources.len() == 0
+                post.sources.is_empty()
                     && post.sender_posts.len() == 2
                     && post.receiver_posts.len() == 1
                     && post.sinks.len() == 1,
@@ -252,10 +252,10 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
             ensure!(
-                post.sources.len() == 0
+                post.sources.is_empty()
                     && post.sender_posts.len() == 2
                     && post.receiver_posts.len() == 2
-                    && post.sinks.len() == 0,
+                    && post.sinks.is_empty(),
                 Error::<T>::InvalidShape
             );
             Self::post_transaction(Some(origin), vec![], vec![], post)
