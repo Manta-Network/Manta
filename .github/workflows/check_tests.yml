@@ -189,8 +189,8 @@ jobs:
           github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN  }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-unit-test-checks.outputs.aws-region }}
-          runner-label: ${{ needs.start-unit-test-checks.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-unit-test-checks.outputs.aws-instance-id }}
+          aws-region: ${{ needs.start-benchmark-checks.outputs.aws-region }}
+          runner-label: ${{ needs.start-benchmark-checks.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-benchmark-checks.outputs.aws-instance-id }}
       - name: discard stopper success/failure
         run: true
