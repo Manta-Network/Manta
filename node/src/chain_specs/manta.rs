@@ -18,8 +18,8 @@
 
 use super::*;
 use crate::command::MANTA_PARACHAIN_ID;
-use manta_runtime::opaque::SessionKeys;
-use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
+use manta_runtime::{opaque::SessionKeys, GenesisConfig, ParachainStakingConfig};
+use session_key_primitives::util::unchecked_account_id;
 /// Manta Protocol Identifier
 pub const MANTA_PROTOCOL_ID: &str = "manta";
 
@@ -34,13 +34,6 @@ pub const SAFE_XCM_VERSION: u32 = 2;
 
 /// Manta Chain Specification
 pub type MantaChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
-
-/// Generate the manta session keys from individual elements.
-///
-/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn manta_session_keys(keys: AuraId) -> SessionKeys {
-    SessionKeys { aura: keys }
-}
 
 /// Returns the [`Properties`] for the Manta parachain.
 pub fn manta_properties() -> Properties {
@@ -61,9 +54,11 @@ pub fn manta_development_config() -> MantaChainSpec {
             manta_dev_genesis(
                 vec![(
                     unchecked_account_id::<sr25519::Public>("Alice"),
-                    unchecked_collator_keys("Alice").0,
+                    SessionKeys::from_seed_unchecked("Alice"),
                 )],
                 unchecked_account_id::<sr25519::Public>("Alice"),
+                // Delegations
+                vec![],
                 vec![
                     unchecked_account_id::<sr25519::Public>("Alice"),
                     unchecked_account_id::<sr25519::Public>("Bob"),
@@ -95,14 +90,28 @@ pub fn manta_local_config() -> MantaChainSpec {
                 vec![
                     (
                         unchecked_account_id::<sr25519::Public>("Alice"),
-                        unchecked_collator_keys("Alice").0,
+                        SessionKeys::from_seed_unchecked("Alice"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Bob"),
-                        unchecked_collator_keys("Bob").0,
+                        SessionKeys::from_seed_unchecked("Bob"),
+                    ),
+                    (
+                        unchecked_account_id::<sr25519::Public>("Charlie"),
+                        SessionKeys::from_seed_unchecked("Charlie"),
+                    ),
+                    (
+                        unchecked_account_id::<sr25519::Public>("Dave"),
+                        SessionKeys::from_seed_unchecked("Dave"),
+                    ),
+                    (
+                        unchecked_account_id::<sr25519::Public>("Eve"),
+                        SessionKeys::from_seed_unchecked("Eve"),
                     ),
                 ],
                 unchecked_account_id::<sr25519::Public>("Alice"),
+                // Delegations
+                vec![],
                 vec![
                     unchecked_account_id::<sr25519::Public>("Alice"),
                     unchecked_account_id::<sr25519::Public>("Bob"),
@@ -130,11 +139,12 @@ pub fn manta_local_config() -> MantaChainSpec {
 }
 
 fn manta_dev_genesis(
-    invulnerables: Vec<(AccountId, AuraId)>,
+    invulnerables: Vec<(AccountId, SessionKeys)>,
     root_key: AccountId,
+    delegations: Vec<(AccountId, AccountId, Balance)>,
     endowed_accounts: Vec<AccountId>,
-) -> manta_runtime::GenesisConfig {
-    manta_runtime::GenesisConfig {
+) -> GenesisConfig {
+    GenesisConfig {
         system: manta_runtime::SystemConfig {
             code: manta_runtime::WASM_BINARY
                 .expect("WASM binary was not build, please build it!")
@@ -157,30 +167,43 @@ fn manta_dev_genesis(
         sudo: manta_runtime::SudoConfig {
             key: Some(root_key),
         },
+        parachain_staking: ParachainStakingConfig {
+            candidates: invulnerables
+                .iter()
+                .cloned()
+                .map(|(account, _)| {
+                    (
+                        account,
+                        manta_runtime::staking::NORMAL_COLLATOR_MINIMUM_STAKE,
+                    )
+                })
+                .collect(),
+            delegations,
+            inflation_config: manta_runtime::staking::inflation_config::<manta_runtime::Runtime>(),
+        },
         parachain_info: manta_runtime::ParachainInfoConfig {
             parachain_id: MANTA_PARACHAIN_ID.into(),
         },
         collator_selection: manta_runtime::CollatorSelectionConfig {
             invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-            candidacy_bond: MANTA * 10000, // How many tokens will be reserved as collator
+            candidacy_bond: 10_000 * MANTA, // How many tokens will be reserved as collator
             ..Default::default()
         },
         session: manta_runtime::SessionConfig {
             keys: invulnerables
                 .iter()
                 .cloned()
-                .map(|(acc, aura)| {
+                .map(|(acc, session_keys)| {
                     (
-                        acc.clone(),              // account id
-                        acc,                      // validator id
-                        manta_session_keys(aura), // session keys
+                        acc.clone(),  // account id
+                        acc,          // validator id
+                        session_keys, // collator session keys
                     )
                 })
                 .collect(),
         },
-        aura_ext: Default::default(),
         parachain_system: Default::default(),
-        polkadot_xcm: manta_runtime::PolkadotXcmConfig {
+        polkadot_xcm: calamari_runtime::PolkadotXcmConfig {
             safe_xcm_version: Some(SAFE_XCM_VERSION),
         },
     }

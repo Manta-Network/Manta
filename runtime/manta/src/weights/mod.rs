@@ -17,10 +17,12 @@
 //! A list of the different weight modules for our runtime.
 
 pub mod frame_system;
+pub mod manta_collator_selection;
+pub mod pallet_author_inherent;
 pub mod pallet_balances;
 pub mod pallet_multisig;
+pub mod pallet_parachain_staking;
 pub mod pallet_preimage;
-pub mod pallet_scheduler;
 pub mod pallet_session;
 pub mod pallet_timestamp;
-pub mod pallet_tx_pause;
+pub mod pallet_utility;

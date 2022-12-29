@@ -1878,24 +1878,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-pallet-aura-ext"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.26#be9e23c377555cabb867326ace51e0ab72bee1b9"
-dependencies = [
- "frame-executive",
- "frame-support",
- "frame-system",
- "pallet-aura",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-application-crypto",
- "sp-consensus-aura",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "cumulus-pallet-dmp-queue"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.26#be9e23c377555cabb867326ace51e0ab72bee1b9"
@@ -5219,12 +5201,9 @@ dependencies = [
 name = "manta-runtime"
 version = "4.0.0-alpha.1"
 dependencies = [
- "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
- "cumulus-pallet-xcm",
- "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
@@ -5236,33 +5215,36 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "hex-literal",
+ "manta-collator-selection",
  "manta-primitives",
+ "nimbus-primitives",
  "pallet-aura",
+ "pallet-aura-style-filter",
+ "pallet-author-inherent",
  "pallet-authorship",
  "pallet-balances",
- "pallet-collator-selection",
  "pallet-multisig",
+ "pallet-parachain-staking",
  "pallet-preimage",
- "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
- "pallet-tx-pause",
  "pallet-utility",
  "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
  "polkadot-primitives",
- "polkadot-runtime-common",
  "runtime-common",
  "scale-info",
  "serde",
  "session-key-primitives",
  "smallvec",
  "sp-api",
+ "sp-application-crypto",
+ "sp-arithmetic",
  "sp-block-builder",
  "sp-consensus-aura",
  "sp-core",
@@ -6300,26 +6282,6 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-collator-selection"
-version = "3.0.0"
-source = "git+https://github.com/paritytech/cumulus.git?branch=polkadot-v0.9.26#be9e23c377555cabb867326ace51e0ab72bee1b9"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "pallet-authorship",
- "pallet-session",
- "parity-scale-codec",
- "rand 0.8.5",
- "scale-info",
- "serde",
- "sp-runtime",
- "sp-staking",
  "sp-std",
 ]
 

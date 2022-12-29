@@ -49,23 +49,3 @@ sp_application_crypto::with_pair! {
     /// Key Pair for the [`VrfId`] Key
     pub type VrfPair = vrf_crypto::Pair;
 }
-
-/// Testing Suite
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crate::{util::dummy_key, AuraId};
-    use sp_application_crypto::{sr25519, UncheckedFrom};
-
-    /// Checks that the dummy [`VrfId`] created from an [`AuraId`] is of the expected form.
-    #[test]
-    fn creating_dummy_vrf_id_from_aura_id_is_sane() {
-        for x in 0..0xFF {
-            let raw_key = sr25519::Public::unchecked_from([x; 32]);
-            assert_eq!(
-                VrfId::from(raw_key),
-                dummy_key::<VrfId>(AuraId::from(raw_key))
-            );
-        }
-    }
-}

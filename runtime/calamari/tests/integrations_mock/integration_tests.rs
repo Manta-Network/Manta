@@ -49,7 +49,7 @@ use manta_primitives::{
     constants::time::{DAYS, HOURS},
     types::{AccountId, Balance, CalamariAssetId, Header},
 };
-use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
+use session_key_primitives::util::unchecked_account_id;
 use xcm::{
     opaque::latest::{
         Junction::{PalletInstance, Parachain},
@@ -468,7 +468,7 @@ fn reward_fees_to_block_author_and_treasury() {
         ])
         .with_authorities(vec![(
             ALICE.clone(),
-            SessionKeys::new(unchecked_collator_keys("Alice")),
+            SessionKeys::from_seed_unchecked("Alice"),
         )])
         .build()
         .execute_with(|| {
