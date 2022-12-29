@@ -1,7 +1,7 @@
 name: calamari integration test
 on:
   push:
-    branches: [manta]
+    branches: [ghzlatarev/split-tests]
   pull_request:
     branches: [ghzlatarev/split-tests]
     types: [opened, reopened, synchronize, labeled]
