@@ -27,4 +27,3 @@ pub mod client;
 pub mod command;
 pub mod rpc;
 pub mod service;
-pub mod service_aura;

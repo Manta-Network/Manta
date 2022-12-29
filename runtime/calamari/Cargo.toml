@@ -190,7 +190,6 @@ try-runtime = [
   'frame-executive/try-runtime',
   'frame-try-runtime',
   'frame-system/try-runtime',
-  'pallet-aura/try-runtime',
   'pallet-authorship/try-runtime',
   'pallet-balances/try-runtime',
   'pallet-parachain-staking/try-runtime',

@@ -20,8 +20,7 @@ use crate::{
     chain_specs,
     cli::{Cli, RelayChainCli, Subcommand},
     rpc,
-    service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor},
-    service_aura::MantaRuntimeExecutor,
+    service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
 };
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
@@ -34,7 +33,6 @@ use sc_cli::{
     NetworkParams, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
-use session_key_primitives::AuraId;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{
     generic,
@@ -223,10 +221,7 @@ impl SubstrateCli for RelayChainCli {
 macro_rules! construct_benchmark_partials {
     ($config:expr, |$partials:ident| $code:expr) => {
         if $config.chain_spec.is_manta() {
-            let $partials = crate::service_aura::new_partial::<manta_runtime::RuntimeApi, _>(
-                &$config,
-                crate::service_aura::parachain_build_import_queue::<_, AuraId>,
-            )?;
+            let $partials = new_partial::<manta_runtime::RuntimeApi>(&$config)?;
             $code
         } else if $config.chain_spec.is_calamari() {
             let $partials = new_partial::<calamari_runtime::RuntimeApi>(&$config)?;
@@ -245,9 +240,8 @@ macro_rules! construct_async_run {
         let runner = $cli.create_runner($cmd)?;
             if runner.config().chain_spec.is_manta() {
                 runner.async_run(|$config| {
-                    let $components = crate::service_aura::new_partial::<manta_runtime::RuntimeApi, _>(
+                    let $components = crate::service::new_partial::<manta_runtime::RuntimeApi>(
                         &$config,
-                        crate::service_aura::parachain_build_import_queue::<_, AuraId>,
                     )?;
                     let task_manager = $components.task_manager;
                     { $( $code )* }.map(|v| (v, task_manager))
@@ -471,7 +465,7 @@ pub fn run_with(cli: Cli) -> Result {
                 );
 
                 if config.chain_spec.is_manta() {
-                    crate::service_aura::start_parachain_node::<manta_runtime::RuntimeApi, AuraId, _>(
+                    crate::service::start_parachain_node::<manta_runtime::RuntimeApi, _>(
                         config,
                         polkadot_config,
                         collator_options,
