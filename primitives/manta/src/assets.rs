@@ -352,6 +352,9 @@ pub enum FungibleLedgerError<I, B> {
 
     /// Unable to Transfer an Asset
     InvalidTransfer(DispatchError),
+
+    /// Encode Error
+    EncodeError,
 }
 
 impl<I, B> FungibleLedgerError<I, B> {

@@ -33,16 +33,16 @@ use frame_system::Config;
 
 /// Weight functions needed for pallet_manta_pay.
 pub trait WeightInfo {
-    /// Returns the [`Weight`] of the [`Pallet::to_private`] extrinsic.
+    /// Returns the [`Weight`] of the [`crate::Pallet::to_private`] extrinsic.
     fn to_private() -> Weight;
 
-    /// Returns the [`Weight`] of the [`Pallet::to_public`] extrinsic.
+    /// Returns the [`Weight`] of the [`crate::Pallet::to_public`] extrinsic.
     fn to_public() -> Weight;
 
-    /// Returns the [`Weight`] of the [`Pallet::private_transfer`] extrinsic.
+    /// Returns the [`Weight`] of the [`crate::Pallet::private_transfer`] extrinsic.
     fn private_transfer() -> Weight;
 
-    /// Returns the [`Weight`] of the [`Pallet::public_transfer`] extrinsic.
+    /// Returns the [`Weight`] of the [`crate::Pallet::public_transfer`] extrinsic.
     fn public_transfer() -> Weight;
 }
 
@@ -97,8 +97,9 @@ where
             .saturating_add(T::DbWeight::get().writes(13 as Weight))
     }
 
-    /// FIXME: PLACEHOLDER WEIGHT
+    // Storage: Assets Asset (r:1 w:1)
+    // Storage: Assets Account (r:2 w:2)
     fn public_transfer() -> Weight {
-        (100_000_000_000 as Weight)
+        (46_629_000 as Weight)
     }
 }

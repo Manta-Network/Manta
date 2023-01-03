@@ -20,8 +20,7 @@ use crate::{
     chain_specs,
     cli::{Cli, RelayChainCli, Subcommand},
     rpc,
-    service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor},
-    service_aura::MantaRuntimeExecutor,
+    service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
 };
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
@@ -34,7 +33,6 @@ use sc_cli::{
     NetworkParams, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
-use session_key_primitives::AuraId;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{
     generic,
@@ -52,7 +50,7 @@ pub type Result<T = (), E = Error> = core::result::Result<T, E>;
 pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
 /// Manta Parachain ID
-pub const MANTA_PARACHAIN_ID: u32 = 2015;
+pub const MANTA_PARACHAIN_ID: u32 = 2100;
 
 /// Calamari Parachain ID
 pub const CALAMARI_PARACHAIN_ID: u32 = 2084;
@@ -105,22 +103,20 @@ fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         "manta-dev" => Ok(Box::new(chain_specs::manta_development_config())),
         "manta-local" => Ok(Box::new(chain_specs::manta_local_config())),
         "manta-testnet" => Ok(Box::new(chain_specs::manta_testnet_config()?)),
-        "manta-testnet-ci" => Ok(Box::new(chain_specs::manta_testnet_ci_config()?)),
         "manta" => Ok(Box::new(chain_specs::manta_config()?)),
         // calamari chainspec
         "calamari-dev" => Ok(Box::new(chain_specs::calamari_development_config())),
         "calamari-local" => Ok(Box::new(chain_specs::calamari_local_config(false))),
         "calamari-localdev" => Ok(Box::new(chain_specs::calamari_local_config(true))),
         "calamari-testnet" => Ok(Box::new(chain_specs::calamari_testnet_config()?)),
-        "calamari-testnet-ci" => Ok(Box::new(chain_specs::calamari_testnet_ci_config()?)),
         "calamari" => Ok(Box::new(chain_specs::calamari_config()?)),
         // dolphin chainspec
         "dolphin-dev" => Ok(Box::new(chain_specs::dolphin_development_config())),
-        "dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config())),
-        "dolphin-localdev" => Ok(Box::new(chain_specs::dolphin_local_config())),
+        "dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config(false))),
+        "dolphin-localdev" => Ok(Box::new(chain_specs::dolphin_local_config(true))),
         "dolphin-testnet" => Ok(Box::new(chain_specs::dolphin_testnet_config()?)),
         "dolphin-2085" => Ok(Box::new(chain_specs::dolphin_2085_config()?)),
-        "dolphin-testnet-ci" => Ok(Box::new(chain_specs::dolphin_testnet_ci_config()?)),
+        "dolphin-v3-staging" => Ok(Box::new(chain_specs::dolphin_v3_2085_staging_config()?)),
         path => {
             let chain_spec = chain_specs::ChainSpec::from_json_file(path.into())?;
             if chain_spec.is_manta() {
@@ -234,10 +230,7 @@ impl SubstrateCli for RelayChainCli {
 macro_rules! construct_benchmark_partials {
     ($config:expr, |$partials:ident| $code:expr) => {
         if $config.chain_spec.is_manta() {
-            let $partials = crate::service_aura::new_partial::<manta_runtime::RuntimeApi, _>(
-                &$config,
-                crate::service_aura::parachain_build_import_queue::<_, AuraId>,
-            )?;
+            let $partials = new_partial::<manta_runtime::RuntimeApi>(&$config)?;
             $code
         } else if $config.chain_spec.is_calamari() {
             let $partials = new_partial::<calamari_runtime::RuntimeApi>(&$config)?;
@@ -256,9 +249,8 @@ macro_rules! construct_async_run {
         let runner = $cli.create_runner($cmd)?;
             if runner.config().chain_spec.is_manta() {
                 runner.async_run(|$config| {
-                    let $components = crate::service_aura::new_partial::<manta_runtime::RuntimeApi, _>(
+                    let $components = crate::service::new_partial::<manta_runtime::RuntimeApi>(
                         &$config,
-                        crate::service_aura::parachain_build_import_queue::<_, AuraId>,
                     )?;
                     let task_manager = $components.task_manager;
                     { $( $code )* }.map(|v| (v, task_manager))
@@ -333,7 +325,7 @@ pub fn run_with(cli: Cli) -> Result {
                     &polkadot_cli,
                     config.tokio_handle.clone(),
                 )
-                .map_err(|err| format!("Relay chain argument error: {}", err))?;
+                .map_err(|err| format!("Relay chain argument error: {err}"))?;
 
                 cmd.run(config, polkadot_config)
             })
@@ -405,7 +397,7 @@ pub fn run_with(cli: Cli) -> Result {
                 .map(|cfg| &cfg.registry);
             let task_manager =
                 sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
-                    .map_err(|e| format!("Error: {:?}", e))?;
+                    .map_err(|e| format!("Error: {e:?}"))?;
 
             if runner.config().chain_spec.is_manta() {
                 runner.async_run(|config| {
@@ -483,13 +475,13 @@ pub fn run_with(cli: Cli) -> Result {
 
                 let block: crate::service::Block =
                     generate_genesis_block(&*config.chain_spec, state_version)
-                        .map_err(|e| format!("{:?}", e))?;
+                        .map_err(|e| format!("{e:?}"))?;
                 let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
                 let tokio_handle = config.tokio_handle.clone();
                 let polkadot_config =
                     SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
-                        .map_err(|err| format!("Relay chain argument error: {}", err))?;
+                        .map_err(|err| format!("Relay chain argument error: {err}"))?;
 
                 info!("Parachain id: {:?}", id);
                 info!("Parachain Account: {}", parachain_account);
@@ -504,7 +496,7 @@ pub fn run_with(cli: Cli) -> Result {
                 );
 
                 if config.chain_spec.is_manta() {
-                    crate::service_aura::start_parachain_node::<manta_runtime::RuntimeApi, AuraId, _>(
+                    crate::service::start_parachain_node::<manta_runtime::RuntimeApi, _>(
                         config,
                         polkadot_config,
                         collator_options,
@@ -522,7 +514,7 @@ pub fn run_with(cli: Cli) -> Result {
                         collator_options,
                         id,
                         hwbench,
-                        rpc::create_common_full,
+                        rpc::create_calamari_full,
                     )
                     .await
                     .map(|r| r.0)

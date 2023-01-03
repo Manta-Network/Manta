@@ -24,7 +24,7 @@ use manta_primitives::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
         AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
-    constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
+    constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL, MANTA_PAY_PALLET_ID},
     types::{AccountId, Balance, CalamariAssetId},
 };
 
@@ -163,4 +163,15 @@ impl pallet_asset_manager::Config for Runtime {
     type ModifierOrigin = EnsureRoot<AccountId>;
     type PalletId = AssetManagerPalletId;
     type WeightInfo = weights::pallet_asset_manager::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+    pub const MantaPayPalletId: PalletId = MANTA_PAY_PALLET_ID;
+}
+
+impl pallet_manta_pay::Config for Runtime {
+    type Event = Event;
+    type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
+    type AssetConfig = CalamariAssetConfig;
+    type PalletId = MantaPayPalletId;
 }

@@ -110,7 +110,8 @@ impl pallet_balances::Config for Test {
 }
 
 parameter_types! {
-    pub const AssetDeposit: Balance = 0; // Does not really matter as this will be only called by root
+    // Does not really matter as this will be only called by root
+    pub const AssetDeposit: Balance = 0;
     pub const AssetAccountDeposit: Balance = 0;
     pub const ApprovalDeposit: Balance = 0;
     pub const AssetsStringLimit: u32 = 50;
