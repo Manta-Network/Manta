@@ -112,6 +112,15 @@ pub mod opaque {
             let (aura, nimbus, vrf) = tuple;
             SessionKeys { aura, nimbus, vrf }
         }
+        /// Derives all collator keys from `seed` without checking that the `seed` is valid.
+        #[cfg(feature = "std")]
+        pub fn from_seed_unchecked(seed: &str) -> SessionKeys {
+            Self::new((
+                session_key_primitives::util::unchecked_public_key::<AuraId>(seed),
+                session_key_primitives::util::unchecked_public_key::<NimbusId>(seed),
+                session_key_primitives::util::unchecked_public_key::<VrfId>(seed),
+            ))
+        }
     }
 }
 
@@ -825,7 +834,7 @@ construct_runtime!(
 
         // Preimage registry.
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 28,
-        // System scheduler.
+        // System scheduler
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 29,
 
         // XCM helpers.

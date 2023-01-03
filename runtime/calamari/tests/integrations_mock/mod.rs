@@ -32,7 +32,7 @@ use frame_support::{
 };
 use lazy_static::lazy_static;
 use manta_primitives::types::{AccountId, Balance};
-use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
+use session_key_primitives::util::unchecked_account_id;
 use sp_core::sr25519::Public;
 
 pub const INITIAL_BALANCE: Balance = 1_000_000_000_000 * KMA;
@@ -45,17 +45,14 @@ lazy_static! {
     pub(crate) static ref EVE: AccountId = unchecked_account_id::<Public>("Eve");
     pub(crate) static ref FERDIE: AccountId = unchecked_account_id::<Public>("Ferdie");
     pub(crate) static ref ALICE_SESSION_KEYS: SessionKeys =
-        SessionKeys::new(unchecked_collator_keys("Alice"));
-    pub(crate) static ref BOB_SESSION_KEYS: SessionKeys =
-        SessionKeys::new(unchecked_collator_keys("Bob"));
+        SessionKeys::from_seed_unchecked("Alice");
+    pub(crate) static ref BOB_SESSION_KEYS: SessionKeys = SessionKeys::from_seed_unchecked("Bob");
     pub(crate) static ref CHARLIE_SESSION_KEYS: SessionKeys =
-        SessionKeys::new(unchecked_collator_keys("Charlie"));
-    pub(crate) static ref DAVE_SESSION_KEYS: SessionKeys =
-        SessionKeys::new(unchecked_collator_keys("Dave"));
-    pub(crate) static ref EVE_SESSION_KEYS: SessionKeys =
-        SessionKeys::new(unchecked_collator_keys("Eve"));
+        SessionKeys::from_seed_unchecked("Charlie");
+    pub(crate) static ref DAVE_SESSION_KEYS: SessionKeys = SessionKeys::from_seed_unchecked("Dave");
+    pub(crate) static ref EVE_SESSION_KEYS: SessionKeys = SessionKeys::from_seed_unchecked("Eve");
     pub(crate) static ref FERDIE_SESSION_KEYS: SessionKeys =
-        SessionKeys::new(unchecked_collator_keys("Ferdie"));
+        SessionKeys::from_seed_unchecked("Ferdie");
 }
 
 /// create a transaction info struct from weight. Handy to avoid building the whole struct.

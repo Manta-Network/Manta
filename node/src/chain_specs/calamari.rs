@@ -23,7 +23,7 @@ use calamari_runtime::{
     currency::KMA, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig,
     ParachainStakingConfig, TechnicalCommitteeConfig,
 };
-use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
+use session_key_primitives::util::unchecked_account_id;
 /// Calamari Protocol Identifier
 pub const CALAMARI_PROTOCOL_ID: &str = "calamari";
 
@@ -61,7 +61,7 @@ pub fn calamari_development_config() -> CalamariChainSpec {
             calamari_dev_genesis(
                 vec![(
                     unchecked_account_id::<sr25519::Public>("Alice"),
-                    SessionKeys::new(unchecked_collator_keys("Alice")),
+                    SessionKeys::from_seed_unchecked("Alice"),
                 )],
                 // Delegations
                 vec![],
@@ -96,23 +96,23 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                 vec![
                     (
                         unchecked_account_id::<sr25519::Public>("Alice"),
-                        SessionKeys::new(unchecked_collator_keys("Alice")),
+                        SessionKeys::from_seed_unchecked("Alice"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Bob"),
-                        SessionKeys::new(unchecked_collator_keys("Bob")),
+                        SessionKeys::from_seed_unchecked("Bob"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Charlie"),
-                        SessionKeys::new(unchecked_collator_keys("Charlie")),
+                        SessionKeys::from_seed_unchecked("Charlie"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Dave"),
-                        SessionKeys::new(unchecked_collator_keys("Dave")),
+                        SessionKeys::from_seed_unchecked("Dave"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Eve"),
-                        SessionKeys::new(unchecked_collator_keys("Eve")),
+                        SessionKeys::from_seed_unchecked("Eve"),
                     ),
                 ],
                 // Delegations

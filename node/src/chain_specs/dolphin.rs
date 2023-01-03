@@ -21,7 +21,7 @@ use crate::command::{DOLPHIN_ON_BAIKAL_PARACHAIN_ID, DOLPHIN_PARACHAIN_ID};
 use dolphin_runtime::{
     opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
 };
-use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
+use session_key_primitives::util::unchecked_account_id;
 
 /// Dolphin Protocol Identifier
 pub const DOLPHIN_PROTOCOL_ID: &str = "dolphin";
@@ -56,7 +56,7 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
             dolphin_dev_genesis(
                 vec![(
                     unchecked_account_id::<sr25519::Public>("Alice"),
-                    SessionKeys::new(unchecked_collator_keys("Alice")),
+                    SessionKeys::from_seed_unchecked("Alice"),
                 )],
                 unchecked_account_id::<sr25519::Public>("Alice"),
                 vec![
@@ -90,23 +90,23 @@ pub fn dolphin_local_config() -> DolphinChainSpec {
                 vec![
                     (
                         unchecked_account_id::<sr25519::Public>("Alice"),
-                        SessionKeys::new(unchecked_collator_keys("Alice")),
+                        SessionKeys::from_seed_unchecked("Alice"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Bob"),
-                        SessionKeys::new(unchecked_collator_keys("Bob")),
+                        SessionKeys::from_seed_unchecked("Bob"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Charlie"),
-                        SessionKeys::new(unchecked_collator_keys("Charlie")),
+                        SessionKeys::from_seed_unchecked("Charlie"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Dave"),
-                        SessionKeys::new(unchecked_collator_keys("Dave")),
+                        SessionKeys::from_seed_unchecked("Dave"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Eve"),
-                        SessionKeys::new(unchecked_collator_keys("Eve")),
+                        SessionKeys::from_seed_unchecked("Eve"),
                     ),
                 ],
                 unchecked_account_id::<sr25519::Public>("Alice"),
