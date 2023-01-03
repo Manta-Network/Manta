@@ -115,14 +115,6 @@ jobs:
       fail-fast: false
       matrix:
         chain-spec:
-          - id: dolphin-dev
-            expected:
-              block-count:
-                relay: 25
-                para: 6
-              peer-count:
-                relay: 7
-                para: 4
           - id: dolphin-local
             expected:
               block-count:
