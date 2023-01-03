@@ -18,6 +18,7 @@
 - [\#937](https://github.com/Manta-Network/Manta/pull/937) Set collator minimum bond to 4M KMA [CA]
 - [\#949](https://github.com/Manta-Network/Manta/pull/949) fix: distinguish between panic-errors and possible-fix-errors [CA]
 - [\#946](https://github.com/Manta-Network/Manta/pull/946) Update Manta Runtime [MA]
+- [\#956](https://github.com/Manta-Network/Manta/pull/956) Reduce running time for CI tests [CADO]
 
 ### Fixed
 - [\#924](https://github.com/Manta-Network/Manta/pull/924) Fix runtime upgrade test by using governance instead of SUDO [CADO]
