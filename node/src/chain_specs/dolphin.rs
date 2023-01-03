@@ -82,9 +82,9 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
 /// Returns the Dolphin local chainspec.
 pub fn dolphin_local_config(localdev: bool) -> DolphinChainSpec {
     let id = if localdev {
-        "calamari_localdev"
+        "dolphin_localdev"
     } else {
-        "calamari_local"
+        "dolphin_local"
     };
     DolphinChainSpec::from_genesis(
         "Dolphin Parachain Local",
