@@ -33,24 +33,24 @@ These checks should be performed on the codebase prior to freezing our release c
     - [ ] Create a Pre-Release on github and add Release Notes (see below for what needs to be in them)
 
 # Deploy to internal testnets ( fast runtime )
-    - [ ] Verify Polkadot JS API are up to date with the latest
-        runtime changes.
-    - [ ] Execute client upgrade on Baikal relaychain nodes if needed
-    - [ ] Execute runtime upgrade to Baikal relaychain and verify network stability.
-    - [ ] Execute client upgrade on Calamari @ Baikal nodes if needed
-    - [ ] Execute runtime upgrade to Calamari @ Baikal and verify network stability.
+- [ ] Verify Polkadot JS API are up to date with the latest
+    runtime changes.
+- [ ] Execute client upgrade on Baikal relaychain nodes if needed
+- [ ] Execute runtime upgrade to Baikal relaychain and verify network stability.
+- [ ] Execute client upgrade on Calamari @ Baikal nodes if needed
+- [ ] Execute runtime upgrade to Calamari @ Baikal and verify network stability.
 - [ ] Complete the [manual QA workflow](https://www.notion.so/mantanetwork/d55be01354bb4f579b16d6e34df9e2e1?v=dcfa54e2b4a343ad9b899574ddb94a1c).
 - [ ] If the release contains any changes that break/change functionality used in https://github.com/Manta-Network/sdk (e.g. RPC changes, see also [extrinsic ordering](#extrinsic-ordering)), raise a PR there and **block this release** until your PR has been merged and incorporated in a new SDK release.
 
 # Deploy to public testnet
-    - [ ] execute client upgrade on calamari @ moonbase-relay nodes if needed
-    - [ ] execute runtime upgrade to calamari @ moonbase-relay and verify network stability.
-    - [ ] execute client upgrade on calamari @ kusama-internal nodes if needed
-    - [ ] execute runtime upgrade to calamari @ kusama-internal and verify network stability.
+- [ ] execute client upgrade on calamari @ moonbase-relay nodes if needed
+- [ ] execute runtime upgrade to calamari @ moonbase-relay and verify network stability.
+- [ ] execute client upgrade on calamari @ kusama-internal nodes if needed
+- [ ] execute runtime upgrade to calamari @ kusama-internal and verify network stability.
 - [ ] check network health metrics like average block times, block authors, etc with this tool https://parachain-utilities.vercel.app/
 - [ ] Coordinate with marketing team for documentation updates and other relevant tasks.
 - [ ] Monitor [Grafana Node Explorer](https://grafana.pulse.pelagos.systems/d/rYdddlPWk/node-exporter-full) for anomalies in our nodes' memory, cpu, disk and network usage. These would include but are not limited to: memory leaks, cpu spikes, spike in tcp sockets waiting to close, etc. Make sure to take a look at all of the available graphs because some problems might only be visible in views that are collapsed by default
-- [ ] Check that the new client and/or runtime versions have [burned-in](#burn-in) without issue for at least 3 days.
+- [ ] Check that the new client and/or runtime versions have burned-in without issue for at least 3 days.
 - [ ] Keep an eye out on the [manta status dashboard](https://status.manta.network/) for additional metrics like outages.
 
 # Deploy to mainnet
