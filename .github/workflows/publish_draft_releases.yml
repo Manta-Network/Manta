@@ -18,7 +18,7 @@ env:
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
 jobs:
   get-rust-versions:
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-20.04
     container:
       image: paritytech/ci-linux:production
@@ -33,7 +33,7 @@ jobs:
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
   build-runtimes:
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
@@ -77,7 +77,7 @@ jobs:
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
   build-node-current:
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     needs: start-node-builder-current
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     env:
@@ -271,7 +271,7 @@ jobs:
         with:
           args: 'draft runtime release ${{ github.ref }} created at ${{ needs.create-draft-release.outputs.release_url }}'
   start-node-builder-current:
-    if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-20.04
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
