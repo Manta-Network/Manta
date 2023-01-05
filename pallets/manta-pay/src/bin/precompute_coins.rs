@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -218,7 +218,7 @@ fn main() -> Result<()> {
     writeln!(
         target_file,
         indoc! {r"
-            // Copyright 2020-2022 Manta Network.
+            // Copyright 2020-2023 Manta Network.
             // This file is part of Manta.
             //
             // Manta is free software: you can redistribute it and/or modify
