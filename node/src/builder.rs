@@ -22,6 +22,7 @@ use crate::{
     instant_finalize::InstantFinalizeBlockImport,
     service::{Client, StateBackend, TransactionPool},
 };
+use std::future::Future;
 
 pub use manta_primitives::types::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
 use polkadot_service::CollatorPair;
@@ -144,14 +145,14 @@ where
     }))
 }
 
-/// start standalone dev consensus
-pub fn start_dev_nimbus_instant_seal_consensus<RuntimeApi>(
+/// build standalone mode dev consensus using manual instant seal
+pub fn build_dev_nimbus_consensus<RuntimeApi>(
     client: Arc<Client<RuntimeApi>>,
     transaction_pool: Arc<TransactionPool<RuntimeApi>>,
     keystore_container: &KeystoreContainer,
     select_chain: LongestChain<TFullBackend<Block>, Block>,
     task_manager: &TaskManager,
-) -> Result<(), Error>
+) -> Result<impl Future<Output = ()> + Send + 'static, Error>
 where
     RuntimeApi: ConstructRuntimeApi<Block, Client<RuntimeApi>> + Send + Sync + 'static,
     RuntimeApi::RuntimeApi: RuntimeApiCommon<StateBackend = StateBackend> + RuntimeApiNimbus,
@@ -225,11 +226,5 @@ where
         },
     });
 
-    task_manager.spawn_essential_handle().spawn_blocking(
-        "authorship_task",
-        Some("block-authoring"),
-        consensus,
-    );
-
-    Ok(())
+    Ok(consensus)
 }

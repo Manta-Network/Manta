@@ -427,7 +427,7 @@ pub fn run_with(cli: Cli) -> Result {
 
             runner.run_node_until_exit(|config| async move {
                 if is_dev {
-                    info!("DEV STANDALONE MODE.");
+                    info!("⚠️  DEV STANDALONE MODE.");
                     if config.chain_spec.is_dolphin() {
                         return crate::service::start_dev_nimbus_node::<dolphin_runtime::RuntimeApi, _>(
                             config,

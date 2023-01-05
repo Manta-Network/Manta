@@ -424,13 +424,19 @@ where
     let select_chain = LongestChain::new(backend.clone());
 
     if role.is_authority() {
-        crate::builder::start_dev_nimbus_instant_seal_consensus(
+        let dev_consensus = crate::builder::build_dev_nimbus_consensus(
             client.clone(),
             transaction_pool.clone(),
             &keystore_container,
             select_chain,
             &task_manager,
         )?;
+
+        task_manager.spawn_essential_handle().spawn_blocking(
+            "authorship_task",
+            Some("block-authoring"),
+            dev_consensus,
+        );
     }
 
     let rpc_builder = {
