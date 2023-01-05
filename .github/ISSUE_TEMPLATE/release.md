@@ -8,63 +8,59 @@ title: Manta {{ SET_VERSION }} Release checklist
 Most of the following checks should be completed before officially publishing the new release
 of the Calamari/Manta runtime or client. Some need to be completed after the new code is deployed.
 
-### Runtime Releases
-
 These checks should be performed on the codebase prior to freezing our release candidate:
 
-- [ ] Verify [`spec_version`](#spec-version) has been incremented since the
-    last release for any native runtimes from any existing use on public
-    (non-private/test) networks. If the runtime was published (release or pre-release), either
-    the `spec_version` or `impl` must be bumped.
-- [ ] Verify pallet and [extrinsic ordering](#extrinsic-ordering) has stayed
-    the same. Bump `transaction_version` if not.
-- [ ] Verify new extrinsics have been correctly whitelisted/blacklisted
-- [ ] Verify [benchmarks](#benchmarks) have been updated for any modified
-    runtime logic.
-- [ ] Check for any upstream storage migrations and perform tests with `try-runtime`, if any.
-- [ ] Update hard-coded URLs to polkadot/manta binaries/runtimes in `publish_draft_releases.yml` CI workflow.
+- [ ] Announce code freeze (typically one week prior to release), to ensure we have enough time for related testing. Notify everyone @Runtime that a release is ongoing and no more merges to `manta` should happen until told otherwise
+- On a branch named `release-vX.Y.Z` or `release-vX.Y.Z-something` ( something could be e.g. `alpha` or `rc1` ). Substitute X Y Z with the release version number.
+    - [ ] Verify that each crate's `version` has been bumped from previous release.
+    - [ ] Verify [`spec_version`](#spec-version) has been incremented since the
+        last release for any native runtimes from any existing use on public
+        (non-private/test) networks. If the runtime was published (release or pre-release), either
+        the `spec_version` or `impl` must be bumped.
+    - [ ] Verify pallet and [extrinsic ordering](#extrinsic-ordering) has stayed
+        the same. Bump `transaction_version` if not.
+    - [ ] Verify new extrinsics have been correctly whitelisted/blacklisted
+    - [ ] Verify [benchmarks](#benchmarks) have been updated for any modified
+        runtime logic.
+    - [ ] Check for any upstream storage migrations and perform tests with `try-runtime`, if any.
+    - [ ] Grep github actions files for `POLKADOT_BINARY` and `_BINARY` and update them
+    - [ ] Generate new changelog using `dev-tools` repo
+    - [ ] Merge when green and reviewed
+    - [ ] Tag the release with the same version you used on the release PR. IMPORTANT: Use the `manta` branch commit for the tag, NOT a `release-` or other branch
+    - [ ] Wait for CI to succeed running on the tag
+    - [ ] Check that a draft release has been created at https://github.com/Manta-Network/Manta/releases with relevant [release notes](#release-notes)
+    - [ ] Check that build artifacts have been added to the draft-release
+    - [ ] Create a Pre-Release on github and add Release Notes (see below for what needs to be in them)
 
-The following checks can be performed after we have frozen our release candidate:
-
-- [ ] Code freeze should typically happen one week prior to release, to ensure we have enough time for related testing.
-- [ ] Notify everyone, especially people with merge rights to `manta` (stechu, Dengjianping) that a release is ongoing and no more merges to `manta` should happen until told otherwise
-- [ ] Complete the [manual QA workflow](https://www.notion.so/mantanetwork/d55be01354bb4f579b16d6e34df9e2e1?v=dcfa54e2b4a343ad9b899574ddb94a1c).
+# Deploy to internal testnets ( fast runtime )
 - [ ] Verify Polkadot JS API are up to date with the latest
     runtime changes.
-- [ ] Execute runtime upgrade to Baikal relay and verify network stability.
-- [ ] Execute runtime upgrade to Calamari @ Baikal and verify network stability.
-- [ ] Execute runtime upgrade to Calamari @ Moonbase-Relay and verify network stability.
-- [ ] Execute runtime upgrade to Dolphin @ Baikal and verify network stability.
-- [ ] Check network health metrics like average block times, block authors, etc with this tool https://parachain-utilities.vercel.app/
-
-Note: Usually update client first then runtime.
-
-### Client Releases
-
-- [ ] Verify that each crate's `version` has been bumped from previous release.
-- [ ] Update client of Baikal relay nodes.
-- [ ] Update client of Calamari-Testnet @ Baikal nodes.
-- [ ] Update client of Calamari-Testnet @ Moonbase-Relay nodes.
-- [ ] Update client of Dolphin @ Baikal nodes.
-
-### All Releases
-
-- [ ] Check that a draft release has been created at
-    https://github.com/Manta-Network/Manta/releases with relevant [release
-    notes](#release-notes)
-- [ ] Check that build artifacts have been added to the
-    draft-release
-- [ ] Coordinate with marketing team for documentation updates and other relevant tasks.
-- [ ] Update changelog.
+- Unless this release specifies a special upgrade process:
+    - [ ] Execute client upgrade on Baikal relaychain nodes
+    - [ ] Execute runtime upgrade to Baikal relaychain and verify network stability.
+    - [ ] Execute client upgrade on Calamari @ Baikal nodes if needed
+    - [ ] Execute runtime upgrade to Calamari @ Baikal and verify network stability.
+- [ ] Complete the [manual QA workflow](https://www.notion.so/mantanetwork/d55be01354bb4f579b16d6e34df9e2e1?v=dcfa54e2b4a343ad9b899574ddb94a1c).
 - [ ] If the release contains any changes that break/change functionality used in https://github.com/Manta-Network/sdk (e.g. RPC changes, see also [extrinsic ordering](#extrinsic-ordering)), raise a PR there and **block this release** until your PR has been merged and incorporated in a new SDK release.
-- [ ] Check that the new client and/or runtime versions have [burned-in](#burn-in) without issue for at least 3 days.
-- [ ] Before declaring a successful burn-in make sure to check for anomalies in our nodes' memory, cpu, disk and network usage via the [Grafana Node Explorer](https://grafana.pulse.pelagos.systems/d/rYdddlPWk/node-exporter-full). These would include but are not limited to: memory leaks, cpu spikes, spike in tcp sockets waiting to close, etc. Make sure to take a look at all of the available graphs, because some problems might only show up in the collapsed views.
+
+# Deploy to public testnet
+- Unless this release specifies a special upgrade process:
+    - [ ] Execute client upgrade on calamari @ moonbase-relay nodes if needed
+    - [ ] Execute runtime upgrade to calamari @ moonbase-relay and verify network stability.
+    - [ ] Execute client upgrade on calamari @ kusama-internal nodes if needed
+    - [ ] Execute runtime upgrade to calamari @ kusama-internal and verify network stability.
+- [ ] Check network health metrics like average block times, block authors, etc with this tool https://parachain-utilities.vercel.app/
+- [ ] Coordinate with marketing team for documentation updates and other relevant tasks.
+- [ ] Monitor [Grafana Node Explorer](https://grafana.pulse.pelagos.systems/d/rYdddlPWk/node-exporter-full) for anomalies in our nodes' memory, cpu, disk and network usage. These would include but are not limited to: memory leaks, cpu spikes, spike in tcp sockets waiting to close, etc. Make sure to take a look at all of the available graphs because some problems might only be visible in views that are collapsed by default
+- [ ] Check that the new client and/or runtime versions have burned-in without issue for at least 3 days.
 - [ ] Keep an eye out on the [manta status dashboard](https://status.manta.network/) for additional metrics like outages.
 
-Note: Do not publish draft releases from PR branches, because those branches will be deleted when the PR is merged.
-
+# Deploy to mainnet
 ### Before Runtime Upgrade Vote
-- [ ] Prepare a governance post and submit to our forum with description and motivation for changes.
+- [ ] Prepare a governance post with description and motivation for changes.
+- [ ] Promote the Pre-Release to a full (latest) Release on github.
+- [ ] Start the governance motion to `authorize_upgrade`.
+- [ ] Submit governance post to our forum with description and motivation for changes.
 
 ### During Runtime Upgrade Vote
 - Notify all external users of `manta`, include the block number the upgrade is enacted!
@@ -72,14 +68,10 @@ Note: Do not publish draft releases from PR branches, because those branches wil
   - [ ] Manta/Calamari Discord Announcement
   - [ ] [Exchange Integration Teams](https://www.notion.so/mantanetwork/Exchanges-3rd-Infrastructures-b089e136a14b430ea405400311b362cb)
   - [ ] Subscan team. Ensure subscan service can continue to scan calamari blocks.
+- Unless this release specifies a special upgrade process:
+    - [ ] Execute client upgrade on company mainnet nodes
 
 ## Notes
-
-### Burn In
-
-- [ ] Ensure that Manta DevOps has run the new release on Baikal nodes for at least 3 days prior to publishing the release.
-- [ ] Check all testnet nodes [on Grafana](https://grafana.pulse.pelagos.systems/d/rYdddlPWk/node-exporter-full?orgId=1&refresh=1m&var-DS_PROMETHEUS=default&var-job=calamari-testnet%20invulnerable%20collator%20(ssl)&var-node=crunchy.baikal.testnet.calamari.systems:443&var-diskdevices=%5Ba-z%5D%2B%7Cnvme%5B0-9%5D%2Bn%5B0-9%5D%2B%7Cmmcblk%5B0-9%5D%2B) for irregularities since the upgrade
-
 ### Release notes
 
 The release notes **MUST** contain:
