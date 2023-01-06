@@ -19,10 +19,8 @@
 #![cfg(test)]
 
 use codec::Encode;
-use frame_support::{
-    assert_err, assert_noop, assert_ok, weights::constants::WEIGHT_PER_SECOND, WeakBoundedVec,
-};
-use manta_primitives::assets::AssetLocation;
+use frame_support::{assert_err, assert_noop, assert_ok, WeakBoundedVec};
+use manta_primitives::{assets::AssetLocation, constants::WEIGHT_PER_SECOND};
 use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
 use xcm_executor::traits::{Convert, WeightBounds};
 use xcm_simulator::TestExt;

@@ -698,16 +698,6 @@ fn collator_with_400k_not_selected_for_block_production() {
 }
 
 #[test]
-fn sanity_check_weight_per_time_constants_are_as_expected() {
-    // These values comes from Substrate, we want to make sure that if it
-    // ever changes we don't accidentally break Polkadot
-    assert_eq!(WEIGHT_PER_SECOND, 1_000_000_000_000);
-    assert_eq!(WEIGHT_PER_MILLIS, WEIGHT_PER_SECOND / 1000);
-    assert_eq!(WEIGHT_PER_MICROS, WEIGHT_PER_MILLIS / 1000);
-    assert_eq!(WEIGHT_PER_NANOS, WEIGHT_PER_MICROS / 1000);
-}
-
-#[test]
 fn calamari_vesting_works() {
     ExtBuilder::default().build().execute_with(|| {
         let unvested = 100 * KMA;
