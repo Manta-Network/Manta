@@ -86,13 +86,23 @@ pub fn calamari_development_config() -> CalamariChainSpec {
 }
 
 /// Returns the Calamari local chainspec.
-pub fn calamari_local_config() -> CalamariChainSpec {
+pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
+    let id = if localdev {
+        "calamari_localdev"
+    } else {
+        "calamari_local"
+    };
     CalamariChainSpec::from_genesis(
         "Calamari Parachain Local",
-        "calamari_local",
+        id,
         ChainType::Local,
         move || {
-            calamari_dev_genesis(
+            let invulnerables = if localdev {
+                vec![(
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    SessionKeys::from_seed_unchecked("Alice"),
+                )]
+            } else {
                 vec![
                     (
                         unchecked_account_id::<sr25519::Public>("Alice"),
@@ -114,7 +124,10 @@ pub fn calamari_local_config() -> CalamariChainSpec {
                         unchecked_account_id::<sr25519::Public>("Eve"),
                         SessionKeys::from_seed_unchecked("Eve"),
                     ),
-                ],
+                ]
+            };
+            calamari_dev_genesis(
+                invulnerables,
                 // Delegations
                 vec![],
                 vec![

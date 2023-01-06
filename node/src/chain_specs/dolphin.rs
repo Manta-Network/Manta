@@ -80,13 +80,23 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
 }
 
 /// Returns the Dolphin local chainspec.
-pub fn dolphin_local_config() -> DolphinChainSpec {
+pub fn dolphin_local_config(localdev: bool) -> DolphinChainSpec {
+    let id = if localdev {
+        "dolphin_localdev"
+    } else {
+        "dolphin_local"
+    };
     DolphinChainSpec::from_genesis(
         "Dolphin Parachain Local",
-        "dolphin_local",
+        id,
         ChainType::Local,
         move || {
-            dolphin_dev_genesis(
+            let invulnerables = if localdev {
+                vec![(
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    SessionKeys::from_seed_unchecked("Alice"),
+                )]
+            } else {
                 vec![
                     (
                         unchecked_account_id::<sr25519::Public>("Alice"),
@@ -108,7 +118,10 @@ pub fn dolphin_local_config() -> DolphinChainSpec {
                         unchecked_account_id::<sr25519::Public>("Eve"),
                         SessionKeys::from_seed_unchecked("Eve"),
                     ),
-                ],
+                ]
+            };
+            dolphin_dev_genesis(
+                invulnerables,
                 unchecked_account_id::<sr25519::Public>("Alice"),
                 vec![
                     unchecked_account_id::<sr25519::Public>("Alice"),

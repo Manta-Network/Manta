@@ -64,6 +64,7 @@ trait IdentifyChain {
     fn is_manta(&self) -> bool;
     fn is_calamari(&self) -> bool;
     fn is_dolphin(&self) -> bool;
+    fn is_localdev(&self) -> bool;
 }
 
 impl IdentifyChain for dyn sc_service::ChainSpec {
@@ -75,6 +76,9 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
     }
     fn is_dolphin(&self) -> bool {
         self.id().starts_with("dolphin")
+    }
+    fn is_localdev(&self) -> bool {
+        self.id().ends_with("localdev")
     }
 }
 
@@ -88,6 +92,9 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
     fn is_dolphin(&self) -> bool {
         <dyn sc_service::ChainSpec>::is_dolphin(self)
     }
+    fn is_localdev(&self) -> bool {
+        <dyn sc_service::ChainSpec>::is_localdev(self)
+    }
 }
 
 fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
@@ -99,12 +106,14 @@ fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         "manta" => Ok(Box::new(chain_specs::manta_config()?)),
         // calamari chainspec
         "calamari-dev" => Ok(Box::new(chain_specs::calamari_development_config())),
-        "calamari-local" => Ok(Box::new(chain_specs::calamari_local_config())),
+        "calamari-local" => Ok(Box::new(chain_specs::calamari_local_config(false))),
+        "calamari-localdev" => Ok(Box::new(chain_specs::calamari_local_config(true))),
         "calamari-testnet" => Ok(Box::new(chain_specs::calamari_testnet_config()?)),
         "calamari" => Ok(Box::new(chain_specs::calamari_config()?)),
         // dolphin chainspec
         "dolphin-dev" => Ok(Box::new(chain_specs::dolphin_development_config())),
-        "dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config())),
+        "dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config(false))),
+        "dolphin-localdev" => Ok(Box::new(chain_specs::dolphin_local_config(true))),
         "dolphin-testnet" => Ok(Box::new(chain_specs::dolphin_testnet_config()?)),
         "dolphin-2085" => Ok(Box::new(chain_specs::dolphin_2085_config()?)),
         "dolphin-v3-staging" => Ok(Box::new(chain_specs::dolphin_v3_2085_staging_config()?)),
@@ -411,9 +420,31 @@ pub fn run_with(cli: Cli) -> Result {
             .into()),
         None => {
             let runner = cli.create_runner(&cli.run.normalize())?;
+            let chain_spec = &runner.config().chain_spec;
+            let is_dev = chain_spec.is_localdev();
+            info!("id:{}", chain_spec.id());
             let collator_options = cli.run.collator_options();
 
             runner.run_node_until_exit(|config| async move {
+                if is_dev {
+                    info!("⚠️  DEV STANDALONE MODE.");
+                    if config.chain_spec.is_dolphin() {
+                        return crate::service::start_dev_nimbus_node::<dolphin_runtime::RuntimeApi, _>(
+                            config,
+                            rpc::create_dolphin_full,
+                        ).await
+                            .map_err(Into::into);
+                    } else if config.chain_spec.is_calamari() {
+                        return crate::service::start_dev_nimbus_node::<calamari_runtime::RuntimeApi, _>(
+                            config,
+                            rpc::create_common_full,
+                        ).await
+                            .map_err(Into::into);
+                    } else {
+                        return Err("Dev mode not support for current chain".into());
+                    }
+                }
+
                 let hwbench = if !cli.no_hardware_benchmarks {
                     config.database.path().map(|database_path| {
                         let _ = std::fs::create_dir_all(database_path);
