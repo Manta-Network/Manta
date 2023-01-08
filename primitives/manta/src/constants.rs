@@ -17,7 +17,7 @@
 //! Manta Protocol Constants
 
 use crate::types::Balance;
-use frame_support::PalletId;
+use frame_support::{weights::Weight, PalletId};
 
 /// Calamari SS58 Prefix
 pub const CALAMARI_SS58PREFIX: u8 = 78;
@@ -96,3 +96,12 @@ pub const MANTA_PAY_PALLET_ID: PalletId = PalletId(*b"mantapay");
 ///
 /// This should only be used for testing and should not be used in production.
 pub const TEST_DEFAULT_ASSET_ED: Balance = 1;
+
+///
+pub const WEIGHT_PER_SECOND: Weight = 1_000_000_000_000;
+///
+pub const WEIGHT_PER_MILLIS: Weight = WEIGHT_PER_SECOND / 1000; // 1_000_000_000
+///
+pub const WEIGHT_PER_MICROS: Weight = WEIGHT_PER_MILLIS / 1000; // 1_000_000
+///
+pub const WEIGHT_PER_NANOS: Weight = WEIGHT_PER_MICROS / 1000; // 1_000
