@@ -54,15 +54,14 @@ use frame_system::{
     EnsureRoot,
 };
 use manta_primitives::{
-    constants::{
-        time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_NANOS,
-        WEIGHT_PER_SECOND,
-    },
+    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
-use runtime_common::{prod_or_fast, BlockExecutionWeight, ExtrinsicBaseWeight};
+use runtime_common::{
+    prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
+};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
 #[cfg(any(feature = "std", test))]
@@ -369,9 +368,6 @@ impl pallet_balances::Config for Runtime {
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
 }
-
-use runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
-use sp_runtime::{FixedPointNumber, Perquintill};
 
 parameter_types! {
     /// Relay Chain `TransactionLengthToFeeCoeff` / 10

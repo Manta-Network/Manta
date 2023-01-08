@@ -38,7 +38,6 @@ use frame_support::{
     codec::Encode,
     dispatch::Dispatchable,
     traits::{tokens::ExistenceRequirement, PalletInfo, StorageInfo, StorageInfoTrait},
-    weights::constants::*,
     StorageHasher, Twox128,
 };
 use manta_primitives::{
