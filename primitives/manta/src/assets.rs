@@ -20,7 +20,7 @@ use alloc::vec::Vec;
 use codec::{Decode, Encode};
 use core::{borrow::Borrow, marker::PhantomData};
 use frame_support::{
-    dispatch::DispatchError,
+    dispatch::{DispatchError, DispatchResultWithPostInfo},
     pallet_prelude::Get,
     traits::tokens::{
         currency::Currency,
