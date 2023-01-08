@@ -21,8 +21,8 @@
 
 pub mod migration;
 
-use frame_support::parameter_types;
-use manta_primitives::types::BlockNumber;
+use frame_support::{parameter_types, weights::Weight};
+use manta_primitives::{constants::WEIGHT_PER_NANOS, types::BlockNumber};
 use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 use sp_runtime::{FixedPointNumber, Perquintill};
 
@@ -77,3 +77,20 @@ parameter_types! {
 /// https://research.web3.foundation/en/latest/polkadot/overview/2-token-economics.html#-2.-slow-adjusting-mechanism
 pub type SlowAdjustingFeeUpdate<R> =
     TargetedFeeAdjustment<R, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
+
+parameter_types! {
+    /// Time to execute an empty block.
+    /// Calculated by multiplying the *Average* with `1` and adding `0`.
+    ///
+    /// Stats nanoseconds:
+    ///   Min, Max: 5_303_128, 5_507_784
+    ///   Average:  5_346_284
+    ///   Median:   5_328_139
+    ///   Std-Dev:  41749.5
+    ///
+    /// Percentiles nanoseconds:
+    ///   99th: 5_489_273
+    ///   95th: 5_433_314
+    ///   75th: 5_354_812
+    pub const BlockExecutionWeight: Weight = 5_346_284 * WEIGHT_PER_NANOS;
+}
