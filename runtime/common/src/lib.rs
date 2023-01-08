@@ -94,3 +94,20 @@ parameter_types! {
     ///   75th: 5_354_812
     pub const BlockExecutionWeight: Weight = 5_346_284 * WEIGHT_PER_NANOS;
 }
+
+parameter_types! {
+    /// Time to execute a NO-OP extrinsic, for example `System::remark`.
+    /// Calculated by multiplying the *Average* with `1` and adding `0`.
+    ///
+    /// Stats nanoseconds:
+    ///   Min, Max: 86_060, 86_999
+    ///   Average:  86_298
+    ///   Median:   86_248
+    ///   Std-Dev:  207.19
+    ///
+    /// Percentiles nanoseconds:
+    ///   99th: 86_924
+    ///   95th: 86_828
+    ///   75th: 86_347
+    pub const ExtrinsicBaseWeight: Weight = 86_298 * WEIGHT_PER_NANOS;
+}
