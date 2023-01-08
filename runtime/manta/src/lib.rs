@@ -43,10 +43,7 @@ use sp_version::RuntimeVersion;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency},
-    weights::{
-        constants::{RocksDbWeight, WEIGHT_PER_SECOND},
-        ConstantMultiplier, DispatchClass, Weight,
-    },
+    weights::{constants::RocksDbWeight, ConstantMultiplier, DispatchClass, Weight},
     PalletId,
 };
 use frame_system::{
@@ -54,7 +51,7 @@ use frame_system::{
     EnsureRoot,
 };
 use manta_primitives::{
-    constants::{time::*, STAKING_PALLET_ID},
+    constants::{time::*, STAKING_PALLET_ID, WEIGHT_PER_SECOND},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 pub use pallet_parachain_staking::{InflationInfo, Range};

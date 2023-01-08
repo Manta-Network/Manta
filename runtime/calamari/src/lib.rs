@@ -46,7 +46,7 @@ use frame_support::{
         ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec,
         NeverEnsureOrigin, PrivilegeCmp,
     },
-    weights::{constants::ExtrinsicBaseWeight, ConstantMultiplier, DispatchClass, Weight},
+    weights::{ConstantMultiplier, DispatchClass, Weight},
     PalletId,
 };
 use frame_system::{
@@ -61,7 +61,7 @@ use manta_primitives::{
 };
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
-use runtime_common::{prod_or_fast, BlockExecutionWeight};
+use runtime_common::{prod_or_fast, BlockExecutionWeight, ExtrinsicBaseWeight};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
 #[cfg(any(feature = "std", test))]
