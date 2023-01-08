@@ -55,7 +55,8 @@ use frame_system::{
 };
 use manta_primitives::{
     constants::{
-        time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_NANOS, WEIGHT_PER_SECOND,
+        time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_NANOS,
+        WEIGHT_PER_SECOND,
     },
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
@@ -305,17 +306,6 @@ impl Contains<Call> for BaseFilter {
             | _ => false
         }
     }
-}
-
-use frame_support::weights::RuntimeDbWeight;
-
-parameter_types! {
-    /// By default, Substrate uses RocksDB, so this will be the weight used throughout
-    /// the runtime.
-    pub const RocksDbWeight: RuntimeDbWeight = RuntimeDbWeight {
-        read: 25_000 * WEIGHT_PER_NANOS,
-        write: 100_000 * WEIGHT_PER_NANOS,
-    };
 }
 
 // Configure FRAME pallets to include in runtime.

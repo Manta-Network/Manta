@@ -105,3 +105,13 @@ pub const WEIGHT_PER_MILLIS: Weight = WEIGHT_PER_SECOND / 1000; // 1_000_000_000
 pub const WEIGHT_PER_MICROS: Weight = WEIGHT_PER_MILLIS / 1000; // 1_000_000
 ///
 pub const WEIGHT_PER_NANOS: Weight = WEIGHT_PER_MICROS / 1000; // 1_000
+
+use frame_support::{parameter_types, weights::RuntimeDbWeight};
+parameter_types! {
+    /// By default, Substrate uses RocksDB, so this will be the weight used throughout
+    /// the runtime.
+    pub const RocksDbWeight: RuntimeDbWeight = RuntimeDbWeight {
+        read: 25_000 * WEIGHT_PER_NANOS,
+        write: 100_000 * WEIGHT_PER_NANOS,
+    };
+}
