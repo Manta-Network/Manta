@@ -24,7 +24,7 @@ use frame_support::{
     assert_ok, construct_runtime, match_types,
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{ConstU32, Everything, Nothing},
+    traits::{ConstU32, Currency, Everything, Nothing},
     weights::{constants::WEIGHT_PER_SECOND, Weight},
     PalletId,
 };
@@ -57,7 +57,7 @@ use xcm_builder::{
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
     EnsureXcmOrigin, FixedRateOfFungible, LocationInverter, ParentIsPreset,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SovereignSignedViaLocation, TakeWeightCredit, WeightInfoBounds,
+    SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit, WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
@@ -242,10 +242,29 @@ pub type Barrier = (
 );
 
 parameter_types! {
-    /// Xcm fees will go to the asset manager (we don't implement treasury yet)
+    /// Xcm fees will go to the asset manager (we don't implement treasury yet for mock parachain)
     pub XcmFeesAccount: AccountId = AssetManager::account_id();
 }
 
+/// Xcm fee of native token
+pub struct XcmNativeFeeToTreasury;
+
+impl TakeRevenue for XcmNativeFeeToTreasury {
+    #[inline]
+    fn take_revenue(revenue: MultiAsset) {
+        if let MultiAsset {
+            id: Concrete(location),
+            fun: Fungible(amount),
+        } = revenue
+        {
+            if location == MultiLocation::here() {
+                let _ = Balances::deposit_creating(&XcmFeesAccount::get(), amount);
+            }
+        }
+    }
+}
+
+/// Xcm fee of non native token
 pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
     AccountId,
     Assets,
@@ -282,7 +301,7 @@ impl Config for XcmExecutorConfig {
     // The second one will charge the first asset in the MultiAssets with pre-defined rate
     // i.e. units_per_second in `AssetManager`
     type Trader = (
-        FixedRateOfFungible<ParaTokenPerSecond, ()>,
+        FixedRateOfFungible<ParaTokenPerSecond, XcmNativeFeeToTreasury>,
         FirstAssetTrader<AssetManager, XcmFeesToAccount>,
     );
     type ResponseHandler = PolkadotXcm;
