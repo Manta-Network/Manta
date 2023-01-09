@@ -126,6 +126,17 @@ pub mod pallet {
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
+    ///
+    pub trait SuspendMantaPay {
+        fn suspend_manta_pay_execution() -> DispatchResultWithPostInfo;
+    }
+
+    impl SuspendMantaPay for () {
+        fn suspend_manta_pay_execution() -> DispatchResultWithPostInfo {
+            Ok(().into())
+        }
+    }
+
     /// Pallet
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
@@ -146,6 +157,9 @@ pub mod pallet {
 
         /// Pallet ID
         type PalletId: Get<PalletId>;
+
+        /// Suspends execution of all extrinsics via TxPause
+        type Suspender: SuspendMantaPay;
     }
 
     /// Fungible Ledger Implementation for [`Config`]
@@ -474,23 +488,35 @@ pub mod pallet {
         }
     }
 
-    impl<T> From<SenderPostError<SenderLedgerError>> for Error<T> {
+    impl<T> From<SenderPostError<SenderLedgerError>> for Error<T>
+    where
+        T: Config,
+    {
         #[inline]
         fn from(err: SenderPostError<SenderLedgerError>) -> Self {
             match err {
                 SenderPostError::AssetSpent => Self::AssetSpent,
                 SenderPostError::InvalidUtxoAccumulatorOutput => Self::InvalidUtxoAccumulatorOutput,
-                SenderPostError::UnexpectedError(_) => Self::InternalLedgerError,
+                SenderPostError::UnexpectedError(_) => {
+                    let _ = T::Suspender::suspend_manta_pay_execution();
+                    Self::InternalLedgerError
+                }
             }
         }
     }
 
-    impl<T> From<ReceiverPostError<ReceiverLedgerError>> for Error<T> {
+    impl<T> From<ReceiverPostError<ReceiverLedgerError>> for Error<T>
+    where
+        T: Config,
+    {
         #[inline]
         fn from(err: ReceiverPostError<ReceiverLedgerError>) -> Self {
             match err {
                 ReceiverPostError::AssetRegistered => Self::AssetRegistered,
-                ReceiverPostError::UnexpectedError(_) => Self::InternalLedgerError,
+                ReceiverPostError::UnexpectedError(_) => {
+                    let _ = T::Suspender::suspend_manta_pay_execution();
+                    Self::InternalLedgerError
+                }
             }
         }
     }
@@ -555,7 +581,10 @@ pub mod pallet {
                 TransferPostError::<T>::DuplicateMint => Self::DuplicateRegister,
                 TransferPostError::<T>::DuplicateSpend => Self::DuplicateSpend,
                 TransferPostError::<T>::InvalidProof => Self::InvalidProof,
-                TransferPostError::<T>::UnexpectedError(_) => Self::InternalLedgerError,
+                TransferPostError::<T>::UnexpectedError(_) => {
+                    let _ = T::Suspender::suspend_manta_pay_execution();
+                    Self::InternalLedgerError
+                }
             }
         }
     }

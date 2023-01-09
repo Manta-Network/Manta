@@ -260,6 +260,7 @@ impl crate::Config for Test {
     type WeightInfo = crate::weights::SubstrateWeight<Self>;
     type PalletId = MantaPayPalletId;
     type AssetConfig = MantaAssetConfig;
+    type Suspender = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
