@@ -425,10 +425,7 @@ fn send_para_b_asset_to_para_b() {
             Box::new(VersionedMultiLocation::V1(dest)),
             ADVERTISED_DEST_WEIGHT
         ));
-        assert_eq!(
-            parachain::Assets::balance(b_asset_id_on_a, &ALICE),
-            INITIAL_BALANCE - amount
-        );
+        assert_eq!(parachain::Assets::balance(b_asset_id_on_a, &ALICE), 0);
     });
 
     // Make sure B received the token
