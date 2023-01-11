@@ -930,6 +930,40 @@ pub struct DensePullResponse {
     pub next_checkpoint: Option<Checkpoint>,
 }
 
+// Runtime only type,
+// for fixing the issue when receivers/senders(Vec<u8>, runtime) to receivers/senders(String, native client)
+#[derive(Clone, Debug, Encode, Default, Hash, Decode)]
+pub struct RuntimeDensePullResponse {
+    /// Pull Continuation Flag
+    ///
+    /// The `should_continue` flag is set to `true` if the client should request more data from the
+    /// ledger to finish the pull.
+    pub should_continue: bool,
+
+    /// Ledger Receiver Chunk
+    // we decode the receivers/senders with our own way
+    pub receivers: Vec<u8>,
+
+    /// Ledger Sender Chunk
+    pub senders: Vec<u8>,
+
+    /// Total Number of Senders/Receivers in Ledger
+    pub senders_receivers_total: [u8; 16],
+}
+
+impl From<RuntimeDensePullResponse> for DensePullResponse {
+    #[inline]
+    fn from(resp: RuntimeDensePullResponse) -> DensePullResponse {
+        Self {
+            should_continue: resp.should_continue,
+            receivers: base64::encode(resp.receivers),
+            senders: base64::encode(resp.senders),
+            senders_receivers_total: resp.senders_receivers_total,
+            next_checkpoint: None,
+        }
+    }
+}
+
 /// Raw Checkpoint for Encoding and Decoding
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Decode, Encode)]
 pub struct RawCheckpoint {

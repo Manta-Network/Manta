@@ -88,7 +88,7 @@ use manta_util::{
 
 pub use crate::types::{Checkpoint, RawCheckpoint};
 pub use pallet::*;
-pub use types::{DensePullResponse, PullResponse};
+pub use types::{DensePullResponse, PullResponse, RuntimeDensePullResponse};
 pub use weights::WeightInfo;
 
 #[cfg(test)]
@@ -680,7 +680,7 @@ pub mod pallet {
             checkpoint: Checkpoint,
             max_receivers: u64,
             max_senders: u64,
-        ) -> DensePullResponse {
+        ) -> RuntimeDensePullResponse {
             let (more_receivers, receivers) =
                 Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
             let (more_senders, senders) = Self::pull_senders(checkpoint.sender_index, max_senders);
@@ -688,12 +688,11 @@ pub mod pallet {
                 .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
                 .sum::<u128>()
                 + NullifierSetSize::<T>::get() as u128;
-            DensePullResponse {
+            RuntimeDensePullResponse {
                 should_continue: more_receivers || more_senders,
-                receivers: base64::encode(receivers.encode()),
-                senders: base64::encode(senders.encode()),
+                receivers: receivers.encode(),
+                senders: senders.encode(),
                 senders_receivers_total: asset_value_encode(senders_receivers_total),
-                next_checkpoint: None,
             }
         }
 

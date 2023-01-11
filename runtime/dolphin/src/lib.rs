@@ -965,7 +965,7 @@ impl_runtime_apis! {
             checkpoint: pallet_manta_pay::RawCheckpoint,
             max_receiver: u64,
             max_sender: u64
-        ) -> pallet_manta_pay::DensePullResponse {
+        ) -> pallet_manta_pay::RuntimeDensePullResponse {
             MantaPay::dense_pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
     }
