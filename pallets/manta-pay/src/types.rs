@@ -932,7 +932,7 @@ pub struct DensePullResponse {
 
 // Runtime only type,
 // for fixing the issue when receivers/senders(Vec<u8>, runtime) to receivers/senders(String, native client)
-#[derive(Clone, Debug, Encode, Default, Hash, Decode)]
+#[derive(Clone, Debug, Encode, Default, Eq, Hash, Decode, PartialEq, TypeInfo)]
 pub struct RuntimeDensePullResponse {
     /// Pull Continuation Flag
     ///
