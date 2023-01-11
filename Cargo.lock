@@ -5145,7 +5145,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.5.8"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=fix/distinguish-errors#9af82bfd59b65e879b35cd4ea0090db19fbe5e09"
+source = "git+https://github.com/manta-network/manta-rs.git#e0b5cd33265086c7b2d975901aaaa4805d8893fe"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5189,7 +5189,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.5.8"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=fix/distinguish-errors#9af82bfd59b65e879b35cd4ea0090db19fbe5e09"
+source = "git+https://github.com/manta-network/manta-rs.git#e0b5cd33265086c7b2d975901aaaa4805d8893fe"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -5215,7 +5215,7 @@ dependencies = [
 [[package]]
 name = "manta-parameters"
 version = "0.5.8"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=fix/distinguish-errors#9af82bfd59b65e879b35cd4ea0090db19fbe5e09"
+source = "git+https://github.com/manta-network/manta-rs.git#e0b5cd33265086c7b2d975901aaaa4805d8893fe"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5228,7 +5228,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.5.8"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=fix/distinguish-errors#9af82bfd59b65e879b35cd4ea0090db19fbe5e09"
+source = "git+https://github.com/manta-network/manta-rs.git#e0b5cd33265086c7b2d975901aaaa4805d8893fe"
 dependencies = [
  "aes-gcm",
  "bip32",
@@ -5332,7 +5332,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.5.8"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=fix/distinguish-errors#9af82bfd59b65e879b35cd4ea0090db19fbe5e09"
+source = "git+https://github.com/manta-network/manta-rs.git#e0b5cd33265086c7b2d975901aaaa4805d8893fe"
 dependencies = [
  "crossbeam-channel",
  "serde",

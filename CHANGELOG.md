@@ -9,7 +9,6 @@
 - [\#952](https://github.com/Manta-Network/Manta/pull/952) update genesis [MA]
 
 ### Changed
-- [\#981](https://github.com/Manta-Network/Manta/pull/981) Ledger Error Handling [MACADO]
 - [\#814](https://github.com/Manta-Network/Manta/pull/814) feat: upgrade asset manager [CADO]
 - [\#890](https://github.com/Manta-Network/Manta/pull/890) MantaPay V1 for Dolphin V3 deployment [CADO]
 - [\#906](https://github.com/Manta-Network/Manta/pull/906) Use finalized_hash instead of best_hash in pull_ledger_diff [CADO]

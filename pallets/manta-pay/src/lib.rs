@@ -834,9 +834,13 @@ pub enum SenderLedgerError {
     OutgoingNoteDecodeError(scale_codec::Error),
 
     /// Asset Spent Error
+    ///
+    /// The asset has already been spent.
     AssetSpent,
 
     /// Invalid UTXO Accumulator Output Error
+    ///
+    /// The sender was not constructed under the current state of the UTXO accumulator.
     InvalidUtxoAccumulatorOutput,
 }
 
@@ -971,6 +975,8 @@ pub enum ReceiverLedgerError {
     FullNoteDecodeError(scale_codec::Error),
 
     /// Asset Registered Error
+    ///
+    /// The asset has already been registered with the ledger.
     AssetRegistered,
 }
 
@@ -1135,7 +1141,9 @@ where
     /// Proof System Error
     ProofSystemError(ProofSystemError<config::Config>),
 
-    /// Invalid Proof
+    /// Invalid Transfer Proof Error
+    ///
+    /// Validity of the transfer could not be proved by the ledger.
     InvalidProof,
 
     /// Type Marker Parameter
@@ -1255,11 +1263,8 @@ where
         posting_key: TransferPostingKeyRef<config::Config, Self>,
     ) -> Result<(Self::ValidProof, Self::Event), TransferLedgerError<T>> {
         let transfer_shape = TransferShape::from_posting_key_ref(&posting_key);
-        if transfer_shape.is_none() {
-            return Err(TransferLedgerError::InvalidTransferShape);
-        }
         let (mut verifying_context, event) = match transfer_shape
-            .expect("This never fails because of the check above.")
+            .ok_or(TransferLedgerError::InvalidTransferShape)?
         {
             TransferShape::ToPrivate => {
                 if let Some(asset_id) = posting_key.asset_id.or(None) {
