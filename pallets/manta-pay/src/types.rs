@@ -896,7 +896,6 @@ pub struct PullResponse {
 }
 
 /// Ledger Source Dense Pull Response
-#[cfg_attr(feature = "rpc", test)]
 #[cfg_attr(
     feature = "serde",
     derive(Deserialize, Serialize),
@@ -931,7 +930,6 @@ pub struct DensePullResponse {
     pub next_checkpoint: Option<Checkpoint>,
 }
 
-#[cfg_attr(feature = "rpc", test)]
 impl From<PullResponse> for DensePullResponse {
     #[inline]
     fn from(resp: PullResponse) -> DensePullResponse {
