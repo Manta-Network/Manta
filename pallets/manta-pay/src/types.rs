@@ -16,7 +16,7 @@
 
 //! Type Definitions for Manta Pay
 
-use alloc::{boxed::Box, string::String, vec::Vec};
+use alloc::{boxed::Box, vec::Vec};
 use manta_crypto::merkle_tree;
 use manta_pay::{
     config::{
@@ -896,6 +896,7 @@ pub struct PullResponse {
 }
 
 /// Ledger Source Dense Pull Response
+#[cfg_attr(feature = "rpc", test)]
 #[cfg_attr(
     feature = "serde",
     derive(Deserialize, Serialize),
@@ -912,11 +913,11 @@ pub struct DensePullResponse {
     /// Ledger Receiver Chunk
     // we decode the receivers/senders with our own way
     #[codec(skip)]
-    pub receivers: String,
+    pub receivers: alloc::string::String,
 
     /// Ledger Sender Chunk
     #[codec(skip)]
-    pub senders: String,
+    pub senders: alloc::string::String,
 
     /// Total Number of Senders/Receivers in Ledger
     pub senders_receivers_total: [u8; 16],
@@ -930,34 +931,14 @@ pub struct DensePullResponse {
     pub next_checkpoint: Option<Checkpoint>,
 }
 
-// Runtime only type,
-// for fixing the issue when receivers/senders(Vec<u8>, runtime) to receivers/senders(String, native client)
-#[derive(Clone, Debug, Encode, Default, Eq, Hash, Decode, PartialEq, TypeInfo)]
-pub struct RuntimeDensePullResponse {
-    /// Pull Continuation Flag
-    ///
-    /// The `should_continue` flag is set to `true` if the client should request more data from the
-    /// ledger to finish the pull.
-    pub should_continue: bool,
-
-    /// Ledger Receiver Chunk
-    // we decode the receivers/senders with our own way
-    pub receivers: Vec<u8>,
-
-    /// Ledger Sender Chunk
-    pub senders: Vec<u8>,
-
-    /// Total Number of Senders/Receivers in Ledger
-    pub senders_receivers_total: [u8; 16],
-}
-
-impl From<RuntimeDensePullResponse> for DensePullResponse {
+#[cfg_attr(feature = "rpc", test)]
+impl From<PullResponse> for DensePullResponse {
     #[inline]
-    fn from(resp: RuntimeDensePullResponse) -> DensePullResponse {
+    fn from(resp: PullResponse) -> DensePullResponse {
         Self {
             should_continue: resp.should_continue,
-            receivers: base64::encode(resp.receivers),
-            senders: base64::encode(resp.senders),
+            receivers: base64::encode(resp.receivers.encode()),
+            senders: base64::encode(resp.senders.encode()),
             senders_receivers_total: resp.senders_receivers_total,
             next_checkpoint: None,
         }
