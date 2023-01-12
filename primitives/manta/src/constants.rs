@@ -118,3 +118,33 @@ parameter_types! {
         write: 100_000 * WEIGHT_PER_NANOS,
     };
 }
+
+#[cfg(test)]
+mod constants_tests {
+    use super::*;
+
+    #[test]
+    fn sanity_check_rocksdb_weight() {
+        use frame_support::weights::constants::RocksDbWeight as ImportedRocksDbWeight;
+        assert_eq!(ImportedRocksDbWeight::get().read, RocksDbWeight::get().read);
+        assert_eq!(
+            ImportedRocksDbWeight::get().write,
+            RocksDbWeight::get().write
+        );
+    }
+
+    #[test]
+    fn sanity_check_weight_per_time_constants() {
+        use frame_support::weights::constants::{
+            WEIGHT_PER_MICROS as IMPORTED_WEIGHT_PER_MICROS,
+            WEIGHT_PER_MILLIS as IMPORTED_WEIGHT_PER_MILLIS,
+            WEIGHT_PER_NANOS as IMPORTED_WEIGHT_PER_NANOS,
+            WEIGHT_PER_SECOND as IMPORTED_WEIGHT_PER_SECOND,
+        };
+
+        assert_eq!(WEIGHT_PER_SECOND, IMPORTED_WEIGHT_PER_SECOND);
+        assert_eq!(WEIGHT_PER_MILLIS, IMPORTED_WEIGHT_PER_MILLIS);
+        assert_eq!(WEIGHT_PER_MICROS, IMPORTED_WEIGHT_PER_MICROS);
+        assert_eq!(WEIGHT_PER_NANOS, IMPORTED_WEIGHT_PER_NANOS);
+    }
+}
