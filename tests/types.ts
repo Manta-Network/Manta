@@ -1,3 +1,5 @@
+import * as $ from "scale-codec";
+
 export const manta_pay_types = {
     Checkpoint: {
         receiver_index: '[u64; 256]',
@@ -35,7 +37,14 @@ export const manta_pay_types = {
         receivers: 'Vec<(Utxo, FullIncomingNote)>',
         senders: 'Vec<([u8; 32], OutgoingNote)>',
         senders_receivers_total: '[u8; 16]',
-    }
+    },
+    DensePullResponse: {
+        should_continue: "bool",
+        receivers: "String",
+        senders: "String",
+        senders_receivers_total: "[u8; 16]",
+        next_checkpoint: "Option<Checkpoint>",
+      }
 };
 
 export const rpc_api = {
@@ -57,6 +66,61 @@ export const rpc_api = {
                 }
             ],
             type: 'PullResponse'
-        }
+        },
+        dense_pull_ledger_diff: {
+            description: "pull from mantaPay",
+            params: [
+              {
+                name: "checkpoint",
+                type: "Checkpoint",
+              },
+              {
+                name: "max_receivers",
+                type: "u64",
+              },
+              {
+                name: "max_senders",
+                type: "u64",
+              },
+            ],
+            type: "DensePullResponse",
+          },
     }
 }
+
+const $Asset = $.object(
+    $.field("id", $.sizedUint8Array(32)),
+    $.field("value", $.sizedUint8Array(16)),
+  );
+  
+  const $Utxo = $.object(
+    $.field("is_transparent", $.bool),
+    $.field("public_asset", $Asset),
+    $.field("commitment", $.sizedUint8Array(32)),
+  );
+  
+  const $IncomingNote = $.object(
+    $.field("ephemeral_public_key", $.sizedUint8Array(32)),
+    $.field("tag", $.sizedUint8Array(32)),
+    $.field("light_incoming_note", $.sizedArray($.sizedUint8Array(32), 3)),
+  );
+  
+  const $LightIncomingNote = $.object(
+    $.field("ephemeral_public_key", $.sizedUint8Array(32)),
+    $.field("ciphertext", $.sizedArray($.sizedUint8Array(32), 3)),
+  );
+  
+  const $FullIncomingNote = $.object(
+    $.field("address_partition", $.u8),
+    $.field("incoming_note", $IncomingNote),
+    $.field("light_incoming_note", $LightIncomingNote),
+  );
+  
+  const $OutgoingNote = $.object(
+    $.field("ephemeral_public_key", $.sizedUint8Array(32)),
+    $.field("ciphertext", $.sizedArray($.sizedUint8Array(32), 2)),
+  );
+  
+  export const $Receivers = $.array($.tuple($Utxo, $FullIncomingNote));
+  export const $Senders = $.array($.tuple($.sizedUint8Array(32), $OutgoingNote));
+  

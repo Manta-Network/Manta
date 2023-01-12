@@ -1,7 +1,7 @@
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import { Keyring } from "@polkadot/keyring";
-import { manta_pay_types, rpc_api } from "./types";
-import { delay } from "./test-util";
+import { manta_pay_types, rpc_api } from "../types";
+import { delay } from "../utils/utils";
 import { assert } from "chai";
 import minimist, { ParsedArgs } from "minimist";
 import { readFile } from "fs/promises";
