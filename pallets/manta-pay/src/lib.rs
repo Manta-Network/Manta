@@ -498,24 +498,27 @@ pub mod pallet {
             match err {
                 SenderPostError::AssetSpent => Self::AssetSpent,
                 SenderPostError::InvalidUtxoAccumulatorOutput => Self::InvalidUtxoAccumulatorOutput,
-                SenderPostError::UnexpectedError(_) => {
-                    let _ = T::Suspender::suspend_manta_pay_execution();
-                    Self::InternalLedgerError
-                }
+                SenderPostError::UnexpectedError(_) => Self::InternalLedgerError,
             }
         }
     }
 
-    impl<T> From<ReceiverPostError<ReceiverLedgerError>> for Error<T>
+    impl<T> From<ReceiverPostError<ReceiverLedgerError<T>>> for Error<T>
     where
         T: Config,
     {
         #[inline]
-        fn from(err: ReceiverPostError<ReceiverLedgerError>) -> Self {
+        fn from(err: ReceiverPostError<ReceiverLedgerError<T>>) -> Self {
             match err {
                 ReceiverPostError::AssetRegistered => Self::AssetRegistered,
-                ReceiverPostError::UnexpectedError(_) => {
-                    let _ = T::Suspender::suspend_manta_pay_execution();
+                ReceiverPostError::UnexpectedError(e) => {
+                    match e {
+                        ReceiverLedgerError::ChecksumError
+                        | ReceiverLedgerError::MerkleTreeCapacityError => {
+                            let _ = T::Suspender::suspend_manta_pay_execution();
+                        }
+                        _ => {}
+                    };
                     Self::InternalLedgerError
                 }
             }
@@ -532,12 +535,19 @@ pub mod pallet {
         }
     }
 
-    impl<T> From<ReceiverLedgerError> for TransferLedgerError<T>
+    impl<T> From<ReceiverLedgerError<T>> for TransferLedgerError<T>
     where
         T: Config,
     {
         #[inline]
-        fn from(err: ReceiverLedgerError) -> Self {
+        fn from(err: ReceiverLedgerError<T>) -> Self {
+            match err {
+                ReceiverLedgerError::ChecksumError
+                | ReceiverLedgerError::MerkleTreeCapacityError => {
+                    let _ = T::Suspender::suspend_manta_pay_execution();
+                }
+                _ => {}
+            };
             TransferLedgerError::ReceiverLedgerError(err)
         }
     }
@@ -568,7 +578,7 @@ pub mod pallet {
         config::Config,
         <T as frame_system::Config>::AccountId,
         SenderLedgerError,
-        ReceiverLedgerError,
+        ReceiverLedgerError<T>,
         TransferLedgerError<T>,
     >;
 
@@ -588,8 +598,14 @@ pub mod pallet {
                 TransferPostError::<T>::DuplicateMint => Self::DuplicateRegister,
                 TransferPostError::<T>::DuplicateSpend => Self::DuplicateSpend,
                 TransferPostError::<T>::InvalidProof => Self::InvalidProof,
-                TransferPostError::<T>::UnexpectedError(_) => {
-                    let _ = T::Suspender::suspend_manta_pay_execution();
+                TransferPostError::<T>::UnexpectedError(e) => {
+                    match e {
+                        TransferLedgerError::ChecksumError
+                        | TransferLedgerError::VerifyingContextDecodeError(_) => {
+                            let _ = T::Suspender::suspend_manta_pay_execution();
+                        }
+                        _ => {}
+                    };
                     Self::InternalLedgerError
                 }
             }
@@ -975,7 +991,10 @@ pub type UtxoItemHashError = codec::DecodeError<
 >;
 
 /// Receiver Ledger Error
-pub enum ReceiverLedgerError {
+pub enum ReceiverLedgerError<T>
+where
+    T: Config,
+{
     /// Utxo Decoding Error
     UtxoDecodeError(scale_codec::Error),
 
@@ -1007,14 +1026,27 @@ pub enum ReceiverLedgerError {
     ///
     /// The asset has already been registered with the ledger.
     AssetRegistered,
+
+    /// Type Marker Parameter
+    Marker(PhantomData<T>),
 }
 
-impl From<ReceiverLedgerError> for ReceiverPostError<ReceiverLedgerError> {
+impl<T> From<ReceiverLedgerError<T>> for ReceiverPostError<ReceiverLedgerError<T>>
+where
+    T: Config,
+{
     #[inline]
-    fn from(value: ReceiverLedgerError) -> Self {
+    fn from(value: ReceiverLedgerError<T>) -> Self {
         if let ReceiverLedgerError::AssetRegistered = value {
             Self::AssetRegistered
         } else {
+            match value {
+                ReceiverLedgerError::ChecksumError
+                | ReceiverLedgerError::MerkleTreeCapacityError => {
+                    let _ = T::Suspender::suspend_manta_pay_execution();
+                }
+                _ => {}
+            };
             Self::UnexpectedError(value)
         }
     }
@@ -1026,7 +1058,7 @@ where
 {
     type SuperPostingKey = (Wrap<()>, ());
     type ValidUtxo = Wrap<config::Utxo>;
-    type Error = ReceiverLedgerError;
+    type Error = ReceiverLedgerError<T>;
 
     #[inline]
     fn is_not_registered(&self, utxo: config::Utxo) -> Result<Self::ValidUtxo, Self::Error> {
@@ -1050,12 +1082,12 @@ where
     {
         let _ = super_key;
         let utxo_accumulator_model = config::UtxoAccumulatorModel::decode(
-            manta_parameters::pay::testnet::parameters::UtxoAccumulatorModel::get()
+            manta_parameters::pay::parameters::UtxoAccumulatorModel::get()
                 .ok_or(ReceiverLedgerError::ChecksumError)?,
         )
         .map_err(ReceiverLedgerError::MTParametersDecodeError)?;
         let utxo_accumulator_item_hash = config::utxo::UtxoAccumulatorItemHash::decode(
-            manta_parameters::pay::testnet::parameters::UtxoAccumulatorItemHash::get()
+            manta_parameters::pay::parameters::UtxoAccumulatorItemHash::get()
                 .ok_or(ReceiverLedgerError::ChecksumError)?,
         )
         .map_err(ReceiverLedgerError::UtxoAccumulatorItemHashDecodeError)?;
@@ -1147,7 +1179,7 @@ where
     ChecksumError,
 
     /// Verifying Context Decoding Error
-    VerifiyingContextDecodeError(VerifyingContextError),
+    VerifyingContextDecodeError(VerifyingContextError),
 
     /// Field Element Encoding Error
     FpEncodeError(scale_codec::Error),
@@ -1162,7 +1194,7 @@ where
     SenderLedgerError(SenderLedgerError),
 
     /// Receiver Ledger Error
-    ReceiverLedgerError(ReceiverLedgerError),
+    ReceiverLedgerError(ReceiverLedgerError<T>),
 
     /// Invalid Transfer Shape
     InvalidTransferShape,
@@ -1191,7 +1223,16 @@ where
             TransferLedgerError::SenderLedgerError(err) => Self::Sender(err.into()),
             TransferLedgerError::ReceiverLedgerError(err) => Self::Receiver(err.into()),
             TransferLedgerError::UnknownAsset => Self::InvalidProof,
-            err => Self::UnexpectedError(err),
+            err => {
+                match err {
+                    TransferLedgerError::ChecksumError
+                    | TransferLedgerError::VerifyingContextDecodeError(_) => {
+                        let _ = T::Suspender::suspend_manta_pay_execution();
+                    }
+                    _ => {}
+                };
+                Self::UnexpectedError(err)
+            }
         }
     }
 }
@@ -1300,7 +1341,7 @@ where
                     let asset_id =
                         fp_encode(asset_id).map_err(TransferLedgerError::FpEncodeError)?;
                     (
-                        manta_parameters::pay::testnet::verifying::ToPrivate::get()
+                        manta_parameters::pay::verifying::ToPrivate::get()
                             .ok_or(TransferLedgerError::ChecksumError)?,
                         PreprocessedEvent::<T>::ToPrivate {
                             asset: Asset::new(
@@ -1315,7 +1356,7 @@ where
                 }
             }
             TransferShape::PrivateTransfer => (
-                manta_parameters::pay::testnet::verifying::PrivateTransfer::get()
+                manta_parameters::pay::verifying::PrivateTransfer::get()
                     .ok_or(TransferLedgerError::ChecksumError)?,
                 PreprocessedEvent::<T>::PrivateTransfer,
             ),
@@ -1324,7 +1365,7 @@ where
                     let asset_id =
                         fp_encode(asset_id).map_err(TransferLedgerError::FpEncodeError)?;
                     (
-                        manta_parameters::pay::testnet::verifying::ToPublic::get()
+                        manta_parameters::pay::verifying::ToPublic::get()
                             .ok_or(TransferLedgerError::ChecksumError)?,
                         PreprocessedEvent::<T>::ToPublic {
                             asset: Asset::new(asset_id, asset_value_encode(posting_key.sinks[0].1)),
@@ -1339,7 +1380,7 @@ where
         let verification = posting_key
             .has_valid_proof(
                 &config::VerifyingContext::decode(&mut verifying_context)
-                    .map_err(TransferLedgerError::VerifiyingContextDecodeError)?,
+                    .map_err(TransferLedgerError::VerifyingContextDecodeError)?,
             )
             .map_err(TransferLedgerError::ProofSystemError)?;
         if verification {
