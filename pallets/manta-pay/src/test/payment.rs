@@ -22,13 +22,13 @@ use crate::{
     },
     types::{fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
     Error, FungibleLedger, ReceiverLedgerError, StandardAssetId, TransferLedgerError,
-    TransferPostError,
+    TransferPostError, VerifyingContextError,
 };
 use frame_support::{assert_noop, assert_ok};
 use frame_system::RawOrigin;
 use manta_accounting::transfer::test::value_distribution;
 use manta_crypto::{
-    arkworks::constraint::fp::Fp,
+    arkworks::{constraint::fp::Fp, serialize::SerializationError},
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
     rand::{CryptoRng, OsRng, Rand, RngCore},
 };
@@ -669,26 +669,27 @@ fn receiver_ledger_errors_should_shut_down() {
         assert_manta_pay_suspension();
     });
 }
-
 #[test]
 fn transfer_ledger_errors_should_shut_down() {
     new_test_ext().execute_with(|| {
         let _e = TransferPostError::from(TransferLedgerError::<Test>::ChecksumError);
         assert_manta_pay_suspension();
 
-        // let _e = TransferPostError::from(TransferLedgerError::<Test>::VerifyingContextDecodeError(
-        //     VerifyingContextError(_),
-        // ));
-        // assert_manta_pay_suspension();
+        let _e = TransferPostError::from(TransferLedgerError::<Test>::VerifyingContextDecodeError(
+            VerifyingContextError::Decode(SerializationError::NotEnoughSpace),
+        ));
+        assert_manta_pay_suspension();
 
         let _e = Error::<Test>::from(TransferPostError::<Test>::UnexpectedError(
             TransferLedgerError::ChecksumError,
         ));
         assert_manta_pay_suspension();
 
-        // let _e = Error::<Test>::from(TransferPostError::<Test>::UnexpectedError(
-        //     TransferLedgerError::VerifyingContextDecodeError(_),
-        // ));
-        // assert_manta_pay_suspension();
+        let _e = Error::<Test>::from(TransferPostError::<Test>::UnexpectedError(
+            TransferLedgerError::<Test>::VerifyingContextDecodeError(
+                VerifyingContextError::Decode(SerializationError::NotEnoughSpace),
+            ),
+        ));
+        assert_manta_pay_suspension();
     });
 }
