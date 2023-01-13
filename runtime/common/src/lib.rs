@@ -111,3 +111,14 @@ parameter_types! {
     ///   75th: 86_347
     pub const ExtrinsicBaseWeight: Weight = 86_298 * WEIGHT_PER_NANOS;
 }
+
+#[cfg(test)]
+mod sanity_tests {
+    use super::*;
+    frame_support::weights::constants::ExtrinsicBaseWeight as ImportedExtrinsicBaseWeight;
+
+    #[test]
+    fn sanity_check_extrinsic_base_weight() {
+        assert_eq!(ExtrinsicBaseWeight::get(), ImportedExtrinsicBaseWeight::get());
+    }
+}
