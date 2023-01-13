@@ -151,7 +151,7 @@ jobs:
         with:
           name: config-for-runtime-upgrade-test
           path: .github/resources/config-for-runtime-upgrade-test.json
-  # THE FOLLOWING HAPPENS ONLY WHEN TAGGED WITH A vX.Y.Z TAG
+  # THE FOLLOWING HAPPENS ONLY WHEN TAGGED WITH A vX.Y.Z TAG a
   create-draft-release:
     runs-on: ubuntu-20.04
     needs: [build-runtimes]
