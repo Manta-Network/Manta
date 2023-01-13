@@ -152,7 +152,6 @@ impl crate::Config for Test {
     type Currency = Balances;
     type MintsPerReserve = ConstU16<5>;
     type ReservePrice = ConstU128<1000>;
-    type CustodialAccount = CustodialAccount;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
