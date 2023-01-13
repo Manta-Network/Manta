@@ -35,7 +35,15 @@ use crate::types::{
 };
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
-use frame_support::{transactional, PalletId};
+use frame_support::{
+    pallet_prelude::*,
+    traits::{tokens::nonfungibles::Mutate, StorageVersion, Currency, ReservableCurrency, ExistenceRequirement},
+    PalletId,
+    transactional,
+};
+use frame_system::pallet_prelude::*;
+use scale_codec::Encode;
+use sp_runtime::{ArithmeticError, traits::{AccountIdConversion, One, Zero}};
 use manta_pay::{
     config::{self, utxo::MerkleTreeConfiguration},
     manta_accounting::transfer::{
@@ -51,7 +59,7 @@ use manta_pay::{
     manta_util::codec::Decode as _,
     parameters::load_transfer_parameters,
 };
-use manta_util::{codec::Encode, into_array_unchecked, Array};
+use manta_util::{into_array_unchecked, Array};
 
 pub use crate::types::{Checkpoint, RawCheckpoint};
 pub use pallet::*;
@@ -77,27 +85,20 @@ pub mod rpc;
 pub mod runtime;
 
 /// Standard Asset Id
-pub type StandardAssetId = u128;
+pub type SBTAssetId = u128;
 
-/// This is needed because ItemId is generic and
-/// cannot be incremented until the type is known to be an integer
-pub trait IncrementItemId<ItemId> {
-    fn get_and_increment_item_id() -> ItemId;
-
-    fn encode_item_id(item: ItemId) -> Option<[u8; 32]>;
+/// This is needed because ItemId is generic and doesn't have Add trait implemented
+pub trait ItemIdConvert<ItemId> {
+    fn asset_id_to_item_id(asset_id: SBTAssetId) -> ItemId;
 }
+
+/// Type alias for currency balance.
+pub type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 /// MantaSBT Pallet
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::{
-        pallet_prelude::*,
-        traits::{tokens::nonfungibles::Mutate, StorageVersion},
-    };
-    use frame_system::pallet_prelude::*;
-    use scale_codec::Encode;
-    use sp_runtime::traits::{AccountIdConversion, Zero};
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
@@ -120,14 +121,26 @@ pub mod pallet {
         type PalletCollectionId: Get<Self::CollectionId>;
 
         /// Returns SBT serial number and increments value
-        type IncrementItem: IncrementItemId<Self::ItemId>;
+        type ConvertItemId: ItemIdConvert<Self::ItemId>;
+
+        /// The currency mechanism.
+        type Currency: ReservableCurrency<Self::AccountId>;
 
         /// Pallet ID
         type PalletId: Get<PalletId>;
+
+        /// Number of mints reserved per `reserve_sbt` call
+        #[pallet::constant]
+        type MintsPerReserve: Get<u16>;
+
+        type ReservePrice: Get<BalanceOf<Self>>;
     }
 
     #[pallet::storage]
-    pub type ItemIdCounter<T: Config> = StorageValue<_, T::ItemId, OptionQuery>;
+    pub type ItemIdCounter<T: Config> = StorageValue<_, SBTAssetId, ValueQuery>;
+
+    #[pallet::storage]
+    pub type ReservedIds<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, (SBTAssetId, SBTAssetId), OptionQuery>;
 
     /// UTXO Set
     #[pallet::storage]
@@ -162,20 +175,32 @@ pub mod pallet {
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::to_private())]
         #[transactional]
-        pub fn to_private(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
+        pub fn to_private(origin: OriginFor<T>, post: TransferPost, metadata: BoundedVec<u8, <T as pallet_uniques::Config>::StringLimit>) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
 
-            let item_id = T::IncrementItem::get_and_increment_item_id();
-            pallet_uniques::Pallet::<T>::mint_into(
-                &T::PalletCollectionId::get(),
-                &item_id,
-                &Self::account_id(),
-            )?;
-            // Ensures asset id is correct
+            let (start_id, end_id) = ReservedIds::<T>::get(&origin).ok_or(Error::<T>::NotReserved)?;
+            // Ensure asset id is correct
             ensure!(
-                post.asset_id == T::IncrementItem::encode_item_id(item_id),
+                post.asset_id == Some(Pallet::<T>::field_from_id(start_id)),
                 Error::<T>::InvalidAssetId
             );
+
+
+            pallet_uniques::Pallet::<T>::mint_into(
+                &T::PalletCollectionId::get(),
+                &T::ConvertItemId::asset_id_to_item_id(start_id),
+                &Self::account_id(),
+            )?;
+
+            pallet_uniques::Pallet::<T>::set_metadata(frame_system::RawOrigin::Root.into(), T::PalletCollectionId::get(), T::ConvertItemId::asset_id_to_item_id(start_id), metadata, true)?;
+
+            let increment_start_id = start_id.saturating_add(One::one());
+            if increment_start_id == end_id {
+                ReservedIds::<T>::remove(&origin)
+            } else {
+                ReservedIds::<T>::insert(&origin, (increment_start_id, end_id))
+            }
+
             // Only one UTXO allowed to be inserted per transaction
             ensure!(
                 post.receiver_posts.len() == 1_usize,
@@ -183,6 +208,22 @@ pub mod pallet {
             );
 
             Self::post_transaction(vec![origin], post)
+        }
+
+        #[pallet::call_index(1)]
+        #[pallet::weight(0)]
+        #[transactional]
+        pub fn reserve_sbt(origin: OriginFor<T>) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            <T as pallet::Config>::Currency::transfer(&who, &Self::account_id(), T::ReservePrice::get(), ExistenceRequirement::KeepAlive)?;
+            let first_id = ItemIdCounter::<T>::get();
+            let stop_id = first_id.checked_add(T::MintsPerReserve::get().into()).ok_or(ArithmeticError::Overflow)?;
+            ItemIdCounter::<T>::set(stop_id);
+
+            ReservedIds::<T>::insert(&who, (first_id, stop_id));
+            Self::deposit_event(Event::<T>::SBTReserved{who, start_id: first_id, stop_id});
+            Ok(())
         }
     }
 
@@ -197,6 +238,15 @@ pub mod pallet {
 
             /// Source Account
             source: T::AccountId,
+        },
+        /// Reserve
+        SBTReserved {
+            /// Public Account reserving sbt mints
+            who: T::AccountId,
+            /// Start of reserved ids
+            start_id: SBTAssetId,
+            /// end of reserved ids
+            stop_id: SBTAssetId,
         },
     }
 
@@ -289,6 +339,10 @@ pub mod pallet {
         ///
         /// At least one of the sink accounts in invalid.
         InvalidSinkAccount,
+
+        /// Need to first reserve SBT before minting
+        NotReserved
+
     }
 
     impl<T> From<InvalidAuthorizationSignature> for Error<T>
@@ -516,7 +570,7 @@ pub mod pallet {
 
         ///
         #[inline]
-        pub fn id_from_field(id: [u8; 32]) -> Option<StandardAssetId> {
+        pub fn id_from_field(id: [u8; 32]) -> Option<SBTAssetId> {
             if 0u128.to_le_bytes() == id[16..32] {
                 Some(u128::from_le_bytes(
                     Array::from_iter(id[0..16].iter().copied()).into(),
@@ -528,7 +582,7 @@ pub mod pallet {
 
         ///
         #[inline]
-        pub fn field_from_id(id: StandardAssetId) -> [u8; 32] {
+        pub fn field_from_id(id: SBTAssetId) -> [u8; 32] {
             into_array_unchecked([id.to_le_bytes(), [0; 16]].concat())
         }
     }

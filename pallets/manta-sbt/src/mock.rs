@@ -16,7 +16,7 @@
 
 use frame_support::{
     parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, Everything, GenesisBuild},
+    traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU16, Everything, GenesisBuild},
     PalletId,
 };
 use frame_system::{EnsureRoot, EnsureSigned};
@@ -30,7 +30,9 @@ use sp_runtime::{
     AccountId32,
 };
 
-use crate::{IncrementItemId, ItemIdCounter, StandardAssetId};
+use crate::{ItemIdConvert, SBTAssetId};
+
+pub const ALICE: AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -109,8 +111,8 @@ parameter_types! {
 
 impl pallet_uniques::Config for Test {
     type Event = Event;
-    type CollectionId = StandardAssetId;
-    type ItemId = StandardAssetId;
+    type CollectionId = SBTAssetId;
+    type ItemId = SBTAssetId;
     type Currency = Balances;
     type ForceOrigin = EnsureRoot<AccountId32>;
     type CollectionDeposit = CollectionDeposit;
@@ -130,19 +132,14 @@ impl pallet_uniques::Config for Test {
 
 parameter_types! {
     pub const MantaSBTPalletId: PalletId = MANTA_SBT_PALLET_ID;
+    pub const CustodialAccount: AccountId32 = ALICE;
 }
 
 pub struct ImplementItemId;
 
-impl IncrementItemId<StandardAssetId> for ImplementItemId {
-    fn get_and_increment_item_id() -> StandardAssetId {
-        let item_id = ItemIdCounter::<Test>::get().unwrap_or(0);
-        ItemIdCounter::<Test>::set(Some(item_id + 1));
-        item_id
-    }
-
-    fn encode_item_id(item: StandardAssetId) -> Option<[u8; 32]> {
-        Some(crate::Pallet::<Test>::field_from_id(item))
+impl ItemIdConvert<SBTAssetId> for ImplementItemId {
+    fn asset_id_to_item_id(asset_id: SBTAssetId) -> SBTAssetId {
+        asset_id
     }
 }
 
@@ -151,7 +148,11 @@ impl crate::Config for Test {
     type WeightInfo = crate::weights::SubstrateWeight<Test>;
     type PalletCollectionId = ConstU128<0>;
     type PalletId = MantaSBTPalletId;
-    type IncrementItem = ImplementItemId;
+    type ConvertItemId = ImplementItemId;
+    type Currency = Balances;
+    type MintsPerReserve = ConstU16<5>;
+    type ReservePrice = ConstU128<1000>;
+    type CustodialAccount = CustodialAccount;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

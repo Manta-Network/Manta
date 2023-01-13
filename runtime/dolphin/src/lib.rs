@@ -59,7 +59,7 @@ use manta_primitives::{
     constants::{time::*, MANTA_SBT_PALLET_ID, STAKING_PALLET_ID, TREASURY_PALLET_ID},
     types::{AccountId, Balance, BlockNumber, DolphinAssetId, Hash, Header, Index, Signature},
 };
-use pallet_manta_sbt::{IncrementItemId, ItemIdCounter};
+use pallet_manta_sbt::{ItemIdConvert, SBTAssetId};
 use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
@@ -689,17 +689,11 @@ impl manta_collator_selection::Config for Runtime {
     type CanAuthor = AuraAuthorFilter;
 }
 
-pub struct ImplementItemId;
+pub struct ConvertItemId;
 
-impl IncrementItemId<DolphinAssetId> for ImplementItemId {
-    fn get_and_increment_item_id() -> DolphinAssetId {
-        let item_id = ItemIdCounter::<Runtime>::get().unwrap_or(0);
-        ItemIdCounter::<Runtime>::set(Some(item_id + 1));
-        item_id
-    }
-
-    fn encode_item_id(item: DolphinAssetId) -> Option<[u8; 32]> {
-        Some(pallet_manta_sbt::Pallet::<Runtime>::field_from_id(item))
+impl ItemIdConvert<DolphinAssetId> for ConvertItemId {
+    fn asset_id_to_item_id(asset_id: SBTAssetId) -> DolphinAssetId {
+        asset_id
     }
 }
 
@@ -711,7 +705,10 @@ impl pallet_manta_sbt::Config for Runtime {
     type Event = Event;
     type PalletCollectionId = ConstU128<0>;
     type PalletId = MantaSBTPalletId;
-    type IncrementItem = ImplementItemId;
+    type ConvertItemId = ConvertItemId;
+    type Currency = Balances;
+    type MintsPerReserve = ConstU16<5>;
+    type ReservePrice = ConstU128<DOL>;
     type WeightInfo = pallet_manta_sbt::weights::SubstrateWeight<Runtime>;
 }
 

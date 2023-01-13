@@ -18,7 +18,7 @@ use crate::{
     fp_decode,
     mock::{new_test_ext, Balances, ImplementItemId, MantaSBTPallet, Origin as MockOrigin, Test},
     types::{fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
-    Error, IncrementItemId, ItemIdCounter,
+    Error, ItemIdCounter,
 };
 use frame_support::{assert_noop, assert_ok};
 use manta_crypto::{
@@ -49,6 +49,12 @@ lazy_static::lazy_static! {
 const RANDOMIZED_TESTS_ITERATIONS: usize = 10;
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
+
+macro_rules! bvec {
+	($( $x:tt )*) => {
+		vec![$( $x )*].try_into().unwrap()
+	}
+}
 
 /// Loads the [`MultiProvingContext`].
 #[inline]
@@ -98,12 +104,12 @@ fn to_private_should_work() {
         new_test_ext().execute_with(|| {
             initialize_test();
             let value = rng.gen();
-            let id =
-                ImplementItemId::encode_item_id(ItemIdCounter::<Test>::get().unwrap_or(0)).unwrap();
+            let id = MantaSBTPallet::field_from_id(ItemIdCounter::<Test>::get());
 
             assert_ok!(MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
-                sample_to_private(id, value, &mut rng)
+                sample_to_private(id, value, &mut rng),
+                bvec![]
             ));
         });
     }
@@ -121,7 +127,8 @@ fn wrong_asset_id_fails() {
         assert_noop!(
             MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
-                sample_to_private(asset_id, value, &mut rng)
+                sample_to_private(asset_id, value, &mut rng),
+                bvec![]
             ),
             Error::<Test>::InvalidAssetId
         );
