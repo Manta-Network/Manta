@@ -115,10 +115,13 @@ parameter_types! {
 #[cfg(test)]
 mod sanity_tests {
     use super::*;
-    frame_support::weights::constants::ExtrinsicBaseWeight as ImportedExtrinsicBaseWeight;
+    use frame_support::weights::constants::ExtrinsicBaseWeight as ImportedExtrinsicBaseWeight;
 
     #[test]
     fn sanity_check_extrinsic_base_weight() {
-        assert_eq!(ExtrinsicBaseWeight::get(), ImportedExtrinsicBaseWeight::get());
+        assert_eq!(
+            ExtrinsicBaseWeight::get(),
+            ImportedExtrinsicBaseWeight::get()
+        );
     }
 }
