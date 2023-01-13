@@ -566,9 +566,9 @@ checksum = "065374052e7df7ee4047b1160cca5e1467a12351a40b3da123c870ba0b8eda2a"
 
 [[package]]
 name = "attohttpc"
-version = "0.22.0"
+version = "0.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fcf00bc6d5abb29b5f97e3c61a90b6d3caa12f3faf897d4a3e3607c050a35a7"
+checksum = "b85f766c20e6ae766956f7a2fcc4e0931e79a7e1f48b29132b5d647021114914"
 dependencies = [
  "flate2",
  "http",
@@ -1006,6 +1006,12 @@ name = "byte-tools"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3b5ca7a04898ad4bcd41c90c5285445ff5b791899bb1b0abdd2a2aa791211d7"
+
+[[package]]
+name = "bytemuck"
+version = "1.12.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aaa3a8d9a1ca92e282c96a32d6511b695d7d994d1d102ba85d279f9b2756947f"
 
 [[package]]
 name = "byteorder"
@@ -4961,8 +4967,8 @@ version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6c601a85f5ecd1aba625247bca0031585fb1c446461b142878a16f8245ddeb8"
 dependencies = [
- "nalgebra",
- "statrs",
+ "nalgebra 0.27.1",
+ "statrs 0.15.0",
 ]
 
 [[package]]
@@ -5144,8 +5150,8 @@ dependencies = [
 
 [[package]]
 name = "manta-accounting"
-version = "0.5.8"
-source = "git+https://github.com/manta-network/manta-rs.git#e0b5cd33265086c7b2d975901aaaa4805d8893fe"
+version = "0.5.9"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.9#8a995e913f5bc37a927ecd58e0b03f5c1c790a46"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5154,7 +5160,7 @@ dependencies = [
  "manta-crypto",
  "manta-util",
  "parking_lot 0.12.1",
- "statrs",
+ "statrs 0.16.0",
 ]
 
 [[package]]
@@ -5188,8 +5194,8 @@ dependencies = [
 
 [[package]]
 name = "manta-crypto"
-version = "0.5.8"
-source = "git+https://github.com/manta-network/manta-rs.git#e0b5cd33265086c7b2d975901aaaa4805d8893fe"
+version = "0.5.9"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.9#8a995e913f5bc37a927ecd58e0b03f5c1c790a46"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -5214,8 +5220,8 @@ dependencies = [
 
 [[package]]
 name = "manta-parameters"
-version = "0.5.8"
-source = "git+https://github.com/manta-network/manta-rs.git#e0b5cd33265086c7b2d975901aaaa4805d8893fe"
+version = "0.5.9"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.9#8a995e913f5bc37a927ecd58e0b03f5c1c790a46"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5227,8 +5233,8 @@ dependencies = [
 
 [[package]]
 name = "manta-pay"
-version = "0.5.8"
-source = "git+https://github.com/manta-network/manta-rs.git#e0b5cd33265086c7b2d975901aaaa4805d8893fe"
+version = "0.5.9"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.9#8a995e913f5bc37a927ecd58e0b03f5c1c790a46"
 dependencies = [
  "aes-gcm",
  "bip32",
@@ -5331,8 +5337,8 @@ dependencies = [
 
 [[package]]
 name = "manta-util"
-version = "0.5.8"
-source = "git+https://github.com/manta-network/manta-rs.git#e0b5cd33265086c7b2d975901aaaa4805d8893fe"
+version = "0.5.9"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.9#8a995e913f5bc37a927ecd58e0b03f5c1c790a46"
 dependencies = [
  "crossbeam-channel",
  "serde",
@@ -5593,7 +5599,25 @@ dependencies = [
  "num-traits",
  "rand 0.8.5",
  "rand_distr",
- "simba",
+ "simba 0.5.1",
+ "typenum 1.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "nalgebra"
+version = "0.29.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d506eb7e08d6329505faa8a3a00a5dcc6de9f76e0c77e4b75763ae3c770831ff"
+dependencies = [
+ "approx",
+ "matrixmultiply",
+ "nalgebra-macros",
+ "num-complex",
+ "num-rational 0.4.1",
+ "num-traits",
+ "rand 0.8.5",
+ "rand_distr",
+ "simba 0.6.0",
  "typenum 1.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -9376,6 +9400,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7b4b9743ed687d4b4bcedf9ff5eaa7398495ae14e61cba0a295704edbc7decde"
 
 [[package]]
+name = "safe_arch"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "794821e4ccb0d9f979512f9c1973480123f9bd62a90d74ab0f9426fcf8f4a529"
+dependencies = [
+ "bytemuck",
+]
+
+[[package]]
 name = "salsa20"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10855,6 +10888,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "simba"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0b7840f121a46d63066ee7a99fc81dcabbc6105e437cae43528cea199b5a05f"
+dependencies = [
+ "approx",
+ "num-complex",
+ "num-traits",
+ "paste",
+ "wide",
+]
+
+[[package]]
 name = "similar"
 version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11746,7 +11792,20 @@ checksum = "05bdbb8e4e78216a85785a85d3ec3183144f98d0097b9281802c019bb07a6f05"
 dependencies = [
  "approx",
  "lazy_static",
- "nalgebra",
+ "nalgebra 0.27.1",
+ "num-traits",
+ "rand 0.8.5",
+]
+
+[[package]]
+name = "statrs"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d08e5e1748192713cc281da8b16924fb46be7b0c2431854eadc785823e5696e"
+dependencies = [
+ "approx",
+ "lazy_static",
+ "nalgebra 0.29.0",
  "num-traits",
  "rand 0.8.5",
 ]
@@ -13077,6 +13136,16 @@ dependencies = [
  "either",
  "libc",
  "once_cell",
+]
+
+[[package]]
+name = "wide"
+version = "0.7.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae41ecad2489a1655c8ef8489444b0b113c0a0c795944a3572a0931cf7d2525c"
+dependencies = [
+ "bytemuck",
+ "safe_arch",
 ]
 
 [[package]]

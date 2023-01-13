@@ -1021,12 +1021,12 @@ where
     {
         let _ = super_key;
         let utxo_accumulator_model = config::UtxoAccumulatorModel::decode(
-            manta_parameters::pay::testnet::parameters::UtxoAccumulatorModel::get()
+            manta_parameters::pay::parameters::UtxoAccumulatorModel::get()
                 .ok_or(ReceiverLedgerError::ChecksumError)?,
         )
         .map_err(ReceiverLedgerError::MTParametersDecodeError)?;
         let utxo_accumulator_item_hash = config::utxo::UtxoAccumulatorItemHash::decode(
-            manta_parameters::pay::testnet::parameters::UtxoAccumulatorItemHash::get()
+            manta_parameters::pay::parameters::UtxoAccumulatorItemHash::get()
                 .ok_or(ReceiverLedgerError::ChecksumError)?,
         )
         .map_err(ReceiverLedgerError::UtxoAccumulatorItemHashDecodeError)?;
@@ -1271,7 +1271,7 @@ where
                     let asset_id =
                         fp_encode(asset_id).map_err(TransferLedgerError::FpEncodeError)?;
                     (
-                        manta_parameters::pay::testnet::verifying::ToPrivate::get()
+                        manta_parameters::pay::verifying::ToPrivate::get()
                             .ok_or(TransferLedgerError::ChecksumError)?,
                         PreprocessedEvent::<T>::ToPrivate {
                             asset: Asset::new(
@@ -1286,7 +1286,7 @@ where
                 }
             }
             TransferShape::PrivateTransfer => (
-                manta_parameters::pay::testnet::verifying::PrivateTransfer::get()
+                manta_parameters::pay::verifying::PrivateTransfer::get()
                     .ok_or(TransferLedgerError::ChecksumError)?,
                 PreprocessedEvent::<T>::PrivateTransfer,
             ),
@@ -1295,7 +1295,7 @@ where
                     let asset_id =
                         fp_encode(asset_id).map_err(TransferLedgerError::FpEncodeError)?;
                     (
-                        manta_parameters::pay::testnet::verifying::ToPublic::get()
+                        manta_parameters::pay::verifying::ToPublic::get()
                             .ok_or(TransferLedgerError::ChecksumError)?,
                         PreprocessedEvent::<T>::ToPublic {
                             asset: Asset::new(asset_id, asset_value_encode(posting_key.sinks[0].1)),
