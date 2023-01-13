@@ -8,8 +8,8 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'manta'
 repository = 'https://github.com/Manta-Network/Manta/'
-rust-version = '1.59'
-version = '3.4.3'
+rust-version = '1.62'
+version = '4.0.0-rc1'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -20,8 +20,10 @@ cfg-if = "1.0.0"
 clap = { version = "3.1", features = ["derive"] }
 codec = { package = 'parity-scale-codec', version = '3.1.2' }
 futures = "0.3.21"
+hex-literal = "0.3"
 log = "0.4.16"
 serde = { version = "1.0.140", features = ["derive"] }
+tracing-core = "=0.1.26"
 
 # Substrate frames
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
@@ -41,6 +43,7 @@ sc-cli = { git = 'https://github.com/paritytech/substrate.git', branch = "polkad
 sc-client-api = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sc-consensus = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sc-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
+sc-consensus-manual-seal = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sc-consensus-slots = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sc-executor = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 sc-keystore = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
@@ -86,9 +89,9 @@ cumulus-relay-chain-interface = { git = 'https://github.com/paritytech/cumulus.g
 cumulus-relay-chain-rpc-interface = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.26" }
 
 # Nimbus dependencies
-nimbus-consensus = { git = "https://github.com/manta-network/nimbus.git", tag = "v3.4.3" }
-nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v3.4.3" }
-pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", tag = "v3.4.3" }
+nimbus-consensus = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.0" }
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.0" }
+pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.0" }
 
 # Polkadot dependencies
 polkadot-cli = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.26" }

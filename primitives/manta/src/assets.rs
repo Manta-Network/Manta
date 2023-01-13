@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -352,6 +352,9 @@ pub enum FungibleLedgerError<I, B> {
 
     /// Unable to Transfer an Asset
     InvalidTransfer(DispatchError),
+
+    /// Encode Error
+    EncodeError,
 }
 
 impl<I, B> FungibleLedgerError<I, B> {

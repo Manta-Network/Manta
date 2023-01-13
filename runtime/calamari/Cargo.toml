@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'calamari-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '3.4.3'
+version = '4.0.0-rc1'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
@@ -71,9 +71,9 @@ cumulus-primitives-utility = { git = 'https://github.com/paritytech/cumulus.git'
 parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.26" }
 
 # Nimbus Dependencies
-nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v3.4.3", default-features = false }
-pallet-aura-style-filter = { git = "https://github.com/manta-network/nimbus.git", tag = "v3.4.3", default-features = false }
-pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", tag = "v3.4.3", default-features = false }
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.0", default-features = false }
+pallet-aura-style-filter = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.0", default-features = false }
+pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.0", default-features = false }
 
 # Polkadot dependencies
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.26" }
@@ -93,6 +93,7 @@ calamari-vesting = { path = '../../pallets/vesting', default-features = false }
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
+pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
@@ -105,6 +106,7 @@ targets = ['x86_64-unknown-linux-gnu']
 substrate-wasm-builder = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.26" }
 
 [dev-dependencies]
+lazy_static = "1.4.0"
 reqwest = { version = "0.11", features = ["blocking"] }
 serde_json = "1.0"
 
@@ -181,13 +183,13 @@ runtime-benchmarks = [
   'pallet-asset-manager/runtime-benchmarks',
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
   'cumulus-pallet-parachain-system/runtime-benchmarks',
+  'pallet-manta-pay/runtime-benchmarks',
   'pallet-xcm-benchmarks',
 ]
 try-runtime = [
   'frame-executive/try-runtime',
   'frame-try-runtime',
   'frame-system/try-runtime',
-  'pallet-aura/try-runtime',
   'pallet-authorship/try-runtime',
   'pallet-balances/try-runtime',
   'pallet-parachain-staking/try-runtime',
@@ -273,4 +275,5 @@ std = [
   'pallet-asset-manager/std',
   'orml-traits/std',
   'orml-xtokens/std',
+  'pallet-manta-pay/std',
 ]

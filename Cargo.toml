@@ -1,13 +1,9 @@
 [workspace]
 members = [
-  'node',
-  'pallets/*',
-  'runtime/manta',
-  'runtime/calamari',
-  'runtime/dolphin',
-  'runtime/common',
-  'primitives/manta',
-  'primitives/session-keys',
+  "node",
+  "pallets/*",
+  "primitives/*",
+  "runtime/*",
 ]
 resolver = "2"
 

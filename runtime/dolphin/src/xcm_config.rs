@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    assets_config::DolphinAssetConfig, AssetManager, Assets, Call, DmpQueue,
+    assets_config::DolphinAssetConfig, AssetManager, Assets, Balances, Call, DmpQueue,
     EnsureRootOrMoreThanHalfCouncil, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm,
     Runtime, Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
@@ -23,7 +23,7 @@ use codec::{Decode, Encode};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
     match_types, parameter_types,
-    traits::{Everything, Nothing},
+    traits::{Currency, Everything, Nothing},
     weights::Weight,
 };
 use frame_system::EnsureRoot;
@@ -45,7 +45,8 @@ use xcm_builder::{
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
     EnsureXcmOrigin, FixedRateOfFungible, LocationInverter, ParentAsSuperuser, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SovereignSignedViaLocation, TakeWeightCredit, WeightInfoBounds,
+    SignedAccountId32AsNative, SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit,
+    WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
@@ -178,6 +179,24 @@ parameter_types! {
     pub XcmFeesAccount: AccountId = Treasury::account_id();
 }
 
+/// Xcm fee of native token
+pub struct XcmNativeFeeToTreasury;
+
+impl TakeRevenue for XcmNativeFeeToTreasury {
+    #[inline]
+    fn take_revenue(revenue: MultiAsset) {
+        if let MultiAsset {
+            id: Concrete(location),
+            fun: Fungible(amount),
+        } = revenue
+        {
+            if location == MultiLocation::here() {
+                let _ = Balances::deposit_creating(&XcmFeesAccount::get(), amount);
+            }
+        }
+    }
+}
+
 pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
     AccountId,
     Assets,
@@ -211,7 +230,7 @@ impl Config for XcmExecutorConfig {
     // The second one will charge the first asset in the MultiAssets with pre-defined rate
     // i.e. units_per_second in `AssetManager`
     type Trader = (
-        FixedRateOfFungible<ParaTokenPerSecond, ()>,
+        FixedRateOfFungible<ParaTokenPerSecond, XcmNativeFeeToTreasury>,
         FirstAssetTrader<AssetManager, XcmFeesToAccount>,
     );
     type ResponseHandler = PolkadotXcm;

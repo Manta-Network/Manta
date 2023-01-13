@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -45,7 +45,7 @@ pub type AccountIndex = u32;
 pub type CalamariAssetId = u128;
 
 /// Dolphin Asset Id Type
-pub type DolphinAssetId = u32;
+pub type DolphinAssetId = u128;
 
 /// Balance of an Account
 pub type Balance = u128;

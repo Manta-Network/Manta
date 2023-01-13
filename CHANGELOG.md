@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## v4.0.0
+### Added
+- [\#903](https://github.com/Manta-Network/Manta/pull/903) Add MantaPay to Calamari runtime [CA]
+- [\#921](https://github.com/Manta-Network/Manta/pull/921) Add dense_pull_ledger_diff rpc method [CADO]
+- [\#919](https://github.com/Manta-Network/Manta/pull/919) Add pull-ledger-diff ci test for calamari [CADO]
+- [\#928](https://github.com/Manta-Network/Manta/pull/928) MantaPay stress-test benchmark [CADO]
+- [\#952](https://github.com/Manta-Network/Manta/pull/952) update genesis [MA]
+
+### Changed
+- [\#814](https://github.com/Manta-Network/Manta/pull/814) feat: upgrade asset manager [CADO]
+- [\#890](https://github.com/Manta-Network/Manta/pull/890) MantaPay V1 for Dolphin V3 deployment [CADO]
+- [\#906](https://github.com/Manta-Network/Manta/pull/906) Use finalized_hash instead of best_hash in pull_ledger_diff [CADO]
+- [\#911](https://github.com/Manta-Network/Manta/pull/911) Feature/manta rs v0.5.8 [MACADO]
+- [\#771](https://github.com/Manta-Network/Manta/pull/771) Update tx-pause pallet to make it easier to pause stuff [CA]
+- [\#944](https://github.com/Manta-Network/Manta/pull/944) Update nimbus [CADO]
+- [\#937](https://github.com/Manta-Network/Manta/pull/937) Set collator minimum bond to 4M KMA [CA]
+- [\#949](https://github.com/Manta-Network/Manta/pull/949) fix: distinguish between panic-errors and possible-fix-errors [CA]
+- [\#946](https://github.com/Manta-Network/Manta/pull/946) Update Manta Runtime [MA]
+- [\#956](https://github.com/Manta-Network/Manta/pull/956) Reduce running time for CI tests [CADO]
+
+### Fixed
+- [\#924](https://github.com/Manta-Network/Manta/pull/924) Fix runtime upgrade test by using governance instead of SUDO [CADO]
+- [\#948](https://github.com/Manta-Network/Manta/pull/948) add zero balance check [CADO]
+
 ## v3.4.3
 ### Changed
 - [\#836](https://github.com/Manta-Network/Manta/pull/836) client trait bound refactor [CA]

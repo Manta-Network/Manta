@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -42,8 +42,8 @@ use sp_version::RuntimeVersion;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, NeverEnsureOrigin,
-        PrivilegeCmp,
+        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec,
+        NeverEnsureOrigin, PrivilegeCmp,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -106,6 +106,15 @@ pub mod opaque {
             let (aura, nimbus, vrf) = tuple;
             SessionKeys { aura, nimbus, vrf }
         }
+        /// Derives all collator keys from `seed` without checking that the `seed` is valid.
+        #[cfg(feature = "std")]
+        pub fn from_seed_unchecked(seed: &str) -> SessionKeys {
+            Self::new((
+                session_key_primitives::util::unchecked_public_key::<AuraId>(seed),
+                session_key_primitives::util::unchecked_public_key::<NimbusId>(seed),
+                session_key_primitives::util::unchecked_public_key::<VrfId>(seed),
+            ))
+        }
     }
 }
 
@@ -117,10 +126,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("dolphin"),
     impl_name: create_runtime_str!("dolphin"),
     authoring_version: 2,
-    spec_version: 3433,
+    spec_version: 4001,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 4,
+    transaction_version: 5,
     state_version: 0,
 };
 
@@ -168,9 +177,20 @@ parameter_types! {
     pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
 }
 
+parameter_types! {
+    pub NonPausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilCollective".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalCollective".to_vec()];
+}
+
 impl pallet_tx_pause::Config for Runtime {
     type Event = Event;
-    type UpdateOrigin = EnsureRoot<AccountId>;
+    type Call = Call;
+    type MaxCallNames = ConstU32<25>;
+    type PauseOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,
+    >;
+    type UnpauseOrigin = EnsureRoot<AccountId>;
+    type NonPausablePallets = IsInVec<NonPausablePallets>;
     type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
@@ -267,6 +287,7 @@ impl Contains<Call> for BaseFilter {
                 | orml_xtokens::Call::transfer_multicurrencies  {..})
             | Call::MantaPay(_)
             | Call::Preimage(_)
+            | Call::TransactionPause(_)
             | Call::Utility(_) => true,
 
             // DISALLOW anything else
@@ -939,6 +960,14 @@ impl_runtime_apis! {
         ) -> pallet_manta_pay::PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
+
+        fn dense_pull_ledger_diff(
+            checkpoint: pallet_manta_pay::RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> pallet_manta_pay::DensePullResponse {
+            MantaPay::dense_pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
     }
 
     impl nimbus_primitives::NimbusApi<Block> for Runtime {
@@ -947,13 +976,6 @@ impl_runtime_apis! {
 
             // And now the actual prediction call
             <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
-        }
-    }
-
-    // We also implement the old AuthorFilterAPI to meet the trait bounds on the client side.
-    impl nimbus_primitives::AuthorFilterAPI<Block, NimbusId> for Runtime {
-        fn can_author(_: NimbusId, _: u32, _: &<Block as BlockT>::Header) -> bool {
-            panic!("AuthorFilterAPI is no longer supported. Please update your client.")
         }
     }
 

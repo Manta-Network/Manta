@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -17,7 +17,6 @@
 //! RuntimeApi for client
 
 use manta_primitives::types::{AccountId, Balance, Block, Index as Nonce};
-use session_key_primitives::NimbusId;
 use sp_runtime::traits::BlakeTwo256;
 
 /// RuntimeApiCommon + RuntimeApiNimbus: nimbus
@@ -39,9 +38,7 @@ where
 
 /// Extend RuntimeApi trait bound for Nimbus
 pub trait RuntimeApiNimbus:
-    cumulus_primitives_core::CollectCollationInfo<Block>
-    + nimbus_primitives::AuthorFilterAPI<Block, NimbusId>
-    + nimbus_primitives::NimbusApi<Block>
+    cumulus_primitives_core::CollectCollationInfo<Block> + nimbus_primitives::NimbusApi<Block>
 {
 }
 
@@ -60,8 +57,6 @@ where
 }
 
 impl<Api> RuntimeApiNimbus for Api where
-    Api: cumulus_primitives_core::CollectCollationInfo<Block>
-        + nimbus_primitives::AuthorFilterAPI<Block, NimbusId>
-        + nimbus_primitives::NimbusApi<Block>
+    Api: cumulus_primitives_core::CollectCollationInfo<Block> + nimbus_primitives::NimbusApi<Block>
 {
 }
