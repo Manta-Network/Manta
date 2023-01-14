@@ -16,12 +16,10 @@
 
 //! MantaPay Runtime APIs
 
-use crate::{DensePullResponse, PullResponse, RawCheckpoint};
+use crate::{PullResponse, RawCheckpoint};
 
 sp_api::decl_runtime_apis! {
     pub trait PullLedgerDiffApi {
         fn pull_ledger_diff(checkpoint: RawCheckpoint, max_receivers: u64, max_senders: u64) -> PullResponse;
-
-        fn dense_pull_ledger_diff(checkpoint: RawCheckpoint, max_receivers: u64, max_senders: u64) -> DensePullResponse;
     }
 }
