@@ -89,7 +89,7 @@ use manta_util::{
 
 pub use crate::types::{Checkpoint, RawCheckpoint};
 pub use pallet::*;
-pub use types::{DensePullResponse, PullResponse};
+pub use types::PullResponse;
 pub use weights::WeightInfo;
 
 #[cfg(test)]
@@ -122,7 +122,6 @@ pub mod pallet {
     use super::*;
     use frame_support::{pallet_prelude::*, traits::StorageVersion};
     use frame_system::pallet_prelude::*;
-    use scale_codec::Encode;
     use sp_runtime::traits::AccountIdConversion;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -677,30 +676,6 @@ pub mod pallet {
                 receivers,
                 senders,
                 senders_receivers_total: asset_value_encode(senders_receivers_total),
-            }
-        }
-
-        /// Returns the diff of ledger state since the given `checkpoint`, `max_receivers`, and
-        /// `max_senders`.
-        #[inline]
-        pub fn dense_pull_ledger_diff(
-            checkpoint: Checkpoint,
-            max_receivers: u64,
-            max_senders: u64,
-        ) -> DensePullResponse {
-            let (more_receivers, receivers) =
-                Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
-            let (more_senders, senders) = Self::pull_senders(checkpoint.sender_index, max_senders);
-            let senders_receivers_total = (0..=255)
-                .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
-                .sum::<u128>()
-                + NullifierSetSize::<T>::get() as u128;
-            DensePullResponse {
-                should_continue: more_receivers || more_senders,
-                receivers: base64::encode(receivers.encode()),
-                senders: base64::encode(senders.encode()),
-                senders_receivers_total: asset_value_encode(senders_receivers_total),
-                next_checkpoint: None,
             }
         }
 
