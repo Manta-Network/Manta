@@ -599,7 +599,7 @@ fn pull_ledger_diff_should_work() {
         let (max_receivers, max_senders) = (128, 128);
         let check_point = crate::Checkpoint::default();
         let runtime_pull_response =
-            MantaPayPallet::pull_ledger_diff(check_point, max_receivers, max_senders);
+            MantaPay::pull_ledger_diff(check_point, max_receivers, max_senders);
 
         // ensure all Utxos have been returned.
         assert!(!runtime_pull_response.should_continue);
@@ -684,6 +684,18 @@ fn transfer_ledger_errors_should_shut_down() {
             TransferLedgerError::<Test>::VerifyingContextDecodeError(
                 VerifyingContextError::Decode(SerializationError::NotEnoughSpace),
             ),
+        ));
+        assert_manta_pay_suspension();
+
+        let _e = Error::<Test>::from(TransferPostError::<Test>::Receiver(
+            ReceiverPostError::UnexpectedError(
+                ReceiverLedgerError::<Test>::MerkleTreeCapacityError,
+            ),
+        ));
+        assert_manta_pay_suspension();
+
+        let _e = Error::<Test>::from(TransferPostError::<Test>::Receiver(
+            ReceiverPostError::UnexpectedError(ReceiverLedgerError::<Test>::ChecksumError),
         ));
         assert_manta_pay_suspension();
     });

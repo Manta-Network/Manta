@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use frame_support::{
-    pallet_prelude::{DispatchResult, DispatchResultWithPostInfo},
+    pallet_prelude::DispatchResult,
     parameter_types,
     traits::{ConstU32, IsInVec},
     PalletId,
@@ -254,8 +254,8 @@ impl pallet_asset_manager::Config for Test {
 
 pub struct MantaPaySuspensionManager;
 impl crate::SuspendMantaPay for MantaPaySuspensionManager {
-    fn suspend_manta_pay_execution() -> DispatchResultWithPostInfo {
-        TransactionPause::pause_pallets(RawOrigin::Root.into(), vec![b"MantaPay".to_vec()])
+    fn suspend_manta_pay_execution() {
+        let _ = TransactionPause::pause_pallets(RawOrigin::Root.into(), vec![b"MantaPay".to_vec()]);
     }
 }
 

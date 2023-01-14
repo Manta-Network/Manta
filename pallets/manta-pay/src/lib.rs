@@ -126,15 +126,15 @@ pub mod pallet {
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
-    ///
+    /// Suspend execution of MantaPay extrinsics (via tx-pause) due to unexpected internal ledger error.
+    /// Currently the following errors, which are only controlled by our own code, not user input:
+    /// ChecksumError, MerkleTreeCapacityError, VerifyingContextDecodeError
     pub trait SuspendMantaPay {
-        fn suspend_manta_pay_execution() -> DispatchResultWithPostInfo;
+        fn suspend_manta_pay_execution();
     }
 
     impl SuspendMantaPay for () {
-        fn suspend_manta_pay_execution() -> DispatchResultWithPostInfo {
-            Ok(().into())
-        }
+        fn suspend_manta_pay_execution() {}
     }
 
     /// Pallet
@@ -514,7 +514,7 @@ pub mod pallet {
                     match e {
                         ReceiverLedgerError::ChecksumError
                         | ReceiverLedgerError::MerkleTreeCapacityError => {
-                            let _ = T::Suspender::suspend_manta_pay_execution();
+                            T::Suspender::suspend_manta_pay_execution();
                         }
                         _ => {}
                     };
@@ -543,7 +543,7 @@ pub mod pallet {
             match err {
                 ReceiverLedgerError::ChecksumError
                 | ReceiverLedgerError::MerkleTreeCapacityError => {
-                    let _ = T::Suspender::suspend_manta_pay_execution();
+                    T::Suspender::suspend_manta_pay_execution();
                 }
                 _ => {}
             };
@@ -601,7 +601,7 @@ pub mod pallet {
                     match e {
                         TransferLedgerError::ChecksumError
                         | TransferLedgerError::VerifyingContextDecodeError(_) => {
-                            let _ = T::Suspender::suspend_manta_pay_execution();
+                            T::Suspender::suspend_manta_pay_execution();
                         }
                         _ => {}
                     };
@@ -1018,7 +1018,7 @@ where
             match value {
                 ReceiverLedgerError::ChecksumError
                 | ReceiverLedgerError::MerkleTreeCapacityError => {
-                    let _ = T::Suspender::suspend_manta_pay_execution();
+                    T::Suspender::suspend_manta_pay_execution();
                 }
                 _ => {}
             };
@@ -1202,7 +1202,7 @@ where
                 match err {
                     TransferLedgerError::ChecksumError
                     | TransferLedgerError::VerifyingContextDecodeError(_) => {
-                        let _ = T::Suspender::suspend_manta_pay_execution();
+                        T::Suspender::suspend_manta_pay_execution();
                     }
                     _ => {}
                 };
@@ -1291,7 +1291,7 @@ where
                     &account_id,
                     deposit,
                     false,
-                )runtime/calamari/tests/integrations_mock/integration_tests.rs
+                )
                 .map(|_| WrapPair(account_id.clone(), deposit))
                 .map_err(|_| InvalidSinkAccount {
                     account_id,
