@@ -156,14 +156,9 @@ fn calamari_dev_genesis(
                 .to_vec(),
         },
         balances: calamari_runtime::BalancesConfig {
-            balances: endowed_accounts[..endowed_accounts.len() / 2]
+            balances: endowed_accounts[..endowed_accounts.len()]
                 .iter()
-                .map(|k| {
-                    (
-                        k.clone(),
-                        100 * CALAMARI_ENDOWMENT / ((endowed_accounts.len() / 2) as Balance),
-                    )
-                })
+                .map(|k| (k.clone(), 100 * CALAMARI_ENDOWMENT))
                 .collect(),
         },
         // no need to pass anything to aura, in fact it will panic if we do. Session will take care
