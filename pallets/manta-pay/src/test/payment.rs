@@ -592,33 +592,27 @@ fn pull_ledger_diff_should_work() {
             );
         }
 
+        // retrieving 128 receivers/senders can get all existing Utxos
         let (max_receivers, max_senders) = (128, 128);
         let check_point = crate::Checkpoint::default();
-        let pull_response =
+        let runtime_pull_response =
             MantaPayPallet::pull_ledger_diff(check_point, max_receivers, max_senders);
-        let dense_pull_response =
-            MantaPayPallet::dense_pull_ledger_diff(check_point, max_receivers, max_senders);
-        assert_eq!(
-            pull_response.senders_receivers_total,
-            dense_pull_response.senders_receivers_total
-        );
-        assert_eq!(
-            pull_response.should_continue,
-            dense_pull_response.should_continue
-        );
-        assert_eq!(
-            pull_response.should_continue,
-            dense_pull_response.should_continue
-        );
+
+        // ensure all Utxos have been returned.
+        assert!(!runtime_pull_response.should_continue);
+
+        // convert runtime response into native response
+        let dense_pull_response: crate::types::DensePullResponse =
+            runtime_pull_response.clone().into();
 
         let dense_receivers = base64::decode(dense_pull_response.receivers).unwrap();
         let mut slice_of = dense_receivers.as_slice();
         let decoded_receivers = <crate::ReceiverChunk as Decode>::decode(&mut slice_of).unwrap();
-        assert_eq!(pull_response.receivers, decoded_receivers);
+        assert_eq!(runtime_pull_response.receivers, decoded_receivers);
 
         let dense_senders = base64::decode(dense_pull_response.senders).unwrap();
         let mut slice_of = dense_senders.as_slice();
         let decoded_senders = <crate::SenderChunk as Decode>::decode(&mut slice_of).unwrap();
-        assert_eq!(pull_response.senders, decoded_senders);
+        assert_eq!(runtime_pull_response.senders, decoded_senders);
     });
 }
