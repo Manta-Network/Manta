@@ -35,7 +35,7 @@ use rand_chacha::ChaCha20Rng;
 use scale_codec::Encode;
 use std::{
     env,
-    fs::{self, OpenOptions},
+    fs::{self, File, OpenOptions},
     io::Write,
     path::PathBuf,
 };
@@ -158,7 +158,21 @@ macro_rules! write_const_nested_array {
         )
     };
 }
+lazy_static::lazy_static! {
+    static ref PROVING_CONTEXT: MultiProvingContext = load_proving_context();
+    static ref PARAMETERS: Parameters = load_transfer_parameters();
+    static ref UTXO_ACCUMULATOR_MODEL: UtxoAccumulatorModel = load_utxo_accumulator_model();
+}
 
+/// Loads the [`MultiProvingContext`].
+#[inline]
+fn load_proving_context() -> MultiProvingContext {
+    manta_pay::parameters::load_proving_context(
+        tempfile::tempdir()
+            .expect("Unable to create temporary directory.")
+            .path(),
+    )
+}
 /// Builds sample transactions for testing.
 #[inline]
 fn main() -> Result<()> {

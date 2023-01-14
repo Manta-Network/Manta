@@ -3336,3 +3336,13 @@ fn test_sender_side_xcm_weight() {
         <ParaXcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
     assert!(weight < ADVERTISED_DEST_WEIGHT);
 }
+
+#[test]
+fn check_transact_weights() {
+    let weight =
+        <ParaXcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut transact_message::<
+            parachain::Call,
+        >())
+        .unwrap();
+    println!("{}", weight);
+}

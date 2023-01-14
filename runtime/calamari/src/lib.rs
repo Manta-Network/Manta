@@ -24,7 +24,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-pub use frame_support::traits::Get;
 use manta_collator_selection::IdentityCollator;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -41,9 +40,11 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use frame_support::{
-    construct_runtime, parameter_types,
+    construct_runtime,
+    pallet_prelude::DispatchResultWithPostInfo,
+    parameter_types,
     traits::{
-        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec,
+        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, Get, IsInVec,
         NeverEnsureOrigin, PrivilegeCmp,
     },
     weights::{
@@ -54,7 +55,7 @@ use frame_support::{
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureRoot,
+    EnsureRoot, RawOrigin,
 };
 use manta_primitives::{
     constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
@@ -295,6 +296,7 @@ impl Contains<Call> for BaseFilter {
                 | pallet_parachain_staking::Call::execute_delegation_request{..}
                 | pallet_parachain_staking::Call::cancel_delegation_request{..})
             | Call::Balances(_)
+            | Call::MantaPay(_)
             | Call::Preimage(_)
             | Call::MantaPay(_)
             | Call::XTokens(orml_xtokens::Call::transfer {..}
@@ -1049,6 +1051,14 @@ impl_runtime_apis! {
         ) -> pallet_manta_pay::PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
+
+        fn dense_pull_ledger_diff(
+            checkpoint: pallet_manta_pay::RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> pallet_manta_pay::DensePullResponse {
+            MantaPay::dense_pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
     }
 
     impl nimbus_primitives::NimbusApi<Block> for Runtime {
@@ -1265,4 +1275,11 @@ cumulus_pallet_parachain_system::register_validate_block! {
     Runtime = Runtime,
     BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
     CheckInherents = CheckInherents,
+}
+
+pub struct MantaPaySuspensionManager;
+impl pallet_manta_pay::SuspendMantaPay for MantaPaySuspensionManager {
+    fn suspend_manta_pay_execution() -> DispatchResultWithPostInfo {
+        TransactionPause::pause_pallets(RawOrigin::Root.into(), vec![b"MantaPay".to_vec()])
+    }
 }

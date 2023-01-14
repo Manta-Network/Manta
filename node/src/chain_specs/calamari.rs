@@ -93,9 +93,9 @@ pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
         "calamari_local"
     };
     CalamariChainSpec::from_genesis(
-        "Calamari Parachain Local",
-        id,
-        ChainType::Local,
+        "Calamari Parachain Live On Rococo",
+        "calamari on Rococo",
+        ChainType::Live,
         move || {
             let invulnerables = if localdev {
                 vec![(
@@ -116,14 +116,6 @@ pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
                         unchecked_account_id::<sr25519::Public>("Charlie"),
                         SessionKeys::from_seed_unchecked("Charlie"),
                     ),
-                    (
-                        unchecked_account_id::<sr25519::Public>("Dave"),
-                        SessionKeys::from_seed_unchecked("Dave"),
-                    ),
-                    (
-                        unchecked_account_id::<sr25519::Public>("Eve"),
-                        SessionKeys::from_seed_unchecked("Eve"),
-                    ),
                 ]
             };
             calamari_dev_genesis(
@@ -136,21 +128,16 @@ pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
                     unchecked_account_id::<sr25519::Public>("Charlie"),
                     unchecked_account_id::<sr25519::Public>("Dave"),
                     unchecked_account_id::<sr25519::Public>("Eve"),
-                    unchecked_account_id::<sr25519::Public>("Alice//stash"),
-                    unchecked_account_id::<sr25519::Public>("Bob//stash"),
-                    unchecked_account_id::<sr25519::Public>("Charlie//stash"),
-                    unchecked_account_id::<sr25519::Public>("Dave//stash"),
-                    unchecked_account_id::<sr25519::Public>("Eve//stash"),
                 ],
             )
         },
         vec![],
         None,
-        Some(CALAMARI_PROTOCOL_ID),
+        Some("calamari-on-moonbase"),
         None,
         Some(calamari_properties()),
         Extensions {
-            relay_chain: KUSAMA_RELAYCHAIN_LOCAL_NET.into(),
+            relay_chain: "".into(),
             para_id: CALAMARI_PARACHAIN_ID,
         },
     )
@@ -169,14 +156,9 @@ fn calamari_dev_genesis(
                 .to_vec(),
         },
         balances: calamari_runtime::BalancesConfig {
-            balances: endowed_accounts[..endowed_accounts.len() / 2]
+            balances: endowed_accounts[..endowed_accounts.len()]
                 .iter()
-                .map(|k| {
-                    (
-                        k.clone(),
-                        100 * CALAMARI_ENDOWMENT / ((endowed_accounts.len() / 2) as Balance),
-                    )
-                })
+                .map(|k| (k.clone(), 100 * CALAMARI_ENDOWMENT))
                 .collect(),
         },
         // no need to pass anything to aura, in fact it will panic if we do. Session will take care

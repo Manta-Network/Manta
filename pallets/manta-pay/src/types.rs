@@ -16,7 +16,7 @@
 
 //! Type Definitions for Manta Pay
 
-use alloc::{boxed::Box, vec::Vec};
+use alloc::{boxed::Box, string::String, vec::Vec};
 use manta_crypto::merkle_tree;
 use manta_pay::{
     config::{
@@ -184,7 +184,7 @@ pub type AssetId = [u8; 32];
 pub type AssetValue = u128;
 
 /// Transfer Proof encoded value
-/// Compatability for JS u128 and Encode/Decode from parity_scale_codec
+/// Compatibility for JS u128 and Encode/Decode from parity_scale_codec
 pub type EncodedAssetValue = [u8; 16];
 
 /// Asset
@@ -912,11 +912,11 @@ pub struct DensePullResponse {
     /// Ledger Receiver Chunk
     // we decode the receivers/senders with our own way
     #[codec(skip)]
-    pub receivers: alloc::string::String,
+    pub receivers: String,
 
     /// Ledger Sender Chunk
     #[codec(skip)]
-    pub senders: alloc::string::String,
+    pub senders: String,
 
     /// Total Number of Senders/Receivers in Ledger
     pub senders_receivers_total: [u8; 16],
@@ -928,19 +928,6 @@ pub struct DensePullResponse {
     /// and the potential risk of inconsistent computing rules between the client and server
     #[codec(skip)]
     pub next_checkpoint: Option<Checkpoint>,
-}
-
-impl From<PullResponse> for DensePullResponse {
-    #[inline]
-    fn from(resp: PullResponse) -> DensePullResponse {
-        Self {
-            should_continue: resp.should_continue,
-            receivers: base64::encode(resp.receivers.encode()),
-            senders: base64::encode(resp.senders.encode()),
-            senders_receivers_total: resp.senders_receivers_total,
-            next_checkpoint: None,
-        }
-    }
 }
 
 /// Raw Checkpoint for Encoding and Decoding
