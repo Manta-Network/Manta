@@ -1,11 +1,11 @@
-import { assert } from "chai";
-import { Keyring } from "@polkadot/keyring";
+import { assert, expect } from "chai";
 import { ApiPromise } from "@polkadot/api";
 import "@polkadot/api-augment";
 import { nodeAddress, signer } from "../config/config.json";
-import { createPromiseApi, delay } from "../utils/utils";
+import { createPromiseApi } from "../utils/utils";
 import { base64Decode } from "@polkadot/util-crypto";
 import { $Receivers, $Senders } from "../types";
+import { u8aToHex } from "@polkadot/util";
 
 describe("Relaying non subscription rpc methods", function () {
   let fullNodeApi: ApiPromise;
@@ -17,10 +17,7 @@ describe("Relaying non subscription rpc methods", function () {
     assert.isNotTrue(fullNodeHealth.toJSON().isSyncing);
   });
 
-  it("Check pull response", async function () {
-    const keyring = new Keyring({ type: "sr25519", ss58Format: 78 });
-    const alice = keyring.addFromUri(signer);
-
+  it("Check dense pull response", async function () {
     // there're only 40 private extrinsic sent, so 128 is big enough to get all Utxos.
     const totalReceivers = 128;
     const totalSenders = 128;
@@ -31,29 +28,144 @@ describe("Relaying non subscription rpc methods", function () {
       sender_index: 0,
     };
 
-    const pullResponse = await (fullNodeApi.rpc as any).mantaPay.pull_ledger_diff(
+    const pullResponse = await (
+      fullNodeApi.rpc as any
+    ).mantaPay.pull_ledger_diff(
       checkPoint,
       BigInt(totalReceivers),
       BigInt(totalSenders)
     );
-    
-    const densePullResponse = await (fullNodeApi.rpc as any).mantaPay.dense_pull_ledger_diff(
+
+    const densePullResponse = await (
+      fullNodeApi.rpc as any
+    ).mantaPay.dense_pull_ledger_diff(
       checkPoint,
       BigInt(totalReceivers),
       BigInt(totalSenders)
     );
-      
+
     // decode densePullResponse, ensure which is equal to pullResponse
     assert.isNotTrue(pullResponse.should_continue);
     assert.isNotTrue(densePullResponse.should_continue);
 
-    const decodedRecievers = $Receivers.decode(base64Decode(densePullResponse.receivers.toString()));
-    const decodedSenders = $Senders.decode(base64Decode(densePullResponse.senders.toString()));
+    const decodedRecievers = $Receivers.decode(
+      base64Decode(densePullResponse.receivers.toString())
+    );
+    const decodedSenders = $Senders.decode(
+      base64Decode(densePullResponse.senders.toString())
+    );
 
-    // assert.equal(decodedRecievers[0], pullResponse.receivers[0]);
-    assert.equal(decodedSenders, pullResponse.senders);
+    // ensure the length of receivers and senders are equal
+    assert.equal(decodedRecievers.length, pullResponse.receivers.length);
+    assert.equal(decodedSenders.length, pullResponse.senders.length);
 
-    assert.equal(densePullResponse.senders_receivers_total, pullResponse.senders_receivers_total);
+    // ensure encoded receivers and senders are equal
+    expect(
+      u8aToHex(base64Decode(densePullResponse.receivers.toString()))
+    ).to.deep.equal(pullResponse.receivers.toHex());
+    expect(
+      u8aToHex(base64Decode(densePullResponse.senders.toString()))
+    ).to.deep.equal(pullResponse.senders.toHex());
+
+    for (let i = 0; i < decodedRecievers.length; ++i) {
+      const [utxo, incomingNotes] = decodedRecievers[i];
+
+      // assert utxo
+      assert.equal(
+        utxo.is_transparent,
+        pullResponse.receivers[i][0].is_transparent
+      );
+      assert.equal(
+        u8aToHex(utxo.commitment),
+        pullResponse.receivers[i][0].commitment
+      );
+      assert.equal(
+        u8aToHex(utxo.public_asset.id),
+        pullResponse.receivers[i][0].public_asset.id
+      );
+      assert.equal(
+        u8aToHex(utxo.public_asset.value),
+        pullResponse.receivers[i][0].public_asset.value
+      );
+
+      // assert FullIncomingNote
+      assert.equal(
+        incomingNotes.address_partition,
+        pullResponse.receivers[i][1].address_partition
+      );
+      assert.equal(
+        u8aToHex(incomingNotes.incoming_note.ephemeral_public_key),
+        pullResponse.receivers[i][1].incoming_note.ephemeral_public_key
+      );
+      assert.equal(
+        u8aToHex(incomingNotes.incoming_note.tag),
+        pullResponse.receivers[i][1].incoming_note.tag
+      );
+
+      const ciphertext = incomingNotes.incoming_note.ciphertext.map(function (
+        c
+      ) {
+        return u8aToHex(c);
+      });
+      assert.equal(
+        ciphertext[0],
+        pullResponse.receivers[i][1].incoming_note.ciphertext[0]
+      );
+      assert.equal(
+        ciphertext[1],
+        pullResponse.receivers[i][1].incoming_note.ciphertext[1]
+      );
+      assert.equal(
+        ciphertext[1],
+        pullResponse.receivers[i][1].incoming_note.ciphertext[1]
+      );
+
+      assert.equal(
+        u8aToHex(incomingNotes.light_incoming_note.ephemeral_public_key),
+        pullResponse.receivers[i][1].light_incoming_note.ephemeral_public_key
+      );
+
+      const _ciphertext = incomingNotes.light_incoming_note.ciphertext.map(
+        function (c) {
+          return u8aToHex(c);
+        }
+      );
+      assert.equal(
+        _ciphertext[0],
+        pullResponse.receivers[i][1].light_incoming_note.ciphertext[0]
+      );
+      assert.equal(
+        _ciphertext[1],
+        pullResponse.receivers[i][1].light_incoming_note.ciphertext[1]
+      );
+      assert.equal(
+        _ciphertext[1],
+        pullResponse.receivers[i][1].light_incoming_note.ciphertext[1]
+      );
+    }
+
+    // assert senders
+    for (let i = 0; i < decodedSenders.length; ++i) {
+      const [nullifier, outgoingNotes] = decodedSenders[i];
+      assert.equal(u8aToHex(nullifier), pullResponse.senders[i][0]);
+
+      // assert OutgoingNote
+      assert.equal(
+        u8aToHex(outgoingNotes.ephemeral_public_key),
+        pullResponse.senders[i][1].ephemeral_public_key
+      );
+
+      const ciphertext = outgoingNotes.ciphertext.map(function (c) {
+        return u8aToHex(c);
+      });
+      assert.equal(ciphertext[0], pullResponse.senders[i][1].ciphertext[0]);
+      assert.equal(ciphertext[1], pullResponse.senders[i][1].ciphertext[1]);
+    }
+
+    expect(densePullResponse.senders_receivers_total).to.deep.equal(
+      pullResponse.senders_receivers_total
+    );
+    assert.isNull(densePullResponse.next_checkpoint.toJSON());
   });
 
   after(async function () {
@@ -62,4 +174,3 @@ describe("Relaying non subscription rpc methods", function () {
     await fullNodeApi.disconnect();
   });
 });
-

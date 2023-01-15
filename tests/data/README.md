@@ -1,6 +1,7 @@
 ## Precomputed coins
 
 ### init-utxo
+
 - 40 coins(to_private)
 - asset id = [8, 9, 10]
 - coin size = 552

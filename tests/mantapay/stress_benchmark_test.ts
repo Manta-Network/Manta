@@ -56,7 +56,8 @@ describe("Node RPC Test", () => {
       test_config.transfers_offset,
       full_transfer_size * test_config.total_iterations
     );
-    const fullReclaimSize = test_config.mint_size * 2 + test_config.reclaim_size;
+    const fullReclaimSize =
+      test_config.mint_size * 2 + test_config.reclaim_size;
     const reclaimsContent = await readFile("./data/precomputed_reclaims");
     const reclaimsBuffer = reclaimsContent.subarray(
       test_config.reclaims_offset,
@@ -67,7 +68,7 @@ describe("Node RPC Test", () => {
     let txsCount = 0;
     let startTime = performance.now();
     let totalTime = 0;
-    
+
     for (
       let i = test_config.start_iteration;
       i < test_config.start_iteration + test_config.tests_iterations;

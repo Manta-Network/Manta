@@ -12,7 +12,11 @@ export function isValidAddress(address: string) {
   }
 }
 
-export function createAssetMetadata(name: string, symbol: string, decimals: number) {
+export function createAssetMetadata(
+  name: string,
+  symbol: string,
+  decimals: number
+) {
   const assetMetadata = {
     metadata: {
       name,

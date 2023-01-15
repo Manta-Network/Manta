@@ -1,5 +1,10 @@
 import { Keyring } from "@polkadot/keyring";
-import { createPromiseApi, delay, createAssetMetadata, createMultiLocationWithParaId } from "../utils/utils";
+import {
+  createPromiseApi,
+  delay,
+  createAssetMetadata,
+  createMultiLocationWithParaId,
+} from "../utils/utils";
 import { BN } from "@polkadot/util";
 import { nodeAddress, signer } from "../config/config.json";
 

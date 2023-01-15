@@ -1,4 +1,4 @@
 {
-    "nodeAddress": "ws://127.0.0.1:9800",
-    "signer": "//Alice"
+  "nodeAddress": "ws://127.0.0.1:9800",
+  "signer": "//Alice"
 }
