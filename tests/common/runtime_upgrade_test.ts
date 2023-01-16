@@ -1,7 +1,7 @@
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import { Keyring } from "@polkadot/keyring";
 import { manta_pay_types, rpc_api } from "../types";
-import { execute_with_root_via_governance } from "./manta_pay";
+import { execute_with_root_via_governance } from "../mantapay/manta_pay";
 import { delay } from "../utils/test-util";
 import { assert } from "chai";
 import minimist, { ParsedArgs } from "minimist";

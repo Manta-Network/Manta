@@ -12,7 +12,7 @@ async function main() {
   const offSet = 1;
   const coinSize = 552; // each coin size is 552.
   const coinsCount = 40;
-  const batchSize = 2;
+  const batchSize = 5;
   const content = await readFile("data/init-utxo/initialize-utxo");
   const buffer = content.subarray(
     offSet + 0 * batchSize * coinSize,

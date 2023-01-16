@@ -5,6 +5,7 @@ Cargo.lock
 runtime/**/target
 .vscode
 .idea
+/tests/dist/
 /tests/node_modules/
 /scripts/benchmarking/benchmarking_errors.txt
 /scripts/benchmarking/machine_benchmark_result.txt

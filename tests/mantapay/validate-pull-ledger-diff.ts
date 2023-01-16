@@ -3,7 +3,7 @@ import { ApiPromise } from "@polkadot/api";
 import "@polkadot/api-augment";
 import { nodeAddress, signer } from "../config/config.json";
 import { createPromiseApi } from "../utils/utils";
-import { base64Decode } from "@polkadot/util-crypto";
+import { base64Decode, isBase64 } from "@polkadot/util-crypto";
 import { $Receivers, $Senders } from "../types";
 import { u8aToHex } from "@polkadot/util";
 
@@ -43,6 +43,10 @@ describe("Relaying non subscription rpc methods", function () {
       BigInt(totalReceivers),
       BigInt(totalSenders)
     );
+
+    // ensure both fields are base64 based string
+    assert.isTrue(isBase64(densePullResponse.receivers.toString()));
+    assert.isTrue(isBase64(densePullResponse.senders.toString()));
 
     // decode densePullResponse, ensure which is equal to pullResponse
     assert.isNotTrue(pullResponse.should_continue);
