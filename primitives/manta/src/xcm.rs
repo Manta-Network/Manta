@@ -16,7 +16,10 @@
 
 //! XCM primitives and implementations
 
-use super::assets::{AssetConfig, FungibleLedger};
+use super::{
+    assets::{AssetConfig, FungibleLedger},
+    constants::WEIGHT_PER_SECOND,
+};
 
 use sp_runtime::traits::{CheckedConversion, Convert, Zero};
 use sp_std::marker::PhantomData;
@@ -25,7 +28,7 @@ use crate::assets::{AssetIdLocationMap, UnitsPerSecond};
 use frame_support::{
     pallet_prelude::Get,
     traits::{fungibles::Mutate, tokens::ExistenceRequirement},
-    weights::{constants::WEIGHT_PER_SECOND, Weight},
+    weights::Weight,
 };
 use frame_system::Config;
 use xcm::{
