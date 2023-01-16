@@ -2,9 +2,11 @@ import { ApiPromise, WsProvider } from "@polkadot/api";
 import { Keyring } from "@polkadot/keyring";
 import { manta_pay_types, rpc_api } from "./types";
 import { delay } from "./test-util";
-import { assert } from "chai";
+import { assert, expect } from "chai";
 import minimist, { ParsedArgs } from "minimist";
 import { readFile } from "fs/promises";
+import { manta_pay_config } from './manta_pay';
+import { MantaPrivateWallet, Environment, Network } from 'manta.js';
 
 const test_config = {
   ws_address: "ws://127.0.0.1:9801",
@@ -22,6 +24,9 @@ const test_config = {
   transfer_size: 1290,
   reclaim_size: 968,
   expected_tps: 0.5,
+
+  sync_iterations: 50,
+  sync_time: 80000,
 };
 
 describe("Node RPC Test", () => {
@@ -68,214 +73,26 @@ describe("Node RPC Test", () => {
     let startTime = performance.now();
     let totalTime = 0;
     
-    for (
-      let i = test_config.start_iteration;
-      i < test_config.start_iteration + test_config.tests_iterations;
-      ++i
-    ) {
-      await api.tx.mantaPay
-        .toPrivate(
-          mintsBuffer.subarray(
-            test_config.mint_size * i,
-            test_config.mint_size * (i + 1)
-          )
-        )
-        .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
-          if (status.isInBlock) {
-            console.log("Included at block hash", status.asInBlock.toHex());
-            console.log("Events:");
-            events.forEach(({ event: { data, method, section }, phase }) => {
-              let event = section + "." + method;
-              console.log("event: ", event);
-              if ("mantaPay.ToPrivate" == event) {
-                allSuccesses++;
-              }
-            });
-          }
-        });
+    
+    const before_rpc = performance.now();
+    let checkpoint = {receiver_index: new Array<number>(manta_pay_config.shard_number).fill(0), sender_index: 0};
+    let should_continue = true;
+    let max_receivers = 1000;
+    let max_senders = 1000;
+    
 
-      let transfersStart =
-        i * (2 * test_config.mint_size + test_config.transfer_size);
-      await api.tx.mantaPay
-        .toPrivate(
-          transfersBuffer.subarray(
-            transfersStart,
-            transfersStart + test_config.mint_size
-          )
-        )
-        .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
-          if (status.isInBlock) {
-            console.log("Included at block hash", status.asInBlock.toHex());
-            console.log("Events:");
-            events.forEach(({ event: { data, method, section }, phase }) => {
-              let event = section + "." + method;
-              console.log("event: ", event);
-              if ("mantaPay.ToPrivate" == event) {
-                allSuccesses++;
-              }
-            });
-          }
-        });
-      await api.tx.mantaPay
-        .toPrivate(
-          transfersBuffer.subarray(
-            transfersStart + test_config.mint_size,
-            transfersStart + 2 * test_config.mint_size
-          )
-        )
-        .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
-          if (status.isInBlock) {
-            console.log("Included at block hash", status.asInBlock.toHex());
-            console.log("Events:");
-            events.forEach(({ event: { data, method, section }, phase }) => {
-              let event = section + "." + method;
-              console.log("event: ", event);
-              if ("mantaPay.ToPrivate" == event) {
-                allSuccesses++;
-              }
-            });
-          }
-        });
-      await api.tx.mantaPay
-        .privateTransfer(
-          transfersBuffer.subarray(
-            transfersStart + 2 * test_config.mint_size,
-            transfersStart +
-              2 * test_config.mint_size +
-              test_config.transfer_size
-          )
-        )
-        .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
-          if (status.isInBlock) {
-            console.log("Included at block hash", status.asInBlock.toHex());
-            console.log("Events:");
-            events.forEach(({ event: { data, method, section }, phase }) => {
-              let event = section + "." + method;
-              console.log("event: ", event);
-              if ("mantaPay.PrivateTransfer" == event) {
-                allSuccesses++;
-              }
-            });
-          }
-        });
-      let reclaimsStart =
-        i * (2 * test_config.mint_size + test_config.reclaim_size);
-      await api.tx.mantaPay
-        .toPrivate(
-          reclaimsBuffer.subarray(
-            reclaimsStart,
-            reclaimsStart + test_config.mint_size
-          )
-        )
-        .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
-          if (status.isInBlock) {
-            console.log("Included at block hash", status.asInBlock.toHex());
-            console.log("Events:");
-            events.forEach(({ event: { data, method, section }, phase }) => {
-              let event = section + "." + method;
-              console.log("event: ", event);
-              if ("mantaPay.ToPrivate" == event) {
-                allSuccesses++;
-              }
-            });
-          }
-        });
-      await api.tx.mantaPay
-        .toPrivate(
-          reclaimsBuffer.subarray(
-            reclaimsStart + test_config.mint_size,
-            reclaimsStart + 2 * test_config.mint_size
-          )
-        )
-        .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
-          if (status.isInBlock) {
-            console.log("Included at block hash", status.asInBlock.toHex());
-            console.log("Events:");
-            events.forEach(({ event: { data, method, section }, phase }) => {
-              let event = section + "." + method;
-              console.log("event: ", event);
-              if ("mantaPay.ToPrivate" == event) {
-                allSuccesses++;
-              }
-            });
-          }
-        });
-      if (i == test_config.start_iteration + test_config.tests_iterations - 1) {
-        await api.tx.mantaPay
-          .toPublic(
-            reclaimsBuffer.subarray(
-              reclaimsStart + 2 * test_config.mint_size,
-              reclaimsStart +
-                2 * test_config.mint_size +
-                test_config.reclaim_size
-            )
-          )
-          .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
-            if (status.isInBlock) {
-              console.log("Included at block hash", status.asInBlock.toHex());
-              console.log("Events:");
-              events.forEach(({ event: { data, method, section }, phase }) => {
-                let event = section + "." + method;
-                console.log("event: ", event);
-                if ("mantaPay.ToPublic" == event) {
-                  allSuccesses++;
-                }
-              });
-            } else if (status.isFinalized) {
-              lastFinalized = true;
-              let endTime = performance.now();
-              totalTime = endTime - startTime;
-              // Convert to seconds
-              totalTime = totalTime / 1000;
-            }
-          });
-      } else {
-        await api.tx.mantaPay
-          .toPublic(
-            reclaimsBuffer.subarray(
-              reclaimsStart + 2 * test_config.mint_size,
-              reclaimsStart +
-                2 * test_config.mint_size +
-                test_config.reclaim_size
-            )
-          )
-          .signAndSend(sender, { nonce: -1 }, ({ events = [], status }) => {
-            if (status.isInBlock) {
-              console.log("Included at block hash", status.asInBlock.toHex());
-              console.log("Events:");
-              events.forEach(({ event: { data, method, section }, phase }) => {
-                let event = section + "." + method;
-                console.log("event: ", event);
-                if ("mantaPay.ToPublic" == event) {
-                  allSuccesses++;
-                }
-              });
-            }
-          });
-      }
-      await delay(12000);
-
-      txsCount += 7;
-      console.log("\n Transactions sent: ", txsCount);
+    const privateWalletConfig = {
+      environment: Environment.Production,
+      network: Network.Calamari
     }
 
-    // wait all txs finalized
-    for (let i = 0; i < test_config.max_wait_time_sec; i++) {
-      await delay(1000);
-      if (lastFinalized) {
-        let tps = (test_config.tests_iterations * 7) / totalTime;
-        console.log("Tps is: ", tps);
-        assert(tps >= test_config.expected_tps);
-        break;
-      }
-    }
+    const privateWallet = await MantaPrivateWallet.init(privateWalletConfig);
+    await privateWallet.initalWalletSync();
 
-    assert(lastFinalized);
-
-    if (allSuccesses != test_config.tests_iterations * 7) {
-      console.log("allSuccesses Count: ", allSuccesses);
-      assert(false);
-    }
+    const after_rpc = performance.now();
+    const sync_time = after_rpc - before_rpc;
+    console.log("Sync time: ", sync_time);
+    expect(sync_time < test_config.sync_time).equals(true);
 
     api.disconnect();
   }).timeout(test_config.timeout);
