@@ -1049,14 +1049,6 @@ impl_runtime_apis! {
         ) -> pallet_manta_pay::PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
-
-        fn dense_pull_ledger_diff(
-            checkpoint: pallet_manta_pay::RawCheckpoint,
-            max_receiver: u64,
-            max_sender: u64
-        ) -> pallet_manta_pay::DensePullResponse {
-            MantaPay::dense_pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
-        }
     }
 
     impl nimbus_primitives::NimbusApi<Block> for Runtime {
