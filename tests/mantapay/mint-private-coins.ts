@@ -1,9 +1,12 @@
 import { Keyring } from "@polkadot/keyring";
-import { createPromiseApi, delay } from "../utils/utils";
+import { createPromiseApi, delay, readChainSpec } from "../utils/utils";
 import { readFile } from "fs/promises";
-import { nodeAddress, signer } from "../config/config.json";
+import { signer } from "../config/config.json";
 
 async function main() {
+  const chainSpec = await readChainSpec();
+  const wsPort = chainSpec.parachains[0].nodes[0].wsPort;
+  const nodeAddress = "ws://127.0.0.1:" + wsPort;
   const nodeApi = await createPromiseApi(nodeAddress);
 
   const keyring = new Keyring({ type: "sr25519", ss58Format: 78 });

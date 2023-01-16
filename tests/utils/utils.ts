@@ -2,6 +2,7 @@ import { ApiPromise, WsProvider } from "@polkadot/api";
 import { decodeAddress, encodeAddress } from "@polkadot/keyring";
 import { hexToU8a, isHex } from "@polkadot/util";
 import { rpc_api, manta_pay_types } from "../types";
+import { readFile } from "fs/promises";
 
 export function isValidAddress(address: string) {
   try {
@@ -58,3 +59,11 @@ export async function delay(ms: number) {
 }
 
 export default createPromiseApi;
+
+export async function readChainSpec() {
+  const content = await readFile(
+    "../.github/resources/config-for-integration-test.json",
+    "utf8"
+  );
+  return JSON.parse(content);
+}

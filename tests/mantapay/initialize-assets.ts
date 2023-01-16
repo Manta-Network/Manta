@@ -4,12 +4,17 @@ import {
   delay,
   createAssetMetadata,
   createMultiLocationWithParaId,
+  readChainSpec,
 } from "../utils/utils";
 import { BN } from "@polkadot/util";
-import { nodeAddress, signer, mnemonic } from "../config/config.json";
+import { mnemonic } from "../config/config.json";
 import { execute_with_root_via_governance } from "./manta_pay";
 
 async function main() {
+  const chainSpec = await readChainSpec();
+  const wsPort = chainSpec.parachains[0].nodes[0].wsPort;
+  const nodeAddress = "ws://127.0.0.1:" + wsPort;
+
   const nodeApi = await createPromiseApi(nodeAddress);
 
   const keyring = new Keyring({ type: "sr25519", ss58Format: 78 });
@@ -19,8 +24,6 @@ async function main() {
   const decimal = nodeApi.registry.chainDecimals;
   const toMint = new BN(amount).mul(new BN(decimal));
 
-  let createAssetsCalls = [];
-  let mintAssetsCalls = [];
   const symbols = ["KMA", "MANTA", "DOL"];
   const assetIds = [8, 9, 10];
   let referendumIndex = (

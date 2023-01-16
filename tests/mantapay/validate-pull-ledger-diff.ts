@@ -1,8 +1,8 @@
 import { assert, expect } from "chai";
 import { ApiPromise } from "@polkadot/api";
 import "@polkadot/api-augment";
-import { nodeAddress, signer } from "../config/config.json";
-import { createPromiseApi } from "../utils/utils";
+import { signer } from "../config/config.json";
+import { createPromiseApi, readChainSpec } from "../utils/utils";
 import { base64Decode, isBase64 } from "@polkadot/util-crypto";
 import { $Receivers, $Senders } from "../types";
 import { u8aToHex } from "@polkadot/util";
@@ -12,6 +12,10 @@ describe("Relaying non subscription rpc methods", function () {
 
   before(async function () {
     // ensure node is health
+    const chainSpec = await readChainSpec();
+    const wsPort = chainSpec.parachains[0].nodes[0].wsPort;
+    const nodeAddress = "ws://127.0.0.1:" + wsPort;
+
     fullNodeApi = await createPromiseApi(nodeAddress);
     const fullNodeHealth = await fullNodeApi.rpc.system.health();
     assert.isNotTrue(fullNodeHealth.toJSON().isSyncing);
