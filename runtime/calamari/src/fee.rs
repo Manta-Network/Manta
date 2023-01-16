@@ -168,7 +168,7 @@ mod multiplier_tests {
 
         let base_fee = max_number_of_remarks_per_block
             * <Runtime as pallet_transaction_payment::Config>::WeightToFee::weight_to_fee(
-                &frame_support::weights::constants::ExtrinsicBaseWeight::get(),
+                &runtime_common::ExtrinsicBaseWeight::get(),
             );
 
         run_with_system_weight(block_weight, || {
