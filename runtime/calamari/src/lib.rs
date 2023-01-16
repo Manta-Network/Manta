@@ -1269,9 +1269,19 @@ cumulus_pallet_parachain_system::register_validate_block! {
 pub struct MantaPaySuspensionManager;
 impl pallet_manta_pay::SuspendMantaPay for MantaPaySuspensionManager {
     fn suspend_manta_pay_execution() {
-        match TransactionPause::pause_pallets(RawOrigin::Root.into(), vec![b"MantaPay".to_vec()]) {
+        match TransactionPause::pause_transactions(
+            RawOrigin::Root.into(),
+            vec![(
+                b"MantaPay".to_vec(),
+                vec![
+                    b"to_private".to_vec(),
+                    b"private_transfer".to_vec(),
+                    b"to_public".to_vec(),
+                ],
+            )],
+        ) {
             Ok(_) => log::error!("MantaPay has been suspended due to an unexpected internal ledger error!"),
             Err(tx_pause_error) => log::error!("MantaPay encountered an unexpected internal ledger error, but failed to be suspended with the following tx-pause error: {:?}!", tx_pause_error)
-            }
+        }
     }
 }

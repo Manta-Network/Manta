@@ -636,11 +636,6 @@ fn assert_manta_pay_suspension() {
         Some(())
     );
 
-    assert_eq!(
-        TransactionPause::paused_transactions((b"MantaPay".to_vec(), b"public_transfer".to_vec())),
-        Some(())
-    );
-
     let _ = TransactionPause::unpause_pallets(RawOrigin::Root.into(), vec![b"MantaPay".to_vec()]);
 }
 

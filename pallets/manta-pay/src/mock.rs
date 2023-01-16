@@ -255,7 +255,17 @@ impl pallet_asset_manager::Config for Test {
 pub struct MantaPaySuspensionManager;
 impl crate::SuspendMantaPay for MantaPaySuspensionManager {
     fn suspend_manta_pay_execution() {
-        let _ = TransactionPause::pause_pallets(RawOrigin::Root.into(), vec![b"MantaPay".to_vec()]);
+        let _ = TransactionPause::pause_transactions(
+            RawOrigin::Root.into(),
+            vec![(
+                b"MantaPay".to_vec(),
+                vec![
+                    b"to_private".to_vec(),
+                    b"private_transfer".to_vec(),
+                    b"to_public".to_vec(),
+                ],
+            )],
+        );
     }
 }
 
