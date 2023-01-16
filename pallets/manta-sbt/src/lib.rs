@@ -37,13 +37,13 @@ use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use frame_support::{
     pallet_prelude::*,
-    traits::{tokens::nonfungibles::Mutate, StorageVersion, Currency, ReservableCurrency, ExistenceRequirement},
-    PalletId,
-    transactional,
+    traits::{
+        tokens::nonfungibles::Mutate, Currency, ExistenceRequirement, ReservableCurrency,
+        StorageVersion,
+    },
+    transactional, PalletId,
 };
 use frame_system::pallet_prelude::*;
-use scale_codec::Encode;
-use sp_runtime::{ArithmeticError, traits::{AccountIdConversion, One, Zero}};
 use manta_pay::{
     config::{self, utxo::MerkleTreeConfiguration},
     manta_accounting::transfer::{
@@ -60,6 +60,11 @@ use manta_pay::{
     parameters::load_transfer_parameters,
 };
 use manta_util::{into_array_unchecked, Array};
+use scale_codec::Encode;
+use sp_runtime::{
+    traits::{AccountIdConversion, One, Zero},
+    ArithmeticError,
+};
 
 pub use crate::types::{Checkpoint, RawCheckpoint};
 pub use pallet::*;
@@ -93,7 +98,8 @@ pub trait ItemIdConvert<ItemId> {
 }
 
 /// Type alias for currency balance.
-pub type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+pub type BalanceOf<T> =
+    <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 /// MantaSBT Pallet
 #[frame_support::pallet]
@@ -140,7 +146,8 @@ pub mod pallet {
     pub type ItemIdCounter<T: Config> = StorageValue<_, SBTAssetId, ValueQuery>;
 
     #[pallet::storage]
-    pub type ReservedIds<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, (SBTAssetId, SBTAssetId), OptionQuery>;
+    pub type ReservedIds<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, (SBTAssetId, SBTAssetId), OptionQuery>;
 
     /// UTXO Set
     #[pallet::storage]
@@ -175,16 +182,20 @@ pub mod pallet {
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::to_private())]
         #[transactional]
-        pub fn to_private(origin: OriginFor<T>, post: TransferPost, metadata: BoundedVec<u8, <T as pallet_uniques::Config>::StringLimit>) -> DispatchResultWithPostInfo {
+        pub fn to_private(
+            origin: OriginFor<T>,
+            post: TransferPost,
+            metadata: BoundedVec<u8, <T as pallet_uniques::Config>::StringLimit>,
+        ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
 
-            let (start_id, end_id) = ReservedIds::<T>::get(&origin).ok_or(Error::<T>::NotReserved)?;
+            let (start_id, end_id) =
+                ReservedIds::<T>::get(&origin).ok_or(Error::<T>::NotReserved)?;
             // Ensure asset id is correct
             ensure!(
                 post.asset_id == Some(Pallet::<T>::field_from_id(start_id)),
                 Error::<T>::InvalidAssetId
             );
-
 
             pallet_uniques::Pallet::<T>::mint_into(
                 &T::PalletCollectionId::get(),
@@ -192,7 +203,13 @@ pub mod pallet {
                 &Self::account_id(),
             )?;
 
-            pallet_uniques::Pallet::<T>::set_metadata(frame_system::RawOrigin::Root.into(), T::PalletCollectionId::get(), T::ConvertItemId::asset_id_to_item_id(start_id), metadata, true)?;
+            pallet_uniques::Pallet::<T>::set_metadata(
+                frame_system::RawOrigin::Root.into(),
+                T::PalletCollectionId::get(),
+                T::ConvertItemId::asset_id_to_item_id(start_id),
+                metadata,
+                true,
+            )?;
 
             let increment_start_id = start_id.saturating_add(One::one());
             if increment_start_id == end_id {
@@ -216,13 +233,24 @@ pub mod pallet {
         pub fn reserve_sbt(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            <T as pallet::Config>::Currency::transfer(&who, &Self::account_id(), T::ReservePrice::get(), ExistenceRequirement::KeepAlive)?;
+            <T as pallet::Config>::Currency::transfer(
+                &who,
+                &Self::account_id(),
+                T::ReservePrice::get(),
+                ExistenceRequirement::KeepAlive,
+            )?;
             let first_id = ItemIdCounter::<T>::get();
-            let stop_id = first_id.checked_add(T::MintsPerReserve::get().into()).ok_or(ArithmeticError::Overflow)?;
+            let stop_id = first_id
+                .checked_add(T::MintsPerReserve::get().into())
+                .ok_or(ArithmeticError::Overflow)?;
             ItemIdCounter::<T>::set(stop_id);
 
             ReservedIds::<T>::insert(&who, (first_id, stop_id));
-            Self::deposit_event(Event::<T>::SBTReserved{who, start_id: first_id, stop_id});
+            Self::deposit_event(Event::<T>::SBTReserved {
+                who,
+                start_id: first_id,
+                stop_id,
+            });
             Ok(())
         }
     }
@@ -341,8 +369,7 @@ pub mod pallet {
         InvalidSinkAccount,
 
         /// Need to first reserve SBT before minting
-        NotReserved
-
+        NotReserved,
     }
 
     impl<T> From<InvalidAuthorizationSignature> for Error<T>

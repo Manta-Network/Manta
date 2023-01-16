@@ -16,7 +16,7 @@
 
 use frame_support::{
     parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU16, Everything, GenesisBuild},
+    traits::{AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, Everything, GenesisBuild},
     PalletId,
 };
 use frame_system::{EnsureRoot, EnsureSigned};
