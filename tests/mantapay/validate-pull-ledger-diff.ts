@@ -7,7 +7,19 @@ import { base64Decode, isBase64 } from "@polkadot/util-crypto";
 import { $Receivers, $Senders } from "../types";
 import { u8aToHex } from "@polkadot/util";
 
-describe("Relaying non subscription rpc methods", function () {
+/**
+  Purpose: This test case is for testing dense/pull_ledger_diff rpc method,
+  but `dense_pull_ledger_diff` response is encoded by base64. So we must decode `dense_pull_ledger_diff`'s response,
+  and compare it with `pull_ledger_diff`'s response, ensure both response are equal.
+  How to test:
+  1. Create some new assets, and issue tokens for these assets.
+  2. Make some `to_private`s transactions to generate Utxos.
+  3. Send a request to `pull_ledger_diff`, get the response.
+  4. Send a request to `dense_pull_ledger_diff`, get the response, and decode it.
+  5. Compare both response.
+**/
+
+describe("Test dense/pull_ledger_diff rpc method", function () {
   let fullNodeApi: ApiPromise;
 
   before(async function () {

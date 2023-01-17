@@ -89,6 +89,29 @@ export const rpc_api = {
   },
 };
 
+/**
+  Why define these types?
+  There's a rpc method `dense_pull_ledger_diff` in mantaPay, but its response is encoded by base64.
+  From frontend side, it doesn't know how to decode `Uint8Array` to concrete types. So we have to define all related types which
+  are used by `DensePullResponse`.
+
+  Which package to define types? https://github.com/paritytech/scale-ts
+  Example: https://github.com/paritytech/scale-ts#example
+
+  How do we use scale-ts?
+  Please define these types carefully, ensure they're identical with related rust based types.
+  Once you define these types, then you can decode raw data to a concrete type, like:
+  ```ts
+  import { $Receivers, $Senders } from "../types";
+  ...
+  
+  const densePullResponse = await (fullNodeApi.rpc as any).mantaPay.dense_pull_ledger_diff(...);
+  const decodedRecievers = $Receivers.decode(
+    base64Decode(densePullResponse.receivers.toString())
+  ); 
+  ```
+**/
+
 const $Asset = $.object(
   $.field("id", $.sizedUint8Array(32)),
   $.field("value", $.sizedUint8Array(16))
