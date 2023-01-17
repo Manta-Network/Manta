@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@ use crate::command::{DOLPHIN_ON_BAIKAL_PARACHAIN_ID, DOLPHIN_PARACHAIN_ID};
 use dolphin_runtime::{
     opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
 };
-use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
+use session_key_primitives::util::unchecked_account_id;
 
 /// Dolphin Protocol Identifier
 pub const DOLPHIN_PROTOCOL_ID: &str = "dolphin";
@@ -56,7 +56,7 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
             dolphin_dev_genesis(
                 vec![(
                     unchecked_account_id::<sr25519::Public>("Alice"),
-                    SessionKeys::new(unchecked_collator_keys("Alice")),
+                    SessionKeys::from_seed_unchecked("Alice"),
                 )],
                 unchecked_account_id::<sr25519::Public>("Alice"),
                 vec![
@@ -80,35 +80,48 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
 }
 
 /// Returns the Dolphin local chainspec.
-pub fn dolphin_local_config() -> DolphinChainSpec {
+pub fn dolphin_local_config(localdev: bool) -> DolphinChainSpec {
+    let id = if localdev {
+        "dolphin_localdev"
+    } else {
+        "dolphin_local"
+    };
     DolphinChainSpec::from_genesis(
         "Dolphin Parachain Local",
-        "dolphin_local",
+        id,
         ChainType::Local,
         move || {
-            dolphin_dev_genesis(
+            let invulnerables = if localdev {
+                vec![(
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    SessionKeys::from_seed_unchecked("Alice"),
+                )]
+            } else {
                 vec![
                     (
                         unchecked_account_id::<sr25519::Public>("Alice"),
-                        SessionKeys::new(unchecked_collator_keys("Alice")),
+                        SessionKeys::from_seed_unchecked("Alice"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Bob"),
-                        SessionKeys::new(unchecked_collator_keys("Bob")),
+                        SessionKeys::from_seed_unchecked("Bob"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Charlie"),
-                        SessionKeys::new(unchecked_collator_keys("Charlie")),
+                        SessionKeys::from_seed_unchecked("Charlie"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Dave"),
-                        SessionKeys::new(unchecked_collator_keys("Dave")),
+                        SessionKeys::from_seed_unchecked("Dave"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Eve"),
-                        SessionKeys::new(unchecked_collator_keys("Eve")),
+                        SessionKeys::from_seed_unchecked("Eve"),
                     ),
-                ],
+                ]
+            };
+            dolphin_dev_genesis(
+                invulnerables,
                 unchecked_account_id::<sr25519::Public>("Alice"),
                 vec![
                     unchecked_account_id::<sr25519::Public>("Alice"),
@@ -219,14 +232,6 @@ pub fn dolphin_2085_config() -> Result<DolphinChainSpec, String> {
         &include_bytes!("../../../genesis/dolphin-2085-genesis.json")[..],
     )?;
     spec.extensions_mut().para_id = DOLPHIN_ON_BAIKAL_PARACHAIN_ID;
-    Ok(spec)
-}
-
-pub fn dolphin_testnet_ci_config() -> Result<DolphinChainSpec, String> {
-    let mut spec = DolphinChainSpec::from_json_bytes(
-        &include_bytes!("../../../genesis/dolphin-testnet-ci-genesis.json")[..],
-    )?;
-    spec.extensions_mut().para_id = DOLPHIN_PARACHAIN_ID;
     Ok(spec)
 }
 

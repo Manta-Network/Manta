@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'calamari-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.0.0-alpha.1'
+version = '4.0.0-rc1'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
@@ -72,9 +72,9 @@ cumulus-primitives-utility = { git = 'https://github.com/paritytech/cumulus.git'
 parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.28" }
 
 # Nimbus Dependencies
-nimbus-primitives = { git = "https://github.com/zqhxuyuan/nimbus.git", branch = "zqh/polkadot-v0.9.28", default-features = false }
-pallet-aura-style-filter = { git = "https://github.com/zqhxuyuan/nimbus.git", branch = "zqh/polkadot-v0.9.28", default-features = false }
-pallet-author-inherent = { git = "https://github.com/zqhxuyuan/nimbus.git", branch = "zqh/polkadot-v0.9.28", default-features = false }
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.1", default-features = false }
+pallet-aura-style-filter = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.1", default-features = false }
+pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.1", default-features = false }
 
 # Polkadot dependencies
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.28" }
@@ -108,6 +108,7 @@ targets = ['x86_64-unknown-linux-gnu']
 substrate-wasm-builder = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
 
 [dev-dependencies]
+lazy_static = "1.4.0"
 reqwest = { version = "0.11", features = ["blocking"] }
 serde_json = "1.0"
 
@@ -192,7 +193,6 @@ try-runtime = [
   'frame-executive/try-runtime',
   'frame-try-runtime',
   'frame-system/try-runtime',
-  'pallet-aura/try-runtime',
   'pallet-authorship/try-runtime',
   'pallet-balances/try-runtime',
   'pallet-parachain-staking/try-runtime',

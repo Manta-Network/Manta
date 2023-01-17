@@ -13,10 +13,11 @@ env:
   AWS_REGION: us-east-1
   AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
   AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
-  AWS_INSTANCE_TYPE: c5.9xlarge
+  AWS_INSTANCE_TYPE: c5d.metal
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
+  POLKADOT_BINARY: https://github.com/paritytech/polkadot/releases/download/v0.9.36/polkadot
 jobs:
   print-rust-versions:
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
@@ -109,19 +110,11 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     needs: [build-node-current, start-calamari-integration-tester]
     runs-on: ${{ needs.start-calamari-integration-tester.outputs.runner-label }}
-    timeout-minutes: 90
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
         chain-spec:
-          - id: calamari-dev
-            expected:
-              block-count:
-                relay: 25
-                para: 6
-              peer-count:
-                relay: 7
-                para: 4
           - id: calamari-local
             expected:
               block-count:
@@ -148,7 +141,7 @@ jobs:
           ls -ahl $HOME/.local/bin/
       - name: fetch and chmod polkadot
         run: |
-          curl -L -o $HOME/.local/bin/polkadot https://github.com/paritytech/polkadot/releases/download/v0.9.26/polkadot
+          curl -L -o $HOME/.local/bin/polkadot ${{ env.POLKADOT_BINARY }}
           chmod +x $HOME/.local/bin/polkadot
           ls -ahl $HOME/.local/bin/
       - id: create-chainspec
@@ -168,6 +161,10 @@ jobs:
           ls -ahl $HOME/.local/share/calamari-pc/
           echo "::set-output name=short-sha::${GITHUB_SHA:0:7}"
           manta export-state --chain $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json > $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-state.json || true
+      - uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Manta
+          path: Manta
       - if: always()
         uses: actions/upload-artifact@v2
         with:
@@ -255,17 +252,24 @@ jobs:
             --no-autorestart \
             -- \
             --address=ws://127.0.0.1:9921
+      - uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Manta
+          path: Manta
       - name: run test suites
         run: |
-          # TODO: implement moonbeam-like js test suite triggers here
-          sleep 300
+          sleep 120
+          cd ${{ github.workspace }}/Manta/tests
+          yarn install
+          yarn
+          yarn correctness_test --address=ws://127.0.0.1:9921 --exit
+          yarn performance_test --address=ws://127.0.0.1:9921 --exit
       - name: check if target block is finalized
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
           yarn install
           yarn
           node index.js --para_address=ws://127.0.0.1:9921 --relay_address=ws://127.0.0.1:9911 --target_block=${{ matrix.chain-spec.expected.block-count.para }}
-          echo $?
           if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
       - name: stop testnet
         run: |
@@ -356,6 +360,46 @@ jobs:
         name: test - calamari alice peered successfully
         run: |
           grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9921.log
+      # Add the manta-pay, asset-manager and assets storage items and run stress test separately,
+      # in order to not break the logic of the other integration tests, which don't work with real data yet.
+      # NOTE: STRESS TEST TO BE FIXED/REENABLED IN https://github.com/Manta-Network/Manta/pull/984
+      # - name: append manta-pay storage
+      #   run: |
+      #     wget -P ${{ github.workspace }}/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
+      #     mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/data/fork.json
+      #     cd ${{ github.workspace }}/Manta/tests
+      #     yarn install
+      #     yarn
+      #     node append_storage.js
+      #     cd ../../
+      #     mv ${{ github.workspace }}/Manta/tests/data/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
+      # - name: launch testnet
+      #   run: |
+      #     cd ${{ github.workspace }}/polkadot-launch
+      #     yarn install
+      #     yarn build
+      #     pm2 start dist/cli.js \
+      #       --name polkadot-launch \
+      #       --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
+      #       --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
+      #       --no-autorestart \
+      #       -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
+      # - name: run stress test
+      #   run: |
+      #     sleep 720
+      #     cd ${{ github.workspace }}/Manta/tests
+      #     yarn install
+      #     yarn
+      #     yarn stress_benchmark_test --address=ws://127.0.0.1:9921 --exit
+      # - name: stop testnet
+      #   run: |
+      #     cd ${{ github.workspace }}/polkadot-launch
+      #     pm2 stop polkadot-launch
+      # - if: always()
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: ${{ matrix.chain-spec.id }}-alice-stress.log
+      #     path: ${{ github.workspace }}/polkadot-launch/9921.log
   docker-image-test:
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     needs: [build-node-current, start-docker-image-tester]
@@ -404,7 +448,6 @@ jobs:
           yarn install
           yarn
           node index.js --para_address=ws://127.0.0.1:9944 --relay_address=ws://127.0.0.1:9945 --target_block=6
-          echo $?
           if [ $? == 1 ]; then echo "Failed to finalize the target block - 6"; exit 1; fi
   # HELPER JOBS BELOW
   start-node-builder-current:

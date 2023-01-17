@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -45,6 +45,7 @@ use manta_primitives::{
     },
     constants::TEST_DEFAULT_ASSET_ED,
 };
+use std::{env, path::Path};
 
 /// UTXO Accumulator for Building Circuits
 type UtxoAccumulator =
@@ -66,11 +67,16 @@ pub const NATIVE_ASSET_ID: StandardAssetId =
 /// Loads the [`MultiProvingContext`].
 #[inline]
 fn load_proving_context() -> MultiProvingContext {
-    parameters::load_proving_context(
-        tempfile::tempdir()
-            .expect("Unable to create temporary directory.")
-            .path(),
-    )
+    let env = env::var("MANTA_PROVING_DIR");
+    if let Ok(path) = env {
+        parameters::try_load_proving_context(Path::new(&path))
+    } else {
+        parameters::load_proving_context(
+            tempfile::tempdir()
+                .expect("Unable to create temporary directory.")
+                .path(),
+        )
+    }
 }
 
 /// Samples a [`Mint`] transaction of `asset` with a random secret.
@@ -89,6 +95,25 @@ where
         rng,
     ))
     .unwrap()
+}
+
+/// Samples a [`ToPublic`] transaction of `asset` with a random secret.
+#[inline]
+fn sample_to_public<R>(asset_id: u128, value: [AssetValue; 2], rng: &mut R) -> PalletTransferPost
+where
+    R: CryptoRng + RngCore + ?Sized,
+{
+    let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
+    let ([_to_public_input_0, _to_public_input_1], to_public) =
+        test::payment::to_public::prove_full(
+            &PROVING_CONTEXT,
+            &PARAMETERS,
+            &mut utxo_accumulator,
+            Fp::from(asset_id),
+            value,
+            rng,
+        );
+    PalletTransferPost::try_from(to_public).unwrap()
 }
 
 /// Mints many assets with the given `id` and `value`.
@@ -324,6 +349,42 @@ fn to_private_should_work() {
     }
 }
 
+/// Tests to_private with zero balance should failed.
+#[test]
+fn to_private_with_zero_should_not_work() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        let asset_id = rng.gen();
+        let total_free_supply: AssetValue = rng.gen();
+        initialize_test(asset_id, total_free_supply + TEST_DEFAULT_ASSET_ED);
+        assert_noop!(
+            MantaPayPallet::to_private(
+                MockOrigin::signed(ALICE),
+                sample_to_private(MantaPayPallet::field_from_id(asset_id), 0, &mut rng)
+            ),
+            Error::<Test>::ZeroTransfer
+        );
+    });
+}
+
+/// Tests to_public with zero balance should failed.
+#[test]
+fn to_public_with_zero_should_not_work() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        let asset_id = rng.gen();
+        let total_free_supply: AssetValue = rng.gen();
+        initialize_test(asset_id, total_free_supply + TEST_DEFAULT_ASSET_ED);
+        assert_noop!(
+            MantaPayPallet::to_public(
+                MockOrigin::signed(ALICE),
+                sample_to_public(asset_id, [0, 0], &mut rng)
+            ),
+            Error::<Test>::ZeroTransfer
+        );
+    });
+}
+
 /// Tests a [`ToPrivate`] transaction with native currency.
 #[test]
 fn native_asset_to_private_should_work() {
@@ -531,33 +592,27 @@ fn pull_ledger_diff_should_work() {
             );
         }
 
+        // retrieving 128 receivers/senders can get all existing Utxos
         let (max_receivers, max_senders) = (128, 128);
         let check_point = crate::Checkpoint::default();
-        let pull_response =
+        let runtime_pull_response =
             MantaPayPallet::pull_ledger_diff(check_point, max_receivers, max_senders);
-        let dense_pull_response =
-            MantaPayPallet::dense_pull_ledger_diff(check_point, max_receivers, max_senders);
-        assert_eq!(
-            pull_response.senders_receivers_total,
-            dense_pull_response.senders_receivers_total
-        );
-        assert_eq!(
-            pull_response.should_continue,
-            dense_pull_response.should_continue
-        );
-        assert_eq!(
-            pull_response.should_continue,
-            dense_pull_response.should_continue
-        );
+
+        // ensure all Utxos have been returned.
+        assert!(!runtime_pull_response.should_continue);
+
+        // convert runtime response into native response
+        let dense_pull_response: crate::types::DensePullResponse =
+            runtime_pull_response.clone().into();
 
         let dense_receivers = base64::decode(dense_pull_response.receivers).unwrap();
         let mut slice_of = dense_receivers.as_slice();
         let decoded_receivers = <crate::ReceiverChunk as Decode>::decode(&mut slice_of).unwrap();
-        assert_eq!(pull_response.receivers, decoded_receivers);
+        assert_eq!(runtime_pull_response.receivers, decoded_receivers);
 
         let dense_senders = base64::decode(dense_pull_response.senders).unwrap();
         let mut slice_of = dense_senders.as_slice();
         let decoded_senders = <crate::SenderChunk as Decode>::decode(&mut slice_of).unwrap();
-        assert_eq!(pull_response.senders, decoded_senders);
+        assert_eq!(runtime_pull_response.senders, decoded_senders);
     });
 }

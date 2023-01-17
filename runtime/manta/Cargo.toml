@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'manta-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.0.0-alpha.1'
+version = '4.0.0-rc1'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
@@ -15,6 +15,8 @@ serde = { version = "1.0.140", features = ['derive'], optional = true }
 smallvec = "1.8.0"
 
 # Substrate primitives
+sp-application-crypto = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+sp-arithmetic = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 sp-api = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 sp-block-builder = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 sp-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
@@ -64,6 +66,11 @@ cumulus-primitives-utility = { git = 'https://github.com/paritytech/cumulus.git'
 pallet-collator-selection = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.28" }
 parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.28" }
 
+# Nimbus Dependencies
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.1", default-features = false }
+pallet-aura-style-filter = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.1", default-features = false }
+pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.1", default-features = false }
+
 # Polkadot dependencies
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.28" }
 polkadot-parachain = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.28" }
@@ -74,8 +81,9 @@ xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', default-feat
 xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.28" }
 
 # Self dependencies
+manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
 manta-primitives = { path = '../../primitives/manta', default-features = false }
-pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
+pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
 
@@ -91,24 +99,35 @@ runtime-benchmarks = [
   'cumulus-pallet-session-benchmarking/runtime-benchmarks',
   'hex-literal',
   'sp-runtime/runtime-benchmarks',
-  'xcm-builder/runtime-benchmarks',
   'frame-benchmarking',
   'frame-system-benchmarking',
   'frame-support/runtime-benchmarks',
   'frame-system/runtime-benchmarks',
+  'manta-collator-selection/runtime-benchmarks',
+  'nimbus-primitives/runtime-benchmarks',
+  'pallet-aura-style-filter/runtime-benchmarks',
+  'pallet-author-inherent/runtime-benchmarks',
   'pallet-balances/runtime-benchmarks',
   'pallet-multisig/runtime-benchmarks',
   'pallet-utility/runtime-benchmarks',
   'pallet-timestamp/runtime-benchmarks',
-  'pallet-xcm/runtime-benchmarks',
-  'pallet-collator-selection/runtime-benchmarks',
-  'pallet-scheduler/runtime-benchmarks',
-  'pallet-tx-pause/runtime-benchmarks',
   'pallet-preimage/runtime-benchmarks',
+  'pallet-parachain-staking/runtime-benchmarks',
 ]
 try-runtime = [
   'frame-executive/try-runtime',
   'frame-try-runtime',
+  'frame-system/try-runtime',
+  'pallet-authorship/try-runtime',
+  'pallet-balances/try-runtime',
+  'pallet-parachain-staking/try-runtime',
+  'pallet-preimage/try-runtime',
+  'pallet-multisig/try-runtime',
+  'pallet-session/try-runtime',
+  'pallet-timestamp/try-runtime',
+  'pallet-transaction-payment/try-runtime',
+  'pallet-utility/try-runtime',
+  'runtime-common/try-runtime',
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
@@ -117,6 +136,8 @@ std = [
   'serde',
   'sp-consensus-aura/std',
   'pallet-aura/std',
+  'sp-application-crypto/std',
+  'sp-arithmetic/std',
   'sp-api/std',
   'sp-std/std',
   'sp-io/std',
@@ -135,32 +156,30 @@ std = [
   'frame-try-runtime/std',
   'pallet-authorship/std',
   'pallet-balances/std',
-  'pallet-preimage/std',
   'pallet-multisig/std',
+  'pallet-parachain-staking/std',
+  'pallet-preimage/std',
   'pallet-utility/std',
   'pallet-transaction-payment-rpc-runtime-api/std',
   'pallet-timestamp/std',
-  'pallet-scheduler/std',
   'pallet-session/std',
   'pallet-sudo/std',
-  'pallet-xcm/std',
   'pallet-transaction-payment/std',
   'manta-primitives/std',
   'runtime-common/std',
   'parachain-info/std',
-  "cumulus-pallet-aura-ext/std",
   'cumulus-pallet-parachain-system/std',
-  'cumulus-pallet-dmp-queue/std',
-  "cumulus-pallet-xcmp-queue/std",
-  "cumulus-pallet-xcm/std",
   "cumulus-primitives-core/std",
   "cumulus-primitives-timestamp/std",
   "cumulus-primitives-utility/std",
-  'xcm/std',
-  'xcm-builder/std',
-  'xcm-executor/std',
-  'polkadot-primitives/std',
-  'pallet-collator-selection/std',
+  "cumulus-pallet-dmp-queue/std",
+  "pallet-author-inherent/std",
+  "pallet-aura-style-filter/std",
   'session-key-primitives/std',
-  'pallet-tx-pause/std',
+  'polkadot-primitives/std',
+  'manta-collator-selection/std',
+  'xcm/std',
+  'pallet-xcm/std',
+  'xcm-executor/std',
+  'xcm-builder/std',
 ]

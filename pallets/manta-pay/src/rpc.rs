@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 
 //! MantaPay RPC Interfaces
 
-use crate::{runtime::PullLedgerDiffApi, Checkpoint, DensePullResponse, PullResponse};
+use crate::{runtime::PullLedgerDiffApi, types::DensePullResponse, Checkpoint, PullResponse};
 use alloc::sync::Arc;
 use core::marker::PhantomData;
 use jsonrpsee::{
@@ -109,7 +109,8 @@ where
     ) -> RpcResult<DensePullResponse> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(self.client.info().finalized_hash);
-        api.dense_pull_ledger_diff(&at, checkpoint.into(), max_receivers, max_senders)
+        api.pull_ledger_diff(&at, checkpoint.into(), max_receivers, max_senders)
+            .map(Into::into)
             .map_err(|err| {
                 CallError::Custom(ErrorObject::owned(
                     PULL_LEDGER_DIFF_ERROR,

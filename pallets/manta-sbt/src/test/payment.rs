@@ -168,29 +168,5 @@ fn pull_ledger_diff_should_work() {
         let check_point = crate::Checkpoint::default();
         let pull_response =
             MantaSBTPallet::pull_ledger_diff(check_point, max_receivers, max_senders);
-        let dense_pull_response =
-            MantaSBTPallet::dense_pull_ledger_diff(check_point, max_receivers, max_senders);
-        assert_eq!(
-            pull_response.senders_receivers_total,
-            dense_pull_response.senders_receivers_total
-        );
-        assert_eq!(
-            pull_response.should_continue,
-            dense_pull_response.should_continue
-        );
-        assert_eq!(
-            pull_response.should_continue,
-            dense_pull_response.should_continue
-        );
-
-        let dense_receivers = base64::decode(dense_pull_response.receivers).unwrap();
-        let mut slice_of = dense_receivers.as_slice();
-        let decoded_receivers = <crate::ReceiverChunk as Decode>::decode(&mut slice_of).unwrap();
-        assert_eq!(pull_response.receivers, decoded_receivers);
-
-        let dense_senders = base64::decode(dense_pull_response.senders).unwrap();
-        let mut slice_of = dense_senders.as_slice();
-        let decoded_senders = <crate::SenderChunk as Decode>::decode(&mut slice_of).unwrap();
-        assert_eq!(pull_response.senders, decoded_senders);
     });
 }

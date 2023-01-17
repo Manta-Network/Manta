@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@ use pallet_parachain_staking::{BalanceOf, InflationInfo};
 
 pub const NORMAL_COLLATOR_MINIMUM_STAKE: Balance = 4_000_000 * KMA;
 pub const EARLY_COLLATOR_MINIMUM_STAKE: Balance = 400_000 * KMA;
-pub const MIN_BOND_TO_BE_CONSIDERED_COLLATOR: Balance = EARLY_COLLATOR_MINIMUM_STAKE;
+pub const MIN_BOND_TO_BE_CONSIDERED_COLLATOR: Balance = NORMAL_COLLATOR_MINIMUM_STAKE;
 
 pub fn inflation_config<T: frame_system::Config + pallet_parachain_staking::Config>(
 ) -> InflationInfo<BalanceOf<T>> {

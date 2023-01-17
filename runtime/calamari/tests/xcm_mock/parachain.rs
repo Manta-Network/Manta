@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -24,8 +24,8 @@ use frame_support::{
     assert_ok, construct_runtime, match_types,
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{ConstU32, Everything, Nothing},
-    weights::{constants::WEIGHT_PER_SECOND, Weight},
+    traits::{ConstU32, Currency, Everything, Nothing},
+    weights::Weight,
     PalletId,
 };
 use frame_system::EnsureRoot;
@@ -42,7 +42,7 @@ use manta_primitives::{
         AssetConfig, AssetIdLocationConvert, AssetIdType, AssetLocation, AssetRegistry,
         AssetRegistryMetadata, AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
-    constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
+    constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL, WEIGHT_PER_SECOND},
     types::{BlockNumber, CalamariAssetId, Header},
     xcm::{FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter, MultiNativeAsset},
 };
@@ -57,7 +57,7 @@ use xcm_builder::{
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
     EnsureXcmOrigin, FixedRateOfFungible, LocationInverter, ParentIsPreset,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SovereignSignedViaLocation, TakeWeightCredit, WeightInfoBounds,
+    SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit, WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
@@ -242,10 +242,29 @@ pub type Barrier = (
 );
 
 parameter_types! {
-    /// Xcm fees will go to the asset manager (we don't implement treasury yet)
+    /// Xcm fees will go to the asset manager (we don't implement treasury yet for mock parachain)
     pub XcmFeesAccount: AccountId = AssetManager::account_id();
 }
 
+/// Xcm fee of native token
+pub struct XcmNativeFeeToTreasury;
+
+impl TakeRevenue for XcmNativeFeeToTreasury {
+    #[inline]
+    fn take_revenue(revenue: MultiAsset) {
+        if let MultiAsset {
+            id: Concrete(location),
+            fun: Fungible(amount),
+        } = revenue
+        {
+            if location == MultiLocation::here() {
+                let _ = Balances::deposit_creating(&XcmFeesAccount::get(), amount);
+            }
+        }
+    }
+}
+
+/// Xcm fee of non native token
 pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
     AccountId,
     Assets,
@@ -282,7 +301,7 @@ impl Config for XcmExecutorConfig {
     // The second one will charge the first asset in the MultiAssets with pre-defined rate
     // i.e. units_per_second in `AssetManager`
     type Trader = (
-        FixedRateOfFungible<ParaTokenPerSecond, ()>,
+        FixedRateOfFungible<ParaTokenPerSecond, XcmNativeFeeToTreasury>,
         FirstAssetTrader<AssetManager, XcmFeesToAccount>,
     );
     type ResponseHandler = PolkadotXcm;

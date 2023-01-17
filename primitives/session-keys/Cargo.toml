@@ -4,11 +4,11 @@ description = "Primitives for session keys"
 edition = "2021"
 license = "GPL-3.0"
 name = "session-key-primitives"
-version = '4.0.0-alpha.1'
+version = '4.0.0-rc1'
 
 [dependencies]
 manta-primitives = { path = "../manta", default-features = false }
-nimbus-primitives = { git = "https://github.com/zqhxuyuan/nimbus.git", branch = "zqh/polkadot-v0.9.28", default-features = false }
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.1", default-features = false }
 parity-scale-codec = { version = "3.1.2", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", default-features = false }

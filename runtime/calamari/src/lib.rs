@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -43,13 +43,10 @@ use sp_version::RuntimeVersion;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse,
+        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec,
         NeverEnsureOrigin, PrivilegeCmp,
     },
-    weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-        ConstantMultiplier, DispatchClass, Weight,
-    },
+    weights::{ConstantMultiplier, DispatchClass, Weight},
     PalletId,
 };
 use frame_system::{
@@ -57,12 +54,14 @@ use frame_system::{
     EnsureRoot,
 };
 use manta_primitives::{
-    constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
+    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
-use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
+use runtime_common::{
+    prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
+};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
 #[cfg(any(feature = "std", test))]
@@ -112,6 +111,15 @@ pub mod opaque {
             let (aura, nimbus, vrf) = tuple;
             SessionKeys { aura, nimbus, vrf }
         }
+        /// Derives all collator keys from `seed` without checking that the `seed` is valid.
+        #[cfg(feature = "std")]
+        pub fn from_seed_unchecked(seed: &str) -> SessionKeys {
+            Self::new((
+                session_key_primitives::util::unchecked_public_key::<AuraId>(seed),
+                session_key_primitives::util::unchecked_public_key::<NimbusId>(seed),
+                session_key_primitives::util::unchecked_public_key::<VrfId>(seed),
+            ))
+        }
     }
 }
 
@@ -123,7 +131,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 4000,
+    spec_version: 4001,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 10,
@@ -173,12 +181,20 @@ parameter_types! {
     pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
 }
 
+parameter_types! {
+    pub NonPausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilCollective".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalCollective".to_vec()];
+}
+
 impl pallet_tx_pause::Config for Runtime {
     type Event = Event;
-    type UpdateOrigin = EitherOfDiverse<
+    type Call = Call;
+    type MaxCallNames = ConstU32<25>;
+    type PauseOrigin = EitherOfDiverse<
         EnsureRoot<AccountId>,
-        pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 1, 2>,
+        pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,
     >;
+    type UnpauseOrigin = EnsureRoot<AccountId>;
+    type NonPausablePallets = IsInVec<NonPausablePallets>;
     type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
@@ -282,6 +298,7 @@ impl Contains<Call> for BaseFilter {
             | Call::MantaPay(_)
             | Call::XTokens(orml_xtokens::Call::transfer {..}
                 | orml_xtokens::Call::transfer_multicurrencies {..})
+            | Call::TransactionPause(_)
             | Call::Utility(_) => true,
 
             // DISALLOW anything else
@@ -816,7 +833,7 @@ construct_runtime!(
 
         // Preimage registry.
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 28,
-        // System scheduler.
+        // System scheduler
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 29,
 
         // XCM helpers.
@@ -1031,14 +1048,6 @@ impl_runtime_apis! {
         ) -> pallet_manta_pay::PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
-
-        fn dense_pull_ledger_diff(
-            checkpoint: pallet_manta_pay::RawCheckpoint,
-            max_receiver: u64,
-            max_sender: u64
-        ) -> pallet_manta_pay::DensePullResponse {
-            MantaPay::dense_pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
-        }
     }
 
     impl nimbus_primitives::NimbusApi<Block> for Runtime {
@@ -1070,13 +1079,6 @@ impl_runtime_apis! {
                 // We're not changing rounds, `PotentialAuthors` is not changing, just use can_author
                 <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
             }
-        }
-    }
-
-    // We also implement the old AuthorFilterAPI to meet the trait bounds on the client side.
-    impl nimbus_primitives::AuthorFilterAPI<Block, NimbusId> for Runtime {
-        fn can_author(_: NimbusId, _: u32, _: &<Block as BlockT>::Header) -> bool {
-            panic!("AuthorFilterAPI is no longer supported. Please update your client.")
         }
     }
 

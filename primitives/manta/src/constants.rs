@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -17,7 +17,11 @@
 //! Manta Protocol Constants
 
 use crate::types::Balance;
-use frame_support::PalletId;
+use frame_support::{
+    parameter_types,
+    weights::{RuntimeDbWeight, Weight},
+    PalletId,
+};
 
 /// Calamari SS58 Prefix
 pub const CALAMARI_SS58PREFIX: u8 = 78;
@@ -99,3 +103,51 @@ pub const MANTA_SBT_PALLET_ID: PalletId = PalletId(*b"mantasbt");
 ///
 /// This should only be used for testing and should not be used in production.
 pub const TEST_DEFAULT_ASSET_ED: Balance = 1;
+
+/// 1_000_000_000_000
+pub const WEIGHT_PER_SECOND: Weight = 1_000_000_000_000;
+/// 1_000_000_000
+pub const WEIGHT_PER_MILLIS: Weight = WEIGHT_PER_SECOND / 1000;
+/// 1_000_000
+pub const WEIGHT_PER_MICROS: Weight = WEIGHT_PER_MILLIS / 1000;
+/// 1_000
+pub const WEIGHT_PER_NANOS: Weight = WEIGHT_PER_MICROS / 1000;
+
+parameter_types! {
+    /// By default, Substrate uses RocksDB, so this will be the weight used throughout
+    /// the runtime.
+    pub const RocksDbWeight: RuntimeDbWeight = RuntimeDbWeight {
+        read: 25_000 * WEIGHT_PER_NANOS,
+        write: 100_000 * WEIGHT_PER_NANOS,
+    };
+}
+
+#[cfg(test)]
+mod constants_tests {
+    use super::*;
+
+    #[test]
+    fn sanity_check_rocksdb_weight() {
+        use frame_support::weights::constants::RocksDbWeight as ImportedRocksDbWeight;
+        assert_eq!(ImportedRocksDbWeight::get().read, RocksDbWeight::get().read);
+        assert_eq!(
+            ImportedRocksDbWeight::get().write,
+            RocksDbWeight::get().write
+        );
+    }
+
+    #[test]
+    fn sanity_check_weight_per_time_constants() {
+        use frame_support::weights::constants::{
+            WEIGHT_PER_MICROS as IMPORTED_WEIGHT_PER_MICROS,
+            WEIGHT_PER_MILLIS as IMPORTED_WEIGHT_PER_MILLIS,
+            WEIGHT_PER_NANOS as IMPORTED_WEIGHT_PER_NANOS,
+            WEIGHT_PER_SECOND as IMPORTED_WEIGHT_PER_SECOND,
+        };
+
+        assert_eq!(WEIGHT_PER_SECOND, IMPORTED_WEIGHT_PER_SECOND);
+        assert_eq!(WEIGHT_PER_MILLIS, IMPORTED_WEIGHT_PER_MILLIS);
+        assert_eq!(WEIGHT_PER_MICROS, IMPORTED_WEIGHT_PER_MICROS);
+        assert_eq!(WEIGHT_PER_NANOS, IMPORTED_WEIGHT_PER_NANOS);
+    }
+}

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -23,7 +23,7 @@ use calamari_runtime::{
     currency::KMA, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig,
     ParachainStakingConfig, TechnicalCommitteeConfig,
 };
-use session_key_primitives::util::{unchecked_account_id, unchecked_collator_keys};
+use session_key_primitives::util::unchecked_account_id;
 /// Calamari Protocol Identifier
 pub const CALAMARI_PROTOCOL_ID: &str = "calamari";
 
@@ -61,7 +61,7 @@ pub fn calamari_development_config() -> CalamariChainSpec {
             calamari_dev_genesis(
                 vec![(
                     unchecked_account_id::<sr25519::Public>("Alice"),
-                    SessionKeys::new(unchecked_collator_keys("Alice")),
+                    SessionKeys::from_seed_unchecked("Alice"),
                 )],
                 // Delegations
                 vec![],
@@ -86,35 +86,48 @@ pub fn calamari_development_config() -> CalamariChainSpec {
 }
 
 /// Returns the Calamari local chainspec.
-pub fn calamari_local_config() -> CalamariChainSpec {
+pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
+    let id = if localdev {
+        "calamari_localdev"
+    } else {
+        "calamari_local"
+    };
     CalamariChainSpec::from_genesis(
         "Calamari Parachain Local",
-        "calamari_local",
+        id,
         ChainType::Local,
         move || {
-            calamari_dev_genesis(
+            let invulnerables = if localdev {
+                vec![(
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    SessionKeys::from_seed_unchecked("Alice"),
+                )]
+            } else {
                 vec![
                     (
                         unchecked_account_id::<sr25519::Public>("Alice"),
-                        SessionKeys::new(unchecked_collator_keys("Alice")),
+                        SessionKeys::from_seed_unchecked("Alice"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Bob"),
-                        SessionKeys::new(unchecked_collator_keys("Bob")),
+                        SessionKeys::from_seed_unchecked("Bob"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Charlie"),
-                        SessionKeys::new(unchecked_collator_keys("Charlie")),
+                        SessionKeys::from_seed_unchecked("Charlie"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Dave"),
-                        SessionKeys::new(unchecked_collator_keys("Dave")),
+                        SessionKeys::from_seed_unchecked("Dave"),
                     ),
                     (
                         unchecked_account_id::<sr25519::Public>("Eve"),
-                        SessionKeys::new(unchecked_collator_keys("Eve")),
+                        SessionKeys::from_seed_unchecked("Eve"),
                     ),
-                ],
+                ]
+            };
+            calamari_dev_genesis(
+                invulnerables,
                 // Delegations
                 vec![],
                 vec![
@@ -231,13 +244,6 @@ pub fn calamari_testnet_config() -> Result<CalamariChainSpec, String> {
     )?;
     spec.extensions_mut().para_id = CALAMARI_PARACHAIN_ID;
     Ok(spec)
-}
-
-/// Returns the Calamari testnet for CI chainspec.
-pub fn calamari_testnet_ci_config() -> Result<CalamariChainSpec, String> {
-    CalamariChainSpec::from_json_bytes(
-        &include_bytes!("../../../genesis/calamari-testnet-ci-genesis.json")[..],
-    )
 }
 
 /// Returns the Calamari mainnet chainspec.

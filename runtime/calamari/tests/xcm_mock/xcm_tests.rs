@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -18,11 +18,12 @@
 
 #![cfg(test)]
 
+use crate::xcm_mock::parachain::XcmFeesAccount;
 use codec::Encode;
 use frame_support::{
-    assert_err, assert_noop, assert_ok, weights::constants::WEIGHT_PER_SECOND, WeakBoundedVec,
+    assert_err, assert_noop, assert_ok, traits::tokens::fungibles::Mutate, WeakBoundedVec,
 };
-use manta_primitives::assets::AssetLocation;
+use manta_primitives::{assets::AssetLocation, constants::WEIGHT_PER_SECOND};
 use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
 use xcm_executor::traits::{Convert, WeightBounds};
 use xcm_simulator::TestExt;
@@ -350,6 +351,87 @@ fn send_para_a_native_asset_to_para_b() {
     ParaB::execute_with(|| {
         // free execution, full amount received
         assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), amount);
+        assert_eq!(
+            parachain::Assets::balance(a_asset_id_on_b, &XcmFeesAccount::get()),
+            0
+        );
+    });
+}
+
+#[test]
+fn send_para_b_asset_to_para_b() {
+    MockNet::reset();
+
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
+    let para_b_source_location = create_asset_location(1, PARA_B_ID);
+
+    let amount = INITIAL_BALANCE;
+
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, false);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, false);
+
+    let _ = register_assets_on_parachain::<ParaA>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(0u128),
+        None,
+    );
+    let b_asset_id_on_a = register_assets_on_parachain::<ParaA>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
+
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(0u128),
+        None,
+    );
+
+    let dest = MultiLocation {
+        parents: 1,
+        interior: X2(
+            Parachain(PARA_B_ID),
+            AccountId32 {
+                network: NetworkId::Any,
+                id: ALICE.into(),
+            },
+        ),
+    };
+
+    // Transfer ParaB balance to B
+    // Also tests that a sender can send all of their balance
+    ParaA::execute_with(|| {
+        assert_ok!(parachain::Assets::mint_into(
+            b_asset_id_on_a,
+            &ALICE,
+            amount
+        ));
+        assert_eq!(parachain::Assets::balance(b_asset_id_on_a, &ALICE), amount);
+
+        assert_ok!(parachain::XTokens::transfer(
+            parachain::Origin::signed(ALICE),
+            parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
+            amount,
+            Box::new(VersionedMultiLocation::V1(dest)),
+            ADVERTISED_DEST_WEIGHT
+        ));
+        assert_eq!(parachain::Assets::balance(b_asset_id_on_a, &ALICE), 0);
+    });
+
+    // Make sure B received the token
+    ParaB::execute_with(|| {
+        // free execution, full amount received
+        assert_eq!(parachain::Balances::free_balance(&ALICE), amount);
+        assert_eq!(parachain::Balances::free_balance(&XcmFeesAccount::get()), 0);
     });
 }
 
@@ -529,7 +611,7 @@ fn send_insufficient_asset_from_para_a_to_para_b() {
     ParaB::execute_with(|| {
         assert_ok!(pallet_balances::Pallet::<parachain::Runtime>::set_balance(
             parachain::Origin::root(),
-            parachain::AssetManager::account_id(),
+            XcmFeesAccount::get(),
             1000000000000000,
             1000000000000000
         ));
@@ -559,6 +641,10 @@ fn send_insufficient_asset_from_para_a_to_para_b() {
         assert_eq!(
             parachain::Assets::balance(a_asset_id_on_b, &ALICE),
             (amount - fee_at_b) * 2
+        );
+        assert_eq!(
+            parachain::Assets::balance(a_asset_id_on_b, &XcmFeesAccount::get()),
+            fee_at_b
         );
     });
 }
@@ -776,6 +862,10 @@ fn send_para_a_custom_asset_to_para_b() {
             parachain::Assets::balance(doge_currency_id_on_b, &ALICE),
             amount
         );
+        assert_eq!(
+            parachain::Assets::balance(doge_currency_id_on_b, &XcmFeesAccount::get()),
+            0
+        );
     });
 }
 
@@ -849,6 +939,10 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
     ParaB::execute_with(|| {
         // free execution, full amount received
         assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), amount);
+        assert_eq!(
+            parachain::Assets::balance(a_asset_id_on_b, &XcmFeesAccount::get()),
+            0
+        );
     });
 
     let alice_on_a = MultiLocation {
@@ -879,7 +973,11 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
         assert_eq!(
             parachain::Balances::free_balance(&ALICE),
             INITIAL_BALANCE - fee_on_b_when_send_back
-        )
+        );
+        assert_eq!(
+            parachain::Balances::free_balance(&XcmFeesAccount::get()),
+            fee_on_b_when_send_back
+        );
     });
 }
 
@@ -974,6 +1072,10 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
     ParaB::execute_with(|| {
         // free execution, full amount received
         assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), amount);
+        assert_eq!(
+            parachain::Assets::balance(a_asset_id_on_b, &XcmFeesAccount::get()),
+            0
+        );
     });
 
     // B send C para A asset
@@ -1005,6 +1107,10 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
         assert_eq!(
             parachain::Assets::balance(a_asset_id_on_c, &ALICE),
             amount - fee_at_reserve
+        );
+        assert_eq!(
+            parachain::Assets::balance(a_asset_id_on_c, &XcmFeesAccount::get()),
+            0
         );
     });
 }
@@ -1066,7 +1172,7 @@ fn receive_relay_asset_with_trader_on_parachain() {
         );
         // Fee sink gets fee
         assert_eq!(
-            parachain::Assets::balance(relay_asset_id_on_a, AssetManager::account_id()),
+            parachain::Assets::balance(relay_asset_id_on_a, &XcmFeesAccount::get()),
             fee
         );
     });
@@ -1140,6 +1246,222 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
 
     ParaB::execute_with(|| {
         assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), amount);
+        assert_eq!(
+            parachain::Assets::balance(a_asset_id_on_b, &XcmFeesAccount::get()),
+            fee
+        );
+    });
+}
+
+#[test]
+fn send_para_b_asset_to_para_b_with_trader_and_fee() {
+    MockNet::reset();
+
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
+    let para_b_source_location = create_asset_location(1, PARA_B_ID);
+
+    let amount = 5000000u128;
+    let units_per_second = ParaTokenPerSecond::get().1;
+    let fee = calculate_fee(
+        units_per_second,
+        non_self_reserve_xtokens_weight_on_receiver(),
+    );
+
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
+
+    let _ = register_assets_on_parachain::<ParaA>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(0u128),
+        None,
+    );
+    let b_asset_id_on_a = register_assets_on_parachain::<ParaA>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(0u128),
+        None,
+    );
+
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(units_per_second),
+        None,
+    );
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(units_per_second),
+        None,
+    );
+
+    let dest = MultiLocation {
+        parents: 1,
+        interior: X2(
+            Parachain(PARA_B_ID),
+            AccountId32 {
+                network: NetworkId::Any,
+                id: ALICE.into(),
+            },
+        ),
+    };
+
+    let para_a_account =
+        polkadot_parachain::primitives::Sibling::from(PARA_A_ID).into_account_truncating();
+
+    ParaB::execute_with(|| {
+        use frame_support::traits::Currency;
+        let _ = parachain::Balances::deposit_creating(&para_a_account, INITIAL_BALANCE);
+    });
+
+    ParaA::execute_with(|| {
+        assert_ok!(parachain::Assets::mint_into(
+            b_asset_id_on_a,
+            &ALICE,
+            INITIAL_BALANCE
+        ));
+        assert_eq!(
+            parachain::Assets::balance(b_asset_id_on_a, &ALICE),
+            INITIAL_BALANCE
+        );
+
+        assert_ok!(parachain::XTokens::transfer_with_fee(
+            parachain::Origin::signed(ALICE),
+            parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
+            amount,
+            fee,
+            Box::new(VersionedMultiLocation::V1(dest)),
+            ADVERTISED_DEST_WEIGHT,
+        ));
+        assert_eq!(
+            parachain::Assets::balance(b_asset_id_on_a, &ALICE),
+            INITIAL_BALANCE - amount - fee
+        )
+    });
+
+    ParaB::execute_with(|| {
+        assert_eq!(
+            parachain::Balances::free_balance(&ALICE),
+            INITIAL_BALANCE + amount
+        );
+        assert_eq!(
+            parachain::Balances::free_balance(&XcmFeesAccount::get()),
+            fee
+        );
+    });
+}
+
+#[test]
+fn send_para_a_native_asset_para_b_and_then_send_back_with_trader_and_fee() {
+    MockNet::reset();
+
+    let para_a_source_location = create_asset_location(1, PARA_A_ID);
+    let para_b_source_location = create_asset_location(1, PARA_B_ID);
+
+    let amount = 5000000u128;
+    let units_per_second = 1_250_000u128;
+    let fee = calculate_fee(units_per_second, self_reserve_xtokens_weight_on_receiver());
+
+    let weight = non_self_reserve_xtokens_weight_on_receiver();
+    let fee_on_b_when_send_back = calculate_fee(ParaTokenPerSecond::get().1, weight);
+
+    let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, true);
+    let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
+
+    let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(units_per_second),
+        None,
+    );
+    let _ = register_assets_on_parachain::<ParaA>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(units_per_second),
+        None,
+    );
+
+    let _ = register_assets_on_parachain::<ParaB>(
+        &para_b_source_location,
+        &para_b_asset_metadata,
+        Some(units_per_second),
+        None,
+    );
+    let a_asset_id_on_b = register_assets_on_parachain::<ParaB>(
+        &para_a_source_location,
+        &para_a_asset_metadata,
+        Some(units_per_second),
+        None,
+    );
+
+    let dest = MultiLocation {
+        parents: 1,
+        interior: X2(
+            Parachain(PARA_B_ID),
+            AccountId32 {
+                network: NetworkId::Any,
+                id: ALICE.into(),
+            },
+        ),
+    };
+
+    ParaA::execute_with(|| {
+        assert_ok!(parachain::XTokens::transfer_with_fee(
+            parachain::Origin::signed(ALICE),
+            parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
+            amount,
+            fee,
+            Box::new(VersionedMultiLocation::V1(dest)),
+            ADVERTISED_DEST_WEIGHT,
+        ));
+        assert_eq!(
+            parachain::Balances::free_balance(&ALICE),
+            INITIAL_BALANCE - amount - fee
+        )
+    });
+
+    ParaB::execute_with(|| {
+        assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), amount);
+        assert_eq!(
+            parachain::Assets::balance(a_asset_id_on_b, &XcmFeesAccount::get()),
+            fee
+        );
+    });
+
+    let alice_on_a = MultiLocation {
+        parents: 1,
+        interior: X2(
+            Parachain(PARA_A_ID),
+            AccountId32 {
+                network: NetworkId::Any,
+                id: ALICE.into(),
+            },
+        ),
+    };
+
+    // Send wrapped a back to a
+    ParaB::execute_with(|| {
+        assert_ok!(parachain::XTokens::transfer(
+            parachain::Origin::signed(ALICE),
+            parachain::CurrencyId::MantaCurrency(a_asset_id_on_b),
+            amount,
+            Box::new(VersionedMultiLocation::V1(alice_on_a)),
+            weight
+        ));
+        assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), 0);
+    });
+
+    // make sure that a received the token
+    ParaA::execute_with(|| {
+        assert_eq!(
+            parachain::Balances::free_balance(&ALICE),
+            INITIAL_BALANCE - fee - fee_on_b_when_send_back
+        );
+        assert_eq!(
+            parachain::Balances::free_balance(&XcmFeesAccount::get()),
+            fee_on_b_when_send_back
+        );
     });
 }
 
@@ -1269,6 +1591,10 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
     ParaC::execute_with(|| {
         amount = amount - fee_at_b - fee_at_a;
         assert_eq!(parachain::Assets::balance(a_asset_id_on_c, &ALICE), amount);
+        assert_eq!(
+            parachain::Assets::balance(a_asset_id_on_b, &XcmFeesAccount::get()),
+            0
+        );
     });
 }
 
@@ -1324,9 +1650,9 @@ fn receive_relay_asset_on_parachain_with_insufficient_fee_payment_should_fail() 
     ParaA::execute_with(|| {
         // ALICE gets nothing
         assert_eq!(parachain::Assets::balance(relay_asset_id, &ALICE), 0);
-        // Asset manager gets nothing, all balance stuck
+        // XcmFeesAccount gets nothing, all balance stuck
         assert_eq!(
-            parachain::Assets::balance(relay_asset_id, AssetManager::account_id()),
+            parachain::Assets::balance(relay_asset_id, &XcmFeesAccount::get()),
             0
         );
     });
@@ -1380,9 +1706,9 @@ fn receive_relay_should_fail_without_specifying_units_per_second() {
     ParaA::execute_with(|| {
         // ALICE gets nothing
         assert_eq!(parachain::Assets::balance(relay_asset_id_on_a, &ALICE), 0);
-        // Asset manager gets nothing, all balance stuck
+        // XcmFeesAccount gets nothing, all balance stuck
         assert_eq!(
-            parachain::Assets::balance(relay_asset_id_on_a, AssetManager::account_id()),
+            parachain::Assets::balance(relay_asset_id_on_a, &XcmFeesAccount::get()),
             0
         );
     });
@@ -1459,6 +1785,10 @@ fn send_para_a_asset_to_para_b_with_insufficient_fee() {
     // Alice on B should receive nothing since the fee is insufficient
     ParaB::execute_with(|| {
         assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), 0);
+        assert_eq!(
+            parachain::Assets::balance(a_asset_id_on_b, &XcmFeesAccount::get()),
+            0
+        );
     });
 }
 

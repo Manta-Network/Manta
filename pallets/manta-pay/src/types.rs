@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 
 //! Type Definitions for Manta Pay
 
-use alloc::{boxed::Box, string::String, vec::Vec};
+use alloc::{boxed::Box, vec::Vec};
 use manta_crypto::merkle_tree;
 use manta_pay::{
     config::{
@@ -912,11 +912,11 @@ pub struct DensePullResponse {
     /// Ledger Receiver Chunk
     // we decode the receivers/senders with our own way
     #[codec(skip)]
-    pub receivers: String,
+    pub receivers: alloc::string::String,
 
     /// Ledger Sender Chunk
     #[codec(skip)]
-    pub senders: String,
+    pub senders: alloc::string::String,
 
     /// Total Number of Senders/Receivers in Ledger
     pub senders_receivers_total: [u8; 16],
@@ -928,6 +928,19 @@ pub struct DensePullResponse {
     /// and the potential risk of inconsistent computing rules between the client and server
     #[codec(skip)]
     pub next_checkpoint: Option<Checkpoint>,
+}
+
+impl From<PullResponse> for DensePullResponse {
+    #[inline]
+    fn from(resp: PullResponse) -> DensePullResponse {
+        Self {
+            should_continue: resp.should_continue,
+            receivers: base64::encode(resp.receivers.encode()),
+            senders: base64::encode(resp.senders.encode()),
+            senders_receivers_total: resp.senders_receivers_total,
+            next_checkpoint: None,
+        }
+    }
 }
 
 /// Raw Checkpoint for Encoding and Decoding

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -20,8 +20,7 @@ use crate::{
     chain_specs,
     cli::{Cli, RelayChainCli, Subcommand},
     rpc,
-    service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor},
-    service_aura::MantaRuntimeExecutor,
+    service::{new_partial, CalamariRuntimeExecutor, DolphinRuntimeExecutor, MantaRuntimeExecutor},
 };
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
@@ -34,7 +33,6 @@ use sc_cli::{
     NetworkParams, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
-use session_key_primitives::AuraId;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{
     generic,
@@ -52,7 +50,7 @@ pub type Result<T = (), E = Error> = core::result::Result<T, E>;
 pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
 /// Manta Parachain ID
-pub const MANTA_PARACHAIN_ID: u32 = 2015;
+pub const MANTA_PARACHAIN_ID: u32 = 2100;
 
 /// Calamari Parachain ID
 pub const CALAMARI_PARACHAIN_ID: u32 = 2084;
@@ -66,6 +64,7 @@ trait IdentifyChain {
     fn is_manta(&self) -> bool;
     fn is_calamari(&self) -> bool;
     fn is_dolphin(&self) -> bool;
+    fn is_localdev(&self) -> bool;
 }
 
 impl IdentifyChain for dyn sc_service::ChainSpec {
@@ -77,6 +76,9 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
     }
     fn is_dolphin(&self) -> bool {
         self.id().starts_with("dolphin")
+    }
+    fn is_localdev(&self) -> bool {
+        self.id().ends_with("localdev")
     }
 }
 
@@ -90,6 +92,9 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
     fn is_dolphin(&self) -> bool {
         <dyn sc_service::ChainSpec>::is_dolphin(self)
     }
+    fn is_localdev(&self) -> bool {
+        <dyn sc_service::ChainSpec>::is_localdev(self)
+    }
 }
 
 fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
@@ -98,20 +103,19 @@ fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         "manta-dev" => Ok(Box::new(chain_specs::manta_development_config())),
         "manta-local" => Ok(Box::new(chain_specs::manta_local_config())),
         "manta-testnet" => Ok(Box::new(chain_specs::manta_testnet_config()?)),
-        "manta-testnet-ci" => Ok(Box::new(chain_specs::manta_testnet_ci_config()?)),
         "manta" => Ok(Box::new(chain_specs::manta_config()?)),
         // calamari chainspec
         "calamari-dev" => Ok(Box::new(chain_specs::calamari_development_config())),
-        "calamari-local" => Ok(Box::new(chain_specs::calamari_local_config())),
+        "calamari-local" => Ok(Box::new(chain_specs::calamari_local_config(false))),
+        "calamari-localdev" => Ok(Box::new(chain_specs::calamari_local_config(true))),
         "calamari-testnet" => Ok(Box::new(chain_specs::calamari_testnet_config()?)),
-        "calamari-testnet-ci" => Ok(Box::new(chain_specs::calamari_testnet_ci_config()?)),
         "calamari" => Ok(Box::new(chain_specs::calamari_config()?)),
         // dolphin chainspec
         "dolphin-dev" => Ok(Box::new(chain_specs::dolphin_development_config())),
-        "dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config())),
+        "dolphin-local" => Ok(Box::new(chain_specs::dolphin_local_config(false))),
+        "dolphin-localdev" => Ok(Box::new(chain_specs::dolphin_local_config(true))),
         "dolphin-testnet" => Ok(Box::new(chain_specs::dolphin_testnet_config()?)),
         "dolphin-2085" => Ok(Box::new(chain_specs::dolphin_2085_config()?)),
-        "dolphin-testnet-ci" => Ok(Box::new(chain_specs::dolphin_testnet_ci_config()?)),
         "dolphin-v3-staging" => Ok(Box::new(chain_specs::dolphin_v3_2085_staging_config()?)),
         path => {
             let chain_spec = chain_specs::ChainSpec::from_json_file(path.into())?;
@@ -226,10 +230,7 @@ impl SubstrateCli for RelayChainCli {
 macro_rules! construct_benchmark_partials {
     ($config:expr, |$partials:ident| $code:expr) => {
         if $config.chain_spec.is_manta() {
-            let $partials = crate::service_aura::new_partial::<manta_runtime::RuntimeApi, _>(
-                &$config,
-                crate::service_aura::parachain_build_import_queue::<_, AuraId>,
-            )?;
+            let $partials = new_partial::<manta_runtime::RuntimeApi>(&$config)?;
             $code
         } else if $config.chain_spec.is_calamari() {
             let $partials = new_partial::<calamari_runtime::RuntimeApi>(&$config)?;
@@ -248,9 +249,8 @@ macro_rules! construct_async_run {
         let runner = $cli.create_runner($cmd)?;
             if runner.config().chain_spec.is_manta() {
                 runner.async_run(|$config| {
-                    let $components = crate::service_aura::new_partial::<manta_runtime::RuntimeApi, _>(
+                    let $components = crate::service::new_partial::<manta_runtime::RuntimeApi>(
                         &$config,
-                        crate::service_aura::parachain_build_import_queue::<_, AuraId>,
                     )?;
                     let task_manager = $components.task_manager;
                     { $( $code )* }.map(|v| (v, task_manager))
@@ -421,9 +421,31 @@ pub fn run_with(cli: Cli) -> Result {
             .into()),
         None => {
             let runner = cli.create_runner(&cli.run.normalize())?;
+            let chain_spec = &runner.config().chain_spec;
+            let is_dev = chain_spec.is_localdev();
+            info!("id:{}", chain_spec.id());
             let collator_options = cli.run.collator_options();
 
             runner.run_node_until_exit(|config| async move {
+                if is_dev {
+                    info!("⚠️  DEV STANDALONE MODE.");
+                    if config.chain_spec.is_dolphin() {
+                        return crate::service::start_dev_nimbus_node::<dolphin_runtime::RuntimeApi, _>(
+                            config,
+                            rpc::create_dolphin_full,
+                        ).await
+                            .map_err(Into::into);
+                    } else if config.chain_spec.is_calamari() {
+                        return crate::service::start_dev_nimbus_node::<calamari_runtime::RuntimeApi, _>(
+                            config,
+                            rpc::create_common_full,
+                        ).await
+                            .map_err(Into::into);
+                    } else {
+                        return Err("Dev mode not support for current chain".into());
+                    }
+                }
+
                 let hwbench = if !cli.no_hardware_benchmarks {
                     config.database.path().map(|database_path| {
                         let _ = std::fs::create_dir_all(database_path);
@@ -475,7 +497,7 @@ pub fn run_with(cli: Cli) -> Result {
                 );
 
                 if config.chain_spec.is_manta() {
-                    crate::service_aura::start_parachain_node::<manta_runtime::RuntimeApi, AuraId, _>(
+                    crate::service::start_parachain_node::<manta_runtime::RuntimeApi, _>(
                         config,
                         polkadot_config,
                         collator_options,

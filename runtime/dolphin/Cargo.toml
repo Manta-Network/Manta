@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'dolphin-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.0.0-alpha.1'
+version = '4.0.0-rc1'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
@@ -72,9 +72,9 @@ cumulus-primitives-utility = { git = 'https://github.com/paritytech/cumulus.git'
 parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.28" }
 
 # Nimbus Dependencies
-nimbus-primitives = { git = "https://github.com/zqhxuyuan/nimbus.git", branch = "zqh/polkadot-v0.9.28", default-features = false }
-pallet-aura-style-filter = { git = "https://github.com/zqhxuyuan/nimbus.git", branch = "zqh/polkadot-v0.9.28", default-features = false }
-pallet-author-inherent = { git = "https://github.com/zqhxuyuan/nimbus.git", branch = "zqh/polkadot-v0.9.28", default-features = false }
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.1", default-features = false }
+pallet-aura-style-filter = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.1", default-features = false }
+pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.1", default-features = false }
 
 # Polkadot dependencies
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.28" }
