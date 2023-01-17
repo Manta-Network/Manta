@@ -174,7 +174,7 @@ jobs:
             --pallet=* \
             --extrinsic=* \
             --repeat=1 \
-            --steps=1
+            --steps=2
       - name: stop sccache server
         run: sccache --stop-server || true
   stop-benchmark-checks:
