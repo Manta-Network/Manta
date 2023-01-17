@@ -6579,6 +6579,7 @@ dependencies = [
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",
+ "pallet-tx-pause",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
  "scale-info",

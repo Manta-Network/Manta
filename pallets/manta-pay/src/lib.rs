@@ -126,6 +126,17 @@ pub mod pallet {
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
+    /// Suspend execution of MantaPay extrinsics (via tx-pause) due to unexpected internal ledger error.
+    /// Currently the following errors, which are only controlled by our own code, not user input:
+    /// ChecksumError, MerkleTreeCapacityError, VerifyingContextDecodeError
+    pub trait SuspendMantaPay {
+        fn suspend_manta_pay_execution();
+    }
+
+    impl SuspendMantaPay for () {
+        fn suspend_manta_pay_execution() {}
+    }
+
     /// Pallet
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
@@ -146,6 +157,9 @@ pub mod pallet {
 
         /// Pallet ID
         type PalletId: Get<PalletId>;
+
+        /// Suspends execution of all extrinsics via TxPause
+        type Suspender: SuspendMantaPay;
     }
 
     /// Fungible Ledger Implementation for [`Config`]
@@ -474,7 +488,10 @@ pub mod pallet {
         }
     }
 
-    impl<T> From<SenderPostError<SenderLedgerError>> for Error<T> {
+    impl<T> From<SenderPostError<SenderLedgerError>> for Error<T>
+    where
+        T: Config,
+    {
         #[inline]
         fn from(err: SenderPostError<SenderLedgerError>) -> Self {
             match err {
@@ -485,12 +502,24 @@ pub mod pallet {
         }
     }
 
-    impl<T> From<ReceiverPostError<ReceiverLedgerError>> for Error<T> {
+    impl<T> From<ReceiverPostError<ReceiverLedgerError<T>>> for Error<T>
+    where
+        T: Config,
+    {
         #[inline]
-        fn from(err: ReceiverPostError<ReceiverLedgerError>) -> Self {
+        fn from(err: ReceiverPostError<ReceiverLedgerError<T>>) -> Self {
             match err {
                 ReceiverPostError::AssetRegistered => Self::AssetRegistered,
-                ReceiverPostError::UnexpectedError(_) => Self::InternalLedgerError,
+                ReceiverPostError::UnexpectedError(e) => {
+                    match e {
+                        ReceiverLedgerError::ChecksumError
+                        | ReceiverLedgerError::MerkleTreeCapacityError => {
+                            T::Suspender::suspend_manta_pay_execution();
+                        }
+                        _ => {}
+                    };
+                    Self::InternalLedgerError
+                }
             }
         }
     }
@@ -505,12 +534,19 @@ pub mod pallet {
         }
     }
 
-    impl<T> From<ReceiverLedgerError> for TransferLedgerError<T>
+    impl<T> From<ReceiverLedgerError<T>> for TransferLedgerError<T>
     where
         T: Config,
     {
         #[inline]
-        fn from(err: ReceiverLedgerError) -> Self {
+        fn from(err: ReceiverLedgerError<T>) -> Self {
+            match err {
+                ReceiverLedgerError::ChecksumError
+                | ReceiverLedgerError::MerkleTreeCapacityError => {
+                    T::Suspender::suspend_manta_pay_execution();
+                }
+                _ => {}
+            };
             TransferLedgerError::ReceiverLedgerError(err)
         }
     }
@@ -541,7 +577,7 @@ pub mod pallet {
         config::Config,
         <T as frame_system::Config>::AccountId,
         SenderLedgerError,
-        ReceiverLedgerError,
+        ReceiverLedgerError<T>,
         TransferLedgerError<T>,
     >;
 
@@ -561,7 +597,16 @@ pub mod pallet {
                 TransferPostError::<T>::DuplicateMint => Self::DuplicateRegister,
                 TransferPostError::<T>::DuplicateSpend => Self::DuplicateSpend,
                 TransferPostError::<T>::InvalidProof => Self::InvalidProof,
-                TransferPostError::<T>::UnexpectedError(_) => Self::InternalLedgerError,
+                TransferPostError::<T>::UnexpectedError(e) => {
+                    match e {
+                        TransferLedgerError::ChecksumError
+                        | TransferLedgerError::VerifyingContextDecodeError(_) => {
+                            T::Suspender::suspend_manta_pay_execution();
+                        }
+                        _ => {}
+                    };
+                    Self::InternalLedgerError
+                }
             }
         }
     }
@@ -921,7 +966,10 @@ pub type UtxoItemHashError = codec::DecodeError<
 >;
 
 /// Receiver Ledger Error
-pub enum ReceiverLedgerError {
+pub enum ReceiverLedgerError<T>
+where
+    T: Config,
+{
     /// Utxo Decoding Error
     UtxoDecodeError(scale_codec::Error),
 
@@ -953,14 +1001,27 @@ pub enum ReceiverLedgerError {
     ///
     /// The asset has already been registered with the ledger.
     AssetRegistered,
+
+    /// Type Marker Parameter
+    Marker(PhantomData<T>),
 }
 
-impl From<ReceiverLedgerError> for ReceiverPostError<ReceiverLedgerError> {
+impl<T> From<ReceiverLedgerError<T>> for ReceiverPostError<ReceiverLedgerError<T>>
+where
+    T: Config,
+{
     #[inline]
-    fn from(value: ReceiverLedgerError) -> Self {
+    fn from(value: ReceiverLedgerError<T>) -> Self {
         if let ReceiverLedgerError::AssetRegistered = value {
             Self::AssetRegistered
         } else {
+            match value {
+                ReceiverLedgerError::ChecksumError
+                | ReceiverLedgerError::MerkleTreeCapacityError => {
+                    T::Suspender::suspend_manta_pay_execution();
+                }
+                _ => {}
+            };
             Self::UnexpectedError(value)
         }
     }
@@ -972,7 +1033,7 @@ where
 {
     type SuperPostingKey = (Wrap<()>, ());
     type ValidUtxo = Wrap<config::Utxo>;
-    type Error = ReceiverLedgerError;
+    type Error = ReceiverLedgerError<T>;
 
     #[inline]
     fn is_not_registered(&self, utxo: config::Utxo) -> Result<Self::ValidUtxo, Self::Error> {
@@ -1093,7 +1154,7 @@ where
     ChecksumError,
 
     /// Verifying Context Decoding Error
-    VerifiyingContextDecodeError(VerifyingContextError),
+    VerifyingContextDecodeError(VerifyingContextError),
 
     /// Field Element Encoding Error
     FpEncodeError(scale_codec::Error),
@@ -1108,7 +1169,7 @@ where
     SenderLedgerError(SenderLedgerError),
 
     /// Receiver Ledger Error
-    ReceiverLedgerError(ReceiverLedgerError),
+    ReceiverLedgerError(ReceiverLedgerError<T>),
 
     /// Invalid Transfer Shape
     InvalidTransferShape,
@@ -1137,7 +1198,16 @@ where
             TransferLedgerError::SenderLedgerError(err) => Self::Sender(err.into()),
             TransferLedgerError::ReceiverLedgerError(err) => Self::Receiver(err.into()),
             TransferLedgerError::UnknownAsset => Self::InvalidProof,
-            err => Self::UnexpectedError(err),
+            err => {
+                match err {
+                    TransferLedgerError::ChecksumError
+                    | TransferLedgerError::VerifyingContextDecodeError(_) => {
+                        T::Suspender::suspend_manta_pay_execution();
+                    }
+                    _ => {}
+                };
+                Self::UnexpectedError(err)
+            }
         }
     }
 }
@@ -1285,7 +1355,7 @@ where
         let verification = posting_key
             .has_valid_proof(
                 &config::VerifyingContext::decode(&mut verifying_context)
-                    .map_err(TransferLedgerError::VerifiyingContextDecodeError)?,
+                    .map_err(TransferLedgerError::VerifyingContextDecodeError)?,
             )
             .map_err(TransferLedgerError::ProofSystemError)?;
         if verification {

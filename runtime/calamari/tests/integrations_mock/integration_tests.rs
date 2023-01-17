@@ -27,7 +27,7 @@ pub use calamari_runtime::{
     fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
     xcm_config::{XcmExecutorConfig, XcmFeesAccount},
     AssetManager, Assets, Authorship, Balances, CalamariVesting, Council, DefaultBlocksPerRound,
-    Democracy, EnactmentPeriod, Event, Get, LaunchPeriod, LeaveDelayRounds,
+    Democracy, EnactmentPeriod, Event, LaunchPeriod, LeaveDelayRounds,
     NativeTokenExistentialDeposit, Origin, ParachainStaking, Period, PolkadotXcm, Runtime,
     TechnicalCommittee, Timestamp, TransactionPause, Treasury, Utility, VotingPeriod,
 };
@@ -37,9 +37,10 @@ use frame_support::{
     assert_err, assert_noop, assert_ok,
     codec::Encode,
     dispatch::Dispatchable,
-    traits::{tokens::ExistenceRequirement, PalletInfo, StorageInfo, StorageInfoTrait},
+    traits::{tokens::ExistenceRequirement, Get, PalletInfo, StorageInfo, StorageInfoTrait},
     StorageHasher, Twox128,
 };
+
 use manta_primitives::{
     assets::{
         AssetConfig, AssetLocation, AssetRegistryMetadata, AssetStorageMetadata, FungibleLedger,

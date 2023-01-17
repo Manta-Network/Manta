@@ -17,16 +17,18 @@
 use crate::{
     fp_decode,
     mock::{
-        new_test_ext, MantaAssetConfig, MantaAssetRegistry, MantaPayPallet, Origin as MockOrigin,
-        Test,
+        new_test_ext, MantaAssetConfig, MantaAssetRegistry, MantaPay, Origin as MockOrigin, Test,
+        TransactionPause,
     },
     types::{fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
-    Error, FungibleLedger, StandardAssetId,
+    Error, FungibleLedger, ReceiverLedgerError, StandardAssetId, TransferLedgerError,
+    TransferPostError, VerifyingContextError,
 };
 use frame_support::{assert_noop, assert_ok};
+use frame_system::RawOrigin;
 use manta_accounting::transfer::test::value_distribution;
 use manta_crypto::{
-    arkworks::constraint::fp::Fp,
+    arkworks::{constraint::fp::Fp, serialize::SerializationError},
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
     rand::{CryptoRng, OsRng, Rand, RngCore},
 };
@@ -35,9 +37,11 @@ use manta_pay::{
         utxo::MerkleTreeConfiguration, ConstraintField, MultiProvingContext, Parameters,
         UtxoAccumulatorModel,
     },
+    manta_accounting::transfer::receiver::ReceiverPostError,
     parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
     test,
 };
+
 use manta_primitives::{
     assets::{
         AssetConfig, AssetRegistry, AssetRegistryMetadata, AssetStorageMetadata,
@@ -90,7 +94,7 @@ where
         &PROVING_CONTEXT.to_private,
         &PARAMETERS,
         &mut utxo_accumulator,
-        MantaPayPallet::id_from_field(asset_id).unwrap().into(),
+        MantaPay::id_from_field(asset_id).unwrap().into(),
         value,
         rng,
     ))
@@ -123,9 +127,9 @@ where
     R: CryptoRng + RngCore + ?Sized,
 {
     for value in values {
-        assert_ok!(MantaPayPallet::to_private(
+        assert_ok!(MantaPay::to_private(
             MockOrigin::signed(ALICE),
-            sample_to_private(MantaPayPallet::field_from_id(id), *value, rng)
+            sample_to_private(MantaPay::field_from_id(id), *value, rng)
         ));
     }
 }
@@ -160,15 +164,15 @@ where
                 [balance / 2, balance / 2],
                 rng,
             );
-        assert_ok!(MantaPayPallet::to_private(
+        assert_ok!(MantaPay::to_private(
             MockOrigin::signed(ALICE),
             PalletTransferPost::try_from(to_private_0).unwrap()
         ));
-        assert_ok!(MantaPayPallet::to_private(
+        assert_ok!(MantaPay::to_private(
             MockOrigin::signed(ALICE),
             PalletTransferPost::try_from(to_private_1).unwrap()
         ));
-        assert_ok!(MantaPayPallet::private_transfer(
+        assert_ok!(MantaPay::private_transfer(
             MockOrigin::signed(ALICE),
             PalletTransferPost::try_from(private_transfer.clone()).unwrap(),
         ));
@@ -224,30 +228,30 @@ where
                 rng,
             );
 
-        assert_ok!(MantaPayPallet::to_private(MockOrigin::signed(ALICE), mint0));
+        assert_ok!(MantaPay::to_private(MockOrigin::signed(ALICE), mint0));
 
-        assert_ok!(MantaPayPallet::to_private(
+        assert_ok!(MantaPay::to_private(
             MockOrigin::signed(ALICE),
             PalletTransferPost::try_from(transfer_input_0).unwrap()
         ));
-        assert_ok!(MantaPayPallet::to_private(
+        assert_ok!(MantaPay::to_private(
             MockOrigin::signed(ALICE),
             PalletTransferPost::try_from(transfer_input_1).unwrap()
         ));
-        assert_ok!(MantaPayPallet::private_transfer(
+        assert_ok!(MantaPay::private_transfer(
             MockOrigin::signed(ALICE),
             PalletTransferPost::try_from(private_transfer.clone()).unwrap(),
         ));
 
-        assert_ok!(MantaPayPallet::to_private(
+        assert_ok!(MantaPay::to_private(
             MockOrigin::signed(ALICE),
             PalletTransferPost::try_from(to_public_input_0).unwrap()
         ));
-        assert_ok!(MantaPayPallet::to_private(
+        assert_ok!(MantaPay::to_private(
             MockOrigin::signed(ALICE),
             PalletTransferPost::try_from(to_public_input_1).unwrap()
         ));
-        assert_ok!(MantaPayPallet::to_public(
+        assert_ok!(MantaPay::to_public(
             MockOrigin::signed(ALICE),
             PalletTransferPost::try_from(to_public.clone()).unwrap()
         ));
@@ -287,15 +291,15 @@ where
             [balance / 2, balance / 2],
             rng,
         );
-        assert_ok!(MantaPayPallet::to_private(
+        assert_ok!(MantaPay::to_private(
             MockOrigin::signed(ALICE),
             PalletTransferPost::try_from(to_private_0).unwrap()
         ));
-        assert_ok!(MantaPayPallet::to_private(
+        assert_ok!(MantaPay::to_private(
             MockOrigin::signed(ALICE),
             PalletTransferPost::try_from(to_private_1).unwrap()
         ));
-        assert_ok!(MantaPayPallet::to_public(
+        assert_ok!(MantaPay::to_public(
             MockOrigin::signed(ALICE),
             PalletTransferPost::try_from(to_public.clone()).unwrap()
         ));
@@ -326,7 +330,7 @@ fn initialize_test(id: StandardAssetId, value: AssetValue) {
     assert_ok!(FungibleLedger::<Test>::deposit_minting(id, &ALICE, value));
     assert_ok!(FungibleLedger::<Test>::deposit_minting(
         id,
-        &MantaPayPallet::account_id(),
+        &MantaPay::account_id(),
         TEST_DEFAULT_ASSET_ED
     ));
 }
@@ -358,9 +362,9 @@ fn to_private_with_zero_should_not_work() {
         let total_free_supply: AssetValue = rng.gen();
         initialize_test(asset_id, total_free_supply + TEST_DEFAULT_ASSET_ED);
         assert_noop!(
-            MantaPayPallet::to_private(
+            MantaPay::to_private(
                 MockOrigin::signed(ALICE),
-                sample_to_private(MantaPayPallet::field_from_id(asset_id), 0, &mut rng)
+                sample_to_private(MantaPay::field_from_id(asset_id), 0, &mut rng)
             ),
             Error::<Test>::ZeroTransfer
         );
@@ -376,7 +380,7 @@ fn to_public_with_zero_should_not_work() {
         let total_free_supply: AssetValue = rng.gen();
         initialize_test(asset_id, total_free_supply + TEST_DEFAULT_ASSET_ED);
         assert_noop!(
-            MantaPayPallet::to_public(
+            MantaPay::to_public(
                 MockOrigin::signed(ALICE),
                 sample_to_public(asset_id, [0, 0], &mut rng)
             ),
@@ -412,10 +416,10 @@ fn overdrawn_mint_should_not_work() {
             let total_supply: u128 = rng.gen();
             initialize_test(asset_id, total_supply + TEST_DEFAULT_ASSET_ED);
             assert_noop!(
-                MantaPayPallet::to_private(
+                MantaPay::to_private(
                     MockOrigin::signed(ALICE),
                     sample_to_private(
-                        MantaPayPallet::field_from_id(asset_id),
+                        MantaPay::field_from_id(asset_id),
                         total_supply + TEST_DEFAULT_ASSET_ED + 1,
                         &mut rng
                     )
@@ -433,9 +437,9 @@ fn to_private_without_init_should_not_work() {
     for _ in 0..RANDOMIZED_TESTS_ITERATIONS {
         new_test_ext().execute_with(|| {
             assert_noop!(
-                MantaPayPallet::to_private(
+                MantaPay::to_private(
                     MockOrigin::signed(ALICE),
-                    sample_to_private(MantaPayPallet::field_from_id(rng.gen()), 100, &mut rng)
+                    sample_to_private(MantaPay::field_from_id(rng.gen()), 100, &mut rng)
                 ),
                 Error::<Test>::InvalidSourceAccount,
             );
@@ -451,14 +455,13 @@ fn mint_existing_coin_should_not_work() {
         new_test_ext().execute_with(|| {
             let asset_id = rng.gen();
             initialize_test(asset_id, 32579u128);
-            let mint_post =
-                sample_to_private(MantaPayPallet::field_from_id(asset_id), 100, &mut rng);
-            assert_ok!(MantaPayPallet::to_private(
+            let mint_post = sample_to_private(MantaPay::field_from_id(asset_id), 100, &mut rng);
+            assert_ok!(MantaPay::to_private(
                 MockOrigin::signed(ALICE),
                 mint_post.clone()
             ));
             assert_noop!(
-                MantaPayPallet::to_private(MockOrigin::signed(ALICE), mint_post),
+                MantaPay::to_private(MockOrigin::signed(ALICE), mint_post),
                 Error::<Test>::AssetRegistered
             );
         });
@@ -498,7 +501,7 @@ fn double_spend_in_private_transfer_should_not_work() {
         new_test_ext().execute_with(|| {
             for private_transfer in private_transfer_test(10, None, &mut OsRng) {
                 assert_noop!(
-                    MantaPayPallet::private_transfer(MockOrigin::signed(ALICE), private_transfer),
+                    MantaPay::private_transfer(MockOrigin::signed(ALICE), private_transfer),
                     Error::<Test>::AssetSpent,
                 );
             }
@@ -550,7 +553,7 @@ fn double_spend_in_reclaim_should_not_work() {
             let total_supply: u128 = rng.gen();
             for reclaim in reclaim_test(10, total_supply / 2, None, &mut rng) {
                 assert_noop!(
-                    MantaPayPallet::to_public(MockOrigin::signed(ALICE), reclaim),
+                    MantaPay::to_public(MockOrigin::signed(ALICE), reclaim),
                     Error::<Test>::AssetSpent,
                 );
             }
@@ -563,14 +566,14 @@ fn check_number_conversions() {
     let mut rng = OsRng;
 
     let start = rng.gen();
-    let expected = MantaPayPallet::field_from_id(start);
+    let expected = MantaPay::field_from_id(start);
 
     let fp = Fp::<ConstraintField>::from(start);
     let encoded = fp_encode(fp).unwrap();
 
     assert_eq!(expected, encoded);
 
-    let id_from_field = MantaPayPallet::id_from_field(encoded).unwrap();
+    let id_from_field = MantaPay::id_from_field(encoded).unwrap();
     let decoded: Fp<ConstraintField> = fp_decode(expected.to_vec()).unwrap();
     assert_eq!(start, id_from_field);
     assert_eq!(fp, decoded);
@@ -596,7 +599,7 @@ fn pull_ledger_diff_should_work() {
         let (max_receivers, max_senders) = (128, 128);
         let check_point = crate::Checkpoint::default();
         let runtime_pull_response =
-            MantaPayPallet::pull_ledger_diff(check_point, max_receivers, max_senders);
+            MantaPay::pull_ledger_diff(check_point, max_receivers, max_senders);
 
         // ensure all Utxos have been returned.
         assert!(!runtime_pull_response.should_continue);
@@ -614,5 +617,81 @@ fn pull_ledger_diff_should_work() {
         let mut slice_of = dense_senders.as_slice();
         let decoded_senders = <crate::SenderChunk as Decode>::decode(&mut slice_of).unwrap();
         assert_eq!(runtime_pull_response.senders, decoded_senders);
+    });
+}
+
+fn assert_manta_pay_suspension() {
+    assert_eq!(
+        TransactionPause::paused_transactions((b"MantaPay".to_vec(), b"to_private".to_vec())),
+        Some(())
+    );
+
+    assert_eq!(
+        TransactionPause::paused_transactions((b"MantaPay".to_vec(), b"private_transfer".to_vec())),
+        Some(())
+    );
+
+    assert_eq!(
+        TransactionPause::paused_transactions((b"MantaPay".to_vec(), b"to_public".to_vec())),
+        Some(())
+    );
+
+    let _ = TransactionPause::unpause_pallets(RawOrigin::Root.into(), vec![b"MantaPay".to_vec()]);
+}
+
+#[test]
+fn receiver_ledger_errors_should_shut_down() {
+    new_test_ext().execute_with(|| {
+        let _e = ReceiverPostError::from(ReceiverLedgerError::<Test>::ChecksumError);
+        assert_manta_pay_suspension();
+
+        let _e = ReceiverPostError::from(ReceiverLedgerError::<Test>::MerkleTreeCapacityError);
+        assert_manta_pay_suspension();
+
+        let _e = Error::<Test>::from(ReceiverPostError::UnexpectedError(
+            ReceiverLedgerError::<Test>::ChecksumError,
+        ));
+        assert_manta_pay_suspension();
+
+        let _e = Error::<Test>::from(ReceiverPostError::UnexpectedError(
+            ReceiverLedgerError::<Test>::MerkleTreeCapacityError,
+        ));
+        assert_manta_pay_suspension();
+    });
+}
+#[test]
+fn transfer_ledger_errors_should_shut_down() {
+    new_test_ext().execute_with(|| {
+        let _e = TransferPostError::from(TransferLedgerError::<Test>::ChecksumError);
+        assert_manta_pay_suspension();
+
+        let _e = TransferPostError::from(TransferLedgerError::<Test>::VerifyingContextDecodeError(
+            VerifyingContextError::Decode(SerializationError::NotEnoughSpace),
+        ));
+        assert_manta_pay_suspension();
+
+        let _e = Error::<Test>::from(TransferPostError::<Test>::UnexpectedError(
+            TransferLedgerError::ChecksumError,
+        ));
+        assert_manta_pay_suspension();
+
+        let _e = Error::<Test>::from(TransferPostError::<Test>::UnexpectedError(
+            TransferLedgerError::<Test>::VerifyingContextDecodeError(
+                VerifyingContextError::Decode(SerializationError::NotEnoughSpace),
+            ),
+        ));
+        assert_manta_pay_suspension();
+
+        let _e = Error::<Test>::from(TransferPostError::<Test>::Receiver(
+            ReceiverPostError::UnexpectedError(
+                ReceiverLedgerError::<Test>::MerkleTreeCapacityError,
+            ),
+        ));
+        assert_manta_pay_suspension();
+
+        let _e = Error::<Test>::from(TransferPostError::<Test>::Receiver(
+            ReceiverPostError::UnexpectedError(ReceiverLedgerError::<Test>::ChecksumError),
+        ));
+        assert_manta_pay_suspension();
     });
 }
