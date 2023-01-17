@@ -86,8 +86,8 @@ xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', default-feat
 xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.28" }
 
 # Third party (vendored) dependencies
-orml-traits = { git = 'https://github.com/open-web3-stack/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.28" }
-orml-xtokens = { git = 'https://github.com/open-web3-stack/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.28" }
+orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.28" }
+orml-xtokens = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.28" }
 
 # Self dependencies
 calamari-vesting = { path = '../../pallets/vesting', default-features = false }
@@ -145,8 +145,8 @@ cumulus-test-relay-sproof-builder = { git = "https://github.com/paritytech/cumul
 parachain-info = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.28" }
 
 # Orml dependencies
-orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.28" }
-orml-xtokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.28" }
+orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.28" }
+orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.28" }
 
 # Self dependencies
 pallet-asset-manager = { path = '../../pallets/asset-manager' }

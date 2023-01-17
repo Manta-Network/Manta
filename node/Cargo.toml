@@ -43,6 +43,7 @@ sc-cli = { git = 'https://github.com/paritytech/substrate.git', branch = "polkad
 sc-client-api = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
 sc-consensus = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
 sc-consensus-aura = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
+sc-consensus-manual-seal = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
 sc-consensus-slots = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
 sc-executor = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
 sc-keystore = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }

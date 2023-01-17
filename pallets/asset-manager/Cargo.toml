@@ -21,7 +21,7 @@ sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkad
 xcm = { git = "https://github.com/paritytech/polkadot.git", default-features = false, branch = "release-v0.9.28" }
 
 # 3rd party dependencies
-orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false, branch = "polkadot-v0.9.28" }
+orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", default-features = false, branch = "polkadot-v0.9.28" }
 
 [dev-dependencies]
 pallet-assets = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28" }
