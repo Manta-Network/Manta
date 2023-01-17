@@ -130,8 +130,6 @@ std = [
   'serde',
   'sp-consensus-aura/std',
   'pallet-aura/std',
-  'sp-application-crypto/std',
-  'sp-arithmetic/std',
   'sp-api/std',
   'sp-std/std',
   'sp-io/std',
