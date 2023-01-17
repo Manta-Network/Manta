@@ -330,16 +330,6 @@ pub mod pallet {
         /// Invalid Authorization Signature
         InvalidAuthorizationSignature,
 
-        /// Asset Spent
-        ///
-        /// An asset present in this transfer has already been spent.
-        AssetSpent,
-
-        /// Invalid UTXO Accumulator Output
-        ///
-        /// The sender was constructed on an invalid version of the ledger state.
-        InvalidUtxoAccumulatorOutput,
-
         /// Asset Registered
         ///
         /// An asset present in this transfer has already been registered to the ledger.
@@ -374,9 +364,6 @@ pub mod pallet {
         ///
         /// This is caused by some internal error in the ledger and should never occur.
         InternalLedgerError,
-
-        /// Encode Error
-        EncodeError,
 
         /// No Sender Ledger in SBT, Private Transfers are disabled
         NoSenderLedger,
@@ -687,6 +674,12 @@ impl<L, R> AsRef<R> for WrapPair<L, R> {
 
 /// Sender Ledger Error
 pub enum SenderLedgerError {
+    /// Field Element Encoding Error
+    FpEncodeError(scale_codec::Error),
+    /// Invalid UTXO Accumulator Output Error
+    ///
+    /// The sender was not constructed under the current state of the UTXO accumulator.
+    InvalidUtxoAccumulatorOutput,
     /// Sender Ledger is purposly not implementented for SBT ledger
     NoSenderLedger,
 }
@@ -695,6 +688,10 @@ impl From<SenderLedgerError> for SenderPostError<SenderLedgerError> {
     #[inline]
     fn from(value: SenderLedgerError) -> Self {
         match value {
+            SenderLedgerError::InvalidUtxoAccumulatorOutput => Self::InvalidUtxoAccumulatorOutput,
+            SenderLedgerError::FpEncodeError(err) => {
+                Self::UnexpectedError(SenderLedgerError::FpEncodeError(err))
+            }
             SenderLedgerError::NoSenderLedger => {
                 Self::UnexpectedError(SenderLedgerError::NoSenderLedger)
             }
@@ -714,17 +711,26 @@ where
     #[inline]
     fn is_unspent(
         &self,
-        _nullifier: config::Nullifier,
+        nullifier: config::Nullifier,
     ) -> Result<Self::ValidNullifier, Self::Error> {
-        Err(SenderLedgerError::NoSenderLedger)
+        Ok(Wrap(nullifier))
     }
 
     #[inline]
     fn has_matching_utxo_accumulator_output(
         &self,
-        _output: config::UtxoAccumulatorOutput,
+        output: config::UtxoAccumulatorOutput,
     ) -> Result<Self::ValidUtxoAccumulatorOutput, Self::Error> {
-        Err(SenderLedgerError::NoSenderLedger)
+        let accumulator_output = fp_encode(output).map_err(SenderLedgerError::FpEncodeError)?;
+        // NOTE: Checking for an empty(zeroed) byte array. This happens for UTXOs with `value = 0`,
+        // for which you dont need a membership proof, but you still need a root (in this case
+        // zeroed).
+        if accumulator_output == [0u8; 32]
+            || UtxoAccumulatorOutputs::<T>::contains_key(accumulator_output)
+        {
+            return Ok(Wrap(output));
+        }
+        Err(SenderLedgerError::InvalidUtxoAccumulatorOutput)
     }
 
     #[inline]
@@ -736,7 +742,7 @@ where
     where
         I: IntoIterator<Item = (Self::ValidUtxoAccumulatorOutput, Self::ValidNullifier)>,
     {
-        Err(SenderLedgerError::NoSenderLedger)
+        Ok(())
     }
 }
 
