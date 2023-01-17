@@ -25,7 +25,7 @@ use frame_support::{
     pallet_prelude::DispatchResult,
     parameter_types,
     traits::{ConstU32, Currency, Everything, Nothing},
-    weights::{constants::WEIGHT_PER_SECOND, Weight},
+    weights::Weight,
     PalletId,
 };
 use frame_system::EnsureRoot;
@@ -42,7 +42,7 @@ use manta_primitives::{
         AssetConfig, AssetIdLocationConvert, AssetIdType, AssetLocation, AssetRegistry,
         AssetRegistryMetadata, AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
-    constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL},
+    constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL, WEIGHT_PER_SECOND},
     types::{BlockNumber, CalamariAssetId, Header},
     xcm::{FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter, MultiNativeAsset},
 };

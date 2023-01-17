@@ -21,10 +21,9 @@
 use crate::xcm_mock::parachain::XcmFeesAccount;
 use codec::Encode;
 use frame_support::{
-    assert_err, assert_noop, assert_ok, traits::tokens::fungibles::Mutate,
-    weights::constants::WEIGHT_PER_SECOND, WeakBoundedVec,
+    assert_err, assert_noop, assert_ok, traits::tokens::fungibles::Mutate, WeakBoundedVec,
 };
-use manta_primitives::assets::AssetLocation;
+use manta_primitives::{assets::AssetLocation, constants::WEIGHT_PER_SECOND};
 use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
 use xcm_executor::traits::{Convert, WeightBounds};
 use xcm_simulator::TestExt;
