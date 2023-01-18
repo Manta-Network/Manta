@@ -42,7 +42,7 @@
 
 use frame_support::{traits::Get, weights::Weight};
 use sp_std::marker::PhantomData;
-use manta_primitives::RocksDbWeight;
+use manta_primitives::constants::RocksDbWeight;
 
 /// Weight functions needed for pallet_asset_manager.
 pub trait WeightInfo {
