@@ -103,8 +103,6 @@ function generate_batched_utxos(
   return { data: data, checkpoint: new_checkpoint };
 }
 
-var referendumIndexObject = { referendumIndex: 0 };
-
 /**
  *  Insert utxos in batches
  * @param api api object connecting to node.
@@ -129,19 +127,19 @@ async function insert_utxos_in_batches(
 
   let success_batch = 0;
   let cur_checkpoint = init_checkpoint;
-  for (let batch_idx = 0; batch_idx < batch_number; batch_idx++) {
+  let _referendumIndex = await api.query.democracy.referendumCount();
+  let referendumIndex = parseInt(_referendumIndex.toString());
+  for (let batch_idx = 0; batch_idx < 1; batch_idx++) {
     const { data, checkpoint } = generate_batched_utxos(
       per_shard_amount,
       cur_checkpoint
     );
     cur_checkpoint = checkpoint;
-    // const callData = api.tx.system.setStorage(data);
-    // execute_with_root_via_governance(
-    //   api,
-    //   keyring,
-    //   callData,
-    //   referendumIndexObject
-    // );
+    const callData = api.tx.system.setStorage(data);
+    execute_with_root_via_governance(api, keyring, callData, {
+      referendumIndex: referendumIndex,
+    });
+    referendumIndex += 1;
     await delay(5000);
   }
 
@@ -200,16 +198,19 @@ async function insert_void_numbers_in_batch(
 ): Promise<number> {
   let success_batch = 0;
   let sender_idx = start_index;
+  let _referendumIndex = (
+    await api.query.democracy.referendumCount()
+  ).toString();
+  let referendumIndex = parseInt(_referendumIndex.toString());
   for (let batch_idx = 0; batch_idx < batch_number; batch_idx++) {
     console.log("start vn batch %i", batch_idx);
     const data = generate_vn_insertion_data(sender_idx, amount_per_batch);
-    // const callData = api.tx.system.setStorage(data);
-    // execute_with_root_via_governance(
-    //   api,
-    //   keyring,
-    //   callData,
-    //   referendumIndexObject
-    // );
+    console.log("vn data: ", data.length);
+    const callData = api.tx.system.setStorage(data);
+    execute_with_root_via_governance(api, keyring, callData, {
+      referendumIndex: referendumIndex,
+    });
+    referendumIndex += 1;
     sender_idx += amount_per_batch;
     await delay(5000);
   }

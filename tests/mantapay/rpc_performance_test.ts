@@ -1,10 +1,10 @@
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import { Keyring } from "@polkadot/keyring";
-import { manta_pay_types, rpc_api } from "../types";
 import { setup_storage, manta_pay_config } from "./manta_pay";
 import minimist, { ParsedArgs } from "minimist";
 import { performance } from "perf_hooks";
 import { expect } from "chai";
+import { createPromiseApi, delay, readChainSpec } from "../utils/utils";
 
 const test_config = {
   ws_address: "ws://127.0.0.1:9800",
@@ -23,7 +23,7 @@ const test_config = {
   testing_phase_timeout_tolerance: 1.5,
 };
 
-async function single_rpc_performance(api: ApiPromise) {
+async function single_rpc_performance(api: ApiPromise, isDense: boolean) {
   let total_sync_time = 0;
   for (let i = 0; i < test_config.sync_iterations; ++i) {
     const receiver_checkpoint = new Array<number>(
@@ -31,16 +31,30 @@ async function single_rpc_performance(api: ApiPromise) {
     );
     receiver_checkpoint.fill(0);
     const before_rpc = performance.now();
-    const data = await (api.rpc as any).mantaPay.pull_ledger_diff(
-      {
-        receiver_index: new Array<number>(manta_pay_config.shard_number).fill(
-          0
-        ),
-        sender_index: 0,
-      },
-      BigInt(8192),
-      BigInt(8192)
-    );
+    let data;
+    if (isDense) {
+      data = await (api.rpc as any).mantaPay.dense_pull_ledger_diff(
+        {
+          receiver_index: new Array<number>(manta_pay_config.shard_number).fill(
+            0
+          ),
+          sender_index: 0,
+        },
+        BigInt(8192),
+        BigInt(8192)
+      );
+    } else {
+      data = await (api.rpc as any).mantaPay.pull_ledger_diff(
+        {
+          receiver_index: new Array<number>(manta_pay_config.shard_number).fill(
+            0
+          ),
+          sender_index: 0,
+        },
+        BigInt(8192),
+        BigInt(8192)
+      );
+    }
     const after_rpc = performance.now();
     const sync_time = after_rpc - before_rpc;
     expect(data.receivers.length).to.not.equal(0);
@@ -57,24 +71,15 @@ async function single_rpc_performance(api: ApiPromise) {
   );
 }
 
-describe("Node RPC Performance Test", () => {
-  it("Check RPC Performance result", async () => {
-    let nodeAddress = "";
-    const args: ParsedArgs = minimist(process.argv.slice(2));
-    if (args["address"] == null) {
-      nodeAddress = test_config.ws_address;
-    } else {
-      nodeAddress = args["address"];
-    }
-    console.log("using address %s", nodeAddress);
+describe("MantaPay RPC Performance Test", () => {
+  let api: ApiPromise;
 
-    const wsProvider = new WsProvider(nodeAddress);
-
-    const api = await ApiPromise.create({
-      provider: wsProvider,
-      types: manta_pay_types,
-      rpc: rpc_api,
-    });
+  before(async function () {
+    // create api
+    const chainSpec = await readChainSpec();
+    const wsPort = chainSpec.parachains[0].nodes[0].wsPort;
+    const nodeAddress = "ws://127.0.0.1:" + wsPort;
+    api = await createPromiseApi(nodeAddress);
 
     const keyring = new Keyring({ type: "sr25519" });
     const sudo_key_pair = keyring.addFromMnemonic(test_config.mnemonic);
@@ -84,13 +89,28 @@ describe("Node RPC Performance Test", () => {
       0,
       test_config.storage_prepare_config
     );
-    await single_rpc_performance(api);
-
-    api.disconnect();
+  });
+  it("Check RPC pull_ledger_diff Performance result", async () => {
+    await single_rpc_performance(api, false);
   }).timeout(
     test_config.storage_setup_phase_timeout +
       test_config.sync_iterations *
         test_config.expected_average_sync_time *
         test_config.testing_phase_timeout_tolerance
   );
+
+  it("Check RPC dense_pull_ledger_diff Performance result", async () => {
+    await single_rpc_performance(api, true);
+  }).timeout(
+    test_config.storage_setup_phase_timeout +
+      test_config.sync_iterations *
+        test_config.expected_average_sync_time *
+        test_config.testing_phase_timeout_tolerance
+  );
+
+  after(async function () {
+    // Exit the mocha process.
+    // If not, the process will pend there.
+    await api.disconnect();
+  });
 });

@@ -37,7 +37,7 @@ async function main() {
       assetMetadata
     );
 
-    const _mintAssetsCall = nodeApi.tx.assetManager.mintAsset(
+    const mintAssetsCall = nodeApi.tx.assetManager.mintAsset(
       assetIds[i],
       alice.address,
       toMint
@@ -47,7 +47,7 @@ async function main() {
       referendumIndex: referendumIndex,
     });
     referendumIndex += 1;
-    await execute_with_root_via_governance(nodeApi, alice, _mintAssetsCall, {
+    await execute_with_root_via_governance(nodeApi, alice, mintAssetsCall, {
       referendumIndex: referendumIndex,
     });
     referendumIndex += 1;
