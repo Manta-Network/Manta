@@ -41,7 +41,7 @@ This is the mono-repo for Manta/Calamari/Dolphin nodes.
 > Tips: The binary will be generated under `target/production/manta`. For less performance critical build, `cargo build --release` is recommended for faster build time.
 3. Run standalone dev chain, useful for testing
   ```bash
-  cargo run -- --chain=dolphin-localdev --alice --force-authoring
+  cargo run -- --chain=dolphin-localdev --alice --force-authoring --tmp
   ```
 > Tip: The chain only produces blocks when you submit extrinsics
 
