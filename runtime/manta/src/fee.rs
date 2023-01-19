@@ -16,10 +16,10 @@
 
 use crate::currency;
 use frame_support::weights::{
-    constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-    WeightToFeePolynomial,
+    WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 };
 use manta_primitives::types::Balance;
+use runtime_common::ExtrinsicBaseWeight;
 use smallvec::smallvec;
 pub use sp_runtime::Perbill;
 

@@ -45,10 +45,7 @@ use frame_support::{
         ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec,
         NeverEnsureOrigin, PrivilegeCmp,
     },
-    weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-        ConstantMultiplier, DispatchClass, Weight,
-    },
+    weights::{ConstantMultiplier, DispatchClass, Weight},
     PalletId,
 };
 use frame_system::{
@@ -56,10 +53,12 @@ use frame_system::{
     EnsureRoot,
 };
 use manta_primitives::{
-    constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
+    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
-use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
+use runtime_common::{
+    prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
+};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
 #[cfg(any(feature = "std", test))]
@@ -126,7 +125,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("dolphin"),
     impl_name: create_runtime_str!("dolphin"),
     authoring_version: 2,
-    spec_version: 4001,
+    spec_version: 4010,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 5,
@@ -946,6 +945,23 @@ impl_runtime_apis! {
         }
     }
 
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, Call>
+        for Runtime
+    {
+        fn query_call_info(
+            call: Call,
+            len: u32,
+        ) -> pallet_transaction_payment::RuntimeDispatchInfo<Balance> {
+            TransactionPayment::query_call_info(call, len)
+        }
+        fn query_call_fee_details(
+            call: Call,
+            len: u32,
+        ) -> pallet_transaction_payment::FeeDetails<Balance> {
+            TransactionPayment::query_call_fee_details(call, len)
+        }
+    }
+
     impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
         fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
             ParachainSystem::collect_collation_info(header)
@@ -959,14 +975,6 @@ impl_runtime_apis! {
             max_sender: u64
         ) -> pallet_manta_pay::PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
-        }
-
-        fn dense_pull_ledger_diff(
-            checkpoint: pallet_manta_pay::RawCheckpoint,
-            max_receiver: u64,
-            max_sender: u64
-        ) -> pallet_manta_pay::DensePullResponse {
-            MantaPay::dense_pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
     }
 
