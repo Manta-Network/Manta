@@ -179,7 +179,7 @@ pub fn manta_mainnet_config() -> MantaChainSpec {
     let genesis_collators_clone = genesis_collators.clone(); // so we can move it into the constructor closure
 
     MantaChainSpec::from_genesis(
-        "Shark Parachain",
+        "Manta Parachain",
         "manta",
         ChainType::Live,
         move || manta_mainnet_genesis(genesis_collators.clone()),
