@@ -16,7 +16,7 @@
 
 use super::{
     weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
-    NativeTokenExistentialDeposit, Origin, Runtime,
+    MantaPaySuspensionManager, NativeTokenExistentialDeposit, Origin, Runtime,
 };
 
 use manta_primitives::{
@@ -174,4 +174,5 @@ impl pallet_manta_pay::Config for Runtime {
     type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
     type AssetConfig = CalamariAssetConfig;
     type PalletId = MantaPayPalletId;
+    type Suspender = MantaPaySuspensionManager;
 }
