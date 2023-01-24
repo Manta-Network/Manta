@@ -28,7 +28,7 @@ use crate::assets::{AssetIdLocationMap, UnitsPerSecond};
 use frame_support::{
     ensure,
     pallet_prelude::Get,
-    traits::{fungibles::Mutate, tokens::ExistenceRequirement},
+    traits::{fungibles::Mutate, tokens::ExistenceRequirement, Contains},
     weights::Weight,
 };
 use frame_system::Config;
