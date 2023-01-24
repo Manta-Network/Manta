@@ -28,9 +28,9 @@ These checks should be performed on the codebase prior to freezing our release c
     - [ ] Merge when green and reviewed
     - [ ] Tag the release with the same version you used on the release PR. IMPORTANT: Use the `manta` branch commit for the tag, NOT a `release-` or other branch
     - [ ] Wait for CI to succeed running on the tag
-    - [ ] Check that a draft release has been created at https://github.com/Manta-Network/Manta/releases with relevant [release notes](#release-notes)
+    - [ ] Check that a draft release has been created at https://github.com/Manta-Network/Manta/releases and add relevant [Release Notes](#release-notes)
     - [ ] Check that build artifacts have been added to the draft-release
-    - [ ] Create a Pre-Release on github and add Release Notes (see below for what needs to be in them)
+    - [ ] Promote the draft to a Pre-Release on github
 
 # Deploy to internal testnets ( fast runtime )
 - [ ] Verify Polkadot JS API are up to date with the latest
@@ -72,7 +72,7 @@ These checks should be performed on the codebase prior to freezing our release c
     - [ ] Execute client upgrade on company mainnet nodes
 
 ## Notes
-### Release notes
+### Release Notes
 
 The release notes **MUST** contain:
 

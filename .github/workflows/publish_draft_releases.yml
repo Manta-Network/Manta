@@ -260,7 +260,7 @@ jobs:
           asset_content_type: application/octet-stream
   brag:
     runs-on: ubuntu-20.04
-    needs: create-draft-release
+    needs: [publish-runtimes, publish-node]
     if: startsWith(github.ref, 'refs/tags')
     steps:
       - env:
