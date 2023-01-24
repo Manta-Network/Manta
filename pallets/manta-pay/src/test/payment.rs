@@ -597,21 +597,15 @@ fn pull_ledger_diff_should_work() {
 
         let (max_receivers, max_senders) = (128, 128);
         let check_point = crate::Checkpoint::default();
-        let pull_response = MantaPay::pull_ledger_diff(check_point, max_receivers, max_senders);
-        let dense_pull_response =
-            MantaPay::dense_pull_ledger_diff(check_point, max_receivers, max_senders);
-        assert_eq!(
-            pull_response.senders_receivers_total,
-            dense_pull_response.senders_receivers_total
-        );
-        assert_eq!(
-            pull_response.should_continue,
-            dense_pull_response.should_continue
-        );
-        assert_eq!(
-            pull_response.should_continue,
-            dense_pull_response.should_continue
-        );
+        let runtime_pull_response =
+            MantaPay::pull_ledger_diff(check_point, max_receivers, max_senders);
+
+        // ensure all Utxos have been returned.
+        assert!(!runtime_pull_response.should_continue);
+
+        // convert runtime response into native response
+        let dense_pull_response: crate::types::DensePullResponse =
+            runtime_pull_response.clone().into();
 
         let dense_receivers = base64::decode(dense_pull_response.receivers).unwrap();
         let mut slice_of = dense_receivers.as_slice();
@@ -689,6 +683,82 @@ fn transfer_ledger_errors_should_shut_down() {
             TransferLedgerError::<Test>::VerifyingContextDecodeError(
                 VerifyingContextError::Decode(SerializationError::NotEnoughSpace),
             ),
+        ));
+        assert_manta_pay_suspension();
+    });
+}
+
+fn assert_manta_pay_suspension() {
+    assert_eq!(
+        TransactionPause::paused_transactions((b"MantaPay".to_vec(), b"to_private".to_vec())),
+        Some(())
+    );
+
+    assert_eq!(
+        TransactionPause::paused_transactions((b"MantaPay".to_vec(), b"private_transfer".to_vec())),
+        Some(())
+    );
+
+    assert_eq!(
+        TransactionPause::paused_transactions((b"MantaPay".to_vec(), b"to_public".to_vec())),
+        Some(())
+    );
+
+    let _ = TransactionPause::unpause_pallets(RawOrigin::Root.into(), vec![b"MantaPay".to_vec()]);
+}
+
+#[test]
+fn receiver_ledger_errors_should_shut_down() {
+    new_test_ext().execute_with(|| {
+        let _e = ReceiverPostError::from(ReceiverLedgerError::<Test>::ChecksumError);
+        assert_manta_pay_suspension();
+
+        let _e = ReceiverPostError::from(ReceiverLedgerError::<Test>::MerkleTreeCapacityError);
+        assert_manta_pay_suspension();
+
+        let _e = Error::<Test>::from(ReceiverPostError::UnexpectedError(
+            ReceiverLedgerError::<Test>::ChecksumError,
+        ));
+        assert_manta_pay_suspension();
+
+        let _e = Error::<Test>::from(ReceiverPostError::UnexpectedError(
+            ReceiverLedgerError::<Test>::MerkleTreeCapacityError,
+        ));
+        assert_manta_pay_suspension();
+    });
+}
+#[test]
+fn transfer_ledger_errors_should_shut_down() {
+    new_test_ext().execute_with(|| {
+        let _e = TransferPostError::from(TransferLedgerError::<Test>::ChecksumError);
+        assert_manta_pay_suspension();
+
+        let _e = TransferPostError::from(TransferLedgerError::<Test>::VerifyingContextDecodeError(
+            VerifyingContextError::Decode(SerializationError::NotEnoughSpace),
+        ));
+        assert_manta_pay_suspension();
+
+        let _e = Error::<Test>::from(TransferPostError::<Test>::UnexpectedError(
+            TransferLedgerError::ChecksumError,
+        ));
+        assert_manta_pay_suspension();
+
+        let _e = Error::<Test>::from(TransferPostError::<Test>::UnexpectedError(
+            TransferLedgerError::<Test>::VerifyingContextDecodeError(
+                VerifyingContextError::Decode(SerializationError::NotEnoughSpace),
+            ),
+        ));
+        assert_manta_pay_suspension();
+
+        let _e = Error::<Test>::from(TransferPostError::<Test>::Receiver(
+            ReceiverPostError::UnexpectedError(
+                ReceiverLedgerError::<Test>::MerkleTreeCapacityError,
+            ),
+        ));
+        assert_manta_pay_suspension();
+
+        let _e = Error::<Test>::from(TransferPostError::<Test>::Receiver(
+            ReceiverPostError::UnexpectedError(ReceiverLedgerError::<Test>::ChecksumError),
         ));
         assert_manta_pay_suspension();
     });

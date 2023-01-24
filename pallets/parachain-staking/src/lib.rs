@@ -1783,7 +1783,7 @@ pub mod pallet {
                     bond.amount = match requests.get(&bond.owner) {
                         None => bond.amount,
                         Some(DelegationAction::Revoke(_)) => {
-                            log::warn!(
+                            log::debug!(
                                 "reward for delegator '{:?}' set to zero due to pending \
                                 revoke request",
                                 bond.owner
@@ -1792,7 +1792,7 @@ pub mod pallet {
                             BalanceOf::<T>::zero()
                         }
                         Some(DelegationAction::Decrease(amount)) => {
-                            log::warn!(
+                            log::debug!(
                                 "reward for delegator '{:?}' reduced by set amount due to pending \
                                 decrease request",
                                 bond.owner
