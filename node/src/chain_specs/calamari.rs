@@ -90,12 +90,12 @@ pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
     let id = if localdev {
         "calamari_localdev"
     } else {
-        "calamari_local"
+        "calamari_rococo"
     };
     CalamariChainSpec::from_genesis(
-        "Calamari Parachain Local",
+        "Calamari Parachain Rococo",
         id,
-        ChainType::Local,
+        ChainType::Live,
         move || {
             let invulnerables = if localdev {
                 vec![(
@@ -115,14 +115,6 @@ pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
                     (
                         unchecked_account_id::<sr25519::Public>("Charlie"),
                         SessionKeys::from_seed_unchecked("Charlie"),
-                    ),
-                    (
-                        unchecked_account_id::<sr25519::Public>("Dave"),
-                        SessionKeys::from_seed_unchecked("Dave"),
-                    ),
-                    (
-                        unchecked_account_id::<sr25519::Public>("Eve"),
-                        SessionKeys::from_seed_unchecked("Eve"),
                     ),
                 ]
             };
@@ -150,7 +142,7 @@ pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
         None,
         Some(calamari_properties()),
         Extensions {
-            relay_chain: KUSAMA_RELAYCHAIN_LOCAL_NET.into(),
+            relay_chain: "rococo".into(),
             para_id: CALAMARI_PARACHAIN_ID,
         },
     )
