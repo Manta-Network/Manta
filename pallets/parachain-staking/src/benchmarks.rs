@@ -633,8 +633,8 @@ benchmarks! {
             true,
             1u32
         )?;
-        let (caller, _) = create_funded_user::<T>("caller", USER_SEED, 0u32.into());
         let bond = <<T as Config>::MinDelegatorStk as Get<BalanceOf<T>>>::get();
+        let (caller, _) = create_funded_user::<T>("caller", USER_SEED, bond * 2u32.into());
         Pallet::<T>::delegate(
             RawOrigin::Signed(caller.clone()).into(),
             collator.clone(),
@@ -642,11 +642,13 @@ benchmarks! {
             0u32,
             0u32
         )?;
-        let usable_balance_before = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
     }: _(RawOrigin::Signed(caller.clone()), collator.clone(), bond)
     verify {
-        let usable_balance_after = <<T as Config>::Currency as Inspect<T::AccountId>>::reducible_balance(&caller,true);
-        assert!(usable_balance_after < usable_balance_before);
+        let expected_bond = bond * 2u32.into();
+        assert_eq!(
+            Pallet::<T>::delegator_state(&caller).expect("candidate was created, qed").total,
+            expected_bond,
+        );
     }
 
     schedule_delegator_bond_less {

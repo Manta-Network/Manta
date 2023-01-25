@@ -29,10 +29,8 @@ use xcm_builder::{
 use xcm_executor::{Config, XcmExecutor};
 
 parameter_types! {
-    pub const RelayNetwork: NetworkId = NetworkId::Kusama;
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
     pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
-    pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
 /// This is the type to convert an (incoming) XCM origin into a local `Origin` instance,
