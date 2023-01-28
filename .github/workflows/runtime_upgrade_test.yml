@@ -202,13 +202,13 @@ jobs:
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
-          yarn runtime_upgrade_test --address=ws://127.0.0.1:9921 --exit
+          yarn runtime_upgrade_test --address=ws://127.0.0.1:9944 --exit
           if [ $? != 0 ]; then echo "Runtime upgrade failed!"; exit 1; fi
       - if: ${{ needs.check-for-runtime-upgrade.outputs.do-versions-match == 'false' }}
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-alice.log
-          path: ${{ github.workspace }}/polkadot-launch/9921.log
+          path: ${{ github.workspace }}/polkadot-launch/9944.log
   parse-runtimes:
     if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}
     runs-on: ubuntu-20.04

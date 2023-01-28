@@ -49,7 +49,7 @@
         "nodes": [
           {
             "name": "alice",
-            "wsPort": 9921,
+            "wsPort": 9944,
             "port": 32331,
             "flags": [
               "--rpc-cors=all",
