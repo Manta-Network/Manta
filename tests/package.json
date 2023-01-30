@@ -6,9 +6,9 @@
   "scripts": {
     "correctness_test": "mocha -r ts-node/register rpc_correctness_test.ts",
     "performance_test": "mocha -r ts-node/register rpc_performance_test.ts",
+    "full_sync_test": "mocha -r ts-node/register rpc_full_sync_test.ts",
     "stress_benchmark_test": "mocha -r ts-node/register stress_benchmark_test.ts",
     "runtime_upgrade_test": "mocha -r ts-node/register runtime_upgrade_test.ts",
-    "full_sync_test": "mocha -r ts-node/register full_sync_test.ts",
     "lint": "eslint ."
   },
   "keywords": [],
@@ -25,7 +25,7 @@
     "@polkadot/x-randomvalues": "^10.1.12",
     "@types/minimist": "^1.2.2",
     "@types/yargs": "^17.0.0",
-    "manta.js": "file:../../Manta-Network/sdk/manta-js/package",
+    "manta.js": "0.0.0",
     "minimist": "^1.2.5",
     "ts-node": "^10.8.0",
     "typescript": "^4.7.4"

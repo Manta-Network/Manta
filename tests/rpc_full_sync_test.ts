@@ -1,5 +1,4 @@
 import { expect } from "chai";
-import minimist, { ParsedArgs } from "minimist";
 import { MantaPrivateWallet, Environment, Network } from 'manta.js';
 import fetch from 'node-fetch';
 
@@ -14,7 +13,6 @@ global.Response = fetch.Response;
 
 const test_config = {
   timeout: 20000000,
-  sync_iterations: 50,
   sync_time: 80000,
 };
 
