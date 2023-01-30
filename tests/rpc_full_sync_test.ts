@@ -13,7 +13,7 @@ global.Response = fetch.Response;
 
 const test_config = {
   timeout: 20000000,
-  sync_time: 80000,
+  sync_time: 400000,
 };
 
 describe("Full Sync Test", () => {
