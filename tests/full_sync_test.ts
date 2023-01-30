@@ -24,8 +24,8 @@ describe("Full Sync Test", () => {
     const before_rpc = performance.now();
     
     const privateWalletConfig = {
-      environment: Environment.Production,
-      network: Network.Dolphin
+      environment: Environment.Development,
+      network: Network.Calamari
     }
 
     const privateWallet = await MantaPrivateWallet.init(privateWalletConfig);
