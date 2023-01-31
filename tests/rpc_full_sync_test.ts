@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { MantaPrivateWallet, Environment, Network } from 'manta.js';
+import { MantaPrivateWallet, Environment, Network } from 'manta.js/node';
 import fetch from 'node-fetch';
 
 // @ts-ignore
