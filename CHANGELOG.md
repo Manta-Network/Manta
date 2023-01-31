@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## v4.0.1
+### Added
+- [\#870](https://github.com/Manta-Network/Manta/pull/870) Manual seal mode for dev [CADO]
+
+### Changed
+- [\#966](https://github.com/Manta-Network/Manta/pull/966) Bump storage trie version for manta RT [MA]
+- [\#978](https://github.com/Manta-Network/Manta/pull/978) xcm fee of native token to treasury [CADO]
+- [\#981](https://github.com/Manta-Network/Manta/pull/981) Upgrade to manta-rs v0.5.9, switch to mainnet keys, fix ledger error handling [MACADO]
+- [\#976](https://github.com/Manta-Network/Manta/pull/976) Move all imported constants to our code base [CADO]
+- [\#967](https://github.com/Manta-Network/Manta/pull/967) Bump Polkadot Dependencies to v0.9.28 [MACADO]
+- [\#977](https://github.com/Manta-Network/Manta/pull/977) Suspend MantaPay when InternalLedgerError [CADO]
+
+### Fixed
+- [\#982](https://github.com/Manta-Network/Manta/pull/982) Fix codec issue for dense-pull-ledger-diff [CADO]
+
 ## v4.0.0
 ### Added
 - [\#903](https://github.com/Manta-Network/Manta/pull/903) Add MantaPay to Calamari runtime [CA]

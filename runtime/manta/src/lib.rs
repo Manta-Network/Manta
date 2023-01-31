@@ -40,6 +40,10 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+use cumulus_pallet_parachain_system::{
+    register_validate_block, CheckInherents, ParachainSetCode, RelayChainStateProof,
+    RelayNumberStrictlyIncreases, RelaychainBlockNumberProvider,
+};
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency},
@@ -121,7 +125,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("manta"),
     impl_name: create_runtime_str!("manta"),
     authoring_version: 1,
-    spec_version: 4001,
+    spec_version: 4010,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -228,7 +232,7 @@ impl frame_system::Config for Runtime {
     type AccountData = pallet_balances::AccountData<Balance>;
     type SystemWeightInfo = weights::frame_system::SubstrateWeight<Runtime>;
     type SS58Prefix = SS58Prefix;
-    type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
+    type OnSetCode = ParachainSetCode<Self>;
     type MaxConsumers = ConstU32<16>;
 }
 
@@ -372,7 +376,7 @@ impl pallet_parachain_staking::Config for Runtime {
 
 impl pallet_author_inherent::Config for Runtime {
     // We start a new slot each time we see a new relay block.
-    type SlotBeacon = cumulus_pallet_parachain_system::RelaychainBlockNumberProvider<Self>;
+    type SlotBeacon = RelaychainBlockNumberProvider<Self>;
     type AccountLookup = CollatorSelection;
     type WeightInfo = weights::pallet_author_inherent::SubstrateWeight<Runtime>;
     /// Nimbus filter pipeline step 1:
@@ -399,19 +403,21 @@ impl pallet_preimage::Config for Runtime {
     type ByteDeposit = PreimageByteDeposit;
 }
 
+parameter_types! {
+    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
+}
+
 impl cumulus_pallet_parachain_system::Config for Runtime {
     type Event = Event;
-    type OnSystemEvent = ();
     type SelfParaId = parachain_info::Pallet<Runtime>;
-    type DmpMessageHandler = ();
-    type ReservedDmpWeight = ();
+    type DmpMessageHandler = DmpQueue;
+    type ReservedDmpWeight = ReservedDmpWeight;
     type OutboundXcmpMessageSource = ();
     type XcmpMessageHandler = ();
     type ReservedXcmpWeight = ();
-    type CheckAssociatedRelayNumber = cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+    type OnSystemEvent = ();
+    type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
-
-impl parachain_info::Config for Runtime {}
 
 // NOTE: pallet_parachain_staking rounds are now used,
 // session rotation through pallet session no longer needed
@@ -799,11 +805,11 @@ impl_runtime_apis! {
     }
 }
 
-struct CheckInherents;
-impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
+struct CheckInherentsStruct;
+impl CheckInherents<Block> for CheckInherentsStruct {
     fn check_inherents(
         block: &Block,
-        relay_state_proof: &cumulus_pallet_parachain_system::RelayChainStateProof,
+        relay_state_proof: &RelayChainStateProof,
     ) -> sp_inherents::CheckInherentsResult {
         let relay_chain_slot = relay_state_proof
             .read_slot()
@@ -821,8 +827,10 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
     }
 }
 
-cumulus_pallet_parachain_system::register_validate_block! {
+register_validate_block! {
     Runtime = Runtime,
     BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
-    CheckInherents = CheckInherents,
+    CheckInherents = CheckInherentsStruct,
 }
+
+impl parachain_info::Config for Runtime {}

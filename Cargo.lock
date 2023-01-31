@@ -1040,7 +1040,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-runtime"
-version = "4.0.0-rc1"
+version = "4.0.1"
 dependencies = [
  "calamari-vesting",
  "cumulus-pallet-dmp-queue",
@@ -1129,7 +1129,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-vesting"
-version = "4.0.0-rc1"
+version = "4.0.1"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -2434,7 +2434,7 @@ dependencies = [
 
 [[package]]
 name = "dolphin-runtime"
-version = "4.0.0-rc1"
+version = "4.0.1"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -5074,7 +5074,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "4.0.0-rc1"
+version = "4.0.1"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -5173,7 +5173,7 @@ dependencies = [
 
 [[package]]
 name = "manta-collator-selection"
-version = "4.0.0-rc1"
+version = "4.0.1"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5260,7 +5260,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "4.0.0-rc1"
+version = "4.0.1"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5280,7 +5280,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "4.0.0-rc1"
+version = "4.0.1"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -6132,7 +6132,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-manager"
-version = "4.0.0-rc1"
+version = "4.0.1"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6564,7 +6564,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-pay"
-version = "0.4.0"
+version = "4.0.1"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -6582,6 +6582,7 @@ dependencies = [
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",
+ "pallet-tx-pause",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
  "scale-info",
@@ -6780,7 +6781,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-parachain-staking"
-version = "4.0.0-rc1"
+version = "4.0.1"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7071,7 +7072,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "4.0.0-rc1"
+version = "4.0.1"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -9326,7 +9327,7 @@ dependencies = [
 
 [[package]]
 name = "runtime-common"
-version = "4.0.0-rc1"
+version = "4.0.1"
 dependencies = [
  "frame-support",
  "manta-primitives",
@@ -10804,7 +10805,7 @@ dependencies = [
 
 [[package]]
 name = "session-key-primitives"
-version = "4.0.0-rc1"
+version = "4.0.1"
 dependencies = [
  "manta-primitives",
  "nimbus-primitives",
