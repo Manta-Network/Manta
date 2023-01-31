@@ -51,9 +51,9 @@ Ensure test case get passed.
 
 todo!()
 
-## Common Tests
+## Runtime Tests
 
-todo!()
+- `runtime_upgrade_test`, which is for do runtime upgrade test.
 
 ## Check Lints
 
