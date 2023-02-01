@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Manta Network.
+// Copyright 2020-2022 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -15,7 +15,11 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Asset Utilities
-use crate::{constants::TEST_DEFAULT_ASSET_ED, types::Balance as MantaBalance};
+use crate::{
+    constants::TEST_DEFAULT_ASSET_ED,
+    nft::NonFungibleLedger,
+    types::{Balance as MantaBalance, CalamariAssetId},
+};
 use alloc::vec::Vec;
 use codec::{Decode, Encode};
 use core::{borrow::Borrow, marker::PhantomData};
@@ -37,6 +41,7 @@ use xcm::{
     VersionedMultiLocation,
 };
 use xcm_executor::traits::Convert;
+use crate::types::AccountId;
 
 /// Asset Id
 pub trait AssetIdType {
@@ -66,12 +71,15 @@ pub trait LocationType {
 pub type Location<T> = <T as LocationType>::Location;
 
 /// Asset Metadata
-pub trait AssetMetadata: BalanceType {
+pub trait AssetMetadata: BalanceType + AssetIdType {
     /// Returns the minimum balance to hold this asset.
     fn min_balance(&self) -> &Self::Balance;
 
     /// Returns a boolean value indicating whether this asset needs an existential deposit.
     fn is_sufficient(&self) -> bool;
+
+    /// Returns AssetId for `AssetManager`
+    fn asset_id(&self) -> &Self::AssetId;
 }
 
 /// Asset Registry
@@ -79,12 +87,23 @@ pub trait AssetMetadata: BalanceType {
 /// The registry trait: defines the interface of creating an asset in the asset implementation
 /// layer. We may revisit this interface design (e.g. add change asset interface). However, change
 /// in StorageMetadata should be rare.
-pub trait AssetRegistry: AssetIdType + BalanceType {
+pub trait AssetRegistry<C>: AssetIdType + BalanceType
+where
+    C: Config,
+{
     /// Metadata Type
-    type Metadata;
+    type Metadata: IsFungible<Self::AssetId, Self::AssetId, Self::AssetId, AccountId>;
 
     /// Error Type
     type Error;
+
+    /// TODO: docs
+    fn create_asset(
+        origin: C::Origin,
+        asset_id: Self::AssetId,
+        admin: C::AccountId,
+        metadata: Self::Metadata,
+    ) -> Result<(), Self::Error>;
 
     /// Creates an new asset.
     ///
@@ -97,21 +116,22 @@ pub trait AssetRegistry: AssetIdType + BalanceType {
     ///     balance storage. If set to `true`, then non-zero balances may be stored without a
     ///     `consumer` reference (and thus an ED in the Balances pallet or whatever else is used to
     ///     control user-account state growth).
-    fn create_asset(
+    fn force_create_asset(
         asset_id: Self::AssetId,
         metadata: Self::Metadata,
-        min_balance: Self::Balance,
-        is_sufficient: bool,
     ) -> Result<(), Self::Error>;
 
     /// Update asset metadata by `AssetId`.
     ///
     /// * `asset_id`: the asset id to be created.
     /// * `metadata`: the metadata that the implementation layer stores.
-    fn update_asset_metadata(
+    fn force_update_metadata(
         asset_id: &Self::AssetId,
         metadata: Self::Metadata,
     ) -> Result<(), Self::Error>;
+
+    /// docs
+    fn get_metadata(asset_id: &Self::AssetId) -> Option<Self::Metadata>;
 }
 
 /// Asset Configuration
@@ -120,10 +140,17 @@ where
     C: Config,
 {
     /// Metadata type that required in token storage: e.g. AssetMetadata in Pallet-Assets.
-    type StorageMetadata: From<Self::AssetRegistryMetadata>;
+    type StorageMetadata: From<Self::AssetRegistryMetadata>
+        + IsFungible<Self::AssetId, Self::AssetId, Self::AssetId, AccountId>;
 
     /// The Asset Metadata type stored in this pallet.
-    type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance> + Parameter + TestingDefault;
+    type AssetRegistryMetadata: Parameter + IsFungible<Self::AssetId, Self::AssetId, Self::AssetId, AccountId>;
+
+    /// The identifier of asset id in manta pay to id within pallet
+    type IdentifierMapping: Parameter
+        + IsFungible<Self::AssetId, Self::AssetId, Self::AssetId, AccountId>
+        + IdentifierMapping<Self::AssetId, Self::AssetId, Self::AssetId>
+        + From<Self::AssetRegistryMetadata>;
 
     /// The AssetId that the non-native asset starts from.
     ///
@@ -143,6 +170,7 @@ where
     ///
     /// The trait we use to register Assets and mint assets.
     type AssetRegistry: AssetRegistry<
+        C,
         AssetId = Self::AssetId,
         Balance = Self::Balance,
         Metadata = Self::StorageMetadata,
@@ -155,11 +183,18 @@ where
         AssetId = Self::AssetId,
         Balance = Self::Balance,
     >;
+
+    /// Fungible Ledger
+    type NonFungibleLedger: NonFungibleLedger<
+        AccountId = C::AccountId,
+        AssetId = Self::AssetId,
+        Balance = Self::Balance,
+    >;
 }
 
-/// Asset Storage Metadata
+/// Fungible Asset Storage Metadata
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
-pub struct AssetStorageMetadata {
+pub struct FungibleAssetStorageMetadata {
     /// Asset Name
     pub name: Vec<u8>,
 
@@ -175,18 +210,219 @@ pub struct AssetStorageMetadata {
     pub is_frozen: bool,
 }
 
-impl<B> From<AssetRegistryMetadata<B>> for AssetStorageMetadata {
-    #[inline]
-    fn from(source: AssetRegistryMetadata<B>) -> Self {
-        source.metadata
+/// Non Fungible Asset Storage Metadata
+#[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
+pub struct NonFungibleAssetStorageMetadata<CollectionId, ItemId, AccountId> {
+    /// Asset Name
+    pub name: Vec<u8>,
+
+    /// Asset info
+    pub info: Vec<u8>,
+
+    /// Collection Id
+    pub collection_id: CollectionId,
+
+    /// Item Id
+    pub item_id: ItemId,
+
+    ///
+    pub origin_owner: AccountId,
+
+    ///
+    pub origin_zkaddress: [u8; 32],
+}
+
+/// If data is fungible
+pub trait IsFungible<AssetId, CollectionId, ItemId, AccountId> {
+    /// Is fungible
+    fn is_fungible(&self) -> bool;
+
+    /// Is non fungible
+    fn is_non_fungible(&self) -> bool;
+
+    /// Asset Id of fungible
+    fn get_fungible_id(&self) -> Option<&AssetId>;
+
+    /// Collection and Item Id of NonFungible
+    fn get_non_fungible_id(&self) -> Option<(&CollectionId, &ItemId)>;
+
+    ///
+    fn get_origin_zkaddress(&self) -> Option<[u8; 32]>;
+
+    ///
+    fn get_origin_account(&self) -> Option<&AccountId>;
+}
+
+/// Identifiew in the `pallet-assets` and `pallet-uniques`
+pub trait IdentifierMapping<AssetId, CollectionId, ItemId> {
+    /// new fungible asset
+    fn new_fungible(asset_id: AssetId) -> Self;
+
+    /// new non-fungible asset
+    fn new_non_fungible(collection_id: CollectionId, item_id: ItemId) -> Self;
+}
+
+/// Asset Storage Metadata
+#[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
+pub enum AssetStorageMetadata<Balance, AssetId, CollectionId, ItemId, AccountId> {
+    /// Metadata for Fungible Assets
+    Fungible(AssetRegistryMetadata<Balance, AssetId>),
+    /// Metadata for NonFungible Assets
+    NonFungible(NonFungibleAssetStorageMetadata<CollectionId, ItemId, AccountId>),
+    ///
+    SBT(NonFungibleAssetStorageMetadata<CollectionId, ItemId, AccountId>),
+}
+
+/// Asset Id in `pallet-assets` or `pallets-uniques`
+#[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
+pub enum AssetIdMapping<AssetId, CollectionId, ItemId, AccountId> {
+    /// Metadata for Fungible Assets
+    Fungible(AssetId),
+    /// Metadata for NonFungible Assets
+    NonFungible((CollectionId, ItemId)),
+    ///
+    SBT((CollectionId, ItemId, [u8; 32], AccountId)),
+}
+
+impl<B, A, C, I, AC> From<AssetStorageMetadata<B, A, C, I, AC>> for AssetIdMapping<A, C, I, AC> {
+    fn from(asset_metadata: AssetStorageMetadata<B, A, C, I, AC>) -> Self {
+        match asset_metadata {
+            AssetStorageMetadata::<B, A, C, I, AC>::Fungible(meta) => Self::Fungible(meta.asset_id),
+            AssetStorageMetadata::<B, A, C, I, AC>::NonFungible(meta) => {
+                Self::NonFungible((meta.collection_id, meta.item_id))
+            }
+            AssetStorageMetadata::<B, A, C, I, AC>::SBT(meta) => {
+                Self::SBT((meta.collection_id, meta.item_id, meta.origin_zkaddress, meta.origin_owner))
+            }
+        }
     }
 }
 
-/// Asset Registry Metadata
+impl<A, C, I, AC> IdentifierMapping<A, C, I> for AssetIdMapping<A, C, I, AC> {
+    fn new_fungible(asset_id: A) -> Self {
+        Self::Fungible(asset_id)
+    }
+
+    fn new_non_fungible(collection_id: C, item_id: I) -> Self {
+        Self::NonFungible((collection_id, item_id))
+    }
+}
+
+impl<A, C, I, AC> IsFungible<A, C, I, AC> for AssetIdMapping<A, C, I, AC> {
+    fn is_fungible(&self) -> bool {
+        match self {
+            Self::Fungible(_) => true,
+            Self::NonFungible(_) => false,
+            Self::SBT(_) => false,
+        }
+    }
+
+    fn is_non_fungible(&self) -> bool {
+        match self {
+            Self::Fungible(_) => false,
+            Self::NonFungible(_) => true,
+            Self::SBT(_) => false,
+        }
+    }
+
+    fn get_fungible_id(&self) -> Option<&A> {
+        match self {
+            Self::Fungible(asset_id) => Some(asset_id),
+            Self::NonFungible(_) => None,
+            Self::SBT(_) => None,
+        }
+    }
+
+    fn get_non_fungible_id(&self) -> Option<(&C, &I)> {
+        match self {
+            Self::Fungible(_) => None,
+            Self::NonFungible((collection_id, item_id)) => Some((&collection_id, &item_id)),
+            Self::SBT((collection_id, item_id, _, _)) => Some((&collection_id, &item_id)),
+        }
+    }
+
+    fn get_origin_zkaddress(&self) -> Option<[u8; 32]> {
+        match self {
+            Self::Fungible(_) => None,
+            Self::NonFungible(_) => None,
+            Self::SBT((_, _, origin_zk_address, _)) => Some(*origin_zk_address),
+        }
+    }
+
+    fn get_origin_account(&self) -> Option<&AC> {
+        match self {
+            Self::Fungible(_) => None,
+            Self::NonFungible(_) => None,
+            Self::SBT((_, _, _, account_id)) => Some(account_id),
+        }
+    }
+}
+
+impl<B, A, C, I, AC> IsFungible<A, C, I, AC> for AssetStorageMetadata<B, A, C, I, AC> {
+    fn is_fungible(&self) -> bool {
+        match self {
+            Self::Fungible(_) => true,
+            Self::NonFungible(_) => false,
+            Self::SBT(_) => false,
+        }
+    }
+
+    fn is_non_fungible(&self) -> bool {
+        match self {
+            Self::Fungible(_) => false,
+            Self::NonFungible(_) => true,
+            Self::SBT(_) => false,
+        }
+    }
+
+    fn get_fungible_id(&self) -> Option<&A> {
+        match self {
+            Self::Fungible(meta) => Some(meta.asset_id()),
+            Self::NonFungible(_) => None,
+            Self::SBT(_) => None,
+        }
+    }
+
+    fn get_non_fungible_id(&self) -> Option<(&C, &I)> {
+        match self {
+            Self::Fungible(_) => None,
+            Self::NonFungible(meta) => Some((&meta.collection_id, &meta.item_id)),
+            Self::SBT(meta) => Some((&meta.collection_id, &meta.item_id)),
+        }
+    }
+
+    fn get_origin_zkaddress(&self) -> Option<[u8; 32]> {
+        match self {
+            Self::Fungible(_) => None,
+            Self::NonFungible(_) => None,
+            Self::SBT(meta) => Some(meta.origin_zkaddress),
+        }
+    }
+
+    fn get_origin_account(&self) -> Option<&AC> {
+        match self {
+            Self::Fungible(_) => None,
+            Self::NonFungible(_) => None,
+            Self::SBT(meta) => Some(&meta.origin_owner),
+        }
+    }
+}
+
+impl<A, B, C, I, AC> From<AssetRegistryMetadata<B, A>> for AssetStorageMetadata<B, A, C, I, AC> {
+    #[inline]
+    fn from(source: AssetRegistryMetadata<B, A>) -> Self {
+        Self::Fungible(source)
+    }
+}
+
+/// Asset Registry Metadata for Fungibles
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
-pub struct AssetRegistryMetadata<B> {
-    /// Asset Storage Metadata
-    pub metadata: AssetStorageMetadata,
+pub struct AssetRegistryMetadata<B, A> {
+    /// Asset Storage Metadata for fungible assets
+    pub metadata: FungibleAssetStorageMetadata,
+
+    /// Asset Id
+    pub asset_id: A,
 
     /// Minimum Balance
     pub min_balance: B,
@@ -210,26 +446,31 @@ pub trait TestingDefault {
     fn testing_default() -> Self;
 }
 
-impl TestingDefault for AssetRegistryMetadata<MantaBalance> {
+impl TestingDefault for AssetRegistryMetadata<MantaBalance, CalamariAssetId> {
     fn testing_default() -> Self {
         Self {
-            metadata: AssetStorageMetadata {
+            metadata: FungibleAssetStorageMetadata {
                 name: b"Default".to_vec(),
                 symbol: b"DEF".to_vec(),
                 decimals: 12,
                 is_frozen: false,
             },
+            asset_id: 0,
             min_balance: TEST_DEFAULT_ASSET_ED,
             is_sufficient: true,
         }
     }
 }
 
-impl<B> BalanceType for AssetRegistryMetadata<B> {
+impl<B, A> BalanceType for AssetRegistryMetadata<B, A> {
     type Balance = B;
 }
 
-impl<B> AssetMetadata for AssetRegistryMetadata<B> {
+impl<B, A> AssetIdType for AssetRegistryMetadata<B, A> {
+    type AssetId = A;
+}
+
+impl<B, A> AssetMetadata for AssetRegistryMetadata<B, A> {
     #[inline]
     fn min_balance(&self) -> &B {
         &self.min_balance
@@ -238,6 +479,11 @@ impl<B> AssetMetadata for AssetRegistryMetadata<B> {
     #[inline]
     fn is_sufficient(&self) -> bool {
         self.is_sufficient
+    }
+
+    #[inline]
+    fn asset_id(&self) -> &A {
+        &self.asset_id
     }
 }
 

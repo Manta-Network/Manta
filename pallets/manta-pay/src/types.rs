@@ -1,22 +1,5 @@
-// Copyright 2020-2023 Manta Network.
-// This file is part of Manta.
-//
-// Manta is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Manta is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with Manta.  If not, see <http://www.gnu.org/licenses/>.
-
-//! Type Definitions for Manta Pay
-
-use alloc::{boxed::Box, string::String, vec::Vec};
+use alloc::{boxed::Box, vec::Vec};
+use manta_accounting::transfer;
 use manta_crypto::merkle_tree;
 use manta_pay::{
     config::{
@@ -108,12 +91,16 @@ where
 {
     use manta_util::codec::Encode;
     let bytes = proof.to_vec();
-    // The first 8 bytes of the serialization are a meaningless header, so we remove them.
-    let u128_bytes = &bytes[8..];
-    u128_bytes
-        .to_vec()
-        .try_into()
-        .map_err(|_e| scale_codec::Error::from(PROOF_ENCODE))
+    if bytes.len() > 128 {
+        let u128_bytes = &bytes[8..];
+        let vec = u128_bytes.to_vec();
+        vec.try_into()
+            .map_err(|_e| scale_codec::Error::from(PROOF_ENCODE))
+    } else {
+        bytes
+            .try_into()
+            .map_err(|_e| scale_codec::Error::from(PROOF_ENCODE))
+    }
 }
 
 /// Proof decode from byte array
@@ -184,7 +171,7 @@ pub type AssetId = [u8; 32];
 pub type AssetValue = u128;
 
 /// Transfer Proof encoded value
-/// Compatibility for JS u128 and Encode/Decode from parity_scale_codec
+/// Compatability for JS u128 and Encode/Decode from parity_scale_codec
 pub type EncodedAssetValue = [u8; 16];
 
 /// Asset
@@ -655,6 +642,42 @@ impl TryFrom<AuthorizationSignature> for utxo::AuthorizationSignature {
     }
 }
 
+#[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, TypeInfo)]
+pub enum AssetType {
+    FT,
+    NFT,
+    SBT,
+    PFT, // permissionless fungible token
+}
+
+impl TryFrom<AssetType> for transfer::AssetType {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(asset_type: AssetType) -> Result<Self, Error> {
+        let asset = match asset_type {
+            AssetType::FT => transfer::AssetType::FT,
+            AssetType::NFT => transfer::AssetType::NFT,
+            AssetType::SBT => transfer::AssetType::SBT,
+            AssetType::PFT => transfer::AssetType::PFT,
+        };
+        Ok(asset)
+    }
+}
+
+impl From<transfer::AssetType> for AssetType {
+    #[inline]
+    fn from(asset_type: transfer::AssetType) -> Self {
+        let asset = match asset_type {
+            transfer::AssetType::FT => AssetType::FT,
+            transfer::AssetType::NFT => AssetType::NFT,
+            transfer::AssetType::SBT => AssetType::SBT,
+            transfer::AssetType::PFT => AssetType::PFT,
+        };
+        asset
+    }
+}
+
 /// Transfer Post
 #[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, TypeInfo)]
 pub struct TransferPost {
@@ -893,41 +916,6 @@ pub struct PullResponse {
 
     /// Total Number of Senders/Receivers in Ledger
     pub senders_receivers_total: [u8; 16],
-}
-
-/// Ledger Source Dense Pull Response
-#[cfg_attr(
-    feature = "serde",
-    derive(Deserialize, Serialize),
-    serde(crate = "manta_util::serde", deny_unknown_fields)
-)]
-#[derive(Clone, Debug, Encode, Default, Eq, Hash, Decode, PartialEq, TypeInfo)]
-pub struct DensePullResponse {
-    /// Pull Continuation Flag
-    ///
-    /// The `should_continue` flag is set to `true` if the client should request more data from the
-    /// ledger to finish the pull.
-    pub should_continue: bool,
-
-    /// Ledger Receiver Chunk
-    // we decode the receivers/senders with our own way
-    #[codec(skip)]
-    pub receivers: String,
-
-    /// Ledger Sender Chunk
-    #[codec(skip)]
-    pub senders: String,
-
-    /// Total Number of Senders/Receivers in Ledger
-    pub senders_receivers_total: [u8; 16],
-
-    /// Next request checkpoint calculated from server.
-    /// If should_continue = false, this data makes no sense.
-    /// Else, the client can just use this one as next request cursor,
-    /// It avoids complex computing on the client side,
-    /// and the potential risk of inconsistent computing rules between the client and server
-    #[codec(skip)]
-    pub next_checkpoint: Option<Checkpoint>,
 }
 
 /// Raw Checkpoint for Encoding and Decoding

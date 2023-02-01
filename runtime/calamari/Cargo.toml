@@ -30,6 +30,7 @@ sp-session = { git = 'https://github.com/paritytech/substrate.git', default-feat
 sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 sp-transaction-pool = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 sp-version = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+pallet-uniques = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 
 # Substrate frames
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, optional = true, branch = "polkadot-v0.9.28" }
@@ -276,4 +277,5 @@ std = [
   'orml-traits/std',
   'orml-xtokens/std',
   'pallet-manta-pay/std',
+  'pallet-uniques/std'
 ]

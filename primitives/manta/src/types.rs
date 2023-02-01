@@ -67,3 +67,6 @@ pub type DigestItem = generic::DigestItem;
 
 /// Moment Type
 pub type Moment = u64;
+
+///
+pub type StandardAssetId = u128;

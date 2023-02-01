@@ -297,6 +297,7 @@ impl Contains<Call> for BaseFilter {
             | Call::Balances(_)
             | Call::MantaPay(_)
             | Call::Preimage(_)
+            | Call::Uniques(_)
             | Call::XTokens(orml_xtokens::Call::transfer {..}
                 | orml_xtokens::Call::transfer_multicurrencies {..})
             | Call::TransactionPause(_)
@@ -856,6 +857,7 @@ construct_runtime!(
 
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
+        Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 51,
     }
 );
 
@@ -1067,13 +1069,13 @@ impl_runtime_apis! {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
 
-        fn dense_pull_ledger_diff(
-            checkpoint: pallet_manta_pay::RawCheckpoint,
-            max_receiver: u64,
-            max_sender: u64
-        ) -> pallet_manta_pay::DensePullResponse {
-            MantaPay::dense_pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
-        }
+        // fn dense_pull_ledger_diff(
+        //     checkpoint: pallet_manta_pay::RawCheckpoint,
+        //     max_receiver: u64,
+        //     max_sender: u64
+        // ) -> pallet_manta_pay::DensePullResponse {
+        //     MantaPay::dense_pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        // }
     }
 
     impl nimbus_primitives::NimbusApi<Block> for Runtime {
@@ -1292,22 +1294,22 @@ cumulus_pallet_parachain_system::register_validate_block! {
     CheckInherents = CheckInherents,
 }
 
-pub struct MantaPaySuspensionManager;
-impl pallet_manta_pay::SuspendMantaPay for MantaPaySuspensionManager {
-    fn suspend_manta_pay_execution() {
-        match TransactionPause::pause_transactions(
-            RawOrigin::Root.into(),
-            vec![(
-                b"MantaPay".to_vec(),
-                vec![
-                    b"to_private".to_vec(),
-                    b"private_transfer".to_vec(),
-                    b"to_public".to_vec(),
-                ],
-            )],
-        ) {
-            Ok(_) => log::error!("MantaPay has been suspended due to an unexpected internal ledger error!"),
-            Err(tx_pause_error) => log::error!("MantaPay encountered an unexpected internal ledger error, but failed to be suspended with the following tx-pause error: {:?}!", tx_pause_error)
-        }
-    }
-}
+// pub struct MantaPaySuspensionManager;
+// impl pallet_manta_pay::SuspendMantaPay for MantaPaySuspensionManager {
+//     fn suspend_manta_pay_execution() {
+//         match TransactionPause::pause_transactions(
+//             RawOrigin::Root.into(),
+//             vec![(
+//                 b"MantaPay".to_vec(),
+//                 vec![
+//                     b"to_private".to_vec(),
+//                     b"private_transfer".to_vec(),
+//                     b"to_public".to_vec(),
+//                 ],
+//             )],
+//         ) {
+//             Ok(_) => log::error!("MantaPay has been suspended due to an unexpected internal ledger error!"),
+//             Err(tx_pause_error) => log::error!("MantaPay encountered an unexpected internal ledger error, but failed to be suspended with the following tx-pause error: {:?}!", tx_pause_error)
+//         }
+//     }
+// }

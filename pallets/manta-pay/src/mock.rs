@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Manta Network.
+// Copyright 2020-2022 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -15,12 +15,12 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use frame_support::{
-    pallet_prelude::{DispatchResult, DispatchResultWithPostInfo},
+    pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{ConstU32, IsInVec},
+    traits::{ConstU32, Everything},
     PalletId,
 };
-use frame_system::{EnsureRoot, RawOrigin};
+use frame_system::EnsureRoot;
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
@@ -52,11 +52,10 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        MantaPay: crate::{Pallet, Call, Storage, Event<T>},
+        ZknftPallet: crate::{Pallet, Call, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Assets: pallet_assets::{Pallet, Storage, Event<T>},
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>},
-        TransactionPause: pallet_tx_pause::{Pallet, Storage, Call, Event<T>},
     }
 );
 
@@ -66,7 +65,7 @@ parameter_types! {
 }
 
 impl frame_system::Config for Test {
-    type BaseCallFilter = frame_support::traits::Everything;
+    type BaseCallFilter = Everything;
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
@@ -252,53 +251,20 @@ impl pallet_asset_manager::Config for Test {
     type WeightInfo = ();
 }
 
-pub struct MantaPaySuspensionManager;
-impl crate::SuspendMantaPay for MantaPaySuspensionManager {
-    fn suspend_manta_pay_execution() {
-        let _ = TransactionPause::pause_transactions(
-            RawOrigin::Root.into(),
-            vec![(
-                b"MantaPay".to_vec(),
-                vec![
-                    b"to_private".to_vec(),
-                    b"private_transfer".to_vec(),
-                    b"to_public".to_vec(),
-                ],
-            )],
-        );
-    }
-}
-
 parameter_types! {
-    pub const MantaPayPalletId: PalletId = MANTA_PAY_PALLET_ID;
+    pub const ZknftPalletId: PalletId = MANTA_PAY_PALLET_ID;
 }
 
 impl crate::Config for Test {
     type Event = Event;
     type WeightInfo = crate::weights::SubstrateWeight<Self>;
-    type PalletId = MantaPayPalletId;
+    type PalletId = ZknftPalletId;
     type AssetConfig = MantaAssetConfig;
-    type Suspender = MantaPaySuspensionManager;
-}
-
-parameter_types! {
-    pub NonPausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilCollective".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalCollective".to_vec()];
-}
-
-impl pallet_tx_pause::Config for Test {
-    type Event = Event;
-    type Call = Call;
-    type MaxCallNames = ConstU32<25>;
-    type PauseOrigin = EnsureRoot<AccountId32>;
-    type UnpauseOrigin = EnsureRoot<AccountId32>;
-    type NonPausablePallets = IsInVec<NonPausablePallets>;
-    type WeightInfo = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    let t = frame_system::GenesisConfig::default()
+    frame_system::GenesisConfig::default()
         .build_storage::<Test>()
-        .unwrap();
-
-    t.into()
+        .unwrap()
+        .into()
 }

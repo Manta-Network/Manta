@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Manta Network.
+// Copyright 2020-2022 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -15,15 +15,17 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    assets_config::DolphinAssetConfig, AssetManager, Assets, Balances, Call, DmpQueue,
+    assets_config::DolphinAssetConfig, AssetManager, Assets, Call, DmpQueue,
     EnsureRootOrMoreThanHalfCouncil, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm,
     Runtime, Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
 use codec::{Decode, Encode};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
-    match_types, parameter_types,
-    traits::{Currency, Everything, Nothing},
+    ensure, match_types,
+    pallet_prelude::PhantomData,
+    parameter_types,
+    traits::{Contains, Everything, Nothing},
     weights::Weight,
 };
 use frame_system::EnsureRoot;
@@ -41,14 +43,16 @@ use scale_info::TypeInfo;
 use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+    Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
     EnsureXcmOrigin, FixedRateOfFungible, LocationInverter, ParentAsSuperuser, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit,
-    WeightInfoBounds,
+    SignedAccountId32AsNative, SovereignSignedViaLocation, TakeWeightCredit, WeightInfoBounds,
 };
-use xcm_executor::{traits::JustTry, Config, XcmExecutor};
+use xcm_executor::{
+    traits::{JustTry, ShouldExecute},
+    Config, XcmExecutor,
+};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -90,6 +94,7 @@ pub type LocationToAccountId = (
     SiblingParachainConvertsVia<Sibling, AccountId>,
     // Straight up local `AccountId32` origins just alias directly to `AccountId`.
     AccountId32Aliases<RelayNetwork, AccountId>,
+    Account32Hash<RelayNetwork, AccountId>,
 );
 
 /// This is the type to convert an (incoming) XCM origin into a local `Origin` instance,
@@ -158,6 +163,56 @@ match_types! {
     };
 }
 
+/// Barrier allowing a top level paid message with DescendOrigin instruction
+/// first
+pub struct AllowTopLevelPaidExecutionDescendOriginFirst<T>(PhantomData<T>);
+impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionDescendOriginFirst<T> {
+    fn should_execute<Call>(
+        origin: &MultiLocation,
+        message: &mut Xcm<Call>,
+        max_weight: u64,
+        _weight_credit: &mut u64,
+    ) -> Result<(), ()> {
+        log::trace!(
+            target: "xcm::barriers",
+            "AllowTopLevelPaidExecutionDescendOriginFirst origin:
+            {:?}, message: {:?}, max_weight: {:?}, weight_credit: {:?}",
+            origin, message, max_weight, _weight_credit,
+        );
+        ensure!(T::contains(origin), ());
+        let mut iter = message.0.iter_mut();
+        // Make sure the first instruction is DescendOrigin
+        iter.next()
+            .filter(|instruction| matches!(instruction, DescendOrigin(_)))
+            .ok_or(())?;
+
+        // Then WithdrawAsset
+        iter.next()
+            .filter(|instruction| matches!(instruction, WithdrawAsset(_)))
+            .ok_or(())?;
+
+        // Then BuyExecution
+        let i = iter.next().ok_or(())?;
+        match i {
+            BuyExecution {
+                weight_limit: Limited(ref mut weight),
+                ..
+            } if *weight >= max_weight => {
+                *weight = max_weight;
+                Ok(())
+            }
+            BuyExecution {
+                ref mut weight_limit,
+                ..
+            } if weight_limit == &Unlimited => {
+                *weight_limit = Limited(max_weight);
+                Ok(())
+            }
+            _ => Err(()),
+        }
+    }
+}
+
 pub type Barrier = (
     // Allows local origin messages which call weight_credit >= weight_limit.
     TakeWeightCredit,
@@ -173,28 +228,11 @@ pub type Barrier = (
     // Allows execution of `SubscribeVersion` or `UnsubscribeVersion` instruction,
     // from parent or sibling chains.
     AllowSubscriptionsFrom<ParentOrSiblings>,
+    AllowTopLevelPaidExecutionDescendOriginFirst<Everything>,
 );
 
 parameter_types! {
     pub XcmFeesAccount: AccountId = Treasury::account_id();
-}
-
-/// Xcm fee of native token
-pub struct XcmNativeFeeToTreasury;
-
-impl TakeRevenue for XcmNativeFeeToTreasury {
-    #[inline]
-    fn take_revenue(revenue: MultiAsset) {
-        if let MultiAsset {
-            id: Concrete(location),
-            fun: Fungible(amount),
-        } = revenue
-        {
-            if location == MultiLocation::here() {
-                let _ = Balances::deposit_creating(&XcmFeesAccount::get(), amount);
-            }
-        }
-    }
 }
 
 pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
@@ -230,7 +268,7 @@ impl Config for XcmExecutorConfig {
     // The second one will charge the first asset in the MultiAssets with pre-defined rate
     // i.e. units_per_second in `AssetManager`
     type Trader = (
-        FixedRateOfFungible<ParaTokenPerSecond, XcmNativeFeeToTreasury>,
+        FixedRateOfFungible<ParaTokenPerSecond, ()>,
         FirstAssetTrader<AssetManager, XcmFeesToAccount>,
     );
     type ResponseHandler = PolkadotXcm;

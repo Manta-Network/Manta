@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Manta Network.
+// Copyright 2020-2022 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -39,13 +39,17 @@ use sp_std::{cmp::Ordering, prelude::*};
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+use common::{BlockHashCount, SlowAdjustingFeeUpdate};
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec,
-        NeverEnsureOrigin, PrivilegeCmp,
+        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, NeverEnsureOrigin,
+        PrivilegeCmp,
     },
-    weights::{ConstantMultiplier, DispatchClass, Weight},
+    weights::{
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+        ConstantMultiplier, DispatchClass, Weight,
+    },
     PalletId,
 };
 use frame_system::{
@@ -53,11 +57,8 @@ use frame_system::{
     EnsureRoot,
 };
 use manta_primitives::{
-    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
+    constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
-};
-use runtime_common::{
-    prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
@@ -66,6 +67,7 @@ pub use sp_runtime::BuildStorage;
 use xcm::latest::prelude::*;
 
 pub mod assets_config;
+pub mod common;
 pub mod currency;
 pub mod fee;
 pub mod impls;
@@ -117,6 +119,26 @@ pub mod opaque {
     }
 }
 
+macro_rules! prod_or_fast {
+    ($prod:expr, $test:expr) => {
+        if cfg!(feature = "fast-runtime") {
+            $test
+        } else {
+            $prod
+        }
+    };
+    ($prod:expr, $test:expr, $env:expr) => {
+        if cfg!(feature = "fast-runtime") {
+            core::option_env!($env)
+                .map(|s| s.parse().ok())
+                .flatten()
+                .unwrap_or($test)
+        } else {
+            $prod
+        }
+    };
+}
+
 // Weights used in the runtime.
 mod weights;
 
@@ -125,10 +147,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("dolphin"),
     impl_name: create_runtime_str!("dolphin"),
     authoring_version: 2,
-    spec_version: 4010,
+    spec_version: 3432,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 5,
+    transaction_version: 4,
     state_version: 0,
 };
 
@@ -176,23 +198,6 @@ parameter_types! {
     pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
 }
 
-parameter_types! {
-    pub NonPausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilCollective".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalCollective".to_vec()];
-}
-
-impl pallet_tx_pause::Config for Runtime {
-    type Event = Event;
-    type Call = Call;
-    type MaxCallNames = ConstU32<25>;
-    type PauseOrigin = EitherOfDiverse<
-        EnsureRoot<AccountId>,
-        pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,
-    >;
-    type UnpauseOrigin = EnsureRoot<AccountId>;
-    type NonPausablePallets = IsInVec<NonPausablePallets>;
-    type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
-}
-
 // Don't allow permission-less asset creation.
 pub struct BaseFilter;
 impl Contains<Call> for BaseFilter {
@@ -207,18 +212,11 @@ impl Contains<Call> for BaseFilter {
             return true;
         }
 
-        if pallet_tx_pause::PausedTransactionFilter::<Runtime>::contains(call) {
-            // no paused call
-            return false;
-        }
-
         #[allow(clippy::match_like_matches_macro)]
         // keep CallFilter with explicit true/false for documentation
         match call {
             // Explicitly DISALLOWED calls
             | Call::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
-            | Call::AssetManager(_) // AssetManager is also filtered because all of its extrinsics
-                                    // are callable only by Root, and Root calls skip this whole filter.
             // Currently, we filter `register_as_candidate` as this call is not yet ready for community.
             | Call::CollatorSelection( manta_collator_selection::Call::register_as_candidate{..})
             // For now disallow public proposal workflows, treasury workflows,
@@ -286,7 +284,8 @@ impl Contains<Call> for BaseFilter {
                 | orml_xtokens::Call::transfer_multicurrencies  {..})
             | Call::MantaPay(_)
             | Call::Preimage(_)
-            | Call::TransactionPause(_)
+            | Call::AssetManager(_)
+            | Call::Uniques(_)
             | Call::Utility(_) => true,
 
             // DISALLOW anything else
@@ -339,7 +338,7 @@ impl pallet_authorship::Config for Runtime {
     type FindAuthor = AuthorInherent;
     type UncleGenerations = ConstU32<0>;
     type FilterUncle = ();
-    type EventHandler = (CollatorSelection,);
+    type EventHandler = ();
 }
 
 parameter_types! {
@@ -720,7 +719,6 @@ construct_runtime!(
         } = 1,
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
         ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
-        TransactionPause: pallet_tx_pause::{Pallet, Call, Storage, Event<T>} = 9,
 
         // Monetary stuff.
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
@@ -767,6 +765,7 @@ construct_runtime!(
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
+        Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 48,
     }
 );
 
@@ -833,7 +832,6 @@ mod benches {
         [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
         [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
         // Manta pallets
-        [pallet_tx_pause, TransactionPause]
         [manta_collator_selection, CollatorSelection]
         [pallet_manta_pay, MantaPay]
         [pallet_asset_manager, AssetManager]
@@ -975,14 +973,6 @@ impl_runtime_apis! {
             max_sender: u64
         ) -> pallet_manta_pay::PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
-        }
-
-        fn dense_pull_ledger_diff(
-            checkpoint: pallet_manta_pay::RawCheckpoint,
-            max_receiver: u64,
-            max_sender: u64
-        ) -> pallet_manta_pay::DensePullResponse {
-            MantaPay::dense_pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
     }
 
