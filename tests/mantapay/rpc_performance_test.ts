@@ -1,13 +1,12 @@
-import { ApiPromise, WsProvider } from "@polkadot/api";
+import { ApiPromise } from "@polkadot/api";
 import { Keyring } from "@polkadot/keyring";
 import { setup_storage, manta_pay_config } from "./manta_pay";
 import minimist, { ParsedArgs } from "minimist";
 import { performance } from "perf_hooks";
 import { expect } from "chai";
-import { createPromiseApi, delay, readChainSpec } from "../utils/utils";
+import { createPromiseApi, readChainSpec } from "../utils/utils";
 
 const test_config = {
-  ws_address: "ws://127.0.0.1:9800",
   mnemonic:
     "bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice",
   storage_prepare_config: {
@@ -76,9 +75,15 @@ describe("MantaPay RPC Performance Test", () => {
 
   before(async function () {
     // create api
-    const chainSpec = await readChainSpec();
-    const wsPort = chainSpec.parachains[0].nodes[0].wsPort;
-    const nodeAddress = "ws://127.0.0.1:" + wsPort;
+    let nodeAddress = "";
+    const args: ParsedArgs = minimist(process.argv.slice(2));
+    if (args["address"] == null) {
+      const chainSpec = await readChainSpec();
+      const wsPort = chainSpec.parachains[0].nodes[0].wsPort;
+      nodeAddress = "ws://127.0.0.1:" + wsPort;
+    } else {
+      nodeAddress = args["address"];
+    }
     api = await createPromiseApi(nodeAddress);
 
     const keyring = new Keyring({ type: "sr25519" });

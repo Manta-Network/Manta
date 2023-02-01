@@ -1,15 +1,12 @@
-import { ApiPromise, WsProvider } from "@polkadot/api";
 import { Keyring } from "@polkadot/keyring";
-import { manta_pay_types, rpc_api } from "../types";
 import { execute_with_root_via_governance } from "../mantapay/manta_pay";
-import { delay } from "../utils/test-util";
+import { createPromiseApi, readChainSpec, delay } from "../utils/utils";
 import { assert } from "chai";
 import minimist, { ParsedArgs } from "minimist";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import * as fs from "fs";
 
 const test_config = {
-  ws_address: "ws://127.0.0.1:9800",
   mnemonic:
     "bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice",
   timeout: 2000000,
@@ -17,21 +14,18 @@ const test_config = {
 
 describe("Node RPC Test", () => {
   it("Check RPC result", async () => {
+    // create api
     let nodeAddress = "";
     const args: ParsedArgs = minimist(process.argv.slice(2));
     if (args["address"] == null) {
-      nodeAddress = test_config.ws_address;
+      const chainSpec = await readChainSpec();
+      const wsPort = chainSpec.parachains[0].nodes[0].wsPort;
+      nodeAddress = "ws://127.0.0.1:" + wsPort;
     } else {
       nodeAddress = args["address"];
     }
-    console.log("using address %s", nodeAddress);
+    const api = await createPromiseApi(nodeAddress);
 
-    const wsProvider = new WsProvider(nodeAddress);
-    const api = await ApiPromise.create({
-      provider: wsProvider,
-      types: manta_pay_types,
-      rpc: rpc_api,
-    });
     const keyring = new Keyring({ type: "sr25519" });
     const aliceKeyPair = keyring.addFromMnemonic(test_config.mnemonic);
 
