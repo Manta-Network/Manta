@@ -58,35 +58,34 @@
 extern crate alloc;
 
 use crate::types::{
-    asset_value_decode, Asset, AssetValue,
-    FullIncomingNote, NullifierCommitment, OutgoingNote, TransferPost,
-    Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
+    asset_value_decode, Asset, AssetValue, FullIncomingNote, NullifierCommitment, OutgoingNote,
+    TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
 };
-use alloc::{vec};
-use frame_support::{traits::tokens::ExistenceRequirement, transactional, PalletId};
+use alloc::vec;
 use frame_support::pallet_prelude::DispatchResultWithPostInfo;
+use frame_support::{traits::tokens::ExistenceRequirement, transactional, PalletId};
 use manta_primitives::{
     assets::{AssetConfig, AssetRegistry, FungibleLedger as _, IsFungible},
-    types::StandardAssetId,
     nft::NonFungibleLedger as _,
+    types::StandardAssetId,
 };
-use sp_runtime::traits::{Get};
+use sp_runtime::traits::Get;
 
 // pub use crate::ledger::Ledger;
-pub use crate::types::{Checkpoint, RawCheckpoint, PullResponse};
+pub use crate::types::{Checkpoint, PullResponse, RawCheckpoint};
 pub use pallet::*;
 pub use weights::WeightInfo;
 
 #[cfg(test)]
 mod mock;
 
-pub mod types;
-pub mod weights;
-pub mod ledger;
-pub mod ledgers;
+pub mod common;
 pub mod errors;
 pub mod impl_pay;
-pub mod common;
+pub mod ledger;
+pub mod ledgers;
+pub mod types;
+pub mod weights;
 
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmark;
@@ -101,11 +100,22 @@ pub mod runtime;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    use crate::types::AssetType;
     use frame_support::{pallet_prelude::*, traits::StorageVersion};
     use frame_system::pallet_prelude::*;
-    use crate::types::AssetType;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
+    /// Suspend execution of MantaPay extrinsics (via tx-pause) due to unexpected internal ledger error.
+    /// Currently the following errors, which are only controlled by our own code, not user input:
+    /// ChecksumError, MerkleTreeCapacityError, VerifyingContextDecodeError
+    pub trait SuspendMantaPay {
+        fn suspend_manta_pay_execution();
+    }
+
+    impl SuspendMantaPay for () {
+        fn suspend_manta_pay_execution() {}
+    }
 
     /// Pallet
     #[pallet::pallet]
@@ -127,6 +137,9 @@ pub mod pallet {
 
         /// Pallet ID
         type PalletId: Get<PalletId>;
+
+        /// Suspends execution of all extrinsics via TxPause
+        type Suspender: SuspendMantaPay;
     }
 
     /// Fungible Ledger Implementation for [`Config`]
@@ -186,8 +199,25 @@ pub mod pallet {
         #[pallet::call_index(0)]
         #[pallet::weight(T::WeightInfo::to_private())]
         #[transactional]
-        pub fn to_private(origin: OriginFor<T>, asset_type: AssetType, post: TransferPost) -> DispatchResultWithPostInfo {
+        pub fn to_private(
+            origin: OriginFor<T>,
+            asset_type: AssetType,
+            post: TransferPost,
+        ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
+            ensure!(
+                post.sources.len() == 1
+                    && post.sender_posts.is_empty()
+                    && post.receiver_posts.len() == 1
+                    && post.sinks.is_empty(),
+                Error::<T>::InvalidShape
+            );
+            for source in post.sources.iter() {
+                ensure!(
+                    asset_value_decode(*source) > 0u128,
+                    Error::<T>::ZeroTransfer
+                );
+            }
             Self::post_transaction(None, vec![origin], vec![], post, asset_type)
         }
 
@@ -196,8 +226,22 @@ pub mod pallet {
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::to_public())]
         #[transactional]
-        pub fn to_public(origin: OriginFor<T>, asset_type: AssetType, post: TransferPost) -> DispatchResultWithPostInfo {
+        pub fn to_public(
+            origin: OriginFor<T>,
+            asset_type: AssetType,
+            post: TransferPost,
+        ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
+            ensure!(
+                post.sources.is_empty()
+                    && post.sender_posts.len() == 2
+                    && post.receiver_posts.len() == 1
+                    && post.sinks.len() == 1,
+                Error::<T>::InvalidShape
+            );
+            for sink in post.sinks.iter() {
+                ensure!(asset_value_decode(*sink) > 0u128, Error::<T>::ZeroTransfer);
+            }
             Self::post_transaction(None, vec![], vec![origin], post, asset_type)
         }
 
@@ -216,6 +260,13 @@ pub mod pallet {
             post: TransferPost,
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
+            ensure!(
+                post.sources.is_empty()
+                    && post.sender_posts.len() == 2
+                    && post.receiver_posts.len() == 2
+                    && post.sinks.is_empty(),
+                Error::<T>::InvalidShape
+            );
             Self::post_transaction(Some(origin), vec![], vec![], post, asset_type)
         }
 
@@ -230,16 +281,31 @@ pub mod pallet {
             post: TransferPost,
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
+            ensure!(
+                post.sources.is_empty()
+                    && post.sender_posts.len() == 2
+                    && post.receiver_posts.len() == 2
+                    && post.sinks.is_empty(),
+                Error::<T>::InvalidShape
+            );
             // this method is used for sbt private transfer.
             // only support private transfer by project manager.
-            let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistry::get_metadata(&asset_id)
-                .ok_or(Error::<T>::PublicUpdateInvalidMint)?;
+            let metadata =
+                <T::AssetConfig as AssetConfig<T>>::AssetRegistry::get_metadata(&asset_id)
+                    .ok_or(Error::<T>::PublicUpdateInvalidMint)?;
 
-            let zk_address = metadata.get_origin_zkaddress().ok_or(Error::<T>::PrivateTransferZkAddressNotExist)?;
-            ensure!(origin_zk_address == zk_address, Error::<T>::PrivateTransferZkAddressNotMatch);
+            let zk_address = metadata
+                .get_origin_zkaddress()
+                .ok_or(Error::<T>::PrivateTransferZkAddressNotExist)?;
+            ensure!(
+                origin_zk_address == zk_address,
+                Error::<T>::PrivateTransferZkAddressNotMatch
+            );
 
             // TODO: account compare
-            metadata.get_origin_account().ok_or(Error::<T>::PrivateTransferAccountNotExist)?;
+            metadata
+                .get_origin_account()
+                .ok_or(Error::<T>::PrivateTransferAccountNotExist)?;
             // ensure!(origin.clone() == origin_account, Error::<T>::PrivateTransferAccountNotMatch);
 
             Self::post_transaction(Some(origin), vec![], vec![], post, asset_type)
@@ -461,4 +527,3 @@ pub mod pallet {
         PrivateTransferAccountNotMatch,
     }
 }
-
