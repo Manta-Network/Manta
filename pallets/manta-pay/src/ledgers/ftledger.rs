@@ -52,16 +52,7 @@ where
         &self,
         output: config::UtxoAccumulatorOutput,
     ) -> Result<Self::ValidUtxoAccumulatorOutput, Self::Error> {
-        let accumulator_output = fp_encode(output).map_err(SenderLedgerError::FpEncodeError)?;
-        // NOTE: Checking for an empty(zeroed) byte array. This happens for UTXOs with `value = 0`,
-        // for which you dont need a membership proof, but you still need a root (in this case
-        // zeroed).
-        if accumulator_output == [0u8; 32]
-            || UtxoAccumulatorOutputs::<T>::contains_key(accumulator_output)
-        {
-            return Ok(Wrap(output));
-        }
-        Err(SenderLedgerError::InvalidUtxoAccumulatorOutput)
+        self.ledger.has_matching_utxo_accumulator_output(output)
     }
 
     #[inline]
