@@ -47,10 +47,6 @@ Ensure test case get passed.
 3. `yarn performance_test`
    You can pass an optional argument `--address=<some_address>` but the default is set to `ws://127.0.0.1:9921`.
 
-### private transaction tests
-
-todo!()
-
 ## Runtime Tests
 
 - `runtime_upgrade_test`, which is for do runtime upgrade test.
