@@ -36,7 +36,7 @@ pub const PULL_LEDGER_DIFF_ERROR: i32 = 1;
 pub trait PullApi {
     /// Returns the update required to be synchronized with the ledger starting from
     /// `checkpoint`.
-    #[method(name = "zknft_pull_ledger_diff", blocking)]
+    #[method(name = "mantaPay_pull_ledger_diff", blocking)]
     fn pull_ledger_diff(
         &self,
         checkpoint: Checkpoint,

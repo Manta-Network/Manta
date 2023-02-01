@@ -91,16 +91,12 @@ where
 {
     use manta_util::codec::Encode;
     let bytes = proof.to_vec();
-    if bytes.len() > 128 {
-        let u128_bytes = &bytes[8..];
-        let vec = u128_bytes.to_vec();
-        vec.try_into()
-            .map_err(|_e| scale_codec::Error::from(PROOF_ENCODE))
-    } else {
-        bytes
-            .try_into()
-            .map_err(|_e| scale_codec::Error::from(PROOF_ENCODE))
-    }
+    // The first 8 bytes of the serialization are a meaningless header, so we remove them.
+    let u128_bytes = &bytes[8..];
+    u128_bytes
+        .to_vec()
+        .try_into()
+        .map_err(|_e| scale_codec::Error::from(PROOF_ENCODE))
 }
 
 /// Proof decode from byte array
