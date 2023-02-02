@@ -27,7 +27,7 @@ use manta_pay::{
     parameters::load_parameters,
     test,
 };
-use pallet_manta_sbt::types::TransferPost;
+use manta_support::manta_pay::TransferPost;
 use rand_chacha::ChaCha20Rng;
 use scale_codec::Encode;
 use std::{

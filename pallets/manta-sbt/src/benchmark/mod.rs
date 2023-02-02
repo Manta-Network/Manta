@@ -14,22 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{
-    benchmark::precomputed_coins::{
-        PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, TO_PRIVATE, TO_PUBLIC, TO_PUBLIC_INPUT,
-    },
-    types::{asset_value_decode, asset_value_encode, Asset},
-    Call, Config, Event, Pallet, StandardAssetId, TransferPost,
-};
+use crate::{benchmark::precomputed_coins::TO_PRIVATE, Call, Config, Pallet, TransferPost};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
-use frame_support::traits::Get;
+use frame_support::traits::Currency;
 use frame_system::RawOrigin;
-
-use manta_primitives::{
-    assets::{AssetConfig, AssetRegistry, FungibleLedger, TestingDefault},
-    constants::TEST_DEFAULT_ASSET_ED,
-    types::Balance,
-};
 use scale_codec::Decode;
 
 mod precomputed_coins;
@@ -47,50 +35,17 @@ where
     assert_eq!(events[events.len() - 1].event, event.into().into());
 }
 
-/// Init assets for manta-pay
-#[inline]
-pub fn init_asset<T>(owner: &T::AccountId, id: StandardAssetId, value: Balance)
-where
-    T: Config,
-{
-    let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
-    let storage_metadata: <T::AssetConfig as AssetConfig<T>>::StorageMetadata = metadata.into();
-    <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
-        id,
-        storage_metadata,
-        TEST_DEFAULT_ASSET_ED,
-        true,
-    )
-    .expect("Unable to create asset.");
-    let pallet_account: T::AccountId = Pallet::<T>::account_id();
-    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
-        id,
-        owner,
-        value + TEST_DEFAULT_ASSET_ED,
-    )
-    .expect("Unable to mint asset to its new owner.");
-    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
-        id,
-        &pallet_account,
-        TEST_DEFAULT_ASSET_ED,
-    )
-    .expect("Unable to mint existential deposit to pallet account.");
-}
-
 benchmarks! {
     to_private {
         let caller: T::AccountId = whitelisted_caller();
-        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        <T as crate::Config>::Currency::make_free_balance_be(&caller, 1_000_000_000u32.into());
+        Pallet::<T>::reserve_sbt(RawOrigin::Signed(caller.clone()).into())?;
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
-        let asset = mint_post.source(0).unwrap();
-        init_asset::<T>(&caller, Pallet::<T>::id_from_field(asset.id).unwrap(), asset_value_decode(asset.value));
     }: to_private (
         RawOrigin::Signed(caller.clone()),
-        mint_post
-    ) verify {
-        // FIXME: add balance checking
-        assert_last_event::<T, _>(Event::ToPrivate { asset, source: caller });
-    }
+        mint_post,
+        vec![0].try_into().unwrap()
+    )
 }
 
 impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);

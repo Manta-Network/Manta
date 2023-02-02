@@ -124,8 +124,6 @@ impl pallet_uniques::Config for Test {
     type KeyLimit = KeyLimit;
     type ValueLimit = ValueLimit;
     type WeightInfo = ();
-    #[cfg(feature = "runtime-benchmarks")]
-    type Helper = ();
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId32>>;
     type Locker = ();
 }

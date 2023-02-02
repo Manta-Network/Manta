@@ -76,7 +76,7 @@ pub use weights::WeightInfo;
 mod mock;
 
 #[cfg(test)]
-mod test;
+mod tests;
 
 pub mod weights;
 
