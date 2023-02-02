@@ -17,7 +17,6 @@
 use crate::{
     fp_decode,
     mock::{new_test_ext, Balances, ImplementItemId, MantaSBTPallet, Origin as MockOrigin, Test},
-    types::{fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
     Error, ItemIdCounter,
 };
 use frame_support::{assert_noop, assert_ok};
@@ -33,6 +32,9 @@ use manta_pay::{
     },
     parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
     test,
+};
+use manta_support::manta_pay::{
+    fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost,
 };
 
 /// UTXO Accumulator for Building Circuits
@@ -50,6 +52,7 @@ const RANDOMIZED_TESTS_ITERATIONS: usize = 10;
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
 
+/// Turns vec! into BoundedVec
 macro_rules! bvec {
 	($( $x:tt )*) => {
 		vec![$( $x )*].try_into().unwrap()

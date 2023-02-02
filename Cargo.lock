@@ -6582,6 +6582,7 @@ dependencies = [
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",
+ "pallet-manta-support",
  "pallet-tx-pause",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
@@ -6614,6 +6615,7 @@ dependencies = [
  "manta-primitives",
  "manta-util",
  "pallet-balances",
+ "pallet-manta-support",
  "pallet-uniques",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
@@ -6626,6 +6628,31 @@ dependencies = [
  "sp-std",
  "tempfile",
  "xcm",
+]
+
+[[package]]
+name = "pallet-manta-support"
+version = "4.0.1"
+dependencies = [
+ "anyhow",
+ "base64 0.20.0",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "indoc",
+ "manta-accounting",
+ "manta-crypto",
+ "manta-pay",
+ "manta-primitives",
+ "manta-util",
+ "parity-scale-codec",
+ "rand_chacha 0.3.1",
+ "scale-info",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime",
+ "sp-std",
+ "tempfile",
 ]
 
 [[package]]

@@ -24,6 +24,7 @@ use jsonrpsee::{
     proc_macros::rpc,
     types::error::{CallError, ErrorObject},
 };
+use manta_support::manta_pay::DensePullResponse;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block};
@@ -43,6 +44,14 @@ pub trait SBTPullApi {
         max_receivers: u64,
         max_senders: u64,
     ) -> RpcResult<PullResponse>;
+
+    #[method(name = "mantaSBT_dense_pull_ledger_diff", blocking)]
+    fn sbt_dense_pull_ledger_diff(
+        &self,
+        checkpoint: Checkpoint,
+        max_receivers: u64,
+        max_senders: u64,
+    ) -> RpcResult<DensePullResponse>;
 }
 
 /// Pull RPC API Implementation
@@ -86,6 +95,27 @@ where
                 CallError::Custom(ErrorObject::owned(
                     PULL_LEDGER_DIFF_ERROR,
                     "Unable to compute state diff for pull",
+                    Some(format!("{err:?}")),
+                ))
+                .into()
+            })
+    }
+
+    #[inline]
+    fn sbt_dense_pull_ledger_diff(
+        &self,
+        checkpoint: Checkpoint,
+        max_receivers: u64,
+        max_senders: u64,
+    ) -> RpcResult<DensePullResponse> {
+        let api = self.client.runtime_api();
+        let at = BlockId::hash(self.client.info().finalized_hash);
+        api.sbt_pull_ledger_diff(&at, checkpoint.into(), max_receivers, max_senders)
+            .map(Into::into)
+            .map_err(|err| {
+                CallError::Custom(ErrorObject::owned(
+                    PULL_LEDGER_DIFF_ERROR,
+                    "Unable to compute dense state diff for pull",
                     Some(format!("{err:?}")),
                 ))
                 .into()

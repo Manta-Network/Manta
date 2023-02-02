@@ -20,7 +20,7 @@
 //!
 //! ## Overview
 //!
-//! Uses `pallet-uniques` to store NFT data. NFTs are created by the pallet account and Ownership is recorded as an UTXO
+//! Uses `pallet-uniques` to store NFT data. NFTs are created and Ownership is recorded as an UTXO
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
@@ -28,10 +28,6 @@
 
 extern crate alloc;
 
-use crate::types::{
-    asset_value_encode, fp_decode, fp_encode, Asset, AssetValue, FullIncomingNote, ReceiverChunk,
-    SenderChunk, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
-};
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use frame_support::{
@@ -59,6 +55,10 @@ use manta_pay::{
     manta_util::codec::Decode as _,
     parameters::load_transfer_parameters,
 };
+use manta_support::manta_pay::{
+    asset_value_encode, fp_decode, fp_encode, Asset, AssetValue, FullIncomingNote, ReceiverChunk,
+    SenderChunk, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
+};
 use manta_util::{
     codec::{self, Encode},
     into_array_unchecked, Array,
@@ -68,9 +68,8 @@ use sp_runtime::{
     ArithmeticError,
 };
 
-pub use crate::types::{Checkpoint, RawCheckpoint};
+pub use manta_support::manta_pay::{Checkpoint, PullResponse, RawCheckpoint};
 pub use pallet::*;
-pub use types::PullResponse;
 pub use weights::WeightInfo;
 
 #[cfg(test)]
@@ -79,7 +78,6 @@ mod mock;
 #[cfg(test)]
 mod test;
 
-pub mod types;
 pub mod weights;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -128,7 +126,7 @@ pub mod pallet {
         /// SBT CollectionId
         type PalletCollectionId: Get<Self::CollectionId>;
 
-        /// Returns SBT serial number and increments value
+        /// Converts to ItemId type
         type ConvertItemId: ItemIdConvert<Self::ItemId>;
 
         /// The currency mechanism.
@@ -141,6 +139,7 @@ pub mod pallet {
         #[pallet::constant]
         type MintsPerReserve: Get<u16>;
 
+        /// Price to reserve
         type ReservePrice: Get<BalanceOf<Self>>;
     }
 

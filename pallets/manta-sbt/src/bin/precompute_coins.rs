@@ -42,7 +42,7 @@ type UtxoAccumulator =
 
 ///
 #[inline]
-fn sample_to_private<R>(
+fn to_private_example<R>(
     proving_context: &ProvingContext,
     parameters: &Parameters,
     utxo_accumulator: &mut UtxoAccumulator,
@@ -102,12 +102,12 @@ fn main() -> Result<()> {
     let mut utxo_accumulator = UtxoAccumulator::new(utxo_accumulator_model);
     let asset_id = 0.into();
 
-    let to_private = sample_to_private(
+    let to_private = to_private_example(
         &proving_context.to_private,
         &parameters,
         &mut utxo_accumulator,
         asset_id,
-        10_000,
+        1,
         &mut rng,
     );
 

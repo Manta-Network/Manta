@@ -57,11 +57,6 @@
 
 extern crate alloc;
 
-use crate::types::{
-    asset_value_decode, asset_value_encode, fp_decode, fp_encode, Asset, AssetValue,
-    FullIncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk, SenderChunk, TransferPost,
-    Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
-};
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use frame_support::{traits::tokens::ExistenceRequirement, transactional, PalletId};
@@ -82,14 +77,18 @@ use manta_pay::{
     parameters::load_transfer_parameters,
 };
 use manta_primitives::assets::{self, AssetConfig, FungibleLedger as _};
+use manta_support::manta_pay::{
+    asset_value_decode, asset_value_encode, fp_decode, fp_encode, Asset, AssetValue,
+    FullIncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk, SenderChunk, TransferPost,
+    Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
+};
 use manta_util::{
     codec::{self, Encode},
     into_array_unchecked, Array,
 };
 
-pub use crate::types::{Checkpoint, RawCheckpoint};
+pub use manta_support::manta_pay::{Checkpoint, PullResponse, RawCheckpoint};
 pub use pallet::*;
-pub use types::PullResponse;
 pub use weights::WeightInfo;
 
 #[cfg(test)]
@@ -98,7 +97,6 @@ mod mock;
 #[cfg(test)]
 mod test;
 
-pub mod types;
 pub mod weights;
 
 #[cfg(feature = "runtime-benchmarks")]

@@ -291,7 +291,7 @@ impl Contains<Call> for BaseFilter {
                 | orml_xtokens::Call::transfer_multicurrencies  {..})
             | Call::MantaPay(_)
             | Call::Preimage(_)
-            | Call::MantaSBT(_)
+            | Call::MantaSbt(_)
             | Call::TransactionPause(_)
             | Call::Utility(_) => true,
 
@@ -797,7 +797,7 @@ construct_runtime!(
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
         Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 48,
-        MantaSBT: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>, Config<T>} = 49,
+        MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>, Config<T>} = 49,
     }
 );
 
@@ -1015,7 +1015,7 @@ impl_runtime_apis! {
             max_receiver: u64,
             max_sender: u64
         ) -> pallet_manta_sbt::PullResponse {
-            MantaSBT::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+            MantaSbt::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
     }
 

@@ -20,7 +20,6 @@ use crate::{
         new_test_ext, MantaAssetConfig, MantaAssetRegistry, MantaPay, Origin as MockOrigin, Test,
         TransactionPause,
     },
-    types::{fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
     Error, FungibleLedger, ReceiverLedgerError, StandardAssetId, TransferLedgerError,
     TransferPostError, VerifyingContextError,
 };
@@ -40,6 +39,9 @@ use manta_pay::{
     manta_accounting::transfer::receiver::ReceiverPostError,
     parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
     test,
+};
+use manta_support::manta_pay::{
+    fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost,
 };
 
 use manta_primitives::{
@@ -605,7 +607,7 @@ fn pull_ledger_diff_should_work() {
         assert!(!runtime_pull_response.should_continue);
 
         // convert runtime response into native response
-        let dense_pull_response: crate::types::DensePullResponse =
+        let dense_pull_response: manta_support::manta_pay::DensePullResponse =
             runtime_pull_response.clone().into();
 
         let dense_receivers = base64::decode(dense_pull_response.receivers).unwrap();
