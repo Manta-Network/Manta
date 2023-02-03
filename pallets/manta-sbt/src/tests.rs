@@ -15,9 +15,8 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    fp_decode,
-    mock::{new_test_ext, Balances, ImplementItemId, MantaSBTPallet, Origin as MockOrigin, Test},
-    Error, ItemIdCounter, ReservedIds,
+    mock::{new_test_ext, Balances, MantaSBTPallet, Origin as MockOrigin, Test},
+    Error, ReservedIds,
 };
 use frame_support::{assert_noop, assert_ok};
 use manta_crypto::{
@@ -34,7 +33,8 @@ use manta_pay::{
     test,
 };
 use manta_support::manta_pay::{
-    fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost,
+    field_from_id, fp_decode, fp_encode, id_from_field, AssetId, AssetValue,
+    TransferPost as PalletTransferPost,
 };
 
 /// UTXO Accumulator for Building Circuits
@@ -77,7 +77,7 @@ where
         &PROVING_CONTEXT.to_private,
         &PARAMETERS,
         &mut utxo_accumulator,
-        MantaSBTPallet::id_from_field(asset_id).unwrap().into(),
+        id_from_field(asset_id).unwrap().into(),
         value,
         rng,
     ))
@@ -102,12 +102,13 @@ fn to_private_should_work() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         initialize_test();
-        let value = rng.gen();
-        let id = MantaSBTPallet::field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
+        let value = 1;
+        let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
 
+        let post = sample_to_private(id, value, &mut rng);
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
-            sample_to_private(id, value, &mut rng),
+            post,
             bvec![0]
         ));
     });
@@ -118,8 +119,8 @@ fn private_transfer_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         initialize_test();
-        let value = rng.gen();
-        let id = MantaSBTPallet::field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
+        let value = 2;
+        let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
 
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
@@ -132,17 +133,14 @@ fn private_transfer_fails() {
             &PROVING_CONTEXT,
             &PARAMETERS,
             &mut utxo_accumulator,
-            MantaSBTPallet::id_from_field(id).unwrap().into(),
+            id_from_field(id).unwrap().into(),
             [value / 2, value / 2],
             &mut rng,
         );
 
+        let post = PalletTransferPost::try_from(private_transfer).unwrap();
         assert_noop!(
-            MantaSBTPallet::to_private(
-                MockOrigin::signed(ALICE),
-                PalletTransferPost::try_from(private_transfer).unwrap(),
-                bvec![]
-            ),
+            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), post, bvec![]),
             Error::<Test>::NoSenderLedger
         );
     });
@@ -153,8 +151,8 @@ fn to_public_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         initialize_test();
-        let value = rng.gen();
-        let id = MantaSBTPallet::field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
+        let value = 2;
+        let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
 
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
@@ -167,17 +165,14 @@ fn to_public_fails() {
             &PROVING_CONTEXT,
             &PARAMETERS,
             &mut utxo_accumulator,
-            MantaSBTPallet::id_from_field(id).unwrap().into(),
+            id_from_field(id).unwrap().into(),
             [value / 2, value / 2],
             &mut rng,
         );
 
+        let post = PalletTransferPost::try_from(private_transfer).unwrap();
         assert_noop!(
-            MantaSBTPallet::to_private(
-                MockOrigin::signed(ALICE),
-                PalletTransferPost::try_from(private_transfer).unwrap(),
-                bvec![]
-            ),
+            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), post, bvec![]),
             Error::<Test>::NoSenderLedger
         );
     });
@@ -189,7 +184,7 @@ fn wrong_asset_id_fails() {
 
     new_test_ext().execute_with(|| {
         initialize_test();
-        let asset_id = MantaSBTPallet::field_from_id(10);
+        let asset_id = field_from_id(10);
         let value = 1;
 
         assert_noop!(
@@ -208,14 +203,14 @@ fn check_number_conversions() {
     let mut rng = OsRng;
 
     let start = rng.gen();
-    let expected = MantaSBTPallet::field_from_id(start);
+    let expected = field_from_id(start);
 
     let fp = Fp::<ConstraintField>::from(start);
     let encoded = fp_encode(fp).unwrap();
 
     assert_eq!(expected, encoded);
 
-    let id_from_field = MantaSBTPallet::id_from_field(encoded).unwrap();
+    let id_from_field = id_from_field(encoded).unwrap();
     let decoded: Fp<ConstraintField> = fp_decode(expected.to_vec()).unwrap();
     assert_eq!(start, id_from_field);
     assert_eq!(fp, decoded);

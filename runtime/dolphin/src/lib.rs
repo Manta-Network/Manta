@@ -59,7 +59,7 @@ use manta_primitives::{
     },
     types::{AccountId, Balance, BlockNumber, DolphinAssetId, Hash, Header, Index, Signature},
 };
-use pallet_manta_sbt::{ItemIdConvert, SBTAssetId};
+use pallet_manta_sbt::ItemIdConvert;
 use runtime_common::{
     prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
 };
@@ -715,7 +715,7 @@ impl manta_collator_selection::Config for Runtime {
 pub struct ConvertItemId;
 
 impl ItemIdConvert<DolphinAssetId> for ConvertItemId {
-    fn asset_id_to_item_id(asset_id: SBTAssetId) -> DolphinAssetId {
+    fn asset_id_to_item_id(asset_id: DolphinAssetId) -> DolphinAssetId {
         asset_id
     }
 }
@@ -732,6 +732,8 @@ impl pallet_manta_sbt::Config for Runtime {
     type Currency = Balances;
     type MintsPerReserve = ConstU16<5>;
     type ReservePrice = ConstU128<DOL>;
+    type Ledger = MantaPay;
+    type IncrementAssetId = AssetManager;
     type WeightInfo = ();
 }
 
@@ -1007,16 +1009,6 @@ impl_runtime_apis! {
             max_sender: u64
         ) -> pallet_manta_pay::PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
-        }
-    }
-
-    impl pallet_manta_sbt::runtime::SBTPullLedgerDiffApi<Block> for Runtime {
-        fn sbt_pull_ledger_diff(
-            checkpoint: pallet_manta_sbt::RawCheckpoint,
-            max_receiver: u64,
-            max_sender: u64
-        ) -> pallet_manta_sbt::PullResponse {
-            MantaSbt::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
     }
 

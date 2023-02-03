@@ -59,7 +59,10 @@ extern crate alloc;
 
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
-use frame_support::{traits::tokens::ExistenceRequirement, transactional, PalletId};
+use frame_support::{
+    pallet_prelude::*, traits::tokens::ExistenceRequirement, transactional, PalletId,
+};
+use frame_system::pallet_prelude::*;
 use manta_pay::{
     config::{self, utxo::MerkleTreeConfiguration},
     manta_accounting::transfer::{
@@ -78,14 +81,11 @@ use manta_pay::{
 };
 use manta_primitives::assets::{self, AssetConfig, FungibleLedger as _};
 use manta_support::manta_pay::{
-    asset_value_decode, asset_value_encode, fp_decode, fp_encode, Asset, AssetValue,
-    FullIncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk, SenderChunk, TransferPost,
-    Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
+    asset_value_decode, asset_value_encode, fp_decode, fp_encode, id_from_field, Asset, AssetType,
+    AssetValue, FullIncomingNote, NullifierCommitment, OutgoingNote, PostToLedger, ReceiverChunk,
+    SenderChunk, StandardAssetId, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
 };
-use manta_util::{
-    codec::{self, Encode},
-    into_array_unchecked, Array,
-};
+use manta_util::codec::{self, Encode};
 
 pub use manta_support::manta_pay::{Checkpoint, PullResponse, RawCheckpoint};
 pub use pallet::*;
@@ -108,9 +108,6 @@ pub mod rpc;
 #[cfg(feature = "runtime")]
 pub mod runtime;
 
-/// Standard Asset Id
-pub type StandardAssetId = u128;
-
 /// Fungible Ledger Error
 pub type FungibleLedgerError = assets::FungibleLedgerError<StandardAssetId, AssetValue>;
 
@@ -118,8 +115,6 @@ pub type FungibleLedgerError = assets::FungibleLedgerError<StandardAssetId, Asse
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::{pallet_prelude::*, traits::StorageVersion};
-    use frame_system::pallet_prelude::*;
     use sp_runtime::traits::AccountIdConversion;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -229,7 +224,7 @@ pub mod pallet {
                     Error::<T>::ZeroTransfer
                 );
             }
-            Self::post_transaction(None, vec![origin], vec![], post)
+            Self::post_transaction(None, vec![origin], vec![], post, AssetType::FT)
         }
 
         /// Transforms some private assets into public ones using `post`, depositing the public
@@ -249,7 +244,7 @@ pub mod pallet {
             for sink in post.sinks.iter() {
                 ensure!(asset_value_decode(*sink) > 0u128, Error::<T>::ZeroTransfer);
             }
-            Self::post_transaction(None, vec![], vec![origin], post)
+            Self::post_transaction(None, vec![], vec![origin], post, AssetType::FT)
         }
 
         /// Transfers private assets encoded in `post`.
@@ -273,7 +268,7 @@ pub mod pallet {
                     && post.sinks.is_empty(),
                 Error::<T>::InvalidShape
             );
-            Self::post_transaction(Some(origin), vec![], vec![], post)
+            Self::post_transaction(Some(origin), vec![], vec![], post, AssetType::FT)
         }
 
         /// Transfers public `asset` from `origin` to the `sink` account.
@@ -287,7 +282,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
             FungibleLedger::<T>::transfer(
-                Self::id_from_field(asset.id).ok_or(Error::<T>::InvalidAssetId)?,
+                id_from_field(asset.id).ok_or(Error::<T>::InvalidAssetId)?,
                 &origin,
                 &sink,
                 asset_value_decode(asset.value),
@@ -305,7 +300,7 @@ pub mod pallet {
 
     /// Event
     #[pallet::event]
-    #[pallet::generate_deposit(fn deposit_event)]
+    #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// To Private Event
         ToPrivate {
@@ -454,6 +449,9 @@ pub mod pallet {
 
         /// Encode Error
         EncodeError,
+
+        /// No Sender Ledger
+        NoSenderLedger,
     }
 
     impl<T> From<InvalidAuthorizationSignature> for Error<T>
@@ -727,48 +725,53 @@ pub mod pallet {
         pub fn account_id() -> T::AccountId {
             T::PalletId::get().into_account_truncating()
         }
+    }
+}
 
-        /// Posts the transaction encoded in `post` to the ledger, using `sources` and `sinks` as
-        /// the public deposit and public withdraw accounts respectively.
-        #[inline]
-        fn post_transaction(
-            origin: Option<T::AccountId>,
-            sources: Vec<T::AccountId>,
-            sinks: Vec<T::AccountId>,
-            post: TransferPost,
-        ) -> DispatchResultWithPostInfo {
-            Self::deposit_event(
-                config::TransferPost::try_from(post)
-                    .map_err(|_| Error::<T>::InvalidSerializedForm)?
-                    .post(
-                        &load_transfer_parameters(),
-                        &mut Ledger(PhantomData),
-                        &(),
-                        sources,
-                        sinks,
-                    )
-                    .map_err(Error::<T>::from)?
-                    .convert(origin),
-            );
-            Ok(().into())
-        }
-
-        ///
-        #[inline]
-        pub fn id_from_field(id: [u8; 32]) -> Option<StandardAssetId> {
-            if 0u128.to_le_bytes() == id[16..32] {
-                Some(u128::from_le_bytes(
-                    Array::from_iter(id[0..16].iter().copied()).into(),
-                ))
-            } else {
-                None
+impl<T: Config> PostToLedger<T::AccountId> for Pallet<T> {
+    /// Posts the transaction encoded in `post` to the ledger, using `sources` and `sinks` as
+    /// the public deposit and public withdraw accounts respectively.
+    #[inline]
+    fn post_transaction(
+        origin: Option<T::AccountId>,
+        sources: Vec<T::AccountId>,
+        sinks: Vec<T::AccountId>,
+        post: TransferPost,
+        asset_type: AssetType,
+    ) -> DispatchResultWithPostInfo {
+        match asset_type {
+            AssetType::FT => {
+                Self::deposit_event(
+                    config::TransferPost::try_from(post)
+                        .map_err(|_| Error::<T>::InvalidSerializedForm)?
+                        .post(
+                            &load_transfer_parameters(),
+                            &mut FTLedger(PhantomData),
+                            &(),
+                            sources,
+                            sinks,
+                        )
+                        .map_err(Error::<T>::from)?
+                        .convert(origin),
+                );
+                Ok(().into())
             }
-        }
-
-        ///
-        #[inline]
-        pub fn field_from_id(id: StandardAssetId) -> [u8; 32] {
-            into_array_unchecked([id.to_le_bytes(), [0; 16]].concat())
+            AssetType::SBT => {
+                Self::deposit_event(
+                    config::TransferPost::try_from(post)
+                        .map_err(|_| Error::<T>::InvalidSerializedForm)?
+                        .post(
+                            &load_transfer_parameters(),
+                            &mut SBTLedger(PhantomData),
+                            &(),
+                            sources,
+                            sinks,
+                        )
+                        .map_err(Error::<T>::from)?
+                        .convert(origin),
+                );
+                Ok(().into())
+            }
         }
     }
 }
@@ -816,8 +819,8 @@ where
     }
 }
 
-/// Ledger
-struct Ledger<T>(PhantomData<T>)
+/// Fungible Token Ledger
+struct FTLedger<T>(PhantomData<T>)
 where
     T: Config;
 
@@ -860,6 +863,11 @@ pub enum SenderLedgerError {
     ///
     /// The sender was not constructed under the current state of the UTXO accumulator.
     InvalidUtxoAccumulatorOutput,
+
+    /// No Sender Ledger
+    ///
+    /// Any attempts to spend UTXO will fail, used for SBT
+    NoSenderLedger,
 }
 
 impl From<SenderLedgerError> for SenderPostError<SenderLedgerError> {
@@ -868,6 +876,7 @@ impl From<SenderLedgerError> for SenderPostError<SenderLedgerError> {
         match value {
             SenderLedgerError::AssetSpent => Self::AssetSpent,
             SenderLedgerError::InvalidUtxoAccumulatorOutput => Self::InvalidUtxoAccumulatorOutput,
+            SenderLedgerError::NoSenderLedger => Self::AssetSpent,
             SenderLedgerError::FpEncodeError(err) => {
                 Self::UnexpectedError(SenderLedgerError::FpEncodeError(err))
             }
@@ -878,7 +887,7 @@ impl From<SenderLedgerError> for SenderPostError<SenderLedgerError> {
     }
 }
 
-impl<T> SenderLedger<config::Parameters> for Ledger<T>
+impl<T> SenderLedger<config::Parameters> for FTLedger<T>
 where
     T: Config,
 {
@@ -1025,7 +1034,7 @@ where
     }
 }
 
-impl<T> ReceiverLedger<config::Parameters> for Ledger<T>
+impl<T> ReceiverLedger<config::Parameters> for FTLedger<T>
 where
     T: Config,
 {
@@ -1210,7 +1219,7 @@ where
     }
 }
 
-impl<T> TransferLedger<config::Config> for Ledger<T>
+impl<T> TransferLedger<config::Config> for FTLedger<T>
 where
     T: Config,
 {
@@ -1234,12 +1243,10 @@ where
         sources
             .map(move |(account_id, withdraw)| {
                 FungibleLedger::<T>::can_withdraw(
-                    Pallet::<T>::id_from_field(fp_encode(*asset_id).map_err(|_e| {
-                        InvalidSourceAccount {
-                            account_id: account_id.clone(),
-                            asset_id: *asset_id,
-                            withdraw,
-                        }
+                    id_from_field(fp_encode(*asset_id).map_err(|_e| InvalidSourceAccount {
+                        account_id: account_id.clone(),
+                        asset_id: *asset_id,
+                        withdraw,
                     })?)
                     .ok_or(InvalidSourceAccount {
                         account_id: account_id.clone(),
@@ -1274,12 +1281,10 @@ where
         sinks
             .map(move |(account_id, deposit)| {
                 FungibleLedger::<T>::can_deposit(
-                    Pallet::<T>::id_from_field(fp_encode(*asset_id).map_err(|_e| {
-                        InvalidSinkAccount {
-                            account_id: account_id.clone(),
-                            asset_id: *asset_id,
-                            deposit,
-                        }
+                    id_from_field(fp_encode(*asset_id).map_err(|_e| InvalidSinkAccount {
+                        account_id: account_id.clone(),
+                        asset_id: *asset_id,
+                        deposit,
                     })?)
                     .ok_or(InvalidSinkAccount {
                         account_id: account_id.clone(),
@@ -1373,10 +1378,9 @@ where
         proof: Self::ValidProof,
     ) -> Result<(), TransferLedgerError<T>> {
         let _ = (proof, super_key);
-        let asset_id_type = Pallet::<T>::id_from_field(
-            fp_encode(asset_id).map_err(TransferLedgerError::FpEncodeError)?,
-        )
-        .ok_or(TransferLedgerError::UnknownAsset)?;
+        let asset_id_type =
+            id_from_field(fp_encode(asset_id).map_err(TransferLedgerError::FpEncodeError)?)
+                .ok_or(TransferLedgerError::UnknownAsset)?;
         for WrapPair(account_id, withdraw) in sources {
             FungibleLedger::<T>::transfer(
                 asset_id_type,
@@ -1397,6 +1401,278 @@ where
             )
             .map_err(TransferLedgerError::FungibleLedgerError)?;
         }
+        Ok(())
+    }
+}
+
+struct SBTLedger<T>(PhantomData<T>)
+where
+    T: Config;
+
+impl<T> SenderLedger<config::Parameters> for SBTLedger<T>
+where
+    T: Config,
+{
+    type SuperPostingKey = (Wrap<()>, ());
+    type ValidUtxoAccumulatorOutput = Wrap<config::UtxoAccumulatorOutput>;
+    type ValidNullifier = Wrap<config::Nullifier>;
+    type Error = SenderLedgerError;
+
+    #[inline]
+    fn is_unspent(
+        &self,
+        nullifier: config::Nullifier,
+    ) -> Result<Self::ValidNullifier, Self::Error> {
+        if NullifierCommitmentSet::<T>::contains_key(
+            fp_encode(nullifier.nullifier.commitment).map_err(SenderLedgerError::FpEncodeError)?,
+        ) {
+            Err(SenderLedgerError::AssetSpent)
+        } else {
+            Ok(Wrap(nullifier))
+        }
+    }
+
+    #[inline]
+    fn has_matching_utxo_accumulator_output(
+        &self,
+        output: config::UtxoAccumulatorOutput,
+    ) -> Result<Self::ValidUtxoAccumulatorOutput, Self::Error> {
+        let accumulator_output = fp_encode(output).map_err(SenderLedgerError::FpEncodeError)?;
+        // NOTE: Checking for an empty(zeroed) byte array. This happens for UTXOs with `value = 0`,
+        // for which you dont need a membership proof, but you still need a root (in this case
+        // zeroed).
+        if accumulator_output == [0u8; 32]
+            || UtxoAccumulatorOutputs::<T>::contains_key(accumulator_output)
+        {
+            return Ok(Wrap(output));
+        }
+        Err(SenderLedgerError::InvalidUtxoAccumulatorOutput)
+    }
+
+    #[inline]
+    fn spend_all<I>(
+        &mut self,
+        _super_key: &Self::SuperPostingKey,
+        _iter: I,
+    ) -> Result<(), Self::Error>
+    where
+        I: IntoIterator<Item = (Self::ValidUtxoAccumulatorOutput, Self::ValidNullifier)>,
+    {
+        Ok(())
+    }
+}
+
+impl<T> ReceiverLedger<config::Parameters> for SBTLedger<T>
+where
+    T: Config,
+{
+    type SuperPostingKey = (Wrap<()>, ());
+    type ValidUtxo = Wrap<config::Utxo>;
+    type Error = ReceiverLedgerError<T>;
+
+    #[inline]
+    fn is_not_registered(&self, utxo: config::Utxo) -> Result<Self::ValidUtxo, Self::Error> {
+        if UtxoSet::<T>::contains_key(
+            Utxo::try_from(utxo).map_err(ReceiverLedgerError::UtxoDecodeError)?,
+        ) {
+            Err(ReceiverLedgerError::AssetRegistered)
+        } else {
+            Ok(Wrap(utxo))
+        }
+    }
+
+    #[inline]
+    fn register_all<I>(
+        &mut self,
+        super_key: &Self::SuperPostingKey,
+        iter: I,
+    ) -> Result<(), Self::Error>
+    where
+        I: IntoIterator<Item = (Self::ValidUtxo, config::Note)>,
+    {
+        let _ = super_key;
+        let utxo_accumulator_model = config::UtxoAccumulatorModel::decode(
+            manta_parameters::pay::parameters::UtxoAccumulatorModel::get()
+                .ok_or(ReceiverLedgerError::ChecksumError)?,
+        )
+        .map_err(ReceiverLedgerError::MTParametersDecodeError)?;
+        let utxo_accumulator_item_hash = config::utxo::UtxoAccumulatorItemHash::decode(
+            manta_parameters::pay::parameters::UtxoAccumulatorItemHash::get()
+                .ok_or(ReceiverLedgerError::ChecksumError)?,
+        )
+        .map_err(ReceiverLedgerError::UtxoAccumulatorItemHashDecodeError)?;
+        let mut shard_indices = iter
+            .into_iter()
+            .map(|(utxo, note)| {
+                (
+                    MerkleTreeConfiguration::tree_index(
+                        &utxo.0.item_hash(&utxo_accumulator_item_hash, &mut ()),
+                    ),
+                    utxo.0,
+                    note,
+                )
+            })
+            .collect::<Vec<_>>();
+        shard_indices.sort_by_key(|(s, _, _)| *s);
+        let mut shard_insertions = Vec::<(_, Vec<_>)>::new();
+        for (shard_index, utxo, note) in shard_indices {
+            match shard_insertions.last_mut() {
+                Some((index, pairs)) if shard_index == *index => pairs.push((utxo, note)),
+                _ => shard_insertions.push((shard_index, vec![(utxo, note)])),
+            }
+        }
+        for (shard_index, insertions) in shard_insertions {
+            let mut tree = ShardTrees::<T>::get(shard_index);
+            let cloned_tree = tree.clone();
+            let mut next_root = Option::<config::UtxoAccumulatorOutput>::None;
+            let mut current_path = cloned_tree
+                .current_path
+                .try_into()
+                .map_err(ReceiverLedgerError::PathDecodeError)?;
+            let mut leaf_digest = tree
+                .leaf_digest
+                .map(|x| fp_decode(x.to_vec()).map_err(ReceiverLedgerError::FpDecodeError))
+                .map_or(Ok(None), |r| r.map(Some))?;
+            for (utxo, note) in insertions {
+                next_root = Some(
+                    merkle_tree::single_path::raw::insert(
+                        &utxo_accumulator_model,
+                        &mut leaf_digest,
+                        &mut current_path,
+                        utxo.item_hash(&utxo_accumulator_item_hash, &mut ()),
+                    )
+                    .ok_or(ReceiverLedgerError::MerkleTreeCapacityError)?,
+                );
+                let next_index = current_path.leaf_index().0 as u64;
+                let utxo = Utxo::try_from(utxo).map_err(ReceiverLedgerError::UtxoDecodeError)?;
+                UtxoSet::<T>::insert(utxo, ());
+                Shards::<T>::insert(
+                    shard_index,
+                    next_index,
+                    (
+                        utxo,
+                        FullIncomingNote::try_from(note)
+                            .map_err(ReceiverLedgerError::FullNoteDecodeError)?,
+                    ),
+                );
+            }
+            tree.current_path = current_path
+                .try_into()
+                .map_err(ReceiverLedgerError::PathDecodeError)?;
+            tree.leaf_digest = leaf_digest
+                .map(|x| fp_encode(x).map_err(ReceiverLedgerError::FpEncodeError))
+                .map_or(Ok(None), |r| r.map(Some))?;
+            if let Some(next_root) = next_root {
+                ShardTrees::<T>::insert(shard_index, tree);
+                UtxoAccumulatorOutputs::<T>::insert(
+                    fp_encode(next_root).map_err(ReceiverLedgerError::FpEncodeError)?,
+                    (),
+                );
+            }
+        }
+        Ok(())
+    }
+}
+
+impl<T> TransferLedger<config::Config> for SBTLedger<T>
+where
+    T: Config,
+{
+    type SuperPostingKey = ();
+    type AccountId = T::AccountId;
+    type Event = PreprocessedEvent<T>;
+    type ValidSourceAccount = WrapPair<Self::AccountId, AssetValue>;
+    type ValidSinkAccount = WrapPair<Self::AccountId, AssetValue>;
+    type ValidProof = Wrap<()>;
+    type Error = TransferLedgerError<T>;
+
+    #[inline]
+    fn check_source_accounts<I>(
+        &self,
+        _asset_id: &config::AssetId,
+        sources: I,
+    ) -> Result<Vec<Self::ValidSourceAccount>, InvalidSourceAccount<config::Config, Self::AccountId>>
+    where
+        I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
+    {
+        Ok(sources
+            .map(move |(account_id, withdraw)| WrapPair(account_id, withdraw))
+            .collect())
+    }
+
+    #[inline]
+    fn check_sink_accounts<I>(
+        &self,
+        _asset_id: &config::AssetId,
+        _sinks: I,
+    ) -> Result<Vec<Self::ValidSinkAccount>, InvalidSinkAccount<config::Config, Self::AccountId>>
+    where
+        I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
+    {
+        // No Sinks for SBT
+        Ok(Vec::new())
+    }
+
+    #[inline]
+    fn is_valid(
+        &self,
+        posting_key: TransferPostingKeyRef<config::Config, Self>,
+    ) -> Result<(Self::ValidProof, Self::Event), TransferLedgerError<T>> {
+        let transfer_shape = TransferShape::from_posting_key_ref(&posting_key);
+        let (mut verifying_context, event) =
+            match transfer_shape.ok_or(TransferLedgerError::InvalidTransferShape)? {
+                TransferShape::ToPrivate => {
+                    if let Some(asset_id) = posting_key.asset_id.or(None) {
+                        let asset_id =
+                            fp_encode(asset_id).map_err(TransferLedgerError::FpEncodeError)?;
+                        (
+                            manta_parameters::pay::verifying::ToPrivate::get()
+                                .ok_or(TransferLedgerError::ChecksumError)?,
+                            PreprocessedEvent::<T>::ToPrivate {
+                                asset: Asset::new(
+                                    asset_id,
+                                    asset_value_encode(posting_key.sources[0].1),
+                                ),
+                                source: posting_key.sources[0].0.clone(),
+                            },
+                        )
+                    } else {
+                        return Err(TransferLedgerError::UnknownAsset);
+                    }
+                }
+                TransferShape::PrivateTransfer => {
+                    return Err(TransferLedgerError::SenderLedgerError(
+                        SenderLedgerError::NoSenderLedger,
+                    ))
+                }
+                TransferShape::ToPublic => {
+                    return Err(TransferLedgerError::SenderLedgerError(
+                        SenderLedgerError::NoSenderLedger,
+                    ))
+                }
+            };
+        let verification = posting_key
+            .has_valid_proof(
+                &config::VerifyingContext::decode(&mut verifying_context)
+                    .map_err(TransferLedgerError::VerifyingContextDecodeError)?,
+            )
+            .map_err(TransferLedgerError::ProofSystemError)?;
+        if verification {
+            Ok((Wrap(()), event))
+        } else {
+            Err(TransferLedgerError::InvalidProof)
+        }
+    }
+
+    #[inline]
+    fn update_public_balances(
+        &mut self,
+        _super_key: &TransferLedgerSuperPostingKey<config::Config, Self>,
+        _asset_id: config::AssetId,
+        _sources: Vec<SourcePostingKey<config::Config, Self>>,
+        _sinks: Vec<SinkPostingKey<config::Config, Self>>,
+        _proof: Self::ValidProof,
+    ) -> Result<(), TransferLedgerError<T>> {
         Ok(())
     }
 }

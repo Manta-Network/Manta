@@ -21,10 +21,6 @@ use pallet_manta_pay::{
     rpc::{Pull, PullApiServer},
     runtime::PullLedgerDiffApi,
 };
-use pallet_manta_sbt::{
-    rpc::{SBTPull, SBTPullApiServer},
-    runtime::SBTPullLedgerDiffApi,
-};
 
 /// Instantiate all RPC extensions for dolphin.
 pub fn create_dolphin_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
@@ -40,7 +36,6 @@ where
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
     C::Api: BlockBuilder<Block>,
     C::Api: PullLedgerDiffApi<Block>,
-    C::Api: SBTPullLedgerDiffApi<Block>,
     P: TransactionPool + Sync + Send + 'static,
 {
     use frame_rpc_system::{System, SystemApiServer};
@@ -63,11 +58,6 @@ where
     let manta_pay_rpc: jsonrpsee::RpcModule<Pull<Block, C>> = Pull::new(client.clone()).into_rpc();
     module
         .merge(manta_pay_rpc)
-        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
-
-    let manta_sbt_rpc: jsonrpsee::RpcModule<SBTPull<Block, C>> = SBTPull::new(client).into_rpc();
-    module
-        .merge(manta_sbt_rpc)
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
     Ok(module)

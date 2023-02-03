@@ -6142,6 +6142,7 @@ dependencies = [
  "orml-traits",
  "pallet-assets",
  "pallet-balances",
+ "pallet-manta-support",
  "parity-scale-codec",
  "scale-info",
  "sp-arithmetic",
@@ -6599,7 +6600,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-sbt"
-version = "0.4.0"
+version = "4.0.1"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -6607,15 +6608,18 @@ dependencies = [
  "frame-support",
  "frame-system",
  "indoc",
- "jsonrpsee",
  "lazy_static",
  "manta-accounting",
  "manta-crypto",
  "manta-pay",
  "manta-primitives",
  "manta-util",
+ "pallet-asset-manager",
+ "pallet-assets",
  "pallet-balances",
+ "pallet-manta-pay",
  "pallet-manta-support",
+ "pallet-tx-pause",
  "pallet-uniques",
  "parity-scale-codec",
  "rand_chacha 0.3.1",

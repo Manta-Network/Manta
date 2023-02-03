@@ -54,6 +54,7 @@ pub mod pallet {
         self, AssetConfig, AssetIdLocationMap, AssetIdType, AssetMetadata, AssetRegistry,
         FungibleLedger, LocationType,
     };
+    use manta_support::manta_pay::IncrementAssetId;
     use orml_traits::GetByKey;
     use sp_runtime::{
         traits::{
@@ -553,10 +554,7 @@ pub mod pallet {
         }
     }
 
-    impl<T> Pallet<T>
-    where
-        T: Config,
-    {
+    impl<T: Config> IncrementAssetId<T::AssetId> for Pallet<T> {
         /// Returns and increments the [`NextAssetId`] by one.
         #[inline]
         fn next_asset_id_and_increment() -> Result<T::AssetId, DispatchError> {
@@ -568,7 +566,12 @@ pub mod pallet {
                 Ok(id)
             })
         }
+    }
 
+    impl<T> Pallet<T>
+    where
+        T: Config,
+    {
         /// Returns the account identifier of the [`AssetManager`] pallet.
         #[inline]
         pub fn account_id() -> T::AccountId {

@@ -17,6 +17,7 @@
 //! Type Definitions for Manta Pay
 
 use alloc::{boxed::Box, vec::Vec};
+use frame_support::pallet_prelude::*;
 use manta_crypto::merkle_tree;
 use manta_pay::{
     config::{
@@ -44,6 +45,28 @@ use manta_crypto::arkworks::{
     groth16::Proof as CryptoProof,
 };
 pub use manta_pay::config::utxo::Checkpoint;
+use manta_util::into_array_unchecked;
+
+/// Standard Asset Id
+pub type StandardAssetId = u128;
+
+///
+#[inline]
+pub fn id_from_field(id: [u8; 32]) -> Option<StandardAssetId> {
+    if 0u128.to_le_bytes() == id[16..32] {
+        Some(u128::from_le_bytes(
+            Array::from_iter(id[0..16].iter().copied()).into(),
+        ))
+    } else {
+        None
+    }
+}
+
+///
+#[inline]
+pub fn field_from_id(id: StandardAssetId) -> [u8; 32] {
+    into_array_unchecked([id.to_le_bytes(), [0; 16]].concat())
+}
 
 /// Decodes the `bytes` array of the given length `N` into the SCALE decodable type `T` returning a
 /// blanket error if decoding fails.
@@ -992,4 +1015,24 @@ impl From<RawCheckpoint> for Checkpoint {
             checkpoint.sender_index as usize,
         )
     }
+}
+
+#[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, TypeInfo)]
+pub enum AssetType {
+    FT,
+    SBT,
+}
+
+pub trait PostToLedger<AccountId> {
+    fn post_transaction(
+        origin: Option<AccountId>,
+        sources: Vec<AccountId>,
+        sinks: Vec<AccountId>,
+        post: TransferPost,
+        asset_type: AssetType,
+    ) -> DispatchResultWithPostInfo;
+}
+
+pub trait IncrementAssetId<AssetId> {
+    fn next_asset_id_and_increment() -> Result<AssetId, DispatchError>;
 }
