@@ -133,6 +133,7 @@ runtime-benchmarks = [
   'pallet-treasury/runtime-benchmarks',
   'pallet-assets/runtime-benchmarks',
   'pallet-manta-pay/runtime-benchmarks',
+  'pallet-manta-sbt/runtime-benchmarks',
   'pallet-asset-manager/runtime-benchmarks',
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
   'cumulus-pallet-parachain-system/runtime-benchmarks',

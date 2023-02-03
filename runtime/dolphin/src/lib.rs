@@ -721,18 +721,18 @@ impl ItemIdConvert<DolphinAssetId> for ConvertItemId {
 }
 
 parameter_types! {
-    pub const MantaSBTPalletId: PalletId = MANTA_SBT_PALLET_ID;
+    pub const MantaSbtPalletId: PalletId = MANTA_SBT_PALLET_ID;
 }
 
 impl pallet_manta_sbt::Config for Runtime {
     type Event = Event;
     type PalletCollectionId = ConstU128<0>;
-    type PalletId = MantaSBTPalletId;
+    type PalletId = MantaSbtPalletId;
     type ConvertItemId = ConvertItemId;
     type Currency = Balances;
     type MintsPerReserve = ConstU16<5>;
     type ReservePrice = ConstU128<DOL>;
-    type WeightInfo = pallet_manta_sbt::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = ();
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -867,6 +867,7 @@ mod benches {
         [pallet_tx_pause, TransactionPause]
         [manta_collator_selection, CollatorSelection]
         [pallet_manta_pay, MantaPay]
+        [pallet_manta_sbt, MantaSbt]
         [pallet_asset_manager, AssetManager]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]

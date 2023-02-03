@@ -9,12 +9,6 @@ readme = 'README.md'
 repository = 'https://github.com/Manta-Network/Manta/'
 version = '4.0.1'
 
-[package.metadata.docs.rs]
-# To build locally:
-# RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features --open
-all-features = true
-rustdoc-args = ["--cfg", "doc_cfg"]
-
 [dependencies]
 # utils
 anyhow = { version = "1.0.55", optional = true, default-features = false }

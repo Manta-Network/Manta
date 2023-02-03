@@ -229,7 +229,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(1)]
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::reserve_sbt())]
         #[transactional]
         pub fn reserve_sbt(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;

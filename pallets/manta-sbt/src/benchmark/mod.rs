@@ -15,8 +15,8 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{benchmark::precomputed_coins::TO_PRIVATE, Call, Config, Pallet, TransferPost};
-use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
-use frame_support::traits::Currency;
+use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, vec, whitelisted_caller};
+use frame_support::traits::{Currency, Get};
 use frame_system::RawOrigin;
 use scale_codec::Decode;
 
@@ -38,13 +38,22 @@ where
 benchmarks! {
     to_private {
         let caller: T::AccountId = whitelisted_caller();
-        <T as crate::Config>::Currency::make_free_balance_be(&caller, 1_000_000_000u32.into());
+        let factor = 1_000u32;
+        <T as crate::Config>::Currency::make_free_balance_be(&caller, T::ReservePrice::get() * factor.into());
         Pallet::<T>::reserve_sbt(RawOrigin::Signed(caller.clone()).into())?;
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
     }: to_private (
         RawOrigin::Signed(caller.clone()),
         mint_post,
         vec![0].try_into().unwrap()
+    )
+
+    reserve_sbt {
+        let caller: T::AccountId = whitelisted_caller();
+        let factor = 1_000u32;
+        <T as crate::Config>::Currency::make_free_balance_be(&caller, T::ReservePrice::get() * factor.into());
+    }: reserve_sbt (
+        RawOrigin::Signed(caller)
     )
 }
 
