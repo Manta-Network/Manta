@@ -55,7 +55,7 @@ where
         .merge(TransactionPayment::new(client.clone()).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
-    let manta_pay_rpc: jsonrpsee::RpcModule<Pull<Block, C>> = Pull::new(client.clone()).into_rpc();
+    let manta_pay_rpc: jsonrpsee::RpcModule<Pull<Block, C>> = Pull::new(client).into_rpc();
     module
         .merge(manta_pay_rpc)
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;

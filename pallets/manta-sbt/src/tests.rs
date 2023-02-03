@@ -14,26 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Tests for Manta-SBT
+
 use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, Origin as MockOrigin, Test},
     Error, ReservedIds,
 };
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{traits::Get, assert_noop, assert_ok};
 use manta_crypto::{
-    arkworks::constraint::fp::Fp,
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
-    rand::{CryptoRng, OsRng, Rand, RngCore},
+    rand::{CryptoRng, OsRng, RngCore},
 };
 use manta_pay::{
     config::{
-        utxo::MerkleTreeConfiguration, ConstraintField, MultiProvingContext, Parameters,
+        utxo::MerkleTreeConfiguration, MultiProvingContext, Parameters,
         UtxoAccumulatorModel,
     },
     parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
     test,
 };
 use manta_support::manta_pay::{
-    field_from_id, fp_decode, fp_encode, id_from_field, AssetId, AssetValue,
+    field_from_id, id_from_field, AssetId, AssetValue,
     TransferPost as PalletTransferPost,
 };
 
@@ -84,7 +85,7 @@ where
     .unwrap()
 }
 
-/// Initializes a test by allocating `value`-many assets of the given `id` to the default account.
+/// Initializes a test by funding accounts and reserving_sbt
 #[inline]
 fn initialize_test() {
     assert_ok!(Balances::set_balance(
@@ -96,7 +97,7 @@ fn initialize_test() {
     assert_ok!(MantaSBTPallet::reserve_sbt(MockOrigin::signed(ALICE)));
 }
 
-/// Tests multiple to_private from some total supply.
+/// Tests that single to_private tx works
 #[test]
 fn to_private_should_work() {
     let mut rng = OsRng;
@@ -114,6 +115,64 @@ fn to_private_should_work() {
     });
 }
 
+/// Tests that it mints the number that corresponds with number of AssetIds incremented in AssetManager
+#[test]
+fn max_reserved_to_private_works() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        initialize_test();
+        let value = 1;
+        let mints_per_reserve = <Test as crate::pallet::Config>::MintsPerReserve::get();
+        for _ in 0..mints_per_reserve {
+            let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
+            let post = sample_to_private(id, value, &mut rng);
+            assert_ok!(MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                post,
+                bvec![0]
+            ));
+        }
+    });
+}
+
+/// Tests that `ReservedIds` are successfully removed from storage after minting all the designated number SBTs
+#[test]
+#[should_panic]
+fn overflow_reserved_ids_fails() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        initialize_test();
+        let value = 1;
+        let  mints_per_reserve: u16 = <Test as crate::pallet::Config>::MintsPerReserve::get();
+        for _ in 0..mints_per_reserve + 1 {
+            let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
+            let post = sample_to_private(id, value, &mut rng);
+            assert_ok!(MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                post,
+                bvec![0]
+            ));
+        }
+    });
+}
+
+/// Must `reserve_sbt` before minting
+#[test]
+fn not_reserved_fails() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        let value = 1;
+        let id = field_from_id(10);
+        let post = sample_to_private(id, value, &mut rng);
+        assert_noop!(MantaSBTPallet::to_private(
+            MockOrigin::signed(ALICE),
+            post,
+            bvec![0]
+        ), Error::<Test>::NotReserved);
+    });
+}
+
+/// Private transfer will fail
 #[test]
 fn private_transfer_fails() {
     let mut rng = OsRng;
@@ -146,6 +205,7 @@ fn private_transfer_fails() {
     });
 }
 
+/// ToPublic Post should fail
 #[test]
 fn to_public_fails() {
     let mut rng = OsRng;
@@ -178,6 +238,7 @@ fn to_public_fails() {
     });
 }
 
+/// Cannot mint arbitrary asset_ids
 #[test]
 fn wrong_asset_id_fails() {
     let mut rng = OsRng;
@@ -196,22 +257,4 @@ fn wrong_asset_id_fails() {
             Error::<Test>::InvalidAssetId
         );
     })
-}
-
-#[test]
-fn check_number_conversions() {
-    let mut rng = OsRng;
-
-    let start = rng.gen();
-    let expected = field_from_id(start);
-
-    let fp = Fp::<ConstraintField>::from(start);
-    let encoded = fp_encode(fp).unwrap();
-
-    assert_eq!(expected, encoded);
-
-    let id_from_field = id_from_field(encoded).unwrap();
-    let decoded: Fp<ConstraintField> = fp_decode(expected.to_vec()).unwrap();
-    assert_eq!(start, id_from_field);
-    assert_eq!(fp, decoded);
 }

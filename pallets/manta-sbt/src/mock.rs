@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
+//! Mock for MantaSbt
+
 use frame_support::{
     parameter_types,
     traits::{

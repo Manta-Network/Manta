@@ -20,7 +20,7 @@
 //!
 //! ## Overview
 //!
-//! Uses `pallet-uniques` to store NFT data. NFTs are created and Ownership is recorded as an UTXO
+//! Uses `pallet-uniques` to store NFT data. NFTs are minted to pallet's account and their ownership is recorded as an UTXO
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
@@ -92,7 +92,7 @@ pub mod pallet {
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
 
-        /// SBT CollectionId
+        /// SBT CollectionId in `pallet_uniques`
         type PalletCollectionId: Get<Self::CollectionId>;
 
         /// Converts to ItemId type
@@ -104,14 +104,14 @@ pub mod pallet {
         /// Pallet ID
         type PalletId: Get<PalletId>;
 
-        /// Number of mints reserved per `reserve_sbt` call
+        /// Number of unique Asset Ids reserved per `reserve_sbt` call
         #[pallet::constant]
         type MintsPerReserve: Get<u16>;
 
-        /// Price to reserve
+        /// Price to reserve Asset Ids
         type ReservePrice: Get<BalanceOf<Self>>;
 
-        /// Ledger to Post
+        /// Private Ledger to Post to
         type Ledger: PostToLedger<Self::AccountId>;
 
         /// Increment Asset Id
@@ -140,7 +140,7 @@ pub mod pallet {
             metadata: BoundedVec<u8, <T as pallet_uniques::Config>::StringLimit>,
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
-            // Only one UTXO allowed to be inserted per transaction
+            // Checks that it is indeed a to_private post
             ensure!(
                 post.sources.len() == 1
                     && post.sender_posts.is_empty()
@@ -159,12 +159,15 @@ pub mod pallet {
             // Ensure asset id is correct
             ensure!(asset_id == start_id, Error::<T>::InvalidAssetId);
 
+            // mints nft
             pallet_uniques::Pallet::<T>::mint_into(
                 &T::PalletCollectionId::get(),
                 &T::ConvertItemId::asset_id_to_item_id(start_id),
                 &Self::account_id(),
             )?;
-
+            // Sets metadata for nft. Important to have a reasonable limit to
+            // `StringLimit` configured so user cannot use it to store large amounts of data onchain
+            // there is no deposit required here
             pallet_uniques::Pallet::<T>::set_metadata(
                 frame_system::RawOrigin::Root.into(),
                 T::PalletCollectionId::get(),
@@ -190,6 +193,9 @@ pub mod pallet {
             T::Ledger::post_transaction(None, vec![origin], vec![], post, AssetType::SBT)
         }
 
+        /// Reserves AssetIds to be used subsequently in `to_private` above.
+        ///
+        /// Increments AssetManager's AssetId counter.
         #[pallet::call_index(1)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::reserve_sbt())]
         #[transactional]
@@ -202,20 +208,20 @@ pub mod pallet {
                 T::ReservePrice::get(),
                 ExistenceRequirement::KeepAlive,
             )?;
-            let first_id = T::IncrementAssetId::next_asset_id_and_increment()?;
-            let mut stop_id: StandardAssetId = 0;
+            let start_id = T::IncrementAssetId::next_asset_id_and_increment()?;
             for _ in 1..T::MintsPerReserve::get() {
-                stop_id = T::IncrementAssetId::next_asset_id_and_increment()?;
+                // Increment counter in AssetManager, values aren't used but make sure these asset_ids are unique
+                T::IncrementAssetId::next_asset_id_and_increment()?;
             }
-            // Increment by one because it stops here, will not submit a post with this asset_id
-            stop_id = stop_id
-                .checked_add(One::one())
+            // Asset_id to stop minting at, goes up to not including this value
+            let stop_id = start_id
+                .checked_add(T::MintsPerReserve::get().into())
                 .ok_or(ArithmeticError::Overflow)?;
 
-            ReservedIds::<T>::insert(&who, (first_id, stop_id));
+            ReservedIds::<T>::insert(&who, (start_id, stop_id));
             Self::deposit_event(Event::<T>::SBTReserved {
                 who,
-                start_id: first_id,
+                start_id,
                 stop_id,
             });
             Ok(())
@@ -279,13 +285,14 @@ pub mod pallet {
     pub enum Error<T> {
         /// Invalid Asset Id
         ///
-        /// The asset id of the transfer could not be converted correctly to the standard format.
+        /// The asset id of the transfer could not be converted correctly to the standard format
+        /// or the post is not the designated asset_id stored in `ReservedIds`
         InvalidAssetId,
 
         /// No Sender Ledger in SBT, Private Transfers are disabled
         NoSenderLedger,
 
-        /// Need to first reserve SBT before minting
+        /// Need to first call `reserve_sbt` before minting
         NotReserved,
     }
 }

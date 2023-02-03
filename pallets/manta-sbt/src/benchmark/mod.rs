@@ -22,19 +22,6 @@ use scale_codec::Decode;
 
 mod precomputed_coins;
 
-pub const INITIAL_VALUE: u128 = 1_000_000_000_000_000_000_000u128;
-
-/// Asserts that the last event that has occurred is the same as `event`.
-#[inline]
-pub fn assert_last_event<T, E>(event: E)
-where
-    T: Config,
-    E: Into<<T as Config>::Event>,
-{
-    let events = frame_system::Pallet::<T>::events();
-    assert_eq!(events[events.len() - 1].event, event.into().into());
-}
-
 benchmarks! {
     to_private {
         let caller: T::AccountId = whitelisted_caller();
