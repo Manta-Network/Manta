@@ -20,22 +20,20 @@ use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, Origin as MockOrigin, Test},
     Error, ReservedIds,
 };
-use frame_support::{traits::Get, assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
     rand::{CryptoRng, OsRng, RngCore},
 };
 use manta_pay::{
     config::{
-        utxo::MerkleTreeConfiguration, MultiProvingContext, Parameters,
-        UtxoAccumulatorModel,
+        utxo::MerkleTreeConfiguration, MultiProvingContext, Parameters, UtxoAccumulatorModel,
     },
     parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
     test,
 };
 use manta_support::manta_pay::{
-    field_from_id, id_from_field, AssetId, AssetValue,
-    TransferPost as PalletTransferPost,
+    field_from_id, id_from_field, AssetId, AssetValue, TransferPost as PalletTransferPost,
 };
 
 /// UTXO Accumulator for Building Circuits
@@ -143,7 +141,7 @@ fn overflow_reserved_ids_fails() {
     new_test_ext().execute_with(|| {
         initialize_test();
         let value = 1;
-        let  mints_per_reserve: u16 = <Test as crate::pallet::Config>::MintsPerReserve::get();
+        let mints_per_reserve: u16 = <Test as crate::pallet::Config>::MintsPerReserve::get();
         for _ in 0..mints_per_reserve + 1 {
             let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
             let post = sample_to_private(id, value, &mut rng);
@@ -164,11 +162,10 @@ fn not_reserved_fails() {
         let value = 1;
         let id = field_from_id(10);
         let post = sample_to_private(id, value, &mut rng);
-        assert_noop!(MantaSBTPallet::to_private(
-            MockOrigin::signed(ALICE),
-            post,
-            bvec![0]
-        ), Error::<Test>::NotReserved);
+        assert_noop!(
+            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), post, bvec![0]),
+            Error::<Test>::NotReserved
+        );
     });
 }
 
