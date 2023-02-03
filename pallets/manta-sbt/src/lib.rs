@@ -92,7 +92,7 @@ pub mod runtime;
 /// SBT Asset Id
 pub type SBTAssetId = u128;
 
-/// This is needed because ItemId is generic and doesn't have Add trait implemented
+/// This is needed because ItemId is generic and doesn't have Numeric traits implemented
 pub trait ItemIdConvert<ItemId> {
     fn asset_id_to_item_id(asset_id: SBTAssetId) -> ItemId;
 }
@@ -143,9 +143,11 @@ pub mod pallet {
         type ReservePrice: Get<BalanceOf<Self>>;
     }
 
+    /// Counter for that give each SBT a unique serial number
     #[pallet::storage]
     pub type ItemIdCounter<T: Config> = StorageValue<_, SBTAssetId, ValueQuery>;
 
+    /// Whitelists accounts to be able to mint SBTs with designated `SBTAssetId`
     #[pallet::storage]
     pub type ReservedIds<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, (SBTAssetId, SBTAssetId), OptionQuery>;
@@ -178,8 +180,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Transforms some public assets into private ones using `post`, withdrawing the public
-        /// assets from the `origin` account.
+        /// Mints a zkSBT
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::to_private())]
         #[transactional]
@@ -189,6 +190,11 @@ pub mod pallet {
             metadata: BoundedVec<u8, <T as pallet_uniques::Config>::StringLimit>,
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
+            // Only one UTXO allowed to be inserted per transaction
+            ensure!(
+                post.receiver_posts.len() == 1_usize && post.sender_posts.len() == 0_usize,
+                Error::<T>::NoSenderLedger
+            );
 
             let (start_id, end_id) =
                 ReservedIds::<T>::get(&origin).ok_or(Error::<T>::NotReserved)?;
@@ -212,18 +218,15 @@ pub mod pallet {
                 true,
             )?;
 
-            let increment_start_id = start_id.saturating_add(One::one());
+            // Increments id by one, remove from storage if reserved asset_ids are exhausted
+            let increment_start_id = start_id
+                .checked_add(One::one())
+                .ok_or(ArithmeticError::Overflow)?;
             if increment_start_id == end_id {
                 ReservedIds::<T>::remove(&origin)
             } else {
                 ReservedIds::<T>::insert(&origin, (increment_start_id, end_id))
             }
-
-            // Only one UTXO allowed to be inserted per transaction
-            ensure!(
-                post.receiver_posts.len() == 1_usize,
-                Error::<T>::DuplicateRegister
-            );
 
             Self::post_transaction(vec![origin], post)
         }
@@ -261,7 +264,7 @@ pub mod pallet {
     #[pallet::generate_deposit(fn deposit_event)]
     pub enum Event<T: Config> {
         /// To Private Event
-        ToPrivate {
+        MintSbt {
             /// Asset Converted
             asset: Asset,
 
@@ -639,7 +642,7 @@ where
     #[inline]
     fn convert(self) -> Event<T> {
         match self {
-            Self::ToPrivate { asset, source } => Event::ToPrivate { asset, source },
+            Self::ToPrivate { asset, source } => Event::MintSbt { asset, source },
         }
     }
 }
