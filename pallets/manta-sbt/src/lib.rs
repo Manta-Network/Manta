@@ -104,7 +104,7 @@ pub mod pallet {
         /// Pallet ID
         type PalletId: Get<PalletId>;
 
-        /// Number of unique Asset Ids reserved per `reserve_sbt` call
+        /// Number of unique Asset Ids reserved per `reserve_sbt` call, cannot be zero
         #[pallet::constant]
         type MintsPerReserve: Get<u16>;
 
@@ -156,7 +156,7 @@ pub mod pallet {
                 .map(id_from_field)
                 .ok_or(Error::<T>::InvalidAssetId)?
                 .ok_or(Error::<T>::InvalidAssetId)?;
-            // Ensure asset id is correct
+            // Ensure asset id is correct, only a single unique asset_id mapped to account is valid
             ensure!(asset_id == start_id, Error::<T>::InvalidAssetId);
 
             // mints nft
@@ -186,11 +186,12 @@ pub mod pallet {
                 ReservedIds::<T>::insert(&origin, (increment_start_id, end_id))
             }
 
+            T::Ledger::post_transaction(None, vec![origin.clone()], vec![], post, AssetType::SBT)?;
             Self::deposit_event(Event::<T>::MintSbt {
-                source: origin.clone(),
+                source: origin,
                 asset: asset_id,
             });
-            T::Ledger::post_transaction(None, vec![origin], vec![], post, AssetType::SBT)
+            Ok(().into())
         }
 
         /// Reserves AssetIds to be used subsequently in `to_private` above.
@@ -202,6 +203,7 @@ pub mod pallet {
         pub fn reserve_sbt(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
+            // Charges fee to reserve AssetIds
             <T as pallet::Config>::Currency::transfer(
                 &who,
                 &Self::account_id(),
@@ -210,10 +212,10 @@ pub mod pallet {
             )?;
             let start_id = T::IncrementAssetId::next_asset_id_and_increment()?;
             for _ in 1..T::MintsPerReserve::get() {
-                // Increment counter in AssetManager, values aren't used but make sure these asset_ids are unique
+                // Increment counter in AssetManager, values aren't used but make sure these asset_ids are incremented upon
                 T::IncrementAssetId::next_asset_id_and_increment()?;
             }
-            // Asset_id to stop minting at, goes up to not including this value
+            // Asset_id to stop minting at, goes up to, but not including this value
             let stop_id = start_id
                 .checked_add(T::MintsPerReserve::get().into())
                 .ok_or(ArithmeticError::Overflow)?;
