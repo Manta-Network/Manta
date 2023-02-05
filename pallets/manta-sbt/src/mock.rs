@@ -18,16 +18,15 @@
 
 use frame_support::{
     parameter_types,
-    traits::{
-        AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, Everything, GenesisBuild, IsInVec,
-    },
+    traits::{ConstU128, ConstU16, ConstU32, Everything, IsInVec},
     PalletId,
 };
-use frame_system::{EnsureRoot, EnsureSigned, RawOrigin};
+use frame_system::{EnsureRoot, RawOrigin};
 use manta_primitives::{
     assets::{
-        AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
-        AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
+        AssetConfig, AssetIdType, AssetLocation, AssetMetadata, AssetRegistry, BalanceType,
+        FungibleAssetRegistryMetadata, FungibleAssetStorageMetadata, LocationType,
+        NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, MANTA_PAY_PALLET_ID, MANTA_SBT_PALLET_ID},
     types::{Balance, BlockNumber, Header},
@@ -43,7 +42,7 @@ use xcm::{
     VersionedMultiLocation,
 };
 
-use crate::{ItemIdConvert, StandardAssetId};
+use crate::StandardAssetId;
 
 pub const ALICE: AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
 
@@ -59,7 +58,6 @@ frame_support::construct_runtime!(
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         MantaSBTPallet: crate::{Pallet, Call, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>},
         Assets: pallet_assets::{Pallet, Storage, Event<T>},
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>},
         TransactionPause: pallet_tx_pause::{Pallet, Storage, Call, Event<T>},
@@ -126,61 +124,21 @@ parameter_types! {
     pub const MetadataDepositPerByte: Balance = 10;
 }
 
-impl pallet_uniques::Config for Test {
-    type Event = Event;
-    type CollectionId = StandardAssetId;
-    type ItemId = StandardAssetId;
-    type Currency = Balances;
-    type ForceOrigin = EnsureRoot<AccountId32>;
-    type CollectionDeposit = CollectionDeposit;
-    type ItemDeposit = ItemDeposit;
-    type MetadataDepositBase = MetadataDepositBase;
-    type AttributeDepositBase = MetadataDepositBase;
-    type DepositPerByte = MetadataDepositPerByte;
-    type StringLimit = ConstU32<1000>;
-    type KeyLimit = KeyLimit;
-    type ValueLimit = ValueLimit;
-    type WeightInfo = ();
-    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId32>>;
-    type Locker = ();
-}
-
 parameter_types! {
     pub const MantaSBTPalletId: PalletId = MANTA_SBT_PALLET_ID;
     pub const CustodialAccount: AccountId32 = ALICE;
 }
 
-pub struct ImplementItemId;
-
-impl ItemIdConvert<StandardAssetId> for ImplementItemId {
-    fn asset_id_to_item_id(asset_id: StandardAssetId) -> StandardAssetId {
-        asset_id
-    }
-}
-
 impl crate::Config for Test {
     type Event = Event;
     type WeightInfo = crate::weights::SubstrateWeight<Test>;
-    type PalletCollectionId = ConstU128<0>;
+    type Balance = Balance;
     type PalletId = MantaSBTPalletId;
-    type ConvertItemId = ImplementItemId;
     type Currency = Balances;
     type MintsPerReserve = ConstU16<5>;
     type ReservePrice = ConstU128<1000>;
     type Ledger = MantaPay;
-    type IncrementAssetId = AssetManager;
-}
-
-pub fn new_test_ext() -> sp_io::TestExternalities {
-    let mut t = frame_system::GenesisConfig::default()
-        .build_storage::<Test>()
-        .unwrap();
-
-    crate::GenesisConfig::<Test>::default()
-        .assimilate_storage(&mut t)
-        .unwrap();
-
-    sp_io::TestExternalities::new(t)
+    type UpdateMetadata = AssetManager;
 }
 
 parameter_types! {
@@ -216,57 +174,48 @@ impl AssetIdType for MantaAssetRegistry {
     type AssetId = StandardAssetId;
 }
 impl AssetRegistry for MantaAssetRegistry {
-    type Metadata = AssetStorageMetadata;
+    type Metadata = AssetMetadata<Balance>;
     type Error = sp_runtime::DispatchError;
 
-    fn create_asset(
-        asset_id: StandardAssetId,
-        metadata: AssetStorageMetadata,
-        min_balance: Balance,
-        is_sufficient: bool,
-    ) -> DispatchResult {
-        Assets::force_create(
-            Origin::root(),
-            asset_id,
-            AssetManager::account_id(),
-            is_sufficient,
-            min_balance,
-        )?;
+    fn create_asset(asset_id: StandardAssetId, metadata: AssetMetadata<Balance>) -> DispatchResult {
+        match metadata {
+            AssetMetadata::FT(meta) => {
+                Assets::force_create(
+                    Origin::root(),
+                    asset_id,
+                    AssetManager::account_id(),
+                    meta.is_sufficient,
+                    meta.min_balance,
+                )?;
 
-        Assets::force_set_metadata(
-            Origin::root(),
-            asset_id,
-            metadata.name,
-            metadata.symbol,
-            metadata.decimals,
-            metadata.is_frozen,
-        )?;
-
-        Assets::force_asset_status(
-            Origin::root(),
-            asset_id,
-            AssetManager::account_id(),
-            AssetManager::account_id(),
-            AssetManager::account_id(),
-            AssetManager::account_id(),
-            min_balance,
-            is_sufficient,
-            metadata.is_frozen,
-        )
+                Assets::force_set_metadata(
+                    Origin::root(),
+                    asset_id,
+                    meta.metadata.name,
+                    meta.metadata.symbol,
+                    meta.metadata.decimals,
+                    meta.metadata.is_frozen,
+                )
+            }
+            AssetMetadata::SBT(_) => Ok(()),
+        }
     }
 
     fn update_asset_metadata(
         asset_id: &StandardAssetId,
-        metadata: AssetStorageMetadata,
+        metadata: AssetMetadata<Balance>,
     ) -> DispatchResult {
-        Assets::force_set_metadata(
-            Origin::root(),
-            *asset_id,
-            metadata.name,
-            metadata.symbol,
-            metadata.decimals,
-            metadata.is_frozen,
-        )
+        match metadata {
+            AssetMetadata::FT(meta) => Assets::force_set_metadata(
+                Origin::root(),
+                *asset_id,
+                meta.metadata.name,
+                meta.metadata.symbol,
+                meta.metadata.decimals,
+                meta.metadata.is_frozen,
+            ),
+            AssetMetadata::SBT(_) => Ok(()),
+        }
     }
 }
 
@@ -276,8 +225,8 @@ parameter_types! {
     pub const StartNonNativeAssetId: StandardAssetId = 8;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
-    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
-        metadata: AssetStorageMetadata {
+    pub NativeAssetMetadata: FungibleAssetRegistryMetadata<Balance> = FungibleAssetRegistryMetadata {
+        metadata: FungibleAssetStorageMetadata {
             name: b"Dolphin".to_vec(),
             symbol: b"DOL".to_vec(),
             decimals: 18,
@@ -304,10 +253,8 @@ impl BalanceType for MantaAssetConfig {
 impl AssetConfig<Test> for MantaAssetConfig {
     type NativeAssetId = NativeAssetId;
     type StartNonNativeAssetId = StartNonNativeAssetId;
-    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
-    type StorageMetadata = AssetStorageMetadata;
     type AssetRegistry = MantaAssetRegistry;
     type FungibleLedger = NativeAndNonNative<Test, MantaAssetConfig, Balances, Assets>;
 }
@@ -364,4 +311,12 @@ impl pallet_tx_pause::Config for Test {
     type UnpauseOrigin = EnsureRoot<AccountId32>;
     type NonPausablePallets = IsInVec<NonPausablePallets>;
     type WeightInfo = ();
+}
+
+pub fn new_test_ext() -> sp_io::TestExternalities {
+    let t = frame_system::GenesisConfig::default()
+        .build_storage::<Test>()
+        .unwrap();
+
+    sp_io::TestExternalities::new(t)
 }

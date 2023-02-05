@@ -52,9 +52,8 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use manta_primitives::assets::{
         self, AssetConfig, AssetIdLocationMap, AssetIdType, AssetMetadata, AssetRegistry,
-        FungibleLedger, LocationType,
+        FungibleLedger, LocationType, UpdateMetadata,
     };
-    use manta_support::manta_pay::IncrementAssetId;
     use orml_traits::GetByKey;
     use sp_runtime::{
         traits::{
@@ -183,7 +182,8 @@ pub mod pallet {
         fn build(&self) {
             NextAssetId::<T>::set(self.start_id);
             let asset_id = <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get();
-            let metadata = <T::AssetConfig as AssetConfig<T>>::NativeAssetMetadata::get();
+            let metadata: AssetMetadata<T::Balance> =
+                <T::AssetConfig as AssetConfig<T>>::NativeAssetMetadata::get().into();
             let location = <T::AssetConfig as AssetConfig<T>>::NativeAssetLocation::get();
             AssetIdLocation::<T>::insert(asset_id, &location);
             AssetIdMetadata::<T>::insert(asset_id, &metadata);
@@ -204,7 +204,7 @@ pub mod pallet {
             location: T::Location,
 
             /// Metadata Registered to Asset Manager
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+            metadata: AssetMetadata<T::Balance>,
         },
 
         /// Updated the location of an asset
@@ -222,7 +222,7 @@ pub mod pallet {
             asset_id: T::AssetId,
 
             /// Updated Metadata for the Asset
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+            metadata: AssetMetadata<T::Balance>,
         },
 
         /// Updated the units-per-second for an asset
@@ -300,12 +300,8 @@ pub mod pallet {
     /// AssetId to AssetRegistry Map.
     #[pallet::storage]
     #[pallet::getter(fn asset_id_metadata)]
-    pub(super) type AssetIdMetadata<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat,
-        T::AssetId,
-        <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
-    >;
+    pub(super) type AssetIdMetadata<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AssetId, AssetMetadata<T::Balance>>;
 
     /// The Next Available [`AssetId`](AssetConfig::AssetId)
     #[pallet::storage]
@@ -342,21 +338,15 @@ pub mod pallet {
         pub fn register_asset(
             origin: OriginFor<T>,
             location: T::Location,
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+            metadata: AssetMetadata<T::Balance>,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
                 !LocationAssetId::<T>::contains_key(&location),
                 Error::<T>::LocationAlreadyExists
             );
-            let asset_id = Self::next_asset_id_and_increment()?;
-            <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
-                asset_id,
-                metadata.clone().into(),
-                metadata.min_balance().clone(),
-                metadata.is_sufficient(),
-            )
-            .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
+
+            let asset_id = Self::create_asset(metadata.clone())?;
             AssetIdLocation::<T>::insert(asset_id, &location);
             AssetIdMetadata::<T>::insert(asset_id, &metadata);
             LocationAssetId::<T>::insert(&location, asset_id);
@@ -450,7 +440,7 @@ pub mod pallet {
         pub fn update_asset_metadata(
             origin: OriginFor<T>,
             asset_id: T::AssetId,
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+            metadata: AssetMetadata<T::Balance>,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
@@ -461,11 +451,8 @@ pub mod pallet {
                 AssetIdLocation::<T>::contains_key(asset_id),
                 Error::<T>::UpdateNonExistentAsset
             );
-            <T::AssetConfig as AssetConfig<T>>::AssetRegistry::update_asset_metadata(
-                &asset_id,
-                metadata.clone().into(),
-            )?;
-            AssetIdMetadata::<T>::insert(asset_id, &metadata);
+            Self::update_metadata(&asset_id, metadata.clone())?;
+
             Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata });
             Ok(())
         }
@@ -554,7 +541,36 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> IncrementAssetId<T::AssetId> for Pallet<T> {
+    impl<T: Config> UpdateMetadata<T::AssetId, T::Balance> for Pallet<T> {
+        #[inline]
+        fn create_asset(metadata: AssetMetadata<T::Balance>) -> Result<T::AssetId, DispatchError> {
+            let asset_id = Self::next_asset_id_and_increment()?;
+            <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
+                asset_id,
+                metadata.into(),
+            )
+            .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
+            Ok(asset_id)
+        }
+
+        #[inline]
+        fn update_metadata(
+            asset_id: &T::AssetId,
+            metadata: AssetMetadata<T::Balance>,
+        ) -> DispatchResult {
+            AssetIdMetadata::<T>::insert(asset_id, &metadata);
+            <T::AssetConfig as AssetConfig<T>>::AssetRegistry::update_asset_metadata(
+                asset_id,
+                metadata.into(),
+            )?;
+            Ok(())
+        }
+    }
+
+    impl<T> Pallet<T>
+    where
+        T: Config,
+    {
         /// Returns and increments the [`NextAssetId`] by one.
         #[inline]
         fn next_asset_id_and_increment() -> Result<T::AssetId, DispatchError> {
@@ -566,12 +582,7 @@ pub mod pallet {
                 Ok(id)
             })
         }
-    }
 
-    impl<T> Pallet<T>
-    where
-        T: Config,
-    {
         /// Returns the account identifier of the [`AssetManager`] pallet.
         #[inline]
         pub fn account_id() -> T::AccountId {

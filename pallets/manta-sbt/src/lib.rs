@@ -29,21 +29,18 @@
 extern crate alloc;
 
 use alloc::vec;
-use core::marker::PhantomData;
 use frame_support::{
     pallet_prelude::*,
-    traits::{
-        tokens::nonfungibles::Mutate, Currency, ExistenceRequirement, ReservableCurrency,
-        StorageVersion,
-    },
+    traits::{Currency, ExistenceRequirement, ReservableCurrency, StorageVersion},
     transactional, PalletId,
 };
 use frame_system::pallet_prelude::*;
+use manta_primitives::assets::{AssetMetadata, SbtBound, UpdateMetadata};
 use manta_support::manta_pay::{
-    id_from_field, AssetType, IncrementAssetId, PostToLedger, StandardAssetId, TransferPost,
+    id_from_field, AssetType, PostToLedger, StandardAssetId, TransferPost,
 };
 use sp_runtime::{
-    traits::{AccountIdConversion, One, Zero},
+    traits::{AccountIdConversion, One},
     ArithmeticError,
 };
 
@@ -60,11 +57,6 @@ pub mod weights;
 
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmark;
-
-/// This is needed because ItemId is generic and doesn't have Numeric traits implemented
-pub trait ItemIdConvert<ItemId> {
-    fn asset_id_to_item_id(asset_id: StandardAssetId) -> ItemId;
-}
 
 /// Type alias for currency balance.
 pub type BalanceOf<T> =
@@ -85,18 +77,15 @@ pub mod pallet {
 
     /// The module configuration trait.
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_uniques::Config {
+    pub trait Config: frame_system::Config {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
 
-        /// SBT CollectionId in `pallet_uniques`
-        type PalletCollectionId: Get<Self::CollectionId>;
-
-        /// Converts to ItemId type
-        type ConvertItemId: ItemIdConvert<Self::ItemId>;
+        /// Balance Type
+        type Balance: Default + Member + Parameter + TypeInfo;
 
         /// The currency mechanism.
         type Currency: ReservableCurrency<Self::AccountId>;
@@ -114,8 +103,8 @@ pub mod pallet {
         /// Private Ledger to Post to
         type Ledger: PostToLedger<Self::AccountId>;
 
-        /// Increment Asset Id
-        type IncrementAssetId: IncrementAssetId<StandardAssetId>;
+        /// Register SBTs to `AssetRegistry`
+        type UpdateMetadata: UpdateMetadata<StandardAssetId, Self::Balance>;
     }
 
     /// Whitelists accounts to be able to mint SBTs with designated `StandardAssetId`
@@ -137,7 +126,7 @@ pub mod pallet {
         pub fn to_private(
             origin: OriginFor<T>,
             post: TransferPost,
-            metadata: BoundedVec<u8, <T as pallet_uniques::Config>::StringLimit>,
+            metadata: BoundedVec<u8, SbtBound>,
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
             // Checks that it is indeed a to_private post
@@ -159,23 +148,8 @@ pub mod pallet {
             // Ensure asset id is correct, only a single unique asset_id mapped to account is valid
             ensure!(asset_id == start_id, Error::<T>::InvalidAssetId);
 
-            // mints nft
-            pallet_uniques::Pallet::<T>::mint_into(
-                &T::PalletCollectionId::get(),
-                &T::ConvertItemId::asset_id_to_item_id(start_id),
-                &Self::account_id(),
-            )?;
-            // Sets metadata for nft. Important to have a reasonable limit to
-            // `StringLimit` configured so user cannot use it to store large amounts of data onchain
-            // there is no deposit required here
-            pallet_uniques::Pallet::<T>::set_metadata(
-                frame_system::RawOrigin::Root.into(),
-                T::PalletCollectionId::get(),
-                T::ConvertItemId::asset_id_to_item_id(start_id),
-                metadata,
-                true,
-            )?;
-
+            // Updates SbtMetadata
+            T::UpdateMetadata::update_metadata(&asset_id, AssetMetadata::SBT(metadata))?;
             // Increments id by one, remove from storage if reserved asset_ids are exhausted
             let increment_start_id = start_id
                 .checked_add(One::one())
@@ -210,10 +184,12 @@ pub mod pallet {
                 T::ReservePrice::get(),
                 ExistenceRequirement::KeepAlive,
             )?;
-            let start_id = T::IncrementAssetId::next_asset_id_and_increment()?;
+
+            let start_id =
+                T::UpdateMetadata::create_asset(AssetMetadata::SBT(BoundedVec::default()))?;
             for _ in 1..T::MintsPerReserve::get() {
-                // Increment counter in AssetManager, values aren't used but make sure these asset_ids are incremented upon
-                T::IncrementAssetId::next_asset_id_and_increment()?;
+                // Creates new Assets in `AssetRegistry`
+                T::UpdateMetadata::create_asset(AssetMetadata::SBT(BoundedVec::default()))?;
             }
             // Asset_id to stop minting at, goes up to, but not including this value
             let stop_id = start_id
@@ -251,35 +227,6 @@ pub mod pallet {
             /// end of reserved ids
             stop_id: StandardAssetId,
         },
-    }
-
-    #[pallet::genesis_config]
-    pub struct GenesisConfig<T>(PhantomData<T>);
-
-    #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
-        fn default() -> Self {
-            Self(std::marker::PhantomData::<T>)
-        }
-    }
-
-    #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-        #[inline]
-        fn build(&self) {
-            pallet_uniques::Pallet::<T>::do_create_collection(
-                T::PalletCollectionId::get(),
-                Pallet::<T>::account_id(),
-                Pallet::<T>::account_id(),
-                Zero::zero(),
-                true,
-                pallet_uniques::Event::<T>::ForceCreated {
-                    collection: T::PalletCollectionId::get(),
-                    owner: Pallet::<T>::account_id(),
-                },
-            )
-            .expect("create SBT collection on genesis failed");
-        }
     }
 
     /// Error

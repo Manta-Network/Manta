@@ -1032,7 +1032,3 @@ pub trait PostToLedger<AccountId> {
         asset_type: AssetType,
     ) -> DispatchResultWithPostInfo;
 }
-
-pub trait IncrementAssetId<AssetId> {
-    fn next_asset_id_and_increment() -> Result<AssetId, DispatchError>;
-}

@@ -28,8 +28,9 @@ use frame_system as system;
 use frame_system::EnsureRoot;
 use manta_primitives::{
     assets::{
-        AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
-        AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
+        AssetConfig, AssetIdType, AssetLocation, AssetMetadata, AssetRegistry, BalanceType,
+        FungibleAssetRegistryMetadata, FungibleAssetStorageMetadata, LocationType,
+        NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, ASSET_STRING_LIMIT},
     types::{AccountId, Balance, BlockNumber, CalamariAssetId, Header},
@@ -125,45 +126,48 @@ impl AssetIdType for MantaAssetRegistry {
     type AssetId = CalamariAssetId;
 }
 impl AssetRegistry for MantaAssetRegistry {
-    type Metadata = AssetStorageMetadata;
+    type Metadata = AssetMetadata<Balance>;
     type Error = sp_runtime::DispatchError;
 
-    fn create_asset(
-        asset_id: CalamariAssetId,
-        metadata: AssetStorageMetadata,
-        min_balance: Balance,
-        is_sufficient: bool,
-    ) -> DispatchResult {
-        Assets::force_create(
-            Origin::root(),
-            asset_id,
-            AssetManager::account_id(),
-            is_sufficient,
-            min_balance,
-        )?;
+    fn create_asset(asset_id: CalamariAssetId, metadata: AssetMetadata<Balance>) -> DispatchResult {
+        match metadata {
+            AssetMetadata::FT(meta) => {
+                Assets::force_create(
+                    Origin::root(),
+                    asset_id,
+                    AssetManager::account_id(),
+                    meta.is_sufficient,
+                    meta.min_balance,
+                )?;
 
-        Assets::force_set_metadata(
-            Origin::root(),
-            asset_id,
-            metadata.name,
-            metadata.symbol,
-            metadata.decimals,
-            metadata.is_frozen,
-        )
+                Assets::force_set_metadata(
+                    Origin::root(),
+                    asset_id,
+                    meta.metadata.name,
+                    meta.metadata.symbol,
+                    meta.metadata.decimals,
+                    meta.metadata.is_frozen,
+                )
+            }
+            AssetMetadata::SBT(_) => Ok(()),
+        }
     }
 
     fn update_asset_metadata(
         asset_id: &CalamariAssetId,
-        metadata: AssetStorageMetadata,
+        metadata: AssetMetadata<Balance>,
     ) -> DispatchResult {
-        Assets::force_set_metadata(
-            Origin::root(),
-            *asset_id,
-            metadata.name,
-            metadata.symbol,
-            metadata.decimals,
-            metadata.is_frozen,
-        )
+        match metadata {
+            AssetMetadata::FT(meta) => Assets::force_set_metadata(
+                Origin::root(),
+                *asset_id,
+                meta.metadata.name,
+                meta.metadata.symbol,
+                meta.metadata.decimals,
+                meta.metadata.is_frozen,
+            ),
+            AssetMetadata::SBT(_) => Ok(()),
+        }
     }
 }
 
@@ -172,8 +176,8 @@ parameter_types! {
     pub const NativeAssetId: CalamariAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
-    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
-        metadata: AssetStorageMetadata {
+    pub NativeAssetMetadata: FungibleAssetRegistryMetadata<Balance> = FungibleAssetRegistryMetadata {
+        metadata: FungibleAssetStorageMetadata {
             name: b"Dolphin".to_vec(),
             symbol: b"DOL".to_vec(),
             decimals: 18,
@@ -200,10 +204,8 @@ impl BalanceType for MantaAssetConfig {
 impl AssetConfig<Runtime> for MantaAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetId = NativeAssetId;
-    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
-    type StorageMetadata = AssetStorageMetadata;
     type AssetRegistry = MantaAssetRegistry;
     type FungibleLedger = NativeAndNonNative<Runtime, MantaAssetConfig, Balances, Assets>;
 }
@@ -256,9 +258,9 @@ pub(crate) fn create_asset_metadata(
     min_balance: u128,
     is_frozen: bool,
     is_sufficient: bool,
-) -> AssetRegistryMetadata<Balance> {
-    AssetRegistryMetadata {
-        metadata: AssetStorageMetadata {
+) -> AssetMetadata<Balance> {
+    FungibleAssetRegistryMetadata {
+        metadata: FungibleAssetStorageMetadata {
             name: name.as_bytes().to_vec(),
             symbol: symbol.as_bytes().to_vec(),
             decimals,
@@ -267,4 +269,5 @@ pub(crate) fn create_asset_metadata(
         min_balance,
         is_sufficient,
     }
+    .into()
 }
