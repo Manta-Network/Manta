@@ -20,7 +20,7 @@
 //!
 //! ## Overview
 //!
-//! Uses `pallet-uniques` to store NFT data. NFTs are minted to pallet's account and their ownership is recorded as an UTXO
+//! Uses `pallet-asset-manager` to store SBT metadata. Ownership is recorded as a corresponding UTXO.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]

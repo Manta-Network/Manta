@@ -235,7 +235,6 @@ impl Contains<Call> for BaseFilter {
                                 | pallet_democracy::Call::external_propose {..}
                                 | pallet_democracy::Call::external_propose_majority {..})
             | Call::Treasury(_) // Treasury calls are filtered while it is accumulating funds.
-            | Call::Uniques(_) // Disallow uniques calls
             // Everything except transfer() is filtered out until it is practically needed:
             | Call::XTokens(
                                 orml_xtokens::Call::transfer_with_fee {..}
@@ -788,8 +787,7 @@ construct_runtime!(
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
-        Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 48,
-        MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
+        MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 48,
     }
 );
 

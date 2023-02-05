@@ -15,8 +15,8 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    cDOL, weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
-    NativeTokenExistentialDeposit, Origin, Runtime, DOL,
+    weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
+    NativeTokenExistentialDeposit, Origin, Runtime,
 };
 
 use manta_primitives::{
@@ -29,8 +29,8 @@ use manta_primitives::{
     types::{AccountId, Balance, DolphinAssetId},
 };
 
-use frame_support::{pallet_prelude::*, parameter_types, traits::AsEnsureOriginWithArg, PalletId};
-use frame_system::{EnsureRoot, EnsureSigned};
+use frame_support::{pallet_prelude::*, parameter_types, PalletId};
+use frame_system::EnsureRoot;
 use xcm::VersionedMultiLocation;
 
 parameter_types! {
@@ -187,30 +187,4 @@ impl pallet_manta_pay::Config for Runtime {
     type AssetConfig = DolphinAssetConfig;
     type PalletId = MantaPayPalletId;
     type Suspender = ();
-}
-
-parameter_types! {
-    pub const CollectionDeposit: Balance = DOL;
-    pub const ItemDeposit: Balance = cDOL;
-    pub const KeyLimit: u32 = 32;
-    pub const ValueLimit: u32 = 256;
-}
-
-impl pallet_uniques::Config for Runtime {
-    type Event = Event;
-    type CollectionId = DolphinAssetId;
-    type ItemId = DolphinAssetId;
-    type Currency = Balances;
-    type ForceOrigin = EnsureRoot<AccountId>;
-    type CollectionDeposit = CollectionDeposit;
-    type ItemDeposit = ItemDeposit;
-    type MetadataDepositBase = MetadataDepositBase;
-    type AttributeDepositBase = MetadataDepositBase;
-    type DepositPerByte = MetadataDepositPerByte;
-    type StringLimit = ConstU32<250>;
-    type KeyLimit = KeyLimit;
-    type ValueLimit = ValueLimit;
-    type WeightInfo = pallet_uniques::weights::SubstrateWeight<Runtime>;
-    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
-    type Locker = ();
 }
