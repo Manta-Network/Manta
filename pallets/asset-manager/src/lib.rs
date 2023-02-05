@@ -196,7 +196,7 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// A new asset was registered
-        AssetRegistered {
+        FungibleAssetRegistered {
             /// Asset Id of new Asset
             asset_id: T::AssetId,
 
@@ -253,6 +253,15 @@ pub mod pallet {
 
             /// Updated Minimum XCM Fee
             min_xcm_fee: u128,
+        },
+
+        /// A new asset was registered
+        AssetRegistered {
+            /// Asset Id of new Asset
+            asset_id: T::AssetId,
+
+            /// Metadata Registered to Asset Manager
+            metadata: AssetMetadata<T::Balance>,
         },
     }
 
@@ -359,7 +368,7 @@ pub mod pallet {
                 Self::increase_count_of_associated_assets(*para_id)?;
             }
 
-            Self::deposit_event(Event::<T>::AssetRegistered {
+            Self::deposit_event(Event::<T>::FungibleAssetRegistered {
                 asset_id,
                 location,
                 metadata,
@@ -451,10 +460,7 @@ pub mod pallet {
                 AssetIdLocation::<T>::contains_key(asset_id),
                 Error::<T>::UpdateNonExistentAsset
             );
-            Self::update_metadata(&asset_id, metadata.clone())?;
-
-            Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata });
-            Ok(())
+            Self::update_metadata(&asset_id, metadata)
         }
 
         /// Update an asset by its asset id in the asset manager.
@@ -547,9 +553,11 @@ pub mod pallet {
             let asset_id = Self::next_asset_id_and_increment()?;
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
                 asset_id,
-                metadata.into(),
+                metadata.clone().into(),
             )
             .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
+
+            Self::deposit_event(Event::<T>::AssetRegistered { asset_id, metadata });
             Ok(asset_id)
         }
 
@@ -561,8 +569,13 @@ pub mod pallet {
             AssetIdMetadata::<T>::insert(asset_id, &metadata);
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::update_asset_metadata(
                 asset_id,
-                metadata.into(),
+                metadata.clone().into(),
             )?;
+
+            Self::deposit_event(Event::<T>::AssetMetadataUpdated {
+                asset_id: *asset_id,
+                metadata,
+            });
             Ok(())
         }
     }
