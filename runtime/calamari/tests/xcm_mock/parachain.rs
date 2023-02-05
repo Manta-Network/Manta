@@ -39,8 +39,9 @@ use sp_std::prelude::*;
 
 use manta_primitives::{
     assets::{
-        AssetConfig, AssetIdLocationConvert, AssetIdType, AssetLocation, AssetRegistry,
-        AssetRegistryMetadata, AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
+        AssetConfig, AssetIdLocationConvert, AssetIdType, AssetLocation, AssetMetadata,
+        AssetRegistry, BalanceType, FungibleAssetRegistryMetadata, FungibleAssetStorageMetadata,
+        LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL, WEIGHT_PER_SECOND},
     types::{BlockNumber, CalamariAssetId, Header},
@@ -524,45 +525,48 @@ impl AssetIdType for CalamariAssetRegistry {
     type AssetId = CalamariAssetId;
 }
 impl AssetRegistry for CalamariAssetRegistry {
-    type Metadata = AssetStorageMetadata;
+    type Metadata = AssetMetadata<Balance>;
     type Error = sp_runtime::DispatchError;
 
-    fn create_asset(
-        asset_id: CalamariAssetId,
-        metadata: AssetStorageMetadata,
-        min_balance: Balance,
-        is_sufficient: bool,
-    ) -> DispatchResult {
-        Assets::force_create(
-            Origin::root(),
-            asset_id,
-            AssetManager::account_id(),
-            is_sufficient,
-            min_balance,
-        )?;
+    fn create_asset(asset_id: CalamariAssetId, metadata: AssetMetadata<Balance>) -> DispatchResult {
+        match metadata {
+            AssetMetadata::FT(meta) => {
+                Assets::force_create(
+                    Origin::root(),
+                    asset_id,
+                    AssetManager::account_id(),
+                    meta.is_sufficient,
+                    meta.min_balance,
+                )?;
 
-        Assets::force_set_metadata(
-            Origin::root(),
-            asset_id,
-            metadata.name,
-            metadata.symbol,
-            metadata.decimals,
-            metadata.is_frozen,
-        )
+                Assets::force_set_metadata(
+                    Origin::root(),
+                    asset_id,
+                    meta.metadata.name,
+                    meta.metadata.symbol,
+                    meta.metadata.decimals,
+                    meta.metadata.is_frozen,
+                )
+            }
+            AssetMetadata::SBT(_) => Ok(()),
+        }
     }
 
     fn update_asset_metadata(
         asset_id: &CalamariAssetId,
-        metadata: AssetStorageMetadata,
+        metadata: AssetMetadata<Balance>,
     ) -> DispatchResult {
-        Assets::force_set_metadata(
-            Origin::root(),
-            *asset_id,
-            metadata.name,
-            metadata.symbol,
-            metadata.decimals,
-            metadata.is_frozen,
-        )
+        match metadata {
+            AssetMetadata::FT(meta) => Assets::force_set_metadata(
+                Origin::root(),
+                *asset_id,
+                meta.metadata.name,
+                meta.metadata.symbol,
+                meta.metadata.decimals,
+                meta.metadata.is_frozen,
+            ),
+            AssetMetadata::SBT(_) => Ok(()),
+        }
     }
 }
 
@@ -571,8 +575,8 @@ parameter_types! {
     pub const NativeAssetId: CalamariAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(SelfReserve::get()));
-    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
-        metadata: AssetStorageMetadata {
+    pub NativeAssetMetadata: FungibleAssetRegistryMetadata<Balance> = FungibleAssetRegistryMetadata {
+        metadata: FungibleAssetStorageMetadata {
             name: b"ParaAToken".to_vec(),
             symbol: b"ParaA".to_vec(),
             decimals: CALAMARI_DECIMAL,
@@ -599,10 +603,8 @@ impl BalanceType for ParachainAssetConfig {
 impl AssetConfig<Runtime> for ParachainAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetId = NativeAssetId;
-    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
-    type StorageMetadata = AssetStorageMetadata;
     type AssetRegistry = CalamariAssetRegistry;
     type FungibleLedger = NativeAndNonNative<Runtime, ParachainAssetConfig, Balances, Assets>;
 }
@@ -732,9 +734,9 @@ pub(crate) fn create_asset_metadata(
     min_balance: u128,
     is_frozen: bool,
     is_sufficient: bool,
-) -> AssetRegistryMetadata<Balance> {
-    AssetRegistryMetadata {
-        metadata: AssetStorageMetadata {
+) -> AssetMetadata<Balance> {
+    FungibleAssetRegistryMetadata {
+        metadata: FungibleAssetStorageMetadata {
             name: name.as_bytes().to_vec(),
             symbol: symbol.as_bytes().to_vec(),
             decimals,
@@ -743,6 +745,7 @@ pub(crate) fn create_asset_metadata(
         min_balance,
         is_sufficient,
     }
+    .into()
 }
 
 pub(crate) fn create_asset_location(parents: u8, para_id: u32) -> AssetLocation {
@@ -754,7 +757,7 @@ pub(crate) fn create_asset_location(parents: u8, para_id: u32) -> AssetLocation 
 
 fn insert_dummy_data(
     dummy_mult_loc: MultiLocation,
-    dummy_asset_metadata: &AssetRegistryMetadata<Balance>,
+    dummy_asset_metadata: &AssetMetadata<Balance>,
     start_from: CalamariAssetId,
     insert_until: CalamariAssetId,
 ) {
@@ -773,7 +776,7 @@ fn insert_dummy_data(
 
 pub(crate) fn register_assets_on_parachain<P>(
     source_location: &AssetLocation,
-    asset_metadata: &AssetRegistryMetadata<Balance>,
+    asset_metadata: &AssetMetadata<Balance>,
     units_per_second: Option<u128>,
     mint_asset: Option<(AccountId, Balance, bool, bool)>,
 ) -> CalamariAssetId

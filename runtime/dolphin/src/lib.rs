@@ -57,9 +57,8 @@ use manta_primitives::{
         time::*, RocksDbWeight, MANTA_SBT_PALLET_ID, STAKING_PALLET_ID, TREASURY_PALLET_ID,
         WEIGHT_PER_SECOND,
     },
-    types::{AccountId, Balance, BlockNumber, DolphinAssetId, Hash, Header, Index, Signature},
+    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
-use pallet_manta_sbt::ItemIdConvert;
 use runtime_common::{
     prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
 };
@@ -712,28 +711,19 @@ impl manta_collator_selection::Config for Runtime {
     type CanAuthor = AuraAuthorFilter;
 }
 
-pub struct ConvertItemId;
-
-impl ItemIdConvert<DolphinAssetId> for ConvertItemId {
-    fn asset_id_to_item_id(asset_id: DolphinAssetId) -> DolphinAssetId {
-        asset_id
-    }
-}
-
 parameter_types! {
     pub const MantaSbtPalletId: PalletId = MANTA_SBT_PALLET_ID;
 }
 
 impl pallet_manta_sbt::Config for Runtime {
     type Event = Event;
-    type PalletCollectionId = ConstU128<0>;
+    type Balance = Balance;
     type PalletId = MantaSbtPalletId;
-    type ConvertItemId = ConvertItemId;
     type Currency = Balances;
     type MintsPerReserve = ConstU16<5>;
     type ReservePrice = ConstU128<DOL>;
     type Ledger = MantaPay;
-    type IncrementAssetId = AssetManager;
+    type UpdateMetadata = AssetManager;
     type WeightInfo = ();
 }
 
@@ -799,7 +789,7 @@ construct_runtime!(
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
         Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 48,
-        MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>, Config<T>} = 49,
+        MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
     }
 );
 
