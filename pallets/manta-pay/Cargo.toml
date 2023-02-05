@@ -65,6 +65,7 @@ std = [
   "manta-crypto/std",
   "manta-util/std",
   "manta-pay/std",
+  "manta-support/std",
 ]
 
 # Precompute Benchmark Transactions
