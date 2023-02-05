@@ -357,7 +357,6 @@ pub mod pallet {
 
             let asset_id = Self::create_asset(metadata.clone())?;
             AssetIdLocation::<T>::insert(asset_id, &location);
-            AssetIdMetadata::<T>::insert(asset_id, &metadata);
             LocationAssetId::<T>::insert(&location, asset_id);
 
             // If it's a new para id, which will be inserted with AssetCount as 1.
@@ -556,6 +555,7 @@ pub mod pallet {
                 metadata.clone().into(),
             )
             .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
+            AssetIdMetadata::<T>::insert(asset_id, &metadata);
 
             Self::deposit_event(Event::<T>::AssetRegistered { asset_id, metadata });
             Ok(asset_id)
