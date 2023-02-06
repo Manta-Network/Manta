@@ -15,7 +15,6 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Asset Utilities
-use crate::{constants::TEST_DEFAULT_ASSET_ED, types::Balance as MantaBalance};
 use alloc::vec::Vec;
 use codec::{Decode, Encode, MaxEncodedLen};
 use core::{borrow::Borrow, marker::PhantomData};
@@ -205,13 +204,13 @@ pub struct FungibleAssetRegistryMetadata<B> {
 
 /// Because there is no obvious defaults for an asset's metadata, we explicitly
 /// name a trait to carry this logic for testing and benchmarking
-pub trait TestingDefault {
+pub trait TestingDefault<Balance> {
     /// Returns some default asset metadata
-    fn testing_default() -> Self;
+    fn testing_default(min_balance: Balance) -> Self;
 }
 
-impl TestingDefault for AssetMetadata<MantaBalance> {
-    fn testing_default() -> Self {
+impl<Balance> TestingDefault<Balance> for AssetMetadata<Balance> {
+    fn testing_default(min_balance: Balance) -> Self {
         FungibleAssetRegistryMetadata {
             metadata: FungibleAssetStorageMetadata {
                 name: b"Default".to_vec(),
@@ -219,7 +218,7 @@ impl TestingDefault for AssetMetadata<MantaBalance> {
                 decimals: 12,
                 is_frozen: false,
             },
-            min_balance: TEST_DEFAULT_ASSET_ED,
+            min_balance,
             is_sufficient: true,
         }
         .into()
