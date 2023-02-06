@@ -25,6 +25,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![forbid(rustdoc::broken_intra_doc_links)]
+#![allow(clippy::large_enum_variant)]
 
 extern crate alloc;
 

@@ -552,7 +552,7 @@ pub mod pallet {
             let asset_id = Self::next_asset_id_and_increment()?;
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
                 asset_id,
-                metadata.clone().into(),
+                metadata.clone(),
             )
             .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
             AssetIdMetadata::<T>::insert(asset_id, &metadata);
@@ -569,7 +569,7 @@ pub mod pallet {
             AssetIdMetadata::<T>::insert(asset_id, &metadata);
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::update_asset_metadata(
                 asset_id,
-                metadata.clone().into(),
+                metadata.clone(),
             )?;
 
             Self::deposit_event(Event::<T>::AssetMetadataUpdated {
