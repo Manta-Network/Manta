@@ -731,6 +731,8 @@ pub mod pallet {
 impl<T: Config> PostToLedger<T::AccountId> for Pallet<T> {
     /// Posts the transaction encoded in `post` to the ledger, using `sources` and `sinks` as
     /// the public deposit and public withdraw accounts respectively.
+    ///
+    /// WARNING: `AssetType` should only be called from rust code. Do not let extrinisics decide what type an asset is, should be determined by protocol.
     #[inline]
     fn post_transaction(
         origin: Option<T::AccountId>,
@@ -1405,6 +1407,9 @@ where
     }
 }
 
+/// This allows `ToPrivate` to insert arbitrary UTXOs. There are no checks on the source accounts. `ToPublic` and `PrivateTransfer` will fail.
+///
+/// WARNING: Ensure that only `AssetId` that correspond to an SBT are allowed to call this Ledger. It will allow arbitrary UTXO to be inserted.
 struct SBTLedger<T>(PhantomData<T>)
 where
     T: Config;

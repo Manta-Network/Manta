@@ -306,7 +306,7 @@ pub mod pallet {
     pub(super) type LocationAssetId<T: Config> =
         StorageMap<_, Blake2_128Concat, T::Location, T::AssetId>;
 
-    /// AssetId to AssetRegistry Map.
+    /// AssetId to AssetMetadata Map.
     #[pallet::storage]
     #[pallet::getter(fn asset_id_metadata)]
     pub(super) type AssetIdMetadata<T: Config> =
@@ -455,10 +455,6 @@ pub mod pallet {
                 asset_id != <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(),
                 Error::<T>::CannotUpdateNativeAssetMetadata
             );
-            ensure!(
-                AssetIdLocation::<T>::contains_key(asset_id),
-                Error::<T>::UpdateNonExistentAsset
-            );
             Self::update_metadata(&asset_id, metadata)
         }
 
@@ -546,6 +542,9 @@ pub mod pallet {
         }
     }
 
+    /// Methods to alter the metadata in asset-manager
+    ///
+    /// WARNING: The below funcions are privileged so DO NOT let arbitrary user input directly call these functions
     impl<T: Config> UpdateMetadata<T::AssetId, T::Balance> for Pallet<T> {
         #[inline]
         fn create_asset(metadata: AssetMetadata<T::Balance>) -> Result<T::AssetId, DispatchError> {
@@ -566,11 +565,15 @@ pub mod pallet {
             asset_id: &T::AssetId,
             metadata: AssetMetadata<T::Balance>,
         ) -> DispatchResult {
-            AssetIdMetadata::<T>::insert(asset_id, &metadata);
+            ensure!(
+                AssetIdMetadata::<T>::contains_key(asset_id),
+                Error::<T>::UpdateNonExistentAsset
+            );
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::update_asset_metadata(
                 asset_id,
                 metadata.clone(),
             )?;
+            AssetIdMetadata::<T>::insert(asset_id, &metadata);
 
             Self::deposit_event(Event::<T>::AssetMetadataUpdated {
                 asset_id: *asset_id,

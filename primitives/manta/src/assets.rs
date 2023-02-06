@@ -137,7 +137,7 @@ where
 }
 
 /// Bound for SBT Metadata Size (Could make generic over runtimes, but simpler to just hardcode)
-pub type SbtBound = ConstU32<100>;
+pub type SbtBound = ConstU32<200>;
 
 /// Metadata for each Asset Type
 ///
@@ -231,7 +231,7 @@ impl<B> BalanceType for FungibleAssetRegistryMetadata<B> {
 
 /// Trait for altering Metadata in `AssetRegistry`
 ///
-/// WARNING: Some of the operations in this trait should be privlaged so do not let user input directly call this trait
+/// WARNING: Some of the operations in this trait should be privileged so do not let user input directly call this trait
 pub trait UpdateMetadata<AssetId, Balance> {
     /// Create new asset in `AssetRegistry`, DO NOT let arbitrary user input call this function
     fn create_asset(metadata: AssetMetadata<Balance>) -> Result<AssetId, DispatchError>;

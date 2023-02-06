@@ -17,7 +17,8 @@
 //! unit tests for asset-manager
 
 use crate::{
-    self as asset_manager, AssetIdLocation, AssetIdMetadata, Error, LocationAssetId, UnitsPerSecond,
+    self as asset_manager, AssetIdLocation, AssetIdMetadata, Error, LocationAssetId, NextAssetId,
+    UnitsPerSecond,
 };
 use asset_manager::mock::*;
 use frame_support::{
@@ -26,7 +27,7 @@ use frame_support::{
     WeakBoundedVec,
 };
 use manta_primitives::{
-    assets::{AssetConfig, AssetLocation, AssetMetadata, FungibleLedger},
+    assets::{AssetConfig, AssetLocation, AssetMetadata, FungibleLedger, UpdateMetadata},
     types::Balance,
 };
 use orml_traits::GetByKey;
@@ -546,4 +547,38 @@ fn set_min_xcm_fee_should_work() {
             None
         );
     })
+}
+
+#[test]
+fn update_metadata_works() {
+    new_test_ext().execute_with(|| {
+        let start_id = 8;
+        let next_id = start_id + 1;
+        assert_eq!(NextAssetId::<Runtime>::get(), start_id);
+        let metadata = AssetMetadata::SBT(vec![0].try_into().unwrap());
+        assert_ok!(crate::Pallet::<Runtime>::create_asset(metadata.clone()));
+
+        // increments counter and inserts metadata
+        assert_eq!(NextAssetId::<Runtime>::get(), next_id);
+        assert_eq!(
+            AssetIdMetadata::<Runtime>::get(start_id).unwrap(),
+            metadata.clone()
+        );
+
+        assert_noop!(
+            crate::Pallet::<Runtime>::update_metadata(&next_id, metadata.clone()),
+            Error::<Runtime>::UpdateNonExistentAsset
+        );
+        let metadata_two = AssetMetadata::SBT(vec![1].try_into().unwrap());
+        assert_ok!(crate::Pallet::<Runtime>::update_metadata(
+            &start_id,
+            metadata_two.clone()
+        ));
+
+        assert!(AssetIdMetadata::<Runtime>::get(&next_id).is_none());
+        assert_eq!(
+            AssetIdMetadata::<Runtime>::get(&start_id).unwrap(),
+            metadata_two
+        );
+    });
 }

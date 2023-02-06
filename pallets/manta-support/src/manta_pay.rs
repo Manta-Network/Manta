@@ -1017,13 +1017,18 @@ impl From<RawCheckpoint> for Checkpoint {
     }
 }
 
+/// Asset Type in Manta Pay
 #[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, TypeInfo)]
 pub enum AssetType {
     FT,
     SBT,
 }
 
+/// Posts to Ledger
 pub trait PostToLedger<AccountId> {
+    /// Posts to ledger
+    ///
+    /// WARNING: `asset_type` must always be determined internally from rust code. Do not let exrinsics determine what asset type they are.
     fn post_transaction(
         origin: Option<AccountId>,
         sources: Vec<AccountId>,

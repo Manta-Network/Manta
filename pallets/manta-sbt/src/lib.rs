@@ -144,7 +144,7 @@ pub mod pallet {
             let asset_id: StandardAssetId = post
                 .asset_id
                 .map(id_from_field)
-                .ok_or(Error::<T>::InvalidAssetId)?
+                .flatten()
                 .ok_or(Error::<T>::InvalidAssetId)?;
             // Ensure asset id is correct, only a single unique asset_id mapped to account is valid
             ensure!(asset_id == start_id, Error::<T>::InvalidAssetId);
@@ -186,10 +186,10 @@ pub mod pallet {
                 ExistenceRequirement::KeepAlive,
             )?;
 
+            // Reserves uniques AssetIds to be used later to mint SBTs
             let start_id =
                 T::UpdateMetadata::create_asset(AssetMetadata::SBT(BoundedVec::default()))?;
             for _ in 1..T::MintsPerReserve::get() {
-                // Creates new Assets in `AssetRegistry`
                 T::UpdateMetadata::create_asset(AssetMetadata::SBT(BoundedVec::default()))?;
             }
             // Asset_id to stop minting at, goes up to, but not including this value
