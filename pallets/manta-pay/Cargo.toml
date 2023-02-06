@@ -109,9 +109,9 @@ jsonrpsee = { version = "0.15.0", features = ["server", "macros"], optional = tr
 # manta dependencies
 manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.9", default-features = false }
 manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.9", default-features = false }
-manta-support = { package = "pallet-manta-support", path = "../manta-support", default-features = false }
 manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.9", default-features = false, features = ["groth16", "parameters", "scale"] }
 manta-primitives = { path = "../../primitives/manta", default-features = false }
+manta-support = { package = "pallet-manta-support", path = "../manta-support", default-features = false }
 manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.9", default-features = false }
 
 [dev-dependencies]
