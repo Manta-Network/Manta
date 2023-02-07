@@ -25,11 +25,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![forbid(rustdoc::broken_intra_doc_links)]
-#![allow(clippy::large_enum_variant)]
 
 extern crate alloc;
 
-use alloc::vec;
+use alloc::{vec, boxed::Box};
 use frame_support::{
     pallet_prelude::*,
     traits::{Currency, ExistenceRequirement, ReservableCurrency, StorageVersion},
@@ -129,7 +128,7 @@ pub mod pallet {
         #[transactional]
         pub fn to_private(
             origin: OriginFor<T>,
-            post: TransferPost,
+            post: Box<TransferPost>,
             metadata: BoundedVec<u8, SbtBound>,
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
@@ -164,7 +163,7 @@ pub mod pallet {
                 ReservedIds::<T>::insert(&origin, (increment_start_id, end_id))
             }
 
-            T::Ledger::post_transaction(None, vec![origin.clone()], vec![], post, AssetType::SBT)?;
+            T::Ledger::post_transaction(None, vec![origin.clone()], vec![], *post, AssetType::SBT)?;
             Self::deposit_event(Event::<T>::MintSbt {
                 source: origin,
                 asset: asset_id,

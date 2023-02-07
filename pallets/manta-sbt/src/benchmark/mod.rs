@@ -31,7 +31,7 @@ benchmarks! {
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
     }: to_private (
         RawOrigin::Signed(caller.clone()),
-        mint_post,
+        Box::new(mint_post),
         vec![0].try_into().unwrap()
     )
 

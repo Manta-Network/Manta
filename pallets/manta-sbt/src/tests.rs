@@ -107,7 +107,7 @@ fn to_private_should_work() {
         let post = sample_to_private(id, value, &mut rng);
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
-            post,
+            Box::new(post),
             bvec![0]
         ));
     });
@@ -126,7 +126,7 @@ fn max_reserved_to_private_works() {
             let post = sample_to_private(id, value, &mut rng);
             assert_ok!(MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
-                post,
+                Box::new(post),
                 bvec![0]
             ));
         }
@@ -147,7 +147,7 @@ fn overflow_reserved_ids_fails() {
             let post = sample_to_private(id, value, &mut rng);
             assert_ok!(MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
-                post,
+                Box::new(post),
                 bvec![0]
             ));
         }
@@ -163,7 +163,7 @@ fn not_reserved_fails() {
         let id = field_from_id(10);
         let post = sample_to_private(id, value, &mut rng);
         assert_noop!(
-            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), post, bvec![0]),
+            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), Box::new(post), bvec![0]),
             Error::<Test>::NotReserved
         );
     });
@@ -180,7 +180,7 @@ fn private_transfer_fails() {
 
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
-            sample_to_private(id, value, &mut rng),
+            Box::new(sample_to_private(id, value, &mut rng)),
             bvec![]
         ));
         let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
@@ -196,7 +196,7 @@ fn private_transfer_fails() {
 
         let post = PalletTransferPost::try_from(private_transfer).unwrap();
         assert_noop!(
-            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), post, bvec![]),
+            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), Box::new(post), bvec![]),
             Error::<Test>::NoSenderLedger
         );
     });
@@ -213,7 +213,7 @@ fn to_public_fails() {
 
         assert_ok!(MantaSBTPallet::to_private(
             MockOrigin::signed(ALICE),
-            sample_to_private(id, value, &mut rng),
+            Box::new(sample_to_private(id, value, &mut rng)),
             bvec![]
         ));
         let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
@@ -229,7 +229,7 @@ fn to_public_fails() {
 
         let post = PalletTransferPost::try_from(private_transfer).unwrap();
         assert_noop!(
-            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), post, bvec![]),
+            MantaSBTPallet::to_private(MockOrigin::signed(ALICE), Box::new(post), bvec![]),
             Error::<Test>::NoSenderLedger
         );
     });
@@ -248,7 +248,7 @@ fn wrong_asset_id_fails() {
         assert_noop!(
             MantaSBTPallet::to_private(
                 MockOrigin::signed(ALICE),
-                sample_to_private(asset_id, value, &mut rng),
+                Box::new(sample_to_private(asset_id, value, &mut rng)),
                 bvec![]
             ),
             Error::<Test>::InvalidAssetId

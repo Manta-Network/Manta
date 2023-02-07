@@ -799,7 +799,7 @@ fn private_transfer_sbt() {
             None,
             vec![ALICE],
             vec![],
-            PalletTransferPost::try_from(to_private_0.clone()).unwrap(),
+            PalletTransferPost::try_from(to_private_0).unwrap(),
             AssetType::SBT
         ));
         assert_ok!(MantaPay::post_transaction(
@@ -825,7 +825,7 @@ fn private_transfer_sbt() {
             None,
             vec![],
             vec![],
-            PalletTransferPost::try_from(private_transfer.clone()).unwrap(),
+            PalletTransferPost::try_from(private_transfer).unwrap(),
             AssetType::FT
         ));
     });

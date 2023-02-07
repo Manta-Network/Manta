@@ -562,11 +562,11 @@ fn update_metadata_works() {
         assert_eq!(NextAssetId::<Runtime>::get(), next_id);
         assert_eq!(
             AssetIdMetadata::<Runtime>::get(start_id).unwrap(),
-            metadata.clone()
+            metadata
         );
 
         assert_noop!(
-            crate::Pallet::<Runtime>::update_metadata(&next_id, metadata.clone()),
+            crate::Pallet::<Runtime>::update_metadata(&next_id, metadata),
             Error::<Runtime>::UpdateNonExistentAsset
         );
         let metadata_two = AssetMetadata::SBT(vec![1].try_into().unwrap());
@@ -575,9 +575,9 @@ fn update_metadata_works() {
             metadata_two.clone()
         ));
 
-        assert!(AssetIdMetadata::<Runtime>::get(&next_id).is_none());
+        assert!(AssetIdMetadata::<Runtime>::get(next_id).is_none());
         assert_eq!(
-            AssetIdMetadata::<Runtime>::get(&start_id).unwrap(),
+            AssetIdMetadata::<Runtime>::get(start_id).unwrap(),
             metadata_two
         );
     });
