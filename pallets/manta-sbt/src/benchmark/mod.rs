@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{benchmark::precomputed_coins::TO_PRIVATE, Call, Config, Pallet, TransferPost};
+use crate::{benchmark::precomputed_coins::TO_PRIVATE, Box, Call, Config, Pallet, TransferPost};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, vec, whitelisted_caller};
 use frame_support::traits::{Currency, Get};
 use frame_system::RawOrigin;
