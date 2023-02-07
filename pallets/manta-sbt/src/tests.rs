@@ -175,7 +175,7 @@ fn private_transfer_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         initialize_test();
-        let value = 2;
+        let value = 1;
         let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
 
         assert_ok!(MantaSBTPallet::to_private(
@@ -190,7 +190,7 @@ fn private_transfer_fails() {
             &PARAMETERS,
             &mut utxo_accumulator,
             id_from_field(id).unwrap().into(),
-            [value / 2, value / 2],
+            [value, value],
             &mut rng,
         );
 
@@ -208,7 +208,7 @@ fn to_public_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         initialize_test();
-        let value = 2;
+        let value = 1;
         let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
 
         assert_ok!(MantaSBTPallet::to_private(
@@ -223,7 +223,7 @@ fn to_public_fails() {
             &PARAMETERS,
             &mut utxo_accumulator,
             id_from_field(id).unwrap().into(),
-            [value / 2, value / 2],
+            [value, value],
             &mut rng,
         );
 

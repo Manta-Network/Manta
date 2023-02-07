@@ -41,7 +41,8 @@ use manta_pay::{
     test,
 };
 use manta_support::manta_pay::{
-    field_from_id, fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost,
+    field_from_id, fp_encode, AssetId, AssetType, AssetValue, PostToLedger,
+    TransferPost as PalletTransferPost,
 };
 
 use manta_primitives::{
@@ -690,5 +691,142 @@ fn transfer_ledger_errors_should_shut_down() {
             ReceiverPostError::UnexpectedError(ReceiverLedgerError::<Test>::ChecksumError),
         ));
         assert_manta_pay_suspension();
+    });
+}
+
+#[test]
+fn to_private_sbt_ledger_works() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        let id = 10u128;
+        // Number can be arbitrary
+        let value = 10000;
+        let post = sample_to_private(field_from_id(id), value, &mut rng);
+        assert_ok!(MantaPay::post_transaction(
+            None,
+            vec![ALICE],
+            vec![],
+            post,
+            AssetType::SBT
+        ));
+    });
+}
+
+#[test]
+fn to_public_sbt_fails() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        let asset_id = 10u128;
+        let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
+        let ([to_public_input_0, to_public_input_1], to_public) =
+            test::payment::to_public::prove_full(
+                &PROVING_CONTEXT,
+                &PARAMETERS,
+                &mut utxo_accumulator,
+                Fp::from(asset_id),
+                [100, 100],
+                &mut rng,
+            );
+
+        assert_ok!(MantaPay::post_transaction(
+            None,
+            vec![ALICE],
+            vec![],
+            PalletTransferPost::try_from(to_public_input_0.clone()).unwrap(),
+            AssetType::SBT
+        ));
+        assert_ok!(MantaPay::post_transaction(
+            None,
+            vec![ALICE],
+            vec![],
+            PalletTransferPost::try_from(to_public_input_1).unwrap(),
+            AssetType::SBT
+        ));
+        assert_noop!(
+            MantaPay::post_transaction(
+                None,
+                vec![],
+                vec![ALICE],
+                PalletTransferPost::try_from(to_public.clone()).unwrap(),
+                AssetType::SBT
+            ),
+            Error::<Test>::InvalidShape
+        );
+
+        // fails for fungible ledger because there is no asset registered at this asset_id
+        assert_noop!(
+            MantaPay::post_transaction(
+                None,
+                vec![ALICE],
+                vec![],
+                PalletTransferPost::try_from(to_public_input_0).unwrap(),
+                AssetType::FT
+            ),
+            Error::<Test>::InvalidSourceAccount
+        );
+        assert_noop!(
+            MantaPay::post_transaction(
+                None,
+                vec![],
+                vec![ALICE],
+                PalletTransferPost::try_from(to_public).unwrap(),
+                AssetType::FT
+            ),
+            Error::<Test>::InvalidSinkAccount
+        );
+    });
+}
+
+#[test]
+fn private_transfer_sbt() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        let asset_id = 10u128;
+        let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
+
+        let ([to_private_0, to_private_1], private_transfer) =
+            test::payment::private_transfer::prove_full(
+                &PROVING_CONTEXT,
+                &PARAMETERS,
+                &mut utxo_accumulator,
+                Fp::from(asset_id),
+                // Divide by 2 in order to not exceed total_supply
+                [100, 100],
+                &mut rng,
+            );
+
+        assert_ok!(MantaPay::post_transaction(
+            None,
+            vec![ALICE],
+            vec![],
+            PalletTransferPost::try_from(to_private_0.clone()).unwrap(),
+            AssetType::SBT
+        ));
+        assert_ok!(MantaPay::post_transaction(
+            None,
+            vec![ALICE],
+            vec![],
+            PalletTransferPost::try_from(to_private_1).unwrap(),
+            AssetType::SBT
+        ));
+        assert_noop!(
+            MantaPay::post_transaction(
+                None,
+                vec![],
+                vec![],
+                PalletTransferPost::try_from(private_transfer.clone()).unwrap(),
+                AssetType::SBT
+            ),
+            Error::<Test>::AssetSpent
+        );
+
+        // Private transfer succeeds, but this does not matter as ownership of sbt is only determined by reconstructing `ToPrivate` UTXO
+        assert_ok!(MantaPay::post_transaction(
+            None,
+            vec![],
+            vec![],
+            PalletTransferPost::try_from(private_transfer.clone()).unwrap(),
+            AssetType::FT
+        ));
     });
 }

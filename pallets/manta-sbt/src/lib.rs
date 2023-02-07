@@ -130,12 +130,13 @@ pub mod pallet {
             metadata: BoundedVec<u8, SbtBound>,
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
-            // Checks that it is indeed a to_private post
+            // Checks that it is indeed a to_private post with a value of 1
             ensure!(
                 post.sources.len() == 1
                     && post.sender_posts.is_empty()
                     && post.receiver_posts.len() == 1
-                    && post.sinks.is_empty(),
+                    && post.sinks.is_empty()
+                    && post.sources.get(0) == Some(&1u128.to_le_bytes()),
                 Error::<T>::NoSenderLedger
             );
 
@@ -143,8 +144,7 @@ pub mod pallet {
                 ReservedIds::<T>::get(&origin).ok_or(Error::<T>::NotReserved)?;
             let asset_id: StandardAssetId = post
                 .asset_id
-                .map(id_from_field)
-                .flatten()
+                .and_then(id_from_field)
                 .ok_or(Error::<T>::InvalidAssetId)?;
             // Ensure asset id is correct, only a single unique asset_id mapped to account is valid
             ensure!(asset_id == start_id, Error::<T>::InvalidAssetId);
@@ -235,8 +235,8 @@ pub mod pallet {
     pub enum Error<T> {
         /// Invalid Asset Id
         ///
-        /// The asset id of the transfer could not be converted correctly to the standard format
-        /// or the post is not the designated asset_id stored in `ReservedIds`
+        /// The asset id of the `TransferPost` is incorrect. It could not be converted correctly to `StandardAssetId`
+        /// or is not the designated `ReservedIds`
         InvalidAssetId,
 
         /// No Sender Ledger in SBT, Private Transfers are disabled
