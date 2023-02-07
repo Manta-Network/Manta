@@ -59,6 +59,9 @@ pub mod weights;
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmark;
 
+// One in encoded form, used to check that value input in `ToPrivate` post is one
+const ENCODED_ONE: [u8; 16] = 1u128.to_le_bytes();
+
 /// Type alias for currency balance.
 pub type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -136,7 +139,7 @@ pub mod pallet {
                     && post.sender_posts.is_empty()
                     && post.receiver_posts.len() == 1
                     && post.sinks.is_empty()
-                    && post.sources.get(0) == Some(&1u128.to_le_bytes()),
+                    && post.sources.first() == Some(&ENCODED_ONE),
                 Error::<T>::NoSenderLedger
             );
 
