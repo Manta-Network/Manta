@@ -560,10 +560,7 @@ fn update_metadata_works() {
 
         // increments counter and inserts metadata
         assert_eq!(NextAssetId::<Runtime>::get(), next_id);
-        assert_eq!(
-            AssetIdMetadata::<Runtime>::get(start_id).unwrap(),
-            metadata
-        );
+        assert_eq!(AssetIdMetadata::<Runtime>::get(start_id).unwrap(), metadata);
 
         assert_noop!(
             crate::Pallet::<Runtime>::update_metadata(&next_id, metadata),
