@@ -18,7 +18,7 @@
 
 use frame_support::{
     parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32, Everything, IsInVec},
+    traits::{ConstU128, ConstU16, ConstU32, Everything, GenesisBuild, IsInVec},
     PalletId,
 };
 use frame_system::{EnsureRoot, RawOrigin};
@@ -314,8 +314,12 @@ impl pallet_tx_pause::Config for Test {
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    let t = frame_system::GenesisConfig::default()
+    let mut t = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
+        .unwrap();
+
+    pallet_asset_manager::GenesisConfig::<Test>::default()
+        .assimilate_storage(&mut t)
         .unwrap();
 
     sp_io::TestExternalities::new(t)
