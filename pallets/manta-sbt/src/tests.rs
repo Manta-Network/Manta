@@ -253,5 +253,24 @@ fn wrong_asset_id_fails() {
             ),
             Error::<Test>::InvalidAssetId
         );
-    })
+    });
+}
+
+#[test]
+fn only_value_of_one_allowed() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        initialize_test();
+        let value = 10;
+        let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
+
+        assert_noop!(
+            MantaSBTPallet::to_private(
+                MockOrigin::signed(ALICE),
+                Box::new(sample_to_private(id, value, &mut rng)),
+                bvec![]
+            ),
+            Error::<Test>::ValueNotOne
+        );
+    });
 }

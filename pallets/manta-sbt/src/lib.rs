@@ -123,6 +123,8 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Mints a zkSBT
+        ///
+        /// `TransferPost` is posted to private ledger and SBT metadata is stored onchain.
         #[pallet::call_index(0)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::to_private())]
         #[transactional]
@@ -137,9 +139,13 @@ pub mod pallet {
                 post.sources.len() == 1
                     && post.sender_posts.is_empty()
                     && post.receiver_posts.len() == 1
-                    && post.sinks.is_empty()
-                    && post.sources.first() == Some(&ENCODED_ONE),
+                    && post.sinks.is_empty(),
                 Error::<T>::NoSenderLedger
+            );
+            // Checks that value is one, this is defensive as value is not used for SBT.
+            ensure!(
+                post.sources.first() == Some(&ENCODED_ONE),
+                Error::<T>::ValueNotOne
             );
 
             let (start_id, end_id) =
@@ -213,21 +219,20 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(fn deposit_event)]
     pub enum Event<T: Config> {
-        /// Mint SBT Event
+        /// Mints SBTs to private ledger
         MintSbt {
             /// AssetId on private leger
             asset: StandardAssetId,
-
             /// Source Account
             source: T::AccountId,
         },
-        /// Reserve SBT
+        /// Reserve `AssetIds` as SBT
         SBTReserved {
-            /// Public Account reserving sbt mints
+            /// Public Account reserving SBT mints
             who: T::AccountId,
-            /// Start of reserved ids
+            /// Start of `AssetIds` reserved for use on private ledger
             start_id: StandardAssetId,
-            /// end of reserved ids
+            /// End of `AssetIds` reserved for use private ledger, does not include this value
             stop_id: StandardAssetId,
         },
     }
@@ -246,6 +251,9 @@ pub mod pallet {
 
         /// Need to first call `reserve_sbt` before minting
         NotReserved,
+
+        /// `ToPrivate` post can only have value of 1. This is defensive to not allow large numbers on private ledger.
+        ValueNotOne,
     }
 }
 
