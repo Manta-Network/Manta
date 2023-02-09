@@ -197,7 +197,6 @@ pub mod pallet {
 
             // Reserves uniques AssetIds to be used later to mint SBTs
             let asset_id_range: Vec<StandardAssetId> = (0..T::MintsPerReserve::get())
-                .into_iter()
                 .map(|_| T::UpdateMetadata::create_asset(AssetMetadata::SBT(BoundedVec::default())))
                 .collect::<Result<Vec<StandardAssetId>, _>>()?;
 
