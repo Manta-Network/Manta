@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! # Zknft Module
+//! # MantaPay Module
 //!
-//! Zknft is a Multi-Asset Shielded Payment protocol.
+//! MantaPay is a Multi-Asset Shielded Payment protocol.
 //!
 //! ## Overview
 //!
@@ -96,7 +96,7 @@ pub mod rpc;
 #[cfg(feature = "runtime")]
 pub mod runtime;
 
-/// Zknft Pallet
+/// MantaPay Pallet
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;

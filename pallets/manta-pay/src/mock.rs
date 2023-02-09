@@ -52,7 +52,7 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        ZknftPallet: crate::{Pallet, Call, Storage, Event<T>},
+        MantaPay: crate::{Pallet, Call, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Assets: pallet_assets::{Pallet, Storage, Event<T>},
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>},
@@ -252,13 +252,13 @@ impl pallet_asset_manager::Config for Test {
 }
 
 parameter_types! {
-    pub const ZknftPalletId: PalletId = MANTA_PAY_PALLET_ID;
+    pub const MantaPayPalletId: PalletId = MANTA_PAY_PALLET_ID;
 }
 
 impl crate::Config for Test {
     type Event = Event;
     type WeightInfo = crate::weights::SubstrateWeight<Self>;
-    type PalletId = ZknftPalletId;
+    type PalletId = MantaPayPalletId;
     type AssetConfig = MantaAssetConfig;
 }
 

@@ -31,7 +31,7 @@ use frame_support::{
 };
 use frame_system::Config;
 
-/// Weight functions needed for pallet_zknft.
+/// Weight functions needed for pallet_MantaPay.
 pub trait WeightInfo {
     /// Returns the [`Weight`] of the [`crate::Pallet::to_private`] extrinsic.
     fn to_private() -> Weight;
@@ -54,11 +54,11 @@ where
     T: Config,
 {
     /// ```text
-    /// Storage: Zknft Balances (r:1 w:1)
-    /// Storage: Zknft UtxoSet (r:1 w:1)
-    /// Storage: Zknft ShardTrees (r:1 w:1)
-    /// Storage: Zknft UtxoSetOutputs (r:0 w:1)
-    /// Storage: Zknft Shards (r:0 w:1)
+    /// Storage: MantaPay Balances (r:1 w:1)
+    /// Storage: MantaPay UtxoSet (r:1 w:1)
+    /// Storage: MantaPay ShardTrees (r:1 w:1)
+    /// Storage: MantaPay UtxoSetOutputs (r:0 w:1)
+    /// Storage: MantaPay Shards (r:0 w:1)
     /// ```
     fn to_private() -> Weight {
         (36_400_000_000 as Weight)
@@ -67,14 +67,14 @@ where
     }
 
     /// ```text
-    /// Storage: Zknft UtxoSetOutputs (r:2 w:1)
-    /// Storage: Zknft VoidNumberSet (r:2 w:2)
-    /// Storage: Zknft UtxoSet (r:1 w:1)
-    /// Storage: Zknft VoidNumberSetSize (r:1 w:1)
-    /// Storage: Zknft ShardTrees (r:1 w:1)
-    /// Storage: Zknft Balances (r:1 w:1)
-    /// Storage: Zknft VoidNumberSetInsertionOrder (r:0 w:2)
-    /// Storage: Zknft Shards (r:0 w:1)
+    /// Storage: MantaPay UtxoSetOutputs (r:2 w:1)
+    /// Storage: MantaPay VoidNumberSet (r:2 w:2)
+    /// Storage: MantaPay UtxoSet (r:1 w:1)
+    /// Storage: MantaPay VoidNumberSetSize (r:1 w:1)
+    /// Storage: MantaPay ShardTrees (r:1 w:1)
+    /// Storage: MantaPay Balances (r:1 w:1)
+    /// Storage: MantaPay VoidNumberSetInsertionOrder (r:0 w:2)
+    /// Storage: MantaPay Shards (r:0 w:1)
     /// ```
     fn to_public() -> Weight {
         (44_100_000_000 as Weight)
@@ -83,13 +83,13 @@ where
     }
 
     /// ```text
-    /// Storage: Zknft UtxoSetOutputs (r:2 w:2)
-    /// Storage: Zknft VoidNumberSet (r:2 w:2)
-    /// Storage: Zknft UtxoSet (r:2 w:2)
-    /// Storage: Zknft VoidNumberSetSize (r:1 w:1)
-    /// Storage: Zknft ShardTrees (r:2 w:2)
-    /// Storage: Zknft VoidNumberSetInsertionOrder (r:0 w:2)
-    /// Storage: Zknft Shards (r:0 w:2)
+    /// Storage: MantaPay UtxoSetOutputs (r:2 w:2)
+    /// Storage: MantaPay VoidNumberSet (r:2 w:2)
+    /// Storage: MantaPay UtxoSet (r:2 w:2)
+    /// Storage: MantaPay VoidNumberSetSize (r:1 w:1)
+    /// Storage: MantaPay ShardTrees (r:2 w:2)
+    /// Storage: MantaPay VoidNumberSetInsertionOrder (r:0 w:2)
+    /// Storage: MantaPay Shards (r:0 w:2)
     /// ```
     fn private_transfer() -> Weight {
         (51_500_000_000 as Weight)

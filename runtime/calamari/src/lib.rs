@@ -298,6 +298,7 @@ impl Contains<Call> for BaseFilter {
             | Call::MantaPay(_)
             | Call::Preimage(_)
             | Call::Uniques(_)
+            | Call::AssetManager(_)
             | Call::XTokens(orml_xtokens::Call::transfer {..}
                 | orml_xtokens::Call::transfer_multicurrencies {..})
             | Call::TransactionPause(_)
