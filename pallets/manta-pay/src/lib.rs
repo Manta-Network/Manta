@@ -756,7 +756,6 @@ impl<T: Config> PostToLedger<T::AccountId> for Pallet<T> {
                         .map_err(Error::<T>::from)?
                         .convert(origin),
                 );
-                Ok(().into())
             }
             AssetType::SBT => {
                 Self::deposit_event(
@@ -772,9 +771,9 @@ impl<T: Config> PostToLedger<T::AccountId> for Pallet<T> {
                         .map_err(Error::<T>::from)?
                         .convert(origin),
                 );
-                Ok(().into())
             }
         }
+        Ok(().into())
     }
 }
 
