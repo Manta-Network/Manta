@@ -96,7 +96,7 @@ pub mod pallet {
         /// Pallet ID
         type PalletId: Get<PalletId>;
 
-        /// Number of unique Asset Ids reserved per `reserve_sbt` call, cannot be zero
+        /// Number of unique Asset Ids reserved per `reserve_sbt` call, is the amount of SBTs allowed to be minted
         #[pallet::constant]
         type MintsPerReserve: Get<u16>;
 
@@ -159,11 +159,12 @@ pub mod pallet {
 
             // Updates SbtMetadata
             T::UpdateMetadata::update_metadata(&asset_id, AssetMetadata::SBT(metadata))?;
-            // Increments id by one, remove from storage if reserved asset_ids are exhausted
             let increment_start_id = start_id
                 .checked_add(One::one())
                 .ok_or(ArithmeticError::Overflow)?;
-            if increment_start_id == end_id {
+
+            // If `ReservedIds` are all used remove from storage, otherwise increment the next `AssetId` to be used next time for minting SBT
+            if increment_start_id > end_id {
                 ReservedIds::<T>::remove(&origin)
             } else {
                 ReservedIds::<T>::insert(&origin, (increment_start_id, end_id))
@@ -195,15 +196,14 @@ pub mod pallet {
             )?;
 
             // Reserves uniques AssetIds to be used later to mint SBTs
-            let start_id =
-                T::UpdateMetadata::create_asset(AssetMetadata::SBT(BoundedVec::default()))?;
-            for _ in 1..T::MintsPerReserve::get() {
-                T::UpdateMetadata::create_asset(AssetMetadata::SBT(BoundedVec::default()))?;
-            }
-            // Asset_id to stop minting at, goes up to, but not including this value
-            let stop_id = start_id
-                .checked_add(T::MintsPerReserve::get().into())
-                .ok_or(ArithmeticError::Overflow)?;
+            let asset_id_range: Vec<StandardAssetId> = (0..T::MintsPerReserve::get())
+                .into_iter()
+                .map(|_| T::UpdateMetadata::create_asset(AssetMetadata::SBT(BoundedVec::default())))
+                .collect::<Result<Vec<StandardAssetId>, _>>()?;
+
+            // The range of `AssetIds` that are reserved as SBTs
+            let start_id: StandardAssetId = *asset_id_range.first().ok_or(Error::<T>::ZeroMints)?;
+            let stop_id: StandardAssetId = *asset_id_range.last().ok_or(Error::<T>::ZeroMints)?;
 
             ReservedIds::<T>::insert(&who, (start_id, stop_id));
             Self::deposit_event(Event::<T>::SBTReserved {
@@ -254,6 +254,9 @@ pub mod pallet {
 
         /// `ToPrivate` post can only have value of 1. This is defensive to not allow large numbers on private ledger.
         ValueNotOne,
+
+        /// Pallet is configured to allow no SBT mints, only happens when `MintsPerReserve` is zero
+        ZeroMints,
     }
 }
 

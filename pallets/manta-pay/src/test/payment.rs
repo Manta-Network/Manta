@@ -820,7 +820,7 @@ fn private_transfer_sbt() {
             Error::<Test>::AssetSpent
         );
 
-        // Private transfer succeeds, but this does not matter as ownership of sbt is only determined by reconstructing `ToPrivate` UTXO
+        // Private transfer succeeds, but this does not matter as ownership of sbt is only determined by reconstructin UTXO from `ToPrivate` `TransactionData`
         assert_ok!(MantaPay::post_transaction(
             None,
             vec![],
