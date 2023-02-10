@@ -323,7 +323,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.chain-spec.id }}-bob.log
-          path: ${{ github.workspace }}/polkadot-launch/9922.log
+          path: ${{ github.workspace }}/polkadot-launch/9944.log
       - name: parse rococo block times
         run: |
           grep '#.*' ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-rococo.csv; done
