@@ -24,7 +24,6 @@ jobs:
           curl -L -o $HOME/manta https://github.com/Manta-Network/Manta/releases/download/$VERSION/manta
           chmod +x $HOME/manta
           ls -ahl $HOME
-      # generate genesis files
       - name: Export genesis files
         run: |
           $HOME/manta build-spec --chain $CHAIN --raw > ./$CHAIN-genesis.json
