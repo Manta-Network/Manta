@@ -35,7 +35,7 @@ jobs:
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
       - uses: actions/checkout@v2
       - name: Run yamllint
-        uses: actionshub/yamllint@1.6.0
+        uses: actionshub/yamllint@v1.6.0
       - name: install sccache
         env:
           SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
