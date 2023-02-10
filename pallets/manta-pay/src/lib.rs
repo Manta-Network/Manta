@@ -1406,9 +1406,9 @@ where
     }
 }
 
-/// This allows `ToPrivate` to insert arbitrary UTXOs. There are no checks on the source accounts. `ToPublic` and `PrivateTransfer` will fail.
+/// Only allows `ToPrivate`. There are no checks on the source accounts. `ToPublic` and `PrivateTransfer` will fail.
 ///
-/// WARNING: Ensure that only `AssetId` that corresponds to an SBT are allowed to call this Ledger. It will allow arbitrary UTXO to be inserted.
+/// WARNING: Ensure that only `AssetId` that corresponds to an SBT are allowed to call this Ledger. It does not check for source account balances.
 struct SBTLedger<T>(PhantomData<T>)
 where
     T: Config;
