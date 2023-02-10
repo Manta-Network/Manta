@@ -70,7 +70,7 @@ jobs:
       - name: download wasm
         uses: actions/download-artifact@v3
         with:
-          name: $CHAIN-genesis.state
+          name: $CHAIN-genesis.wasm
       - name: compare sha checksums
         run: |
           sha256sum --check $HOME/$CHAIN-genesis.json.sha256 $HOME/$CHAIN-genesis.state.sha256 $HOME/$CHAIN-genesis.wasm.sha256
