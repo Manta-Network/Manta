@@ -196,7 +196,7 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// A new asset was registered
-        FungibleAssetRegistered {
+        ForceAssetRegistered {
             /// Asset Id of new Asset
             asset_id: T::AssetId,
 
@@ -367,7 +367,7 @@ pub mod pallet {
                 Self::increase_count_of_associated_assets(*para_id)?;
             }
 
-            Self::deposit_event(Event::<T>::FungibleAssetRegistered {
+            Self::deposit_event(Event::<T>::ForceAssetRegistered {
                 asset_id,
                 location,
                 metadata,
