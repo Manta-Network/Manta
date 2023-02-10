@@ -35,7 +35,7 @@ jobs:
           sha256sum $CHAIN-genesis.state | tee $CHAIN-genesis.state.sha256
       - name: Export genesis wasm
         run: |
-          $HOME/manta export-genesis-state --chain $CHAIN > $CHAIN-genesis.wasm
+          $HOME/manta export-genesis-wasm --chain $CHAIN > $CHAIN-genesis.wasm
           sha256sum $CHAIN-genesis.wasm | tee $CHAIN-genesis.wasm.sha256
       # upload artifacts
       - name: upload genesis
