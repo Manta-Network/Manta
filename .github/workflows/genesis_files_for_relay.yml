@@ -15,46 +15,46 @@ jobs:
   export_genesis_files:
     runs-on: ubuntu-latest
     steps:
-        - name: fetch and chmod manta release
-          run: |
-            curl -L -o $HOME/manta https://github.com/Manta-Network/Manta/releases/download/$VERSION/manta
-            chmod +x $HOME/manta
-            ls -ahl $HOME
-        - name: print genesis hash
-          run: |
-            $HOME/manta build-spec --chain $CHAIN --raw > ./$CHAIN-genesis.json
-            sha256sum $CHAIN-genesis.json > $CHAIN-genesis.json.sha256
-        - name: Export genesis state
-          run: |
-            $HOME/manta export-genesis-state --chain $CHAIN > $CHAIN-genesis.state
-            sha256sum $CHAIN-genesis.state > $CHAIN-genesis.state.sha256
-        - name: Export genesis wasm
-          run: |
-            $HOME/manta export-genesis-state --chain $CHAIN > $CHAIN-genesis.wasm
-            sha256sum $CHAIN-genesis.wasm > $CHAIN-genesis.wasm.sha256
-        - name: upload state
-          uses: actions/upload-artifact@v2
-          with:
-            name: $CHAIN-genesis.state
-            path: $HOME/$CHAIN-genesis.state
-        - name: upload wasm
-          uses: actions/upload-artifact@v2
-          with:
-            name: $CHAIN-genesis.wasm
-            path: $HOME/$CHAIN-genesis.wasm
-        ## download artifacts and compare sha checksums
-        - name: remove files
-          run: |
-            rm $HOME/$CHAIN-genesis.state
-            rm $HOME/$CHAIN-genesis.wasm
-        - name: download state
-          uses: actions/download-artifact@v3
-          with:
-            name:  $CHAIN-genesis.state
-        - name: download wasm
-          uses: actions/download-artifact@v3
-          with:
-            name:  $CHAIN-genesis.state
-        - name: compare sha checksums
-          run: |
-            sha256sum --check $CHAIN-genesis.state.sha256 $CHAIN-genesis.wasm.sha256
+      - name: fetch and chmod manta release
+        run: |
+          curl -L -o $HOME/manta https://github.com/Manta-Network/Manta/releases/download/$VERSION/manta
+          chmod +x $HOME/manta
+          ls -ahl $HOME
+      - name: print genesis hash
+        run: |
+          $HOME/manta build-spec --chain $CHAIN --raw > ./$CHAIN-genesis.json
+          sha256sum $CHAIN-genesis.json > $CHAIN-genesis.json.sha256
+      - name: Export genesis state
+        run: |
+          $HOME/manta export-genesis-state --chain $CHAIN > $CHAIN-genesis.state
+          sha256sum $CHAIN-genesis.state > $CHAIN-genesis.state.sha256
+      - name: Export genesis wasm
+        run: |
+          $HOME/manta export-genesis-state --chain $CHAIN > $CHAIN-genesis.wasm
+          sha256sum $CHAIN-genesis.wasm > $CHAIN-genesis.wasm.sha256
+      - name: upload state
+        uses: actions/upload-artifact@v2
+        with:
+          name: $CHAIN-genesis.state
+          path: $HOME/$CHAIN-genesis.state
+      - name: upload wasm
+        uses: actions/upload-artifact@v2
+        with:
+          name: $CHAIN-genesis.wasm
+          path: $HOME/$CHAIN-genesis.wasm
+      ## download artifacts and compare sha checksums
+      - name: remove files
+        run: |
+          rm $HOME/$CHAIN-genesis.state
+          rm $HOME/$CHAIN-genesis.wasm
+      - name: download state
+        uses: actions/download-artifact@v3
+        with:
+          name:  $CHAIN-genesis.state
+      - name: download wasm
+        uses: actions/download-artifact@v3
+        with:
+          name:  $CHAIN-genesis.state
+      - name: compare sha checksums
+        run: |
+          sha256sum --check $CHAIN-genesis.state.sha256 $CHAIN-genesis.wasm.sha256
