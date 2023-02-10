@@ -25,18 +25,12 @@ jobs:
           chmod +x $HOME/manta
           ls -ahl $HOME
       # generate genesis files
-      - name: print genesis hash
+      - name: Export genesis files
         run: |
           $HOME/manta build-spec --chain $CHAIN --raw > ./$CHAIN-genesis.json
-          sha256sum $CHAIN-genesis.json | tee $CHAIN-genesis.json.sha256
-      - name: Export genesis state
-        run: |
           $HOME/manta export-genesis-state --chain $CHAIN > $CHAIN-genesis.state
-          sha256sum $CHAIN-genesis.state | tee $CHAIN-genesis.state.sha256
-      - name: Export genesis wasm
-        run: |
           $HOME/manta export-genesis-wasm --chain $CHAIN > $CHAIN-genesis.wasm
-          sha256sum $CHAIN-genesis.wasm | tee $CHAIN-genesis.wasm.sha256
+          sha256sum $CHAIN-genesis.json $CHAIN-genesis.state $CHAIN-genesis.wasm | tee $CHAIN-genesis.sha256
       # upload artifacts
       - name: upload genesis
         uses: actions/upload-artifact@v2
@@ -73,4 +67,4 @@ jobs:
           name: $CHAIN-genesis.wasm
       - name: compare sha checksums
         run: |
-          sha256sum --check $HOME/$CHAIN-genesis.json.sha256 $HOME/$CHAIN-genesis.state.sha256 $HOME/$CHAIN-genesis.wasm.sha256
+          sha256sum --check $HOME/$CHAIN-genesis.sha256
