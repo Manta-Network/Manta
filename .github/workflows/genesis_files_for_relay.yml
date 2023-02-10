@@ -66,4 +66,4 @@ jobs:
           name: $CHAIN-genesis.wasm
       - name: compare sha checksums
         run: |
-          sha256sum --check --status --strict $HOME/$CHAIN-genesis.sha256
+          sha256sum --check --strict $HOME/$CHAIN-genesis.sha256
