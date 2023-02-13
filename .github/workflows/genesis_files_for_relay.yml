@@ -55,15 +55,15 @@ jobs:
       - name: download json
         uses: actions/download-artifact@v3
         with:
-          name: $CHAIN-genesis.json
+          name: ${{env.CHAIN}}-genesis.json
       - name: download state
         uses: actions/download-artifact@v3
         with:
-          name: $CHAIN-genesis.state
+          name: ${{env.CHAIN}}-genesis.state
       - name: download wasm
         uses: actions/download-artifact@v3
         with:
-          name: $CHAIN-genesis.wasm
+          name: ${{env.CHAIN}}-genesis.wasm
       - name: compare sha checksums
         run: |
           sha256sum --check --strict $CHAIN-genesis.sha256
