@@ -34,18 +34,18 @@ jobs:
       - name: upload genesis
         uses: actions/upload-artifact@v2
         with:
-          name: $CHAIN-genesis.json
-          path: $CHAIN-genesis.json
+          name: ${{env.CHAIN}}-genesis.json
+          path: ${{env.CHAIN}}-genesis.json
       - name: upload state
         uses: actions/upload-artifact@v2
         with:
-          name: $CHAIN-genesis.state
-          path: $CHAIN-genesis.state
+          name: ${{env.CHAIN}}-genesis.state
+          path: ${{env.CHAIN}}-genesis.state
       - name: upload wasm
         uses: actions/upload-artifact@v2
         with:
-          name: $CHAIN-genesis.wasm
-          path: $CHAIN-genesis.wasm
+          name: ${{env.CHAIN}}-genesis.wasm
+          path: ${{env.CHAIN}}-genesis.wasm
       # download artifacts and compare sha checksums
       - name: remove files
         run: |
