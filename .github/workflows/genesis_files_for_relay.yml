@@ -26,10 +26,10 @@ jobs:
           ls -ahl .
       - name: Export genesis files
         run: |
-          manta build-spec --chain $CHAIN --raw > $CHAIN-genesis.json
-          manta export-genesis-state --chain $CHAIN > $CHAIN-genesis.state
-          manta export-genesis-wasm --chain $CHAIN > $CHAIN-genesis.wasm
-          sha256sum $CHAIN-genesis.json $CHAIN-genesis.state $CHAIN-genesis.wasm | tee $CHAIN-genesis.sha256
+          ./manta build-spec --chain $CHAIN --raw > ${{CHAIN}}-genesis.json
+          ./manta export-genesis-state --chain $CHAIN > ${{CHAIN}}-genesis.state
+          ./manta export-genesis-wasm --chain $CHAIN > ${{CHAIN}}-genesis.wasm
+          sha256sum $CHAIN-genesis.json $CHAIN-genesis.state $CHAIN-genesis.wasm | tee ${{CHAIN}}-genesis.sha256
       # upload artifacts
       - name: upload genesis
         uses: actions/upload-artifact@v2
