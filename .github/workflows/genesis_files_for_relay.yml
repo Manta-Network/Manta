@@ -17,8 +17,8 @@ jobs:
     steps:
       - name: get curl
         run: |
-          apt update
-          apt install -y curl
+          sudo apt update
+          sudo apt install -y curl
       - name: fetch and chmod manta release
         run: |
           curl -L -o $HOME/manta https://github.com/Manta-Network/Manta/releases/download/$VERSION/manta
