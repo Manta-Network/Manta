@@ -16,6 +16,8 @@
 
 //! Manta Chain Specifications
 
+mod mainnet_genesis;
+
 use super::*;
 use crate::command::MANTA_PARACHAIN_ID;
 use manta_runtime::{
@@ -219,9 +221,7 @@ pub fn manta_testnet_config() -> Result<MantaChainSpec, String> {
     Ok(spec)
 }
 
-/// Returns the Manta mainnet chainspec, generated to the below json file using
-/// using Ok(mainnet_genesis::manta_mainnet_config())
-/// cargo run -- build-spec --chain manta --raw
+/// Returns the Manta mainnet chainspec
 pub fn manta_config() -> Result<MantaChainSpec, String> {
-    MantaChainSpec::from_json_bytes(&include_bytes!("../../../../genesis/manta-genesis.json")[..])
+    Ok(mainnet_genesis::manta_mainnet_config())
 }
