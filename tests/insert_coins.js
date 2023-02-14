@@ -56,10 +56,10 @@ async function main() {
             status
         }) => {
             if (status.isFinalized) {
-                err.log("tx %i success.", status.nonce);
+                console.log("tx %i success.", status.nonce);
             }
             if (status.isDropped || status.isUsurped || status.isFinalityTimeout || status.isRetracted) {
-                err.log(`tx %i ${status.type}.`, status.nonce);
+                console.err(`tx %i ${status.type}.`, status.nonce);
             }
         });
 
@@ -81,10 +81,10 @@ async function main() {
             status
         }) => {
             if (status.isFinalized) {
-                err.log("tx %i success.", status.nonce);
+                console.log("tx %i success.", status.nonce);
             }
             if (status.isDropped || status.isUsurped || status.isFinalityTimeout || status.isRetracted) {
-                err.log(`tx %i ${status.type}.`, status.nonce);
+                console.err(`tx %i ${status.type}.`, status.nonce);
             }
         });
 
