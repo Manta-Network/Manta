@@ -17,53 +17,53 @@ jobs:
     steps:
       - name: get curl
         run: |
-          apt update
-          apt install -y curl
+          sudo apt update
+          sudo apt install -y curl
       - name: fetch and chmod manta release
         run: |
-          curl -L -o $HOME/manta https://github.com/Manta-Network/Manta/releases/download/$VERSION/manta
-          chmod +x $HOME/manta
-          ls -ahl $HOME
+          curl -L -o manta https://github.com/Manta-Network/Manta/releases/download/$VERSION/manta
+          chmod +x manta
+          ls -ahl .
       - name: Export genesis files
         run: |
-          $HOME/manta build-spec --chain $CHAIN --raw > ./$CHAIN-genesis.json
-          $HOME/manta export-genesis-state --chain $CHAIN > $CHAIN-genesis.state
-          $HOME/manta export-genesis-wasm --chain $CHAIN > $CHAIN-genesis.wasm
+          ./manta build-spec --chain $CHAIN --raw > $CHAIN-genesis.json
+          ./manta export-genesis-state --chain $CHAIN > $CHAIN-genesis.state
+          ./manta export-genesis-wasm --chain $CHAIN > $CHAIN-genesis.wasm
           sha256sum $CHAIN-genesis.json $CHAIN-genesis.state $CHAIN-genesis.wasm | tee $CHAIN-genesis.sha256
       # upload artifacts
       - name: upload genesis
         uses: actions/upload-artifact@v2
         with:
-          name: $CHAIN-genesis.json
-          path: $HOME/$CHAIN-genesis.json
+          name: ${{env.CHAIN}}-genesis.json
+          path: ${{env.CHAIN}}-genesis.json
       - name: upload state
         uses: actions/upload-artifact@v2
         with:
-          name: $CHAIN-genesis.state
-          path: $HOME/$CHAIN-genesis.state
+          name: ${{env.CHAIN}}-genesis.state
+          path: ${{env.CHAIN}}-genesis.state
       - name: upload wasm
         uses: actions/upload-artifact@v2
         with:
-          name: $CHAIN-genesis.wasm
-          path: $HOME/$CHAIN-genesis.wasm
+          name: ${{env.CHAIN}}-genesis.wasm
+          path: ${{env.CHAIN}}-genesis.wasm
       # download artifacts and compare sha checksums
       - name: remove files
         run: |
-          rm $HOME/$CHAIN-genesis.json
-          rm $HOME/$CHAIN-genesis.state
-          rm $HOME/$CHAIN-genesis.wasm
+          rm $CHAIN-genesis.json
+          rm $CHAIN-genesis.state
+          rm $CHAIN-genesis.wasm
       - name: download json
         uses: actions/download-artifact@v3
         with:
-          name: $CHAIN-genesis.json
+          name: ${{env.CHAIN}}-genesis.json
       - name: download state
         uses: actions/download-artifact@v3
         with:
-          name: $CHAIN-genesis.state
+          name: ${{env.CHAIN}}-genesis.state
       - name: download wasm
         uses: actions/download-artifact@v3
         with:
-          name: $CHAIN-genesis.wasm
+          name: ${{env.CHAIN}}-genesis.wasm
       - name: compare sha checksums
         run: |
-          sha256sum --check --strict $HOME/$CHAIN-genesis.sha256
+          sha256sum --check --strict $CHAIN-genesis.sha256
