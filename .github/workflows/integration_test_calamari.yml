@@ -360,46 +360,43 @@ jobs:
         name: test - calamari alice peered successfully
         run: |
           grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9921.log
-      # Add the manta-pay, asset-manager and assets storage items and run stress test separately,
-      # in order to not break the logic of the other integration tests, which don't work with real data yet.
-      # NOTE: STRESS TEST TO BE FIXED/REENABLED IN https://github.com/Manta-Network/Manta/pull/984
-      # - name: append manta-pay storage
-      #   run: |
-      #     wget -P ${{ github.workspace }}/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
-      #     mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/data/fork.json
-      #     cd ${{ github.workspace }}/Manta/tests
-      #     yarn install
-      #     yarn
-      #     node append_storage.js
-      #     cd ../../
-      #     mv ${{ github.workspace }}/Manta/tests/data/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
-      # - name: launch testnet
-      #   run: |
-      #     cd ${{ github.workspace }}/polkadot-launch
-      #     yarn install
-      #     yarn build
-      #     pm2 start dist/cli.js \
-      #       --name polkadot-launch \
-      #       --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
-      #       --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
-      #       --no-autorestart \
-      #       -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
-      # - name: run stress test
-      #   run: |
-      #     sleep 720
-      #     cd ${{ github.workspace }}/Manta/tests
-      #     yarn install
-      #     yarn
-      #     yarn stress_benchmark_test --address=ws://127.0.0.1:9921 --exit
-      # - name: stop testnet
-      #   run: |
-      #     cd ${{ github.workspace }}/polkadot-launch
-      #     pm2 stop polkadot-launch
-      # - if: always()
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: ${{ matrix.chain-spec.id }}-alice-stress.log
-      #     path: ${{ github.workspace }}/polkadot-launch/9921.log
+      - name: append manta-pay storage
+        run: |
+          wget -P ${{ github.workspace }}/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
+          mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/data/fork.json
+          cd ${{ github.workspace }}/Manta/tests
+          yarn install
+          yarn
+          node append_storage.js
+          cd ../../
+          mv ${{ github.workspace }}/Manta/tests/data/fork.json $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json
+      - name: launch testnet
+        run: |
+          cd ${{ github.workspace }}/polkadot-launch
+          yarn install
+          yarn build
+          pm2 start dist/cli.js \
+            --name polkadot-launch \
+            --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
+            --no-autorestart \
+            -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
+      - name: run stress test
+        run: |
+          sleep 720
+          cd ${{ github.workspace }}/Manta/tests
+          yarn install
+          yarn
+          yarn stress_benchmark_test --address=ws://127.0.0.1:9921 --exit
+      - name: stop testnet
+        run: |
+          cd ${{ github.workspace }}/polkadot-launch
+          pm2 stop polkadot-launch
+      - if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.chain-spec.id }}-alice-stress.log
+          path: ${{ github.workspace }}/polkadot-launch/9921.log
   docker-image-test:
     if: contains(github.event.pull_request.labels.*.name, 'A-calamari' || github.ref == 'refs/heads/manta')
     needs: [build-node-current, start-docker-image-tester]
