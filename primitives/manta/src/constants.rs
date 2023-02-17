@@ -83,6 +83,9 @@ pub mod time {
 pub const ASSET_STRING_LIMIT: u32 = 50;
 
 /// Staking Pallet Identifier
+pub const LOTTERY_PALLET_ID: PalletId = PalletId(*b"LotryPot");
+
+/// Staking Pallet Identifier
 pub const STAKING_PALLET_ID: PalletId = PalletId(*b"PotStake");
 
 /// Treasury Pallet Identifier

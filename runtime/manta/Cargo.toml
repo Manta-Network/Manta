@@ -45,6 +45,8 @@ pallet-authorship = { git = 'https://github.com/paritytech/substrate.git', defau
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 pallet-multisig = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 pallet-preimage = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+pallet-randomness-collective-flip = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }          # TODO: PoC only randomness source
+pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.28" }
 pallet-session = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 pallet-sudo = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
@@ -65,6 +67,7 @@ parachain-info = { git = 'https://github.com/paritytech/cumulus.git', default-fe
 nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.1", default-features = false }
 pallet-aura-style-filter = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.1", default-features = false }
 pallet-author-inherent = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.1", default-features = false }
+# pallet-randomness = { git = 'https://github.com/purestake/moonbeam.git', default-features = false, rev = "4618e833842e3d5b49353ac0ff8170bbfc6cc219" } # TODO, newer versions incomp with 0.9.28
 
 # Polkadot dependencies
 pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.28" }
@@ -78,6 +81,7 @@ xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-fea
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
+pallet-lottery = { path = '../../pallets/pallet-lottery', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
 
@@ -103,6 +107,7 @@ runtime-benchmarks = [
   'pallet-author-inherent/runtime-benchmarks',
   'pallet-balances/runtime-benchmarks',
   'pallet-multisig/runtime-benchmarks',
+  'pallet-scheduler/runtime-benchmarks',
   'pallet-utility/runtime-benchmarks',
   'pallet-timestamp/runtime-benchmarks',
   'pallet-parachain-staking/runtime-benchmarks',
@@ -117,6 +122,7 @@ try-runtime = [
   'pallet-balances/try-runtime',
   'pallet-parachain-staking/try-runtime',
   'pallet-preimage/try-runtime',
+  'pallet-scheduler/try-runtime',
   'pallet-multisig/try-runtime',
   'pallet-session/try-runtime',
   'pallet-timestamp/try-runtime',
@@ -135,11 +141,14 @@ std = [
   'sp-std/std',
   'sp-io/std',
   'sp-core/std',
+  'pallet-scheduler/std',
   'sp-runtime/std',
   'sp-version/std',
   'sp-offchain/std',
   'sp-session/std',
   'sp-block-builder/std',
+  'pallet-randomness-collective-flip/std',
+  'pallet-lottery/std',
   'sp-transaction-pool/std',
   'sp-inherents/std',
   'frame-support/std',

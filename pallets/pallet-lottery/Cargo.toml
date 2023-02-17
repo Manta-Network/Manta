@@ -1,0 +1,37 @@
+[package]
+authors = ["Adam Reif"]
+edition = "2021"
+name = "pallet-lottery"
+version = "0.1.0"
+
+[dependencies]
+codec = { version = '3.1.2', default-features = false, features = ['derive'], package = 'parity-scale-codec' }
+scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+
+# Polkadot dependencies
+frame-executive = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+pallet-scheduler = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+
+# Self dependencies
+manta-primitives = { path = "../../primitives/manta" }
+pallet-parachain-staking = { path = '../parachain-staking' }
+
+[features]
+default = ["std"]
+std = [
+  "sp-core/std",
+  "sp-std/std",
+  "sp-io/std",
+  "sp-runtime/std",
+  "frame-support/std",
+  "frame-system/std",
+  "frame-executive/std",
+  "frame-support/std",
+  "pallet-scheduler/std",
+]
