@@ -2004,7 +2004,6 @@ fn receive_sufficient_relay_asset_on_parachain() {
     ParaA::execute_with(|| {
         assert_eq!(
             parachain::Assets::balance(relay_asset_id, sp_runtime::AccountId32::new(new_account)),
-
             amount
         );
     });
