@@ -1946,7 +1946,7 @@ fn receive_insufficient_relay_asset_on_parachain() {
     // parachain should not have received assets
     ParaA::execute_with(|| {
         assert_eq!(
-            parachain::Balances::free_balance(new_account.into()),
+            parachain::Balances::free_balance(&new_account.into()),
             fresh_account_amount
         );
     });
