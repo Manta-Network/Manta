@@ -1914,7 +1914,7 @@ fn receive_insufficient_relay_asset_on_parachain() {
     // parachain should not have received assets
     ParaA::execute_with(|| {
         assert_eq!(
-            parachain::Assets::balance(relay_asset_id, new_account.into()),
+            parachain::Assets::balance(relay_asset_id, sp_runtime::AccountId32::new(new_account)),
             0
         );
     });
@@ -1946,7 +1946,7 @@ fn receive_insufficient_relay_asset_on_parachain() {
     // parachain should not have received assets
     ParaA::execute_with(|| {
         assert_eq!(
-            parachain::Balances::free_balance(new_account.into()),
+            parachain::Balances::free_balance(sp_runtime::AccountId32::new(new_account)),
             fresh_account_amount
         );
     });
@@ -2003,7 +2003,8 @@ fn receive_sufficient_relay_asset_on_parachain() {
     // parachain should have received assets
     ParaA::execute_with(|| {
         assert_eq!(
-            parachain::Assets::balance(relay_asset_id, new_account.into()),
+            parachain::Assets::balance(relay_asset_id, sp_runtime::AccountId32::new(new_account)),
+
             amount
         );
     });
