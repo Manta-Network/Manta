@@ -1914,7 +1914,7 @@ fn receive_insufficient_relay_asset_on_parachain() {
     // parachain should not have received assets
     ParaA::execute_with(|| {
         assert_eq!(
-            parachain::Assets::balance(relay_asset_id, &new_account.into()),
+            parachain::Assets::balance(relay_asset_id, new_account.into()),
             0
         );
     });
@@ -1946,7 +1946,7 @@ fn receive_insufficient_relay_asset_on_parachain() {
     // parachain should not have received assets
     ParaA::execute_with(|| {
         assert_eq!(
-            parachain::Balances::free_balance(&new_account.into()),
+            parachain::Balances::free_balance(new_account.into()),
             fresh_account_amount
         );
     });
@@ -2003,7 +2003,7 @@ fn receive_sufficient_relay_asset_on_parachain() {
     // parachain should have received assets
     ParaA::execute_with(|| {
         assert_eq!(
-            parachain::Assets::balance(relay_asset_id, &new_account.into()),
+            parachain::Assets::balance(relay_asset_id, new_account.into()),
             amount
         );
     });
@@ -2938,7 +2938,7 @@ fn transfer_multicurrencies_should_work_scenarios() {
         )
         .unwrap();
         assert_eq!(
-            parachain::Assets::balance(relay_asset_id_on_b, &para_a_sovereign_on_para_b),
+            parachain::Assets::balance(relay_asset_id_on_b, para_a_sovereign_on_para_b),
             0
         );
 
@@ -3287,7 +3287,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
         )
         .unwrap();
         assert_eq!(
-            parachain::Assets::balance(relay_asset_id_on_b, &para_a_sovereign_on_para_b),
+            parachain::Assets::balance(relay_asset_id_on_b, para_a_sovereign_on_para_b),
             0
         );
 
