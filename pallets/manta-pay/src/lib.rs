@@ -300,7 +300,7 @@ pub mod pallet {
 
     /// Event
     #[pallet::event]
-    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    #[pallet::generate_deposit(fn deposit_event)]
     pub enum Event<T: Config> {
         /// To Private Event
         ToPrivate {
@@ -449,9 +449,6 @@ pub mod pallet {
 
         /// Encode Error
         EncodeError,
-
-        /// No Sender Ledger
-        NoSenderLedger,
     }
 
     impl<T> From<InvalidAuthorizationSignature> for Error<T>
@@ -796,7 +793,7 @@ where
     }
 }
 
-/// Fungible Token Ledger
+/// Ledger
 struct Ledger<T>(PhantomData<T>)
 where
     T: Config;
