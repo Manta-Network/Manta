@@ -1,7 +1,7 @@
 name: publish draft releases
 on:
   push:
-    branches: [ghzlatarev/calamari-xcm, release-**]
+    branches: [ghzlatarev/zk-nft-2, release-**]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 concurrency:
