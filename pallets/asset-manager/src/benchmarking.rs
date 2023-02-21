@@ -20,7 +20,7 @@ use crate::{Call, Config, Event, Pallet};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::traits::Get;
 use frame_system::{EventRecord, RawOrigin};
-use manta_primitives::assets::{AssetConfig, AssetMetadata, TestingDefault, UnitsPerSecond};
+use manta_primitives::assets::{AssetConfig, TestingDefault, UnitsPerSecond};
 use xcm::latest::prelude::*;
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
@@ -35,7 +35,7 @@ benchmarks! {
 
     register_asset {
         let location = T::Location::default();
-        let metadata = AssetMetadata::<T::Balance>::testing_default(1.into());
+        let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
     }: _(RawOrigin::Root, location.clone(), metadata)
     verify {
         assert_eq!(Pallet::<T>::asset_id_location(<T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get()), Some(location));
@@ -46,13 +46,13 @@ benchmarks! {
         for i in 8..assets_count + 8 {
             let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
             let location = T::Location::from(location.clone());
-            let metadata = AssetMetadata::<T::Balance>::testing_default(1.into());
+            let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
             Pallet::<T>::set_units_per_second(RawOrigin::Root.into(), <T as Config>::AssetId::from(i), 0)?;
         }
         // does not really matter what we register, as long as it is different than the previous
         let location = T::Location::default();
-        let metadata = AssetMetadata::<T::Balance>::testing_default(1.into());
+        let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
         let amount = 10;
         Pallet::<T>::register_asset(RawOrigin::Root.into(), location, metadata)?;
         let some_valid_asset_id = <T as Config>::AssetId::from(assets_count + 8);
@@ -66,12 +66,12 @@ benchmarks! {
         for i in 0..assets_count {
             let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
             let location = T::Location::from(location.clone());
-            let metadata = AssetMetadata::<T::Balance>::testing_default(1.into());
+            let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
         }
         // does not really matter what we register, as long as it is different than the previous
         let location = T::Location::default();
-        let metadata = AssetMetadata::<T::Balance>::testing_default(1.into());
+        let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
         Pallet::<T>::register_asset(RawOrigin::Root.into(), location, metadata)?;
         let new_location = T::Location::from(MultiLocation::new(0, X1(Parachain(1000))));
         let some_valid_asset_id = <T as Config>::AssetId::from(assets_count);
@@ -85,12 +85,12 @@ benchmarks! {
         for i in 0..assets_count {
             let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
             let location = T::Location::from(location.clone());
-            let metadata = AssetMetadata::<T::Balance>::testing_default(1.into());
+            let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
         }
         // does not really matter what we register, as long as it is different than the previous
         let location = T::Location::default();
-        let metadata = AssetMetadata::<T::Balance>::testing_default(1.into());
+        let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
         Pallet::<T>::register_asset(RawOrigin::Root.into(), location, metadata.clone())?;
         let some_valid_asset_id = <T as Config>::AssetId::from(assets_count);
     }: _(RawOrigin::Root, some_valid_asset_id, metadata.clone())
@@ -102,14 +102,14 @@ benchmarks! {
         let assets_count = 1000;
         for i in 0..assets_count {
             let location = T::Location::from(MultiLocation::new(0, X1(Parachain(i))));
-            let metadata = AssetMetadata::<T::Balance>::testing_default(1.into());
+            let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
         }
         let beneficiary: T::AccountId = whitelisted_caller();
         let amount = 100;
         // does not really matter what we register, as long as it is different than the previous
         let location = T::Location::default();
-        let metadata = AssetMetadata::<T::Balance>::testing_default(1.into());
+        let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
         Pallet::<T>::register_asset(RawOrigin::Root.into(), location, metadata)?;
         let some_valid_asset_id = <T as Config>::AssetId::from(assets_count);
     }: _(RawOrigin::Root, <T as Config>::AssetId::from(assets_count), beneficiary.clone(), <T as Config>::Balance::from(amount) )
@@ -123,7 +123,7 @@ benchmarks! {
 
             let location: MultiLocation = MultiLocation::new(0, X1(Parachain(i)));
             let location = T::Location::from(location.clone());
-            let metadata = AssetMetadata::<T::Balance>::testing_default(1.into());
+            let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
 
             Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata.clone())?;
             Pallet::<T>::set_units_per_second(RawOrigin::Root.into(), <T as Config>::AssetId::from(i), 0)?;
@@ -131,7 +131,7 @@ benchmarks! {
 
         // does not really matter what we register, as long as it is different than the previous
         let location = T::Location::default();
-        let metadata = AssetMetadata::<T::Balance>::testing_default(1.into());
+        let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
         let min_xcm_fee = 10;
         Pallet::<T>::register_asset(RawOrigin::Root.into(), location.clone(), metadata)?;
 

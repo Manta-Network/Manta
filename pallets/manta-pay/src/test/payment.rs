@@ -46,7 +46,7 @@ use manta_support::manta_pay::{
 
 use manta_primitives::{
     assets::{
-        AssetConfig, AssetRegistry, FungibleAssetRegistryMetadata, FungibleAssetStorageMetadata,
+        AssetConfig, AssetRegistry, AssetRegistryMetadata, AssetStorageMetadata,
         FungibleLedger as _,
     },
     constants::TEST_DEFAULT_ASSET_ED,
@@ -313,8 +313,8 @@ where
 /// Initializes a test by allocating `value`-many assets of the given `id` to the default account.
 #[inline]
 fn initialize_test(id: StandardAssetId, value: AssetValue) {
-    let metadata = FungibleAssetRegistryMetadata {
-        metadata: FungibleAssetStorageMetadata {
+    let metadata = AssetRegistryMetadata {
+        metadata: AssetStorageMetadata {
             name: b"Calamari".to_vec(),
             symbol: b"KMA".to_vec(),
             decimals: 12,
@@ -323,7 +323,12 @@ fn initialize_test(id: StandardAssetId, value: AssetValue) {
         min_balance: TEST_DEFAULT_ASSET_ED,
         is_sufficient: true,
     };
-    assert_ok!(MantaAssetRegistry::create_asset(id, metadata.into(),));
+    assert_ok!(MantaAssetRegistry::create_asset(
+        id,
+        metadata.into(),
+        TEST_DEFAULT_ASSET_ED,
+        true
+    ));
     assert_ok!(FungibleLedger::<Test>::deposit_minting(id, &ALICE, value));
     assert_ok!(FungibleLedger::<Test>::deposit_minting(
         id,

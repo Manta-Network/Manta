@@ -28,7 +28,7 @@ use manta_support::manta_pay::{
 };
 
 use manta_primitives::{
-    assets::{AssetConfig, AssetMetadata, AssetRegistry, FungibleLedger, TestingDefault},
+    assets::{AssetConfig, AssetRegistry, FungibleLedger, TestingDefault},
     constants::TEST_DEFAULT_ASSET_ED,
     types::Balance,
 };
@@ -55,9 +55,15 @@ pub fn init_asset<T>(owner: &T::AccountId, id: StandardAssetId, value: Balance)
 where
     T: Config,
 {
-    let metadata = AssetMetadata::<Balance>::testing_default(1);
-    <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(id, metadata)
-        .expect("Unable to create asset.");
+    let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
+    let storage_metadata: <T::AssetConfig as AssetConfig<T>>::StorageMetadata = metadata.into();
+    <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
+        id,
+        storage_metadata,
+        TEST_DEFAULT_ASSET_ED,
+        true,
+    )
+    .expect("Unable to create asset.");
     let pallet_account: T::AccountId = Pallet::<T>::account_id();
     <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
         id,
