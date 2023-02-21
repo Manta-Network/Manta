@@ -31,7 +31,7 @@ use frame_support::{
     Blake2_128Concat,
 };
 use manta_primitives::{
-    assets::{AssetLocation, FungibleAssetRegistryMetadata, FungibleAssetStorageMetadata},
+    assets::{AssetLocation, AssetRegistryMetadata, AssetStorageMetadata},
     types::Balance,
 };
 use scale_info::TypeInfo;
@@ -193,8 +193,8 @@ where
         .collect();
         for (old_key, old_value) in stored_data {
             let new_key: NewAssetId = old_key as NewAssetId;
-            let new_value: FungibleAssetRegistryMetadata<Balance> = FungibleAssetRegistryMetadata {
-                metadata: FungibleAssetStorageMetadata {
+            let new_value: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
+                metadata: AssetStorageMetadata {
                     name: old_value.name,
                     symbol: old_value.symbol,
                     decimals: old_value.decimals,
@@ -423,7 +423,7 @@ where
         let pallet_prefix: &[u8] = b"AssetManager";
         let storage_item_prefix: &[u8] = b"AssetIdMetadata";
         assert_eq!(
-            storage_key_iter::<NewAssetId, FungibleAssetRegistryMetadata<Balance>, Blake2_128Concat>(
+            storage_key_iter::<NewAssetId, AssetRegistryMetadata<Balance>, Blake2_128Concat>(
                 pallet_prefix,
                 storage_item_prefix
             )
@@ -604,7 +604,7 @@ where
         let storage_item_prefix: &[u8] = b"AssetIdMetadata";
         let stored_data_new: Vec<_> = storage_key_iter::<
             NewAssetId,
-            FungibleAssetRegistryMetadata<Balance>,
+            AssetRegistryMetadata<Balance>,
             Blake2_128Concat,
         >(pallet_prefix, storage_item_prefix)
         .collect();
@@ -614,8 +614,8 @@ where
         stored_data_old.iter().for_each(|(key, value)| {
             let new_storage = (
                 *key as NewAssetId,
-                FungibleAssetRegistryMetadata {
-                    metadata: FungibleAssetStorageMetadata {
+                AssetRegistryMetadata {
+                    metadata: AssetStorageMetadata {
                         name: value.name.clone(),
                         symbol: value.symbol.clone(),
                         decimals: value.decimals,

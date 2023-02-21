@@ -722,7 +722,7 @@ impl pallet_manta_sbt::Config for Runtime {
     type Currency = Balances;
     type MintsPerReserve = ConstU16<5>;
     type ReservePrice = ConstU128<DOL>;
-    type UpdateMetadata = AssetManager;
+    type SbtMetadataBound = ConstU32<300>;
     type WeightInfo = ();
 }
 

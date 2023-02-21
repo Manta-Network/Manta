@@ -21,15 +21,14 @@ use super::{
 
 use manta_primitives::{
     assets::{
-        AssetConfig, AssetIdType, AssetLocation, AssetMetadata, AssetRegistry, BalanceType,
-        FungibleAssetRegistryMetadata, FungibleAssetStorageMetadata, LocationType,
-        NativeAndNonNative,
+        AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
+        AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
     constants::{ASSET_MANAGER_PALLET_ID, DOLPHIN_DECIMAL, MANTA_PAY_PALLET_ID},
     types::{AccountId, Balance, DolphinAssetId},
 };
 
-use frame_support::{pallet_prelude::*, parameter_types, PalletId};
+use frame_support::{pallet_prelude::DispatchResult, parameter_types, PalletId};
 use frame_system::EnsureRoot;
 use xcm::VersionedMultiLocation;
 
@@ -67,60 +66,57 @@ impl AssetIdType for MantaAssetRegistry {
     type AssetId = DolphinAssetId;
 }
 impl AssetRegistry for MantaAssetRegistry {
-    type Metadata = AssetMetadata<Balance>;
+    type Metadata = AssetStorageMetadata;
     type Error = sp_runtime::DispatchError;
 
-    fn create_asset(asset_id: DolphinAssetId, metadata: AssetMetadata<Balance>) -> DispatchResult {
-        match metadata {
-            AssetMetadata::FT(meta) => {
-                Assets::force_create(
-                    Origin::root(),
-                    asset_id,
-                    sp_runtime::MultiAddress::Id(AssetManager::account_id()),
-                    meta.is_sufficient,
-                    meta.min_balance,
-                )?;
+    fn create_asset(
+        asset_id: DolphinAssetId,
+        metadata: AssetStorageMetadata,
+        min_balance: Balance,
+        is_sufficient: bool,
+    ) -> DispatchResult {
+        Assets::force_create(
+            Origin::root(),
+            asset_id,
+            sp_runtime::MultiAddress::Id(AssetManager::account_id()),
+            is_sufficient,
+            min_balance,
+        )?;
 
-                Assets::force_set_metadata(
-                    Origin::root(),
-                    asset_id,
-                    meta.metadata.name,
-                    meta.metadata.symbol,
-                    meta.metadata.decimals,
-                    meta.metadata.is_frozen,
-                )?;
+        Assets::force_set_metadata(
+            Origin::root(),
+            asset_id,
+            metadata.name,
+            metadata.symbol,
+            metadata.decimals,
+            metadata.is_frozen,
+        )?;
 
-                Assets::force_asset_status(
-                    Origin::root(),
-                    asset_id,
-                    AssetManager::account_id().into(),
-                    AssetManager::account_id().into(),
-                    AssetManager::account_id().into(),
-                    AssetManager::account_id().into(),
-                    meta.min_balance,
-                    meta.is_sufficient,
-                    meta.metadata.is_frozen,
-                )
-            }
-            AssetMetadata::SBT(_) => Ok(()),
-        }
+        Assets::force_asset_status(
+            Origin::root(),
+            asset_id,
+            AssetManager::account_id().into(),
+            AssetManager::account_id().into(),
+            AssetManager::account_id().into(),
+            AssetManager::account_id().into(),
+            min_balance,
+            is_sufficient,
+            metadata.is_frozen,
+        )
     }
 
     fn update_asset_metadata(
         asset_id: &DolphinAssetId,
-        metadata: AssetMetadata<Balance>,
+        metadata: AssetStorageMetadata,
     ) -> DispatchResult {
-        match metadata {
-            AssetMetadata::FT(meta) => Assets::force_set_metadata(
-                Origin::root(),
-                *asset_id,
-                meta.metadata.name,
-                meta.metadata.symbol,
-                meta.metadata.decimals,
-                meta.metadata.is_frozen,
-            ),
-            AssetMetadata::SBT(_) => Ok(()),
-        }
+        Assets::force_set_metadata(
+            Origin::root(),
+            *asset_id,
+            metadata.name,
+            metadata.symbol,
+            metadata.decimals,
+            metadata.is_frozen,
+        )
     }
 }
 
@@ -129,8 +125,8 @@ parameter_types! {
     pub const NativeAssetId: DolphinAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(SelfReserve::get()));
-    pub NativeAssetMetadata: FungibleAssetRegistryMetadata<Balance> = FungibleAssetRegistryMetadata {
-        metadata: FungibleAssetStorageMetadata {
+    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
+        metadata: AssetStorageMetadata {
             name: b"Dolphin".to_vec(),
             symbol: b"DOL".to_vec(),
             decimals: DOLPHIN_DECIMAL,
@@ -160,8 +156,10 @@ impl AssetIdType for DolphinAssetConfig {
 impl AssetConfig<Runtime> for DolphinAssetConfig {
     type StartNonNativeAssetId = StartNonNativeAssetId;
     type NativeAssetId = NativeAssetId;
+    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
+    type StorageMetadata = AssetStorageMetadata;
     type AssetRegistry = MantaAssetRegistry;
     type FungibleLedger = DolphinConcreteFungibleLedger;
 }

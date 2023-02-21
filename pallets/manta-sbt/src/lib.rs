@@ -35,7 +35,6 @@ use frame_support::{
     transactional, PalletId,
 };
 use frame_system::pallet_prelude::*;
-use manta_primitives::assets::{AssetMetadata, SbtBound, UpdateMetadata};
 use manta_support::manta_pay::{
     asset_value_encode, fp_decode, fp_encode, id_from_field, AssetValue, Checkpoint,
     FullIncomingNote, PullResponse, ReceiverChunk, SenderChunk, StandardAssetId, TransferPost,
@@ -129,9 +128,21 @@ pub mod pallet {
         /// Price to reserve Asset Ids
         type ReservePrice: Get<BalanceOf<Self>>;
 
-        /// Register SBTs to `AssetRegistry`
-        type UpdateMetadata: UpdateMetadata<StandardAssetId, Self::Balance>;
+        /// Max size in bytes of stored metadata
+        type SbtMetadataBound: Get<u32>;
     }
+
+    #[pallet::storage]
+    pub(super) type NextSbtId<T: Config> = StorageValue<_, StandardAssetId, ValueQuery>;
+
+    #[pallet::storage]
+    pub(super) type SbtMetadata<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        StandardAssetId,
+        BoundedVec<u8, T::SbtMetadataBound>,
+        OptionQuery,
+    >;
 
     /// Whitelists accounts to be able to mint SBTs with designated `StandardAssetId`
     #[pallet::storage]
@@ -180,7 +191,7 @@ pub mod pallet {
         pub fn to_private(
             origin: OriginFor<T>,
             post: Box<TransferPost>,
-            metadata: BoundedVec<u8, SbtBound>,
+            metadata: BoundedVec<u8, T::SbtMetadataBound>,
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
             // Checks that it is indeed a to_private post with a value of 1
@@ -206,8 +217,7 @@ pub mod pallet {
             // Ensure asset id is correct, only a single unique asset_id mapped to account is valid
             ensure!(asset_id == start_id, Error::<T>::InvalidAssetId);
 
-            // Updates SbtMetadata
-            T::UpdateMetadata::update_metadata(&asset_id, AssetMetadata::SBT(metadata))?;
+            SbtMetadata::<T>::insert(&start_id, metadata);
             let increment_start_id = start_id
                 .checked_add(One::one())
                 .ok_or(ArithmeticError::Overflow)?;
@@ -246,7 +256,7 @@ pub mod pallet {
 
             // Reserves uniques AssetIds to be used later to mint SBTs
             let asset_id_range: Vec<StandardAssetId> = (0..T::MintsPerReserve::get())
-                .map(|_| T::UpdateMetadata::create_asset(AssetMetadata::SBT(BoundedVec::default())))
+                .map(|_| Self::next_sbt_id_and_increment())
                 .collect::<Result<Vec<StandardAssetId>, _>>()?;
 
             // The range of `AssetIds` that are reserved as SBTs
@@ -575,6 +585,18 @@ impl<T: Config> Pallet<T> {
     #[inline]
     pub fn account_id() -> T::AccountId {
         T::PalletId::get().into_account_truncating()
+    }
+
+    /// Returns and increments the [`NextAssetId`] by one.
+    #[inline]
+    fn next_sbt_id_and_increment() -> Result<StandardAssetId, DispatchError> {
+        NextSbtId::<T>::try_mutate(|current| {
+            let id = *current;
+            *current = current
+                .checked_add(One::one())
+                .ok_or(ArithmeticError::Overflow)?;
+            Ok(id)
+        })
     }
 }
 

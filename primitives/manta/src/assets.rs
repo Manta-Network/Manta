@@ -15,19 +15,20 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Asset Utilities
+use crate::{constants::TEST_DEFAULT_ASSET_ED, types::Balance as MantaBalance};
 use alloc::vec::Vec;
-use codec::{Decode, Encode, MaxEncodedLen};
+use codec::{Decode, Encode};
 use core::{borrow::Borrow, marker::PhantomData};
 use frame_support::{
     dispatch::DispatchError,
-    pallet_prelude::{ConstU32, DispatchResult, Get},
+    pallet_prelude::Get,
     traits::tokens::{
         currency::Currency,
         fungible,
         fungibles::{self, Mutate, Transfer},
         DepositConsequence, ExistenceRequirement, WithdrawReasons,
     },
-    BoundedVec,
+    Parameter,
 };
 use frame_system::Config;
 use scale_info::TypeInfo;
@@ -64,6 +65,15 @@ pub trait LocationType {
 /// Location Type
 pub type Location<T> = <T as LocationType>::Location;
 
+/// Asset Metadata
+pub trait AssetMetadata: BalanceType {
+    /// Returns the minimum balance to hold this asset.
+    fn min_balance(&self) -> &Self::Balance;
+
+    /// Returns a boolean value indicating whether this asset needs an existential deposit.
+    fn is_sufficient(&self) -> bool;
+}
+
 /// Asset Registry
 ///
 /// The registry trait: defines the interface of creating an asset in the asset implementation
@@ -87,7 +97,12 @@ pub trait AssetRegistry: AssetIdType + BalanceType {
     ///     balance storage. If set to `true`, then non-zero balances may be stored without a
     ///     `consumer` reference (and thus an ED in the Balances pallet or whatever else is used to
     ///     control user-account state growth).
-    fn create_asset(asset_id: Self::AssetId, metadata: Self::Metadata) -> Result<(), Self::Error>;
+    fn create_asset(
+        asset_id: Self::AssetId,
+        metadata: Self::Metadata,
+        min_balance: Self::Balance,
+        is_sufficient: bool,
+    ) -> Result<(), Self::Error>;
 
     /// Update asset metadata by `AssetId`.
     ///
@@ -104,6 +119,12 @@ pub trait AssetConfig<C>: AssetIdType + BalanceType + LocationType
 where
     C: Config,
 {
+    /// Metadata type that required in token storage: e.g. AssetMetadata in Pallet-Assets.
+    type StorageMetadata: From<Self::AssetRegistryMetadata>;
+
+    /// The Asset Metadata type stored in this pallet.
+    type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance> + Parameter + TestingDefault;
+
     /// The AssetId that the non-native asset starts from.
     ///
     /// A typical configuration is 8, so that asset 0 - 7 is reserved.
@@ -116,7 +137,7 @@ where
     type NativeAssetLocation: Get<Self::Location>;
 
     /// Native Asset Metadata
-    type NativeAssetMetadata: Get<FungibleAssetRegistryMetadata<Self::Balance>>;
+    type NativeAssetMetadata: Get<Self::AssetRegistryMetadata>;
 
     /// Asset Registry
     ///
@@ -124,7 +145,7 @@ where
     type AssetRegistry: AssetRegistry<
         AssetId = Self::AssetId,
         Balance = Self::Balance,
-        Metadata = AssetMetadata<Self::Balance>,
+        Metadata = Self::StorageMetadata,
         Error = DispatchError,
     >;
 
@@ -136,29 +157,9 @@ where
     >;
 }
 
-/// Bound for SBT Metadata Size (Could make generic over runtimes, but simpler to just hardcode)
-pub type SbtBound = ConstU32<200>;
-
-/// Metadata for each Asset Type
-///
-/// Currently supports SBT (Soul Bound Token) and Fungible Tokens
-#[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, TypeInfo, MaxEncodedLen)]
-pub enum AssetMetadata<Balance> {
-    /// Fungible Token Metadata
-    FT(FungibleAssetRegistryMetadata<Balance>),
-    /// Soul Bound Token Metadata
-    SBT(BoundedVec<u8, SbtBound>),
-}
-
-impl<B> From<FungibleAssetRegistryMetadata<B>> for AssetMetadata<B> {
-    fn from(source: FungibleAssetRegistryMetadata<B>) -> Self {
-        Self::FT(source)
-    }
-}
-
 /// Asset Storage Metadata
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
-pub struct FungibleAssetStorageMetadata {
+pub struct AssetStorageMetadata {
     /// Asset Name
     pub name: Vec<u8>,
 
@@ -174,18 +175,18 @@ pub struct FungibleAssetStorageMetadata {
     pub is_frozen: bool,
 }
 
-impl<B> From<FungibleAssetRegistryMetadata<B>> for FungibleAssetStorageMetadata {
+impl<B> From<AssetRegistryMetadata<B>> for AssetStorageMetadata {
     #[inline]
-    fn from(source: FungibleAssetRegistryMetadata<B>) -> Self {
+    fn from(source: AssetRegistryMetadata<B>) -> Self {
         source.metadata
     }
 }
 
 /// Asset Registry Metadata
 #[derive(Clone, Debug, Decode, Encode, Eq, Hash, Ord, PartialEq, PartialOrd, TypeInfo)]
-pub struct FungibleAssetRegistryMetadata<B> {
+pub struct AssetRegistryMetadata<B> {
     /// Asset Storage Metadata
-    pub metadata: FungibleAssetStorageMetadata,
+    pub metadata: AssetStorageMetadata,
 
     /// Minimum Balance
     pub min_balance: B,
@@ -204,40 +205,40 @@ pub struct FungibleAssetRegistryMetadata<B> {
 
 /// Because there is no obvious defaults for an asset's metadata, we explicitly
 /// name a trait to carry this logic for testing and benchmarking
-pub trait TestingDefault<Balance> {
+pub trait TestingDefault {
     /// Returns some default asset metadata
-    fn testing_default(min_balance: Balance) -> Self;
+    fn testing_default() -> Self;
 }
 
-impl<Balance> TestingDefault<Balance> for AssetMetadata<Balance> {
-    fn testing_default(min_balance: Balance) -> Self {
-        FungibleAssetRegistryMetadata {
-            metadata: FungibleAssetStorageMetadata {
+impl TestingDefault for AssetRegistryMetadata<MantaBalance> {
+    fn testing_default() -> Self {
+        Self {
+            metadata: AssetStorageMetadata {
                 name: b"Default".to_vec(),
                 symbol: b"DEF".to_vec(),
                 decimals: 12,
                 is_frozen: false,
             },
-            min_balance,
+            min_balance: TEST_DEFAULT_ASSET_ED,
             is_sufficient: true,
         }
-        .into()
     }
 }
 
-impl<B> BalanceType for FungibleAssetRegistryMetadata<B> {
+impl<B> BalanceType for AssetRegistryMetadata<B> {
     type Balance = B;
 }
 
-/// Trait for altering Metadata in `AssetRegistry`
-///
-/// WARNING: Some of the operations in this trait should be privileged so do not let user input directly call this trait
-pub trait UpdateMetadata<AssetId, Balance> {
-    /// Create new asset in `AssetRegistry`, DO NOT let arbitrary user input call this function
-    fn create_asset(metadata: AssetMetadata<Balance>) -> Result<AssetId, DispatchError>;
+impl<B> AssetMetadata for AssetRegistryMetadata<B> {
+    #[inline]
+    fn min_balance(&self) -> &B {
+        &self.min_balance
+    }
 
-    /// Update metadata for `AssetId`, DO NOT let arbitrary user input call this function
-    fn update_metadata(asset_id: &AssetId, metadata: AssetMetadata<Balance>) -> DispatchResult;
+    #[inline]
+    fn is_sufficient(&self) -> bool {
+        self.is_sufficient
+    }
 }
 
 /// Asset Location

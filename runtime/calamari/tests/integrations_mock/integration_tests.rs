@@ -43,8 +43,8 @@ use frame_support::{
 
 use manta_primitives::{
     assets::{
-        AssetConfig, AssetLocation, AssetMetadata, FungibleAssetRegistryMetadata,
-        FungibleAssetStorageMetadata, FungibleLedger, FungibleLedgerError,
+        AssetConfig, AssetLocation, AssetRegistryMetadata, AssetStorageMetadata, FungibleLedger,
+        FungibleLedgerError,
     },
     constants::time::{DAYS, HOURS},
     types::{AccountId, Balance, CalamariAssetId, Header},
@@ -1052,8 +1052,8 @@ fn concrete_fungible_ledger_transfers_work() {
             // Transfer tests for non-native assets:
 
             let min_balance = 10u128;
-            let asset_metadata: AssetMetadata<Balance> = FungibleAssetRegistryMetadata {
-                metadata: FungibleAssetStorageMetadata {
+            let asset_metadata = AssetRegistryMetadata {
+                metadata: AssetStorageMetadata {
                     name: b"Kusama".to_vec(),
                     symbol: b"KSM".to_vec(),
                     decimals: 12,
@@ -1061,8 +1061,7 @@ fn concrete_fungible_ledger_transfers_work() {
                 },
                 min_balance,
                 is_sufficient: true,
-            }
-            .into();
+            };
             let source_location =
                 AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
             assert_ok!(AssetManager::register_asset(
@@ -1214,8 +1213,8 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
             // Non-native asset tests:
 
             let min_balance = 10u128;
-            let asset_metadata: AssetMetadata<Balance> = FungibleAssetRegistryMetadata {
-                metadata: FungibleAssetStorageMetadata {
+            let asset_metadata = AssetRegistryMetadata {
+                metadata: AssetStorageMetadata {
                     name: b"Kusama".to_vec(),
                     symbol: b"KSM".to_vec(),
                     decimals: 12,
@@ -1223,8 +1222,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                 },
                 min_balance,
                 is_sufficient: true,
-            }
-            .into();
+            };
             let source_location =
                 AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
             assert_ok!(AssetManager::register_asset(
@@ -1273,8 +1271,8 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                 FungibleLedgerError::Overflow
             );
 
-            let asset_metadata: AssetMetadata<Balance> = FungibleAssetRegistryMetadata {
-                metadata: FungibleAssetStorageMetadata {
+            let asset_metadata = AssetRegistryMetadata {
+                metadata: AssetStorageMetadata {
                     name: b"Rococo".to_vec(),
                     symbol: b"Roc".to_vec(),
                     decimals: 12,
@@ -1282,8 +1280,7 @@ fn concrete_fungible_ledger_can_deposit_and_mint_works() {
                 },
                 min_balance,
                 is_sufficient: false,
-            }
-            .into();
+            };
 
             let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
                 1,
@@ -1363,8 +1360,8 @@ fn concrete_fungible_ledger_can_withdraw_works() {
             // Non-native asset tests:
 
             let min_balance = 10u128;
-            let asset_metadata: AssetMetadata<Balance> = FungibleAssetRegistryMetadata {
-                metadata: FungibleAssetStorageMetadata {
+            let asset_metadata = AssetRegistryMetadata {
+                metadata: AssetStorageMetadata {
                     name: b"Kusama".to_vec(),
                     symbol: b"KSM".to_vec(),
                     decimals: 12,
@@ -1372,8 +1369,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
                 },
                 min_balance,
                 is_sufficient: true,
-            }
-            .into();
+            };
             let source_location =
                 AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
             assert_ok!(AssetManager::register_asset(

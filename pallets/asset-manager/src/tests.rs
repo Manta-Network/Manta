@@ -17,8 +17,7 @@
 //! unit tests for asset-manager
 
 use crate::{
-    self as asset_manager, AssetIdLocation, AssetIdMetadata, Error, LocationAssetId, NextAssetId,
-    UnitsPerSecond,
+    self as asset_manager, AssetIdLocation, AssetIdMetadata, Error, LocationAssetId, UnitsPerSecond,
 };
 use asset_manager::mock::*;
 use frame_support::{
@@ -26,10 +25,7 @@ use frame_support::{
     traits::{fungibles::InspectMetadata, Contains},
     WeakBoundedVec,
 };
-use manta_primitives::{
-    assets::{AssetConfig, AssetLocation, AssetMetadata, FungibleLedger, UpdateMetadata},
-    types::Balance,
-};
+use manta_primitives::assets::{AssetConfig, AssetLocation, FungibleLedger};
 use orml_traits::GetByKey;
 use sp_runtime::traits::BadOrigin;
 use xcm::{latest::prelude::*, VersionedMultiLocation};
@@ -41,8 +37,7 @@ fn basic_setup_should_work() {
     new_test_ext().execute_with(|| {
         let asset_id = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
         let asset_location = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetLocation::get();
-        let asset_metadata: AssetMetadata<Balance> =
-            <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetMetadata::get().into();
+        let asset_metadata = <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetMetadata::get();
         assert_eq!(
             AssetIdLocation::<Runtime>::get(asset_id),
             Some(asset_location.clone())
@@ -141,13 +136,13 @@ fn update_asset() {
     let original_decimals = 12;
     let asset_metadata =
         create_asset_metadata("Kusama", "KSM", original_decimals, 1u128, false, false);
-
+    let mut new_metadata = asset_metadata.clone();
+    let new_name = b"NotKusama".to_vec();
+    let new_symbol = b"NotKSM".to_vec();
     let new_decimals = original_decimals + 1;
-    let new_name = "NotKusama";
-    let new_symbol = "NotKSM";
-    let new_metadata =
-        create_asset_metadata(new_name, new_symbol, new_decimals, 1u128, false, false);
-
+    new_metadata.metadata.name = new_name.clone();
+    new_metadata.metadata.symbol = new_symbol.clone();
+    new_metadata.metadata.decimals = new_decimals;
     let source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let new_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::new(
         1,
@@ -180,8 +175,8 @@ fn update_asset() {
             asset_id,
             new_metadata.clone(),
         ),);
-        assert_eq!(Assets::name(&asset_id), new_name.as_bytes().to_vec());
-        assert_eq!(Assets::symbol(&asset_id), new_symbol.as_bytes().to_vec());
+        assert_eq!(Assets::name(&asset_id), new_name);
+        assert_eq!(Assets::symbol(&asset_id), new_symbol);
         assert_eq!(Assets::decimals(&asset_id), new_decimals);
         // Update the asset location
         assert_ok!(AssetManager::update_asset_location(
@@ -547,35 +542,4 @@ fn set_min_xcm_fee_should_work() {
             None
         );
     })
-}
-
-#[test]
-fn update_metadata_works() {
-    new_test_ext().execute_with(|| {
-        let start_id = 8;
-        let next_id = start_id + 1;
-        assert_eq!(NextAssetId::<Runtime>::get(), start_id);
-        let metadata = AssetMetadata::SBT(vec![0].try_into().unwrap());
-        assert_ok!(crate::Pallet::<Runtime>::create_asset(metadata.clone()));
-
-        // increments counter and inserts metadata
-        assert_eq!(NextAssetId::<Runtime>::get(), next_id);
-        assert_eq!(AssetIdMetadata::<Runtime>::get(start_id).unwrap(), metadata);
-
-        assert_noop!(
-            crate::Pallet::<Runtime>::update_metadata(&next_id, metadata),
-            Error::<Runtime>::UpdateNonExistentAsset
-        );
-        let metadata_two = AssetMetadata::SBT(vec![1].try_into().unwrap());
-        assert_ok!(crate::Pallet::<Runtime>::update_metadata(
-            &start_id,
-            metadata_two.clone()
-        ));
-
-        assert!(AssetIdMetadata::<Runtime>::get(next_id).is_none());
-        assert_eq!(
-            AssetIdMetadata::<Runtime>::get(start_id).unwrap(),
-            metadata_two
-        );
-    });
 }
