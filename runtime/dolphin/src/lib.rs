@@ -59,6 +59,7 @@ use manta_primitives::{
     },
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
+use manta_support::manta_pay::{PullResponse, RawCheckpoint};
 use runtime_common::{
     prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
 };
@@ -721,7 +722,6 @@ impl pallet_manta_sbt::Config for Runtime {
     type Currency = Balances;
     type MintsPerReserve = ConstU16<5>;
     type ReservePrice = ConstU128<DOL>;
-    type Ledger = MantaPay;
     type UpdateMetadata = AssetManager;
     type WeightInfo = ();
 }
@@ -992,11 +992,21 @@ impl_runtime_apis! {
 
     impl pallet_manta_pay::runtime::PullLedgerDiffApi<Block> for Runtime {
         fn pull_ledger_diff(
-            checkpoint: pallet_manta_pay::RawCheckpoint,
+            checkpoint: RawCheckpoint,
             max_receiver: u64,
             max_sender: u64
-        ) -> pallet_manta_pay::PullResponse {
+        ) -> PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+    }
+
+    impl pallet_manta_sbt::runtime::SBTPullLedgerDiffApi<Block> for Runtime {
+        fn sbt_pull_ledger_diff(
+            checkpoint: RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> PullResponse {
+            MantaSbt::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
     }
 

@@ -89,7 +89,8 @@ manta-collator-selection = { path = '../../pallets/collator-selection', default-
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
 pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
-pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false }
+pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
+manta-support = { package = "pallet-manta-support", path = "../../pallets/manta-support", default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
@@ -226,4 +227,5 @@ std = [
   'pallet-assets/std',
   'pallet-manta-pay/std',
   'pallet-manta-sbt/std',
+  'manta-support/std',
 ]

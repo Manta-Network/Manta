@@ -17,7 +17,6 @@
 //! Type Definitions for Manta Pay
 
 use alloc::{boxed::Box, vec::Vec};
-use frame_support::pallet_prelude::*;
 use manta_crypto::merkle_tree;
 use manta_pay::{
     config::{
@@ -1015,25 +1014,4 @@ impl From<RawCheckpoint> for Checkpoint {
             checkpoint.sender_index as usize,
         )
     }
-}
-
-/// Asset Type in Manta Pay
-#[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, TypeInfo)]
-pub enum AssetType {
-    FT,
-    SBT,
-}
-
-/// Posts to Ledger
-pub trait PostToLedger<AccountId> {
-    /// Posts to ledger
-    ///
-    /// WARNING: `asset_type` must always be determined internally from rust code. Do not let exrinsics determine what asset type they are.
-    fn post_transaction(
-        origin: Option<AccountId>,
-        sources: Vec<AccountId>,
-        sinks: Vec<AccountId>,
-        post: TransferPost,
-        asset_type: AssetType,
-    ) -> DispatchResultWithPostInfo;
 }

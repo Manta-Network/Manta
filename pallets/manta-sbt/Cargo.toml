@@ -44,6 +44,24 @@ std = [
   "manta-support/std",
 ]
 
+# RPC Interface
+rpc = [
+  "jsonrpsee",
+  "serde",
+  "runtime",
+  "sp-api",
+  "sp-blockchain",
+  "manta-support/rpc",
+]
+
+# Serde Serialization
+serde = [
+  "manta-support/serde",
+]
+
+# Runtime API
+runtime = ["sp-api"]
+
 # Precompute Benchmark Transactions
 precompute-coins = [
   "anyhow",
@@ -78,6 +96,9 @@ sp-api = { git = 'https://github.com/paritytech/substrate.git', branch = "polkad
 sp-blockchain = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", optional = true, default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", default-features = false }
 sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", default-features = false }
+
+# JSON-RPC
+jsonrpsee = { version = "0.15.0", features = ["server", "macros"], optional = true }
 
 # manta dependencies
 manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.9", default-features = false }

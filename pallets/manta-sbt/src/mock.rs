@@ -137,7 +137,6 @@ impl crate::Config for Test {
     type Currency = Balances;
     type MintsPerReserve = ConstU16<5>;
     type ReservePrice = ConstU128<1000>;
-    type Ledger = MantaPay;
     type UpdateMetadata = AssetManager;
 }
 
