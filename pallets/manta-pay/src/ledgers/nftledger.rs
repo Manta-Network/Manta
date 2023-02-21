@@ -202,11 +202,10 @@ where
         proof: Self::ValidProof,
     ) -> Result<(), TransferLedgerError<T>> {
         let _ = (proof, super_key);
-        let metadata = Pallet::<T>::get_metadata(asset_id).expect("Metadata get failed");
+        let metadata = Pallet::<T>::get_metadata(asset_id)?;
         let (collection_id, item_id) = metadata
             .get_non_fungible_id()
-            .ok_or(FungibleLedgerError::UnknownAsset)
-            .expect("Metadata get failed");
+            .ok_or(TransferLedgerError::UnknownAsset)?;
         for WrapPair(_account_id, _withdraw) in sources {
             NonFungibleLedger::<T>::transfer(collection_id, item_id, &Pallet::<T>::account_id())
                 .expect("todo: remove");

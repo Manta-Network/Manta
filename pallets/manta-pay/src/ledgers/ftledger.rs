@@ -120,7 +120,7 @@ where
         sources
             .map(move |(account_id, withdraw)| {
                 FungibleLedger::<T>::can_withdraw(
-                    id.clone(),
+                    *id,
                     &account_id,
                     &withdraw,
                     ExistenceRequirement::KeepAlive,
@@ -150,7 +150,7 @@ where
         let id = metadata.get_fungible_id().expect("Asset Id get failed");
         sinks
             .map(move |(account_id, deposit)| {
-                FungibleLedger::<T>::can_deposit(id.clone(), &account_id, deposit, false)
+                FungibleLedger::<T>::can_deposit(*id, &account_id, deposit, false)
                     .map(|_| WrapPair(account_id.clone(), deposit))
                     .map_err(|_| InvalidSinkAccount {
                         account_id,
@@ -235,11 +235,10 @@ where
         proof: Self::ValidProof,
     ) -> Result<(), TransferLedgerError<T>> {
         let _ = (proof, super_key);
-        let metadata = Pallet::<T>::get_metadata(asset_id).expect("Metadata get failed");
+        let metadata = Pallet::<T>::get_metadata(asset_id)?;
         let id = metadata
             .get_fungible_id()
-            .ok_or(FungibleLedgerError::UnknownAsset)
-            .expect("Metadata get failed");
+            .ok_or(FungibleLedgerError::UnknownAsset)?;
         for WrapPair(account_id, withdraw) in sources {
             FungibleLedger::<T>::transfer(
                 id.clone(),
@@ -247,8 +246,7 @@ where
                 &Pallet::<T>::account_id(),
                 withdraw,
                 ExistenceRequirement::KeepAlive,
-            )
-            .expect("Metadata get failed");
+            )?;
         }
         for WrapPair(account_id, deposit) in sinks {
             FungibleLedger::<T>::transfer(
@@ -257,8 +255,7 @@ where
                 &account_id,
                 deposit,
                 ExistenceRequirement::KeepAlive,
-            )
-            .expect("Metadata get failed");
+            )?;
         }
         Ok(())
     }

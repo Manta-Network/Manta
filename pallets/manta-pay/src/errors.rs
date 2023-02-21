@@ -330,6 +330,16 @@ where
     }
 }
 
+impl<T> From<FungibleLedgerError> for TransferLedgerError<T>
+where
+    T: Config,
+{
+    #[inline]
+    fn from(_: FungibleLedgerError) -> Self {
+        TransferLedgerError::UnknownAsset
+    }
+}
+
 impl<T> From<SenderLedgerError> for TransferLedgerError<T>
 where
     T: Config,
