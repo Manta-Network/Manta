@@ -227,7 +227,7 @@ fn reserve_transfer_relaychain_to_parachain_a_then_back() {
             0,
         ));
         assert_eq!(
-            parachain::Balances::free_balance(&para_account_id(1)),
+            parachain::Balances::free_balance(para_account_id(1)),
             INITIAL_BALANCE + amount
         );
     });
@@ -352,7 +352,7 @@ fn send_para_a_native_asset_to_para_b() {
         // free execution, full amount received
         assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), amount);
         assert_eq!(
-            parachain::Assets::balance(a_asset_id_on_b, &XcmFeesAccount::get()),
+            parachain::Assets::balance(a_asset_id_on_b, XcmFeesAccount::get()),
             0
         );
     });
@@ -431,7 +431,7 @@ fn send_para_b_asset_to_para_b() {
     ParaB::execute_with(|| {
         // free execution, full amount received
         assert_eq!(parachain::Balances::free_balance(&ALICE), amount);
-        assert_eq!(parachain::Balances::free_balance(&XcmFeesAccount::get()), 0);
+        assert_eq!(parachain::Balances::free_balance(XcmFeesAccount::get()), 0);
     });
 }
 
@@ -643,7 +643,7 @@ fn send_insufficient_asset_from_para_a_to_para_b() {
             (amount - fee_at_b) * 2
         );
         assert_eq!(
-            parachain::Assets::balance(a_asset_id_on_b, &XcmFeesAccount::get()),
+            parachain::Assets::balance(a_asset_id_on_b, XcmFeesAccount::get()),
             fee_at_b
         );
     });
@@ -863,7 +863,7 @@ fn send_para_a_custom_asset_to_para_b() {
             amount
         );
         assert_eq!(
-            parachain::Assets::balance(doge_currency_id_on_b, &XcmFeesAccount::get()),
+            parachain::Assets::balance(doge_currency_id_on_b, XcmFeesAccount::get()),
             0
         );
     });
@@ -940,7 +940,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
         // free execution, full amount received
         assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), amount);
         assert_eq!(
-            parachain::Assets::balance(a_asset_id_on_b, &XcmFeesAccount::get()),
+            parachain::Assets::balance(a_asset_id_on_b, XcmFeesAccount::get()),
             0
         );
     });
@@ -975,7 +975,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back() {
             INITIAL_BALANCE - fee_on_b_when_send_back
         );
         assert_eq!(
-            parachain::Balances::free_balance(&XcmFeesAccount::get()),
+            parachain::Balances::free_balance(XcmFeesAccount::get()),
             fee_on_b_when_send_back
         );
     });
@@ -1073,7 +1073,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
         // free execution, full amount received
         assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), amount);
         assert_eq!(
-            parachain::Assets::balance(a_asset_id_on_b, &XcmFeesAccount::get()),
+            parachain::Assets::balance(a_asset_id_on_b, XcmFeesAccount::get()),
             0
         );
     });
@@ -1109,7 +1109,7 @@ fn send_para_a_native_asset_from_para_b_to_para_c() {
             amount - fee_at_reserve
         );
         assert_eq!(
-            parachain::Assets::balance(a_asset_id_on_c, &XcmFeesAccount::get()),
+            parachain::Assets::balance(a_asset_id_on_c, XcmFeesAccount::get()),
             0
         );
     });
@@ -1159,7 +1159,7 @@ fn receive_relay_asset_with_trader_on_parachain() {
             0,
         ));
         assert_eq!(
-            relay_chain::Balances::free_balance(&para_account_id(1)),
+            relay_chain::Balances::free_balance(para_account_id(1)),
             INITIAL_BALANCE + amount
         );
     });
@@ -1172,7 +1172,7 @@ fn receive_relay_asset_with_trader_on_parachain() {
         );
         // Fee sink gets fee
         assert_eq!(
-            parachain::Assets::balance(relay_asset_id_on_a, &XcmFeesAccount::get()),
+            parachain::Assets::balance(relay_asset_id_on_a, XcmFeesAccount::get()),
             fee
         );
     });
@@ -1247,7 +1247,7 @@ fn send_para_a_asset_to_para_b_with_trader_and_fee() {
     ParaB::execute_with(|| {
         assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), amount);
         assert_eq!(
-            parachain::Assets::balance(a_asset_id_on_b, &XcmFeesAccount::get()),
+            parachain::Assets::balance(a_asset_id_on_b, XcmFeesAccount::get()),
             fee
         );
     });
@@ -1346,7 +1346,7 @@ fn send_para_b_asset_to_para_b_with_trader_and_fee() {
             INITIAL_BALANCE + amount
         );
         assert_eq!(
-            parachain::Balances::free_balance(&XcmFeesAccount::get()),
+            parachain::Balances::free_balance(XcmFeesAccount::get()),
             fee
         );
     });
@@ -1424,7 +1424,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back_with_trader_and_fee() {
     ParaB::execute_with(|| {
         assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), amount);
         assert_eq!(
-            parachain::Assets::balance(a_asset_id_on_b, &XcmFeesAccount::get()),
+            parachain::Assets::balance(a_asset_id_on_b, XcmFeesAccount::get()),
             fee
         );
     });
@@ -1459,7 +1459,7 @@ fn send_para_a_native_asset_para_b_and_then_send_back_with_trader_and_fee() {
             INITIAL_BALANCE - fee - fee_on_b_when_send_back
         );
         assert_eq!(
-            parachain::Balances::free_balance(&XcmFeesAccount::get()),
+            parachain::Balances::free_balance(XcmFeesAccount::get()),
             fee_on_b_when_send_back
         );
     });
@@ -1592,7 +1592,7 @@ fn send_para_a_asset_from_para_b_to_para_c_with_trader() {
         amount = amount - fee_at_b - fee_at_a;
         assert_eq!(parachain::Assets::balance(a_asset_id_on_c, &ALICE), amount);
         assert_eq!(
-            parachain::Assets::balance(a_asset_id_on_b, &XcmFeesAccount::get()),
+            parachain::Assets::balance(a_asset_id_on_b, XcmFeesAccount::get()),
             0
         );
     });
@@ -1642,7 +1642,7 @@ fn receive_relay_asset_on_parachain_with_insufficient_fee_payment_should_fail() 
             0,
         ));
         assert_eq!(
-            relay_chain::Balances::free_balance(&para_account_id(1)),
+            relay_chain::Balances::free_balance(para_account_id(1)),
             INITIAL_BALANCE + amount
         );
     });
@@ -1652,7 +1652,7 @@ fn receive_relay_asset_on_parachain_with_insufficient_fee_payment_should_fail() 
         assert_eq!(parachain::Assets::balance(relay_asset_id, &ALICE), 0);
         // XcmFeesAccount gets nothing, all balance stuck
         assert_eq!(
-            parachain::Assets::balance(relay_asset_id, &XcmFeesAccount::get()),
+            parachain::Assets::balance(relay_asset_id, XcmFeesAccount::get()),
             0
         );
     });
@@ -1698,7 +1698,7 @@ fn receive_relay_should_fail_without_specifying_units_per_second() {
             0,
         ));
         assert_eq!(
-            relay_chain::Balances::free_balance(&para_account_id(1)),
+            relay_chain::Balances::free_balance(para_account_id(1)),
             INITIAL_BALANCE + amount
         );
     });
@@ -1708,7 +1708,7 @@ fn receive_relay_should_fail_without_specifying_units_per_second() {
         assert_eq!(parachain::Assets::balance(relay_asset_id_on_a, &ALICE), 0);
         // XcmFeesAccount gets nothing, all balance stuck
         assert_eq!(
-            parachain::Assets::balance(relay_asset_id_on_a, &XcmFeesAccount::get()),
+            parachain::Assets::balance(relay_asset_id_on_a, XcmFeesAccount::get()),
             0
         );
     });
@@ -1786,7 +1786,7 @@ fn send_para_a_asset_to_para_b_with_insufficient_fee() {
     ParaB::execute_with(|| {
         assert_eq!(parachain::Assets::balance(a_asset_id_on_b, &ALICE), 0);
         assert_eq!(
-            parachain::Assets::balance(a_asset_id_on_b, &XcmFeesAccount::get()),
+            parachain::Assets::balance(a_asset_id_on_b, XcmFeesAccount::get()),
             0
         );
     });
@@ -1906,7 +1906,7 @@ fn receive_insufficient_relay_asset_on_parachain() {
             0,
         ));
         assert_eq!(
-            relay_chain::Balances::free_balance(&para_account_id(1)),
+            relay_chain::Balances::free_balance(para_account_id(1)),
             INITIAL_BALANCE + amount
         );
     });
@@ -1914,7 +1914,7 @@ fn receive_insufficient_relay_asset_on_parachain() {
     // parachain should not have received assets
     ParaA::execute_with(|| {
         assert_eq!(
-            parachain::Assets::balance(relay_asset_id, &new_account.into()),
+            parachain::Assets::balance(relay_asset_id, sp_runtime::AccountId32::new(new_account)),
             0
         );
     });
@@ -1938,7 +1938,7 @@ fn receive_insufficient_relay_asset_on_parachain() {
             0,
         ));
         assert_eq!(
-            relay_chain::Balances::free_balance(&para_account_id(1)),
+            relay_chain::Balances::free_balance(para_account_id(1)),
             INITIAL_BALANCE + amount + amount
         );
     });
@@ -1946,7 +1946,7 @@ fn receive_insufficient_relay_asset_on_parachain() {
     // parachain should not have received assets
     ParaA::execute_with(|| {
         assert_eq!(
-            parachain::Balances::free_balance(&new_account.into()),
+            parachain::Balances::free_balance(sp_runtime::AccountId32::new(new_account)),
             fresh_account_amount
         );
     });
@@ -1995,7 +1995,7 @@ fn receive_sufficient_relay_asset_on_parachain() {
             0,
         ));
         assert_eq!(
-            relay_chain::Balances::free_balance(&para_account_id(1)),
+            relay_chain::Balances::free_balance(para_account_id(1)),
             INITIAL_BALANCE + amount
         );
     });
@@ -2003,7 +2003,7 @@ fn receive_sufficient_relay_asset_on_parachain() {
     // parachain should have received assets
     ParaA::execute_with(|| {
         assert_eq!(
-            parachain::Assets::balance(relay_asset_id, &new_account.into()),
+            parachain::Assets::balance(relay_asset_id, sp_runtime::AccountId32::new(new_account)),
             amount
         );
     });
@@ -2913,11 +2913,11 @@ fn transfer_multicurrencies_should_work_scenarios() {
         let para_a_sovereign_on_relay = para_account_id(1);
         let para_b_sovereign_on_relay = para_account_id(2);
         assert_eq!(
-            relay_chain::Balances::free_balance(&para_a_sovereign_on_relay),
+            relay_chain::Balances::free_balance(para_a_sovereign_on_relay),
             INITIAL_BALANCE - (fee_amount - min_xcm_fee)
         );
         assert_eq!(
-            relay_chain::Balances::free_balance(&para_b_sovereign_on_relay),
+            relay_chain::Balances::free_balance(para_b_sovereign_on_relay),
             // 0 because transfer_multicurrencies uses a Teleport for this case
             0
         );
@@ -2938,7 +2938,7 @@ fn transfer_multicurrencies_should_work_scenarios() {
         )
         .unwrap();
         assert_eq!(
-            parachain::Assets::balance(relay_asset_id_on_b, &para_a_sovereign_on_para_b),
+            parachain::Assets::balance(relay_asset_id_on_b, para_a_sovereign_on_para_b),
             0
         );
 
@@ -3269,11 +3269,11 @@ fn transfer_multicurrencies_should_fail_scenarios() {
         let para_a_sovereign_on_relay = para_account_id(1);
         let para_b_sovereign_on_relay = para_account_id(2);
         assert_eq!(
-            relay_chain::Balances::free_balance(&para_a_sovereign_on_relay),
+            relay_chain::Balances::free_balance(para_a_sovereign_on_relay),
             INITIAL_BALANCE - (fee_amount - min_xcm_fee)
         );
         assert_eq!(
-            relay_chain::Balances::free_balance(&para_b_sovereign_on_relay),
+            relay_chain::Balances::free_balance(para_b_sovereign_on_relay),
             // 0 because transfer_multicurrencies uses a Teleport for this case
             0
         );
@@ -3287,7 +3287,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
         )
         .unwrap();
         assert_eq!(
-            parachain::Assets::balance(relay_asset_id_on_b, &para_a_sovereign_on_para_b),
+            parachain::Assets::balance(relay_asset_id_on_b, para_a_sovereign_on_para_b),
             0
         );
 
