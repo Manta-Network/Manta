@@ -837,11 +837,6 @@ pub enum SenderLedgerError {
     ///
     /// The sender was not constructed under the current state of the UTXO accumulator.
     InvalidUtxoAccumulatorOutput,
-
-    /// No Sender Ledger
-    ///
-    /// Any attempts to spend UTXO will fail, used for SBT
-    NoSenderLedger,
 }
 
 impl From<SenderLedgerError> for SenderPostError<SenderLedgerError> {
@@ -850,7 +845,6 @@ impl From<SenderLedgerError> for SenderPostError<SenderLedgerError> {
         match value {
             SenderLedgerError::AssetSpent => Self::AssetSpent,
             SenderLedgerError::InvalidUtxoAccumulatorOutput => Self::InvalidUtxoAccumulatorOutput,
-            SenderLedgerError::NoSenderLedger => Self::AssetSpent,
             SenderLedgerError::FpEncodeError(err) => {
                 Self::UnexpectedError(SenderLedgerError::FpEncodeError(err))
             }
