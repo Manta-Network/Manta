@@ -6142,7 +6142,6 @@ dependencies = [
  "orml-traits",
  "pallet-assets",
  "pallet-balances",
- "pallet-manta-support",
  "parity-scale-codec",
  "scale-info",
  "sp-arithmetic",

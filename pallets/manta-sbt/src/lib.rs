@@ -1010,10 +1010,10 @@ where
             match transfer_shape.ok_or(TransferLedgerError::InvalidTransferShape)? {
                 TransferShape::ToPrivate => {
                     if let Some(asset_id) = posting_key.asset_id.or(None) {
-                        let asset_id = fp_encode(asset_id)
-                            .map(id_from_field)
-                            .map_err(TransferLedgerError::FpEncodeError)?
-                            .unwrap();
+                        let asset_id = id_from_field(
+                            fp_encode(asset_id).map_err(TransferLedgerError::FpEncodeError)?,
+                        )
+                        .ok_or(TransferLedgerError::UnknownAsset)?;
                         (
                             manta_parameters::pay::verifying::ToPrivate::get()
                                 .ok_or(TransferLedgerError::ChecksumError)?,
