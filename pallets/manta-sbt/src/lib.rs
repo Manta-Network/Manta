@@ -217,7 +217,7 @@ pub mod pallet {
             // Ensure asset id is correct, only a single unique asset_id mapped to account is valid
             ensure!(asset_id == start_id, Error::<T>::InvalidAssetId);
 
-            SbtMetadata::<T>::insert(&start_id, metadata);
+            SbtMetadata::<T>::insert(start_id, metadata);
             let increment_start_id = start_id
                 .checked_add(One::one())
                 .ok_or(ArithmeticError::Overflow)?;
