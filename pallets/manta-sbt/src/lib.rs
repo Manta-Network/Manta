@@ -112,9 +112,6 @@ pub mod pallet {
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
 
-        /// Balance Type
-        type Balance: Default + Member + Parameter + TypeInfo;
-
         /// The currency mechanism.
         type Currency: ReservableCurrency<Self::AccountId>;
 
@@ -129,6 +126,7 @@ pub mod pallet {
         type ReservePrice: Get<BalanceOf<Self>>;
 
         /// Max size in bytes of stored metadata
+        #[pallet::constant]
         type SbtMetadataBound: Get<u32>;
     }
 

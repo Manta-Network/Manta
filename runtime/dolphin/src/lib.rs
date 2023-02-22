@@ -717,7 +717,6 @@ parameter_types! {
 
 impl pallet_manta_sbt::Config for Runtime {
     type Event = Event;
-    type Balance = Balance;
     type PalletId = MantaSbtPalletId;
     type Currency = Balances;
     type MintsPerReserve = ConstU16<5>;

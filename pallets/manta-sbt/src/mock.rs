@@ -131,7 +131,6 @@ parameter_types! {
 impl crate::Config for Test {
     type Event = Event;
     type WeightInfo = crate::weights::SubstrateWeight<Test>;
-    type Balance = Balance;
     type PalletId = MantaSBTPalletId;
     type Currency = Balances;
     type MintsPerReserve = ConstU16<5>;
