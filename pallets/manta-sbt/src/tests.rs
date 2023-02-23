@@ -22,6 +22,7 @@ use crate::{
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
+    arkworks::constraint::fp::Fp,
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
     rand::{CryptoRng, OsRng, RngCore},
 };
@@ -32,7 +33,6 @@ use manta_pay::{
     parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
     test,
 };
-use manta_crypto::arkworks::constraint::fp::Fp;
 use manta_support::manta_pay::{
     field_from_id, id_from_field, AssetId, AssetValue, TransferPost as PalletTransferPost,
 };
