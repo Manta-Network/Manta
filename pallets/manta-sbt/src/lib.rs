@@ -117,6 +117,7 @@ pub mod pallet {
         type Currency: ReservableCurrency<Self::AccountId>;
 
         /// Pallet ID
+        #[pallet::constant]
         type PalletId: Get<PalletId>;
 
         /// Number of unique Asset Ids reserved per `reserve_sbt` call, is the amount of SBTs allowed to be minted
@@ -124,6 +125,7 @@ pub mod pallet {
         type MintsPerReserve: Get<u16>;
 
         /// Price to reserve Asset Ids
+        #[pallet::constant]
         type ReservePrice: Get<BalanceOf<Self>>;
 
         /// Max size in bytes of stored metadata
@@ -535,7 +537,7 @@ impl<T: Config> Pallet<T> {
         Shards::<T>::contains_key(shard_index, max_receiver_index)
     }
 
-    /// Returns the diff of ledger state since the given `checkpoint`, `max_receivers`.
+    /// Returns the diff of ledger state since the given `checkpoint` and `max_receivers`.
     /// This `Ledger` implementaion has no senders by definition, cannot transfer SBTs.
     #[inline]
     pub fn pull_ledger_diff(
