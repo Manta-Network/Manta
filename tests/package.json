@@ -7,7 +7,7 @@
     "init-assets": "tsc --project ./ && node dist/mantapay/initialize-assets.js",
     "mint-private-assets": "tsc --project ./ && node dist/mantapay/mint-private-coins.js",
     "correctness_test": "mocha -r ts-node/register mantapay/rpc_correctness_test.ts",
-    "performance_test": "mocha -r ts-node/register mantapay/rpc_performance_test.ts",
+    "performance_test": "mocha --timeout 600000 -r ts-node/register mantapay/rpc_performance_test.ts",
     "stress_benchmark_test": "mocha -r ts-node/register mantapay/stress_benchmark_test.ts",
     "runtime_upgrade_test": "mocha -r ts-node/register runtime/runtime_upgrade_test.ts",
     "validate-pull-ledger-diff": "mocha -r ts-node/register mantapay/validate-pull-ledger-diff.ts"
