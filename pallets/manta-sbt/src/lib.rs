@@ -37,7 +37,7 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use manta_support::manta_pay::{
     asset_value_encode, fp_decode, fp_encode, id_from_field, AssetValue, Checkpoint,
-    FullIncomingNote, MTParametersError, PullResponse, ReceiverChunk, SenderChunk, StandardAssetId,
+    FullIncomingNote, MTParametersError, PullResponse, ReceiverChunk, StandardAssetId,
     TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError, UtxoMerkleTreePath,
     VerifyingContextError, Wrap, WrapPair,
 };
@@ -535,14 +535,8 @@ impl<T: Config> Pallet<T> {
         Shards::<T>::contains_key(shard_index, max_receiver_index)
     }
 
-    /// Pulls sender data from the ledger starting at the `sender_index`.
-    #[inline]
-    fn pull_senders() -> (bool, SenderChunk) {
-        (false, vec![])
-    }
-
-    /// Returns the diff of ledger state since the given `checkpoint`, `max_receivers`, and
-    /// `max_senders`.
+    /// Returns the diff of ledger state since the given `checkpoint`, `max_receivers`.
+    /// This `Ledger` implementaion has no senders by definition, cannot transfer SBTs.
     #[inline]
     pub fn pull_ledger_diff(
         checkpoint: Checkpoint,
@@ -551,14 +545,13 @@ impl<T: Config> Pallet<T> {
     ) -> PullResponse {
         let (more_receivers, receivers) =
             Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
-        let (_more_senders, senders) = Self::pull_senders();
         let senders_receivers_total = (0..=255)
             .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
             .sum::<u128>();
         PullResponse {
             should_continue: more_receivers,
             receivers,
-            senders,
+            senders: vec![],
             senders_receivers_total: asset_value_encode(senders_receivers_total),
         }
     }
