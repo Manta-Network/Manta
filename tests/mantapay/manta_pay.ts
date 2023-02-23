@@ -1,4 +1,5 @@
 import { ApiPromise } from "@polkadot/api";
+import "@polkadot/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import { u8aToHex, numberToU8a } from "@polkadot/util";

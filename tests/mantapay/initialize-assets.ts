@@ -22,13 +22,14 @@ async function main() {
 
   const amount = 100000000;
   const decimal = nodeApi.registry.chainDecimals;
-  const toMint = new BN(amount).mul(new BN(decimal));
+  const factor = new BN(10).pow(new BN(decimal));
+  const toMint = new BN(amount).mul(factor);
 
   const symbols = ["KMA", "MANTA", "DOL"];
   const assetIds = [8, 9, 10];
-  let referendumIndex = (
-    await nodeApi.query.democracy.referendumCount()
-  ).toNumber();
+  let referendumIndex = parseInt(
+    (await nodeApi.query.democracy.referendumCount()).toString()
+  );
   for (let i = 0; i < 3; i++) {
     const assetLocaltion = createMultiLocationWithParaId(2000 + i);
     const assetMetadata = createAssetMetadata(symbols[i], symbols[i], 12);
