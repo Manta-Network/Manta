@@ -169,7 +169,7 @@ fn not_reserved_fails() {
     });
 }
 
-/// Private transfer will fail
+/// Private transfer will fail. `to_private` checks that post is correct shape.
 #[test]
 fn private_transfer_fails() {
     let mut rng = OsRng;
@@ -197,12 +197,12 @@ fn private_transfer_fails() {
         let post = PalletTransferPost::try_from(private_transfer).unwrap();
         assert_noop!(
             MantaSBTPallet::to_private(MockOrigin::signed(ALICE), Box::new(post), bvec![]),
-            Error::<Test>::NoSenderLedger
+            Error::<Test>::InvalidShape
         );
     });
 }
 
-/// ToPublic Post should fail
+/// ToPublic Post should fail. `to_private` checks that post is correct shape
 #[test]
 fn to_public_fails() {
     let mut rng = OsRng;
@@ -230,7 +230,7 @@ fn to_public_fails() {
         let post = PalletTransferPost::try_from(private_transfer).unwrap();
         assert_noop!(
             MantaSBTPallet::to_private(MockOrigin::signed(ALICE), Box::new(post), bvec![]),
-            Error::<Test>::NoSenderLedger
+            Error::<Test>::InvalidShape
         );
     });
 }

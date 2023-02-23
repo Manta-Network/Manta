@@ -82,10 +82,11 @@ use manta_pay::{
 use manta_primitives::assets::{self, AssetConfig, FungibleLedger as _};
 use manta_support::manta_pay::{
     asset_value_decode, asset_value_encode, fp_decode, fp_encode, id_from_field, Asset, AssetValue,
-    FullIncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk, SenderChunk,
-    StandardAssetId, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
+    FullIncomingNote, MTParametersError, NullifierCommitment, OutgoingNote, ReceiverChunk,
+    SenderChunk, StandardAssetId, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError,
+    UtxoMerkleTreePath, VerifyingContextError, Wrap, WrapPair,
 };
-use manta_util::codec::{self, Encode};
+use manta_util::codec::Encode;
 
 pub use manta_support::manta_pay::{Checkpoint, PullResponse, RawCheckpoint};
 pub use pallet::*;
@@ -798,28 +799,6 @@ struct Ledger<T>(PhantomData<T>)
 where
     T: Config;
 
-/// Wrap Type
-#[derive(Clone, Copy)]
-pub struct Wrap<T>(T);
-
-impl<T> AsRef<T> for Wrap<T> {
-    #[inline]
-    fn as_ref(&self) -> &T {
-        &self.0
-    }
-}
-
-/// Wrap Pair Type
-#[derive(Clone, Copy)]
-pub struct WrapPair<L, R>(L, R);
-
-impl<L, R> AsRef<R> for WrapPair<L, R> {
-    #[inline]
-    fn as_ref(&self) -> &R {
-        &self.1
-    }
-}
-
 /// Sender Ledger Error
 pub enum SenderLedgerError {
     /// Field Element Encoding Error
@@ -927,18 +906,6 @@ where
         Ok(())
     }
 }
-
-/// Merkle Tree Parameters Decode Error Type
-pub type MTParametersError = codec::DecodeError<
-    <&'static [u8] as codec::Read>::Error,
-    <config::UtxoAccumulatorModel as codec::Decode>::Error,
->;
-
-/// Utxo Accumulator Item Hash Decode Error Type
-pub type UtxoItemHashError = codec::DecodeError<
-    <&'static [u8] as codec::Read>::Error,
-    <config::utxo::UtxoAccumulatorItemHash as codec::Decode>::Error,
->;
 
 /// Receiver Ledger Error
 pub enum ReceiverLedgerError<T>
@@ -1113,12 +1080,6 @@ where
         Ok(())
     }
 }
-
-/// Verification Context Decode Error Type
-pub type VerifyingContextError = codec::DecodeError<
-    <&'static [u8] as codec::Read>::Error,
-    <config::VerifyingContext as codec::Decode>::Error,
->;
 
 /// Transfer Ledger Error
 pub enum TransferLedgerError<T>

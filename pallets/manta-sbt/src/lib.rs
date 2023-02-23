@@ -37,8 +37,9 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use manta_support::manta_pay::{
     asset_value_encode, fp_decode, fp_encode, id_from_field, AssetValue, Checkpoint,
-    FullIncomingNote, PullResponse, ReceiverChunk, SenderChunk, StandardAssetId, TransferPost,
-    Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
+    FullIncomingNote, MTParametersError, PullResponse, ReceiverChunk, SenderChunk, StandardAssetId,
+    TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError, UtxoMerkleTreePath,
+    VerifyingContextError, Wrap, WrapPair,
 };
 use sp_runtime::{
     traits::{AccountIdConversion, One},
@@ -61,7 +62,7 @@ use manta_pay::{
     manta_util::codec::Decode as _,
     parameters::load_transfer_parameters,
 };
-use manta_util::codec::{self, Encode};
+use manta_util::codec::Encode;
 
 pub use pallet::*;
 pub use weights::WeightInfo;
@@ -130,9 +131,15 @@ pub mod pallet {
         type SbtMetadataBound: Get<u32>;
     }
 
+    /// Counter for SBT AssetId. Increments by one everytime a new asset id is requested.
+    ///
+    /// Should only ever be modified by `next_sbt_id_and_increment()`
     #[pallet::storage]
     pub(super) type NextSbtId<T: Config> = StorageValue<_, StandardAssetId, ValueQuery>;
 
+    /// SBT Metadata maps `StandardAsset` to the correstonding SBT metadata
+    ///
+    /// Metadata is raw bytes that correspond to an image
     #[pallet::storage]
     pub(super) type SbtMetadata<T: Config> = StorageMap<
         _,
@@ -144,7 +151,7 @@ pub mod pallet {
 
     /// Whitelists accounts to be able to mint SBTs with designated `StandardAssetId`
     #[pallet::storage]
-    pub type ReservedIds<T: Config> = StorageMap<
+    pub(super) type ReservedIds<T: Config> = StorageMap<
         _,
         Blake2_128Concat,
         T::AccountId,
@@ -198,7 +205,7 @@ pub mod pallet {
                     && post.sender_posts.is_empty()
                     && post.receiver_posts.len() == 1
                     && post.sinks.is_empty(),
-                Error::<T>::NoSenderLedger
+                Error::<T>::InvalidShape
             );
             // Checks that value is one, this is defensive as value is not used for SBT.
             ensure!(
@@ -598,28 +605,6 @@ impl<T: Config> Pallet<T> {
     }
 }
 
-/// Wrap Type
-#[derive(Clone, Copy)]
-pub struct Wrap<T>(T);
-
-impl<T> AsRef<T> for Wrap<T> {
-    #[inline]
-    fn as_ref(&self) -> &T {
-        &self.0
-    }
-}
-
-/// Wrap Pair Type
-#[derive(Clone, Copy)]
-pub struct WrapPair<L, R>(L, R);
-
-impl<L, R> AsRef<R> for WrapPair<L, R> {
-    #[inline]
-    fn as_ref(&self) -> &R {
-        &self.1
-    }
-}
-
 /// Sender Ledger Error
 pub enum SenderLedgerError {
     /// Field Element Encoding Error
@@ -727,18 +712,6 @@ where
         Ok(())
     }
 }
-
-/// Merkle Tree Parameters Decode Error Type
-pub type MTParametersError = codec::DecodeError<
-    <&'static [u8] as codec::Read>::Error,
-    <config::UtxoAccumulatorModel as codec::Decode>::Error,
->;
-
-/// Utxo Accumulator Item Hash Decode Error Type
-pub type UtxoItemHashError = codec::DecodeError<
-    <&'static [u8] as codec::Read>::Error,
-    <config::utxo::UtxoAccumulatorItemHash as codec::Decode>::Error,
->;
 
 /// Receiver Ledger Error
 pub enum ReceiverLedgerError {
@@ -897,12 +870,6 @@ where
         Ok(())
     }
 }
-
-/// Verification Context Decode Error Type
-pub type VerifyingContextError = codec::DecodeError<
-    <&'static [u8] as codec::Read>::Error,
-    <config::VerifyingContext as codec::Decode>::Error,
->;
 
 /// Transfer Ledger Error
 pub enum TransferLedgerError<T>
