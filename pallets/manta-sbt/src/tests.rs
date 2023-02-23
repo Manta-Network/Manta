@@ -306,7 +306,7 @@ fn private_transfer_ledger() {
         assert_noop!(
             MantaSBTPallet::post_transaction(
                 vec![],
-                PalletTransferPost::try_from(private_transfer.clone()).unwrap(),
+                PalletTransferPost::try_from(private_transfer).unwrap(),
             ),
             Error::<Test>::NoSenderLedger
         );
@@ -332,7 +332,7 @@ fn to_public_sbt_fails() {
 
         assert_ok!(MantaSBTPallet::post_transaction(
             vec![ALICE],
-            PalletTransferPost::try_from(to_public_input_0.clone()).unwrap(),
+            PalletTransferPost::try_from(to_public_input_0).unwrap(),
         ));
         assert_ok!(MantaSBTPallet::post_transaction(
             vec![ALICE],
@@ -341,7 +341,7 @@ fn to_public_sbt_fails() {
         assert_noop!(
             MantaSBTPallet::post_transaction(
                 vec![],
-                PalletTransferPost::try_from(to_public.clone()).unwrap(),
+                PalletTransferPost::try_from(to_public).unwrap(),
             ),
             Error::<Test>::InvalidShape
         );
