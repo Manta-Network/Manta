@@ -6599,7 +6599,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-sbt"
-version = "4.0.1"
+version = "4.0.2"
 dependencies = [
  "anyhow",
  "base64 0.20.0",

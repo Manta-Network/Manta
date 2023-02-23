@@ -32,6 +32,7 @@ use manta_pay::{
     parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
     test,
 };
+use manta_crypto::arkworks::constraint::fp::Fp;
 use manta_support::manta_pay::{
     field_from_id, id_from_field, AssetId, AssetValue, TransferPost as PalletTransferPost,
 };
@@ -271,6 +272,78 @@ fn only_value_of_one_allowed() {
                 bvec![]
             ),
             Error::<Test>::ValueNotOne
+        );
+    });
+}
+
+/// Tests `PrivateTransfer` by manually calling `Ledger`, should already filter this out by checking post shape.
+#[test]
+fn private_transfer_ledger() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        let asset_id = 10u128;
+        let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
+
+        let ([to_private_0, to_private_1], private_transfer) =
+            test::payment::private_transfer::prove_full(
+                &PROVING_CONTEXT,
+                &PARAMETERS,
+                &mut utxo_accumulator,
+                Fp::from(asset_id),
+                // Divide by 2 in order to not exceed total_supply
+                [100, 100],
+                &mut rng,
+            );
+
+        assert_ok!(MantaSBTPallet::post_transaction(
+            vec![ALICE],
+            PalletTransferPost::try_from(to_private_0).unwrap(),
+        ));
+        assert_ok!(MantaSBTPallet::post_transaction(
+            vec![ALICE],
+            PalletTransferPost::try_from(to_private_1).unwrap(),
+        ));
+        assert_noop!(
+            MantaSBTPallet::post_transaction(
+                vec![],
+                PalletTransferPost::try_from(private_transfer.clone()).unwrap(),
+            ),
+            Error::<Test>::NoSenderLedger
+        );
+    });
+}
+
+/// Tests `ToPublic` by manually calling `Ledger`, should already filter this out by checking post shape.
+#[test]
+fn to_public_sbt_fails() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        let asset_id = 10u128;
+        let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
+        let ([to_public_input_0, to_public_input_1], to_public) =
+            test::payment::to_public::prove_full(
+                &PROVING_CONTEXT,
+                &PARAMETERS,
+                &mut utxo_accumulator,
+                Fp::from(asset_id),
+                [100, 100],
+                &mut rng,
+            );
+
+        assert_ok!(MantaSBTPallet::post_transaction(
+            vec![ALICE],
+            PalletTransferPost::try_from(to_public_input_0.clone()).unwrap(),
+        ));
+        assert_ok!(MantaSBTPallet::post_transaction(
+            vec![ALICE],
+            PalletTransferPost::try_from(to_public_input_1).unwrap(),
+        ));
+        assert_noop!(
+            MantaSBTPallet::post_transaction(
+                vec![],
+                PalletTransferPost::try_from(to_public.clone()).unwrap(),
+            ),
+            Error::<Test>::InvalidShape
         );
     });
 }
