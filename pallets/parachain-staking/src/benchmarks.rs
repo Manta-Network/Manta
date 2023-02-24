@@ -92,10 +92,11 @@ fn create_funded_collator<T: Config>(
     } else {
         total
     };
+    let number_candidates = Pallet::<T>::total_selected();
     Pallet::<T>::join_candidates(
         RawOrigin::Signed(user.clone()).into(),
         bond,
-        candidate_count,
+        number_candidates + candidate_count,
     )?;
     Ok(user)
 }
@@ -202,7 +203,7 @@ benchmarks! {
             candidate_count += 1u32;
         }
         let (caller, min_candidate_stk) = create_funded_user::<T>("caller", USER_SEED, 0u32.into());
-    }: _(RawOrigin::Signed(caller.clone()), min_candidate_stk, candidate_count)
+    }: _(RawOrigin::Signed(caller.clone()), min_candidate_stk, Pallet::<T>::total_selected() + candidate_count)
     verify {
         assert!(Pallet::<T>::is_candidate(&caller));
     }
@@ -232,7 +233,7 @@ benchmarks! {
             candidate_count,
         )?;
         candidate_count += 1u32;
-    }: _(RawOrigin::Signed(caller.clone()), candidate_count)
+    }: _(RawOrigin::Signed(caller.clone()), Pallet::<T>::total_selected() + candidate_count)
     verify {
         assert!(Pallet::<T>::candidate_info(&caller).unwrap().is_leaving());
     }
@@ -284,7 +285,7 @@ benchmarks! {
         }
         Pallet::<T>::schedule_leave_candidates(
             RawOrigin::Signed(candidate.clone()).into(),
-            3u32
+            Pallet::<T>::total_selected() + 2u32
         )?;
         roll_to_and_author::<T>(<<T as Config>::LeaveCandidatesDelay as Get<u32>>::get(), candidate.clone());
     }: _(RawOrigin::Signed(candidate.clone()), candidate.clone(), col_del_count)
@@ -318,13 +319,11 @@ benchmarks! {
             true,
             candidate_count,
         )?;
-        candidate_count += 1u32;
         Pallet::<T>::schedule_leave_candidates(
             RawOrigin::Signed(caller.clone()).into(),
-            candidate_count
+            Pallet::<T>::total_selected() + candidate_count
         )?;
-        candidate_count -= 1u32;
-    }: _(RawOrigin::Signed(caller.clone()), candidate_count)
+    }: _(RawOrigin::Signed(caller.clone()), Pallet::<T>::total_selected() + candidate_count)
     verify {
         assert!(Pallet::<T>::candidate_info(&caller).unwrap().is_active());
     }
@@ -659,7 +658,8 @@ benchmarks! {
             true,
             1u32
         )?;
-        let (caller, total) = create_funded_user::<T>("caller", USER_SEED, 0u32.into());
+        let delegator_bond = <<T as Config>::MinDelegatorStk as Get<BalanceOf<T>>>::get();
+        let (caller, total) = create_funded_user::<T>("caller", USER_SEED, delegator_bond * 2u32.into());
         Pallet::<T>::delegate(RawOrigin::Signed(
             caller.clone()).into(),
             collator.clone(),
@@ -667,7 +667,7 @@ benchmarks! {
             0u32,
             0u32
         )?;
-        let bond_less = <<T as Config>::MinDelegatorStk as Get<BalanceOf<T>>>::get();
+        let bond_less = delegator_bond;
     }: _(RawOrigin::Signed(caller.clone()), collator.clone(), bond_less)
     verify {
         let state = Pallet::<T>::delegator_state(&caller)
@@ -724,7 +724,8 @@ benchmarks! {
             true,
             1u32
         )?;
-        let (caller, total) = create_funded_user::<T>("caller", USER_SEED, 0u32.into());
+        let delegator_bond = <<T as Config>::MinDelegatorStk as Get<BalanceOf<T>>>::get();
+        let (caller, total) = create_funded_user::<T>("caller", USER_SEED, delegator_bond * 2u32.into());
         Pallet::<T>::delegate(RawOrigin::Signed(
             caller.clone()).into(),
             collator.clone(),
@@ -732,7 +733,7 @@ benchmarks! {
             0u32,
             0u32
         )?;
-        let bond_less = <<T as Config>::MinDelegatorStk as Get<BalanceOf<T>>>::get();
+        let bond_less = delegator_bond;
         Pallet::<T>::schedule_delegator_bond_less(
             RawOrigin::Signed(caller.clone()).into(),
             collator.clone(),
@@ -794,7 +795,8 @@ benchmarks! {
             true,
             1u32
         )?;
-        let (caller, total) = create_funded_user::<T>("caller", USER_SEED, 0u32.into());
+        let delegator_bond = <<T as Config>::MinDelegatorStk as Get<BalanceOf<T>>>::get();
+        let (caller, total) = create_funded_user::<T>("caller", USER_SEED, delegator_bond * 2u32.into());
         Pallet::<T>::delegate(RawOrigin::Signed(
             caller.clone()).into(),
             collator.clone(),
@@ -802,7 +804,7 @@ benchmarks! {
             0u32,
             0u32
         )?;
-        let bond_less = <<T as Config>::MinDelegatorStk as Get<BalanceOf<T>>>::get();
+        let bond_less = delegator_bond;
         Pallet::<T>::schedule_delegator_bond_less(
             RawOrigin::Signed(caller.clone()).into(),
             collator.clone(),

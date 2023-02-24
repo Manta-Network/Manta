@@ -130,7 +130,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 4010,
+    spec_version: 4020,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 10,
@@ -221,6 +221,8 @@ impl Contains<Call> for BaseFilter {
         match call {
             // Explicitly DISALLOWED calls ( Pallet user extrinsics we don't want used WITH REASONING )
             | Call::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
+            // It's a call only for vesting crowdloan contributors' token, normal user should not use it.
+            | Call::CalamariVesting(calamari_vesting::Call::vested_transfer {..})
             // For now disallow public proposal workflows, treasury workflows,
             // as well as external_propose and external_propose_majority.
             | Call::Democracy(

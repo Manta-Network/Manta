@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v4.0.2
+### Added
+- [\#1017](https://github.com/Manta-Network/Manta/pull/1017) github action for relaychain genesis files [MA]
+
+### Changed
+- [\#1015](https://github.com/Manta-Network/Manta/pull/1015) Re-new MantaPay precomputed coins and re-enable tests [CADO]
+
+### Fixed
+- [\#968](https://github.com/Manta-Network/Manta/pull/968) fix benchmarks, paraID and genesis [MA]
+
 ## v4.0.1
 ### Added
 - [\#870](https://github.com/Manta-Network/Manta/pull/870) Manual seal mode for dev [CADO]
