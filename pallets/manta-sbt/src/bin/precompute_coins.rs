@@ -100,7 +100,7 @@ fn main() -> Result<()> {
     let (proving_context, _, parameters, utxo_accumulator_model) =
         load_parameters(directory.path()).expect("Unable to load parameters.");
     let mut utxo_accumulator = UtxoAccumulator::new(utxo_accumulator_model);
-    let asset_id = 0.into();
+    let asset_id = 1.into();
 
     let to_private = to_private_example(
         &proving_context.to_private,

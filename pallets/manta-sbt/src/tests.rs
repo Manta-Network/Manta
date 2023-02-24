@@ -347,3 +347,15 @@ fn to_public_sbt_fails() {
         );
     });
 }
+
+/// Increments Counter correctly
+#[test]
+fn sbt_counter_increments() {
+    new_test_ext().execute_with(|| {
+        let init_value = MantaSBTPallet::next_sbt_id_and_increment().unwrap();
+        // initializes value to one
+        assert_eq!(init_value, 1);
+        let next_value = MantaSBTPallet::next_sbt_id_and_increment().unwrap();
+        assert_eq!(next_value, 2);
+    });
+}

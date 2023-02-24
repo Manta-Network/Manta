@@ -16,11 +16,17 @@
 
 //! # MantaSBT Module
 //!
-//! MantaSBT creates non-transferable nfts as unspendable UTXOs
+//! MantaSBT creates non-transferable nfts (soul-bound) as unspendable UTXOs
 //!
 //! ## Overview
 //!
-//! Uses `pallet-asset-manager` to store SBT metadata. Ownership is recorded as a corresponding UTXO.
+//! There are two calls `reserve_sbt` and `to_private`.
+//!
+//! `reserve_sbt`: Reserves unique `AssetIds` for user to later mint into sbt.
+//!
+//! `to_private`: Mints SBT with signer generated `TransferPost` using previously reserved `AssetId`. Stores relevant metadata with associated `AssetId`
+//!
+//! Ownership of SBT is recorded as a corresponding UTXO. You can prove you own SBT using `TransactionData` which can reconstruct UTXO
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
@@ -137,7 +143,7 @@ pub mod pallet {
     ///
     /// Should only ever be modified by `next_sbt_id_and_increment()`
     #[pallet::storage]
-    pub(super) type NextSbtId<T: Config> = StorageValue<_, StandardAssetId, ValueQuery>;
+    pub(super) type NextSbtId<T: Config> = StorageValue<_, StandardAssetId, OptionQuery>;
 
     /// SBT Metadata maps `StandardAsset` to the correstonding SBT metadata
     ///
@@ -590,12 +596,23 @@ impl<T: Config> Pallet<T> {
     /// Returns and increments the [`NextAssetId`] by one.
     #[inline]
     fn next_sbt_id_and_increment() -> Result<StandardAssetId, DispatchError> {
-        NextSbtId::<T>::try_mutate(|current| {
-            let id = *current;
-            *current = current
-                .checked_add(One::one())
-                .ok_or(ArithmeticError::Overflow)?;
-            Ok(id)
+        NextSbtId::<T>::try_mutate(|maybe_val| {
+            match maybe_val {
+                Some(current) => {
+                    let id = *current;
+                    *maybe_val = Some(
+                        current
+                            .checked_add(One::one())
+                            .ok_or(ArithmeticError::Overflow)?,
+                    );
+                    Ok(id)
+                }
+                // If storage is empty, starts at value of one (Field cannot be zero)
+                None => {
+                    *maybe_val = Some(2);
+                    Ok(One::one())
+                }
+            }
         })
     }
 }
