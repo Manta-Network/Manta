@@ -398,6 +398,15 @@ jobs:
           rustup default stable
           rustup update
           rustup target add wasm32-unknown-unknown
+          sudo apt update
+          sudo apt install libwebkit2gtk-4.0-dev \
+              build-essential \
+              curl \
+              wget \
+              libssl-dev \
+              libgtk-3-dev \
+              libayatana-appindicator3-dev \
+              librsvg2-dev
           cargo install tauri-cli
           cargo tauri build
           cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release
