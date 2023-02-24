@@ -399,6 +399,7 @@ jobs:
           rustup update
           rustup target add wasm32-unknown-unknown
           cargo install tauri-cli
+          cargo tauri build
           cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release
           cd ..
       - name: run full sync test
