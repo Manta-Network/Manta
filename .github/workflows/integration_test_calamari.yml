@@ -409,6 +409,7 @@ jobs:
               librsvg2-dev
           cargo install tauri-cli
           cargo tauri build
+          echo "I reached the cargo run test server command"
           cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release
           cd ..
       - name: run full sync test
