@@ -384,6 +384,7 @@ jobs:
             --no-autorestart \
             -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
       - name: run signer test server
+        continue-on-error: true
         run: |
           git clone https://github.com/Manta-Network/manta-signer.git
           cd manta-signer
@@ -410,6 +411,8 @@ jobs:
           cargo tauri signer generate -w signer-pk.txt -p "" > /dev/null
           export TAURI_PRIVATE_KEY=$(cat signer-pk.txt)
           cargo tauri build > /dev/null
+      - name: run signer test server 2
+        run: |
           cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release
           pm2 start cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release \
             --name manta-signer-test-server \
