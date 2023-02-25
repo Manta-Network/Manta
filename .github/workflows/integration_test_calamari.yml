@@ -407,9 +407,11 @@ jobs:
               libgtk-3-dev \
               libayatana-appindicator3-dev \
               librsvg2-dev
+          echo "I reached the cargo run test server command"
+          tauri signer generate -w signer-pk.txt
+          export TAURI_PRIVATE_KEY=$(cat signer-pk.txt)
           cargo install tauri-cli
           cargo tauri build
-          echo "I reached the cargo run test server command"
           cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release
           cd ..
       - name: run full sync test
