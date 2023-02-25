@@ -409,10 +409,12 @@ jobs:
               librsvg2-dev
           echo "I reached the cargo run test server command"
           cargo install tauri-cli
-          cargo tauri signer generate -w signer-pk.txt
-          export TAURI_PRIVATE_KEY=$(cat signer-pk.txt)
-          cargo tauri build
           cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release
+          pm2 start cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release \
+            --name manta-signer-test-server \
+            --output manta-signer-test-server-stdout.log \
+            --error manta-signer-test-server-stderr.log \
+            --no-autorestart
           cd ..
       - name: run full sync test
         run: |
