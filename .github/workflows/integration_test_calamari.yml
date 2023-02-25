@@ -408,9 +408,9 @@ jobs:
               libayatana-appindicator3-dev \
               librsvg2-dev
           echo "I reached the cargo run test server command"
+          cargo install tauri-cli
           cargo tauri signer generate -w signer-pk.txt
           export TAURI_PRIVATE_KEY=$(cat signer-pk.txt)
-          cargo install tauri-cli
           cargo tauri build
           cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release
           cd ..
