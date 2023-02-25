@@ -5,9 +5,6 @@ on:
   pull_request:
     branches: [manta]
     types: [opened, reopened, synchronize, labeled]
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
 env:
   AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
   AWS_REGION: us-east-1
@@ -410,7 +407,7 @@ jobs:
               librsvg2-dev
           echo "I reached the cargo run test server command"
           cargo install tauri-cli
-          cargo tauri signer generate -w signer-pk.txt > /dev/null
+          cargo tauri signer generate -w signer-pk.txt -p "" > /dev/null
           export TAURI_PRIVATE_KEY=$(cat signer-pk.txt)
           cargo tauri build > /dev/null
           cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release
