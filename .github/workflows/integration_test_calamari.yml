@@ -403,12 +403,14 @@ jobs:
               build-essential \
               curl \
               wget \
+              dictionaries-common \
               libssl-dev \
               libgtk-3-dev \
               libayatana-appindicator3-dev \
               librsvg2-dev
           echo "I reached the cargo run test server command"
           cargo install tauri-cli
+          cargo tauri build > /dev/null
           cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release
           pm2 start cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release \
             --name manta-signer-test-server \
