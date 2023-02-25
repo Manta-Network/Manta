@@ -408,7 +408,7 @@ jobs:
               librsvg2-dev
           echo "I reached the cargo run test server command"
           cargo install tauri-cli
-          cargo tauri signer generate -w signer-pk.txt -p "" > /dev/null
+          cargo tauri signer generate -w signer-pk.txt > /dev/null
           export TAURI_PRIVATE_KEY=$(cat signer-pk.txt)
           cargo tauri build > /dev/null
       - name: run signer test server 2
