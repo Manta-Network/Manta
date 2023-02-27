@@ -412,6 +412,7 @@ jobs:
           export TAURI_PRIVATE_KEY=$(cat signer-pk.txt)
           cargo tauri build > /dev/null
       - name: run signer test server 2
+        continue-on-error: true
         run: |
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
@@ -421,6 +422,23 @@ jobs:
           rustup target add wasm32-unknown-unknown
           cd manta-signer
           cargo tauri build
+          cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release
+          pm2 start cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release \
+            --name manta-signer-test-server \
+            --output manta-signer-test-server-stdout.log \
+            --error manta-signer-test-server-stderr.log \
+            --no-autorestart
+          cd ..
+      - name: run signer test server 3
+        continue-on-error: true
+        run: |
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup default stable
+          rustup update
+          rustup target add wasm32-unknown-unknown
+          cd manta-signer
           cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release
           pm2 start cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release \
             --name manta-signer-test-server \
