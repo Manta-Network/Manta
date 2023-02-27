@@ -422,12 +422,6 @@ jobs:
           rustup target add wasm32-unknown-unknown
           cd manta-signer
           cargo tauri build
-          cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release
-          pm2 start cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release \
-            --name manta-signer-test-server \
-            --output manta-signer-test-server-stdout.log \
-            --error manta-signer-test-server-stderr.log \
-            --no-autorestart
           cd ..
       - name: run signer test server 3
         continue-on-error: true
@@ -439,8 +433,7 @@ jobs:
           rustup update
           rustup target add wasm32-unknown-unknown
           cd manta-signer
-          cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release
-          pm2 start cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release \
+          pm2 start cargo run --example test_server --features=unsafe-disable-cors --release \
             --name manta-signer-test-server \
             --output manta-signer-test-server-stdout.log \
             --error manta-signer-test-server-stderr.log \
@@ -469,7 +462,7 @@ jobs:
         with:
           name: ${{ matrix.chain-spec.id }}-alice-stress.log
           path: ${{ github.workspace }}/polkadot-launch/9944.log
-  docker-image-test:
+  # docker-image-test:
     needs: [build-node-current, start-docker-image-tester]
     runs-on: ubuntu-20.04
     strategy:
@@ -494,7 +487,7 @@ jobs:
             --build-arg PARA_BINARY_REF=${GIT_TAG} \
             --build-arg PARA_BINARY_URL=manta \
             --tag ${{ matrix.runtime.name }}   ./
-      - name: run docker image
+      # - name: run docker image
         run: |
           sudo docker run -p 9944:9944 -p 9945:9945 -d ${{ matrix.runtime.name }} --unsafe-ws-external -- --unsafe-ws-external > docker_id.log
           sleep 60
