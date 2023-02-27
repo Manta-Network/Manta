@@ -463,53 +463,53 @@ jobs:
           name: ${{ matrix.chain-spec.id }}-alice-stress.log
           path: ${{ github.workspace }}/polkadot-launch/9944.log
   # docker-image-test:
-    needs: [build-node-current, start-docker-image-tester]
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        runtime:
-          - name: calamari
-    steps:
-      - uses: actions/checkout@v2
-      - name: fetch manta
-        uses: actions/download-artifact@v2
-        with:
-          name: manta
-      - name: build docker image
-        run: |
-          mv manta docker/manta
-          cd docker/
-          chmod +x manta
-          GIT_TAG=${{ github.event.release.tag_name }}
-          BINARY_NAME=manta
-          ln -s ${{ matrix.runtime.name }}.Dockerfile Dockerfile
-          docker build \
-            --build-arg PARA_BINARY_REF=${GIT_TAG} \
-            --build-arg PARA_BINARY_URL=manta \
-            --tag ${{ matrix.runtime.name }}   ./
-      # - name: run docker image
-        run: |
-          sudo docker run -p 9944:9944 -p 9945:9945 -d ${{ matrix.runtime.name }} --unsafe-ws-external -- --unsafe-ws-external > docker_id.log
-          sleep 60
-      - name: Show log
-        run: |
-          echo "Get the docker container ID:"
-          image_id=`cat docker_id.log`
-          echo $image_id
-          echo "Adjusting permissions so we can access docker logs..."
-          sudo chmod -R +x /var/lib/docker/
-          sudo cat /var/lib/docker/containers/${image_id}/${image_id}-json.log
-      - uses: actions/checkout@v2
-        with:
-          repository: Manta-Network/Dev-Tools
-          path: dev-tools
-      - name: check if target block is finalized
-        run: |
-          cd dev-tools/check-finalized-block
-          yarn install
-          yarn
-          node index.js --para_address=ws://127.0.0.1:9944 --relay_address=ws://127.0.0.1:9945 --target_block=6
-          if [ $? == 1 ]; then echo "Failed to finalize the target block - 6"; exit 1; fi
+  #   needs: [build-node-current, start-docker-image-tester]
+  #   runs-on: ubuntu-20.04
+  #   strategy:
+  #     matrix:
+  #       runtime:
+  #         - name: calamari
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: fetch manta
+  #       uses: actions/download-artifact@v2
+  #       with:
+  #         name: manta
+  #     - name: build docker image
+  #       run: |
+  #         mv manta docker/manta
+  #         cd docker/
+  #         chmod +x manta
+  #         GIT_TAG=${{ github.event.release.tag_name }}
+  #         BINARY_NAME=manta
+  #         ln -s ${{ matrix.runtime.name }}.Dockerfile Dockerfile
+  #         docker build \
+  #           --build-arg PARA_BINARY_REF=${GIT_TAG} \
+  #           --build-arg PARA_BINARY_URL=manta \
+  #           --tag ${{ matrix.runtime.name }}   ./
+  #     # - name: run docker image
+  #       run: |
+  #         sudo docker run -p 9944:9944 -p 9945:9945 -d ${{ matrix.runtime.name }} --unsafe-ws-external -- --unsafe-ws-external > docker_id.log
+  #         sleep 60
+  #     - name: Show log
+  #       run: |
+  #         echo "Get the docker container ID:"
+  #         image_id=`cat docker_id.log`
+  #         echo $image_id
+  #         echo "Adjusting permissions so we can access docker logs..."
+  #         sudo chmod -R +x /var/lib/docker/
+  #         sudo cat /var/lib/docker/containers/${image_id}/${image_id}-json.log
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         repository: Manta-Network/Dev-Tools
+  #         path: dev-tools
+  #     - name: check if target block is finalized
+  #       run: |
+  #         cd dev-tools/check-finalized-block
+  #         yarn install
+  #         yarn
+  #         node index.js --para_address=ws://127.0.0.1:9944 --relay_address=ws://127.0.0.1:9945 --target_block=6
+  #         if [ $? == 1 ]; then echo "Failed to finalize the target block - 6"; exit 1; fi
   # HELPER JOBS BELOW
   start-node-builder-current:
     runs-on: ubuntu-20.04
@@ -589,42 +589,42 @@ jobs:
           aws-instance-id: ${{ needs.start-calamari-integration-tester.outputs.aws-instance-id }}
       - name: discard stopper success/failure
         run: true
-  start-docker-image-tester:
-    runs-on: ubuntu-20.04
-    outputs:
-      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-    steps:
-      - id: start-self-hosted-runner
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: start
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
-          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-          aws-instance-root-volume-size: 64
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
-  stop-docker-image-tester:
-    if: ${{ always() }}
-    needs: [start-docker-image-tester, docker-image-test]
-    runs-on: ubuntu-20.04
-    steps:
-      - continue-on-error: true
-        uses: audacious-network/aws-github-runner@v1.0.33
-        with:
-          mode: stop
-          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ needs.start-docker-image-tester.outputs.aws-region }}
-          runner-label: ${{ needs.start-docker-image-tester.outputs.runner-label }}
-          aws-instance-id: ${{ needs.start-docker-image-tester.outputs.aws-instance-id }}
-      - name: discard stopper success/failure
-        run: true
+  # start-docker-image-tester:
+  #   runs-on: ubuntu-20.04
+  #   outputs:
+  #     runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+  #     aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+  #     aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+  #   steps:
+  #     - id: start-self-hosted-runner
+  #       uses: audacious-network/aws-github-runner@v1.0.33
+  #       with:
+  #         mode: start
+  #         github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
+  #         aws-region: ${{ env.AWS_REGION }}
+  #         aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
+  #         aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
+  #         aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
+  #         aws-instance-root-volume-size: 64
+  #         aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+  #         aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
+  # stop-docker-image-tester:
+  #   if: ${{ always() }}
+  #   needs: [start-docker-image-tester, docker-image-test]
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - continue-on-error: true
+  #       uses: audacious-network/aws-github-runner@v1.0.33
+  #       with:
+  #         mode: stop
+  #         github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: ${{ needs.start-docker-image-tester.outputs.aws-region }}
+  #         runner-label: ${{ needs.start-docker-image-tester.outputs.runner-label }}
+  #         aws-instance-id: ${{ needs.start-docker-image-tester.outputs.aws-instance-id }}
+  #     - name: discard stopper success/failure
+  #       run: true
