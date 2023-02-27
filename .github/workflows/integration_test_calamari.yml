@@ -418,7 +418,7 @@ jobs:
           rustup toolchain install stable
           rustup default stable
           rustup update
-          rustup target add wasm32-unknown-unknowns
+          rustup target add wasm32-unknown-unknown
           cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release
           pm2 start cargo run --example test_server --features=unsafe-disable-cors,disable-restart --release \
             --name manta-signer-test-server \
