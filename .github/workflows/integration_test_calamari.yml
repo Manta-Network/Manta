@@ -433,7 +433,13 @@ jobs:
           rustup update
           rustup target add wasm32-unknown-unknown
           cd manta-signer
-          cargo run --example test_server --features=unsafe-disable-cors --release &
+          pm2 start cargo \
+            --name measure-block-time-${{ matrix.chain-spec.id }} \
+            --output signer-stdout.log \
+            --error signer-stderr.log \
+            --no-autorestart \
+            -- \
+            run --example test_server --features=unsafe-disable-cors --release
           cd ..
       - name: run full sync test
         run: |
