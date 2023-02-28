@@ -434,7 +434,7 @@ jobs:
           rustup target add wasm32-unknown-unknown
           cd manta-signer
           pm2 start cargo \
-            --name measure-block-time-${{ matrix.chain-spec.id }} \
+            --name manta-signer-${{ matrix.chain-spec.id }} \
             --output signer-stdout.log \
             --error signer-stderr.log \
             --no-autorestart \
