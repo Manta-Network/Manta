@@ -44,20 +44,20 @@ describe("Node RPC Test", () => {
     const keyring = new Keyring({ type: "sr25519" });
     const sender = keyring.addFromMnemonic(test_config.mnemonic);
 
-    const mintsContent = await readFile("./data/precomputed_mints");
+    const mintsContent = await readFile("../data/precomputed_mints");
     const mintsBuffer = mintsContent.subarray(
       test_config.mints_offset,
       test_config.mint_size * test_config.total_iterations
     );
     const full_transfer_size =
       test_config.mint_size * 2 + test_config.transfer_size;
-    const transfersContent = await readFile("./data/precomputed_transfers");
+    const transfersContent = await readFile("../data/precomputed_transfers");
     const transfersBuffer = transfersContent.subarray(
       test_config.transfers_offset,
       full_transfer_size * test_config.total_iterations
     );
     const fullReclaimSize = test_config.mint_size * 2 + test_config.reclaim_size;
-    const reclaimsContent = await readFile("./data/precomputed_reclaims");
+    const reclaimsContent = await readFile("../data/precomputed_reclaims");
     const reclaimsBuffer = reclaimsContent.subarray(
       test_config.reclaims_offset,
       fullReclaimSize * test_config.total_iterations
