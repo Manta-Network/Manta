@@ -259,7 +259,7 @@ jobs:
       # - name: run test suites
       #   run: |
       #     sleep 120
-      #     cd ${{ github.workspace }}/Manta/tests
+      #     cd ${{ github.workspace }}/Manta/tests/esm
       #     yarn install
       #     yarn
       #     yarn correctness_test --address=ws://127.0.0.1:9944 --exit
@@ -366,7 +366,7 @@ jobs:
         run: |
           wget -P ${{ github.workspace }}/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
           mv $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-spec.json ${{ github.workspace }}/Manta/tests/data/fork.json
-          cd ${{ github.workspace }}/Manta/tests
+          cd ${{ github.workspace }}/Manta/tests/cjs
           yarn install
           yarn
           node append_storage.js
@@ -438,14 +438,14 @@ jobs:
       - name: run full sync test
         run: |
           sleep 720
-          cd ${{ github.workspace }}/Manta/tests
+          cd ${{ github.workspace }}/Manta/tests/esm
           yarn install
           yarn
           yarn upgrade manta.js
           yarn full_sync_test --exit
       - name: run stress test
         run: |
-          cd ${{ github.workspace }}/Manta/tests
+          cd ${{ github.workspace }}/Manta/tests/cjs
           yarn install
           yarn
           yarn stress_benchmark_test --address=ws://127.0.0.1:9944 --exit

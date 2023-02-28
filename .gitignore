@@ -5,7 +5,8 @@ Cargo.lock
 runtime/**/target
 .vscode
 .idea
-/tests/node_modules/
+/tests/cjs/node_modules/
+/tests/esm/node_modules/
 /scripts/benchmarking/benchmarking_errors.txt
 /scripts/benchmarking/machine_benchmark_result.txt
 /scripts/benchmarking/rocksdb_weights.rs

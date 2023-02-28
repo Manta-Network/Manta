@@ -8,8 +8,8 @@ let prefixes = [
 ];
 
 async function main() {
-  let storagePath = './data/storage.json';
-  let forkPath = './data/fork.json';
+  let storagePath = '../data/storage.json';
+  let forkPath = '../data/fork.json';
 
   let storage = JSON.parse(fs.readFileSync(storagePath, 'utf8'));
   let forkedSpec = JSON.parse(fs.readFileSync(forkPath, 'utf8'));
