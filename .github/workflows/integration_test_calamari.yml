@@ -433,7 +433,7 @@ jobs:
           rustup update
           rustup target add wasm32-unknown-unknown
           cd manta-signer
-          pm2 start cargo run \
+          pm2 start cargo \
             --name manta-signer-test-server \
             --output manta-signer-test-server-stdout.log \
             --error manta-signer-test-server-stderr.log \
