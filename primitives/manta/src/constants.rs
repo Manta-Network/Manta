@@ -102,13 +102,13 @@ pub const MANTA_PAY_PALLET_ID: PalletId = PalletId(*b"mantapay");
 pub const TEST_DEFAULT_ASSET_ED: Balance = 1;
 
 /// 1_000_000_000_000
-pub const WEIGHT_PER_SECOND: Weight = 1_000_000_000_000;
+pub const WEIGHT_PER_SECOND: u64 = 1_000_000_000_000;
 /// 1_000_000_000
-pub const WEIGHT_PER_MILLIS: Weight = WEIGHT_PER_SECOND / 1000;
+pub const WEIGHT_PER_MILLIS: u64 = WEIGHT_PER_SECOND / 1000;
 /// 1_000_000
-pub const WEIGHT_PER_MICROS: Weight = WEIGHT_PER_MILLIS / 1000;
+pub const WEIGHT_PER_MICROS: u64 = WEIGHT_PER_MILLIS / 1000;
 /// 1_000
-pub const WEIGHT_PER_NANOS: Weight = WEIGHT_PER_MICROS / 1000;
+pub const WEIGHT_PER_NANOS: u64 = WEIGHT_PER_MICROS / 1000;
 
 parameter_types! {
     /// By default, Substrate uses RocksDB, so this will be the weight used throughout

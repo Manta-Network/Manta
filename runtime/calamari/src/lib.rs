@@ -186,7 +186,7 @@ parameter_types! {
 
 impl pallet_tx_pause::Config for Runtime {
     type Event = Event;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type MaxCallNames = ConstU32<25>;
     type PauseOrigin = EitherOfDiverse<
         EnsureRoot<AccountId>,
@@ -314,7 +314,7 @@ impl frame_system::Config for Runtime {
     type BlockWeights = RuntimeBlockWeights;
     type BlockLength = RuntimeBlockLength;
     type AccountId = AccountId;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type Lookup = AccountIdLookup<AccountId, ()>;
     type Index = Index;
     type BlockNumber = BlockNumber;
@@ -322,7 +322,7 @@ impl frame_system::Config for Runtime {
     type Hashing = BlakeTwo256;
     type Header = Header;
     type Event = Event;
-    type Origin = Origin;
+    type RuntimeOrigin = RuntimeOrigin;
     type BlockHashCount = BlockHashCount;
     type DbWeight = RocksDbWeight;
     type Version = Version;
@@ -393,7 +393,7 @@ parameter_types! {
 
 impl pallet_multisig::Config for Runtime {
     type Event = Event;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type Currency = Balances;
     type DepositBase = DepositBase;
     type DepositFactor = DepositFactor;
@@ -403,7 +403,7 @@ impl pallet_multisig::Config for Runtime {
 
 impl pallet_utility::Config for Runtime {
     type Event = Event;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type PalletsOrigin = OriginCaller;
     type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;
 }
@@ -478,7 +478,7 @@ parameter_types! {
 
 type CouncilCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<CouncilCollective> for Runtime {
-    type Origin = Origin;
+    type RuntimeOrigin = RuntimeOrigin;
     type Proposal = Call;
     type Event = Event;
     type MotionDuration = CouncilMotionDuration;
@@ -513,7 +513,7 @@ parameter_types! {
 
 type TechnicalCollective = pallet_collective::Instance2;
 impl pallet_collective::Config<TechnicalCollective> for Runtime {
-    type Origin = Origin;
+    type RuntimeOrigin = RuntimeOrigin;
     type Proposal = Call;
     type Event = Event;
     type MotionDuration = TechnicalMotionDuration;
@@ -678,9 +678,9 @@ impl PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
 
 impl pallet_scheduler::Config for Runtime {
     type Event = Event;
-    type Origin = Origin;
+    type RuntimeOrigin = RuntimeOrigin;
     type PalletsOrigin = OriginCaller;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type MaximumWeight = MaximumSchedulerWeight;
     type ScheduleOrigin = ScheduleOrigin;
     type MaxScheduledPerBlock = ConstU32<50>; // 50 scheduled calls at most in the queue for a single block.
@@ -878,9 +878,9 @@ pub type SignedExtra = (
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
-pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
+pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
@@ -1035,7 +1035,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, Call>
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
         for Runtime
     {
         fn query_call_info(
@@ -1208,7 +1208,7 @@ impl_runtime_apis! {
             }
 
             impl pallet_xcm_benchmarks::generic::Config for Runtime {
-                type Call = Call;
+                type RuntimeCall = RuntimeCall;
 
                 fn worst_case_response() -> (u64, Response) {
                     (0u64, Response::Version(Default::default()))

@@ -320,7 +320,7 @@ fn pause_pallets_weight_works() {
 
         let ps = ps.unwrap();
         let actual_weight = ps.actual_weight.unwrap();
-        assert_eq!(actual_weight, weight_per_tx.saturating_mul(size as Weight));
+        assert_eq!(actual_weight, weight_per_tx.saturating_mul(size as u64));
         assert!(actual_weight < initial_weight);
 
         let ps2: DispatchResultWithPostInfo =

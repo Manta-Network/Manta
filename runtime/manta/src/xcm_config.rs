@@ -40,7 +40,7 @@ parameter_types! {
 pub type XcmOriginToCallOrigin = (
     // Superuser converter for the Relay-chain (Parent) location. This will allow it to issue a
     // transaction from the Root origin.
-    ParentAsSuperuser<Origin>,
+    ParentAsSuperuser<RuntimeOrigin>,
 );
 
 parameter_types! {
@@ -81,7 +81,7 @@ pub type Barrier = (
 
 pub struct XcmExecutorConfig;
 impl Config for XcmExecutorConfig {
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
     // Defines how to Withdraw and Deposit instruction work
     type AssetTransactor = (); // MultiAssetTransactor;
@@ -115,12 +115,12 @@ pub type XcmRouter = (
 
 impl pallet_xcm::Config for Runtime {
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Event = Event;
-    type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+    type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type XcmRouter = XcmRouter;
-    type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+    type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     /// This means that no location will pass XcmExecuteFilter, so a dispatched `execute` message will be filtered.
     /// This shouldn't be reachable since `LocalOriginToLocation = ();`, but let's be on the safe side.
     type XcmExecuteFilter = Nothing;

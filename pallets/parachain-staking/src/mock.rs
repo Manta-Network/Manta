@@ -65,10 +65,10 @@ parameter_types! {
 impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type DbWeight = ();
-    type Origin = Origin;
+    type RuntimeOrigin = RuntimeOrigin;
     type Index = u64;
     type BlockNumber = BlockNumber;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;

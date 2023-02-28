@@ -71,12 +71,13 @@ parameter_types! {
     /// that combined with `AdjustmentVariable`, we can recover from the minimum.
     /// See `multiplier_can_grow_from_zero`.
     pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000u128);
+    pub MaximumMultiplier: Multiplier = Bounded::max_value();
 }
 
 /// Parameterized slow adjusting fee updated based on
 /// https://research.web3.foundation/en/latest/polkadot/overview/2-token-economics.html#-2.-slow-adjusting-mechanism
 pub type SlowAdjustingFeeUpdate<R> =
-    TargetedFeeAdjustment<R, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
+    TargetedFeeAdjustment<R, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier, MaximumMultiplier>;
 
 parameter_types! {
     /// Time to execute an empty block.

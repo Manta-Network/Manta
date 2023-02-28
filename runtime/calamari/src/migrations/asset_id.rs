@@ -254,7 +254,7 @@ where
             None => {
                 return T::DbWeight::get()
                     .reads(num_reads as Weight)
-                    .saturating_add(T::DbWeight::get().writes(num_writes as Weight));
+                    .saturating_add(T::DbWeight::get().writes(num_writes as u64));
             }
         };
         let new_value: NewAssetId = value as NewAssetId;
@@ -351,7 +351,7 @@ where
 
         T::DbWeight::get()
             .reads(num_reads as Weight)
-            .saturating_add(T::DbWeight::get().writes(num_writes as Weight))
+            .saturating_add(T::DbWeight::get().writes(num_writes as u64))
     }
 
     #[cfg(feature = "try-runtime")]

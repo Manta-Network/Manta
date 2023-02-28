@@ -51,17 +51,17 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         type Call: Parameter + GetCallMetadata;
 
         type MaxCallNames: Get<u32>;
 
         /// The origin which may add to filter.
-        type PauseOrigin: EnsureOrigin<Self::Origin>;
+        type PauseOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
         /// The origin which may remove from filter.
-        type UnpauseOrigin: EnsureOrigin<Self::Origin>;
+        type UnpauseOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
         /// Names of pallets which cannot be paused.
         type NonPausablePallets: Contains<Vec<u8>>;
@@ -236,7 +236,7 @@ pub mod pallet {
                 Self::deposit_event(Event::PalletPaused(pallet_name));
             }
 
-            Ok(Some(T::WeightInfo::pause_transaction().saturating_mul(sum as Weight)).into())
+            Ok(Some(T::WeightInfo::pause_transaction().saturating_mul(sum as u64)).into())
         }
 
         /// Unpause all the calls of the listed pallets in `pallet_names`.
@@ -273,7 +273,7 @@ pub mod pallet {
                 Self::deposit_event(Event::PalletUnpaused(pallet_name));
             }
 
-            Ok(Some(T::WeightInfo::pause_transaction().saturating_mul(sum as Weight)).into())
+            Ok(Some(T::WeightInfo::pause_transaction().saturating_mul(sum as u64)).into())
         }
     }
 }

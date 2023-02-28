@@ -70,8 +70,8 @@ parameter_types! {
 }
 
 impl frame_system::Config for Runtime {
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Hash = H256;
@@ -172,15 +172,15 @@ pub type XcmOriginToCallOrigin = (
     // Sovereign account converter; this attempts to derive an `AccountId` from the origin location
     // using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
     // foreign chains who want to have a local sovereign account on this chain which they control.
-    SovereignSignedViaLocation<LocationToAccountId, Origin>,
+    SovereignSignedViaLocation<LocationToAccountId, RuntimeOrigin>,
     // If the incoming XCM origin is of type `AccountId32` and the Network is Network::Any
     // or `RelayNetwork`, convert it to a Native 32 byte account.
-    SignedAccountId32AsNative<RelayNetwork, Origin>,
+    SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
     // Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
     // recognised.
-    SiblingParachainAsNative<cumulus_pallet_xcm::Origin, Origin>,
+    SiblingParachainAsNative<cumulus_pallet_xcm::Origin, RuntimeOrigin>,
     // Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
-    XcmPassthrough<Origin>,
+    XcmPassthrough<RuntimeOrigin>,
 );
 
 parameter_types! {
@@ -279,7 +279,7 @@ pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
 
 pub struct XcmExecutorConfig;
 impl Config for XcmExecutorConfig {
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
     // Defines how to Withdraw and Deposit instruction work
     type AssetTransactor = MultiAssetTransactor;
@@ -329,7 +329,7 @@ pub mod mock_msg_queue {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         type XcmExecutor: ExecuteXcm<Self::Call>;
     }
 
@@ -349,7 +349,7 @@ pub mod mock_msg_queue {
     #[pallet::storage]
     #[pallet::getter(fn received_dmp)]
     /// A queue of received DMP messages
-    pub(super) type ReceivedDmp<T: Config> = StorageValue<_, Vec<Xcm<T::Call>>, ValueQuery>;
+    pub(super) type ReceivedDmp<T: Config> = StorageValue<_, Vec<Xcm<T::RuntimeCall>>, ValueQuery>;
 
     impl<T: Config> Get<ParaId> for Pallet<T> {
         fn get() -> ParaId {
@@ -389,11 +389,11 @@ pub mod mock_msg_queue {
         fn handle_xcmp_message(
             sender: ParaId,
             _sent_at: RelayBlockNumber,
-            xcm: VersionedXcm<T::Call>,
+            xcm: VersionedXcm<T::RuntimeCall>,
             max_weight: Weight,
         ) -> Result<Weight, XcmError> {
             let hash = Encode::using_encoded(&xcm, T::Hashing::hash);
-            let (result, event) = match Xcm::<T::Call>::try_from(xcm) {
+            let (result, event) = match Xcm::<T::RuntimeCall>::try_from(xcm) {
                 Ok(xcm) => {
                     let location = (1, Parachain(sender.into()));
                     match T::XcmExecutor::execute_xcm(location, xcm, max_weight) {
@@ -426,7 +426,7 @@ pub mod mock_msg_queue {
 
                 let mut remaining_fragments = data_ref;
                 while !remaining_fragments.is_empty() {
-                    if let Ok(xcm) = VersionedXcm::<T::Call>::decode(&mut remaining_fragments) {
+                    if let Ok(xcm) = VersionedXcm::<T::RuntimeCall>::decode(&mut remaining_fragments) {
                         let _ = Self::handle_xcmp_message(sender, sent_at, xcm, max_weight);
                     } else {
                         debug_assert!(false, "Invalid incoming XCMP message data");
@@ -445,7 +445,7 @@ pub mod mock_msg_queue {
             for (_i, (_sent_at, data)) in iter.enumerate() {
                 let id = sp_io::hashing::blake2_256(&data[..]);
                 let maybe_msg =
-                    VersionedXcm::<T::Call>::decode(&mut &data[..]).map(Xcm::<T::Call>::try_from);
+                    VersionedXcm::<T::RuntimeCall>::decode(&mut &data[..]).map(Xcm::<T::RuntimeCall>::try_from);
                 match maybe_msg {
                     Err(_) => {
                         Self::deposit_event(Event::InvalidFormat(id));
@@ -486,9 +486,9 @@ pub type LocalOriginToLocation = ();
 
 impl pallet_xcm::Config for Runtime {
     type Event = Event;
-    type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+    type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type XcmRouter = XcmRouter;
-    type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+    type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type XcmExecuteFilter = Nothing;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     // Do not allow teleports
@@ -500,8 +500,8 @@ impl pallet_xcm::Config for Runtime {
         MaxInstructions,
     >;
     type LocationInverter = LocationInverter<Ancestry>;
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
     type AdvertisedXcmVersion = CurrentXcmVersion;
 }

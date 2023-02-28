@@ -70,8 +70,8 @@ impl frame_system::Config for Test {
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Hash = H256;
@@ -287,7 +287,7 @@ parameter_types! {
 
 impl pallet_tx_pause::Config for Test {
     type Event = Event;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type MaxCallNames = ConstU32<25>;
     type PauseOrigin = EnsureRoot<AccountId32>;
     type UnpauseOrigin = EnsureRoot<AccountId32>;

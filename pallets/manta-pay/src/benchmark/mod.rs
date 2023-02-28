@@ -80,7 +80,7 @@ where
 benchmarks! {
     to_private {
         let caller: T::AccountId = whitelisted_caller();
-        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
         let asset = mint_post.source(0).unwrap();
         init_asset::<T>(&caller, Pallet::<T>::id_from_field(asset.id).unwrap(), asset_value_decode(asset.value));
@@ -94,7 +94,7 @@ benchmarks! {
 
     to_public {
         let caller: T::AccountId = whitelisted_caller();
-        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         for coin in TO_PUBLIC_INPUT {
             Pallet::<T>::to_private(
@@ -114,7 +114,7 @@ benchmarks! {
 
     private_transfer {
         let caller: T::AccountId = whitelisted_caller();
-        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         for coin in PRIVATE_TRANSFER_INPUT {
             Pallet::<T>::to_private(
@@ -132,7 +132,7 @@ benchmarks! {
 
     public_transfer {
         let caller: T::AccountId = whitelisted_caller();
-        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         let asset = Asset::new(Pallet::<T>::field_from_id(8u128), asset_value_encode(100));
         let sink = Pallet::<T>::account_id();

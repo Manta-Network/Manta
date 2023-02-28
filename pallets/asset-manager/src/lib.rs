@@ -76,7 +76,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Asset Id Type
         type AssetId: AtLeast32BitUnsigned
@@ -106,7 +106,7 @@ pub mod pallet {
 
         /// The origin which may forcibly create or destroy an asset or otherwise alter privileged
         /// attributes.
-        type ModifierOrigin: EnsureOrigin<Self::Origin>;
+        type ModifierOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
         /// Pallet ID
         type PalletId: Get<PalletId>;

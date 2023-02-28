@@ -77,14 +77,14 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for SubstrateWeight<T> {
     // Storage: Assets Asset (r:1 w:1)
     fn create() -> Weight {
         (17_554_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(1 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+            .saturating_add(T::DbWeight::get().reads(1 as u64))
+            .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     fn force_create() -> Weight {
         (15_650_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(1 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+            .saturating_add(T::DbWeight::get().reads(1 as u64))
+            .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:5002 w:5001)
@@ -94,141 +94,141 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for SubstrateWeight<T> {
     fn destroy(c: u32, s: u32, a: u32, ) -> Weight {
         (0 as Weight)
             // Standard Error: 51_000
-            .saturating_add((18_501_000 as Weight).saturating_mul(c as Weight))
+            .saturating_add((18_501_000 as Weight).saturating_mul(c as u64))
             // Standard Error: 51_000
-            .saturating_add((21_310_000 as Weight).saturating_mul(s as Weight))
+            .saturating_add((21_310_000 as Weight).saturating_mul(s as u64))
             // Standard Error: 516_000
-            .saturating_add((13_845_000 as Weight).saturating_mul(a as Weight))
-            .saturating_add(T::DbWeight::get().reads(5 as Weight))
-            .saturating_add(T::DbWeight::get().reads((2 as Weight).saturating_mul(c as Weight)))
-            .saturating_add(T::DbWeight::get().reads((2 as Weight).saturating_mul(s as Weight)))
-            .saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(a as Weight)))
-            .saturating_add(T::DbWeight::get().writes(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes((2 as Weight).saturating_mul(c as Weight)))
-            .saturating_add(T::DbWeight::get().writes((2 as Weight).saturating_mul(s as Weight)))
-            .saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(a as Weight)))
+            .saturating_add((13_845_000 as Weight).saturating_mul(a as u64))
+            .saturating_add(T::DbWeight::get().reads(5 as u64))
+            .saturating_add(T::DbWeight::get().reads((2 as Weight).saturating_mul(c as u64)))
+            .saturating_add(T::DbWeight::get().reads((2 as Weight).saturating_mul(s as u64)))
+            .saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(a as u64)))
+            .saturating_add(T::DbWeight::get().writes(2 as u64))
+            .saturating_add(T::DbWeight::get().writes((2 as Weight).saturating_mul(c as u64)))
+            .saturating_add(T::DbWeight::get().writes((2 as Weight).saturating_mul(s as u64)))
+            .saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(a as u64)))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:1 w:1)
     fn mint() -> Weight {
         (32_136_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(2 as Weight))
+            .saturating_add(T::DbWeight::get().reads(2 as u64))
+            .saturating_add(T::DbWeight::get().writes(2 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:1 w:1)
     fn burn() -> Weight {
         (36_784_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(2 as Weight))
+            .saturating_add(T::DbWeight::get().reads(2 as u64))
+            .saturating_add(T::DbWeight::get().writes(2 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:2 w:2)
     // Storage: System Account (r:1 w:1)
     fn transfer() -> Weight {
         (51_461_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(4 as Weight))
-            .saturating_add(T::DbWeight::get().writes(4 as Weight))
+            .saturating_add(T::DbWeight::get().reads(4 as u64))
+            .saturating_add(T::DbWeight::get().writes(4 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:2 w:2)
     // Storage: System Account (r:1 w:1)
     fn transfer_keep_alive() -> Weight {
         (40_913_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(4 as Weight))
-            .saturating_add(T::DbWeight::get().writes(4 as Weight))
+            .saturating_add(T::DbWeight::get().reads(4 as u64))
+            .saturating_add(T::DbWeight::get().writes(4 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:2 w:2)
     // Storage: System Account (r:1 w:1)
     fn force_transfer() -> Weight {
         (51_756_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(4 as Weight))
-            .saturating_add(T::DbWeight::get().writes(4 as Weight))
+            .saturating_add(T::DbWeight::get().reads(4 as u64))
+            .saturating_add(T::DbWeight::get().writes(4 as u64))
     }
     // Storage: Assets Asset (r:1 w:0)
     // Storage: Assets Account (r:1 w:1)
     fn freeze() -> Weight {
         (20_875_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+            .saturating_add(T::DbWeight::get().reads(2 as u64))
+            .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:0)
     // Storage: Assets Account (r:1 w:1)
     fn thaw() -> Weight {
         (19_191_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+            .saturating_add(T::DbWeight::get().reads(2 as u64))
+            .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     fn freeze_asset() -> Weight {
         (16_157_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(1 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+            .saturating_add(T::DbWeight::get().reads(1 as u64))
+            .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     fn thaw_asset() -> Weight {
         (15_666_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(1 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+            .saturating_add(T::DbWeight::get().reads(1 as u64))
+            .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Metadata (r:1 w:0)
     fn transfer_ownership() -> Weight {
         (18_502_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+            .saturating_add(T::DbWeight::get().reads(2 as u64))
+            .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     fn set_team() -> Weight {
         (17_194_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(1 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+            .saturating_add(T::DbWeight::get().reads(1 as u64))
+            .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:0)
     // Storage: Assets Metadata (r:1 w:1)
     fn set_metadata(n: u32, s: u32, ) -> Weight {
         (19_822_000 as Weight)
             // Standard Error: 1_000
-            .saturating_add((6_000 as Weight).saturating_mul(n as Weight))
+            .saturating_add((6_000 as Weight).saturating_mul(n as u64))
             // Standard Error: 1_000
-            .saturating_add((9_000 as Weight).saturating_mul(s as Weight))
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+            .saturating_add((9_000 as Weight).saturating_mul(s as u64))
+            .saturating_add(T::DbWeight::get().reads(2 as u64))
+            .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:0)
     // Storage: Assets Metadata (r:1 w:1)
     fn clear_metadata() -> Weight {
         (20_181_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+            .saturating_add(T::DbWeight::get().reads(2 as u64))
+            .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:0)
     // Storage: Assets Metadata (r:1 w:1)
     fn force_set_metadata(_n: u32, _s: u32, ) -> Weight {
         (18_233_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+            .saturating_add(T::DbWeight::get().reads(2 as u64))
+            .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:0)
     // Storage: Assets Metadata (r:1 w:1)
     fn force_clear_metadata() -> Weight {
         (20_077_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+            .saturating_add(T::DbWeight::get().reads(2 as u64))
+            .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     fn force_asset_status() -> Weight {
         (16_215_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(1 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+            .saturating_add(T::DbWeight::get().reads(1 as u64))
+            .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Approvals (r:1 w:1)
     fn approve_transfer() -> Weight {
         (24_743_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(2 as Weight))
+            .saturating_add(T::DbWeight::get().reads(2 as u64))
+            .saturating_add(T::DbWeight::get().writes(2 as u64))
     }
     // Storage: Assets Approvals (r:1 w:1)
     // Storage: Assets Asset (r:1 w:1)
@@ -236,22 +236,22 @@ impl<T: frame_system::Config> pallet_assets::WeightInfo for SubstrateWeight<T> {
     // Storage: System Account (r:1 w:1)
     fn transfer_approved() -> Weight {
         (57_978_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(5 as Weight))
-            .saturating_add(T::DbWeight::get().writes(5 as Weight))
+            .saturating_add(T::DbWeight::get().reads(5 as u64))
+            .saturating_add(T::DbWeight::get().writes(5 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Approvals (r:1 w:1)
     fn cancel_approval() -> Weight {
         (23_312_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(2 as Weight))
+            .saturating_add(T::DbWeight::get().reads(2 as u64))
+            .saturating_add(T::DbWeight::get().writes(2 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Approvals (r:1 w:1)
     fn force_cancel_approval() -> Weight {
         (25_426_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(2 as Weight))
+            .saturating_add(T::DbWeight::get().reads(2 as u64))
+            .saturating_add(T::DbWeight::get().writes(2 as u64))
     }
 }
 
@@ -260,14 +260,14 @@ impl WeightInfo for () {
     // Storage: Assets Asset (r:1 w:1)
     fn create() -> Weight {
         (17_554_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(1 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     fn force_create() -> Weight {
         (15_650_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(1 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:5002 w:5001)
@@ -277,141 +277,141 @@ impl WeightInfo for () {
     fn destroy(c: u32, s: u32, a: u32, ) -> Weight {
         (0 as Weight)
             // Standard Error: 51_000
-            .saturating_add((18_501_000 as Weight).saturating_mul(c as Weight))
+            .saturating_add((18_501_000 as Weight).saturating_mul(c as u64))
             // Standard Error: 51_000
-            .saturating_add((21_310_000 as Weight).saturating_mul(s as Weight))
+            .saturating_add((21_310_000 as Weight).saturating_mul(s as u64))
             // Standard Error: 516_000
-            .saturating_add((13_845_000 as Weight).saturating_mul(a as Weight))
-            .saturating_add(RocksDbWeight::get().reads(5 as Weight))
-            .saturating_add(RocksDbWeight::get().reads((2 as Weight).saturating_mul(c as Weight)))
-            .saturating_add(RocksDbWeight::get().reads((2 as Weight).saturating_mul(s as Weight)))
-            .saturating_add(RocksDbWeight::get().reads((1 as Weight).saturating_mul(a as Weight)))
-            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes((2 as Weight).saturating_mul(c as Weight)))
-            .saturating_add(RocksDbWeight::get().writes((2 as Weight).saturating_mul(s as Weight)))
-            .saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(a as Weight)))
+            .saturating_add((13_845_000 as Weight).saturating_mul(a as u64))
+            .saturating_add(RocksDbWeight::get().reads(5 as u64))
+            .saturating_add(RocksDbWeight::get().reads((2 as Weight).saturating_mul(c as u64)))
+            .saturating_add(RocksDbWeight::get().reads((2 as Weight).saturating_mul(s as u64)))
+            .saturating_add(RocksDbWeight::get().reads((1 as Weight).saturating_mul(a as u64)))
+            .saturating_add(RocksDbWeight::get().writes(2 as u64))
+            .saturating_add(RocksDbWeight::get().writes((2 as Weight).saturating_mul(c as u64)))
+            .saturating_add(RocksDbWeight::get().writes((2 as Weight).saturating_mul(s as u64)))
+            .saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(a as u64)))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:1 w:1)
     fn mint() -> Weight {
         (32_136_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(2 as u64))
+            .saturating_add(RocksDbWeight::get().writes(2 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:1 w:1)
     fn burn() -> Weight {
         (36_784_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(2 as u64))
+            .saturating_add(RocksDbWeight::get().writes(2 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:2 w:2)
     // Storage: System Account (r:1 w:1)
     fn transfer() -> Weight {
         (51_461_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(4 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(4 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(4 as u64))
+            .saturating_add(RocksDbWeight::get().writes(4 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:2 w:2)
     // Storage: System Account (r:1 w:1)
     fn transfer_keep_alive() -> Weight {
         (40_913_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(4 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(4 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(4 as u64))
+            .saturating_add(RocksDbWeight::get().writes(4 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:2 w:2)
     // Storage: System Account (r:1 w:1)
     fn force_transfer() -> Weight {
         (51_756_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(4 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(4 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(4 as u64))
+            .saturating_add(RocksDbWeight::get().writes(4 as u64))
     }
     // Storage: Assets Asset (r:1 w:0)
     // Storage: Assets Account (r:1 w:1)
     fn freeze() -> Weight {
         (20_875_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(2 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:0)
     // Storage: Assets Account (r:1 w:1)
     fn thaw() -> Weight {
         (19_191_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(2 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     fn freeze_asset() -> Weight {
         (16_157_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(1 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     fn thaw_asset() -> Weight {
         (15_666_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(1 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Metadata (r:1 w:0)
     fn transfer_ownership() -> Weight {
         (18_502_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(2 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     fn set_team() -> Weight {
         (17_194_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(1 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:0)
     // Storage: Assets Metadata (r:1 w:1)
     fn set_metadata(n: u32, s: u32, ) -> Weight {
         (19_822_000 as Weight)
             // Standard Error: 1_000
-            .saturating_add((6_000 as Weight).saturating_mul(n as Weight))
+            .saturating_add((6_000 as Weight).saturating_mul(n as u64))
             // Standard Error: 1_000
-            .saturating_add((9_000 as Weight).saturating_mul(s as Weight))
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+            .saturating_add((9_000 as Weight).saturating_mul(s as u64))
+            .saturating_add(RocksDbWeight::get().reads(2 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:0)
     // Storage: Assets Metadata (r:1 w:1)
     fn clear_metadata() -> Weight {
         (20_181_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(2 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:0)
     // Storage: Assets Metadata (r:1 w:1)
     fn force_set_metadata(_n: u32, _s: u32, ) -> Weight {
         (18_233_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(2 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:0)
     // Storage: Assets Metadata (r:1 w:1)
     fn force_clear_metadata() -> Weight {
         (20_077_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(2 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     fn force_asset_status() -> Weight {
         (16_215_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(1 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Approvals (r:1 w:1)
     fn approve_transfer() -> Weight {
         (24_743_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(2 as u64))
+            .saturating_add(RocksDbWeight::get().writes(2 as u64))
     }
     // Storage: Assets Approvals (r:1 w:1)
     // Storage: Assets Asset (r:1 w:1)
@@ -419,21 +419,21 @@ impl WeightInfo for () {
     // Storage: System Account (r:1 w:1)
     fn transfer_approved() -> Weight {
         (57_978_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(5 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(5 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(5 as u64))
+            .saturating_add(RocksDbWeight::get().writes(5 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Approvals (r:1 w:1)
     fn cancel_approval() -> Weight {
         (23_312_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(2 as u64))
+            .saturating_add(RocksDbWeight::get().writes(2 as u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Approvals (r:1 w:1)
     fn force_cancel_approval() -> Weight {
         (25_426_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
+            .saturating_add(RocksDbWeight::get().reads(2 as u64))
+            .saturating_add(RocksDbWeight::get().writes(2 as u64))
     }
 }

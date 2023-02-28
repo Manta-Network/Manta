@@ -100,21 +100,21 @@ pub type XcmOriginToCallOrigin = (
     // Sovereign account converter; this attempts to derive an `AccountId` from the origin location
     // using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
     // foreign chains who want to have a local sovereign account on this chain which they control.
-    SovereignSignedViaLocation<LocationToAccountId, Origin>,
+    SovereignSignedViaLocation<LocationToAccountId, RuntimeOrigin>,
     // Native converter for Relay-chain (Parent) location; will converts to a `Relay` origin when
     // recognised.
-    RelayChainAsNative<RelayChainOrigin, Origin>,
+    RelayChainAsNative<RelayChainOrigin, RuntimeOrigin>,
     // Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
     // recognised.
-    SiblingParachainAsNative<cumulus_pallet_xcm::Origin, Origin>,
+    SiblingParachainAsNative<cumulus_pallet_xcm::Origin, RuntimeOrigin>,
     // Superuser converter for the Relay-chain (Parent) location. This will allow it to issue a
     // transaction from the Root origin.
-    ParentAsSuperuser<Origin>,
+    ParentAsSuperuser<RuntimeOrigin>,
     // If the incoming XCM origin is of type `AccountId32` and the Network is Network::Any
     // or `RelayNetwork`, convert it to a Native 32 byte account.
-    SignedAccountId32AsNative<RelayNetwork, Origin>,
+    SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
     // Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
-    XcmPassthrough<Origin>,
+    XcmPassthrough<RuntimeOrigin>,
 );
 
 parameter_types! {
@@ -211,7 +211,7 @@ pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
 
 pub struct XcmExecutorConfig;
 impl Config for XcmExecutorConfig {
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
     // Defines how to Withdraw and Deposit instruction work
     type AssetTransactor = MultiAssetTransactor;
@@ -255,12 +255,12 @@ pub type XcmRouter = (
 impl pallet_xcm::Config for Runtime {
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Event = Event;
-    type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+    type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type XcmRouter = XcmRouter;
-    type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+    type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     /// This means that no location will pass XcmExecuteFilter, so a dispatched `execute` message will be filtered.
     /// This shouldn't be reachable since `LocalOriginToLocation = ();`, but let's be on the safe side.
     type XcmExecuteFilter = Nothing;

@@ -47,10 +47,10 @@ impl Contains<Call> for BaseFilter {
 }
 
 impl frame_system::Config for Runtime {
-    type Origin = Origin;
+    type RuntimeOrigin = RuntimeOrigin;
     type Index = u64;
     type BlockNumber = BlockNumber;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
@@ -99,7 +99,7 @@ parameter_types! {
 
 impl Config for Runtime {
     type Event = Event;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type MaxCallNames = ConstU32<10>;
     type PauseOrigin = EnsureRoot<AccountId>;
     type UnpauseOrigin = EnsureRoot<AccountId>;

@@ -51,8 +51,8 @@ parameter_types! {
 }
 
 impl frame_system::Config for Runtime {
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Hash = H256;
@@ -97,7 +97,7 @@ impl pallet_balances::Config for Runtime {
 
 impl pallet_utility::Config for Runtime {
     type Event = Event;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type WeightInfo = ();
     type PalletsOrigin = OriginCaller;
 }
@@ -125,10 +125,10 @@ pub type LocalAssetTransactor =
     XcmCurrencyAdapter<Balances, IsConcrete<KsmLocation>, SovereignAccountOf, AccountId, ()>;
 
 type LocalOriginConverter = (
-    SovereignSignedViaLocation<SovereignAccountOf, Origin>,
-    ChildParachainAsNative<origin::Origin, Origin>,
-    SignedAccountId32AsNative<KusamaNetwork, Origin>,
-    ChildSystemParachainAsSuperuser<ParaId, Origin>,
+    SovereignSignedViaLocation<SovereignAccountOf, RuntimeOrigin>,
+    ChildParachainAsNative<origin::Origin, RuntimeOrigin>,
+    SignedAccountId32AsNative<KusamaNetwork, RuntimeOrigin>,
+    ChildSystemParachainAsSuperuser<ParaId, RuntimeOrigin>,
 );
 
 parameter_types! {
@@ -151,7 +151,7 @@ pub type Barrier = (
 
 pub struct XcmExecutorConfig;
 impl Config for XcmExecutorConfig {
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
     type AssetTransactor = LocalAssetTransactor;
     type OriginConverter = LocalOriginConverter;
@@ -167,22 +167,22 @@ impl Config for XcmExecutorConfig {
     type SubscriptionService = XcmPallet;
 }
 
-pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, KusamaNetwork>;
+pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, KusamaNetwork>;
 
 impl pallet_xcm::Config for Runtime {
     type Event = Event;
-    type SendXcmOrigin = xcm_builder::EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+    type SendXcmOrigin = xcm_builder::EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type XcmRouter = XcmRouter;
     // Anyone can execute XCM messages locally...
-    type ExecuteXcmOrigin = xcm_builder::EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+    type ExecuteXcmOrigin = xcm_builder::EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type XcmExecuteFilter = Nothing;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type XcmTeleportFilter = Everything;
     type XcmReserveTransferFilter = Everything;
     type Weigher = FixedWeightBounds<BaseXcmWeight, Call, MaxInstructions>;
     type LocationInverter = LocationInverter<Ancestry>;
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 }
