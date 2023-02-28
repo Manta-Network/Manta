@@ -433,7 +433,7 @@ jobs:
           rustup update
           rustup target add wasm32-unknown-unknown
           cd manta-signer
-          start cargo run --example test_server --features=unsafe-disable-cors --release &
+          cargo run --example test_server --features=unsafe-disable-cors --release &
           cd ..
       - name: run full sync test
         run: |
