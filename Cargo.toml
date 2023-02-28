@@ -4,6 +4,7 @@ members = [
   "pallets/*",
   "primitives/*",
   "runtime/*",
+  "utils/*",
 ]
 resolver = "2"
 

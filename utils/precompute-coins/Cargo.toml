@@ -1,0 +1,21 @@
+[package]
+authors = ['Manta Network']
+edition = "2021"
+homepage = 'https://manta.network'
+license = 'GPL-3.0'
+name = 'precompute-coins'
+readme = 'README.md'
+repository = 'https://github.com/Manta-Network/Manta/'
+version = '4.0.2'
+
+[dependencies]
+anyhow = "1.0.55"
+pallet-manta-pay = { path = '../../pallets/manta-pay' }
+manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.9" }
+rand_chacha = "0.3.1"
+manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.9", features = ["download", "test"] }
+scale-codec = { package = "parity-scale-codec", version = '3.1.2' }
+tempfile = { version = "3.3.0" }
+clap = { version = "4.1.6", features =["derive"] }
+manta-xt = { path = "../manta-xt" }
+tokio = { version = "1.25", features = ["rt", "macros", "sync", "rt-multi-thread"] }

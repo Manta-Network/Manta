@@ -1,0 +1,19 @@
+[package]
+authors = ['Manta Network']
+edition = "2021"
+homepage = 'https://manta.network'
+license = 'GPL-3.0'
+name = 'manta-xt'
+readme = 'README.md'
+repository = 'https://github.com/Manta-Network/Manta/'
+version = '4.0.2'
+
+[dependencies]
+anyhow = "1.0.58"
+codec = { package = "parity-scale-codec", version = "3.2.1" }
+sp-core = { version = "16.0.0", default-features = false }
+sp-runtime = { version = "18.0.0", default-features = false }
+subxt = "0.27.1"
+
+[dev-dependencies]
+tokio = { version = "1.25", features = ["rt", "macros"] }
