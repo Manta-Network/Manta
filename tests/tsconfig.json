@@ -1,11 +1,11 @@
 {
-    "moduleResolution": "node16",
     "compilerOptions": {
     "target": "es2016",    
     "module": "commonjs",
     "esModuleInterop": true, 
     "forceConsistentCasingInFileNames": true, 
     "strict": true,
+    "moduleResolution": "node16",
     "skipLibCheck": true
   }
 }
