@@ -40,12 +40,14 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use frame_support::{
-    construct_runtime, parameter_types,
+    construct_runtime,
+    dispatch::DispatchClass,
+    parameter_types,
     traits::{
-        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, Get, IsInVec,
+        ConstU128, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, Get, IsInVec,
         NeverEnsureOrigin, PrivilegeCmp,
     },
-    weights::{ConstantMultiplier, DispatchClass, Weight},
+    weights::{ConstantMultiplier, Weight},
     PalletId,
 };
 use frame_system::{

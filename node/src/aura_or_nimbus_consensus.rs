@@ -22,7 +22,7 @@
 
 use futures::TryFutureExt;
 use log::debug;
-use sc_client_api::{backend::Backend, HeaderBackend};
+use sc_client_api::HeaderBackend;
 use sc_consensus::{
     import_queue::{BasicQueue, Verifier as VerifierT},
     BlockImport, BlockImportParams,

@@ -18,7 +18,7 @@ use super::{
     ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
 };
 
-use frame_support::{match_types, parameter_types, traits::Nothing, weights::Weight};
+use frame_support::{match_types, parameter_types, traits::Nothing};
 
 use frame_system::EnsureRoot;
 use manta_primitives::{types::AccountId, xcm::MultiNativeAsset};

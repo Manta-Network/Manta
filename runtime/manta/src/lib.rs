@@ -45,9 +45,11 @@ use cumulus_pallet_parachain_system::{
     RelayNumberStrictlyIncreases, RelaychainBlockNumberProvider,
 };
 use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency},
-    weights::{ConstantMultiplier, DispatchClass, Weight},
+    construct_runtime,
+    dispatch::DispatchClass,
+    parameter_types,
+    traits::{ConstU128, ConstU32, ConstU8, Contains, Currency},
+    weights::{ConstantMultiplier, Weight},
     PalletId,
 };
 use frame_system::{

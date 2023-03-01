@@ -76,7 +76,10 @@ mod multiplier_tests {
         Runtime, RuntimeBlockWeights as BlockWeights, RuntimeCall, System, TransactionPayment, KMA,
     };
     use codec::Encode;
-    use frame_support::weights::{DispatchClass, Weight, WeightToFee};
+    use frame_support::{
+        dispatch::DispatchClass,
+        weights::{Weight, WeightToFee},
+    };
     use frame_system::WeightInfo;
     use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
     use runtime_common::{

@@ -29,7 +29,6 @@ use polkadot_service::CollatorPair;
 use session_key_primitives::AuraId;
 use std::sync::Arc;
 
-use sc_client_api::backend::Backend;
 use sc_consensus::LongestChain;
 use sc_network::NetworkService;
 use sc_service::{Configuration, Error, KeystoreContainer, TFullBackend, TaskManager};

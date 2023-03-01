@@ -17,11 +17,7 @@
 //! Manta Protocol Constants
 
 use crate::types::Balance;
-use frame_support::{
-    parameter_types,
-    weights::{RuntimeDbWeight, Weight},
-    PalletId,
-};
+use frame_support::{parameter_types, weights::RuntimeDbWeight, PalletId};
 
 /// Calamari SS58 Prefix
 pub const CALAMARI_SS58PREFIX: u8 = 78;
