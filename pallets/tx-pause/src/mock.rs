@@ -39,8 +39,8 @@ mod tx_pause {
 }
 
 pub struct BaseFilter;
-impl Contains<Call> for BaseFilter {
-    fn contains(call: &Call) -> bool {
+impl Contains<RuntimeCall> for BaseFilter {
+    fn contains(call: &RuntimeCall) -> bool {
         // filter paused calls
         !tx_pause::PausedTransactionFilter::<Runtime>::contains(call)
     }
@@ -56,7 +56,7 @@ impl frame_system::Config for Runtime {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = ConstU32<250>;
     type BlockWeights = ();
     type BlockLength = ();
@@ -80,7 +80,7 @@ parameter_types! {
 impl pallet_balances::Config for Runtime {
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = NativeTokenExistentialDeposit;
     type AccountStore = System;
     type MaxLocks = ();
@@ -98,7 +98,7 @@ parameter_types! {
 }
 
 impl Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type MaxCallNames = ConstU32<10>;
     type PauseOrigin = EnsureRoot<AccountId>;

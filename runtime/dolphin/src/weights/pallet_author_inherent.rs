@@ -57,7 +57,7 @@ impl<T: frame_system::Config> pallet_author_inherent::WeightInfo for SubstrateWe
     // Storage: Session NextKeys (r:1 w:0)
     // Storage: Session Validators (r:1 w:0)
     fn kick_off_authorship_validation() -> Weight {
-        (16_985_000 as Weight)
+        Weight::from_ref_time(16_985_000)
             .saturating_add(T::DbWeight::get().reads(5 as u64))
             .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
@@ -71,7 +71,7 @@ impl WeightInfo for () {
     // Storage: Session NextKeys (r:1 w:0)
     // Storage: Session Validators (r:1 w:0)
     fn kick_off_authorship_validation() -> Weight {
-        (16_985_000 as Weight)
+        Weight::from_ref_time(16_985_000)
             .saturating_add(RocksDbWeight::get().reads(5 as u64))
             .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }

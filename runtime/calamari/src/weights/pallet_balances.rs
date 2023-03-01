@@ -60,43 +60,43 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_balances::WeightInfo for SubstrateWeight<T> {
     // Storage: System Account (r:1 w:1)
     fn transfer() -> Weight {
-        (43_688_000 as Weight)
+        Weight::from_ref_time(43_688_000)
             .saturating_add(T::DbWeight::get().reads(1 as u64))
             .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: System Account (r:1 w:1)
     fn transfer_keep_alive() -> Weight {
-        (34_707_000 as Weight)
+        Weight::from_ref_time(34_707_000)
             .saturating_add(T::DbWeight::get().reads(1 as u64))
             .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: System Account (r:1 w:1)
     fn set_balance_creating() -> Weight {
-        (22_918_000 as Weight)
+        Weight::from_ref_time(22_918_000)
             .saturating_add(T::DbWeight::get().reads(1 as u64))
             .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: System Account (r:1 w:1)
     fn set_balance_killing() -> Weight {
-        (26_547_000 as Weight)
+        Weight::from_ref_time(26_547_000)
             .saturating_add(T::DbWeight::get().reads(1 as u64))
             .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: System Account (r:2 w:2)
     fn force_transfer() -> Weight {
-        (46_366_000 as Weight)
+        Weight::from_ref_time(46_366_000)
             .saturating_add(T::DbWeight::get().reads(2 as u64))
             .saturating_add(T::DbWeight::get().writes(2 as u64))
     }
     // Storage: System Account (r:1 w:1)
     fn transfer_all() -> Weight {
-        (38_733_000 as Weight)
+        Weight::from_ref_time(38_733_000)
             .saturating_add(T::DbWeight::get().reads(1 as u64))
             .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
     // Storage: System Account (r:1 w:1)
     fn force_unreserve() -> Weight {
-        (19_911_000 as Weight)
+        Weight::from_ref_time(19_911_000)
             .saturating_add(T::DbWeight::get().reads(1 as u64))
             .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
@@ -106,43 +106,43 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for SubstrateWeight<T>
 impl WeightInfo for () {
     // Storage: System Account (r:1 w:1)
     fn transfer() -> Weight {
-        (43_688_000 as Weight)
+        Weight::from_ref_time(43_688_000)
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
             .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: System Account (r:1 w:1)
     fn transfer_keep_alive() -> Weight {
-        (34_707_000 as Weight)
+        Weight::from_ref_time(34_707_000)
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
             .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: System Account (r:1 w:1)
     fn set_balance_creating() -> Weight {
-        (22_918_000 as Weight)
+        Weight::from_ref_time(22_918_000)
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
             .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: System Account (r:1 w:1)
     fn set_balance_killing() -> Weight {
-        (26_547_000 as Weight)
+        Weight::from_ref_time(26_547_000)
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
             .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: System Account (r:2 w:2)
     fn force_transfer() -> Weight {
-        (46_366_000 as Weight)
+        Weight::from_ref_time(46_366_000)
             .saturating_add(RocksDbWeight::get().reads(2 as u64))
             .saturating_add(RocksDbWeight::get().writes(2 as u64))
     }
     // Storage: System Account (r:1 w:1)
     fn transfer_all() -> Weight {
-        (38_733_000 as Weight)
+        Weight::from_ref_time(38_733_000)
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
             .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
     // Storage: System Account (r:1 w:1)
     fn force_unreserve() -> Weight {
-        (19_911_000 as Weight)
+        Weight::from_ref_time(19_911_000)
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
             .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }

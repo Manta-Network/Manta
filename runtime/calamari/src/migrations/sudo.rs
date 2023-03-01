@@ -35,10 +35,10 @@ impl<T: frame_system::Config> OnRuntimeUpgrade for RemoveSudo<T> {
             log::info!(target: "OnRuntimeUpgrade", "✅ Sudo key has been removed.");
             log::info!(target: "OnRuntimeUpgrade", "✅ The pallet version has been removed.");
             T::DbWeight::get()
-                .reads(1 as Weight)
+                .reads(1)
                 .saturating_add(T::DbWeight::get().writes(1 as u64))
         } else {
-            T::DbWeight::get().reads(1 as Weight)
+            T::DbWeight::get().reads(1)
         }
     }
 

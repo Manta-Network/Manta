@@ -1570,7 +1570,7 @@ pub mod pallet {
 
             // don't underflow uint
             if now < delay {
-                return 0u64.into();
+                return Weight::zero();
             }
 
             let paid_for_round = now.saturating_sub(delay);
@@ -1585,7 +1585,7 @@ pub mod pallet {
                 }
                 result.1 // weight consumed by pay_one_collator_reward
             } else {
-                0u64.into()
+                Weight::zero()
             }
         }
 
@@ -1607,7 +1607,7 @@ pub mod pallet {
                 // 2. we called pay_one_collator_reward when we were actually done with deferred
                 //    payouts
                 log::warn!("pay_one_collator_reward called with no <Points<T>> for the round!");
-                return (None, 0u64.into());
+                return (None, Weight::zero());
             }
 
             let mint = |amt: BalanceOf<T>, to: T::AccountId| {
@@ -1627,7 +1627,7 @@ pub mod pallet {
             if let Some((collator, pts)) =
                 <AwardedPts<T>>::iter_prefix(paid_for_round).drain().next()
             {
-                let mut extra_weight = 0;
+                let mut extra_weight = Weight::zero();
                 let pct_due = Perbill::from_rational(pts, total_points);
                 let total_paid = pct_due * payout_info.total_staking_reward;
                 let mut amt_due = total_paid;
@@ -1672,7 +1672,7 @@ pub mod pallet {
             } else {
                 // Note that we don't clean up storage here; it is cleaned up in
                 // handle_delayed_payouts()
-                (None, 0u64.into())
+                (None, Weight::zero())
             }
         }
 

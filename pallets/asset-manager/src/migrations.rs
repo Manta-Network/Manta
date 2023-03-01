@@ -38,8 +38,8 @@ where
         let storage_version = <T as GetStorageVersion>::on_chain_storage_version();
         if storage_version < 1 {
             log::info!(target: "asset-manager", "Start to execute storage migration for asset-manager.");
-            let mut reads: Weight = 0;
-            let mut writes: Weight = 0;
+            let mut reads: u64 = 0;
+            let mut writes: u64 = 0;
             LocationAssetId::<T>::iter().for_each(|(location, _asset_id)| {
                 reads += 1;
                 if let Some(para_id) =

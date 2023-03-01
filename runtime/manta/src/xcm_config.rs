@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use super::{Call, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime};
+use super::{
+    ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+};
 
 use frame_support::{match_types, parameter_types, traits::Nothing, weights::Weight};
 
@@ -45,7 +47,7 @@ pub type XcmOriginToCallOrigin = (
 
 parameter_types! {
     /// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-    pub UnitWeightCost: Weight = 1_000_000_000;
+    pub UnitWeightCost: u64 = 1_000_000_000;
     /// Used in native traders
     /// This might be able to skipped.
     /// We have to use `here()` because of reanchoring logic
@@ -91,7 +93,7 @@ impl Config for XcmExecutorConfig {
     type IsTeleporter = ();
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = Barrier;
-    type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+    type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
     // Trader is the means to purchasing weight credit for XCM execution.
     // We define a trader that will charge parachain's native currency, who's `MultiLocation`
     // is defined in `SelfReserve`.
@@ -117,7 +119,7 @@ impl pallet_xcm::Config for Runtime {
     const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type XcmRouter = XcmRouter;
     type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
@@ -127,13 +129,13 @@ impl pallet_xcm::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Nothing;
-    type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+    type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
     type LocationInverter = LocationInverter<Ancestry>;
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }

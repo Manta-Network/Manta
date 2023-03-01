@@ -24,11 +24,11 @@ use frame_support::{
     assert_ok, construct_runtime, match_types,
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{ConstU32, Currency, Everything, Nothing},
+    traits::{AsEnsureOriginWithArg, ConstU32, Currency, Everything, Nothing},
     weights::Weight,
     PalletId,
 };
-use frame_system::EnsureRoot;
+use frame_system::{EnsureRoot, EnsureSigned};
 use scale_info::TypeInfo;
 use sp_core::H256;
 use sp_runtime::{
@@ -79,7 +79,7 @@ impl frame_system::Config for Runtime {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type BlockWeights = ();
     type BlockLength = ();
@@ -105,7 +105,7 @@ parameter_types! {
 impl pallet_balances::Config for Runtime {
     type MaxLocks = MaxLocks;
     type Balance = Balance;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
@@ -115,8 +115,8 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    pub const ReservedXcmpWeight: Weight = WEIGHT_PER_SECOND / 4;
-    pub const ReservedDmpWeight: Weight = WEIGHT_PER_SECOND / 4;
+    pub const ReservedXcmpWeight: Weight = Weight::from_ref_time(WEIGHT_PER_SECOND.saturating_div(4));
+    pub const ReservedDmpWeight: Weight = Weight::from_ref_time(WEIGHT_PER_SECOND.saturating_div(4));
 }
 
 parameter_types! {
@@ -137,7 +137,7 @@ parameter_types! {
 }
 
 impl pallet_assets::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type AssetId = CalamariAssetId;
     type Currency = Balances;
@@ -151,6 +151,10 @@ impl pallet_assets::Config for Runtime {
     type Freezer = ();
     type Extra = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    type RemoveItemsLimit = ConstU32<1000>;
+    type AssetIdParameter = CalamariAssetId;
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+    type CallbackHandle = ();
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -184,7 +188,7 @@ pub type XcmOriginToCallOrigin = (
 );
 
 parameter_types! {
-    pub const UnitWeightCost: Weight = 1_000_000_000;
+    pub const UnitWeightCost: u64 = 1_000_000_000;
     // Used in native traders
     // This might be able to skipped.
     // We have to use `here()` because of reanchoring logic
@@ -290,8 +294,8 @@ impl Config for XcmExecutorConfig {
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = Barrier;
     type Weigher = WeightInfoBounds<
-        calamari_runtime::weights::xcm::CalamariXcmWeight<Call>,
-        Call,
+        calamari_runtime::weights::xcm::CalamariXcmWeight<RuntimeCall>,
+        RuntimeCall,
         MaxInstructions,
     >;
     // Trader is the means to purchasing weight credit for XCM execution.
@@ -312,7 +316,7 @@ impl Config for XcmExecutorConfig {
 }
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type ChannelInfo = ParachainSystem;
     type VersionWrapper = PolkadotXcm;
@@ -330,7 +334,7 @@ pub mod mock_msg_queue {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-        type XcmExecutor: ExecuteXcm<Self::Call>;
+        type XcmExecutor: ExecuteXcm<Self::RuntimeCall>;
     }
 
     #[pallet::call]
@@ -396,12 +400,16 @@ pub mod mock_msg_queue {
             let (result, event) = match Xcm::<T::RuntimeCall>::try_from(xcm) {
                 Ok(xcm) => {
                     let location = (1, Parachain(sender.into()));
-                    match T::XcmExecutor::execute_xcm(location, xcm, max_weight) {
+                    match T::XcmExecutor::execute_xcm(location, xcm, max_weight.ref_time()) {
                         Outcome::Error(e) => (Err(e), Event::Fail(Some(hash), e)),
-                        Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
+                        Outcome::Complete(w) => {
+                            (Ok(Weight::from_ref_time(w)), Event::Success(Some(hash)))
+                        }
                         // As far as the caller is concerned, this was dispatched without error, so
                         // we just report the weight used.
-                        Outcome::Incomplete(w, e) => (Ok(w), Event::Fail(Some(hash), e)),
+                        Outcome::Incomplete(w, e) => {
+                            (Ok(Weight::from_ref_time(w)), Event::Fail(Some(hash), e))
+                        }
                     }
                 }
                 Err(()) => (
@@ -426,7 +434,9 @@ pub mod mock_msg_queue {
 
                 let mut remaining_fragments = data_ref;
                 while !remaining_fragments.is_empty() {
-                    if let Ok(xcm) = VersionedXcm::<T::RuntimeCall>::decode(&mut remaining_fragments) {
+                    if let Ok(xcm) =
+                        VersionedXcm::<T::RuntimeCall>::decode(&mut remaining_fragments)
+                    {
                         let _ = Self::handle_xcmp_message(sender, sent_at, xcm, max_weight);
                     } else {
                         debug_assert!(false, "Invalid incoming XCMP message data");
@@ -444,8 +454,8 @@ pub mod mock_msg_queue {
         ) -> Weight {
             for (_i, (_sent_at, data)) in iter.enumerate() {
                 let id = sp_io::hashing::blake2_256(&data[..]);
-                let maybe_msg =
-                    VersionedXcm::<T::RuntimeCall>::decode(&mut &data[..]).map(Xcm::<T::RuntimeCall>::try_from);
+                let maybe_msg = VersionedXcm::<T::RuntimeCall>::decode(&mut &data[..])
+                    .map(Xcm::<T::RuntimeCall>::try_from);
                 match maybe_msg {
                     Err(_) => {
                         Self::deposit_event(Event::InvalidFormat(id));
@@ -454,7 +464,8 @@ pub mod mock_msg_queue {
                         Self::deposit_event(Event::UnsupportedVersion(id));
                     }
                     Ok(Ok(x)) => {
-                        let outcome = T::XcmExecutor::execute_xcm(Parent, x.clone(), limit);
+                        let outcome =
+                            T::XcmExecutor::execute_xcm(Parent, x.clone(), limit.ref_time());
                         <ReceivedDmp<T>>::append(x);
                         Self::deposit_event(Event::ExecutedDownward(id, outcome));
                     }
@@ -466,12 +477,12 @@ pub mod mock_msg_queue {
 }
 
 impl mock_msg_queue::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type SelfParaId = parachain_info::Pallet<Runtime>;
     type DmpMessageHandler = MsgQueue;
     type ReservedDmpWeight = ReservedDmpWeight;
@@ -485,7 +496,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 pub type LocalOriginToLocation = ();
 
 impl pallet_xcm::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type XcmRouter = XcmRouter;
     type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
@@ -495,8 +506,8 @@ impl pallet_xcm::Config for Runtime {
     type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Nothing;
     type Weigher = WeightInfoBounds<
-        calamari_runtime::weights::xcm::CalamariXcmWeight<Call>,
-        Call,
+        calamari_runtime::weights::xcm::CalamariXcmWeight<RuntimeCall>,
+        RuntimeCall,
         MaxInstructions,
     >;
     type LocationInverter = LocationInverter<Ancestry>;
@@ -534,7 +545,7 @@ impl AssetRegistry for CalamariAssetRegistry {
         is_sufficient: bool,
     ) -> DispatchResult {
         Assets::force_create(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             AssetManager::account_id(),
             is_sufficient,
@@ -542,7 +553,7 @@ impl AssetRegistry for CalamariAssetRegistry {
         )?;
 
         Assets::force_set_metadata(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             metadata.name,
             metadata.symbol,
@@ -556,7 +567,7 @@ impl AssetRegistry for CalamariAssetRegistry {
         metadata: AssetStorageMetadata,
     ) -> DispatchResult {
         Assets::force_set_metadata(
-            Origin::root(),
+            RuntimeOrigin::root(),
             *asset_id,
             metadata.name,
             metadata.symbol,
@@ -608,7 +619,7 @@ impl AssetConfig<Runtime> for ParachainAssetConfig {
 }
 
 impl pallet_asset_manager::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type AssetId = CalamariAssetId;
     type Balance = Balance;
     type Location = AssetLocation;
@@ -619,7 +630,7 @@ impl pallet_asset_manager::Config for Runtime {
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 }
 
@@ -647,13 +658,13 @@ where
 }
 
 parameter_types! {
-    pub const BaseXcmWeight: Weight = 100_000_000;
+    pub const BaseXcmWeight: u64 = 100_000_000;
     pub const MaxAssetsForTransfer: usize = 3;
 }
 
 // The XCM message wrapper wrapper
 impl orml_xtokens::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type CurrencyId = CurrencyId;
     type AccountIdToMultiLocation = manta_primitives::xcm::AccountIdToMultiLocation;
@@ -661,8 +672,8 @@ impl orml_xtokens::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type SelfLocation = SelfReserve;
     type Weigher = WeightInfoBounds<
-        calamari_runtime::weights::xcm::CalamariXcmWeight<Call>,
-        Call,
+        calamari_runtime::weights::xcm::CalamariXcmWeight<RuntimeCall>,
+        RuntimeCall,
         MaxInstructions,
     >;
     type BaseXcmWeight = BaseXcmWeight;
@@ -700,7 +711,7 @@ construct_runtime!(
     }
 );
 
-pub(crate) fn para_events() -> Vec<Event> {
+pub(crate) fn para_events() -> Vec<RuntimeEvent> {
     System::events()
         .into_iter()
         .map(|r| r.event)
@@ -762,7 +773,7 @@ fn insert_dummy_data(
     let mut next_dummy_mult_loc = dummy_mult_loc;
     while next_asset_id < insert_until {
         assert_ok!(AssetManager::register_asset(
-            self::Origin::root(),
+            self::RuntimeOrigin::root(),
             AssetLocation::from(next_dummy_mult_loc.clone()),
             dummy_asset_metadata.clone()
         ));
@@ -808,14 +819,14 @@ where
         asset_id = AssetManager::next_asset_id();
 
         assert_ok!(AssetManager::register_asset(
-            self::Origin::root(),
+            self::RuntimeOrigin::root(),
             source_location.clone(),
             asset_metadata.clone()
         ));
 
         if let Some((owner, min_balance, is_sufficient, is_frozen)) = mint_asset {
             assert_ok!(self::Assets::force_asset_status(
-                self::Origin::root(),
+                self::RuntimeOrigin::root(),
                 asset_id,
                 owner.clone(),
                 owner.clone(),
@@ -829,7 +840,7 @@ where
 
         if let Some(ups) = units_per_second {
             assert_ok!(AssetManager::set_units_per_second(
-                self::Origin::root(),
+                self::RuntimeOrigin::root(),
                 asset_id,
                 ups,
             ));

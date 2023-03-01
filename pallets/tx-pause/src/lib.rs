@@ -40,7 +40,7 @@ pub mod weights;
 pub use pallet::*;
 pub use weights::WeightInfo;
 
-type CallOf<T> = <T as Config>::Call;
+type CallOf<T> = <T as Config>::RuntimeCall;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -53,7 +53,7 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-        type Call: Parameter + GetCallMetadata;
+        type RuntimeCall: Parameter + GetCallMetadata;
 
         type MaxCallNames: Get<u32>;
 
@@ -152,7 +152,7 @@ pub mod pallet {
         #[pallet::call_index(2)]
         #[pallet::weight({
             let len = pallet_and_funcs.iter().flat_map(|item| {item.clone().1}).count();
-            T::WeightInfo::pause_transaction().saturating_mul(len as Weight)
+            T::WeightInfo::pause_transaction().saturating_mul(len as u64)
         })]
         #[transactional]
         pub fn pause_transactions(
@@ -177,7 +177,7 @@ pub mod pallet {
         #[pallet::call_index(3)]
         #[pallet::weight({
             let len = pallet_and_funcs.iter().flat_map(|item| {item.clone().1}).count();
-            T::WeightInfo::unpause_transaction().saturating_mul(len as Weight)
+            T::WeightInfo::unpause_transaction().saturating_mul(len as u64)
         })]
         #[transactional]
         pub fn unpause_transactions(
@@ -201,7 +201,7 @@ pub mod pallet {
         #[pallet::weight({
             let len = pallet_names.len();
             let max = T::MaxCallNames::get();
-            T::WeightInfo::pause_transaction().saturating_mul(len as Weight).saturating_mul(max as Weight)
+            T::WeightInfo::pause_transaction().saturating_mul(len as u64).saturating_mul(max as u64)
         })]
         #[transactional]
         pub fn pause_pallets(
@@ -245,7 +245,7 @@ pub mod pallet {
         #[pallet::weight({
             let len = pallet_names.len();
             let max = T::MaxCallNames::get();
-            T::WeightInfo::pause_transaction().saturating_mul(len as Weight).saturating_mul(max as Weight)
+            T::WeightInfo::pause_transaction().saturating_mul(len as u64).saturating_mul(max as u64)
         })]
         #[transactional]
         pub fn unpause_pallets(

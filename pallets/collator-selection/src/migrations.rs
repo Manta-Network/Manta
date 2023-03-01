@@ -62,10 +62,10 @@ impl<T: Config> Pallet<T> {
             }
 
             // Return the weight consumed by the migration.
-            T::DbWeight::get().reads_writes(1, dropcount as Weight + 1)
+            T::DbWeight::get().reads_writes(1, dropcount + 1)
         } else {
             log::debug!("collator-selection V0->V1 migration not needed!");
-            0
+            Weight::zero()
         }
     }
     pub fn pre_migrate_v0_to_v1() -> Result<(), &'static str> {

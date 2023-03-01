@@ -15,8 +15,8 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
-    MantaPaySuspensionManager, NativeTokenExistentialDeposit, Origin, Runtime,
+    weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, MantaPaySuspensionManager,
+    NativeTokenExistentialDeposit, Runtime, RuntimeEvent, RuntimeOrigin,
 };
 
 use manta_primitives::{
@@ -28,9 +28,14 @@ use manta_primitives::{
     types::{AccountId, Balance, CalamariAssetId},
 };
 
-use frame_support::{pallet_prelude::DispatchResult, parameter_types, traits::ConstU32, PalletId};
+use frame_support::{
+    pallet_prelude::DispatchResult,
+    parameter_types,
+    traits::{AsEnsureOriginWithArg, ConstU32},
+    PalletId,
+};
 
-use frame_system::EnsureRoot;
+use frame_system::{EnsureRoot, EnsureSigned};
 
 use xcm::VersionedMultiLocation;
 
@@ -44,7 +49,7 @@ parameter_types! {
 }
 
 impl pallet_assets::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type AssetId = CalamariAssetId;
     type Currency = Balances;
@@ -57,7 +62,12 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = ConstU32<50>;
     type Freezer = ();
     type Extra = ();
-    type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
+    // type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
+    type WeightInfo = ();
+    type RemoveItemsLimit = ConstU32<1000>;
+    type AssetIdParameter = CalamariAssetId;
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+    type CallbackHandle = ();
 }
 
 pub struct CalamariAssetRegistry;
@@ -78,7 +88,7 @@ impl AssetRegistry for CalamariAssetRegistry {
         is_sufficient: bool,
     ) -> DispatchResult {
         Assets::force_create(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             sp_runtime::MultiAddress::Id(AssetManager::account_id()),
             is_sufficient,
@@ -86,7 +96,7 @@ impl AssetRegistry for CalamariAssetRegistry {
         )?;
 
         Assets::force_set_metadata(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             metadata.name,
             metadata.symbol,
@@ -100,7 +110,7 @@ impl AssetRegistry for CalamariAssetRegistry {
         metadata: AssetStorageMetadata,
     ) -> DispatchResult {
         Assets::force_set_metadata(
-            Origin::root(),
+            RuntimeOrigin::root(),
             *asset_id,
             metadata.name,
             metadata.symbol,
@@ -155,7 +165,7 @@ impl AssetConfig<Runtime> for CalamariAssetConfig {
 }
 
 impl pallet_asset_manager::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type AssetId = CalamariAssetId;
     type Balance = Balance;
     type Location = AssetLocation;
@@ -170,7 +180,7 @@ parameter_types! {
 }
 
 impl pallet_manta_pay::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
     type AssetConfig = CalamariAssetConfig;
     type PalletId = MantaPayPalletId;

@@ -148,7 +148,9 @@ pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(70);
 
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
-pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_ref_time(WEIGHT_PER_SECOND)
+    .saturating_div(2)
+    .set_proof_size(cumulus_primitives_core::relay_chain::v2::MAX_POV_SIZE as u64);
 
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
@@ -177,11 +179,11 @@ parameter_types! {
 
 // Don't allow permission-less asset creation.
 pub struct MantaFilter;
-impl Contains<Call> for MantaFilter {
-    fn contains(call: &Call) -> bool {
+impl Contains<RuntimeCall> for MantaFilter {
+    fn contains(call: &RuntimeCall) -> bool {
         if matches!(
             call,
-            Call::Timestamp(_) | Call::ParachainSystem(_) | Call::System(_)
+            RuntimeCall::Timestamp(_) | RuntimeCall::ParachainSystem(_) | RuntimeCall::System(_)
         ) {
             // always allow core call
             // pallet-timestamp and parachainSystem could not be filtered because they are used in communication between releychain and parachain.
@@ -193,14 +195,14 @@ impl Contains<Call> for MantaFilter {
         match call {
             // Explicitly DISALLOWED calls ( Pallet user extrinsics we don't want used WITH REASONING )
             // Explicitly ALLOWED calls
-            | Call::Authorship(_)
+            | RuntimeCall::Authorship(_)
             // Sudo also cannot be filtered because it is used in runtime upgrade.
-            | Call::Sudo(_)
-            | Call::Multisig(_)
-            | Call::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
-            | Call::Balances(_)
-            | Call::Preimage(_)
-            | Call::Utility(_) => true,
+            | RuntimeCall::Sudo(_)
+            | RuntimeCall::Multisig(_)
+            | RuntimeCall::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
+            | RuntimeCall::Balances(_)
+            | RuntimeCall::Preimage(_)
+            | RuntimeCall::Utility(_) => true,
 
             // DISALLOW anything else
             | _ => false
@@ -221,7 +223,7 @@ impl frame_system::Config for Runtime {
     type Hash = Hash;
     type Hashing = BlakeTwo256;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type RuntimeOrigin = RuntimeOrigin;
     type BlockHashCount = BlockHashCount;
     type DbWeight = RocksDbWeight;
@@ -265,7 +267,7 @@ impl pallet_balances::Config for Runtime {
     type ReserveIdentifier = [u8; 8];
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = NativeTokenExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
@@ -282,7 +284,7 @@ impl pallet_transaction_payment::Config for Runtime {
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthToFeeCoeff>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 parameter_types! {
@@ -293,24 +295,24 @@ parameter_types! {
 }
 
 impl pallet_multisig::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type Currency = Balances;
     type DepositBase = DepositBase;
     type DepositFactor = DepositFactor;
-    type MaxSignatories = ConstU16<100>;
+    type MaxSignatories = ConstU32<100>;
     type WeightInfo = weights::pallet_multisig::SubstrateWeight<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
     type PalletsOrigin = OriginCaller;
     type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;
 }
 
 impl pallet_sudo::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type RuntimeCall = RuntimeCall;
 }
 
@@ -329,7 +331,7 @@ parameter_types! {
     pub LeaveDelayRounds: BlockNumber = prod_or_fast!(28,1,"MANTA_LEAVEDELAYROUNDS"); // == 7 * DAYS / 6 * HOURS
 }
 impl pallet_parachain_staking::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type BlockAuthor = AuthorInherent;
     type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
@@ -395,20 +397,19 @@ parameter_types! {
 
 impl pallet_preimage::Config for Runtime {
     type WeightInfo = weights::pallet_preimage::SubstrateWeight<Runtime>;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type ManagerOrigin = EnsureRoot<AccountId>;
-    type MaxSize = PreimageMaxSize;
     type BaseDeposit = PreimageBaseDeposit;
     type ByteDeposit = PreimageByteDeposit;
 }
 
 parameter_types! {
-    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
+    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type SelfParaId = parachain_info::Pallet<Runtime>;
     type DmpMessageHandler = DmpQueue;
     type ReservedDmpWeight = ReservedDmpWeight;
@@ -435,7 +436,7 @@ parameter_types! {
     pub const Offset: u32 = 0;
 }
 impl pallet_session::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     // we don't have stash and controller, thus we don't need the convert as well.
     type ValidatorIdOf = IdentityCollator;
@@ -463,7 +464,7 @@ parameter_types! {
 pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
 
 impl manta_collator_selection::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type UpdateOrigin = CollatorSelectionUpdateOrigin;
     type PotId = PotId;
@@ -542,7 +543,8 @@ pub type SignedExtra = (
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+pub type UncheckedExtrinsic =
+    generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
@@ -689,13 +691,13 @@ impl_runtime_apis! {
         for Runtime
     {
         fn query_call_info(
-            call: Call,
+            call: RuntimeCall,
             len: u32,
         ) -> pallet_transaction_payment::RuntimeDispatchInfo<Balance> {
             TransactionPayment::query_call_info(call, len)
         }
         fn query_call_fee_details(
-            call: Call,
+            call: RuntimeCall,
             len: u32,
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_call_fee_details(call, len)

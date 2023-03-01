@@ -56,7 +56,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     // Storage: CalamariVesting VestingSchedule (r:1 w:1)
     // Storage: Timestamp Now (r:1 w:0)
     fn update_vesting_schedule() -> Weight {
-        (18_103_000 as Weight)
+        Weight::from_ref_time(18_103_000)
             .saturating_add(T::DbWeight::get().reads(2 as u64))
             .saturating_add(T::DbWeight::get().writes(1 as u64))
     }
@@ -66,7 +66,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     // Storage: Balances Locks (r:1 w:1)
     // Storage: System Account (r:1 w:1)
     fn vest() -> Weight {
-        (37_818_000 as Weight)
+        Weight::from_ref_time(37_818_000)
             .saturating_add(T::DbWeight::get().reads(5 as u64))
             .saturating_add(T::DbWeight::get().writes(3 as u64))
     }
@@ -76,7 +76,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     // Storage: CalamariVesting VestingSchedule (r:1 w:0)
     // Storage: Balances Locks (r:1 w:1)
     fn vested_transfer() -> Weight {
-        (66_814_000 as Weight)
+        Weight::from_ref_time(66_814_000)
             .saturating_add(T::DbWeight::get().reads(5 as u64))
             .saturating_add(T::DbWeight::get().writes(3 as u64))
     }
@@ -87,7 +87,7 @@ impl WeightInfo for () {
     // Storage: CalamariVesting VestingSchedule (r:1 w:1)
     // Storage: Timestamp Now (r:1 w:0)
     fn update_vesting_schedule() -> Weight {
-        (18_103_000 as Weight)
+        Weight::from_ref_time(18_103_000)
             .saturating_add(RocksDbWeight::get().reads(2 as u64))
             .saturating_add(RocksDbWeight::get().writes(1 as u64))
     }
@@ -97,7 +97,7 @@ impl WeightInfo for () {
     // Storage: Balances Locks (r:1 w:1)
     // Storage: System Account (r:1 w:1)
     fn vest() -> Weight {
-        (37_818_000 as Weight)
+        Weight::from_ref_time(37_818_000)
             .saturating_add(RocksDbWeight::get().reads(5 as u64))
             .saturating_add(RocksDbWeight::get().writes(3 as u64))
     }
@@ -107,7 +107,7 @@ impl WeightInfo for () {
     // Storage: CalamariVesting VestingSchedule (r:1 w:0)
     // Storage: Balances Locks (r:1 w:1)
     fn vested_transfer() -> Weight {
-        (66_814_000 as Weight)
+        Weight::from_ref_time(66_814_000)
             .saturating_add(RocksDbWeight::get().reads(5 as u64))
             .saturating_add(RocksDbWeight::get().writes(3 as u64))
     }

@@ -15,9 +15,9 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    assets_config::DolphinAssetConfig, AssetManager, Assets, Balances, Call, DmpQueue,
-    EnsureRootOrMoreThanHalfCouncil, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm,
-    Runtime, Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
+    assets_config::DolphinAssetConfig, AssetManager, Assets, Balances, DmpQueue,
+    EnsureRootOrMoreThanHalfCouncil, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
+    RuntimeCall, RuntimeEvent, RuntimeOrigin, Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
 use codec::{Decode, Encode};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
@@ -54,12 +54,12 @@ use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 pub use sp_runtime::BuildStorage;
 
 parameter_types! {
-    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
-    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
+    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type SelfParaId = parachain_info::Pallet<Runtime>;
     type DmpMessageHandler = DmpQueue;
     type ReservedDmpWeight = ReservedDmpWeight;
@@ -74,7 +74,7 @@ impl parachain_info::Config for Runtime {}
 
 parameter_types! {
     pub const RelayNetwork: NetworkId = NetworkId::Kusama;
-    pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
+    pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
     pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();
@@ -119,7 +119,7 @@ pub type XcmOriginToCallOrigin = (
 
 parameter_types! {
     // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-    pub UnitWeightCost: Weight = 1_000_000_000;
+    pub UnitWeightCost: u64 = 1_000_000_000;
     // Used in native traders
     // This might be able to skipped.
     // We have to use `here()` because of reanchoring logic
@@ -221,8 +221,11 @@ impl Config for XcmExecutorConfig {
     type IsTeleporter = ();
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = Barrier;
-    type Weigher =
-        WeightInfoBounds<crate::weights::xcm::DolphinXcmWeight<Call>, Call, MaxInstructions>;
+    type Weigher = WeightInfoBounds<
+        crate::weights::xcm::DolphinXcmWeight<RuntimeCall>,
+        RuntimeCall,
+        MaxInstructions,
+    >;
     // Trader is the means to purchasing weight credit for XCM execution.
     // We define two traders:
     // The first one will charge parachain's native currency, who's `MultiLocation`
@@ -257,7 +260,7 @@ impl pallet_xcm::Config for Runtime {
 
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
     type XcmRouter = XcmRouter;
     type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
@@ -267,19 +270,22 @@ impl pallet_xcm::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Nothing;
-    type Weigher =
-        WeightInfoBounds<crate::weights::xcm::DolphinXcmWeight<Call>, Call, MaxInstructions>;
+    type Weigher = WeightInfoBounds<
+        crate::weights::xcm::DolphinXcmWeight<RuntimeCall>,
+        RuntimeCall,
+        MaxInstructions,
+    >;
     type LocationInverter = LocationInverter<Ancestry>;
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 }
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type ChannelInfo = ParachainSystem;
     type VersionWrapper = PolkadotXcm;
@@ -290,7 +296,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }
@@ -319,13 +325,13 @@ where
 }
 
 parameter_types! {
-    pub const BaseXcmWeight: Weight = 100_000_000;
+    pub const BaseXcmWeight: u64 = 100_000_000;
     pub const MaxAssetsForTransfer: usize = 2;
 }
 
 // The XCM message wrapper wrapper
 impl orml_xtokens::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type CurrencyId = CurrencyId;
     type AccountIdToMultiLocation = AccountIdToMultiLocation;
@@ -335,8 +341,11 @@ impl orml_xtokens::Config for Runtime {
     // Take note that this pallet does not have the typical configurable WeightInfo.
     // It uses the Weigher configuration to calculate weights for the user callable extrinsics on this chain,
     // as well as weights for execution on the destination chain. Both based on the composed xcm messages.
-    type Weigher =
-        WeightInfoBounds<crate::weights::xcm::DolphinXcmWeight<Call>, Call, MaxInstructions>;
+    type Weigher = WeightInfoBounds<
+        crate::weights::xcm::DolphinXcmWeight<RuntimeCall>,
+        RuntimeCall,
+        MaxInstructions,
+    >;
     type BaseXcmWeight = BaseXcmWeight;
     type LocationInverter = LocationInverter<Ancestry>;
     type MaxAssetsForTransfer = MaxAssetsForTransfer;

@@ -125,7 +125,7 @@ where
             || assets_storage_version != INITIAL_PALLET_ASSETS_VERSION
         {
             log::info!("Aborting migration due to unexpected on-chain storage versions for pallet-assets-manager: {:?} and pallet-assets: {:?}. Expectation was: {:?} and {:?}.", asset_manager_storage_version, assets_storage_version, INITIAL_PALLET_ASSETS_MANAGER_VERSION, INITIAL_PALLET_ASSETS_VERSION );
-            return T::DbWeight::get().reads(num_reads as Weight);
+            return T::DbWeight::get().reads(num_reads);
         }
 
         // AssetIdLocation
@@ -253,7 +253,7 @@ where
             Some(value) => value,
             None => {
                 return T::DbWeight::get()
-                    .reads(num_reads as Weight)
+                    .reads(num_reads)
                     .saturating_add(T::DbWeight::get().writes(num_writes as u64));
             }
         };
@@ -350,7 +350,7 @@ where
         log::info!(target: "assets", "✅ Storage migration for Assets has been executed successfully and storage version has been update to: {:?}.", INITIAL_PALLET_ASSETS_VERSION + 1);
 
         T::DbWeight::get()
-            .reads(num_reads as Weight)
+            .reads(num_reads)
             .saturating_add(T::DbWeight::get().writes(num_writes as u64))
     }
 

@@ -50,7 +50,7 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: AssetManager LocationAssetId (r:1 w:0)
 	// Storage: System Account (r:1 w:1)
 	pub(crate) fn withdraw_asset() -> Weight {
-		(35_802_000 as Weight)
+		Weight::from_ref_time(35_802_000)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -58,7 +58,7 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: AssetManager LocationAssetId (r:1 w:0)
 	// Storage: System Account (r:2 w:2)
 	pub(crate) fn transfer_asset() -> Weight {
-		(52_695_000 as Weight)
+		Weight::from_ref_time(52_695_000)
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -71,18 +71,18 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn transfer_reserve_asset() -> Weight {
-		(69_472_000 as Weight)
+		Weight::from_ref_time(69_472_000)
 			.saturating_add(T::DbWeight::get().reads(9 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
 	pub(crate) fn reserve_asset_deposited() -> Weight {
-		(1_499_000 as Weight)
+		Weight::from_ref_time(1_499_000)
 	}
 	// Storage: ParachainInfo ParachainId (r:1 w:0)
 	// Storage: AssetManager LocationAssetId (r:1 w:0)
 	// Storage: System Account (r:1 w:1)
 	pub(crate) fn deposit_asset() -> Weight {
-		(36_317_000 as Weight)
+		Weight::from_ref_time(36_317_000)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -95,7 +95,7 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn deposit_reserve_asset() -> Weight {
-		(55_177_000 as Weight)
+		Weight::from_ref_time(55_177_000)
 			.saturating_add(T::DbWeight::get().reads(8 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
@@ -106,7 +106,7 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn initiate_teleport() -> Weight {
-		(25_483_000 as Weight)
+		Weight::from_ref_time(25_483_000)
 			.saturating_add(T::DbWeight::get().reads(6 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}

@@ -136,10 +136,10 @@ mod constants_tests {
     #[test]
     fn sanity_check_weight_per_time_constants() {
         use frame_support::weights::constants::{
-            WEIGHT_PER_MICROS as IMPORTED_WEIGHT_PER_MICROS,
-            WEIGHT_PER_MILLIS as IMPORTED_WEIGHT_PER_MILLIS,
-            WEIGHT_PER_NANOS as IMPORTED_WEIGHT_PER_NANOS,
-            WEIGHT_PER_SECOND as IMPORTED_WEIGHT_PER_SECOND,
+            WEIGHT_REF_TIME_PER_MICROS as IMPORTED_WEIGHT_PER_MICROS,
+            WEIGHT_REF_TIME_PER_MILLIS as IMPORTED_WEIGHT_PER_MILLIS,
+            WEIGHT_REF_TIME_PER_NANOS as IMPORTED_WEIGHT_PER_NANOS,
+            WEIGHT_REF_TIME_PER_SECOND as IMPORTED_WEIGHT_PER_SECOND,
         };
 
         assert_eq!(WEIGHT_PER_SECOND, IMPORTED_WEIGHT_PER_SECOND);

@@ -46,7 +46,7 @@ frame_support::construct_runtime!(
 
 parameter_types! {
     pub BlockWeights: frame_system::limits::BlockWeights =
-        frame_system::limits::BlockWeights::simple_max(1024);
+        frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1024));
 }
 impl frame_system::Config for Test {
     type AccountData = pallet_balances::AccountData<Balance>;
@@ -58,7 +58,7 @@ impl frame_system::Config for Test {
     type BlockWeights = ();
     type RuntimeCall = RuntimeCall;
     type DbWeight = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type Header = Header;
@@ -79,7 +79,7 @@ impl pallet_balances::Config for Test {
     type AccountStore = System;
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type MaxLocks = ConstU32<10>;
     type MaxReserves = ();
@@ -104,7 +104,7 @@ parameter_types! {
 }
 impl Config for Test {
     type Currency = Balances;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Timestamp = Timestamp;
     type MinVestedTransfer = MinVestedTransfer;
     type MaxScheduleLength = MaxScheduleLength;

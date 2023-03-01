@@ -56,14 +56,14 @@ impl<T: frame_system::Config> pallet_session::WeightInfo for SubstrateWeight<T> 
     // Storage: Session NextKeys (r:1 w:1)
     // Storage: Session KeyOwner (r:3 w:3)
     fn set_keys() -> Weight {
-        (27_320_000 as Weight)
+        Weight::from_ref_time(27_320_000)
             .saturating_add(T::DbWeight::get().reads(4 as u64))
             .saturating_add(T::DbWeight::get().writes(4 as u64))
     }
     // Storage: Session NextKeys (r:1 w:1)
     // Storage: Session KeyOwner (r:0 w:3)
     fn purge_keys() -> Weight {
-        (16_428_000 as Weight)
+        Weight::from_ref_time(16_428_000)
             .saturating_add(T::DbWeight::get().reads(1 as u64))
             .saturating_add(T::DbWeight::get().writes(4 as u64))
     }
@@ -74,14 +74,14 @@ impl WeightInfo for () {
     // Storage: Session NextKeys (r:1 w:1)
     // Storage: Session KeyOwner (r:3 w:3)
     fn set_keys() -> Weight {
-        (27_320_000 as Weight)
+        Weight::from_ref_time(27_320_000)
             .saturating_add(RocksDbWeight::get().reads(4 as u64))
             .saturating_add(RocksDbWeight::get().writes(4 as u64))
     }
     // Storage: Session NextKeys (r:1 w:1)
     // Storage: Session KeyOwner (r:0 w:3)
     fn purge_keys() -> Weight {
-        (16_428_000 as Weight)
+        Weight::from_ref_time(16_428_000)
             .saturating_add(RocksDbWeight::get().reads(1 as u64))
             .saturating_add(RocksDbWeight::get().writes(4 as u64))
     }

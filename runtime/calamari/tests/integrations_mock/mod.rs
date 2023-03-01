@@ -23,7 +23,7 @@ use calamari_runtime::opaque::SessionKeys;
 pub use calamari_runtime::{
     currency::KMA,
     staking::{EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR},
-    CollatorSelection, Event, Origin, ParachainStaking, Runtime, System,
+    CollatorSelection, ParachainStaking, Runtime, RuntimeEvent, RuntimeOrigin, System,
 };
 
 use frame_support::{
@@ -64,12 +64,12 @@ pub fn info_from_weight(w: Weight) -> DispatchInfo {
     }
 }
 
-pub fn last_event() -> Event {
+pub fn last_event() -> RuntimeEvent {
     System::events().pop().expect("Event expected").event
 }
 
-pub fn root_origin() -> <Runtime as frame_system::Config>::Origin {
-    <Runtime as frame_system::Config>::Origin::root()
+pub fn root_origin() -> <Runtime as frame_system::Config>::RuntimeOrigin {
+    <Runtime as frame_system::Config>::RuntimeOrigin::root()
 }
 
 pub fn initialize_collators_through_whitelist(collators: Vec<AccountId>) {

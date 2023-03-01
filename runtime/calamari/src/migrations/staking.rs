@@ -33,7 +33,7 @@ where
         + pallet_parachain_staking::Config
         + pallet_session::Config
         + manta_collator_selection::Config,
-    <<T as frame_system::Config>::Origin as OriginTrait>::AccountId:
+    <<T as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId:
         From<<T as frame_system::Config>::AccountId>,
     pallet_parachain_staking::BalanceOf<T>: Into<Balance> + From<Balance>,
     <<T as manta_collator_selection::Config>::Currency as Currency<
@@ -46,7 +46,7 @@ where
 {
     fn on_runtime_upgrade() -> Weight
     where
-        <<T as frame_system::Config>::Origin as OriginTrait>::AccountId:
+        <<T as frame_system::Config>::RuntimeOrigin as OriginTrait>::AccountId:
             From<<T as frame_system::Config>::AccountId>,
         pallet_parachain_staking::BalanceOf<T>: Into<Balance> + From<Balance>,
     {
@@ -61,7 +61,7 @@ where
 
         // 2. Clear the invulnerables list
         let _ = manta_collator_selection::Pallet::<T>::set_invulnerables(
-            <T as frame_system::Config>::Origin::root(),
+            <T as frame_system::Config>::RuntimeOrigin::root(),
             Vec::new(),
         );
 
@@ -72,14 +72,14 @@ where
         let desired_candidates = manta_collator_selection::Pallet::<T>::desired_candidates();
         if new_n_of_candidates > desired_candidates {
             let _ = manta_collator_selection::Pallet::<T>::set_desired_candidates(
-                <T as frame_system::Config>::Origin::root(),
+                <T as frame_system::Config>::RuntimeOrigin::root(),
                 new_n_of_candidates,
             );
         }
         // 3.2 Ensure the candidacy bond for collator_selection is actually 400k
         // NOTE: This is needed to migrate already deployed testnets like Baikal
         let _ = manta_collator_selection::Pallet::<T>::set_candidacy_bond(
-            <T as frame_system::Config>::Origin::root(),
+            <T as frame_system::Config>::RuntimeOrigin::root(),
             T::MinWhitelistCandidateStk::get().unique_saturated_into(),
         );
 
@@ -91,7 +91,7 @@ where
                 <T as pallet_parachain_staking::Config>::Currency::free_balance(&invuln)
             );
             let _ = manta_collator_selection::Pallet::<T>::register_candidate(
-                <T as frame_system::Config>::Origin::root(),
+                <T as frame_system::Config>::RuntimeOrigin::root(),
                 invuln.clone(),
             );
             log::info!(
@@ -121,7 +121,7 @@ where
         // Setting total_selected will take effect at the beginning of the next round, so for the first 6 hours
         // our invulnerables will be the only collators
         let _ = pallet_parachain_staking::Pallet::<T>::set_total_selected(
-            <T as frame_system::Config>::Origin::root(),
+            <T as frame_system::Config>::RuntimeOrigin::root(),
             INITIAL_MAX_ACTIVE_COLLATORS,
         );
 

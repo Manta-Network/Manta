@@ -73,14 +73,15 @@ mod fee_split_tests {
 #[cfg(test)]
 mod multiplier_tests {
     use crate::{
-        Call, Runtime, RuntimeBlockWeights as BlockWeights, System, TransactionPayment, KMA,
+        Runtime, RuntimeBlockWeights as BlockWeights, RuntimeCall, System, TransactionPayment, KMA,
     };
     use codec::Encode;
     use frame_support::weights::{DispatchClass, Weight, WeightToFee};
     use frame_system::WeightInfo;
     use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
     use runtime_common::{
-        AdjustmentVariable, MinimumMultiplier, SlowAdjustingFeeUpdate, TargetBlockFullness,
+        AdjustmentVariable, MaximumMultiplier, MinimumMultiplier, SlowAdjustingFeeUpdate,
+        TargetBlockFullness,
     };
     use sp_runtime::{
         traits::{Convert, One},
@@ -108,6 +109,7 @@ mod multiplier_tests {
             TargetBlockFullness,
             AdjustmentVariable,
             MinimumMultiplier,
+            MaximumMultiplier,
         >::convert(fm)
     }
 
@@ -150,19 +152,20 @@ mod multiplier_tests {
             .get(DispatchClass::Normal)
             .max_total
             .unwrap()
-            - 10;
+            - Weight::from_ref_time(10);
 
         // remark extrinsic is chosen arbitrarily for benchmark as a small, constant size TX.
-        let remark = Call::System(frame_system::Call::<Runtime>::remark_with_event {
+        let remark = RuntimeCall::System(frame_system::Call::<Runtime>::remark_with_event {
             remark: vec![1, 2, 3],
         });
         let len: u32 = remark.encode().len() as u32;
         let remark_weight: Weight =
             <Runtime as frame_system::Config>::SystemWeightInfo::remark(len);
-        let max_number_of_remarks_per_block = (block_weight / remark_weight) as u128;
+        let max_number_of_remarks_per_block =
+            (block_weight.ref_time() / remark_weight.ref_time()) as u128;
         let len_fee = max_number_of_remarks_per_block.saturating_mul(
             <Runtime as pallet_transaction_payment::Config>::LengthToFee::weight_to_fee(
-                &(len as Weight),
+                &(Weight::from_ref_time(len as u64)),
             ),
         );
 

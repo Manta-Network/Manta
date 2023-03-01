@@ -16,7 +16,7 @@
 
 #![cfg(feature = "runtime-benchmarks")]
 
-use crate::{Call, Config, Event, Pallet};
+use crate::{Config, Pallet, RuntimeCall, RuntimeEvent};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::traits::Get;
 use frame_system::{EventRecord, RawOrigin};

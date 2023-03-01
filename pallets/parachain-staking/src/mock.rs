@@ -57,7 +57,7 @@ construct_runtime!(
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
-    pub const MaximumBlockWeight: Weight = 1024;
+    pub const MaximumBlockWeight: u64 = 1024;
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::one();
     pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
@@ -74,7 +74,7 @@ impl frame_system::Config for Test {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
     type PalletInfo = PalletInfo;
@@ -96,7 +96,7 @@ impl pallet_balances::Config for Test {
     type ReserveIdentifier = [u8; 4];
     type MaxLocks = ();
     type Balance = Balance;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
@@ -125,7 +125,7 @@ parameter_types! {
     pub const MinDelegation: u128 = 3;
 }
 impl Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type MonetaryGovernanceOrigin = frame_system::EnsureRoot<AccountId>;
     type MinBlocksPerRound = MinBlocksPerRound;
@@ -184,7 +184,7 @@ ord_parameter_types! {
     pub const RootAccount: u64 = 777;
 }
 impl manta_collator_selection::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type UpdateOrigin = EnsureSignedBy<RootAccount, u64>;
     type PotId = PotId;
@@ -236,7 +236,7 @@ parameter_types! {
     pub const Period: BlockNumber = 10;
 }
 impl pallet_session::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     // we don't have stash and controller, thus we don't need the convert as well.
     type ValidatorIdOf = manta_collator_selection::IdentityCollator;
@@ -375,7 +375,7 @@ pub(crate) fn roll_to_round_end(round: u32) -> u32 {
     roll_to(block)
 }
 
-pub(crate) fn last_event() -> Event {
+pub(crate) fn last_event() -> RuntimeEvent {
     System::events().pop().expect("Event expected").event
 }
 
@@ -384,7 +384,7 @@ pub(crate) fn events() -> Vec<pallet::Event<Test>> {
         .into_iter()
         .map(|r| r.event)
         .filter_map(|e| {
-            if let Event::ParachainStaking(inner) = e {
+            if let RuntimeEvent::ParachainStaking(inner) = e {
                 Some(inner)
             } else {
                 None

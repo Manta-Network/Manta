@@ -17,8 +17,8 @@
 use crate::{
     fp_decode,
     mock::{
-        new_test_ext, MantaAssetConfig, MantaAssetRegistry, MantaPay, Origin as MockOrigin, Test,
-        TransactionPause,
+        new_test_ext, MantaAssetConfig, MantaAssetRegistry, MantaPay, RuntimeOrigin as MockOrigin,
+        Test, TransactionPause,
     },
     types::{fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
     Error, FungibleLedger, ReceiverLedgerError, StandardAssetId, TransferLedgerError,

@@ -53,38 +53,38 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn query_holding() -> Weight {
-		(784_175_000 as Weight)
+		Weight::from_ref_time(784_175_000)
 			.saturating_add(T::DbWeight::get().reads(6 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	pub(crate) fn buy_execution() -> Weight {
-		(3_842_000 as Weight)
+		Weight::from_ref_time(3_842_000)
 	}
 	// Storage: PolkadotXcm Queries (r:1 w:0)
 	pub(crate) fn query_response() -> Weight {
-		(12_596_000 as Weight)
+		Weight::from_ref_time(12_596_000)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 	}
 	pub(crate) fn transact() -> Weight {
-		(15_631_000 as Weight)
+		Weight::from_ref_time(15_631_000)
 	}
 	pub(crate) fn refund_surplus() -> Weight {
-		(3_825_000 as Weight)
+		Weight::from_ref_time(3_825_000)
 	}
 	pub(crate) fn set_error_handler() -> Weight {
-		(809_000 as Weight)
+		Weight::from_ref_time(809_000)
 	}
 	pub(crate) fn set_appendix() -> Weight {
-		(800_000 as Weight)
+		Weight::from_ref_time(800_000)
 	}
 	pub(crate) fn clear_error() -> Weight {
-		(790_000 as Weight)
+		Weight::from_ref_time(790_000)
 	}
 	pub(crate) fn descend_origin() -> Weight {
-		(1_916_000 as Weight)
+		Weight::from_ref_time(1_916_000)
 	}
 	pub(crate) fn clear_origin() -> Weight {
-		(779_000 as Weight)
+		Weight::from_ref_time(779_000)
 	}
 	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
 	// Storage: PolkadotXcm VersionDiscoveryQueue (r:1 w:1)
@@ -92,18 +92,18 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn report_error() -> Weight {
-		(14_288_000 as Weight)
+		Weight::from_ref_time(14_288_000)
 			.saturating_add(T::DbWeight::get().reads(5 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: PolkadotXcm AssetTraps (r:1 w:1)
 	pub(crate) fn claim_asset() -> Weight {
-		(6_702_000 as Weight)
+		Weight::from_ref_time(6_702_000)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	pub(crate) fn trap() -> Weight {
-		(781_000 as Weight)
+		Weight::from_ref_time(781_000)
 	}
 	// Storage: PolkadotXcm VersionNotifyTargets (r:1 w:1)
 	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
@@ -112,13 +112,13 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn subscribe_version() -> Weight {
-		(18_594_000 as Weight)
+		Weight::from_ref_time(18_594_000)
 			.saturating_add(T::DbWeight::get().reads(6 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 	// Storage: PolkadotXcm VersionNotifyTargets (r:0 w:1)
 	pub(crate) fn unsubscribe_version() -> Weight {
-		(3_086_000 as Weight)
+		Weight::from_ref_time(3_086_000)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: ParachainInfo ParachainId (r:1 w:0)
@@ -128,7 +128,7 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem HostConfiguration (r:1 w:0)
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn initiate_reserve_withdraw() -> Weight {
-		(961_253_000 as Weight)
+		Weight::from_ref_time(961_253_000)
 			.saturating_add(T::DbWeight::get().reads(6 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
