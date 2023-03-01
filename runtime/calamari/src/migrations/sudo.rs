@@ -43,18 +43,18 @@ impl<T: frame_system::Config> OnRuntimeUpgrade for RemoveSudo<T> {
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
         if have_storage_value(b"Sudo", b"Key", b"") {
             log::info!(target: "OnRuntimeUpgrade", "✅ Sudo key will be removed soon.");
             log::info!(target: "OnRuntimeUpgrade", "✅ The pallet version will be removed soon.");
-            Ok(())
+            Ok(Vec::new())
         } else {
             Err("Sudo doesn't exist.")
         }
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
         if have_storage_value(b"Sudo", b"Key", b"") {
             Err("Failed to remove sudo module.")
         } else {

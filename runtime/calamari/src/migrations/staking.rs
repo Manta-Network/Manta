@@ -129,7 +129,7 @@ where
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
         // Before beginning the migration invulnerables must have 400k KMA in free balance
         let invulnerables = manta_collator_selection::Pallet::<T>::invulnerables();
         for invulnerable in invulnerables.clone() {
@@ -147,11 +147,11 @@ where
         );
 
         Self::set_temp_storage(invulnerables, "invulnerables");
-        Ok(())
+        Ok(Vec::new())
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
         // Invulnerables were migrated correctly
         let invulnerables: Vec<T::AccountId> =
             Self::get_temp_storage("invulnerables").expect("must exist");

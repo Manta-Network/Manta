@@ -19,7 +19,7 @@ use crate::{
         PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, TO_PRIVATE, TO_PUBLIC, TO_PUBLIC_INPUT,
     },
     types::{asset_value_decode, asset_value_encode, Asset},
-    Config, Pallet, RuntimeCall, RuntimeEvent, StandardAssetId, TransferPost,
+    Call, Config, Event, Pallet, StandardAssetId, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::traits::Get;
@@ -41,7 +41,7 @@ pub const INITIAL_VALUE: u128 = 1_000_000_000_000_000_000_000u128;
 pub fn assert_last_event<T, E>(event: E)
 where
     T: Config,
-    E: Into<<T as Config>::Event>,
+    E: Into<<T as Config>::RuntimeEvent>,
 {
     let events = frame_system::Pallet::<T>::events();
     assert_eq!(events[events.len() - 1].event, event.into().into());

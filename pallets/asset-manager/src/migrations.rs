@@ -66,16 +66,16 @@ where
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
         let storage_version = <T as GetStorageVersion>::on_chain_storage_version();
         if storage_version >= 1 {
             return Err("Storage version is >= 1, the migration won't be executed.");
         }
-        Ok(())
+        Ok(Vec::new())
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
         let storage_version = <T as GetStorageVersion>::on_chain_storage_version();
         if storage_version < 1 {
             return Err("Storage version is >= 1, the migration won't be executed.");

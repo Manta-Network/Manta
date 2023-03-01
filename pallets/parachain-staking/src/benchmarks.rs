@@ -26,6 +26,7 @@ use frame_support::traits::{tokens::fungible::Inspect, Currency, Get, OnFinalize
 use frame_system::RawOrigin;
 use sp_runtime::{Perbill, Percent};
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
+
 /// Minimum collator candidate stake
 fn min_candidate_stk<T: Config>() -> BalanceOf<T> {
     <<T as Config>::MinCandidateStk as Get<BalanceOf<T>>>::get()
