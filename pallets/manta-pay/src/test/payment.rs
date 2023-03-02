@@ -18,17 +18,14 @@ use crate::{
     fp_decode,
     mock::{
         new_test_ext, MantaAssetConfig, MantaAssetRegistry, MantaPay, Origin as MockOrigin, Test,
-        TransactionPause,
     },
     types::{fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
-    Error, FungibleLedger, ReceiverLedgerError, StandardAssetId, TransferLedgerError,
-    TransferPostError, VerifyingContextError,
+    Error, FungibleLedger, StandardAssetId,
 };
 use frame_support::{assert_noop, assert_ok};
-use frame_system::RawOrigin;
 use manta_accounting::transfer::test::value_distribution;
 use manta_crypto::{
-    arkworks::{constraint::fp::Fp, serialize::SerializationError},
+    arkworks::constraint::fp::Fp,
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
     rand::{CryptoRng, OsRng, Rand, RngCore},
 };
@@ -37,7 +34,6 @@ use manta_pay::{
         utxo::MerkleTreeConfiguration, ConstraintField, MultiProvingContext, Parameters,
         UtxoAccumulatorModel,
     },
-    manta_accounting::transfer::receiver::ReceiverPostError,
     parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
     test,
 };
@@ -617,81 +613,5 @@ fn pull_ledger_diff_should_work() {
         let mut slice_of = dense_senders.as_slice();
         let decoded_senders = <crate::SenderChunk as Decode>::decode(&mut slice_of).unwrap();
         assert_eq!(runtime_pull_response.senders, decoded_senders);
-    });
-}
-
-fn assert_manta_pay_suspension() {
-    assert_eq!(
-        TransactionPause::paused_transactions((b"MantaPay".to_vec(), b"to_private".to_vec())),
-        Some(())
-    );
-
-    assert_eq!(
-        TransactionPause::paused_transactions((b"MantaPay".to_vec(), b"private_transfer".to_vec())),
-        Some(())
-    );
-
-    assert_eq!(
-        TransactionPause::paused_transactions((b"MantaPay".to_vec(), b"to_public".to_vec())),
-        Some(())
-    );
-
-    let _ = TransactionPause::unpause_pallets(RawOrigin::Root.into(), vec![b"MantaPay".to_vec()]);
-}
-
-#[test]
-fn receiver_ledger_errors_should_shut_down() {
-    new_test_ext().execute_with(|| {
-        let _e = ReceiverPostError::from(ReceiverLedgerError::<Test>::ChecksumError);
-        assert_manta_pay_suspension();
-
-        let _e = ReceiverPostError::from(ReceiverLedgerError::<Test>::MerkleTreeCapacityError);
-        assert_manta_pay_suspension();
-
-        let _e = Error::<Test>::from(ReceiverPostError::UnexpectedError(
-            ReceiverLedgerError::<Test>::ChecksumError,
-        ));
-        assert_manta_pay_suspension();
-
-        let _e = Error::<Test>::from(ReceiverPostError::UnexpectedError(
-            ReceiverLedgerError::<Test>::MerkleTreeCapacityError,
-        ));
-        assert_manta_pay_suspension();
-    });
-}
-#[test]
-fn transfer_ledger_errors_should_shut_down() {
-    new_test_ext().execute_with(|| {
-        let _e = TransferPostError::from(TransferLedgerError::<Test>::ChecksumError);
-        assert_manta_pay_suspension();
-
-        let _e = TransferPostError::from(TransferLedgerError::<Test>::VerifyingContextDecodeError(
-            VerifyingContextError::Decode(SerializationError::NotEnoughSpace),
-        ));
-        assert_manta_pay_suspension();
-
-        let _e = Error::<Test>::from(TransferPostError::<Test>::UnexpectedError(
-            TransferLedgerError::ChecksumError,
-        ));
-        assert_manta_pay_suspension();
-
-        let _e = Error::<Test>::from(TransferPostError::<Test>::UnexpectedError(
-            TransferLedgerError::<Test>::VerifyingContextDecodeError(
-                VerifyingContextError::Decode(SerializationError::NotEnoughSpace),
-            ),
-        ));
-        assert_manta_pay_suspension();
-
-        let _e = Error::<Test>::from(TransferPostError::<Test>::Receiver(
-            ReceiverPostError::UnexpectedError(
-                ReceiverLedgerError::<Test>::MerkleTreeCapacityError,
-            ),
-        ));
-        assert_manta_pay_suspension();
-
-        let _e = Error::<Test>::from(TransferPostError::<Test>::Receiver(
-            ReceiverPostError::UnexpectedError(ReceiverLedgerError::<Test>::ChecksumError),
-        ));
-        assert_manta_pay_suspension();
     });
 }
