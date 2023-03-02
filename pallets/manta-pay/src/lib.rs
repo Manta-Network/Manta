@@ -337,11 +337,6 @@ pub mod pallet {
     /// Error
     #[pallet::error]
     pub enum Error<T> {
-        /// Uninitialized Supply
-        ///
-        /// Supply of the given Asset Id has not yet been initialized.
-        UninitializedSupply,
-
         /// Zero Transfer
         ///
         /// Transfers cannot include amounts equal to zero.
@@ -482,9 +477,6 @@ pub mod pallet {
 
         /// Transfer Ledger Proof Error
         TransferLedgerProofSystemFailed,
-
-        /// Field was a value of zero
-        FieldIsZero,
 
         /// Marker Error, tnis error exists for `PhantomData` should never happen
         Marker,
@@ -1089,7 +1081,7 @@ where
         let asset_id_type = Pallet::<T>::id_from_field(
             fp_encode(asset_id).map_err(TransferLedgerError::FpEncodeError)?,
         )
-        .ok_or(TransferLedgerError::FieldIsZero)?;
+        .ok_or(TransferLedgerError::InvalidAssetId)?;
         for WrapPair(account_id, withdraw) in sources {
             FungibleLedger::<T>::transfer(
                 asset_id_type,

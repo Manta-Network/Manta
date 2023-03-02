@@ -279,7 +279,7 @@ where
                 TransferLedgerError::InvalidProof => Self::InvalidProof,
                 TransferLedgerError::Marker(_) => Self::Marker,
                 TransferLedgerError::SenderLedgerError(err) => SenderPostError::from(err).into(),
-                TransferLedgerError::FieldIsZero => Self::FieldIsZero,
+                TransferLedgerError::InvalidAssetId => Self::InvalidAssetId,
                 TransferLedgerError::ReceiverLedgerError(err) => {
                     ReceiverPostError::from(err).into()
                 }
@@ -325,8 +325,8 @@ where
     /// Validity of the transfer could not be proved by the ledger.
     InvalidProof,
 
-    /// Field was zero, it cannot be zero
-    FieldIsZero,
+    /// Invalid AssetId, cannot have a value of zero
+    InvalidAssetId,
 
     /// Type Marker Parameter
     Marker(PhantomData<T>),
