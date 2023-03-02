@@ -80,8 +80,8 @@ xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-fea
 # Self dependencies
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
 manta-primitives = { path = '../../primitives/manta', default-features = false }
-pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
 pallet-lottery = { path = '../../pallets/pallet-lottery', default-features = false }
+pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
 
