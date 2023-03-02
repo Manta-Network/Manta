@@ -29,7 +29,7 @@
 //! 6. Withdrawals have a up-to 7 day timelock and are paid out automatically (via scheduler) in the first lottery drawing after it expires
 
 #![cfg_attr(not(feature = "std"), no_std)]
-
+#![feature(drain_filter)]
 #[cfg(test)]
 mod mock;
 
@@ -39,6 +39,7 @@ mod tests;
 use frame_support::pallet;
 // pub use weights::WeightInfo;
 pub use frame_system::WeightInfo;
+use log;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -135,8 +136,13 @@ pub mod pallet {
     type ActiveBalancePerUser<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>>;
 
+    struct UnstakingCollator {
+        account: T::AccountId,
+        since: T::BlockNumber,
+    }
+
     #[pallet::storage]
-    type UnstakingCollators<T: Config> = StorageValue<_, Vec<T::AcccountId>, ValueQuery>;
+    type UnstakingCollators<T: Config> = StorageValue<_, Vec<UnstakingCollator>, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn remaining_unstaking_balance)]
@@ -232,7 +238,11 @@ pub mod pallet {
             );
 
             // Transfer funds to pot
-            Currency::transfer(origin, LotteryPot::get().into_account_truncating(), amount)?;
+            Currency::transfer(
+                &origin,
+                &LotteryPot::get().into_account_truncating(),
+                amount,
+            )?;
 
             // Attempt to stake them with some collator
             do_stake(amount)?;
@@ -265,9 +275,9 @@ pub mod pallet {
                 // Mark funds as offboarding
                 WithdrawalRequestQueue::<T>::mutate(|withdraw_vec| {
                     withdraw_vec.push(Request {
-                        caller,
-                        now,
-                        amount,
+                        user: caller,
+                        block: now,
+                        balance: amount,
                     })
                 });
                 // store reduced balance
@@ -291,7 +301,7 @@ pub mod pallet {
 
                 // If this fails, something weird is going on or the next line needs to be implemented
                 // TODO: add some arithmetic to only unstake the diff between needed and remaining instead of using needed
-                do_unstake_collator(amount)?;
+                do_unstake_collator(amount, now)?;
 
                 // TODO: Try mutate again
                 RemainingUnstakingBalance::<T>::try_mutate(|&mut remaining| {
@@ -408,9 +418,9 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn draw_lottery(origin: OriginFor<T>) -> DispatchResult {
             let origin = ensure_signed(origin)?;
-            ensure_eq!(origin = LotteryPot::get()); // Allow only this pallet to execute
+            ensure_eq!(origin, LotteryPot::get()); // Allow only this pallet to execute
 
-            let pot_account_id = LotteryPot::get().into_account();
+            let pot_account_id = LotteryPot::get().into_account_truncating();
 
             let now = <frame_system::Pallet<T>>::block_number();
             ensure!(now >= next_drawing(), Error::<T>::TooEarlyForDrawing);
@@ -449,19 +459,12 @@ pub mod pallet {
             Self::deposit_event(Event::LotteryWinner(winner));
 
             // TODO: Update bookkeeping
-            NextDrawingAt::<T>::set(now+lottery_interval());
-
-
-            process_requests();
-            Ok(())
-        }
-
-        #[pallet::weight(0)]
-        pub fn process_requests(origin: OriginFor<T>) -> DispatchResult {
-            ensure_signed(origin)?;
+            NextDrawingAt::<T>::set(now + lottery_interval());
 
             update_active_funds();
+            finish_unstaking_collators();
             schedule_withdrawal_payouts();
+            rebalance_remaining_funds();
             Ok(())
         }
     }
@@ -482,7 +485,7 @@ pub mod pallet {
             )
         }
 
-        fn do_unstake_collator(amount: BalanceOf<T>) -> DispatchResult {
+        fn do_unstake_collator(amount: BalanceOf<T>, now: BlockNumber) -> DispatchResult {
             let some_collator = unchecked_account_id::<sr25519::Public>("Alice");
 
             // TODO: Find the smallest currently active delegation larger than `amount`
@@ -503,7 +506,12 @@ pub mod pallet {
             RemainingUnstakingBalance::<T>::mutate(|bal| bal += delegated_amount_to_be_unstaked);
 
             // update unstaking storage
-            UnstakingCollators::<T>::mutate(|collators| collators.push(some_collator));
+            UnstakingCollators::<T>::mutate(|collators| {
+                collators.push(UnstakingCollator {
+                    account: some_collator,
+                    since: now,
+                })
+            });
 
             // unstake from parachain staking
             // NOTE: All funds that were delegated here no longer produce staking rewards
@@ -514,15 +522,84 @@ pub mod pallet {
         }
 
         fn update_active_funds() -> DispatchResult {
-            // TODO: move onboarded funds to active
             // TODO: move cancelled offboarding funds to active
             Ok(())
+        }
+
+        /// NOTE: This code assumes UnstakingCollators is sorted
+        fn finish_unstaking_collators(origin: Origin) -> Result((), str) {
+            ensure_root_or_manager(origin);
+
+            let unstaking = UnstakingCollators::<T>::get();
+            UnstakingCollators::<T>::try_mutate(|unstaking| {
+                let remaining_collators = unstaking.filter_map(|collator| {
+                    // only attempt to resolve fully unstaked collators
+                    if (collator.since + UnstakingTime::<T>::get() > now) {
+                        Some(collator)
+                    };
+                    // There can only be one request per collator and it is always a full revoke_delegation call
+                    match pallet_parachain_staking::<T>::execute_delegation_request(
+                        origin,
+                        LotteryPot::get().into_account_truncating(),
+                        collator,
+                    ){
+                        Ok(_) => {
+                            // collator was unstaked, remove from unstaking collators
+                             None
+                        },
+                        Err(e) => {
+                            log::error!("Collator finished unstaking timelock but could not be removed with error {:?}",e);
+                            Some(collator)
+                        },
+                    };
+                });
+                if remaining_collators.len() != unstaking.len() {
+                    unstaking = remaining_collators;
+                    Ok()
+                } else {
+                    Err()
+                }
+            });
+        }
+
+        fn rebalance_remaining_funds(origin: Origin){
+            ensure_root_or_manager(origin);
+
+            let pot_account_id = LotteryPot::get().into_account_truncating();
+            let available_balance = <Balances<T> as Currency<_>>::free_balance(pot_account_id);
+            let stakable_balance = available_balance - T::gas_reserve();
+
+            // TODO: Calculate these from current values
+            const candidate_delegation_count: u32 = 500;
+            const delegation_count: u32 = 500;
+
+            // TODO: Find highest APY for this deposit (possibly balance deposit to multiple collators)
+            let some_output: Vec<(T::AccountId, BalanceOf<T>)> = vec![(
+                unchecked_account_id::<sr25519::Public>("Alice"),
+                stakable_balance,
+            )];
+
+            // Stake it to one or more collators
+            for (collator, balance) in some_output {
+                pallet_parachain_staking::<T>::delegate(
+                    origin,
+                    collator,
+                    balance,
+                    candidate_delegation_count,
+                    delegation_count,
+                )
+                .ok_or_else(|e| {
+                    log::error!("Could not delegate to collator with error {:?}", e);
+                });
+            }
         }
 
         /// This fn schedules a single shot payout of all matured withdrawals
         /// It is meant to be executed in the course of a drawing
         fn schedule_withdrawal_payouts(origin: Origin) -> DispatchResult {
+            let some_collator = unchecked_account_id::<sr25519::Public>("Alice");
             let now = <frame_system::Pallet<T>>::block_number();
+
             T::WithdrawalRequestQueue::try_mutate(|request_vec| {
                 ensure!(request_vec.length() > 0, Error::<T>::WithdrawBelowMinAmount);
                 let left_overs;
