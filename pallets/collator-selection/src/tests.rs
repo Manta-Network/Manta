@@ -290,8 +290,8 @@ fn cannot_register_dupe_candidate() {
 #[test]
 fn cannot_register_as_candidate_if_poor() {
     new_test_ext().execute_with(|| {
-        assert_eq!(Balances::free_balance(&3), 100);
-        assert_eq!(Balances::free_balance(&33), 0);
+        assert_eq!(Balances::free_balance(3), 100);
+        assert_eq!(Balances::free_balance(33), 0);
 
         // works
         assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
@@ -314,14 +314,14 @@ fn register_as_candidate_works() {
         assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
 
         // take two endowed, non-invulnerables accounts.
-        assert_eq!(Balances::free_balance(&3), 100);
-        assert_eq!(Balances::free_balance(&4), 100);
+        assert_eq!(Balances::free_balance(3), 100);
+        assert_eq!(Balances::free_balance(4), 100);
 
         assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
         assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
 
-        assert_eq!(Balances::free_balance(&3), 90);
-        assert_eq!(Balances::free_balance(&4), 90);
+        assert_eq!(Balances::free_balance(3), 90);
+        assert_eq!(Balances::free_balance(4), 90);
 
         assert_eq!(CollatorSelection::candidates().len(), 2);
     });

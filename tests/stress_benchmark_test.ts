@@ -16,7 +16,7 @@ const test_config = {
   transfers_offset: 4,
   reclaims_offset: 4,
   total_iterations: 15000,
-  start_iteration: 13500,
+  start_iteration: 14000,
   tests_iterations: 100,
   mint_size: 552,
   transfer_size: 1290,
