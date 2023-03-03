@@ -789,20 +789,6 @@ where
     }
 }
 
-impl<T> From<ReceiverLedgerError<T>> for ReceiverPostError<ReceiverLedgerError<T>>
-where
-    T: Config,
-{
-    #[inline]
-    fn from(value: ReceiverLedgerError<T>) -> Self {
-        if let ReceiverLedgerError::AssetRegistered = value {
-            Self::AssetRegistered
-        } else {
-            Self::UnexpectedError(value)
-        }
-    }
-}
-
 impl<T> ReceiverLedger<config::Parameters> for Ledger<T>
 where
     T: Config,

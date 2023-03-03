@@ -142,6 +142,20 @@ where
     }
 }
 
+impl<T> From<ReceiverLedgerError<T>> for ReceiverPostError<ReceiverLedgerError<T>>
+where
+    T: Config,
+{
+    #[inline]
+    fn from(value: ReceiverLedgerError<T>) -> Self {
+        if let ReceiverLedgerError::AssetRegistered = value {
+            Self::AssetRegistered
+        } else {
+            Self::UnexpectedError(value)
+        }
+    }
+}
+
 /// Sender Ledger Error
 pub enum SenderLedgerError {
     /// Field Element Encoding Error
