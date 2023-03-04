@@ -58,7 +58,7 @@
 extern crate alloc;
 
 use crate::types::{
-    asset_value_decode, asset_value_encode, fp_decode, fp_encode, Asset, AssetValue,
+    asset_value_decode, asset_value_encode, fp_decode, fp_encode, AccountId, Asset, AssetValue,
     FullIncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk, SenderChunk, TransferPost,
     Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
 };
@@ -210,7 +210,10 @@ pub mod pallet {
     pub(super) type NullifierSetSize<T: Config> = StorageValue<_, u64, ValueQuery>;
 
     #[pallet::call]
-    impl<T: Config> Pallet<T> {
+    impl<T: Config> Pallet<T>
+    where
+        T::AccountId: From<AccountId> + Into<AccountId>,
+    {
         /// Transforms some public assets into private ones using `post`, withdrawing the public
         /// assets from the `origin` account.
         #[pallet::call_index(0)]
@@ -468,22 +471,22 @@ pub mod pallet {
         }
     }
 
-    impl<T> From<InvalidSourceAccount<config::Config, T::AccountId>> for Error<T>
+    impl<T> From<InvalidSourceAccount<config::Config, AccountId>> for Error<T>
     where
         T: Config,
     {
         #[inline]
-        fn from(_: InvalidSourceAccount<config::Config, T::AccountId>) -> Self {
+        fn from(_: InvalidSourceAccount<config::Config, AccountId>) -> Self {
             Self::InvalidSourceAccount
         }
     }
 
-    impl<T> From<InvalidSinkAccount<config::Config, T::AccountId>> for Error<T>
+    impl<T> From<InvalidSinkAccount<config::Config, AccountId>> for Error<T>
     where
         T: Config,
     {
         #[inline]
-        fn from(_: InvalidSinkAccount<config::Config, T::AccountId>) -> Self {
+        fn from(_: InvalidSinkAccount<config::Config, AccountId>) -> Self {
             Self::InvalidSinkAccount
         }
     }
@@ -575,7 +578,7 @@ pub mod pallet {
     /// Transfer Post Error
     pub type TransferPostError<T> = transfer::TransferPostError<
         config::Config,
-        <T as frame_system::Config>::AccountId,
+        AccountId,
         SenderLedgerError,
         ReceiverLedgerError<T>,
         TransferLedgerError<T>,
@@ -614,6 +617,7 @@ pub mod pallet {
     impl<T> Pallet<T>
     where
         T: Config,
+        T::AccountId: From<AccountId> + Into<AccountId>,
     {
         /// Maximum Number of Updates per Shard (based on benchmark result)
         const PULL_MAX_RECEIVER_UPDATE_SIZE: u64 = 32768;
@@ -746,8 +750,8 @@ pub mod pallet {
                         &load_transfer_parameters(),
                         &mut Ledger(PhantomData),
                         &(),
-                        sources,
-                        sinks,
+                        sources.into_iter().map(Into::into).collect(),
+                        sinks.into_iter().map(Into::into).collect(),
                     )
                     .map_err(Error::<T>::from)?
                     .convert(origin),
@@ -1215,12 +1219,12 @@ where
 impl<T> TransferLedger<config::Config> for Ledger<T>
 where
     T: Config,
+    T::AccountId: From<AccountId> + Into<AccountId>,
 {
     type SuperPostingKey = ();
-    type AccountId = T::AccountId;
     type Event = PreprocessedEvent<T>;
-    type ValidSourceAccount = WrapPair<Self::AccountId, AssetValue>;
-    type ValidSinkAccount = WrapPair<Self::AccountId, AssetValue>;
+    type ValidSourceAccount = WrapPair<AccountId, AssetValue>;
+    type ValidSinkAccount = WrapPair<AccountId, AssetValue>;
     type ValidProof = Wrap<()>;
     type Error = TransferLedgerError<T>;
 
@@ -1229,30 +1233,30 @@ where
         &self,
         asset_id: &config::AssetId,
         sources: I,
-    ) -> Result<Vec<Self::ValidSourceAccount>, InvalidSourceAccount<config::Config, Self::AccountId>>
+    ) -> Result<Vec<Self::ValidSourceAccount>, InvalidSourceAccount<config::Config, AccountId>>
     where
-        I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
+        I: Iterator<Item = (AccountId, config::AssetValue)>,
     {
         sources
             .map(move |(account_id, withdraw)| {
                 FungibleLedger::<T>::can_withdraw(
                     Pallet::<T>::id_from_field(fp_encode(*asset_id).map_err(|_e| {
                         InvalidSourceAccount {
-                            account_id: account_id.clone(),
+                            account_id,
                             asset_id: *asset_id,
                             withdraw,
                         }
                     })?)
                     .ok_or(InvalidSourceAccount {
-                        account_id: account_id.clone(),
+                        account_id,
                         asset_id: *asset_id,
                         withdraw,
                     })?,
-                    &account_id,
+                    &account_id.into(),
                     &withdraw,
                     ExistenceRequirement::KeepAlive,
                 )
-                .map(|_| WrapPair(account_id.clone(), withdraw))
+                .map(|_| WrapPair(account_id, withdraw))
                 .map_err(|_| InvalidSourceAccount {
                     account_id,
                     asset_id: *asset_id,
@@ -1267,9 +1271,9 @@ where
         &self,
         asset_id: &config::AssetId,
         sinks: I,
-    ) -> Result<Vec<Self::ValidSinkAccount>, InvalidSinkAccount<config::Config, Self::AccountId>>
+    ) -> Result<Vec<Self::ValidSinkAccount>, InvalidSinkAccount<config::Config, AccountId>>
     where
-        I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
+        I: Iterator<Item = (AccountId, config::AssetValue)>,
     {
         // NOTE: Existence of accounts is type-checked so we don't need to do anything here, just
         // pass the data forward.
@@ -1278,21 +1282,21 @@ where
                 FungibleLedger::<T>::can_deposit(
                     Pallet::<T>::id_from_field(fp_encode(*asset_id).map_err(|_e| {
                         InvalidSinkAccount {
-                            account_id: account_id.clone(),
+                            account_id,
                             asset_id: *asset_id,
                             deposit,
                         }
                     })?)
                     .ok_or(InvalidSinkAccount {
-                        account_id: account_id.clone(),
+                        account_id,
                         asset_id: *asset_id,
                         deposit,
                     })?,
-                    &account_id,
+                    &account_id.into(),
                     deposit,
                     false,
                 )
-                .map(|_| WrapPair(account_id.clone(), deposit))
+                .map(|_| WrapPair(account_id, deposit))
                 .map_err(|_| InvalidSinkAccount {
                     account_id,
                     asset_id: *asset_id,
@@ -1323,7 +1327,7 @@ where
                                 asset_id,
                                 asset_value_encode(posting_key.sources[0].1),
                             ),
-                            source: posting_key.sources[0].0.clone(),
+                            source: posting_key.sources[0].0.into(),
                         },
                     )
                 } else {
@@ -1344,7 +1348,7 @@ where
                             .ok_or(TransferLedgerError::ChecksumError)?,
                         PreprocessedEvent::<T>::ToPublic {
                             asset: Asset::new(asset_id, asset_value_encode(posting_key.sinks[0].1)),
-                            sink: posting_key.sinks[0].0.clone(),
+                            sink: posting_key.sinks[0].0.into(),
                         },
                     )
                 } else {
@@ -1382,7 +1386,7 @@ where
         for WrapPair(account_id, withdraw) in sources {
             FungibleLedger::<T>::transfer(
                 asset_id_type,
-                &account_id,
+                &account_id.into(),
                 &Pallet::<T>::account_id(),
                 withdraw,
                 ExistenceRequirement::KeepAlive,
@@ -1393,7 +1397,7 @@ where
             FungibleLedger::<T>::transfer(
                 asset_id_type,
                 &Pallet::<T>::account_id(),
-                &account_id,
+                &account_id.into(),
                 deposit,
                 ExistenceRequirement::KeepAlive,
             )
