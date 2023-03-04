@@ -6,6 +6,7 @@ version = "0.1.0"
 
 [dependencies]
 codec = { version = '3.1.2', default-features = false, features = ['derive'], package = 'parity-scale-codec' }
+log = { version = "0.4.0", default-features = false }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 
 # Substrate dependencies
@@ -21,6 +22,7 @@ sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features
 # Self dependencies
 manta-primitives = { path = "../../primitives/manta" }
 pallet-parachain-staking = { path = '../parachain-staking' }
+session-key-primitives = { path = '../../primitives/session-keys' }
 
 [features]
 default = ["std"]
