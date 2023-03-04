@@ -115,6 +115,7 @@ where
             &mut utxo_accumulator,
             Fp::from(asset_id),
             value,
+            rng.gen(),
             rng,
         );
     PalletTransferPost::try_from(to_public).unwrap()
@@ -225,6 +226,7 @@ where
                 &mut utxo_accumulator,
                 Fp::from(asset_id),
                 [100, 100],
+                rng.gen(),
                 rng,
             );
 
@@ -289,6 +291,7 @@ where
             Fp::from(asset_id),
             // Divide by 2 in order to not exceed total_supply
             [balance / 2, balance / 2],
+            rng.gen(),
             rng,
         );
         assert_ok!(MantaPay::to_private(
