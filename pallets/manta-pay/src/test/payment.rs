@@ -21,7 +21,7 @@ use crate::{
         Test,
     },
     types::{fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
-    Error, FungibleLedger, StandardAssetId, TransferPost,
+    Error, FungibleLedger, StandardAssetId,
 };
 use frame_support::{assert_noop, assert_ok};
 use manta_accounting::transfer::test::value_distribution;
@@ -589,7 +589,7 @@ fn public_lower_than_ed_should_not_work0() {
         let value = 1000u128;
         initialize_test_wt_deposit_pallet(asset_id, value * 4);
 
-        let asset_info = Assets::balance(asset_id, &MantaPay::account_id());
+        let asset_info = Assets::balance(asset_id, MantaPay::account_id());
         assert_eq!(asset_info, 0);
         let asset_info = Assets::balance(asset_id, ALICE.clone());
         assert_eq!(asset_info, value * 4);
@@ -627,7 +627,7 @@ fn public_lower_than_ed_should_not_work0() {
             MockOrigin::signed(ALICE),
             PalletTransferPost::try_from(to_private_0).unwrap()
         ));
-        let asset_info = Assets::balance(asset_id, &MantaPay::account_id());
+        let asset_info = Assets::balance(asset_id, MantaPay::account_id());
         assert_eq!(asset_info, value);
 
         // Second ToPrivate
@@ -655,7 +655,7 @@ fn public_lower_than_ed_should_not_work0() {
             MockOrigin::signed(ALICE),
             PalletTransferPost::try_from(to_private_1).unwrap()
         ));
-        let asset_info = Assets::balance(asset_id, &MantaPay::account_id());
+        let asset_info = Assets::balance(asset_id, MantaPay::account_id());
         assert_eq!(asset_info, value * 2);
 
         // ToPublic will use previous two ToPrivate.
@@ -707,7 +707,7 @@ fn public_lower_than_ed_should_not_work0() {
             MockOrigin::signed(ALICE),
             PalletTransferPost::try_from(to_public).unwrap()
         ));
-        let asset_info = Assets::balance(asset_id, &MantaPay::account_id());
+        let asset_info = Assets::balance(asset_id, MantaPay::account_id());
         assert_eq!(asset_info, 2);
     });
 }

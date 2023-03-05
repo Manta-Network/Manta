@@ -478,7 +478,7 @@ pub mod pallet {
         /// Transfer Ledger Proof Error
         TransferLedgerProofSystemFailed,
 
-        /// Marker Error, tnis error exists for `PhantomData` should never happen
+        /// Marker Error, this error exists for `PhantomData` should never happen
         Marker,
     }
 
