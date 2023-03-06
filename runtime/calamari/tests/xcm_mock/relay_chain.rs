@@ -21,7 +21,6 @@
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{ConstU32, Everything, Nothing},
-    weights::Weight,
 };
 use sp_core::H256;
 use sp_runtime::{

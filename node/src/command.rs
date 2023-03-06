@@ -395,6 +395,8 @@ pub fn run_with(cli: Cli) -> Result {
         }
         #[cfg(feature = "try-runtime")]
         Some(Subcommand::TryRuntime(cmd)) => {
+            use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
+
             // grab the task manager.
             let runner = cli.create_runner(cmd)?;
             let registry = &runner
@@ -407,13 +409,22 @@ pub fn run_with(cli: Cli) -> Result {
                     .map_err(|e| format!("Error: {e:?}"))?;
 
             if runner.config().chain_spec.is_manta() {
-                runner.async_run(|config| {
-                    Ok((cmd.run::<Block, MantaRuntimeExecutor>(config), task_manager))
+                runner.async_run(|_config| {
+                    Ok((
+                        cmd.run::<Block, ExtendedHostFunctions<
+                            sp_io::SubstrateHostFunctions,
+                            <MantaRuntimeExecutor as NativeExecutionDispatch>::ExtendHostFunctions,
+                        >>(),
+                        task_manager,
+                    ))
                 })
             } else if runner.config().chain_spec.is_calamari() {
-                runner.async_run(|config| {
+                runner.async_run(|_config| {
                     Ok((
-                        cmd.run::<Block, CalamariRuntimeExecutor>(config),
+                        cmd.run::<Block, ExtendedHostFunctions<
+							sp_io::SubstrateHostFunctions,
+							<CalamariRuntimeExecutor as NativeExecutionDispatch>::ExtendHostFunctions,
+						>>(),
                         task_manager,
                     ))
                 })

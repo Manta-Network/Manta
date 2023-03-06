@@ -329,10 +329,6 @@ fn governance_filters_work() {
         // Setup the preimage and preimage hash
         let runtime_call = RuntimeCall::System(frame_system::Call::remark { remark: vec![0] });
         let proposal = Preimage::bound(runtime_call).unwrap();
-        let preimage_hash = note_preimage(
-            &ALICE,
-            &RuntimeCall::System(frame_system::Call::remark { remark: vec![0] }),
-        );
 
         // Setup the Council
         assert_ok!(Council::set_members(
@@ -730,7 +726,7 @@ fn calamari_vesting_works() {
 }
 
 // #[test] TODO
-fn verify_pallet_prefixes() {
+fn _verify_pallet_prefixes() {
     fn is_pallet_prefix<P: 'static>(name: &str) {
         // Compares the unhashed pallet prefix in the `StorageInstance` implementation by every
         // storage item in the pallet P. This pallet prefix is used in conjunction with the

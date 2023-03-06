@@ -26,10 +26,7 @@ pub use calamari_runtime::{
     CollatorSelection, ParachainStaking, Runtime, RuntimeEvent, RuntimeOrigin, System,
 };
 
-use frame_support::{
-    assert_ok,
-    weights::{DispatchInfo, Weight},
-};
+use frame_support::{assert_ok, dispatch::DispatchInfo, weights::Weight};
 use lazy_static::lazy_static;
 use manta_primitives::types::{AccountId, Balance};
 use session_key_primitives::util::unchecked_account_id;

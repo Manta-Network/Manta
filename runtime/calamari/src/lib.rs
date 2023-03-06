@@ -44,7 +44,7 @@ use frame_support::{
     dispatch::DispatchClass,
     parameter_types,
     traits::{
-        ConstU128, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, Get, IsInVec,
+        ConstU128, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec,
         NeverEnsureOrigin, PrivilegeCmp,
     },
     weights::{ConstantMultiplier, Weight},

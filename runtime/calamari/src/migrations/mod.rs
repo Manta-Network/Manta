@@ -14,6 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-pub mod asset_id;
+// pub mod asset_id; // TODO:
 // pub mod staking; // TODO: fix error
 pub mod sudo;
