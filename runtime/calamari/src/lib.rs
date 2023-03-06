@@ -887,9 +887,10 @@ pub type UncheckedExtrinsic =
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
+/// TODO: fix OnRuntimeUpgradeHelpersExt
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = (migrations::asset_id::AssetIdMigration<Runtime>,);
+/// pub type OnRuntimeUpgradeHooks = (migrations::asset_id::AssetIdMigration<Runtime>,);
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
