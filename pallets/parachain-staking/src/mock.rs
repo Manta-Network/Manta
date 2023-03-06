@@ -22,7 +22,6 @@ use crate::{
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{Everything, GenesisBuild, LockIdentifier, OnFinalize, OnInitialize},
-    weights::Weight,
 };
 use manta_primitives::types::{BlockNumber, Header};
 use sp_core::H256;

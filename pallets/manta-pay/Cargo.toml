@@ -43,6 +43,11 @@ runtime-benchmarks = [
   "manta-primitives/runtime-benchmarks",
 ]
 
+try-runtime = [
+  "frame-support/try-runtime",
+  "frame-system/try-runtime",
+]
+
 # Serde Serialization
 serde = [
   "manta-pay/serde",

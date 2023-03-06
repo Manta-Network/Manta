@@ -28,7 +28,7 @@ use frame_support::{
 #[cfg(feature = "try-runtime")]
 use frame_support::{ensure, traits::StorageVersion};
 
-use sp_std::marker::PhantomData;
+use sp_std::{marker::PhantomData, vec::Vec};
 
 /// MigratePalletPv2Sv means a wrapped handler to automatically upgrade our pallet
 /// from PalletVersion(Pv) to StorageVersion(Sv).

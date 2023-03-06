@@ -254,6 +254,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 pub fn initialize_to_block(n: BlockNumber) {
     for i in System::block_number() + 1..=n {
         System::set_block_number(i);
-        <AllPalletsReversedWithSystemFirst as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(i);
+        <AllPalletsWithSystem as frame_support::traits::OnInitialize<BlockNumber>>::on_initialize(
+            i,
+        );
     }
 }

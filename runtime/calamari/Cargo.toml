@@ -163,7 +163,6 @@ runtime-benchmarks = [
   'frame-system/runtime-benchmarks',
   'manta-collator-selection/runtime-benchmarks',
   'nimbus-primitives/runtime-benchmarks',
-  'pallet-aura-style-filter/runtime-benchmarks',
   'pallet-author-inherent/runtime-benchmarks',
   'pallet-balances/runtime-benchmarks',
   'pallet-multisig/runtime-benchmarks',
@@ -187,9 +186,11 @@ runtime-benchmarks = [
   'pallet-xcm-benchmarks',
 ]
 try-runtime = [
-  'frame-executive/try-runtime',
   'frame-try-runtime',
+  'frame-executive/try-runtime',
   'frame-system/try-runtime',
+  "frame-support/try-runtime",
+  'pallet-aura/try-runtime',
   'pallet-authorship/try-runtime',
   'pallet-balances/try-runtime',
   'pallet-parachain-staking/try-runtime',
@@ -207,7 +208,19 @@ try-runtime = [
   'pallet-assets/try-runtime',
   'pallet-tx-pause/try-runtime',
   'pallet-asset-manager/try-runtime',
+  'pallet-xcm/try-runtime',
   'runtime-common/try-runtime',
+  "parachain-info/try-runtime",
+  "cumulus-pallet-parachain-system/try-runtime",
+	"cumulus-pallet-xcmp-queue/try-runtime",
+  'cumulus-pallet-dmp-queue/try-runtime',
+  'pallet-aura-style-filter/try-runtime',
+  'manta-collator-selection/try-runtime',
+  'pallet-author-inherent/try-runtime',
+  'cumulus-pallet-xcm/try-runtime',
+  'orml-xtokens/try-runtime',
+  'pallet-manta-pay/try-runtime',
+  'calamari-vesting/try-runtime'
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []

@@ -24,6 +24,7 @@ use frame_support::{
     pallet_prelude::Weight,
     traits::{Get, OnRuntimeUpgrade, PalletInfoAccess, StorageVersion},
 };
+use sp_std::vec::Vec;
 
 /// Storage migration to populate the existing assets'
 /// entries in the new AllowedDestParaIds storage item

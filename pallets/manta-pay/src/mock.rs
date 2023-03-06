@@ -139,6 +139,8 @@ impl pallet_assets::Config for Test {
     type AssetIdParameter = StandardAssetId;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId32>>;
     type CallbackHandle = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
 }
 
 pub struct MantaAssetRegistry;

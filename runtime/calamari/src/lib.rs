@@ -896,8 +896,7 @@ pub type Executive = frame_executive::Executive<
     Block,
     frame_system::ChainContext<Runtime>,
     Runtime,
-    AllPalletsReversedWithSystemFirst,
-    OnRuntimeUpgradeHooks,
+    AllPalletsWithSystem,
 >;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -906,7 +905,7 @@ extern crate frame_benchmarking;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
-    frame_benchmarking::define_benchmarks!(
+    define_benchmarks!(
         // Substrate pallets
         [pallet_balances, Balances]
         [pallet_multisig, Multisig]
@@ -1107,13 +1106,18 @@ impl_runtime_apis! {
 
     #[cfg(feature = "try-runtime")]
     impl frame_try_runtime::TryRuntime<Block> for Runtime {
-        fn on_runtime_upgrade() -> (Weight, Weight) {
-            let weight = Executive::try_runtime_upgrade().unwrap();
+        fn on_runtime_upgrade(checks: frame_try_runtime::UpgradeCheckSelect) -> (Weight, Weight) {
+            let weight = Executive::try_runtime_upgrade(checks).unwrap();
             (weight, RuntimeBlockWeights::get().max_block)
         }
 
-        fn execute_block_no_check(block: Block) -> Weight {
-            Executive::execute_block_no_check(block)
+        fn execute_block(
+            block: Block,
+            state_root_check: bool,
+            signature_check: bool,
+            select: frame_try_runtime::TryStateSelect
+        ) -> Weight {
+            Executive::try_execute_block(block, state_root_check, signature_check, select).expect("try_execute_block failed")
         }
     }
 
@@ -1131,7 +1135,7 @@ impl_runtime_apis! {
             let mut list = Vec::<BenchmarkList>::new();
             list_benchmarks!(list, extra);
 
-            let storage_info = AllPalletsReversedWithSystemFirst::storage_info();
+            let storage_info = AllPalletsWithSystem::storage_info();
 
             (list, storage_info)
         }
