@@ -816,7 +816,7 @@ extern crate frame_benchmarking;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
-    define_benchmarks!(
+    frame_benchmarking::define_benchmarks!(
         // Substrate pallets
         [pallet_balances, Balances]
         [pallet_multisig, Multisig]

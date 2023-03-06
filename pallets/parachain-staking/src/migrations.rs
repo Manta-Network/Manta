@@ -30,8 +30,6 @@ use crate::{
     BalanceOf, Bond, BottomDelegations, CandidateInfo, CandidateMetadata, CapacityStatus,
     CollatorCandidate, Config, Delegations, Event, Pallet, Points, Round, Staked, TopDelegations,
 };
-#[cfg(feature = "try-runtime")]
-use frame_support::traits::OnRuntimeUpgradeHelpersExt;
 use frame_support::Twox64Concat;
 extern crate alloc;
 #[cfg(feature = "try-runtime")]

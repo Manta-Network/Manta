@@ -20,9 +20,8 @@ use crate::{
 };
 use core::marker::PhantomData;
 use frame_support::traits::OnRuntimeUpgrade;
-#[cfg(feature = "try-runtime")]
-use frame_support::traits::OnRuntimeUpgradeHelpersExt;
 use sp_runtime::traits::UniqueSaturatedInto;
+use codec::Decode;
 
 /// Migration to move old invulnerables to the staking set on upgrade
 pub struct InitializeStakingPallet<T>(PhantomData<T>);
@@ -146,15 +145,14 @@ where
                     as u32
         );
 
-        Self::set_temp_storage(invulnerables, "invulnerables");
-        Ok(Vec::new())
+        Ok((invulnerables).encode())
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
+    fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
         // Invulnerables were migrated correctly
-        let invulnerables: Vec<T::AccountId> =
-            Self::get_temp_storage("invulnerables").expect("must exist");
+        let invulnerables: Vec<T::AccountId>
+            = Decode::decode(&mut &state[..]).expect("pre_upgrade provides a valid state; qed");
         for invuln in invulnerables {
             assert!(
                 !manta_collator_selection::Pallet::<T>::candidates()
