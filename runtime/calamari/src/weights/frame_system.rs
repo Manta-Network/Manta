@@ -69,29 +69,29 @@ impl<T: frame_system::Config> frame_system::WeightInfo for SubstrateWeight<T> {
     // Storage: unknown [0x3a686561707061676573] (r:0 w:1)
     fn set_heap_pages() -> Weight {
         Weight::from_ref_time(5_786_000)
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(2 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(2_u64))
     }
     // Storage: Skipped Metadata (r:0 w:0)
     fn set_storage(i: u32, ) -> Weight {
         Weight::from_ref_time(0)
             // Standard Error: 1_000
             .saturating_add(Weight::from_ref_time(711_000).saturating_mul(i as u64))
-            .saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(i as u64)))
+            .saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(i as u64)))
     }
     // Storage: Skipped Metadata (r:0 w:0)
     fn kill_storage(i: u32, ) -> Weight {
         Weight::from_ref_time(0)
             // Standard Error: 1_000
             .saturating_add(Weight::from_ref_time(586_000).saturating_mul(i as u64))
-            .saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(i as u64)))
+            .saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(i as u64)))
     }
     // Storage: Skipped Metadata (r:0 w:0)
     fn kill_prefix(p: u32, ) -> Weight {
         Weight::from_ref_time(0)
             // Standard Error: 2_000
             .saturating_add(Weight::from_ref_time(1_251_000).saturating_mul(p as u64))
-            .saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(p as u64)))
+            .saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(p as u64)))
     }
 }
 
@@ -109,28 +109,28 @@ impl WeightInfo for () {
     // Storage: unknown [0x3a686561707061676573] (r:0 w:1)
     fn set_heap_pages() -> Weight {
         Weight::from_ref_time(5_786_000)
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(2 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(2_u64))
     }
     // Storage: Skipped Metadata (r:0 w:0)
     fn set_storage(i: u32, ) -> Weight {
         Weight::from_ref_time(0)
             // Standard Error: 1_000
             .saturating_add(Weight::from_ref_time(711_000).saturating_mul(i as u64))
-            .saturating_add(RocksDbWeight::get().writes((1 as u64).saturating_mul(i as u64)))
+            .saturating_add(RocksDbWeight::get().writes((1_u64).saturating_mul(i as u64)))
     }
     // Storage: Skipped Metadata (r:0 w:0)
     fn kill_storage(i: u32, ) -> Weight {
         Weight::from_ref_time(0)
             // Standard Error: 1_000
             .saturating_add(Weight::from_ref_time(586_000).saturating_mul(i as u64))
-            .saturating_add(RocksDbWeight::get().writes((1 as u64).saturating_mul(i as u64)))
+            .saturating_add(RocksDbWeight::get().writes((1_u64).saturating_mul(i as u64)))
     }
     // Storage: Skipped Metadata (r:0 w:0)
     fn kill_prefix(p: u32, ) -> Weight {
         Weight::from_ref_time(0)
             // Standard Error: 2_000
             .saturating_add(Weight::from_ref_time(1_251_000).saturating_mul(p as u64))
-            .saturating_add(RocksDbWeight::get().writes((1 as u64).saturating_mul(p as u64)))
+            .saturating_add(RocksDbWeight::get().writes((1_u64).saturating_mul(p as u64)))
     }
 }

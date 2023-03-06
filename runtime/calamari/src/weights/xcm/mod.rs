@@ -121,7 +121,7 @@ impl<Call> XcmWeightInfo<Call> for CalamariXcmWeight<Call> {
         _dest: &MultiLocation,
     ) -> XCMWeight {
         // Hardcoded until better understanding how to deal with worst case scenario of holding register
-        let hardcoded_weight = Weight::from_ref_time(1_000_000_000 as u64).ref_time();
+        let hardcoded_weight = Weight::from_ref_time(1_000_000_000_u64).ref_time();
         let weight = assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_asset());
         cmp::min(hardcoded_weight, weight)
     }
@@ -132,7 +132,7 @@ impl<Call> XcmWeightInfo<Call> for CalamariXcmWeight<Call> {
         _xcm: &Xcm<()>,
     ) -> XCMWeight {
         // Hardcoded until better understanding how to deal with worst case scenario of holding register
-        let hardcoded_weight = Weight::from_ref_time(1_000_000_000 as u64).ref_time();
+        let hardcoded_weight = Weight::from_ref_time(1_000_000_000_u64).ref_time();
         let weight =
             assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::deposit_reserve_asset());
         cmp::min(hardcoded_weight, weight)
@@ -146,7 +146,7 @@ impl<Call> XcmWeightInfo<Call> for CalamariXcmWeight<Call> {
         _xcm: &Xcm<()>,
     ) -> XCMWeight {
         // Hardcoded until better understanding how to deal with worst case scenario of holding register
-        let hardcoded_weight = Weight::from_ref_time(1_000_000_000 as u64).ref_time();
+        let hardcoded_weight = Weight::from_ref_time(1_000_000_000_u64).ref_time();
         let weight = assets.weigh_multi_assets(XcmGeneric::<Runtime>::initiate_reserve_withdraw());
         cmp::min(hardcoded_weight, weight)
     }
@@ -156,7 +156,7 @@ impl<Call> XcmWeightInfo<Call> for CalamariXcmWeight<Call> {
         _xcm: &Xcm<()>,
     ) -> XCMWeight {
         // Hardcoded until better understanding how to deal with worst case scenario of holding register
-        let hardcoded_weight = Weight::from_ref_time(1_000_000_000 as u64).ref_time();
+        let hardcoded_weight = Weight::from_ref_time(1_000_000_000_u64).ref_time();
         let weight = assets.weigh_multi_assets(XcmFungibleWeight::<Runtime>::initiate_teleport());
         cmp::min(hardcoded_weight, weight)
     }
@@ -167,7 +167,7 @@ impl<Call> XcmWeightInfo<Call> for CalamariXcmWeight<Call> {
         _max_response_weight: &u64,
     ) -> XCMWeight {
         // Hardcoded until better understanding how to deal with worst case scenario of holding register
-        let hardcoded_weight = Weight::from_ref_time(1_000_000_000 as u64).ref_time();
+        let hardcoded_weight = Weight::from_ref_time(1_000_000_000_u64).ref_time();
         let weight = XcmGeneric::<Runtime>::query_holding().ref_time();
         cmp::min(hardcoded_weight, weight)
     }

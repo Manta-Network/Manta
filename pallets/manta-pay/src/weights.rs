@@ -62,8 +62,8 @@ where
     /// ```
     fn to_private() -> Weight {
         Weight::from_ref_time(36_400_000_000)
-            .saturating_add(T::DbWeight::get().reads(6 as u64))
-            .saturating_add(T::DbWeight::get().writes(7 as u64))
+            .saturating_add(T::DbWeight::get().reads(6_u64))
+            .saturating_add(T::DbWeight::get().writes(7_u64))
     }
 
     /// ```text
@@ -78,8 +78,8 @@ where
     /// ```
     fn to_public() -> Weight {
         Weight::from_ref_time(44_100_000_000)
-            .saturating_add(T::DbWeight::get().reads(10 as u64))
-            .saturating_add(T::DbWeight::get().writes(12 as u64))
+            .saturating_add(T::DbWeight::get().reads(10_u64))
+            .saturating_add(T::DbWeight::get().writes(12_u64))
     }
 
     /// ```text
@@ -93,8 +93,8 @@ where
     /// ```
     fn private_transfer() -> Weight {
         Weight::from_ref_time(51_500_000_000)
-            .saturating_add(T::DbWeight::get().reads(9 as u64))
-            .saturating_add(T::DbWeight::get().writes(13 as u64))
+            .saturating_add(T::DbWeight::get().reads(9_u64))
+            .saturating_add(T::DbWeight::get().writes(13_u64))
     }
 
     // Storage: Assets Asset (r:1 w:1)

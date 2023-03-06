@@ -65,8 +65,8 @@ impl<T: frame_system::Config> pallet_membership::WeightInfo for SubstrateWeight<
         Weight::from_ref_time(16_269_000)
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(66_000).saturating_mul(m as u64))
-            .saturating_add(T::DbWeight::get().reads(2 as u64))
-            .saturating_add(T::DbWeight::get().writes(3 as u64))
+            .saturating_add(T::DbWeight::get().reads(2_u64))
+            .saturating_add(T::DbWeight::get().writes(3_u64))
     }
     // Storage: CouncilMembership Members (r:1 w:1)
     // Storage: Council Proposals (r:1 w:0)
@@ -77,8 +77,8 @@ impl<T: frame_system::Config> pallet_membership::WeightInfo for SubstrateWeight<
         Weight::from_ref_time(19_294_000)
             // Standard Error: 1_000
             .saturating_add(Weight::from_ref_time(65_000).saturating_mul(m as u64))
-            .saturating_add(T::DbWeight::get().reads(3 as u64))
-            .saturating_add(T::DbWeight::get().writes(3 as u64))
+            .saturating_add(T::DbWeight::get().reads(3_u64))
+            .saturating_add(T::DbWeight::get().writes(3_u64))
     }
     // Storage: CouncilMembership Members (r:1 w:1)
     // Storage: Council Proposals (r:1 w:0)
@@ -89,8 +89,8 @@ impl<T: frame_system::Config> pallet_membership::WeightInfo for SubstrateWeight<
         Weight::from_ref_time(19_450_000)
             // Standard Error: 1_000
             .saturating_add(Weight::from_ref_time(74_000).saturating_mul(m as u64))
-            .saturating_add(T::DbWeight::get().reads(3 as u64))
-            .saturating_add(T::DbWeight::get().writes(3 as u64))
+            .saturating_add(T::DbWeight::get().reads(3_u64))
+            .saturating_add(T::DbWeight::get().writes(3_u64))
     }
     // Storage: CouncilMembership Members (r:1 w:1)
     // Storage: Council Proposals (r:1 w:0)
@@ -101,8 +101,8 @@ impl<T: frame_system::Config> pallet_membership::WeightInfo for SubstrateWeight<
         Weight::from_ref_time(19_260_000)
             // Standard Error: 1_000
             .saturating_add(Weight::from_ref_time(199_000).saturating_mul(m as u64))
-            .saturating_add(T::DbWeight::get().reads(3 as u64))
-            .saturating_add(T::DbWeight::get().writes(3 as u64))
+            .saturating_add(T::DbWeight::get().reads(3_u64))
+            .saturating_add(T::DbWeight::get().writes(3_u64))
     }
     // Storage: CouncilMembership Members (r:1 w:1)
     // Storage: Council Proposals (r:1 w:0)
@@ -113,8 +113,8 @@ impl<T: frame_system::Config> pallet_membership::WeightInfo for SubstrateWeight<
         Weight::from_ref_time(19_950_000)
             // Standard Error: 1_000
             .saturating_add(Weight::from_ref_time(74_000).saturating_mul(m as u64))
-            .saturating_add(T::DbWeight::get().reads(3 as u64))
-            .saturating_add(T::DbWeight::get().writes(4 as u64))
+            .saturating_add(T::DbWeight::get().reads(3_u64))
+            .saturating_add(T::DbWeight::get().writes(4_u64))
     }
     // Storage: CouncilMembership Members (r:1 w:0)
     // Storage: CouncilMembership Prime (r:0 w:1)
@@ -123,8 +123,8 @@ impl<T: frame_system::Config> pallet_membership::WeightInfo for SubstrateWeight<
         Weight::from_ref_time(5_575_000)
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(36_000).saturating_mul(m as u64))
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(2 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(2_u64))
     }
     // Storage: CouncilMembership Prime (r:0 w:1)
     // Storage: Council Prime (r:0 w:1)
@@ -132,7 +132,7 @@ impl<T: frame_system::Config> pallet_membership::WeightInfo for SubstrateWeight<
         Weight::from_ref_time(2_166_000)
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(1_000).saturating_mul(m as u64))
-            .saturating_add(T::DbWeight::get().writes(2 as u64))
+            .saturating_add(T::DbWeight::get().writes(2_u64))
     }
 }
 
@@ -146,8 +146,8 @@ impl WeightInfo for () {
         Weight::from_ref_time(16_269_000)
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(66_000).saturating_mul(m as u64))
-            .saturating_add(RocksDbWeight::get().reads(2 as u64))
-            .saturating_add(RocksDbWeight::get().writes(3 as u64))
+            .saturating_add(RocksDbWeight::get().reads(2_u64))
+            .saturating_add(RocksDbWeight::get().writes(3_u64))
     }
     // Storage: CouncilMembership Members (r:1 w:1)
     // Storage: Council Proposals (r:1 w:0)
@@ -158,8 +158,8 @@ impl WeightInfo for () {
         Weight::from_ref_time(19_294_000)
             // Standard Error: 1_000
             .saturating_add(Weight::from_ref_time(65_000).saturating_mul(m as u64))
-            .saturating_add(RocksDbWeight::get().reads(3 as u64))
-            .saturating_add(RocksDbWeight::get().writes(3 as u64))
+            .saturating_add(RocksDbWeight::get().reads(3_u64))
+            .saturating_add(RocksDbWeight::get().writes(3_u64))
     }
     // Storage: CouncilMembership Members (r:1 w:1)
     // Storage: Council Proposals (r:1 w:0)
@@ -170,8 +170,8 @@ impl WeightInfo for () {
         Weight::from_ref_time(19_450_000)
             // Standard Error: 1_000
             .saturating_add(Weight::from_ref_time(74_000).saturating_mul(m as u64))
-            .saturating_add(RocksDbWeight::get().reads(3 as u64))
-            .saturating_add(RocksDbWeight::get().writes(3 as u64))
+            .saturating_add(RocksDbWeight::get().reads(3_u64))
+            .saturating_add(RocksDbWeight::get().writes(3_u64))
     }
     // Storage: CouncilMembership Members (r:1 w:1)
     // Storage: Council Proposals (r:1 w:0)
@@ -182,8 +182,8 @@ impl WeightInfo for () {
         Weight::from_ref_time(19_260_000)
             // Standard Error: 1_000
             .saturating_add(Weight::from_ref_time(199_000).saturating_mul(m as u64))
-            .saturating_add(RocksDbWeight::get().reads(3 as u64))
-            .saturating_add(RocksDbWeight::get().writes(3 as u64))
+            .saturating_add(RocksDbWeight::get().reads(3_u64))
+            .saturating_add(RocksDbWeight::get().writes(3_u64))
     }
     // Storage: CouncilMembership Members (r:1 w:1)
     // Storage: Council Proposals (r:1 w:0)
@@ -194,8 +194,8 @@ impl WeightInfo for () {
         Weight::from_ref_time(19_950_000)
             // Standard Error: 1_000
             .saturating_add(Weight::from_ref_time(74_000).saturating_mul(m as u64))
-            .saturating_add(RocksDbWeight::get().reads(3 as u64))
-            .saturating_add(RocksDbWeight::get().writes(4 as u64))
+            .saturating_add(RocksDbWeight::get().reads(3_u64))
+            .saturating_add(RocksDbWeight::get().writes(4_u64))
     }
     // Storage: CouncilMembership Members (r:1 w:0)
     // Storage: CouncilMembership Prime (r:0 w:1)
@@ -204,8 +204,8 @@ impl WeightInfo for () {
         Weight::from_ref_time(5_575_000)
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(36_000).saturating_mul(m as u64))
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(2 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(2_u64))
     }
     // Storage: CouncilMembership Prime (r:0 w:1)
     // Storage: Council Prime (r:0 w:1)
@@ -213,6 +213,6 @@ impl WeightInfo for () {
         Weight::from_ref_time(2_166_000)
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(1_000).saturating_mul(m as u64))
-            .saturating_add(RocksDbWeight::get().writes(2 as u64))
+            .saturating_add(RocksDbWeight::get().writes(2_u64))
     }
 }

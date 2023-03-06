@@ -69,8 +69,8 @@ impl<T: frame_system::Config> pallet_preimage::WeightInfo for SubstrateWeight<T>
         Weight::from_ref_time(0)
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(2_000).saturating_mul(s as u64))
-            .saturating_add(T::DbWeight::get().reads(2 as u64))
-            .saturating_add(T::DbWeight::get().writes(2 as u64))
+            .saturating_add(T::DbWeight::get().reads(2_u64))
+            .saturating_add(T::DbWeight::get().writes(2_u64))
     }
     // Storage: Preimage PreimageFor (r:1 w:1)
     // Storage: Preimage StatusFor (r:1 w:0)
@@ -78,8 +78,8 @@ impl<T: frame_system::Config> pallet_preimage::WeightInfo for SubstrateWeight<T>
         Weight::from_ref_time(0)
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(2_000).saturating_mul(s as u64))
-            .saturating_add(T::DbWeight::get().reads(2 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(2_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: Preimage PreimageFor (r:1 w:1)
     // Storage: Preimage StatusFor (r:1 w:0)
@@ -87,66 +87,66 @@ impl<T: frame_system::Config> pallet_preimage::WeightInfo for SubstrateWeight<T>
         Weight::from_ref_time(0)
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(2_000).saturating_mul(s as u64))
-            .saturating_add(T::DbWeight::get().reads(2 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(2_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     // Storage: Preimage PreimageFor (r:0 w:1)
     fn unnote_preimage() -> Weight {
         Weight::from_ref_time(36_208_000)
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(2 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(2_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     // Storage: Preimage PreimageFor (r:0 w:1)
     fn unnote_no_deposit_preimage() -> Weight {
         Weight::from_ref_time(22_670_000)
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(2 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(2_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     fn request_preimage() -> Weight {
         Weight::from_ref_time(35_218_000)
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     fn request_no_deposit_preimage() -> Weight {
         Weight::from_ref_time(21_461_000)
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     fn request_unnoted_preimage() -> Weight {
         Weight::from_ref_time(17_370_000)
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     fn request_requested_preimage() -> Weight {
         Weight::from_ref_time(7_247_000)
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     // Storage: Preimage PreimageFor (r:0 w:1)
     fn unrequest_preimage() -> Weight {
         Weight::from_ref_time(21_803_000)
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(2 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(2_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     // Storage: Preimage PreimageFor (r:0 w:1)
     fn unrequest_unnoted_preimage() -> Weight {
         Weight::from_ref_time(17_345_000)
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(2 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(2_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     fn unrequest_multi_referenced_preimage() -> Weight {
         Weight::from_ref_time(7_187_000)
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
 }
 
@@ -158,8 +158,8 @@ impl WeightInfo for () {
         Weight::from_ref_time(0)
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(2_000).saturating_mul(s as u64))
-            .saturating_add(RocksDbWeight::get().reads(2 as u64))
-            .saturating_add(RocksDbWeight::get().writes(2 as u64))
+            .saturating_add(RocksDbWeight::get().reads(2_u64))
+            .saturating_add(RocksDbWeight::get().writes(2_u64))
     }
     // Storage: Preimage PreimageFor (r:1 w:1)
     // Storage: Preimage StatusFor (r:1 w:0)
@@ -167,8 +167,8 @@ impl WeightInfo for () {
         Weight::from_ref_time(0)
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(2_000).saturating_mul(s as u64))
-            .saturating_add(RocksDbWeight::get().reads(2 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(2_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: Preimage PreimageFor (r:1 w:1)
     // Storage: Preimage StatusFor (r:1 w:0)
@@ -176,65 +176,65 @@ impl WeightInfo for () {
         Weight::from_ref_time(0)
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(2_000).saturating_mul(s as u64))
-            .saturating_add(RocksDbWeight::get().reads(2 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(2_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     // Storage: Preimage PreimageFor (r:0 w:1)
     fn unnote_preimage() -> Weight {
         Weight::from_ref_time(36_208_000)
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(2 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(2_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     // Storage: Preimage PreimageFor (r:0 w:1)
     fn unnote_no_deposit_preimage() -> Weight {
         Weight::from_ref_time(22_670_000)
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(2 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(2_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     fn request_preimage() -> Weight {
         Weight::from_ref_time(35_218_000)
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     fn request_no_deposit_preimage() -> Weight {
         Weight::from_ref_time(21_461_000)
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     fn request_unnoted_preimage() -> Weight {
         Weight::from_ref_time(17_370_000)
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     fn request_requested_preimage() -> Weight {
         Weight::from_ref_time(7_247_000)
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     // Storage: Preimage PreimageFor (r:0 w:1)
     fn unrequest_preimage() -> Weight {
         Weight::from_ref_time(21_803_000)
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(2 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(2_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     // Storage: Preimage PreimageFor (r:0 w:1)
     fn unrequest_unnoted_preimage() -> Weight {
         Weight::from_ref_time(17_345_000)
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(2 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(2_u64))
     }
     // Storage: Preimage StatusFor (r:1 w:1)
     fn unrequest_multi_referenced_preimage() -> Weight {
         Weight::from_ref_time(7_187_000)
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
 }

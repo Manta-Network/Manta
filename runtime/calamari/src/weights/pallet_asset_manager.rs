@@ -65,23 +65,23 @@ impl<T: frame_system::Config> pallet_asset_manager::WeightInfo for SubstrateWeig
     // Storage: AssetManager AssetIdLocation (r:0 w:1)
     fn register_asset() -> Weight {
         Weight::from_ref_time(47_350_000)
-            .saturating_add(T::DbWeight::get().reads(4 as u64))
-            .saturating_add(T::DbWeight::get().writes(6 as u64))
+            .saturating_add(T::DbWeight::get().reads(4_u64))
+            .saturating_add(T::DbWeight::get().writes(6_u64))
     }
     // Storage: AssetManager AssetIdLocation (r:1 w:0)
     // Storage: AssetManager UnitsPerSecond (r:0 w:1)
     fn set_units_per_second() -> Weight {
         Weight::from_ref_time(58_063_000)
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: AssetManager AssetIdLocation (r:1 w:1)
     // Storage: AssetManager LocationAssetId (r:1 w:2)
     // Storage: AssetManager AllowedDestParaIds (r:2 w:2)
     fn update_asset_location() -> Weight {
         Weight::from_ref_time(77_464_000)
-            .saturating_add(T::DbWeight::get().reads(4 as u64))
-            .saturating_add(T::DbWeight::get().writes(5 as u64))
+            .saturating_add(T::DbWeight::get().reads(4_u64))
+            .saturating_add(T::DbWeight::get().writes(5_u64))
     }
     // Storage: AssetManager AssetIdLocation (r:1 w:0)
     // Storage: Assets Asset (r:1 w:0)
@@ -89,21 +89,21 @@ impl<T: frame_system::Config> pallet_asset_manager::WeightInfo for SubstrateWeig
     // Storage: AssetManager AssetIdMetadata (r:0 w:1)
     fn update_asset_metadata() -> Weight {
         Weight::from_ref_time(76_368_000)
-            .saturating_add(T::DbWeight::get().reads(3 as u64))
-            .saturating_add(T::DbWeight::get().writes(2 as u64))
+            .saturating_add(T::DbWeight::get().reads(3_u64))
+            .saturating_add(T::DbWeight::get().writes(2_u64))
     }
     // Storage: AssetManager AssetIdLocation (r:1 w:0)
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:1 w:1)
     fn mint_asset() -> Weight {
         Weight::from_ref_time(85_610_000)
-            .saturating_add(T::DbWeight::get().reads(3 as u64))
-            .saturating_add(T::DbWeight::get().writes(2 as u64))
+            .saturating_add(T::DbWeight::get().reads(3_u64))
+            .saturating_add(T::DbWeight::get().writes(2_u64))
     }
     // Storage: AssetManager MinXcmFee (r:0 w:1)
     fn set_min_xcm_fee() -> Weight {
         Weight::from_ref_time(51_273_000)
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
 }
 
@@ -117,23 +117,23 @@ impl WeightInfo for () {
     // Storage: AssetManager AssetIdLocation (r:0 w:1)
     fn register_asset() -> Weight {
         Weight::from_ref_time(47_350_000)
-            .saturating_add(RocksDbWeight::get().reads(4 as u64))
-            .saturating_add(RocksDbWeight::get().writes(6 as u64))
+            .saturating_add(RocksDbWeight::get().reads(4_u64))
+            .saturating_add(RocksDbWeight::get().writes(6_u64))
     }
     // Storage: AssetManager AssetIdLocation (r:1 w:0)
     // Storage: AssetManager UnitsPerSecond (r:0 w:1)
     fn set_units_per_second() -> Weight {
         Weight::from_ref_time(58_063_000)
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: AssetManager AssetIdLocation (r:1 w:1)
     // Storage: AssetManager LocationAssetId (r:1 w:2)
     // Storage: AssetManager AllowedDestParaIds (r:2 w:2)
     fn update_asset_location() -> Weight {
         Weight::from_ref_time(77_464_000)
-            .saturating_add(RocksDbWeight::get().reads(4 as u64))
-            .saturating_add(RocksDbWeight::get().writes(5 as u64))
+            .saturating_add(RocksDbWeight::get().reads(4_u64))
+            .saturating_add(RocksDbWeight::get().writes(5_u64))
     }
     // Storage: AssetManager AssetIdLocation (r:1 w:0)
     // Storage: Assets Asset (r:1 w:0)
@@ -141,20 +141,20 @@ impl WeightInfo for () {
     // Storage: AssetManager AssetIdMetadata (r:0 w:1)
     fn update_asset_metadata() -> Weight {
         Weight::from_ref_time(76_368_000)
-            .saturating_add(RocksDbWeight::get().reads(3 as u64))
-            .saturating_add(RocksDbWeight::get().writes(2 as u64))
+            .saturating_add(RocksDbWeight::get().reads(3_u64))
+            .saturating_add(RocksDbWeight::get().writes(2_u64))
     }
     // Storage: AssetManager AssetIdLocation (r:1 w:0)
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:1 w:1)
     fn mint_asset() -> Weight {
         Weight::from_ref_time(85_610_000)
-            .saturating_add(RocksDbWeight::get().reads(3 as u64))
-            .saturating_add(RocksDbWeight::get().writes(2 as u64))
+            .saturating_add(RocksDbWeight::get().reads(3_u64))
+            .saturating_add(RocksDbWeight::get().writes(2_u64))
     }
     // Storage: AssetManager MinXcmFee (r:0 w:1)
     fn set_min_xcm_fee() -> Weight {
         Weight::from_ref_time(51_273_000)
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
 }

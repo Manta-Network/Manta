@@ -64,8 +64,8 @@ impl<T: frame_system::Config> pallet_manta_pay::WeightInfo for SubstrateWeight<T
     // Storage: MantaPay Shards (r:0 w:1)
     fn to_private() -> Weight {
         Weight::from_ref_time(39_780_864_000)
-            .saturating_add(T::DbWeight::get().reads(6 as u64))
-            .saturating_add(T::DbWeight::get().writes(7 as u64))
+            .saturating_add(T::DbWeight::get().reads(6_u64))
+            .saturating_add(T::DbWeight::get().writes(7_u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:2 w:2)
@@ -78,8 +78,8 @@ impl<T: frame_system::Config> pallet_manta_pay::WeightInfo for SubstrateWeight<T
     // Storage: MantaPay Shards (r:0 w:1)
     fn to_public() -> Weight {
         Weight::from_ref_time(53_066_482_000)
-            .saturating_add(T::DbWeight::get().reads(10 as u64))
-            .saturating_add(T::DbWeight::get().writes(12 as u64))
+            .saturating_add(T::DbWeight::get().reads(10_u64))
+            .saturating_add(T::DbWeight::get().writes(12_u64))
     }
     // Storage: MantaPay UtxoAccumulatorOutputs (r:2 w:2)
     // Storage: MantaPay NullifierCommitmentSet (r:2 w:2)
@@ -90,15 +90,15 @@ impl<T: frame_system::Config> pallet_manta_pay::WeightInfo for SubstrateWeight<T
     // Storage: MantaPay Shards (r:0 w:2)
     fn private_transfer() -> Weight {
         Weight::from_ref_time(70_327_731_000)
-            .saturating_add(T::DbWeight::get().reads(9 as u64))
-            .saturating_add(T::DbWeight::get().writes(13 as u64))
+            .saturating_add(T::DbWeight::get().reads(9_u64))
+            .saturating_add(T::DbWeight::get().writes(13_u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:2 w:2)
     fn public_transfer() -> Weight {
         Weight::from_ref_time(42_174_000)
-            .saturating_add(T::DbWeight::get().reads(3 as u64))
-            .saturating_add(T::DbWeight::get().writes(3 as u64))
+            .saturating_add(T::DbWeight::get().reads(3_u64))
+            .saturating_add(T::DbWeight::get().writes(3_u64))
     }
 }
 
@@ -113,8 +113,8 @@ impl WeightInfo for () {
     // Storage: MantaPay Shards (r:0 w:1)
     fn to_private() -> Weight {
         Weight::from_ref_time(39_780_864_000)
-            .saturating_add(RocksDbWeight::get().reads(6 as u64))
-            .saturating_add(RocksDbWeight::get().writes(7 as u64))
+            .saturating_add(RocksDbWeight::get().reads(6_u64))
+            .saturating_add(RocksDbWeight::get().writes(7_u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:2 w:2)
@@ -127,8 +127,8 @@ impl WeightInfo for () {
     // Storage: MantaPay Shards (r:0 w:1)
     fn to_public() -> Weight {
         Weight::from_ref_time(53_066_482_000)
-            .saturating_add(RocksDbWeight::get().reads(10 as u64))
-            .saturating_add(RocksDbWeight::get().writes(12 as u64))
+            .saturating_add(RocksDbWeight::get().reads(10_u64))
+            .saturating_add(RocksDbWeight::get().writes(12_u64))
     }
     // Storage: MantaPay UtxoAccumulatorOutputs (r:2 w:2)
     // Storage: MantaPay NullifierCommitmentSet (r:2 w:2)
@@ -139,14 +139,14 @@ impl WeightInfo for () {
     // Storage: MantaPay Shards (r:0 w:2)
     fn private_transfer() -> Weight {
         Weight::from_ref_time(70_327_731_000)
-            .saturating_add(RocksDbWeight::get().reads(9 as u64))
-            .saturating_add(RocksDbWeight::get().writes(13 as u64))
+            .saturating_add(RocksDbWeight::get().reads(9_u64))
+            .saturating_add(RocksDbWeight::get().writes(13_u64))
     }
     // Storage: Assets Asset (r:1 w:1)
     // Storage: Assets Account (r:2 w:2)
     fn public_transfer() -> Weight {
         Weight::from_ref_time(42_174_000)
-            .saturating_add(RocksDbWeight::get().reads(3 as u64))
-            .saturating_add(RocksDbWeight::get().writes(3 as u64))
+            .saturating_add(RocksDbWeight::get().reads(3_u64))
+            .saturating_add(RocksDbWeight::get().writes(3_u64))
     }
 }

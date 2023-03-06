@@ -55,14 +55,14 @@ impl<T: frame_system::Config> pallet_tx_pause::WeightInfo for SubstrateWeight<T>
     // Storage: TransactionPause PausedTransactions (r:1 w:1)
     fn pause_transaction() -> Weight {
         Weight::from_ref_time(17_486_000)
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: TransactionPause PausedTransactions (r:1 w:1)
     fn unpause_transaction() -> Weight {
         Weight::from_ref_time(17_900_000)
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
 }
 
@@ -71,13 +71,13 @@ impl WeightInfo for () {
     // Storage: TransactionPause PausedTransactions (r:1 w:1)
     fn pause_transaction() -> Weight {
         Weight::from_ref_time(17_486_000)
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: TransactionPause PausedTransactions (r:1 w:1)
     fn unpause_transaction() -> Weight {
         Weight::from_ref_time(17_900_000)
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
 }

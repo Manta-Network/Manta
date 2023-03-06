@@ -66,27 +66,27 @@ impl<T: frame_system::Config> manta_collator_selection::WeightInfo for Substrate
         Weight::from_ref_time(9_438_000)
             // Standard Error: 15_000
             .saturating_add(Weight::from_ref_time(74_000).saturating_mul(b as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: CollatorSelection DesiredCandidates (r:0 w:1)
     fn set_desired_candidates() -> Weight {
         Weight::from_ref_time(11_073_000)
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: CollatorSelection CandidacyBond (r:0 w:1)
     fn set_candidacy_bond() -> Weight {
         Weight::from_ref_time(9_087_000)
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: CollatorSelection EvictionBaseline (r:0 w:1)
     fn set_eviction_baseline() -> Weight {
         Weight::from_ref_time(8_733_000)
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: CollatorSelection EvictionTolerance (r:0 w:1)
     fn set_eviction_tolerance() -> Weight {
         Weight::from_ref_time(8_848_000)
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: CollatorSelection Candidates (r:1 w:1)
     // Storage: CollatorSelection DesiredCandidates (r:1 w:0)
@@ -97,16 +97,16 @@ impl<T: frame_system::Config> manta_collator_selection::WeightInfo for Substrate
         Weight::from_ref_time(42_763_000)
             // Standard Error: 4_000
             .saturating_add(Weight::from_ref_time(476_000).saturating_mul(c as u64))
-            .saturating_add(T::DbWeight::get().reads(5 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(5_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: CollatorSelection Candidates (r:1 w:1)
     fn leave_intent(c: u32, ) -> Weight {
         Weight::from_ref_time(31_759_000)
             // Standard Error: 7_000
             .saturating_add(Weight::from_ref_time(344_000).saturating_mul(c as u64))
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: CollatorSelection Invulnerables (r:1 w:0)
     // Storage: CollatorSelection Candidates (r:1 w:1)
@@ -114,8 +114,8 @@ impl<T: frame_system::Config> manta_collator_selection::WeightInfo for Substrate
         Weight::from_ref_time(29_327_000)
             // Standard Error: 7_000
             .saturating_add(Weight::from_ref_time(261_000).saturating_mul(c as u64))
-            .saturating_add(T::DbWeight::get().reads(2 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(2_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: CollatorSelection Candidates (r:1 w:1)
     // Storage: CollatorSelection DesiredCandidates (r:1 w:0)
@@ -126,16 +126,16 @@ impl<T: frame_system::Config> manta_collator_selection::WeightInfo for Substrate
         Weight::from_ref_time(40_380_000)
             // Standard Error: 7_000
             .saturating_add(Weight::from_ref_time(249_000).saturating_mul(c as u64))
-            .saturating_add(T::DbWeight::get().reads(5 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(5_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: System Account (r:2 w:2)
     // Storage: CollatorSelection BlocksPerCollatorThisSession (r:1 w:1)
     // Storage: System BlockWeight (r:1 w:1)
     fn note_author() -> Weight {
         Weight::from_ref_time(34_340_000)
-            .saturating_add(T::DbWeight::get().reads(4 as u64))
-            .saturating_add(T::DbWeight::get().writes(4 as u64))
+            .saturating_add(T::DbWeight::get().reads(4_u64))
+            .saturating_add(T::DbWeight::get().writes(4_u64))
     }
     // Storage: CollatorSelection Candidates (r:1 w:0)
     // Storage: CollatorSelection EvictionBaseline (r:1 w:0)
@@ -149,10 +149,10 @@ impl<T: frame_system::Config> manta_collator_selection::WeightInfo for Substrate
         Weight::from_ref_time(11_231_000)
             // Standard Error: 73_000
             .saturating_add(Weight::from_ref_time(24_164_000).saturating_mul(c as u64))
-            .saturating_add(T::DbWeight::get().reads(6 as u64))
-            .saturating_add(T::DbWeight::get().reads((2 as u64).saturating_mul(c as u64)))
-            .saturating_add(T::DbWeight::get().writes(3 as u64))
-            .saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(c as u64)))
+            .saturating_add(T::DbWeight::get().reads(6_u64))
+            .saturating_add(T::DbWeight::get().reads((2_u64).saturating_mul(c as u64)))
+            .saturating_add(T::DbWeight::get().writes(3_u64))
+            .saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(c as u64)))
     }
 }
 
@@ -163,27 +163,27 @@ impl WeightInfo for () {
         Weight::from_ref_time(9_438_000)
             // Standard Error: 15_000
             .saturating_add(Weight::from_ref_time(74_000).saturating_mul(b as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: CollatorSelection DesiredCandidates (r:0 w:1)
     fn set_desired_candidates() -> Weight {
         Weight::from_ref_time(11_073_000)
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: CollatorSelection CandidacyBond (r:0 w:1)
     fn set_candidacy_bond() -> Weight {
         Weight::from_ref_time(9_087_000)
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: CollatorSelection EvictionBaseline (r:0 w:1)
     fn set_eviction_baseline() -> Weight {
         Weight::from_ref_time(8_733_000)
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: CollatorSelection EvictionTolerance (r:0 w:1)
     fn set_eviction_tolerance() -> Weight {
         Weight::from_ref_time(8_848_000)
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: CollatorSelection Candidates (r:1 w:1)
     // Storage: CollatorSelection DesiredCandidates (r:1 w:0)
@@ -194,16 +194,16 @@ impl WeightInfo for () {
         Weight::from_ref_time(42_763_000)
             // Standard Error: 4_000
             .saturating_add(Weight::from_ref_time(476_000).saturating_mul(c as u64))
-            .saturating_add(RocksDbWeight::get().reads(5 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(5_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: CollatorSelection Candidates (r:1 w:1)
     fn leave_intent(c: u32, ) -> Weight {
         Weight::from_ref_time(31_759_000)
             // Standard Error: 7_000
             .saturating_add(Weight::from_ref_time(344_000).saturating_mul(c as u64))
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: CollatorSelection Invulnerables (r:1 w:0)
     // Storage: CollatorSelection Candidates (r:1 w:1)
@@ -211,8 +211,8 @@ impl WeightInfo for () {
         Weight::from_ref_time(29_327_000)
             // Standard Error: 7_000
             .saturating_add(Weight::from_ref_time(261_000).saturating_mul(c as u64))
-            .saturating_add(RocksDbWeight::get().reads(2 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(2_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: CollatorSelection Candidates (r:1 w:1)
     // Storage: CollatorSelection DesiredCandidates (r:1 w:0)
@@ -223,16 +223,16 @@ impl WeightInfo for () {
         Weight::from_ref_time(40_380_000)
             // Standard Error: 7_000
             .saturating_add(Weight::from_ref_time(249_000).saturating_mul(c as u64))
-            .saturating_add(RocksDbWeight::get().reads(5 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(5_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: System Account (r:2 w:2)
     // Storage: CollatorSelection BlocksPerCollatorThisSession (r:1 w:1)
     // Storage: System BlockWeight (r:1 w:1)
     fn note_author() -> Weight {
         Weight::from_ref_time(34_340_000)
-            .saturating_add(RocksDbWeight::get().reads(4 as u64))
-            .saturating_add(RocksDbWeight::get().writes(4 as u64))
+            .saturating_add(RocksDbWeight::get().reads(4_u64))
+            .saturating_add(RocksDbWeight::get().writes(4_u64))
     }
     // Storage: CollatorSelection Candidates (r:1 w:0)
     // Storage: CollatorSelection EvictionBaseline (r:1 w:0)
@@ -246,9 +246,9 @@ impl WeightInfo for () {
         Weight::from_ref_time(11_231_000)
             // Standard Error: 73_000
             .saturating_add(Weight::from_ref_time(24_164_000).saturating_mul(c as u64))
-            .saturating_add(RocksDbWeight::get().reads(6 as u64))
-            .saturating_add(RocksDbWeight::get().reads((2 as u64).saturating_mul(c as u64)))
-            .saturating_add(RocksDbWeight::get().writes(3 as u64))
-            .saturating_add(RocksDbWeight::get().writes((1 as u64).saturating_mul(c as u64)))
+            .saturating_add(RocksDbWeight::get().reads(6_u64))
+            .saturating_add(RocksDbWeight::get().reads((2_u64).saturating_mul(c as u64)))
+            .saturating_add(RocksDbWeight::get().writes(3_u64))
+            .saturating_add(RocksDbWeight::get().writes((1_u64).saturating_mul(c as u64)))
     }
 }

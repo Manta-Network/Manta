@@ -54,8 +54,8 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn query_holding() -> Weight {
 		Weight::from_ref_time(802_573_000)
-			.saturating_add(T::DbWeight::get().reads(6 as u64))
-			.saturating_add(T::DbWeight::get().writes(2 as u64))
+			.saturating_add(T::DbWeight::get().reads(6_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	pub(crate) fn buy_execution() -> Weight {
 		Weight::from_ref_time(3_714_000)
@@ -63,7 +63,7 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: PolkadotXcm Queries (r:1 w:0)
 	pub(crate) fn query_response() -> Weight {
 		Weight::from_ref_time(11_478_000)
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
 	}
 	pub(crate) fn transact() -> Weight {
 		Weight::from_ref_time(14_828_000)
@@ -93,14 +93,14 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn report_error() -> Weight {
 		Weight::from_ref_time(13_486_000)
-			.saturating_add(T::DbWeight::get().reads(5 as u64))
-			.saturating_add(T::DbWeight::get().writes(2 as u64))
+			.saturating_add(T::DbWeight::get().reads(5_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	// Storage: PolkadotXcm AssetTraps (r:1 w:1)
 	pub(crate) fn claim_asset() -> Weight {
 		Weight::from_ref_time(6_270_000)
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	pub(crate) fn trap() -> Weight {
 		Weight::from_ref_time(740_000)
@@ -113,13 +113,13 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn subscribe_version() -> Weight {
 		Weight::from_ref_time(17_698_000)
-			.saturating_add(T::DbWeight::get().reads(6 as u64))
-			.saturating_add(T::DbWeight::get().writes(3 as u64))
+			.saturating_add(T::DbWeight::get().reads(6_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	// Storage: PolkadotXcm VersionNotifyTargets (r:0 w:1)
 	pub(crate) fn unsubscribe_version() -> Weight {
 		Weight::from_ref_time(2_985_000)
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: ParachainInfo ParachainId (r:1 w:0)
 	// Storage: PolkadotXcm SupportedVersion (r:1 w:0)
@@ -129,7 +129,7 @@ impl<T: frame_system::Config> WeightInfo<T> {
 	// Storage: ParachainSystem PendingUpwardMessages (r:1 w:1)
 	pub(crate) fn initiate_reserve_withdraw() -> Weight {
 		Weight::from_ref_time(953_715_000)
-			.saturating_add(T::DbWeight::get().reads(6 as u64))
-			.saturating_add(T::DbWeight::get().writes(2 as u64))
+			.saturating_add(T::DbWeight::get().reads(6_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 }

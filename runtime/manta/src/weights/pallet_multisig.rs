@@ -71,8 +71,8 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for SubstrateWeight<T>
             .saturating_add(Weight::from_ref_time(106_000).saturating_mul(s as u64))
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(1_000).saturating_mul(z as u64))
-            .saturating_add(T::DbWeight::get().reads(2 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(2_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: Multisig Multisigs (r:1 w:1)
     fn as_multi_approve(s: u32, z: u32, ) -> Weight {
@@ -81,8 +81,8 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for SubstrateWeight<T>
             .saturating_add(Weight::from_ref_time(90_000).saturating_mul(s as u64))
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(1_000).saturating_mul(z as u64))
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: Multisig Multisigs (r:1 w:1)
     // Storage: Multisig Calls (r:1 w:1)
@@ -93,8 +93,8 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for SubstrateWeight<T>
             .saturating_add(Weight::from_ref_time(128_000).saturating_mul(s as u64))
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(2_000).saturating_mul(z as u64))
-            .saturating_add(T::DbWeight::get().reads(3 as u64))
-            .saturating_add(T::DbWeight::get().writes(3 as u64))
+            .saturating_add(T::DbWeight::get().reads(3_u64))
+            .saturating_add(T::DbWeight::get().writes(3_u64))
     }
     // Storage: Multisig Multisigs (r:1 w:1)
     // Storage: unknown [0x3a65787472696e7369635f696e646578] (r:1 w:0)
@@ -102,8 +102,8 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for SubstrateWeight<T>
         Weight::from_ref_time(34_650_000)
             // Standard Error: 2_000
             .saturating_add(Weight::from_ref_time(125_000).saturating_mul(s as u64))
-            .saturating_add(T::DbWeight::get().reads(2 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(2_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: Multisig Multisigs (r:1 w:1)
     // Storage: Multisig Calls (r:1 w:0)
@@ -111,8 +111,8 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for SubstrateWeight<T>
         Weight::from_ref_time(21_755_000)
             // Standard Error: 1_000
             .saturating_add(Weight::from_ref_time(119_000).saturating_mul(s as u64))
-            .saturating_add(T::DbWeight::get().reads(1 as u64))
-            .saturating_add(T::DbWeight::get().writes(1 as u64))
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     // Storage: Multisig Multisigs (r:1 w:1)
     // Storage: Multisig Calls (r:1 w:1)
@@ -120,8 +120,8 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for SubstrateWeight<T>
         Weight::from_ref_time(51_254_000)
             // Standard Error: 2_000
             .saturating_add(Weight::from_ref_time(139_000).saturating_mul(s as u64))
-            .saturating_add(T::DbWeight::get().reads(2 as u64))
-            .saturating_add(T::DbWeight::get().writes(2 as u64))
+            .saturating_add(T::DbWeight::get().reads(2_u64))
+            .saturating_add(T::DbWeight::get().writes(2_u64))
     }
 }
 
@@ -140,8 +140,8 @@ impl WeightInfo for () {
             .saturating_add(Weight::from_ref_time(106_000).saturating_mul(s as u64))
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(1_000).saturating_mul(z as u64))
-            .saturating_add(RocksDbWeight::get().reads(2 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(2_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: Multisig Multisigs (r:1 w:1)
     fn as_multi_approve(s: u32, z: u32, ) -> Weight {
@@ -150,8 +150,8 @@ impl WeightInfo for () {
             .saturating_add(Weight::from_ref_time(90_000).saturating_mul(s as u64))
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(1_000).saturating_mul(z as u64))
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: Multisig Multisigs (r:1 w:1)
     // Storage: Multisig Calls (r:1 w:1)
@@ -162,8 +162,8 @@ impl WeightInfo for () {
             .saturating_add(Weight::from_ref_time(128_000).saturating_mul(s as u64))
             // Standard Error: 0
             .saturating_add(Weight::from_ref_time(2_000).saturating_mul(z as u64))
-            .saturating_add(RocksDbWeight::get().reads(3 as u64))
-            .saturating_add(RocksDbWeight::get().writes(3 as u64))
+            .saturating_add(RocksDbWeight::get().reads(3_u64))
+            .saturating_add(RocksDbWeight::get().writes(3_u64))
     }
     // Storage: Multisig Multisigs (r:1 w:1)
     // Storage: unknown [0x3a65787472696e7369635f696e646578] (r:1 w:0)
@@ -171,8 +171,8 @@ impl WeightInfo for () {
         Weight::from_ref_time(34_650_000)
             // Standard Error: 2_000
             .saturating_add(Weight::from_ref_time(125_000).saturating_mul(s as u64))
-            .saturating_add(RocksDbWeight::get().reads(2 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(2_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: Multisig Multisigs (r:1 w:1)
     // Storage: Multisig Calls (r:1 w:0)
@@ -180,8 +180,8 @@ impl WeightInfo for () {
         Weight::from_ref_time(21_755_000)
             // Standard Error: 1_000
             .saturating_add(Weight::from_ref_time(119_000).saturating_mul(s as u64))
-            .saturating_add(RocksDbWeight::get().reads(1 as u64))
-            .saturating_add(RocksDbWeight::get().writes(1 as u64))
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     // Storage: Multisig Multisigs (r:1 w:1)
     // Storage: Multisig Calls (r:1 w:1)
@@ -189,7 +189,7 @@ impl WeightInfo for () {
         Weight::from_ref_time(51_254_000)
             // Standard Error: 2_000
             .saturating_add(Weight::from_ref_time(139_000).saturating_mul(s as u64))
-            .saturating_add(RocksDbWeight::get().reads(2 as u64))
-            .saturating_add(RocksDbWeight::get().writes(2 as u64))
+            .saturating_add(RocksDbWeight::get().reads(2_u64))
+            .saturating_add(RocksDbWeight::get().writes(2_u64))
     }
 }
