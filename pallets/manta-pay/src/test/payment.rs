@@ -622,6 +622,7 @@ fn public_lower_than_ed_should_not_work0() {
                 FullParametersRef::new(&PARAMETERS, utxo_accumulator.model()),
                 &PROVING_CONTEXT.to_private,
                 None,
+                Vec::new(),
                 &mut rng,
             )
             .expect("Unable to build TO_PRIVATE proof.")
@@ -650,6 +651,7 @@ fn public_lower_than_ed_should_not_work0() {
                 FullParametersRef::new(&PARAMETERS, utxo_accumulator.model()),
                 &PROVING_CONTEXT.to_private,
                 None,
+                Vec::new(),
                 &mut rng,
             )
             .expect("Unable to build TO_PRIVATE proof.")
@@ -679,6 +681,7 @@ fn public_lower_than_ed_should_not_work0() {
             FullParametersRef::new(&PARAMETERS, utxo_accumulator.model()),
             &PROVING_CONTEXT.to_public,
             Some(&spending_key),
+            Vec::from([ALICE.into()]),
             &mut rng,
         )
         .expect("Unable to build TO_PUBLIC proof.")
@@ -702,6 +705,7 @@ fn public_lower_than_ed_should_not_work0() {
                 FullParametersRef::new(&PARAMETERS, utxo_accumulator.model()),
                 &PROVING_CONTEXT.to_public,
                 Some(&spending_key),
+                Vec::from([ALICE.into()]),
                 &mut rng,
             )
             .expect("Unable to build TO_PUBLIC proof.")
