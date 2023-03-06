@@ -66,6 +66,8 @@ std = [
   "manta-crypto/std",
   "manta-util/std",
   "manta-pay/std",
+  "session-key-primitives/std",
+  "sp-core/std",
 ]
 
 # Precompute Benchmark Transactions
@@ -112,6 +114,8 @@ manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", branch =
 manta-pay = { git = "https://github.com/manta-network/manta-rs.git", branch = "to_public_signature_fix", default-features = false, features = ["groth16", "parameters", "scale"] }
 manta-primitives = { path = "../../primitives/manta", default-features = false }
 manta-util = { git = "https://github.com/manta-network/manta-rs.git", branch = "to_public_signature_fix", default-features = false }
+session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
+sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", default-features = false }
 
 [dev-dependencies]
 lazy_static = "1.4.0"

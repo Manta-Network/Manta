@@ -5161,7 +5161,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.5.11"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=to_public_signature_fix#949a0dd48b2f98445482b2d2d3bb13ec0c8855a0"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=to_public_signature_fix#9c1ff3babce72defb67d02969440c06c4530cc16"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5205,7 +5205,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.5.11"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=to_public_signature_fix#949a0dd48b2f98445482b2d2d3bb13ec0c8855a0"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=to_public_signature_fix#9c1ff3babce72defb67d02969440c06c4530cc16"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -5231,7 +5231,7 @@ dependencies = [
 [[package]]
 name = "manta-parameters"
 version = "0.5.11"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=to_public_signature_fix#949a0dd48b2f98445482b2d2d3bb13ec0c8855a0"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=to_public_signature_fix#9c1ff3babce72defb67d02969440c06c4530cc16"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5244,7 +5244,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.5.11"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=to_public_signature_fix#949a0dd48b2f98445482b2d2d3bb13ec0c8855a0"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=to_public_signature_fix#9c1ff3babce72defb67d02969440c06c4530cc16"
 dependencies = [
  "aes-gcm",
  "bip32",
@@ -5348,7 +5348,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.5.11"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=to_public_signature_fix#949a0dd48b2f98445482b2d2d3bb13ec0c8855a0"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=to_public_signature_fix#9c1ff3babce72defb67d02969440c06c4530cc16"
 dependencies = [
  "crossbeam-channel",
  "serde",
@@ -6588,6 +6588,7 @@ dependencies = [
  "parity-scale-codec",
  "rand_chacha 0.3.1",
  "scale-info",
+ "session-key-primitives",
  "sp-api",
  "sp-blockchain",
  "sp-core",
@@ -12469,7 +12470,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.6",
  "rand 0.8.5",
  "static_assertions",
