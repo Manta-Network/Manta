@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, MantaPaySuspensionManager,
+    weights, xcm_config::SelfReserve, AssetManager, Assets, Balances,
     NativeTokenExistentialDeposit, Runtime, RuntimeEvent, RuntimeOrigin,
 };
 
@@ -186,5 +186,4 @@ impl pallet_manta_pay::Config for Runtime {
     type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
     type AssetConfig = CalamariAssetConfig;
     type PalletId = MantaPayPalletId;
-    type Suspender = MantaPaySuspensionManager;
 }
