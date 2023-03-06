@@ -149,7 +149,6 @@ orml-xtokens = { git = "https://github.com/open-web3-stack/open-runtime-module-l
 # Self dependencies
 pallet-asset-manager = { path = '../../pallets/asset-manager' }
 
-
 [features]
 default = ['std']
 runtime-benchmarks = [
@@ -189,7 +188,7 @@ try-runtime = [
   'frame-try-runtime',
   'frame-executive/try-runtime',
   'frame-system/try-runtime',
-  "frame-support/try-runtime",
+  'frame-support/try-runtime',
   'pallet-aura/try-runtime',
   'pallet-authorship/try-runtime',
   'pallet-balances/try-runtime',
@@ -210,9 +209,9 @@ try-runtime = [
   'pallet-asset-manager/try-runtime',
   'pallet-xcm/try-runtime',
   'runtime-common/try-runtime',
-  "parachain-info/try-runtime",
-  "cumulus-pallet-parachain-system/try-runtime",
-	"cumulus-pallet-xcmp-queue/try-runtime",
+  'parachain-info/try-runtime',
+  'cumulus-pallet-parachain-system/try-runtime',
+  'cumulus-pallet-xcmp-queue/try-runtime',
   'cumulus-pallet-dmp-queue/try-runtime',
   'pallet-aura-style-filter/try-runtime',
   'manta-collator-selection/try-runtime',
@@ -220,7 +219,7 @@ try-runtime = [
   'cumulus-pallet-xcm/try-runtime',
   'orml-xtokens/try-runtime',
   'pallet-manta-pay/try-runtime',
-  'calamari-vesting/try-runtime'
+  'calamari-vesting/try-runtime',
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
@@ -245,7 +244,7 @@ std = [
   'frame-system/std',
   'frame-system-rpc-runtime-api/std',
   'frame-try-runtime/std',
-  "frame-system-benchmarking/std",
+  'frame-system-benchmarking/std',
   'pallet-authorship/std',
   'pallet-balances/std',
   'pallet-multisig/std',
@@ -270,12 +269,12 @@ std = [
   'cumulus-pallet-parachain-system/std',
   'cumulus-pallet-dmp-queue/std',
   "cumulus-pallet-xcmp-queue/std",
-  "cumulus-pallet-xcm/std",
-  "cumulus-primitives-core/std",
-  "cumulus-primitives-timestamp/std",
-  "cumulus-primitives-utility/std",
-  "pallet-author-inherent/std",
-  "pallet-aura-style-filter/std",
+  'cumulus-pallet-xcm/std',
+  'cumulus-primitives-core/std',
+  'cumulus-primitives-timestamp/std',
+  'cumulus-primitives-utility/std',
+  'pallet-author-inherent/std',
+  'pallet-aura-style-filter/std',
   'session-key-primitives/std',
   'xcm/std',
   'xcm-builder/std',

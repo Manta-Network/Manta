@@ -59,9 +59,9 @@ pallet-transaction-payment-rpc-runtime-api = { git = 'https://github.com/parityt
 pallet-treasury = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 pallet-utility = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 
+pallet-conviction-voting = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 pallet-ranked-collective = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 pallet-referenda = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
-pallet-conviction-voting = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 
 # Cumulus dependencies
 cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.37" }
@@ -139,9 +139,9 @@ runtime-benchmarks = [
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
   'cumulus-pallet-parachain-system/runtime-benchmarks',
   'pallet-xcm-benchmarks/runtime-benchmarks',
-  "pallet-ranked-collective/runtime-benchmarks",
-	"pallet-referenda/runtime-benchmarks",
-	"pallet-conviction-voting/runtime-benchmarks",
+  'pallet-ranked-collective/runtime-benchmarks',
+  'pallet-referenda/runtime-benchmarks',
+  'pallet-conviction-voting/runtime-benchmarks',
 ]
 try-runtime = [
   "frame-support/try-runtime",
@@ -166,9 +166,9 @@ try-runtime = [
   'pallet-tx-pause/try-runtime',
   'pallet-xcm/try-runtime',
   'pallet-asset-manager/try-runtime',
-  "parachain-info/try-runtime",
-  "cumulus-pallet-parachain-system/try-runtime",
-	"cumulus-pallet-xcmp-queue/try-runtime",
+  'parachain-info/try-runtime',
+  'cumulus-pallet-parachain-system/try-runtime',
+  'cumulus-pallet-xcmp-queue/try-runtime',
   'cumulus-pallet-dmp-queue/try-runtime',
   'pallet-aura-style-filter/try-runtime',
   'manta-collator-selection/try-runtime',
@@ -201,7 +201,7 @@ std = [
   'frame-system/std',
   'frame-system-rpc-runtime-api/std',
   'frame-try-runtime/std',
-  "frame-system-benchmarking/std",
+  'frame-system-benchmarking/std',
   'pallet-authorship/std',
   'pallet-balances/std',
   'pallet-multisig/std',
@@ -229,9 +229,9 @@ std = [
   "cumulus-primitives-utility/std",
   "pallet-author-inherent/std",
   "pallet-aura-style-filter/std",
-  "pallet-ranked-collective/std",
-	"pallet-referenda/std",
-	"pallet-conviction-voting/std",
+  'pallet-ranked-collective/std',
+  'pallet-referenda/std',
+  'pallet-conviction-voting/std',
   'session-key-primitives/std',
   'xcm/std',
   'sp-application-crypto/std',
