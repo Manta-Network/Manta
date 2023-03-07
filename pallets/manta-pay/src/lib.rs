@@ -221,19 +221,19 @@ pub mod pallet {
         #[transactional]
         pub fn to_private(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
-            ensure!(
-                post.sources.len() == 1
-                    && post.sender_posts.is_empty()
-                    && post.receiver_posts.len() == 1
-                    && post.sinks.is_empty(),
-                Error::<T>::InvalidShape
-            );
-            for source in post.sources.iter() {
-                ensure!(
-                    asset_value_decode(*source) > 0u128,
-                    Error::<T>::ZeroTransfer
-                );
-            }
+            // ensure!(
+            //     post.sources.len() == 1
+            //         && post.sender_posts.is_empty()
+            //         && post.receiver_posts.len() == 1
+            //         && post.sinks.is_empty(),
+            //     Error::<T>::InvalidShape
+            // );
+            // for source in post.sources.iter() {
+            //     ensure!(
+            //         asset_value_decode(*source) > 0u128,
+            //         Error::<T>::ZeroTransfer
+            //     );
+            // }
             Self::post_transaction(None, vec![origin], vec![], post)
         }
 
