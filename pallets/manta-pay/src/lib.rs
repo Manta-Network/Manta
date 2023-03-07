@@ -233,23 +233,23 @@ pub mod pallet {
         #[transactional]
         pub fn to_public(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
-            // Prevent replaying of failed transactions
-            ensure!(
-                post.sink_accounts.len() == 1
-                    && T::AccountId::from(post.sink_accounts[0]) == origin,
-                Error::<T>::InvalidSinkAccount
-            );
             ensure!(
                 post.sources.is_empty()
                     && post.sender_posts.len() == 2
                     && post.receiver_posts.len() == 1
-                    && post.sinks.len() == 1,
+                    && post.sinks.len() == 1
+                    && post.sink_accounts.len() == 1,
                 Error::<T>::InvalidShape
             );
             for sink in post.sinks.iter() {
                 ensure!(asset_value_decode(*sink) > 0u128, Error::<T>::ZeroTransfer);
             }
-            Self::post_transaction(None, vec![], vec![origin], post)
+            Self::post_transaction(
+                None,
+                vec![],
+                vec![T::AccountId::from(post.sink_accounts[0])],
+                post,
+            )
         }
 
         /// Transfers private assets encoded in `post`.
