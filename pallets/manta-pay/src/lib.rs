@@ -232,7 +232,7 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::to_public())]
         #[transactional]
         pub fn to_public(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
-            let origin = ensure_signed(origin)?;
+            let _origin = ensure_signed(origin)?;
             ensure!(
                 post.sources.is_empty()
                     && post.sender_posts.len() == 2
