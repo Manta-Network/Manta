@@ -5155,8 +5155,8 @@ dependencies = [
 
 [[package]]
 name = "manta-accounting"
-version = "0.5.9"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.9#8a995e913f5bc37a927ecd58e0b03f5c1c790a46"
+version = "0.5.11"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=main#7a0eef39d74b16e96709b0dfaad061a36d920fe7"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5199,8 +5199,8 @@ dependencies = [
 
 [[package]]
 name = "manta-crypto"
-version = "0.5.9"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.9#8a995e913f5bc37a927ecd58e0b03f5c1c790a46"
+version = "0.5.11"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=main#7a0eef39d74b16e96709b0dfaad061a36d920fe7"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -5225,8 +5225,8 @@ dependencies = [
 
 [[package]]
 name = "manta-parameters"
-version = "0.5.9"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.9#8a995e913f5bc37a927ecd58e0b03f5c1c790a46"
+version = "0.5.11"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=main#7a0eef39d74b16e96709b0dfaad061a36d920fe7"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5238,8 +5238,8 @@ dependencies = [
 
 [[package]]
 name = "manta-pay"
-version = "0.5.9"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.9#8a995e913f5bc37a927ecd58e0b03f5c1c790a46"
+version = "0.5.11"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=main#7a0eef39d74b16e96709b0dfaad061a36d920fe7"
 dependencies = [
  "aes-gcm",
  "bip32",
@@ -5342,8 +5342,8 @@ dependencies = [
 
 [[package]]
 name = "manta-util"
-version = "0.5.9"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.9#8a995e913f5bc37a927ecd58e0b03f5c1c790a46"
+version = "0.5.11"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=main#7a0eef39d74b16e96709b0dfaad061a36d920fe7"
 dependencies = [
  "crossbeam-channel",
  "serde",
@@ -12468,7 +12468,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.6",
  "rand 0.8.5",
  "static_assertions",

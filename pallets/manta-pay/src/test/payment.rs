@@ -114,6 +114,7 @@ where
             &mut utxo_accumulator,
             Fp::from(asset_id),
             value,
+            ALICE.into(),
             rng,
         );
     PalletTransferPost::try_from(to_public).unwrap()
@@ -224,6 +225,7 @@ where
                 &mut utxo_accumulator,
                 Fp::from(asset_id),
                 [100, 100],
+                ALICE.into(),
                 rng,
             );
 
@@ -288,6 +290,7 @@ where
             Fp::from(asset_id),
             // Divide by 2 in order to not exceed total_supply
             [balance / 2, balance / 2],
+            ALICE.into(),
             rng,
         );
         assert_ok!(MantaPay::to_private(
@@ -619,6 +622,7 @@ fn public_lower_than_ed_should_not_work0() {
                 FullParametersRef::new(&PARAMETERS, utxo_accumulator.model()),
                 &PROVING_CONTEXT.to_private,
                 None,
+                Vec::new(),
                 &mut rng,
             )
             .expect("Unable to build TO_PRIVATE proof.")
@@ -647,6 +651,7 @@ fn public_lower_than_ed_should_not_work0() {
                 FullParametersRef::new(&PARAMETERS, utxo_accumulator.model()),
                 &PROVING_CONTEXT.to_private,
                 None,
+                Vec::new(),
                 &mut rng,
             )
             .expect("Unable to build TO_PRIVATE proof.")
@@ -676,6 +681,7 @@ fn public_lower_than_ed_should_not_work0() {
             FullParametersRef::new(&PARAMETERS, utxo_accumulator.model()),
             &PROVING_CONTEXT.to_public,
             Some(&spending_key),
+            Vec::from([ALICE.into()]),
             &mut rng,
         )
         .expect("Unable to build TO_PUBLIC proof.")
@@ -699,6 +705,7 @@ fn public_lower_than_ed_should_not_work0() {
                 FullParametersRef::new(&PARAMETERS, utxo_accumulator.model()),
                 &PROVING_CONTEXT.to_public,
                 Some(&spending_key),
+                Vec::from([ALICE.into()]),
                 &mut rng,
             )
             .expect("Unable to build TO_PUBLIC proof.")
