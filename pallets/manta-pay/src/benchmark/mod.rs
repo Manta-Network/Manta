@@ -108,10 +108,10 @@ benchmarks! {
         let asset = reclaim_post.sink(0).unwrap();
     }: to_public (
         RawOrigin::Signed(caller.clone()),
-        reclaim_post
+        reclaim_post.clone()
     ) verify {
         // FIXME: add balance checking
-        assert_last_event::<T, _>(Event::ToPublic { asset, sink: caller });
+        assert_last_event::<T, _>(Event::ToPublic { asset, sink: T::AccountId::from(reclaim_post.sink_accounts[0]) });
     }
 
     private_transfer {
