@@ -213,7 +213,8 @@ pub mod pallet {
                 post.sources.len() == 1
                     && post.sender_posts.is_empty()
                     && post.receiver_posts.len() == 1
-                    && post.sinks.is_empty(),
+                    && post.sinks.is_empty()
+                    && post.sink_accounts.is_empty(),
                 Error::<T>::InvalidShape
             );
             // Prevent ledger bloat from zero value transactions
@@ -270,7 +271,8 @@ pub mod pallet {
                 post.sources.is_empty()
                     && post.sender_posts.len() == 2
                     && post.receiver_posts.len() == 2
-                    && post.sinks.is_empty(),
+                    && post.sinks.is_empty()
+                    && post.sink_accounts.is_empty(),
                 Error::<T>::InvalidShape
             );
             Self::post_transaction(Some(origin), vec![], vec![], post)
