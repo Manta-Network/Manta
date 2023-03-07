@@ -216,6 +216,7 @@ pub mod pallet {
                     && post.sinks.is_empty(),
                 Error::<T>::InvalidShape
             );
+            // Prevent ledger bloat from zero value transactions
             for source in post.sources.iter() {
                 ensure!(
                     asset_value_decode(*source) > 0u128,
@@ -232,6 +233,12 @@ pub mod pallet {
         #[transactional]
         pub fn to_public(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
+            // Prevent replaying of failed transactions
+            ensure!(
+                post.sink_accounts.len() == 1
+                    && T::AccountId::from(post.sink_accounts[0]) == origin,
+                Error::<T>::InvalidSinkAccount
+            );
             ensure!(
                 post.sources.is_empty()
                     && post.sender_posts.len() == 2
