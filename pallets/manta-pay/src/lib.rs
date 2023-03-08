@@ -248,6 +248,7 @@ pub mod pallet {
             Self::post_transaction(
                 None,
                 vec![],
+                // Possibility to panic must be prevented by preceding shape check
                 vec![T::AccountId::from(post.sink_accounts[0])],
                 post,
             )
