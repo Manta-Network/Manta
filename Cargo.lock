@@ -5847,7 +5847,7 @@ dependencies = [
 [[package]]
 name = "nimbus-consensus"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.37#ddea1b6a9af6cf0286773f2e4de065b2f14b385a"
+source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.37#e6b82e37d9cc24a5d43a135ef569986c4c440f2a"
 dependencies = [
  "async-trait",
  "cumulus-client-consensus-common",
@@ -5878,7 +5878,7 @@ dependencies = [
 [[package]]
 name = "nimbus-primitives"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.37#ddea1b6a9af6cf0286773f2e4de065b2f14b385a"
+source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.37#e6b82e37d9cc24a5d43a135ef569986c4c440f2a"
 dependencies = [
  "async-trait",
  "frame-benchmarking",
@@ -6303,7 +6303,7 @@ dependencies = [
 [[package]]
 name = "pallet-aura-style-filter"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.37#ddea1b6a9af6cf0286773f2e4de065b2f14b385a"
+source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.37#e6b82e37d9cc24a5d43a135ef569986c4c440f2a"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6319,7 +6319,7 @@ dependencies = [
 [[package]]
 name = "pallet-author-inherent"
 version = "0.9.0"
-source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.37#ddea1b6a9af6cf0286773f2e4de065b2f14b385a"
+source = "git+https://github.com/manta-network/nimbus.git?branch=polkadot-v0.9.37#e6b82e37d9cc24a5d43a135ef569986c4c440f2a"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
