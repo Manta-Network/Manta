@@ -725,8 +725,8 @@ fn calamari_vesting_works() {
     });
 }
 
-// #[test] TODO
-fn _verify_pallet_prefixes() {
+#[test]
+fn verify_pallet_prefixes() {
     fn is_pallet_prefix<P: 'static>(name: &str) {
         // Compares the unhashed pallet prefix in the `StorageInstance` implementation by every
         // storage item in the pallet P. This pallet prefix is used in conjunction with the
@@ -805,6 +805,13 @@ fn _verify_pallet_prefixes() {
             },
             StorageInfo {
                 pallet_name: b"Balances".to_vec(),
+                storage_name: b"InactiveIssuance".to_vec(),
+                prefix: prefix(b"Balances", b"InactiveIssuance"),
+                max_values: Some(1),
+                max_size: Some(16),
+            },
+            StorageInfo {
+                pallet_name: b"Balances".to_vec(),
                 storage_name: b"Account".to_vec(),
                 prefix: prefix(b"Balances", b"Account"),
                 max_values: None,
@@ -824,13 +831,6 @@ fn _verify_pallet_prefixes() {
                 max_values: None,
                 max_size: Some(1249),
             },
-            StorageInfo {
-                pallet_name: b"Balances".to_vec(),
-                storage_name: b"StorageVersion".to_vec(),
-                prefix: prefix(b"Balances", b"StorageVersion"),
-                max_values: Some(1),
-                max_size: Some(1),
-            }
         ]
     );
 }
