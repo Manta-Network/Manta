@@ -53,7 +53,7 @@ pub mod pallet {
         },
         PalletId,
     };
-    use frame_system::pallet_prelude::*;
+    use frame_system::{pallet_prelude::*, RawOrigin};
     pub use frame_system::WeightInfo;
     use manta_primitives::constants::time::DAYS;
     use sp_runtime::{traits::Saturating, DispatchResult};
@@ -264,12 +264,7 @@ pub mod pallet {
             );
 
             // Transfer funds to pot
-            Currency::transfer(
-                &origin,
-                &LotteryPot::get().into_account_truncating(),
-                amount,
-                KeepAlive,
-            )?;
+            Currency::transfer(caller_account, &Self::account_id(), amount, KeepAlive)?;
 
             // Attempt to stake them with some collator
             // TODO: get collator
@@ -384,7 +379,7 @@ pub mod pallet {
             // Schedule the draw lottery call to autoreschedule periodically, it will fail if ID already exists
             pallet_scheduler::Pallet::<T>::schedule_named(
                 origin,
-                LotteryPot::get().0,
+                T::LotteryPot::get().0.to_vec(),
                 drawing_scheduled_at,
                 Some((drawing_interval, 99999u32)), // XXX: Seems scheduler has no way to schedule infinite amount
                 LOWEST_PRIORITY,
@@ -400,13 +395,13 @@ pub mod pallet {
             Self::ensure_root_or_manager(origin)?;
 
             ensure!(
-                pallet_scheduler::Pallet::<T>::Lookup::contains_key(LotteryPot::get().0),
+                pallet_scheduler::Pallet::<T>::Lookup::contains_key(T::LotteryPot::get().0.to_vec()),
                 Error::<T>::LotteryNotScheduled
             );
 
             let now = <frame_system::Pallet<T>>::block_number();
 
-            pallet_scheduler::Pallet::<T>::cancel_named(origin, LotteryPot::get().0)
+            pallet_scheduler::Pallet::<T>::cancel_named(origin, T::LotteryPot::get().0.to_vec())
                 .map_err(|_| Error::<T>::LotteryAlreadyStopped)?;
 
             Self::deposit_event(Event::LotteryStopped(now));
@@ -414,14 +409,16 @@ pub mod pallet {
         }
 
         #[pallet::weight(0)]
-        pub fn draw_lottery(origin: OriginFor<T>) -> DispatchResult {
+        pub fn draw_lottery(origin: OriginFor<T>) -> DispatchResult
+        where
+            <T as frame_system::Config>::AccountId: From<AccountId32>,
+        {
             Self::ensure_root_or_manager(origin)?; // Allow only the origin that scheduled the lottery to execute
-
-            let pot_account_id = LotteryPot::get().into_account_truncating();
 
             let now = <frame_system::Pallet<T>>::block_number();
             ensure!(now >= Self::next_drawing(), Error::<T>::TooEarlyForDrawing);
 
+            let pot_account_id = Self::account_id();
             let funds_in_pot = <T as pallet::Config>::Currency::total_balance(&pot_account_id);
             let total_deposits = SumOfDeposits::<T>::get();
 
@@ -449,7 +446,7 @@ pub mod pallet {
                 Error::<T>::PalletMisconfigured
             );
 
-            let winning_balance = random.0.into::<u128>() % Self::total_pot() as u128;
+            let winning_balance = random.0.into() % Self::total_pot() as u128;
             let mut winner: Option<T::AccountId> = None;
             let mut count = 0;
 
@@ -495,7 +492,8 @@ pub mod pallet {
             amount: BalanceOf<T>,
         ) -> DispatchResult
         where
-            <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance: From<<<T as Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>
+            <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance: From<<<T as Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>,
+            <T as frame_system::Config>::AccountId: From<AccountId32>
         {
             ensure_signed(origin)?;
             // TODO: choose collator, split amount over multiple?
@@ -508,7 +506,7 @@ pub mod pallet {
             const delegation_count: u32 = 500;
 
             pallet_parachain_staking::Pallet::<T>::delegate(
-                LotteryPot::get().into_account_truncating(),
+                RawOrigin::Signed(Self::account_id()).into(),
                 some_collator,
                 amount.into(),
                 candidate_delegation_count,
@@ -522,7 +520,10 @@ pub mod pallet {
             Ok(()) // TODO: Error handling
         }
 
-        fn do_unstake_collator(amount: BalanceOf<T>, now: T::BlockNumber) -> DispatchResult {
+        fn do_unstake_collator(amount: BalanceOf<T>, now: T::BlockNumber) -> DispatchResult
+        where
+            <T as frame_system::Config>::AccountId: From<AccountId32>,
+        {
             let some_collator: T::AccountId =
                 unchecked_account_id::<sr25519::Public>("Alice").into();
 
@@ -535,7 +536,7 @@ pub mod pallet {
             // unstake from parachain staking
             // NOTE: All funds that were delegated here no longer produce staking rewards
             pallet_parachain_staking::Pallet::<T>::schedule_revoke_delegation(
-                LotteryPot::get().into_account(),
+                RawOrigin::Signed(Self::account_id()).into(),
                 some_collator,
             )
             .map_err(|_| Error::<T>::TODO)?;
@@ -557,7 +558,7 @@ pub mod pallet {
             // unstake from parachain staking
             // NOTE: All funds that were delegated here no longer produce staking rewards
             pallet_parachain_staking::Pallet::<T>::schedule_revoke_delegation(
-                LotteryPot::get().into_account(),
+                RawOrigin::Signed(Self::account_id()).into(),
                 some_collator,
             )
             .map_err(|_| Error::<T>::TODO)?;
@@ -582,8 +583,8 @@ pub mod pallet {
                     };
                     // There can only be one request per collator and it is always a full revoke_delegation call
                     match pallet_parachain_staking::Pallet::<T>::execute_delegation_request(
-                        origin,
-                        LotteryPot::get().into_account_truncating(),
+                        RawOrigin::Signed(Self::account_id()).into(),
+                        Self::account_id(),
                         collator.account,
                     ){
                         Ok(_) => {
@@ -608,17 +609,18 @@ pub mod pallet {
 
         pub fn rebalance_remaining_funds(origin: OriginFor<T>)
         where
- <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance: From<<<T as Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>
+            <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance: From<<<T as Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>,
+            <T as frame_system::Config>::AccountId: From<AccountId32>
          {
             Self::ensure_root_or_manager(origin);
 
-            let pot_account_id = LotteryPot::get().into_account_truncating();
+            let pot_account_id = Self::account_id();
             let available_balance = <T as pallet::Config>::Currency::free_balance(&pot_account_id);
             let stakable_balance = available_balance - Self::gas_reserve();
 
             // TODO: Find highest APY for this deposit (possibly balance deposit to multiple collators)
             let some_output: Vec<(T::AccountId, BalanceOf<T>)> = vec![(
-                unchecked_account_id::<sr25519::Public>("Alice"),
+                unchecked_account_id::<sr25519::Public>("Alice").into(),
                 stakable_balance,
             )];
 
@@ -630,7 +632,10 @@ pub mod pallet {
 
         /// This fn schedules a single shot payout of all matured withdrawals
         /// It is meant to be executed in the course of a drawing
-        fn schedule_withdrawal_payouts(origin: OriginFor<T>) -> DispatchResult {
+        fn schedule_withdrawal_payouts(origin: OriginFor<T>) -> DispatchResult
+        where
+            <T as frame_system::Config>::AccountId: From<AccountId32>,
+        {
             let some_collator: T::AccountId =
                 unchecked_account_id::<sr25519::Public>("Alice").into();
             let now = <frame_system::Pallet<T>>::block_number();
@@ -645,18 +650,18 @@ pub mod pallet {
                         continue;
                     }
                     // Pallet::<T>::SumOfDeposits::mutate(|sum| sum - request.amount);
-                    <SumOfDeposits<T>>::mutate(|sum| sum - request.balance);
+                    <SumOfDeposits<T>>::mutate(|sum| *sum - request.balance);
 
                     // TODO: immediately execute unstake
                     pallet_parachain_staking::Pallet::<T>::execute_delegation_request(
-                        origin,
-                        LotteryPot::get().into_account_truncating(),
+                        RawOrigin::Signed(Self::account_id()).into(),
+                        Self::account_id(),
                         some_collator,
                     )?;
 
                     // TODO: schedule transfer offboarded funds to owner
                     <T as Config>::Currency::transfer(
-                        &LotteryPot::get().into_account(),
+                        &Self::account_id(),
                         &request.user,
                         request.balance,
                         KeepAlive,
