@@ -20,7 +20,7 @@ use anyhow::Result;
 use indoc::indoc;
 use manta_crypto::{
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
-    rand::{CryptoRng, RngCore, SeedableRng},
+    rand::{CryptoRng, Rand, RngCore, SeedableRng},
 };
 use manta_pay::{
     config::{
@@ -30,7 +30,7 @@ use manta_pay::{
     parameters::load_parameters,
     test,
 };
-use pallet_manta_pay::types::TransferPost;
+use pallet_manta_pay::types::{AccountId, TransferPost};
 use rand_chacha::ChaCha20Rng;
 use scale_codec::Encode;
 use std::{
@@ -106,6 +106,7 @@ fn sample_to_public<R>(
     utxo_accumulator: &mut UtxoAccumulator,
     asset_id: AssetId,
     values: [AssetValue; 2],
+    account_id: AccountId,
     rng: &mut R,
 ) -> ([TransferPost; 2], TransferPost)
 where
@@ -117,6 +118,7 @@ where
         utxo_accumulator,
         asset_id,
         values,
+        account_id,
         rng,
     );
     (
@@ -207,6 +209,7 @@ fn main() -> Result<()> {
         &mut utxo_accumulator,
         asset_id,
         [10_000, 20_000],
+        rng.gen::<(), _>(),
         &mut rng,
     );
 

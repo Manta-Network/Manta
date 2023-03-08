@@ -28,22 +28,22 @@ where
     }
 }
 
-impl<T> From<InvalidSourceAccount<config::Config, T::AccountId>> for Error<T>
+impl<T, Id> From<InvalidSourceAccount<config::Config, Id>> for Error<T>
 where
     T: Config,
 {
     #[inline]
-    fn from(_: InvalidSourceAccount<config::Config, T::AccountId>) -> Self {
+    fn from(_: InvalidSourceAccount<config::Config, Id>) -> Self {
         Self::InvalidSourceAccount
     }
 }
 
-impl<T> From<InvalidSinkAccount<config::Config, T::AccountId>> for Error<T>
+impl<T, Id> From<InvalidSinkAccount<config::Config, Id>> for Error<T>
 where
     T: Config,
 {
     #[inline]
-    fn from(_: InvalidSinkAccount<config::Config, T::AccountId>) -> Self {
+    fn from(_: InvalidSinkAccount<config::Config, Id>) -> Self {
         Self::InvalidSinkAccount
     }
 }
@@ -258,7 +258,7 @@ where
 /// Transfer Post Error
 pub type TransferPostError<T> = transfer::TransferPostError<
     config::Config,
-    <T as frame_system::Config>::AccountId,
+    AccountId,
     SenderLedgerError,
     ReceiverLedgerError<T>,
     TransferLedgerError<T>,

@@ -1031,7 +1031,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-runtime"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "calamari-vesting",
  "cumulus-pallet-dmp-queue",
@@ -1120,7 +1120,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-vesting"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -2578,7 +2578,7 @@ dependencies = [
 
 [[package]]
 name = "dolphin-runtime"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -5123,7 +5123,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -5208,8 +5208,8 @@ dependencies = [
 
 [[package]]
 name = "manta-accounting"
-version = "0.5.11"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=polkadot-v0.9.37#33ea5e12801c3d3ca3eb7b9a17d563efcd224097"
+version = "0.5.12"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=polkadot-v0.9.37#6d35dde8cb795ffa2dcb40ca61ee8928c4f857c6"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5223,7 +5223,7 @@ dependencies = [
 
 [[package]]
 name = "manta-collator-selection"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5252,8 +5252,8 @@ dependencies = [
 
 [[package]]
 name = "manta-crypto"
-version = "0.5.11"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=polkadot-v0.9.37#33ea5e12801c3d3ca3eb7b9a17d563efcd224097"
+version = "0.5.12"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=polkadot-v0.9.37#6d35dde8cb795ffa2dcb40ca61ee8928c4f857c6"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -5278,8 +5278,8 @@ dependencies = [
 
 [[package]]
 name = "manta-parameters"
-version = "0.5.11"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=polkadot-v0.9.37#33ea5e12801c3d3ca3eb7b9a17d563efcd224097"
+version = "0.5.12"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=polkadot-v0.9.37#6d35dde8cb795ffa2dcb40ca61ee8928c4f857c6"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5291,8 +5291,8 @@ dependencies = [
 
 [[package]]
 name = "manta-pay"
-version = "0.5.11"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=polkadot-v0.9.37#33ea5e12801c3d3ca3eb7b9a17d563efcd224097"
+version = "0.5.12"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=polkadot-v0.9.37#6d35dde8cb795ffa2dcb40ca61ee8928c4f857c6"
 dependencies = [
  "aes-gcm 0.9.4",
  "bip32",
@@ -5310,7 +5310,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5330,7 +5330,7 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -5395,8 +5395,8 @@ dependencies = [
 
 [[package]]
 name = "manta-util"
-version = "0.5.11"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=polkadot-v0.9.37#33ea5e12801c3d3ca3eb7b9a17d563efcd224097"
+version = "0.5.12"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=polkadot-v0.9.37#6d35dde8cb795ffa2dcb40ca61ee8928c4f857c6"
 dependencies = [
  "crossbeam-channel",
  "serde",
@@ -6249,7 +6249,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-manager"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6704,7 +6704,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-pay"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -6891,7 +6891,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-parachain-staking"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7240,7 +7240,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -9595,7 +9595,7 @@ dependencies = [
 
 [[package]]
 name = "runtime-common"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "frame-support",
  "manta-primitives",
@@ -11126,7 +11126,7 @@ dependencies = [
 
 [[package]]
 name = "session-key-primitives"
-version = "4.0.2"
+version = "4.0.3"
 dependencies = [
  "manta-primitives",
  "nimbus-primitives",
