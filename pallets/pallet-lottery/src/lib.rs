@@ -56,8 +56,9 @@ pub mod pallet {
     use frame_system::{pallet_prelude::*, RawOrigin};
     pub use frame_system::WeightInfo;
     use manta_primitives::{types::AccountId as AccountId32,constants::time::DAYS};
-    use sp_runtime::{traits::Saturating, DispatchResult};
+    use sp_runtime::{traits::Saturating, DispatchResult, traits::Hash};
     use sp_std::prelude::*;
+    use u256::U256;
 
     // TODO: Remove
     use session_key_primitives::util::unchecked_account_id;
@@ -75,7 +76,7 @@ pub mod pallet {
         /// Overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         /// The currency mechanism.
-        type Currency: LockableCurrency<Self::AccountId>;
+        type Currency: LockableCurrency<Self::AccountId> + From<<Self as pallet_parachain_staking::Config>::Currency>;
         // Randomness source to use for determining lottery winner
         type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
         /// Origin that can manage lottery parameters and start/stop drawings
@@ -313,6 +314,7 @@ pub mod pallet {
                 // store reduced balance
                 *balance -= amount;
                 TotalPot::<T>::mutate(|pot| *pot -= amount);
+                Ok(())
             });
 
             // Unstaking workflow
@@ -436,7 +438,7 @@ pub mod pallet {
             // TODO: Convert to saturating math
             let payout = funds_in_pot - total_deposits - Self::gas_reserve();
 
-            ensure!(payout.into() > 0u32, Error::<T>::PotBalanceTooLow);
+            ensure!(payout > 0u32.into(), Error::<T>::PotBalanceTooLow);
             ensure!(
                 funds_in_pot - payout >= total_deposits,
                 Error::<T>::PotBalanceTooLow
@@ -456,10 +458,15 @@ pub mod pallet {
                 Error::<T>::PalletMisconfigured
             );
 
-            let winning_balance = random.0.into() % Self::total_pot().into();
-            let mut winner: Option<T::AccountId> = None;
-            let mut count = 0;
+            let randomness = random.0;
+            let randomness1 = randomness.as_ref();
+            let array : [u8;32] = randomness1.try_into().except("sp_runtime::traits::Hash is H256 so it can't overflow. qed");
+            let as_number = U256::from_le_bytes(array);
+            let winning_number = as_number as u128;
+            let winning_balance = winning_number.into() % Self::total_pot().into();
 
+            let mut winner: Option<T::AccountId> = None;
+            let mut count : BalanceOf<T> = 0u32.into();
             for (account, balance) in ActiveBalancePerUser::<T>::iter() {
                 count += balance;
                 if count >= winning_balance {
@@ -536,7 +543,7 @@ pub mod pallet {
                 unchecked_account_id::<sp_core::sr25519::Public>("Alice").into();
 
             // TODO: Find the smallest currently active delegation larger than `amount`
-            let delegated_amount_to_be_unstaked: BalanceOf<T> = 0u128.into();
+            let delegated_amount_to_be_unstaked: BalanceOf<T> = 0u32.into();
 
             // TODO: If none can be found, find a combination of collators so it can
             // TODO: If it still can't be found, either there's a logic bug or we've been hacked
