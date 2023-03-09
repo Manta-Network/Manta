@@ -7,7 +7,7 @@ license = 'GPL-3.0'
 name = 'pallet-manta-pay'
 readme = 'README.md'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.0.2'
+version = '4.0.3'
 
 [package.metadata.docs.rs]
 # To build locally:
@@ -107,16 +107,16 @@ sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkad
 jsonrpsee = { version = "0.15.0", features = ["server", "macros"], optional = true }
 
 # manta dependencies
-manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.9", default-features = false }
-manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.9", default-features = false }
-manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.9", default-features = false, features = ["groth16", "parameters", "scale"] }
+manta-accounting = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.12", default-features = false }
+manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.12", default-features = false }
+manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.12", default-features = false, features = ["groth16", "parameters", "scale"] }
 manta-primitives = { path = "../../primitives/manta", default-features = false }
-manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.9", default-features = false }
+manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.12", default-features = false }
 
 [dev-dependencies]
 lazy_static = "1.4.0"
-manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.9", features = ["getrandom"] }
-manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.9", features = ["groth16", "parameters", "scale", "download", "test"] }
+manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.12", features = ["getrandom"] }
+manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.12", features = ["groth16", "parameters", "scale", "download", "test"] }
 pallet-asset-manager = { path = "../asset-manager" }
 pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
