@@ -149,7 +149,7 @@ pub mod pallet {
     pub(super) type ActiveBalancePerUser<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, ValueQuery>;
 
-    #[derive(Encode, Decode, TypeInfo)]
+    #[derive(Clone, Encode, Decode, TypeInfo)]
     pub(super) struct UnstakingCollator<AccountId, BlockNumber> {
         account: AccountId,
         since: BlockNumber,
@@ -166,7 +166,7 @@ pub mod pallet {
     // type RemainingBalanceOnUnstakingCollator<T: Config> =
     //     StorageMap<_, Blake2_128Concat, T::AcccountId, T::BalanceOf>;
 
-    #[derive(Encode, Decode, TypeInfo)]
+    #[derive(Clone,Encode, Decode, TypeInfo)]
     pub(super) struct Request<AccountId, BlockNumber, Balance> {
         user: AccountId,
         block: BlockNumber,
@@ -247,9 +247,21 @@ pub mod pallet {
     }
 
     #[pallet::call]
-    impl<T: Config> Pallet<T> {
+    impl<T: Config> Pallet<T>
+    where
+        <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<
+            <T as frame_system::Config>::AccountId,
+        >>::Balance: From<
+            <<T as Config>::Currency as frame_support::traits::Currency<
+                <T as frame_system::Config>::AccountId,
+            >>::Balance,
+        >,
+    {
         #[pallet::weight(0)]
-        pub fn deposit(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
+        pub fn deposit(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult
+        where
+            <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance: From<<<T as Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>
+        {
             let caller_account = ensure_signed(origin)?;
 
             ensure!(
@@ -314,7 +326,7 @@ pub mod pallet {
                 *balance -= amount;
                 TotalPot::<T>::mutate(|pot| *pot -= amount);
                 // Ok(())
-            Ok::<(), DispatchError>(())
+                Ok::<(), DispatchError>(())
             });
 
             // Unstaking workflow
@@ -327,9 +339,9 @@ pub mod pallet {
                 remaining = remaining.saturating_sub(amount);
 
                 let zero: BalanceOf<T> = 0u32.into();
-                (remaining > zero).then(|| remaining).ok_or(
-                    "not enough left to handle this request from current unstaking funds",
-                )
+                (remaining > zero)
+                    .then(|| remaining)
+                    .ok_or("not enough left to handle this request from current unstaking funds")
             })
             .or_else(|_| {
                 // Withdrawal needs an extra collator to unstake to have enough funds to serve withdrawals, do it
@@ -500,7 +512,10 @@ pub mod pallet {
             T::LotteryPot::get().into_account_truncating()
         }
 
-        fn do_stake(collator: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
+        fn do_stake(collator: T::AccountId, amount: BalanceOf<T>) -> DispatchResult
+        where
+            <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance: From<<<T as Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>
+        {
             let some_collator = collator;
 
             // TODO: Calculate these from current values
@@ -574,16 +589,16 @@ pub mod pallet {
             let now = <frame_system::Pallet<T>>::block_number();
             let unstaking = UnstakingCollators::<T>::get();
             UnstakingCollators::<T>::try_mutate(|unstaking| {
-                let remaining_collators = unstaking.iter().filter_map(|&collator| {
+                let remaining_collators = unstaking.iter().filter_map(|collator| {
                     // only attempt to resolve fully unstaked collators
                     if collator.since + UnstakeTime::<T>::get() > now {
-                        return Some(collator);
+                        return Some(collator.clone());
                     };
                     // There can only be one request per collator and it is always a full revoke_delegation call
                     match pallet_parachain_staking::Pallet::<T>::execute_delegation_request(
                         RawOrigin::Signed(Self::account_id()).into(),
                         Self::account_id(),
-                        collator.account,
+                        collator.account.clone(),
                     ){
                         Ok(_) => {
                             // collator was unstaked, remove from unstaking collators
@@ -591,13 +606,16 @@ pub mod pallet {
                         },
                         Err(e) => {
                             log::error!("Collator finished unstaking timelock but could not be removed with error {:?}",e);
-                            return Some(collator);
+                            return Some(collator.clone());
                         },
                     };
                 }).collect::<Vec<_>>();
 
                 if remaining_collators.len() != unstaking.len() {
-                    std::mem::replace(unstaking, remaining_collators);
+                    unstaking.clear();
+                    for c in remaining_collators{
+                        unstaking.push(c.clone());
+                    }
                     Ok(())
                 } else {
                     Err("no change")
@@ -605,7 +623,10 @@ pub mod pallet {
             });
         }
 
-        pub fn rebalance_remaining_funds(origin: OriginFor<T>) {
+        pub fn rebalance_remaining_funds(origin: OriginFor<T>)
+            where
+            <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance: From<<<T as Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>
+        {
             Self::ensure_root_or_manager(origin);
 
             let pot_account_id = Self::account_id();
@@ -614,7 +635,7 @@ pub mod pallet {
 
             // TODO: Find highest APY for this deposit (possibly balance deposit to multiple collators)
             let some_output: Vec<(T::AccountId, BalanceOf<T>)> = vec![(
-                pallet_parachain_staking::Pallet::<T>::selected_candidates()[0], // no panic, at least one collator must be chosen or the chain is borked
+                pallet_parachain_staking::Pallet::<T>::selected_candidates()[0].clone(), // no panic, at least one collator must be chosen or the chain is borked
                 stakable_balance,
             )];
 
@@ -627,7 +648,7 @@ pub mod pallet {
         /// This fn schedules a single shot payout of all matured withdrawals
         /// It is meant to be executed in the course of a drawing
         fn schedule_withdrawal_payouts(origin: OriginFor<T>) -> DispatchResult {
-            let some_collator = pallet_parachain_staking::Pallet::<T>::selected_candidates()[0]; // no panic, at least one collator must be chosen or the chain is borked
+            let some_collator = pallet_parachain_staking::Pallet::<T>::selected_candidates()[0].clone(); // no panic, at least one collator must be chosen or the chain is borked
             let now = <frame_system::Pallet<T>>::block_number();
 
             <WithdrawalRequestQueue<T>>::try_mutate(|request_vec| {
@@ -635,11 +656,11 @@ pub mod pallet {
                     (*request_vec).is_empty(),
                     Error::<T>::WithdrawBelowMinAmount
                 );
-                let left_overs: Vec<Request<_, _, _>> = Vec::new();
-                for request in (*request_vec).into_iter() {
+                let mut left_overs: Vec<Request<_, _, _>> = Vec::new();
+                for request in request_vec.iter() {
                     if now < request.block + <UnstakeTime<T>>::get() {
                         // too early to withdraw this request
-                        left_overs.push(request);
+                        left_overs.push((*request).clone());
                         continue;
                     }
                     // Pallet::<T>::SumOfDeposits::mutate(|sum| sum - request.amount);
@@ -649,7 +670,7 @@ pub mod pallet {
                     pallet_parachain_staking::Pallet::<T>::execute_delegation_request(
                         RawOrigin::Signed(Self::account_id()).into(),
                         Self::account_id(),
-                        some_collator,
+                        some_collator.clone(),
                     )?;
 
                     // TODO: schedule transfer offboarded funds to owner
