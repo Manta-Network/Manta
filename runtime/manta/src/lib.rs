@@ -200,8 +200,7 @@ impl Contains<Call> for MantaFilter {
             | Call::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
             | Call::Balances(_)
             | Call::Preimage(_)
-            | Call::Utility(_)
-            | Call::Scheduler(_) => true,
+            | Call::Utility(_) => true,
 
             // DISALLOW anything else
             | _ => false
@@ -247,26 +246,6 @@ impl pallet_timestamp::Config for Runtime {
     type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
     type WeightInfo = weights::pallet_timestamp::SubstrateWeight<Runtime>;
-}
-
-// pub type RootOrHalfCouncil = EitherOfDiverse<
-//     EnsureRoot<AccountId>,
-//     pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
-// >;
-
-parameter_types! {
-    pub const LotteryPotId: PalletId = LOTTERY_PALLET_ID;
-}
-
-impl pallet_lottery::Config for Runtime {
-    type Event = Event;
-    type PalletInfo = PalletInfo;
-    type Currency = Balances;
-    type RandomnessSource = RandomnessCollectiveFlip;
-    type ManageOrigin = EnsureRoot<AccountId>;
-    // type ManageOrigin = RootOrHalfCouncil; // TODO
-    type LotteryPot = LotteryPotId;
-    type WeightInfo = ();
 }
 
 impl pallet_authorship::Config for Runtime {
@@ -395,47 +374,6 @@ impl pallet_parachain_staking::Config for Runtime {
     type WeightInfo = weights::pallet_parachain_staking::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-    pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
-        RuntimeBlockWeights::get().max_block;
-    pub const NoPreimagePostponement: Option<u32> = Some(10);
-}
-
-type ScheduleOrigin = EnsureRoot<AccountId>; // TODO: This must eventually be Root-or-council
-/// Used the compare the privilege of an origin inside the scheduler.
-pub struct OriginPrivilegeCmp;
-impl PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
-    fn cmp_privilege(left: &OriginCaller, right: &OriginCaller) -> Option<Ordering> {
-        if left == right {
-            return Some(Ordering::Equal);
-        }
-
-        match (left, right) {
-            // Root is greater than anything.
-            (OriginCaller::system(frame_system::RawOrigin::Root), _) => Some(Ordering::Greater),
-            // Check which one has more yes votes.
-            // (
-            //     OriginCaller::Council(pallet_collective::RawOrigin::Members(l_yes_votes, l_count)),
-            //     OriginCaller::Council(pallet_collective::RawOrigin::Members(r_yes_votes, r_count)),
-            // ) => Some((l_yes_votes * r_count).cmp(&(r_yes_votes * l_count))),
-            // For every other origin we don't care, as they are not used for `ScheduleOrigin`.
-            _ => None,
-        }
-    }
-}
-impl pallet_scheduler::Config for Runtime {
-    type Event = Event;
-    type Origin = Origin;
-    type PalletsOrigin = OriginCaller;
-    type Call = Call;
-    type MaximumWeight = MaximumSchedulerWeight;
-    type ScheduleOrigin = ScheduleOrigin;
-    type MaxScheduledPerBlock = ConstU32<50>; // 50 scheduled calls at most in the queue for a single block.
-    type WeightInfo = weights::pallet_scheduler::SubstrateWeight<Runtime>;
-    type OriginPrivilegeCmp = OriginPrivilegeCmp;
-    type PreimageProvider = Preimage;
-    type NoPreimagePostponement = NoPreimagePostponement;
-}
 impl pallet_author_inherent::Config for Runtime {
     // We start a new slot each time we see a new relay block.
     type SlotBeacon = RelaychainBlockNumberProvider<Self>;
@@ -523,6 +461,7 @@ parameter_types! {
 
 /// We allow root and the Relay Chain council to execute privileged collator selection operations.
 pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
+
 impl manta_collator_selection::Config for Runtime {
     type Event = Event;
     type Currency = Balances;
@@ -539,8 +478,6 @@ impl manta_collator_selection::Config for Runtime {
     /// Filters collators not part of the current pallet_session::validators()
     type CanAuthor = AuraAuthorFilter;
 }
-
-impl pallet_randomness_collective_flip::Config for Runtime {}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -573,8 +510,6 @@ construct_runtime!(
 
         // Preimage registry.
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 28,
-        // System scheduler
-        Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 29,
 
         // XCM helpers.
         PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config} = 31,
@@ -585,9 +520,6 @@ construct_runtime!(
         Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
         // Temporary
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
-        // Randomness: pallet_randomness::{Pallet, Call, Storage, Event<T>, Inherent} = 120,
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 119,
-        Lottery: pallet_lottery::{Pallet, Call, Storage, Event<T>, Origin, Config} = 118
     }
 );
 
