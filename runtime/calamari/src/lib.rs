@@ -467,8 +467,7 @@ impl pallet_democracy::Config for Runtime {
     type Scheduler = Scheduler;
     type PalletsOrigin = OriginCaller;
     type MaxVotes = ConstU32<100>;
-    // type WeightInfo = weights::pallet_democracy::SubstrateWeight<Runtime>;
-    type WeightInfo = ();
+    type WeightInfo = weights::pallet_democracy::SubstrateWeight<Runtime>;
     type MaxProposals = ConstU32<100>;
     type Preimages = Preimage;
     type MaxDeposits = ConstU32<100>;
@@ -689,8 +688,7 @@ impl pallet_scheduler::Config for Runtime {
     type MaximumWeight = MaximumSchedulerWeight;
     type ScheduleOrigin = ScheduleOrigin;
     type MaxScheduledPerBlock = ConstU32<50>; // 50 scheduled calls at most in the queue for a single block.
-                                              // type WeightInfo = weights::pallet_scheduler::SubstrateWeight<Runtime>;
-    type WeightInfo = ();
+    type WeightInfo = weights::pallet_scheduler::SubstrateWeight<Runtime>;
     type OriginPrivilegeCmp = OriginPrivilegeCmp;
     type Preimages = Preimage;
 }
@@ -933,7 +931,7 @@ mod benches {
         [pallet_parachain_staking, ParachainStaking]
         [pallet_manta_pay, MantaPay]
         // Nimbus pallets
-        [pallet_author_inherent, AuthorInherent]
+        // [pallet_author_inherent, AuthorInherent]
     );
 }
 

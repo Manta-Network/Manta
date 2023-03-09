@@ -101,7 +101,8 @@ pub type DefaultExecutorType = WasmExecutor<HostFunctions>;
 pub type Client<RuntimeApi> = TFullClient<Block, RuntimeApi, DefaultExecutorType>;
 
 /// Default Import Queue Type
-// pub type ImportQueue<RuntimeApi> = sc_consensus::DefaultImportQueue<Block, Client<RuntimeApi>>;
+pub type DefaultImportQueue<RuntimeApi> =
+    sc_consensus::DefaultImportQueue<Block, Client<RuntimeApi>>;
 
 /// Full Transaction Pool Type
 pub type TransactionPool<RuntimeApi> = sc_transaction_pool::FullPool<Block, Client<RuntimeApi>>;
@@ -111,7 +112,7 @@ pub type PartialComponents<RuntimeApi> = sc_service::PartialComponents<
     Client<RuntimeApi>,
     TFullBackend<Block>,
     (),
-    sc_consensus::DefaultImportQueue<Block, Client<RuntimeApi>>,
+    DefaultImportQueue<RuntimeApi>,
     TransactionPool<RuntimeApi>,
     (Option<Telemetry>, Option<TelemetryWorkerHandle>),
 >;

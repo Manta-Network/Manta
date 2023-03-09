@@ -62,8 +62,7 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = ConstU32<50>;
     type Freezer = ();
     type Extra = ();
-    // type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
-    type WeightInfo = ();
+    type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = CalamariAssetId;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;

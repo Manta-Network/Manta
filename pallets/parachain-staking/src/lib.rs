@@ -51,7 +51,7 @@
 
 mod delegation_requests;
 pub mod inflation;
-// pub mod migrations; // TODO
+pub mod migrations; // TODO
 pub mod traits;
 pub mod types;
 pub mod weights;
