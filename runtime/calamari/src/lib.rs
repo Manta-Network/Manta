@@ -255,18 +255,11 @@ impl Contains<RuntimeCall> for BaseFilter {
                                 | pallet_democracy::Call::fast_track  {..}
                                 | pallet_democracy::Call::veto_external {..}
                                 | pallet_democracy::Call::cancel_referendum {..}
-                                // | pallet_democracy::Call::cancel_queued {..}
                                 | pallet_democracy::Call::delegate {..}
                                 | pallet_democracy::Call::undelegate {..}
-                                // | pallet_democracy::Call::note_preimage {..}
-                                // | pallet_democracy::Call::note_preimage_operational {..}
-                                // | pallet_democracy::Call::note_imminent_preimage {..}
-                                // | pallet_democracy::Call::note_imminent_preimage_operational {..}
-                                // | pallet_democracy::Call::reap_preimage {..}
                                 | pallet_democracy::Call::unlock {..}
                                 | pallet_democracy::Call::remove_vote {..}
                                 | pallet_democracy::Call::remove_other_vote {..}
-                                // | pallet_democracy::Call::enact_proposal {..}
                                 | pallet_democracy::Call::blacklist {..})
             | RuntimeCall::Council(_)
             | RuntimeCall::TechnicalCommittee(_)
