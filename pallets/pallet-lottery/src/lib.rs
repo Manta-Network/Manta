@@ -80,7 +80,7 @@ pub mod pallet {
         // Randomness source to use for determining lottery winner
         type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
         /// Origin that can manage lottery parameters and start/stop drawings
-        type ManageOrigin: EnsureOrigin<frame_system::Origin<Self>>;
+        type ManageOrigin: EnsureOrigin<<Self as frame_system::Config>::Origin>;
         /// Account Identifier from which the internal Pot is generated.
         type LotteryPot: Get<PalletId>;
         /// Weight information for extrinsics in this pallet.

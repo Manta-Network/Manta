@@ -53,7 +53,7 @@ use frame_system::{
     EnsureRoot,
 };
 use manta_primitives::{
-    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
+    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, LOTTERY_PALLET_ID, WEIGHT_PER_SECOND},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 pub use pallet_parachain_staking::{InflationInfo, Range};
@@ -358,7 +358,7 @@ parameter_types! {
 }
 impl pallet_lottery::Config for Runtime {
     type Event = Event;
-    type PalletInfo = PalletInfo;
+    // type PalletInfo = PalletInfo;
     type Currency = Balances;
     type RandomnessSource = RandomnessCollectiveFlip;
     type ManageOrigin = RootOrHalfCouncil;
@@ -878,7 +878,7 @@ construct_runtime!(
 
         // Randomness: pallet_randomness::{Pallet, Call, Storage, Event<T>, Inherent} = 120,
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 119,
-        Lottery: pallet_lottery::{Pallet, Call, Storage, Event<T>, Origin, Config<T>} = 118
+        Lottery: pallet_lottery::{Pallet, Call, Storage, Event<T>, Config<T>} = 118
     }
 );
 
