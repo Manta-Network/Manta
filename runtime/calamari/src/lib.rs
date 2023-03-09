@@ -298,6 +298,7 @@ impl Contains<Call> for BaseFilter {
             | Call::XTokens(orml_xtokens::Call::transfer {..}
                 | orml_xtokens::Call::transfer_multicurrencies {..})
             | Call::TransactionPause(_)
+            | Call::Scheduler(_)
             | Call::Utility(_) => true,
 
             // DISALLOW anything else
@@ -346,6 +347,22 @@ impl pallet_timestamp::Config for Runtime {
     type WeightInfo = weights::pallet_timestamp::SubstrateWeight<Runtime>;
 }
 
+pub type RootOrHalfCouncil = EitherOfDiverse<
+    EnsureRoot<AccountId>,
+    pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
+>;
+parameter_types! {
+    pub const LotteryPotId: PalletId = LOTTERY_PALLET_ID;
+}
+impl pallet_lottery::Config for Runtime {
+    type Event = Event;
+    type PalletInfo = PalletInfo;
+    type Currency = Balances;
+    type RandomnessSource = RandomnessCollectiveFlip;
+    type ManageOrigin = RootOrHalfCouncil;
+    type LotteryPot = LotteryPotId;
+    type WeightInfo = ();
+}
 impl pallet_authorship::Config for Runtime {
     type FindAuthor = AuthorInherent;
     type UncleGenerations = ConstU32<0>;
@@ -651,7 +668,7 @@ parameter_types! {
     pub const NoPreimagePostponement: Option<u32> = Some(10);
 }
 
-type ScheduleOrigin = EnsureRoot<AccountId>;
+type ScheduleOrigin = EnsureRoot<AccountId>; // TODO: This must eventually be Root-or-council
 /// Used the compare the privilege of an origin inside the scheduler.
 pub struct OriginPrivilegeCmp;
 impl PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
@@ -780,6 +797,8 @@ parameter_types! {
     pub const MinVestedTransfer: Balance = KMA;
 }
 
+impl pallet_randomness_collective_flip::Config for Runtime {}
+
 impl calamari_vesting::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
@@ -854,6 +873,10 @@ construct_runtime!(
 
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
+
+        // Randomness: pallet_randomness::{Pallet, Call, Storage, Event<T>, Inherent} = 120,
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 119,
+        Lottery: pallet_lottery::{Pallet, Call, Storage, Event<T>, Origin, Config<T>} = 118
     }
 );
 

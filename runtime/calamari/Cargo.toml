@@ -50,6 +50,7 @@ pallet-democracy = { git = "https://github.com/paritytech/substrate.git", defaul
 pallet-membership = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.28" }
 pallet-multisig = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 pallet-preimage = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+pallet-randomness-collective-flip = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }          # TODO: PoC only randomness source
 pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.28" }
 pallet-session = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 pallet-timestamp = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
@@ -96,6 +97,7 @@ pallet-asset-manager = { path = '../../pallets/asset-manager', default-features 
 pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
+pallet-lottery = { path = '../../pallets/pallet-lottery', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
 
@@ -167,6 +169,7 @@ runtime-benchmarks = [
   'pallet-author-inherent/runtime-benchmarks',
   'pallet-balances/runtime-benchmarks',
   'pallet-multisig/runtime-benchmarks',
+  'pallet-scheduler/runtime-benchmarks',
   'pallet-utility/runtime-benchmarks',
   'pallet-timestamp/runtime-benchmarks',
   'pallet-xcm/runtime-benchmarks',
@@ -194,6 +197,7 @@ try-runtime = [
   'pallet-balances/try-runtime',
   'pallet-parachain-staking/try-runtime',
   'pallet-preimage/try-runtime',
+  'pallet-scheduler/try-runtime',
   'pallet-multisig/try-runtime',
   'pallet-session/try-runtime',
   'pallet-timestamp/try-runtime',
@@ -220,11 +224,14 @@ std = [
   'sp-std/std',
   'sp-io/std',
   'sp-core/std',
+  'pallet-scheduler/std',
   'sp-runtime/std',
   'sp-version/std',
   'sp-offchain/std',
   'sp-session/std',
   'sp-block-builder/std',
+  'pallet-randomness-collective-flip/std',
+  'pallet-lottery/std',
   'sp-transaction-pool/std',
   'sp-inherents/std',
   'frame-support/std',

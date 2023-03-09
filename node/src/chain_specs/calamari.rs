@@ -235,6 +235,7 @@ fn calamari_dev_genesis(
         polkadot_xcm: calamari_runtime::PolkadotXcmConfig {
             safe_xcm_version: Some(SAFE_XCM_VERSION),
         },
+        pallet_lottery: Default::defeault,
     }
 }
 /// Returns the Calamari testnet chainspec.
