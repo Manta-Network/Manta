@@ -7,7 +7,7 @@ import { expect } from 'chai';
 import minimist, { ParsedArgs } from 'minimist';
 
 const test_config = {
-    ws_address: "ws://127.0.0.1:9944",
+    ws_address: "ws://127.0.0.1:9800",
     mnemonic: 'bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice',
     storage_prepare_config: {
         utxo_batch_number: 1,
