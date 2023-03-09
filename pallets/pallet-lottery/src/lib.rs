@@ -46,19 +46,18 @@ pub mod pallet {
     use frame_support::{
         ensure, log,
         pallet_prelude::*,
-        traits::{
-            schedule::{LOWEST_PRIORITY},
-            ExistenceRequirement::KeepAlive,
-            *,
-        },
+        traits::{schedule::LOWEST_PRIORITY, ExistenceRequirement::KeepAlive, *},
         PalletId,
     };
-    use frame_system::{pallet_prelude::*, RawOrigin};
     pub use frame_system::WeightInfo;
-    use manta_primitives::{constants::time::DAYS};
-    use sp_runtime::{traits::Saturating, DispatchResult, traits::Hash};
-    use sp_std::prelude::*;
+    use frame_system::{pallet_prelude::*, RawOrigin};
+    use manta_primitives::constants::time::DAYS;
     use sp_core::U256;
+    use sp_runtime::{
+        traits::{Hash, Saturating},
+        DispatchResult,
+    };
+    use sp_std::prelude::*;
 
     // TODO: Remove
     use session_key_primitives::util::unchecked_account_id;
@@ -76,7 +75,8 @@ pub mod pallet {
         /// Overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         /// The currency mechanism.
-        type Currency: LockableCurrency<Self::AccountId> + From<<Self as pallet_parachain_staking::Config>::Currency>;
+        type Currency: LockableCurrency<Self::AccountId>
+            + From<<Self as pallet_parachain_staking::Config>::Currency>;
         // Randomness source to use for determining lottery winner
         type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
         /// Origin that can manage lottery parameters and start/stop drawings
@@ -247,13 +247,9 @@ pub mod pallet {
     }
 
     #[pallet::call]
-    impl<T: Config> Pallet<T>
-    {
+    impl<T: Config> Pallet<T> {
         #[pallet::weight(0)]
-        pub fn deposit(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult
-        where
-            <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance: From<<<T as Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>,
-        {
+        pub fn deposit(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
             let caller_account = ensure_signed(origin)?;
 
             ensure!(
@@ -266,7 +262,12 @@ pub mod pallet {
             );
 
             // Transfer funds to pot
-            <T as Config>::Currency::transfer(&caller_account, &Self::account_id(), amount, KeepAlive)?;
+            <T as Config>::Currency::transfer(
+                &caller_account,
+                &Self::account_id(),
+                amount,
+                KeepAlive,
+            )?;
 
             // Attempt to stake them with some collator
             // TODO: get highest APY collator available
@@ -283,8 +284,7 @@ pub mod pallet {
         }
 
         #[pallet::weight(0)]
-        pub fn request_withdraw(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult
-        {
+        pub fn request_withdraw(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
             let caller = ensure_signed(origin)?;
 
             ensure!(
@@ -313,7 +313,8 @@ pub mod pallet {
                 // store reduced balance
                 *balance -= amount;
                 TotalPot::<T>::mutate(|pot| *pot -= amount);
-                Ok(())
+                // Ok(())
+            Ok::<(), DispatchError>(())
             });
 
             // Unstaking workflow
@@ -323,10 +324,12 @@ pub mod pallet {
 
             // If the withdrawal fits in the available funds, do nothing else
             RemainingUnstakingBalance::<T>::try_mutate(|&mut remaining| {
-                remaining -= amount;
-                (remaining.into() > 0u128).then(|| remaining).ok_or(Err(
+                remaining = remaining.saturating_sub(amount);
+
+                let zero: BalanceOf<T> = 0u32.into();
+                (remaining > zero).then(|| remaining).ok_or(
                     "not enough left to handle this request from current unstaking funds",
-                ))
+                )
             })
             .or_else(|_| {
                 // Withdrawal needs an extra collator to unstake to have enough funds to serve withdrawals, do it
@@ -339,19 +342,20 @@ pub mod pallet {
                 // TODO: Try mutate again
                 RemainingUnstakingBalance::<T>::try_mutate(|&mut remaining| {
                     remaining -= amount;
-                    (remaining > 0u32.into()).then(|| remaining).ok_or(Err(
+                    (remaining > 0u32.into()).then(|| remaining).ok_or(
                         "not enough left to handle this request from current unstaking funds",
-                    ))
+                    )
                 })
             }); // TODO: Error handling
-            // .or_else(|_| Error::<T>::WithdrawFailed.into())?;
-            // END UNSTAKING SECTION
+                // .or_else(|_| Error::<T>::WithdrawFailed.into())?;
+                // END UNSTAKING SECTION
 
             // schedule payout after T::ReduceBondDelay expires
             // RAD: What happens if delegation_execute_scheduled_request fails?
             // TODO: pallet_scheduler::<T>::schedule(batch(delegation_execute_scheduled_request(),transfer_to_user))
             Self::deposit_event(Event::ScheduledWithdraw(caller, amount));
-            Ok(())
+            // Ok(())
+            Ok::<(), DispatchError>(())
         }
 
         /// Rebalances stake by removing stake from overallocated collators and adding to underallocated
@@ -370,9 +374,7 @@ pub mod pallet {
         }
 
         #[pallet::weight(0)]
-        pub fn start_lottery(origin: OriginFor<T>) -> DispatchResult where
-            <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance: From<<<T as Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>,
-          {
+        pub fn start_lottery(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_root_or_manager(origin)?;
             // TODO: Check that the pallet has enough funds to pay gas fees for at least the first drawing
 
@@ -403,7 +405,7 @@ pub mod pallet {
         pub fn stop_lottery(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_root_or_manager(origin)?;
 
-// TODO
+            // TODO
             // ensure!(
             //     <pallet_scheduler::Pallet<T>::Lookup>::contains_key(T::LotteryPot::get().0.to_vec()),
             //     Error::<T>::LotteryNotScheduled
@@ -419,10 +421,7 @@ pub mod pallet {
         }
 
         #[pallet::weight(0)]
-        pub fn draw_lottery(origin: OriginFor<T>) -> DispatchResult
-        where
-            <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance: From<<<T as Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>,
-        {
+        pub fn draw_lottery(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_root_or_manager(origin)?; // Allow only the origin that scheduled the lottery to execute
 
             let now = <frame_system::Pallet<T>>::block_number();
@@ -464,7 +463,7 @@ pub mod pallet {
             let winning_balance = 10u32.into();
 
             let mut winner: Option<T::AccountId> = None;
-            let mut count : BalanceOf<T> = 0u32.into();
+            let mut count: BalanceOf<T> = 0u32.into();
             for (account, balance) in ActiveBalancePerUser::<T>::iter() {
                 count += balance;
                 if count >= winning_balance {
@@ -501,13 +500,7 @@ pub mod pallet {
             T::LotteryPot::get().into_account_truncating()
         }
 
-        fn do_stake(
-            collator: T::AccountId,
-            amount: BalanceOf<T>,
-        ) -> DispatchResult
-        where
-            <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance: From<<<T as Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>,
-        {
+        fn do_stake(collator: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
             let some_collator = collator;
 
             // TODO: Calculate these from current values
@@ -529,9 +522,7 @@ pub mod pallet {
             Ok(()) // TODO: Error handling
         }
 
-        fn do_unstake_collator(amount: BalanceOf<T>, now: T::BlockNumber) -> DispatchResult
-
-        {
+        fn do_unstake_collator(amount: BalanceOf<T>, now: T::BlockNumber) -> DispatchResult {
             let some_collator = pallet_parachain_staking::Pallet::<T>::selected_candidates()[0]; // no panic, at least one collator must be chosen or the chain is borked
 
             // TODO: Find the smallest currently active delegation larger than `amount`
@@ -614,10 +605,7 @@ pub mod pallet {
             });
         }
 
-        pub fn rebalance_remaining_funds(origin: OriginFor<T>)
-        where
-            <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance: From<<<T as Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>,
-         {
+        pub fn rebalance_remaining_funds(origin: OriginFor<T>) {
             Self::ensure_root_or_manager(origin);
 
             let pot_account_id = Self::account_id();
@@ -638,14 +626,16 @@ pub mod pallet {
 
         /// This fn schedules a single shot payout of all matured withdrawals
         /// It is meant to be executed in the course of a drawing
-        fn schedule_withdrawal_payouts(origin: OriginFor<T>) -> DispatchResult
-        {
+        fn schedule_withdrawal_payouts(origin: OriginFor<T>) -> DispatchResult {
             let some_collator = pallet_parachain_staking::Pallet::<T>::selected_candidates()[0]; // no panic, at least one collator must be chosen or the chain is borked
             let now = <frame_system::Pallet<T>>::block_number();
 
             <WithdrawalRequestQueue<T>>::try_mutate(|request_vec| {
-                ensure!((*request_vec).is_empty(), Error::<T>::WithdrawBelowMinAmount);
-                let left_overs: Vec<Request<_,_,_>> = Vec::new();
+                ensure!(
+                    (*request_vec).is_empty(),
+                    Error::<T>::WithdrawBelowMinAmount
+                );
+                let left_overs: Vec<Request<_, _, _>> = Vec::new();
                 for request in (*request_vec).into_iter() {
                     if now < request.block + <UnstakeTime<T>>::get() {
                         // too early to withdraw this request
@@ -672,7 +662,7 @@ pub mod pallet {
                 }
                 // Update T::WithdrawalRequestQueue if changed
                 if left_overs.len() != (*request_vec).len() {
-                    std::mem::replace(request_vec,left_overs);
+                    std::mem::replace(request_vec, left_overs);
                     Ok(())
                 } else {
                     Err("no changes")
