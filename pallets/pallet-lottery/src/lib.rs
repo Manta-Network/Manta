@@ -46,7 +46,11 @@ pub mod pallet {
     use frame_support::{
         ensure, log,
         pallet_prelude::*,
-        traits::{schedule::LOWEST_PRIORITY, ExistenceRequirement::KeepAlive, *},
+        traits::{
+            schedule::{MaybeHashed, LOWEST_PRIORITY},
+            ExistenceRequirement::KeepAlive,
+            *,
+        },
         PalletId,
     };
     pub use frame_system::WeightInfo;
@@ -54,12 +58,10 @@ pub mod pallet {
     use manta_primitives::constants::time::DAYS;
     use sp_core::U256;
     use sp_runtime::{
-        traits::{Hash, Saturating},
+        traits::{AccountIdConversion, Hash, Saturating},
         DispatchResult,
     };
     use sp_std::prelude::*;
-    use frame_support::traits::schedule::MaybeHashed;
-    use sp_runtime::traits::AccountIdConversion;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
@@ -164,7 +166,7 @@ pub mod pallet {
     // type RemainingBalanceOnUnstakingCollator<T: Config> =
     //     StorageMap<_, Blake2_128Concat, T::AcccountId, T::BalanceOf>;
 
-    #[derive(Clone,Encode, Decode, TypeInfo)]
+    #[derive(Clone, Encode, Decode, TypeInfo)]
     pub(super) struct Request<AccountId, BlockNumber, Balance> {
         user: AccountId,
         block: BlockNumber,
@@ -247,6 +249,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T>
     where
+        Call<T>: Into<<T as pallet_scheduler::Config>::Call>,
         <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<
             <T as frame_system::Config>::AccountId,
         >>::Balance: From<
@@ -282,7 +285,8 @@ pub mod pallet {
             // Attempt to stake them with some collator
             // TODO: get highest APY collator available
             // TEMP: Get first active collator
-            let some_collator = pallet_parachain_staking::Pallet::<T>::selected_candidates()[0].clone(); // no panic, at least one collator must be chosen or the chain is borked
+            let some_collator =
+                pallet_parachain_staking::Pallet::<T>::selected_candidates()[0].clone(); // no panic, at least one collator must be chosen or the chain is borked
             Self::do_stake(some_collator, amount)?;
 
             // Add to active funds
@@ -385,8 +389,11 @@ pub mod pallet {
         }
 
         #[pallet::weight(0)]
-        pub fn start_lottery(origin: OriginFor<T>) -> DispatchResult {
-            Self::ensure_root_or_manager(origin)?;
+        pub fn start_lottery(origin: OriginFor<T>) -> DispatchResult
+        where
+        Call<T>: Into<<T as pallet_scheduler::Config>::Call>,
+{
+            Self::ensure_root_or_manager(origin.clone())?;
             // TODO: Check that the pallet has enough funds to pay gas fees for at least the first drawing
 
             let now = <frame_system::Pallet<T>>::block_number();
@@ -396,10 +403,10 @@ pub mod pallet {
                 Error::<T>::PalletMisconfigured
             );
             let drawing_scheduled_at = now + drawing_interval;
-            let lottery_drawing_call = Call::draw_lottery{};
+            let lottery_drawing_call = Call::draw_lottery {};
 
             pallet_scheduler::Pallet::<T>::schedule_named(
-                origin,
+                origin.clone(),
                 T::LotteryPot::get().0.to_vec(),
                 drawing_scheduled_at,
                 Some((drawing_interval, 99999u32)), // XXX: Seems scheduler has no way to schedule infinite amount
@@ -536,7 +543,8 @@ pub mod pallet {
         }
 
         fn do_unstake_collator(amount: BalanceOf<T>, now: T::BlockNumber) -> DispatchResult {
-            let some_collator = pallet_parachain_staking::Pallet::<T>::selected_candidates()[0].clone(); // no panic, at least one collator must be chosen or the chain is borked
+            let some_collator =
+                pallet_parachain_staking::Pallet::<T>::selected_candidates()[0].clone(); // no panic, at least one collator must be chosen or the chain is borked
 
             // TODO: Find the smallest currently active delegation larger than `amount`
             let delegated_amount_to_be_unstaked: BalanceOf<T> = 0u32.into();
@@ -611,7 +619,7 @@ pub mod pallet {
 
                 if remaining_collators.len() != unstaking.len() {
                     unstaking.clear();
-                    for c in remaining_collators{
+                    for c in remaining_collators {
                         unstaking.push(c.clone());
                     }
                     Ok(())
@@ -646,7 +654,8 @@ pub mod pallet {
         /// This fn schedules a single shot payout of all matured withdrawals
         /// It is meant to be executed in the course of a drawing
         fn schedule_withdrawal_payouts(origin: OriginFor<T>) -> DispatchResult {
-            let some_collator = pallet_parachain_staking::Pallet::<T>::selected_candidates()[0].clone(); // no panic, at least one collator must be chosen or the chain is borked
+            let some_collator =
+                pallet_parachain_staking::Pallet::<T>::selected_candidates()[0].clone(); // no panic, at least one collator must be chosen or the chain is borked
             let now = <frame_system::Pallet<T>>::block_number();
 
             <WithdrawalRequestQueue<T>>::try_mutate(|request_vec| {
@@ -682,7 +691,7 @@ pub mod pallet {
                 // Update T::WithdrawalRequestQueue if changed
                 if left_overs.len() != (*request_vec).len() {
                     request_vec.clear();
-                    for c in left_overs{
+                    for c in left_overs {
                         request_vec.push(c);
                     }
                     Ok(())
