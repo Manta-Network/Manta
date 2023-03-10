@@ -47,7 +47,7 @@ pub mod pallet {
         ensure, log,
         pallet_prelude::*,
         traits::{
-            schedule::{v2::Named as ScheduleNamed, MaybeHashed, LOWEST_PRIORITY},
+            schedule::{v2::Named as ScheduleNamed, DispatchTime, MaybeHashed, LOWEST_PRIORITY},
             ExistenceRequirement::KeepAlive,
             *,
         },
@@ -56,23 +56,21 @@ pub mod pallet {
     pub use frame_system::WeightInfo;
     use frame_system::{pallet_prelude::*, RawOrigin};
     use manta_primitives::constants::time::DAYS;
+    use pallet_parachain_staking::BalanceOf;
     use sp_core::U256;
     use sp_runtime::{
-        traits::{Dispatchable, AccountIdConversion, Hash, Saturating},
+        traits::{AccountIdConversion, Dispatchable, Hash, Saturating},
         DispatchResult,
     };
     use sp_std::prelude::*;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
-    type BalanceOf<T> =
-        <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
     pub type CallOf<T> = <T as frame_system::Config>::Call;
 
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_parachain_staking::Config
-    {
-        /// Overarching event type.
+    pub trait Config: frame_system::Config + pallet_parachain_staking::Config {
+        // type Call: Parameter + Dispatchable<Origin = Self::Origin> + From<Call<Self>>;
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         /// The Scheduler.
         type Scheduler: ScheduleNamed<
@@ -82,14 +80,16 @@ pub mod pallet {
             Hash = Self::Hash,
         >;
         /// The currency mechanism.
-        type Currency: LockableCurrency<Self::AccountId>
-            + From<<Self as pallet_parachain_staking::Config>::Currency>;
+        // NOTE: Use Currency trait from pallet_parachain_staking
+        // type Currency: LockableCurrency<Self::AccountId>
+        //     + Into<<Self as pallet_parachain_staking::Config>::Currency>
+        //     + From<<Self as pallet_parachain_staking::Config>::Currency>;
         // Randomness source to use for determining lottery winner
         type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
         /// Origin that can manage lottery parameters and start/stop drawings
         type ManageOrigin: EnsureOrigin<<Self as frame_system::Config>::Origin>;
         /// Overarching type of all pallets origins.
-		type PalletsOrigin: From<frame_system::RawOrigin<Self::AccountId>>;
+        type PalletsOrigin: From<frame_system::RawOrigin<Self::AccountId>>;
         /// Account Identifier from which the internal Pot is generated.
         type LotteryPot: Get<PalletId>;
         /// Weight information for extrinsics in this pallet.
@@ -256,21 +256,9 @@ pub mod pallet {
     }
 
     #[pallet::call]
-    impl<T: Config> Pallet<T>
-    where
-        <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<
-            <T as frame_system::Config>::AccountId,
-        >>::Balance: From<
-            <<T as Config>::Currency as frame_support::traits::Currency<
-                <T as frame_system::Config>::AccountId,
-            >>::Balance,
-        >,
-    {
+    impl<T: Config> Pallet<T> {
         #[pallet::weight(0)]
-        pub fn deposit(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult
-        where
-            <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance: From<<<T as Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>
-        {
+        pub fn deposit(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
             let caller_account = ensure_signed(origin)?;
 
             ensure!(
@@ -283,7 +271,7 @@ pub mod pallet {
             );
 
             // Transfer funds to pot
-            <T as Config>::Currency::transfer(
+            <T as pallet_parachain_staking::Config>::Currency::transfer(
                 &caller_account.clone(),
                 &Self::account_id(),
                 amount,
@@ -397,8 +385,7 @@ pub mod pallet {
         }
 
         #[pallet::weight(0)]
-        pub fn start_lottery(origin: OriginFor<T>) -> DispatchResult
-        {
+        pub fn start_lottery(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_root_or_manager(origin.clone())?;
             // TODO: Check that the pallet has enough funds to pay gas fees for at least the first drawing
 
@@ -408,19 +395,21 @@ pub mod pallet {
                 drawing_interval > 0u32.into(),
                 Error::<T>::PalletMisconfigured
             );
-            let drawing_scheduled_at = now + drawing_interval;
-            let lottery_drawing_call = Call::draw_lottery {};
-
-            pallet_scheduler::Pallet::<T>::schedule_named(
-                origin.clone(),
+            // TODO: Fix "the trait `From<pallet::Call<_>>` is not implemented for `<T as frame_system::Config>::Call`"
+            // let lottery_drawing_call: <T as frame_system::Config>::Call = Call::draw_lottery {}.into();
+            let lottery_drawing_call: CallOf<T> = Call::draw_lottery {}.into();
+            // let lottery_drawing_call: <T as Config>::Call = frame_system::Call::remark { remark: 0u32.encode() }.into();
+            T::Scheduler::schedule_named(
                 T::LotteryPot::get().0.to_vec(),
-                drawing_scheduled_at,
+                DispatchTime::After(drawing_interval),
                 Some((drawing_interval, 99999u32)), // XXX: Seems scheduler has no way to schedule infinite amount
                 LOWEST_PRIORITY,
-                Box::new(MaybeHashed::Value(lottery_drawing_call.into())),
-            )?;
+                frame_support::dispatch::RawOrigin::Root.into(),
+                MaybeHashed::Value(lottery_drawing_call),
+            );
+            // )?;
 
-            Self::deposit_event(Event::LotteryStarted(drawing_scheduled_at));
+            Self::deposit_event(Event::LotteryStarted(now + drawing_interval));
             Ok(())
         }
 
@@ -436,8 +425,8 @@ pub mod pallet {
 
             let now = <frame_system::Pallet<T>>::block_number();
 
-            pallet_scheduler::Pallet::<T>::cancel_named(origin, T::LotteryPot::get().0.to_vec())
-                .map_err(|_| Error::<T>::LotteryAlreadyStopped)?;
+            // T::Scheduler::cancel_named(origin, T::LotteryPot::get().0.to_vec())
+            //     .map_err(|_| Error::<T>::LotteryAlreadyStopped)?;
 
             Self::deposit_event(Event::LotteryStopped(now));
             Ok(())
@@ -451,7 +440,8 @@ pub mod pallet {
             ensure!(now >= Self::next_drawing(), Error::<T>::TooEarlyForDrawing);
 
             let pot_account_id = Self::account_id();
-            let funds_in_pot = <T as Config>::Currency::total_balance(&pot_account_id);
+            let funds_in_pot =
+                <T as pallet_parachain_staking::Config>::Currency::total_balance(&pot_account_id);
             let total_deposits = SumOfDeposits::<T>::get();
 
             // always keep some funds for gas
@@ -497,12 +487,12 @@ pub mod pallet {
             // Should be impossible: If no winner was selected, return Error
             ensure!(winner.is_some(), Error::<T>::NoWinnerFound);
 
-            <T as Config>::Currency::transfer(
-                &Self::account_id(),
-                &winner.clone().unwrap(),
-                payout,
-                KeepAlive,
-            )?;
+            // <T as Config>::Currency::transfer(
+            //     &Self::account_id(),
+            //     &winner.clone().unwrap(),
+            //     payout,
+            //     KeepAlive,
+            // )?;
             Self::deposit_event(Event::LotteryWinner(winner.unwrap()));
 
             // TODO: Update bookkeeping
@@ -523,10 +513,7 @@ pub mod pallet {
             T::LotteryPot::get().into_account_truncating()
         }
 
-        fn do_stake(collator: T::AccountId, amount: BalanceOf<T>) -> DispatchResult
-        where
-            <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance: From<<<T as Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>
-        {
+        fn do_stake(collator: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
             let some_collator = collator;
 
             // TODO: Calculate these from current values
@@ -635,14 +622,12 @@ pub mod pallet {
             });
         }
 
-        pub fn rebalance_remaining_funds(origin: OriginFor<T>)
-            where
-            <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance: From<<<T as Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>
-        {
+        pub fn rebalance_remaining_funds(origin: OriginFor<T>) {
             Self::ensure_root_or_manager(origin);
 
             let pot_account_id = Self::account_id();
-            let available_balance = <T as Config>::Currency::free_balance(&pot_account_id);
+            let available_balance =
+                <T as pallet_parachain_staking::Config>::Currency::free_balance(&pot_account_id);
             let stakable_balance = available_balance - Self::gas_reserve();
 
             // TODO: Find highest APY for this deposit (possibly balance deposit to multiple collators)
@@ -687,7 +672,7 @@ pub mod pallet {
                     )?;
 
                     // TODO: schedule transfer offboarded funds to owner
-                    <T as Config>::Currency::transfer(
+                    <T as pallet_parachain_staking::Config>::Currency::transfer(
                         &Self::account_id(),
                         &request.user,
                         request.balance,
