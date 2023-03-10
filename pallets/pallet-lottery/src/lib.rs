@@ -66,7 +66,8 @@ pub mod pallet {
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
-    pub type CallOf<T> = <T as frame_system::Config>::Call;
+    // pub type CallOf<T> = <T as frame_system::Config>::Call;
+    pub type CallOf<T> = Call<T>;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_parachain_staking::Config {
@@ -506,6 +507,12 @@ pub mod pallet {
             Ok(())
         }
     }
+
+    // impl<T: Config> Into<<T as frame_system::Config>::Call> for CallOf<T> {
+    //     fn into(c: CallOf<T>) -> <T as frame_system::Config>::Call {
+    //         c.into()
+    //     }
+    // }
 
     impl<T: Config> Pallet<T> {
         /// Get a unique, inaccessible account id from the `PotId`.
