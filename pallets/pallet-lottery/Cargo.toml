@@ -10,7 +10,6 @@ log = { version = "0.4.0", default-features = false }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 
 # Substrate dependencies
-frame-executive = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 pallet-scheduler = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
@@ -33,6 +32,5 @@ std = [
   "sp-runtime/std",
   "frame-support/std",
   "frame-system/std",
-  "frame-executive/std",
   "pallet-scheduler/std",
 ]
