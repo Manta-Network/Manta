@@ -670,7 +670,7 @@ parameter_types! {
     pub const NoPreimagePostponement: Option<u32> = Some(10);
 }
 
-type ScheduleOrigin = EnsureRoot<AccountId>; // TODO: This must eventually be Root-or-council
+type ScheduleOrigin = RootOrHalfCouncil;
 /// Used the compare the privilege of an origin inside the scheduler.
 pub struct OriginPrivilegeCmp;
 impl PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
