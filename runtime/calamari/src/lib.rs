@@ -360,7 +360,7 @@ parameter_types! {
     pub const LotteryPotId: PalletId = LOTTERY_PALLET_ID;
 }
 impl pallet_lottery::Config for Runtime {
-    // type Call = Call;
+    type Call = Call;
     type Event = Event;
     type Scheduler = Scheduler;
     type RandomnessSource = RandomnessCollectiveFlip;

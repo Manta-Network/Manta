@@ -66,12 +66,11 @@ pub mod pallet {
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
-    pub type CallOf<T> = <T as frame_system::Config>::Call;
-    // pub type CallOf<T> = Call<T>;
+    pub type CallOf<T> = <T as Config>::Call;
 
     #[pallet::config]
     pub trait Config: frame_system::Config + pallet_parachain_staking::Config {
-        // type Call: Parameter + Dispatchable<Origin = Self::Origin> + From<Call<Self>>;
+        type Call: Parameter + Dispatchable<Origin = Self::Origin> + From<Call<Self>>;
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         /// The Scheduler.
         type Scheduler: ScheduleNamed<
