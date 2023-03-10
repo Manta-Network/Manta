@@ -361,10 +361,11 @@ parameter_types! {
 }
 impl pallet_lottery::Config for Runtime {
     type Event = Event;
-    // type PalletInfo = PalletInfo;
+    type Scheduler = Scheduler;
     type Currency = Balances;
     type RandomnessSource = RandomnessCollectiveFlip;
     type ManageOrigin = RootOrHalfCouncil;
+    type PalletsOrigin = OriginCaller;
     type LotteryPot = LotteryPotId;
     type WeightInfo = ();
 }

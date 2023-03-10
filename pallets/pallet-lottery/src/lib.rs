@@ -47,7 +47,7 @@ pub mod pallet {
         ensure, log,
         pallet_prelude::*,
         traits::{
-            schedule::{MaybeHashed, LOWEST_PRIORITY},
+            schedule::{v2::Named as ScheduleNamed, MaybeHashed, LOWEST_PRIORITY},
             ExistenceRequirement::KeepAlive,
             *,
         },
@@ -58,7 +58,7 @@ pub mod pallet {
     use manta_primitives::constants::time::DAYS;
     use sp_core::U256;
     use sp_runtime::{
-        traits::{AccountIdConversion, Hash, Saturating},
+        traits::{Dispatchable, AccountIdConversion, Hash, Saturating},
         DispatchResult,
     };
     use sp_std::prelude::*;
@@ -67,13 +67,20 @@ pub mod pallet {
 
     type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+    pub type CallOf<T> = <T as frame_system::Config>::Call;
 
     #[pallet::config]
-    pub trait Config:
-        frame_system::Config + pallet_scheduler::Config + pallet_parachain_staking::Config
+    pub trait Config: frame_system::Config + pallet_parachain_staking::Config
     {
         /// Overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        /// The Scheduler.
+        type Scheduler: ScheduleNamed<
+            Self::BlockNumber,
+            CallOf<Self>,
+            Self::PalletsOrigin,
+            Hash = Self::Hash,
+        >;
         /// The currency mechanism.
         type Currency: LockableCurrency<Self::AccountId>
             + From<<Self as pallet_parachain_staking::Config>::Currency>;
@@ -81,6 +88,8 @@ pub mod pallet {
         type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
         /// Origin that can manage lottery parameters and start/stop drawings
         type ManageOrigin: EnsureOrigin<<Self as frame_system::Config>::Origin>;
+        /// Overarching type of all pallets origins.
+		type PalletsOrigin: From<frame_system::RawOrigin<Self::AccountId>>;
         /// Account Identifier from which the internal Pot is generated.
         type LotteryPot: Get<PalletId>;
         /// Weight information for extrinsics in this pallet.
@@ -249,7 +258,6 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T>
     where
-        Call<T>: Into<<T as pallet_scheduler::Config>::Call>,
         <<T as pallet_parachain_staking::Config>::Currency as frame_support::traits::Currency<
             <T as frame_system::Config>::AccountId,
         >>::Balance: From<
@@ -390,8 +398,6 @@ pub mod pallet {
 
         #[pallet::weight(0)]
         pub fn start_lottery(origin: OriginFor<T>) -> DispatchResult
-        where
-            Call<T>: Into<<T as pallet_scheduler::Config>::Call>,
         {
             Self::ensure_root_or_manager(origin.clone())?;
             // TODO: Check that the pallet has enough funds to pay gas fees for at least the first drawing

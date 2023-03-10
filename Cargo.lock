@@ -6570,7 +6570,6 @@ dependencies = [
  "log",
  "manta-primitives",
  "pallet-parachain-staking",
- "pallet-scheduler",
  "parity-scale-codec",
  "scale-info",
  "session-key-primitives",
