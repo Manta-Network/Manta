@@ -59,8 +59,6 @@ pub mod pallet {
     };
     use sp_std::prelude::*;
 
-    // TODO: Remove
-    use session_key_primitives::util::unchecked_account_id;
     use sp_runtime::traits::AccountIdConversion;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -684,7 +682,10 @@ pub mod pallet {
                 }
                 // Update T::WithdrawalRequestQueue if changed
                 if left_overs.len() != (*request_vec).len() {
-                    std::mem::replace(request_vec, left_overs);
+                    request_vec.clear();
+                    for c in left_overs{
+                        request_vec.push(c);
+                    }
                     Ok(())
                 } else {
                     Err("no changes")

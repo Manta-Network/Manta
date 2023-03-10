@@ -19,13 +19,16 @@ sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-feat
 sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 
 # Self dependencies
-manta-primitives = { path = "../../primitives/manta" }
-pallet-parachain-staking = { path = '../parachain-staking' }
-session-key-primitives = { path = '../../primitives/session-keys' }
+manta-primitives = { path = "../../primitives/manta" , default-features = false}
+pallet-parachain-staking = { path = '../parachain-staking' , default-features = false}
+session-key-primitives = { path = '../../primitives/session-keys' , default-features = false}
 
 [features]
 default = ["std"]
 std = [
+  "manta-primitives/std",
+  "pallet-parachain-staking/std",
+  "session-key-primitives/std",
   "sp-core/std",
   "sp-std/std",
   "sp-io/std",
