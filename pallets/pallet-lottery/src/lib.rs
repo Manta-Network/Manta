@@ -396,17 +396,16 @@ pub mod pallet {
                 Error::<T>::PalletMisconfigured
             );
             let drawing_scheduled_at = now + drawing_interval;
-            // let lottery_drawing_call = Call::draw_lottery{};
+            let lottery_drawing_call = Call::draw_lottery{};
 
-            // TODO: Schedule the draw lottery call to autoreschedule periodically, it will fail if ID already exists
-            // pallet_scheduler::Pallet::<T>::schedule_named(
-            //     origin,
-            //     T::LotteryPot::get().0.to_vec(),
-            //     drawing_scheduled_at,
-            //     Some((drawing_interval, 99999u32)), // XXX: Seems scheduler has no way to schedule infinite amount
-            //     LOWEST_PRIORITY,
-            //     Box::new(lottery_drawing_call(origin)),
-            // )?;
+            pallet_scheduler::Pallet::<T>::schedule_named(
+                origin,
+                T::LotteryPot::get().0.to_vec(),
+                drawing_scheduled_at,
+                Some((drawing_interval, 99999u32)), // XXX: Seems scheduler has no way to schedule infinite amount
+                LOWEST_PRIORITY,
+                Box::new(lottery_drawing_call),
+            )?;
 
             Self::deposit_event(Event::LotteryStarted(drawing_scheduled_at));
             Ok(())
