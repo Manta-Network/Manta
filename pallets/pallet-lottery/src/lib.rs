@@ -391,8 +391,8 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn start_lottery(origin: OriginFor<T>) -> DispatchResult
         where
-        Call<T>: Into<<T as pallet_scheduler::Config>::Call>,
-{
+            Call<T>: Into<<T as pallet_scheduler::Config>::Call>,
+        {
             Self::ensure_root_or_manager(origin.clone())?;
             // TODO: Check that the pallet has enough funds to pay gas fees for at least the first drawing
 
