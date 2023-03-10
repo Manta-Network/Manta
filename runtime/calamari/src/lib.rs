@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -24,7 +24,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-pub use frame_support::traits::Get;
 use manta_collator_selection::IdentityCollator;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -43,13 +42,10 @@ use sp_version::RuntimeVersion;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse,
+        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, Get, IsInVec,
         NeverEnsureOrigin, PrivilegeCmp,
     },
-    weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-        ConstantMultiplier, DispatchClass, Weight,
-    },
+    weights::{ConstantMultiplier, DispatchClass, Weight},
     PalletId,
 };
 use frame_system::{
@@ -57,12 +53,14 @@ use frame_system::{
     EnsureRoot,
 };
 use manta_primitives::{
-    constants::{time::*, STAKING_PALLET_ID, TREASURY_PALLET_ID},
+    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
-use runtime_common::{prod_or_fast, BlockHashCount, SlowAdjustingFeeUpdate};
+use runtime_common::{
+    prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
+};
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
 #[cfg(any(feature = "std", test))]
@@ -112,6 +110,15 @@ pub mod opaque {
             let (aura, nimbus, vrf) = tuple;
             SessionKeys { aura, nimbus, vrf }
         }
+        /// Derives all collator keys from `seed` without checking that the `seed` is valid.
+        #[cfg(feature = "std")]
+        pub fn from_seed_unchecked(seed: &str) -> SessionKeys {
+            Self::new((
+                session_key_primitives::util::unchecked_public_key::<AuraId>(seed),
+                session_key_primitives::util::unchecked_public_key::<NimbusId>(seed),
+                session_key_primitives::util::unchecked_public_key::<VrfId>(seed),
+            ))
+        }
     }
 }
 
@@ -123,10 +130,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 3420,
+    spec_version: 4030,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 9,
+    transaction_version: 11,
     state_version: 0,
 };
 
@@ -173,12 +180,20 @@ parameter_types! {
     pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
 }
 
+parameter_types! {
+    pub NonPausablePallets: Vec<Vec<u8>> = vec![b"Democracy".to_vec(), b"Balances".to_vec(), b"Council".to_vec(), b"CouncilCollective".to_vec(), b"TechnicalCommittee".to_vec(), b"TechnicalCollective".to_vec()];
+}
+
 impl pallet_tx_pause::Config for Runtime {
     type Event = Event;
-    type UpdateOrigin = EitherOfDiverse<
+    type Call = Call;
+    type MaxCallNames = ConstU32<25>;
+    type PauseOrigin = EitherOfDiverse<
         EnsureRoot<AccountId>,
-        pallet_collective::EnsureProportionMoreThan<AccountId, TechnicalCollective, 1, 2>,
+        pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,
     >;
+    type UnpauseOrigin = EnsureRoot<AccountId>;
+    type NonPausablePallets = IsInVec<NonPausablePallets>;
     type WeightInfo = weights::pallet_tx_pause::SubstrateWeight<Runtime>;
 }
 
@@ -206,6 +221,8 @@ impl Contains<Call> for BaseFilter {
         match call {
             // Explicitly DISALLOWED calls ( Pallet user extrinsics we don't want used WITH REASONING )
             | Call::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
+            // It's a call only for vesting crowdloan contributors' token, normal user should not use it.
+            | Call::CalamariVesting(calamari_vesting::Call::vested_transfer {..})
             // For now disallow public proposal workflows, treasury workflows,
             // as well as external_propose and external_propose_majority.
             | Call::Democracy(
@@ -279,8 +296,10 @@ impl Contains<Call> for BaseFilter {
                 | pallet_parachain_staking::Call::cancel_delegation_request{..})
             | Call::Balances(_)
             | Call::Preimage(_)
+            | Call::MantaPay(_)
             | Call::XTokens(orml_xtokens::Call::transfer {..}
                 | orml_xtokens::Call::transfer_multicurrencies {..})
+            | Call::TransactionPause(_)
             | Call::Utility(_) => true,
 
             // DISALLOW anything else
@@ -813,9 +832,9 @@ construct_runtime!(
         // Treasury
         Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,
 
-        // Preimage registrar.
+        // Preimage registry.
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 28,
-        // System scheduler.
+        // System scheduler
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 29,
 
         // XCM helpers.
@@ -833,6 +852,7 @@ construct_runtime!(
         // Assets management
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
+        MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
 
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
@@ -865,7 +885,6 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExt
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
 pub type OnRuntimeUpgradeHooks = ();
-
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -907,6 +926,7 @@ mod benches {
         [manta_collator_selection, CollatorSelection]
         [pallet_asset_manager, AssetManager]
         [pallet_parachain_staking, ParachainStaking]
+        [pallet_manta_pay, MantaPay]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );
@@ -1015,25 +1035,68 @@ impl_runtime_apis! {
         }
     }
 
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, Call>
+        for Runtime
+    {
+        fn query_call_info(
+            call: Call,
+            len: u32,
+        ) -> pallet_transaction_payment::RuntimeDispatchInfo<Balance> {
+            TransactionPayment::query_call_info(call, len)
+        }
+        fn query_call_fee_details(
+            call: Call,
+            len: u32,
+        ) -> pallet_transaction_payment::FeeDetails<Balance> {
+            TransactionPayment::query_call_fee_details(call, len)
+        }
+    }
+
     impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
         fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
             ParachainSystem::collect_collation_info(header)
         }
     }
 
-    impl nimbus_primitives::NimbusApi<Block> for Runtime {
-        fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool {
-            System::initialize(&(parent_header.number + 1), &parent_header.hash(), &parent_header.digest);
-
-            // And now the actual prediction call
-            <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
+    impl pallet_manta_pay::runtime::PullLedgerDiffApi<Block> for Runtime {
+        fn pull_ledger_diff(
+            checkpoint: pallet_manta_pay::RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> pallet_manta_pay::PullResponse {
+            MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
     }
 
-    // We also implement the old AuthorFilterAPI to meet the trait bounds on the client side.
-    impl nimbus_primitives::AuthorFilterAPI<Block, NimbusId> for Runtime {
-        fn can_author(_: NimbusId, _: u32, _: &<Block as BlockT>::Header) -> bool {
-            panic!("AuthorFilterAPI is no longer supported. Please update your client.")
+    impl nimbus_primitives::NimbusApi<Block> for Runtime {
+        fn can_author(author: NimbusId, relay_parent: u32, parent_header: &<Block as BlockT>::Header) -> bool {
+            let next_block_number = parent_header.number + 1;
+            let slot = relay_parent;
+            // Because the staking solution calculates the next staking set at the beginning
+            // of the first block in the new round, the only way to accurately predict the
+            // authors is to compute the selection during prediction.
+            // NOTE: This logic must manually be kept in sync with the nimbus filter pipeline
+            if pallet_parachain_staking::Pallet::<Self>::round().should_update(next_block_number)
+            {
+                // lookup account from nimbusId
+                // mirrors logic in `pallet_author_inherent`
+                use nimbus_primitives::AccountLookup;
+                let account = match manta_collator_selection::Pallet::<Self>::lookup_account(&author) {
+                    Some(account) => account,
+                    // Authors whose account lookups fail will not be eligible
+                    None => {
+                        return false;
+                    }
+                };
+                // manually check aura eligibility (in the new round)
+                // mirrors logic in `aura_style_filter`
+                let truncated_half_slot = (slot >> 1) as usize;
+                let active: Vec<AccountId> = pallet_parachain_staking::Pallet::<Self>::compute_top_candidates();
+                account == active[truncated_half_slot % active.len()]
+            } else {
+                // We're not changing rounds, `PotentialAuthors` is not changing, just use can_author
+                <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
+            }
         }
     }
 

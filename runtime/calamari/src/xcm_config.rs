@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -15,50 +15,45 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},
-    AssetManager, Assets, Call, DmpQueue, EnsureRootOrMoreThanHalfCouncil, Event, Origin,
-    ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, Treasury, XcmpQueue,
-    MAXIMUM_BLOCK_WEIGHT,
+    assets_config::CalamariAssetConfig, AssetManager, Assets, Balances, Call, DmpQueue,
+    EnsureRootOrMoreThanHalfCouncil, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm,
+    Runtime, Treasury, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
-
 use codec::{Decode, Encode};
-use scale_info::TypeInfo;
-
+use core::marker::PhantomData;
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-use sp_std::prelude::*;
-
 use frame_support::{
     match_types, parameter_types,
-    traits::{Everything, Nothing},
+    traits::{Currency, Everything, Nothing},
     weights::Weight,
 };
 use frame_system::EnsureRoot;
 use manta_primitives::{
-    assets::{AssetIdLocationConvert, AssetLocation},
-    types::{AccountId, AssetId, Balance},
+    assets::AssetIdLocationConvert,
+    types::{AccountId, Balance, CalamariAssetId},
     xcm::{
         AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
         MultiNativeAsset,
     },
 };
-
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-
 use orml_traits::location::AbsoluteReserveProvider;
-// Polkadot imports
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
-
+use scale_info::TypeInfo;
+use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
     EnsureXcmOrigin, FixedRateOfFungible, LocationInverter, ParentAsSuperuser, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SovereignSignedViaLocation, TakeWeightCredit, WeightInfoBounds,
+    SignedAccountId32AsNative, SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit,
+    WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
+
+#[cfg(any(feature = "std", test))]
+pub use sp_runtime::BuildStorage;
 
 parameter_types! {
     pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
@@ -125,11 +120,11 @@ pub type XcmOriginToCallOrigin = (
 );
 
 parameter_types! {
-    // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
+    /// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
     pub UnitWeightCost: Weight = 1_000_000_000;
-    // Used in native traders
-    // This might be able to skipped.
-    // We have to use `here()` because of reanchoring logic
+    /// Used in native traders
+    /// This might be able to skipped.
+    /// We have to use `here()` because of reanchoring logic
     pub ParaTokenPerSecond: (xcm::v2::AssetId, u128) = (Concrete(MultiLocation::here()), 1_000_000_000);
     pub const MaxInstructions: u32 = 100;
 }
@@ -138,21 +133,19 @@ parameter_types! {
 /// Transactor for assets in pallet-assets, i.e. implements `fungibles` trait
 pub type MultiAssetTransactor = MultiAssetAdapter<
     Runtime,
+    // Used to find the query the native asset id of the chain.
+    CalamariAssetConfig,
     // "default" implementation of converting a `MultiLocation` to an `AccountId`
     LocationToAccountId,
     // Used when the incoming asset is a fungible concrete asset matching the given location or name:
     IsNativeConcrete<SelfReserve>,
     // Used to match incoming assets which are not the native asset.
     ConvertedConcreteAssetId<
-        AssetId,
+        CalamariAssetId,
         Balance,
-        AssetIdLocationConvert<AssetLocation, AssetManager>,
+        AssetIdLocationConvert<AssetManager>,
         JustTry,
     >,
-    // Precondition checks and actual implementations of mint and burn logic.
-    CalamariConcreteFungibleLedger,
-    // Used to find the query the native asset id of the chain.
-    CalamariAssetConfig,
 >;
 
 match_types! {
@@ -188,15 +181,33 @@ parameter_types! {
     pub XcmFeesAccount: AccountId = Treasury::account_id();
 }
 
+/// Xcm fee of native token
+pub struct XcmNativeFeeToTreasury;
+
+impl TakeRevenue for XcmNativeFeeToTreasury {
+    #[inline]
+    fn take_revenue(revenue: MultiAsset) {
+        if let MultiAsset {
+            id: Concrete(location),
+            fun: Fungible(amount),
+        } = revenue
+        {
+            if location == MultiLocation::here() {
+                let _ = Balances::deposit_creating(&XcmFeesAccount::get(), amount);
+            }
+        }
+    }
+}
+
 pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
+    AccountId,
     Assets,
     ConvertedConcreteAssetId<
-        AssetId,
+        CalamariAssetId,
         Balance,
-        AssetIdLocationConvert<AssetLocation, AssetManager>,
+        AssetIdLocationConvert<AssetManager>,
         JustTry,
     >,
-    AccountId,
     XcmFeesAccount,
 >;
 
@@ -221,8 +232,8 @@ impl Config for XcmExecutorConfig {
     // The second one will charge the first asset in the MultiAssets with pre-defined rate
     // i.e. units_per_second in `AssetManager`
     type Trader = (
-        FixedRateOfFungible<ParaTokenPerSecond, ()>,
-        FirstAssetTrader<AssetId, AssetLocation, AssetManager, XcmFeesToAccount>,
+        FixedRateOfFungible<ParaTokenPerSecond, XcmNativeFeeToTreasury>,
+        FirstAssetTrader<AssetManager, XcmFeesToAccount>,
     );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
@@ -286,17 +297,20 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }
 
-// We wrap AssetId for XToken
+/// We wrap AssetId for XToken
 #[derive(Clone, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
 pub enum CurrencyId {
-    MantaCurrency(AssetId),
+    /// Assets registered in pallet-assets
+    MantaCurrency(CalamariAssetId),
 }
 
-pub struct CurrencyIdtoMultiLocation<AssetXConverter>(sp_std::marker::PhantomData<AssetXConverter>);
+/// Maps a xTokens CurrencyId to a xcm MultiLocation implemented by some asset manager
+pub struct CurrencyIdtoMultiLocation<AssetXConverter>(PhantomData<AssetXConverter>);
+
 impl<AssetXConverter> sp_runtime::traits::Convert<CurrencyId, Option<MultiLocation>>
     for CurrencyIdtoMultiLocation<AssetXConverter>
 where
-    AssetXConverter: xcm_executor::traits::Convert<MultiLocation, AssetId>,
+    AssetXConverter: xcm_executor::traits::Convert<MultiLocation, CalamariAssetId>,
 {
     fn convert(currency: CurrencyId) -> Option<MultiLocation> {
         match currency {
@@ -318,124 +332,24 @@ impl orml_xtokens::Config for Runtime {
     type Event = Event;
     type Balance = Balance;
     type CurrencyId = CurrencyId;
-    type AccountIdToMultiLocation = AccountIdToMultiLocation<AccountId>;
-    type CurrencyIdConvert =
-        CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetLocation, AssetManager>>;
+    type AccountIdToMultiLocation = AccountIdToMultiLocation;
+    type CurrencyIdConvert = CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetManager>>;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type SelfLocation = SelfReserve;
-    // Take note that this pallet does not have the typical configurable WeightInfo.
-    // It uses the Weigher configuration to calculate weights for the user callable extrinsics on this chain,
-    // as well as weights for execution on the destination chain. Both based on the composed xcm messages.
+
+    /// Weigher Configuration
+    ///
+    /// Take note that this pallet does not have the typical configurable WeightInfo.
+    /// It uses the Weigher configuration to calculate weights for the user callable
+    /// extrinsics on this chain, as well as weights for execution on the destination
+    /// chain. Both based on the composed xcm messages.
     type Weigher =
         WeightInfoBounds<crate::weights::xcm::CalamariXcmWeight<Call>, Call, MaxInstructions>;
+
     type BaseXcmWeight = BaseXcmWeight;
     type LocationInverter = LocationInverter<Ancestry>;
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
     type MinXcmFee = AssetManager;
     type MultiLocationsFilter = AssetManager;
     type ReserveProvider = AbsoluteReserveProvider;
-}
-
-#[test]
-fn test_receiver_weight() {
-    use xcm_executor::traits::WeightBounds;
-
-    let dummy_assets = MultiAssets::from(vec![MultiAsset {
-        id: Concrete(MultiLocation {
-            parents: 1,
-            interior: X1(Parachain(1)),
-        }),
-        fun: Fungible(10000000000000),
-    }]);
-    // format of self_reserve message received from a chain using xTokens
-    let mut msg = Xcm(vec![
-        ReserveAssetDeposited(dummy_assets.clone()),
-        ClearOrigin,
-        BuyExecution {
-            fees: MultiAsset {
-                id: Concrete(MultiLocation {
-                    parents: 1,
-                    interior: X1(Parachain(1)),
-                }),
-                fun: Fungible(10000000000000),
-            },
-            weight_limit: Limited(3999999999),
-        },
-        DepositAsset {
-            assets: Wild(All),
-            max_assets: 1,
-            beneficiary: MultiLocation {
-                parents: 0,
-                interior: X1(AccountId32 {
-                    network: Any,
-                    id: [
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0,
-                    ],
-                }),
-            },
-        },
-    ]);
-
-    let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
-    // 4_000_000_000 is a typical configuration value provided to dApp developers for `dest_weight`
-    // argument when sending xcm message to Calamari. ie moonbeam, sub=wallet, phala, etc
-    assert!(weight < 4_000_000_000);
-
-    // format of to_reserve message received from a chain using xTokens
-    msg.0[0] = WithdrawAsset(dummy_assets);
-    let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
-    assert!(weight < 4_000_000_000);
-}
-
-#[test]
-fn test_sender_xcm_weight() {
-    use xcm_executor::traits::WeightBounds;
-
-    let dummy_multi_location = MultiLocation {
-        parents: 1,
-        interior: X1(Parachain(1)),
-    };
-    let dummy_assets = MultiAssets::from(vec![MultiAsset {
-        id: Concrete(MultiLocation {
-            parents: 1,
-            interior: X1(Parachain(1)),
-        }),
-        fun: Fungible(10000000000000),
-    }]);
-    // format of to_reserve message composed by xTokens
-    let mut msg = Xcm(vec![
-        WithdrawAsset(dummy_assets),
-        InitiateReserveWithdraw {
-            assets: Wild(All),
-            reserve: dummy_multi_location.clone(),
-            xcm: Xcm(vec![
-                BuyExecution {
-                    fees: MultiAsset {
-                        id: Concrete(dummy_multi_location),
-                        fun: Fungible(10000000000000),
-                    },
-                    weight_limit: Limited(3999999999),
-                },
-                DepositAsset {
-                    assets: Wild(All),
-                    max_assets: 1,
-                    beneficiary: MultiLocation {
-                        parents: 0,
-                        interior: X1(AccountId32 {
-                            network: Any,
-                            id: [
-                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                            ],
-                        }),
-                    },
-                },
-            ]),
-        },
-    ]);
-
-    let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
-    // 4_000_000_000 is a typical configuration we use on the manta dApps
-    assert!(weight < 4_000_000_000);
 }

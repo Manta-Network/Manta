@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -16,22 +16,27 @@
 
 use crate::{
     benchmark::precomputed_coins::{
-        MINT, PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, RECLAIM, RECLAIM_INPUT,
+        PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, TO_PRIVATE, TO_PUBLIC, TO_PUBLIC_INPUT,
     },
-    Asset, Call, Config, Event, Pallet, TransferPost,
+    types::{asset_value_decode, asset_value_encode, AccountId, Asset},
+    Call, Config, Event, Pallet, StandardAssetId, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use frame_support::traits::Get;
 use frame_system::RawOrigin;
+
 use manta_primitives::{
-    assets::{AssetConfig, AssetRegistrar, FungibleLedger},
-    constants::DEFAULT_ASSET_ED,
-    types::{AssetId, Balance},
+    assets::{AssetConfig, AssetRegistry, FungibleLedger, TestingDefault},
+    constants::TEST_DEFAULT_ASSET_ED,
+    types::Balance,
 };
 use scale_codec::Decode;
 
 mod precomputed_coins;
 
-/// Asserts that the last event that has occured is the same as `event`.
+pub const INITIAL_VALUE: u128 = 1_000_000_000_000_000_000_000u128;
+
+/// Asserts that the last event that has occurred is the same as `event`.
 #[inline]
 pub fn assert_last_event<T, E>(event: E)
 where
@@ -44,41 +49,43 @@ where
 
 /// Init assets for manta-pay
 #[inline]
-pub fn init_asset<T>(owner: &T::AccountId, id: AssetId, value: Balance)
+pub fn init_asset<T>(owner: &T::AccountId, id: StandardAssetId, value: Balance)
 where
     T: Config,
+    T::AccountId: From<AccountId> + Into<AccountId>,
 {
-    let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistrarMetadata::default();
+    let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
     let storage_metadata: <T::AssetConfig as AssetConfig<T>>::StorageMetadata = metadata.into();
-    <T::AssetConfig as AssetConfig<T>>::AssetRegistrar::create_asset(
+    <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
         id,
-        DEFAULT_ASSET_ED,
         storage_metadata,
+        TEST_DEFAULT_ASSET_ED,
         true,
     )
     .expect("Unable to create asset.");
     let pallet_account: T::AccountId = Pallet::<T>::account_id();
-    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_mint(
+    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
         id,
         owner,
-        value + DEFAULT_ASSET_ED,
+        value + TEST_DEFAULT_ASSET_ED,
     )
     .expect("Unable to mint asset to its new owner.");
-    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_can_mint(
+    <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
         id,
         &pallet_account,
-        DEFAULT_ASSET_ED,
+        TEST_DEFAULT_ASSET_ED,
     )
     .expect("Unable to mint existential deposit to pallet account.");
 }
 
 benchmarks! {
+    where_clause {  where T::AccountId: From<AccountId> + Into<AccountId> }
     to_private {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, 8u32, 1_000_000u128);
-        let mint_post = TransferPost::decode(&mut &*MINT).unwrap();
-        let asset = Asset::new(mint_post.asset_id.unwrap(), mint_post.sources[0]);
+        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
+        let asset = mint_post.source(0).unwrap();
+        init_asset::<T>(&caller, Pallet::<T>::id_from_field(asset.id).unwrap(), asset_value_decode(asset.value));
     }: to_private (
         RawOrigin::Signed(caller.clone()),
         mint_post
@@ -90,26 +97,27 @@ benchmarks! {
     to_public {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, 8u32, 1_000_000u128);
-        for coin in RECLAIM_INPUT {
+        init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
+        for coin in TO_PUBLIC_INPUT {
             Pallet::<T>::to_private(
                 origin.clone(),
                 TransferPost::decode(&mut &**coin).unwrap()
             ).unwrap();
         }
-        let reclaim_post = TransferPost::decode(&mut &*RECLAIM).unwrap();
+        let reclaim_post = TransferPost::decode(&mut &*TO_PUBLIC).unwrap();
+        let asset = reclaim_post.sink(0).unwrap();
     }: to_public (
         RawOrigin::Signed(caller.clone()),
-        reclaim_post
+        reclaim_post.clone()
     ) verify {
         // FIXME: add balance checking
-        assert_last_event::<T, _>(Event::ToPublic { asset: Asset::new(8, 10_000), sink: caller });
+        assert_last_event::<T, _>(Event::ToPublic { asset, sink: T::AccountId::from(reclaim_post.sink_accounts[0]) });
     }
 
     private_transfer {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, 8u32, 1_000_000u128);
+        init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         for coin in PRIVATE_TRANSFER_INPUT {
             Pallet::<T>::to_private(
                 origin.clone(),
@@ -121,14 +129,14 @@ benchmarks! {
         RawOrigin::Signed(caller.clone()),
         private_transfer_post
     ) verify {
-        assert_last_event::<T, _>(Event::PrivateTransfer { origin: caller });
+        assert_last_event::<T, _>(Event::PrivateTransfer { origin: Some(caller) });
     }
 
     public_transfer {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
-        init_asset::<T>(&caller, 8u32, 1_000_000u128);
-        let asset = Asset::new(8, 100);
+        init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
+        let asset = Asset::new(Pallet::<T>::field_from_id(8u128), asset_value_encode(100));
         let sink = Pallet::<T>::account_id();
     }: public_transfer (
         RawOrigin::Signed(caller.clone()),
@@ -136,7 +144,7 @@ benchmarks! {
         sink.clone()
     ) verify {
         // FIXME: add balance checking
-        assert_last_event::<T, _>(Event::Transfer { asset, source: caller.clone(), sink, });
+        assert_last_event::<T, _>(Event::Transfer { asset, source: caller.clone(), sink });
     }
 }
 

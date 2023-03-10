@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -16,10 +16,10 @@
 
 use crate::currency;
 use frame_support::weights::{
-    constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-    WeightToFeePolynomial,
+    WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 };
 use manta_primitives::types::Balance;
+use runtime_common::ExtrinsicBaseWeight;
 use smallvec::smallvec;
 pub use sp_runtime::Perbill;
 

@@ -6,6 +6,8 @@
   "scripts": {
     "correctness_test": "mocha -r ts-node/register rpc_correctness_test.ts",
     "performance_test": "mocha -r ts-node/register rpc_performance_test.ts",
+    "stress_benchmark_test": "mocha -r ts-node/register stress_benchmark_test.ts",
+    "runtime_upgrade_test": "mocha -r ts-node/register runtime_upgrade_test.ts",
     "lint": "eslint ."
   },
   "keywords": [],

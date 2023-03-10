@@ -6,7 +6,7 @@
 <br>
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat-square)](https://www.gnu.org/licenses/gpl-3.0)
-![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/Manta-Network/Manta/Check%20Build/manta?style=flat-square)
+![Tests on manta](https://img.shields.io/github/actions/workflow/status/Manta-Network/Manta/check_tests.yml?branch=manta)
 [![Twitter](https://img.shields.io/badge/-Twitter-5c5c5c?style=flat-square&logo=Twitter)](https://twitter.com/mantanetwork)
 [![Discord](https://img.shields.io/badge/Discord-gray?style=flat-square&logo=discord)](https://discord.gg/n4QFj4n5vg)
 [![Forum](https://img.shields.io/discourse/status?server=https%3A%2F%2Fforum.manta.network&style=flat-square)](https://forum.manta.network)
@@ -14,19 +14,19 @@
 [![Medium](https://img.shields.io/badge/Medium-gray?style=flat-square&logo=medium)](https://mantanetwork.medium.com/)
 
 
-Manta is the privacy layer for Web 3. Manta's goal is to protect Web 3 users' fundamental privacy from the first principle.  
+Manta is the privacy layer for Web 3. Manta's goal is to protect Web 3 users' fundamental privacy from the first principle.
 
-Disclaimer: The code currently hasn't been properly security audited (work in progress), use it at your own risk. 
+Disclaimer: The code currently hasn't been properly security audited (work in progress), use it at your own risk.
 
 :point_right: Learn more about [Manta Network](https://manta.network). <br>
 :point_right: Check out our [technical documentation](https://docs.manta.network). <br>
 :point_right: Get involved in [Manta Community](https://forum.manta.network/). <br>
 
 ## Manta/Calamari/Dolphin
-This is the mono-repo for Manta/Calamari/Dolphin nodes. 
+This is the mono-repo for Manta/Calamari/Dolphin nodes.
 * Manta: Manta's Polkadot parachain network
 * Calamari: Manta's canary network on Kusama
-* Dolphin: Manta's testnet 
+* Dolphin: Manta's testnet
 
 ## Build Manta/Calamari/Dolphin Node
 1. Setup environment
@@ -39,6 +39,11 @@ This is the mono-repo for Manta/Calamari/Dolphin nodes.
   cargo b --profile production
   ```
 > Tips: The binary will be generated under `target/production/manta`. For less performance critical build, `cargo build --release` is recommended for faster build time.
+3. Run standalone dev chain, useful for local development
+  ```bash
+  cargo run -- --chain=dolphin-localdev --alice --tmp
+  ```
+> Tip: The chain only produces blocks when you submit extrinsics
 
 ## Semantic Versioning
 Manta/Calamari/Dolphin's version number:
@@ -56,4 +61,4 @@ where:
 
 ## Minimum supported rust compiler
 
-This project's MSRV is `rustc 1.59`
+This project's MSRV is `rustc 1.62`

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -21,7 +21,8 @@ use crate::command::{DOLPHIN_ON_BAIKAL_PARACHAIN_ID, DOLPHIN_PARACHAIN_ID};
 use dolphin_runtime::{
     opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig, TechnicalCommitteeConfig,
 };
-use session_key_primitives::helpers::{get_account_id_from_seed, get_collator_keys_from_seed};
+use session_key_primitives::util::unchecked_account_id;
+
 /// Dolphin Protocol Identifier
 pub const DOLPHIN_PROTOCOL_ID: &str = "dolphin";
 /// Kusama Relaychain Local Network Identifier
@@ -54,15 +55,15 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
         move || {
             dolphin_dev_genesis(
                 vec![(
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    SessionKeys::new(get_collator_keys_from_seed("Alice")),
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    SessionKeys::from_seed_unchecked("Alice"),
                 )],
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                unchecked_account_id::<sr25519::Public>("Alice"),
                 vec![
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    unchecked_account_id::<sr25519::Public>("Bob"),
+                    unchecked_account_id::<sr25519::Public>("Alice//stash"),
+                    unchecked_account_id::<sr25519::Public>("Bob//stash"),
                 ],
             )
         },
@@ -79,47 +80,60 @@ pub fn dolphin_development_config() -> DolphinChainSpec {
 }
 
 /// Returns the Dolphin local chainspec.
-pub fn dolphin_local_config() -> DolphinChainSpec {
+pub fn dolphin_local_config(localdev: bool) -> DolphinChainSpec {
+    let id = if localdev {
+        "dolphin_localdev"
+    } else {
+        "dolphin_local"
+    };
     DolphinChainSpec::from_genesis(
         "Dolphin Parachain Local",
-        "dolphin_local",
+        id,
         ChainType::Local,
         move || {
+            let invulnerables = if localdev {
+                vec![(
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    SessionKeys::from_seed_unchecked("Alice"),
+                )]
+            } else {
+                vec![
+                    (
+                        unchecked_account_id::<sr25519::Public>("Alice"),
+                        SessionKeys::from_seed_unchecked("Alice"),
+                    ),
+                    (
+                        unchecked_account_id::<sr25519::Public>("Bob"),
+                        SessionKeys::from_seed_unchecked("Bob"),
+                    ),
+                    (
+                        unchecked_account_id::<sr25519::Public>("Charlie"),
+                        SessionKeys::from_seed_unchecked("Charlie"),
+                    ),
+                    (
+                        unchecked_account_id::<sr25519::Public>("Dave"),
+                        SessionKeys::from_seed_unchecked("Dave"),
+                    ),
+                    (
+                        unchecked_account_id::<sr25519::Public>("Eve"),
+                        SessionKeys::from_seed_unchecked("Eve"),
+                    ),
+                ]
+            };
             dolphin_dev_genesis(
+                invulnerables,
+                unchecked_account_id::<sr25519::Public>("Alice"),
                 vec![
-                    (
-                        get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        SessionKeys::new(get_collator_keys_from_seed("Alice")),
-                    ),
-                    (
-                        get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        SessionKeys::new(get_collator_keys_from_seed("Bob")),
-                    ),
-                    (
-                        get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                        SessionKeys::new(get_collator_keys_from_seed("Charlie")),
-                    ),
-                    (
-                        get_account_id_from_seed::<sr25519::Public>("Dave"),
-                        SessionKeys::new(get_collator_keys_from_seed("Dave")),
-                    ),
-                    (
-                        get_account_id_from_seed::<sr25519::Public>("Eve"),
-                        SessionKeys::new(get_collator_keys_from_seed("Eve")),
-                    ),
-                ],
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                vec![
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve"),
-                    get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    unchecked_account_id::<sr25519::Public>("Bob"),
+                    unchecked_account_id::<sr25519::Public>("Charlie"),
+                    unchecked_account_id::<sr25519::Public>("Dave"),
+                    unchecked_account_id::<sr25519::Public>("Eve"),
+                    unchecked_account_id::<sr25519::Public>("Alice//stash"),
+                    unchecked_account_id::<sr25519::Public>("Bob//stash"),
+                    unchecked_account_id::<sr25519::Public>("Charlie//stash"),
+                    unchecked_account_id::<sr25519::Public>("Dave//stash"),
+                    unchecked_account_id::<sr25519::Public>("Eve//stash"),
                 ],
             )
         },
@@ -220,10 +234,11 @@ pub fn dolphin_2085_config() -> Result<DolphinChainSpec, String> {
     Ok(spec)
 }
 
-pub fn dolphin_testnet_ci_config() -> Result<DolphinChainSpec, String> {
+/// Returns the Dolphin V3 2085 staging chainspec.
+pub fn dolphin_v3_2085_staging_config() -> Result<DolphinChainSpec, String> {
     let mut spec = DolphinChainSpec::from_json_bytes(
-        &include_bytes!("../../../genesis/dolphin-testnet-ci-genesis.json")[..],
+        &include_bytes!("../../../genesis/dolphin-v3-2085-genesis.json")[..],
     )?;
-    spec.extensions_mut().para_id = DOLPHIN_PARACHAIN_ID;
+    spec.extensions_mut().para_id = 9997;
     Ok(spec)
 }

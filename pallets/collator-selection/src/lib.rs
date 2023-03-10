@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -639,7 +639,7 @@ pub mod pallet {
                             })
                             .unwrap_or_else(|why| {
                                 log::warn!("Failed to remove candidate due to underperformance {:?}", why);
-                                debug_assert!(false, "failed to remove candidate {:?}", why);
+                                debug_assert!(false, "failed to remove candidate {why:?}");
                             });
                     }
                 }

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Manta Network.
+// Copyright 2020-2023 Manta Network.
 // This file is part of Manta.
 //
 // Manta is free software: you can redistribute it and/or modify
@@ -14,5 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-// Aura consensus authority.
+//! Aura Keys
+
+/// Aura Consensus Authority
 pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;

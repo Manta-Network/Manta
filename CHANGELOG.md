@@ -1,5 +1,74 @@
 # CHANGELOG
 
+## v4.0.3
+### Changed
+- [\#1024](https://github.com/Manta-Network/Manta/pull/1024) Minor: use checked-in genesis for --chain=manta [MA]
+- [\#1025](https://github.com/Manta-Network/Manta/pull/1025) Filter vested_transfer [CA]
+- [\#1031](https://github.com/Manta-Network/Manta/pull/1031) Verbose Error Handling [CADO]
+
+### Fixed
+- [\#1032](https://github.com/Manta-Network/Manta/pull/1032) Security: Include the sink AccountId in the signed message for ToPublic transactions [MACA]
+
+## v4.0.2
+### Added
+- [\#1017](https://github.com/Manta-Network/Manta/pull/1017) github action for relaychain genesis files [MA]
+
+### Changed
+- [\#1015](https://github.com/Manta-Network/Manta/pull/1015) Re-new MantaPay precomputed coins and re-enable tests [CADO]
+
+### Fixed
+- [\#968](https://github.com/Manta-Network/Manta/pull/968) fix benchmarks, paraID and genesis [MA]
+
+## v4.0.1
+### Added
+- [\#870](https://github.com/Manta-Network/Manta/pull/870) Manual seal mode for dev [CADO]
+
+### Changed
+- [\#966](https://github.com/Manta-Network/Manta/pull/966) Bump storage trie version for manta RT [MA]
+- [\#978](https://github.com/Manta-Network/Manta/pull/978) xcm fee of native token to treasury [CADO]
+- [\#981](https://github.com/Manta-Network/Manta/pull/981) Upgrade to manta-rs v0.5.9, switch to mainnet keys, fix ledger error handling [MACADO]
+- [\#976](https://github.com/Manta-Network/Manta/pull/976) Move all imported constants to our code base [CADO]
+- [\#967](https://github.com/Manta-Network/Manta/pull/967) Bump Polkadot Dependencies to v0.9.28 [MACADO]
+- [\#977](https://github.com/Manta-Network/Manta/pull/977) Suspend MantaPay when InternalLedgerError [CADO]
+
+### Fixed
+- [\#982](https://github.com/Manta-Network/Manta/pull/982) Fix codec issue for dense-pull-ledger-diff [CADO]
+
+## v4.0.0
+### Added
+- [\#903](https://github.com/Manta-Network/Manta/pull/903) Add MantaPay to Calamari runtime [CA]
+- [\#921](https://github.com/Manta-Network/Manta/pull/921) Add dense_pull_ledger_diff rpc method [CADO]
+- [\#919](https://github.com/Manta-Network/Manta/pull/919) Add pull-ledger-diff ci test for calamari [CADO]
+- [\#928](https://github.com/Manta-Network/Manta/pull/928) MantaPay stress-test benchmark [CADO]
+- [\#952](https://github.com/Manta-Network/Manta/pull/952) update genesis [MA]
+
+### Changed
+- [\#814](https://github.com/Manta-Network/Manta/pull/814) feat: upgrade asset manager [CADO]
+- [\#890](https://github.com/Manta-Network/Manta/pull/890) MantaPay V1 for Dolphin V3 deployment [CADO]
+- [\#906](https://github.com/Manta-Network/Manta/pull/906) Use finalized_hash instead of best_hash in pull_ledger_diff [CADO]
+- [\#911](https://github.com/Manta-Network/Manta/pull/911) Feature/manta rs v0.5.8 [MACADO]
+- [\#771](https://github.com/Manta-Network/Manta/pull/771) Update tx-pause pallet to make it easier to pause stuff [CA]
+- [\#944](https://github.com/Manta-Network/Manta/pull/944) Update nimbus [CADO]
+- [\#937](https://github.com/Manta-Network/Manta/pull/937) Set collator minimum bond to 4M KMA [CA]
+- [\#949](https://github.com/Manta-Network/Manta/pull/949) fix: distinguish between panic-errors and possible-fix-errors [CA]
+- [\#946](https://github.com/Manta-Network/Manta/pull/946) Update Manta Runtime [MA]
+- [\#956](https://github.com/Manta-Network/Manta/pull/956) Reduce running time for CI tests [CADO]
+
+### Fixed
+- [\#924](https://github.com/Manta-Network/Manta/pull/924) Fix runtime upgrade test by using governance instead of SUDO [CADO]
+- [\#948](https://github.com/Manta-Network/Manta/pull/948) add zero balance check [CADO]
+
+## v3.4.3
+### Changed
+- [\#836](https://github.com/Manta-Network/Manta/pull/836) client trait bound refactor [CA]
+- [\#848](https://github.com/Manta-Network/Manta/pull/848) Fix XCM tests [CADO]
+- [\#860](https://github.com/Manta-Network/Manta/pull/860) Don't include testing helpers in release code [CA]
+- [\#865](https://github.com/Manta-Network/Manta/pull/865) Aura slot skip fix v2 [CA]
+
+### Fixed
+- [\#846](https://github.com/Manta-Network/Manta/pull/846) Fix sequence skipping when a collator misses its slot [CA]
+- [\#867](https://github.com/Manta-Network/Manta/pull/867) Fix round changes [CA]
+
 ## v3.4.2
 ### Changed
 - [\#834](https://github.com/Manta-Network/Manta/pull/834) Followups to Staking [CA]
