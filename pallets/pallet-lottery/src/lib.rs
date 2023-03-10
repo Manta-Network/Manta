@@ -58,7 +58,7 @@ pub mod pallet {
         DispatchResult,
     };
     use sp_std::prelude::*;
-
+    use frame_support::traits::schedule::MaybeHashed;
     use sp_runtime::traits::AccountIdConversion;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -404,7 +404,7 @@ pub mod pallet {
                 drawing_scheduled_at,
                 Some((drawing_interval, 99999u32)), // XXX: Seems scheduler has no way to schedule infinite amount
                 LOWEST_PRIORITY,
-                Box::new(lottery_drawing_call),
+                Box::new(MaybeHashed::Value(lottery_drawing_call.into())),
             )?;
 
             Self::deposit_event(Event::LotteryStarted(drawing_scheduled_at));
