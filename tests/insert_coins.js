@@ -29,16 +29,17 @@ async function main() {
     const mints_offset = 2;
     const transfers_offset = 4;
     const reclaims_offset = 4;
-    const total_iterations = 15000;
-    const mint_size = 552;
-    const transfer_size = 100;
+    const total_iterations = 14000;
+    const mint_size = 553;
+    const transfer_size = 1106;
+    const reclaim_size = 1001;
 
     let batches_sent = 0;
     const transactions = [];
 
     for (let i = 0; i < total_iterations; i++) {
         const mints_start = mints_offset + i * mint_size;
-        const mint = api.tx.mantaPay.toPrivate(mints_buffer.subarray(mints_start, mint_size + mints_start));
+        const mint = api.tx.mantaPay.toPrivate(mints_buffer.subarray(mints_start, mints_start + mint_size));
         transactions.push(mint);
 
         const transfers_start = transfers_offset + i * (2 * mint_size + transfer_size);
@@ -68,8 +69,8 @@ async function main() {
 
         const reclaims_start = reclaims_offset + i * (2 * mint_size + transfer_size);
         const reclaim_mint_1 = api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start, reclaims_start + mint_size));
-        const reclaim_mint_2 = api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start, reclaims_start + mint_size));
-        const reclaim = api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start, reclaims_start + mint_size));
+        const reclaim_mint_2 = api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start + mint_size, reclaims_start + 2 * mint_size));
+        const reclaim = api.tx.mantaPay.toPublic(reclaims_buffer.subarray(reclaims_start + 2 * mint_size, reclaims_start + 2 * mint_size + reclaim_size));
         transactions.push(reclaim_mint_1);
         transactions.push(reclaim_mint_2);
         transactions.push(reclaim);
@@ -88,9 +89,10 @@ async function main() {
             }
         });
 
+        batches_sent++;
+        console.log("Batches sent: ", batches_sent);
         await new Promise(resolve => setTimeout(resolve, 10000));
         transactions.length = 0;
-
     }
 }
 
