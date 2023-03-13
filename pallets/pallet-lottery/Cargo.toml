@@ -19,6 +19,7 @@ sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features
 
 # Self dependencies
 manta-primitives = { path = "../../primitives/manta", default-features = false }
+runtime-common = { path = "../../runtime/common", default-features = false }
 pallet-parachain-staking = { path = '../parachain-staking', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
 

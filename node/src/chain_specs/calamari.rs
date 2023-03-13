@@ -158,7 +158,6 @@ pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
 
 fn calamari_dev_genesis(
     invulnerables: Vec<(AccountId, SessionKeys)>,
-
     delegations: Vec<(AccountId, AccountId, Balance)>,
     endowed_accounts: Vec<AccountId>,
 ) -> GenesisConfig {

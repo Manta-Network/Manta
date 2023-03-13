@@ -6571,6 +6571,7 @@ dependencies = [
  "manta-primitives",
  "pallet-parachain-staking",
  "parity-scale-codec",
+ "runtime-common",
  "scale-info",
  "session-key-primitives",
  "sp-core",

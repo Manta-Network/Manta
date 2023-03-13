@@ -55,7 +55,7 @@ pub mod pallet {
     };
     pub use frame_system::WeightInfo;
     use frame_system::{pallet_prelude::*, RawOrigin};
-    use manta_primitives::constants::time::DAYS;
+    use manta_primitives::constants::time::{MINUTES,DAYS};
     use pallet_parachain_staking::BalanceOf;
     use sp_core::U256;
     use sp_runtime::{
@@ -63,7 +63,7 @@ pub mod pallet {
         DispatchResult,
     };
     use sp_std::prelude::*;
-
+    use runtime_common::prod_or_fast;
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     pub type CallOf<T> = <T as Config>::Call;
@@ -201,11 +201,11 @@ pub mod pallet {
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
-                lottery_interval: (7 * DAYS).into(),
-                drawing_freezeout: (1 * DAYS).into(),
+                lottery_interval: prod_or_fast!((7 * DAYS).into(),(5 * MINUTES).into()),
+                drawing_freezeout: prod_or_fast!((1 * DAYS).into(),(1 * MINUTES).into()),
+                unstake_time: prod_or_fast!((7 * DAYS).into(),(5 * MINUTES).into()), // fast config in staking is 3 minutes to unstake
                 min_deposit: 1u32.into(),
                 min_withdraw: 1u32.into(),
-                unstake_time: (7 * DAYS).into(),
                 gas_reserve: 10_000u32.into(),
             }
         }
@@ -408,6 +408,8 @@ pub mod pallet {
                 MaybeHashed::Value(lottery_drawing_call),
             );
             // )?;
+
+            NextDrawingAt::<T>::set(now + drawing_interval);
 
             Self::deposit_event(Event::LotteryStarted(now + drawing_interval));
             Ok(())
