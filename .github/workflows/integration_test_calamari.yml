@@ -409,8 +409,9 @@ jobs:
               libgtk-3-dev \
               libayatana-appindicator3-dev \
               librsvg2-dev
-          echo "I reached the cargo run test server command"
+          echo "I reached the cargo run test server command 1"
           cargo install tauri-cli
+          echo "I reached the cargo run test server command 2"
           cargo tauri build
       - name: run signer test server 2
         continue-on-error: true
