@@ -383,8 +383,23 @@ jobs:
             --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart \
             -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
-      - name: init rust
+      # - name: init rust
+      #   run: |
+      #     sudo apt update
+      #     sudo apt install -y pkg-config libssl-dev
+      #     curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+      #     source ${HOME}/.cargo/env
+      #     rustup toolchain install stable
+      #     rustup default stable
+      #     rustup update
+      #     rustup target add wasm32-unknown-unknown
+      - uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/manta-signer
+      - name: Build tauri-cli and signer (PError No such device or address)
+        continue-on-error: true
         run: |
+          cd manta-signer
           sudo apt update
           sudo apt install -y pkg-config libssl-dev
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
@@ -393,13 +408,6 @@ jobs:
           rustup default stable
           rustup update
           rustup target add wasm32-unknown-unknown
-      - name: run signer test server
-        continue-on-error: true
-        run: |
-          git clone https://github.com/Manta-Network/manta-signer.git
-          cd manta-signer
-          sudo apt install -y pkg-config libssl-dev
-          sudo apt update
           sudo apt -y install libwebkit2gtk-4.0-dev \
               build-essential \
               curl \
@@ -409,17 +417,23 @@ jobs:
               libgtk-3-dev \
               libayatana-appindicator3-dev \
               librsvg2-dev
-          echo "I reached the cargo run test server command 1"
           cargo install tauri-cli
-          echo "I reached the cargo run test server command 2"
           cargo tauri build
-      - name: run signer test server 2
+      - name: Build signer again (Error A public key has been found, but no private key.)
         continue-on-error: true
         run: |
           cd manta-signer
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup default stable
+          rustup update
+          rustup target add wasm32-unknown-unknown
           cargo tauri build
           cd ..
-      - name: run signer test server 3
+      - name: Run signer test server
         continue-on-error: true
         run: |
           cd manta-signer
