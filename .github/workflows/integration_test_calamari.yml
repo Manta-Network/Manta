@@ -383,24 +383,8 @@ jobs:
             --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart \
             -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
-      # - name: init rust
-      #   run: |
-      #     sudo apt update
-      #     sudo apt install -y pkg-config libssl-dev
-      #     curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-      #     source ${HOME}/.cargo/env
-      #     rustup toolchain install stable
-      #     rustup default stable
-      #     rustup update
-      #     rustup target add wasm32-unknown-unknown
-      - uses: actions/checkout@v2
-        with:
-          repository: Manta-Network/manta-signer
-          path: manta-signer
-      - name: Build tauri-cli and signer (PError No such device or address)
-        continue-on-error: true
+      - name: init rust
         run: |
-          cd manta-signer
           sudo apt update
           sudo apt install -y pkg-config libssl-dev
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
@@ -409,6 +393,15 @@ jobs:
           rustup default stable
           rustup update
           rustup target add wasm32-unknown-unknown
+      - uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/manta-signer
+          path: manta-signer
+      - name: Build tauri-cli and signer (PError No such device or address)
+        continue-on-error: true
+        run: |
+          cd manta-signer
+          rustup update
           sudo apt -y install libwebkit2gtk-4.0-dev \
               build-essential \
               curl \
@@ -424,28 +417,14 @@ jobs:
         continue-on-error: true
         run: |
           cd manta-signer
-          sudo apt update
-          sudo apt install -y pkg-config libssl-dev
-          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-          source ${HOME}/.cargo/env
-          rustup toolchain install stable
-          rustup default stable
           rustup update
-          rustup target add wasm32-unknown-unknown
           cargo tauri build
           cd ..
       - name: Run signer test server
         continue-on-error: true
         run: |
           cd manta-signer
-          sudo apt update
-          sudo apt install -y pkg-config libssl-dev
-          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-          source ${HOME}/.cargo/env
-          rustup toolchain install stable
-          rustup default stable
           rustup update
-          rustup target add wasm32-unknown-unknown
           pm2 start cargo \
             --name manta-signer-${{ matrix.chain-spec.id }} \
             --output signer-stdout.log \
