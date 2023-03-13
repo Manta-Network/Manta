@@ -438,6 +438,14 @@ jobs:
         continue-on-error: true
         run: |
           cd manta-signer
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup default stable
+          rustup update
+          rustup target add wasm32-unknown-unknown
           pm2 start cargo \
             --name manta-signer-${{ matrix.chain-spec.id }} \
             --output signer-stdout.log \

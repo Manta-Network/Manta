@@ -27,13 +27,13 @@ describe("Full Sync Test", () => {
     }
 
     const privateWallet = await MantaPrivateWallet.init(privateWalletConfig);
-    await expect(privateWallet.initalWalletSync()).to.be.rejectedWith(Error);
+
+    expect(await privateWallet.initalWalletSync()).to.be.ok;
 
     const after_rpc = performance.now();
     const sync_time = after_rpc - before_rpc;
     console.log("Sync time: ", sync_time);
     expect(sync_time < test_config.sync_time).equals(true);
-    // expect(sync_time > 2000).equals(true);
 
   }).timeout(test_config.timeout);
 });
