@@ -37,16 +37,6 @@ jobs:
       CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@v2
-      - name: init
-        run: |
-          sudo apt update
-          sudo apt install -y pkg-config libssl-dev
-          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-          source ${HOME}/.cargo/env
-          rustup toolchain install stable
-          rustup default stable
-          rustup update
-          rustup target add wasm32-unknown-unknown
       # - name: install sccache
       #   env:
       #     SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
@@ -78,6 +68,16 @@ jobs:
       #       sccache-
       # - name: start sccache server
       #   run: sccache --start-server
+      # - name: init
+      #   run: |
+      #     sudo apt update
+      #     sudo apt install -y pkg-config libssl-dev
+      #     curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+      #     source ${HOME}/.cargo/env
+      #     rustup toolchain install stable
+      #     rustup default stable
+      #     rustup update
+      #     rustup target add wasm32-unknown-unknown
       # - name: build
       #   env:
       #     RUST_BACKTRACE: full
@@ -383,6 +383,16 @@ jobs:
             --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
             --no-autorestart \
             -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
+      - name: init rust
+        run: |
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup default stable
+          rustup update
+          rustup target add wasm32-unknown-unknown
       - name: run signer test server
         continue-on-error: true
         run: |
@@ -401,6 +411,7 @@ jobs:
               librsvg2-dev
           echo "I reached the cargo run test server command"
           cargo install tauri-cli
+          cargo tauri build
       - name: run signer test server 2
         continue-on-error: true
         run: |
