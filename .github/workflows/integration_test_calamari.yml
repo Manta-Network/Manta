@@ -37,6 +37,16 @@ jobs:
       CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@v2
+      - name: init
+        run: |
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup default stable
+          rustup update
+          rustup target add wasm32-unknown-unknown
       # - name: install sccache
       #   env:
       #     SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
@@ -68,16 +78,6 @@ jobs:
       #       sccache-
       # - name: start sccache server
       #   run: sccache --start-server
-      # - name: init
-      #   run: |
-      #     sudo apt update
-      #     sudo apt install -y pkg-config libssl-dev
-      #     curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-      #     source ${HOME}/.cargo/env
-      #     rustup toolchain install stable
-      #     rustup default stable
-      #     rustup update
-      #     rustup target add wasm32-unknown-unknown
       # - name: build
       #   env:
       #     RUST_BACKTRACE: full
@@ -388,14 +388,7 @@ jobs:
         run: |
           git clone https://github.com/Manta-Network/manta-signer.git
           cd manta-signer
-          sudo apt update
           sudo apt install -y pkg-config libssl-dev
-          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-          source ${HOME}/.cargo/env
-          rustup toolchain install stable
-          rustup default stable
-          rustup update
-          rustup target add wasm32-unknown-unknown
           sudo apt update
           sudo apt -y install libwebkit2gtk-4.0-dev \
               build-essential \
@@ -414,24 +407,12 @@ jobs:
       - name: run signer test server 2
         continue-on-error: true
         run: |
-          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-          source ${HOME}/.cargo/env
-          rustup toolchain install stable
-          rustup default stable
-          rustup update
-          rustup target add wasm32-unknown-unknown
           cd manta-signer
           cargo tauri build
           cd ..
       - name: run signer test server 3
         continue-on-error: true
         run: |
-          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-          source ${HOME}/.cargo/env
-          rustup toolchain install stable
-          rustup default stable
-          rustup update
-          rustup target add wasm32-unknown-unknown
           cd manta-signer
           pm2 start cargo \
             --name manta-signer-${{ matrix.chain-spec.id }} \
