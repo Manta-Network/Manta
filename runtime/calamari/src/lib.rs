@@ -358,6 +358,12 @@ pub type RootOrHalfCouncil = EitherOfDiverse<
 >;
 parameter_types! {
     pub const LotteryPotId: PalletId = LOTTERY_PALLET_ID;
+    /// Time in blocks between lottery drawings
+    pub DrawingInterval: BlockNumber = prod_or_fast!(7 * DAYS, 5 * MINUTES);
+    /// Time in blocks *before* a drawing in which modifications of the win-eligble pool are prevented
+    pub DrawingFreezeout: BlockNumber = prod_or_fast!(1 * DAYS, 1 * MINUTES);
+    /// Time in blocks until a collator is done unstaking
+    pub UnstakeLockTime: BlockNumber = LeaveDelayRounds::get() * DefaultBlocksPerRound::get();
 }
 impl pallet_lottery::Config for Runtime {
     type Call = Call;
@@ -367,6 +373,9 @@ impl pallet_lottery::Config for Runtime {
     type ManageOrigin = RootOrHalfCouncil;
     type PalletsOrigin = OriginCaller;
     type LotteryPot = LotteryPotId;
+    type DrawingInterval = DrawingInterval;
+    type DrawingFreezeout = DrawingFreezeout;
+    type UnstakeLockTime = UnstakeLockTime;
     type WeightInfo = ();
 }
 impl pallet_authorship::Config for Runtime {
@@ -610,7 +619,7 @@ parameter_types! {
     /// Default percent of inflation set aside for parachain bond every round
     pub const DefaultParachainBondReservePercent: Percent = Percent::zero();
     pub DefaultBlocksPerRound: BlockNumber = prod_or_fast!(6 * HOURS,15,"CALAMARI_DEFAULTBLOCKSPERROUND");
-    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(28,1,"CALAMARI_LEAVEDELAYROUNDS"); // == 7 * DAYS / 6 * HOURS
+    pub LeaveDelayRounds: BlockNumber = prod_or_fast!(28,1,"CALAMARI_LEAVEDELAYROUNDS"); // == 7 * DAYS / 6 * HOURS = 28
 }
 impl pallet_parachain_staking::Config for Runtime {
     type Event = Event;

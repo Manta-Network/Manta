@@ -59,11 +59,11 @@ pub mod pallet {
     use pallet_parachain_staking::BalanceOf;
     use sp_core::U256;
     use sp_runtime::{
-        traits::{AccountIdConversion, Dispatchable, Hash, Saturating},
+        ArithmeticError,
+        traits::{AccountIdConversion, Dispatchable, Hash, Saturating, CheckedSub},
         DispatchResult,
     };
     use sp_std::prelude::*;
-    use runtime_common::prod_or_fast;
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
     pub type CallOf<T> = <T as Config>::Call;
@@ -91,7 +91,19 @@ pub mod pallet {
         /// Overarching type of all pallets origins.
         type PalletsOrigin: From<frame_system::RawOrigin<Self::AccountId>>;
         /// Account Identifier from which the internal Pot is generated.
+        #[pallet::constant]
         type LotteryPot: Get<PalletId>;
+        /// Time in blocks between lottery drawings
+        #[pallet::constant]
+        type DrawingInterval: Get<Self::BlockNumber>;
+        /// Time in blocks *before* a drawing in
+        /// Depending on the randomness source, the winner might be established before the drawing, this prevents modification of the eligible winning set after the winner
+        /// has been established but before it is selected by fn draw_lottery() which modifications of the win-eligble pool are prevented
+        #[pallet::constant]
+        type DrawingFreezeout: Get<Self::BlockNumber>;
+        /// Time in blocks until a collator is done unstaking
+        #[pallet::constant]
+        type UnstakeLockTime: Get<Self::BlockNumber>;
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
     }
@@ -103,17 +115,6 @@ pub mod pallet {
     pub struct Pallet<T>(PhantomData<T>);
 
     // Configurable (constant) storage items
-
-    #[pallet::storage]
-    #[pallet::getter(fn lottery_interval)]
-    pub(super) type LotteryInterval<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
-
-    /// Depending on the randomness source, the winner might be established before the drawing, this prevents modification of the eligible winning set after the winner
-    /// has been established but before it is selected by fn draw_lottery()
-    #[pallet::storage]
-    #[pallet::getter(fn drawing_buffer)]
-    pub(super) type PreDrawingModificationLockBlocks<T: Config> =
-        StorageValue<_, T::BlockNumber, ValueQuery>;
 
     /// NOTE: how much KMA to keep in the pallet for gas
     /// This must be initialized at genesis, otherwise the pallet will run out of gas at the first drawing
@@ -128,11 +129,6 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn min_withdraw)]
     pub(super) type MinWithdraw<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
-
-    /// This value is imposed by the staking solution used and must be configured >= than what it uses
-    #[pallet::storage]
-    #[pallet::getter(fn unstake_time)]
-    pub(super) type UnstakeTime<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
 
     // Dynamic Storage Items
 
@@ -188,9 +184,6 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub lottery_interval: T::BlockNumber,
-        pub drawing_freezeout: T::BlockNumber,
-        pub unstake_time: T::BlockNumber,
         /// amount of token to keep in the pot for paying gas fees
         pub gas_reserve: BalanceOf<T>,
         pub min_deposit: BalanceOf<T>,
@@ -201,9 +194,6 @@ pub mod pallet {
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
-                lottery_interval: prod_or_fast!((7 * DAYS).into(),(5 * MINUTES).into()),
-                drawing_freezeout: prod_or_fast!((1 * DAYS).into(),(1 * MINUTES).into()),
-                unstake_time: prod_or_fast!((7 * DAYS).into(),(5 * MINUTES).into()), // fast config in staking is 3 minutes to unstake
                 min_deposit: 1u32.into(),
                 min_withdraw: 1u32.into(),
                 gas_reserve: 10_000u32.into(),
@@ -215,9 +205,6 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         #[inline]
         fn build(&self) {
-            LotteryInterval::<T>::set(self.lottery_interval);
-            PreDrawingModificationLockBlocks::<T>::set(self.drawing_freezeout);
-            UnstakeTime::<T>::set(self.unstake_time);
             GasReserve::<T>::set(self.gas_reserve);
             MinDeposit::<T>::set(self.min_deposit);
             MinWithdraw::<T>::set(self.min_withdraw);
@@ -241,7 +228,6 @@ pub mod pallet {
         OnlyRootOrManageOrigin,
         LotteryNotStarted,
         LotteryAlreadyStarted,
-        LotteryAlreadyStopped,
         LotteryNotScheduled,
         TooEarlyForDrawing,
         TooCloseToDrawing,
@@ -288,6 +274,7 @@ pub mod pallet {
             // Add to active funds
             ActiveBalancePerUser::<T>::mutate(caller_account.clone(), |balance| *balance += amount);
             TotalPot::<T>::mutate(|balance| *balance += amount);
+            SumOfDeposits::<T>::mutate(|balance| *balance += amount);
 
             Self::deposit_event(Event::Deposited(caller_account.clone(), amount));
             Ok(())
@@ -322,7 +309,7 @@ pub mod pallet {
                 });
                 // store reduced balance
                 *balance -= amount;
-                TotalPot::<T>::mutate(|pot| *pot -= amount);
+                TotalPot::<T>::try_mutate(|pot| (*pot).checked_sub(&amount).ok_or(ArithmeticError::Underflow))?;
                 // Ok(())
                 Ok::<(), DispatchError>(())
             });
@@ -390,7 +377,7 @@ pub mod pallet {
             // TODO: Check that the pallet has enough funds to pay gas fees for at least the first drawing
 
             let now = <frame_system::Pallet<T>>::block_number();
-            let drawing_interval = Self::lottery_interval();
+            let drawing_interval = <T as Config>::DrawingInterval::get();
             ensure!(
                 drawing_interval > 0u32.into(),
                 Error::<T>::PalletMisconfigured
@@ -419,17 +406,10 @@ pub mod pallet {
         pub fn stop_lottery(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_root_or_manager(origin.clone())?;
 
-            // TODO
-            // ensure!(
-            //     <pallet_scheduler::Pallet<T>::Lookup>::contains_key(T::LotteryPot::get().0.to_vec()),
-            //     Error::<T>::LotteryNotScheduled
-            // );
+            T::Scheduler::cancel_named(T::LotteryPot::get().0.to_vec())
+                .map_err(|_| Error::<T>::LotteryNotStarted)?;
 
             let now = <frame_system::Pallet<T>>::block_number();
-
-            // T::Scheduler::cancel_named(origin, T::LotteryPot::get().0.to_vec())
-            //     .map_err(|_| Error::<T>::LotteryAlreadyStopped)?;
-
             Self::deposit_event(Event::LotteryStopped(now));
             Ok(())
         }
@@ -465,17 +445,16 @@ pub mod pallet {
             ensure!(
                 random.1
                     > Self::next_drawing()
-                        .saturating_sub(Self::drawing_buffer())
+                        .saturating_sub(<T as Config>::DrawingFreezeout::get())
                         .into(),
                 Error::<T>::PalletMisconfigured
             );
 
             // TODO: Fix this conversion
-            // let random_hash = random.0;
-            // let as_number = U256::from_big_endian(random_hash.as_ref());
-            // let winning_number = as_number.low_u128();
-            // let winning_balance: BalanceOf<T> = winning_number.into() % Self::total_pot().into();
-            let winning_balance = 10u32.into();
+            let random_hash = random.0;
+            let as_number = U256::from_big_endian(random_hash.as_ref());
+            let winning_number = as_number.low_u128();
+            let winning_balance: BalanceOf<T> = BalanceOf::<T>::try_from(winning_number).map_err(|_|ArithmeticError::Overflow)? % Self::total_pot().into();
 
             let mut winner: Option<T::AccountId> = None;
             let mut count: BalanceOf<T> = 0u32.into();
@@ -498,22 +477,25 @@ pub mod pallet {
             Self::deposit_event(Event::LotteryWinner(winner.unwrap()));
 
             // TODO: Update bookkeeping
-            NextDrawingAt::<T>::set(now + Self::lottery_interval());
+            NextDrawingAt::<T>::set(now + <T as Config>::DrawingInterval::get());
 
             Self::update_active_funds()?;
-            Self::finish_unstaking_collators(origin.clone());
-            Self::schedule_withdrawal_payouts(origin.clone())?;
-            Self::rebalance_remaining_funds(origin.clone());
+            Self::finish_unstaking_collators();
+            Self::schedule_withdrawal_payouts()?;
+            Self::rebalance_remaining_funds();
 
             Ok(())
         }
     }
 
-    // impl<T: Config> Into<<T as frame_system::Config>::Call> for CallOf<T> {
-    //     fn into(c: CallOf<T>) -> <T as frame_system::Config>::Call {
-    //         c.into()
-    //     }
-    // }
+    impl<T: Config> Pallet<T> {
+        // TODO: This should be an RPC call
+        pub fn lottery_surplus() -> BalanceOf<T> {
+            let funds = <T as pallet_parachain_staking::Config>::Currency::total_balance(&Self::account_id());
+            let reserve = <GasReserve<T> as frame_support::storage::StorageValue<BalanceOf<T>>>::get();
+            funds.saturating_sub(reserve)
+        }
+    }
 
     impl<T: Config> Pallet<T> {
         /// Get a unique, inaccessible account id from the `PotId`.
@@ -590,15 +572,13 @@ pub mod pallet {
         }
 
         /// NOTE: This code assumes UnstakingCollators is sorted
-        fn finish_unstaking_collators(origin: OriginFor<T>) {
-            Self::ensure_root_or_manager(origin);
-
+        fn finish_unstaking_collators() {
             let now = <frame_system::Pallet<T>>::block_number();
             let unstaking = UnstakingCollators::<T>::get();
             UnstakingCollators::<T>::try_mutate(|unstaking| {
                 let remaining_collators = unstaking.iter().filter_map(|collator| {
                     // only attempt to resolve fully unstaked collators
-                    if collator.since + UnstakeTime::<T>::get() > now {
+                    if collator.since + <T as Config>::UnstakeLockTime::get() > now {
                         return Some(collator.clone());
                     };
                     // There can only be one request per collator and it is always a full revoke_delegation call
@@ -630,9 +610,7 @@ pub mod pallet {
             });
         }
 
-        pub fn rebalance_remaining_funds(origin: OriginFor<T>) {
-            Self::ensure_root_or_manager(origin);
-
+        pub fn rebalance_remaining_funds() {
             let pot_account_id = Self::account_id();
             let available_balance =
                 <T as pallet_parachain_staking::Config>::Currency::free_balance(&pot_account_id);
@@ -652,7 +630,7 @@ pub mod pallet {
 
         /// This fn schedules a single shot payout of all matured withdrawals
         /// It is meant to be executed in the course of a drawing
-        fn schedule_withdrawal_payouts(origin: OriginFor<T>) -> DispatchResult {
+        fn schedule_withdrawal_payouts() -> DispatchResult {
             let some_collator =
                 pallet_parachain_staking::Pallet::<T>::selected_candidates()[0].clone(); // no panic, at least one collator must be chosen or the chain is borked
             let now = <frame_system::Pallet<T>>::block_number();
@@ -664,7 +642,7 @@ pub mod pallet {
                 );
                 let mut left_overs: Vec<Request<_, _, _>> = Vec::new();
                 for request in request_vec.iter() {
-                    if now < request.block + <UnstakeTime<T>>::get() {
+                    if now < request.block + <T as Config>::UnstakeLockTime::get() {
                         // too early to withdraw this request
                         left_overs.push((*request).clone());
                         continue;
@@ -704,7 +682,7 @@ pub mod pallet {
         pub(super) fn not_in_drawing_freezeout() -> bool {
             let now = <frame_system::Pallet<T>>::block_number();
             now < (Self::next_drawing()
-                .saturating_sub(Self::drawing_buffer())
+                .saturating_sub(<T as Config>::DrawingFreezeout::get())
                 .into())
         }
 
