@@ -401,6 +401,7 @@ jobs:
         continue-on-error: true
         run: |
           cd manta-signer
+          source ${HOME}/.cargo/env
           rustup update
           sudo apt -y install libwebkit2gtk-4.0-dev \
               build-essential \
@@ -417,6 +418,7 @@ jobs:
         continue-on-error: true
         run: |
           cd manta-signer
+          source ${HOME}/.cargo/env
           rustup update
           cargo tauri build
           cd ..
@@ -424,6 +426,7 @@ jobs:
         continue-on-error: true
         run: |
           cd manta-signer
+          source ${HOME}/.cargo/env
           rustup update
           pm2 start cargo \
             --name manta-signer-${{ matrix.chain-spec.id }} \
