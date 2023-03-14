@@ -221,7 +221,7 @@ pub mod pallet {
     pub enum Event<T: Config> {
         LotteryStarted(T::BlockNumber),
         LotteryStopped(T::BlockNumber),
-        LotteryWinner(T::AccountId),
+        LotteryWinner(T::AccountId, BalanceOf<T>),
         Deposited(T::AccountId, BalanceOf<T>),
         ScheduledWithdraw(T::AccountId, BalanceOf<T>),
         Withdrawn(T::AccountId, BalanceOf<T>),
@@ -384,8 +384,9 @@ pub mod pallet {
             Self::ensure_root_or_manager(origin.clone())?;
             // Pallet has enough funds to pay gas fees for at least the first drawing
             ensure!(
-                <T as pallet_parachain_staking::Config>::Currency::free_balance(&Self::account_id())
-                    >= Self::gas_reserve(),
+                pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
+                    &Self::account_id()
+                ) >= Self::gas_reserve(),
                 Error::<T>::PotBalanceBelowGasReserve
             );
 
@@ -467,7 +468,9 @@ pub mod pallet {
             let all_funds_in_pallet =
                 <T as pallet_parachain_staking::Config>::Currency::total_balance(&pot_account_id);
             let available_funds_in_pallet =
-                <T as pallet_parachain_staking::Config>::Currency::free_balance(&pot_account_id);
+                pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
+                    &pot_account_id,
+                );
 
             // always keep some funds for gas
             let payout = all_funds_in_pallet
@@ -540,7 +543,7 @@ pub mod pallet {
                 Ok::<(), ArithmeticError>(())
             })?;
 
-            Self::deposit_event(Event::LotteryWinner(winner.unwrap()));
+            Self::deposit_event(Event::LotteryWinner(winner.unwrap(), payout));
 
             // TODO: Update bookkeeping
             NextDrawingAt::<T>::set(Some(now + <T as Config>::DrawingInterval::get()));
@@ -564,7 +567,7 @@ pub mod pallet {
         pub fn liquidate_lottery(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_root_or_manager(origin.clone())?; // Allow only the origin that scheduled the lottery to execute
 
-            ensure!(Self::next_drawing().is_none(),Error::<T>::LotteryIsRunning);
+            ensure!(Self::next_drawing().is_none(), Error::<T>::LotteryIsRunning);
 
             // TODO: Unstake all collators, schedule return of all user deposits
             // for collator in collators_we_staked_to {
@@ -578,12 +581,14 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         // TODO: This should be an RPC call
         pub fn lottery_surplus() -> BalanceOf<T> {
-            let funds = <T as pallet_parachain_staking::Config>::Currency::total_balance(
+            let funds = pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
                 &Self::account_id(),
             );
-            let reserve =
-                <GasReserve<T> as frame_support::storage::StorageValue<BalanceOf<T>>>::get();
-            funds.saturating_sub(reserve)
+            let unclaimed_winnings = Self::total_unclaimed_winnings();
+            let reserve = Self::gas_reserve();
+            funds
+                .saturating_sub(unclaimed_winnings)
+                .saturating_sub(reserve)
         }
     }
 
@@ -620,6 +625,7 @@ pub mod pallet {
                 pallet_parachain_staking::Pallet::<T>::selected_candidates()[0].clone(); // no panic, at least one collator must be chosen or the chain is borked
 
             // TODO: Find the smallest currently active delegation larger than `amount`
+            let my_delegations = pallet_parachain_staking::Pallet::<T>::delegator_state(&Self::account_id()).ok_or(pallet_parachain_staking::Error::DelegatorDNE)?;
             let delegated_amount_to_be_unstaked: BalanceOf<T> = 0u32.into();
 
             // TODO: If none can be found, find a combination of collators so it can
@@ -636,7 +642,7 @@ pub mod pallet {
 
             // TODO: Update remaining balance
             RemainingUnstakingBalance::<T>::mutate(|bal| {
-                *bal += delegated_amount_to_be_unstaked.into()
+                *bal = (*bal).saturating_add(delegated_amount_to_be_unstaked.into());
             });
 
             // update unstaking storage
@@ -706,10 +712,13 @@ pub mod pallet {
         }
 
         pub fn do_rebalance_remaining_funds() {
-            let pot_account_id = Self::account_id();
+            // Only restake what isn't needed to service outstanding withdrawal requests
+            let outstanding_withdrawal_requests = <WithdrawalRequestQueue<T>>::get().iter().map(|request|request.balance).reduce(|acc,e|acc + e).unwrap_or(0u32.into());
             let available_balance =
-                <T as pallet_parachain_staking::Config>::Currency::free_balance(&pot_account_id);
-            let stakable_balance = available_balance - Self::gas_reserve();
+                pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
+                    &Self::account_id(),
+                );
+            let stakable_balance = available_balance - outstanding_withdrawal_requests - Self::gas_reserve();
 
             // TODO: Find highest APY for this deposit (possibly balance deposit to multiple collators)
             let some_output: Vec<(T::AccountId, BalanceOf<T>)> = vec![(
@@ -727,7 +736,12 @@ pub mod pallet {
         /// **It is meant to be executed in the course of a drawing**
         fn do_process_matured_withdrawals() -> DispatchResult {
             let now = <frame_system::Pallet<T>>::block_number();
-            let funds_available_to_withdraw = <T as pallet_parachain_staking::Config>::Currency::free_balance(&Self::account_id()).saturating_sub(<GasReserve<T>>::get()).saturating_sub(/* TODO: Not-yet-claimed winnings */0u32.into());
+            let funds_available_to_withdraw =
+                pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
+                    &Self::account_id(),
+                )
+                .saturating_sub(Self::total_unclaimed_winnings())
+                .saturating_sub(Self::gas_reserve());
 
             // Pay down the list from top (oldest) to bottom until we've paid out everyone or run out of available funds
             <WithdrawalRequestQueue<T>>::try_mutate(|request_vec| {
