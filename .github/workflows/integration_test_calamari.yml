@@ -5,6 +5,9 @@ on:
   pull_request:
     branches: [manta]
     types: [opened, reopened, synchronize, labeled]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 env:
   AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
   AWS_REGION: us-east-1
@@ -219,149 +222,149 @@ jobs:
         with:
           repository: Manta-Network/Dev-Tools
           path: dev-tools-calamari
-      # - name: launch testnet
+      - name: launch testnet
+        run: |
+          cd ${{ github.workspace }}/polkadot-launch
+          yarn install
+          yarn build
+          pm2 start dist/cli.js \
+            --name polkadot-launch \
+            --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
+            --no-autorestart \
+            -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
+      - name: init measure-block-time rococo
+        run: |
+          cd ${{ github.workspace }}/dev-tools-rococo/measure-block-time
+          yarn install
+          pm2 start index.js \
+            --name measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }} \
+            --output ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log \
+            --no-autorestart \
+            -- \
+            --address=ws://127.0.0.1:9911
+      - name: init measure-block-time calamari
+        run: |
+          cd ${{ github.workspace }}/dev-tools-calamari/measure-block-time
+          yarn install
+          pm2 start index.js \
+            --name measure-block-time-${{ matrix.chain-spec.id }} \
+            --output ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
+            --error ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
+            --no-autorestart \
+            -- \
+            --address=ws://127.0.0.1:9944
+      - uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Manta
+          path: Manta
+      - name: run test suites
+        run: |
+          sleep 120
+          cd ${{ github.workspace }}/Manta/tests/esm
+          yarn install
+          yarn
+          yarn correctness_test --address=ws://127.0.0.1:9944 --exit
+          yarn performance_test --address=ws://127.0.0.1:9944 --exit
+      - name: check if target block is finalized
+        run: |
+          cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
+          yarn install
+          yarn
+          node index.js --para_address=ws://127.0.0.1:9944 --relay_address=ws://127.0.0.1:9911 --target_block=${{ matrix.chain-spec.expected.block-count.para }}
+          if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
+      - name: stop testnet
+        run: |
+          cd ${{ github.workspace }}/polkadot-launch
+          pm2 stop measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}
+          pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
+          pm2 stop polkadot-launch
+      - if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log
+          path: ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log
+      - if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log
+          path: ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log
+      - if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
+          path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
+      - if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
+          path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
+      - if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
+          path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
+      - if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
+          path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
+      - if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: rococo-alice-relay-for-${{ matrix.chain-spec.id }}.log
+          path: ${{ github.workspace }}/polkadot-launch/alice.log
+      - if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: rococo-bob-relay-for-${{ matrix.chain-spec.id }}.log
+          path: ${{ github.workspace }}/polkadot-launch/bob.log
+      - if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.chain-spec.id }}-alice.log
+          path: ${{ github.workspace }}/polkadot-launch/9944.log
+      - if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.chain-spec.id }}-bob.log
+          path: ${{ github.workspace }}/polkadot-launch/9944.log
+      - name: parse rococo block times
+        run: |
+          grep '#.*' ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-rococo.csv; done
+          if [ ! -f ${{ github.workspace }}/block-time-rococo.csv ]; then echo "block times not detected"; exit 1; fi
+          jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-rococo.csv > ${{ github.workspace }}/block-time-rococo.json
+      - if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: block-time-rococo-relay-for-${{ matrix.chain-spec.id }}.json
+          path: ${{ github.workspace }}/block-time-rococo.json
+      # - if: always()
+      # - name: parse calamari block times
       #   run: |
-      #     cd ${{ github.workspace }}/polkadot-launch
-      #     yarn install
-      #     yarn build
-      #     pm2 start dist/cli.js \
-      #       --name polkadot-launch \
-      #       --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log \
-      #       --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log \
-      #       --no-autorestart \
-      #       -- $HOME/.local/share/calamari-pc/${{ matrix.chain-spec.id }}-${GITHUB_SHA:0:7}-launch-config.json
-      # - name: init measure-block-time rococo
-      #   run: |
-      #     cd ${{ github.workspace }}/dev-tools-rococo/measure-block-time
-      #     yarn install
-      #     pm2 start index.js \
-      #       --name measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }} \
-      #       --output ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log \
-      #       --error ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log \
-      #       --no-autorestart \
-      #       -- \
-      #       --address=ws://127.0.0.1:9911
-      # - name: init measure-block-time calamari
-      #   run: |
-      #     cd ${{ github.workspace }}/dev-tools-calamari/measure-block-time
-      #     yarn install
-      #     pm2 start index.js \
-      #       --name measure-block-time-${{ matrix.chain-spec.id }} \
-      #       --output ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log \
-      #       --error ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log \
-      #       --no-autorestart \
-      #       -- \
-      #       --address=ws://127.0.0.1:9944
-      # - uses: actions/checkout@v2
-      #   with:
-      #     repository: Manta-Network/Manta
-      #     path: Manta
-      # - name: run test suites
-      #   run: |
-      #     sleep 120
-      #     cd ${{ github.workspace }}/Manta/tests/esm
-      #     yarn install
-      #     yarn
-      #     yarn correctness_test --address=ws://127.0.0.1:9944 --exit
-      #     yarn performance_test --address=ws://127.0.0.1:9944 --exit
-      # - name: check if target block is finalized
-      #   run: |
-      #     cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block
-      #     yarn install
-      #     yarn
-      #     node index.js --para_address=ws://127.0.0.1:9944 --relay_address=ws://127.0.0.1:9911 --target_block=${{ matrix.chain-spec.expected.block-count.para }}
-      #     if [ $? == 1 ]; then echo "Failed to finalize the target block - ${{ matrix.chain-spec.expected.block-count.para }}"; exit 1; fi
-      # - name: stop testnet
-      #   run: |
-      #     cd ${{ github.workspace }}/polkadot-launch
-      #     pm2 stop measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}
-      #     pm2 stop measure-block-time-${{ matrix.chain-spec.id }}
-      #     pm2 stop polkadot-launch
+      #     grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv; done
+      #     if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv ]; then echo "block times not detected"; exit 1; fi
+      #     jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv > ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
       # - if: always()
       #   uses: actions/upload-artifact@v2
       #   with:
-      #     name: polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log
-      #     path: ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stdout.log
-      # - if: always()
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log
-      #     path: ${{ github.workspace }}/polkadot-launch-for-${{ matrix.chain-spec.id }}-stderr.log
-      # - if: always()
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
-      #     path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log
-      # - if: always()
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
-      #     path: ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stderr.log
-      # - if: always()
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
-      #     path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log
-      # - if: always()
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
-      #     path: ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stderr.log
-      # - if: always()
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: rococo-alice-relay-for-${{ matrix.chain-spec.id }}.log
-      #     path: ${{ github.workspace }}/polkadot-launch/alice.log
-      # - if: always()
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: rococo-bob-relay-for-${{ matrix.chain-spec.id }}.log
-      #     path: ${{ github.workspace }}/polkadot-launch/bob.log
-      # - if: always()
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: ${{ matrix.chain-spec.id }}-alice.log
-      #     path: ${{ github.workspace }}/polkadot-launch/9944.log
-      # - if: always()
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: ${{ matrix.chain-spec.id }}-bob.log
-      #     path: ${{ github.workspace }}/polkadot-launch/9944.log
-      # - name: parse rococo block times
-      #   run: |
-      #     grep '#.*' ${{ github.workspace }}/measure-block-time-rococo-relay-for-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-rococo.csv; done
-      #     if [ ! -f ${{ github.workspace }}/block-time-rococo.csv ]; then echo "block times not detected"; exit 1; fi
-      #     jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-rococo.csv > ${{ github.workspace }}/block-time-rococo.json
-      # - if: always()
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: block-time-rococo-relay-for-${{ matrix.chain-spec.id }}.json
-      #     path: ${{ github.workspace }}/block-time-rococo.json
-      # # - if: always()
-      # # - name: parse calamari block times
-      # #   run: |
-      # #     grep '#.*' ${{ github.workspace }}/measure-block-time-${{ matrix.chain-spec.id }}-stdout.log | while read -r line; do words=($line); echo ${words[6]},${words[10]} | tee ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv; done
-      # #     if [ ! -f ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv ]; then echo "block times not detected"; exit 1; fi
-      # #     jq -s -R '[split("\n") | .[] | select(length > 0) | split(",") | {block:.[0]|tonumber, time:.[1]|tonumber} ]' ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.csv > ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
-      # # - if: always()
-      # #   uses: actions/upload-artifact@v2
-      # #   with:
-      # #     name: block-time-${{ matrix.chain-spec.id }}.json
-      # #     path: ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
-      # - if: always()
-      #   name: test - rococo alice peered successfully
-      #   run: |
-      #     grep '💤 Idle (${{ matrix.chain-spec.expected.peer-count.relay }} peers)' ${{ github.workspace }}/polkadot-launch/alice.log
-      # - if: always()
-      #   name: test - rococo alice imported block ${{ matrix.chain-spec.expected.block-count.relay }}
-      #   run: |
-      #     grep ' Imported #${{ matrix.chain-spec.expected.block-count.relay }} ' ${{ github.workspace }}/polkadot-launch/alice.log
-      # - if: always()
-      #   name: test - calamari alice peered successfully
-      #   run: |
-      #     grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9944.log
-      # # Add the manta-pay, asset-manager and assets storage items and run stress test separately,
-      # # in order to not break the logic of the other integration tests, which don't work with real data yet.
+      #     name: block-time-${{ matrix.chain-spec.id }}.json
+      #     path: ${{ github.workspace }}/block-time-${{ matrix.chain-spec.id }}.json
+      - if: always()
+        name: test - rococo alice peered successfully
+        run: |
+          grep '💤 Idle (${{ matrix.chain-spec.expected.peer-count.relay }} peers)' ${{ github.workspace }}/polkadot-launch/alice.log
+      - if: always()
+        name: test - rococo alice imported block ${{ matrix.chain-spec.expected.block-count.relay }}
+        run: |
+          grep ' Imported #${{ matrix.chain-spec.expected.block-count.relay }} ' ${{ github.workspace }}/polkadot-launch/alice.log
+      - if: always()
+        name: test - calamari alice peered successfully
+        run: |
+          grep '\[Parachain\] 💤 Idle (${{ matrix.chain-spec.expected.peer-count.para }} peers)' ${{ github.workspace }}/polkadot-launch/9944.log
+      # Add the manta-pay, asset-manager and assets storage items and run stress test separately,
+      # in order to not break the logic of the other integration tests, which don't work with real data yet.
       - name: append manta-pay storage
         run: |
           wget -P ${{ github.workspace }}/Manta/tests/data https://manta-ops.s3.amazonaws.com/integration-tests-data/storage.json
@@ -459,54 +462,54 @@ jobs:
         with:
           name: ${{ matrix.chain-spec.id }}-alice-stress.log
           path: ${{ github.workspace }}/polkadot-launch/9944.log
-  # docker-image-test:
-  #   needs: [build-node-current, start-docker-image-tester]
-  #   runs-on: ubuntu-20.04
-  #   strategy:
-  #     matrix:
-  #       runtime:
-  #         - name: calamari
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - name: fetch manta
-  #       uses: actions/download-artifact@v2
-  #       with:
-  #         name: manta
-  #     - name: build docker image
-  #       run: |
-  #         mv manta docker/manta
-  #         cd docker/
-  #         chmod +x manta
-  #         GIT_TAG=${{ github.event.release.tag_name }}
-  #         BINARY_NAME=manta
-  #         ln -s ${{ matrix.runtime.name }}.Dockerfile Dockerfile
-  #         docker build \
-  #           --build-arg PARA_BINARY_REF=${GIT_TAG} \
-  #           --build-arg PARA_BINARY_URL=manta \
-  #           --tag ${{ matrix.runtime.name }}   ./
-  #     # - name: run docker image
-  #       run: |
-  #         sudo docker run -p 9944:9944 -p 9945:9945 -d ${{ matrix.runtime.name }} --unsafe-ws-external -- --unsafe-ws-external > docker_id.log
-  #         sleep 60
-  #     - name: Show log
-  #       run: |
-  #         echo "Get the docker container ID:"
-  #         image_id=`cat docker_id.log`
-  #         echo $image_id
-  #         echo "Adjusting permissions so we can access docker logs..."
-  #         sudo chmod -R +x /var/lib/docker/
-  #         sudo cat /var/lib/docker/containers/${image_id}/${image_id}-json.log
-  #     - uses: actions/checkout@v2
-  #       with:
-  #         repository: Manta-Network/Dev-Tools
-  #         path: dev-tools
-  #     - name: check if target block is finalized
-  #       run: |
-  #         cd dev-tools/check-finalized-block
-  #         yarn install
-  #         yarn
-  #         node index.js --para_address=ws://127.0.0.1:9944 --relay_address=ws://127.0.0.1:9945 --target_block=6
-  #         if [ $? == 1 ]; then echo "Failed to finalize the target block - 6"; exit 1; fi
+  docker-image-test:
+    needs: [build-node-current, start-docker-image-tester]
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        runtime:
+          - name: calamari
+    steps:
+      - uses: actions/checkout@v2
+      - name: fetch manta
+        uses: actions/download-artifact@v2
+        with:
+          name: manta
+      - name: build docker image
+        run: |
+          mv manta docker/manta
+          cd docker/
+          chmod +x manta
+          GIT_TAG=${{ github.event.release.tag_name }}
+          BINARY_NAME=manta
+          ln -s ${{ matrix.runtime.name }}.Dockerfile Dockerfile
+          docker build \
+            --build-arg PARA_BINARY_REF=${GIT_TAG} \
+            --build-arg PARA_BINARY_URL=manta \
+            --tag ${{ matrix.runtime.name }}   ./
+      # - name: run docker image
+        run: |
+          sudo docker run -p 9944:9944 -p 9945:9945 -d ${{ matrix.runtime.name }} --unsafe-ws-external -- --unsafe-ws-external > docker_id.log
+          sleep 60
+      - name: Show log
+        run: |
+          echo "Get the docker container ID:"
+          image_id=`cat docker_id.log`
+          echo $image_id
+          echo "Adjusting permissions so we can access docker logs..."
+          sudo chmod -R +x /var/lib/docker/
+          sudo cat /var/lib/docker/containers/${image_id}/${image_id}-json.log
+      - uses: actions/checkout@v2
+        with:
+          repository: Manta-Network/Dev-Tools
+          path: dev-tools
+      - name: check if target block is finalized
+        run: |
+          cd dev-tools/check-finalized-block
+          yarn install
+          yarn
+          node index.js --para_address=ws://127.0.0.1:9944 --relay_address=ws://127.0.0.1:9945 --target_block=6
+          if [ $? == 1 ]; then echo "Failed to finalize the target block - 6"; exit 1; fi
   # HELPER JOBS BELOW
   start-node-builder-current:
     runs-on: ubuntu-20.04
@@ -586,42 +589,42 @@ jobs:
           aws-instance-id: ${{ needs.start-calamari-integration-tester.outputs.aws-instance-id }}
       - name: discard stopper success/failure
         run: true
-  # start-docker-image-tester:
-  #   runs-on: ubuntu-20.04
-  #   outputs:
-  #     runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
-  #     aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
-  #     aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
-  #   steps:
-  #     - id: start-self-hosted-runner
-  #       uses: audacious-network/aws-github-runner@v1.0.33
-  #       with:
-  #         mode: start
-  #         github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #         aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
-  #         aws-region: ${{ env.AWS_REGION }}
-  #         aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
-  #         aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
-  #         aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
-  #         aws-instance-root-volume-size: 64
-  #         aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
-  #         aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
-  # stop-docker-image-tester:
-  #   if: ${{ always() }}
-  #   needs: [start-docker-image-tester, docker-image-test]
-  #   runs-on: ubuntu-20.04
-  #   steps:
-  #     - continue-on-error: true
-  #       uses: audacious-network/aws-github-runner@v1.0.33
-  #       with:
-  #         mode: stop
-  #         github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
-  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #         aws-region: ${{ needs.start-docker-image-tester.outputs.aws-region }}
-  #         runner-label: ${{ needs.start-docker-image-tester.outputs.runner-label }}
-  #         aws-instance-id: ${{ needs.start-docker-image-tester.outputs.aws-instance-id }}
-  #     - name: discard stopper success/failure
-  #       run: true
+  start-docker-image-tester:
+    runs-on: ubuntu-20.04
+    outputs:
+      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    steps:
+      - id: start-self-hosted-runner
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: start
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
+          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
+          aws-instance-root-volume-size: 64
+          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
+  stop-docker-image-tester:
+    if: ${{ always() }}
+    needs: [start-docker-image-tester, docker-image-test]
+    runs-on: ubuntu-20.04
+    steps:
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: stop
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.start-docker-image-tester.outputs.aws-region }}
+          runner-label: ${{ needs.start-docker-image-tester.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-docker-image-tester.outputs.aws-instance-id }}
+      - name: discard stopper success/failure
+        run: true
