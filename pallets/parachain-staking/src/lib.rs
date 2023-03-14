@@ -1688,7 +1688,14 @@ pub mod pallet {
                 .into_iter()
                 .rev()
                 .take(top_n)
-                .filter(|x| x.amount >= T::MinCollatorStk::get())
+                .filter(|x| {
+                    // Only consider collators above minimum total stake and self-bond
+                    x.amount >= T::MinCollatorStk::get()
+                        && Self::candidate_info(x.owner.clone())
+                            .expect("looping candidates. therefore canidateinfo exists. qed")
+                            .bond
+                            > T::MinCandidateStk::get()
+                })
                 .map(|x| x.owner)
                 .collect::<Vec<T::AccountId>>();
             collators.sort();

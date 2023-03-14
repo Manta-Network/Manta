@@ -44,6 +44,7 @@ lazy_static! {
     pub(crate) static ref DAVE: AccountId = unchecked_account_id::<Public>("Dave");
     pub(crate) static ref EVE: AccountId = unchecked_account_id::<Public>("Eve");
     pub(crate) static ref FERDIE: AccountId = unchecked_account_id::<Public>("Ferdie");
+    pub(crate) static ref USER: AccountId = unchecked_account_id::<Public>("User");
     pub(crate) static ref ALICE_SESSION_KEYS: SessionKeys =
         SessionKeys::from_seed_unchecked("Alice");
     pub(crate) static ref BOB_SESSION_KEYS: SessionKeys = SessionKeys::from_seed_unchecked("Bob");
