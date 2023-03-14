@@ -24,7 +24,7 @@ use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_call
 use frame_support::traits::Get;
 use frame_system::RawOrigin;
 use manta_support::manta_pay::{
-    asset_value_decode, asset_value_encode, field_from_id, id_from_field, Asset,
+    asset_value_decode, asset_value_encode, field_from_id, id_from_field, AccountId, Asset,
 };
 
 use manta_primitives::{
@@ -54,6 +54,7 @@ where
 pub fn init_asset<T>(owner: &T::AccountId, id: StandardAssetId, value: Balance)
 where
     T: Config,
+    T::AccountId: From<AccountId> + Into<AccountId>,
 {
     let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
     let storage_metadata: <T::AssetConfig as AssetConfig<T>>::StorageMetadata = metadata.into();
@@ -80,6 +81,7 @@ where
 }
 
 benchmarks! {
+    where_clause {  where T::AccountId: From<AccountId> + Into<AccountId> }
     to_private {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
@@ -108,10 +110,10 @@ benchmarks! {
         let asset = reclaim_post.sink(0).unwrap();
     }: to_public (
         RawOrigin::Signed(caller.clone()),
-        reclaim_post
+        reclaim_post.clone()
     ) verify {
         // FIXME: add balance checking
-        assert_last_event::<T, _>(Event::ToPublic { asset, sink: caller });
+        assert_last_event::<T, _>(Event::ToPublic { asset, sink: T::AccountId::from(reclaim_post.sink_accounts[0]) });
     }
 
     private_transfer {

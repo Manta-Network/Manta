@@ -225,6 +225,7 @@ fn to_public_fails() {
             &mut utxo_accumulator,
             id_from_field(id).unwrap().into(),
             [value, value],
+            ALICE.into(),
             &mut rng,
         );
 
@@ -327,6 +328,7 @@ fn to_public_sbt_fails() {
                 &mut utxo_accumulator,
                 Fp::from(asset_id),
                 [100, 100],
+                ALICE.into(),
                 &mut rng,
             );
 

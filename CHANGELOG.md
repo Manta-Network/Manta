@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## v4.0.3
+### Changed
+- [\#1024](https://github.com/Manta-Network/Manta/pull/1024) Minor: use checked-in genesis for --chain=manta [MA]
+- [\#1025](https://github.com/Manta-Network/Manta/pull/1025) Filter vested_transfer [CA]
+- [\#1031](https://github.com/Manta-Network/Manta/pull/1031) Verbose Error Handling [CADO]
+
+### Fixed
+- [\#1032](https://github.com/Manta-Network/Manta/pull/1032) Security: Include the sink AccountId in the signed message for ToPublic transactions [MACA]
+
 ## v4.0.2
 ### Added
 - [\#1017](https://github.com/Manta-Network/Manta/pull/1017) github action for relaychain genesis files [MA]

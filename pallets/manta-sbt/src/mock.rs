@@ -21,7 +21,7 @@ use frame_support::{
     traits::{ConstU128, ConstU16, ConstU32, Everything, GenesisBuild, IsInVec},
     PalletId,
 };
-use frame_system::{EnsureRoot, RawOrigin};
+use frame_system::EnsureRoot;
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
@@ -266,23 +266,6 @@ impl pallet_asset_manager::Config for Test {
     type WeightInfo = ();
 }
 
-pub struct MantaPaySuspensionManager;
-impl pallet_manta_pay::SuspendMantaPay for MantaPaySuspensionManager {
-    fn suspend_manta_pay_execution() {
-        let _ = TransactionPause::pause_transactions(
-            RawOrigin::Root.into(),
-            vec![(
-                b"MantaPay".to_vec(),
-                vec![
-                    b"to_private".to_vec(),
-                    b"private_transfer".to_vec(),
-                    b"to_public".to_vec(),
-                ],
-            )],
-        );
-    }
-}
-
 parameter_types! {
     pub const MantaPayPalletId: PalletId = MANTA_PAY_PALLET_ID;
 }
@@ -292,7 +275,6 @@ impl pallet_manta_pay::Config for Test {
     type WeightInfo = pallet_manta_pay::weights::SubstrateWeight<Test>;
     type PalletId = MantaPayPalletId;
     type AssetConfig = MantaAssetConfig;
-    type Suspender = MantaPaySuspensionManager;
 }
 
 parameter_types! {

@@ -42,7 +42,7 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use manta_support::manta_pay::{
-    asset_value_encode, fp_decode, fp_encode, id_from_field, AssetValue, Checkpoint,
+    asset_value_encode, fp_decode, fp_encode, id_from_field, AccountId, AssetValue, Checkpoint,
     FullIncomingNote, MTParametersError, PullResponse, ReceiverChunk, StandardAssetId,
     TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError, UtxoMerkleTreePath,
     VerifyingContextError, Wrap, WrapPair,
@@ -194,7 +194,10 @@ pub mod pallet {
         StorageMap<_, Twox64Concat, UtxoAccumulatorOutput, (), ValueQuery>;
 
     #[pallet::call]
-    impl<T: Config> Pallet<T> {
+    impl<T: Config> Pallet<T>
+    where
+        T::AccountId: From<AccountId> + Into<AccountId>,
+    {
         /// Mints a zkSBT
         ///
         /// `TransferPost` is posted to private ledger and SBT metadata is stored onchain.
@@ -389,22 +392,22 @@ where
     }
 }
 
-impl<T> From<InvalidSourceAccount<config::Config, T::AccountId>> for Error<T>
+impl<T, Id> From<InvalidSourceAccount<config::Config, Id>> for Error<T>
 where
     T: Config,
 {
     #[inline]
-    fn from(_: InvalidSourceAccount<config::Config, T::AccountId>) -> Self {
+    fn from(_: InvalidSourceAccount<config::Config, Id>) -> Self {
         Self::InvalidSourceAccount
     }
 }
 
-impl<T> From<InvalidSinkAccount<config::Config, T::AccountId>> for Error<T>
+impl<T, Id> From<InvalidSinkAccount<config::Config, Id>> for Error<T>
 where
     T: Config,
 {
     #[inline]
-    fn from(_: InvalidSinkAccount<config::Config, T::AccountId>) -> Self {
+    fn from(_: InvalidSinkAccount<config::Config, Id>) -> Self {
         Self::InvalidSinkAccount
     }
 }
@@ -453,7 +456,7 @@ where
 /// Transfer Post Error
 pub type TransferPostError<T> = transfer::TransferPostError<
     config::Config,
-    <T as frame_system::Config>::AccountId,
+    AccountId,
     SenderLedgerError,
     ReceiverLedgerError,
     TransferLedgerError<T>,
@@ -480,7 +483,10 @@ where
     }
 }
 
-impl<T: Config> Pallet<T> {
+impl<T: Config> Pallet<T>
+where
+    T::AccountId: From<AccountId> + Into<AccountId>,
+{
     /// Maximum Number of Updates per Shard (based on benchmark result)
     const PULL_MAX_RECEIVER_UPDATE_SIZE: u64 = 32768;
 
@@ -578,7 +584,7 @@ impl<T: Config> Pallet<T> {
                     &load_transfer_parameters(),
                     &mut SBTLedger(PhantomData),
                     &(),
-                    sources,
+                    sources.into_iter().map(Into::into).collect(),
                     Vec::new(),
                 )
                 .map_err(Error::<T>::from)?
@@ -941,12 +947,12 @@ where
 impl<T> TransferLedger<config::Config> for SBTLedger<T>
 where
     T: Config,
+    T::AccountId: From<AccountId> + Into<AccountId>,
 {
     type SuperPostingKey = ();
-    type AccountId = T::AccountId;
     type Event = PreprocessedEvent<T>;
-    type ValidSourceAccount = WrapPair<Self::AccountId, AssetValue>;
-    type ValidSinkAccount = WrapPair<Self::AccountId, AssetValue>;
+    type ValidSourceAccount = WrapPair<AccountId, AssetValue>;
+    type ValidSinkAccount = WrapPair<AccountId, AssetValue>;
     type ValidProof = Wrap<()>;
     type Error = TransferLedgerError<T>;
 
@@ -955,9 +961,9 @@ where
         &self,
         _asset_id: &config::AssetId,
         sources: I,
-    ) -> Result<Vec<Self::ValidSourceAccount>, InvalidSourceAccount<config::Config, Self::AccountId>>
+    ) -> Result<Vec<Self::ValidSourceAccount>, InvalidSourceAccount<config::Config, AccountId>>
     where
-        I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
+        I: Iterator<Item = (AccountId, config::AssetValue)>,
     {
         Ok(sources
             .map(move |(account_id, withdraw)| WrapPair(account_id, withdraw))
@@ -969,9 +975,9 @@ where
         &self,
         _asset_id: &config::AssetId,
         _sinks: I,
-    ) -> Result<Vec<Self::ValidSinkAccount>, InvalidSinkAccount<config::Config, Self::AccountId>>
+    ) -> Result<Vec<Self::ValidSinkAccount>, InvalidSinkAccount<config::Config, AccountId>>
     where
-        I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
+        I: Iterator<Item = (AccountId, config::AssetValue)>,
     {
         // No Sinks for SBT
         Ok(Vec::new())
@@ -996,7 +1002,7 @@ where
                                 .ok_or(TransferLedgerError::ChecksumError)?,
                             PreprocessedEvent::<T>::ToPrivate {
                                 asset: asset_id,
-                                source: posting_key.sources[0].0.clone(),
+                                source: posting_key.sources[0].0.clone().into(),
                             },
                         )
                     } else {

@@ -17,17 +17,15 @@
 use crate::{
     fp_decode, id_from_field,
     mock::{
-        new_test_ext, MantaAssetConfig, MantaAssetRegistry, MantaPay, Origin as MockOrigin, Test,
-        TransactionPause,
+        new_test_ext, Assets, MantaAssetConfig, MantaAssetRegistry, MantaPay, Origin as MockOrigin,
+        Test,
     },
-    Error, FungibleLedger, ReceiverLedgerError, StandardAssetId, TransferLedgerError,
-    TransferPostError, VerifyingContextError,
+    Error, FungibleLedger,
 };
 use frame_support::{assert_noop, assert_ok};
-use frame_system::RawOrigin;
 use manta_accounting::transfer::test::value_distribution;
 use manta_crypto::{
-    arkworks::{constraint::fp::Fp, serialize::SerializationError},
+    arkworks::constraint::fp::Fp,
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
     rand::{CryptoRng, OsRng, Rand, RngCore},
 };
@@ -36,20 +34,22 @@ use manta_pay::{
         utxo::MerkleTreeConfiguration, ConstraintField, MultiProvingContext, Parameters,
         UtxoAccumulatorModel,
     },
-    manta_accounting::transfer::receiver::ReceiverPostError,
     parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
     test,
 };
 use manta_support::manta_pay::{
-    field_from_id, fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost,
+    field_from_id, fp_encode, AssetId, AssetValue, StandardAssetId,
+    TransferPost as PalletTransferPost,
 };
 
+use manta_crypto::accumulator::Accumulator;
+use manta_pay::config::{Asset, Authorization, FullParametersRef, Receiver, ToPrivate, ToPublic};
 use manta_primitives::{
     assets::{
         AssetConfig, AssetRegistry, AssetRegistryMetadata, AssetStorageMetadata,
         FungibleLedger as _,
     },
-    constants::TEST_DEFAULT_ASSET_ED,
+    constants::{TEST_DEFAULT_ASSET_ED, TEST_DEFAULT_ASSET_ED2},
 };
 use std::{env, path::Path};
 
@@ -117,6 +117,7 @@ where
             &mut utxo_accumulator,
             Fp::from(asset_id),
             value,
+            ALICE.into(),
             rng,
         );
     PalletTransferPost::try_from(to_public).unwrap()
@@ -227,6 +228,7 @@ where
                 &mut utxo_accumulator,
                 Fp::from(asset_id),
                 [100, 100],
+                ALICE.into(),
                 rng,
             );
 
@@ -291,6 +293,7 @@ where
             Fp::from(asset_id),
             // Divide by 2 in order to not exceed total_supply
             [balance / 2, balance / 2],
+            ALICE.into(),
             rng,
         );
         assert_ok!(MantaPay::to_private(
@@ -335,6 +338,27 @@ fn initialize_test(id: StandardAssetId, value: AssetValue) {
         &MantaPay::account_id(),
         TEST_DEFAULT_ASSET_ED
     ));
+}
+
+/// Initializes a test by allocating `value` amount asset to ALICE.
+fn initialize_test_wt_deposit_pallet(id: StandardAssetId, value: AssetValue) {
+    let metadata = AssetRegistryMetadata {
+        metadata: AssetStorageMetadata {
+            name: b"Calamari".to_vec(),
+            symbol: b"KMA".to_vec(),
+            decimals: 12,
+            is_frozen: false,
+        },
+        min_balance: TEST_DEFAULT_ASSET_ED2,
+        is_sufficient: true,
+    };
+    assert_ok!(MantaAssetRegistry::create_asset(
+        id,
+        metadata.into(),
+        TEST_DEFAULT_ASSET_ED2,
+        true
+    ));
+    assert_ok!(FungibleLedger::<Test>::deposit_minting(id, &ALICE, value));
 }
 
 /// Tests multiple to_private from some total supply.
@@ -564,6 +588,141 @@ fn double_spend_in_reclaim_should_not_work() {
 }
 
 #[test]
+fn public_lower_than_ed_should_not_work0() {
+    let mut rng = OsRng;
+    new_test_ext().execute_with(|| {
+        let asset_id = rng.gen();
+        let value = 1000u128;
+        initialize_test_wt_deposit_pallet(asset_id, value * 4);
+
+        let asset_info = Assets::balance(asset_id, MantaPay::account_id());
+        assert_eq!(asset_info, 0);
+        let asset_info = Assets::balance(asset_id, ALICE.clone());
+        assert_eq!(asset_info, value * 4);
+
+        let mut utxo_accumulator = UtxoAccumulator::new(UTXO_ACCUMULATOR_MODEL.clone());
+        let spending_key = rng.gen();
+        let address = PARAMETERS.address_from_spending_key(&spending_key);
+        let mut authorization =
+            Authorization::from_spending_key(&PARAMETERS, &spending_key, &mut rng);
+        let asset_0 = Asset::new(Fp::from(asset_id), value);
+        let asset_1 = Asset::new(Fp::from(asset_id), value);
+
+        // First ToPrivate
+        let (to_private_0, pre_sender_0) = ToPrivate::internal_pair(
+            &PARAMETERS,
+            &mut authorization.context,
+            address,
+            asset_0,
+            Default::default(),
+            &mut rng,
+        );
+        let sender_0 = pre_sender_0
+            .insert_and_upgrade(&PARAMETERS, &mut utxo_accumulator)
+            .expect("");
+        let to_private_0 = to_private_0
+            .into_post(
+                FullParametersRef::new(&PARAMETERS, utxo_accumulator.model()),
+                &PROVING_CONTEXT.to_private,
+                None,
+                Vec::new(),
+                &mut rng,
+            )
+            .expect("Unable to build TO_PRIVATE proof.")
+            .expect("Did not match transfer shape.");
+        assert_ok!(MantaPay::to_private(
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::try_from(to_private_0).unwrap()
+        ));
+        let asset_info = Assets::balance(asset_id, MantaPay::account_id());
+        assert_eq!(asset_info, value);
+
+        // Second ToPrivate
+        let (to_private_1, pre_sender_1) = ToPrivate::internal_pair(
+            &PARAMETERS,
+            &mut authorization.context,
+            address,
+            asset_1,
+            Default::default(),
+            &mut rng,
+        );
+        let sender_1 = pre_sender_1
+            .insert_and_upgrade(&PARAMETERS, &mut utxo_accumulator)
+            .expect("");
+        let to_private_1 = to_private_1
+            .into_post(
+                FullParametersRef::new(&PARAMETERS, utxo_accumulator.model()),
+                &PROVING_CONTEXT.to_private,
+                None,
+                Vec::new(),
+                &mut rng,
+            )
+            .expect("Unable to build TO_PRIVATE proof.")
+            .expect("Did not match transfer shape.");
+        assert_ok!(MantaPay::to_private(
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::try_from(to_private_1).unwrap()
+        ));
+        let asset_info = Assets::balance(asset_id, MantaPay::account_id());
+        assert_eq!(asset_info, value * 2);
+
+        // ToPublic will use previous two ToPrivate.
+        // 0,2000 if ED=1 -> PublicUpdateInvalidTransfer
+        // 1,1999 if ED=2 -> PublicUpdateInvalidTransfer
+        let asset_2 = Asset::new(Fp::from(asset_id), 1);
+        let asset_3 = Asset::new(Fp::from(asset_id), 1999);
+        let receiver_1 =
+            Receiver::sample(&PARAMETERS, address, asset_2, Default::default(), &mut rng);
+        receiver_1.insert_utxo(&PARAMETERS, &mut utxo_accumulator);
+        let to_public = ToPublic::build(
+            authorization,
+            [sender_0.clone(), sender_1.clone()],
+            [receiver_1],
+            asset_3,
+        )
+        .into_post(
+            FullParametersRef::new(&PARAMETERS, utxo_accumulator.model()),
+            &PROVING_CONTEXT.to_public,
+            Some(&spending_key),
+            Vec::from([ALICE.into()]),
+            &mut rng,
+        )
+        .expect("Unable to build TO_PUBLIC proof.")
+        .expect("");
+        assert_noop!(
+            MantaPay::to_public(
+                MockOrigin::signed(ALICE),
+                PalletTransferPost::try_from(to_public).unwrap()
+            ),
+            Error::<Test>::PublicUpdateInvalidTransfer
+        );
+
+        // 2,1998 if ED=2 -> ToPublic OK
+        let asset_2 = Asset::new(Fp::from(asset_id), 2);
+        let asset_3 = Asset::new(Fp::from(asset_id), 1998);
+        let receiver_1 =
+            Receiver::sample(&PARAMETERS, address, asset_2, Default::default(), &mut rng);
+        receiver_1.insert_utxo(&PARAMETERS, &mut utxo_accumulator);
+        let to_public = ToPublic::build(authorization, [sender_0, sender_1], [receiver_1], asset_3)
+            .into_post(
+                FullParametersRef::new(&PARAMETERS, utxo_accumulator.model()),
+                &PROVING_CONTEXT.to_public,
+                Some(&spending_key),
+                Vec::from([ALICE.into()]),
+                &mut rng,
+            )
+            .expect("Unable to build TO_PUBLIC proof.")
+            .expect("");
+        assert_ok!(MantaPay::to_public(
+            MockOrigin::signed(ALICE),
+            PalletTransferPost::try_from(to_public).unwrap()
+        ));
+        let asset_info = Assets::balance(asset_id, MantaPay::account_id());
+        assert_eq!(asset_info, 2);
+    });
+}
+
+#[test]
 fn check_number_conversions() {
     let mut rng = OsRng;
 
@@ -619,81 +778,5 @@ fn pull_ledger_diff_should_work() {
         let mut slice_of = dense_senders.as_slice();
         let decoded_senders = <crate::SenderChunk as Decode>::decode(&mut slice_of).unwrap();
         assert_eq!(runtime_pull_response.senders, decoded_senders);
-    });
-}
-
-fn assert_manta_pay_suspension() {
-    assert_eq!(
-        TransactionPause::paused_transactions((b"MantaPay".to_vec(), b"to_private".to_vec())),
-        Some(())
-    );
-
-    assert_eq!(
-        TransactionPause::paused_transactions((b"MantaPay".to_vec(), b"private_transfer".to_vec())),
-        Some(())
-    );
-
-    assert_eq!(
-        TransactionPause::paused_transactions((b"MantaPay".to_vec(), b"to_public".to_vec())),
-        Some(())
-    );
-
-    let _ = TransactionPause::unpause_pallets(RawOrigin::Root.into(), vec![b"MantaPay".to_vec()]);
-}
-
-#[test]
-fn receiver_ledger_errors_should_shut_down() {
-    new_test_ext().execute_with(|| {
-        let _e = ReceiverPostError::from(ReceiverLedgerError::<Test>::ChecksumError);
-        assert_manta_pay_suspension();
-
-        let _e = ReceiverPostError::from(ReceiverLedgerError::<Test>::MerkleTreeCapacityError);
-        assert_manta_pay_suspension();
-
-        let _e = Error::<Test>::from(ReceiverPostError::UnexpectedError(
-            ReceiverLedgerError::<Test>::ChecksumError,
-        ));
-        assert_manta_pay_suspension();
-
-        let _e = Error::<Test>::from(ReceiverPostError::UnexpectedError(
-            ReceiverLedgerError::<Test>::MerkleTreeCapacityError,
-        ));
-        assert_manta_pay_suspension();
-    });
-}
-#[test]
-fn transfer_ledger_errors_should_shut_down() {
-    new_test_ext().execute_with(|| {
-        let _e = TransferPostError::from(TransferLedgerError::<Test>::ChecksumError);
-        assert_manta_pay_suspension();
-
-        let _e = TransferPostError::from(TransferLedgerError::<Test>::VerifyingContextDecodeError(
-            VerifyingContextError::Decode(SerializationError::NotEnoughSpace),
-        ));
-        assert_manta_pay_suspension();
-
-        let _e = Error::<Test>::from(TransferPostError::<Test>::UnexpectedError(
-            TransferLedgerError::ChecksumError,
-        ));
-        assert_manta_pay_suspension();
-
-        let _e = Error::<Test>::from(TransferPostError::<Test>::UnexpectedError(
-            TransferLedgerError::<Test>::VerifyingContextDecodeError(
-                VerifyingContextError::Decode(SerializationError::NotEnoughSpace),
-            ),
-        ));
-        assert_manta_pay_suspension();
-
-        let _e = Error::<Test>::from(TransferPostError::<Test>::Receiver(
-            ReceiverPostError::UnexpectedError(
-                ReceiverLedgerError::<Test>::MerkleTreeCapacityError,
-            ),
-        ));
-        assert_manta_pay_suspension();
-
-        let _e = Error::<Test>::from(TransferPostError::<Test>::Receiver(
-            ReceiverPostError::UnexpectedError(ReceiverLedgerError::<Test>::ChecksumError),
-        ));
-        assert_manta_pay_suspension();
     });
 }

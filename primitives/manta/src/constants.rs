@@ -103,6 +103,8 @@ pub const MANTA_SBT_PALLET_ID: PalletId = PalletId(*b"mantasbt");
 ///
 /// This should only be used for testing and should not be used in production.
 pub const TEST_DEFAULT_ASSET_ED: Balance = 1;
+/// Make ED as 2 for another test case.
+pub const TEST_DEFAULT_ASSET_ED2: Balance = 2;
 
 /// 1_000_000_000_000
 pub const WEIGHT_PER_SECOND: Weight = 1_000_000_000_000;

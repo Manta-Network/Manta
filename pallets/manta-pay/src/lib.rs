@@ -59,6 +59,7 @@ extern crate alloc;
 
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
+use errors::{ReceiverLedgerError, SenderLedgerError, TransferLedgerError};
 use frame_support::{
     pallet_prelude::*, traits::tokens::ExistenceRequirement, transactional, PalletId,
 };
@@ -81,10 +82,10 @@ use manta_pay::{
 };
 use manta_primitives::assets::{self, AssetConfig, FungibleLedger as _};
 use manta_support::manta_pay::{
-    asset_value_decode, asset_value_encode, fp_decode, fp_encode, id_from_field, Asset, AssetValue,
-    FullIncomingNote, MTParametersError, NullifierCommitment, OutgoingNote, ReceiverChunk,
-    SenderChunk, StandardAssetId, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError,
-    UtxoMerkleTreePath, VerifyingContextError, Wrap, WrapPair,
+    asset_value_decode, asset_value_encode, fp_decode, fp_encode, id_from_field, AccountId, Asset,
+    AssetValue, FullIncomingNote, MTParametersError, NullifierCommitment, OutgoingNote,
+    ReceiverChunk, SenderChunk, StandardAssetId, TransferPost, Utxo, UtxoAccumulatorOutput,
+    UtxoItemHashError, UtxoMerkleTreePath, VerifyingContextError, Wrap, WrapPair,
 };
 use manta_util::codec::Encode;
 
@@ -98,6 +99,7 @@ mod mock;
 #[cfg(test)]
 mod test;
 
+pub mod errors;
 pub mod weights;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -120,17 +122,6 @@ pub mod pallet {
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
-    /// Suspend execution of MantaPay extrinsics (via tx-pause) due to unexpected internal ledger error.
-    /// Currently the following errors, which are only controlled by our own code, not user input:
-    /// ChecksumError, MerkleTreeCapacityError, VerifyingContextDecodeError
-    pub trait SuspendMantaPay {
-        fn suspend_manta_pay_execution();
-    }
-
-    impl SuspendMantaPay for () {
-        fn suspend_manta_pay_execution() {}
-    }
-
     /// Pallet
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
@@ -151,9 +142,6 @@ pub mod pallet {
 
         /// Pallet ID
         type PalletId: Get<PalletId>;
-
-        /// Suspends execution of all extrinsics via TxPause
-        type Suspender: SuspendMantaPay;
     }
 
     /// Fungible Ledger Implementation for [`Config`]
@@ -204,7 +192,10 @@ pub mod pallet {
     pub(super) type NullifierSetSize<T: Config> = StorageValue<_, u64, ValueQuery>;
 
     #[pallet::call]
-    impl<T: Config> Pallet<T> {
+    impl<T: Config> Pallet<T>
+    where
+        T::AccountId: From<AccountId> + Into<AccountId>,
+    {
         /// Transforms some public assets into private ones using `post`, withdrawing the public
         /// assets from the `origin` account.
         #[pallet::call_index(0)]
@@ -216,9 +207,11 @@ pub mod pallet {
                 post.sources.len() == 1
                     && post.sender_posts.is_empty()
                     && post.receiver_posts.len() == 1
-                    && post.sinks.is_empty(),
+                    && post.sinks.is_empty()
+                    && post.sink_accounts.is_empty(),
                 Error::<T>::InvalidShape
             );
+            // Prevent ledger bloat from zero value transactions
             for source in post.sources.iter() {
                 ensure!(
                     asset_value_decode(*source) > 0u128,
@@ -234,18 +227,25 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::to_public())]
         #[transactional]
         pub fn to_public(origin: OriginFor<T>, post: TransferPost) -> DispatchResultWithPostInfo {
-            let origin = ensure_signed(origin)?;
+            let _origin = ensure_signed(origin)?;
             ensure!(
                 post.sources.is_empty()
                     && post.sender_posts.len() == 2
                     && post.receiver_posts.len() == 1
-                    && post.sinks.len() == 1,
+                    && post.sinks.len() == 1
+                    && post.sink_accounts.len() == 1,
                 Error::<T>::InvalidShape
             );
             for sink in post.sinks.iter() {
                 ensure!(asset_value_decode(*sink) > 0u128, Error::<T>::ZeroTransfer);
             }
-            Self::post_transaction(None, vec![], vec![origin], post)
+            Self::post_transaction(
+                None,
+                vec![],
+                // Possibility to panic must be prevented by preceding shape check
+                vec![T::AccountId::from(post.sink_accounts[0])],
+                post,
+            )
         }
 
         /// Transfers private assets encoded in `post`.
@@ -266,7 +266,8 @@ pub mod pallet {
                 post.sources.is_empty()
                     && post.sender_posts.len() == 2
                     && post.receiver_posts.len() == 2
-                    && post.sinks.is_empty(),
+                    && post.sinks.is_empty()
+                    && post.sink_accounts.is_empty(),
                 Error::<T>::InvalidShape
             );
             Self::post_transaction(Some(origin), vec![], vec![], post)
@@ -343,20 +344,10 @@ pub mod pallet {
     /// Error
     #[pallet::error]
     pub enum Error<T> {
-        /// Uninitialized Supply
-        ///
-        /// Supply of the given Asset Id has not yet been initialized.
-        UninitializedSupply,
-
         /// Zero Transfer
         ///
         /// Transfers cannot include amounts equal to zero.
         ZeroTransfer,
-
-        /// Balance Low
-        ///
-        /// Attempted to withdraw from balance which was smaller than the withdrawal amount.
-        BalanceLow,
 
         /// Invalid Serialized Form
         ///
@@ -443,171 +434,65 @@ pub mod pallet {
         /// [`InvalidTransfer`](FungibleLedgerError::InvalidTransfer) from [`FungibleLedgerError`]
         PublicUpdateInvalidTransfer,
 
-        /// Internal Ledger Error
-        ///
-        /// This is caused by some internal error in the ledger and should never occur.
-        InternalLedgerError,
+        /// Fungible Ledger Encode Error
+        FungibleLedgerEncodeError,
 
-        /// Encode Error
-        EncodeError,
-    }
+        /// Sender Ledger Fp Encoding failed.
+        SenderLedgerFpEncodeError,
 
-    impl<T> From<InvalidAuthorizationSignature> for Error<T>
-    where
-        T: Config,
-    {
-        #[inline]
-        fn from(_: InvalidAuthorizationSignature) -> Self {
-            Self::InvalidAuthorizationSignature
-        }
-    }
+        /// Sender Ledger [`OutgoingNote`] failed to decode
+        SenderLedgerOutgoingNodeDecodeFailed,
 
-    impl<T> From<InvalidSourceAccount<config::Config, T::AccountId>> for Error<T>
-    where
-        T: Config,
-    {
-        #[inline]
-        fn from(_: InvalidSourceAccount<config::Config, T::AccountId>) -> Self {
-            Self::InvalidSourceAccount
-        }
-    }
+        /// Reciever Ledger Utxo decode failed
+        ReceiverLedgerUtxoDecodeFailed,
 
-    impl<T> From<InvalidSinkAccount<config::Config, T::AccountId>> for Error<T>
-    where
-        T: Config,
-    {
-        #[inline]
-        fn from(_: InvalidSinkAccount<config::Config, T::AccountId>) -> Self {
-            Self::InvalidSinkAccount
-        }
-    }
+        /// Receiver Ledger Wrong Checksum Error
+        ReceiverLedgerChecksumError,
 
-    impl<T> From<SenderPostError<SenderLedgerError>> for Error<T>
-    where
-        T: Config,
-    {
-        #[inline]
-        fn from(err: SenderPostError<SenderLedgerError>) -> Self {
-            match err {
-                SenderPostError::AssetSpent => Self::AssetSpent,
-                SenderPostError::InvalidUtxoAccumulatorOutput => Self::InvalidUtxoAccumulatorOutput,
-                SenderPostError::UnexpectedError(_) => Self::InternalLedgerError,
-            }
-        }
-    }
+        /// Receiver Ledger Merkle Tree Parameters Decoding Error
+        ReceiverLedgerMTParametersDecodeError,
 
-    impl<T> From<ReceiverPostError<ReceiverLedgerError<T>>> for Error<T>
-    where
-        T: Config,
-    {
-        #[inline]
-        fn from(err: ReceiverPostError<ReceiverLedgerError<T>>) -> Self {
-            match err {
-                ReceiverPostError::AssetRegistered => Self::AssetRegistered,
-                ReceiverPostError::UnexpectedError(e) => {
-                    match e {
-                        ReceiverLedgerError::ChecksumError
-                        | ReceiverLedgerError::MerkleTreeCapacityError => {
-                            T::Suspender::suspend_manta_pay_execution();
-                        }
-                        _ => {}
-                    };
-                    Self::InternalLedgerError
-                }
-            }
-        }
-    }
+        /// Receiver Ledger Utxo Accumulator Item Hash Decoding Error
+        ReceiverLedgerUtxoAccumulatorItemHashDecodeError,
 
-    impl<T> From<SenderLedgerError> for TransferLedgerError<T>
-    where
-        T: Config,
-    {
-        #[inline]
-        fn from(err: SenderLedgerError) -> Self {
-            TransferLedgerError::SenderLedgerError(err)
-        }
-    }
+        /// Receiver Ledger Merkle Tree Out of Capacity Error
+        ReceiverLedgerMerkleTreeCapacityError,
 
-    impl<T> From<ReceiverLedgerError<T>> for TransferLedgerError<T>
-    where
-        T: Config,
-    {
-        #[inline]
-        fn from(err: ReceiverLedgerError<T>) -> Self {
-            match err {
-                ReceiverLedgerError::ChecksumError
-                | ReceiverLedgerError::MerkleTreeCapacityError => {
-                    T::Suspender::suspend_manta_pay_execution();
-                }
-                _ => {}
-            };
-            TransferLedgerError::ReceiverLedgerError(err)
-        }
-    }
+        /// Receiver Ledger Field Element Encoding Error
+        ReceiverLedgerFpEncodeError,
 
-    impl<T> From<FungibleLedgerError> for Error<T>
-    where
-        T: Config,
-    {
-        #[inline]
-        fn from(err: FungibleLedgerError) -> Self {
-            match err {
-                FungibleLedgerError::InvalidAssetId(_) => Self::PublicUpdateInvalidAssetId,
-                FungibleLedgerError::BelowMinimum => Self::PublicUpdateBelowMinimum,
-                FungibleLedgerError::CannotCreate => Self::PublicUpdateCannotCreate,
-                FungibleLedgerError::UnknownAsset => Self::PublicUpdateUnknownAsset,
-                FungibleLedgerError::Overflow => Self::PublicUpdateOverflow,
-                FungibleLedgerError::CannotWithdrawMoreThan(_) => Self::PublicUpdateCannotWithdraw,
-                FungibleLedgerError::InvalidMint(_) => Self::PublicUpdateInvalidMint,
-                FungibleLedgerError::InvalidBurn(_) => Self::PublicUpdateInvalidBurn,
-                FungibleLedgerError::InvalidTransfer(_) => Self::PublicUpdateInvalidTransfer,
-                FungibleLedgerError::EncodeError => Self::EncodeError,
-            }
-        }
-    }
+        /// Receiver Ledger Field Element Decoding Error
+        ReceiverLedgerFpDecodeError,
 
-    /// Transfer Post Error
-    pub type TransferPostError<T> = transfer::TransferPostError<
-        config::Config,
-        <T as frame_system::Config>::AccountId,
-        SenderLedgerError,
-        ReceiverLedgerError<T>,
-        TransferLedgerError<T>,
-    >;
+        /// Receiver Ledger Path Decoding Error
+        ReceiverLedgerPathDecodeError,
 
-    impl<T> From<TransferPostError<T>> for Error<T>
-    where
-        T: Config,
-    {
-        #[inline]
-        fn from(err: TransferPostError<T>) -> Self {
-            match err {
-                TransferPostError::<T>::InvalidShape => Self::InvalidShape,
-                TransferPostError::<T>::InvalidAuthorizationSignature(err) => err.into(),
-                TransferPostError::<T>::InvalidSourceAccount(err) => err.into(),
-                TransferPostError::<T>::InvalidSinkAccount(err) => err.into(),
-                TransferPostError::<T>::Sender(err) => err.into(),
-                TransferPostError::<T>::Receiver(err) => err.into(),
-                TransferPostError::<T>::DuplicateMint => Self::DuplicateRegister,
-                TransferPostError::<T>::DuplicateSpend => Self::DuplicateSpend,
-                TransferPostError::<T>::InvalidProof => Self::InvalidProof,
-                TransferPostError::<T>::UnexpectedError(e) => {
-                    match e {
-                        TransferLedgerError::ChecksumError
-                        | TransferLedgerError::VerifyingContextDecodeError(_) => {
-                            T::Suspender::suspend_manta_pay_execution();
-                        }
-                        _ => {}
-                    };
-                    Self::InternalLedgerError
-                }
-            }
-        }
+        /// Receiver Ledger Full Incoming Note Decoding Error
+        ReceiverLedgerFullNoteDecodeError,
+
+        /// Transfer Ledger Wrong Checksum Error
+        TransferLedgerChecksumError,
+
+        /// Transfer Ledger `VerifyingContext` cannont be decoded
+        TransferLedgerVerifyingContextDecodeError,
+
+        /// Transer Ledger Field Element Encoding Error
+        TransferLedgerFpEncodeError,
+
+        /// Transfer Ledger Unknown Asset
+        TransferLedgerUnknownAsset,
+
+        /// Transfer Ledger Proof Error
+        TransferLedgerProofSystemFailed,
+
+        /// Marker Error, this error exists for `PhantomData` should never happen
+        Marker,
     }
 
     impl<T> Pallet<T>
     where
         T: Config,
+        T::AccountId: From<AccountId> + Into<AccountId>,
     {
         /// Maximum Number of Updates per Shard (based on benchmark result)
         const PULL_MAX_RECEIVER_UPDATE_SIZE: u64 = 32768;
@@ -740,8 +625,8 @@ pub mod pallet {
                         &load_transfer_parameters(),
                         &mut Ledger(PhantomData),
                         &(),
-                        sources,
-                        sinks,
+                        sources.into_iter().map(Into::into).collect(),
+                        sinks.into_iter().map(Into::into).collect(),
                     )
                     .map_err(Error::<T>::from)?
                     .convert(origin),
@@ -798,41 +683,6 @@ where
 struct Ledger<T>(PhantomData<T>)
 where
     T: Config;
-
-/// Sender Ledger Error
-pub enum SenderLedgerError {
-    /// Field Element Encoding Error
-    FpEncodeError(scale_codec::Error),
-
-    /// Outgoing Note Decoding Error
-    OutgoingNoteDecodeError(scale_codec::Error),
-
-    /// Asset Spent Error
-    ///
-    /// The asset has already been spent.
-    AssetSpent,
-
-    /// Invalid UTXO Accumulator Output Error
-    ///
-    /// The sender was not constructed under the current state of the UTXO accumulator.
-    InvalidUtxoAccumulatorOutput,
-}
-
-impl From<SenderLedgerError> for SenderPostError<SenderLedgerError> {
-    #[inline]
-    fn from(value: SenderLedgerError) -> Self {
-        match value {
-            SenderLedgerError::AssetSpent => Self::AssetSpent,
-            SenderLedgerError::InvalidUtxoAccumulatorOutput => Self::InvalidUtxoAccumulatorOutput,
-            SenderLedgerError::FpEncodeError(err) => {
-                Self::UnexpectedError(SenderLedgerError::FpEncodeError(err))
-            }
-            SenderLedgerError::OutgoingNoteDecodeError(err) => {
-                Self::UnexpectedError(SenderLedgerError::OutgoingNoteDecodeError(err))
-            }
-        }
-    }
-}
 
 impl<T> SenderLedger<config::Parameters> for Ledger<T>
 where
@@ -904,68 +754,6 @@ where
             NullifierSetSize::<T>::set(index + i);
         }
         Ok(())
-    }
-}
-
-/// Receiver Ledger Error
-pub enum ReceiverLedgerError<T>
-where
-    T: Config,
-{
-    /// Utxo Decoding Error
-    UtxoDecodeError(scale_codec::Error),
-
-    /// Wrong Checksum Error
-    ChecksumError,
-
-    /// Merkle Tree Parameters Decoding Error
-    MTParametersDecodeError(MTParametersError),
-
-    /// Utxo Accumulator Item Hash Decoding Error
-    UtxoAccumulatorItemHashDecodeError(UtxoItemHashError),
-
-    /// Merkle Tree Out of Capacity Error
-    MerkleTreeCapacityError,
-
-    /// Field Element Encoding Error
-    FpEncodeError(scale_codec::Error),
-
-    /// Field Element Encoding Error
-    FpDecodeError(scale_codec::Error),
-
-    /// Path Decoding Error
-    PathDecodeError(scale_codec::Error),
-
-    /// Full Incoming Note Decoding Error
-    FullNoteDecodeError(scale_codec::Error),
-
-    /// Asset Registered Error
-    ///
-    /// The asset has already been registered with the ledger.
-    AssetRegistered,
-
-    /// Type Marker Parameter
-    Marker(PhantomData<T>),
-}
-
-impl<T> From<ReceiverLedgerError<T>> for ReceiverPostError<ReceiverLedgerError<T>>
-where
-    T: Config,
-{
-    #[inline]
-    fn from(value: ReceiverLedgerError<T>) -> Self {
-        if let ReceiverLedgerError::AssetRegistered = value {
-            Self::AssetRegistered
-        } else {
-            match value {
-                ReceiverLedgerError::ChecksumError
-                | ReceiverLedgerError::MerkleTreeCapacityError => {
-                    T::Suspender::suspend_manta_pay_execution();
-                }
-                _ => {}
-            };
-            Self::UnexpectedError(value)
-        }
     }
 }
 
@@ -1081,82 +869,15 @@ where
     }
 }
 
-/// Transfer Ledger Error
-pub enum TransferLedgerError<T>
-where
-    T: Config,
-{
-    /// Wrong Checksum Error
-    ChecksumError,
-
-    /// Verifying Context Decoding Error
-    VerifyingContextDecodeError(VerifyingContextError),
-
-    /// Field Element Encoding Error
-    FpEncodeError(scale_codec::Error),
-
-    /// Unknown Asset Error
-    UnknownAsset,
-
-    /// Fungible Ledger Error
-    FungibleLedgerError(FungibleLedgerError),
-
-    /// Sender Ledger Error
-    SenderLedgerError(SenderLedgerError),
-
-    /// Receiver Ledger Error
-    ReceiverLedgerError(ReceiverLedgerError<T>),
-
-    /// Invalid Transfer Shape
-    InvalidTransferShape,
-
-    /// Proof System Error
-    ProofSystemError(ProofSystemError<config::Config>),
-
-    /// Invalid Transfer Proof Error
-    ///
-    /// Validity of the transfer could not be proved by the ledger.
-    InvalidProof,
-
-    /// Type Marker Parameter
-    Marker(PhantomData<T>),
-}
-
-impl<T> From<TransferLedgerError<T>> for TransferPostError<T>
-where
-    T: Config,
-{
-    #[inline]
-    fn from(value: TransferLedgerError<T>) -> Self {
-        match value {
-            TransferLedgerError::InvalidProof => Self::InvalidProof,
-            TransferLedgerError::InvalidTransferShape => Self::InvalidShape,
-            TransferLedgerError::SenderLedgerError(err) => Self::Sender(err.into()),
-            TransferLedgerError::ReceiverLedgerError(err) => Self::Receiver(err.into()),
-            TransferLedgerError::UnknownAsset => Self::InvalidProof,
-            err => {
-                match err {
-                    TransferLedgerError::ChecksumError
-                    | TransferLedgerError::VerifyingContextDecodeError(_) => {
-                        T::Suspender::suspend_manta_pay_execution();
-                    }
-                    _ => {}
-                };
-                Self::UnexpectedError(err)
-            }
-        }
-    }
-}
-
 impl<T> TransferLedger<config::Config> for Ledger<T>
 where
     T: Config,
+    T::AccountId: From<AccountId> + Into<AccountId>,
 {
     type SuperPostingKey = ();
-    type AccountId = T::AccountId;
     type Event = PreprocessedEvent<T>;
-    type ValidSourceAccount = WrapPair<Self::AccountId, AssetValue>;
-    type ValidSinkAccount = WrapPair<Self::AccountId, AssetValue>;
+    type ValidSourceAccount = WrapPair<AccountId, AssetValue>;
+    type ValidSinkAccount = WrapPair<AccountId, AssetValue>;
     type ValidProof = Wrap<()>;
     type Error = TransferLedgerError<T>;
 
@@ -1165,9 +886,9 @@ where
         &self,
         asset_id: &config::AssetId,
         sources: I,
-    ) -> Result<Vec<Self::ValidSourceAccount>, InvalidSourceAccount<config::Config, Self::AccountId>>
+    ) -> Result<Vec<Self::ValidSourceAccount>, InvalidSourceAccount<config::Config, AccountId>>
     where
-        I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
+        I: Iterator<Item = (AccountId, config::AssetValue)>,
     {
         sources
             .map(move |(account_id, withdraw)| {
@@ -1178,15 +899,15 @@ where
                         withdraw,
                     })?)
                     .ok_or(InvalidSourceAccount {
-                        account_id: account_id.clone(),
+                        account_id,
                         asset_id: *asset_id,
                         withdraw,
                     })?,
-                    &account_id,
+                    &account_id.into(),
                     &withdraw,
                     ExistenceRequirement::KeepAlive,
                 )
-                .map(|_| WrapPair(account_id.clone(), withdraw))
+                .map(|_| WrapPair(account_id, withdraw))
                 .map_err(|_| InvalidSourceAccount {
                     account_id,
                     asset_id: *asset_id,
@@ -1201,9 +922,9 @@ where
         &self,
         asset_id: &config::AssetId,
         sinks: I,
-    ) -> Result<Vec<Self::ValidSinkAccount>, InvalidSinkAccount<config::Config, Self::AccountId>>
+    ) -> Result<Vec<Self::ValidSinkAccount>, InvalidSinkAccount<config::Config, AccountId>>
     where
-        I: Iterator<Item = (Self::AccountId, config::AssetValue)>,
+        I: Iterator<Item = (AccountId, config::AssetValue)>,
     {
         // NOTE: Existence of accounts is type-checked so we don't need to do anything here, just
         // pass the data forward.
@@ -1216,15 +937,15 @@ where
                         deposit,
                     })?)
                     .ok_or(InvalidSinkAccount {
-                        account_id: account_id.clone(),
+                        account_id,
                         asset_id: *asset_id,
                         deposit,
                     })?,
-                    &account_id,
+                    &account_id.into(),
                     deposit,
                     false,
                 )
-                .map(|_| WrapPair(account_id.clone(), deposit))
+                .map(|_| WrapPair(account_id, deposit))
                 .map_err(|_| InvalidSinkAccount {
                     account_id,
                     asset_id: *asset_id,
@@ -1255,7 +976,7 @@ where
                                 asset_id,
                                 asset_value_encode(posting_key.sources[0].1),
                             ),
-                            source: posting_key.sources[0].0.clone(),
+                            source: posting_key.sources[0].0.into(),
                         },
                     )
                 } else {
@@ -1276,7 +997,7 @@ where
                             .ok_or(TransferLedgerError::ChecksumError)?,
                         PreprocessedEvent::<T>::ToPublic {
                             asset: Asset::new(asset_id, asset_value_encode(posting_key.sinks[0].1)),
-                            sink: posting_key.sinks[0].0.clone(),
+                            sink: posting_key.sinks[0].0.into(),
                         },
                     )
                 } else {
@@ -1313,7 +1034,7 @@ where
         for WrapPair(account_id, withdraw) in sources {
             FungibleLedger::<T>::transfer(
                 asset_id_type,
-                &account_id,
+                &account_id.into(),
                 &Pallet::<T>::account_id(),
                 withdraw,
                 ExistenceRequirement::KeepAlive,
@@ -1324,7 +1045,7 @@ where
             FungibleLedger::<T>::transfer(
                 asset_id_type,
                 &Pallet::<T>::account_id(),
-                &account_id,
+                &account_id.into(),
                 deposit,
                 ExistenceRequirement::KeepAlive,
             )

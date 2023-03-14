@@ -199,11 +199,14 @@ pub const PROOF_LENGTH: usize = 128;
 /// Transfer Proof Type
 pub type Proof = [u8; PROOF_LENGTH];
 
-///
+/// Asset Identifier Type
 pub type AssetId = [u8; 32];
 
-///
+/// Asset Value Type
 pub type AssetValue = u128;
+
+/// Account Identifier Type
+pub type AccountId = [u8; 32];
 
 /// Transfer Proof encoded value
 /// Compatability for JS u128 and Encode/Decode from parity_scale_codec
@@ -701,6 +704,9 @@ pub struct TransferPost {
 
     /// Proof
     pub proof: Proof,
+
+    /// Sink Accounts
+    pub sink_accounts: Vec<AccountId>,
 }
 
 impl TransferPost {
@@ -766,6 +772,7 @@ impl TryFrom<config::TransferPost> for TransferPost {
             .map(|v| Ok::<[u8; 16], Self::Error>(v.to_le_bytes()))
             .collect::<Result<_, _>>()?;
         let proof = proof_encode(post.body.proof)?;
+        let sink_accounts = post.sink_accounts;
         Ok(Self {
             authorization_signature,
             asset_id,
@@ -774,6 +781,7 @@ impl TryFrom<config::TransferPost> for TransferPost {
             receiver_posts,
             sinks,
             proof,
+            sink_accounts,
         })
     }
 }
@@ -805,6 +813,7 @@ impl TryFrom<TransferPost> for config::TransferPost {
                 sinks: post.sinks.into_iter().map(u128::from_le_bytes).collect(),
                 proof,
             },
+            sink_accounts: post.sink_accounts,
         })
     }
 }
