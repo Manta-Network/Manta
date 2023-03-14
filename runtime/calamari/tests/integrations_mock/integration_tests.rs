@@ -650,7 +650,7 @@ fn collator_with_large_stake_but_too_low_self_bond_not_selected_for_block_produc
             }
 
             // Delegate a large amount of tokens
-            for collator in vec![EVE.clone(), USER.clone()] {
+            for collator in vec![EVE.clone(), FERDIE.clone()] {
                 assert_ok!(ParachainStaking::delegate(
                     Origin::signed(USER.clone()),
                     collator,
