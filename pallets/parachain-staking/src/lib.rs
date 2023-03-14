@@ -1694,7 +1694,7 @@ pub mod pallet {
                         && Self::candidate_info(x.owner.clone())
                             .expect("looping candidates. therefore canidateinfo exists. qed")
                             .bond
-                            > T::MinCandidateStk::get()
+                            >= T::MinCandidateStk::get()
                 })
                 .map(|x| x.owner)
                 .collect::<Vec<T::AccountId>>();
