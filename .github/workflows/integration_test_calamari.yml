@@ -260,7 +260,7 @@ jobs:
       - name: run test suites
         run: |
           sleep 120
-          cd ${{ github.workspace }}/Manta/tests/esm
+          cd ${{ github.workspace }}/Manta/tests/cjs
           yarn install
           yarn
           yarn correctness_test --address=ws://127.0.0.1:9944 --exit
