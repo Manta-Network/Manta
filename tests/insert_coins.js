@@ -1,4 +1,6 @@
 const fs = require('fs').promises;
+const { Keyring } = require('@polkadot/keyring');
+const { ApiPromise, WsProvider } = require('@polkadot/api');
 
 const keyring = new Keyring({
     type: 'sr25519'
@@ -18,9 +20,9 @@ async function main() {
     const api = await createPromiseApi(nodeAddress);
     const sender = keyring.addFromMnemonic("bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice");
 
-    const mints_file = '/home/georgi/Desktop/workspace/Manta/precomputed-15k-iterations/precomputed_mints_v3-5';
-    const transfers_file = '/home/georgi/Desktop/workspace/Manta/precomputed-15k-iterations/precomputed_transfers_v3-5';
-    const reclaims_file = '/home/georgi/Desktop/workspace/Manta/precomputed-15k-iterations/precomputed_reclaims_v3-5';
+    const mints_file = '/home/georgi/Desktop/workspace/Manta/precomputed-15k-iterations/precomputed_mints_v4';
+    const transfers_file = '/home/georgi/Desktop/workspace/Manta/precomputed-15k-iterations/precomputed_transfers_v4';
+    const reclaims_file = '/home/georgi/Desktop/workspace/Manta/precomputed-15k-iterations/precomputed_reclaims_v4';
 
     const mints_buffer = await fs.readFile(mints_file);
     const transfers_buffer = await fs.readFile(transfers_file);
@@ -31,7 +33,7 @@ async function main() {
     const reclaims_offset = 4;
     const total_iterations = 14000;
     const mint_size = 553;
-    const transfer_size = 1106;
+    const transfer_size = 1291;
     const reclaim_size = 1001;
 
     let batches_sent = 0;
@@ -67,7 +69,7 @@ async function main() {
         await new Promise(resolve => setTimeout(resolve, 10000));
         transactions.length = 0;
 
-        const reclaims_start = reclaims_offset + i * (2 * mint_size + transfer_size);
+        const reclaims_start = reclaims_offset + i * (2 * mint_size + reclaim_size);
         const reclaim_mint_1 = api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start, reclaims_start + mint_size));
         const reclaim_mint_2 = api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start + mint_size, reclaims_start + 2 * mint_size));
         const reclaim = api.tx.mantaPay.toPublic(reclaims_buffer.subarray(reclaims_start + 2 * mint_size, reclaims_start + 2 * mint_size + reclaim_size));
