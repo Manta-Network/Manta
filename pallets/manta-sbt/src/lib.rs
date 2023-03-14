@@ -1002,7 +1002,7 @@ where
                                 .ok_or(TransferLedgerError::ChecksumError)?,
                             PreprocessedEvent::<T>::ToPrivate {
                                 asset: asset_id,
-                                source: posting_key.sources[0].0.clone().into(),
+                                source: posting_key.sources[0].0.into(),
                             },
                         )
                     } else {

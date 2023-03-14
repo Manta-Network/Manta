@@ -894,7 +894,7 @@ where
             .map(move |(account_id, withdraw)| {
                 FungibleLedger::<T>::can_withdraw(
                     id_from_field(fp_encode(*asset_id).map_err(|_e| InvalidSourceAccount {
-                        account_id: account_id.clone(),
+                        account_id,
                         asset_id: *asset_id,
                         withdraw,
                     })?)
@@ -932,7 +932,7 @@ where
             .map(move |(account_id, deposit)| {
                 FungibleLedger::<T>::can_deposit(
                     id_from_field(fp_encode(*asset_id).map_err(|_e| InvalidSinkAccount {
-                        account_id: account_id.clone(),
+                        account_id,
                         asset_id: *asset_id,
                         deposit,
                     })?)
