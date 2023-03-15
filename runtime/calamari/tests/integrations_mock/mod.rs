@@ -97,5 +97,8 @@ pub fn initialize_collators_through_whitelist(collators: Vec<AccountId>) {
         ParachainStaking::candidate_pool().len(),
         candidate_count as usize
     );
-    assert_ok!(ParachainStaking::set_total_selected(root_origin(), candidate_count));
+    assert_ok!(ParachainStaking::set_total_selected(
+        root_origin(),
+        candidate_count
+    ));
 }
