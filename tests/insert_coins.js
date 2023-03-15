@@ -20,9 +20,9 @@ async function main() {
     const api = await createPromiseApi(nodeAddress);
     const sender = keyring.addFromMnemonic("bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice");
 
-    const mints_file = './data/precomputed_mints_v4';
-    const transfers_file = './data/precomputed_transfers_v4';
-    const reclaims_file = './data/precomputed_reclaims_v4';
+    const mints_file = './data/precomputed_mints';
+    const transfers_file = './data/precomputed_transfers';
+    const reclaims_file = './data/precomputed_reclaims';
 
     const mints_buffer = await fs.readFile(mints_file);
     const transfers_buffer = await fs.readFile(transfers_file);
