@@ -1687,7 +1687,6 @@ pub mod pallet {
             let mut collators = candidates
                 .into_iter()
                 .rev()
-                .take(top_n)
                 .filter(|x| {
                     // Only consider collators above minimum total stake and self-bond
                     x.amount >= T::MinCollatorStk::get()
@@ -1696,6 +1695,7 @@ pub mod pallet {
                             .bond
                             >= T::MinCandidateStk::get()
                 })
+                .take(top_n)
                 .map(|x| x.owner)
                 .collect::<Vec<T::AccountId>>();
             collators.sort();
