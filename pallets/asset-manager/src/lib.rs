@@ -51,8 +51,8 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use manta_primitives::assets::{
-        self, AssetConfig, AssetIdLocationMap, AssetIdType, AssetMetadata, AssetRegistry,
-        FungibleLedger, LocationType,
+        self, AssetConfig, AssetIdLocationMap, AssetIdLpMap, AssetIdType, AssetMetadata,
+        AssetRegistry, FungibleLedger, LocationType,
     };
     use orml_traits::GetByKey;
     use sp_runtime::{
@@ -150,6 +150,18 @@ pub mod pallet {
         }
     }
 
+    impl<T> AssetIdLpMap for Pallet<T>
+    where
+        T: Config,
+    {
+        fn lp_asset_id(
+            asset_id0: &Self::AssetId,
+            asset_id1: &Self::AssetId,
+        ) -> Option<Self::AssetId> {
+            AssetIdLp::<T>::get((asset_id0, asset_id1))
+        }
+    }
+
     impl<T> assets::UnitsPerSecond for Pallet<T>
     where
         T: Config,
@@ -196,6 +208,24 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// A new asset was registered
         AssetRegistered {
+            /// Asset Id of new Asset
+            asset_id: T::AssetId,
+
+            /// Location of the new Asset
+            location: T::Location,
+
+            /// Metadata Registered to Asset Manager
+            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+        },
+
+        /// A LP asset was registered
+        LPAssetRegistered {
+            /// Asset Id of new Asset
+            asset_id0: T::AssetId,
+
+            /// Asset Id of new Asset
+            asset_id1: T::AssetId,
+
             /// Asset Id of new Asset
             asset_id: T::AssetId,
 
@@ -325,6 +355,11 @@ pub mod pallet {
     #[pallet::getter(fn get_para_id)]
     pub type AllowedDestParaIds<T: Config> = StorageMap<_, Blake2_128Concat, ParaId, AssetCount>;
 
+    #[pallet::storage]
+    #[pallet::getter(fn asset_id_lp)]
+    pub(super) type AssetIdLp<T: Config> =
+        StorageMap<_, Blake2_128Concat, (T::AssetId, T::AssetId), T::AssetId>;
+
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Register a new asset in the asset manager.
@@ -344,21 +379,8 @@ pub mod pallet {
             metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
-            ensure!(
-                !LocationAssetId::<T>::contains_key(&location),
-                Error::<T>::LocationAlreadyExists
-            );
-            let asset_id = Self::next_asset_id_and_increment()?;
-            <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
-                asset_id,
-                metadata.clone().into(),
-                metadata.min_balance().clone(),
-                metadata.is_sufficient(),
-            )
-            .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
-            AssetIdLocation::<T>::insert(asset_id, &location);
-            AssetIdMetadata::<T>::insert(asset_id, &metadata);
-            LocationAssetId::<T>::insert(&location, asset_id);
+
+            let asset_id = Self::do_register_asset(&location, &metadata)?;
 
             // If it's a new para id, which will be inserted with AssetCount as 1.
             // If not, AssetCount will increased by 1.
@@ -370,8 +392,40 @@ pub mod pallet {
 
             Self::deposit_event(Event::<T>::AssetRegistered {
                 asset_id,
-                location,
-                metadata,
+                location: location.clone(),
+                metadata: metadata.clone(),
+            });
+            Ok(())
+        }
+
+        #[pallet::call_index(6)]
+        #[pallet::weight(T::WeightInfo::register_asset())]
+        #[transactional]
+        pub fn register_lp_asset(
+            origin: OriginFor<T>,
+            asset_0: T::AssetId,
+            asset_1: T::AssetId,
+            location: T::Location,
+            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+        ) -> DispatchResult {
+            T::ModifierOrigin::ensure_origin(origin)?;
+
+            let (asset_id0, asset_id1) = Self::sort_asset_id(asset_0, asset_1);
+            ensure!(
+                AssetIdLp::<T>::contains_key((&asset_id0, &asset_id1)),
+                Error::<T>::AssetAlreadyRegistered
+            );
+
+            let asset_id = Self::do_register_asset(&location, &metadata)?;
+
+            AssetIdLp::<T>::insert((asset_id0, asset_id1), asset_id);
+
+            Self::deposit_event(Event::<T>::LPAssetRegistered {
+                asset_id0,
+                asset_id1,
+                asset_id,
+                location: location.clone(),
+                metadata: metadata.clone(),
             });
             Ok(())
         }
@@ -557,6 +611,29 @@ pub mod pallet {
     where
         T: Config,
     {
+        /// Register asset by providing location and metadata.
+        pub fn do_register_asset(
+            location: &T::Location,
+            metadata: &<T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+        ) -> Result<T::AssetId, DispatchError> {
+            ensure!(
+                !LocationAssetId::<T>::contains_key(location),
+                Error::<T>::LocationAlreadyExists
+            );
+            let asset_id = Self::next_asset_id_and_increment()?;
+            <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
+                asset_id,
+                metadata.clone().into(),
+                metadata.min_balance().clone(),
+                metadata.is_sufficient(),
+            )
+            .map_err(|_| Error::<T>::ErrorCreatingAsset)?;
+            AssetIdLocation::<T>::insert(asset_id, location);
+            AssetIdMetadata::<T>::insert(asset_id, metadata);
+            LocationAssetId::<T>::insert(location, asset_id);
+            Ok(asset_id)
+        }
+
         /// Returns and increments the [`NextAssetId`] by one.
         #[inline]
         fn next_asset_id_and_increment() -> Result<T::AssetId, DispatchError> {
@@ -601,6 +678,15 @@ pub mod pallet {
             } else {
                 AllowedDestParaIds::<T>::insert(para_id, <AssetCount as One>::one());
                 Ok(())
+            }
+        }
+
+        /// Sorted the assets pair
+        pub fn sort_asset_id(asset_0: T::AssetId, asset_1: T::AssetId) -> (T::AssetId, T::AssetId) {
+            if asset_0 < asset_1 {
+                (asset_0, asset_1)
+            } else {
+                (asset_1, asset_0)
             }
         }
     }

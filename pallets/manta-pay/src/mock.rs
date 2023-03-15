@@ -36,7 +36,7 @@ use sp_runtime::{
 };
 use xcm::{
     prelude::{Parachain, X1},
-    v1::MultiLocation,
+    v2::MultiLocation,
     VersionedMultiLocation,
 };
 

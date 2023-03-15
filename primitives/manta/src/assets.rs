@@ -33,7 +33,7 @@ use frame_support::{
 use frame_system::Config;
 use scale_info::TypeInfo;
 use xcm::{
-    v1::{Junctions, MultiLocation},
+    v2::{Junctions, MultiLocation},
     VersionedMultiLocation,
 };
 use xcm_executor::traits::Convert;
@@ -289,6 +289,12 @@ pub trait AssetIdLocationMap: AssetIdType + LocationType {
     fn asset_id(location: &Self::Location) -> Option<Self::AssetId>;
 }
 
+///
+pub trait AssetIdLpMap: AssetIdType {
+    /// Returns the `lp_asset_id`.
+    fn lp_asset_id(asset_id0: &Self::AssetId, asset_id1: &Self::AssetId) -> Option<Self::AssetId>;
+}
+
 /// Defines the units per second charged given an `AssetId`.
 pub trait UnitsPerSecond: AssetIdType {
     /// Returns the units per second for `asset_id`.
@@ -390,6 +396,12 @@ pub trait FungibleLedger: AssetIdType + BalanceType {
     /// Account Id Type
     type AccountId;
 
+    /// Get balance
+    fn balance(asset_id: Self::AssetId, account: &Self::AccountId) -> Self::Balance;
+
+    /// Total supply
+    fn supply(asset_id: Self::AssetId) -> Self::Balance;
+
     /// Checks if an asset id is valid and returning and [`Error`](FungibleLedgerError) otherwise.
     fn ensure_valid(
         asset_id: Self::AssetId,
@@ -483,6 +495,22 @@ where
         + Transfer<C::AccountId>,
 {
     type AccountId = C::AccountId;
+
+    fn balance(asset_id: Self::AssetId, account: &Self::AccountId) -> Self::Balance {
+        if asset_id == A::NativeAssetId::get() {
+            Native::balance(account)
+        } else {
+            NonNative::balance(asset_id, account)
+        }
+    }
+
+    fn supply(asset_id: Self::AssetId) -> Self::Balance {
+        if asset_id == A::NativeAssetId::get() {
+            <Native as fungible::Inspect<C::AccountId>>::total_issuance()
+        } else {
+            NonNative::total_issuance(asset_id)
+        }
+    }
 
     #[inline]
     fn ensure_valid(
