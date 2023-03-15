@@ -23,7 +23,7 @@ use xcm::{
         },
         Xcm,
     },
-    v1::{
+    v2::{
         Fungibility::*,
         Junction::{AccountId32, Parachain},
         Junctions::*,

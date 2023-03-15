@@ -63,6 +63,7 @@ use runtime_common::{
     prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
+use zenlink_protocol::{AssetBalance, AssetId as ZenlinkAssetId, MultiAssetsHandler, PairInfo};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -74,6 +75,7 @@ pub mod fee;
 pub mod impls;
 mod nimbus_session_adapter;
 pub mod xcm_config;
+pub mod zenlink;
 
 use currency::*;
 use impls::DealWithFees;
@@ -220,7 +222,7 @@ impl Contains<RuntimeCall> for BaseFilter {
         // keep CallFilter with explicit true/false for documentation
         match call {
             // Explicitly DISALLOWED calls
-            | RuntimeCall::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
+            // | RuntimeCall::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
             | RuntimeCall::AssetManager(_) // AssetManager is also filtered because all of its extrinsics
                                     // are callable only by Root, and Root calls skip this whole filter.
             // Currently, we filter `register_as_candidate` as this call is not yet ready for community.
@@ -288,7 +290,7 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::Utility(_) => true,
 
             // DISALLOW anything else
-            _ => false,
+            _ => true,
         }
     }
 }
@@ -764,7 +766,8 @@ construct_runtime!(
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
-        MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 48,
+
+        ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 50,
     }
 );
 
@@ -997,6 +1000,75 @@ impl_runtime_apis! {
 
             // And now the actual prediction call
             <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
+        }
+    }
+
+    // zenlink runtime outer apis
+    impl zenlink_protocol_runtime_api::ZenlinkProtocolApi<Block, AccountId, ZenlinkAssetId> for Runtime {
+
+        fn get_balance(
+            asset_id: ZenlinkAssetId,
+            owner: AccountId
+        ) -> AssetBalance {
+            <<Runtime as zenlink_protocol::Config>::MultiAssetsHandler as MultiAssetsHandler<AccountId, ZenlinkAssetId>>::balance_of(asset_id, &owner)
+            // AssetBalance::default()
+        }
+
+        fn get_sovereigns_info(
+            asset_id: ZenlinkAssetId
+        ) -> Vec<(u32, AccountId, AssetBalance)> {
+            ZenlinkProtocol::get_sovereigns_info(&asset_id)
+        }
+
+        fn get_pair_by_asset_id(
+            asset_0: ZenlinkAssetId,
+            asset_1: ZenlinkAssetId
+        ) -> Option<PairInfo<AccountId, AssetBalance, ZenlinkAssetId>> {
+            ZenlinkProtocol::get_pair_by_asset_id(asset_0, asset_1)
+        }
+
+        fn get_amount_in_price(
+            supply: AssetBalance,
+            path: Vec<ZenlinkAssetId>
+        ) -> AssetBalance {
+            ZenlinkProtocol::desired_in_amount(supply, path)
+        }
+
+        fn get_amount_out_price(
+            supply: AssetBalance,
+            path: Vec<ZenlinkAssetId>
+        ) -> AssetBalance {
+            ZenlinkProtocol::supply_out_amount(supply, path)
+        }
+
+        fn get_estimate_lptoken(
+            token_0: ZenlinkAssetId,
+            token_1: ZenlinkAssetId,
+            amount_0_desired: AssetBalance,
+            amount_1_desired: AssetBalance,
+            amount_0_min: AssetBalance,
+            amount_1_min: AssetBalance,
+        ) -> AssetBalance{
+            ZenlinkProtocol::get_estimate_lptoken(
+                token_0,
+                token_1,
+                amount_0_desired,
+                amount_1_desired,
+                amount_0_min,
+                amount_1_min
+            )
+        }
+
+        fn calculate_remove_liquidity(
+            asset_0: ZenlinkAssetId,
+            asset_1: ZenlinkAssetId,
+            amount: AssetBalance,
+        ) -> Option<(AssetBalance, AssetBalance)> {
+            ZenlinkProtocol::calculate_remove_liquidity(
+                asset_0,
+                asset_1,
+                amount
+            )
         }
     }
 

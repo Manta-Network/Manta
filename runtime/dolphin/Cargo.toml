@@ -103,6 +103,13 @@ session-key-primitives = { path = '../../primitives/session-keys', default-featu
 orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.37" }
 orml-xtokens = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.37" }
 
+merkle-distributor = { git = 'https://github.com/zenlinkpro/merkle-distributor', rev = "41cdaa648ad67b69ec61b1958206c960e78aa075", default-features = false }
+zenlink-protocol = { git = 'https://github.com/zenlinkpro/Zenlink-DEX-Module', rev = "e43f6be5747f6ff7a0370e294400bee5dba6c855", default-features = false }
+zenlink-protocol-runtime-api = { git = 'https://github.com/zenlinkpro/Zenlink-DEX-Module', rev = "e43f6be5747f6ff7a0370e294400bee5dba6c855", default-features = false }
+zenlink-stable-amm = { git = 'https://github.com/zenlinkpro/Zenlink-DEX-Module', rev = "e43f6be5747f6ff7a0370e294400bee5dba6c855", default-features = false }
+zenlink-stable-amm-runtime-api = { git = 'https://github.com/zenlinkpro/Zenlink-DEX-Module', rev = "e43f6be5747f6ff7a0370e294400bee5dba6c855", default-features = false }
+zenlink-swap-router = { git = 'https://github.com/zenlinkpro/Zenlink-DEX-Module', rev = "e43f6be5747f6ff7a0370e294400bee5dba6c855", default-features = false }
+
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
@@ -182,6 +189,10 @@ try-runtime = [
   'pallet-manta-pay/try-runtime',
   'pallet-manta-sbt/try-runtime',
   'pallet-sudo/try-runtime',
+  "zenlink-protocol/try-runtime",
+	"merkle-distributor/try-runtime",
+	"zenlink-stable-amm/try-runtime",
+	"zenlink-swap-router/try-runtime",
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
@@ -252,6 +263,10 @@ std = [
   'pallet-treasury/std',
   'pallet-assets/std',
   'pallet-manta-pay/std',
-  'pallet-manta-sbt/std',
-  'manta-support/std',
+  "zenlink-protocol/std",
+	"zenlink-protocol-runtime-api/std",
+	"zenlink-stable-amm/std",
+	"zenlink-stable-amm-runtime-api/std",
+	"zenlink-swap-router/std",
+	"merkle-distributor/std",
 ]

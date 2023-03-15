@@ -42,7 +42,7 @@ use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 use xcm::{
     prelude::{Parachain, X1},
-    v1::MultiLocation,
+    v2::MultiLocation,
     VersionedMultiLocation,
 };
 parameter_types! {

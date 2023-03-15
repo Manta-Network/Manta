@@ -32,7 +32,7 @@ use frame_support::{
 use frame_system::Config;
 use xcm::{
     latest::{prelude::Concrete, Error as XcmError},
-    v1::{
+    v2::{
         AssetId as XcmAssetId, Fungibility,
         Junction::{AccountId32, Parachain},
         Junctions::X1,
