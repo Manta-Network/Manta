@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{benchmark::precomputed_coins::TO_PRIVATE, Box, Call, Config, Pallet, TransferPost};
+use crate::{
+    benchmark::precomputed_coins::TO_PRIVATE, AccountId, Box, Call, Config, Pallet, TransferPost,
+};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, vec, whitelisted_caller};
 use frame_support::traits::{Currency, Get};
 use frame_system::RawOrigin;
@@ -23,6 +25,7 @@ use scale_codec::Decode;
 mod precomputed_coins;
 
 benchmarks! {
+    where_clause {  where T::AccountId: From<AccountId> + Into<AccountId> }
     to_private {
         let caller: T::AccountId = whitelisted_caller();
         let factor = 1_000u32;

@@ -114,7 +114,6 @@ manta-primitives = { path = "../../primitives/manta", default-features = false }
 manta-support = { package = "pallet-manta-support", path = "../manta-support", default-features = false }
 manta-util = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.12", default-features = false }
 
-
 [dev-dependencies]
 lazy_static = "1.4.0"
 manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.12", features = ["getrandom"] }
