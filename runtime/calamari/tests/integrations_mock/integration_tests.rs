@@ -660,7 +660,7 @@ fn collator_with_large_stake_but_too_low_self_bond_not_selected_for_block_produc
                 ));
             }
 
-            // Ensure ALICE is not selected despite having a large stake although it has a large total stake
+            // Ensure ALICE is not selected despite having a large total stake through delegation
             // NOTE: Must use 6 or more collators because 5 is the minimum on calamari
             assert!(!ParachainStaking::compute_top_candidates().contains(&ALICE));
             assert!(ParachainStaking::compute_top_candidates().contains(&BOB));
