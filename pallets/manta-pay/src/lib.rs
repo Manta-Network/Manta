@@ -60,7 +60,7 @@ extern crate alloc;
 use crate::types::{
     asset_value_decode, asset_value_encode, fp_decode, fp_encode, AccountId, Asset, AssetValue,
     FullIncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk, SenderChunk, TransferPost,
-    Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
+    Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath, CurrentPath,
 };
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
@@ -563,6 +563,18 @@ pub mod pallet {
                 }
             }
             Shards::<T>::contains_key(shard_index, max_receiver_index)
+        }
+
+        ///
+        #[inline]
+        pub fn initial_read() -> (Vec<Utxo>, Vec<CurrentPath>, u128) {
+            let (_, receivers) = Self::pull_receivers([0; 256], u64::MAX);
+            let utxos = receivers.into_iter().map(|receiver| receiver.0).collect();
+            let membership_proofs =
+                (0..=255)
+                    .map(|i| ShardTrees::<T>::get(i).current_path).collect();
+            let nullifier_count = NullifierSetSize::<T>::get() as u128;
+            (utxos, membership_proofs, nullifier_count)
         }
 
         /// Pulls sender data from the ledger starting at the `sender_index`.
