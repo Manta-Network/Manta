@@ -62,11 +62,11 @@ async function main() {
                 console.log("tx %i success.", status.nonce);
             }
             if (status.isDropped || status.isUsurped || status.isFinalityTimeout || status.isRetracted) {
-                console.err(`tx %i ${status.type}.`, status.nonce);
+                console.log(`tx %i ${status.type}.`, status.nonce);
             }
         });
 
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        await new Promise(resolve => setTimeout(resolve, 12000));
         transactions.length = 0;
 
         const reclaims_start = reclaims_offset + i * (2 * mint_size + reclaim_size);
@@ -87,13 +87,13 @@ async function main() {
                 console.log("tx %i success.", status.nonce);
             }
             if (status.isDropped || status.isUsurped || status.isFinalityTimeout || status.isRetracted) {
-                console.err(`tx %i ${status.type}.`, status.nonce);
+                console.log(`tx %i ${status.type}.`, status.nonce);
             }
         });
 
         batches_sent++;
         console.log("Batches sent: ", batches_sent);
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        await new Promise(resolve => setTimeout(resolve, 12000));
         transactions.length = 0;
     }
 }
