@@ -605,6 +605,73 @@ fn collator_cant_join_below_standard_bond() {
 }
 
 #[test]
+fn collator_with_large_stake_but_too_low_self_bond_not_selected_for_block_production() {
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+            (BOB.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (CHARLIE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (DAVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (EVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (FERDIE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (USER.clone(), 400_000_000 * KMA),
+        ])
+        .with_invulnerables(vec![])
+        .with_authorities(vec![
+            (ALICE.clone(), ALICE_SESSION_KEYS.clone()),
+            (BOB.clone(), BOB_SESSION_KEYS.clone()),
+            (CHARLIE.clone(), CHARLIE_SESSION_KEYS.clone()),
+            (DAVE.clone(), DAVE_SESSION_KEYS.clone()),
+            (EVE.clone(), EVE_SESSION_KEYS.clone()),
+            (FERDIE.clone(), FERDIE_SESSION_KEYS.clone()),
+        ])
+        .build()
+        .execute_with(|| {
+            initialize_collators_through_whitelist(vec![
+                ALICE.clone(),
+                BOB.clone(),
+                CHARLIE.clone(),
+                DAVE.clone(),
+                EVE.clone(),
+                FERDIE.clone(),
+            ]);
+            // Increase self-bond for everyone but ALICE
+            for collator in vec![
+                BOB.clone(),
+                CHARLIE.clone(),
+                DAVE.clone(),
+                EVE.clone(),
+                FERDIE.clone(),
+            ] {
+                assert_ok!(ParachainStaking::candidate_bond_more(
+                    Origin::signed(collator.clone()),
+                    MIN_BOND_TO_BE_CONSIDERED_COLLATOR - EARLY_COLLATOR_MINIMUM_STAKE
+                ));
+            }
+
+            // Delegate a large amount of tokens to EVE and ALICE
+            for collator in vec![EVE.clone(), ALICE.clone()] {
+                assert_ok!(ParachainStaking::delegate(
+                    Origin::signed(USER.clone()),
+                    collator,
+                    100_000_000 * KMA,
+                    50,
+                    50
+                ));
+            }
+
+            // Ensure ALICE is not selected despite having a large total stake through delegation
+            // NOTE: Must use 6 or more collators because 5 is the minimum on calamari
+            assert!(!ParachainStaking::compute_top_candidates().contains(&ALICE));
+            assert!(ParachainStaking::compute_top_candidates().contains(&BOB));
+            assert!(ParachainStaking::compute_top_candidates().contains(&CHARLIE));
+            assert!(ParachainStaking::compute_top_candidates().contains(&DAVE));
+            assert!(ParachainStaking::compute_top_candidates().contains(&EVE));
+            assert!(ParachainStaking::compute_top_candidates().contains(&FERDIE));
+        });
+}
+
+#[test]
 fn collator_can_leave_if_below_standard_bond() {
     ExtBuilder::default()
         .with_balances(vec![
@@ -646,12 +713,12 @@ fn collator_can_leave_if_below_standard_bond() {
 fn collator_with_400k_not_selected_for_block_production() {
     ExtBuilder::default()
         .with_balances(vec![
-            (ALICE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            (ALICE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
             (BOB.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
             (CHARLIE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
             (DAVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
             (EVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
-            (FERDIE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+            (FERDIE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
         ])
         .with_invulnerables(vec![])
         .with_authorities(vec![
@@ -674,11 +741,11 @@ fn collator_with_400k_not_selected_for_block_production() {
             ]);
             // Increase bond for everyone but FERDIE
             for collator in vec![
-                ALICE.clone(),
                 BOB.clone(),
                 CHARLIE.clone(),
                 DAVE.clone(),
                 EVE.clone(),
+                FERDIE.clone(),
             ] {
                 assert_ok!(ParachainStaking::candidate_bond_more(
                     Origin::signed(collator.clone()),
@@ -688,12 +755,12 @@ fn collator_with_400k_not_selected_for_block_production() {
 
             // Ensure CHARLIE and later are not selected
             // NOTE: Must use 6 or more collators because 5 is the minimum on calamari
-            assert!(ParachainStaking::compute_top_candidates().contains(&ALICE));
+            assert!(!ParachainStaking::compute_top_candidates().contains(&ALICE));
             assert!(ParachainStaking::compute_top_candidates().contains(&BOB));
             assert!(ParachainStaking::compute_top_candidates().contains(&CHARLIE));
             assert!(ParachainStaking::compute_top_candidates().contains(&DAVE));
             assert!(ParachainStaking::compute_top_candidates().contains(&EVE));
-            assert!(!ParachainStaking::compute_top_candidates().contains(&FERDIE));
+            assert!(ParachainStaking::compute_top_candidates().contains(&FERDIE));
         });
 }
 
