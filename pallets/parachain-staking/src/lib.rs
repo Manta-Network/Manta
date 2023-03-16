@@ -1690,8 +1690,9 @@ pub mod pallet {
                 .filter(|x| {
                     // Only consider collators above minimum total stake and self-bond
                     x.amount >= T::MinCollatorStk::get()
+                        && Self::is_candidate(x.owner.clone())
                         && Self::candidate_info(x.owner.clone())
-                            .expect("looping candidates. therefore canidateinfo exists. qed")
+                            .expect("is_candidate => canidateinfo exists. qed")
                             .bond
                             >= T::MinCandidateStk::get()
                 })
