@@ -1689,12 +1689,13 @@ pub mod pallet {
                 .rev()
                 .filter(|x| {
                     // Only consider collators above minimum total stake and self-bond
-                    x.amount >= T::MinCollatorStk::get()
-                        && Self::is_candidate(&x.owner)
-                        && Self::candidate_info(x.owner.clone())
-                            .expect("is_candidate => canidateinfo exists. qed")
-                            .bond
-                            >= T::MinCandidateStk::get()
+                    x.amount >= T::MinCollatorStk::get() &&
+                    if let Some(info) = Self::candidate_info(x.owner.clone()) {
+                        info.bond >= T::MinCandidateStk::get()
+                    } else {
+                        log::error!("Candidate did not have CandidateInfo in storage, this should not happen");
+                        false
+                    }
                 })
                 .take(top_n)
                 .map(|x| x.owner)
