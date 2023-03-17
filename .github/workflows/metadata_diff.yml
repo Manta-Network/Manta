@@ -4,7 +4,7 @@ on:
     inputs:
       reference_binary:
         description: The link to the reference binary, which should be the previous release.
-        default: https://github.com/Manta-Network/Manta/releases/download/v4.0.1/manta
+        default: https://github.com/Manta-Network/Manta/releases/download/v4.0.3/manta
         required: true
       chain:
         description: The name of the chain under test. Usually, you would pass a local chain
