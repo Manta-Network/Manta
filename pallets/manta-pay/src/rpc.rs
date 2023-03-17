@@ -16,7 +16,11 @@
 
 //! MantaPay RPC Interfaces
 
-use crate::{runtime::PullLedgerDiffApi, types::DensePullResponse, Checkpoint, PullResponse};
+use crate::{
+    runtime::PullLedgerDiffApi,
+    types::{DensePullResponse, InitialSyncResponse},
+    Checkpoint, PullResponse,
+};
 use alloc::sync::Arc;
 use core::marker::PhantomData;
 use jsonrpsee::{
@@ -51,6 +55,14 @@ pub trait PullApi {
         max_receivers: u64,
         max_senders: u64,
     ) -> RpcResult<DensePullResponse>;
+
+    ///
+    #[method(name = "mantaPay_inital_pull", blocking)]
+    fn initial_pull(
+        &self,
+        checkpoint: Checkpoint,
+        max_receivers: u64,
+    ) -> RpcResult<InitialSyncResponse>;
 }
 
 /// Pull RPC API Implementation
@@ -115,6 +127,25 @@ where
                 CallError::Custom(ErrorObject::owned(
                     PULL_LEDGER_DIFF_ERROR,
                     "Unable to compute dense state diff for pull",
+                    Some(format!("{err:?}")),
+                ))
+                .into()
+            })
+    }
+
+    #[inline]
+    fn initial_pull(
+        &self,
+        checkpoint: Checkpoint,
+        max_receivers: u64,
+    ) -> RpcResult<InitialSyncResponse> {
+        let api = self.client.runtime_api();
+        let at = BlockId::hash(self.client.info().finalized_hash);
+        api.initial_pull(&at, checkpoint.into(), max_receivers)
+            .map_err(|err| {
+                CallError::Custom(ErrorObject::owned(
+                    PULL_LEDGER_DIFF_ERROR,
+                    "Unable to compute state diff for initial pull",
                     Some(format!("{err:?}")),
                 ))
                 .into()

@@ -976,6 +976,9 @@ impl_runtime_apis! {
         ) -> pallet_manta_pay::PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
+        fn initial_pull(checkpoint::pallet_manta_pay::RawCheckpoint, max_receiver: u64) -> pallet_manta_pay::InitialSyncResponse {
+            MantaPay::initial_sync(checkpoint.into(), max_receiver)
+        }
     }
 
     impl nimbus_primitives::NimbusApi<Block> for Runtime {

@@ -17,7 +17,6 @@
 //! Type Definitions for Manta Pay
 
 use alloc::{boxed::Box, vec::Vec};
-use manta_crypto::merkle_tree;
 use manta_pay::{
     config::{
         self,
@@ -26,6 +25,7 @@ use manta_pay::{
     crypto::poseidon::encryption::{self, BlockArray, CiphertextBlock},
     manta_crypto::{
         encryption::{hybrid, EmptyHeader},
+        merkle_tree,
         permutation::duplex,
         signature::schnorr,
     },
@@ -803,7 +803,12 @@ pub type LeafDigest = [u8; 32];
 pub type InnerDigest = [u8; 32];
 
 /// Merkle Tree Current Path
-#[derive(Clone, Debug, Decode, Default, Encode, Eq, PartialEq, TypeInfo)]
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, PartialEq, TypeInfo)]
 pub struct CurrentPath {
     /// Sibling Digest
     pub sibling_digest: LeafDigest,
@@ -877,8 +882,38 @@ pub struct UtxoMerkleTreePath {
 /// Receiver Chunk Data Type
 pub type ReceiverChunk = Vec<(Utxo, FullIncomingNote)>;
 
+/// Utxo Chunk Data Type
+pub type UtxoChunk = Vec<Utxo>;
+
+/// Merkle Tree [`CurrentPath`] Chunk Data Type
+pub type CurrentPathChunk = Vec<CurrentPath>;
+
 /// Sender Chunk Data Type
 pub type SenderChunk = Vec<(NullifierCommitment, OutgoingNote)>;
+
+/// Initial Sync Response
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Decode, Default, Encode, Eq, Hash, PartialEq, TypeInfo)]
+pub struct InitialSyncResponse {
+    /// Initial Sync Continuation Flag
+    ///
+    /// The `should_continue` flag is set to `true` if the client should request more data from the
+    /// ledger to finish the pull.
+    pub should_continue: bool,
+
+    /// Ledger Utxo Chunk
+    pub utxos: UtxoChunk,
+
+    /// Ledger [`CurrentPath`] Chunk
+    pub paths: CurrentPathChunk,
+
+    /// Nullifier Count
+    pub nullifier_count: u128,
+}
 
 /// Ledger Source Pull Response
 #[cfg_attr(
