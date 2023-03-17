@@ -57,7 +57,7 @@ pub trait PullApi {
     ) -> RpcResult<DensePullResponse>;
 
     ///
-    #[method(name = "mantaPay_inital_pull", blocking)]
+    #[method(name = "mantaPay_initial_pull", blocking)]
     fn initial_pull(
         &self,
         checkpoint: Checkpoint,
