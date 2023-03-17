@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v4.0.4
+### Fixed
+- [\#1043](https://github.com/Manta-Network/Manta/pull/1043) Add self-bond filter condition when computing new set of collators [CA]
+
 ## v4.0.3
 ### Changed
 - [\#1024](https://github.com/Manta-Network/Manta/pull/1024) Minor: use checked-in genesis for --chain=manta [MA]
