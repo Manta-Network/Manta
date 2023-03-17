@@ -59,8 +59,8 @@ extern crate alloc;
 
 use crate::types::{
     asset_value_decode, asset_value_encode, fp_decode, fp_encode, AccountId, Asset, AssetValue,
-    FullIncomingNote, InitialSyncResponse, NullifierCommitment, OutgoingNote, ReceiverChunk,
-    SenderChunk, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
+    FullIncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk, SenderChunk, TransferPost,
+    Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
 };
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
@@ -90,7 +90,7 @@ use manta_util::{
 
 pub use crate::types::{Checkpoint, RawCheckpoint};
 pub use pallet::*;
-pub use types::PullResponse;
+pub use types::{InitialSyncResponse, PullResponse};
 pub use weights::WeightInfo;
 
 #[cfg(test)]
