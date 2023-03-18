@@ -1687,8 +1687,17 @@ pub mod pallet {
             let mut collators = candidates
                 .into_iter()
                 .rev()
+                .filter(|x| {
+                    // Only consider collators above minimum total stake and self-bond
+                    x.amount >= T::MinCollatorStk::get() &&
+                    if let Some(info) = Self::candidate_info(x.owner.clone()) {
+                        info.bond >= T::MinCandidateStk::get()
+                    } else {
+                        log::error!("Candidate did not have CandidateInfo in storage, this should not happen");
+                        false
+                    }
+                })
                 .take(top_n)
-                .filter(|x| x.amount >= T::MinCollatorStk::get())
                 .map(|x| x.owner)
                 .collect::<Vec<T::AccountId>>();
             collators.sort();
