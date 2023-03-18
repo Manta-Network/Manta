@@ -14,9 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use frame_support::weights::{
-    WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
-};
+use frame_support::weights::{WeightToFeeCoefficient, WeightToFeeCoefficients};
 use manta_primitives::types::Balance;
 use smallvec::smallvec;
 pub use sp_runtime::Perbill;
@@ -30,30 +28,6 @@ pub const FEES_PERCENTAGE_TO_TREASURY: u8 = 45;
 
 pub const TIPS_PERCENTAGE_TO_AUTHOR: u8 = 100;
 pub const TIPS_PERCENTAGE_TO_TREASURY: u8 = 0;
-
-/// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
-/// node's balance type.
-///
-/// This should typically create a mapping between the following ranges:
-///   - [0, MAXIMUM_BLOCK_WEIGHT]
-///   - [Balance::min, Balance::max]
-///
-/// Yet, it can be used for any other sort of change to weight-fee. Some examples being:
-///   - Setting it to `0` will essentially disable the weight fee.
-///   - Setting it to `1` will cause the literal `#[weight = x]` values to be charged.
-pub struct WeightToFee;
-impl WeightToFeePolynomial for WeightToFee {
-    type Balance = Balance;
-    fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-        // Refer to the congested_chain_simulation() test for how to come up with the coefficient.
-        smallvec![WeightToFeeCoefficient {
-            coeff_integer: 50_000u32.into(),
-            coeff_frac: Perbill::zero(),
-            negative: false,
-            degree: 1,
-        }]
-    }
-}
 
 #[cfg(test)]
 mod fee_split_tests {
@@ -170,9 +144,11 @@ mod multiplier_tests {
         while multiplier <= Multiplier::from_u32(1) {
             t.execute_with(|| {
                 frame_system::Pallet::<Runtime>::set_block_consumed_resources(Weight::MAX, 0);
-                // let len = <Runtime as frame_system::Config>::BlockLength::get();
-                let len = 0;//3_670_016;
-                // imagine this tx was called.
+                // Give the attacker super powers to not pay tx-length fee
+                // The maximum length fo a block is 3_670_016 on Calamari
+                let len = 0;
+                // Imagine this tx was called. This means that he will pay a single base-fee,
+                // which is additional super powers for the attacker
                 let fee = TransactionPayment::compute_fee(len, &info, 0);
                 fees_paid += fee;
 
@@ -218,8 +194,7 @@ mod multiplier_tests {
     #[test]
     #[ignore]
     fn multiplier_cool_down_simulator() {
-        // assume the multiplier is initially set to its minimum. We update it with values twice the
-        //target (target is 25%, thus 50%) and we see at which point it reaches the minimum 0.2
+        // Start from multiplier of 1 to see how long it will take to cool-down to the minimum
         let mut multiplier = Multiplier::from_u32(1);
         let mut blocks = 0;
 
@@ -227,7 +202,7 @@ mod multiplier_tests {
             .build_storage::<Runtime>()
             .unwrap()
             .into();
-        // set the minimum
+
         t.execute_with(|| {
             pallet_transaction_payment::NextFeeMultiplier::<Runtime>::set(multiplier);
         });
