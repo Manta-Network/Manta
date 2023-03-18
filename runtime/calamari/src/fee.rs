@@ -73,7 +73,8 @@ mod fee_split_tests {
 #[cfg(test)]
 mod multiplier_tests {
     use crate::{
-        Call, Runtime, RuntimeBlockWeights as BlockWeights, System, TransactionPayment, KMA,
+        sp_api_hidden_includes_construct_runtime::hidden_include::traits::Hooks, Call, Runtime,
+        RuntimeBlockWeights as BlockWeights, System, TransactionPayment, KMA,
     };
     use codec::Encode;
     use frame_support::{
@@ -177,7 +178,6 @@ mod multiplier_tests {
 
                 // this will update the multiplier.
                 System::set_block_consumed_resources(block_weight, len.try_into().unwrap());
-                use crate::sp_api_hidden_includes_construct_runtime::hidden_include::traits::Hooks;
                 TransactionPayment::on_finalize(1);
                 let next = TransactionPayment::next_fee_multiplier();
 
@@ -212,6 +212,38 @@ mod multiplier_tests {
 
         if should_fail {
             panic!("The cost to fully congest our network should be over the target_daily_congestion_cost_kma after 1 day.");
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn multiplier_cool_down_simulator() {
+        // assume the multiplier is initially set to its minimum. We update it with values twice the
+        //target (target is 25%, thus 50%) and we see at which point it reaches the minimum 0.2
+        let mut multiplier = Multiplier::from_u32(1);
+        let mut blocks = 0;
+
+        let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
+            .build_storage::<Runtime>()
+            .unwrap()
+            .into();
+        // set the minimum
+        t.execute_with(|| {
+            pallet_transaction_payment::NextFeeMultiplier::<Runtime>::set(multiplier);
+        });
+
+        while multiplier > MinimumMultiplier::get() {
+            t.execute_with(|| {
+                // this will update the multiplier.
+                TransactionPayment::on_finalize(1);
+                let next = TransactionPayment::next_fee_multiplier();
+
+                assert!(next < multiplier, "{:?} !>= {:?}", next, multiplier);
+                multiplier = next;
+
+                println!("block = {} / multiplier {:?}", blocks, multiplier);
+            });
+            blocks += 1;
         }
     }
 }
