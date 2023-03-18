@@ -66,7 +66,7 @@ parameter_types! {
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
     /// The adjustment variable of the runtime. Higher values will cause `TargetBlockFullness` to
     /// change the fees more rapidly.
-    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(175, 1_000_000);
+    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(125, 1_000_000);
     /// Minimum amount of the multiplier. This value cannot be too low. A test case should ensure
     /// that combined with `AdjustmentVariable`, we can recover from the minimum.
     /// See `multiplier_can_grow_from_zero`.

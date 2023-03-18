@@ -14,9 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use frame_support::weights::{WeightToFeeCoefficient, WeightToFeeCoefficients};
-use manta_primitives::types::Balance;
-use smallvec::smallvec;
 pub use sp_runtime::Perbill;
 
 /// The block saturation level. Fees will be updates based on this value.

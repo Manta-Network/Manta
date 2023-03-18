@@ -14,9 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use frame_support::weights::{WeightToFeeCoefficient, WeightToFeeCoefficients};
-use manta_primitives::types::Balance;
-use smallvec::smallvec;
 pub use sp_runtime::Perbill;
 
 /// The block saturation level. Fees will be updates based on this value.
@@ -47,49 +44,12 @@ mod fee_split_tests {
 #[cfg(test)]
 mod multiplier_tests {
     use crate::{
-        sp_api_hidden_includes_construct_runtime::hidden_include::traits::Hooks, Call, Runtime,
+        sp_api_hidden_includes_construct_runtime::hidden_include::traits::Hooks, Runtime,
         RuntimeBlockWeights as BlockWeights, System, TransactionPayment, KMA,
     };
-    use codec::Encode;
-    use frame_support::{
-        dispatch::DispatchInfo,
-        weights::{DispatchClass, Weight, WeightToFee},
-    };
-    use frame_system::WeightInfo;
-    use pallet_transaction_payment::{
-        CurrencyAdapter, FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
-    };
-    use runtime_common::{
-        AdjustmentVariable, MinimumMultiplier, SlowAdjustingFeeUpdate, TargetBlockFullness,
-    };
-    use sp_runtime::{
-        traits::{Convert, One},
-        FixedPointNumber,
-    };
-
-    fn run_with_system_weight<F>(w: Weight, mut assertions: F)
-    where
-        F: FnMut(),
-    {
-        let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
-            .build_storage::<Runtime>()
-            .unwrap()
-            .into();
-        t.execute_with(|| {
-            System::set_block_consumed_resources(w, 0);
-            assertions()
-        });
-    }
-
-    // update based on runtime impl.
-    fn runtime_multiplier_update(fm: Multiplier) -> Multiplier {
-        TargetedFeeAdjustment::<
-            Runtime,
-            TargetBlockFullness,
-            AdjustmentVariable,
-            MinimumMultiplier,
-        >::convert(fm)
-    }
+    use frame_support::{dispatch::DispatchInfo, weights::DispatchClass};
+    use pallet_transaction_payment::Multiplier;
+    use runtime_common::MinimumMultiplier;
 
     fn fetch_kma_price() -> Result<f32, &'static str> {
         let body = reqwest::blocking::get(
@@ -143,7 +103,6 @@ mod multiplier_tests {
         let mut should_fail = false;
         while multiplier <= Multiplier::from_u32(1) {
             t.execute_with(|| {
-                frame_system::Pallet::<Runtime>::set_block_consumed_resources(Weight::MAX, 0);
                 // Give the attacker super powers to not pay tx-length fee
                 // The maximum length fo a block is 3_670_016 on Calamari
                 let len = 0;

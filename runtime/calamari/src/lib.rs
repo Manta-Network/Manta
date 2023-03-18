@@ -78,7 +78,6 @@ pub mod staking;
 pub mod xcm_config;
 
 use currency::*;
-use fee::WeightToFee;
 use impls::DealWithFees;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
