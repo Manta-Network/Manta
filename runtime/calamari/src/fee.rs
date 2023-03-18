@@ -66,7 +66,6 @@ mod multiplier_tests {
     }
 
     #[test]
-    #[ignore]
     fn multiplier_growth_simulator_and_congestion_budget_test() {
         let target_daily_congestion_cost_usd = 250_000;
         let kma_price = fetch_kma_price().unwrap();
@@ -151,7 +150,6 @@ mod multiplier_tests {
     }
 
     #[test]
-    #[ignore]
     fn multiplier_cool_down_simulator() {
         // Start from multiplier of 1 to see how long it will take to cool-down to the minimum
         let mut multiplier = Multiplier::from_u32(1);
@@ -178,6 +176,12 @@ mod multiplier_tests {
                 println!("block = {} / multiplier {:?}", blocks, multiplier);
             });
             blocks += 1;
+        }
+
+        let cooldown_target = 10.0f32;
+        let days = (blocks * 12) as f32 / (60 * 60 * 24) as f32;
+        if days > cooldown_target {
+            panic!("It will take more than 10 days to cool down: {:?}", days);
         }
     }
 }
