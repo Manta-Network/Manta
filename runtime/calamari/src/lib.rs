@@ -375,7 +375,7 @@ parameter_types! {
     //pub const TransactionLengthToFeeCoeff: Balance = mKMA / 100;
     pub const TransactionLengthToFeeCoeff: Balance = mKMA;
     // pub const TransactionLengthToFeeCoeff: Balance = KMA / 10;
-    pub const WeightToFeeCoeff: Balance = 250_000;
+    pub const WeightToFeeCoeff: Balance = 150_000;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
