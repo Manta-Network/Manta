@@ -364,7 +364,7 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
-    type WeightToFee = WeightToFeeCoeff;
+    type WeightToFee = ConstantMultiplier<Balance, WeightToFeeCoeff>;
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthToFeeCoeff>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
