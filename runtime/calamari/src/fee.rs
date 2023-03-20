@@ -84,6 +84,28 @@ mod multiplier_tests {
         let mut blocks = 0;
         let mut fees_paid = 0;
         let mut fees_after_one_day = 0;
+        let mut quarter_block = 0;
+        let mut half_block = 0;
+        let mut one_block = 0;
+        let mut two_block = 0;
+        let mut three_block = 0;
+        let mut ten_block = 0;
+        let mut hundred_block = 0;
+        let mut fees_at_quarter_multiplier = 0;
+        let mut fees_at_half_multiplier = 0;
+        let mut fees_at_1x_multiplier = 0;
+        let mut fees_at_2x_multiplier = 0;
+        let mut fees_at_3x_multiplier = 0;
+        let mut fees_at_10x_multiplier = 0;
+        let mut fees_at_100x_multiplier = 0;
+        let mut fee_at_quarter = 0;
+        let mut fee_at_half = 0;
+        let mut fee_at_0 = 0;
+        let mut fee_at_1 = 0;
+        let mut fee_at_2 = 0;
+        let mut fee_at_3 = 0;
+        let mut fee_at_10 = 0;
+        let mut fee_at_100 = 0;
 
         let info = DispatchInfo {
             weight: block_weight,
@@ -100,7 +122,7 @@ mod multiplier_tests {
         });
 
         let mut should_fail = false;
-        while multiplier <= Multiplier::from_u32(1) || blocks <= 7200 {
+        while multiplier <= Multiplier::from_u32(100) || blocks <= 7200 {
             t.execute_with(|| {
                 // Give the attacker super powers to not pay tx-length fee
                 // The maximum length fo a block is 3_670_016 on Calamari
@@ -120,22 +142,111 @@ mod multiplier_tests {
 
                 println!(
                     "block = {} / multiplier {:?} / fee = {:?} / fees so far {:?} / fees so far in USD {:?}",
-                    blocks, multiplier, fee, fees_paid, (fees_paid as f32 / KMA as f32) * kma_price
+                    blocks, multiplier, (fee as f32 / KMA as f32) * kma_price, fees_paid, (fees_paid as f32 / KMA as f32) * kma_price
                 );
 
+                if blocks == 0 {
+                    fee_at_0 = fee;
+                }
                 if blocks == 7200 {
                     fees_after_one_day = fees_paid;
                     if fees_paid < target_daily_congestion_cost_kma {
                         should_fail = true;
                     }
                 }
+                if multiplier <= Multiplier::from_u32(1) / 4.into() {
+                    fees_at_quarter_multiplier = fees_paid;
+                    quarter_block = blocks;
+                    fee_at_quarter = fee;
+                }
+                if multiplier <= Multiplier::from_u32(1) / 2.into() {
+                    fees_at_half_multiplier = fees_paid;
+                    half_block = blocks;
+                    fee_at_half = fee;
+                }
+                if multiplier <= Multiplier::from_u32(1) {
+                    fees_at_1x_multiplier = fees_paid;
+                    one_block = blocks;
+                    fee_at_1 = fee;
+                }
+                if multiplier <= Multiplier::from_u32(2) {
+                    fees_at_2x_multiplier = fees_paid;
+                    two_block = blocks;
+                    fee_at_2 = fee;
+                }
+                if multiplier <= Multiplier::from_u32(3) {
+                    fees_at_3x_multiplier = fees_paid;
+                    three_block = blocks;
+                    fee_at_3 = fee;
+                }
+                if multiplier <= Multiplier::from_u32(10) {
+                    fees_at_10x_multiplier = fees_paid;
+                    ten_block = blocks;
+                    fee_at_10 = fee;
+                }
+                if multiplier <= Multiplier::from_u32(100) {
+                    fees_at_100x_multiplier = fees_paid;
+                    hundred_block = blocks;
+                    fee_at_100 = fee;
+                }
             });
             blocks += 1;
         }
 
         println!(
-            "It will take {:?} days to reach multiplier of 1",
-            (blocks * 12) as f32 / (60 * 60 * 24) as f32,
+            "The single block cost at the start is: {:?} USD. Single transfer: {:?} and single zk-tx: {:?}.
+            {:?} for 0.25x at a cost   {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?},
+            {:?} for 0.5x at a cost of {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?},
+            {:?} for 1x at a cost of   {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?},
+            {:?} for 2x at a cost of   {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?} ,
+            {:?} for 3x at a cost of   {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?},
+            {:?} for 10x at a cost of  {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?},
+            {:?} for 100x at a cost of {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?}",
+            (fee_at_0 as f32 / KMA as f32) * kma_price,
+            ((fee_at_0 as f32 / KMA as f32) * kma_price) * 0.0003f32,
+            ((fee_at_0 as f32 / KMA as f32) * kma_price) * 0.15f32,
+
+            (quarter_block * 12) as f32 / (60 * 60 * 24) as f32,
+            (fees_at_quarter_multiplier as f32 / KMA as f32) * kma_price,
+            (fee_at_quarter as f32 / KMA as f32) * kma_price,
+            ((fee_at_quarter as f32 / KMA as f32) * kma_price) * 0.0003f32,
+            ((fee_at_quarter as f32 / KMA as f32) * kma_price) * 0.15f32,
+
+            (half_block * 12) as f32 / (60 * 60 * 24) as f32,
+            (fees_at_half_multiplier as f32 / KMA as f32) * kma_price,
+            (fee_at_half as f32 / KMA as f32) * kma_price,
+            ((fee_at_half as f32 / KMA as f32) * kma_price) * 0.0003f32,
+            ((fee_at_half as f32 / KMA as f32) * kma_price) * 0.15f32,
+
+            (one_block * 12) as f32 / (60 * 60 * 24) as f32,
+            (fees_at_1x_multiplier as f32 / KMA as f32) * kma_price,
+            (fee_at_1 as f32 / KMA as f32) * kma_price,
+            ((fee_at_1 as f32 / KMA as f32) * kma_price) * 0.0003f32,
+            ((fee_at_1 as f32 / KMA as f32) * kma_price) * 0.15f32,
+
+            (two_block * 12) as f32 / (60 * 60 * 24) as f32,
+            (fees_at_2x_multiplier as f32 / KMA as f32) * kma_price,
+            (fee_at_2 as f32 / KMA as f32) * kma_price,
+            ((fee_at_2 as f32 / KMA as f32) * kma_price) * 0.0003f32,
+            ((fee_at_2 as f32 / KMA as f32) * kma_price) * 0.15f32,
+
+            (three_block * 12) as f32 / (60 * 60 * 24) as f32,
+            (fees_at_3x_multiplier as f32 / KMA as f32) * kma_price,
+            (fee_at_3 as f32 / KMA as f32) * kma_price,
+            ((fee_at_3 as f32 / KMA as f32) * kma_price) * 0.0003f32,
+            ((fee_at_3 as f32 / KMA as f32) * kma_price) * 0.15f32,
+
+            (ten_block * 12) as f32 / (60 * 60 * 24) as f32,
+            (fees_at_10x_multiplier as f32 / KMA as f32) * kma_price,
+            (fee_at_10 as f32 / KMA as f32) * kma_price,
+            ((fee_at_10 as f32 / KMA as f32) * kma_price) * 0.0003f32,
+            ((fee_at_10 as f32 / KMA as f32) * kma_price) * 0.15f32,
+
+            (hundred_block * 12) as f32 / (60 * 60 * 24) as f32,
+            (fees_at_100x_multiplier as f32 / KMA as f32) * kma_price,
+            (fee_at_100 as f32 / KMA as f32) * kma_price,
+            ((fee_at_100 as f32 / KMA as f32) * kma_price) * 0.0003f32,
+            ((fee_at_100 as f32 / KMA as f32) * kma_price) * 0.15f32,
         );
 
         println!(
@@ -152,7 +263,7 @@ mod multiplier_tests {
     #[test]
     fn multiplier_cool_down_simulator() {
         // Start from multiplier of 1 to see how long it will take to cool-down to the minimum
-        let mut multiplier = Multiplier::from_u32(1);
+        let mut multiplier = Multiplier::from_u32(2);
         let mut blocks = 0;
 
         let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
@@ -167,13 +278,18 @@ mod multiplier_tests {
         while multiplier > MinimumMultiplier::get() {
             t.execute_with(|| {
                 // this will update the multiplier.
-                TransactionPayment::on_finalize(1);
+                TransactionPayment::on_finalize(100);
                 let next = TransactionPayment::next_fee_multiplier();
 
                 assert!(next < multiplier, "{:?} !>= {:?}", next, multiplier);
                 multiplier = next;
 
-                println!("block = {} / multiplier {:?}", blocks, multiplier);
+                println!(
+                    "days = {} / block = {} / multiplier {:?}",
+                    (blocks * 12) as f32 / (60 * 60 * 24) as f32,
+                    blocks,
+                    multiplier,
+                );
             });
             blocks += 1;
         }
