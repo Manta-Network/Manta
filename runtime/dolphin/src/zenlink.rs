@@ -14,22 +14,31 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use super::{AssetManager, Balances, ParachainInfo, Runtime, RuntimeEvent, ZenlinkProtocol};
-use crate::{assets_config::DolphinConcreteFungibleLedger, xcm_config::RelayNetwork};
+use super::{
+    AssetManager, Assets, Balances, ParachainInfo, Runtime, RuntimeEvent, Timestamp,
+    ZenlinkProtocol, ZenlinkStableAMM,
+};
+use crate::{
+    assets_config::{DolphinAssetConfig, DolphinConcreteFungibleLedger},
+    xcm_config::RelayNetwork,
+};
 use frame_support::{parameter_types, traits::ExistenceRequirement, PalletId};
 use manta_primitives::{
-    assets::{AssetIdLocationMap, AssetIdLpMap, AssetLocation, FungibleLedger},
-    types::{AccountId, DolphinAssetId},
+    assets::{AssetIdLocationMap, AssetIdLpMap, FungibleLedger},
+    currencies::Currencies,
+    types::{AccountId, DolphinAssetId, PoolId},
 };
+use orml_traits::MultiCurrency;
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::DispatchError;
 use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{AccountId32Aliases, SiblingParachainConvertsVia};
 use zenlink_protocol::{
-    make_x2_location, AssetBalance, AssetId as ZenlinkAssetId, AssetIdConverter, Config,
-    GenerateLpAssetId, LocalAssetHandler, PairLpGenerate, ZenlinkMultiAssets, LOCAL,
+    make_x2_location, AssetBalance, AssetId as ZenlinkAssetId, AssetIdConverter, GenerateLpAssetId,
+    LocalAssetHandler, ZenlinkMultiAssets, LOCAL,
 };
+use zenlink_stable_amm::traits::{StablePoolLpCurrencyIdGenerate, ValidateCurrency};
 
 parameter_types! {
     pub const ZenlinkPalletId: PalletId = PalletId(*b"/zenlink");
@@ -62,12 +71,66 @@ impl zenlink_protocol::Config for Runtime {
     type PalletId = ZenlinkPalletId;
     type SelfParaId = SelfParaId;
     type TargetChains = ZenlinkRegistedParaChains;
-    type XcmExecutor = ();
-    type WeightInfo = ();
     type AssetId = ZenlinkAssetId;
     type LpGenerate = AssetManagerLpGenerate;
     type AccountIdConverter = ZenlinkLocationToAccountId;
     type AssetIdConverter = AssetIdConverter;
+    type XcmExecutor = ();
+    type WeightInfo = ();
+}
+
+parameter_types! {
+    pub const StringLimit: u32 = 50;
+    pub const StableAmmPalletId: PalletId = PalletId(*b"mt/stamm");
+}
+
+type MantaCurrencies = Currencies<Runtime, DolphinAssetConfig, Balances, Assets>;
+
+impl zenlink_stable_amm::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type CurrencyId = DolphinAssetId;
+    type MultiCurrency = MantaCurrencies;
+    type PoolId = u32;
+    type TimeProvider = Timestamp;
+    type EnsurePoolAsset = StableAmmVerifyPoolAsset;
+    type LpGenerate = PoolLpGenerate;
+    type PoolCurrencySymbolLimit = StringLimit;
+    type PalletId = StableAmmPalletId;
+    type WeightInfo = ();
+}
+
+impl zenlink_swap_router::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type StablePoolId = u32;
+    type Balance = u128;
+    type StableCurrencyId = DolphinAssetId;
+    type NormalCurrencyId = ZenlinkAssetId;
+    type NormalAmm = ZenlinkProtocol;
+    type StableAMM = ZenlinkStableAMM;
+    type WeightInfo = ();
+}
+
+pub struct StableAmmVerifyPoolAsset;
+
+impl ValidateCurrency<DolphinAssetId> for StableAmmVerifyPoolAsset {
+    fn validate_pooled_currency(_currencies: &[DolphinAssetId]) -> bool {
+        true
+    }
+
+    fn validate_pool_lp_currency(_currency_id: DolphinAssetId) -> bool {
+        if <MantaCurrencies as MultiCurrency<<Runtime as frame_system::Config>::AccountId>>::total_issuance(_currency_id) > 0 {
+            return false;
+        }
+        true
+    }
+}
+
+pub struct PoolLpGenerate;
+
+impl StablePoolLpCurrencyIdGenerate<DolphinAssetId, PoolId> for PoolLpGenerate {
+    fn generate_by_pool_id(pool_id: PoolId) -> DolphinAssetId {
+        <AssetManager as AssetIdLpMap>::lp_asset_pool(&pool_id).expect("must find asset id")
+    }
 }
 
 pub struct AssetManagerLpGenerate;
@@ -91,6 +154,7 @@ impl GenerateLpAssetId<ZenlinkAssetId> for AssetManagerLpGenerate {
     }
 }
 
+/// Zenlink protocol Asset adaptor for orml_traits::MultiCurrency.
 pub struct LocalAssetAdaptor;
 
 impl LocalAssetAdaptor {
@@ -109,8 +173,10 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
     fn local_balance_of(asset_id: ZenlinkAssetId, who: &sp_runtime::AccountId32) -> AssetBalance {
         let asset_index = LocalAssetAdaptor::asset_id_convert(asset_id);
         log::info!(
-            "local balance asset id:{:?}, index:{:?}",
-            asset_id,
+            "local balance asset id convert:{:?},{:?},{:?}, index:{:?}",
+            asset_id.chain_id,
+            asset_id.asset_type,
+            asset_id.asset_index,
             asset_index
         );
         if let Some(asset_id) = asset_index {
@@ -123,11 +189,12 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
     fn local_total_supply(asset_id: ZenlinkAssetId) -> AssetBalance {
         let asset_index = LocalAssetAdaptor::asset_id_convert(asset_id);
         log::info!(
-            "local supply asset id:{:?}, index:{:?}",
-            asset_id,
+            "local supply asset id convert:{:?},{:?},{:?}, index:{:?}",
+            asset_id.chain_id,
+            asset_id.asset_type,
+            asset_id.asset_index,
             asset_index
         );
-
         if let Some(asset_id) = asset_index {
             <DolphinConcreteFungibleLedger as FungibleLedger>::supply(asset_id)
         } else {
@@ -138,11 +205,12 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
     fn local_is_exists(asset_id: ZenlinkAssetId) -> bool {
         let asset_index = LocalAssetAdaptor::asset_id_convert(asset_id);
         log::info!(
-            "local exists asset id:{:?}, index:{:?}",
-            asset_id,
+            "local exists asset id convert:{:?},{:?},{:?}, index:{:?}",
+            asset_id.chain_id,
+            asset_id.asset_type,
+            asset_id.asset_index,
             asset_index
         );
-
         if let Some(_asset_id) = asset_index {
             true
         } else {
@@ -157,8 +225,10 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
     ) -> Result<AssetBalance, DispatchError> {
         let asset_index = LocalAssetAdaptor::asset_id_convert(asset_id);
         log::info!(
-            "local deposit asset id:{:?}, index:{:?}, account:{:?}",
-            asset_id,
+            "local deposit asset id convert:{:?},{:?},{:?}, index:{:?}, account:{:?}",
+            asset_id.chain_id,
+            asset_id.asset_type,
+            asset_id.asset_index,
             asset_index,
             origin
         );
@@ -181,8 +251,10 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
     ) -> Result<AssetBalance, DispatchError> {
         let asset_index = LocalAssetAdaptor::asset_id_convert(asset_id);
         log::info!(
-            "local withdraw asset id:{:?}, index:{:?}, account:{:?}",
-            asset_id,
+            "local withdraw asset id convert:{:?},{:?},{:?}, index:{:?}, account:{:?}",
+            asset_id.chain_id,
+            asset_id.asset_type,
+            asset_id.asset_index,
             asset_index,
             origin
         );

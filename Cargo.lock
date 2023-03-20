@@ -1057,7 +1057,7 @@ dependencies = [
  "manta-collator-selection",
  "manta-primitives",
  "nimbus-primitives",
- "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.37)",
+ "orml-traits",
  "orml-xtokens",
  "pallet-asset-manager",
  "pallet-assets",
@@ -2599,9 +2599,8 @@ dependencies = [
  "log",
  "manta-collator-selection",
  "manta-primitives",
- "merkle-distributor",
  "nimbus-primitives",
- "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.37)",
+ "orml-traits",
  "orml-xtokens",
  "pallet-asset-manager",
  "pallet-assets",
@@ -5322,6 +5321,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "orml-traits",
  "parity-scale-codec",
  "scale-info",
  "smallvec",
@@ -5505,25 +5505,6 @@ name = "memory_units"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8452105ba047068f40ff7093dd1d9da90898e63dd61736462e9cdda6a90ad3c3"
-
-[[package]]
-name = "merkle-distributor"
-version = "0.1.0"
-source = "git+https://github.com/zenlinkpro/merkle-distributor?rev=41cdaa648ad67b69ec61b1958206c960e78aa075#41cdaa648ad67b69ec61b1958206c960e78aa075"
-dependencies = [
- "frame-support",
- "frame-system",
- "hex-literal",
- "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library?rev=05f0007b30c98303078ee64d34390233d6ffb30e)",
- "pallet-balances",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
 
 [[package]]
 name = "merlin"
@@ -6170,11 +6151,11 @@ dependencies = [
 [[package]]
 name = "orml-tokens"
 version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library?rev=05f0007b30c98303078ee64d34390233d6ffb30e#05f0007b30c98303078ee64d34390233d6ffb30e"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.37#16b6c1149a15674d21c87244b7988a667e2c14d9"
 dependencies = [
  "frame-support",
  "frame-system",
- "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library?rev=05f0007b30c98303078ee64d34390233d6ffb30e)",
+ "orml-traits",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -6190,25 +6171,7 @@ dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
  "num-traits",
- "orml-utilities 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.37)",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "xcm",
-]
-
-[[package]]
-name = "orml-traits"
-version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library?rev=05f0007b30c98303078ee64d34390233d6ffb30e#05f0007b30c98303078ee64d34390233d6ffb30e"
-dependencies = [
- "frame-support",
- "impl-trait-for-tuples",
- "num-traits",
- "orml-utilities 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library?rev=05f0007b30c98303078ee64d34390233d6ffb30e)",
+ "orml-utilities",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -6222,20 +6185,6 @@ dependencies = [
 name = "orml-utilities"
 version = "0.4.1-dev"
 source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.37#16b6c1149a15674d21c87244b7988a667e2c14d9"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "orml-utilities"
-version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library?rev=05f0007b30c98303078ee64d34390233d6ffb30e#05f0007b30c98303078ee64d34390233d6ffb30e"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -6252,7 +6201,7 @@ version = "0.4.1-dev"
 source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.37#16b6c1149a15674d21c87244b7988a667e2c14d9"
 dependencies = [
  "frame-support",
- "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.37)",
+ "orml-traits",
  "parity-scale-codec",
  "sp-runtime",
  "sp-std",
@@ -6268,7 +6217,7 @@ dependencies = [
  "cumulus-primitives-core",
  "frame-support",
  "frame-system",
- "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.37)",
+ "orml-traits",
  "orml-xcm-support",
  "pallet-xcm",
  "parity-scale-codec",
@@ -6328,7 +6277,7 @@ dependencies = [
  "frame-system",
  "log",
  "manta-primitives",
- "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.37)",
+ "orml-traits",
  "pallet-assets",
  "pallet-balances",
  "parity-scale-codec",
@@ -14386,14 +14335,14 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol"
 version = "0.4.4"
-source = "git+https://github.com/zenlinkpro/Zenlink-DEX-Module?rev=e43f6be5747f6ff7a0370e294400bee5dba6c855#e43f6be5747f6ff7a0370e294400bee5dba6c855"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#ec82341a22e0e32150f484a7169cb1f5ff242353"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
  "frame-system",
  "log",
  "orml-tokens",
- "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library?rev=05f0007b30c98303078ee64d34390233d6ffb30e)",
+ "orml-traits",
  "pallet-balances",
  "parity-scale-codec",
  "scale-info",
@@ -14409,7 +14358,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol-runtime-api"
 version = "0.4.4"
-source = "git+https://github.com/zenlinkpro/Zenlink-DEX-Module?rev=e43f6be5747f6ff7a0370e294400bee5dba6c855#e43f6be5747f6ff7a0370e294400bee5dba6c855"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#ec82341a22e0e32150f484a7169cb1f5ff242353"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -14420,11 +14369,11 @@ dependencies = [
 [[package]]
 name = "zenlink-stable-amm"
 version = "0.1.0"
-source = "git+https://github.com/zenlinkpro/Zenlink-DEX-Module?rev=e43f6be5747f6ff7a0370e294400bee5dba6c855#e43f6be5747f6ff7a0370e294400bee5dba6c855"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#ec82341a22e0e32150f484a7169cb1f5ff242353"
 dependencies = [
  "frame-support",
  "frame-system",
- "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library?rev=05f0007b30c98303078ee64d34390233d6ffb30e)",
+ "orml-traits",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -14437,7 +14386,7 @@ dependencies = [
 [[package]]
 name = "zenlink-stable-amm-runtime-api"
 version = "0.1.0"
-source = "git+https://github.com/zenlinkpro/Zenlink-DEX-Module?rev=e43f6be5747f6ff7a0370e294400bee5dba6c855#e43f6be5747f6ff7a0370e294400bee5dba6c855"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#ec82341a22e0e32150f484a7169cb1f5ff242353"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -14448,11 +14397,11 @@ dependencies = [
 [[package]]
 name = "zenlink-swap-router"
 version = "0.1.0"
-source = "git+https://github.com/zenlinkpro/Zenlink-DEX-Module?rev=e43f6be5747f6ff7a0370e294400bee5dba6c855#e43f6be5747f6ff7a0370e294400bee5dba6c855"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#ec82341a22e0e32150f484a7169cb1f5ff242353"
 dependencies = [
  "frame-support",
  "frame-system",
- "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library?rev=05f0007b30c98303078ee64d34390233d6ffb30e)",
+ "orml-traits",
  "parity-scale-codec",
  "scale-info",
  "serde",

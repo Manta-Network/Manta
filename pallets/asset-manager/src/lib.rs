@@ -50,9 +50,12 @@ pub mod pallet {
         transactional, PalletId,
     };
     use frame_system::pallet_prelude::*;
-    use manta_primitives::assets::{
-        self, AssetConfig, AssetIdLocationMap, AssetIdLpMap, AssetIdType, AssetMetadata,
-        AssetRegistry, FungibleLedger, LocationType,
+    use manta_primitives::{
+        assets::{
+            self, AssetConfig, AssetIdLocationMap, AssetIdLpMap, AssetIdType, AssetMetadata,
+            AssetRegistry, FungibleLedger, LocationType,
+        },
+        types::PoolId,
     };
     use orml_traits::GetByKey;
     use sp_runtime::{
@@ -159,6 +162,10 @@ pub mod pallet {
             asset_id1: &Self::AssetId,
         ) -> Option<Self::AssetId> {
             AssetIdLp::<T>::get((asset_id0, asset_id1))
+        }
+
+        fn lp_asset_pool(pool_id: &PoolId) -> Option<Self::AssetId> {
+            PoolIdLp::<T>::get(pool_id)
         }
     }
 
@@ -360,6 +367,10 @@ pub mod pallet {
     pub(super) type AssetIdLp<T: Config> =
         StorageMap<_, Blake2_128Concat, (T::AssetId, T::AssetId), T::AssetId>;
 
+    #[pallet::storage]
+    #[pallet::getter(fn pool_id_lp)]
+    pub(super) type PoolIdLp<T: Config> = StorageMap<_, Blake2_128Concat, PoolId, T::AssetId>;
+
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Register a new asset in the asset manager.
@@ -403,6 +414,7 @@ pub mod pallet {
         #[transactional]
         pub fn register_lp_asset(
             origin: OriginFor<T>,
+            pool_id: PoolId,
             asset_0: T::AssetId,
             asset_1: T::AssetId,
             location: T::Location,
@@ -412,13 +424,18 @@ pub mod pallet {
 
             let (asset_id0, asset_id1) = Self::sort_asset_id(asset_0, asset_1);
             ensure!(
-                AssetIdLp::<T>::contains_key((&asset_id0, &asset_id1)),
+                !AssetIdLp::<T>::contains_key((&asset_id0, &asset_id1)),
+                Error::<T>::AssetAlreadyRegistered
+            );
+            ensure!(
+                !PoolIdLp::<T>::contains_key(&pool_id),
                 Error::<T>::AssetAlreadyRegistered
             );
 
             let asset_id = Self::do_register_asset(&location, &metadata)?;
 
             AssetIdLp::<T>::insert((asset_id0, asset_id1), asset_id);
+            PoolIdLp::<T>::insert(pool_id, asset_id);
 
             Self::deposit_event(Event::<T>::LPAssetRegistered {
                 asset_id0,
