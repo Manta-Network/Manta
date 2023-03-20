@@ -67,7 +67,7 @@ mod multiplier_tests {
 
     #[test]
     fn multiplier_growth_simulator_and_congestion_budget_test() {
-        let target_daily_congestion_cost_usd = 250_000;
+        let target_daily_congestion_cost_usd = 100_000;
         let kma_price = fetch_kma_price().unwrap();
         println!("KMA/USD price as read from CoinGecko = {kma_price}");
         let target_daily_congestion_cost_kma =
@@ -100,7 +100,7 @@ mod multiplier_tests {
         });
 
         let mut should_fail = false;
-        while multiplier <= Multiplier::from_u32(1) {
+        while multiplier <= Multiplier::from_u32(1) || blocks <= 7200 {
             t.execute_with(|| {
                 // Give the attacker super powers to not pay tx-length fee
                 // The maximum length fo a block is 3_670_016 on Calamari
