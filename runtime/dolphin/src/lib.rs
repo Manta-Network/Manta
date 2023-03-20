@@ -56,7 +56,9 @@ use frame_system::{
 };
 use manta_primitives::{
     constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
-    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
+    types::{
+        AccountId, Balance, BlockNumber, DolphinAssetId, Hash, Header, Index, PoolId, Signature,
+    },
 };
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 use runtime_common::{
@@ -64,6 +66,7 @@ use runtime_common::{
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 use zenlink_protocol::{AssetBalance, AssetId as ZenlinkAssetId, MultiAssetsHandler, PairInfo};
+use zenlink_stable_amm::traits::StableAmmApi;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -768,6 +771,8 @@ construct_runtime!(
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
 
         ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 50,
+        ZenlinkStableAMM: zenlink_stable_amm::{Pallet, Call, Storage, Event<T>} = 51,
+        ZenlinkSwapRouter: zenlink_swap_router::{Pallet, Call, Event<T>} = 52,
     }
 );
 
@@ -1069,6 +1074,64 @@ impl_runtime_apis! {
                 asset_1,
                 amount
             )
+        }
+    }
+
+    impl zenlink_stable_amm_runtime_api::StableAmmApi<Block, DolphinAssetId, u128, AccountId, u32> for Runtime{
+        fn get_virtual_price(pool_id: PoolId)->Balance{
+            ZenlinkStableAMM::get_virtual_price(pool_id)
+        }
+
+        fn get_a(pool_id: PoolId)->Balance{
+            ZenlinkStableAMM::get_a(pool_id)
+        }
+
+        fn get_a_precise(pool_id: PoolId)->Balance{
+            ZenlinkStableAMM::get_a(pool_id) * 100
+        }
+
+        fn get_currencies(pool_id: PoolId)->Vec<DolphinAssetId>{
+            ZenlinkStableAMM::get_currencies(pool_id)
+        }
+
+        fn get_currency(pool_id: PoolId, index: u32)->Option<DolphinAssetId>{
+            ZenlinkStableAMM::get_currency(pool_id, index)
+        }
+
+        fn get_lp_currency(pool_id: PoolId)->Option<DolphinAssetId>{
+            ZenlinkStableAMM::get_lp_currency(pool_id)
+        }
+
+        fn get_currency_precision_multipliers(pool_id: PoolId)->Vec<Balance>{
+            ZenlinkStableAMM::get_currency_precision_multipliers(pool_id)
+        }
+
+        fn get_currency_balances(pool_id: PoolId)->Vec<Balance>{
+            ZenlinkStableAMM::get_currency_balances(pool_id)
+        }
+
+        fn get_number_of_currencies(pool_id: PoolId)->u32{
+            ZenlinkStableAMM::get_number_of_currencies(pool_id)
+        }
+
+        fn get_admin_balances(pool_id: PoolId)->Vec<Balance>{
+            ZenlinkStableAMM::get_admin_balances(pool_id)
+        }
+
+        fn calculate_currency_amount(pool_id: PoolId, amounts:Vec<Balance>, deposit: bool)->Balance{
+            ZenlinkStableAMM::stable_amm_calculate_currency_amount(pool_id, &amounts, deposit).unwrap_or_default()
+        }
+
+        fn calculate_swap(pool_id: PoolId, in_index: u32, out_index: u32, in_amount: Balance)->Balance{
+            ZenlinkStableAMM::stable_amm_calculate_swap_amount(pool_id, in_index as usize, out_index as usize, in_amount).unwrap_or_default()
+        }
+
+        fn calculate_remove_liquidity(pool_id: PoolId, amount: Balance)->Vec<Balance>{
+            ZenlinkStableAMM::stable_amm_calculate_remove_liquidity(pool_id, amount).unwrap_or_default()
+        }
+
+        fn calculate_remove_liquidity_one_currency(pool_id: PoolId, amount:Balance, index: u32)->Balance{
+            ZenlinkStableAMM::stable_amm_calculate_remove_liquidity_one_currency(pool_id, amount, index).unwrap_or_default()
         }
     }
 

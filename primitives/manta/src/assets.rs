@@ -15,7 +15,10 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Asset Utilities
-use crate::{constants::TEST_DEFAULT_ASSET_ED, types::Balance as MantaBalance};
+use crate::{
+    constants::TEST_DEFAULT_ASSET_ED,
+    types::{Balance as MantaBalance, PoolId},
+};
 use alloc::vec::Vec;
 use codec::{Decode, Encode};
 use core::{borrow::Borrow, marker::PhantomData};
@@ -280,7 +283,7 @@ impl From<AssetLocation> for Option<MultiLocation> {
     }
 }
 
-///
+/// AssetId and Location query trait.
 pub trait AssetIdLocationMap: AssetIdType + LocationType {
     /// Returns the [`Location`](LocationType::Location) of `asset_id`.
     fn location(asset_id: &Self::AssetId) -> Option<Self::Location>;
@@ -289,10 +292,13 @@ pub trait AssetIdLocationMap: AssetIdType + LocationType {
     fn asset_id(location: &Self::Location) -> Option<Self::AssetId>;
 }
 
-///
+/// AssetId and PoolId query trait.
 pub trait AssetIdLpMap: AssetIdType {
-    /// Returns the `lp_asset_id`.
+    /// Returns the `lp_asset_id` by assets.
     fn lp_asset_id(asset_id0: &Self::AssetId, asset_id1: &Self::AssetId) -> Option<Self::AssetId>;
+
+    /// Returns the `lp_asset_id` by PoolId
+    fn lp_asset_pool(pool_id: &PoolId) -> Option<Self::AssetId>;
 }
 
 /// Defines the units per second charged given an `AssetId`.
