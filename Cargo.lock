@@ -1110,7 +1110,7 @@ dependencies = [
  "sp-std",
  "sp-transaction-pool",
  "sp-version",
- "substrate-fixed",
+ "substrate-fixed 0.5.9 (git+https://github.com/Manta-Network/substrate-fixed.git)",
  "substrate-wasm-builder",
  "xcm",
  "xcm-builder",
@@ -6911,7 +6911,7 @@ dependencies = [
  "sp-runtime",
  "sp-staking",
  "sp-std",
- "substrate-fixed",
+ "substrate-fixed 0.5.9 (git+https://github.com/Manta-Network/substrate-fixed.git?tag=v0.5.9)",
 ]
 
 [[package]]
@@ -12280,6 +12280,17 @@ version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.37#f38bd6671d460293c93062cc1e4fe9e9e490cb29"
 dependencies = [
  "platforms 2.0.0",
+]
+
+[[package]]
+name = "substrate-fixed"
+version = "0.5.9"
+source = "git+https://github.com/Manta-Network/substrate-fixed.git?tag=v0.5.9#a4fb461aae6205ffc55bed51254a40c52be04e5d"
+dependencies = [
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "typenum 1.16.0 (git+https://github.com/encointer/typenum?tag=v1.16.0)",
 ]
 
 [[package]]

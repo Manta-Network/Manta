@@ -21,7 +21,7 @@ scale-info = { version = "2.1.2", default-features = false, features = ["derive"
 sp-arithmetic = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
-substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", default-features = false }
+substrate-fixed = { git = "https://github.com/Manta-Network/substrate-fixed.git", tag = "v0.5.9", default-features = false }
 
 # Manta
 manta-primitives = { path = '../../primitives/manta', default-features = false }
