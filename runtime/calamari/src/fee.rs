@@ -120,7 +120,7 @@ mod multiplier_tests {
 
                 println!(
                     "block = {} / multiplier {:?} / fee = {:?} / fees so far {:?} / fees so far in USD {:?}",
-                    blocks, multiplier, fee, fees_paid, (fees_paid / KMA) as f32 * kma_price
+                    blocks, multiplier, fee, fees_paid, (fees_paid as f32 / KMA as f32) * kma_price
                 );
 
                 if blocks == 7200 {
@@ -141,7 +141,7 @@ mod multiplier_tests {
         println!(
             "Cost for 1 day in KMA {:?} and in USD {:?}",
             fees_after_one_day,
-            (fees_after_one_day / KMA) as f32 * kma_price
+            (fees_after_one_day as f32 / KMA as f32) * kma_price
         );
 
         if should_fail {
