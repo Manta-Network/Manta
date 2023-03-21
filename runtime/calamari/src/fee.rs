@@ -85,6 +85,8 @@ mod multiplier_tests {
         let mut blocks = 0;
         let mut fees_paid = 0;
         let mut fees_after_one_day = 0;
+        let mut fees_to_1x = 0;
+        let mut blocks_to_1x = 0;
 
         let info = DispatchInfo {
             weight: block_weight,
@@ -101,7 +103,7 @@ mod multiplier_tests {
         });
 
         let mut should_fail = false;
-        while multiplier <= Multiplier::from_u32(1) {
+        while multiplier <= Multiplier::from_u32(1) || blocks <= 7200 {
             t.execute_with(|| {
                 // Give the attacker super powers to not pay tx-length fee
                 // The maximum length fo a block is 3_670_016 on Calamari
@@ -130,13 +132,19 @@ mod multiplier_tests {
                         should_fail = true;
                     }
                 }
+
+                if multiplier <= Multiplier::from(1u32) {
+                    fees_to_1x = fees_paid;
+                    blocks_to_1x = blocks;
+                }
             });
             blocks += 1;
         }
 
         println!(
-            "It will take {:?} days to reach multiplier of 1",
-            blocks as f32 / DAYS as f32
+            "It will take {:?} days to reach multiplier of 1x at a total cost of USD {:?}",
+            blocks_to_1x as f32 / DAYS as f32,
+            (fees_to_1x as f32 / KMA as f32) * kma_price
         );
 
         println!(
