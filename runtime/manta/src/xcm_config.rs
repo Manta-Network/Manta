@@ -15,18 +15,18 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    assets_config::MantaAssetConfig, AssetManager, Assets, Balance, Balances, Call, Event, Origin,
-    ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, Treasury, XcmpQueue,
+    assets_config::MantaAssetConfig, AssetManager, Assets, Balance, Balances, Call, DmpQueue,
+    Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, Treasury, XcmpQueue,
+    MAXIMUM_BLOCK_WEIGHT,
 };
 
+use codec::{Decode, Encode};
+use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
     match_types, parameter_types,
     traits::{Currency, Everything, Nothing},
     weights::Weight,
 };
-use sp_std::marker::PhantomData;
-
-use codec::{Decode, Encode};
 use frame_system::EnsureRoot;
 use manta_primitives::{
     assets::AssetIdLocationConvert,
@@ -40,6 +40,7 @@ use orml_traits::location::AbsoluteReserveProvider;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use scale_info::TypeInfo;
+use sp_std::marker::PhantomData;
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -50,6 +51,23 @@ use xcm_builder::{
     WeightInfoBounds,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
+
+parameter_types! {
+    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
+    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
+}
+
+impl cumulus_pallet_parachain_system::Config for Runtime {
+    type Event = Event;
+    type SelfParaId = parachain_info::Pallet<Runtime>;
+    type DmpMessageHandler = DmpQueue;
+    type ReservedDmpWeight = ReservedDmpWeight;
+    type OutboundXcmpMessageSource = XcmpQueue;
+    type XcmpMessageHandler = XcmpQueue;
+    type ReservedXcmpWeight = ReservedXcmpWeight;
+    type OnSystemEvent = ();
+    type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
+}
 
 parameter_types! {
     pub const RelayNetwork: NetworkId = NetworkId::Kusama;

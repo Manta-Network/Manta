@@ -42,7 +42,7 @@ use sp_version::RuntimeVersion;
 
 use cumulus_pallet_parachain_system::{
     register_validate_block, CheckInherents, ParachainSetCode, RelayChainStateProof,
-    RelayNumberStrictlyIncreases, RelaychainBlockNumberProvider,
+    RelaychainBlockNumberProvider,
 };
 use frame_support::{
     construct_runtime, parameter_types,
@@ -405,22 +405,6 @@ impl pallet_preimage::Config for Runtime {
     type MaxSize = PreimageMaxSize;
     type BaseDeposit = PreimageBaseDeposit;
     type ByteDeposit = PreimageByteDeposit;
-}
-
-parameter_types! {
-    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
-}
-
-impl cumulus_pallet_parachain_system::Config for Runtime {
-    type Event = Event;
-    type SelfParaId = parachain_info::Pallet<Runtime>;
-    type DmpMessageHandler = DmpQueue;
-    type ReservedDmpWeight = ReservedDmpWeight;
-    type OutboundXcmpMessageSource = ();
-    type XcmpMessageHandler = ();
-    type ReservedXcmpWeight = ();
-    type OnSystemEvent = ();
-    type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 // NOTE: pallet_parachain_staking rounds are now used,
