@@ -48,6 +48,7 @@ mod multiplier_tests {
         RuntimeBlockWeights as BlockWeights, System, TransactionPayment, KMA,
     };
     use frame_support::{dispatch::DispatchInfo, weights::DispatchClass};
+    use manta_primitives::constants::time::DAYS;
     use pallet_transaction_payment::Multiplier;
     use runtime_common::MinimumMultiplier;
 
@@ -137,7 +138,7 @@ mod multiplier_tests {
 
         println!(
             "It will take {:?} days to reach multiplier of 1",
-            (blocks_at_one_day * 12) as f32 / (60 * 60 * 24) as f32,
+            blocks as f32 / DAYS as f32
         );
 
         println!(
@@ -180,8 +181,8 @@ mod multiplier_tests {
             blocks += 1;
         }
 
-        let cooldown_target = 10.0f32;
-        let days = (blocks * 12) as f32 / (60 * 60 * 24) as f32;
+        let cooldown_target = 10f32;
+        let days = blocks as f32 / DAYS as f32;
         if days > cooldown_target {
             panic!("It will take more than 10 days to cool down: {:?}", days);
         }
