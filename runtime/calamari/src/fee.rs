@@ -133,7 +133,7 @@ mod multiplier_tests {
                     }
                 }
 
-                if multiplier <= Multiplier::from(1u32) {
+                if multiplier <= Multiplier::from_u32(1u32) {
                     fees_to_1x = fees_paid;
                     blocks_to_1x = blocks;
                 }
