@@ -203,6 +203,8 @@ impl Contains<Call> for MantaFilter {
             | Call::Multisig(_)
             | Call::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
             | Call::Balances(_)
+            | Call::XTokens(orml_xtokens::Call::transfer {..}
+                | orml_xtokens::Call::transfer_multicurrencies {..})
             | Call::Preimage(_)
             | Call::Utility(_) => true,
 
