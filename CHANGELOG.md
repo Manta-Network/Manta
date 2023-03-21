@@ -3,6 +3,7 @@
 ## v4.0.4
 ### Fixed
 - [\#1043](https://github.com/Manta-Network/Manta/pull/1043) Add self-bond filter condition when computing new set of collators [CA]
+- [\#1047](https://github.com/Manta-Network/Manta/pull/1047) Transaction fees bump [CADO]
 
 ## v4.0.3
 ### Changed
