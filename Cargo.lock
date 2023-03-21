@@ -5318,6 +5318,7 @@ dependencies = [
  "pallet-treasury",
  "pallet-utility",
  "pallet-xcm",
+ "pallet-xcm-benchmarks",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
