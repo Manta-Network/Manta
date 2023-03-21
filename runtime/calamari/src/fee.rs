@@ -84,6 +84,7 @@ mod multiplier_tests {
         let mut blocks = 0;
         let mut fees_paid = 0;
         let mut fees_after_one_day = 0;
+        let mut blocks_at_one_day = 0;
 
         let info = DispatchInfo {
             weight: block_weight,
@@ -125,6 +126,7 @@ mod multiplier_tests {
 
                 if blocks == 7200 {
                     fees_after_one_day = fees_paid;
+                    blocks_at_one_day = blocks;
                     if fees_paid < target_daily_congestion_cost_kma {
                         should_fail = true;
                     }
@@ -135,7 +137,7 @@ mod multiplier_tests {
 
         println!(
             "It will take {:?} days to reach multiplier of 1",
-            (blocks * 12) as f32 / (60 * 60 * 24) as f32,
+            (blocks_at_one_day * 12) as f32 / (60 * 60 * 24) as f32,
         );
 
         println!(

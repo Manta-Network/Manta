@@ -359,7 +359,7 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
     /// Relay Chain `TransactionLengthToFeeCoeff` / 10
     pub const TransactionLengthToFeeCoeff: Balance = mDOL / 100;
-    pub const WeightToFeeCoeff: Balance = 150_000;
+    pub const WeightToFeeCoeff: Balance = 5_000;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
