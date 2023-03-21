@@ -32,7 +32,7 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, Perbill, Percent,
+    ApplyExtrinsicResult, Perbill, Percent, Permill,
 };
 
 use sp_std::prelude::*;
@@ -46,16 +46,17 @@ use cumulus_pallet_parachain_system::{
 };
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency},
+    traits::{ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, NeverEnsureOrigin},
     weights::{ConstantMultiplier, DispatchClass, Weight},
     PalletId,
 };
+
 use frame_system::{
     limits::{BlockLength, BlockWeights},
     EnsureRoot,
 };
 use manta_primitives::{
-    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, WEIGHT_PER_SECOND},
+    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 pub use pallet_parachain_staking::{InflationInfo, Range};
@@ -68,6 +69,7 @@ use session_key_primitives::{AuraId, NimbusId, VrfId};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
+pub mod assets_config;
 pub mod currency;
 pub mod fee;
 pub mod impls;
@@ -479,6 +481,36 @@ impl manta_collator_selection::Config for Runtime {
     type CanAuthor = AuraAuthorFilter;
 }
 
+parameter_types! {
+    pub const ProposalBond: Permill = Permill::from_percent(1);
+    pub const ProposalBondMinimum: Balance = 500 * MANTA;
+    pub const ProposalBondMaximum: Balance = 10_000 * MANTA;
+    pub SpendPeriod: BlockNumber = 6 * DAYS;
+    pub const Burn: Permill = Permill::from_percent(0);
+    pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
+}
+
+impl pallet_treasury::Config for Runtime {
+    type PalletId = TreasuryPalletId;
+    type Currency = Balances;
+    type ApproveOrigin = EnsureRoot<AccountId>;
+    type RejectOrigin = EnsureRoot<AccountId>;
+    type Event = Event;
+    type OnSlash = Treasury;
+    type ProposalBond = ProposalBond;
+    type ProposalBondMinimum = ProposalBondMinimum;
+    type ProposalBondMaximum = ProposalBondMaximum;
+    type SpendPeriod = SpendPeriod;
+    type Burn = Burn;
+    type BurnDestination = ();
+    type MaxApprovals = ConstU32<100>;
+    type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
+    type SpendFunds = ();
+    // Expects an implementation of `EnsureOrigin` with a `Success` generic,
+    // which is the the maximum amount that this origin is allowed to spend at a time.
+    type SpendOrigin = NeverEnsureOrigin<Balance>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -508,18 +540,27 @@ construct_runtime!(
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 
+        Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>} = 26,
+
         // Preimage registry.
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 28,
 
         // XCM helpers.
+        XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,
         PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config} = 31,
+        CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
+        XTokens: orml_xtokens::{Pallet, Call, Event<T>, Storage} = 34,
 
         // Handy utilities.
         Utility: pallet_utility::{Pallet, Call, Event} = 40,
         Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 41,
         // Temporary
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 42,
+
+        // Assets management
+        Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
+        AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
     }
 );
 
