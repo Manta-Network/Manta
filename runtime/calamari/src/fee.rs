@@ -85,7 +85,6 @@ mod multiplier_tests {
         let mut blocks = 0;
         let mut fees_paid = 0;
         let mut fees_after_one_day = 0;
-        let mut blocks_at_one_day = 0;
 
         let info = DispatchInfo {
             weight: block_weight,
@@ -102,7 +101,7 @@ mod multiplier_tests {
         });
 
         let mut should_fail = false;
-        while multiplier <= Multiplier::from_u32(1) || blocks <= 7200 {
+        while multiplier <= Multiplier::from_u32(1) {
             t.execute_with(|| {
                 // Give the attacker super powers to not pay tx-length fee
                 // The maximum length fo a block is 3_670_016 on Calamari
@@ -127,7 +126,6 @@ mod multiplier_tests {
 
                 if blocks == 7200 {
                     fees_after_one_day = fees_paid;
-                    blocks_at_one_day = blocks;
                     if fees_paid < target_daily_congestion_cost_kma {
                         should_fail = true;
                     }
