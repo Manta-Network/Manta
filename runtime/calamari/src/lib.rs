@@ -56,6 +56,7 @@ use manta_primitives::{
     constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
+use manta_support::manta_pay::{PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
 use runtime_common::{
@@ -296,6 +297,7 @@ impl Contains<Call> for BaseFilter {
             | Call::Balances(_)
             | Call::Preimage(_)
             | Call::MantaPay(_)
+            | Call::MantaSbt(_)
             | Call::XTokens(orml_xtokens::Call::transfer {..}
                 | orml_xtokens::Call::transfer_multicurrencies {..})
             | Call::TransactionPause(_)
@@ -853,6 +855,7 @@ construct_runtime!(
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
+        MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
 
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
@@ -927,6 +930,7 @@ mod benches {
         [pallet_asset_manager, AssetManager]
         [pallet_parachain_staking, ParachainStaking]
         [pallet_manta_pay, MantaPay]
+        [pallet_manta_sbt, MantaSbt]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );
@@ -1060,11 +1064,21 @@ impl_runtime_apis! {
 
     impl pallet_manta_pay::runtime::PullLedgerDiffApi<Block> for Runtime {
         fn pull_ledger_diff(
-            checkpoint: pallet_manta_pay::RawCheckpoint,
+            checkpoint: RawCheckpoint,
             max_receiver: u64,
             max_sender: u64
-        ) -> pallet_manta_pay::PullResponse {
+        ) -> PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+    }
+
+    impl pallet_manta_sbt::runtime::SBTPullLedgerDiffApi<Block> for Runtime {
+        fn sbt_pull_ledger_diff(
+            checkpoint: RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> PullResponse {
+            MantaSbt::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
     }
 
