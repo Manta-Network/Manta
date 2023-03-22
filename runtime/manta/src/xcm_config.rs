@@ -205,7 +205,7 @@ impl Config for XcmExecutorConfig {
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = Barrier;
     type Weigher =
-        WeightInfoBounds<crate::weights::xcm::CalamariXcmWeight<Call>, Call, MaxInstructions>;
+        WeightInfoBounds<crate::weights::xcm::MantaXcmWeight<Call>, Call, MaxInstructions>;
     // Trader is the means to purchasing weight credit for XCM execution.
     // We define two traders:
     // The first one will charge parachain's native currency, who's `MultiLocation`
@@ -250,7 +250,7 @@ impl pallet_xcm::Config for Runtime {
     type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Nothing;
     type Weigher =
-        WeightInfoBounds<crate::weights::xcm::CalamariXcmWeight<Call>, Call, MaxInstructions>;
+        WeightInfoBounds<crate::weights::xcm::MantaXcmWeight<Call>, Call, MaxInstructions>;
     type LocationInverter = LocationInverter<Ancestry>;
     type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 }
@@ -321,7 +321,7 @@ impl orml_xtokens::Config for Runtime {
     /// extrinsics on this chain, as well as weights for execution on the destination
     /// chain. Both based on the composed xcm messages.
     type Weigher =
-        WeightInfoBounds<crate::weights::xcm::CalamariXcmWeight<Call>, Call, MaxInstructions>;
+        WeightInfoBounds<crate::weights::xcm::MantaXcmWeight<Call>, Call, MaxInstructions>;
     type BaseXcmWeight = BaseXcmWeight;
     type LocationInverter = LocationInverter<Ancestry>;
     type MaxAssetsForTransfer = MaxAssetsForTransfer;

@@ -5295,6 +5295,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "hex-literal",
+ "log",
  "manta-collator-selection",
  "manta-primitives",
  "nimbus-primitives",
@@ -5321,8 +5322,10 @@ dependencies = [
  "pallet-xcm-benchmarks",
  "parachain-info",
  "parity-scale-codec",
+ "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-primitives",
+ "polkadot-runtime-parachains",
  "runtime-common",
  "scale-info",
  "serde",
@@ -5346,6 +5349,7 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "xcm-simulator",
 ]
 
 [[package]]
