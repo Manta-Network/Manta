@@ -18,8 +18,8 @@
 
 use crate::{
     runtime::PullLedgerDiffApi,
-    types::{DensePullResponse, DenseInitialSyncResponse},
-    Checkpoint, PullResponse,
+    types::{DenseInitialSyncResponse, DensePullResponse},
+    Checkpoint, InitialSyncResponse, PullResponse,
 };
 use alloc::sync::Arc;
 use core::marker::PhantomData;
@@ -56,7 +56,14 @@ pub trait PullApi {
         max_senders: u64,
     ) -> RpcResult<DensePullResponse>;
 
-    ///
+    /// Returns the update required for the initial synchronization with the ledger.
+    #[method(name = "mantaPay_initial_pull", blocking)]
+    fn initial_pull(
+        &self,
+        checkpoint: Checkpoint,
+        max_receivers: u64,
+    ) -> RpcResult<InitialSyncResponse>;
+
     #[method(name = "mantaPay_dense_initial_pull", blocking)]
     fn dense_initial_pull(
         &self,
@@ -127,6 +134,25 @@ where
                 CallError::Custom(ErrorObject::owned(
                     PULL_LEDGER_DIFF_ERROR,
                     "Unable to compute dense state diff for pull",
+                    Some(format!("{err:?}")),
+                ))
+                .into()
+            })
+    }
+
+    #[inline]
+    fn initial_pull(
+        &self,
+        checkpoint: Checkpoint,
+        max_receivers: u64,
+    ) -> RpcResult<InitialSyncResponse> {
+        let api = self.client.runtime_api();
+        let at = BlockId::hash(self.client.info().finalized_hash);
+        api.initial_pull(&at, checkpoint.into(), max_receivers)
+            .map_err(|err| {
+                CallError::Custom(ErrorObject::owned(
+                    PULL_LEDGER_DIFF_ERROR,
+                    "Unable to compute state diff for initial pull",
                     Some(format!("{err:?}")),
                 ))
                 .into()
