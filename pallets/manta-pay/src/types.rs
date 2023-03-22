@@ -906,13 +906,51 @@ pub struct InitialSyncResponse {
     pub should_continue: bool,
 
     /// Ledger Utxo Chunk
-    pub utxos: UtxoChunk,
+    pub utxo_data: UtxoChunk,
 
     /// Ledger [`CurrentPath`] Chunk
-    pub paths: CurrentPathChunk,
+    pub membership_proof_data: CurrentPathChunk,
 
     /// Nullifier Count
     pub nullifier_count: u128,
+}
+
+/// Ledger Source Dense Pull Response
+#[cfg_attr(
+    feature = "serde",
+    derive(Deserialize, Serialize),
+    serde(crate = "manta_util::serde", deny_unknown_fields)
+)]
+#[derive(Clone, Debug, Encode, Default, Eq, Hash, Decode, PartialEq, TypeInfo)]
+pub struct DenseInitialSyncResponse {
+    /// Pull Continuation Flag
+    ///
+    /// The `should_continue` flag is set to `true` if the client should request more data from the
+    /// ledger to finish the pull.
+    pub should_continue: bool,
+
+    /// Ledger Utxo Chunk
+    #[codec(skip)]
+    pub utxo_data: alloc::string::String,
+
+    /// Ledger [`CurrentPath`] Chunk
+    #[codec(skip)]
+    pub membership_proof_data: alloc::string::String,
+
+    /// Nullifier Count
+    pub nullifier_count: u128,
+}
+
+impl From<InitialSyncResponse> for DenseInitialSyncResponse {
+    #[inline]
+    fn from(resp: InitialSyncResponse) -> DenseInitialSyncResponse {
+        Self {
+            should_continue: resp.should_continue,
+            utxo_data: base64::encode(resp.utxo_data.encode()),
+            membership_proof_data: base64::encode(resp.membership_proof_data.encode()),
+            nullifier_count: resp.nullifier_count,
+        }
+    }
 }
 
 /// Ledger Source Pull Response

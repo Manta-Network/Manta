@@ -571,15 +571,15 @@ pub mod pallet {
         pub fn initial_pull(checkpoint: Checkpoint, max_receivers: u64) -> InitialSyncResponse {
             let (should_continue, receivers) =
                 Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
-            let utxos = receivers.into_iter().map(|receiver| receiver.0).collect();
-            let paths = (0..=255)
+            let utxo_data = receivers.into_iter().map(|receiver| receiver.0).collect();
+            let membership_proof_data = (0..=255)
                 .map(|i| ShardTrees::<T>::get(i).current_path)
                 .collect();
             let nullifier_count = NullifierSetSize::<T>::get() as u128;
             InitialSyncResponse {
                 should_continue,
-                utxos,
-                paths,
+                utxo_data,
+                membership_proof_data,
                 nullifier_count,
             }
         }

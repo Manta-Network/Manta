@@ -18,7 +18,7 @@
 
 use crate::{
     runtime::PullLedgerDiffApi,
-    types::{DensePullResponse, InitialSyncResponse},
+    types::{DensePullResponse, DenseInitialSyncResponse},
     Checkpoint, PullResponse,
 };
 use alloc::sync::Arc;
@@ -57,12 +57,12 @@ pub trait PullApi {
     ) -> RpcResult<DensePullResponse>;
 
     ///
-    #[method(name = "mantaPay_initial_pull", blocking)]
-    fn initial_pull(
+    #[method(name = "mantaPay_dense_initial_pull", blocking)]
+    fn dense_initial_pull(
         &self,
         checkpoint: Checkpoint,
         max_receivers: u64,
-    ) -> RpcResult<InitialSyncResponse>;
+    ) -> RpcResult<DenseInitialSyncResponse>;
 }
 
 /// Pull RPC API Implementation
@@ -134,14 +134,15 @@ where
     }
 
     #[inline]
-    fn initial_pull(
+    fn dense_initial_pull(
         &self,
         checkpoint: Checkpoint,
         max_receivers: u64,
-    ) -> RpcResult<InitialSyncResponse> {
+    ) -> RpcResult<DenseInitialSyncResponse> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(self.client.info().finalized_hash);
         api.initial_pull(&at, checkpoint.into(), max_receivers)
+            .map(Into::into)
             .map_err(|err| {
                 CallError::Custom(ErrorObject::owned(
                     PULL_LEDGER_DIFF_ERROR,
