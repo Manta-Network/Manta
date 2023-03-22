@@ -14,11 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-use frame_support::weights::{
-    WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
-};
-use manta_primitives::types::Balance;
-use smallvec::smallvec;
 pub use sp_runtime::Perbill;
 
 /// The block saturation level. Fees will be updates based on this value.
@@ -30,30 +25,6 @@ pub const FEES_PERCENTAGE_TO_TREASURY: u8 = 45;
 
 pub const TIPS_PERCENTAGE_TO_AUTHOR: u8 = 100;
 pub const TIPS_PERCENTAGE_TO_TREASURY: u8 = 0;
-
-/// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
-/// node's balance type.
-///
-/// This should typically create a mapping between the following ranges:
-///   - [0, MAXIMUM_BLOCK_WEIGHT]
-///   - [Balance::min, Balance::max]
-///
-/// Yet, it can be used for any other sort of change to weight-fee. Some examples being:
-///   - Setting it to `0` will essentially disable the weight fee.
-///   - Setting it to `1` will cause the literal `#[weight = x]` values to be charged.
-pub struct WeightToFee;
-impl WeightToFeePolynomial for WeightToFee {
-    type Balance = Balance;
-    fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-        // Refer to the congested_chain_simulation() test for how to come up with the coefficient.
-        smallvec![WeightToFeeCoefficient {
-            coeff_integer: 5000u32.into(),
-            coeff_frac: Perbill::zero(),
-            negative: false,
-            degree: 1,
-        }]
-    }
-}
 
 #[cfg(test)]
 mod fee_split_tests {
@@ -73,43 +44,13 @@ mod fee_split_tests {
 #[cfg(test)]
 mod multiplier_tests {
     use crate::{
-        Call, Runtime, RuntimeBlockWeights as BlockWeights, System, TransactionPayment, KMA,
+        sp_api_hidden_includes_construct_runtime::hidden_include::traits::Hooks, Runtime,
+        RuntimeBlockWeights as BlockWeights, System, TransactionPayment, KMA,
     };
-    use codec::Encode;
-    use frame_support::weights::{DispatchClass, Weight, WeightToFee};
-    use frame_system::WeightInfo;
-    use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
-    use runtime_common::{
-        AdjustmentVariable, MinimumMultiplier, SlowAdjustingFeeUpdate, TargetBlockFullness,
-    };
-    use sp_runtime::{
-        traits::{Convert, One},
-        FixedPointNumber,
-    };
-
-    fn run_with_system_weight<F>(w: Weight, mut assertions: F)
-    where
-        F: FnMut(),
-    {
-        let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
-            .build_storage::<Runtime>()
-            .unwrap()
-            .into();
-        t.execute_with(|| {
-            System::set_block_consumed_resources(w, 0);
-            assertions()
-        });
-    }
-
-    // update based on runtime impl.
-    fn runtime_multiplier_update(fm: Multiplier) -> Multiplier {
-        TargetedFeeAdjustment::<
-            Runtime,
-            TargetBlockFullness,
-            AdjustmentVariable,
-            MinimumMultiplier,
-        >::convert(fm)
-    }
+    use frame_support::{dispatch::DispatchInfo, weights::DispatchClass};
+    use manta_primitives::constants::time::DAYS;
+    use pallet_transaction_payment::Multiplier;
+    use runtime_common::MinimumMultiplier;
 
     fn fetch_kma_price() -> Result<f32, &'static str> {
         let body = reqwest::blocking::get(
@@ -125,133 +66,131 @@ mod multiplier_tests {
         }
     }
 
-    // Consider the daily cost to fully congest our network to be defined as:
-    // `target_daily_congestion_cost_usd = inclusion_fee * blocks_per_day * kma_price`
-    // Where:
-    // `inclusion_fee = fee_adjustment * (weight_to_fee_coeff * (block_weight ^ degree)) + base_fee + (len_to_fee_coeff * length_fee)`
-    // Where:
-    // `fee_adjustment`, `weight_to_fee_coeff` and `len_to_fee_coeff` are configurable in a runtime via:
-    // `FeeMultiplierUpdate` and `WeightToFee` and `LengthToFee`
-    // `fee_adjustment` is also variable depending on previous block's fullness
-    // We are also assuming `length_fee` is negligible for small TXs like a remark or a transfer.
-    // This test loops 1 day of parachain blocks (7200) and calculates accumulated fee if every block is almost full
     #[test]
-    fn congested_chain_simulation() {
-        // Configure the target cost depending on the current state of the network.
-        let target_daily_congestion_cost_usd = 250000;
+    fn multiplier_growth_simulator_and_congestion_budget_test() {
+        let target_daily_congestion_cost_usd = 100_000;
         let kma_price = fetch_kma_price().unwrap();
         println!("KMA/USD price as read from CoinGecko = {kma_price}");
         let target_daily_congestion_cost_kma =
-            (target_daily_congestion_cost_usd as f32 * kma_price * KMA as f32) as u128;
+            (target_daily_congestion_cost_usd as f32 / kma_price * KMA as f32) as u128;
 
-        // `cargo test --package calamari-runtime --lib -- fee::multiplier_tests::congested_chain_simulation --exact --nocapture` to get some insight.
-        // almost full. The entire quota of normal transactions is taken.
+        // assume the multiplier is initially set to its minimum and that each block
+        // will be full with a single user extrinsic, which will minimize then length and base fees
+        let mut multiplier = MinimumMultiplier::get();
         let block_weight = BlockWeights::get()
             .get(DispatchClass::Normal)
             .max_total
-            .unwrap()
-            - 10;
+            .unwrap();
 
-        // remark extrinsic is chosen arbitrarily for benchmark as a small, constant size TX.
-        let remark = Call::System(frame_system::Call::<Runtime>::remark_with_event {
-            remark: vec![1, 2, 3],
-        });
-        let len: u32 = remark.encode().len() as u32;
-        let remark_weight: Weight =
-            <Runtime as frame_system::Config>::SystemWeightInfo::remark(len);
-        let max_number_of_remarks_per_block = (block_weight / remark_weight) as u128;
-        let len_fee = max_number_of_remarks_per_block.saturating_mul(
-            <Runtime as pallet_transaction_payment::Config>::LengthToFee::weight_to_fee(
-                &(len as Weight),
-            ),
-        );
-
-        let base_fee = max_number_of_remarks_per_block
-            * <Runtime as pallet_transaction_payment::Config>::WeightToFee::weight_to_fee(
-                &runtime_common::ExtrinsicBaseWeight::get(),
-            );
-
-        run_with_system_weight(block_weight, || {
-            // initial value configured on module
-            let mut fee_adjustment = Multiplier::one();
-            assert_eq!(fee_adjustment, TransactionPayment::next_fee_multiplier());
-            let mut accumulated_fee: u128 = 0;
-            // Simulates 1 day of parachain blocks (12 seconds each)
-            for iteration in 0..7200 {
-                let next = runtime_multiplier_update(fee_adjustment);
-                // if no change or less, panic. This should never happen in this case.
-                if fee_adjustment >= next {
-                    println!("final fee_adjustment: {fee_adjustment}");
-                    println!("final next: {next}");
-                    panic!("The fee should ever increase");
-                }
-                fee_adjustment = next;
-                let fee =
-                    <Runtime as pallet_transaction_payment::Config>::WeightToFee::weight_to_fee(
-                        &block_weight,
-                    );
-
-                // base_fee and len_fee are not adjusted:
-                // https://docs.substrate.io/main-docs/build/tx-weights-fees/#:~:text=A%20closer%20look%20at%20the%20inclusion%20fee
-                let adjusted_fee = fee_adjustment.saturating_mul_acc_int(fee) + base_fee + len_fee;
-                accumulated_fee += adjusted_fee;
-                println!(
-                    "Iteration {}, New fee_adjustment = {:?}. Adjusted Fee: {} KMA, Total Fee: {} KMA, Dollar Value: {}",
-                    iteration,
-                    fee_adjustment,
-                    adjusted_fee / KMA,
-                    accumulated_fee / KMA,
-                    (accumulated_fee / KMA) as f32 * kma_price,
-                );
-            }
-
-            if accumulated_fee < target_daily_congestion_cost_kma {
-                panic!("The cost to fully congest our network should be over the target_daily_congestion_cost_kma after 1 day.");
-            }
-        });
-    }
-
-    #[test]
-    fn multiplier_can_grow_from_zero() {
-        let minimum_multiplier = MinimumMultiplier::get();
-        let target = TargetBlockFullness::get()
-            * BlockWeights::get()
-                .get(DispatchClass::Normal)
-                .max_total
-                .unwrap();
-        // if the min is too small, then this will not change, and we are doomed forever.
-        // the weight is 1/100th bigger than target.
-        run_with_system_weight(target * 101 / 100, || {
-            let next = SlowAdjustingFeeUpdate::<Runtime>::convert(minimum_multiplier);
-            assert!(
-                next > minimum_multiplier,
-                "{next:?} !>= {minimum_multiplier:?}"
-            );
-        })
-    }
-
-    #[test]
-    #[ignore] // test runs for a very long time
-    fn multiplier_growth_simulator() {
-        // assume the multiplier is initially set to its minimum. We update it with values twice the
-        //target (target is 25%, thus 50%) and we see at which point it reaches 1.
-        let mut multiplier = MinimumMultiplier::get();
-        let block_weight = TargetBlockFullness::get()
-            * BlockWeights::get()
-                .get(DispatchClass::Normal)
-                .max_total
-                .unwrap()
-            * 2;
         let mut blocks = 0;
-        while multiplier <= Multiplier::one() {
-            run_with_system_weight(block_weight, || {
-                let next = SlowAdjustingFeeUpdate::<Runtime>::convert(multiplier);
-                // ensure that it is growing as well.
-                assert!(next > multiplier, "{next:?} !>= {multiplier:?}");
+        let mut fees_paid = 0;
+        let mut fees_after_one_day = 0;
+        let mut fees_to_1x = 0;
+        let mut blocks_to_1x = 0;
+
+        let info = DispatchInfo {
+            weight: block_weight,
+            ..Default::default()
+        };
+
+        let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
+            .build_storage::<Runtime>()
+            .unwrap()
+            .into();
+        // set the minimum
+        t.execute_with(|| {
+            pallet_transaction_payment::NextFeeMultiplier::<Runtime>::set(MinimumMultiplier::get());
+        });
+
+        let mut should_fail = false;
+        while multiplier <= Multiplier::from_u32(1) || blocks <= 7200 {
+            t.execute_with(|| {
+                // Give the attacker super powers to not pay tx-length fee
+                // The maximum length fo a block is 3_670_016 on Calamari
+                let len = 0;
+                // Imagine this tx was called. This means that he will pay a single base-fee,
+                // which is additional super powers for the attacker
+                let fee = TransactionPayment::compute_fee(len, &info, 0);
+                fees_paid += fee;
+
+                // this will update the multiplier.
+                System::set_block_consumed_resources(block_weight, len.try_into().unwrap());
+                TransactionPayment::on_finalize(1);
+                let next = TransactionPayment::next_fee_multiplier();
+
+                assert!(next > multiplier, "{:?} !>= {:?}", next, multiplier);
                 multiplier = next;
+
+                println!(
+                    "block = {} / multiplier {:?} / fee = {:?} / fees so far {:?} / fees so far in USD {:?}",
+                    blocks, multiplier, fee, fees_paid, (fees_paid as f32 / KMA as f32) * kma_price
+                );
+
+                if blocks == 7200 {
+                    fees_after_one_day = fees_paid;
+                    if fees_paid < target_daily_congestion_cost_kma {
+                        should_fail = true;
+                    }
+                }
+
+                if multiplier <= Multiplier::from_u32(1u32) {
+                    fees_to_1x = fees_paid;
+                    blocks_to_1x = blocks;
+                }
             });
             blocks += 1;
-            println!("block = {blocks} multiplier {multiplier:?}");
+        }
+
+        println!(
+            "It will take {:?} days to reach multiplier of 1x at a total cost of USD {:?}",
+            blocks_to_1x as f32 / DAYS as f32,
+            (fees_to_1x as f32 / KMA as f32) * kma_price
+        );
+
+        println!(
+            "Cost for 1 day in KMA {:?} and in USD {:?}",
+            fees_after_one_day,
+            (fees_after_one_day as f32 / KMA as f32) * kma_price
+        );
+
+        if should_fail {
+            panic!("The cost to fully congest our network should be over the target_daily_congestion_cost_kma after 1 day.");
+        }
+    }
+
+    #[test]
+    fn multiplier_cool_down_simulator() {
+        // Start from multiplier of 1 to see how long it will take to cool-down to the minimum
+        let mut multiplier = Multiplier::from_u32(1);
+        let mut blocks = 0;
+
+        let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
+            .build_storage::<Runtime>()
+            .unwrap()
+            .into();
+
+        t.execute_with(|| {
+            pallet_transaction_payment::NextFeeMultiplier::<Runtime>::set(multiplier);
+        });
+
+        while multiplier > MinimumMultiplier::get() {
+            t.execute_with(|| {
+                // this will update the multiplier.
+                TransactionPayment::on_finalize(1);
+                let next = TransactionPayment::next_fee_multiplier();
+
+                assert!(next < multiplier, "{:?} !>= {:?}", next, multiplier);
+                multiplier = next;
+
+                println!("block = {} / multiplier {:?}", blocks, multiplier);
+            });
+            blocks += 1;
+        }
+
+        let cooldown_target = 10f32;
+        let days = blocks as f32 / DAYS as f32;
+        if days > cooldown_target {
+            panic!("It will take more than 10 days to cool down: {:?}", days);
         }
     }
 }
