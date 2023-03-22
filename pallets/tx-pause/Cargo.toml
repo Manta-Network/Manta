@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = "pallet-tx-pause"
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.0.3'
+version = '4.0.4'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false }
