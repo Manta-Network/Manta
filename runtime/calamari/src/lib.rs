@@ -50,7 +50,7 @@ use frame_support::{
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
-    EnsureRoot, RawOrigin,
+    EnsureRoot,
 };
 use manta_primitives::{
     constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
@@ -78,7 +78,6 @@ pub mod staking;
 pub mod xcm_config;
 
 use currency::*;
-use fee::WeightToFee;
 use impls::DealWithFees;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
@@ -130,10 +129,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 4020,
+    spec_version: 4040,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 10,
+    transaction_version: 11,
     state_version: 0,
 };
 
@@ -221,6 +220,8 @@ impl Contains<Call> for BaseFilter {
         match call {
             // Explicitly DISALLOWED calls ( Pallet user extrinsics we don't want used WITH REASONING )
             | Call::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
+            // It's a call only for vesting crowdloan contributors' token, normal user should not use it.
+            | Call::CalamariVesting(calamari_vesting::Call::vested_transfer {..})
             // For now disallow public proposal workflows, treasury workflows,
             // as well as external_propose and external_propose_majority.
             | Call::Democracy(
@@ -369,13 +370,14 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    /// Relay Chain `TransactionLengthToFeeCoeff` / 10
+    /// Relay Chain `TransactionLengthToFeeCoeff` / 10 (1_000_000 on Kusama)
     pub const TransactionLengthToFeeCoeff: Balance = mKMA / 100;
+    pub const WeightToFeeCoeff: Balance = 5_000;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
-    type WeightToFee = WeightToFee;
+    type WeightToFee = ConstantMultiplier<Balance, WeightToFeeCoeff>;
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthToFeeCoeff>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
@@ -882,7 +884,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExt
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = (migrations::asset_id::AssetIdMigration<Runtime>,);
+pub type OnRuntimeUpgradeHooks = ();
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -1280,24 +1282,4 @@ cumulus_pallet_parachain_system::register_validate_block! {
     Runtime = Runtime,
     BlockExecutor = pallet_author_inherent::BlockExecutor::<Runtime, Executive>,
     CheckInherents = CheckInherents,
-}
-
-pub struct MantaPaySuspensionManager;
-impl pallet_manta_pay::SuspendMantaPay for MantaPaySuspensionManager {
-    fn suspend_manta_pay_execution() {
-        match TransactionPause::pause_transactions(
-            RawOrigin::Root.into(),
-            vec![(
-                b"MantaPay".to_vec(),
-                vec![
-                    b"to_private".to_vec(),
-                    b"private_transfer".to_vec(),
-                    b"to_public".to_vec(),
-                ],
-            )],
-        ) {
-            Ok(_) => log::error!("MantaPay has been suspended due to an unexpected internal ledger error!"),
-            Err(tx_pause_error) => log::error!("MantaPay encountered an unexpected internal ledger error, but failed to be suspended with the following tx-pause error: {:?}!", tx_pause_error)
-        }
-    }
 }

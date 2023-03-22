@@ -18,7 +18,7 @@ use crate::{
     benchmark::precomputed_coins::{
         PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, TO_PRIVATE, TO_PUBLIC, TO_PUBLIC_INPUT,
     },
-    types::{asset_value_decode, asset_value_encode, Asset},
+    types::{asset_value_decode, asset_value_encode, AccountId, Asset},
     Call, Config, Event, Pallet, StandardAssetId, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
@@ -52,6 +52,7 @@ where
 pub fn init_asset<T>(owner: &T::AccountId, id: StandardAssetId, value: Balance)
 where
     T: Config,
+    T::AccountId: From<AccountId> + Into<AccountId>,
 {
     let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
     let storage_metadata: <T::AssetConfig as AssetConfig<T>>::StorageMetadata = metadata.into();
@@ -78,6 +79,7 @@ where
 }
 
 benchmarks! {
+    where_clause {  where T::AccountId: From<AccountId> + Into<AccountId> }
     to_private {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
@@ -106,10 +108,10 @@ benchmarks! {
         let asset = reclaim_post.sink(0).unwrap();
     }: to_public (
         RawOrigin::Signed(caller.clone()),
-        reclaim_post
+        reclaim_post.clone()
     ) verify {
         // FIXME: add balance checking
-        assert_last_event::<T, _>(Event::ToPublic { asset, sink: caller });
+        assert_last_event::<T, _>(Event::ToPublic { asset, sink: T::AccountId::from(reclaim_post.sink_accounts[0]) });
     }
 
     private_transfer {
