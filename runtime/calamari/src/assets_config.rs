@@ -194,5 +194,5 @@ impl pallet_manta_sbt::Config for Runtime {
     type MintsPerReserve = ConstU16<5>;
     type ReservePrice = ConstU128<{ 100 * KMA }>;
     type SbtMetadataBound = ConstU32<300>;
-    type WeightInfo = ();
+    type WeightInfo = weights::pallet_manta_sbt::SubstrateWeight<Runtime>;
 }

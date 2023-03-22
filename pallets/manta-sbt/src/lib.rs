@@ -52,6 +52,7 @@ use sp_runtime::{
     ArithmeticError,
 };
 
+use errors::{ReceiverLedgerError, SenderLedgerError, TransferLedgerError};
 use manta_pay::{
     config::{self, utxo::MerkleTreeConfiguration},
     manta_accounting::transfer::{
@@ -79,6 +80,7 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+pub mod errors;
 pub mod weights;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -314,20 +316,15 @@ pub mod pallet {
     /// Error
     #[pallet::error]
     pub enum Error<T> {
+        /// Invalid Serialized Form
+        ///
+        /// The transfer could not be interpreted because of an issue during deserialization.
+        InvalidSerializedForm,
+
         /// Invalid Asset Id
         ///
-        /// The asset id of the `TransferPost` is incorrect. It could not be converted correctly to `StandardAssetId`
-        /// or is not the designated `ReservedIds`
+        /// The asset id of the transfer could not be converted correctly to the standard format.
         InvalidAssetId,
-
-        /// No Sender Ledger in SBT, Private Transfers are disabled
-        NoSenderLedger,
-
-        /// Need to first call `reserve_sbt` before minting
-        NotReserved,
-
-        /// `ToPrivate` post can only have value of 1. This is defensive to not allow large numbers on private ledger.
-        ValueNotOne,
 
         /// Invalid Shape
         ///
@@ -336,6 +333,16 @@ pub mod pallet {
 
         /// Invalid Authorization Signature
         InvalidAuthorizationSignature,
+
+        /// Asset Spent
+        ///
+        /// An asset present in this transfer has already been spent.
+        AssetSpent,
+
+        /// Invalid UTXO Accumulator Output
+        ///
+        /// The sender was constructed on an invalid version of the ledger state.
+        InvalidUtxoAccumulatorOutput,
 
         /// Asset Registered
         ///
@@ -367,119 +374,98 @@ pub mod pallet {
         /// At least one of the sink accounts in invalid.
         InvalidSinkAccount,
 
-        /// Internal Ledger Error
-        ///
-        /// This is caused by some internal error in the ledger and should never occur.
-        InternalLedgerError,
+        /// [`InvalidAssetId`](FungibleLedgerError::InvalidAssetId) from [`FungibleLedgerError`]
+        PublicUpdateInvalidAssetId,
 
-        /// Invalid Serialized Form
-        ///
-        /// The transfer could not be interpreted because of an issue during deserialization.
-        InvalidSerializedForm,
+        /// [`BelowMinimum`](FungibleLedgerError::BelowMinimum) from [`FungibleLedgerError`]
+        PublicUpdateBelowMinimum,
+
+        /// [`CannotCreate`](FungibleLedgerError::CannotCreate) from [`FungibleLedgerError`]
+        PublicUpdateCannotCreate,
+
+        /// [`UnknownAsset`](FungibleLedgerError::UnknownAsset) from [`FungibleLedgerError`]
+        PublicUpdateUnknownAsset,
+
+        /// [`Overflow`](FungibleLedgerError::Overflow) from [`FungibleLedgerError`]
+        PublicUpdateOverflow,
+
+        /// [`CannotWithdraw`](FungibleLedgerError::CannotWithdrawMoreThan) from [`FungibleLedgerError`]
+        PublicUpdateCannotWithdraw,
+
+        /// [`InvalidMint`](FungibleLedgerError::InvalidMint) from [`FungibleLedgerError`]
+        PublicUpdateInvalidMint,
+
+        /// [`InvalidBurn`](FungibleLedgerError::InvalidBurn) from [`FungibleLedgerError`]
+        PublicUpdateInvalidBurn,
+
+        /// [`InvalidTransfer`](FungibleLedgerError::InvalidTransfer) from [`FungibleLedgerError`]
+        PublicUpdateInvalidTransfer,
+
+        /// Fungible Ledger Encode Error
+        FungibleLedgerEncodeError,
+
+        /// Sender Ledger Fp Encoding failed.
+        SenderLedgerFpEncodeError,
+
+        /// Sender Ledger [`OutgoingNote`] failed to decode
+        SenderLedgerOutgoingNodeDecodeFailed,
+
+        /// Reciever Ledger Utxo decode failed
+        ReceiverLedgerUtxoDecodeFailed,
+
+        /// Receiver Ledger Wrong Checksum Error
+        ReceiverLedgerChecksumError,
+
+        /// Receiver Ledger Merkle Tree Parameters Decoding Error
+        ReceiverLedgerMTParametersDecodeError,
+
+        /// Receiver Ledger Utxo Accumulator Item Hash Decoding Error
+        ReceiverLedgerUtxoAccumulatorItemHashDecodeError,
+
+        /// Receiver Ledger Merkle Tree Out of Capacity Error
+        ReceiverLedgerMerkleTreeCapacityError,
+
+        /// Receiver Ledger Field Element Encoding Error
+        ReceiverLedgerFpEncodeError,
+
+        /// Receiver Ledger Field Element Decoding Error
+        ReceiverLedgerFpDecodeError,
+
+        /// Receiver Ledger Path Decoding Error
+        ReceiverLedgerPathDecodeError,
+
+        /// Receiver Ledger Full Incoming Note Decoding Error
+        ReceiverLedgerFullNoteDecodeError,
+
+        /// Transfer Ledger Wrong Checksum Error
+        TransferLedgerChecksumError,
+
+        /// Transfer Ledger `VerifyingContext` cannont be decoded
+        TransferLedgerVerifyingContextDecodeError,
+
+        /// Transer Ledger Field Element Encoding Error
+        TransferLedgerFpEncodeError,
+
+        /// Transfer Ledger Unknown Asset
+        TransferLedgerUnknownAsset,
+
+        /// Transfer Ledger Proof Error
+        TransferLedgerProofSystemFailed,
+
+        /// Marker Error, this error exists for `PhantomData` should never happen
+        Marker,
 
         /// Pallet is configured to allow no SBT mints, only happens when `MintsPerReserve` is zero
         ZeroMints,
-    }
-}
 
-impl<T> From<InvalidAuthorizationSignature> for Error<T>
-where
-    T: Config,
-{
-    #[inline]
-    fn from(_: InvalidAuthorizationSignature) -> Self {
-        Self::InvalidAuthorizationSignature
-    }
-}
+        /// Value of `ToPrivate` post must be one.
+        ValueNotOne,
 
-impl<T, Id> From<InvalidSourceAccount<config::Config, Id>> for Error<T>
-where
-    T: Config,
-{
-    #[inline]
-    fn from(_: InvalidSourceAccount<config::Config, Id>) -> Self {
-        Self::InvalidSourceAccount
-    }
-}
+        /// `AssetId` was not reserved by this account to mint
+        NotReserved,
 
-impl<T, Id> From<InvalidSinkAccount<config::Config, Id>> for Error<T>
-where
-    T: Config,
-{
-    #[inline]
-    fn from(_: InvalidSinkAccount<config::Config, Id>) -> Self {
-        Self::InvalidSinkAccount
-    }
-}
-
-impl<T> From<SenderPostError<SenderLedgerError>> for Error<T> {
-    #[inline]
-    fn from(err: SenderPostError<SenderLedgerError>) -> Self {
-        match err {
-            SenderPostError::AssetSpent => Self::NoSenderLedger,
-            SenderPostError::InvalidUtxoAccumulatorOutput => Self::NoSenderLedger,
-            SenderPostError::UnexpectedError(_) => Self::NoSenderLedger,
-        }
-    }
-}
-
-impl<T> From<ReceiverPostError<ReceiverLedgerError>> for Error<T> {
-    #[inline]
-    fn from(err: ReceiverPostError<ReceiverLedgerError>) -> Self {
-        match err {
-            ReceiverPostError::AssetRegistered => Self::AssetRegistered,
-            ReceiverPostError::UnexpectedError(_) => Self::InternalLedgerError,
-        }
-    }
-}
-
-impl<T> From<SenderLedgerError> for TransferLedgerError<T>
-where
-    T: Config,
-{
-    #[inline]
-    fn from(err: SenderLedgerError) -> Self {
-        TransferLedgerError::SenderLedgerError(err)
-    }
-}
-
-impl<T> From<ReceiverLedgerError> for TransferLedgerError<T>
-where
-    T: Config,
-{
-    #[inline]
-    fn from(err: ReceiverLedgerError) -> Self {
-        TransferLedgerError::ReceiverLedgerError(err)
-    }
-}
-
-/// Transfer Post Error
-pub type TransferPostError<T> = transfer::TransferPostError<
-    config::Config,
-    AccountId,
-    SenderLedgerError,
-    ReceiverLedgerError,
-    TransferLedgerError<T>,
->;
-
-impl<T> From<TransferPostError<T>> for Error<T>
-where
-    T: Config,
-{
-    #[inline]
-    fn from(err: TransferPostError<T>) -> Self {
-        match err {
-            TransferPostError::<T>::InvalidShape => Self::InvalidShape,
-            TransferPostError::<T>::InvalidAuthorizationSignature(err) => err.into(),
-            TransferPostError::<T>::InvalidSourceAccount(err) => err.into(),
-            TransferPostError::<T>::InvalidSinkAccount(err) => err.into(),
-            TransferPostError::<T>::Sender(err) => err.into(),
-            TransferPostError::<T>::Receiver(err) => err.into(),
-            TransferPostError::<T>::DuplicateMint => Self::DuplicateRegister,
-            TransferPostError::<T>::DuplicateSpend => Self::DuplicateSpend,
-            TransferPostError::<T>::InvalidProof => Self::InvalidProof,
-            TransferPostError::<T>::UnexpectedError(_) => Self::InternalLedgerError,
-        }
+        /// SBT only allows `ToPrivate` Transactions
+        NoSenderLedger,
     }
 }
 
@@ -623,33 +609,6 @@ where
     }
 }
 
-/// Sender Ledger Error
-pub enum SenderLedgerError {
-    /// Field Element Encoding Error
-    FpEncodeError(scale_codec::Error),
-    /// Invalid UTXO Accumulator Output Error
-    ///
-    /// The sender was not constructed under the current state of the UTXO accumulator.
-    InvalidUtxoAccumulatorOutput,
-    /// Sender Ledger is purposly not implementented for SBT ledger
-    NoSenderLedger,
-}
-
-impl From<SenderLedgerError> for SenderPostError<SenderLedgerError> {
-    #[inline]
-    fn from(value: SenderLedgerError) -> Self {
-        match value {
-            SenderLedgerError::InvalidUtxoAccumulatorOutput => Self::InvalidUtxoAccumulatorOutput,
-            SenderLedgerError::FpEncodeError(err) => {
-                Self::UnexpectedError(SenderLedgerError::FpEncodeError(err))
-            }
-            SenderLedgerError::NoSenderLedger => {
-                Self::UnexpectedError(SenderLedgerError::NoSenderLedger)
-            }
-        }
-    }
-}
-
 /// Preprocessed Event
 enum PreprocessedEvent<T>
 where
@@ -731,59 +690,13 @@ where
     }
 }
 
-/// Receiver Ledger Error
-pub enum ReceiverLedgerError {
-    /// Utxo Decoding Error
-    UtxoDecodeError(scale_codec::Error),
-
-    /// Wrong Checksum Error
-    ChecksumError,
-
-    /// Merkle Tree Parameters Decoding Error
-    MTParametersDecodeError(MTParametersError),
-
-    /// Utxo Accumulator Item Hash Decoding Error
-    UtxoAccumulatorItemHashDecodeError(UtxoItemHashError),
-
-    /// Merkle Tree Out of Capacity Error
-    MerkleTreeCapacityError,
-
-    /// Field Element Encoding Error
-    FpEncodeError(scale_codec::Error),
-
-    /// Field Element Encoding Error
-    FpDecodeError(scale_codec::Error),
-
-    /// Path Decoding Error
-    PathDecodeError(scale_codec::Error),
-
-    /// Full Incoming Note Decoding Error
-    FullNoteDecodeError(scale_codec::Error),
-
-    /// Asset Registered Error
-    ///
-    /// The asset has already been registered with the ledger.
-    AssetRegistered,
-}
-
-impl From<ReceiverLedgerError> for ReceiverPostError<ReceiverLedgerError> {
-    #[inline]
-    fn from(value: ReceiverLedgerError) -> Self {
-        if let ReceiverLedgerError::AssetRegistered = value {
-            Self::AssetRegistered
-        } else {
-            Self::UnexpectedError(value)
-        }
-    }
-}
-
 impl<T> ReceiverLedger<config::Parameters> for SBTLedger<T>
 where
     T: Config,
 {
     type SuperPostingKey = (Wrap<()>, ());
     type ValidUtxo = Wrap<config::Utxo>;
-    type Error = ReceiverLedgerError;
+    type Error = ReceiverLedgerError<T>;
 
     #[inline]
     fn is_not_registered(&self, utxo: config::Utxo) -> Result<Self::ValidUtxo, Self::Error> {
@@ -886,61 +799,6 @@ where
             }
         }
         Ok(())
-    }
-}
-
-/// Transfer Ledger Error
-pub enum TransferLedgerError<T>
-where
-    T: Config,
-{
-    /// Wrong Checksum Error
-    ChecksumError,
-
-    /// Verifying Context Decoding Error
-    VerifyingContextDecodeError(VerifyingContextError),
-
-    /// Field Element Encoding Error
-    FpEncodeError(scale_codec::Error),
-
-    /// Unknown Asset Error
-    UnknownAsset,
-
-    /// Sender Ledger Error
-    SenderLedgerError(SenderLedgerError),
-
-    /// Receiver Ledger Error
-    ReceiverLedgerError(ReceiverLedgerError),
-
-    /// Invalid Transfer Shape
-    InvalidTransferShape,
-
-    /// Proof System Error
-    ProofSystemError(ProofSystemError<config::Config>),
-
-    /// Invalid Transfer Proof Error
-    ///
-    /// Validity of the transfer could not be proved by the ledger.
-    InvalidProof,
-
-    /// Type Marker Parameter
-    Marker(PhantomData<T>),
-}
-
-impl<T> From<TransferLedgerError<T>> for TransferPostError<T>
-where
-    T: Config,
-{
-    #[inline]
-    fn from(value: TransferLedgerError<T>) -> Self {
-        match value {
-            TransferLedgerError::InvalidProof => Self::InvalidProof,
-            TransferLedgerError::InvalidTransferShape => Self::InvalidShape,
-            TransferLedgerError::SenderLedgerError(err) => Self::Sender(err.into()),
-            TransferLedgerError::ReceiverLedgerError(err) => Self::Receiver(err.into()),
-            TransferLedgerError::UnknownAsset => Self::InvalidProof,
-            err => Self::UnexpectedError(err),
-        }
     }
 }
 
