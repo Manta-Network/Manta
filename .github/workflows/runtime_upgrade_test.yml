@@ -16,8 +16,8 @@ env:
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
-  POLKADOT_BINARY: https://github.com/paritytech/polkadot/releases/download/v0.9.38/polkadot
-  MANTA_BINARY: https://github.com/Manta-Network/Manta/releases/download/v4.0.1/manta
+  POLKADOT_BINARY: https://github.com/paritytech/polkadot/releases/download/v0.9.39-1/polkadot
+  MANTA_BINARY: https://github.com/Manta-Network/Manta/releases/download/v4.0.3/manta
 jobs:
   print-rust-versions:
     if: ${{ startsWith(github.ref, 'refs/tags') || startsWith(github.ref, 'refs/heads/release-') || github.ref == 'refs/heads/manta' }}

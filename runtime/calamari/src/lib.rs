@@ -81,7 +81,6 @@ pub mod staking;
 pub mod xcm_config;
 
 use currency::*;
-use fee::WeightToFee;
 use impls::DealWithFees;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
@@ -133,7 +132,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 4030,
+    spec_version: 4040,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 11,
@@ -401,13 +400,14 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    /// Relay Chain `TransactionLengthToFeeCoeff` / 10
+    /// Relay Chain `TransactionLengthToFeeCoeff` / 10 (1_000_000 on Kusama)
     pub const TransactionLengthToFeeCoeff: Balance = mKMA / 100;
+    pub const WeightToFeeCoeff: Balance = 5_000;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
-    type WeightToFee = WeightToFee;
+    type WeightToFee = ConstantMultiplier<Balance, WeightToFeeCoeff>;
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthToFeeCoeff>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
