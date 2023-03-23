@@ -49,11 +49,11 @@
 //! * [`Call::claim_my_winnings`]: Allows any user to transfer any accrued winnings into their wallet
 //!
 //! ### Manager Dispatchable Functions
-//! * [`Call::start_lottery`]: Schedules periodic lottery drawings to occur each [`LotteryInterval`]
+//! * [`Call::start_lottery`]: Schedules periodic lottery drawings to occur each [`Config::LotteryInterval`]
 //! * [`Call::stop_lottery`]: Cancels the current drawing and stops scheduling new drawings
 //! * [`Call::draw_lottery`]: Immediately executes a lottery drawing
 //! * [`Call::process_matured_withdrawals`]: Immediately transfer funds of all matured withdrawals to their respective owner's wallets
-//! * [`Call::liquidate_lottery`]: Unstakes all lottery funds and schedules [`process_matured_withdrawals`] after the timelock period
+//! * [`Call::liquidate_lottery`]: Unstakes all lottery funds and schedules [`Call::process_matured_withdrawals`] after the timelock period
 //! * [`Call::rebalance_stake`]: Immediately unstakes overweight collators (with low APY) for later restaking into underweight collators (with high APY)
 //!
 //! Furthermore, substrate exposes getters for storage items with information about the lottery's state
@@ -284,7 +284,6 @@ pub mod pallet {
         ///
         /// # Arguments
         ///
-        /// * `origin` - The origin of the transaction.
         /// * `amount` - The amount of tokens to be deposited.
         #[pallet::weight(0)]
         pub fn deposit(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
@@ -333,7 +332,6 @@ pub mod pallet {
         ///
         /// # Arguments
         ///
-        /// * `origin` - the account that originated the call
         /// * `amount` - the amount of funds to withdraw
         ///
         /// # Errors
@@ -422,6 +420,8 @@ pub mod pallet {
         /// Maximizes staking APY and thus accrued winnings by removing staked tokens from overallocated/inactive
         /// collators and adding to underallocated ones.
         ///
+        /// Can only be called by the account set as [`Config::ManageOrigin`]
+        ///
         /// This function should be called when the pallet's staked tokens are staked with overweight collators
         /// or collators that became inactive or left the staking set.
         /// This will withdraw the tokens from overallocated and inactive collators and wait until the funds are unlocked,
@@ -429,12 +429,6 @@ pub mod pallet {
         ///
         /// Note that this operation can run in parallel with a drawing, but it will reduce the staking revenue
         /// generated in that drawing by the amount of funds being rebalanced.
-        ///
-        /// This function can only be called by the root or the manager.
-        ///
-        /// # Arguments
-        ///
-        /// * `origin` - The account that initiates the call. It must be the root or the manager.
         ///
         /// # Errors
         ///
@@ -451,11 +445,9 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Starts a new lottery drawing by scheduling a [`Call::draw_lottery`] call using [`pallet_scheduler`]
+        /// Starts the lottery by scheduling a [`Call::draw_lottery`] call
         ///
-        /// # Arguments
-        ///
-        /// * `origin`: Origin that is allowed to start the lottery drawing configured by [`Config::ManageOrigin`]
+        /// Can only be called by the account set as [`Config::ManageOrigin`]
         ///
         /// # Errors
         ///
@@ -471,7 +463,7 @@ pub mod pallet {
         /// using [`frame_support::traits::schedule::Named`] with the lottery pallet's pallet ID configured with [`Config::LotteryPot`] as identifier.
         /// If the lottery is already started, this function will fail.
         ///
-        /// After the lottery is started, the [`Config::NextDrawingAt`] storage item is set to the block number of the scheduled [`Call::draw_lottery`] plus the [`Config::DrawingInterval`].
+        /// After the lottery is started, the [`NextDrawingAt`] storage item is set to the block number of the scheduled [`Call::draw_lottery`] plus the [`Config::DrawingInterval`].
         /// This item is used to determine when the next drawing will occur.
         #[pallet::weight(0)]
         pub fn start_lottery(origin: OriginFor<T>) -> DispatchResult {
@@ -512,10 +504,8 @@ pub mod pallet {
         ///
         /// This function cancels the scheduled drawing and cleans up bookkeeping.
         ///
-        /// # Arguments
-        ///
-        /// * `origin`: Origin that is allowed to stop the lottery drawing configured by [`ManageOrigin`]
-        ///
+        /// Can only be called by the account set as [`Config::ManageOrigin`]
+
         /// # Errors
         ///
         /// Returns an error if no lottery is scheduled
@@ -538,10 +528,6 @@ pub mod pallet {
         }
 
         /// Allows the caller to transfer any of the account's previously unclaimed winnings to his their wallet
-        ///
-        /// # Arguments
-        ///
-        /// * `origin`: The account that originated the call
         ///
         /// # Errors
         ///
@@ -569,11 +555,9 @@ pub mod pallet {
             }
         }
 
-        /// Draws a lottery winner and allows them to claim their winnings later. Only the [`ManageOrigin`] can execute this function.
+        /// Draws a lottery winner and allows them to claim their winnings later. Only the [`Config::ManageOrigin`] can execute this function.
         ///
-        /// # Arguments
-        ///
-        /// * `origin`: Origin that is allowed to manage the lottery configured by [`ManageOrigin`]
+        /// Can only be called by the account set as [`Config::ManageOrigin`]
         ///
         /// # Errors
         ///
@@ -687,11 +671,10 @@ pub mod pallet {
 
         /// This function transfers all withdrawals to user's wallets that are payable from unstaked collators whose timelock expired
         ///
-        /// # Parameters
-        ///
-        /// * origin: Origin that is allowed to manage the lottery configured by [`Config::ManageOrigin`]
+        /// Can only be called by the account set as [`Config::ManageOrigin`]
         ///
         /// # Errors
+        ///
         /// This function can return errors defined by the ensure_root_or_manager function and by the do_process_matured_withdrawals function.
         #[pallet::weight(0)]
         pub fn process_matured_withdrawals(origin: OriginFor<T>) -> DispatchResult {
@@ -702,12 +685,10 @@ pub mod pallet {
 
         /// Liquidates all funds held in the lottery pallet, unstaking collators, returning user deposits and paying out winnings
         ///
+        /// Can only be called by the account set as [`Config::ManageOrigin`]
+        ///
         /// Due to staking timelock, this schedules the payout of user deposits after timelock has expired.
         /// NOTE: TODO: Any interaction with this pallet is disallowed while a liquidation is ongoing
-        ///
-        /// # Parameters
-        ///
-        /// * origin: Origin that is allowed to manage the lottery configured by [`Config::ManageOrigin`]
         ///
         /// # Errors
         ///
