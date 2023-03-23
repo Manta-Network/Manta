@@ -128,7 +128,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("dolphin"),
     impl_name: create_runtime_str!("dolphin"),
     authoring_version: 2,
-    spec_version: 4040,
+    spec_version: 4042,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 6,
@@ -719,7 +719,7 @@ impl pallet_manta_sbt::Config for Runtime {
     type Event = Event;
     type PalletId = MantaSbtPalletId;
     type Currency = Balances;
-    type MintsPerReserve = ConstU16<5>;
+    type MintsPerReserve = ConstU16<8>;
     type ReservePrice = ConstU128<DOL>;
     type SbtMetadataBound = ConstU32<300>;
     type WeightInfo = ();
@@ -996,6 +996,9 @@ impl_runtime_apis! {
             max_sender: u64
         ) -> PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+        fn initial_pull(checkpoint: pallet_manta_pay::RawCheckpoint, max_receiver: u64) -> pallet_manta_pay::InitialSyncResponse {
+            MantaPay::initial_pull(checkpoint.into(), max_receiver)
         }
     }
 

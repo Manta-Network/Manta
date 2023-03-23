@@ -1070,6 +1070,9 @@ impl_runtime_apis! {
         ) -> PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
+        fn initial_pull(checkpoint: pallet_manta_pay::RawCheckpoint, max_receiver: u64) -> pallet_manta_pay::InitialSyncResponse {
+            MantaPay::initial_pull(checkpoint.into(), max_receiver)
+        }
     }
 
     impl pallet_manta_sbt::runtime::SBTPullLedgerDiffApi<Block> for Runtime {
