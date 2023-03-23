@@ -24,14 +24,14 @@
 //! Funds withdrawn from the the lottery are subject to a timelock determined by parachain-staking before they can be claimed.
 //!
 //! ### Lottery Rules
-//! 1. A drawing is scheduled to happen every `<LotteryInterval<T>>::get()` blocks.
-//! 2. A designated manager can start & stop the drawings as well as rebalance the stake to better collators
-//! 3. Winnings must be claimed manually by the winner but there is no time limit for claiming winnings
-//! 4. In order to prevent gaming of the lottery winner, no modifications to this pallet are allowed a configurable amount of time before a drawing
+//! 1. A drawing is scheduled to happen every [`Config::LotteryInterval`] blocks.
+//! 2. A designated manager can start & stop the drawings as well as rebalance the stake to improve the yield generated through staking
+//! 3. In order to prevent gaming of the lottery drawing mechanism, no modifications to this pallet are allowed [`Config::DrawingFreezeout`] blocks before a drawing
 //!     This is needed e.g. using BABE Randomness, where the randomness will be known a day before the scheduled drawing
-//! 5. Deposits happen instantly
+//! 4. Winnings must be claimed manually by the winner but there is no time limit for claiming winnings
+//! 5. Deposits are instantly staked by the pallet
 //! 6. Withdrawals must wait for a timelock imposed by [`pallet_parachain_staking`] and are paid out automatically (via scheduler) in the first lottery drawing after it expires
-//! 7. The [`Config::ManageOrigin`] must at the same time be allowed to use Schedule
+//! 7. The [`Config::ManageOrigin`] must at the same time be allowed to use [`frame_support::traits::schedule::Named`] e.g. `ScheduleOrigin` in `pallet_scheduler`
 //!
 //! ## Dependencies
 //! 1. To enable fair winner selection, a fair and low-influience randomness provider implementing [`frame_support::traits::Randomness`], e.g. pallet_randomness
@@ -325,7 +325,9 @@ pub mod pallet {
         /// Requests a withdrawal of `amount` from the caller's active funds.
         ///
         /// Withdrawal is not immediate as funds are subject to a timelock imposed by [`pallet_parachain_staking`]
-        /// It will be executed with the first [`Call::draw_lottery`] call after timelock expires and can not be cancelled
+        /// It will be executed with the first [`Call::draw_lottery`] call after timelock expires
+        /// The withdrawal can not be cancelled because it inflicts ecomomic damage on the lottery through collator unstaking
+        /// and the user causing this damage must be subjected to economic consequences for doing so
         ///
         /// The withdrawal is paid from [`RemainingUnstakingBalance`]
         /// If this balance is too low to handle the request, another collator is unstaked
@@ -415,6 +417,34 @@ pub mod pallet {
             // RAD: What happens if delegation_execute_scheduled_request fails?
             Self::deposit_event(Event::ScheduledWithdraw(caller, amount));
             Ok::<(), DispatchError>(())
+        }
+
+        /// Allows the caller to transfer any of the account's previously unclaimed winnings to his their wallet
+        ///
+        /// # Errors
+        ///
+        /// CannotLookup: The caller has no unclaimed winnings.
+        #[pallet::weight(0)]
+        pub fn claim_my_winnings(origin: OriginFor<T>) -> DispatchResult {
+            let caller = ensure_signed(origin)?;
+            match UnclaimedWinningsByAccount::<T>::take(caller.clone()) {
+                Some(winnings) => {
+                    TotalUnclaimedWinnings::<T>::try_mutate(|old| {
+                        *old = (*old)
+                            .checked_sub(&winnings)
+                            .ok_or(ArithmeticError::Underflow)?;
+                        Ok::<(), ArithmeticError>(())
+                    })?;
+
+                    <T as pallet_parachain_staking::Config>::Currency::transfer(
+                        &Self::account_id(),
+                        &caller,
+                        winnings,
+                        KeepAlive,
+                    ) // NOTE: If the transfer fails, the TXN get rolled back and the winnings stay in the map for claiming later
+                }
+                None => Err(DispatchError::CannotLookup).into(),
+            }
         }
 
         /// Maximizes staking APY and thus accrued winnings by removing staked tokens from overallocated/inactive
@@ -527,45 +557,20 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Allows the caller to transfer any of the account's previously unclaimed winnings to his their wallet
-        ///
-        /// # Errors
-        ///
-        /// CannotLookup: The caller has no unclaimed winnings.
-        #[pallet::weight(0)]
-        pub fn claim_my_winnings(origin: OriginFor<T>) -> DispatchResult {
-            let caller = ensure_signed(origin)?;
-            match UnclaimedWinningsByAccount::<T>::take(caller.clone()) {
-                Some(winnings) => {
-                    TotalUnclaimedWinnings::<T>::try_mutate(|old| {
-                        *old = (*old)
-                            .checked_sub(&winnings)
-                            .ok_or(ArithmeticError::Underflow)?;
-                        Ok::<(), ArithmeticError>(())
-                    })?;
-
-                    <T as pallet_parachain_staking::Config>::Currency::transfer(
-                        &Self::account_id(),
-                        &caller,
-                        winnings,
-                        KeepAlive,
-                    ) // NOTE: If the transfer fails, the TXN get rolled back and the winnings stay in the map for claiming later
-                }
-                None => Err(DispatchError::CannotLookup).into(),
-            }
-        }
-
         /// Draws a lottery winner and allows them to claim their winnings later. Only the [`Config::ManageOrigin`] can execute this function.
         ///
         /// Can only be called by the account set as [`Config::ManageOrigin`]
         ///
         /// # Errors
         ///
+        /// ## Operational
         /// * TooEarlyForDrawing: The lottery is not ready for drawing yet.
+        /// * PotBalanceBelowGasReserve: The balance of the pot is below the gas reserve so no winner will be paid out
+        ///
+        /// ## Fatal
         /// * ArithmeticError::Underflow: An underflow occurred when calculating the payout.
-        /// * Error::<T>::PotBalanceBelowGasReserve: The balance of the pot is below the gas reserve.
-        /// * Error::<T>::PotBalanceTooLow: The balance of the pot is too low.
-        /// * Error::<T>::NoWinnerFound: No winner was selected
+        /// * PotBalanceTooLow: The balance of the pot is too low.
+        /// * NoWinnerFound: Nobody was selected as winner
         #[pallet::weight(0)]
         pub fn draw_lottery(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_root_or_manager(origin.clone())?; // Allow only the origin that scheduled the lottery to execute
