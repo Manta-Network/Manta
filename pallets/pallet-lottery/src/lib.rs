@@ -14,19 +14,50 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! # Lottery Pallet generating funds with parachain_staking
-//! User funds are staked and the lottery draws its prize pool from the staking rewards accrued during the lottery period
-//! Funds deposited to the lottery become eligible to win after one drawing.
+//! # No-Loss-Lottery Module
+//!
+//! ## Overview
+//!
+//! This pallet implements a no-loss-lottery by taking user deposits, generating excess funds by staking funds with [`pallet_parachain_staking`]
+//! and periodically selects a winner from participating users weighted by their deposit amount to receive a claim to the
+//! accrued excess funds.
 //! Funds withdrawn from the the lottery are subject to a timelock determined by parachain-staking before they can be claimed.
 //!
-//! ### Rules
+//! ### Lottery Rules
 //! 1. A drawing is scheduled to happen every `<LotteryInterval<T>>::get()` blocks.
 //! 2. A designated manager can start & stop the drawings as well as rebalance the stake to better collators
-//! 3. Winnings are paid out directly to the winner's wallet after each drawing
+//! 3. Winnings must be claimed manually by the winner but there is no time limit for claiming winnings
 //! 4. In order to prevent gaming of the lottery winner, no modifications to this pallet are allowed a configurable amount of time before a drawing
 //!     This is needed e.g. using BABE Randomness, where the randomness will be known a day before the scheduled drawing
 //! 5. Deposits happen instantly
-//! 6. Withdrawals have a up-to 7 day timelock and are paid out automatically (via scheduler) in the first lottery drawing after it expires
+//! 6. Withdrawals must wait for a timelock imposed by [`pallet_parachain_staking`] and are paid out automatically (via scheduler) in the first lottery drawing after it expires
+//! 7. The [`Config::ManageOrigin`] must at the same time be allowed to use Schedule
+//!
+//! ## Dependencies
+//! 1. To enable fair winner selection, a fair and low-influience randomness provider implementing [`frame_support::traits::Randomness`], e.g. pallet_randomness
+//! 2. To schedule automatic drawings, a scheduling pallet implementing [`frame_support::traits::schedule::Named`], e.g. pallet_scheduler
+//! 3. To generate lottery revenue, [`pallet_parachain_staking`]
+//!
+//! ## Interface
+//!
+//! This pallet contains extrinsics callable by any user and a second set of extrinsic callable only by a *Lottery Manager* Origin
+//! configurable as [`Config::ManageOrigin`] in the [`Config`] struct of this pallet.
+//!
+//! ### User Dispatchable Functions
+//! * [`Call::deposit`]: Allows any user to deposit tokens into the lottery
+//! * [`Call::request_withdraw`]: Allows any user to request return of their deposited tokens to own wallet
+//! * [`Call::claim_my_winnings`]: Allows any user to transfer any accrued winnings into their wallet
+//!
+//! ### Manager Dispatchable Functions
+//! * [`Call::start_lottery`]: Schedules periodic lottery drawings to occur each [`LotteryInterval`]
+//! * [`Call::stop_lottery`]: Cancels the current drawing and stops scheduling new drawings
+//! * [`Call::draw_lottery`]: Immediately executes a lottery drawing
+//! * [`Call::process_matured_withdrawals`]: Immediately transfer funds of all matured withdrawals to their respective owner's wallets
+//! * [`Call::liquidate_lottery`]: Unstakes all lottery funds and schedules [`process_matured_withdrawals`] after the timelock period
+//! * [`Call::rebalance_stake`]: Immediately unstakes overweight collators (with low APY) for later restaking into underweight collators (with high APY)
+//!
+//! Furthermore, substrate exposes getters for storage items with information about the lottery's state
+//! Please refer to [`Pallet`] for more documentation on each function.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -97,7 +128,7 @@ pub mod pallet {
         type DrawingInterval: Get<Self::BlockNumber>;
         /// Time in blocks *before* a drawing in
         /// Depending on the randomness source, the winner might be established before the drawing, this prevents modification of the eligible winning set after the winner
-        /// has been established but before it is selected by fn draw_lottery() which modifications of the win-eligble pool are prevented
+        /// has been established but before it is selected by [`Call::draw_lottery`] which modifications of the win-eligble pool are prevented
         #[pallet::constant]
         type DrawingFreezeout: Get<Self::BlockNumber>;
         /// Time in blocks until a collator is done unstaking
@@ -249,6 +280,12 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        /// Allows any user to deposit tokens into the lottery
+        ///
+        /// # Arguments
+        ///
+        /// * `origin` - The origin of the transaction.
+        /// * `amount` - The amount of tokens to be deposited.
         #[pallet::weight(0)]
         pub fn deposit(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
             let caller_account = ensure_signed(origin)?;
@@ -286,6 +323,27 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Requests a withdrawal of `amount` from the caller's active funds.
+        ///
+        /// Withdrawal is not immediate as funds are subject to a timelock imposed by [`pallet_parachain_staking`]
+        /// It will be executed with the first [`Call::draw_lottery`] call after timelock expires and can not be cancelled
+        ///
+        /// The withdrawal is paid from [`RemainingUnstakingBalance`]
+        /// If this balance is too low to handle the request, another collator is unstaked
+        ///
+        /// # Arguments
+        ///
+        /// * `origin` - the account that originated the call
+        /// * `amount` - the amount of funds to withdraw
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if:
+        /// * `amount` is below the minimum withdraw amount
+        /// * `amount` is larger than the user's total deposit
+        /// * It is too close to the drawing
+        /// * The user has not enough active funds
+        /// * There are any arithmetic underflows
         #[pallet::weight(0)]
         pub fn request_withdraw(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
             let caller = ensure_signed(origin)?;
@@ -356,32 +414,69 @@ pub mod pallet {
                 // .or_else(|_| Error::<T>::WithdrawFailed.into())?;
                 // END UNSTAKING SECTION
 
-            // schedule payout after T::ReduceBondDelay expires
             // RAD: What happens if delegation_execute_scheduled_request fails?
-            // TODO: pallet_scheduler::<T>::schedule(batch(delegation_execute_scheduled_request(),transfer_to_user))
             Self::deposit_event(Event::ScheduledWithdraw(caller, amount));
-            // Ok(())
             Ok::<(), DispatchError>(())
         }
 
-        /// Rebalances stake by removing stake from overallocated collators and adding to underallocated
+        /// Maximizes staking APY and thus accrued winnings by removing staked tokens from overallocated/inactive
+        /// collators and adding to underallocated ones.
         ///
-        /// It may be necessary to call this if large amounts of token become unstaked, e.g. due to a collator leaving
+        /// This function should be called when the pallet's staked tokens are staked with overweight collators
+        /// or collators that became inactive or left the staking set.
+        /// This will withdraw the tokens from overallocated and inactive collators and wait until the funds are unlocked,
+        /// then re-allocate them to underallocated collators.
+        ///
+        /// Note that this operation can run in parallel with a drawing, but it will reduce the staking revenue
+        /// generated in that drawing by the amount of funds being rebalanced.
+        ///
+        /// This function can only be called by the root or the manager.
+        ///
+        /// # Arguments
+        ///
+        /// * `origin` - The account that initiates the call. It must be the root or the manager.
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if the caller is not authorized or if there are not enough tokens to be rebalanced.
+        ///
         #[pallet::weight(0)]
-        pub fn rebalance_stake(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
+        pub fn rebalance_stake(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_root_or_manager(origin)?;
 
             // withdraw from overallocated collators, wait until funds unlock, re-allocate to underallocated collators
-            // RAD: This can run in parallel with a drawing, it will just reduce the staking revenue generated in this drawing by the amount of funds being rebalanced
             // TODO: find some balancing algorithm that does this
 
             // Self::deposit_event(Event::StartedRebalance(amount));
             Ok(())
         }
 
+        /// Starts a new lottery drawing by scheduling a [`Call::draw_lottery`] call using [`pallet_scheduler`]
+        ///
+        /// # Arguments
+        ///
+        /// * `origin`: Origin that is allowed to start the lottery drawing configured by [`Config::ManageOrigin`]
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if:
+        /// * The caller is not authorized to start the lottery.
+        /// * The pallet does not have enough funds to pay for gas fees for at least the first drawing.
+        /// * The drawing interval is zero or negative.
+        /// * The Scheduler implementation failed to schedule the [`Call::draw_lottery`] call.
+        ///
+        /// # Details
+        ///
+        /// This function schedules a [`Call::draw_lottery`] call with a delay specified by the [`Config::DrawingInterval`] configuration
+        /// using [`frame_support::traits::schedule::Named`] with the lottery pallet's pallet ID configured with [`Config::LotteryPot`] as identifier.
+        /// If the lottery is already started, this function will fail.
+        ///
+        /// After the lottery is started, the [`Config::NextDrawingAt`] storage item is set to the block number of the scheduled [`Call::draw_lottery`] plus the [`Config::DrawingInterval`].
+        /// This item is used to determine when the next drawing will occur.
         #[pallet::weight(0)]
         pub fn start_lottery(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_root_or_manager(origin.clone())?;
+
             // Pallet has enough funds to pay gas fees for at least the first drawing
             ensure!(
                 pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
@@ -413,6 +508,18 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Stops the ongoing lottery and cancels the scheduled and any future drawings.
+        ///
+        /// This function cancels the scheduled drawing and cleans up bookkeeping.
+        ///
+        /// # Arguments
+        ///
+        /// * `origin`: Origin that is allowed to stop the lottery drawing configured by [`ManageOrigin`]
+        ///
+        /// # Errors
+        ///
+        /// Returns an error if no lottery is scheduled
+        ///
         #[pallet::weight(0)]
         pub fn stop_lottery(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_root_or_manager(origin.clone())?;
@@ -430,6 +537,15 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Allows the caller to transfer any of the account's previously unclaimed winnings to his their wallet
+        ///
+        /// # Arguments
+        ///
+        /// * `origin`: The account that originated the call
+        ///
+        /// # Errors
+        ///
+        /// CannotLookup: The caller has no unclaimed winnings.
         #[pallet::weight(0)]
         pub fn claim_my_winnings(origin: OriginFor<T>) -> DispatchResult {
             let caller = ensure_signed(origin)?;
@@ -453,6 +569,19 @@ pub mod pallet {
             }
         }
 
+        /// Draws a lottery winner and allows them to claim their winnings later. Only the [`ManageOrigin`] can execute this function.
+        ///
+        /// # Arguments
+        ///
+        /// * `origin`: Origin that is allowed to manage the lottery configured by [`ManageOrigin`]
+        ///
+        /// # Errors
+        ///
+        /// * TooEarlyForDrawing: The lottery is not ready for drawing yet.
+        /// * ArithmeticError::Underflow: An underflow occurred when calculating the payout.
+        /// * Error::<T>::PotBalanceBelowGasReserve: The balance of the pot is below the gas reserve.
+        /// * Error::<T>::PotBalanceTooLow: The balance of the pot is too low.
+        /// * Error::<T>::NoWinnerFound: No winner was selected
         #[pallet::weight(0)]
         pub fn draw_lottery(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_root_or_manager(origin.clone())?; // Allow only the origin that scheduled the lottery to execute
@@ -556,6 +685,14 @@ pub mod pallet {
             Ok(())
         }
 
+        /// This function transfers all withdrawals to user's wallets that are payable from unstaked collators whose timelock expired
+        ///
+        /// # Parameters
+        ///
+        /// * origin: Origin that is allowed to manage the lottery configured by [`Config::ManageOrigin`]
+        ///
+        /// # Errors
+        /// This function can return errors defined by the ensure_root_or_manager function and by the do_process_matured_withdrawals function.
         #[pallet::weight(0)]
         pub fn process_matured_withdrawals(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_root_or_manager(origin.clone())?; // Allow only the origin that scheduled the lottery to execute
@@ -563,6 +700,18 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Liquidates all funds held in the lottery pallet, unstaking collators, returning user deposits and paying out winnings
+        ///
+        /// Due to staking timelock, this schedules the payout of user deposits after timelock has expired.
+        /// NOTE: TODO: Any interaction with this pallet is disallowed while a liquidation is ongoing
+        ///
+        /// # Parameters
+        ///
+        /// * origin: Origin that is allowed to manage the lottery configured by [`Config::ManageOrigin`]
+        ///
+        /// # Errors
+        ///
+        /// * Fails if a lottery has not been stopped and a drawing is ongoing
         #[pallet::weight(0)]
         pub fn liquidate_lottery(origin: OriginFor<T>) -> DispatchResult {
             Self::ensure_root_or_manager(origin.clone())?; // Allow only the origin that scheduled the lottery to execute
@@ -574,6 +723,9 @@ pub mod pallet {
             //     do_unstake(collator);
             // }
             // TODO: Lock everything until this process is finished
+
+            // TODO: return user deposits and paying out winnings
+
             Ok(())
         }
     }
@@ -625,7 +777,9 @@ pub mod pallet {
                 pallet_parachain_staking::Pallet::<T>::selected_candidates()[0].clone(); // no panic, at least one collator must be chosen or the chain is borked
 
             // TODO: Find the smallest currently active delegation larger than `amount`
-            let my_delegations = pallet_parachain_staking::Pallet::<T>::delegator_state(&Self::account_id()).ok_or(pallet_parachain_staking::Error::DelegatorDNE)?;
+            let my_delegations =
+                pallet_parachain_staking::Pallet::<T>::delegator_state(&Self::account_id())
+                    .ok_or(pallet_parachain_staking::Error::<T>::DelegatorDNE)?;
             let delegated_amount_to_be_unstaked: BalanceOf<T> = 0u32.into();
 
             // TODO: If none can be found, find a combination of collators so it can
@@ -713,12 +867,17 @@ pub mod pallet {
 
         pub fn do_rebalance_remaining_funds() {
             // Only restake what isn't needed to service outstanding withdrawal requests
-            let outstanding_withdrawal_requests = <WithdrawalRequestQueue<T>>::get().iter().map(|request|request.balance).reduce(|acc,e|acc + e).unwrap_or(0u32.into());
+            let outstanding_withdrawal_requests = <WithdrawalRequestQueue<T>>::get()
+                .iter()
+                .map(|request| request.balance)
+                .reduce(|acc, e| acc + e)
+                .unwrap_or(0u32.into());
             let available_balance =
                 pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
                     &Self::account_id(),
                 );
-            let stakable_balance = available_balance - outstanding_withdrawal_requests - Self::gas_reserve();
+            let stakable_balance =
+                available_balance - outstanding_withdrawal_requests - Self::gas_reserve();
 
             // TODO: Find highest APY for this deposit (possibly balance deposit to multiple collators)
             let some_output: Vec<(T::AccountId, BalanceOf<T>)> = vec![(
