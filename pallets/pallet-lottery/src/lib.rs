@@ -24,7 +24,7 @@
 //! Funds withdrawn from the the lottery are subject to a timelock determined by parachain-staking before they can be claimed.
 //!
 //! ### Lottery Rules
-//! 1. A drawing is scheduled to happen every [`Config::LotteryInterval`] blocks.
+//! 1. A drawing is scheduled to happen every [`Config::DrawingInterval`] blocks.
 //! 2. A designated manager can start & stop the drawings as well as rebalance the stake to improve the yield generated through staking
 //! 3. In order to prevent gaming of the lottery drawing mechanism, no modifications to this pallet are allowed [`Config::DrawingFreezeout`] blocks before a drawing
 //!     This is needed e.g. using BABE Randomness, where the randomness will be known a day before the scheduled drawing
@@ -49,7 +49,7 @@
 //! * [`Call::claim_my_winnings`]: Allows any user to transfer any accrued winnings into their wallet
 //!
 //! ### Manager Dispatchable Functions
-//! * [`Call::start_lottery`]: Schedules periodic lottery drawings to occur each [`Config::LotteryInterval`]
+//! * [`Call::start_lottery`]: Schedules periodic lottery drawings to occur each [`Config::DrawingInterval`]
 //! * [`Call::stop_lottery`]: Cancels the current drawing and stops scheduling new drawings
 //! * [`Call::draw_lottery`]: Immediately executes a lottery drawing
 //! * [`Call::process_matured_withdrawals`]: Immediately transfer funds of all matured withdrawals to their respective owner's wallets
@@ -326,7 +326,8 @@ pub mod pallet {
         ///
         /// Withdrawal is not immediate as funds are subject to a timelock imposed by [`pallet_parachain_staking`]
         /// It will be executed with the first [`Call::draw_lottery`] call after timelock expires
-        /// The withdrawal can not be cancelled because it inflicts ecomomic damage on the lottery through collator unstaking
+        ///
+        /// Withdrawals can NOT be cancelled because they inflict ecomomic damage on the lottery through collator unstaking
         /// and the user causing this damage must be subjected to economic consequences for doing so
         ///
         /// The withdrawal is paid from [`RemainingUnstakingBalance`]
@@ -518,11 +519,11 @@ pub mod pallet {
                 T::LotteryPot::get().0.to_vec(),
                 DispatchTime::After(drawing_interval),
                 Some((drawing_interval, 99999u32)), // XXX: Seems scheduler has no way to schedule infinite amount
-                LOWEST_PRIORITY,
+                LOWEST_PRIORITY,                    // TODO: Maybe schedule only one and schedule the next drawing in `draw_lottery`
                 frame_support::dispatch::RawOrigin::Root.into(),
                 MaybeHashed::Value(lottery_drawing_call),
-            );
-            // )?; TODO
+            )
+            .map_err(|_| Error::<T>::TODO)?; // TODO: Error handling
 
             NextDrawingAt::<T>::set(Some(now + drawing_interval));
 
@@ -546,8 +547,6 @@ pub mod pallet {
 
             T::Scheduler::cancel_named(T::LotteryPot::get().0.to_vec())
                 .map_err(|_| Error::<T>::LotteryNotStarted)?;
-
-            // TODO: Force unstake and schedule payout of all deposited balances after unstaking
 
             // TODO: Cleanup bookkeeping
             NextDrawingAt::<T>::kill();
@@ -605,7 +604,6 @@ pub mod pallet {
                 Error::<T>::PotBalanceTooLow
             );
             ensure!(
-                // TODO: add a manager extrinsic to manually finish_unstake()
                 available_funds_in_pallet >= payout,
                 Error::<T>::PotBalanceTooLow
             );
@@ -777,8 +775,7 @@ pub mod pallet {
                 RawOrigin::Signed(Self::account_id()).into(),
                 some_collator.clone(),
             )
-            .map_err(|_| Error::<T>::TODO)?;
-            // TODO: Error handling
+            .map_err(|_| Error::<T>::TODO)?; // TODO: Error handling
 
             // TODO: Update remaining balance
             RemainingUnstakingBalance::<T>::mutate(|bal| {
