@@ -260,8 +260,6 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        OnlyRootOrigin,
-        OnlyRootOrManageOrigin,
         LotteryNotStarted,
         LotteryIsRunning,
         LotteryNotScheduled,
@@ -463,11 +461,11 @@ pub mod pallet {
         ///
         /// # Errors
         ///
-        /// Returns an error if the caller is not authorized or if there are not enough tokens to be rebalanced.
-        ///
+        /// * BadOrigin: Caller is not ManageOrigin
+        /// * TODO: Amount of tokens to be rebalanced would be too low.
         #[pallet::weight(0)]
         pub fn rebalance_stake(origin: OriginFor<T>) -> DispatchResult {
-            Self::ensure_root_or_manager(origin)?;
+            T::ManageOrigin::ensure_origin(origin)?;
 
             // withdraw from overallocated collators, wait until funds unlock, re-allocate to underallocated collators
             // TODO: find some balancing algorithm that does this
@@ -483,7 +481,7 @@ pub mod pallet {
         /// # Errors
         ///
         /// Returns an error if:
-        /// * The caller is not authorized to start the lottery.
+        /// * BadOrigin: Caller is not ManageOrigin
         /// * The pallet does not have enough funds to pay for gas fees for at least the first drawing.
         /// * The drawing interval is zero or negative.
         /// * The Scheduler implementation failed to schedule the [`Call::draw_lottery`] call.
@@ -498,7 +496,7 @@ pub mod pallet {
         /// This item is used to determine when the next drawing will occur.
         #[pallet::weight(0)]
         pub fn start_lottery(origin: OriginFor<T>) -> DispatchResult {
-            Self::ensure_root_or_manager(origin.clone())?;
+            T::ManageOrigin::ensure_origin(origin.clone())?;
 
             // Pallet has enough funds to pay gas fees for at least the first drawing
             ensure!(
@@ -536,14 +534,15 @@ pub mod pallet {
         /// This function cancels the scheduled drawing and cleans up bookkeeping.
         ///
         /// Can only be called by the account set as [`Config::ManageOrigin`]
-
+        ///
         /// # Errors
         ///
-        /// Returns an error if no lottery is scheduled
+        /// * BadOrigin: Caller is not manager
+        /// * LotteryNotStarted: Nothing to stop
         ///
         #[pallet::weight(0)]
         pub fn stop_lottery(origin: OriginFor<T>) -> DispatchResult {
-            Self::ensure_root_or_manager(origin.clone())?;
+            T::ManageOrigin::ensure_origin(origin.clone())?;
 
             T::Scheduler::cancel_named(T::LotteryPot::get().0.to_vec())
                 .map_err(|_| Error::<T>::LotteryNotStarted)?;
@@ -563,6 +562,7 @@ pub mod pallet {
         /// # Errors
         ///
         /// ## Operational
+        /// * BadOrigin: Caller is not ManageOrigin
         /// * TooEarlyForDrawing: The lottery is not ready for drawing yet.
         /// * PotBalanceBelowGasReserve: The balance of the pot is below the gas reserve so no winner will be paid out
         ///
@@ -572,7 +572,7 @@ pub mod pallet {
         /// * NoWinnerFound: Nobody was selected as winner
         #[pallet::weight(0)]
         pub fn draw_lottery(origin: OriginFor<T>) -> DispatchResult {
-            Self::ensure_root_or_manager(origin.clone())?; // Allow only the origin that scheduled the lottery to execute
+            T::ManageOrigin::ensure_origin(origin.clone())?;
 
             let now = <frame_system::Pallet<T>>::block_number();
             ensure!(
@@ -678,10 +678,11 @@ pub mod pallet {
         ///
         /// # Errors
         ///
-        /// This function can return errors defined by the ensure_root_or_manager function and by the do_process_matured_withdrawals function.
+        /// * BadOrigin: Caller is not ManageOrigin
+        /// * errors defined by the do_process_matured_withdrawals function.
         #[pallet::weight(0)]
         pub fn process_matured_withdrawals(origin: OriginFor<T>) -> DispatchResult {
-            Self::ensure_root_or_manager(origin.clone())?; // Allow only the origin that scheduled the lottery to execute
+            T::ManageOrigin::ensure_origin(origin.clone())?;
             Self::do_process_matured_withdrawals()?;
             Ok(())
         }
@@ -695,10 +696,11 @@ pub mod pallet {
         ///
         /// # Errors
         ///
+        /// * BadOrigin: Caller is not ManageOrigin
         /// * Fails if a lottery has not been stopped and a drawing is ongoing
         #[pallet::weight(0)]
         pub fn liquidate_lottery(origin: OriginFor<T>) -> DispatchResult {
-            Self::ensure_root_or_manager(origin.clone())?; // Allow only the origin that scheduled the lottery to execute
+            T::ManageOrigin::ensure_origin(origin.clone())?;
 
             ensure!(Self::next_drawing().is_none(), Error::<T>::LotteryIsRunning);
 
@@ -927,16 +929,6 @@ pub mod pallet {
                 .expect("checked for none before. qed")
                 .saturating_sub(<T as Config>::DrawingFreezeout::get())
                 .into()
-        }
-
-        pub(super) fn ensure_root_or_manager(origin: OriginFor<T>) -> DispatchResult {
-            ensure!(
-                // TODO: Schedule origin must be council and root, not root only
-                frame_system::ensure_root(origin).is_ok(),
-                // frame_system::ensure_root(origin) || T::ManageOrigin::ensure_origin(origin)
-                Error::<T>::OnlyRootOrManageOrigin
-            );
-            Ok(())
         }
     }
 }
