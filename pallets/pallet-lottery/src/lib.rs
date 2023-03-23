@@ -56,8 +56,8 @@
 //! * [`Call::liquidate_lottery`]: Unstakes all lottery funds and schedules [`Call::process_matured_withdrawals`] after the timelock period
 //! * [`Call::rebalance_stake`]: Immediately unstakes overweight collators (with low APY) for later restaking into underweight collators (with high APY)
 //!
-//! Furthermore, substrate exposes getters for storage items with information about the lottery's state
 //! Please refer to [`Pallet`] for more documentation on each function.
+//! Furthermore, the storage items containing all relevant information about lottery state can be queried via e.g. the [polkadot.js API](https://polkadot.js.org/docs/api)
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
