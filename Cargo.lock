@@ -5406,6 +5406,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "manta-farming"
+version = "4.0.3"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "manta-primitives",
+ "orml-traits",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "manta-parameters"
 version = "0.5.15"
 source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.15#d5fb3502f4d492deaeb376dde013d3a12a729ee5"
