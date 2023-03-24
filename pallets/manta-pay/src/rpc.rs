@@ -16,10 +16,7 @@
 
 //! MantaPay RPC Interfaces
 
-use crate::{
-    runtime::PullLedgerDiffApi,
-    Checkpoint, InitialSyncResponse, PullResponse,
-};
+use crate::{runtime::PullLedgerDiffApi, Checkpoint, InitialSyncResponse, PullResponse};
 use alloc::sync::Arc;
 use core::marker::PhantomData;
 use jsonrpsee::{

@@ -59,7 +59,7 @@ use manta_primitives::{
     },
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
-use manta_support::manta_pay::{PullResponse, RawCheckpoint};
+use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 use runtime_common::{
     prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
 };
@@ -997,7 +997,7 @@ impl_runtime_apis! {
         ) -> PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
-        fn initial_pull(checkpoint: pallet_manta_pay::RawCheckpoint, max_receiver: u64) -> pallet_manta_pay::InitialSyncResponse {
+        fn initial_pull(checkpoint: RawCheckpoint, max_receiver: u64) -> InitialSyncResponse {
             MantaPay::initial_pull(checkpoint.into(), max_receiver)
         }
     }
@@ -1009,6 +1009,9 @@ impl_runtime_apis! {
             max_sender: u64
         ) -> PullResponse {
             MantaSbt::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+        fn initial_pull(checkpoint: RawCheckpoint, max_receiver: u64) -> InitialSyncResponse {
+            MantaSbt::initial_pull(checkpoint.into(), max_receiver)
         }
     }
 

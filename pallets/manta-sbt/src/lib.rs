@@ -43,9 +43,9 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use manta_support::manta_pay::{
     asset_value_encode, fp_decode, fp_encode, id_from_field, AccountId, AssetValue, Checkpoint,
-    FullIncomingNote, MTParametersError, PullResponse, ReceiverChunk, StandardAssetId,
-    TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError, UtxoMerkleTreePath,
-    VerifyingContextError, Wrap, WrapPair,
+    FullIncomingNote, InitialSyncResponse, MTParametersError, PullResponse, ReceiverChunk,
+    StandardAssetId, TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError,
+    UtxoMerkleTreePath, VerifyingContextError, Wrap, WrapPair,
 };
 use sp_runtime::{
     traits::{AccountIdConversion, One},
@@ -547,6 +547,25 @@ where
             }
         }
         Shards::<T>::contains_key(shard_index, max_receiver_index)
+    }
+
+    /// Returns the diff of ledger state since the given `checkpoint` and `max_receivers` to
+    /// perform the initial synchronization.
+    #[inline]
+    pub fn initial_pull(checkpoint: Checkpoint, max_receivers: u64) -> InitialSyncResponse {
+        let (should_continue, receivers) =
+            Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
+        let utxo_data = receivers.into_iter().map(|receiver| receiver.0).collect();
+        let membership_proof_data = (0..=255)
+            .map(|i| ShardTrees::<T>::get(i).current_path)
+            .collect();
+        let nullifier_count = 0 as u128;
+        InitialSyncResponse {
+            should_continue,
+            utxo_data,
+            membership_proof_data,
+            nullifier_count,
+        }
     }
 
     /// Returns the diff of ledger state since the given `checkpoint` and `max_receivers`.
