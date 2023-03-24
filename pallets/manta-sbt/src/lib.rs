@@ -41,12 +41,6 @@ use frame_support::{
     transactional, PalletId,
 };
 use frame_system::pallet_prelude::*;
-use manta_support::manta_pay::{
-    asset_value_encode, fp_decode, fp_encode, id_from_field, AccountId, AssetValue, Checkpoint,
-    FullIncomingNote, MTParametersError, PullResponse, ReceiverChunk, StandardAssetId,
-    TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError, UtxoMerkleTreePath,
-    VerifyingContextError, Wrap, WrapPair,
-};
 use sp_runtime::{
     traits::{AccountIdConversion, One},
     ArithmeticError,
@@ -66,10 +60,15 @@ use manta_pay::{
     },
     manta_crypto::merkle_tree::{self, forest::Configuration as _},
     manta_parameters::{self, Get as _},
-    manta_util::codec::Decode as _,
+    manta_util::codec::{Decode as _, Encode},
     parameters::load_transfer_parameters,
 };
-use manta_util::codec::Encode;
+use manta_support::manta_pay::{
+    asset_value_encode, fp_decode, fp_encode, id_from_field, AccountId, AssetValue, Checkpoint,
+    FullIncomingNote, MTParametersError, PullResponse, ReceiverChunk, StandardAssetId,
+    TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError, UtxoMerkleTreePath,
+    VerifyingContextError, Wrap, WrapPair,
+};
 
 pub use pallet::*;
 pub use weights::WeightInfo;

@@ -114,7 +114,7 @@ fn to_private_should_work() {
     });
 }
 
-/// Tests that it mints the number that corresponds with number of AssetIds incremented in AssetManager
+/// Tests that it mints the number that corresponds with number of AssetIds that reserved.
 #[test]
 fn max_reserved_to_private_works() {
     let mut rng = OsRng;
@@ -136,21 +136,24 @@ fn max_reserved_to_private_works() {
 
 /// Tests that `ReservedIds` are successfully removed from storage after minting all the designated number SBTs
 #[test]
-#[should_panic]
 fn overflow_reserved_ids_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
         initialize_test();
         let value = 1;
         let mints_per_reserve: u16 = <Test as crate::pallet::Config>::MintsPerReserve::get();
-        for _ in 0..mints_per_reserve + 1 {
-            let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
-            let post = sample_to_private(id, value, &mut rng);
-            assert_ok!(MantaSBTPallet::to_private(
-                MockOrigin::signed(ALICE),
-                Box::new(post),
-                bvec![0]
-            ));
+        for i in 0..mints_per_reserve + 1 {
+            if i < mints_per_reserve {
+                let id = field_from_id(ReservedIds::<Test>::get(ALICE).unwrap().0);
+                let post = sample_to_private(id, value, &mut rng);
+                assert_ok!(MantaSBTPallet::to_private(
+                    MockOrigin::signed(ALICE),
+                    Box::new(post),
+                    bvec![0]
+                ));
+            } else {
+                assert!(!ReservedIds::<Test>::contains_key(ALICE));
+            }
         }
     });
 }
@@ -244,7 +247,7 @@ fn wrong_asset_id_fails() {
 
     new_test_ext().execute_with(|| {
         initialize_test();
-        let asset_id = field_from_id(10);
+        let asset_id = field_from_id(2);
         let value = 1;
 
         assert_noop!(
