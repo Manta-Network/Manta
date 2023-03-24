@@ -73,7 +73,6 @@ mod nimbus_session_adapter;
 pub mod xcm_config;
 
 use currency::*;
-use fee::WeightToFee;
 use impls::DealWithFees;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
@@ -360,11 +359,12 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
     /// Relay Chain `TransactionLengthToFeeCoeff` / 10
     pub const TransactionLengthToFeeCoeff: Balance = mDOL / 100;
+    pub const WeightToFeeCoeff: Balance = 5_000;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
-    type WeightToFee = WeightToFee;
+    type WeightToFee = ConstantMultiplier<Balance, WeightToFeeCoeff>;
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthToFeeCoeff>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
