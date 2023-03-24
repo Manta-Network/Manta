@@ -13,6 +13,7 @@ frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = 
 pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", default-features = false }
 sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", default-features = false }
 sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", default-features = false }
+xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.28", optional = true}
 
 # Self dependencies
 manta-primitives = { path = '../../primitives/manta', default-features = false }
@@ -73,4 +74,4 @@ std = [
 try-runtime = [
   "frame-support/try-runtime",
 ]
-testhelpers = []
+testhelpers = ["xcm"]
