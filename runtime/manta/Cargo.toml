@@ -96,7 +96,7 @@ session-key-primitives = { path = '../../primitives/session-keys', default-featu
 polkadot-core-primitives = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.28" }
 polkadot-runtime-parachains = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.28" }
 xcm-simulator = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.28" }
-runtime-common = { path = '../common' }
+runtime-common = { path = '../common', features = ["testhelpers"] }
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
