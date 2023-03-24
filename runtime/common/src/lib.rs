@@ -21,6 +21,9 @@
 
 pub mod migration;
 
+#[cfg(test)]
+pub mod test_helpers;
+
 use frame_support::{parameter_types, weights::Weight};
 use manta_primitives::{constants::WEIGHT_PER_NANOS, types::BlockNumber};
 use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
