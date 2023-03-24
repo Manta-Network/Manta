@@ -203,8 +203,7 @@ impl Contains<Call> for MantaFilter {
             | Call::Multisig(_)
             | Call::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
             | Call::Balances(_)
-            | Call::XTokens(orml_xtokens::Call::transfer {..}
-                | orml_xtokens::Call::transfer_multicurrencies {..})
+            | Call::XTokens(orml_xtokens::Call::transfer {..})
             | Call::Preimage(_)
             | Call::Utility(_) => true,
 
@@ -471,8 +470,8 @@ impl manta_collator_selection::Config for Runtime {
 
 parameter_types! {
     pub const ProposalBond: Permill = Permill::from_percent(1);
-    pub const ProposalBondMinimum: Balance = 500 * MANTA;
-    pub const ProposalBondMaximum: Balance = 10_000 * MANTA;
+    pub const ProposalBondMinimum: Balance = 3 * MANTA;
+    pub const ProposalBondMaximum: Balance = 50 * MANTA;
     pub SpendPeriod: BlockNumber = 6 * DAYS;
     pub const Burn: Permill = Permill::from_percent(0);
     pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
