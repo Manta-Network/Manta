@@ -247,10 +247,6 @@ pub mod pallet {
             }
 
             Self::post_transaction(vec![origin.clone()], *post)?;
-            Self::deposit_event(Event::<T>::MintSbt {
-                source: origin,
-                asset: asset_id,
-            });
             Ok(().into())
         }
 
