@@ -246,7 +246,7 @@ pub mod pallet {
                 ReservedIds::<T>::insert(&origin, (increment_start_id, end_id))
             }
 
-            Self::post_transaction(vec![origin.clone()], *post)?;
+            Self::post_transaction(vec![origin], *post)?;
             Ok(().into())
         }
 
