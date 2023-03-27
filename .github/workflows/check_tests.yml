@@ -94,9 +94,8 @@ jobs:
           test false
         continue-on-error: true
       - name: Update comment
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { owner, repo } = context.repo;
             const { number } = context.issue;
