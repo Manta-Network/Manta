@@ -18,7 +18,7 @@
 
 use frame_support::{
     parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32, Everything, GenesisBuild, IsInVec},
+    traits::{ConstU128, ConstU16, ConstU32, ConstU64, Everything, GenesisBuild, IsInVec},
     PalletId,
 };
 use frame_system::EnsureRoot;
@@ -136,6 +136,8 @@ impl crate::Config for Test {
     type MintsPerReserve = ConstU16<5>;
     type ReservePrice = ConstU128<1000>;
     type SbtMetadataBound = ConstU32<200>;
+    type WhitelistOrigin = EnsureRoot<AccountId32>;
+    type ChainId = ConstU64<2084>;
 }
 
 parameter_types! {

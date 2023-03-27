@@ -47,8 +47,12 @@ use manta_support::manta_pay::{
     TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError, UtxoMerkleTreePath,
     VerifyingContextError, Wrap, WrapPair,
 };
+use scale_codec::Encode as ScaleEncode;
+use sha3::{Digest, Keccak256};
+use sp_core::{H160, H256, U256};
+use sp_io::{crypto::secp256k1_ecdsa_recover, hashing::keccak_256};
 use sp_runtime::{
-    traits::{AccountIdConversion, One},
+    traits::{AccountIdConversion, One, Zero},
     ArithmeticError,
 };
 
@@ -99,6 +103,12 @@ const ENCODED_ONE: [u8; 16] = 1u128.to_le_bytes();
 pub type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
+/// Eth based address
+type EvmAddress = H160;
+
+/// A signature (a 512-bit value, plus 8 bits for recovery ID).
+pub type Eip712Signature = [u8; 65];
+
 /// MantaSBT Pallet
 #[frame_support::pallet]
 pub mod pallet {
@@ -124,6 +134,9 @@ pub mod pallet {
         /// The currency mechanism.
         type Currency: ReservableCurrency<Self::AccountId>;
 
+        /// The origin which can whitelist eth accounts
+        type WhitelistOrigin: EnsureOrigin<Self::Origin>;
+
         /// Pallet ID
         #[pallet::constant]
         type PalletId: Get<PalletId>;
@@ -139,6 +152,10 @@ pub mod pallet {
         /// Max size in bytes of stored metadata
         #[pallet::constant]
         type SbtMetadataBound: Get<u32>;
+
+        /// ChainId for eth based signature
+        #[pallet::constant]
+        type ChainId: Get<u64>;
     }
 
     /// Counter for SBT AssetId. Increments by one everytime a new asset id is requested.
@@ -146,6 +163,11 @@ pub mod pallet {
     /// Should only ever be modified by `next_sbt_id_and_increment()`
     #[pallet::storage]
     pub(super) type NextSbtId<T: Config> = StorageValue<_, StandardAssetId, OptionQuery>;
+
+    /// Whitelist for Evm Accounts
+    #[pallet::storage]
+    pub(super) type EvmAddressWhitelist<T: Config> =
+        StorageMap<_, Blake2_128Concat, EvmAddress, StandardAssetId, OptionQuery>;
 
     /// SBT Metadata maps `StandardAsset` to the correstonding SBT metadata
     ///
@@ -207,33 +229,16 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::to_private())]
         #[transactional]
         pub fn to_private(
-            origin: OriginFor<T>,
+            who: OriginFor<T>,
             post: Box<TransferPost>,
             metadata: BoundedVec<u8, T::SbtMetadataBound>,
         ) -> DispatchResultWithPostInfo {
-            let origin = ensure_signed(origin)?;
-            // Checks that it is indeed a to_private post with a value of 1
-            ensure!(
-                post.sources.len() == 1
-                    && post.sender_posts.is_empty()
-                    && post.receiver_posts.len() == 1
-                    && post.sinks.is_empty(),
-                Error::<T>::InvalidShape
-            );
-            // Checks that value is one, this is defensive as value is not used for SBT.
-            ensure!(
-                post.sources.first() == Some(&ENCODED_ONE),
-                Error::<T>::ValueNotOne
-            );
+            let who = ensure_signed(who)?;
 
-            let (start_id, end_id) =
-                ReservedIds::<T>::get(&origin).ok_or(Error::<T>::NotReserved)?;
-            let asset_id: StandardAssetId = post
-                .asset_id
-                .and_then(id_from_field)
-                .ok_or(Error::<T>::InvalidAssetId)?;
-            // Ensure asset id is correct, only a single unique asset_id mapped to account is valid
-            ensure!(asset_id == start_id, Error::<T>::InvalidAssetId);
+            let (start_id, end_id) = ReservedIds::<T>::get(&who).ok_or(Error::<T>::NotReserved)?;
+
+            // Checks that it is indeed a to_private post with a value of 1 and has correct asset_id
+            Self::check_post_shape(&post, start_id)?;
 
             SbtMetadata::<T>::insert(start_id, metadata);
             let increment_start_id = start_id
@@ -242,16 +247,12 @@ pub mod pallet {
 
             // If `ReservedIds` are all used remove from storage, otherwise increment the next `AssetId` to be used next time for minting SBT
             if increment_start_id > end_id {
-                ReservedIds::<T>::remove(&origin)
+                ReservedIds::<T>::remove(&who)
             } else {
-                ReservedIds::<T>::insert(&origin, (increment_start_id, end_id))
+                ReservedIds::<T>::insert(&who, (increment_start_id, end_id))
             }
 
-            Self::post_transaction(vec![origin.clone()], *post)?;
-            Self::deposit_event(Event::<T>::MintSbt {
-                source: origin,
-                asset: asset_id,
-            });
+            Self::post_transaction(vec![who], *post)?;
             Ok(().into())
         }
 
@@ -289,6 +290,45 @@ pub mod pallet {
             });
             Ok(())
         }
+
+        #[pallet::call_index(2)]
+        #[pallet::weight(0)]
+        #[transactional]
+        pub fn whitelist_evm_account(
+            origin: OriginFor<T>,
+            evm_address: EvmAddress,
+        ) -> DispatchResult {
+            T::WhitelistOrigin::ensure_origin(origin)?;
+
+            let asset_id = Self::next_sbt_id_and_increment()?;
+            EvmAddressWhitelist::<T>::insert(evm_address, asset_id);
+
+            Self::deposit_event(Event::<T>::WhitelistEvmAddress {
+                address: evm_address,
+                asset_id,
+            });
+            Ok(())
+        }
+
+        #[pallet::call_index(3)]
+        #[pallet::weight(0)]
+        #[transactional]
+        pub fn mint_sbt_eth(
+            origin: OriginFor<T>,
+            post: Box<TransferPost>,
+            eth_signature: Eip712Signature,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            let address = Self::verify_eip712_signature(&who, &eth_signature)
+                .ok_or(Error::<T>::BadSignature)?;
+            let asset_id =
+                EvmAddressWhitelist::<T>::get(address).ok_or(Error::<T>::NotWhitelisted)?;
+            Self::check_post_shape(&post, asset_id)?;
+
+            Self::post_transaction(vec![who], *post)?;
+            Ok(().into())
+        }
     }
 
     /// Event
@@ -310,6 +350,18 @@ pub mod pallet {
             start_id: StandardAssetId,
             /// End of `AssetIds` reserved for use private ledger, does not include this value
             stop_id: StandardAssetId,
+        },
+        WhitelistEvmAddress {
+            /// Eth Address that is now whitelisted to mint an SBT
+            address: EvmAddress,
+            /// AssetId that is reserved for above Eth address
+            asset_id: StandardAssetId,
+        },
+        MintSbtEvm {
+            /// Eth Address that is used to mint sbt
+            address: EvmAddress,
+            /// AssetId of minted SBT
+            asset_id: StandardAssetId,
         },
     }
 
@@ -466,6 +518,12 @@ pub mod pallet {
 
         /// SBT only allows `ToPrivate` Transactions
         NoSenderLedger,
+
+        /// Incorrect EVM based signature
+        BadSignature,
+
+        /// Eth account is not whitelisted for free mint
+        NotWhitelisted,
     }
 }
 
@@ -607,6 +665,101 @@ where
             }
         })
     }
+
+    #[inline]
+    fn check_post_shape(post: &TransferPost, asset_id: StandardAssetId) -> DispatchResult {
+        // Checks that it is indeed a to_private post with a value of 1
+        ensure!(
+            post.sources.len() == 1
+                && post.sender_posts.is_empty()
+                && post.receiver_posts.len() == 1
+                && post.sinks.is_empty(),
+            Error::<T>::InvalidShape
+        );
+        // Checks that value is one, this is defensive as value is not used for SBT.
+        ensure!(
+            post.sources.first() == Some(&ENCODED_ONE),
+            Error::<T>::ValueNotOne
+        );
+
+        let post_id: StandardAssetId = post
+            .asset_id
+            .and_then(id_from_field)
+            .ok_or(Error::<T>::InvalidAssetId)?;
+        // Ensure asset id is correct, only a single unique asset_id mapped to account is valid
+        ensure!(asset_id == post_id, Error::<T>::InvalidAssetId);
+
+        Ok(())
+    }
+
+    #[inline]
+    fn verify_eip712_signature(who: &T::AccountId, sig: &[u8; 65]) -> Option<EvmAddress> {
+        let msg = Self::eip712_signable_message(who);
+        let msg_hash = keccak_256(msg.as_slice());
+
+        recover_signer(sig, &msg_hash)
+    }
+
+    // Eip-712 message to be signed
+    #[inline]
+    fn eip712_signable_message(who: &T::AccountId) -> Vec<u8> {
+        let domain_separator = Self::evm_account_domain_separator();
+        let payload_hash = Self::evm_account_payload_hash(who);
+
+        let mut msg = b"\x19\x01".to_vec();
+        msg.extend_from_slice(&domain_separator);
+        msg.extend_from_slice(&payload_hash);
+        msg
+    }
+
+    #[inline]
+    fn evm_account_payload_hash(who: &T::AccountId) -> [u8; 32] {
+        let tx_type_hash = &sha3_256("Transaction(bytes substrateAddress)");
+        let mut tx_msg = tx_type_hash.to_vec();
+        tx_msg.extend_from_slice(&keccak_256(&who.encode()));
+        keccak_256(tx_msg.as_slice())
+    }
+
+    #[inline]
+    fn evm_account_domain_separator() -> [u8; 32] {
+        let domain_hash =
+            &sha3_256("EIP712Domain(string name,string version,uint256 chainId,bytes32 salt)");
+        let mut domain_seperator_msg = domain_hash.to_vec();
+        domain_seperator_msg.extend_from_slice(&sha3_256("Claim Free SBT")); // name
+        domain_seperator_msg.extend_from_slice(&sha3_256("1")); // version
+        domain_seperator_msg.extend_from_slice(&to_bytes(T::ChainId::get())); // chain id
+        domain_seperator_msg.extend_from_slice(
+            frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero()).as_ref(),
+        ); // genesis block hash
+        keccak_256(domain_seperator_msg.as_slice())
+    }
+}
+
+#[inline]
+fn recover_signer(sig: &[u8; 65], msg_hash: &[u8; 32]) -> Option<H160> {
+    secp256k1_ecdsa_recover(sig, msg_hash)
+        .map(|pubkey| H160::from(H256::from_slice(&keccak_256(&pubkey))))
+        .ok()
+}
+
+#[inline]
+pub fn sha3_256(s: &str) -> [u8; 32] {
+    let mut result = [0u8; 32];
+
+    // create a SHA3-256 object
+    let mut hasher = Keccak256::new();
+    // write input message
+    hasher.update(s);
+    // read hash digest
+    result.copy_from_slice(&hasher.finalize()[..32]);
+
+    result
+}
+
+/// Convert any type that implements Into<U256> into byte representation ([u8, 32])
+#[inline]
+pub fn to_bytes<T: Into<U256>>(value: T) -> [u8; 32] {
+    Into::<[u8; 32]>::into(value.into())
 }
 
 /// Preprocessed Event
