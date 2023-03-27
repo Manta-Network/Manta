@@ -98,25 +98,24 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const octokit = context.github;
             const { owner, repo } = context.repo;
             const { number } = context.issue;
             const comment = "The cost to fully congest our network should be over the target_daily_congestion_cost_kma after 1 day.";
-            const { data } = await octokit.issues.listComments({ owner, repo, issue_number: number });
+            const { data } = await github.issues.listComments({ owner, repo, issue_number: number });
             const existingComment = data.find((comment) => comment.body === comment);
             if (existingComment) {
               const status = ${{ job.status }};
               const statusIcon = status === 'success' ? ':white_check_mark:' : ':warning:';
               const statusText = status === 'success' ? 'The CI run succeeded.' : 'The CI run failed.';
               const updatedComment = `${comment}\n\n${statusIcon} ${statusText}`;
-              await octokit.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
+              await github.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
               if (status === 'success') {
-                await octokit.reactions.createForIssueComment({ owner, repo, comment_id: existingComment.id, content: 'rocket' });
-                await octokit.resolve.createForIssueComment({ owner, repo, comment_id: existingComment.id, content: 'rocket' });
+                await github.reactions.createForIssueComment({ owner, repo, comment_id: existingComment.id, content: 'rocket' });
+                await github.resolve.createForIssueComment({ owner, repo, comment_id: existingComment.id, content: 'rocket' });
               }
             } else {
-              const { data: newComment } = await octokit.issues.createComment({ owner, repo, issue_number: number, body: comment });
-              await octokit.reactions.createForIssueComment({ owner, repo, comment_id: newComment.id, content: 'eyes' });
+              const { data: newComment } = await github.issues.createComment({ owner, repo, issue_number: number, body: comment });
+              await github.reactions.createForIssueComment({ owner, repo, comment_id: newComment.id, content: 'eyes' });
             }
       - name: stop sccache server
         run: sccache --stop-server || true
