@@ -67,7 +67,7 @@ parameter_types! {
     /// The adjustment variable of the runtime. Higher values will cause `TargetBlockFullness` to
     /// change the fees more rapidly.
 
-    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(290, 100_000);
+    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(225, 100_000);
     // pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(290, 100_000);
     // pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(125, 1_000_000);
 
@@ -75,7 +75,7 @@ parameter_types! {
     /// that combined with `AdjustmentVariable`, we can recover from the minimum.
     /// See `multiplier_can_grow_from_zero`.
 
-    pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 100_000u128);
+    pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 5_000u128);
     // pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 100_000u128);
     // pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 5u128);
 }

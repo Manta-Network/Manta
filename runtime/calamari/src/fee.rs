@@ -50,6 +50,7 @@ mod multiplier_tests {
     use frame_support::{dispatch::DispatchInfo, weights::DispatchClass};
     use pallet_transaction_payment::Multiplier;
     use runtime_common::MinimumMultiplier;
+    use sp_runtime::FixedU128;
 
     fn fetch_kma_price() -> Result<f32, &'static str> {
         let body = reqwest::blocking::get(
@@ -68,7 +69,8 @@ mod multiplier_tests {
     #[test]
     fn multiplier_growth_simulator_and_congestion_budget_test() {
         let target_daily_congestion_cost_usd = 100_000;
-        let kma_price = fetch_kma_price().unwrap();
+        //let kma_price = fetch_kma_price().unwrap();
+        let kma_price = 0.002318f32;
         println!("KMA/USD price as read from CoinGecko = {kma_price}");
         let target_daily_congestion_cost_kma =
             (target_daily_congestion_cost_usd as f32 / kma_price * KMA as f32) as u128;
@@ -121,6 +123,50 @@ mod multiplier_tests {
             pallet_transaction_payment::NextFeeMultiplier::<Runtime>::set(MinimumMultiplier::get());
         });
 
+        //let mut multipliers = vec![];
+        // let base = 0.0002f32;
+        // let chunk = (1.0f32 - 0.0002f32) / 20.0f32;
+        // let mc = 5000 / 20;
+        // for i in 0..20 {
+        //     let next = base + i as f32 * chunk;
+        //     multipliers.push(5000 - i * mc);
+        // }
+        // multipliers[19] = 1;
+
+        // let mut multipliers = vec![1_052_620_497_623_580_000u128,
+        // 1_111_086_416_598_230_000u128,
+        // 1_176_429_061_673_450_000u128,
+        // 1_249_937_492_188_440_000u128,
+        // 1_333_244_436_149_650_000u128,
+        // 1_428_449_092_109_900_000u128,
+        // 1_538_295_849_798_860_000u128,
+        // 1_666_444_437_968_640_000u128,
+        // 1_817_884_494_909_560_000u128,
+        // 1_999_600_012_011_200_000u128,
+        // 1_999_600_012_011_200_000u128,
+        // 2_221_679_056_252_420_000u128,
+        // 2_499_250_100_007_490_000u128,
+        // 2_856_081_847_217_320_000u128,
+        // 3_331_778_248_047_910_000u128,
+        // 3_997_601_519_040_610_000u128,
+        // 4_996_002_897_921_490_000u128,
+        // 6_659_119_087_910_050_000u128,
+        // 9_982_031_544_657_100_000u128,
+        // 19_924_287_031_853_200_000u128,
+        // 5_000_000_000_000_000_000_000u128
+        // ];
+
+        let incr = Multiplier::from_u32(1) / 20.into();
+        let mut multipliers = vec![Multiplier::from_u32(1) / 5000.into(), incr];
+        for i in 2..20 {
+            multipliers.push(multipliers[i -1] + incr);
+        }
+        multipliers[19] = Multiplier::from_u32(1);
+
+        let mut fee_at = vec![0; 20];
+        let mut fees_so_far_at = vec![0; 20];
+        let mut blocks_at = vec![0; 20];
+
         let mut should_fail = false;
         while multiplier <= Multiplier::from_u32(100) || blocks <= 7200 {
             t.execute_with(|| {
@@ -144,7 +190,7 @@ mod multiplier_tests {
                     "block = {} / multiplier {:?} / fee = {:?} / fees so far {:?} / fees so far in USD {:?}",
                     blocks, multiplier, (fee as f32 / KMA as f32) * kma_price, fees_paid, (fees_paid as f32 / KMA as f32) * kma_price
                 );
-
+                
                 if blocks == 0 {
                     fee_at_0 = fee;
                 }
@@ -189,65 +235,95 @@ mod multiplier_tests {
                     hundred_block = blocks;
                     fee_at_100 = fee;
                 }
+
+                for i in 0 ..20 {
+                    let check = multipliers[i].clone();
+                    if multiplier <= check {
+                         fee_at[i] = fee;
+                         fees_so_far_at[i] = fees_paid;
+                         blocks_at[i] = blocks;
+                    }
+                }
             });
             blocks += 1;
         }
 
         println!(
-            "The single block cost at the start is: {:?} USD. Single transfer: {:?} and single zk-tx: {:?}.
-            {:?} for 0.25x at a cost   {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?},
-            {:?} for 0.5x at a cost of {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?},
-            {:?} for 1x at a cost of   {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?},
-            {:?} for 2x at a cost of   {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?} ,
-            {:?} for 3x at a cost of   {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?},
-            {:?} for 10x at a cost of  {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?},
-            {:?} for 100x at a cost of {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?}",
+            "The single block cost at the start is: {:?} USD. Single transfer: {:?} and single zk-tx: {:?}, single zk-tx in KMA {:?},.
+            {:?} for 0.25x at a cost   {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?}, single zk-tx in KMA {:?},
+            {:?} for 0.5x at a cost of {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?}, single zk-tx in KMA {:?},
+            {:?} for 1x at a cost of   {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?}, single zk-tx in KMA {:?},
+            {:?} for 2x at a cost of   {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?}, single zk-tx in KMA {:?},
+            {:?} for 3x at a cost of   {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?}, single zk-tx in KMA {:?},
+            {:?} for 10x at a cost of  {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?}, single zk-tx in KMA {:?},
+            {:?} for 100x at a cost of {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?}, single zk-tx in KMA {:?},",
             (fee_at_0 as f32 / KMA as f32) * kma_price,
             ((fee_at_0 as f32 / KMA as f32) * kma_price) * 0.0003f32,
             ((fee_at_0 as f32 / KMA as f32) * kma_price) * 0.15f32,
+            fee_at_0,
 
             (quarter_block * 12) as f32 / (60 * 60 * 24) as f32,
             (fees_at_quarter_multiplier as f32 / KMA as f32) * kma_price,
             (fee_at_quarter as f32 / KMA as f32) * kma_price,
             ((fee_at_quarter as f32 / KMA as f32) * kma_price) * 0.0003f32,
             ((fee_at_quarter as f32 / KMA as f32) * kma_price) * 0.15f32,
+            fee_at_quarter,
 
             (half_block * 12) as f32 / (60 * 60 * 24) as f32,
             (fees_at_half_multiplier as f32 / KMA as f32) * kma_price,
             (fee_at_half as f32 / KMA as f32) * kma_price,
             ((fee_at_half as f32 / KMA as f32) * kma_price) * 0.0003f32,
             ((fee_at_half as f32 / KMA as f32) * kma_price) * 0.15f32,
+            fee_at_half,
 
             (one_block * 12) as f32 / (60 * 60 * 24) as f32,
             (fees_at_1x_multiplier as f32 / KMA as f32) * kma_price,
             (fee_at_1 as f32 / KMA as f32) * kma_price,
             ((fee_at_1 as f32 / KMA as f32) * kma_price) * 0.0003f32,
             ((fee_at_1 as f32 / KMA as f32) * kma_price) * 0.15f32,
+            fee_at_1,
 
             (two_block * 12) as f32 / (60 * 60 * 24) as f32,
             (fees_at_2x_multiplier as f32 / KMA as f32) * kma_price,
             (fee_at_2 as f32 / KMA as f32) * kma_price,
             ((fee_at_2 as f32 / KMA as f32) * kma_price) * 0.0003f32,
             ((fee_at_2 as f32 / KMA as f32) * kma_price) * 0.15f32,
+            fee_at_2,
 
             (three_block * 12) as f32 / (60 * 60 * 24) as f32,
             (fees_at_3x_multiplier as f32 / KMA as f32) * kma_price,
             (fee_at_3 as f32 / KMA as f32) * kma_price,
             ((fee_at_3 as f32 / KMA as f32) * kma_price) * 0.0003f32,
             ((fee_at_3 as f32 / KMA as f32) * kma_price) * 0.15f32,
+            fee_at_3,
 
             (ten_block * 12) as f32 / (60 * 60 * 24) as f32,
             (fees_at_10x_multiplier as f32 / KMA as f32) * kma_price,
             (fee_at_10 as f32 / KMA as f32) * kma_price,
             ((fee_at_10 as f32 / KMA as f32) * kma_price) * 0.0003f32,
             ((fee_at_10 as f32 / KMA as f32) * kma_price) * 0.15f32,
+            fee_at_10,
 
             (hundred_block * 12) as f32 / (60 * 60 * 24) as f32,
             (fees_at_100x_multiplier as f32 / KMA as f32) * kma_price,
             (fee_at_100 as f32 / KMA as f32) * kma_price,
             ((fee_at_100 as f32 / KMA as f32) * kma_price) * 0.0003f32,
             ((fee_at_100 as f32 / KMA as f32) * kma_price) * 0.15f32,
+            fee_at_100,
         );
+
+        for i in 0 .. 20 {
+            println!(
+                "{:?} days for {:?}x at a cost {:?} USD, with single block: {:?} USD. Single transfer: {:?} and single zk-tx: {:?}, single zk-tx in KMA {:?}",
+                (blocks_at[i] * 12) as f32 / (60 * 60 * 24) as f32,
+                multipliers[i],
+                (fees_so_far_at[i] as f32 / KMA as f32) * kma_price,
+                (fee_at[i] as f32 / KMA as f32) * kma_price,
+                ((fee_at[i] as f32 / KMA as f32) * kma_price) * 0.0003f32,
+                ((fee_at[i] as f32 / KMA as f32) * kma_price) * 0.15f32,
+                fee_at[i]
+            );    
+        }
 
         println!(
             "Cost for 1 day in KMA {:?} and in USD {:?}",
