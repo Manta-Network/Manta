@@ -94,7 +94,7 @@ jobs:
           test false
         continue-on-error: true
       - name: Update comment
-        uses: actions/github-script@v3
+        uses: actions/github-script@v5
         with:
           script: |
             // this uses octokit Issues API from https://octokit.github.io/rest.js/v19#issues
