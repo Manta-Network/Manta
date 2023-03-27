@@ -103,20 +103,20 @@ jobs:
             const number = context.issue.number;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const comment = "The cost to fully congest our network should be over the target_daily_congestion_cost_kma after 1 day.";
+            const comment = "Congestion test: 1-day congestion cost (calamari)"
 
             // find or create a comment in the PR
             const { data } = await octokit.rest.issues.listComments({ owner, repo, issue_number: number });
             let existingComment = data.find((comment) => comment.body.includes(comment));
             if (!existingComment) {
               const { data: newComment } = await octokit.rest.issues.createComment({ owner, repo, issue_number: number, body: comment });
-              existingComment = newComment
+              existingComment = newComment;
             }
             // Update comment text with CI status
             const status = '${{ job.steps.congestion_test.outcome }}';
             const statusIcon = status === 'success' ? ':white_check_mark:' : ':warning:';
-            const statusText = status === 'success' ? 'The CI run succeeded.' : 'The CI run failed.';
-            const updatedComment = `${comment}\n\n${statusIcon} ${statusText}`;
+            const above = status === 'success' ? 'is above' : 'is NOT above';
+            const updatedComment = `${statusIcon} ${comment} ${above} target_daily_congestion_cost_kma`;
             await octokit.rest.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
       - name: stop sccache server
         run: sccache --stop-server || true
