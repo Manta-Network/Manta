@@ -101,17 +101,21 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const comment = "The cost to fully congest our network should be over the target_daily_congestion_cost_kma after 1 day.";
+            console.log(github);
+            console.log(github.issues);
+            console.log(github.issues.listComments;
+            const { data } = await github.issues.listComments({ owner, repo, issue_number: number });
             const { data } = await github.issues.listComments({ owner, repo, issue_number: number });
             const existingComment = data.find((comment) => comment.body === comment);
             if (existingComment) {
-              const status = ${{ job.status }};
+              const status = '${{ job.status }}';
               const statusIcon = status === 'success' ? ':white_check_mark:' : ':warning:';
               const statusText = status === 'success' ? 'The CI run succeeded.' : 'The CI run failed.';
               const updatedComment = `${comment}\n\n${statusIcon} ${statusText}`;
               await github.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
               if (status === 'success') {
                 await github.reactions.createForIssueComment({ owner, repo, comment_id: existingComment.id, content: 'rocket' });
-                await github.resolve.createForIssueComment({ owner, repo, comment_id: existingComment.id, content: 'rocket' });
+                await github.issues.createComment({ owner, repo, issue_number: number, body: ':rocket: This issue has been resolved.' });
               }
             } else {
               const { data: newComment } = await github.issues.createComment({ owner, repo, issue_number: number, body: comment });
