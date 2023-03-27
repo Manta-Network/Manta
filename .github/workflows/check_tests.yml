@@ -93,7 +93,7 @@ jobs:
           source ${HOME}/.cargo/env
           RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime -- fee::multiplier_tests::multiplier_growth_simulator_and_congestion_budget_test
         continue-on-error: true
-      - name: Update comment
+      - name: Comment on PR whether congestion test failed
         uses: actions/github-script@v6
         with:
           script: |
@@ -103,7 +103,6 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const comment = "Congestion test: 1-day congestion cost (calamari)"
-
             // find or create a comment in the PR
             const { data } = await octokit.rest.issues.listComments({ owner, repo, issue_number: number });
             let existingComment = data.find((comment) => comment.body.includes(comment));
