@@ -97,8 +97,11 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const { owner, repo } = context.repo;
-            const { number } = context.issue;
+            github.rest.issues.get({
+              number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            })
             const comment = "The cost to fully congest our network should be over the target_daily_congestion_cost_kma after 1 day.";
             const { data } = await github.issues.listComments({ owner, repo, issue_number: number });
             const existingComment = data.find((comment) => comment.body === comment);
