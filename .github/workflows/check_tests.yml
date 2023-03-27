@@ -90,13 +90,15 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime -- fee::multiplier_tests::multiplier_growth_simulator_and_congestion_budget_test
+          # RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime -- fee::multiplier_tests::multiplier_growth_simulator_and_congestion_budget_test
+          test false
         continue-on-error: true
       - name: Update comment
         uses: actions/github-script@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const octokit = context.github;
             const { owner, repo } = context.repo;
             const { number } = context.issue;
             const comment = "The cost to fully congest our network should be over the target_daily_congestion_cost_kma after 1 day.";
