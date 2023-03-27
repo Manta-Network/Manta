@@ -517,7 +517,7 @@ pub mod pallet {
                 T::LotteryPot::get().0.to_vec(),
                 DispatchTime::After(drawing_interval),
                 Some((drawing_interval, 99999u32)), // XXX: Seems scheduler has no way to schedule infinite amount
-                LOWEST_PRIORITY,                    // TODO: Maybe schedule only one and schedule the next drawing in `draw_lottery`
+                LOWEST_PRIORITY, // TODO: Maybe schedule only one and schedule the next drawing in `draw_lottery`
                 frame_support::dispatch::RawOrigin::Root.into(),
                 MaybeHashed::Value(lottery_drawing_call),
             )

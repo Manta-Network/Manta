@@ -94,7 +94,7 @@ jobs:
           test false
         continue-on-error: true
       - name: Update comment
-        uses: actions/github-script@v5
+        uses: actions/github-script@v6
         with:
           script: |
             // this uses octokit Issues API from https://octokit.github.io/rest.js/v19#issues
@@ -103,26 +103,18 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const comment = "The cost to fully congest our network should be over the target_daily_congestion_cost_kma after 1 day.";
-            // core.warning(octokit);
-            //core.warning(octokit.rest);
-            core.warning(octokit.rest.issues);
-            // core.warning(octokit.rest.issues.listComments);
+
             const { data } = await octokit.rest.issues.listComments({ owner, repo, issue_number: number });
-            const existingComment = data.find((comment) => comment.body === comment);
-            if (existingComment) {
-              const status = '${{ job.status }}';
-              const statusIcon = status === 'success' ? ':white_check_mark:' : ':warning:';
-              const statusText = status === 'success' ? 'The CI run succeeded.' : 'The CI run failed.';
-              const updatedComment = `${comment}\n\n${statusIcon} ${statusText}`;
-              await octokit.rest.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
-              if (status === 'success') {
-                await octokit.rest.reactions.createForIssueComment({ owner, repo, comment_id: existingComment.id, content: 'rocket' });
-                await octokit.rest.issues.createComment({ owner, repo, issue_number: number, body: ':rocket: This issue has been resolved.' });
-              }
-            } else {
+            let existingComment = data.find((comment) => comment.body === comment);
+            if (!existingComment) {
               const { data: newComment } = await octokit.rest.issues.createComment({ owner, repo, issue_number: number, body: comment });
-              await octokit.rest.reactions.createForIssueComment({ owner, repo, comment_id: newComment.id, content: 'eyes' });
+              existingComment = newComment
             }
+            const status = '${{ job.status }}';
+            const statusIcon = status === 'success' ? ':white_check_mark:' : ':warning:';
+            const statusText = status === 'success' ? 'The CI run succeeded.' : 'The CI run failed.';
+            const updatedComment = `${comment}\n\n${statusIcon} ${statusText}`;
+            await octokit.rest.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
       - name: stop sccache server
         run: sccache --stop-server || true
   stop-unit-test-checks:
