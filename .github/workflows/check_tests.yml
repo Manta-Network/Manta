@@ -83,6 +83,7 @@ jobs:
       #     source ${HOME}/.cargo/env
       #     RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime 
       - name: Run congestion test (allowed to fail)
+        id: congestion_test
         env:
           RUST_BACKTRACE: full
           RUSTC_WRAPPER: sccache
@@ -112,7 +113,7 @@ jobs:
               existingComment = newComment
             }
             // Update comment text with CI status
-            const status = '${{ job.status }}';
+            const status = '${{ job.steps.congestion_test.outcome }}';
             const statusIcon = status === 'success' ? ':white_check_mark:' : ':warning:';
             const statusText = status === 'success' ? 'The CI run succeeded.' : 'The CI run failed.';
             const updatedComment = `${comment}\n\n${statusIcon} ${statusText}`;
