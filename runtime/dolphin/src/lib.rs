@@ -42,8 +42,8 @@ use sp_version::RuntimeVersion;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec,
-        NeverEnsureOrigin, PrivilegeCmp,
+        ConstU128, ConstU16, ConstU32, ConstU64, ConstU8, Contains, Currency, EitherOfDiverse,
+        IsInVec, NeverEnsureOrigin, PrivilegeCmp,
     },
     weights::{ConstantMultiplier, DispatchClass, Weight},
     PalletId,
@@ -722,6 +722,11 @@ impl pallet_manta_sbt::Config for Runtime {
     type MintsPerReserve = ConstU16<5>;
     type ReservePrice = ConstU128<DOL>;
     type SbtMetadataBound = ConstU32<300>;
+    type ChainId = ConstU64<2085>;
+    type WhitelistOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,
+    >;
     type WeightInfo = ();
 }
 

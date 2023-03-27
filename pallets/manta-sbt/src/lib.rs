@@ -134,7 +134,7 @@ pub mod pallet {
         /// The currency mechanism.
         type Currency: ReservableCurrency<Self::AccountId>;
 
-        /// The origin which can whitelist eth accounts
+        /// The origin which can change the privileged whitelist account
         type WhitelistOrigin: EnsureOrigin<Self::Origin>;
 
         /// Pallet ID
@@ -163,6 +163,10 @@ pub mod pallet {
     /// Should only ever be modified by `next_sbt_id_and_increment()`
     #[pallet::storage]
     pub(super) type NextSbtId<T: Config> = StorageValue<_, StandardAssetId, OptionQuery>;
+
+    /// Account that can add evm accounts to whitelist
+    #[pallet::storage]
+    pub(super) type WhitelistAccount<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
 
     /// Whitelist for Evm Accounts
     #[pallet::storage]
@@ -298,7 +302,11 @@ pub mod pallet {
             origin: OriginFor<T>,
             evm_address: EvmAddress,
         ) -> DispatchResult {
-            T::WhitelistOrigin::ensure_origin(origin)?;
+            let who = ensure_signed(origin)?;
+
+            let whitelist_account =
+                WhitelistAccount::<T>::get().ok_or(Error::<T>::NotWhitelistAccount)?;
+            ensure!(who == whitelist_account, Error::<T>::NotWhitelistAccount);
 
             let asset_id = Self::next_sbt_id_and_increment()?;
             EvmAddressWhitelist::<T>::insert(evm_address, asset_id);
@@ -328,6 +336,20 @@ pub mod pallet {
 
             Self::post_transaction(vec![who], *post)?;
             Ok(().into())
+        }
+
+        #[pallet::call_index(4)]
+        #[pallet::weight(0)]
+        #[transactional]
+        pub fn change_whitelist_account(
+            origin: OriginFor<T>,
+            account: Option<T::AccountId>,
+        ) -> DispatchResult {
+            T::WhitelistOrigin::ensure_origin(origin)?;
+
+            WhitelistAccount::<T>::set(account.clone());
+            Self::deposit_event(Event::<T>::ChangeWhitelistAccount { account });
+            Ok(())
         }
     }
 
@@ -362,6 +384,10 @@ pub mod pallet {
             address: EvmAddress,
             /// AssetId of minted SBT
             asset_id: StandardAssetId,
+        },
+        ChangeWhitelistAccount {
+            /// Account that is now the new privileged whitelist account
+            account: Option<T::AccountId>,
         },
     }
 
@@ -524,6 +550,9 @@ pub mod pallet {
 
         /// Eth account is not whitelisted for free mint
         NotWhitelisted,
+
+        /// Account is not the privileged account able to whitelist eth addresses
+        NotWhitelistAccount,
     }
 }
 
