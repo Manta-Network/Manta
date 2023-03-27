@@ -103,21 +103,21 @@ jobs:
               repo: context.repo.repo,
             })
             const comment = "The cost to fully congest our network should be over the target_daily_congestion_cost_kma after 1 day.";
-            const { data } = await github.issues.listComments({ owner, repo, issue_number: number });
+            const { data } = await github.rest.issues.listComments({ owner, repo, issue_number: number });
             const existingComment = data.find((comment) => comment.body === comment);
             if (existingComment) {
               const status = ${{ job.status }};
               const statusIcon = status === 'success' ? ':white_check_mark:' : ':warning:';
               const statusText = status === 'success' ? 'The CI run succeeded.' : 'The CI run failed.';
               const updatedComment = `${comment}\n\n${statusIcon} ${statusText}`;
-              await github.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
               if (status === 'success') {
-                await github.reactions.createForIssueComment({ owner, repo, comment_id: existingComment.id, content: 'rocket' });
-                await github.resolve.createForIssueComment({ owner, repo, comment_id: existingComment.id, content: 'rocket' });
+                await github.rest.reactions.createForIssueComment({ owner, repo, comment_id: existingComment.id, content: 'rocket' });
+                await github.rest.resolve.createForIssueComment({ owner, repo, comment_id: existingComment.id, content: 'rocket' });
               }
             } else {
-              const { data: newComment } = await github.issues.createComment({ owner, repo, issue_number: number, body: comment });
-              await github.reactions.createForIssueComment({ owner, repo, comment_id: newComment.id, content: 'eyes' });
+              const { data: newComment } = await github.rest.issues.createComment({ owner, repo, issue_number: number, body: comment });
+              await github.rest.reactions.createForIssueComment({ owner, repo, comment_id: newComment.id, content: 'eyes' });
             }
       - name: stop sccache server
         run: sccache --stop-server || true
