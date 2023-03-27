@@ -103,7 +103,7 @@ jobs:
             const comment = "The cost to fully congest our network should be over the target_daily_congestion_cost_kma after 1 day.";
             console.log(github);
             console.log(github.issues);
-            console.log(github.issues.listComments;
+            console.log(github.issues.listComments);
             const { data } = await github.issues.listComments({ owner, repo, issue_number: number });
             const { data } = await github.issues.listComments({ owner, repo, issue_number: number });
             const existingComment = data.find((comment) => comment.body === comment);
