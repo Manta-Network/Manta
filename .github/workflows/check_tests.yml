@@ -91,8 +91,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          # RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime -- fee::multiplier_tests::multiplier_growth_simulator_and_congestion_budget_test
-          test false
+          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime -- fee::multiplier_tests::multiplier_growth_simulator_and_congestion_budget_test
         continue-on-error: true
       - name: Update comment
         uses: actions/github-script@v6
