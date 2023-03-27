@@ -97,7 +97,7 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            github.rest.issues.get({
+            await github.rest.issues.get({
               number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
