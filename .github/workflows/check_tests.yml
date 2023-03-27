@@ -73,15 +73,15 @@ jobs:
           rustup default stable
           rustup update
           rustup target add wasm32-unknown-unknown
-      # - name: Run Unit Tests
-      #   env:
-      #     RUST_BACKTRACE: full
-      #     RUSTC_WRAPPER: sccache
-      #     SCCACHE_CACHE_SIZE: 2G
-      #     SCCACHE_DIR: /home/runner/.cache/sccache
-      #   run: |
-      #     source ${HOME}/.cargo/env
-      #     RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime 
+      - name: Run Unit Tests
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+        run: |
+          source ${HOME}/.cargo/env
+          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime 
       - name: Run congestion test (allowed to fail)
         id: congestion_test
         env:
