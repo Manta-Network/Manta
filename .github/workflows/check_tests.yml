@@ -104,7 +104,7 @@ jobs:
             const repo = context.repo.repo;
             const comment = "The cost to fully congest our network should be over the target_daily_congestion_cost_kma after 1 day.";
             // core.warning(octokit);
-            core.warning(octokit.rest);
+            //core.warning(octokit.rest);
             core.warning(octokit.rest.issues);
             // core.warning(octokit.rest.issues.listComments);
             const { data } = await octokit.rest.issues.listComments({ owner, repo, issue_number: number });
