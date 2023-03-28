@@ -81,7 +81,7 @@ jobs:
           SCCACHE_DIR: /home/runner/.cache/sccache
         run: |
           source ${HOME}/.cargo/env
-          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime 
+          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime
       - name: Run congestion test (allowed to fail)
         id: congestion_test
         env:
