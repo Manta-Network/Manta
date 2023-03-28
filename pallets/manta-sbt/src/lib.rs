@@ -332,11 +332,12 @@ pub mod pallet {
             let address = Self::verify_eip712_signature(&who, &eth_signature)
                 .ok_or(Error::<T>::BadSignature)?;
             let asset_id =
-                EvmAddressWhitelist::<T>::get(address).ok_or(Error::<T>::NotWhitelisted)?;
+                EvmAddressWhitelist::<T>::take(address).ok_or(Error::<T>::NotWhitelisted)?;
             Self::check_post_shape(&post, asset_id)?;
             SbtMetadata::<T>::insert(asset_id, metadata);
 
             Self::post_transaction(vec![who], *post)?;
+            Self::deposit_event(Event::<T>::MintSbtEvm { asset_id, address });
             Ok(().into())
         }
 
