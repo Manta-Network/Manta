@@ -82,6 +82,40 @@ jobs:
         run: |
           source ${HOME}/.cargo/env
           RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime
+      - name: Run congestion test (allowed to fail)
+        id: congestion_test
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+        run: |
+          source ${HOME}/.cargo/env
+          RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime -- fee::multiplier_tests::multiplier_growth_simulator_and_congestion_budget_test
+        continue-on-error: true
+      - name: Comment on PR whether congestion test failed
+        uses: actions/github-script@v6
+        with:
+          script: |
+            // this uses octokit Issues API from https://octokit.github.io/rest.js/v19#issues
+            const octokit = github;
+            const number = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const comment_text = "Congestion test: 1-day congestion cost (calamari)"
+            // find or create a comment in the PR
+            const { data } = await octokit.rest.issues.listComments({ owner, repo, issue_number: number });
+            let existingComment = data.find((comment) => comment.body.includes(comment_text));
+            if (!existingComment) {
+              const { data: newComment } = await octokit.rest.issues.createComment({ owner, repo, issue_number: number, body: comment_text });
+              existingComment = newComment;
+            }
+            // Update comment text with CI status
+            const status = '${{ job.steps.congestion_test.outcome }}';
+            const statusIcon = status === 'success' ? ':white_check_mark:' : ':warning:';
+            const above = status === 'success' ? 'is above' : 'is NOT above';
+            const updatedComment = `${statusIcon} ${comment_text} ${above} target_daily_congestion_cost_kma`;
+            await octokit.rest.issues.updateComment({ owner, repo, comment_id: existingComment.id, body: updatedComment });
       - name: stop sccache server
         run: sccache --stop-server || true
   stop-unit-test-checks:
