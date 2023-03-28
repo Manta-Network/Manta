@@ -21,7 +21,7 @@
 
 pub mod migration;
 
-#[cfg(feature = "testhelpers")]
+#[cfg(feature = "test-helpers")]
 pub mod test_helpers;
 
 use frame_support::{parameter_types, weights::Weight};
