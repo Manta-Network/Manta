@@ -325,6 +325,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             post: Box<TransferPost>,
             eth_signature: Eip712Signature,
+            metadata: BoundedVec<u8, T::SbtMetadataBound>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
@@ -333,6 +334,7 @@ pub mod pallet {
             let asset_id =
                 EvmAddressWhitelist::<T>::get(address).ok_or(Error::<T>::NotWhitelisted)?;
             Self::check_post_shape(&post, asset_id)?;
+            SbtMetadata::<T>::insert(asset_id, metadata);
 
             Self::post_transaction(vec![who], *post)?;
             Ok(().into())
