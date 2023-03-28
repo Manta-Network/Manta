@@ -829,7 +829,7 @@ impl_runtime_apis! {
                 ));
                 pub const CheckedAccount: Option<AccountId> = None;
                 pub const DotLocation: MultiLocation = MultiLocation::parent();
-                pub KmaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(2084)));
+                pub MantaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(2104)));
             }
 
             impl pallet_xcm_benchmarks::Config for Runtime {
@@ -860,7 +860,7 @@ impl_runtime_apis! {
                         .collect::<Vec<_>>();
 
                         assets.push(MultiAsset{
-                            id: Concrete(KmaLocation::get()),
+                            id: Concrete(MantaLocation::get()),
                             fun: Fungible(1_000_000 * MANTA),
                         });
                         assets.into()
@@ -876,7 +876,7 @@ impl_runtime_apis! {
 
                 fn get_multi_asset() -> MultiAsset {
                     MultiAsset {
-                        id: Concrete(KmaLocation::get()),
+                        id: Concrete(MantaLocation::get()),
                         fun: Fungible(1 * MANTA),
                     }
                 }
@@ -898,8 +898,8 @@ impl_runtime_apis! {
                 }
 
                 fn claimable_asset() -> Result<(MultiLocation, MultiLocation, MultiAssets), BenchmarkError> {
-                    let origin = KmaLocation::get();
-                    let assets: MultiAssets = (Concrete(KmaLocation::get()), 1_000 * MANTA).into();
+                    let origin = MantaLocation::get();
+                    let assets: MultiAssets = (Concrete(MantaLocation::get()), 1_000 * MANTA).into();
                     let ticket = MultiLocation { parents: 0, interior: Here };
                     Ok((origin, ticket, assets))
                 }
