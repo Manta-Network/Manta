@@ -87,6 +87,8 @@ orml-xtokens = { git = 'https://github.com/manta-network/open-runtime-module-lib
 # Self dependencies
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
 manta-primitives = { path = '../../primitives/manta', default-features = false }
+manta-support = { package = "pallet-manta-support", path = "../../pallets/manta-support", default-features = false }
+pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
 runtime-common = { path = '../common', default-features = false }
@@ -189,6 +191,8 @@ std = [
   'pallet-transaction-payment/std',
   'pallet-treasury/std',
   'manta-primitives/std',
+  'pallet-manta-sbt/std',
+  'manta-support/std',
   'runtime-common/std',
   'parachain-info/std',
   'cumulus-pallet-parachain-system/std',

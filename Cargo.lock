@@ -5313,6 +5313,8 @@ dependencies = [
  "pallet-author-inherent",
  "pallet-authorship",
  "pallet-balances",
+ "pallet-manta-sbt",
+ "pallet-manta-support",
  "pallet-multisig",
  "pallet-parachain-staking",
  "pallet-preimage",
