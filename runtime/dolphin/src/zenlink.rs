@@ -21,6 +21,7 @@ use super::{
 use crate::{
     assets_config::{DolphinAssetConfig, DolphinConcreteFungibleLedger},
     xcm_config::RelayNetwork,
+    MantaCurrencies,
 };
 use frame_support::{parameter_types, traits::ExistenceRequirement, PalletId};
 use manta_primitives::{
@@ -83,8 +84,6 @@ parameter_types! {
     pub const StringLimit: u32 = 50;
     pub const StableAmmPalletId: PalletId = PalletId(*b"mt/stamm");
 }
-
-type MantaCurrencies = Currencies<Runtime, DolphinAssetConfig, Balances, Assets>;
 
 impl zenlink_stable_amm::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;

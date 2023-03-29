@@ -1,24 +1,21 @@
-// This file is part of Bifrost.
-
-// Copyright (C) 2019-2022 Liebi Technologies (UK) Ltd.
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
-
-// This program is free software: you can redistribute it and/or modify
+// Copyright 2020-2023 Manta Network.
+// This file is part of Manta.
+//
+// Manta is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-
-// This program is distributed in the hope that it will be useful,
+//
+// Manta is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-
+//
 // You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
+// along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::*;
 use codec::HasCompact;
-use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_core::U256;
 use sp_runtime::{
@@ -122,6 +119,42 @@ pub enum PoolState {
     Ongoing,
     Dead,
     Retired,
+}
+
+#[derive(Encode, Decode, Copy, Clone, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+pub enum Action {
+    Deposit,
+    Withdraw,
+    Claim,
+    ForceRetirePool,
+    ClosePool,
+    ResetPool,
+    KillPool,
+    EditPool,
+}
+
+impl PoolState {
+    pub fn state_valid(action: Action, state: PoolState) -> bool {
+        match action {
+            Action::Deposit => state == PoolState::Ongoing || state == PoolState::Charged,
+            Action::Withdraw => {
+                state == PoolState::Ongoing
+                    || state == PoolState::Charged
+                    || state == PoolState::Dead
+            }
+            Action::Claim => state == PoolState::Ongoing || state == PoolState::Dead,
+            Action::ForceRetirePool => state == PoolState::Dead,
+            Action::ClosePool => state == PoolState::Ongoing,
+            Action::ResetPool => state == PoolState::Retired,
+            Action::KillPool => state == PoolState::Retired || state == PoolState::UnCharged,
+            Action::EditPool => {
+                state == PoolState::Retired
+                    || state == PoolState::Ongoing
+                    || state == PoolState::Charged
+                    || state == PoolState::UnCharged
+            }
+        }
+    }
 }
 
 impl<T: Config> Pallet<T> {
@@ -388,12 +421,11 @@ impl<T: Config> Pallet<T> {
             who,
             |share_info_old| -> DispatchResult {
                 if let Some(mut share_info) = share_info_old.take() {
-                    let current_block_number: BlockNumberFor<T> =
-                        frame_system::Pallet::<T>::block_number();
+                    let n: BlockNumberFor<T> = frame_system::Pallet::<T>::block_number();
                     let mut tmp: Vec<(BlockNumberFor<T>, BalanceOf<T>)> = Default::default();
                     share_info.withdraw_list.iter().try_for_each(
                         |(dest_block, remove_value)| -> DispatchResult {
-                            if *dest_block <= current_block_number {
+                            if *dest_block <= n {
                                 let native_amount = pool_info
                                     .basic_token
                                     .1
@@ -432,8 +464,7 @@ impl<T: Config> Pallet<T> {
                     share_info.withdraw_list = tmp;
 
                     // if withdraw_list and share both are empty, and if_remove is true, remove it.
-                    if share_info.withdraw_list
-                        != Vec::<(BlockNumberFor<T>, BalanceOf<T>)>::default()
+                    if !share_info.withdraw_list.is_empty()
                         || !share_info.share.is_zero()
                         || !if_remove
                     {

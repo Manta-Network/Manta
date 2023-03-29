@@ -98,6 +98,8 @@ pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false,
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
+manta-farming = { path = '../../pallets/farming', default-features = false }
+manta-farming-rpc-runtime-api = { path = '../../pallets/farming/rpc/runtime-api', default-features = false }
 
 # Third party (vendored) dependencies
 orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.37" }

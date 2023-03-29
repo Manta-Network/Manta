@@ -1,41 +1,40 @@
-// This file is part of Bifrost.
-
-// Copyright (C) 2019-2022 Liebi Technologies (UK) Ltd.
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
-
-// This program is free software: you can redistribute it and/or modify
+// Copyright 2020-2023 Manta Network.
+// This file is part of Manta.
+//
+// Manta is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-
-// This program is distributed in the hope that it will be useful,
+//
+// Manta is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-
+//
 // You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
+// along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Codec;
-use node_primitives::{Balance, CurrencyId};
+use manta_primitives::types::Balance;
 use sp_api::decl_runtime_apis;
 use sp_std::vec::Vec;
 
 decl_runtime_apis! {
-	pub trait FarmingRuntimeApi<AccountId, PoolId> where
-		AccountId: Codec,
-		PoolId: Codec,
-	{
-		fn get_farming_rewards(
-			who: AccountId,
-			pid: PoolId,
-		) -> Vec<(CurrencyId, Balance)>;
+    pub trait FarmingRuntimeApi<AccountId, CurrencyId, PoolId> where
+        AccountId: Codec,
+        PoolId: Codec,
+        CurrencyId: Codec,
+    {
+        fn get_farming_rewards(
+            who: AccountId,
+            pid: PoolId,
+        ) -> Vec<(CurrencyId, Balance)>;
 
-		fn get_gauge_rewards(
-			who: AccountId,
-			pid: PoolId,
-		) -> Vec<(CurrencyId, Balance)>;
-	}
+        fn get_gauge_rewards(
+            who: AccountId,
+            pid: PoolId,
+        ) -> Vec<(CurrencyId, Balance)>;
+    }
 }

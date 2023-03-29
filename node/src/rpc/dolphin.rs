@@ -17,14 +17,17 @@
 //! Dolphin RPC Extensions
 
 use super::*;
+use manta_farming_rpc_api::{FarmingRpc, FarmingRpcApiServer};
+use manta_farming_rpc_runtime_api::FarmingRuntimeApi;
+use manta_primitives::types::{DolphinAssetId, PoolId};
 use pallet_manta_pay::{
     rpc::{Pull, PullApiServer},
     runtime::PullLedgerDiffApi,
 };
-use pallet_manta_sbt::{
-    rpc::{SBTPull, SBTPullApiServer},
-    runtime::SBTPullLedgerDiffApi,
-};
+use zenlink_protocol::AssetId;
+use zenlink_protocol_rpc::{ZenlinkProtocol, ZenlinkProtocolApiServer};
+use zenlink_protocol_runtime_api::ZenlinkProtocolApi as ZenlinkProtocolRuntimeApi;
+use zenlink_stable_amm_rpc::{StableAmm, StableAmmApiServer};
 
 /// Instantiate all RPC extensions for dolphin.
 pub fn create_dolphin_full<C, P>(deps: FullDeps<C, P>) -> Result<RpcExtension, sc_service::Error>
@@ -40,7 +43,16 @@ where
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
     C::Api: BlockBuilder<Block>,
     C::Api: PullLedgerDiffApi<Block>,
-    C::Api: SBTPullLedgerDiffApi<Block>,
+    C::Api: FarmingRuntimeApi<Block, AccountId, DolphinAssetId, PoolId>,
+    C::Api: ZenlinkProtocolRuntimeApi<Block, AccountId, AssetId>,
+    C::Api: zenlink_stable_amm_runtime_api::StableAmmApi<
+        Block,
+        DolphinAssetId,
+        Balance,
+        AccountId,
+        PoolId,
+    >,
+
     P: TransactionPool + Sync + Send + 'static,
 {
     use frame_rpc_system::{System, SystemApiServer};
@@ -65,9 +77,14 @@ where
         .merge(manta_pay_rpc)
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
-    let manta_sbt_rpc: jsonrpsee::RpcModule<SBTPull<Block, C>> = SBTPull::new(client).into_rpc();
     module
-        .merge(manta_sbt_rpc)
+        .merge(FarmingRpc::new(client.clone()).into_rpc())
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+    module
+        .merge(ZenlinkProtocol::new(client.clone()).into_rpc())
+        .map_err(|e| sc_service::Error::Other(e.to_string()))?;
+    module
+        .merge(StableAmm::new(client).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
 
     Ok(module)

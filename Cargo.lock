@@ -2653,6 +2653,8 @@ dependencies = [
  "hex-literal",
  "log",
  "manta-collator-selection",
+ "manta-farming",
+ "manta-farming-rpc-runtime-api",
  "manta-primitives",
  "nimbus-primitives",
  "orml-traits",
@@ -5275,6 +5277,8 @@ dependencies = [
  "hex-literal",
  "jsonrpsee",
  "log",
+ "manta-farming-rpc-api",
+ "manta-farming-rpc-runtime-api",
  "manta-primitives",
  "manta-runtime",
  "nimbus-consensus",
@@ -5333,6 +5337,11 @@ dependencies = [
  "tracing-core",
  "try-runtime-cli",
  "xcm",
+ "zenlink-protocol",
+ "zenlink-protocol-rpc",
+ "zenlink-protocol-runtime-api",
+ "zenlink-stable-amm-rpc",
+ "zenlink-stable-amm-runtime-api",
 ]
 
 [[package]]
@@ -5422,6 +5431,32 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "manta-farming-rpc-api"
+version = "4.0.3"
+dependencies = [
+ "jsonrpsee",
+ "manta-farming-rpc-runtime-api",
+ "manta-primitives",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
+name = "manta-farming-rpc-runtime-api"
+version = "4.0.3"
+dependencies = [
+ "manta-primitives",
+ "parity-scale-codec",
+ "sp-api",
  "sp-std",
 ]
 
@@ -14789,6 +14824,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "zenlink-protocol-rpc"
+version = "0.4.4"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#ec82341a22e0e32150f484a7169cb1f5ff242353"
+dependencies = [
+ "jsonrpsee",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-rpc",
+ "sp-runtime",
+ "zenlink-protocol",
+ "zenlink-protocol-runtime-api",
+]
+
+[[package]]
 name = "zenlink-protocol-runtime-api"
 version = "0.4.4"
 source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#ec82341a22e0e32150f484a7169cb1f5ff242353"
@@ -14814,6 +14864,20 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "zenlink-stable-amm-rpc"
+version = "0.1.0"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#ec82341a22e0e32150f484a7169cb1f5ff242353"
+dependencies = [
+ "jsonrpsee",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-rpc",
+ "sp-runtime",
+ "zenlink-stable-amm-runtime-api",
 ]
 
 [[package]]

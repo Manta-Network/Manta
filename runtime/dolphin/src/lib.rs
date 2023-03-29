@@ -29,7 +29,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+    traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, Perbill, Permill,
 };
@@ -80,8 +80,10 @@ mod nimbus_session_adapter;
 pub mod xcm_config;
 pub mod zenlink;
 
+use crate::assets_config::DolphinAssetConfig;
 use currency::*;
 use impls::DealWithFees;
+use manta_primitives::currencies::Currencies;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -708,6 +710,25 @@ impl manta_collator_selection::Config for Runtime {
     type CanAuthor = AuraAuthorFilter;
 }
 
+parameter_types! {
+    pub const FarmingKeeperPalletId: PalletId = PalletId(*b"mt/fmkpr");
+    pub const FarmingRewardIssuerPalletId: PalletId = PalletId(*b"mt/fmrir");
+    pub TreasuryAccount: AccountId = TreasuryPalletId::get().into_account_truncating();
+}
+
+type MantaCurrencies = Currencies<Runtime, DolphinAssetConfig, Balances, Assets>;
+
+impl manta_farming::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type CurrencyId = DolphinAssetId;
+    type MultiCurrency = MantaCurrencies;
+    type ControlOrigin = CollatorSelectionUpdateOrigin;
+    type TreasuryAccount = TreasuryAccount;
+    type Keeper = FarmingKeeperPalletId;
+    type RewardIssuer = FarmingRewardIssuerPalletId;
+    type WeightInfo = ();
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -773,6 +794,7 @@ construct_runtime!(
         ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 50,
         ZenlinkStableAMM: zenlink_stable_amm::{Pallet, Call, Storage, Event<T>} = 51,
         ZenlinkSwapRouter: zenlink_swap_router::{Pallet, Call, Event<T>} = 52,
+        Farming: manta_farming::{Pallet, Call, Storage, Event<T>} = 55,
     }
 );
 
@@ -1132,6 +1154,16 @@ impl_runtime_apis! {
 
         fn calculate_remove_liquidity_one_currency(pool_id: PoolId, amount:Balance, index: u32)->Balance{
             ZenlinkStableAMM::stable_amm_calculate_remove_liquidity_one_currency(pool_id, amount, index).unwrap_or_default()
+        }
+    }
+
+    impl manta_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, DolphinAssetId, PoolId> for Runtime {
+        fn get_farming_rewards(who: AccountId, pid: PoolId) -> Vec<(DolphinAssetId, Balance)> {
+            Farming::get_farming_rewards(&who, pid).unwrap_or(Vec::new())
+        }
+
+        fn get_gauge_rewards(who: AccountId, pid: PoolId) -> Vec<(DolphinAssetId, Balance)> {
+            Farming::get_gauge_rewards(&who, pid).unwrap_or(Vec::new())
         }
     }
 
