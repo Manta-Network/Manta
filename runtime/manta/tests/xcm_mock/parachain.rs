@@ -120,8 +120,8 @@ parameter_types! {
 }
 
 parameter_types! {
-    pub const KsmLocation: MultiLocation = MultiLocation::parent();
-    pub const RelayNetwork: NetworkId = NetworkId::Kusama;
+    pub const DotLocation: MultiLocation = MultiLocation::parent();
+    pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
     pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();

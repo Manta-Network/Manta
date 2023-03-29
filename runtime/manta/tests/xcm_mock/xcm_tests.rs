@@ -197,7 +197,7 @@ fn reserve_transfer_relaychain_to_parachain_a_then_back() {
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
 
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
+    let relay_asset_metadata = create_asset_metadata("Polkadot", "DOT", 12, 1, false, true);
     let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, false, true);
 
     let _ = register_assets_on_parachain::<ParaA>(
@@ -1127,7 +1127,7 @@ fn receive_relay_asset_with_trader_on_parachain() {
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
 
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
+    let relay_asset_metadata = create_asset_metadata("Polkadot", "DOT", 12, 1, false, true);
     let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, false, true);
 
     let amount = 666u128;
@@ -1610,7 +1610,7 @@ fn receive_relay_asset_on_parachain_with_insufficient_fee_payment_should_fail() 
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
 
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
+    let relay_asset_metadata = create_asset_metadata("Polkadot", "DOT", 12, 1, false, true);
     let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, false, true);
 
     let amount = 20u128;
@@ -1670,7 +1670,7 @@ fn receive_relay_should_fail_without_specifying_units_per_second() {
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
 
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
+    let relay_asset_metadata = create_asset_metadata("Polkadot", "DOT", 12, 1, false, true);
     let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, false, true);
 
     let amount = 333u128;
@@ -1877,7 +1877,7 @@ fn receive_insufficient_relay_asset_on_parachain() {
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
 
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, false);
+    let relay_asset_metadata = create_asset_metadata("Polkadot", "DOT", 12, 1, false, false);
     let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, false, true);
 
     let amount = 123u128;
@@ -1966,7 +1966,7 @@ fn receive_sufficient_relay_asset_on_parachain() {
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
 
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
+    let relay_asset_metadata = create_asset_metadata("Polkadot", "DOT", 12, 1, false, true);
     let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, false, true);
 
     let amount = 123u128;
@@ -2118,7 +2118,7 @@ fn test_versioning_on_runtime_upgrade_with_relay() {
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
 
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
+    let relay_asset_metadata = create_asset_metadata("Polkadot", "DOT", 12, 1, false, true);
     let para_a_asset_metadata = create_asset_metadata("ParaA", "ParaA", 12, 1, false, true);
 
     // register relay asset in parachain A (XCM version 1)
@@ -2606,7 +2606,7 @@ fn less_than_min_xcm_fee_should_not_work() {
     let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
 
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
+    let relay_asset_metadata = create_asset_metadata("Polkadot", "DOT", 12, 1, false, true);
 
     let _ = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -2779,7 +2779,7 @@ fn transfer_multicurrencies_should_work_scenarios() {
     let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, true);
 
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
+    let relay_asset_metadata = create_asset_metadata("Polkadot", "DOT", 12, 1, false, true);
 
     let _ = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -2980,7 +2980,7 @@ fn transfer_multicurrencies_should_fail_scenarios() {
     let para_c_asset_metadata = create_asset_metadata("ParaCToken", "ParaC", 18, 1, false, true);
 
     let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
-    let relay_asset_metadata = create_asset_metadata("Kusama", "KSM", 12, 1, false, true);
+    let relay_asset_metadata = create_asset_metadata("Polkadot", "DOT", 12, 1, false, true);
     let units_per_sec = 0;
 
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(

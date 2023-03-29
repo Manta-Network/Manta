@@ -109,8 +109,8 @@ impl configuration::Config for Runtime {
 }
 
 parameter_types! {
-    pub const KsmLocation: MultiLocation = Here.into();
-    pub const KusamaNetwork: NetworkId = NetworkId::Kusama;
+    pub const DotLocation: MultiLocation = Here.into();
+    pub const PolkadotNetwork: NetworkId = NetworkId::Polkadot;
     pub const AnyNetwork: NetworkId = NetworkId::Any;
     pub Ancestry: MultiLocation = Here.into();
     pub UnitWeightCost: Weight = 1_000;
@@ -118,22 +118,22 @@ parameter_types! {
 
 pub type SovereignAccountOf = (
     ChildParachainConvertsVia<ParaId, AccountId>,
-    AccountId32Aliases<KusamaNetwork, AccountId>,
+    AccountId32Aliases<PolkadotNetwork, AccountId>,
 );
 
 pub type LocalAssetTransactor =
-    XcmCurrencyAdapter<Balances, IsConcrete<KsmLocation>, SovereignAccountOf, AccountId, ()>;
+    XcmCurrencyAdapter<Balances, IsConcrete<DotLocation>, SovereignAccountOf, AccountId, ()>;
 
 type LocalOriginConverter = (
     SovereignSignedViaLocation<SovereignAccountOf, Origin>,
     ChildParachainAsNative<origin::Origin, Origin>,
-    SignedAccountId32AsNative<KusamaNetwork, Origin>,
+    SignedAccountId32AsNative<PolkadotNetwork, Origin>,
     ChildSystemParachainAsSuperuser<ParaId, Origin>,
 );
 
 parameter_types! {
     pub const BaseXcmWeight: Weight = 1_000;
-    pub KsmPerSecond: (AssetId, u128) = (Concrete(KsmLocation::get()), 1);
+    pub DotPerSecond: (AssetId, u128) = (Concrete(DotLocation::get()), 1);
     pub const MaxInstructions: u32 = 100;
 }
 
@@ -160,14 +160,14 @@ impl Config for XcmExecutorConfig {
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = Barrier;
     type Weigher = FixedWeightBounds<BaseXcmWeight, Call, MaxInstructions>;
-    type Trader = FixedRateOfFungible<KsmPerSecond, ()>;
+    type Trader = FixedRateOfFungible<DotPerSecond, ()>;
     type ResponseHandler = XcmPallet;
     type AssetTrap = XcmPallet;
     type AssetClaims = XcmPallet;
     type SubscriptionService = XcmPallet;
 }
 
-pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, KusamaNetwork>;
+pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, PolkadotNetwork>;
 
 impl pallet_xcm::Config for Runtime {
     type Event = Event;

@@ -70,7 +70,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 }
 
 parameter_types! {
-    pub const RelayNetwork: NetworkId = NetworkId::Kusama;
+    pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
     pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
     pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
@@ -197,7 +197,7 @@ impl Config for XcmExecutorConfig {
     type Call = Call;
     type XcmSender = XcmRouter;
     // Defines how to Withdraw and Deposit instruction work
-    type AssetTransactor = MultiAssetTransactor; // MultiAssetTransactor;
+    type AssetTransactor = MultiAssetTransactor;
     type OriginConverter = XcmOriginToCallOrigin;
     // Combinations of (Location, Asset) pairs which we trust as reserves.
     type IsReserve = MultiNativeAsset;

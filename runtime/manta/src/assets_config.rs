@@ -118,7 +118,7 @@ parameter_types! {
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
         metadata: AssetStorageMetadata {
             name: b"Manta".to_vec(),
-            symbol: b"KMA".to_vec(),
+            symbol: b"MANTA".to_vec(),
             decimals: MANTA_DECIMAL,
             is_frozen: false,
         },
