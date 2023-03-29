@@ -1,19 +1,13 @@
 [package]
 authors = ['Manta Network']
-description = 'Pallet implementing the MantaPay protocol.'
+description = 'Pallet implementing zkSBT protocol.'
 edition = "2021"
 homepage = 'https://manta.network'
 license = 'GPL-3.0'
-name = 'pallet-manta-pay'
+name = 'pallet-manta-sbt'
 readme = 'README.md'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.0.4'
-
-[package.metadata.docs.rs]
-# To build locally:
-# RUSTDOCFLAGS="--cfg doc_cfg" cargo +nightly doc --all-features --open
-all-features = true
-rustdoc-args = ["--cfg", "doc_cfg"]
+version = '4.0.2'
 
 [[bin]]
 name = "precompute_coins"
@@ -23,30 +17,12 @@ required-features = ["precompute-coins"]
 # Default Features
 default = ["std"]
 
-# RPC Interface
-rpc = [
-  "jsonrpsee",
-  "runtime",
-  "serde",
-  "sp-api",
-  "sp-blockchain",
-  "manta-support/rpc",
-]
-
-# Runtime API
-runtime = ["sp-api"]
-
 # Runtime Benchmarks
 runtime-benchmarks = [
   "frame-benchmarking",
   "frame-support/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
   "manta-primitives/runtime-benchmarks",
-]
-
-# Serde Serialization
-serde = [
-  "manta-support/serde",
 ]
 
 # Standard Library
@@ -67,6 +43,24 @@ std = [
   "manta-pay/std",
   "manta-support/std",
 ]
+
+# RPC Interface
+rpc = [
+  "jsonrpsee",
+  "serde",
+  "runtime",
+  "sp-api",
+  "sp-blockchain",
+  "manta-support/rpc",
+]
+
+# Serde Serialization
+serde = [
+  "manta-support/serde",
+]
+
+# Runtime API
+runtime = ["sp-api"]
 
 # Precompute Benchmark Transactions
 precompute-coins = [
@@ -119,9 +113,10 @@ lazy_static = "1.4.0"
 manta-crypto = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.12", features = ["getrandom"] }
 manta-pay = { git = "https://github.com/manta-network/manta-rs.git", tag = "v0.5.12", features = ["groth16", "parameters", "scale", "download", "test"] }
 pallet-asset-manager = { path = "../asset-manager" }
-pallet-assets = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
+pallet-assets = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28" }
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
-pallet-tx-pause = { path = '../tx-pause' }
+pallet-manta-pay = { path = "../manta-pay" }
+pallet-tx-pause = { path = "../tx-pause" }
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28" }
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28" }
 tempfile = "3.3.0"
