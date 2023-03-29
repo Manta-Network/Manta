@@ -102,6 +102,7 @@ jobs:
             const number = context.issue.number;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
+            if (!number) return; // Ignore non-PR CI runs
             const comment_text = "Congestion test: 1-day congestion cost (calamari)"
             // find or create a comment in the PR
             const { data } = await octokit.rest.issues.listComments({ owner, repo, issue_number: number });
