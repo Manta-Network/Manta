@@ -90,7 +90,7 @@ pub mod pallet {
     use pallet_parachain_staking::BalanceOf;
     use sp_core::U256;
     use sp_runtime::{
-        traits::{AccountIdConversion, CheckedAdd, CheckedSub, Dispatchable, Hash, Saturating},
+        traits::{AccountIdConversion, CheckedAdd, CheckedSub, Dispatchable, Hash, Saturating, Zero},
         ArithmeticError, DispatchResult,
     };
     use sp_std::prelude::*;
@@ -517,7 +517,7 @@ pub mod pallet {
                 T::LotteryPot::get().0.to_vec(),
                 DispatchTime::After(drawing_interval),
                 Some((drawing_interval, 99999u32)), // XXX: Seems scheduler has no way to schedule infinite amount
-                LOWEST_PRIORITY,                    // TODO: Maybe schedule only one and schedule the next drawing in `draw_lottery`
+                LOWEST_PRIORITY, // TODO: Maybe schedule only one and schedule the next drawing in `draw_lottery`
                 frame_support::dispatch::RawOrigin::Root.into(),
                 MaybeHashed::Value(lottery_drawing_call),
             )
@@ -590,13 +590,7 @@ pub mod pallet {
                 );
 
             // always keep some funds for gas
-            let payout = all_funds_in_pallet
-                .checked_sub(&total_deposits)
-                .ok_or(ArithmeticError::Underflow)?
-                .checked_sub(&Self::total_unclaimed_winnings())
-                .ok_or(ArithmeticError::Underflow)?
-                .checked_sub(&Self::gas_reserve())
-                .ok_or(Error::<T>::PotBalanceBelowGasReserve)?;
+            let payout = Self::lottery_surplus();
 
             ensure!(payout > 0u32.into(), Error::<T>::PotBalanceTooLow);
             ensure!(
@@ -717,20 +711,6 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        // TODO: This should be an RPC call
-        pub fn lottery_surplus() -> BalanceOf<T> {
-            let funds = pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
-                &Self::account_id(),
-            );
-            let unclaimed_winnings = Self::total_unclaimed_winnings();
-            let reserve = Self::gas_reserve();
-            funds
-                .saturating_sub(unclaimed_winnings)
-                .saturating_sub(reserve)
-        }
-    }
-
-    impl<T: Config> Pallet<T> {
         /// Get a unique, inaccessible account id from the `PotId`.
         fn account_id() -> T::AccountId {
             T::LotteryPot::get().into_account_truncating()
@@ -738,6 +718,11 @@ pub mod pallet {
 
         fn do_stake(collator: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
             let some_collator = collator;
+
+            // preconditions
+            if Self::lottery_surplus().is_zero() {
+                return Ok(());
+            }
 
             // TODO: Calculate these from current values
             const CANDIDATE_DELEGATION_COUNT: u32 = 500;
@@ -861,8 +846,7 @@ pub mod pallet {
                 pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
                     &Self::account_id(),
                 );
-            let stakable_balance =
-                available_balance - outstanding_withdrawal_requests - Self::gas_reserve();
+            let stakable_balance = Self::lottery_surplus() - outstanding_withdrawal_requests;
 
             // TODO: Find highest APY for this deposit (possibly balance deposit to multiple collators)
             let some_output: Vec<(T::AccountId, BalanceOf<T>)> = vec![(
@@ -880,12 +864,7 @@ pub mod pallet {
         /// **It is meant to be executed in the course of a drawing**
         fn do_process_matured_withdrawals() -> DispatchResult {
             let now = <frame_system::Pallet<T>>::block_number();
-            let funds_available_to_withdraw =
-                pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
-                    &Self::account_id(),
-                )
-                .saturating_sub(Self::total_unclaimed_winnings())
-                .saturating_sub(Self::gas_reserve());
+            let funds_available_to_withdraw = Self::lottery_surplus();
 
             // Pay down the list from top (oldest) to bottom until we've paid out everyone or run out of available funds
             <WithdrawalRequestQueue<T>>::try_mutate(|request_vec| {
@@ -917,6 +896,17 @@ pub mod pallet {
                 }
             });
             Ok(())
+        }
+
+        pub fn lottery_surplus() -> BalanceOf<T> {
+            let non_staked_funds =
+                pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
+                    &Self::account_id(),
+                );
+            non_staked_funds
+                .saturating_sub(Self::sum_of_deposits())
+                .saturating_sub(Self::total_unclaimed_winnings())
+                .saturating_sub(Self::gas_reserve())
         }
 
         pub(super) fn not_in_drawing_freezeout() -> bool {
