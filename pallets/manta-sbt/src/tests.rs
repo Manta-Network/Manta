@@ -18,7 +18,7 @@
 
 use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, Origin as MockOrigin, Test},
-    Error, ReservedIds,
+    DispatchError, Error, ReservedIds, WhitelistAccount,
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
@@ -360,4 +360,31 @@ fn sbt_counter_increments() {
         let next_value = MantaSBTPallet::next_sbt_id_and_increment().unwrap();
         assert_eq!(next_value, 2);
     });
+}
+
+#[test]
+fn change_whitelist_account_works() {
+    new_test_ext().execute_with(|| {
+        assert_noop!(
+            MantaSBTPallet::change_whitelist_account(MockOrigin::signed(ALICE), Some(ALICE)),
+            DispatchError::BadOrigin
+        );
+        assert_eq!(WhitelistAccount::<Test>::get(), None);
+
+        assert_ok!(MantaSBTPallet::change_whitelist_account(
+            MockOrigin::root(),
+            Some(ALICE)
+        ));
+        assert_eq!(WhitelistAccount::<Test>::get().unwrap(), ALICE);
+        assert_ok!(MantaSBTPallet::change_whitelist_account(
+            MockOrigin::root(),
+            None
+        ));
+        assert_eq!(WhitelistAccount::<Test>::get(), None);
+    })
+}
+
+#[test]
+fn whitelist_account_works() {
+    new_test_ext().execute_with(|| {})
 }

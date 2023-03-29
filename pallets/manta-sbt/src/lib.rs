@@ -43,11 +43,10 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use manta_support::manta_pay::{
     asset_value_encode, fp_decode, fp_encode, id_from_field, AccountId, AssetValue, Checkpoint,
-    FullIncomingNote, MTParametersError, PullResponse, ReceiverChunk, StandardAssetId,
+    FullIncomingNote, MTParametersError, Proof, PullResponse, ReceiverChunk, StandardAssetId,
     TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError, UtxoMerkleTreePath,
     VerifyingContextError, Wrap, WrapPair,
 };
-use scale_codec::Encode as ScaleEncode;
 use sha3::{Digest, Keccak256};
 use sp_core::{H160, H256, U256};
 use sp_io::{crypto::secp256k1_ecdsa_recover, hashing::keccak_256};
@@ -108,6 +107,22 @@ type EvmAddress = H160;
 
 /// A signature (a 512-bit value, plus 8 bits for recovery ID).
 pub type Eip712Signature = [u8; 65];
+
+/// Enum with each possible type of whitelisted Eth Address
+#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub enum EvmAddressType {
+    /// BAB holder
+    Bab(EvmAddress),
+    /// Galxe holder
+    Galxe(EvmAddress),
+}
+
+/// Status of
+#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub enum MintStatus {
+    Available(StandardAssetId),
+    AlreadyMinted,
+}
 
 /// MantaSBT Pallet
 #[frame_support::pallet]
@@ -171,7 +186,7 @@ pub mod pallet {
     /// Whitelist for Evm Accounts
     #[pallet::storage]
     pub(super) type EvmAddressWhitelist<T: Config> =
-        StorageMap<_, Blake2_128Concat, EvmAddress, StandardAssetId, OptionQuery>;
+        StorageMap<_, Blake2_128Concat, EvmAddressType, MintStatus, OptionQuery>;
 
     /// SBT Metadata maps `StandardAsset` to the correstonding SBT metadata
     ///
@@ -300,7 +315,7 @@ pub mod pallet {
         #[transactional]
         pub fn whitelist_evm_account(
             origin: OriginFor<T>,
-            evm_address: EvmAddress,
+            evm_address: EvmAddressType,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
@@ -309,7 +324,8 @@ pub mod pallet {
             ensure!(who == whitelist_account, Error::<T>::NotWhitelistAccount);
 
             let asset_id = Self::next_sbt_id_and_increment()?;
-            EvmAddressWhitelist::<T>::insert(evm_address, asset_id);
+            let mint_status = MintStatus::Available(asset_id);
+            EvmAddressWhitelist::<T>::insert(evm_address, mint_status);
 
             Self::deposit_event(Event::<T>::WhitelistEvmAddress {
                 address: evm_address,
@@ -325,19 +341,37 @@ pub mod pallet {
             origin: OriginFor<T>,
             post: Box<TransferPost>,
             eth_signature: Eip712Signature,
+            address_type: EvmAddressType,
             metadata: BoundedVec<u8, T::SbtMetadataBound>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            let address = Self::verify_eip712_signature(&who, &eth_signature)
+            let address = Self::verify_eip712_signature(&post.proof, &eth_signature)
                 .ok_or(Error::<T>::BadSignature)?;
-            let asset_id =
-                EvmAddressWhitelist::<T>::take(address).ok_or(Error::<T>::NotWhitelisted)?;
+            // Check signature
+            match address_type {
+                EvmAddressType::Bab(eth_address) | EvmAddressType::Galxe(eth_address) => {
+                    ensure!(eth_address == address, Error::<T>::BadSignature);
+                }
+            }
+
+            let mint_status =
+                EvmAddressWhitelist::<T>::get(address_type).ok_or(Error::<T>::NotWhitelisted)?;
+            let asset_id = match mint_status {
+                MintStatus::Available(asset) => asset,
+                MintStatus::AlreadyMinted => return Err(Error::<T>::NotWhitelisted.into()),
+            };
+            // Change status to minted
+            EvmAddressWhitelist::<T>::insert(address_type, MintStatus::AlreadyMinted);
+
             Self::check_post_shape(&post, asset_id)?;
             SbtMetadata::<T>::insert(asset_id, metadata);
 
             Self::post_transaction(vec![who], *post)?;
-            Self::deposit_event(Event::<T>::MintSbtEvm { asset_id, address });
+            Self::deposit_event(Event::<T>::MintSbtEvm {
+                asset_id,
+                address: address_type,
+            });
             Ok(().into())
         }
 
@@ -376,18 +410,21 @@ pub mod pallet {
             /// End of `AssetIds` reserved for use private ledger, does not include this value
             stop_id: StandardAssetId,
         },
+        /// Evm Address is Whitelisted
         WhitelistEvmAddress {
             /// Eth Address that is now whitelisted to mint an SBT
-            address: EvmAddress,
+            address: EvmAddressType,
             /// AssetId that is reserved for above Eth address
             asset_id: StandardAssetId,
         },
+        /// Sbt is minted using Whitelisted Eth account
         MintSbtEvm {
             /// Eth Address that is used to mint sbt
-            address: EvmAddress,
+            address: EvmAddressType,
             /// AssetId of minted SBT
             asset_id: StandardAssetId,
         },
+        /// Privileged `WhitelistAccount` is changed
         ChangeWhitelistAccount {
             /// Account that is now the new privileged whitelist account
             account: Option<T::AccountId>,
@@ -698,6 +735,7 @@ where
         })
     }
 
+    /// Checks that post is `ToPrivate` with a value of one
     #[inline]
     fn check_post_shape(post: &TransferPost, asset_id: StandardAssetId) -> DispatchResult {
         // Checks that it is indeed a to_private post with a value of 1
@@ -724,9 +762,10 @@ where
         Ok(())
     }
 
+    /// Checks that signature was generated using the `TransferPost` proof field as payload
     #[inline]
-    fn verify_eip712_signature(who: &T::AccountId, sig: &[u8; 65]) -> Option<EvmAddress> {
-        let msg = Self::eip712_signable_message(who);
+    fn verify_eip712_signature(proof: &Proof, sig: &[u8; 65]) -> Option<EvmAddress> {
+        let msg = Self::eip712_signable_message(proof);
         let msg_hash = keccak_256(msg.as_slice());
 
         recover_signer(sig, &msg_hash)
@@ -734,9 +773,9 @@ where
 
     // Eip-712 message to be signed
     #[inline]
-    fn eip712_signable_message(who: &T::AccountId) -> Vec<u8> {
+    fn eip712_signable_message(proof: &Proof) -> Vec<u8> {
         let domain_separator = Self::evm_account_domain_separator();
-        let payload_hash = Self::evm_account_payload_hash(who);
+        let payload_hash = Self::evm_account_payload_hash(proof);
 
         let mut msg = b"\x19\x01".to_vec();
         msg.extend_from_slice(&domain_separator);
@@ -745,10 +784,10 @@ where
     }
 
     #[inline]
-    fn evm_account_payload_hash(who: &T::AccountId) -> [u8; 32] {
-        let tx_type_hash = &sha3_256("Transaction(bytes substrateAddress)");
+    fn evm_account_payload_hash(proof: &Proof) -> [u8; 32] {
+        let tx_type_hash = &sha3_256("Transaction(bytes proof)");
         let mut tx_msg = tx_type_hash.to_vec();
-        tx_msg.extend_from_slice(&keccak_256(&who.encode()));
+        tx_msg.extend_from_slice(&keccak_256(proof.as_slice()));
         keccak_256(tx_msg.as_slice())
     }
 
