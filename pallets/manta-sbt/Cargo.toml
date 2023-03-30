@@ -32,6 +32,7 @@ std = [
   "frame-benchmarking/std",
   "frame-support/std",
   "frame-system/std",
+  "pallet-timestamp/std",
   "scale-codec/std",
   "scale-info/std",
   "sp-runtime/std",
@@ -87,21 +88,22 @@ anyhow = { version = "1.0.55", optional = true, default-features = false }
 base64 = { version = "0.20", default-features = false, features = ["alloc"] }
 indoc = { version = "1.0.3", optional = true, default-features = false }
 rand_chacha = { version = "0.3.1", optional = true, default-features = false }
-tempfile = { version = "3.3.0", optional = true, default-features = false }
 sha3 = { version = "0.10.6", default-features = false }
+tempfile = { version = "3.3.0", optional = true, default-features = false }
 
 # substrate dependencies
 frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", default-features = false, optional = true }
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", default-features = false }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", default-features = false }
 scale-codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 sp-api = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", optional = true, default-features = false }
 sp-blockchain = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", optional = true, default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", default-features = false }
-sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", default-features = false }
 sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", default-features = false }
 sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", default-features = false }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", default-features = false }
 
 # JSON-RPC
 jsonrpsee = { version = "0.15.0", features = ["server", "macros"], optional = true }

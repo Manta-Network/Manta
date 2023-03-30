@@ -117,6 +117,22 @@ pub enum EvmAddressType {
     Galxe(EvmAddress),
 }
 
+/// Different mint types
+#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub enum MintType {
+    Bab,
+    Galxe,
+}
+
+impl From<EvmAddressType> for MintType {
+    fn from(address_type: EvmAddressType) -> Self {
+        match address_type {
+            EvmAddressType::Bab(_) => MintType::Bab,
+            EvmAddressType::Galxe(_) => MintType::Galxe,
+        }
+    }
+}
+
 /// Status of
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub enum MintStatus {
@@ -139,7 +155,7 @@ pub mod pallet {
 
     /// The module configuration trait.
     #[pallet::config]
-    pub trait Config: frame_system::Config {
+    pub trait Config: frame_system::Config + pallet_timestamp::Config {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
@@ -149,8 +165,8 @@ pub mod pallet {
         /// The currency mechanism.
         type Currency: ReservableCurrency<Self::AccountId>;
 
-        /// The origin which can change the privileged whitelist account
-        type WhitelistOrigin: EnsureOrigin<Self::Origin>;
+        /// The origin which can change the privileged whitelist account and set time range for mints
+        type AdminOrigin: EnsureOrigin<Self::Origin>;
 
         /// Pallet ID
         #[pallet::constant]
@@ -168,7 +184,7 @@ pub mod pallet {
         #[pallet::constant]
         type SbtMetadataBound: Get<u32>;
 
-        /// ChainId for eth based signature
+        /// ChainId for `Eip712Signature`
         #[pallet::constant]
         type ChainId: Get<u64>;
     }
@@ -187,6 +203,11 @@ pub mod pallet {
     #[pallet::storage]
     pub(super) type EvmAddressWhitelist<T: Config> =
         StorageMap<_, Blake2_128Concat, EvmAddressType, MintStatus, OptionQuery>;
+
+    /// Range of time at which evm mints are possible.
+    #[pallet::storage]
+    pub(super) type MintTimeRange<T: Config> =
+        StorageMap<_, Blake2_128Concat, MintType, (T::Moment, Option<T::Moment>), OptionQuery>;
 
     /// SBT Metadata maps `StandardAsset` to the correstonding SBT metadata
     ///
@@ -346,6 +367,9 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
+            // check that mint type is within time window
+            Self::check_mint_time(address_type.into())?;
+
             let address = Self::verify_eip712_signature(&post.proof, &eth_signature)
                 .ok_or(Error::<T>::BadSignature)?;
             // Check signature
@@ -382,10 +406,30 @@ pub mod pallet {
             origin: OriginFor<T>,
             account: Option<T::AccountId>,
         ) -> DispatchResult {
-            T::WhitelistOrigin::ensure_origin(origin)?;
+            T::AdminOrigin::ensure_origin(origin)?;
 
             WhitelistAccount::<T>::set(account.clone());
             Self::deposit_event(Event::<T>::ChangeWhitelistAccount { account });
+            Ok(())
+        }
+
+        #[pallet::call_index(5)]
+        #[pallet::weight(0)]
+        #[transactional]
+        pub fn set_mint_time(
+            origin: OriginFor<T>,
+            mint_type: MintType,
+            start_time: T::Moment,
+            end_time: Option<T::Moment>,
+        ) -> DispatchResult {
+            T::AdminOrigin::ensure_origin(origin)?;
+
+            MintTimeRange::<T>::insert(mint_type, (start_time, end_time));
+            Self::deposit_event(Event::<T>::SetTimeRange {
+                mint_type,
+                start_time,
+                end_time,
+            });
             Ok(())
         }
     }
@@ -428,6 +472,14 @@ pub mod pallet {
         ChangeWhitelistAccount {
             /// Account that is now the new privileged whitelist account
             account: Option<T::AccountId>,
+        },
+        SetTimeRange {
+            /// The whitelist that time range is set for (ex: BAB)
+            mint_type: MintType,
+            /// Start time at which minting is valid
+            start_time: T::Moment,
+            /// End time at which minting will no longer be valid, None represents no end time.
+            end_time: Option<T::Moment>,
         },
     }
 
@@ -593,6 +645,9 @@ pub mod pallet {
 
         /// Account is not the privileged account able to whitelist eth addresses
         NotWhitelistAccount,
+
+        /// Minting SBT is outside defined time range
+        MintNotAvailable,
     }
 }
 
@@ -758,7 +813,6 @@ where
             .ok_or(Error::<T>::InvalidAssetId)?;
         // Ensure asset id is correct, only a single unique asset_id mapped to account is valid
         ensure!(asset_id == post_id, Error::<T>::InvalidAssetId);
-
         Ok(())
     }
 
@@ -803,6 +857,27 @@ where
             frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero()).as_ref(),
         ); // genesis block hash
         keccak_256(domain_seperator_msg.as_slice())
+    }
+
+    /// Checks that mint type is available to mint within time window defined in `MintTimeRange`
+    #[inline]
+    fn check_mint_time(mint_type: MintType) -> DispatchResult {
+        let current_time = pallet_timestamp::Pallet::<T>::now();
+        let (start_time, end_time) =
+            MintTimeRange::<T>::get(mint_type).ok_or(Error::<T>::MintNotAvailable)?;
+
+        // checks that current time falls within bounds
+        if start_time > current_time {
+            return Err(Error::<T>::MintNotAvailable.into());
+        } else {
+            // Checks if end time is Some and then compares it to current time. A value of None corresponds to no ending time
+            if let Some(time) = end_time {
+                if time < current_time {
+                    return Err(Error::<T>::MintNotAvailable.into());
+                }
+            }
+        }
+        Ok(())
     }
 }
 

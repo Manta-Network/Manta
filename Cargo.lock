@@ -6621,6 +6621,7 @@ dependencies = [
  "pallet-balances",
  "pallet-manta-pay",
  "pallet-manta-support",
+ "pallet-timestamp",
  "pallet-tx-pause",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
