@@ -473,7 +473,7 @@ pub mod pallet {
         /// * TODO: Amount of tokens to be rebalanced would be too low.
         #[pallet::weight(0)]
         pub fn rebalance_stake(origin: OriginFor<T>) -> DispatchResult {
-            //TODO T::ManageOrigin::ensure_origin(origin)?;
+            T::ManageOrigin::ensure_origin(origin)?;
 
             // withdraw from overallocated collators, wait until funds unlock, re-allocate to underallocated collators
             // TODO: find some balancing algorithm that does this
@@ -503,7 +503,7 @@ pub mod pallet {
         /// You can always learn what block the next drawing - if any - will happen by calling [`Self::next_drawing_at`]
         #[pallet::weight(0)]
         pub fn start_lottery(origin: OriginFor<T>) -> DispatchResult {
-            //TODO T::ManageOrigin::ensure_origin(origin.clone())?;
+            T::ManageOrigin::ensure_origin(origin.clone())?;
 
             let now = <frame_system::Pallet<T>>::block_number();
             ensure!(
@@ -551,7 +551,7 @@ pub mod pallet {
         ///
         #[pallet::weight(0)]
         pub fn stop_lottery(origin: OriginFor<T>) -> DispatchResult {
-            //TODO T::ManageOrigin::ensure_origin(origin.clone())?;
+            T::ManageOrigin::ensure_origin(origin.clone())?;
 
             T::Scheduler::cancel_named(T::LotteryPot::get().0.to_vec())
                 .map_err(|_| Error::<T>::LotteryNotStarted)?;
@@ -578,7 +578,7 @@ pub mod pallet {
         /// * NoWinnerFound: Nobody was selected as winner
         #[pallet::weight(0)]
         pub fn draw_lottery(origin: OriginFor<T>) -> DispatchResult {
-            //TODO T::ManageOrigin::ensure_origin(origin.clone())?;
+            T::ManageOrigin::ensure_origin(origin.clone())?;
 
             let total_funds_in_pallet =
                 <T as pallet_parachain_staking::Config>::Currency::total_balance(
@@ -666,7 +666,7 @@ pub mod pallet {
         /// * errors defined by the do_process_matured_withdrawals function.
         #[pallet::weight(0)]
         pub fn process_matured_withdrawals(origin: OriginFor<T>) -> DispatchResult {
-            //TODO T::ManageOrigin::ensure_origin(origin.clone())?;
+            T::ManageOrigin::ensure_origin(origin.clone())?;
             Self::finish_unstaking_collators();
             Self::do_process_matured_withdrawals()?;
             Ok(())
@@ -685,7 +685,7 @@ pub mod pallet {
         /// * Fails if a lottery has not been stopped and a drawing is ongoing
         #[pallet::weight(0)]
         pub fn liquidate_lottery(origin: OriginFor<T>) -> DispatchResult {
-            //TODO T::ManageOrigin::ensure_origin(origin.clone())?;
+            T::ManageOrigin::ensure_origin(origin.clone())?;
 
             ensure!(
                 Self::next_drawing_at().is_none(),
