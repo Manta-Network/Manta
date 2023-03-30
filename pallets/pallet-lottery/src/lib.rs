@@ -530,7 +530,7 @@ pub mod pallet {
             );
             let lottery_drawing_call: CallOf<T> = Call::draw_lottery {}.into();
             T::Scheduler::schedule_named(
-                T::LotteryPot::get().0.to_vec(),
+                Self::lottery_schedule_id(),
                 DispatchTime::After(drawing_interval),
                 Some((drawing_interval, 99999u32)), // XXX: Seems scheduler has no way to schedule infinite amount
                 LOWEST_PRIORITY, // TODO: Maybe schedule only one and schedule the next drawing in `draw_lottery`
@@ -558,7 +558,7 @@ pub mod pallet {
         pub fn stop_lottery(origin: OriginFor<T>) -> DispatchResult {
             T::ManageOrigin::ensure_origin(origin.clone())?;
 
-            T::Scheduler::cancel_named(T::LotteryPot::get().0.to_vec())
+            T::Scheduler::cancel_named(Self::lottery_schedule_id())
                 .map_err(|_| Error::<T>::LotteryNotStarted)?;
 
             let now = <frame_system::Pallet<T>>::block_number();
@@ -713,6 +713,10 @@ pub mod pallet {
         /// Get a unique, inaccessible account id from the `PotId`.
         fn account_id() -> T::AccountId {
             T::LotteryPot::get().into_account_truncating()
+        }
+        /// Get an identifier for scheduling drawings from the `PotId`.
+        fn lottery_schedule_id() -> Vec<u8> {
+            T::LotteryPot::get().0.to_vec()
         }
 
         fn do_stake(collator: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
@@ -900,7 +904,7 @@ pub mod pallet {
         // public getters for lottery state
         /// Returns the block the next drawing will execute, if any
         pub fn next_drawing_at() -> Option<T::BlockNumber> {
-            T::Scheduler::next_dispatch_time(T::LotteryPot::get().0.to_vec()).ok()
+            T::Scheduler::next_dispatch_time(Self::lottery_schedule_id()).ok()
         }
         /// funds in the lottery that are not staked or assigned to previous winners ( can be used to pay TX fees )
         pub fn lottery_funds_surplus() -> BalanceOf<T> {
