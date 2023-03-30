@@ -584,7 +584,9 @@ pub mod pallet {
                 <T as pallet_parachain_staking::Config>::Currency::total_balance(
                     &Self::account_id(),
                 );
+            log::info!("DRAWING: funds_in_pallet {:?}", total_funds_in_pallet);
             let winning_claim = Self::lottery_funds_surplus_idle();
+            log::info!("DRAWING: winning_claim {:?}", winning_claim);
             ensure!(winning_claim > 0u32.into(), Error::<T>::PotBalanceTooLow);
             ensure!(
                 // Prevent granting funds to a user that would have to be paid from deposit money (we're a casino, not a bank)
@@ -616,12 +618,20 @@ pub mod pallet {
             let winning_balance: BalanceOf<T> = BalanceOf::<T>::try_from(winning_number)
                 .map_err(|_| ArithmeticError::Overflow)?
                 % Self::total_pot().into();
+            log::warn!("hash {:?}", random_hash);
+            log::warn!("asnumber {:?}", as_number);
+            log::warn!("winningnumber {:?}", winning_number);
+            log::warn!("winningbalance {:?}", winning_balance);
+            log::warn!("totalPot {:?}", TotalPot::<T>::get());
 
             let mut winner: Option<T::AccountId> = None;
             let mut count: BalanceOf<T> = 0u32.into();
             for (account, balance) in ActiveBalancePerUser::<T>::iter() {
                 count += balance;
+                log::info!("count {:?}", count);
                 if count >= winning_balance {
+                    log::info!("wincount {:?}", count);
+                    log::info!("  winbal {:?}", winning_balance);
                     winner = Some(account);
                     break;
                 }
@@ -860,6 +870,10 @@ pub mod pallet {
 
             // Pay down the list from top (oldest) to bottom until we've paid out everyone or run out of available funds
             <WithdrawalRequestQueue<T>>::try_mutate(|request_vec| {
+                log::info!(
+                    "WITHDRAW: Pending withdraw requests {:?}",
+                    request_vec.len()
+                );
                 ensure!((*request_vec).is_empty(), "nothing to withdraw");
                 let mut left_overs: Vec<Request<_, _, _>> = Vec::new();
                 for request in request_vec.iter() {
@@ -869,6 +883,11 @@ pub mod pallet {
                     }
                     // we know we can pay this out, do it
                     <SumOfDeposits<T>>::mutate(|sum| (*sum).saturating_sub(request.balance));
+                    log::info!(
+                        "WITHDRAW: Transferring {:?} tokens to {:?}",
+                        request.balance,
+                        request.user
+                    );
                     <T as pallet_parachain_staking::Config>::Currency::transfer(
                         &Self::account_id(),
                         &request.user,
@@ -882,6 +901,10 @@ pub mod pallet {
                     for c in left_overs {
                         request_vec.push(c);
                     }
+                    log::info!(
+                        "WITHDRAW: Remaining unpaid withdraw requests {:?}",
+                        request_vec.len()
+                    );
                     Ok(())
                 } else {
                     Err("no changes")
