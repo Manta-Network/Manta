@@ -53,21 +53,32 @@ pub fn manta_properties() -> Properties {
 /// Returns the Manta development chainspec.
 pub fn manta_development_config() -> MantaChainSpec {
     MantaChainSpec::from_genesis(
-        "Manta Parachain Development",
-        "manta_dev",
-        ChainType::Local,
+        "Manta Parachain Live",
+        "manta_live",
+        ChainType::Live,
         move || {
             manta_dev_genesis(
-                vec![(
-                    unchecked_account_id::<sr25519::Public>("Alice"),
-                    SessionKeys::from_seed_unchecked("Alice"),
-                )],
+                vec![
+                    (
+                        unchecked_account_id::<sr25519::Public>("Alice"),
+                        SessionKeys::from_seed_unchecked("Alice"),
+                    ),
+                    (
+                        unchecked_account_id::<sr25519::Public>("Bob"),
+                        SessionKeys::from_seed_unchecked("Bob"),
+                    ),
+                    (
+                        unchecked_account_id::<sr25519::Public>("Charlie"),
+                        SessionKeys::from_seed_unchecked("Charlie"),
+                    ),
+                ],
                 unchecked_account_id::<sr25519::Public>("Alice"),
                 // Delegations
                 vec![],
                 vec![
                     unchecked_account_id::<sr25519::Public>("Alice"),
                     unchecked_account_id::<sr25519::Public>("Bob"),
+                    unchecked_account_id::<sr25519::Public>("Charlie"),
                     unchecked_account_id::<sr25519::Public>("Alice//stash"),
                     unchecked_account_id::<sr25519::Public>("Bob//stash"),
                 ],
@@ -79,7 +90,7 @@ pub fn manta_development_config() -> MantaChainSpec {
         None,
         Some(manta_properties()),
         Extensions {
-            relay_chain: POLKADOT_RELAYCHAIN_DEV_NET.into(),
+            relay_chain: "".into(),
             para_id: MANTA_PARACHAIN_ID,
         },
     )
