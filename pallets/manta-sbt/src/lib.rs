@@ -879,6 +879,30 @@ where
         }
         Ok(())
     }
+
+    /// Returns an Etherum public key derived from an Ethereum secret key.
+    #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
+    pub fn eth_public(secret: &libsecp256k1::SecretKey) -> libsecp256k1::PublicKey {
+        libsecp256k1::PublicKey::from_secret_key(secret)
+    }
+
+    /// Returns an Etherum address derived from an Ethereum secret key.
+    /// Only for tests
+    #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
+    pub fn eth_address(secret: &libsecp256k1::SecretKey) -> EvmAddress {
+        EvmAddress::from_slice(&keccak_256(&Self::eth_public(secret).serialize()[1..65])[12..])
+    }
+
+    /// Constructs a message and signs it.
+    #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
+    pub fn eth_sign(secret: &libsecp256k1::SecretKey, proof: &Proof) -> Eip712Signature {
+        let msg = keccak_256(&Self::eip712_signable_message(proof));
+        let (sig, recovery_id) = libsecp256k1::sign(&libsecp256k1::Message::parse(&msg), secret);
+        let mut r = [0u8; 65];
+        r[0..64].copy_from_slice(&sig.serialize()[..]);
+        r[64] = recovery_id.serialize();
+        r
+    }
 }
 
 #[inline]
