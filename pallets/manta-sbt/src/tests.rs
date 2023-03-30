@@ -18,8 +18,8 @@
 
 use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, Origin as MockOrigin, Test, Timestamp},
-    DispatchError, Error, EvmAddress, EvmAddressType, EvmAddressWhitelist, MintStatus, MintType,
-    ReservedIds, WhitelistAccount,
+    DispatchError, Error, EvmAddress, EvmAddressType, EvmAddressWhitelist, MintStatus,
+    MintTimeRange, MintType, ReservedIds, SbtMetadata, WhitelistAccount,
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
@@ -55,6 +55,11 @@ pub const BOB: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([1u8; 32])
 /// Alice eth account
 pub fn alice_eth() -> libsecp256k1::SecretKey {
     libsecp256k1::SecretKey::parse(&keccak_256(b"Alice")).unwrap()
+}
+
+/// Bob eth account
+pub fn bob_eth() -> libsecp256k1::SecretKey {
+    libsecp256k1::SecretKey::parse(&keccak_256(b"Bob")).unwrap()
 }
 
 /// Turns vec! into BoundedVec
@@ -119,6 +124,7 @@ fn to_private_should_work() {
             Box::new(post),
             bvec![0]
         ));
+        assert_eq!(SbtMetadata::<Test>::get(1).unwrap(), vec![0]);
     });
 }
 
@@ -443,10 +449,6 @@ fn mint_sbt_eth_works() {
             Some(ALICE)
         ));
         let evm_mint_type = EvmAddressType::Bab(MantaSBTPallet::eth_address(&alice_eth()));
-        assert_ok!(MantaSBTPallet::whitelist_evm_account(
-            MockOrigin::signed(ALICE),
-            evm_mint_type
-        ));
         Timestamp::set_timestamp(10);
         assert_ok!(MantaSBTPallet::set_mint_time(
             MockOrigin::root(),
@@ -456,12 +458,48 @@ fn mint_sbt_eth_works() {
         ));
 
         let value = 1;
-        let storage_id = match EvmAddressWhitelist::<Test>::get(evm_mint_type).unwrap() {
-            MintStatus::Available(asset_id) => asset_id,
-            MintStatus::AlreadyMinted => panic!("should not be minted"),
-        };
+        let storage_id = 1;
         let id = field_from_id(storage_id);
         let post = Box::new(sample_to_private(id, value, &mut rng));
+
+        // Account has not been whitelisted
+        assert_noop!(
+            MantaSBTPallet::mint_sbt_eth(
+                MockOrigin::signed(ALICE),
+                post.clone(),
+                MantaSBTPallet::eth_sign(&alice_eth(), &post.proof),
+                evm_mint_type,
+                bvec![0]
+            ),
+            Error::<Test>::NotWhitelisted
+        );
+        // whitelist account
+        assert_ok!(MantaSBTPallet::whitelist_evm_account(
+            MockOrigin::signed(ALICE),
+            evm_mint_type
+        ));
+
+        // wrong signature fails
+        assert_noop!(
+            MantaSBTPallet::mint_sbt_eth(
+                MockOrigin::signed(ALICE),
+                post.clone(),
+                MantaSBTPallet::eth_sign(&alice_eth(), &[0; 128]),
+                evm_mint_type,
+                bvec![0]
+            ),
+            Error::<Test>::BadSignature
+        );
+        assert_noop!(
+            MantaSBTPallet::mint_sbt_eth(
+                MockOrigin::signed(ALICE),
+                post.clone(),
+                MantaSBTPallet::eth_sign(&bob_eth(), &[0; 128]),
+                evm_mint_type,
+                bvec![0]
+            ),
+            Error::<Test>::BadSignature
+        );
 
         assert_ok!(MantaSBTPallet::mint_sbt_eth(
             MockOrigin::signed(ALICE),
@@ -470,6 +508,7 @@ fn mint_sbt_eth_works() {
             evm_mint_type,
             bvec![0]
         ));
+        assert_eq!(SbtMetadata::<Test>::get(1).unwrap(), vec![0]);
 
         // Account is already minted
         assert_eq!(
@@ -557,5 +596,25 @@ fn timestamp_range_fails() {
             evm_mint_type,
             bvec![0]
         ));
+    })
+}
+
+#[test]
+fn set_mint_time_works() {
+    new_test_ext().execute_with(|| {
+        assert_noop!(
+            MantaSBTPallet::set_mint_time(MockOrigin::signed(ALICE), MintType::Bab, 0, None),
+            DispatchError::BadOrigin
+        );
+        assert_ok!(MantaSBTPallet::set_mint_time(
+            MockOrigin::root(),
+            MintType::Bab,
+            0,
+            None
+        ));
+        assert_eq!(
+            MintTimeRange::<Test>::get(MintType::Bab).unwrap(),
+            (0, None)
+        );
     })
 }
