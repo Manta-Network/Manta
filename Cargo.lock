@@ -6601,7 +6601,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-sbt"
-version = "4.0.2"
+version = "4.0.4"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -6638,7 +6638,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-support"
-version = "4.0.2"
+version = "4.0.4"
 dependencies = [
  "anyhow",
  "base64 0.20.0",

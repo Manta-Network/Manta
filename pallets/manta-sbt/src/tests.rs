@@ -18,7 +18,8 @@
 
 use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, Origin as MockOrigin, Test},
-    DispatchError, Error, ReservedIds, WhitelistAccount,
+    DispatchError, Error, EvmAddress, EvmAddressType, EvmAddressWhitelist, MintStatus, ReservedIds,
+    WhitelistAccount,
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
@@ -48,6 +49,7 @@ lazy_static::lazy_static! {
 }
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
+pub const BOB: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([1u8; 32]);
 
 /// Turns vec! into BoundedVec
 macro_rules! bvec {
@@ -386,5 +388,48 @@ fn change_whitelist_account_works() {
 
 #[test]
 fn whitelist_account_works() {
-    new_test_ext().execute_with(|| {})
+    new_test_ext().execute_with(|| {
+        assert_noop!(
+            MantaSBTPallet::whitelist_evm_account(
+                MockOrigin::signed(ALICE),
+                EvmAddressType::Bab(EvmAddress::default())
+            ),
+            Error::<Test>::NotWhitelistAccount,
+        );
+        assert_eq!(
+            EvmAddressWhitelist::<Test>::get(EvmAddressType::Bab(EvmAddress::default())),
+            None
+        );
+
+        assert_ok!(MantaSBTPallet::change_whitelist_account(
+            MockOrigin::root(),
+            Some(ALICE)
+        ));
+        assert_ok!(MantaSBTPallet::whitelist_evm_account(
+            MockOrigin::signed(ALICE),
+            EvmAddressType::Bab(EvmAddress::default())
+        ));
+        assert_eq!(
+            EvmAddressWhitelist::<Test>::get(EvmAddressType::Bab(EvmAddress::default())).unwrap(),
+            MintStatus::Available(1)
+        );
+
+        assert_noop!(
+            MantaSBTPallet::whitelist_evm_account(
+                MockOrigin::signed(BOB),
+                EvmAddressType::Bab(EvmAddress::default())
+            ),
+            Error::<Test>::NotWhitelistAccount,
+        );
+    })
+}
+
+#[test]
+fn mint_sbt_eth_works() {
+    new_test_ext().execute_with(|| {
+        assert_ok!(MantaSBTPallet::change_whitelist_account(
+            MockOrigin::root(),
+            Some(ALICE)
+        ));
+    })
 }
