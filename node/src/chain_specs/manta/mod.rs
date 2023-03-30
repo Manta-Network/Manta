@@ -18,11 +18,13 @@
 
 use super::*;
 use crate::command::MANTA_PARACHAIN_ID;
+use hex_literal::hex;
 use manta_runtime::{
     opaque::SessionKeys, staking::NORMAL_COLLATOR_MINIMUM_STAKE, GenesisConfig,
     ParachainStakingConfig, PolkadotXcmConfig,
 };
 use session_key_primitives::util::unchecked_account_id;
+
 /// Manta Protocol Identifier
 pub const MANTA_PROTOCOL_ID: &str = "manta";
 
@@ -72,7 +74,7 @@ pub fn manta_development_config() -> MantaChainSpec {
                         SessionKeys::from_seed_unchecked("Charlie"),
                     ),
                 ],
-                unchecked_account_id::<sr25519::Public>("Alice"),
+                hex!["bc153ffd4c96de7496df009c6f4ecde6f95bf67b60e0c1025a7552d0b6926e04"].into(),
                 // Delegations
                 vec![],
                 vec![
