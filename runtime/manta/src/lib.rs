@@ -550,6 +550,7 @@ construct_runtime!(
         // Assets management
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
+        MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
         MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
     }
 );
@@ -613,6 +614,8 @@ mod benches {
         [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
         [pallet_session, SessionBench::<Runtime>]
         // Manta pallets
+        [pallet_manta_pay, MantaPay]
+        [pallet_manta_sbt, MantaSbt]
         [manta_collator_selection, CollatorSelection]
         [pallet_parachain_staking, ParachainStaking]
         // Nimbus pallets
@@ -743,6 +746,16 @@ impl_runtime_apis! {
     impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
         fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
             ParachainSystem::collect_collation_info(header)
+        }
+    }
+
+    impl pallet_manta_pay::runtime::PullLedgerDiffApi<Block> for Runtime {
+        fn pull_ledger_diff(
+            checkpoint: RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> PullResponse {
+            MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
     }
 
