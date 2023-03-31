@@ -74,7 +74,7 @@ pub fn manta_development_config() -> MantaChainSpec {
                         SessionKeys::from_seed_unchecked("Charlie"),
                     ),
                 ],
-                hex!["bc153ffd4c96de7496df009c6f4ecde6f95bf67b60e0c1025a7552d0b6926e04"].into(),
+                unchecked_account_id::<sr25519::Public>("Alice"),
                 // Delegations
                 vec![],
                 vec![
