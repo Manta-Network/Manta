@@ -205,6 +205,7 @@ impl Contains<Call> for MantaFilter {
             | Call::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
             | Call::Balances(_)
             | Call::MantaSbt(_)
+            | Call::MantaPay(_)
             | Call::XTokens(orml_xtokens::Call::transfer {..})
             | Call::Preimage(_)
             | Call::Utility(_) => true,
