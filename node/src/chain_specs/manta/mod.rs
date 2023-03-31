@@ -170,12 +170,12 @@ fn manta_dev_genesis(
                 .to_vec(),
         },
         balances: manta_runtime::BalancesConfig {
-            balances: endowed_accounts[..endowed_accounts.len() / 2]
+            balances: endowed_accounts[..endowed_accounts.len()]
                 .iter()
                 .map(|k| {
                     (
                         k.clone(),
-                        10 * MANTA_ENDOWMENT / ((endowed_accounts.len() / 2) as Balance),
+                        10 * MANTA_ENDOWMENT / (endowed_accounts.len() as Balance),
                     )
                 })
                 .collect(),
