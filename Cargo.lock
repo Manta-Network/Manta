@@ -5184,7 +5184,7 @@ dependencies = [
 [[package]]
 name = "manta-accounting"
 version = "0.5.12"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=signer_initial_sync_checkout#91901dec1c131582d84c9ae12a9d5959567e80ac"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=fix/revert_bip_bump#f4c6fe690f23dd0749b7ae5f3c0e5cc29ff0939c"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5228,7 +5228,7 @@ dependencies = [
 [[package]]
 name = "manta-crypto"
 version = "0.5.12"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=signer_initial_sync_checkout#91901dec1c131582d84c9ae12a9d5959567e80ac"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=fix/revert_bip_bump#f4c6fe690f23dd0749b7ae5f3c0e5cc29ff0939c"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -5254,7 +5254,7 @@ dependencies = [
 [[package]]
 name = "manta-parameters"
 version = "0.5.12"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=signer_initial_sync_checkout#91901dec1c131582d84c9ae12a9d5959567e80ac"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=fix/revert_bip_bump#f4c6fe690f23dd0749b7ae5f3c0e5cc29ff0939c"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5267,7 +5267,7 @@ dependencies = [
 [[package]]
 name = "manta-pay"
 version = "0.5.12"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=signer_initial_sync_checkout#91901dec1c131582d84c9ae12a9d5959567e80ac"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=fix/revert_bip_bump#f4c6fe690f23dd0749b7ae5f3c0e5cc29ff0939c"
 dependencies = [
  "aes-gcm",
  "bip32",
@@ -5371,7 +5371,7 @@ dependencies = [
 [[package]]
 name = "manta-util"
 version = "0.5.12"
-source = "git+https://github.com/manta-network/manta-rs.git?branch=signer_initial_sync_checkout#91901dec1c131582d84c9ae12a9d5959567e80ac"
+source = "git+https://github.com/manta-network/manta-rs.git?branch=fix/revert_bip_bump#f4c6fe690f23dd0749b7ae5f3c0e5cc29ff0939c"
 dependencies = [
  "crossbeam-channel",
  "serde",
