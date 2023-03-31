@@ -241,11 +241,11 @@ pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
             )
         },
         vec![
-            "/dns/crispy.kusama-internal.testnet.calamari.systems/tcp/30333/p2p/12D3KooWHUpYD9BSiQuMQfzNb3Dw75BxZT4qxmhqgV2Sr7xPFmWW".parse().unwrap(),
-            "/dns/crunchy.kusama-internal.testnet.calamari.systems/tcp/30333/p2p/12D3KooWHmRLMqv97ekjuGnuZpHEdKttFFG3NMp9rWDqXKRDrquN".parse().unwrap(),
-            "/dns/falafel.kusama-internal.testnet.calamari.systems/tcp/30333/p2p/12D3KooWAaJ2D4stMe3Yuegw5AmxnPFN8MgwMtyVAAkcMf65taPi".parse().unwrap(),
-            "/dns/hotdog.kusama-internal.testnet.calamari.systems/tcp/30333/p2p/12D3KooWHQP3VNMaUS8z38SfiFhk3iWw2CARLGUv4WPvrPeV9ijR".parse().unwrap(),
-            "/dns/tasty.kusama-internal.testnet.calamari.systems/tcp/30333/p2p/12D3KooWDzwzNhzASBtq6jV1VHs7SHbJ7b4Dvccy75GSVJAhsfaX".parse().unwrap(),
+            "/dns/c1.calamari.seabird.systems/tcp/30333/p2p/12D3KooWHUpYD9BSiQuMQfzNb3Dw75BxZT4qxmhqgV2Sr7xPFmWW".parse().unwrap(),
+            "/dns/c2.calamari.seabird.systems/tcp/30333/p2p/12D3KooWHmRLMqv97ekjuGnuZpHEdKttFFG3NMp9rWDqXKRDrquN".parse().unwrap(),
+            "/dns/c3.calamari.seabird.systems/tcp/30333/p2p/12D3KooWAaJ2D4stMe3Yuegw5AmxnPFN8MgwMtyVAAkcMf65taPi".parse().unwrap(),
+            "/dns/c4.calamari.seabird.systems/tcp/30333/p2p/12D3KooWHQP3VNMaUS8z38SfiFhk3iWw2CARLGUv4WPvrPeV9ijR".parse().unwrap(),
+            "/dns/c5.calamari.seabird.systems/tcp/30333/p2p/12D3KooWDzwzNhzASBtq6jV1VHs7SHbJ7b4Dvccy75GSVJAhsfaX".parse().unwrap(),
         ],
         None,
         Some(CALAMARI_PROTOCOL_ID),
