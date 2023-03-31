@@ -20,17 +20,14 @@ use anyhow::Result;
 use indoc::indoc;
 use manta_crypto::{
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
-    rand::{CryptoRng, Rand, RngCore, SeedableRng},
+    rand::{CryptoRng, RngCore, SeedableRng},
 };
 use manta_pay::{
-    config::{
-        utxo::MerkleTreeConfiguration, AssetId, AssetValue, MultiProvingContext, Parameters,
-        ProvingContext,
-    },
+    config::{utxo::MerkleTreeConfiguration, AssetId, AssetValue, Parameters, ProvingContext},
     parameters::load_parameters,
     test,
 };
-use manta_support::manta_pay::{AccountId, TransferPost};
+use manta_support::manta_pay::TransferPost;
 use rand_chacha::ChaCha20Rng;
 use scale_codec::Encode;
 use std::{
@@ -45,7 +42,7 @@ type UtxoAccumulator =
 
 ///
 #[inline]
-fn sample_to_private<R>(
+fn to_private_example<R>(
     proving_context: &ProvingContext,
     parameters: &Parameters,
     utxo_accumulator: &mut UtxoAccumulator,
@@ -67,69 +64,6 @@ where
     .unwrap()
 }
 
-/// Samples a [`PrivateTransfer`] transaction under two [`ToPrivate`]s.
-#[inline]
-fn sample_private_transfer<R>(
-    proving_context: &MultiProvingContext,
-    parameters: &Parameters,
-    utxo_accumulator: &mut UtxoAccumulator,
-    asset_id: AssetId,
-    values: [AssetValue; 2],
-    rng: &mut R,
-) -> ([TransferPost; 2], TransferPost)
-where
-    R: CryptoRng + RngCore + ?Sized,
-{
-    let ([to_private_0, to_private_1], private_transfer) =
-        test::payment::private_transfer::prove_full(
-            proving_context,
-            parameters,
-            utxo_accumulator,
-            asset_id,
-            values,
-            rng,
-        );
-    (
-        [
-            TransferPost::try_from(to_private_0).unwrap(),
-            TransferPost::try_from(to_private_1).unwrap(),
-        ],
-        TransferPost::try_from(private_transfer).unwrap(),
-    )
-}
-
-/// Samples a [`ToPublic`] transaction under two [`ToPrivate`]s.
-#[inline]
-fn sample_to_public<R>(
-    proving_context: &MultiProvingContext,
-    parameters: &Parameters,
-    utxo_accumulator: &mut UtxoAccumulator,
-    asset_id: AssetId,
-    values: [AssetValue; 2],
-    account_id: AccountId,
-    rng: &mut R,
-) -> ([TransferPost; 2], TransferPost)
-where
-    R: CryptoRng + RngCore + ?Sized,
-{
-    let ([to_private_0, to_private_1], to_public) = test::payment::to_public::prove_full(
-        proving_context,
-        parameters,
-        utxo_accumulator,
-        asset_id,
-        values,
-        account_id,
-        rng,
-    );
-    (
-        [
-            TransferPost::try_from(to_private_0).unwrap(),
-            TransferPost::try_from(to_private_1).unwrap(),
-        ],
-        TransferPost::try_from(to_public).unwrap(),
-    )
-}
-
 /// Writes a new `const` definition to `$writer`.
 macro_rules! write_const_array {
     ($writer:ident, $name:ident, $value:expr) => {
@@ -138,25 +72,6 @@ macro_rules! write_const_array {
             "pub(crate) const {}: &[u8] = &{:?};\n",
             stringify!($name),
             $value.encode().as_slice()
-        )
-    };
-}
-
-/// Writes a new `const` definition to `$writer`.
-macro_rules! write_const_nested_array {
-    ($writer:ident, $name:ident, $value:expr) => {
-        writeln!(
-            $writer,
-            "pub(crate) const {}: &[&[u8]] = &[{}];\n",
-            stringify!($name),
-            $value
-                .iter()
-                .flat_map(|v| {
-                    format!("&{:?},", v.encode().as_slice())
-                        .chars()
-                        .collect::<Vec<_>>()
-                })
-                .collect::<String>(),
         )
     };
 }
@@ -185,31 +100,14 @@ fn main() -> Result<()> {
     let (proving_context, _, parameters, utxo_accumulator_model) =
         load_parameters(directory.path()).expect("Unable to load parameters.");
     let mut utxo_accumulator = UtxoAccumulator::new(utxo_accumulator_model);
-    let asset_id = 8.into();
+    let asset_id = 1.into();
 
-    let to_private = sample_to_private(
+    let to_private = to_private_example(
         &proving_context.to_private,
         &parameters,
         &mut utxo_accumulator,
         asset_id,
-        10_000,
-        &mut rng,
-    );
-    let (private_transfer_input, private_transfer) = sample_private_transfer(
-        &proving_context,
-        &parameters,
-        &mut utxo_accumulator,
-        asset_id,
-        [10_000, 20_000],
-        &mut rng,
-    );
-    let (to_public_input, to_public) = sample_to_public(
-        &proving_context,
-        &parameters,
-        &mut utxo_accumulator,
-        asset_id,
-        [10_000, 20_000],
-        rng.gen::<(), _>(),
+        1,
         &mut rng,
     );
 
@@ -244,10 +142,5 @@ fn main() -> Result<()> {
     )?;
 
     write_const_array!(target_file, TO_PRIVATE, to_private)?;
-    write_const_nested_array!(target_file, PRIVATE_TRANSFER_INPUT, private_transfer_input)?;
-    write_const_array!(target_file, PRIVATE_TRANSFER, private_transfer)?;
-    write_const_nested_array!(target_file, TO_PUBLIC_INPUT, to_public_input)?;
-    write_const_array!(target_file, TO_PUBLIC, to_public)?;
-
     Ok(directory.close()?)
 }

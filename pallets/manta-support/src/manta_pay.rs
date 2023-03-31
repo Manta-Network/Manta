@@ -44,6 +44,28 @@ use manta_crypto::arkworks::{
     groth16::Proof as CryptoProof,
 };
 pub use manta_pay::config::utxo::Checkpoint;
+use manta_util::{codec, into_array_unchecked};
+
+/// Standard Asset Id
+pub type StandardAssetId = u128;
+
+///
+#[inline]
+pub fn id_from_field(id: [u8; 32]) -> Option<StandardAssetId> {
+    if 0u128.to_le_bytes() == id[16..32] {
+        Some(u128::from_le_bytes(
+            Array::from_iter(id[0..16].iter().copied()).into(),
+        ))
+    } else {
+        None
+    }
+}
+
+///
+#[inline]
+pub fn field_from_id(id: StandardAssetId) -> [u8; 32] {
+    into_array_unchecked([id.to_le_bytes(), [0; 16]].concat())
+}
 
 /// Decodes the `bytes` array of the given length `N` into the SCALE decodable type `T` returning a
 /// blanket error if decoding fails.
@@ -1000,5 +1022,45 @@ impl From<RawCheckpoint> for Checkpoint {
             checkpoint.receiver_index.map(|i| i as usize).into(),
             checkpoint.sender_index as usize,
         )
+    }
+}
+
+/// Merkle Tree Parameters Decode Error Type
+pub type MTParametersError = codec::DecodeError<
+    <&'static [u8] as codec::Read>::Error,
+    <config::UtxoAccumulatorModel as codec::Decode>::Error,
+>;
+
+/// Utxo Accumulator Item Hash Decode Error Type
+pub type UtxoItemHashError = codec::DecodeError<
+    <&'static [u8] as codec::Read>::Error,
+    <config::utxo::UtxoAccumulatorItemHash as codec::Decode>::Error,
+>;
+
+/// Verification Context Decode Error Type
+pub type VerifyingContextError = codec::DecodeError<
+    <&'static [u8] as codec::Read>::Error,
+    <config::VerifyingContext as codec::Decode>::Error,
+>;
+
+/// Wrap Type
+#[derive(Clone, Copy)]
+pub struct Wrap<T>(pub T);
+
+impl<T> AsRef<T> for Wrap<T> {
+    #[inline]
+    fn as_ref(&self) -> &T {
+        &self.0
+    }
+}
+
+/// Wrap Pair Type
+#[derive(Clone, Copy)]
+pub struct WrapPair<L, R>(pub L, pub R);
+
+impl<L, R> AsRef<R> for WrapPair<L, R> {
+    #[inline]
+    fn as_ref(&self) -> &R {
+        &self.1
     }
 }
