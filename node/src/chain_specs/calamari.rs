@@ -150,7 +150,7 @@ pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
         None,
         Some(calamari_properties()),
         Extensions {
-            relay_chain: KUSAMA_RELAYCHAIN_LOCAL_NET.into(),
+            relay_chain: "".into(),
             para_id: CALAMARI_PARACHAIN_ID,
         },
     )
