@@ -108,7 +108,7 @@ type EvmAddress = H160;
 /// A signature (a 512-bit value, plus 8 bits for recovery ID).
 pub type Eip712Signature = [u8; 65];
 
-/// Enum with each possible type of whitelisted Eth Address
+/// Enum with each possible type of allowlisted Eth Address
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub enum EvmAddressType {
     /// BAB holder
@@ -165,7 +165,7 @@ pub mod pallet {
         /// The currency mechanism.
         type Currency: ReservableCurrency<Self::AccountId>;
 
-        /// The origin which can change the privileged whitelist account and set time range for mints
+        /// The origin which can change the privileged allowlist account and set time range for mints
         type AdminOrigin: EnsureOrigin<Self::Origin>;
 
         /// Pallet ID
@@ -195,13 +195,13 @@ pub mod pallet {
     #[pallet::storage]
     pub(super) type NextSbtId<T: Config> = StorageValue<_, StandardAssetId, OptionQuery>;
 
-    /// Account that can add evm accounts to whitelist
+    /// Account that can add evm accounts to allowlist
     #[pallet::storage]
-    pub(super) type WhitelistAccount<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
+    pub(super) type AllowlistAccount<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
 
-    /// Whitelist for Evm Accounts
+    /// Allowlist for Evm Accounts
     #[pallet::storage]
-    pub(super) type EvmAddressWhitelist<T: Config> =
+    pub(super) type EvmAddressAllowlist<T: Config> =
         StorageMap<_, Blake2_128Concat, EvmAddressType, MintStatus, OptionQuery>;
 
     /// Range of time at which evm mints are possible.
@@ -221,7 +221,7 @@ pub mod pallet {
         OptionQuery,
     >;
 
-    /// Whitelists accounts to be able to mint SBTs with designated `StandardAssetId`
+    /// Allowlists accounts to be able to mint SBTs with designated `StandardAssetId`
     #[pallet::storage]
     pub(super) type ReservedIds<T: Config> = StorageMap<
         _,
@@ -334,21 +334,21 @@ pub mod pallet {
         #[pallet::call_index(2)]
         #[pallet::weight(0)]
         #[transactional]
-        pub fn whitelist_evm_account(
+        pub fn allowlist_evm_account(
             origin: OriginFor<T>,
             evm_address: EvmAddressType,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            let whitelist_account =
-                WhitelistAccount::<T>::get().ok_or(Error::<T>::NotWhitelistAccount)?;
-            ensure!(who == whitelist_account, Error::<T>::NotWhitelistAccount);
+            let allowlist_account =
+                AllowlistAccount::<T>::get().ok_or(Error::<T>::NotAllowlistAccount)?;
+            ensure!(who == allowlist_account, Error::<T>::NotAllowlistAccount);
 
             let asset_id = Self::next_sbt_id_and_increment()?;
             let mint_status = MintStatus::Available(asset_id);
-            EvmAddressWhitelist::<T>::insert(evm_address, mint_status);
+            EvmAddressAllowlist::<T>::insert(evm_address, mint_status);
 
-            Self::deposit_event(Event::<T>::WhitelistEvmAddress {
+            Self::deposit_event(Event::<T>::AllowlistEvmAddress {
                 address: evm_address,
                 asset_id,
             });
@@ -380,13 +380,13 @@ pub mod pallet {
             }
 
             let mint_status =
-                EvmAddressWhitelist::<T>::get(address_type).ok_or(Error::<T>::NotWhitelisted)?;
+                EvmAddressAllowlist::<T>::get(address_type).ok_or(Error::<T>::NotAllowlisted)?;
             let asset_id = match mint_status {
                 MintStatus::Available(asset) => asset,
-                MintStatus::AlreadyMinted => return Err(Error::<T>::NotWhitelisted.into()),
+                MintStatus::AlreadyMinted => return Err(Error::<T>::NotAllowlisted.into()),
             };
             // Change status to minted
-            EvmAddressWhitelist::<T>::insert(address_type, MintStatus::AlreadyMinted);
+            EvmAddressAllowlist::<T>::insert(address_type, MintStatus::AlreadyMinted);
 
             Self::check_post_shape(&post, asset_id)?;
             SbtMetadata::<T>::insert(asset_id, metadata);
@@ -402,14 +402,14 @@ pub mod pallet {
         #[pallet::call_index(4)]
         #[pallet::weight(0)]
         #[transactional]
-        pub fn change_whitelist_account(
+        pub fn change_allowlist_account(
             origin: OriginFor<T>,
             account: Option<T::AccountId>,
         ) -> DispatchResult {
             T::AdminOrigin::ensure_origin(origin)?;
 
-            WhitelistAccount::<T>::set(account.clone());
-            Self::deposit_event(Event::<T>::ChangeWhitelistAccount { account });
+            AllowlistAccount::<T>::set(account.clone());
+            Self::deposit_event(Event::<T>::ChangeAllowlistAccount { account });
             Ok(())
         }
 
@@ -454,27 +454,27 @@ pub mod pallet {
             /// End of `AssetIds` reserved for use private ledger, does not include this value
             stop_id: StandardAssetId,
         },
-        /// Evm Address is Whitelisted
-        WhitelistEvmAddress {
-            /// Eth Address that is now whitelisted to mint an SBT
+        /// Evm Address is Allowlisted
+        AllowlistEvmAddress {
+            /// Eth Address that is now allowlisted to mint an SBT
             address: EvmAddressType,
             /// AssetId that is reserved for above Eth address
             asset_id: StandardAssetId,
         },
-        /// Sbt is minted using Whitelisted Eth account
+        /// Sbt is minted using Allowlisted Eth account
         MintSbtEvm {
             /// Eth Address that is used to mint sbt
             address: EvmAddressType,
             /// AssetId of minted SBT
             asset_id: StandardAssetId,
         },
-        /// Privileged `WhitelistAccount` is changed
-        ChangeWhitelistAccount {
-            /// Account that is now the new privileged whitelist account
+        /// Privileged `AllowlistAccount` is changed
+        ChangeAllowlistAccount {
+            /// Account that is now the new privileged allowlist account
             account: Option<T::AccountId>,
         },
         SetTimeRange {
-            /// The whitelist that time range is set for (ex: BAB)
+            /// The allowlist that time range is set for (ex: BAB)
             mint_type: MintType,
             /// Start time at which minting is valid
             start_time: T::Moment,
@@ -640,11 +640,11 @@ pub mod pallet {
         /// Incorrect EVM based signature
         BadSignature,
 
-        /// Eth account is not whitelisted for free mint
-        NotWhitelisted,
+        /// Eth account is not allowlisted for free mint
+        NotAllowlisted,
 
-        /// Account is not the privileged account able to whitelist eth addresses
-        NotWhitelistAccount,
+        /// Account is not the privileged account able to allowlist eth addresses
+        NotAllowlistAccount,
 
         /// Minting SBT is outside defined time range
         MintNotAvailable,

@@ -18,8 +18,8 @@
 
 use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, Origin as MockOrigin, Test, Timestamp},
-    DispatchError, Error, EvmAddress, EvmAddressType, EvmAddressWhitelist, MintStatus,
-    MintTimeRange, MintType, ReservedIds, SbtMetadata, WhitelistAccount,
+    AllowlistAccount, DispatchError, Error, EvmAddress, EvmAddressAllowlist, EvmAddressType,
+    MintStatus, MintTimeRange, MintType, ReservedIds, SbtMetadata,
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
@@ -381,61 +381,61 @@ fn sbt_counter_increments() {
 }
 
 #[test]
-fn change_whitelist_account_works() {
+fn change_allowlist_account_works() {
     new_test_ext().execute_with(|| {
         assert_noop!(
-            MantaSBTPallet::change_whitelist_account(MockOrigin::signed(ALICE), Some(ALICE)),
+            MantaSBTPallet::change_allowlist_account(MockOrigin::signed(ALICE), Some(ALICE)),
             DispatchError::BadOrigin
         );
-        assert_eq!(WhitelistAccount::<Test>::get(), None);
+        assert_eq!(AllowlistAccount::<Test>::get(), None);
 
-        assert_ok!(MantaSBTPallet::change_whitelist_account(
+        assert_ok!(MantaSBTPallet::change_allowlist_account(
             MockOrigin::root(),
             Some(ALICE)
         ));
-        assert_eq!(WhitelistAccount::<Test>::get().unwrap(), ALICE);
-        assert_ok!(MantaSBTPallet::change_whitelist_account(
+        assert_eq!(AllowlistAccount::<Test>::get().unwrap(), ALICE);
+        assert_ok!(MantaSBTPallet::change_allowlist_account(
             MockOrigin::root(),
             None
         ));
-        assert_eq!(WhitelistAccount::<Test>::get(), None);
+        assert_eq!(AllowlistAccount::<Test>::get(), None);
     })
 }
 
 #[test]
-fn whitelist_account_works() {
+fn allowlist_account_works() {
     new_test_ext().execute_with(|| {
         assert_noop!(
-            MantaSBTPallet::whitelist_evm_account(
+            MantaSBTPallet::allowlist_evm_account(
                 MockOrigin::signed(ALICE),
                 EvmAddressType::Bab(EvmAddress::default())
             ),
-            Error::<Test>::NotWhitelistAccount,
+            Error::<Test>::NotAllowlistAccount,
         );
         assert_eq!(
-            EvmAddressWhitelist::<Test>::get(EvmAddressType::Bab(EvmAddress::default())),
+            EvmAddressAllowlist::<Test>::get(EvmAddressType::Bab(EvmAddress::default())),
             None
         );
 
-        assert_ok!(MantaSBTPallet::change_whitelist_account(
+        assert_ok!(MantaSBTPallet::change_allowlist_account(
             MockOrigin::root(),
             Some(ALICE)
         ));
-        assert_ok!(MantaSBTPallet::whitelist_evm_account(
+        assert_ok!(MantaSBTPallet::allowlist_evm_account(
             MockOrigin::signed(ALICE),
             EvmAddressType::Bab(EvmAddress::default())
         ));
         assert_eq!(
-            EvmAddressWhitelist::<Test>::get(EvmAddressType::Bab(EvmAddress::default())).unwrap(),
+            EvmAddressAllowlist::<Test>::get(EvmAddressType::Bab(EvmAddress::default())).unwrap(),
             MintStatus::Available(1)
         );
 
         assert_noop!(
-            MantaSBTPallet::whitelist_evm_account(
+            MantaSBTPallet::allowlist_evm_account(
                 MockOrigin::signed(BOB),
                 EvmAddressType::Bab(EvmAddress::default())
             ),
-            Error::<Test>::NotWhitelistAccount,
+            Error::<Test>::NotAllowlistAccount,
         );
     })
 }
@@ -444,7 +444,7 @@ fn whitelist_account_works() {
 fn mint_sbt_eth_works() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        assert_ok!(MantaSBTPallet::change_whitelist_account(
+        assert_ok!(MantaSBTPallet::change_allowlist_account(
             MockOrigin::root(),
             Some(ALICE)
         ));
@@ -462,7 +462,7 @@ fn mint_sbt_eth_works() {
         let id = field_from_id(storage_id);
         let post = Box::new(sample_to_private(id, value, &mut rng));
 
-        // Account has not been whitelisted
+        // Account has not been allowlisted
         assert_noop!(
             MantaSBTPallet::mint_sbt_eth(
                 MockOrigin::signed(ALICE),
@@ -471,10 +471,10 @@ fn mint_sbt_eth_works() {
                 evm_mint_type,
                 bvec![0]
             ),
-            Error::<Test>::NotWhitelisted
+            Error::<Test>::NotAllowlisted
         );
-        // whitelist account
-        assert_ok!(MantaSBTPallet::whitelist_evm_account(
+        // allowlist account
+        assert_ok!(MantaSBTPallet::allowlist_evm_account(
             MockOrigin::signed(ALICE),
             evm_mint_type
         ));
@@ -512,7 +512,7 @@ fn mint_sbt_eth_works() {
 
         // Account is already minted
         assert_eq!(
-            EvmAddressWhitelist::<Test>::get(evm_mint_type).unwrap(),
+            EvmAddressAllowlist::<Test>::get(evm_mint_type).unwrap(),
             MintStatus::AlreadyMinted
         );
         assert_noop!(
@@ -523,7 +523,7 @@ fn mint_sbt_eth_works() {
                 evm_mint_type,
                 bvec![0]
             ),
-            Error::<Test>::NotWhitelisted
+            Error::<Test>::NotAllowlisted
         );
     })
 }
@@ -532,12 +532,12 @@ fn mint_sbt_eth_works() {
 fn timestamp_range_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
-        assert_ok!(MantaSBTPallet::change_whitelist_account(
+        assert_ok!(MantaSBTPallet::change_allowlist_account(
             MockOrigin::root(),
             Some(ALICE)
         ));
         let evm_mint_type = EvmAddressType::Bab(MantaSBTPallet::eth_address(&alice_eth()));
-        assert_ok!(MantaSBTPallet::whitelist_evm_account(
+        assert_ok!(MantaSBTPallet::allowlist_evm_account(
             MockOrigin::signed(ALICE),
             evm_mint_type
         ));
@@ -549,7 +549,7 @@ fn timestamp_range_fails() {
         ));
 
         let value = 1;
-        let storage_id = match EvmAddressWhitelist::<Test>::get(evm_mint_type).unwrap() {
+        let storage_id = match EvmAddressAllowlist::<Test>::get(evm_mint_type).unwrap() {
             MintStatus::Available(asset_id) => asset_id,
             MintStatus::AlreadyMinted => panic!("should not be minted"),
         };
