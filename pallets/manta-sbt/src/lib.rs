@@ -332,7 +332,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(2)]
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::allowlist_evm_account())]
         #[transactional]
         pub fn allowlist_evm_account(
             origin: OriginFor<T>,
@@ -356,7 +356,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(3)]
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::mint_sbt_eth())]
         #[transactional]
         pub fn mint_sbt_eth(
             origin: OriginFor<T>,
@@ -400,7 +400,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(4)]
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::change_allowlist_account())]
         #[transactional]
         pub fn change_allowlist_account(
             origin: OriginFor<T>,
@@ -414,7 +414,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(5)]
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_mint_time())]
         #[transactional]
         pub fn set_mint_time(
             origin: OriginFor<T>,
