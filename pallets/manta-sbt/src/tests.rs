@@ -523,7 +523,7 @@ fn mint_sbt_eth_works() {
                 evm_mint_type,
                 bvec![0]
             ),
-            Error::<Test>::NotAllowlisted
+            Error::<Test>::AlreadyMinted
         );
     })
 }
