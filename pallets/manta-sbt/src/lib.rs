@@ -20,13 +20,33 @@
 //!
 //! ## Overview
 //!
+//! There are two paths in which an account can mint a zkSBT.
+//! One is by using the native token (KMA/MANTA) to reserve the right to mint and subsequently minting the zkSBT.
+//! The other is by having a `EvmAddress` added to an allowlist which gives user one free zkSBT to mint (still costs tx fee).
+//! Ownership of SBT is recorded as a corresponding UTXO.
+//! User can prove you own SBT using `TransactionData` which can reconstruct UTXO
+//!
+//! ### Minting zkSBT using native token to pay
+//!
 //! There are two calls `reserve_sbt` and `to_private`.
 //!
 //! `reserve_sbt`: Reserves unique `AssetIds` for user to later mint into sbt.
 //!
 //! `to_private`: Mints SBT with signer generated `TransferPost` using previously reserved `AssetId`. Stores relevant metadata with associated `AssetId`
 //!
-//! Ownership of SBT is recorded as a corresponding UTXO. You can prove you own SBT using `TransactionData` which can reconstruct UTXO
+//! ### Minting zkSBT using `EvmAddress` allowlist
+//!
+//! First some `AdminOrigin` must setup the allowlist, the following must be called to setup allowlist:
+//!
+//! `change_allowlist_account`: `AdminOrigin` must set a privileged account to have power to allowlist `EvmAddress`
+//! `set_mint_time`: `AdminOrigin` must set a time range for a particular `MintType` to be valid.
+//! `allowlist_evm_account`: Account set in `change_allowlist_account` can allow a particular `EvmAddress` one free mint of zkSBT.
+//!
+//! Second step a user that has been added to `EvmAddressAllowlist` can now mint their zkSBT.
+//!
+//! `mint_sbt_eth`: User must generate a zkp corresponding to the reserved `AssetId` mapped to their `EvmAddress`.
+//! Subsequently user must generate signature by signing zkp with their eth private key.
+//! If their `EvmAddress` has been allowlisted then user will have a zkSBT for free (minus tx fee cost)!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
@@ -133,7 +153,7 @@ impl From<EvmAddressType> for MintType {
     }
 }
 
-/// Status of
+/// zkSBT mint Status of `EvmAddressType`. This has flag `AlreadyMinted` to put into storage after succesful mint
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub enum MintStatus {
     Available(StandardAssetId),
@@ -204,7 +224,7 @@ pub mod pallet {
     pub(super) type EvmAddressAllowlist<T: Config> =
         StorageMap<_, Blake2_128Concat, EvmAddressType, MintStatus, OptionQuery>;
 
-    /// Range of time at which evm mints are possible.
+    /// Range of time at which evm mintsf for each `MintType` are possible.
     #[pallet::storage]
     pub(super) type MintTimeRange<T: Config> =
         StorageMap<_, Blake2_128Concat, MintType, (T::Moment, Option<T::Moment>), OptionQuery>;
@@ -331,6 +351,9 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Adds EvmAddress to allowlist and reserve an unique AssetId for this account. Requires caller to be the `AllowlistAccount`.
+        ///
+        /// `EvmAddressType` creates multiple allowlists, so an `EvmAddress` can have multiple free mints for different `MintTypes`.
         #[pallet::call_index(2)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::allowlist_evm_account())]
         #[transactional]
@@ -355,6 +378,9 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Mint zkSBT using Evm allowlist, signature must correspont to an `EvmAddress` which has been added to allowlist.
+        ///
+        /// Requires a valid `Eip712Signature` which is generated from signing the zkp with an eth private key
         #[pallet::call_index(3)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::mint_sbt_eth())]
         #[transactional]
@@ -399,6 +425,7 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// Sets the privileged allowlist account. Requires `AdminOrigin`
         #[pallet::call_index(4)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::change_allowlist_account())]
         #[transactional]
@@ -413,6 +440,7 @@ pub mod pallet {
             Ok(())
         }
 
+        /// Sets the time range of which a `MintType` will be valid. Requires `AdminOrigin`
         #[pallet::call_index(5)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_mint_time())]
         #[transactional]
@@ -825,7 +853,7 @@ where
         recover_signer(sig, &msg_hash)
     }
 
-    // Eip-712 message to be signed
+    /// Eip-712 message to be signed
     #[inline]
     fn eip712_signable_message(proof: &Proof) -> Vec<u8> {
         let domain_separator = Self::evm_account_domain_separator();
@@ -837,6 +865,7 @@ where
         msg
     }
 
+    /// Creates `keccak_256` hash of Proof payload
     #[inline]
     fn evm_account_payload_hash(proof: &Proof) -> [u8; 32] {
         let tx_type_hash = &sha3_256("Transaction(bytes proof)");
@@ -845,6 +874,7 @@ where
         keccak_256(tx_msg.as_slice())
     }
 
+    /// Creates Eip712 domain separator for minting zkSBT. This ensures signature will not have collisions
     #[inline]
     fn evm_account_domain_separator() -> [u8; 32] {
         let domain_hash =
@@ -905,6 +935,7 @@ where
     }
 }
 
+/// Recover `EvmAddress` from `Eip712Signature` using the message hash
 #[inline]
 fn recover_signer(sig: &[u8; 65], msg_hash: &[u8; 32]) -> Option<H160> {
     secp256k1_ecdsa_recover(sig, msg_hash)
@@ -912,6 +943,7 @@ fn recover_signer(sig: &[u8; 65], msg_hash: &[u8; 32]) -> Option<H160> {
         .ok()
 }
 
+/// Utility function to get SHA3-256 hash of &str
 #[inline]
 pub fn sha3_256(s: &str) -> [u8; 32] {
     let mut result = [0u8; 32];
