@@ -410,7 +410,7 @@ pub mod pallet {
                 EvmAddressAllowlist::<T>::get(address_type).ok_or(Error::<T>::NotAllowlisted)?;
             let asset_id = match mint_status {
                 MintStatus::Available(asset) => asset,
-                MintStatus::AlreadyMinted => return Err(Error::<T>::NotAllowlisted.into()),
+                MintStatus::AlreadyMinted => return Err(Error::<T>::AlreadyMinted.into()),
             };
             // Change status to minted
             EvmAddressAllowlist::<T>::insert(address_type, MintStatus::AlreadyMinted);
@@ -677,6 +677,9 @@ pub mod pallet {
 
         /// Minting SBT is outside defined time range
         MintNotAvailable,
+
+        /// SBT has already been minted with this `EvmAddress`
+        AlreadyMinted,
     }
 }
 
