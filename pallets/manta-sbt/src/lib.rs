@@ -24,7 +24,7 @@
 //! One is by using the native token (KMA/MANTA) to reserve the right to mint and subsequently minting the zkSBT.
 //! The other is by having a `EvmAddress` added to an allowlist which gives user one free zkSBT to mint (still costs tx fee).
 //! Ownership of SBT is recorded as a corresponding UTXO.
-//! User can prove you own SBT using `TransactionData` which can reconstruct UTXO
+//! User can prove ownership of SBT using `TransactionData` which can reconstruct UTXO and check its existence on-chain.
 //!
 //! ### Minting zkSBT using native token to pay
 //!
@@ -32,7 +32,8 @@
 //!
 //! `reserve_sbt`: Reserves unique `AssetIds` for user to later mint into sbt.
 //!
-//! `to_private`: Mints SBT with signer generated `TransferPost` using previously reserved `AssetId`. Stores relevant metadata with associated `AssetId`
+//! `to_private`: Mints SBT with signer generated `TransferPost` using previously reserved `AssetId`.
+//! Stores relevant metadata with associated `AssetId`
 //!
 //! ### Minting zkSBT using `EvmAddress` allowlist
 //!
