@@ -225,7 +225,7 @@ pub mod pallet {
     pub(super) type EvmAddressAllowlist<T: Config> =
         StorageMap<_, Blake2_128Concat, EvmAddressType, MintStatus, OptionQuery>;
 
-    /// Range of time at which evm mintsf for each `MintType` are possible.
+    /// Range of time at which evm mints for each `MintType` are possible.
     #[pallet::storage]
     pub(super) type MintTimeRange<T: Config> =
         StorageMap<_, Blake2_128Concat, MintType, (T::Moment, Option<T::Moment>), OptionQuery>;
@@ -379,7 +379,7 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Mint zkSBT using Evm allowlist, signature must correspont to an `EvmAddress` which has been added to allowlist.
+        /// Mint zkSBT using Evm allowlist, signature must correspond to an `EvmAddress` which has been added to allowlist.
         ///
         /// Requires a valid `Eip712Signature` which is generated from signing the zkp with an eth private key
         #[pallet::call_index(3)]
