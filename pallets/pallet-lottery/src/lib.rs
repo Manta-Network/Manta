@@ -56,6 +56,11 @@
 //! * [`Call::liquidate_lottery`]: Unstakes all lottery funds and schedules [`Call::process_matured_withdrawals`] after the timelock period
 //! * [`Call::rebalance_stake`]: Immediately unstakes overweight collators (with low APY) for later restaking into underweight collators (with high APY)
 //!
+//! ### Important state queries
+//! * [`Pallet::next_drawing_at`]: Block number where the next drawing will happen
+//! * [`Pallet::not_in_drawing_freezeout`]: False if deposits/withdrawals are currently frozen
+//! * [`Pallet::lottery_funds_surplus_idle`]: Token amount currently in the pallet the winner would get if the drawing was now
+//!
 //! Please refer to [`Pallet`] for more documentation on each function.
 //! Furthermore, the storage items containing all relevant information about lottery state can be queried via e.g. the [polkadot.js API](https://polkadot.js.org/docs/api)
 
@@ -829,7 +834,7 @@ pub mod pallet {
             });
         }
 
-        pub fn do_rebalance_remaining_funds() {
+        fn do_rebalance_remaining_funds() {
             // Only restake what isn't needed to service outstanding withdrawal requests
             let stakable_balance = Self::lottery_funds_surplus_idle();
 
@@ -889,12 +894,14 @@ pub mod pallet {
             });
             Ok(())
         }
+    }
 
+    impl<T: Config> Pallet<T> { // public getters for lottery state
         /// Returns the block the next drawing will execute, if any
         pub fn next_drawing_at() -> Option<T::BlockNumber> {
             T::Scheduler::next_dispatch_time(T::LotteryPot::get().0.to_vec()).ok()
         }
-
+        /// funds in the lottery that are not staked or assigned to previous winners ( can be used to pay TX fees )
         pub fn lottery_funds_surplus() -> BalanceOf<T> {
             let non_staked_funds =
                 pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
@@ -914,8 +921,7 @@ pub mod pallet {
                 .saturating_sub(Self::gas_reserve())
                 .saturating_sub(outstanding_withdrawal_requests)
         }
-
-        /// Returns is we're within the pre-drawing time where deposiuts/withdrawals are frozen
+        /// Returns if we're within the pre-drawing time where deposits/withdrawals are frozen
         pub fn not_in_drawing_freezeout() -> bool {
             match Self::next_drawing_at() {
                 Some(drawing) => {
