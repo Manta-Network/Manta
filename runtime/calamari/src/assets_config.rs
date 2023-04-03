@@ -195,7 +195,7 @@ impl pallet_manta_sbt::Config for Runtime {
     type ReservePrice = ConstU128<{ 100_000 * KMA }>;
     type SbtMetadataBound = ConstU32<300>;
     type ChainId = ConstU64<2084>;
-    type WhitelistOrigin = EitherOfDiverse<
+    type AdminOrigin = EitherOfDiverse<
         EnsureRoot<AccountId>,
         pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,
     >;
