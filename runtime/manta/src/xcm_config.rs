@@ -16,28 +16,53 @@
 
 use super::{Call, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime};
 
-use frame_support::{match_types, parameter_types, traits::Nothing, weights::Weight};
+use frame_support::{
+    match_types, parameter_types,
+    traits::{Everything, Nothing},
+    weights::Weight,
+};
 
 use frame_system::EnsureRoot;
 use manta_primitives::{types::AccountId, xcm::MultiNativeAsset};
 
+use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AllowKnownQueryResponses, AllowSubscriptionsFrom, AllowUnpaidExecutionFrom, EnsureXcmOrigin,
-    FixedRateOfFungible, FixedWeightBounds, LocationInverter, ParentAsSuperuser, TakeWeightCredit,
+    Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+    AllowUnpaidExecutionFrom, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds,
+    LocationInverter, ParentAsSuperuser, ParentIsPreset, SiblingParachainConvertsVia,
+    SovereignSignedViaLocation, TakeWeightCredit,
 };
 use xcm_executor::{Config, XcmExecutor};
 
+use manta_primitives::xcm::AllowTopLevelPaidExecutionDescendOriginFirst;
+
 parameter_types! {
+    pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
     pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
 }
+
+/// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
+/// when determining ownership of accounts for asset transacting and when attempting to use XCM
+/// `Transact` in order to determine the dispatch Origin.
+pub type LocationToAccountId = (
+    // The parent (Relay-chain) origin converts to the default `AccountId`.
+    ParentIsPreset<AccountId>,
+    // Sibling parachain origins convert to AccountId via the `ParaId::into`.
+    SiblingParachainConvertsVia<Sibling, AccountId>,
+    // Straight up local `AccountId32` origins just alias directly to `AccountId`.
+    AccountId32Aliases<RelayNetwork, AccountId>,
+    // TODO: comment
+    Account32Hash<RelayNetwork, AccountId>,
+);
 
 /// This is the type to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`.
 /// It uses some Rust magic macro to do the pattern matching sequentially.
 /// There is an `OriginKind` which can biases the kind of local `Origin` it will become.
 pub type XcmOriginToCallOrigin = (
+    SovereignSignedViaLocation<LocationToAccountId, Origin>,
     // Superuser converter for the Relay-chain (Parent) location. This will allow it to issue a
     // transaction from the Root origin.
     ParentAsSuperuser<Origin>,
@@ -68,6 +93,7 @@ match_types! {
 pub type Barrier = (
     // Allows local origin messages which call weight_credit >= weight_limit.
     TakeWeightCredit,
+    AllowTopLevelPaidExecutionDescendOriginFirst<Everything>,
     // Parent root gets free execution
     AllowUnpaidExecutionFrom<ParentLocation>,
     // Expected responses are OK.

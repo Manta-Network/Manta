@@ -31,8 +31,8 @@ use manta_primitives::{
     assets::AssetIdLocationConvert,
     types::{AccountId, Balance, DolphinAssetId},
     xcm::{
-        AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
-        MultiNativeAsset,
+        AccountIdToMultiLocation, AllowTopLevelPaidExecutionDescendOriginFirst, FirstAssetTrader,
+        IsNativeConcrete, MultiAssetAdapter, MultiNativeAsset,
     },
 };
 use pallet_xcm::XcmPassthrough;
@@ -41,7 +41,7 @@ use scale_info::TypeInfo;
 use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+    Account32Hash, AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
     EnsureXcmOrigin, FixedRateOfFungible, LocationInverter, ParentAsSuperuser, ParentIsPreset,
     RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
@@ -90,6 +90,7 @@ pub type LocationToAccountId = (
     SiblingParachainConvertsVia<Sibling, AccountId>,
     // Straight up local `AccountId32` origins just alias directly to `AccountId`.
     AccountId32Aliases<RelayNetwork, AccountId>,
+    Account32Hash<RelayNetwork, AccountId>,
 );
 
 /// This is the type to convert an (incoming) XCM origin into a local `Origin` instance,
@@ -161,6 +162,8 @@ match_types! {
 pub type Barrier = (
     // Allows local origin messages which call weight_credit >= weight_limit.
     TakeWeightCredit,
+    // TODO: comment
+    AllowTopLevelPaidExecutionDescendOriginFirst<Everything>,
     // Allows non-local origin messages, for example from from the xcmp queue,
     // which have the ability to deposit assets and pay for their own execution.
     AllowTopLevelPaidExecutionFrom<Everything>,

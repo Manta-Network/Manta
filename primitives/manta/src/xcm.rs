@@ -415,8 +415,7 @@ where
     }
 }
 
-/// Barrier allowing a top level paid message with DescendOrigin instruction
-/// first
+/// Barrier allowing a top level paid message with DescendOrigin instruction first
 pub struct AllowTopLevelPaidExecutionDescendOriginFirst<T>(PhantomData<T>);
 impl<T: Contains<MultiLocation>> ShouldExecute for AllowTopLevelPaidExecutionDescendOriginFirst<T> {
     fn should_execute<Call>(
