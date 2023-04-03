@@ -708,25 +708,6 @@ impl manta_collator_selection::Config for Runtime {
     type CanAuthor = AuraAuthorFilter;
 }
 
-parameter_types! {
-    pub const MantaSbtPalletId: PalletId = MANTA_SBT_PALLET_ID;
-}
-
-impl pallet_manta_sbt::Config for Runtime {
-    type Event = Event;
-    type PalletId = MantaSbtPalletId;
-    type Currency = Balances;
-    type MintsPerReserve = ConstU16<8>;
-    type ReservePrice = ConstU128<DOL>;
-    type SbtMetadataBound = ConstU32<300>;
-    type ChainId = ConstU64<2085>;
-    type WhitelistOrigin = EitherOfDiverse<
-        EnsureRoot<AccountId>,
-        pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,
-    >;
-    type WeightInfo = ();
-}
-
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
