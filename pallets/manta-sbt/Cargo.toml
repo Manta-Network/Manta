@@ -125,7 +125,7 @@ pallet-asset-manager = { path = "../asset-manager" }
 pallet-assets = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28" }
 pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
 pallet-manta-pay = { path = "../manta-pay" }
-pallet-tx-pause = { path = "../tx-pause" }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28" }
+pallet-tx-pause = { path = "../tx-pause" }
 tempfile = "3.3.0"
 xcm = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.28" }
