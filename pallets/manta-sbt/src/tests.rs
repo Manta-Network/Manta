@@ -606,6 +606,11 @@ fn set_mint_time_works() {
             MantaSBTPallet::set_mint_time(MockOrigin::signed(ALICE), MintType::Bab, 0, None),
             DispatchError::BadOrigin
         );
+        assert_noop!(
+            MantaSBTPallet::set_mint_time(MockOrigin::root(), MintType::Bab, 10, Some(5)),
+            Error::<Test>::InvalidTimeRange
+        );
+
         assert_ok!(MantaSBTPallet::set_mint_time(
             MockOrigin::root(),
             MintType::Bab,

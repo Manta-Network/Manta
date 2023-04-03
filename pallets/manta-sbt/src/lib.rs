@@ -459,6 +459,10 @@ pub mod pallet {
         ) -> DispatchResult {
             T::AdminOrigin::ensure_origin(origin)?;
 
+            if let Some(end) = end_time {
+                ensure!(end > start_time, Error::<T>::InvalidTimeRange);
+            }
+
             MintTimeRange::<T>::insert(mint_type, (start_time, end_time));
             Self::deposit_event(Event::<T>::SetTimeRange {
                 mint_type,
@@ -686,6 +690,9 @@ pub mod pallet {
 
         /// SBT has already been minted with this `EvmAddress`
         AlreadyMinted,
+
+        /// Time range is invalid (start_time > end_time)
+        InvalidTimeRange,
     }
 }
 
