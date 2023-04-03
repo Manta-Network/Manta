@@ -3,6 +3,9 @@
   "id": "manta",
   "chainType": "Live",
   "bootNodes": [
+    "/dns/a1.manta.systems/tcp/30333/p2p/12D3KooWCpnkG834s9ETesFTWtGqRDjs6Te1UCXHib3iD8GEmXLU",
+    "/dns/a2.manta.systems/tcp/30333/p2p/12D3KooWDwTeTxyyp8tVzrnHQk7jo3hLWs7ukZEC642cduKgp2Fd",
+    "/dns/a3.manta.systems/tcp/30333/p2p/12D3KooWAjiBUsKPJesAHoZHbLQqjN8bA6QTtjJjkwwZPenHjbMR",
     "/dns/c1.manta.systems/tcp/30333/p2p/12D3KooWSNwD7tJkqKGdMfCVTJbbzrGFTGbXoeMFZCTwEytpFCM4",
     "/dns/c2.manta.systems/tcp/30333/p2p/12D3KooWSyPTkVytQwurRBt73wPQDTgypw88bdhsE4Rb6RnQvCJ9",
     "/dns/c3.manta.systems/tcp/30333/p2p/12D3KooWJwHqCEjTF46eAUDspKKwxa15TMfs7x8DNr3Gs71Qr64j",
