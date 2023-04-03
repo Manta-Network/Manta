@@ -92,7 +92,7 @@ pub type LocationToAccountId = (
     SiblingParachainConvertsVia<Sibling, AccountId>,
     // Straight up local `AccountId32` origins just alias directly to `AccountId`.
     AccountId32Aliases<RelayNetwork, AccountId>,
-    // TODO: comment
+    // Converts multilocation into a 32 byte hash for local `AccountId`s
     Account32Hash<RelayNetwork, AccountId>,
 );
 
@@ -165,7 +165,8 @@ match_types! {
 pub type Barrier = (
     // Allows local origin messages which call weight_credit >= weight_limit.
     TakeWeightCredit,
-    // TODO: comment
+    // Allows execution of Transact XCM instruction from configurable set of origins
+    // as long as the message is in the format DescendOrigin + WithdrawAsset + BuyExecution
     AllowTopLevelPaidExecutionDescendOriginFirst<Everything>,
     // Allows non-local origin messages, for example from from the xcmp queue,
     // which have the ability to deposit assets and pay for their own execution.
