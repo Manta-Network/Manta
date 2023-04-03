@@ -50,7 +50,7 @@ pub type Result<T = (), E = Error> = core::result::Result<T, E>;
 pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 
 /// Manta Parachain ID
-pub const MANTA_PARACHAIN_ID: u32 = 2104;
+pub const MANTA_PARACHAIN_ID: u32 = 9999;
 
 /// Calamari Parachain ID
 pub const CALAMARI_PARACHAIN_ID: u32 = 2084;
