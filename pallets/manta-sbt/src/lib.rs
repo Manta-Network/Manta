@@ -58,7 +58,7 @@ extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
 use frame_support::{
     pallet_prelude::*,
-    traits::{Currency, ExistenceRequirement, ReservableCurrency, StorageVersion},
+    traits::{Currency, ExistenceRequirement, ReservableCurrency, StorageVersion, Time},
     transactional, PalletId,
 };
 use frame_system::pallet_prelude::*;
@@ -161,6 +161,9 @@ pub enum MintStatus {
     AlreadyMinted,
 }
 
+/// Type for timestamp
+pub type Moment<T> = <<T as Config>::Now as Time>::Moment;
+
 /// MantaSBT Pallet
 #[frame_support::pallet]
 pub mod pallet {
@@ -176,7 +179,7 @@ pub mod pallet {
 
     /// The module configuration trait.
     #[pallet::config]
-    pub trait Config: frame_system::Config + pallet_timestamp::Config {
+    pub trait Config: frame_system::Config {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
@@ -188,6 +191,9 @@ pub mod pallet {
 
         /// The origin which can change the privileged allowlist account and set time range for mints
         type AdminOrigin: EnsureOrigin<Self::Origin>;
+
+        /// Gets the current on-chain time
+        type Now: Time;
 
         /// Pallet ID
         #[pallet::constant]
@@ -228,7 +234,7 @@ pub mod pallet {
     /// Range of time at which evm mints for each `MintType` are possible.
     #[pallet::storage]
     pub(super) type MintTimeRange<T: Config> =
-        StorageMap<_, Blake2_128Concat, MintType, (T::Moment, Option<T::Moment>), OptionQuery>;
+        StorageMap<_, Blake2_128Concat, MintType, (Moment<T>, Option<Moment<T>>), OptionQuery>;
 
     /// SBT Metadata maps `StandardAsset` to the correstonding SBT metadata
     ///
@@ -448,8 +454,8 @@ pub mod pallet {
         pub fn set_mint_time(
             origin: OriginFor<T>,
             mint_type: MintType,
-            start_time: T::Moment,
-            end_time: Option<T::Moment>,
+            start_time: Moment<T>,
+            end_time: Option<Moment<T>>,
         ) -> DispatchResult {
             T::AdminOrigin::ensure_origin(origin)?;
 
@@ -506,9 +512,9 @@ pub mod pallet {
             /// The allowlist that time range is set for (ex: BAB)
             mint_type: MintType,
             /// Start time at which minting is valid
-            start_time: T::Moment,
+            start_time: Moment<T>,
             /// End time at which minting will no longer be valid, None represents no end time.
-            end_time: Option<T::Moment>,
+            end_time: Option<Moment<T>>,
         },
     }
 
@@ -896,7 +902,7 @@ where
     /// Checks that mint type is available to mint within time window defined in `MintTimeRange`
     #[inline]
     fn check_mint_time(mint_type: MintType) -> DispatchResult {
-        let current_time = pallet_timestamp::Pallet::<T>::now();
+        let current_time = T::Now::now();
         let (start_time, end_time) =
             MintTimeRange::<T>::get(mint_type).ok_or(Error::<T>::MintNotAvailable)?;
 
