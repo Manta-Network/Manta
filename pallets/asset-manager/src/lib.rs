@@ -627,13 +627,14 @@ pub mod pallet {
             }
 
             match location.interior {
+                // Local transfers
+                Junctions::Here => true,
                 // Send tokens back to relaychain.
                 Junctions::X1(Junction::AccountId32 { .. }) => true,
                 // Send tokens to sibling chain.
                 Junctions::X2(Junction::Parachain(para_id), Junction::AccountId32 { .. })
-                | Junctions::X2(Junction::Parachain(para_id), Junction::AccountKey20 { .. }) => {
-                    AllowedDestParaIds::<T>::contains_key(para_id)
-                }
+                | Junctions::X2(Junction::Parachain(para_id), Junction::PalletInstance { .. })
+                | Junctions::X2(Junction::Parachain(para_id), Junction::AccountKey20 { .. }) => true,
                 // We don't support X3 or longer Junctions.
                 _ => false,
             }
