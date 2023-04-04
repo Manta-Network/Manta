@@ -16,7 +16,7 @@
 
 use super::{
     weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
-    NativeTokenExistentialDeposit, Origin, Runtime, TechnicalCollective, KMA,
+    NativeTokenExistentialDeposit, Origin, Runtime, TechnicalCollective, Timestamp, KMA,
 };
 
 use manta_primitives::{
@@ -199,5 +199,6 @@ impl pallet_manta_sbt::Config for Runtime {
         EnsureRoot<AccountId>,
         pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,
     >;
+    type Now = Timestamp;
     type WeightInfo = weights::pallet_manta_sbt::SubstrateWeight<Runtime>;
 }
