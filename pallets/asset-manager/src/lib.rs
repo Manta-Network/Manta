@@ -619,6 +619,7 @@ pub mod pallet {
             }
         }
 
+        /// defines what types of locations can be registered as assets
         fn is_allowed_location_shape(location: &MultiLocation) -> bool {
             // check parents
             if location.parents != 1 {
