@@ -353,7 +353,7 @@ pub mod pallet {
             );
             if let Some(multi) = location.clone().into() {
                 ensure!(
-                    Self::is_allowed_location_shape(&multi),
+                    Self::is_allowed_asset_location(&multi),
                     Error::<T>::LocationNotSupported
                 );
             }
@@ -410,7 +410,7 @@ pub mod pallet {
             );
             if let Some(multi) = location.clone().into() {
                 ensure!(
-                    Self::is_allowed_location_shape(&multi),
+                    Self::is_allowed_asset_location(&multi),
                     Error::<T>::LocationNotSupported
                 );
             }
@@ -620,47 +620,51 @@ pub mod pallet {
         }
 
         /// defines what types of locations can be registered as assets
-        fn is_allowed_location_shape(location: &MultiLocation) -> bool {
+        fn is_allowed_asset_location(location: &MultiLocation) -> bool {
             let p = location.parents;
             if p > 1 {
                 return false;
             }
             match location.interior {
-                // Local transfers or relay asset
+                // Local or relay asset
                 Junctions::Here => p == 0 || p == 1,
-                // Send tokens to relaychain.
-                Junctions::X1(Junction::AccountId32 { .. }) => p == 1,
+                // A parachain native asset
+                Junctions::X1(Junction::Parachain { .. }) => p == 1,
                 // Send tokens to sibling chain.
-                Junctions::X2(Junction::Parachain { .. }, Junction::AccountId32 { .. })
-                | Junctions::X2(Junction::Parachain { .. }, Junction::PalletInstance { .. })
-                | Junctions::X2(Junction::Parachain { .. }, Junction::AccountKey20 { .. }) => {
-                    p == 1
-                }
-                // We don't support X3 or longer Junctions.
+                Junctions::X2(Junction::Parachain { .. }, Junction::PalletInstance { .. })
+                | Junctions::X2(Junction::Parachain { .. }, Junction::GeneralKey { .. }) => p == 1,
+                Junctions::X3(
+                    Junction::Parachain { .. },
+                    Junction::PalletInstance { .. },
+                    Junction::GeneralIndex { .. },
+                ) => p == 1,
                 _ => false,
             }
         }
     }
 
-    /// impl used by xtokens as `MultiLocationsFilter`. Defines where we're allowed to send to
+    /// impl used by xtokens as `MultiLocationsFilter`. Defines where we're allowed to **send** to
     impl<T> Contains<MultiLocation> for Pallet<T>
     where
         T: Config,
     {
         #[inline]
         fn contains(location: &MultiLocation) -> bool {
-            if !Self::is_allowed_location_shape(location) {
-                return false;
-            }
             // xtokens / XCM must not be used to send transfers local to our parachain
-            if location.parents == 0 {
+            // and we don't support nested chains
+            if location.parents != 1 {
                 return false;
             }
-            // if sending to sibling, only siblings whose assets we registered are allowed
-            if let Junctions::X2(Junction::Parachain(para_id), _) = location.interior {
-                AllowedDestParaIds::<T>::contains_key(para_id)
-            } else {
-                true
+            match location.interior {
+                // Send tokens to an account on the relaychain.
+                Junctions::X1(Junction::AccountId32 { .. }) => true,
+                // Send tokens to an account on a sibling chain.
+                Junctions::X2(Junction::Parachain(para_id), Junction::AccountId32 { .. })
+                | Junctions::X2(Junction::Parachain(para_id), Junction::AccountKey20 { .. }) => {
+                    AllowedDestParaIds::<T>::contains_key(para_id)
+                }
+                // We don't support X3 or longer Junctions.
+                _ => false,
             }
         }
     }
