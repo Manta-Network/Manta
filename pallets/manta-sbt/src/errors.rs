@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Error Handling for MantaPay
+//! Error Handling for MantaSBT
 
 use super::*;
 
@@ -155,6 +155,9 @@ pub enum SenderLedgerError {
     ///
     /// The sender was not constructed under the current state of the UTXO accumulator.
     InvalidUtxoAccumulatorOutput,
+
+    /// SBT does not have sender ledger
+    NoSenderLedger,
 }
 
 impl<T> From<SenderPostError<SenderLedgerError>> for Error<T>
@@ -175,6 +178,7 @@ where
                 SenderLedgerError::OutgoingNoteDecodeError(_) => {
                     Self::SenderLedgerOutgoingNodeDecodeFailed
                 }
+                SenderLedgerError::NoSenderLedger => Self::NoSenderLedger,
             },
         }
     }
@@ -191,6 +195,9 @@ impl From<SenderLedgerError> for SenderPostError<SenderLedgerError> {
             }
             SenderLedgerError::OutgoingNoteDecodeError(err) => {
                 Self::UnexpectedError(SenderLedgerError::OutgoingNoteDecodeError(err))
+            }
+            SenderLedgerError::NoSenderLedger => {
+                Self::UnexpectedError(SenderLedgerError::NoSenderLedger)
             }
         }
     }
@@ -213,27 +220,6 @@ where
     #[inline]
     fn from(err: ReceiverLedgerError<T>) -> Self {
         TransferLedgerError::ReceiverLedgerError(err)
-    }
-}
-
-impl<T> From<FungibleLedgerError> for Error<T>
-where
-    T: Config,
-{
-    #[inline]
-    fn from(err: FungibleLedgerError) -> Self {
-        match err {
-            FungibleLedgerError::InvalidAssetId(_) => Self::PublicUpdateInvalidAssetId,
-            FungibleLedgerError::BelowMinimum => Self::PublicUpdateBelowMinimum,
-            FungibleLedgerError::CannotCreate => Self::PublicUpdateCannotCreate,
-            FungibleLedgerError::UnknownAsset => Self::PublicUpdateUnknownAsset,
-            FungibleLedgerError::Overflow => Self::PublicUpdateOverflow,
-            FungibleLedgerError::CannotWithdrawMoreThan(_) => Self::PublicUpdateCannotWithdraw,
-            FungibleLedgerError::InvalidMint(_) => Self::PublicUpdateInvalidMint,
-            FungibleLedgerError::InvalidBurn(_) => Self::PublicUpdateInvalidBurn,
-            FungibleLedgerError::InvalidTransfer(_) => Self::PublicUpdateInvalidTransfer,
-            FungibleLedgerError::EncodeError => Self::FungibleLedgerEncodeError,
-        }
     }
 }
 
@@ -268,7 +254,6 @@ where
                     Self::TransferLedgerVerifyingContextDecodeError
                 }
                 TransferLedgerError::FpEncodeError(_) => Self::TransferLedgerFpEncodeError,
-                TransferLedgerError::FungibleLedgerError(err) => err.into(),
                 TransferLedgerError::UnknownAsset => Self::TransferLedgerUnknownAsset,
                 TransferLedgerError::InvalidTransferShape => Self::InvalidShape,
                 TransferLedgerError::ProofSystemError(_) => Self::TransferLedgerProofSystemFailed,
@@ -300,9 +285,6 @@ where
 
     /// Unknown Asset Error
     UnknownAsset,
-
-    /// Fungible Ledger Error
-    FungibleLedgerError(FungibleLedgerError),
 
     /// Sender Ledger Error
     SenderLedgerError(SenderLedgerError),

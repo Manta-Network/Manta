@@ -94,6 +94,9 @@ pub const ASSET_MANAGER_PALLET_ID: PalletId = PalletId(*b"asstmngr");
 /// Manta Pay Pallet Identifier
 pub const MANTA_PAY_PALLET_ID: PalletId = PalletId(*b"mantapay");
 
+/// Soul Bound NFT Pallet Identifier
+pub const MANTA_SBT_PALLET_ID: PalletId = PalletId(*b"mantasbt");
+
 /// Test Default Asset Existential Deposit
 ///
 /// # Warning

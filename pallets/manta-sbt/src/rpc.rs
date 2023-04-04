@@ -16,11 +16,7 @@
 
 //! MantaPay RPC Interfaces
 
-use crate::{
-    runtime::PullLedgerDiffApi,
-    types::{DenseInitialSyncResponse, DensePullResponse},
-    Checkpoint, InitialSyncResponse, PullResponse,
-};
+use crate::{runtime::SBTPullLedgerDiffApi, Checkpoint, PullResponse};
 use alloc::sync::Arc;
 use core::marker::PhantomData;
 use jsonrpsee::{
@@ -38,43 +34,28 @@ pub const PULL_LEDGER_DIFF_ERROR: i32 = 1;
 
 /// Pull API
 #[rpc(server)]
-pub trait PullApi {
+pub trait SBTPullApi {
     /// Returns the update required to be synchronized with the ledger starting from
     /// `checkpoint`.
-    #[method(name = "mantaPay_pull_ledger_diff", blocking)]
-    fn pull_ledger_diff(
+    #[method(name = "mantaSBT_pull_ledger_diff", blocking)]
+    fn sbt_pull_ledger_diff(
         &self,
         checkpoint: Checkpoint,
         max_receivers: u64,
         max_senders: u64,
     ) -> RpcResult<PullResponse>;
 
-    #[method(name = "mantaPay_dense_pull_ledger_diff", blocking)]
-    fn dense_pull_ledger_diff(
+    #[method(name = "mantaSBT_dense_pull_ledger_diff", blocking)]
+    fn sbt_dense_pull_ledger_diff(
         &self,
         checkpoint: Checkpoint,
         max_receivers: u64,
         max_senders: u64,
     ) -> RpcResult<DensePullResponse>;
-
-    /// Returns the update required for the initial synchronization with the ledger.
-    #[method(name = "mantaPay_initial_pull", blocking)]
-    fn initial_pull(
-        &self,
-        checkpoint: Checkpoint,
-        max_receivers: u64,
-    ) -> RpcResult<InitialSyncResponse>;
-
-    #[method(name = "mantaPay_dense_initial_pull", blocking)]
-    fn dense_initial_pull(
-        &self,
-        checkpoint: Checkpoint,
-        max_receivers: u64,
-    ) -> RpcResult<DenseInitialSyncResponse>;
 }
 
 /// Pull RPC API Implementation
-pub struct Pull<B, C> {
+pub struct SBTPull<B, C> {
     /// Client
     client: Arc<C>,
 
@@ -82,7 +63,7 @@ pub struct Pull<B, C> {
     __: PhantomData<B>,
 }
 
-impl<B, C> Pull<B, C> {
+impl<B, C> SBTPull<B, C> {
     /// Builds a new [`Pull`] RPC API implementation.
     #[inline]
     pub fn new(client: Arc<C>) -> Self {
@@ -94,14 +75,14 @@ impl<B, C> Pull<B, C> {
 }
 
 #[async_trait]
-impl<B, C> PullApiServer for Pull<B, C>
+impl<B, C> SBTPullApiServer for SBTPull<B, C>
 where
     B: Block,
     C: 'static + ProvideRuntimeApi<B> + HeaderBackend<B>,
-    C::Api: PullLedgerDiffApi<B>,
+    C::Api: SBTPullLedgerDiffApi<B>,
 {
     #[inline]
-    fn pull_ledger_diff(
+    fn sbt_pull_ledger_diff(
         &self,
         checkpoint: Checkpoint,
         max_receivers: u64,
@@ -109,7 +90,7 @@ where
     ) -> RpcResult<PullResponse> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(self.client.info().finalized_hash);
-        api.pull_ledger_diff(&at, checkpoint.into(), max_receivers, max_senders)
+        api.sbt_pull_ledger_diff(&at, checkpoint.into(), max_receivers, max_senders)
             .map_err(|err| {
                 CallError::Custom(ErrorObject::owned(
                     PULL_LEDGER_DIFF_ERROR,
@@ -121,7 +102,7 @@ where
     }
 
     #[inline]
-    fn dense_pull_ledger_diff(
+    fn sbt_dense_pull_ledger_diff(
         &self,
         checkpoint: Checkpoint,
         max_receivers: u64,
@@ -129,51 +110,12 @@ where
     ) -> RpcResult<DensePullResponse> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(self.client.info().finalized_hash);
-        api.pull_ledger_diff(&at, checkpoint.into(), max_receivers, max_senders)
+        api.sbt_pull_ledger_diff(&at, checkpoint.into(), max_receivers, max_senders)
             .map(Into::into)
             .map_err(|err| {
                 CallError::Custom(ErrorObject::owned(
                     PULL_LEDGER_DIFF_ERROR,
                     "Unable to compute dense state diff for pull",
-                    Some(format!("{err:?}")),
-                ))
-                .into()
-            })
-    }
-
-    #[inline]
-    fn initial_pull(
-        &self,
-        checkpoint: Checkpoint,
-        max_receivers: u64,
-    ) -> RpcResult<InitialSyncResponse> {
-        let api = self.client.runtime_api();
-        let at = BlockId::hash(self.client.info().finalized_hash);
-        api.initial_pull(&at, checkpoint.into(), max_receivers)
-            .map_err(|err| {
-                CallError::Custom(ErrorObject::owned(
-                    PULL_LEDGER_DIFF_ERROR,
-                    "Unable to compute state diff for initial pull",
-                    Some(format!("{err:?}")),
-                ))
-                .into()
-            })
-    }
-
-    #[inline]
-    fn dense_initial_pull(
-        &self,
-        checkpoint: Checkpoint,
-        max_receivers: u64,
-    ) -> RpcResult<DenseInitialSyncResponse> {
-        let api = self.client.runtime_api();
-        let at = BlockId::hash(self.client.info().finalized_hash);
-        api.initial_pull(&at, checkpoint.into(), max_receivers)
-            .map(Into::into)
-            .map_err(|err| {
-                CallError::Custom(ErrorObject::owned(
-                    PULL_LEDGER_DIFF_ERROR,
-                    "Unable to compute state diff for initial pull",
                     Some(format!("{err:?}")),
                 ))
                 .into()

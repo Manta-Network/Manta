@@ -1077,6 +1077,8 @@ dependencies = [
  "pallet-collective",
  "pallet-democracy",
  "pallet-manta-pay",
+ "pallet-manta-sbt",
+ "pallet-manta-support",
  "pallet-membership",
  "pallet-multisig",
  "pallet-parachain-staking",
@@ -2467,6 +2469,8 @@ dependencies = [
  "pallet-collective",
  "pallet-democracy",
  "pallet-manta-pay",
+ "pallet-manta-sbt",
+ "pallet-manta-support",
  "pallet-membership",
  "pallet-multisig",
  "pallet-preimage",
@@ -5125,6 +5129,7 @@ dependencies = [
  "nimbus-primitives",
  "pallet-author-inherent",
  "pallet-manta-pay",
+ "pallet-manta-sbt",
  "pallet-parachain-staking",
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",
@@ -6602,6 +6607,7 @@ dependencies = [
  "pallet-asset-manager",
  "pallet-assets",
  "pallet-balances",
+ "pallet-manta-support",
  "pallet-tx-pause",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
@@ -6614,6 +6620,67 @@ dependencies = [
  "sp-std",
  "tempfile",
  "xcm",
+]
+
+[[package]]
+name = "pallet-manta-sbt"
+version = "4.0.2"
+dependencies = [
+ "anyhow",
+ "base64 0.20.0",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "indoc",
+ "jsonrpsee",
+ "lazy_static",
+ "manta-accounting",
+ "manta-crypto",
+ "manta-pay",
+ "manta-primitives",
+ "manta-util",
+ "pallet-asset-manager",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-manta-pay",
+ "pallet-manta-support",
+ "pallet-tx-pause",
+ "parity-scale-codec",
+ "rand_chacha 0.3.1",
+ "scale-info",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "tempfile",
+ "xcm",
+]
+
+[[package]]
+name = "pallet-manta-support"
+version = "4.0.2"
+dependencies = [
+ "anyhow",
+ "base64 0.20.0",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "indoc",
+ "manta-accounting",
+ "manta-crypto",
+ "manta-pay",
+ "manta-primitives",
+ "manta-util",
+ "parity-scale-codec",
+ "rand_chacha 0.3.1",
+ "scale-info",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime",
+ "sp-std",
+ "tempfile",
 ]
 
 [[package]]
