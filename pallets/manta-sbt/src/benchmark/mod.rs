@@ -75,6 +75,7 @@ benchmarks! {
     }: set_mint_time (
         RawOrigin::Root,
         MintType::Bab,
+        0,
         5u32.into(),
         Some(10u32.into())
     )
@@ -89,6 +90,7 @@ benchmarks! {
         MantaSBTPallet::<T>::set_mint_time(
             RawOrigin::Root.into(),
             MintType::Bab,
+            0,
             0_u32.into(),
             None
         )?;
@@ -99,7 +101,7 @@ benchmarks! {
         )?;
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
 
-        let signature = MantaSBTPallet::<T>::eth_sign(&alice(), &mint_post.proof);
+        let signature = MantaSBTPallet::<T>::eth_sign(&alice(), &mint_post.proof, 0);
 
     }: mint_sbt_eth(
         RawOrigin::Signed(caller),

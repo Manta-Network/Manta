@@ -164,6 +164,14 @@ pub enum MintStatus {
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[scale_info(skip_type_params(T))]
+pub struct MintChainInfo<T: Config> {
+    pub chain_id: u64,
+    pub start_time: Moment<T>,
+    pub end_time: Option<Moment<T>>,
+}
+
+#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[scale_info(skip_type_params(T))]
 pub struct Metadata<T: Config> {
     pub mint_type: MintType,
     pub collection_id: Option<u128>,
@@ -221,10 +229,6 @@ pub mod pallet {
         /// Max size in bytes of stored metadata
         #[pallet::constant]
         type SbtMetadataBound: Get<u32>;
-
-        /// ChainId for `Eip712Signature`
-        #[pallet::constant]
-        type ChainId: Get<u64>;
     }
 
     /// Counter for SBT AssetId. Increments by one everytime a new asset id is requested.
@@ -244,8 +248,8 @@ pub mod pallet {
 
     /// Range of time at which evm mints for each `MintType` are possible.
     #[pallet::storage]
-    pub(super) type MintTimeRange<T: Config> =
-        StorageMap<_, Blake2_128Concat, MintType, (Moment<T>, Option<Moment<T>>), OptionQuery>;
+    pub(super) type MintChainInfos<T: Config> =
+        StorageMap<_, Blake2_128Concat, MintType, MintChainInfo<T>, OptionQuery>;
 
     /// SBT Metadata maps `StandardAsset` to the correstonding SBT metadata
     ///
@@ -415,11 +419,16 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            // check that mint type is within time window
-            Self::check_mint_time(address_type.into())?;
+            let mint_type = address_type.into();
+            let chain_info =
+                MintChainInfos::<T>::get(mint_type).ok_or(Error::<T>::MintNotAvailable)?;
 
-            let address = Self::verify_eip712_signature(&post.proof, &eth_signature)
-                .ok_or(Error::<T>::BadSignature)?;
+            // check that mint type is within time window
+            Self::check_mint_time(&chain_info)?;
+
+            let address =
+                Self::verify_eip712_signature(&post.proof, &eth_signature, chain_info.chain_id)
+                    .ok_or(Error::<T>::BadSignature)?;
             // Check signature
             match address_type {
                 EvmAddressType::Bab(eth_address) | EvmAddressType::Galxe(eth_address) => {
@@ -439,7 +448,7 @@ pub mod pallet {
             Self::check_post_shape(&post, asset_id)?;
 
             let sbt_metadata = Metadata::<T> {
-                mint_type: address_type.into(),
+                mint_type,
                 collection_id,
                 item_id,
                 extra: metadata,
@@ -477,6 +486,7 @@ pub mod pallet {
         pub fn set_mint_time(
             origin: OriginFor<T>,
             mint_type: MintType,
+            chain_id: u64,
             start_time: Moment<T>,
             end_time: Option<Moment<T>>,
         ) -> DispatchResult {
@@ -486,9 +496,16 @@ pub mod pallet {
                 ensure!(end > start_time, Error::<T>::InvalidTimeRange);
             }
 
-            MintTimeRange::<T>::insert(mint_type, (start_time, end_time));
+            let mint_chain_info = MintChainInfo::<T> {
+                chain_id,
+                start_time,
+                end_time,
+            };
+            MintChainInfos::<T>::insert(mint_type, mint_chain_info);
+
             Self::deposit_event(Event::<T>::SetTimeRange {
                 mint_type,
+                chain_id,
                 start_time,
                 end_time,
             });
@@ -538,6 +555,8 @@ pub mod pallet {
         SetTimeRange {
             /// The allowlist that time range is set for (ex: BAB)
             mint_type: MintType,
+            /// Chain Id
+            chain_id: u64,
             /// Start time at which minting is valid
             start_time: Moment<T>,
             /// End time at which minting will no longer be valid, None represents no end time.
@@ -886,8 +905,8 @@ where
 
     /// Checks that signature was generated using the `TransferPost` proof field as payload
     #[inline]
-    fn verify_eip712_signature(proof: &Proof, sig: &[u8; 65]) -> Option<EvmAddress> {
-        let msg = Self::eip712_signable_message(proof);
+    fn verify_eip712_signature(proof: &Proof, sig: &[u8; 65], chain_id: u64) -> Option<EvmAddress> {
+        let msg = Self::eip712_signable_message(proof, chain_id);
         let msg_hash = keccak_256(msg.as_slice());
 
         recover_signer(sig, &msg_hash)
@@ -895,8 +914,8 @@ where
 
     /// Eip-712 message to be signed
     #[inline]
-    fn eip712_signable_message(proof: &Proof) -> Vec<u8> {
-        let domain_separator = Self::evm_account_domain_separator();
+    fn eip712_signable_message(proof: &Proof, chain_id: u64) -> Vec<u8> {
+        let domain_separator = Self::evm_account_domain_separator(chain_id);
         let payload_hash = Self::evm_account_payload_hash(proof);
 
         let mut msg = b"\x19\x01".to_vec();
@@ -916,25 +935,25 @@ where
 
     /// Creates Eip712 domain separator for minting zkSBT. This ensures signature will not have collisions
     #[inline]
-    fn evm_account_domain_separator() -> [u8; 32] {
+    fn evm_account_domain_separator(chain_id: u64) -> [u8; 32] {
         let domain_hash =
             &sha3_256("EIP712Domain(string name,string version,uint256 chainId,bytes32 salt)");
         let mut domain_seperator_msg = domain_hash.to_vec();
         domain_seperator_msg.extend_from_slice(&sha3_256("Claim Free SBT")); // name
         domain_seperator_msg.extend_from_slice(&sha3_256("1")); // version
-        domain_seperator_msg.extend_from_slice(&to_bytes(T::ChainId::get())); // chain id
+        domain_seperator_msg.extend_from_slice(&to_bytes(chain_id)); // chain id
         domain_seperator_msg.extend_from_slice(
             frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero()).as_ref(),
         ); // genesis block hash
         keccak_256(domain_seperator_msg.as_slice())
     }
 
-    /// Checks that mint type is available to mint within time window defined in `MintTimeRange`
+    /// Checks that mint type is available to mint within time window defined in `MintChainInfos`
     #[inline]
-    fn check_mint_time(mint_type: MintType) -> DispatchResult {
+    fn check_mint_time(mint_chain_info: &MintChainInfo<T>) -> DispatchResult {
         let current_time = T::Now::now();
-        let (start_time, end_time) =
-            MintTimeRange::<T>::get(mint_type).ok_or(Error::<T>::MintNotAvailable)?;
+
+        let (start_time, end_time) = (mint_chain_info.start_time, mint_chain_info.end_time);
 
         // checks that current time falls within bounds
         if start_time > current_time {
@@ -965,8 +984,12 @@ where
 
     /// Constructs a message and signs it.
     #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
-    pub fn eth_sign(secret: &libsecp256k1::SecretKey, proof: &Proof) -> Eip712Signature {
-        let msg = keccak_256(&Self::eip712_signable_message(proof));
+    pub fn eth_sign(
+        secret: &libsecp256k1::SecretKey,
+        proof: &Proof,
+        chain_id: u64,
+    ) -> Eip712Signature {
+        let msg = keccak_256(&Self::eip712_signable_message(proof, chain_id));
         let (sig, recovery_id) = libsecp256k1::sign(&libsecp256k1::Message::parse(&msg), secret);
         let mut r = [0u8; 65];
         r[0..64].copy_from_slice(&sig.serialize()[..]);
