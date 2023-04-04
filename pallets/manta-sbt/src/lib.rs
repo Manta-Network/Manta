@@ -40,7 +40,7 @@
 //! First some `AdminOrigin` must setup the allowlist, the following must be called to setup allowlist:
 //!
 //! `change_allowlist_account`: `AdminOrigin` must set a privileged account to have power to allowlist `EvmAddress`
-//! `set_mint_time`: `AdminOrigin` must set a time range for a particular `MintType` to be valid.
+//! `set_mint_chain_info`: `AdminOrigin` must set a time range for a particular `MintType` to be valid.
 //! `allowlist_evm_account`: Account set in `change_allowlist_account` can allow a particular `EvmAddress` one free mint of zkSBT.
 //!
 //! Second step a user that has been added to `EvmAddressAllowlist` can now mint their zkSBT.
@@ -246,7 +246,7 @@ pub mod pallet {
     pub(super) type EvmAddressAllowlist<T: Config> =
         StorageMap<_, Blake2_128Concat, EvmAddressType, MintStatus, OptionQuery>;
 
-    /// Range of time at which evm mints for each `MintType` are possible.
+    /// Range of time and chain_id at which evm mints for each `MintType` are possible.
     #[pallet::storage]
     pub(super) type MintChainInfos<T: Config> =
         StorageMap<_, Blake2_128Concat, MintType, MintChainInfo<T>, OptionQuery>;
@@ -479,11 +479,11 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Sets the time range of which a `MintType` will be valid. Requires `AdminOrigin`
+        /// Sets the time range and chain_id of which a `MintType` will be valid. Requires `AdminOrigin`
         #[pallet::call_index(5)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_mint_time())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_mint_chain_info())]
         #[transactional]
-        pub fn set_mint_time(
+        pub fn set_mint_chain_info(
             origin: OriginFor<T>,
             mint_type: MintType,
             chain_id: u64,
@@ -503,7 +503,7 @@ pub mod pallet {
             };
             MintChainInfos::<T>::insert(mint_type, mint_chain_info);
 
-            Self::deposit_event(Event::<T>::SetTimeRange {
+            Self::deposit_event(Event::<T>::MintChainInfo {
                 mint_type,
                 chain_id,
                 start_time,
@@ -552,10 +552,10 @@ pub mod pallet {
             /// Account that is now the new privileged allowlist account
             account: Option<T::AccountId>,
         },
-        SetTimeRange {
-            /// The allowlist that time range is set for (ex: BAB)
+        MintChainInfo {
+            /// Chain Type that mint SBT
             mint_type: MintType,
-            /// Chain Id
+            /// Chain Id used for signature verification
             chain_id: u64,
             /// Start time at which minting is valid
             start_time: Moment<T>,
@@ -727,7 +727,7 @@ pub mod pallet {
         /// Account is not the privileged account able to allowlist eth addresses
         NotAllowlistAccount,
 
-        /// Minting SBT is outside defined time range
+        /// Minting SBT is outside defined time range or chain_id is not set
         MintNotAvailable,
 
         /// SBT has already been minted with this `EvmAddress`

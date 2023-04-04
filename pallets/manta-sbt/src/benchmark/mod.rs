@@ -71,8 +71,8 @@ benchmarks! {
         EvmAddressType::Bab(H160::default())
     )
 
-    set_mint_time {
-    }: set_mint_time (
+    set_mint_chain_info {
+    }: set_mint_chain_info (
         RawOrigin::Root,
         MintType::Bab,
         0,
@@ -87,7 +87,7 @@ benchmarks! {
             Some(caller.clone())
         )?;
         let bab_alice = EvmAddressType::Bab(MantaSBTPallet::<T>::eth_address(&alice()));
-        MantaSBTPallet::<T>::set_mint_time(
+        MantaSBTPallet::<T>::set_mint_chain_info(
             RawOrigin::Root.into(),
             MintType::Bab,
             0,

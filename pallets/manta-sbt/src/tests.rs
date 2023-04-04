@@ -454,7 +454,7 @@ fn mint_sbt_eth_works() {
         ));
         let evm_mint_type = EvmAddressType::Bab(MantaSBTPallet::eth_address(&alice_eth()));
         Timestamp::set_timestamp(10);
-        assert_ok!(MantaSBTPallet::set_mint_time(
+        assert_ok!(MantaSBTPallet::set_mint_chain_info(
             MockOrigin::root(),
             MintType::Bab,
             0,
@@ -560,7 +560,7 @@ fn timestamp_range_fails() {
             MockOrigin::signed(ALICE),
             evm_mint_type
         ));
-        assert_ok!(MantaSBTPallet::set_mint_time(
+        assert_ok!(MantaSBTPallet::set_mint_chain_info(
             MockOrigin::root(),
             MintType::Bab,
             0,
@@ -607,7 +607,7 @@ fn timestamp_range_fails() {
         );
 
         // with None as end time works
-        assert_ok!(MantaSBTPallet::set_mint_time(
+        assert_ok!(MantaSBTPallet::set_mint_chain_info(
             MockOrigin::root(),
             MintType::Bab,
             0,
@@ -627,18 +627,24 @@ fn timestamp_range_fails() {
 }
 
 #[test]
-fn set_mint_time_works() {
+fn set_mint_chain_info_works() {
     new_test_ext().execute_with(|| {
         assert_noop!(
-            MantaSBTPallet::set_mint_time(MockOrigin::signed(ALICE), MintType::Bab, 0, 0, None),
+            MantaSBTPallet::set_mint_chain_info(
+                MockOrigin::signed(ALICE),
+                MintType::Bab,
+                0,
+                0,
+                None
+            ),
             DispatchError::BadOrigin
         );
         assert_noop!(
-            MantaSBTPallet::set_mint_time(MockOrigin::root(), MintType::Bab, 0, 10, Some(5)),
+            MantaSBTPallet::set_mint_chain_info(MockOrigin::root(), MintType::Bab, 0, 10, Some(5)),
             Error::<Test>::InvalidTimeRange
         );
 
-        assert_ok!(MantaSBTPallet::set_mint_time(
+        assert_ok!(MantaSBTPallet::set_mint_chain_info(
             MockOrigin::root(),
             MintType::Bab,
             0,
