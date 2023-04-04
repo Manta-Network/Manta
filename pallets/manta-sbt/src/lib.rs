@@ -162,7 +162,7 @@ pub enum MintStatus {
     AlreadyMinted,
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 pub struct MintChainInfo<T: Config> {
     pub chain_id: u64,
@@ -170,13 +170,13 @@ pub struct MintChainInfo<T: Config> {
     pub end_time: Option<Moment<T>>,
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
-#[scale_info(skip_type_params(T))]
-pub struct Metadata<T: Config> {
+#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[scale_info(skip_type_params(Bound))]
+pub struct Metadata<Bound: Get<u32>> {
     pub mint_type: MintType,
     pub collection_id: Option<u128>,
     pub item_id: Option<u128>,
-    pub extra: Option<BoundedVec<u8, T::SbtMetadataBound>>,
+    pub extra: Option<BoundedVec<u8, Bound>>,
 }
 
 /// Type for timestamp
@@ -193,7 +193,6 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::storage_version(STORAGE_VERSION)]
-    #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
     /// The module configuration trait.
@@ -255,8 +254,13 @@ pub mod pallet {
     ///
     /// Metadata is raw bytes that correspond to an image
     #[pallet::storage]
-    pub(super) type SbtMetadata<T: Config> =
-        StorageMap<_, Blake2_128Concat, StandardAssetId, Metadata<T>, OptionQuery>;
+    pub(super) type SbtMetadata<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        StandardAssetId,
+        Metadata<T::SbtMetadataBound>,
+        OptionQuery,
+    >;
 
     /// Allowlists accounts to be able to mint SBTs with designated `StandardAssetId`
     #[pallet::storage]
@@ -317,7 +321,7 @@ pub mod pallet {
             // Checks that it is indeed a to_private post with a value of 1 and has correct asset_id
             Self::check_post_shape(&post, start_id)?;
 
-            let sbt_metadata = Metadata::<T> {
+            let sbt_metadata = Metadata::<T::SbtMetadataBound> {
                 mint_type: MintType::Manta,
                 collection_id: None,
                 item_id: None,
@@ -447,7 +451,7 @@ pub mod pallet {
 
             Self::check_post_shape(&post, asset_id)?;
 
-            let sbt_metadata = Metadata::<T> {
+            let sbt_metadata = Metadata::<T::SbtMetadataBound> {
                 mint_type,
                 collection_id,
                 item_id,
