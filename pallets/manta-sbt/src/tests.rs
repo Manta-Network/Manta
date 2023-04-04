@@ -475,7 +475,7 @@ fn mint_sbt_eth_works() {
                 evm_mint_type,
                 Some(0),
                 Some(0),
-                bvec![0]
+                Some(bvec![0])
             ),
             Error::<Test>::NotAllowlisted
         );
@@ -494,7 +494,7 @@ fn mint_sbt_eth_works() {
                 evm_mint_type,
                 Some(0),
                 Some(0),
-                bvec![0]
+                Some(bvec![0])
             ),
             Error::<Test>::BadSignature
         );
@@ -506,7 +506,7 @@ fn mint_sbt_eth_works() {
                 evm_mint_type,
                 Some(0),
                 Some(0),
-                bvec![0]
+                Some(bvec![0])
             ),
             Error::<Test>::BadSignature
         );
@@ -518,7 +518,7 @@ fn mint_sbt_eth_works() {
             evm_mint_type,
             Some(0),
             Some(0),
-            bvec![0]
+            Some(bvec![0])
         ));
         let sbt_metadata = SbtMetadata::<Test>::get(1).unwrap();
         assert_eq!(sbt_metadata.collection_id, Some(0));
@@ -539,7 +539,7 @@ fn mint_sbt_eth_works() {
                 evm_mint_type,
                 Some(0),
                 Some(0),
-                bvec![0]
+                Some(bvec![0])
             ),
             Error::<Test>::AlreadyMinted
         );
@@ -584,7 +584,7 @@ fn timestamp_range_fails() {
                 evm_mint_type,
                 Some(0),
                 Some(0),
-                bvec![0]
+                Some(bvec![0])
             ),
             Error::<Test>::MintNotAvailable
         );
@@ -599,7 +599,7 @@ fn timestamp_range_fails() {
                 evm_mint_type,
                 Some(0),
                 Some(0),
-                bvec![0]
+                Some(bvec![0])
             ),
             Error::<Test>::MintNotAvailable
         );
@@ -618,7 +618,7 @@ fn timestamp_range_fails() {
             evm_mint_type,
             Some(0),
             Some(0),
-            bvec![0]
+            Some(bvec![0])
         ));
     })
 }

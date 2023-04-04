@@ -411,7 +411,7 @@ pub mod pallet {
             address_type: EvmAddressType,
             collection_id: Option<u128>,
             item_id: Option<u128>,
-            metadata: BoundedVec<u8, T::SbtMetadataBound>,
+            metadata: Option<BoundedVec<u8, T::SbtMetadataBound>>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
@@ -442,10 +442,10 @@ pub mod pallet {
                 mint_type: address_type.into(),
                 collection_id,
                 item_id,
-                extra: Some(metadata),
+                extra: metadata,
             };
 
-            SbtMetadata::<T>::insert(asset_id, &sbt_metadata);
+            SbtMetadata::<T>::insert(asset_id, sbt_metadata);
 
             Self::post_transaction(vec![who], *post)?;
             Self::deposit_event(Event::<T>::MintSbtEvm {
