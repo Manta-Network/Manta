@@ -16,11 +16,7 @@
 
 //! MantaPay RPC Interfaces
 
-use crate::{
-    runtime::PullLedgerDiffApi,
-    types::{DenseInitialSyncResponse, DensePullResponse},
-    Checkpoint, InitialSyncResponse, PullResponse,
-};
+use crate::runtime::PullLedgerDiffApi;
 use alloc::sync::Arc;
 use core::marker::PhantomData;
 use jsonrpsee::{
@@ -28,7 +24,9 @@ use jsonrpsee::{
     proc_macros::rpc,
     types::error::{CallError, ErrorObject},
 };
-use manta_support::manta_pay::DensePullResponse;
+use manta_support::manta_pay::{
+    Checkpoint, DenseInitialSyncResponse, DensePullResponse, InitialSyncResponse, PullResponse,
+};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block};

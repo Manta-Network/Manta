@@ -83,15 +83,14 @@ use manta_pay::{
 use manta_primitives::assets::{self, AssetConfig, FungibleLedger as _};
 use manta_support::manta_pay::{
     asset_value_decode, asset_value_encode, fp_decode, fp_encode, id_from_field, AccountId, Asset,
-    AssetValue, FullIncomingNote, MTParametersError, NullifierCommitment, OutgoingNote,
-    ReceiverChunk, SenderChunk, StandardAssetId, TransferPost, Utxo, UtxoAccumulatorOutput,
-    UtxoItemHashError, UtxoMerkleTreePath, VerifyingContextError, Wrap, WrapPair,
+    AssetValue, Checkpoint, FullIncomingNote, InitialSyncResponse, MTParametersError,
+    NullifierCommitment, OutgoingNote, PullResponse, ReceiverChunk, SenderChunk, StandardAssetId,
+    TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError, UtxoMerkleTreePath,
+    VerifyingContextError, Wrap, WrapPair,
 };
 use manta_util::codec::Encode;
 
-pub use manta_support::manta_pay::{Checkpoint, PullResponse, RawCheckpoint};
 pub use pallet::*;
-pub use types::{InitialSyncResponse, PullResponse};
 pub use weights::WeightInfo;
 
 #[cfg(test)]
