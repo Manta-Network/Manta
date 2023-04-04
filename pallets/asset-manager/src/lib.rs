@@ -352,7 +352,10 @@ pub mod pallet {
                 Error::<T>::LocationAlreadyExists
             );
             if let Some(multi) = location.clone().into() {
-                ensure!(Self::contains(&multi), Error::<T>::LocationNotSupported);
+                ensure!(
+                    Self::is_allowed_location_shape(&multi),
+                    Error::<T>::LocationNotSupported
+                );
             }
             let asset_id = Self::next_asset_id_and_increment()?;
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
@@ -406,7 +409,10 @@ pub mod pallet {
                 Error::<T>::LocationAlreadyExists
             );
             if let Some(multi) = location.clone().into() {
-                ensure!(Self::contains(&multi), Error::<T>::LocationNotSupported);
+                ensure!(
+                    Self::is_allowed_location_shape(&multi),
+                    Error::<T>::LocationNotSupported
+                );
             }
             // change the ledger state.
             let old_location =
@@ -612,20 +618,12 @@ pub mod pallet {
                 Ok(())
             }
         }
-    }
 
-    /// Check the multilocation destination is supported by calamari/manta.
-    impl<T> Contains<MultiLocation> for Pallet<T>
-    where
-        T: Config,
-    {
-        #[inline]
-        fn contains(location: &MultiLocation) -> bool {
+        fn is_allowed_location_shape(location: &MultiLocation) -> bool {
             // check parents
             if location.parents != 1 {
                 return false;
             }
-
             match location.interior {
                 // Local transfers
                 Junctions::Here => true,
@@ -634,9 +632,31 @@ pub mod pallet {
                 // Send tokens to sibling chain.
                 Junctions::X2(Junction::Parachain(para_id), Junction::AccountId32 { .. })
                 | Junctions::X2(Junction::Parachain(para_id), Junction::PalletInstance { .. })
-                | Junctions::X2(Junction::Parachain(para_id), Junction::AccountKey20 { .. }) => true,
+                | Junctions::X2(Junction::Parachain(para_id), Junction::AccountKey20 { .. }) => {
+                    true
+                }
                 // We don't support X3 or longer Junctions.
                 _ => false,
+            }
+        }
+    }
+
+    /// impl used by xtokens to filter multilocations allowed to send to
+    impl<T> Contains<MultiLocation> for Pallet<T>
+    where
+        T: Config,
+    {
+        #[inline]
+        fn contains(location: &MultiLocation) -> bool {
+            if !Self::is_allowed_location_shape(location) {
+                return false;
+            }
+
+            // if sending to sibling, only siblings whose assets we registered are allowed
+            if let Junctions::X2(Junction::Parachain(para_id), _) = location.interior {
+                AllowedDestParaIds::<T>::contains_key(para_id)
+            } else {
+                true
             }
         }
     }
