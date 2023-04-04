@@ -138,7 +138,6 @@ impl crate::Config for Test {
     type ReservePrice = ConstU128<1000>;
     type SbtMetadataBound = ConstU32<200>;
     type AdminOrigin = EnsureRoot<AccountId32>;
-    type ChainId = ConstU64<2084>;
     type Now = Timestamp;
 }
 

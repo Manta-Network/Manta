@@ -33,7 +33,7 @@ use manta_primitives::{
 use frame_support::{
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32, ConstU64, EitherOfDiverse},
+    traits::{ConstU128, ConstU16, ConstU32, EitherOfDiverse},
     PalletId,
 };
 use frame_system::EnsureRoot;
@@ -204,7 +204,6 @@ impl pallet_manta_sbt::Config for Runtime {
     type MintsPerReserve = ConstU16<5>;
     type ReservePrice = ConstU128<DOL>;
     type SbtMetadataBound = ConstU32<300>;
-    type ChainId = ConstU64<2085>;
     type AdminOrigin = EitherOfDiverse<
         EnsureRoot<AccountId>,
         pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,

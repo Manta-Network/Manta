@@ -50,7 +50,7 @@ pub trait WeightInfo {
     fn reserve_sbt() -> Weight;
     fn change_allowlist_account() -> Weight;
     fn allowlist_evm_account() -> Weight;
-    fn set_mint_time() -> Weight;
+    fn set_mint_chain_info() -> Weight;
     fn mint_sbt_eth() -> Weight;
 }
 
@@ -89,13 +89,13 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
             .saturating_add(T::DbWeight::get().reads(2 as Weight))
             .saturating_add(T::DbWeight::get().writes(2 as Weight))
     }
-    // Storage: MantaSbt MintTimeRange (r:0 w:1)
-    fn set_mint_time() -> Weight {
+    // Storage: MantaSbt MintChainInfos (r:0 w:1)
+    fn set_mint_chain_info() -> Weight {
         (14_838_000 as Weight)
             .saturating_add(T::DbWeight::get().writes(1 as Weight))
     }
     // Storage: Timestamp Now (r:1 w:0)
-    // Storage: MantaSbt MintTimeRange (r:1 w:0)
+    // Storage: MantaSbt MintChainInfos (r:1 w:0)
     // Storage: System BlockHash (r:1 w:0)
     // Storage: MantaSbt EvmAddressAllowlist (r:1 w:1)
     // Storage: MantaSbt UtxoSet (r:1 w:1)
@@ -144,13 +144,13 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(2 as Weight))
             .saturating_add(RocksDbWeight::get().writes(2 as Weight))
     }
-    // Storage: MantaSbt MintTimeRange (r:0 w:1)
-    fn set_mint_time() -> Weight {
+    // Storage: MantaSbt MintChainInfos (r:0 w:1)
+    fn set_mint_chain_info() -> Weight {
         (14_838_000 as Weight)
             .saturating_add(RocksDbWeight::get().writes(1 as Weight))
     }
     // Storage: Timestamp Now (r:1 w:0)
-    // Storage: MantaSbt MintTimeRange (r:1 w:0)
+    // Storage: MantaSbt MintChainInfos (r:1 w:0)
     // Storage: System BlockHash (r:1 w:0)
     // Storage: MantaSbt EvmAddressAllowlist (r:1 w:1)
     // Storage: MantaSbt UtxoSet (r:1 w:1)

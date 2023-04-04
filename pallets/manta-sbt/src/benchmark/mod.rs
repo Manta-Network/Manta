@@ -71,10 +71,11 @@ benchmarks! {
         EvmAddressType::Bab(H160::default())
     )
 
-    set_mint_time {
-    }: set_mint_time (
+    set_mint_chain_info {
+    }: set_mint_chain_info (
         RawOrigin::Root,
         MintType::Bab,
+        0,
         5u32.into(),
         Some(10u32.into())
     )
@@ -86,9 +87,10 @@ benchmarks! {
             Some(caller.clone())
         )?;
         let bab_alice = EvmAddressType::Bab(MantaSBTPallet::<T>::eth_address(&alice()));
-        MantaSBTPallet::<T>::set_mint_time(
+        MantaSBTPallet::<T>::set_mint_chain_info(
             RawOrigin::Root.into(),
             MintType::Bab,
+            0,
             0_u32.into(),
             None
         )?;
@@ -99,7 +101,7 @@ benchmarks! {
         )?;
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
 
-        let signature = MantaSBTPallet::<T>::eth_sign(&alice(), &mint_post.proof);
+        let signature = MantaSBTPallet::<T>::eth_sign(&alice(), &mint_post.proof, 0);
 
     }: mint_sbt_eth(
         RawOrigin::Signed(caller),
