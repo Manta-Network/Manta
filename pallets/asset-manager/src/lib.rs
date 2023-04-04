@@ -639,7 +639,7 @@ pub mod pallet {
         }
     }
 
-    /// impl used by xtokens to filter multilocations allowed to send to
+    /// impl used by xtokens as `MultiLocationsFilter`. Defines where we're allowed to send to
     impl<T> Contains<MultiLocation> for Pallet<T>
     where
         T: Config,
