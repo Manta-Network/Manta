@@ -124,7 +124,11 @@ fn to_private_should_work() {
             Box::new(post),
             bvec![0]
         ));
-        assert_eq!(SbtMetadata::<Test>::get(1).unwrap(), vec![0]);
+        assert_eq!(SbtMetadata::<Test>::get(1).unwrap().extra, Some(bvec![0]));
+        assert_eq!(
+            SbtMetadata::<Test>::get(1).unwrap().mint_type,
+            MintType::Manta
+        );
     });
 }
 
@@ -469,6 +473,8 @@ fn mint_sbt_eth_works() {
                 post.clone(),
                 MantaSBTPallet::eth_sign(&alice_eth(), &post.proof),
                 evm_mint_type,
+                Some(0),
+                Some(0),
                 bvec![0]
             ),
             Error::<Test>::NotAllowlisted
@@ -486,6 +492,8 @@ fn mint_sbt_eth_works() {
                 post.clone(),
                 MantaSBTPallet::eth_sign(&alice_eth(), &[0; 128]),
                 evm_mint_type,
+                Some(0),
+                Some(0),
                 bvec![0]
             ),
             Error::<Test>::BadSignature
@@ -496,6 +504,8 @@ fn mint_sbt_eth_works() {
                 post.clone(),
                 MantaSBTPallet::eth_sign(&bob_eth(), &[0; 128]),
                 evm_mint_type,
+                Some(0),
+                Some(0),
                 bvec![0]
             ),
             Error::<Test>::BadSignature
@@ -506,9 +516,15 @@ fn mint_sbt_eth_works() {
             post.clone(),
             MantaSBTPallet::eth_sign(&alice_eth(), &post.proof),
             evm_mint_type,
+            Some(0),
+            Some(0),
             bvec![0]
         ));
-        assert_eq!(SbtMetadata::<Test>::get(1).unwrap(), vec![0]);
+        let sbt_metadata = SbtMetadata::<Test>::get(1).unwrap();
+        assert_eq!(sbt_metadata.collection_id, Some(0));
+        assert_eq!(sbt_metadata.item_id, Some(0));
+        assert_eq!(sbt_metadata.extra, Some(bvec![0]));
+        assert_eq!(sbt_metadata.mint_type, MintType::Bab);
 
         // Account is already minted
         assert_eq!(
@@ -521,6 +537,8 @@ fn mint_sbt_eth_works() {
                 post.clone(),
                 MantaSBTPallet::eth_sign(&alice_eth(), &post.proof),
                 evm_mint_type,
+                Some(0),
+                Some(0),
                 bvec![0]
             ),
             Error::<Test>::AlreadyMinted
@@ -564,6 +582,8 @@ fn timestamp_range_fails() {
                 post.clone(),
                 MantaSBTPallet::eth_sign(&alice_eth(), &post.proof),
                 evm_mint_type,
+                Some(0),
+                Some(0),
                 bvec![0]
             ),
             Error::<Test>::MintNotAvailable
@@ -577,6 +597,8 @@ fn timestamp_range_fails() {
                 post.clone(),
                 MantaSBTPallet::eth_sign(&alice_eth(), &post.proof),
                 evm_mint_type,
+                Some(0),
+                Some(0),
                 bvec![0]
             ),
             Error::<Test>::MintNotAvailable
@@ -594,6 +616,8 @@ fn timestamp_range_fails() {
             post.clone(),
             MantaSBTPallet::eth_sign(&alice_eth(), &post.proof),
             evm_mint_type,
+            Some(0),
+            Some(0),
             bvec![0]
         ));
     })

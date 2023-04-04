@@ -106,6 +106,8 @@ benchmarks! {
         Box::new(mint_post),
         signature,
         bab_alice,
+        Some(0),
+        Some(0),
         vec![0].try_into().unwrap()
     )
 }

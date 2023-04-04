@@ -143,6 +143,7 @@ pub enum EvmAddressType {
 pub enum MintType {
     Bab,
     Galxe,
+    Manta,
 }
 
 impl From<EvmAddressType> for MintType {
@@ -161,6 +162,15 @@ pub enum MintStatus {
     AlreadyMinted,
 }
 
+#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct Metadata<T: Config> {
+    pub mint_type: MintType,
+    pub collection_id: Option<u128>,
+    pub item_id: Option<u128>,
+    pub extra: Option<BoundedVec<u8, T::SbtMetadataBound>>,
+}
+
 /// Type for timestamp
 pub type Moment<T> = <<T as Config>::Now as Time>::Moment;
 
@@ -175,6 +185,7 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::storage_version(STORAGE_VERSION)]
+    #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
     /// The module configuration trait.
@@ -240,13 +251,8 @@ pub mod pallet {
     ///
     /// Metadata is raw bytes that correspond to an image
     #[pallet::storage]
-    pub(super) type SbtMetadata<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat,
-        StandardAssetId,
-        BoundedVec<u8, T::SbtMetadataBound>,
-        OptionQuery,
-    >;
+    pub(super) type SbtMetadata<T: Config> =
+        StorageMap<_, Blake2_128Concat, StandardAssetId, Metadata<T>, OptionQuery>;
 
     /// Allowlists accounts to be able to mint SBTs with designated `StandardAssetId`
     #[pallet::storage]
@@ -307,7 +313,14 @@ pub mod pallet {
             // Checks that it is indeed a to_private post with a value of 1 and has correct asset_id
             Self::check_post_shape(&post, start_id)?;
 
-            SbtMetadata::<T>::insert(start_id, metadata);
+            let sbt_metadata = Metadata::<T> {
+                mint_type: MintType::Manta,
+                collection_id: None,
+                item_id: None,
+                extra: Some(metadata),
+            };
+
+            SbtMetadata::<T>::insert(start_id, sbt_metadata);
             let increment_start_id = start_id
                 .checked_add(One::one())
                 .ok_or(ArithmeticError::Overflow)?;
@@ -396,6 +409,8 @@ pub mod pallet {
             post: Box<TransferPost>,
             eth_signature: Eip712Signature,
             address_type: EvmAddressType,
+            collection_id: Option<u128>,
+            item_id: Option<u128>,
             metadata: BoundedVec<u8, T::SbtMetadataBound>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -422,7 +437,15 @@ pub mod pallet {
             EvmAddressAllowlist::<T>::insert(address_type, MintStatus::AlreadyMinted);
 
             Self::check_post_shape(&post, asset_id)?;
-            SbtMetadata::<T>::insert(asset_id, metadata);
+
+            let sbt_metadata = Metadata::<T> {
+                mint_type: address_type.into(),
+                collection_id,
+                item_id,
+                extra: Some(metadata),
+            };
+
+            SbtMetadata::<T>::insert(asset_id, &sbt_metadata);
 
             Self::post_transaction(vec![who], *post)?;
             Self::deposit_event(Event::<T>::MintSbtEvm {
