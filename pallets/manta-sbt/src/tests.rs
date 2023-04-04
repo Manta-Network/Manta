@@ -19,7 +19,7 @@
 use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, Origin as MockOrigin, Test, Timestamp},
     AllowlistAccount, DispatchError, Error, EvmAddress, EvmAddressAllowlist, EvmAddressType,
-    MintChainInfo, MintChainInfos, MintStatus, MintType, ReservedIds, SbtMetadata,
+    MintChainInfo, MintChainInfos, MintStatus, MintType, Moment, ReservedIds, SbtMetadata,
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
@@ -653,7 +653,7 @@ fn set_mint_chain_info_works() {
         ));
         assert_eq!(
             MintChainInfos::<Test>::get(MintType::Bab).unwrap(),
-            MintChainInfo::<Test> {
+            MintChainInfo::<Moment<Test>> {
                 chain_id: 0,
                 start_time: 0,
                 end_time: None

@@ -162,14 +162,15 @@ pub enum MintStatus {
     AlreadyMinted,
 }
 
+/// Info about a particular `MintType`
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[scale_info(skip_type_params(T))]
-pub struct MintChainInfo<T: Config> {
+pub struct MintChainInfo<Moment> {
     pub chain_id: u64,
-    pub start_time: Moment<T>,
-    pub end_time: Option<Moment<T>>,
+    pub start_time: Moment,
+    pub end_time: Option<Moment>,
 }
 
+/// Metadata stored for a minted zkSBT
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(Bound))]
 pub struct Metadata<Bound: Get<u32>> {
@@ -248,7 +249,7 @@ pub mod pallet {
     /// Range of time and chain_id at which evm mints for each `MintType` are possible.
     #[pallet::storage]
     pub(super) type MintChainInfos<T: Config> =
-        StorageMap<_, Blake2_128Concat, MintType, MintChainInfo<T>, OptionQuery>;
+        StorageMap<_, Blake2_128Concat, MintType, MintChainInfo<Moment<T>>, OptionQuery>;
 
     /// SBT Metadata maps `StandardAsset` to the correstonding SBT metadata
     ///
@@ -500,7 +501,7 @@ pub mod pallet {
                 ensure!(end > start_time, Error::<T>::InvalidTimeRange);
             }
 
-            let mint_chain_info = MintChainInfo::<T> {
+            let mint_chain_info = MintChainInfo::<Moment<T>> {
                 chain_id,
                 start_time,
                 end_time,
@@ -954,7 +955,7 @@ where
 
     /// Checks that mint type is available to mint within time window defined in `MintChainInfos`
     #[inline]
-    fn check_mint_time(mint_chain_info: &MintChainInfo<T>) -> DispatchResult {
+    fn check_mint_time(mint_chain_info: &MintChainInfo<Moment<T>>) -> DispatchResult {
         let current_time = T::Now::now();
 
         let (start_time, end_time) = (mint_chain_info.start_time, mint_chain_info.end_time);
