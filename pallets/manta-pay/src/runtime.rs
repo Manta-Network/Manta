@@ -16,7 +16,7 @@
 
 //! MantaPay Runtime APIs
 
-use crate::{InitialSyncResponse, PullResponse, RawCheckpoint};
+use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 
 sp_api::decl_runtime_apis! {
     pub trait PullLedgerDiffApi {
