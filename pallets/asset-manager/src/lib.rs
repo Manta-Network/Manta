@@ -52,7 +52,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use manta_primitives::assets::{
         self, AssetConfig, AssetIdLocationMap, AssetIdType, AssetMetadata, AssetRegistry,
-        FungibleLedger, LocationType,
+        AssetRegistryMetadata, FungibleLedger, LocationType,
     };
     use orml_traits::GetByKey;
     use sp_runtime::{
@@ -449,8 +449,9 @@ pub mod pallet {
         pub fn update_asset_metadata(
             origin: OriginFor<T>,
             asset_id: T::AssetId,
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
-        ) -> DispatchResult {
+            metadata: <<T as Config>::AssetConfig as AssetConfig<T>>::StorageMetadata,
+        ) -> DispatchResult
+        {
             T::ModifierOrigin::ensure_origin(origin)?;
             ensure!(
                 asset_id != <T::AssetConfig as AssetConfig<T>>::NativeAssetId::get(),
@@ -464,8 +465,21 @@ pub mod pallet {
                 &asset_id,
                 metadata.clone().into(),
             )?;
-            AssetIdMetadata::<T>::insert(asset_id, &metadata);
-            Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata });
+            let new_metadata = AssetIdMetadata::<T>::try_mutate(asset_id, |registry_metadata| {
+                if let Some(meta) = *registry_metadata {
+                    let new = AssetRegistryMetadata {
+                        metadata: metadata.into(),
+                        min_balance: meta.min_balance(),
+                        is_sufficient: meta.is_sufficient(),
+                    };
+                    let neww: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata = new.into();
+                    *registry_metadata = Some(neww.clone());
+                    Ok(neww)
+                } else {
+                    Err(Error::<T>::UpdateNonExistentAsset.into())
+                }
+            })?;
+            Self::deposit_event(Event::<T>::AssetMetadataUpdated { asset_id, metadata: new_metadata });
             Ok(())
         }
 

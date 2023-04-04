@@ -120,7 +120,7 @@ where
     C: Config,
 {
     /// Metadata type that required in token storage: e.g. AssetMetadata in Pallet-Assets.
-    type StorageMetadata: From<Self::AssetRegistryMetadata>;
+    type StorageMetadata: From<Self::AssetRegistryMetadata> + Parameter;
 
     /// The Asset Metadata type stored in this pallet.
     type AssetRegistryMetadata: AssetMetadata<Balance = Self::Balance> + Parameter + TestingDefault;
