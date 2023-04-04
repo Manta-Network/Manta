@@ -653,7 +653,7 @@ pub mod pallet {
                 return false;
             }
             // xtokens / XCM must not be used to send transfers local to our parachain
-            if location.parents != 1 {
+            if location.parents == 0 {
                 return false;
             }
             // if sending to sibling, only siblings whose assets we registered are allowed
