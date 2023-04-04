@@ -196,7 +196,7 @@ impl pallet_manta_sbt::Config for Runtime {
     type SbtMetadataBound = ConstU32<300>;
     type AdminOrigin = EitherOfDiverse<
         EnsureRoot<AccountId>,
-        pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,
+        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>,
     >;
     type Now = Timestamp;
     type WeightInfo = weights::pallet_manta_sbt::SubstrateWeight<Runtime>;

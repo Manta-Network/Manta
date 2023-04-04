@@ -141,8 +141,11 @@ pub enum EvmAddressType {
 /// Different mint types
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub enum MintType {
+    /// Bab allowlist mint
     Bab,
+    /// Galxe allowlist mint
     Galxe,
+    /// Mint using native token (KMA/MANTA)
     Manta,
 }
 
