@@ -261,6 +261,9 @@ pub mod pallet {
         /// Location Already Exists
         LocationAlreadyExists,
 
+        /// MultiLocation Type Not Supported
+        LocationNotSupported,
+
         /// An error occured while creating a new asset at the [`AssetRegistry`].
         ErrorCreatingAsset,
 
@@ -348,6 +351,7 @@ pub mod pallet {
                 !LocationAssetId::<T>::contains_key(&location),
                 Error::<T>::LocationAlreadyExists
             );
+            ensure!(Self::contains(&location), Error::<T>::LocationNotSupported);
             let asset_id = Self::next_asset_id_and_increment()?;
             <T::AssetConfig as AssetConfig<T>>::AssetRegistry::create_asset(
                 asset_id,
@@ -399,6 +403,7 @@ pub mod pallet {
                 !LocationAssetId::<T>::contains_key(&location),
                 Error::<T>::LocationAlreadyExists
             );
+            ensure!(Self::contains(&location), Error::<T>::LocationNotSupported);
             // change the ledger state.
             let old_location =
                 AssetIdLocation::<T>::get(asset_id).ok_or(Error::<T>::UpdateNonExistentAsset)?;
