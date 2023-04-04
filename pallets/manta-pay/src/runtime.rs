@@ -16,10 +16,11 @@
 
 //! MantaPay Runtime APIs
 
-use crate::{PullResponse, RawCheckpoint};
+use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 
 sp_api::decl_runtime_apis! {
     pub trait PullLedgerDiffApi {
         fn pull_ledger_diff(checkpoint: RawCheckpoint, max_receivers: u64, max_senders: u64) -> PullResponse;
+        fn initial_pull(checkpoint: RawCheckpoint, max_receivers: u64) -> InitialSyncResponse;
     }
 }
