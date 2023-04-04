@@ -66,6 +66,9 @@ use runtime_common::{
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
 
+#[cfg(feature = "runtime-benchmarks")]
+use xcm::latest::prelude::*;
+
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
