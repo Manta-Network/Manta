@@ -48,6 +48,10 @@ use manta_primitives::constants::RocksDbWeight;
 pub trait WeightInfo {
     fn to_private() -> Weight;
     fn reserve_sbt() -> Weight;
+    fn change_allowlist_account() -> Weight;
+    fn allowlist_evm_account() -> Weight;
+    fn set_mint_chain_info() -> Weight;
+    fn mint_sbt_eth() -> Weight;
 }
 
 /// Weights for pallet_manta_sbt using the Substrate node and recommended hardware.
@@ -72,6 +76,38 @@ impl<T: frame_system::Config> pallet_manta_sbt::WeightInfo for SubstrateWeight<T
             .saturating_add(T::DbWeight::get().reads(2 as Weight))
             .saturating_add(T::DbWeight::get().writes(3 as Weight))
     }
+    // Storage: MantaSbt AllowlistAccount (r:0 w:1)
+    fn change_allowlist_account() -> Weight {
+        (13_771_000 as Weight)
+            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    }
+    // Storage: MantaSbt AllowlistAccount (r:1 w:0)
+    // Storage: MantaSbt NextSbtId (r:1 w:1)
+    // Storage: MantaSbt EvmAddressAllowlist (r:0 w:1)
+    fn allowlist_evm_account() -> Weight {
+        (20_203_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(2 as Weight))
+            .saturating_add(T::DbWeight::get().writes(2 as Weight))
+    }
+    // Storage: MantaSbt MintChainInfos (r:0 w:1)
+    fn set_mint_chain_info() -> Weight {
+        (14_838_000 as Weight)
+            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    }
+    // Storage: Timestamp Now (r:1 w:0)
+    // Storage: MantaSbt MintChainInfos (r:1 w:0)
+    // Storage: System BlockHash (r:1 w:0)
+    // Storage: MantaSbt EvmAddressAllowlist (r:1 w:1)
+    // Storage: MantaSbt UtxoSet (r:1 w:1)
+    // Storage: MantaSbt ShardTrees (r:1 w:1)
+    // Storage: MantaSbt UtxoAccumulatorOutputs (r:0 w:1)
+    // Storage: MantaSbt SbtMetadata (r:0 w:1)
+    // Storage: MantaSbt Shards (r:0 w:1)
+    fn mint_sbt_eth() -> Weight {
+        (29_952_520_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(6 as Weight))
+            .saturating_add(T::DbWeight::get().writes(6 as Weight))
+    }
 }
 
 // For backwards compatibility and tests
@@ -94,5 +130,37 @@ impl WeightInfo for () {
         (47_080_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(2 as Weight))
             .saturating_add(RocksDbWeight::get().writes(3 as Weight))
+    }
+    // Storage: MantaSbt AllowlistAccount (r:0 w:1)
+    fn change_allowlist_account() -> Weight {
+        (13_771_000 as Weight)
+            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    }
+    // Storage: MantaSbt AllowlistAccount (r:1 w:0)
+    // Storage: MantaSbt NextSbtId (r:1 w:1)
+    // Storage: MantaSbt EvmAddressAllowlist (r:0 w:1)
+    fn allowlist_evm_account() -> Weight {
+        (20_203_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
+    }
+    // Storage: MantaSbt MintChainInfos (r:0 w:1)
+    fn set_mint_chain_info() -> Weight {
+        (14_838_000 as Weight)
+            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    }
+    // Storage: Timestamp Now (r:1 w:0)
+    // Storage: MantaSbt MintChainInfos (r:1 w:0)
+    // Storage: System BlockHash (r:1 w:0)
+    // Storage: MantaSbt EvmAddressAllowlist (r:1 w:1)
+    // Storage: MantaSbt UtxoSet (r:1 w:1)
+    // Storage: MantaSbt ShardTrees (r:1 w:1)
+    // Storage: MantaSbt UtxoAccumulatorOutputs (r:0 w:1)
+    // Storage: MantaSbt SbtMetadata (r:0 w:1)
+    // Storage: MantaSbt Shards (r:0 w:1)
+    fn mint_sbt_eth() -> Weight {
+        (29_952_520_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(6 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(6 as Weight))
     }
 }

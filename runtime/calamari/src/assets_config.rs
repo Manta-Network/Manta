@@ -16,7 +16,7 @@
 
 use super::{
     weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
-    NativeTokenExistentialDeposit, Origin, Runtime, KMA,
+    NativeTokenExistentialDeposit, Origin, Runtime, TechnicalCollective, Timestamp, KMA,
 };
 
 use manta_primitives::{
@@ -33,7 +33,7 @@ use manta_primitives::{
 use frame_support::{
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32},
+    traits::{ConstU128, ConstU16, ConstU32, EitherOfDiverse},
     PalletId,
 };
 
@@ -194,5 +194,10 @@ impl pallet_manta_sbt::Config for Runtime {
     type MintsPerReserve = ConstU16<5>;
     type ReservePrice = ConstU128<{ 100_000 * KMA }>;
     type SbtMetadataBound = ConstU32<300>;
+    type AdminOrigin = EitherOfDiverse<
+        EnsureRoot<AccountId>,
+        pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>,
+    >;
+    type Now = Timestamp;
     type WeightInfo = weights::pallet_manta_sbt::SubstrateWeight<Runtime>;
 }
