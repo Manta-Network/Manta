@@ -472,6 +472,7 @@ fn mint_sbt_eth_works() {
             MantaSBTPallet::mint_sbt_eth(
                 MockOrigin::signed(ALICE),
                 post.clone(),
+                Some(0),
                 MantaSBTPallet::eth_sign(&alice_eth(), &post.proof, 0),
                 evm_mint_type,
                 Some(0),
@@ -491,6 +492,7 @@ fn mint_sbt_eth_works() {
             MantaSBTPallet::mint_sbt_eth(
                 MockOrigin::signed(ALICE),
                 post.clone(),
+                Some(0),
                 MantaSBTPallet::eth_sign(&alice_eth(), &[0; 128], 0),
                 evm_mint_type,
                 Some(0),
@@ -503,6 +505,7 @@ fn mint_sbt_eth_works() {
             MantaSBTPallet::mint_sbt_eth(
                 MockOrigin::signed(ALICE),
                 post.clone(),
+                Some(0),
                 MantaSBTPallet::eth_sign(&bob_eth(), &[0; 128], 0),
                 evm_mint_type,
                 Some(0),
@@ -515,6 +518,7 @@ fn mint_sbt_eth_works() {
         assert_ok!(MantaSBTPallet::mint_sbt_eth(
             MockOrigin::signed(ALICE),
             post.clone(),
+            Some(0),
             MantaSBTPallet::eth_sign(&alice_eth(), &post.proof, 0),
             evm_mint_type,
             Some(0),
@@ -536,6 +540,7 @@ fn mint_sbt_eth_works() {
             MantaSBTPallet::mint_sbt_eth(
                 MockOrigin::signed(ALICE),
                 post.clone(),
+                Some(0),
                 MantaSBTPallet::eth_sign(&alice_eth(), &post.proof, 0),
                 evm_mint_type,
                 Some(0),
@@ -582,6 +587,7 @@ fn timestamp_range_fails() {
             MantaSBTPallet::mint_sbt_eth(
                 MockOrigin::signed(ALICE),
                 post.clone(),
+                Some(0),
                 MantaSBTPallet::eth_sign(&alice_eth(), &post.proof, 0),
                 evm_mint_type,
                 Some(0),
@@ -597,6 +603,7 @@ fn timestamp_range_fails() {
             MantaSBTPallet::mint_sbt_eth(
                 MockOrigin::signed(ALICE),
                 post.clone(),
+                Some(0),
                 MantaSBTPallet::eth_sign(&alice_eth(), &post.proof, 0),
                 evm_mint_type,
                 Some(0),
@@ -617,6 +624,7 @@ fn timestamp_range_fails() {
         assert_ok!(MantaSBTPallet::mint_sbt_eth(
             MockOrigin::signed(ALICE),
             post.clone(),
+            Some(0),
             MantaSBTPallet::eth_sign(&alice_eth(), &post.proof, 0),
             evm_mint_type,
             Some(0),

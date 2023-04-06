@@ -419,6 +419,7 @@ pub mod pallet {
         pub fn mint_sbt_eth(
             origin: OriginFor<T>,
             post: Box<TransferPost>,
+            chain_id: Option<u64>,
             eth_signature: Eip712Signature,
             address_type: EvmAddressType,
             collection_id: Option<u128>,
@@ -434,9 +435,10 @@ pub mod pallet {
             // check that mint type is within time window
             Self::check_mint_time(&chain_info)?;
 
-            let address =
-                Self::verify_eip712_signature(&post.proof, &eth_signature, chain_info.chain_id)
-                    .ok_or(Error::<T>::BadSignature)?;
+            let chain_id = chain_id.unwrap_or(chain_info.chain_id);
+
+            let address = Self::verify_eip712_signature(&post.proof, &eth_signature, chain_id)
+                .ok_or(Error::<T>::BadSignature)?;
             // Check signature
             match address_type {
                 EvmAddressType::Bab(eth_address) | EvmAddressType::Galxe(eth_address) => {

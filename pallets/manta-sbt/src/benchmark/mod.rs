@@ -106,6 +106,7 @@ benchmarks! {
     }: mint_sbt_eth(
         RawOrigin::Signed(caller),
         Box::new(mint_post),
+        Some(0),
         signature,
         bab_alice,
         Some(0),
