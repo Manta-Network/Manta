@@ -20,13 +20,34 @@
 //!
 //! ## Overview
 //!
+//! There are two paths in which an account can mint a zkSBT.
+//! One is by using the native token (KMA/MANTA) to reserve the right to mint and subsequently minting the zkSBT.
+//! The other is by having a `EvmAddress` added to an allowlist which gives user one free zkSBT to mint (still costs tx fee).
+//! Ownership of SBT is recorded as a corresponding UTXO.
+//! User can prove ownership of SBT using `TransactionData` which can reconstruct UTXO and check its existence on-chain.
+//!
+//! ### Minting zkSBT using native token to pay
+//!
 //! There are two calls `reserve_sbt` and `to_private`.
 //!
 //! `reserve_sbt`: Reserves unique `AssetIds` for user to later mint into sbt.
 //!
-//! `to_private`: Mints SBT with signer generated `TransferPost` using previously reserved `AssetId`. Stores relevant metadata with associated `AssetId`
+//! `to_private`: Mints SBT with signer generated `TransferPost` using previously reserved `AssetId`.
+//! Stores relevant metadata with associated `AssetId`
 //!
-//! Ownership of SBT is recorded as a corresponding UTXO. You can prove you own SBT using `TransactionData` which can reconstruct UTXO
+//! ### Minting zkSBT using `EvmAddress` allowlist
+//!
+//! First some `AdminOrigin` must setup the allowlist, the following must be called to setup allowlist:
+//!
+//! `change_allowlist_account`: `AdminOrigin` must set a privileged account to have power to allowlist `EvmAddress`
+//! `set_mint_chain_info`: `AdminOrigin` must set a time range for a particular `MintType` to be valid.
+//! `allowlist_evm_account`: Account set in `change_allowlist_account` can allow a particular `EvmAddress` one free mint of zkSBT.
+//!
+//! Second step a user that has been added to `EvmAddressAllowlist` can now mint their zkSBT.
+//!
+//! `mint_sbt_eth`: User must generate a zkp corresponding to the reserved `AssetId` mapped to their `EvmAddress`.
+//! Subsequently user must generate signature by signing zkp with their eth private key.
+//! If their `EvmAddress` has been allowlisted then user will have a zkSBT for free (minus tx fee cost)!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
@@ -37,12 +58,21 @@ extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
 use frame_support::{
     pallet_prelude::*,
-    traits::{Currency, ExistenceRequirement, ReservableCurrency, StorageVersion},
+    traits::{Currency, ExistenceRequirement, ReservableCurrency, StorageVersion, Time},
     transactional, PalletId,
 };
 use frame_system::pallet_prelude::*;
+use manta_support::manta_pay::{
+    asset_value_encode, fp_decode, fp_encode, id_from_field, AccountId, AssetValue, Checkpoint,
+    FullIncomingNote, MTParametersError, Proof, PullResponse, ReceiverChunk, StandardAssetId,
+    TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError, UtxoMerkleTreePath,
+    VerifyingContextError, Wrap, WrapPair,
+};
+use sha3::{Digest, Keccak256};
+use sp_core::{H160, H256, U256};
+use sp_io::{crypto::secp256k1_ecdsa_recover, hashing::keccak_256};
 use sp_runtime::{
-    traits::{AccountIdConversion, One},
+    traits::{AccountIdConversion, One, Zero},
     ArithmeticError,
 };
 
@@ -60,15 +90,10 @@ use manta_pay::{
     },
     manta_crypto::merkle_tree::{self, forest::Configuration as _},
     manta_parameters::{self, Get as _},
-    manta_util::codec::{Decode as _, Encode},
+    manta_util::codec::Decode as _,
     parameters::load_transfer_parameters,
 };
-use manta_support::manta_pay::{
-    asset_value_encode, fp_decode, fp_encode, id_from_field, AccountId, AssetValue, Checkpoint,
-    FullIncomingNote, MTParametersError, PullResponse, ReceiverChunk, StandardAssetId,
-    TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError, UtxoMerkleTreePath,
-    VerifyingContextError, Wrap, WrapPair,
-};
+use manta_util::codec::Encode;
 
 pub use pallet::*;
 pub use weights::WeightInfo;
@@ -98,6 +123,69 @@ const ENCODED_ONE: [u8; 16] = 1u128.to_le_bytes();
 pub type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
+/// Eth based address
+type EvmAddress = H160;
+
+/// A signature (a 512-bit value, plus 8 bits for recovery ID).
+pub type Eip712Signature = [u8; 65];
+
+/// Enum with each possible type of allowlisted Eth Address
+#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub enum EvmAddressType {
+    /// BAB holder
+    Bab(EvmAddress),
+    /// Galxe holder
+    Galxe(EvmAddress),
+}
+
+/// Different mint types
+#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub enum MintType {
+    /// Bab allowlist mint
+    Bab,
+    /// Galxe allowlist mint
+    Galxe,
+    /// Mint using native token (KMA/MANTA)
+    Manta,
+}
+
+impl From<EvmAddressType> for MintType {
+    fn from(address_type: EvmAddressType) -> Self {
+        match address_type {
+            EvmAddressType::Bab(_) => MintType::Bab,
+            EvmAddressType::Galxe(_) => MintType::Galxe,
+        }
+    }
+}
+
+/// zkSBT mint Status of `EvmAddressType`. This has flag `AlreadyMinted` to put into storage after succesful mint
+#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub enum MintStatus {
+    Available(StandardAssetId),
+    AlreadyMinted,
+}
+
+/// Info about a particular `MintType`
+#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub struct MintChainInfo<Moment> {
+    pub chain_id: u64,
+    pub start_time: Moment,
+    pub end_time: Option<Moment>,
+}
+
+/// Metadata stored for a minted zkSBT
+#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[scale_info(skip_type_params(Bound))]
+pub struct Metadata<Bound: Get<u32>> {
+    pub mint_type: MintType,
+    pub collection_id: Option<u128>,
+    pub item_id: Option<u128>,
+    pub extra: Option<BoundedVec<u8, Bound>>,
+}
+
+/// Type for timestamp
+pub type Moment<T> = <<T as Config>::Now as Time>::Moment;
+
 /// MantaSBT Pallet
 #[frame_support::pallet]
 pub mod pallet {
@@ -123,6 +211,12 @@ pub mod pallet {
         /// The currency mechanism.
         type Currency: ReservableCurrency<Self::AccountId>;
 
+        /// The origin which can change the privileged allowlist account and set time range for mints
+        type AdminOrigin: EnsureOrigin<Self::Origin>;
+
+        /// Gets the current on-chain time
+        type Now: Time;
+
         /// Pallet ID
         #[pallet::constant]
         type PalletId: Get<PalletId>;
@@ -146,6 +240,20 @@ pub mod pallet {
     #[pallet::storage]
     pub(super) type NextSbtId<T: Config> = StorageValue<_, StandardAssetId, OptionQuery>;
 
+    /// Account that can add evm accounts to allowlist
+    #[pallet::storage]
+    pub(super) type AllowlistAccount<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
+
+    /// Allowlist for Evm Accounts
+    #[pallet::storage]
+    pub(super) type EvmAddressAllowlist<T: Config> =
+        StorageMap<_, Blake2_128Concat, EvmAddressType, MintStatus, OptionQuery>;
+
+    /// Range of time and chain_id at which evm mints for each `MintType` are possible.
+    #[pallet::storage]
+    pub(super) type MintChainInfos<T: Config> =
+        StorageMap<_, Blake2_128Concat, MintType, MintChainInfo<Moment<T>>, OptionQuery>;
+
     /// SBT Metadata maps `StandardAsset` to the correstonding SBT metadata
     ///
     /// Metadata is raw bytes that correspond to an image
@@ -154,11 +262,11 @@ pub mod pallet {
         _,
         Blake2_128Concat,
         StandardAssetId,
-        BoundedVec<u8, T::SbtMetadataBound>,
+        Metadata<T::SbtMetadataBound>,
         OptionQuery,
     >;
 
-    /// Whitelists accounts to be able to mint SBTs with designated `StandardAssetId`
+    /// Allowlists accounts to be able to mint SBTs with designated `StandardAssetId`
     #[pallet::storage]
     pub(super) type ReservedIds<T: Config> = StorageMap<
         _,
@@ -206,47 +314,37 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::to_private())]
         #[transactional]
         pub fn to_private(
-            origin: OriginFor<T>,
+            who: OriginFor<T>,
             post: Box<TransferPost>,
             metadata: BoundedVec<u8, T::SbtMetadataBound>,
         ) -> DispatchResultWithPostInfo {
-            let origin = ensure_signed(origin)?;
-            // Checks that it is indeed a to_private post with a value of 1
-            ensure!(
-                post.sources.len() == 1
-                    && post.sender_posts.is_empty()
-                    && post.receiver_posts.len() == 1
-                    && post.sinks.is_empty(),
-                Error::<T>::InvalidShape
-            );
-            // Checks that value is one, this is defensive as value is not used for SBT.
-            ensure!(
-                post.sources.first() == Some(&ENCODED_ONE),
-                Error::<T>::ValueNotOne
-            );
+            let who = ensure_signed(who)?;
 
-            let (start_id, end_id) =
-                ReservedIds::<T>::get(&origin).ok_or(Error::<T>::NotReserved)?;
-            let asset_id: StandardAssetId = post
-                .asset_id
-                .and_then(id_from_field)
-                .ok_or(Error::<T>::InvalidAssetId)?;
-            // Ensure asset id is correct, only a single unique asset_id mapped to account is valid
-            ensure!(asset_id == start_id, Error::<T>::InvalidAssetId);
+            let (start_id, end_id) = ReservedIds::<T>::get(&who).ok_or(Error::<T>::NotReserved)?;
 
-            SbtMetadata::<T>::insert(start_id, metadata);
+            // Checks that it is indeed a to_private post with a value of 1 and has correct asset_id
+            Self::check_post_shape(&post, start_id)?;
+
+            let sbt_metadata = Metadata::<T::SbtMetadataBound> {
+                mint_type: MintType::Manta,
+                collection_id: None,
+                item_id: None,
+                extra: Some(metadata),
+            };
+
+            SbtMetadata::<T>::insert(start_id, sbt_metadata);
             let increment_start_id = start_id
                 .checked_add(One::one())
                 .ok_or(ArithmeticError::Overflow)?;
 
             // If `ReservedIds` are all used remove from storage, otherwise increment the next `AssetId` to be used next time for minting SBT
             if increment_start_id > end_id {
-                ReservedIds::<T>::remove(&origin)
+                ReservedIds::<T>::remove(&who)
             } else {
-                ReservedIds::<T>::insert(&origin, (increment_start_id, end_id))
+                ReservedIds::<T>::insert(&who, (increment_start_id, end_id))
             }
 
-            Self::post_transaction(vec![origin], *post)?;
+            Self::post_transaction(vec![who], *post)?;
             Ok(().into())
         }
 
@@ -284,6 +382,143 @@ pub mod pallet {
             });
             Ok(())
         }
+
+        /// Adds EvmAddress to allowlist and reserve an unique AssetId for this account. Requires caller to be the `AllowlistAccount`.
+        ///
+        /// `EvmAddressType` creates multiple allowlists, so an `EvmAddress` can have multiple free mints for different `MintTypes`.
+        #[pallet::call_index(2)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::allowlist_evm_account())]
+        #[transactional]
+        pub fn allowlist_evm_account(
+            origin: OriginFor<T>,
+            evm_address: EvmAddressType,
+        ) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+
+            let allowlist_account =
+                AllowlistAccount::<T>::get().ok_or(Error::<T>::NotAllowlistAccount)?;
+            ensure!(who == allowlist_account, Error::<T>::NotAllowlistAccount);
+
+            let asset_id = Self::next_sbt_id_and_increment()?;
+            let mint_status = MintStatus::Available(asset_id);
+            EvmAddressAllowlist::<T>::insert(evm_address, mint_status);
+
+            Self::deposit_event(Event::<T>::AllowlistEvmAddress {
+                address: evm_address,
+                asset_id,
+            });
+            Ok(())
+        }
+
+        /// Mint zkSBT using Evm allowlist, signature must correspond to an `EvmAddress` which has been added to allowlist.
+        ///
+        /// Requires a valid `Eip712Signature` which is generated from signing the zkp with an eth private key
+        #[pallet::call_index(3)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::mint_sbt_eth())]
+        #[transactional]
+        pub fn mint_sbt_eth(
+            origin: OriginFor<T>,
+            post: Box<TransferPost>,
+            eth_signature: Eip712Signature,
+            address_type: EvmAddressType,
+            collection_id: Option<u128>,
+            item_id: Option<u128>,
+            metadata: Option<BoundedVec<u8, T::SbtMetadataBound>>,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            let mint_type = address_type.into();
+            let chain_info =
+                MintChainInfos::<T>::get(mint_type).ok_or(Error::<T>::MintNotAvailable)?;
+
+            // check that mint type is within time window
+            Self::check_mint_time(&chain_info)?;
+
+            let address =
+                Self::verify_eip712_signature(&post.proof, &eth_signature, chain_info.chain_id)
+                    .ok_or(Error::<T>::BadSignature)?;
+            // Check signature
+            match address_type {
+                EvmAddressType::Bab(eth_address) | EvmAddressType::Galxe(eth_address) => {
+                    ensure!(eth_address == address, Error::<T>::BadSignature);
+                }
+            }
+
+            let mint_status =
+                EvmAddressAllowlist::<T>::get(address_type).ok_or(Error::<T>::NotAllowlisted)?;
+            let asset_id = match mint_status {
+                MintStatus::Available(asset) => asset,
+                MintStatus::AlreadyMinted => return Err(Error::<T>::AlreadyMinted.into()),
+            };
+            // Change status to minted
+            EvmAddressAllowlist::<T>::insert(address_type, MintStatus::AlreadyMinted);
+
+            Self::check_post_shape(&post, asset_id)?;
+
+            let sbt_metadata = Metadata::<T::SbtMetadataBound> {
+                mint_type,
+                collection_id,
+                item_id,
+                extra: metadata,
+            };
+
+            SbtMetadata::<T>::insert(asset_id, sbt_metadata);
+
+            Self::post_transaction(vec![who], *post)?;
+            Self::deposit_event(Event::<T>::MintSbtEvm {
+                asset_id,
+                address: address_type,
+            });
+            Ok(().into())
+        }
+
+        /// Sets the privileged allowlist account. Requires `AdminOrigin`
+        #[pallet::call_index(4)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::change_allowlist_account())]
+        #[transactional]
+        pub fn change_allowlist_account(
+            origin: OriginFor<T>,
+            account: Option<T::AccountId>,
+        ) -> DispatchResult {
+            T::AdminOrigin::ensure_origin(origin)?;
+
+            AllowlistAccount::<T>::set(account.clone());
+            Self::deposit_event(Event::<T>::ChangeAllowlistAccount { account });
+            Ok(())
+        }
+
+        /// Sets the time range and chain_id of which a `MintType` will be valid. Requires `AdminOrigin`
+        #[pallet::call_index(5)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_mint_chain_info())]
+        #[transactional]
+        pub fn set_mint_chain_info(
+            origin: OriginFor<T>,
+            mint_type: MintType,
+            chain_id: u64,
+            start_time: Moment<T>,
+            end_time: Option<Moment<T>>,
+        ) -> DispatchResult {
+            T::AdminOrigin::ensure_origin(origin)?;
+
+            if let Some(end) = end_time {
+                ensure!(end > start_time, Error::<T>::InvalidTimeRange);
+            }
+
+            let mint_chain_info = MintChainInfo::<Moment<T>> {
+                chain_id,
+                start_time,
+                end_time,
+            };
+            MintChainInfos::<T>::insert(mint_type, mint_chain_info);
+
+            Self::deposit_event(Event::<T>::MintChainInfo {
+                mint_type,
+                chain_id,
+                start_time,
+                end_time,
+            });
+            Ok(())
+        }
     }
 
     /// Event
@@ -305,6 +540,35 @@ pub mod pallet {
             start_id: StandardAssetId,
             /// End of `AssetIds` reserved for use private ledger, does not include this value
             stop_id: StandardAssetId,
+        },
+        /// Evm Address is Allowlisted
+        AllowlistEvmAddress {
+            /// Eth Address that is now allowlisted to mint an SBT
+            address: EvmAddressType,
+            /// AssetId that is reserved for above Eth address
+            asset_id: StandardAssetId,
+        },
+        /// Sbt is minted using Allowlisted Eth account
+        MintSbtEvm {
+            /// Eth Address that is used to mint sbt
+            address: EvmAddressType,
+            /// AssetId of minted SBT
+            asset_id: StandardAssetId,
+        },
+        /// Privileged `AllowlistAccount` is changed
+        ChangeAllowlistAccount {
+            /// Account that is now the new privileged allowlist account
+            account: Option<T::AccountId>,
+        },
+        MintChainInfo {
+            /// Chain Type that mint SBT
+            mint_type: MintType,
+            /// Chain Id used for signature verification
+            chain_id: u64,
+            /// Start time at which minting is valid
+            start_time: Moment<T>,
+            /// End time at which minting will no longer be valid, None represents no end time.
+            end_time: Option<Moment<T>>,
         },
     }
 
@@ -461,6 +725,24 @@ pub mod pallet {
 
         /// SBT only allows `ToPrivate` Transactions
         NoSenderLedger,
+
+        /// Incorrect EVM based signature
+        BadSignature,
+
+        /// Eth account is not allowlisted for free mint
+        NotAllowlisted,
+
+        /// Account is not the privileged account able to allowlist eth addresses
+        NotAllowlistAccount,
+
+        /// Minting SBT is outside defined time range or chain_id is not set
+        MintNotAvailable,
+
+        /// SBT has already been minted with this `EvmAddress`
+        AlreadyMinted,
+
+        /// Time range is invalid (start_time > end_time)
+        InvalidTimeRange,
     }
 }
 
@@ -602,6 +884,155 @@ where
             }
         })
     }
+
+    /// Checks that post is `ToPrivate` with a value of one
+    #[inline]
+    fn check_post_shape(post: &TransferPost, asset_id: StandardAssetId) -> DispatchResult {
+        // Checks that it is indeed a to_private post with a value of 1
+        ensure!(
+            post.sources.len() == 1
+                && post.sender_posts.is_empty()
+                && post.receiver_posts.len() == 1
+                && post.sinks.is_empty(),
+            Error::<T>::InvalidShape
+        );
+        // Checks that value is one, this is defensive as value is not used for SBT.
+        ensure!(
+            post.sources.first() == Some(&ENCODED_ONE),
+            Error::<T>::ValueNotOne
+        );
+
+        let post_id: StandardAssetId = post
+            .asset_id
+            .and_then(id_from_field)
+            .ok_or(Error::<T>::InvalidAssetId)?;
+        // Ensure asset id is correct, only a single unique asset_id mapped to account is valid
+        ensure!(asset_id == post_id, Error::<T>::InvalidAssetId);
+        Ok(())
+    }
+
+    /// Checks that signature was generated using the `TransferPost` proof field as payload
+    #[inline]
+    fn verify_eip712_signature(proof: &Proof, sig: &[u8; 65], chain_id: u64) -> Option<EvmAddress> {
+        let msg = Self::eip712_signable_message(proof, chain_id);
+        let msg_hash = keccak_256(msg.as_slice());
+
+        recover_signer(sig, &msg_hash)
+    }
+
+    /// Eip-712 message to be signed
+    #[inline]
+    fn eip712_signable_message(proof: &Proof, chain_id: u64) -> Vec<u8> {
+        let domain_separator = Self::evm_account_domain_separator(chain_id);
+        let payload_hash = Self::evm_account_payload_hash(proof);
+
+        let mut msg = b"\x19\x01".to_vec();
+        msg.extend_from_slice(&domain_separator);
+        msg.extend_from_slice(&payload_hash);
+        msg
+    }
+
+    /// Creates `keccak_256` hash of Proof payload
+    #[inline]
+    fn evm_account_payload_hash(proof: &Proof) -> [u8; 32] {
+        let tx_type_hash = &sha3_256("Transaction(bytes proof)");
+        let mut tx_msg = tx_type_hash.to_vec();
+        tx_msg.extend_from_slice(&keccak_256(proof.as_slice()));
+        keccak_256(tx_msg.as_slice())
+    }
+
+    /// Creates Eip712 domain separator for minting zkSBT. This ensures signature will not have collisions
+    #[inline]
+    fn evm_account_domain_separator(chain_id: u64) -> [u8; 32] {
+        let domain_hash =
+            &sha3_256("EIP712Domain(string name,string version,uint256 chainId,bytes32 salt)");
+        let mut domain_seperator_msg = domain_hash.to_vec();
+        domain_seperator_msg.extend_from_slice(&sha3_256("Claim Free SBT")); // name
+        domain_seperator_msg.extend_from_slice(&sha3_256("1")); // version
+        domain_seperator_msg.extend_from_slice(&to_bytes(chain_id)); // chain id
+        domain_seperator_msg.extend_from_slice(
+            frame_system::Pallet::<T>::block_hash(T::BlockNumber::zero()).as_ref(),
+        ); // genesis block hash
+        keccak_256(domain_seperator_msg.as_slice())
+    }
+
+    /// Checks that mint type is available to mint within time window defined in `MintChainInfos`
+    #[inline]
+    fn check_mint_time(mint_chain_info: &MintChainInfo<Moment<T>>) -> DispatchResult {
+        let current_time = T::Now::now();
+
+        let (start_time, end_time) = (mint_chain_info.start_time, mint_chain_info.end_time);
+
+        // checks that current time falls within bounds
+        if start_time > current_time {
+            return Err(Error::<T>::MintNotAvailable.into());
+        } else {
+            // Checks if end time is Some and then compares it to current time. A value of None corresponds to no ending time
+            if let Some(time) = end_time {
+                if time < current_time {
+                    return Err(Error::<T>::MintNotAvailable.into());
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Returns an Etherum public key derived from an Ethereum secret key.
+    #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
+    pub fn eth_public(secret: &libsecp256k1::SecretKey) -> libsecp256k1::PublicKey {
+        libsecp256k1::PublicKey::from_secret_key(secret)
+    }
+
+    /// Returns an Etherum address derived from an Ethereum secret key.
+    /// Only for tests
+    #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
+    pub fn eth_address(secret: &libsecp256k1::SecretKey) -> EvmAddress {
+        EvmAddress::from_slice(&keccak_256(&Self::eth_public(secret).serialize()[1..65])[12..])
+    }
+
+    /// Constructs a message and signs it.
+    #[cfg(any(feature = "runtime-benchmarks", feature = "std"))]
+    pub fn eth_sign(
+        secret: &libsecp256k1::SecretKey,
+        proof: &Proof,
+        chain_id: u64,
+    ) -> Eip712Signature {
+        let msg = keccak_256(&Self::eip712_signable_message(proof, chain_id));
+        let (sig, recovery_id) = libsecp256k1::sign(&libsecp256k1::Message::parse(&msg), secret);
+        let mut r = [0u8; 65];
+        r[0..64].copy_from_slice(&sig.serialize()[..]);
+        r[64] = recovery_id.serialize();
+        r
+    }
+}
+
+/// Recover `EvmAddress` from `Eip712Signature` using the message hash
+#[inline]
+fn recover_signer(sig: &[u8; 65], msg_hash: &[u8; 32]) -> Option<H160> {
+    secp256k1_ecdsa_recover(sig, msg_hash)
+        .map(|pubkey| H160::from(H256::from_slice(&keccak_256(&pubkey))))
+        .ok()
+}
+
+/// Utility function to get SHA3-256 hash of &str
+#[inline]
+pub fn sha3_256(s: &str) -> [u8; 32] {
+    let mut result = [0u8; 32];
+
+    // create a SHA3-256 object
+    let mut hasher = Keccak256::new();
+    // write input message
+    hasher.update(s);
+    // read hash digest
+    result.copy_from_slice(&hasher.finalize()[..32]);
+
+    result
+}
+
+/// Convert any type that implements Into<U256> into byte representation ([u8, 32])
+#[inline]
+pub fn to_bytes<T: Into<U256>>(value: T) -> [u8; 32] {
+    Into::<[u8; 32]>::into(value.into())
 }
 
 /// Preprocessed Event

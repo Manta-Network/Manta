@@ -15,14 +15,21 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    benchmark::precomputed_coins::TO_PRIVATE, AccountId, Box, Call, Config, Pallet, TransferPost,
+    benchmark::precomputed_coins::TO_PRIVATE, AccountId, Box, Call, Config, EvmAddressType,
+    MintType, Pallet, Pallet as MantaSBTPallet, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, vec, whitelisted_caller};
 use frame_support::traits::{Currency, Get};
 use frame_system::RawOrigin;
 use scale_codec::Decode;
+use sp_core::H160;
+use sp_io::hashing::keccak_256;
 
 mod precomputed_coins;
+
+fn alice() -> libsecp256k1::SecretKey {
+    libsecp256k1::SecretKey::parse(&keccak_256(b"Alice")).unwrap()
+}
 
 benchmarks! {
     where_clause {  where T::AccountId: From<AccountId> + Into<AccountId> }
@@ -44,6 +51,66 @@ benchmarks! {
         <T as crate::Config>::Currency::make_free_balance_be(&caller, T::ReservePrice::get() * factor.into());
     }: reserve_sbt (
         RawOrigin::Signed(caller)
+    )
+
+    change_allowlist_account{
+        let caller: T::AccountId = whitelisted_caller();
+    }: change_allowlist_account (
+        RawOrigin::Root,
+        Some(caller)
+    )
+
+    allowlist_evm_account {
+        let caller: T::AccountId = whitelisted_caller();
+        MantaSBTPallet::<T>::change_allowlist_account(
+            RawOrigin::Root.into(),
+            Some(caller.clone())
+        )?;
+    }: allowlist_evm_account (
+        RawOrigin::Signed(caller),
+        EvmAddressType::Bab(H160::default())
+    )
+
+    set_mint_chain_info {
+    }: set_mint_chain_info (
+        RawOrigin::Root,
+        MintType::Bab,
+        0,
+        5u32.into(),
+        Some(10u32.into())
+    )
+
+    mint_sbt_eth {
+        let caller: T::AccountId = whitelisted_caller();
+        MantaSBTPallet::<T>::change_allowlist_account(
+            RawOrigin::Root.into(),
+            Some(caller.clone())
+        )?;
+        let bab_alice = EvmAddressType::Bab(MantaSBTPallet::<T>::eth_address(&alice()));
+        MantaSBTPallet::<T>::set_mint_chain_info(
+            RawOrigin::Root.into(),
+            MintType::Bab,
+            0,
+            0_u32.into(),
+            None
+        )?;
+
+        MantaSBTPallet::<T>::allowlist_evm_account(
+            RawOrigin::Signed(caller.clone()).into(),
+            bab_alice,
+        )?;
+        let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
+
+        let signature = MantaSBTPallet::<T>::eth_sign(&alice(), &mint_post.proof, 0);
+
+    }: mint_sbt_eth(
+        RawOrigin::Signed(caller),
+        Box::new(mint_post),
+        signature,
+        bab_alice,
+        Some(0),
+        Some(0),
+        Some(vec![0].try_into().unwrap())
     )
 }
 

@@ -18,7 +18,7 @@
 
 use frame_support::{
     parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32, Everything, GenesisBuild, IsInVec},
+    traits::{ConstU128, ConstU16, ConstU32, ConstU64, Everything, GenesisBuild, IsInVec},
     PalletId,
 };
 use frame_system::EnsureRoot;
@@ -55,6 +55,7 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         MantaSBTPallet: crate::{Pallet, Call, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Assets: pallet_assets::{Pallet, Storage, Event<T>},
@@ -136,6 +137,8 @@ impl crate::Config for Test {
     type MintsPerReserve = ConstU16<5>;
     type ReservePrice = ConstU128<1000>;
     type SbtMetadataBound = ConstU32<200>;
+    type AdminOrigin = EnsureRoot<AccountId32>;
+    type Now = Timestamp;
 }
 
 parameter_types! {
@@ -288,6 +291,13 @@ impl pallet_tx_pause::Config for Test {
     type PauseOrigin = EnsureRoot<AccountId32>;
     type UnpauseOrigin = EnsureRoot<AccountId32>;
     type NonPausablePallets = IsInVec<NonPausablePallets>;
+    type WeightInfo = ();
+}
+
+impl pallet_timestamp::Config for Test {
+    type Moment = u64;
+    type OnTimestampSet = ();
+    type MinimumPeriod = ConstU64<5>;
     type WeightInfo = ();
 }
 

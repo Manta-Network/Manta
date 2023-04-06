@@ -42,7 +42,7 @@ use sp_version::RuntimeVersion;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec,
+        ConstU16, ConstU32, ConstU8, Contains, Currency, EitherOfDiverse, IsInVec,
         NeverEnsureOrigin, PrivilegeCmp,
     },
     weights::{ConstantMultiplier, DispatchClass, Weight},
@@ -53,10 +53,7 @@ use frame_system::{
     EnsureRoot,
 };
 use manta_primitives::{
-    constants::{
-        time::*, RocksDbWeight, MANTA_SBT_PALLET_ID, STAKING_PALLET_ID, TREASURY_PALLET_ID,
-        WEIGHT_PER_SECOND,
-    },
+    constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
@@ -709,20 +706,6 @@ impl manta_collator_selection::Config for Runtime {
     /// Nimbus filter pipeline step 2:
     /// Filters collators not part of the current pallet_session::validators()
     type CanAuthor = AuraAuthorFilter;
-}
-
-parameter_types! {
-    pub const MantaSbtPalletId: PalletId = MANTA_SBT_PALLET_ID;
-}
-
-impl pallet_manta_sbt::Config for Runtime {
-    type Event = Event;
-    type PalletId = MantaSbtPalletId;
-    type Currency = Balances;
-    type MintsPerReserve = ConstU16<5>;
-    type ReservePrice = ConstU128<DOL>;
-    type SbtMetadataBound = ConstU32<300>;
-    type WeightInfo = ();
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

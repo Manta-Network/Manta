@@ -6613,7 +6613,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-sbt"
-version = "4.0.2"
+version = "4.0.4"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -6623,6 +6623,7 @@ dependencies = [
  "indoc",
  "jsonrpsee",
  "lazy_static",
+ "libsecp256k1",
  "manta-accounting",
  "manta-crypto",
  "manta-pay",
@@ -6633,10 +6634,12 @@ dependencies = [
  "pallet-balances",
  "pallet-manta-pay",
  "pallet-manta-support",
+ "pallet-timestamp",
  "pallet-tx-pause",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
  "scale-info",
+ "sha3 0.10.6",
  "sp-api",
  "sp-blockchain",
  "sp-core",
@@ -6649,7 +6652,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-support"
-version = "4.0.2"
+version = "4.0.4"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
