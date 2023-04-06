@@ -416,6 +416,7 @@ pub mod pallet {
         #[pallet::call_index(3)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::mint_sbt_eth())]
         #[transactional]
+        #[allow(clippy::too_many_arguments)]
         pub fn mint_sbt_eth(
             origin: OriginFor<T>,
             post: Box<TransferPost>,
