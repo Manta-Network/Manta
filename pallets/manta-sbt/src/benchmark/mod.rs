@@ -66,6 +66,12 @@ benchmarks! {
             RawOrigin::Root.into(),
             Some(caller.clone())
         )?;
+        MantaSBTPallet::<T>::set_mint_chain_info(
+            RawOrigin::Root.into(),
+            MintType::Bab,
+            0_u32.into(),
+            None
+        )?;
     }: allowlist_evm_account (
         RawOrigin::Signed(caller),
         EvmAddressType::Bab(H160::default())
@@ -104,7 +110,7 @@ benchmarks! {
     }: mint_sbt_eth(
         RawOrigin::Signed(caller),
         Box::new(mint_post),
-        1,
+        0,
         signature,
         bab_alice,
         Some(0),
