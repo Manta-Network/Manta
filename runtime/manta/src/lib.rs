@@ -473,7 +473,7 @@ parameter_types! {
     pub const ProposalBond: Permill = Permill::from_percent(1);
     pub const ProposalBondMinimum: Balance = 3 * MANTA;
     pub const ProposalBondMaximum: Balance = 50 * MANTA;
-    pub SpendPeriod: BlockNumber = 6 * DAYS;
+    pub SpendPeriod: BlockNumber = 14 * DAYS;
     pub const Burn: Permill = Permill::from_percent(0);
     pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
 }
