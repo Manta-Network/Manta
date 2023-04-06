@@ -75,7 +75,6 @@ benchmarks! {
     }: set_mint_chain_info (
         RawOrigin::Root,
         MintType::Bab,
-        0,
         5u32.into(),
         Some(10u32.into())
     )
@@ -90,7 +89,6 @@ benchmarks! {
         MantaSBTPallet::<T>::set_mint_chain_info(
             RawOrigin::Root.into(),
             MintType::Bab,
-            0,
             0_u32.into(),
             None
         )?;
@@ -106,7 +104,7 @@ benchmarks! {
     }: mint_sbt_eth(
         RawOrigin::Signed(caller),
         Box::new(mint_post),
-        Some(0),
+        1,
         signature,
         bab_alice,
         Some(0),
