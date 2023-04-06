@@ -168,7 +168,6 @@ pub enum MintStatus {
 /// Info about a particular `MintType`
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct MintChainInfo<Moment> {
-    pub chain_id: u64,
     pub start_time: Moment,
     pub end_time: Option<Moment>,
 }
@@ -395,9 +394,19 @@ pub mod pallet {
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
+            let mint_type: MintType = evm_address.into();
+            let chain_info =
+                MintChainInfos::<T>::get(mint_type).ok_or(Error::<T>::MintNotAvailable)?;
+            Self::check_mint_time(&chain_info)?;
+
             let allowlist_account =
                 AllowlistAccount::<T>::get().ok_or(Error::<T>::NotAllowlistAccount)?;
             ensure!(who == allowlist_account, Error::<T>::NotAllowlistAccount);
+
+            ensure!(
+                !EvmAddressAllowlist::<T>::contains_key(evm_address),
+                Error::<T>::AlreadyInAllowlist
+            );
 
             let asset_id = Self::next_sbt_id_and_increment()?;
             let mint_status = MintStatus::Available(asset_id);
@@ -416,9 +425,11 @@ pub mod pallet {
         #[pallet::call_index(3)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::mint_sbt_eth())]
         #[transactional]
+        #[allow(clippy::too_many_arguments)]
         pub fn mint_sbt_eth(
             origin: OriginFor<T>,
             post: Box<TransferPost>,
+            chain_id: u64,
             eth_signature: Eip712Signature,
             address_type: EvmAddressType,
             collection_id: Option<u128>,
@@ -434,9 +445,8 @@ pub mod pallet {
             // check that mint type is within time window
             Self::check_mint_time(&chain_info)?;
 
-            let address =
-                Self::verify_eip712_signature(&post.proof, &eth_signature, chain_info.chain_id)
-                    .ok_or(Error::<T>::BadSignature)?;
+            let address = Self::verify_eip712_signature(&post.proof, &eth_signature, chain_id)
+                .ok_or(Error::<T>::BadSignature)?;
             // Check signature
             match address_type {
                 EvmAddressType::Bab(eth_address) | EvmAddressType::Galxe(eth_address) => {
@@ -494,7 +504,6 @@ pub mod pallet {
         pub fn set_mint_chain_info(
             origin: OriginFor<T>,
             mint_type: MintType,
-            chain_id: u64,
             start_time: Moment<T>,
             end_time: Option<Moment<T>>,
         ) -> DispatchResult {
@@ -505,7 +514,6 @@ pub mod pallet {
             }
 
             let mint_chain_info = MintChainInfo::<Moment<T>> {
-                chain_id,
                 start_time,
                 end_time,
             };
@@ -513,7 +521,6 @@ pub mod pallet {
 
             Self::deposit_event(Event::<T>::MintChainInfo {
                 mint_type,
-                chain_id,
                 start_time,
                 end_time,
             });
@@ -563,8 +570,6 @@ pub mod pallet {
         MintChainInfo {
             /// Chain Type that mint SBT
             mint_type: MintType,
-            /// Chain Id used for signature verification
-            chain_id: u64,
             /// Start time at which minting is valid
             start_time: Moment<T>,
             /// End time at which minting will no longer be valid, None represents no end time.
@@ -737,6 +742,9 @@ pub mod pallet {
 
         /// Minting SBT is outside defined time range or chain_id is not set
         MintNotAvailable,
+
+        /// `EvmAddress` is already in the allowlist
+        AlreadyInAllowlist,
 
         /// SBT has already been minted with this `EvmAddress`
         AlreadyMinted,
