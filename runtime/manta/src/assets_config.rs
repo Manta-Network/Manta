@@ -29,7 +29,6 @@ use manta_primitives::{
 };
 
 use frame_support::{pallet_prelude::DispatchResult, parameter_types, traits::ConstU32, PalletId};
-
 use frame_system::EnsureRoot;
 
 use xcm::VersionedMultiLocation;

@@ -829,7 +829,7 @@ impl_runtime_apis! {
                 ));
                 pub const CheckedAccount: Option<AccountId> = None;
                 pub const DotLocation: MultiLocation = MultiLocation::parent();
-                pub MantaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(2104)));
+                pub MantaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
             }
 
             impl pallet_xcm_benchmarks::Config for Runtime {

@@ -76,6 +76,7 @@ parameter_types! {
     pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
+
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
 /// when determining ownership of accounts for asset transacting and when attempting to use XCM
 /// `Transact` in order to determine the dispatch Origin.
@@ -265,6 +266,7 @@ impl cumulus_pallet_xcm::Config for Runtime {
     type Event = Event;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
 }
+
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type Event = Event;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
@@ -305,6 +307,7 @@ parameter_types! {
     pub const BaseXcmWeight: Weight = 100_000_000;
     pub const MaxAssetsForTransfer: usize = 2;
 }
+
 // The XCM message wrapper wrapper
 impl orml_xtokens::Config for Runtime {
     type Event = Event;

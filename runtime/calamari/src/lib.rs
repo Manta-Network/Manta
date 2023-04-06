@@ -1171,7 +1171,7 @@ impl_runtime_apis! {
                 ));
                 pub const CheckedAccount: Option<AccountId> = None;
                 pub const KsmLocation: MultiLocation = MultiLocation::parent();
-                pub KmaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(2084)));
+                pub KmaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
             }
 
             impl pallet_xcm_benchmarks::Config for Runtime {
