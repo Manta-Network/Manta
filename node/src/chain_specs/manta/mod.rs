@@ -70,13 +70,14 @@ pub fn manta_properties() -> Properties {
 
 /// Returns the Manta mainnet chainspec
 pub fn manta_mainnet_config() -> Result<MantaChainSpec, String> {
-    // MantaChainSpec::from_json_bytes(&include_bytes!("../../../../genesis/manta-genesis.json")[..])
-    Ok(public_testnet_genesis::manta_public_testnet_config())
+    MantaChainSpec::from_json_bytes(&include_bytes!("../../../../genesis/manta-genesis.json")[..])
 }
 /// Returns the Manta testnet chainspec.
-pub fn manta_testnet_config() -> Result<MantaChainSpec, String> {
-    // MantaChainSpec::from_json_bytes(&include_bytes!("../../../../genesis/manta-testnet-genesis.json")[..])
-    Ok(public_testnet_genesis::manta_public_testnet_config())
+pub fn manta_testnet_config() -> MantaChainSpec {
+    // NOTE: The public testnet is expected to be reset frequently
+    // and the `manta build-spec`-generated genesis is held in the ansible deployment
+    // There is no need to maintain a checked-in genesis.json in this repo as well
+    public_testnet_genesis::manta_public_testnet_config()
 }
 /// Returns the Manta development chainspec.
 pub fn manta_local_config() -> MantaChainSpec {
