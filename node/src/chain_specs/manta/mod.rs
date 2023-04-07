@@ -93,13 +93,10 @@ fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
     let root_key = genesis_collators.first().unwrap().acc.clone();
 
     const INITIAL_COLLATOR_BALANCE: Balance = 1_000_000_000 * MANTA;
-    // endow collators
-    let mut endowments = genesis_collators
+    let endowments = genesis_collators
         .iter()
         .map(|collator| (collator.acc.clone(), INITIAL_COLLATOR_BALANCE))
         .collect::<Vec<_>>();
-    // endow SUDO
-    endowments.push((root_key.clone(), INITIAL_COLLATOR_BALANCE));
     #[allow(clippy::assertions_on_constants)]
     const _: () = assert!(
         NORMAL_COLLATOR_MINIMUM_STAKE < INITIAL_COLLATOR_BALANCE,
