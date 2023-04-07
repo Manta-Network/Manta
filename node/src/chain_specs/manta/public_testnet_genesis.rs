@@ -76,12 +76,10 @@ pub fn manta_public_testnet_config() -> MantaChainSpec {
             .filter_map(|collator| collator.nodeid)
             .collect(),
         Some(
-            TelemetryEndpoints::new(vec![
-                (
-                    "/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F".to_string(),
-                    0,
-                ),
-            ])
+            TelemetryEndpoints::new(vec![(
+                "/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F".to_string(),
+                0,
+            )])
             .unwrap(),
         ),
         Some(MANTA_PROTOCOL_ID),

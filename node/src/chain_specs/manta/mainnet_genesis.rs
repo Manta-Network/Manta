@@ -184,9 +184,9 @@ pub fn manta_mainnet_config() -> MantaChainSpec {
         ChainType::Live,
         move || manta_mainnet_genesis(genesis_collators_clone.clone()),
         genesis_collators
-        .into_iter()
-        .filter_map(|collator| collator.nodeid)
-        .collect(),
+            .into_iter()
+            .filter_map(|collator| collator.nodeid)
+            .collect(),
         Some(
             TelemetryEndpoints::new(vec![
                 (

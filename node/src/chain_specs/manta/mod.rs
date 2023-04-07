@@ -90,12 +90,10 @@ pub fn manta_development_config() -> MantaChainSpec {
 
 // common helper to create the above configs
 fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
-    use hex_literal::hex;
+    let root_key = session_key_primitives::util::unchecked_account_id::<sr25519::Public>("Alice");
 
     const INITIAL_COLLATOR_BALANCE: Balance = 1_000_000_000 * MANTA;
-    let root_key: AccountId =
-        hex!("49daa32c7287890f38b7e1a8cd2961723d36d20baa0bf3b82e0c4bdda93b1c0a").into(); // 2/3 MULTISIG of ALICE,BOB,CHARLIE
-                                                                                         // endow collators
+    // endow collators
     let mut endowments = genesis_collators
         .iter()
         .map(|collator| (collator.acc.clone(), INITIAL_COLLATOR_BALANCE))
