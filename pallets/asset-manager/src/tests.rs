@@ -78,7 +78,7 @@ fn wrong_modifier_origin_should_not_work() {
             AssetManager::update_asset_metadata(
                 Origin::signed([3u8; 32].into()),
                 0,
-                asset_metadata
+                asset_metadata.into()
             ),
             BadOrigin
         );
@@ -166,14 +166,14 @@ fn update_asset() {
             AssetManager::update_asset_metadata(
                 Origin::root(),
                 native_asset_id,
-                new_metadata.clone(),
+                new_metadata.clone().into(),
             ),
             Error::<Runtime>::CannotUpdateNativeAssetMetadata
         );
         assert_ok!(AssetManager::update_asset_metadata(
             Origin::root(),
             asset_id,
-            new_metadata.clone(),
+            new_metadata.clone().into(),
         ),);
         assert_eq!(Assets::name(&asset_id), new_name);
         assert_eq!(Assets::symbol(&asset_id), new_symbol);
@@ -205,7 +205,7 @@ fn update_asset() {
             AssetManager::update_asset_metadata(
                 Origin::root(),
                 next_asset_id,
-                new_metadata.clone()
+                new_metadata.clone().into()
             ),
             Error::<Runtime>::UpdateNonExistentAsset
         );

@@ -106,7 +106,7 @@ pub trait AssetRegistry: AssetIdType + BalanceType {
 
     /// Update asset metadata by `AssetId`.
     ///
-    /// * `asset_id`: the asset id to be created.
+    /// * `asset_id`: the asset id to be updated.
     /// * `metadata`: the metadata that the implementation layer stores.
     fn update_asset_metadata(
         asset_id: &Self::AssetId,
