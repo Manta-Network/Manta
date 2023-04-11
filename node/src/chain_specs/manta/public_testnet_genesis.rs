@@ -21,7 +21,7 @@ use hex_literal::hex;
 use sc_telemetry::TelemetryEndpoints;
 use sp_core::crypto::UncheckedInto;
 
-pub fn manta_public_testnet_config() -> MantaChainSpec {
+pub fn genesis_spec() -> MantaChainSpec {
     let genesis_collators: Vec<Collator> = vec![
         Collator::new(
             hex!("0c9429df04f4c051d022a262d5c786d4cde9688bd230c139814f935f14709975").into(),

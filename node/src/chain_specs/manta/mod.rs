@@ -77,15 +77,15 @@ pub fn manta_testnet_config() -> MantaChainSpec {
     // NOTE: The public testnet is expected to be reset frequently
     // and the `manta build-spec`-generated genesis is held in the ansible deployment
     // There is no need to maintain a checked-in genesis.json in this repo as well
-    public_testnet_genesis::manta_public_testnet_config()
+    public_testnet_genesis::genesis_spec()
 }
 /// Returns the Manta development chainspec.
 pub fn manta_local_config() -> MantaChainSpec {
-    local_testnets_geneses::manta_local_testnet_config()
+    local_testnets_geneses::genesis_spec_local()
 }
 /// Returns the Manta development chainspec.
 pub fn manta_development_config() -> MantaChainSpec {
-    local_testnets_geneses::manta_dev_testnet_config()
+    local_testnets_geneses::genesis_spec_dev()
 }
 
 // common helper to create the above configs

@@ -19,7 +19,7 @@
 use super::*;
 use session_key_primitives::util::unchecked_account_id;
 
-pub fn manta_dev_testnet_config() -> MantaChainSpec {
+pub fn genesis_spec_dev() -> MantaChainSpec {
     let genesis_collators: Vec<Collator> = vec![Collator::new(
         unchecked_account_id::<sr25519::Public>("Alice"),
         None,
@@ -47,7 +47,7 @@ pub fn manta_dev_testnet_config() -> MantaChainSpec {
     )
 }
 
-pub fn manta_local_testnet_config() -> MantaChainSpec {
+pub fn genesis_spec_local() -> MantaChainSpec {
     let genesis_collators: Vec<Collator> = vec![
         Collator::new(
             unchecked_account_id::<sr25519::Public>("Alice"),

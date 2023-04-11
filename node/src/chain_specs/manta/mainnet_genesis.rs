@@ -33,7 +33,7 @@ impl Collator {
     }
 }
 
-fn manta_mainnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
+fn genesis_config(genesis_collators: Vec<Collator>) -> GenesisConfig {
     const TOTAL_ISSUANCE: Balance = 1_000_000_000 * MANTA;
     const INITIAL_CONTROLLER_BALANCE: Balance = 5_000 * MANTA;
     const INITIAL_COLLATOR_BALANCE: Balance = 100 * MANTA;
@@ -133,7 +133,7 @@ fn manta_mainnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
     }
 }
 
-pub fn manta_mainnet_config() -> MantaChainSpec {
+pub fn genesis_spec() -> MantaChainSpec {
     let genesis_collators: Vec<Collator> = vec![
         Collator::new( // c1: dfWh1oFWNxrmrHdiGdVpQQD6Pp3SmY5NrNsAGNRCxgaqJuZif
             hex!("0619e4018531059b677d70b476b72431d3e88fe71d2c27bba5d945975e824956").into(),
@@ -182,7 +182,7 @@ pub fn manta_mainnet_config() -> MantaChainSpec {
         "Manta Parachain",
         "manta",
         ChainType::Live,
-        move || manta_mainnet_genesis(genesis_collators_clone.clone()),
+        move || genesis_config(genesis_collators_clone.clone()),
         genesis_collators
             .into_iter()
             .filter_map(|collator| collator.nodeid)
