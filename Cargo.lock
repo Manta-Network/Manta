@@ -1040,7 +1040,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-runtime"
-version = "4.0.4"
+version = "4.0.5"
 dependencies = [
  "calamari-vesting",
  "cumulus-pallet-dmp-queue",
@@ -1131,7 +1131,7 @@ dependencies = [
 
 [[package]]
 name = "calamari-vesting"
-version = "4.0.4"
+version = "4.0.5"
 dependencies = [
  "chrono",
  "frame-benchmarking",
@@ -2436,7 +2436,7 @@ dependencies = [
 
 [[package]]
 name = "dolphin-runtime"
-version = "4.0.4"
+version = "4.0.5"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -5076,7 +5076,7 @@ dependencies = [
 
 [[package]]
 name = "manta"
-version = "4.0.4"
+version = "4.0.5"
 dependencies = [
  "async-trait",
  "calamari-runtime",
@@ -5160,8 +5160,8 @@ dependencies = [
 
 [[package]]
 name = "manta-accounting"
-version = "0.5.12"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.12#ba1a4b747456bc4f76a9cb18b515aaf0810b4c9c"
+version = "0.5.13"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.13#0c36f42a26d3955712ae371bf1bf85a7e2849264"
 dependencies = [
  "derivative",
  "derive_more",
@@ -5175,7 +5175,7 @@ dependencies = [
 
 [[package]]
 name = "manta-collator-selection"
-version = "4.0.4"
+version = "4.0.5"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5204,8 +5204,8 @@ dependencies = [
 
 [[package]]
 name = "manta-crypto"
-version = "0.5.12"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.12#ba1a4b747456bc4f76a9cb18b515aaf0810b4c9c"
+version = "0.5.13"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.13#0c36f42a26d3955712ae371bf1bf85a7e2849264"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -5230,8 +5230,8 @@ dependencies = [
 
 [[package]]
 name = "manta-parameters"
-version = "0.5.12"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.12#ba1a4b747456bc4f76a9cb18b515aaf0810b4c9c"
+version = "0.5.13"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.13#0c36f42a26d3955712ae371bf1bf85a7e2849264"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -5243,8 +5243,8 @@ dependencies = [
 
 [[package]]
 name = "manta-pay"
-version = "0.5.12"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.12#ba1a4b747456bc4f76a9cb18b515aaf0810b4c9c"
+version = "0.5.13"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.13#0c36f42a26d3955712ae371bf1bf85a7e2849264"
 dependencies = [
  "aes-gcm",
  "bip32",
@@ -5262,7 +5262,7 @@ dependencies = [
 
 [[package]]
 name = "manta-primitives"
-version = "4.0.4"
+version = "4.0.5"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5282,11 +5282,13 @@ dependencies = [
 
 [[package]]
 name = "manta-runtime"
-version = "4.0.4"
+version = "4.0.5"
 dependencies = [
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
@@ -5298,9 +5300,14 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "hex-literal",
+ "log",
  "manta-collator-selection",
  "manta-primitives",
  "nimbus-primitives",
+ "orml-traits",
+ "orml-xtokens",
+ "pallet-asset-manager",
+ "pallet-assets",
  "pallet-aura",
  "pallet-aura-style-filter",
  "pallet-author-inherent",
@@ -5314,12 +5321,16 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-treasury",
  "pallet-utility",
  "pallet-xcm",
+ "pallet-xcm-benchmarks",
  "parachain-info",
  "parity-scale-codec",
+ "polkadot-core-primitives",
  "polkadot-parachain",
  "polkadot-primitives",
+ "polkadot-runtime-parachains",
  "runtime-common",
  "scale-info",
  "serde",
@@ -5343,12 +5354,13 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "xcm-simulator",
 ]
 
 [[package]]
 name = "manta-util"
-version = "0.5.12"
-source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.12#ba1a4b747456bc4f76a9cb18b515aaf0810b4c9c"
+version = "0.5.13"
+source = "git+https://github.com/manta-network/manta-rs.git?tag=v0.5.13#0c36f42a26d3955712ae371bf1bf85a7e2849264"
 dependencies = [
  "crossbeam-channel",
  "serde",
@@ -6134,7 +6146,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-asset-manager"
-version = "4.0.4"
+version = "4.0.5"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6566,7 +6578,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-pay"
-version = "4.0.4"
+version = "4.0.5"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -6601,7 +6613,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-sbt"
-version = "4.0.2"
+version = "4.0.5"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -6611,6 +6623,7 @@ dependencies = [
  "indoc",
  "jsonrpsee",
  "lazy_static",
+ "libsecp256k1",
  "manta-accounting",
  "manta-crypto",
  "manta-pay",
@@ -6621,10 +6634,12 @@ dependencies = [
  "pallet-balances",
  "pallet-manta-pay",
  "pallet-manta-support",
+ "pallet-timestamp",
  "pallet-tx-pause",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
  "scale-info",
+ "sha3 0.10.6",
  "sp-api",
  "sp-blockchain",
  "sp-core",
@@ -6637,7 +6652,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-manta-support"
-version = "4.0.2"
+version = "4.0.5"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -6813,7 +6828,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-parachain-staking"
-version = "4.0.4"
+version = "4.0.5"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7104,7 +7119,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-tx-pause"
-version = "4.0.4"
+version = "4.0.5"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -9344,14 +9359,42 @@ dependencies = [
 
 [[package]]
 name = "runtime-common"
-version = "4.0.4"
+version = "4.0.5"
 dependencies = [
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
+ "cumulus-primitives-parachain-inherent",
+ "cumulus-test-relay-sproof-builder",
  "frame-support",
+ "frame-system",
+ "lazy_static",
  "manta-primitives",
+ "orml-traits",
+ "orml-xtokens",
+ "pallet-asset-manager",
+ "pallet-assets",
+ "pallet-balances",
  "pallet-transaction-payment",
+ "pallet-utility",
+ "pallet-xcm",
+ "parachain-info",
+ "parity-scale-codec",
+ "polkadot-core-primitives",
+ "polkadot-parachain",
+ "polkadot-runtime-parachains",
+ "reqwest",
+ "scale-info",
+ "serde_json",
+ "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
+ "xcm-simulator",
 ]
 
 [[package]]
@@ -10822,7 +10865,7 @@ dependencies = [
 
 [[package]]
 name = "session-key-primitives"
-version = "4.0.4"
+version = "4.0.5"
 dependencies = [
  "manta-primitives",
  "nimbus-primitives",

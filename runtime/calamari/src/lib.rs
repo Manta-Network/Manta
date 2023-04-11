@@ -56,7 +56,7 @@ use manta_primitives::{
     constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
-use manta_support::manta_pay::{PullResponse, RawCheckpoint};
+use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
 use runtime_common::{
@@ -130,7 +130,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 4040,
+    spec_version: 4050,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 11,
@@ -1070,6 +1070,9 @@ impl_runtime_apis! {
         ) -> PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
+        fn initial_pull(checkpoint: RawCheckpoint, max_receiver: u64) -> InitialSyncResponse {
+            MantaPay::initial_pull(checkpoint.into(), max_receiver)
+        }
     }
 
     impl pallet_manta_sbt::runtime::SBTPullLedgerDiffApi<Block> for Runtime {
@@ -1168,7 +1171,7 @@ impl_runtime_apis! {
                 ));
                 pub const CheckedAccount: Option<AccountId> = None;
                 pub const KsmLocation: MultiLocation = MultiLocation::parent();
-                pub KmaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(2084)));
+                pub KmaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
             }
 
             impl pallet_xcm_benchmarks::Config for Runtime {

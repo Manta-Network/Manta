@@ -24,12 +24,16 @@ use frame_support::{
     assert_err, assert_noop, assert_ok, traits::tokens::fungibles::Mutate, WeakBoundedVec,
 };
 use manta_primitives::{assets::AssetLocation, constants::WEIGHT_PER_SECOND};
+use runtime_common::test_helpers::{
+    self_reserve_xcm_message_receiver_side, self_reserve_xcm_message_sender_side,
+    to_reserve_xcm_message_receiver_side, to_reserve_xcm_message_sender_side,
+    ADVERTISED_DEST_WEIGHT,
+};
 use xcm::{latest::prelude::*, v2::Response, VersionedMultiLocation, WrapVersion};
 use xcm_executor::traits::{Convert, WeightBounds};
 use xcm_simulator::TestExt;
 
 use super::{
-    super::*,
     parachain::{
         create_asset_location, create_asset_metadata, register_assets_on_parachain, AssetManager,
         ParaTokenPerSecond, XcmExecutorConfig as ParaXcmExecutorConfig, PALLET_ASSET_INDEX,

@@ -19,7 +19,7 @@
 #![cfg(test)]
 #![allow(clippy::identity_op)] // keep e.g. 1 * DAYS for legibility
 
-use super::{super::*, mock::*, *};
+use super::{mock::*, *};
 
 pub use calamari_runtime::{
     assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},
@@ -39,6 +39,11 @@ use frame_support::{
     dispatch::Dispatchable,
     traits::{tokens::ExistenceRequirement, Get, PalletInfo, StorageInfo, StorageInfoTrait},
     StorageHasher, Twox128,
+};
+use runtime_common::test_helpers::{
+    self_reserve_xcm_message_receiver_side, self_reserve_xcm_message_sender_side,
+    to_reserve_xcm_message_receiver_side, to_reserve_xcm_message_sender_side,
+    ADVERTISED_DEST_WEIGHT,
 };
 
 use manta_primitives::{

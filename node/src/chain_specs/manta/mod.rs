@@ -207,6 +207,7 @@ fn manta_dev_genesis(
         polkadot_xcm: PolkadotXcmConfig {
             safe_xcm_version: Some(SAFE_XCM_VERSION),
         },
+        asset_manager: Default::default(),
     }
 }
 
