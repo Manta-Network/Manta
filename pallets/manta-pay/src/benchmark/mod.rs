@@ -18,12 +18,14 @@ use crate::{
     benchmark::precomputed_coins::{
         PRIVATE_TRANSFER, PRIVATE_TRANSFER_INPUT, TO_PRIVATE, TO_PUBLIC, TO_PUBLIC_INPUT,
     },
-    types::{asset_value_decode, asset_value_encode, AccountId, Asset},
     Call, Config, Event, Pallet, StandardAssetId, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::traits::Get;
 use frame_system::RawOrigin;
+use manta_support::manta_pay::{
+    asset_value_decode, asset_value_encode, field_from_id, id_from_field, AccountId, Asset,
+};
 
 use manta_primitives::{
     assets::{AssetConfig, AssetRegistry, FungibleLedger, TestingDefault},
@@ -85,7 +87,7 @@ benchmarks! {
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
         let asset = mint_post.source(0).unwrap();
-        init_asset::<T>(&caller, Pallet::<T>::id_from_field(asset.id).unwrap(), asset_value_decode(asset.value));
+        init_asset::<T>(&caller, id_from_field(asset.id).unwrap(), asset_value_decode(asset.value));
     }: to_private (
         RawOrigin::Signed(caller.clone()),
         mint_post
@@ -136,7 +138,7 @@ benchmarks! {
         let caller: T::AccountId = whitelisted_caller();
         let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
-        let asset = Asset::new(Pallet::<T>::field_from_id(8u128), asset_value_encode(100));
+        let asset = Asset::new(field_from_id(8u128), asset_value_encode(100));
         let sink = Pallet::<T>::account_id();
     }: public_transfer (
         RawOrigin::Signed(caller.clone()),

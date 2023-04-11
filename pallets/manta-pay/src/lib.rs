@@ -57,15 +57,13 @@
 
 extern crate alloc;
 
-use crate::types::{
-    asset_value_decode, asset_value_encode, fp_decode, fp_encode, AccountId, Asset, AssetValue,
-    FullIncomingNote, NullifierCommitment, OutgoingNote, ReceiverChunk, SenderChunk, TransferPost,
-    Utxo, UtxoAccumulatorOutput, UtxoMerkleTreePath,
-};
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use errors::{ReceiverLedgerError, SenderLedgerError, TransferLedgerError};
-use frame_support::{traits::tokens::ExistenceRequirement, transactional, PalletId};
+use frame_support::{
+    pallet_prelude::*, traits::tokens::ExistenceRequirement, transactional, PalletId,
+};
+use frame_system::pallet_prelude::*;
 use manta_pay::{
     config::{self, utxo::MerkleTreeConfiguration},
     manta_accounting::transfer::{
@@ -83,14 +81,16 @@ use manta_pay::{
     parameters::load_transfer_parameters,
 };
 use manta_primitives::assets::{self, AssetConfig, FungibleLedger as _};
-use manta_util::{
-    codec::{self, Encode},
-    into_array_unchecked, Array,
+use manta_support::manta_pay::{
+    asset_value_decode, asset_value_encode, fp_decode, fp_encode, id_from_field, AccountId, Asset,
+    AssetValue, Checkpoint, FullIncomingNote, InitialSyncResponse, MTParametersError,
+    NullifierCommitment, OutgoingNote, PullResponse, ReceiverChunk, SenderChunk, StandardAssetId,
+    TransferPost, Utxo, UtxoAccumulatorOutput, UtxoItemHashError, UtxoMerkleTreePath,
+    VerifyingContextError, Wrap, WrapPair,
 };
+use manta_util::codec::Encode;
 
-pub use crate::types::{Checkpoint, RawCheckpoint};
 pub use pallet::*;
-pub use types::PullResponse;
 pub use weights::WeightInfo;
 
 #[cfg(test)]
@@ -100,7 +100,6 @@ mod mock;
 mod test;
 
 pub mod errors;
-pub mod types;
 pub mod weights;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -112,9 +111,6 @@ pub mod rpc;
 #[cfg(feature = "runtime")]
 pub mod runtime;
 
-/// Standard Asset Id
-pub type StandardAssetId = u128;
-
 /// Fungible Ledger Error
 pub type FungibleLedgerError = assets::FungibleLedgerError<StandardAssetId, AssetValue>;
 
@@ -122,8 +118,6 @@ pub type FungibleLedgerError = assets::FungibleLedgerError<StandardAssetId, Asse
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::{pallet_prelude::*, traits::StorageVersion};
-    use frame_system::pallet_prelude::*;
     use sp_runtime::traits::AccountIdConversion;
 
     const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -290,7 +284,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let origin = ensure_signed(origin)?;
             FungibleLedger::<T>::transfer(
-                Self::id_from_field(asset.id).ok_or(Error::<T>::InvalidAssetId)?,
+                id_from_field(asset.id).ok_or(Error::<T>::InvalidAssetId)?,
                 &origin,
                 &sink,
                 asset_value_decode(asset.value),
@@ -565,6 +559,25 @@ pub mod pallet {
             Shards::<T>::contains_key(shard_index, max_receiver_index)
         }
 
+        /// Returns the diff of ledger state since the given `checkpoint` and `max_receivers` to
+        /// perform the initial synchronization.
+        #[inline]
+        pub fn initial_pull(checkpoint: Checkpoint, max_receivers: u64) -> InitialSyncResponse {
+            let (should_continue, receivers) =
+                Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
+            let utxo_data = receivers.into_iter().map(|receiver| receiver.0).collect();
+            let membership_proof_data = (0..=255)
+                .map(|i| ShardTrees::<T>::get(i).current_path)
+                .collect();
+            let nullifier_count = NullifierSetSize::<T>::get() as u128;
+            InitialSyncResponse {
+                should_continue,
+                utxo_data,
+                membership_proof_data,
+                nullifier_count,
+            }
+        }
+
         /// Pulls sender data from the ledger starting at the `sender_index`.
         #[inline]
         fn pull_senders(sender_index: usize, max_update_request: u64) -> (bool, SenderChunk) {
@@ -639,24 +652,6 @@ pub mod pallet {
             );
             Ok(().into())
         }
-
-        ///
-        #[inline]
-        pub fn id_from_field(id: [u8; 32]) -> Option<StandardAssetId> {
-            if 0u128.to_le_bytes() == id[16..32] {
-                Some(u128::from_le_bytes(
-                    Array::from_iter(id[0..16].iter().copied()).into(),
-                ))
-            } else {
-                None
-            }
-        }
-
-        ///
-        #[inline]
-        pub fn field_from_id(id: StandardAssetId) -> [u8; 32] {
-            into_array_unchecked([id.to_le_bytes(), [0; 16]].concat())
-        }
     }
 }
 
@@ -707,28 +702,6 @@ where
 struct Ledger<T>(PhantomData<T>)
 where
     T: Config;
-
-/// Wrap Type
-#[derive(Clone, Copy)]
-pub struct Wrap<T>(T);
-
-impl<T> AsRef<T> for Wrap<T> {
-    #[inline]
-    fn as_ref(&self) -> &T {
-        &self.0
-    }
-}
-
-/// Wrap Pair Type
-#[derive(Clone, Copy)]
-pub struct WrapPair<L, R>(L, R);
-
-impl<L, R> AsRef<R> for WrapPair<L, R> {
-    #[inline]
-    fn as_ref(&self) -> &R {
-        &self.1
-    }
-}
 
 impl<T> SenderLedger<config::Parameters> for Ledger<T>
 where
@@ -939,12 +912,10 @@ where
         sources
             .map(move |(account_id, withdraw)| {
                 FungibleLedger::<T>::can_withdraw(
-                    Pallet::<T>::id_from_field(fp_encode(*asset_id).map_err(|_e| {
-                        InvalidSourceAccount {
-                            account_id,
-                            asset_id: *asset_id,
-                            withdraw,
-                        }
+                    id_from_field(fp_encode(*asset_id).map_err(|_e| InvalidSourceAccount {
+                        account_id,
+                        asset_id: *asset_id,
+                        withdraw,
                     })?)
                     .ok_or(InvalidSourceAccount {
                         account_id,
@@ -979,12 +950,10 @@ where
         sinks
             .map(move |(account_id, deposit)| {
                 FungibleLedger::<T>::can_deposit(
-                    Pallet::<T>::id_from_field(fp_encode(*asset_id).map_err(|_e| {
-                        InvalidSinkAccount {
-                            account_id,
-                            asset_id: *asset_id,
-                            deposit,
-                        }
+                    id_from_field(fp_encode(*asset_id).map_err(|_e| InvalidSinkAccount {
+                        account_id,
+                        asset_id: *asset_id,
+                        deposit,
                     })?)
                     .ok_or(InvalidSinkAccount {
                         account_id,
@@ -1078,10 +1047,9 @@ where
         proof: Self::ValidProof,
     ) -> Result<(), TransferLedgerError<T>> {
         let _ = (proof, super_key);
-        let asset_id_type = Pallet::<T>::id_from_field(
-            fp_encode(asset_id).map_err(TransferLedgerError::FpEncodeError)?,
-        )
-        .ok_or(TransferLedgerError::InvalidAssetId)?;
+        let asset_id_type =
+            id_from_field(fp_encode(asset_id).map_err(TransferLedgerError::FpEncodeError)?)
+                .ok_or(TransferLedgerError::UnknownAsset)?;
         for WrapPair(account_id, withdraw) in sources {
             FungibleLedger::<T>::transfer(
                 asset_id_type,
