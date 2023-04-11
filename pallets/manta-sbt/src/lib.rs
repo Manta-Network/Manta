@@ -526,6 +526,23 @@ pub mod pallet {
             });
             Ok(())
         }
+
+        #[pallet::call_index(6)]
+        #[pallet::weight(0)]
+        #[transactional]
+        pub fn remove_allowlist_account(
+            origin: OriginFor<T>,
+            evm_address: EvmAddressType,
+        ) -> DispatchResult {
+            T::AdminOrigin::ensure_origin(origin)?;
+
+            EvmAddressAllowlist::<T>::remove(evm_address);
+
+            Self::deposit_event(Event::<T>::DisallowEvmAddress {
+                address: evm_address,
+            });
+            Ok(())
+        }
     }
 
     /// Event
@@ -574,6 +591,10 @@ pub mod pallet {
             start_time: Moment<T>,
             /// End time at which minting will no longer be valid, None represents no end time.
             end_time: Option<Moment<T>>,
+        },
+        DisallowEvmAddress {
+            /// Eth Address that is used to mint sbt
+            address: EvmAddressType,
         },
     }
 
