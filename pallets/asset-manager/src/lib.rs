@@ -52,7 +52,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use manta_primitives::assets::{
         self, AssetConfig, AssetIdLocationMap, AssetIdType, AssetMetadata, AssetRegistry,
-        AssetRegistryMetadata, FungibleLedger, LocationType,
+        FungibleLedger, LocationType,
     };
     use orml_traits::GetByKey;
     use sp_runtime::{
