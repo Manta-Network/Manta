@@ -39,7 +39,7 @@ async function main() {
     let batches_sent = 0;
     const transactions = [];
 
-    for (let i = 0; i < total_iterations; i++) {
+    for (let i = 6500; i < total_iterations; i++) {
         const mints_start = mints_offset + i * mint_size;
         const mint = api.tx.mantaPay.toPrivate(mints_buffer.subarray(mints_start, mints_start + mint_size));
         transactions.push(mint);
