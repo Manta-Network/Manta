@@ -57,7 +57,7 @@ impl<T: frame_system::Config> pallet_author_inherent::WeightInfo for SubstrateWe
     // Storage: AuthorInherent Author (r:1 w:0)
     // Storage: ParachainStaking SelectedCandidates (r:1 w:0)
     fn kick_off_authorship_validation() -> Weight {
-        (12_425_000 as Weight)
+        (12_718_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(4 as Weight))
             .saturating_add(T::DbWeight::get().writes(1 as Weight))
     }
@@ -70,7 +70,7 @@ impl WeightInfo for () {
     // Storage: AuthorInherent Author (r:1 w:0)
     // Storage: ParachainStaking SelectedCandidates (r:1 w:0)
     fn kick_off_authorship_validation() -> Weight {
-        (12_425_000 as Weight)
+        (12_718_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(4 as Weight))
             .saturating_add(RocksDbWeight::get().writes(1 as Weight))
     }

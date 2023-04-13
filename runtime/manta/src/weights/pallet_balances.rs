@@ -60,43 +60,43 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_balances::WeightInfo for SubstrateWeight<T> {
     // Storage: System Account (r:1 w:1)
     fn transfer() -> Weight {
-        (47_073_000 as Weight)
+        (47_589_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(1 as Weight))
             .saturating_add(T::DbWeight::get().writes(1 as Weight))
     }
     // Storage: System Account (r:1 w:1)
     fn transfer_keep_alive() -> Weight {
-        (32_745_000 as Weight)
+        (34_772_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(1 as Weight))
             .saturating_add(T::DbWeight::get().writes(1 as Weight))
     }
     // Storage: System Account (r:1 w:1)
     fn set_balance_creating() -> Weight {
-        (22_609_000 as Weight)
+        (21_853_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(1 as Weight))
             .saturating_add(T::DbWeight::get().writes(1 as Weight))
     }
     // Storage: System Account (r:1 w:1)
     fn set_balance_killing() -> Weight {
-        (26_497_000 as Weight)
+        (24_083_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(1 as Weight))
             .saturating_add(T::DbWeight::get().writes(1 as Weight))
     }
     // Storage: System Account (r:2 w:2)
     fn force_transfer() -> Weight {
-        (43_077_000 as Weight)
+        (47_209_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(2 as Weight))
             .saturating_add(T::DbWeight::get().writes(2 as Weight))
     }
     // Storage: System Account (r:1 w:1)
     fn transfer_all() -> Weight {
-        (41_931_000 as Weight)
+        (38_922_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(1 as Weight))
             .saturating_add(T::DbWeight::get().writes(1 as Weight))
     }
     // Storage: System Account (r:1 w:1)
     fn force_unreserve() -> Weight {
-        (19_851_000 as Weight)
+        (20_000_000 as Weight)
             .saturating_add(T::DbWeight::get().reads(1 as Weight))
             .saturating_add(T::DbWeight::get().writes(1 as Weight))
     }
@@ -106,43 +106,43 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for SubstrateWeight<T>
 impl WeightInfo for () {
     // Storage: System Account (r:1 w:1)
     fn transfer() -> Weight {
-        (47_073_000 as Weight)
+        (47_589_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(1 as Weight))
             .saturating_add(RocksDbWeight::get().writes(1 as Weight))
     }
     // Storage: System Account (r:1 w:1)
     fn transfer_keep_alive() -> Weight {
-        (32_745_000 as Weight)
+        (34_772_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(1 as Weight))
             .saturating_add(RocksDbWeight::get().writes(1 as Weight))
     }
     // Storage: System Account (r:1 w:1)
     fn set_balance_creating() -> Weight {
-        (22_609_000 as Weight)
+        (21_853_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(1 as Weight))
             .saturating_add(RocksDbWeight::get().writes(1 as Weight))
     }
     // Storage: System Account (r:1 w:1)
     fn set_balance_killing() -> Weight {
-        (26_497_000 as Weight)
+        (24_083_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(1 as Weight))
             .saturating_add(RocksDbWeight::get().writes(1 as Weight))
     }
     // Storage: System Account (r:2 w:2)
     fn force_transfer() -> Weight {
-        (43_077_000 as Weight)
+        (47_209_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(2 as Weight))
             .saturating_add(RocksDbWeight::get().writes(2 as Weight))
     }
     // Storage: System Account (r:1 w:1)
     fn transfer_all() -> Weight {
-        (41_931_000 as Weight)
+        (38_922_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(1 as Weight))
             .saturating_add(RocksDbWeight::get().writes(1 as Weight))
     }
     // Storage: System Account (r:1 w:1)
     fn force_unreserve() -> Weight {
-        (19_851_000 as Weight)
+        (20_000_000 as Weight)
             .saturating_add(RocksDbWeight::get().reads(1 as Weight))
             .saturating_add(RocksDbWeight::get().writes(1 as Weight))
     }

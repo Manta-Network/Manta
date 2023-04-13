@@ -57,49 +57,49 @@ pub trait WeightInfo {
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_utility::WeightInfo for SubstrateWeight<T> {
     fn batch(c: u32, ) -> Weight {
-        (35_708_000 as Weight)
+        (25_168_000 as Weight)
             // Standard Error: 5_000
-            .saturating_add((4_906_000 as Weight).saturating_mul(c as Weight))
+            .saturating_add((4_812_000 as Weight).saturating_mul(c as Weight))
     }
     fn as_derivative() -> Weight {
-        (6_517_000 as Weight)
+        (6_038_000 as Weight)
     }
     fn batch_all(c: u32, ) -> Weight {
-        (37_970_000 as Weight)
+        (22_514_000 as Weight)
             // Standard Error: 5_000
-            .saturating_add((5_095_000 as Weight).saturating_mul(c as Weight))
+            .saturating_add((4_974_000 as Weight).saturating_mul(c as Weight))
     }
     fn dispatch_as() -> Weight {
-        (13_985_000 as Weight)
+        (13_644_000 as Weight)
     }
     fn force_batch(c: u32, ) -> Weight {
-        (38_296_000 as Weight)
-            // Standard Error: 5_000
-            .saturating_add((4_933_000 as Weight).saturating_mul(c as Weight))
+        (27_816_000 as Weight)
+            // Standard Error: 4_000
+            .saturating_add((4_795_000 as Weight).saturating_mul(c as Weight))
     }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
     fn batch(c: u32, ) -> Weight {
-        (35_708_000 as Weight)
+        (25_168_000 as Weight)
             // Standard Error: 5_000
-            .saturating_add((4_906_000 as Weight).saturating_mul(c as Weight))
+            .saturating_add((4_812_000 as Weight).saturating_mul(c as Weight))
     }
     fn as_derivative() -> Weight {
-        (6_517_000 as Weight)
+        (6_038_000 as Weight)
     }
     fn batch_all(c: u32, ) -> Weight {
-        (37_970_000 as Weight)
+        (22_514_000 as Weight)
             // Standard Error: 5_000
-            .saturating_add((5_095_000 as Weight).saturating_mul(c as Weight))
+            .saturating_add((4_974_000 as Weight).saturating_mul(c as Weight))
     }
     fn dispatch_as() -> Weight {
-        (13_985_000 as Weight)
+        (13_644_000 as Weight)
     }
     fn force_batch(c: u32, ) -> Weight {
-        (38_296_000 as Weight)
-            // Standard Error: 5_000
-            .saturating_add((4_933_000 as Weight).saturating_mul(c as Weight))
+        (27_816_000 as Weight)
+            // Standard Error: 4_000
+            .saturating_add((4_795_000 as Weight).saturating_mul(c as Weight))
     }
 }
