@@ -1,12 +1,16 @@
-name: Try-runtime check against latest Calamari mainnet state
+name: Try-runtime check against latest mainnet state
 on:
   # NOTE: The try-runtime tool expects your local chain's runtime version to match the version of the chain that
-  # you're testing against. In this case Calamari mainnet. That's why this CI workflow has a manual trigger.
+  # you're testing against. In the default case Calamari mainnet. That's why this CI workflow has a manual trigger.
   workflow_dispatch:
     inputs:
       prod_url:
         description: The WebSocket url of the reference node
         default: wss://ws.calamari.systems:443
+        required: true
+      chain_spec:
+        description: The chain spec of the local node
+        default: calamari-dev
         required: true
 env:
   AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
@@ -18,6 +22,7 @@ env:
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
   PROD_URL: ${{github.event.inputs.prod_url}}
+  CHAIN_SPEC: ${{github.event.inputs.chain_spec}}
 jobs:
   start-checks:
     runs-on: ubuntu-20.04
@@ -104,7 +109,7 @@ jobs:
           yarn install
           yarn
           latest_hash=$(node get-latest-block-hash --address=$PROD_URL)
-          $HOME/.local/bin/manta try-runtime --chain calamari-dev on-runtime-upgrade live --at $latest_hash --uri $PROD_URL
+          $HOME/.local/bin/manta try-runtime --chain $CHAIN_SPEC on-runtime-upgrade live --at $latest_hash --uri $PROD_URL
       - name: stop sccache server
         run: sccache --stop-server || true
   stop-checks:
