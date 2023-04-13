@@ -98,11 +98,11 @@ jobs:
       - name: Start old node
         run: |
           echo Running on $CHAIN
-          $HOME/manta-old --chain=$CHAIN --port 30444 --ws-port 9944 -- --chain kusama &
+          $HOME/manta-old --chain=$CHAIN --port 30444 --base-path ./temp1 --ws-port 9944 -- --chain kusama &
       - name: Start new node
         run: |
           echo Running on $CHAIN
-          target/release/manta --chain=$CHAIN --port 30555 --ws-port 9955 -- --chain kusama &
+          target/release/manta --chain=$CHAIN --port 30555 --base-path ./temp2 --ws-port 9955 -- --chain kusama &
       - name: Prepare output
         run: |
           VERSION=$(./target/release/manta --version)
