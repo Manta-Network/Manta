@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v4.0.6
+### Fixed
+- [\#1068](https://github.com/Manta-Network/Manta/pull/1068) Do not skip integration tests [CA]
+- [\#1069](https://github.com/Manta-Network/Manta/pull/1069) Enable manta runtime xcm tests [MA]
+
 ## v4.0.5
 ### Added
 - [\#1012](https://github.com/Manta-Network/Manta/pull/1012) Add zkSBTs [MACADO]
