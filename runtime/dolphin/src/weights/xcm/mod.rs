@@ -35,7 +35,8 @@ impl WeighMultiAssets for MultiAssetFilter {
     fn weigh_multi_assets(&self, weight: Weight) -> Weight {
         match self {
             Self::Definite(assets) => {
-                (assets.inner().iter().count() as Weight).saturating_mul(weight)
+                // NOTE: We charge fees for at least 1 asset even if 0 were requested to punish spam
+                (assets.inner().iter().count().max(1) as Weight).saturating_mul(weight)
             }
             Self::Wild(_) => (MAX_ASSETS as Weight).saturating_mul(weight),
         }
@@ -44,7 +45,7 @@ impl WeighMultiAssets for MultiAssetFilter {
 
 impl WeighMultiAssets for MultiAssets {
     fn weigh_multi_assets(&self, weight: Weight) -> Weight {
-        (self.inner().iter().count() as Weight).saturating_mul(weight)
+        (self.inner().iter().count().max(1) as Weight).saturating_mul(weight)
     }
 }
 
