@@ -1,13 +1,10 @@
-import { ApiPromise, WsProvider } from "@polkadot/api";
 import { Keyring } from "@polkadot/keyring";
-import { manta_pay_types, rpc_api } from "./types";
-import { delay } from "./test-util";
 import { assert } from "chai";
-import minimist, { ParsedArgs } from "minimist";
 import { readFile } from "fs/promises";
+import { createPromiseApi, delay, readChainSpec } from "../utils/utils";
+import minimist, { ParsedArgs } from "minimist";
 
 const test_config = {
-  ws_address: "ws://127.0.0.1:9801",
   mnemonic:
     "bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice",
   timeout: 20000000,
@@ -26,21 +23,18 @@ const test_config = {
 
 describe("Node RPC Test", () => {
   it("Check RPC result", async () => {
+    // create api
     let nodeAddress = "";
     const args: ParsedArgs = minimist(process.argv.slice(2));
     if (args["address"] == null) {
-      nodeAddress = test_config.ws_address;
+      const chainSpec = await readChainSpec();
+      const wsPort = chainSpec.parachains[0].nodes[0].wsPort;
+      nodeAddress = "ws://127.0.0.1:" + wsPort;
     } else {
       nodeAddress = args["address"];
     }
-    console.log("using address %s", nodeAddress);
+    const api = await createPromiseApi(nodeAddress);
 
-    const wsProvider = new WsProvider(nodeAddress);
-    const api = await ApiPromise.create({
-      provider: wsProvider,
-      types: manta_pay_types,
-      rpc: rpc_api,
-    });
     const keyring = new Keyring({ type: "sr25519" });
     const sender = keyring.addFromMnemonic(test_config.mnemonic);
 
@@ -56,7 +50,8 @@ describe("Node RPC Test", () => {
       test_config.transfers_offset,
       full_transfer_size * test_config.total_iterations
     );
-    const fullReclaimSize = test_config.mint_size * 2 + test_config.reclaim_size;
+    const fullReclaimSize =
+      test_config.mint_size * 2 + test_config.reclaim_size;
     const reclaimsContent = await readFile("./data/precomputed_reclaims");
     const reclaimsBuffer = reclaimsContent.subarray(
       test_config.reclaims_offset,
@@ -67,7 +62,7 @@ describe("Node RPC Test", () => {
     let txsCount = 0;
     let startTime = performance.now();
     let totalTime = 0;
-    
+
     for (
       let i = test_config.start_iteration;
       i < test_config.start_iteration + test_config.tests_iterations;

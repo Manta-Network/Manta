@@ -262,8 +262,10 @@ jobs:
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
-          yarn correctness_test --address=ws://127.0.0.1:9921 --exit
-          yarn performance_test --address=ws://127.0.0.1:9921 --exit
+          yarn init-assets
+          yarn mint-private-assets
+          yarn validate-pull-ledger-diff
+          yarn performance_test
       - name: check if target block is finalized
         run: |
           cd ${{ github.workspace }}/dev-tools-calamari/check-finalized-block

@@ -196,7 +196,7 @@ jobs:
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
-          yarn runtime_upgrade_test --address=ws://127.0.0.1:9921 --exit
+          yarn runtime_upgrade_test --exit
           if [ $? != 0 ]; then echo "Runtime upgrade failed!"; exit 1; fi
       - uses: actions/upload-artifact@v2
         with:
