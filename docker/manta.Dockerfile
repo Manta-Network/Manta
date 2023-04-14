@@ -28,13 +28,14 @@ RUN chmod +x $PARA_BINARY_PATH
 RUN ldd $PARA_BINARY_PATH
 RUN $PARA_BINARY_PATH --version
 
-# Get calamari and kusama genesis file
+# Get manta and kusama genesis file
 ADD $PARA_GENESIS_URL $PARA_GENESIS_PATH
 ADD $RELAY_GENESIS_URL $RELAY_GENESIS_PATH
+
 # Expose 5 ports by default
 EXPOSE 30333 30334 9933 9944 9615 9945
 ENTRYPOINT [\
   "/usr/local/bin/manta",\
   "--chain",\
-  "/usr/share/calamari.json"\
+  "/usr/share/manta.json"\
 ]
