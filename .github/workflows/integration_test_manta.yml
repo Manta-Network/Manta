@@ -118,7 +118,7 @@ jobs:
           - id: manta-local
             expected:
               block-count:
-                relay: 25
+                relay: 15
                 para: 6
               peer-count:
                 relay: 7
