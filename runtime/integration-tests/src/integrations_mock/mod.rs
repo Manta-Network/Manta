@@ -16,24 +16,62 @@
 
 #![cfg(test)]
 
-pub mod integration_tests;
+pub mod calamari;
+pub mod common;
+pub mod manta;
 pub mod mock;
 
-use calamari_runtime::opaque::SessionKeys;
+pub use mock::run_to_block;
+
+#[cfg(feature = "calamari")]
 pub use calamari_runtime::{
     currency::KMA,
-    staking::{EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR},
-    CollatorSelection, Event, Origin, ParachainStaking, Runtime, System,
+    fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
+    opaque::SessionKeys,
+    staking::{self, EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR},
+    xcm_config::{XcmExecutorConfig, XcmFeesAccount},
+    AssetManager, Assets, AuthorInherent, Authorship, Balances, CalamariVesting, Call,
+    CollatorSelection, Council, DefaultBlocksPerRound, Democracy, EnactmentPeriod, Event,
+    InflationInfo, LaunchPeriod, LeaveDelayRounds, NativeTokenExistentialDeposit, Origin,
+    ParachainStaking, Period, PolkadotXcm, Range, Runtime, Scheduler, Session, System,
+    TechnicalCommittee, Timestamp, TransactionPause, TransactionPayment, Treasury, Utility,
+    VotingPeriod,
+};
+#[cfg(feature = "manta")]
+pub use manta_runtime::{
+    assets_config::MantaConcreteFungibleLedger,
+    currency::MANTA as KMA,
+    opaque::SessionKeys,
+    staking::{self, EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR},
+    xcm_config::{XcmExecutorConfig, XcmFeesAccount},
+    AssetManager, Assets, AuthorInherent, Authorship, Balances, Call, CollatorSelection,
+    DefaultBlocksPerRound, Event, InflationInfo, LeaveDelayRounds, NativeTokenExistentialDeposit,
+    Origin, ParachainStaking, Period, PolkadotXcm, Range, Runtime, Session, System, Timestamp,
+    TransactionPayment, Treasury, Utility,
 };
 
+use codec::Encode;
 use frame_support::{
     assert_ok,
     weights::{DispatchInfo, Weight},
 };
 use lazy_static::lazy_static;
-use manta_primitives::types::{AccountId, Balance};
+use manta_primitives::types::{AccountId, Balance, Header};
+use nimbus_primitives::NIMBUS_ENGINE_ID;
 use session_key_primitives::util::unchecked_account_id;
 use sp_core::sr25519::Public;
+use sp_runtime::{traits::Header as HeaderT, DigestItem};
+
+#[cfg(feature = "calamari")]
+type RuntimeAssetConfig = calamari_runtime::assets_config::CalamariAssetConfig;
+#[cfg(feature = "manta")]
+type RuntimeAssetConfig = manta_runtime::assets_config::MantaAssetConfig;
+
+#[cfg(feature = "calamari")]
+type RuntimeConcreteFungibleLedger =
+    calamari_runtime::assets_config::CalamariConcreteFungibleLedger;
+#[cfg(feature = "manta")]
+type RuntimeConcreteFungibleLedger = manta_runtime::assets_config::MantaConcreteFungibleLedger;
 
 pub const INITIAL_BALANCE: Balance = 1_000_000_000_000 * KMA;
 
@@ -91,7 +129,7 @@ pub fn initialize_collators_through_whitelist(collators: Vec<AccountId>) {
     assert_ok!(ParachainStaking::initialize_pallet(
         1,
         collators,
-        calamari_runtime::staking::inflation_config::<Runtime>()
+        staking::inflation_config::<Runtime>()
     ));
     assert_eq!(
         ParachainStaking::candidate_pool().len(),
@@ -101,4 +139,19 @@ pub fn initialize_collators_through_whitelist(collators: Vec<AccountId>) {
         root_origin(),
         candidate_count
     ));
+}
+
+#[allow(dead_code)]
+fn seal_header(mut header: Header, author: AccountId) -> Header {
+    {
+        let digest = header.digest_mut();
+        digest
+            .logs
+            .push(DigestItem::PreRuntime(NIMBUS_ENGINE_ID, author.encode()));
+        digest
+            .logs
+            .push(DigestItem::Seal(NIMBUS_ENGINE_ID, author.encode()));
+    }
+
+    header
 }

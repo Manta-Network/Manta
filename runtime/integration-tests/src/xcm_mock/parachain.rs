@@ -65,6 +65,11 @@ use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 
+#[cfg(feature = "calamari")]
+type RuntimeXcmWeight = calamari_runtime::weights::xcm::CalamariXcmWeight<Call>;
+#[cfg(feature = "manta")]
+type RuntimeXcmWeight = manta_runtime::weights::xcm::MantaXcmWeight<Call>;
+
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
 }
@@ -289,11 +294,7 @@ impl Config for XcmExecutorConfig {
     type IsTeleporter = ();
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = Barrier;
-    type Weigher = WeightInfoBounds<
-        calamari_runtime::weights::xcm::CalamariXcmWeight<Call>,
-        Call,
-        MaxInstructions,
-    >;
+    type Weigher = WeightInfoBounds<RuntimeXcmWeight, Call, MaxInstructions>;
     // Trader is the means to purchasing weight credit for XCM execution.
     // We define two traders:
     // The first one will charge parachain's native currency, who's `MultiLocation`
@@ -494,11 +495,7 @@ impl pallet_xcm::Config for Runtime {
     // Do not allow teleports
     type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Nothing;
-    type Weigher = WeightInfoBounds<
-        calamari_runtime::weights::xcm::CalamariXcmWeight<Call>,
-        Call,
-        MaxInstructions,
-    >;
+    type Weigher = WeightInfoBounds<RuntimeXcmWeight, Call, MaxInstructions>;
     type LocationInverter = LocationInverter<Ancestry>;
     type Origin = Origin;
     type Call = Call;
@@ -660,11 +657,7 @@ impl orml_xtokens::Config for Runtime {
     type CurrencyIdConvert = CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetManager>>;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type SelfLocation = SelfReserve;
-    type Weigher = WeightInfoBounds<
-        calamari_runtime::weights::xcm::CalamariXcmWeight<Call>,
-        Call,
-        MaxInstructions,
-    >;
+    type Weigher = WeightInfoBounds<RuntimeXcmWeight, Call, MaxInstructions>;
     type BaseXcmWeight = BaseXcmWeight;
     type LocationInverter = LocationInverter<Ancestry>;
     type MaxAssetsForTransfer = MaxAssetsForTransfer;

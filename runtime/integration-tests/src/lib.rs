@@ -14,6 +14,5 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-#![cfg(test)]
-
+pub mod integrations_mock;
 pub mod xcm_mock;

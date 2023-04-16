@@ -82,6 +82,16 @@ jobs:
         run: |
           source ${HOME}/.cargo/env
           RUSTC_BOOTSTRAP=1 cargo test --release --features=runtime-benchmarks,try-runtime
+      - name: Run Integration Tests
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+        run: |
+          source ${HOME}/.cargo/env
+          RUSTC_BOOTSTRAP=1 cargo test -p integration-tests --release --features=calamari --no-default-features
+          RUSTC_BOOTSTRAP=1 cargo test -p integration-tests --release --features=manta --no-default-features
       - name: Run congestion test (allowed to fail)
         id: congestion_test
         env:
