@@ -64,23 +64,13 @@ pub fn genesis_spec_local() -> MantaChainSpec {
             None,
             SessionKeys::from_seed_unchecked("Charlie"),
         ),
-        Collator::new(
-            unchecked_account_id::<sr25519::Public>("Dave"),
-            None,
-            SessionKeys::from_seed_unchecked("Dave"),
-        ),
-        Collator::new(
-            unchecked_account_id::<sr25519::Public>("Eve"),
-            None,
-            SessionKeys::from_seed_unchecked("Eve"),
-        ),
     ];
     let genesis_collators_clone = genesis_collators.clone(); // so we can move it into the constructor closure
 
     MantaChainSpec::from_genesis(
-        "Manta Parachain Local",
-        "manta",
-        ChainType::Local,
+        "Manta Parachain Moonbase",
+        "manta_moonbase",
+        ChainType::Live,
         move || manta_devnet_genesis(genesis_collators_clone.clone()),
         genesis_collators
             .into_iter()
@@ -91,7 +81,7 @@ pub fn genesis_spec_local() -> MantaChainSpec {
         None,
         Some(manta_properties()),
         Extensions {
-            relay_chain: POLKADOT_RELAYCHAIN_LOCAL_NET.into(),
+            relay_chain: "".into(),
             para_id: MANTA_PARACHAIN_ID,
         },
     )
