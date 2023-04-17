@@ -1,34 +1,34 @@
 [package]
 name = "pallet-randomness"
-authors = { workspace = true }
+authors = ["Manta Network"]
 description = "Provides randomness"
 edition = "2018"
 version = "0.1.0"
 
 [dependencies]
-frame-benchmarking = { workspace = true, optional = true }
-frame-support = { workspace = true }
-frame-system = { workspace = true }
-hex = { workspace = true }
-log = { workspace = true }
-nimbus-primitives = { workspace = true }
-parity-scale-codec = { workspace = true, features = [ "derive" ] }
-scale-info = { workspace = true, features = [ "derive" ] }
-serde = { workspace = true, optional = true }
-session-keys-primitives = { workspace = true }
-sp-consensus-vrf = { workspace = true }
-sp-core = { workspace = true }
-sp-io = { workspace = true }
-sp-runtime = { workspace = true }
-sp-std = { workspace = true }
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", optional = true}
+frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", default-features = false }
+hex = "0.4.3"
+log = "0.4"
+nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.1" }
+parity-scale-codec = { version = "3.1.2", default-features = false, features = ["derive"] }
+scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+serde = { version = "1.0.136", default-features = false, optional = true }
+session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
+sp-consensus-vrf = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
+sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
+sp-io ={ git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
+sp-runtime ={ git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
+sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
 
 # Frontier
-pallet-evm = { workspace = true, features = [ "forbid-evm-reentrancy" ] }
+# pallet-evm = { workspace = true, features = [ "forbid-evm-reentrancy" ] }
 
 [dev-dependencies]
-derive_more = { workspace = true }
-pallet-author-mapping = { workspace = true, features = [ "std" ] }
-pallet-balances = { workspace = true, features = [ "std" ] }
+derive_more = "0.99"
+# pallet-author-mapping = { workspace = true, features = [ "std" ] }
+pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", features = [ "std" ] }
 
 [features]
 default = [ "std" ]
@@ -38,11 +38,10 @@ std = [
 	"frame-system/std",
 	"hex/std",
 	"nimbus-primitives/std",
-	"pallet-evm/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"serde",
-	"session-keys-primitives/std",
+	"session-key-primitives/std",
 	"sp-consensus-vrf/std",
 	"sp-core/std",
 	"sp-io/std",
@@ -51,6 +50,6 @@ std = [
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
-	"session-keys-primitives/runtime-benchmarks",
+	# "session-key-primitives/runtime-benchmarks",
 ]
 # try-runtime = [ "frame-support/try-runtime" ]

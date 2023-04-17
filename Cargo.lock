@@ -6822,6 +6822,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-randomness"
+version = "0.1.0"
+dependencies = [
+ "derive_more",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "log",
+ "nimbus-primitives",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "session-key-primitives",
+ "sp-consensus-vrf",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-randomness-collective-flip"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.28#ce10b9f29353e89fc3e59d447041bb29622def3f"
@@ -10819,6 +10842,7 @@ dependencies = [
 name = "session-key-primitives"
 version = "4.0.4"
 dependencies = [
+ "async-trait",
  "manta-primitives",
  "nimbus-primitives",
  "parity-scale-codec",
@@ -10826,6 +10850,7 @@ dependencies = [
  "sp-application-crypto",
  "sp-consensus-aura",
  "sp-core",
+ "sp-inherents",
  "sp-runtime",
 ]
 
