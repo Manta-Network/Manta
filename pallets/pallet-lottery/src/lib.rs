@@ -528,7 +528,7 @@ pub mod pallet {
                 drawing_interval > 0u32.into(),
                 Error::<T>::PalletMisconfigured
             );
-            let lottery_drawing_call: CallOf<T> = Call::draw_lottery{}.into();
+            let lottery_drawing_call: CallOf<T> = Call::draw_lottery {}.into();
             T::Scheduler::schedule_named(
                 T::LotteryPot::get().0.to_vec(),
                 DispatchTime::After(drawing_interval),
@@ -896,7 +896,8 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> Pallet<T> { // public getters for lottery state
+    impl<T: Config> Pallet<T> {
+        // public getters for lottery state
         /// Returns the block the next drawing will execute, if any
         pub fn next_drawing_at() -> Option<T::BlockNumber> {
             T::Scheduler::next_dispatch_time(T::LotteryPot::get().0.to_vec()).ok()
