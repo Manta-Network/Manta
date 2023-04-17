@@ -24,27 +24,27 @@ use sp_runtime::RuntimeString;
 /// TODO document
 pub enum InherentError {
     /// TODO document
-	Other(RuntimeString),
+    Other(RuntimeString),
 }
 
 impl IsFatalError for InherentError {
-	fn is_fatal_error(&self) -> bool {
-		match *self {
-			InherentError::Other(_) => true,
-		}
-	}
+    fn is_fatal_error(&self) -> bool {
+        match *self {
+            InherentError::Other(_) => true,
+        }
+    }
 }
 
 impl InherentError {
-	/// Try to create an instance ouf of the given identifier and data.
-	#[cfg(feature = "std")]
-	pub fn try_from(id: &InherentIdentifier, data: &[u8]) -> Option<Self> {
-		if id == &INHERENT_IDENTIFIER {
-			<InherentError as parity_scale_codec::Decode>::decode(&mut &*data).ok()
-		} else {
-			None
-		}
-	}
+    /// Try to create an instance ouf of the given identifier and data.
+    #[cfg(feature = "std")]
+    pub fn try_from(id: &InherentIdentifier, data: &[u8]) -> Option<Self> {
+        if id == &INHERENT_IDENTIFIER {
+            <InherentError as parity_scale_codec::Decode>::decode(&mut &*data).ok()
+        } else {
+            None
+        }
+    }
 }
 
 /// The InherentIdentifier to set the babe randomness results
@@ -58,23 +58,23 @@ pub struct InherentDataProvider;
 #[cfg(feature = "std")]
 #[async_trait::async_trait]
 impl sp_inherents::InherentDataProvider for InherentDataProvider {
-	fn provide_inherent_data(&self, inherent_data: &mut InherentData) -> Result<(), Error> {
-		inherent_data.put_data(INHERENT_IDENTIFIER, &())
-	}
+    fn provide_inherent_data(&self, inherent_data: &mut InherentData) -> Result<(), Error> {
+        inherent_data.put_data(INHERENT_IDENTIFIER, &())
+    }
 
-	async fn try_handle_error(
-		&self,
-		identifier: &InherentIdentifier,
-		_error: &[u8],
-	) -> Option<Result<(), sp_inherents::Error>> {
-		// Don't process modules from other inherents
-		if *identifier != INHERENT_IDENTIFIER {
-			return None;
-		}
+    async fn try_handle_error(
+        &self,
+        identifier: &InherentIdentifier,
+        _error: &[u8],
+    ) -> Option<Result<(), sp_inherents::Error>> {
+        // Don't process modules from other inherents
+        if *identifier != INHERENT_IDENTIFIER {
+            return None;
+        }
 
-		// All errors with the randomness inherent are fatal
-		Some(Err(Error::Application(Box::from(String::from(
-			"Error processing dummy randomness inherent",
-		)))))
-	}
+        // All errors with the randomness inherent are fatal
+        Some(Err(Error::Application(Box::from(String::from(
+            "Error processing dummy randomness inherent",
+        )))))
+    }
 }

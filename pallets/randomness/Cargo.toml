@@ -1,12 +1,12 @@
 [package]
-name = "pallet-randomness"
 authors = ["Manta Network"]
 description = "Provides randomness"
 edition = "2018"
+name = "pallet-randomness"
 version = "0.1.0"
 
 [dependencies]
-frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", optional = true}
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", optional = true }
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", default-features = false }
 hex = "0.4.3"
@@ -18,8 +18,8 @@ serde = { version = "1.0.136", default-features = false, optional = true }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
 sp-consensus-vrf = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
 sp-core = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
-sp-io ={ git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
-sp-runtime ={ git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
+sp-io = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
+sp-runtime = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
 sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
 
 # Frontier
@@ -28,28 +28,28 @@ sp-std = { git = 'https://github.com/paritytech/substrate.git', branch = "polkad
 [dev-dependencies]
 derive_more = "0.99"
 # pallet-author-mapping = { workspace = true, features = [ "std" ] }
-pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", features = [ "std" ] }
+pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", features = ["std"] }
 
 [features]
-default = [ "std" ]
-std = [
-	"frame-benchmarking/std",
-	"frame-support/std",
-	"frame-system/std",
-	"hex/std",
-	"nimbus-primitives/std",
-	"parity-scale-codec/std",
-	"scale-info/std",
-	"serde",
-	"session-key-primitives/std",
-	"sp-consensus-vrf/std",
-	"sp-core/std",
-	"sp-io/std",
-	"sp-runtime/std",
-	"sp-std/std",
-]
+default = ["std"]
 runtime-benchmarks = [
-	"frame-benchmarking",
-	# "session-key-primitives/runtime-benchmarks",
+  "frame-benchmarking",
+  # "session-key-primitives/runtime-benchmarks",
+]
+std = [
+  "frame-benchmarking/std",
+  "frame-support/std",
+  "frame-system/std",
+  "hex/std",
+  "nimbus-primitives/std",
+  "parity-scale-codec/std",
+  "scale-info/std",
+  "serde",
+  "session-key-primitives/std",
+  "sp-consensus-vrf/std",
+  "sp-core/std",
+  "sp-io/std",
+  "sp-runtime/std",
+  "sp-std/std",
 ]
 # try-runtime = [ "frame-support/try-runtime" ]

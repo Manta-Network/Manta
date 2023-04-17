@@ -44,27 +44,27 @@
 #![allow(unused_imports)]
 
 use frame_support::{
-	traits::Get,
-	weights::{constants::RocksDbWeight, Weight},
+    traits::Get,
+    weights::{constants::RocksDbWeight, Weight},
 };
 use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_randomness.
 pub trait WeightInfo {
-	#[rustfmt::skip]
+    #[rustfmt::skip]
 	fn set_babe_randomness_results() -> Weight;
 }
 
 /// Weights for pallet_randomness using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-	// Storage: Randomness RelayEpoch (r:1 w:1)
-	// Storage: ParachainSystem ValidationData (r:1 w:0)
-	// Storage: ParachainSystem RelayStateProof (r:1 w:0)
-	// Storage: Randomness RandomnessResults (r:1 w:1)
-	// Storage: Randomness InherentIncluded (r:0 w:1)
+    // Storage: Randomness RelayEpoch (r:1 w:1)
+    // Storage: ParachainSystem ValidationData (r:1 w:0)
+    // Storage: ParachainSystem RelayStateProof (r:1 w:0)
+    // Storage: Randomness RandomnessResults (r:1 w:1)
+    // Storage: Randomness InherentIncluded (r:0 w:1)
 	#[rustfmt::skip]
-	fn set_babe_randomness_results() -> Weight {
+    fn set_babe_randomness_results() -> Weight {
 		(28_446_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
@@ -73,13 +73,13 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-	// Storage: Randomness RelayEpoch (r:1 w:1)
-	// Storage: ParachainSystem ValidationData (r:1 w:0)
-	// Storage: ParachainSystem RelayStateProof (r:1 w:0)
-	// Storage: Randomness RandomnessResults (r:1 w:1)
-	// Storage: Randomness InherentIncluded (r:0 w:1)
+    // Storage: Randomness RelayEpoch (r:1 w:1)
+    // Storage: ParachainSystem ValidationData (r:1 w:0)
+    // Storage: ParachainSystem RelayStateProof (r:1 w:0)
+    // Storage: Randomness RandomnessResults (r:1 w:1)
+    // Storage: Randomness InherentIncluded (r:0 w:1)
 	#[rustfmt::skip]
-	fn set_babe_randomness_results() -> Weight {
+    fn set_babe_randomness_results() -> Weight {
 		(28_446_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(3 as u64))

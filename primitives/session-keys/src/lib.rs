@@ -22,9 +22,9 @@
 #![forbid(missing_docs)]
 
 pub mod aura;
+pub mod inherent;
 pub mod nimbus;
 pub mod vrf;
-pub mod inherent;
 
 pub use aura::AuraId;
 pub use nimbus::NimbusId;
