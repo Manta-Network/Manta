@@ -398,7 +398,7 @@ impl pallet_randomness::GetBabeData<u64, Option<Hash>> for BabeDataGetter {
         }
         relay_chain_state_proof()
             .read_optional_entry(
-                cumulus_primitives_core::relay_chain::well_known_keys::ONE_EPOCH_AGO_RANDOMNESS,
+                cumulus_primitives_core::relay_chain::well_known_keys::TWO_EPOCHS_AGO_RANDOMNESS,
             )
             .ok()
             .flatten()
