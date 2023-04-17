@@ -272,6 +272,7 @@ impl Contains<Call> for BaseFilter {
             | Call::TechnicalMembership(_)
             | Call::Scheduler(_)
             | Call::Lottery(_)
+            | Call::Randomness(pallet_randomness::Call::set_babe_randomness_results{..})
             | Call::CalamariVesting(_)
             | Call::Session(_) // User must be able to set their session key when applying for a collator
             | Call::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
