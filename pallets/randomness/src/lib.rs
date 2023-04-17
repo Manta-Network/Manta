@@ -59,7 +59,7 @@ pub trait GetBabeData<EpochIndex, Randomness> {
 pub mod pallet {
     use super::*;
     use crate::weights::{SubstrateWeight, WeightInfo};
-    use frame_support::traits::{Currency, ExistenceRequirement::KeepAlive};
+    use frame_support::traits::ExistenceRequirement::KeepAlive;
     use frame_support::{pallet_prelude::*, PalletId};
     use frame_system::pallet_prelude::*;
     use nimbus_primitives::NimbusId;
@@ -74,9 +74,6 @@ pub mod pallet {
     /// Request identifier, unique per request for randomness
     pub type RequestId = u64;
 
-    pub type BalanceOf<T> =
-        <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
-
     #[pallet::pallet]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(PhantomData<T>);
@@ -84,8 +81,6 @@ pub mod pallet {
     /// Configuration trait of this pallet.
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        /// Currency in which the security deposit will be taken.
-        type Currency: Currency<Self::AccountId>;
         /// Get the BABE data from the runtime
         type BabeDataGetter: GetBabeData<u64, Option<Self::Hash>>;
     }

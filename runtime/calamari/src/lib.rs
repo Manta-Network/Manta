@@ -355,6 +355,57 @@ pub type RootOrHalfCouncil = EitherOfDiverse<
     EnsureRoot<AccountId>,
     pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
 >;
+
+/// Only callable after `set_validation_data` is called which forms this proof the same way
+fn relay_chain_state_proof() -> cumulus_pallet_parachain_system::RelayChainStateProof {
+    let relay_storage_root = ParachainSystem::validation_data()
+        .expect("set in `set_validation_data`")
+        .relay_parent_storage_root;
+    let relay_chain_state =
+        ParachainSystem::relay_state_proof().expect("set in `set_validation_data`");
+    cumulus_pallet_parachain_system::RelayChainStateProof::new(
+        ParachainInfo::get(),
+        relay_storage_root,
+        relay_chain_state,
+    )
+    .expect("Invalid relay chain state proof, already constructed in `set_validation_data`")
+}
+pub struct BabeDataGetter;
+impl pallet_randomness::GetBabeData<u64, Option<Hash>> for BabeDataGetter {
+    // Tolerate panic here because only ever called in inherent (so can be omitted)
+    fn get_epoch_index() -> u64 {
+        if cfg!(feature = "runtime-benchmarks") {
+            // storage reads as per actual reads
+            let _relay_storage_root = ParachainSystem::validation_data();
+            let _relay_chain_state = ParachainSystem::relay_state_proof();
+            const BENCHMARKING_NEW_EPOCH: u64 = 10u64;
+            return BENCHMARKING_NEW_EPOCH;
+        }
+        relay_chain_state_proof()
+            .read_optional_entry(cumulus_primitives_core::relay_chain::well_known_keys::EPOCH_INDEX)
+            .ok()
+            .flatten()
+            .expect("expected to be able to read epoch index from relay chain state proof")
+    }
+    fn get_epoch_randomness() -> Option<Hash> {
+        if cfg!(feature = "runtime-benchmarks") {
+            // storage reads as per actual reads
+            let _relay_storage_root = ParachainSystem::validation_data();
+            let _relay_chain_state = ParachainSystem::relay_state_proof();
+            let benchmarking_babe_output = Hash::default();
+            return Some(benchmarking_babe_output);
+        }
+        relay_chain_state_proof()
+            .read_optional_entry(
+                cumulus_primitives_core::relay_chain::well_known_keys::ONE_EPOCH_AGO_RANDOMNESS,
+            )
+            .ok()
+            .flatten()
+    }
+}
+impl pallet_randomness::Config for Runtime {
+    type BabeDataGetter = BabeDataGetter;
+}
 parameter_types! {
     pub const LotteryPotId: PalletId = LOTTERY_PALLET_ID;
     /// Time in blocks between lottery drawings
@@ -368,7 +419,7 @@ impl pallet_lottery::Config for Runtime {
     type Call = Call;
     type Event = Event;
     type Scheduler = Scheduler;
-    type RandomnessSource = RandomnessCollectiveFlip;
+    type RandomnessSource = Randomness;
     type ManageOrigin = RootOrHalfCouncil;
     type PalletsOrigin = OriginCaller;
     type LotteryPot = LotteryPotId;
@@ -812,8 +863,6 @@ parameter_types! {
     pub const MinVestedTransfer: Balance = KMA;
 }
 
-impl pallet_randomness_collective_flip::Config for Runtime {}
-
 impl calamari_vesting::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
@@ -889,9 +938,8 @@ construct_runtime!(
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
 
-        // Randomness: pallet_randomness::{Pallet, Call, Storage, Event<T>, Inherent} = 120,
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 119,
-        Lottery: pallet_lottery::{Pallet, Call, Storage, Event<T>, Config<T>} = 118
+        Randomness: pallet_randomness::{Pallet, Call, Storage, Inherent} = 119,
+        Lottery: pallet_lottery::{Pallet, Call, Storage, Event<T>, Config<T>} = 118 // Beware: Lottery depends on Randomness inherent
     }
 );
 

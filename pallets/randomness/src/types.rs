@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{BalanceOf, Config, Error, Pallet, RandomnessResults, RelayEpoch};
+use crate::{Config, Error, Pallet, RandomnessResults, RelayEpoch};
 use frame_support::pallet_prelude::*;
 use frame_support::traits::{Currency, ExistenceRequirement::KeepAlive};
 use sp_runtime::traits::{CheckedAdd, CheckedSub, Saturating};
