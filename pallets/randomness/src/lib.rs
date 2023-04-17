@@ -122,19 +122,18 @@ pub mod pallet {
             if relay_epoch_index > last_relay_epoch_index {
                 let babe_one_epoch_ago_this_block = RequestType::BabeEpoch(relay_epoch_index);
                 // populate `RandomnessResults` for BABE epoch randomness
-                if let Some(mut results) =
-                    <RandomnessResults<T>>::get(&babe_one_epoch_ago_this_block)
-                {
-                    if let Some(randomness) = T::BabeDataGetter::get_epoch_randomness() {
-                        results.randomness = Some(randomness);
-                        <RandomnessResults<T>>::insert(babe_one_epoch_ago_this_block, results);
-                    } else {
-                        log::warn!(
-                            "Failed to fill BABE epoch randomness results \
+                if let Some(randomness) = T::BabeDataGetter::get_epoch_randomness() {
+                    let result = RandomnessResult {
+                        request_count: 1,
+                        randomness: Some(randomness),
+                    };
+                    <RandomnessResults<T>>::insert(babe_one_epoch_ago_this_block, result);
+                } else {
+                    log::warn!(
+                        "Failed to fill BABE epoch randomness results \
 							REQUIRE HOTFIX TO FILL EPOCH RANDOMNESS RESULTS FOR EPOCH {:?}",
-                            relay_epoch_index
-                        );
-                    }
+                        relay_epoch_index
+                    );
                 }
             }
             <RelayEpoch<T>>::put(relay_epoch_index);
