@@ -24,6 +24,7 @@
 pub mod aura;
 pub mod nimbus;
 pub mod vrf;
+pub mod inherent;
 
 pub use aura::AuraId;
 pub use nimbus::NimbusId;
