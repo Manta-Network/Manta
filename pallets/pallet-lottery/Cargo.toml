@@ -5,6 +5,7 @@ name = "pallet-lottery"
 version = "0.1.0"
 
 [dependencies]
+array_tool = { version = "1", default-features = false }
 codec = { version = '3.1.2', default-features = false, features = ['derive'], package = 'parity-scale-codec' }
 log = { version = "0.4.0", default-features = false }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
@@ -12,6 +13,7 @@ scale-info = { version = "2.1.2", default-features = false, features = ["derive"
 # Substrate dependencies
 frame-support = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 frame-system = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+sp-arithmetic = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }

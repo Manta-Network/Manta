@@ -64,7 +64,6 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use nimbus_primitives::NimbusId;
     use session_key_primitives::inherent::{InherentError, INHERENT_IDENTIFIER};
-    use sp_core::{H160, H256};
     use sp_runtime::traits::{AccountIdConversion, Hash, Saturating};
     use sp_std::convert::TryInto;
 

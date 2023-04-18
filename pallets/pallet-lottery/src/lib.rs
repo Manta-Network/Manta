@@ -66,6 +66,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+mod staking;
+
 #[cfg(test)]
 mod mock;
 
@@ -220,6 +222,11 @@ pub mod pallet {
     #[pallet::storage]
     pub(super) type WithdrawalRequestQueue<T: Config> =
         StorageValue<_, Vec<Request<T::AccountId, T::BlockNumber, BalanceOf<T>>>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn staked_collators)]
+    pub(super) type StakedCollators<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, ValueQuery>;
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
