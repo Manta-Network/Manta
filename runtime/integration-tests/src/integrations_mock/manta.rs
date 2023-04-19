@@ -40,22 +40,37 @@ fn verify_pallet_prefixes() {
     is_pallet_prefix::<manta_runtime::ParachainSystem>("ParachainSystem");
     is_pallet_prefix::<manta_runtime::Timestamp>("Timestamp");
     is_pallet_prefix::<manta_runtime::ParachainInfo>("ParachainInfo");
+
     is_pallet_prefix::<manta_runtime::Balances>("Balances");
     is_pallet_prefix::<manta_runtime::TransactionPayment>("TransactionPayment");
+
+    is_pallet_prefix::<manta_runtime::ParachainStaking>("ParachainStaking");
+
+    is_pallet_prefix::<manta_runtime::AuthorInherent>("AuthorInherent");
+    is_pallet_prefix::<manta_runtime::AuraAuthorFilter>("AuraAuthorFilter");
+
     is_pallet_prefix::<manta_runtime::Authorship>("Authorship");
     is_pallet_prefix::<manta_runtime::CollatorSelection>("CollatorSelection");
     is_pallet_prefix::<manta_runtime::Session>("Session");
     is_pallet_prefix::<manta_runtime::Aura>("Aura");
+
     is_pallet_prefix::<manta_runtime::Treasury>("Treasury");
+
+    is_pallet_prefix::<manta_runtime::Preimage>("Preimage");
+
     is_pallet_prefix::<manta_runtime::XcmpQueue>("XcmpQueue");
     is_pallet_prefix::<manta_runtime::PolkadotXcm>("PolkadotXcm");
     is_pallet_prefix::<manta_runtime::CumulusXcm>("CumulusXcm");
     is_pallet_prefix::<manta_runtime::DmpQueue>("DmpQueue");
+    is_pallet_prefix::<manta_runtime::XTokens>("XTokens");
+
     is_pallet_prefix::<manta_runtime::Utility>("Utility");
     is_pallet_prefix::<manta_runtime::Multisig>("Multisig");
-    is_pallet_prefix::<manta_runtime::AuthorInherent>("AuthorInherent");
-    is_pallet_prefix::<manta_runtime::AuraAuthorFilter>("AuraAuthorFilter");
-    is_pallet_prefix::<manta_runtime::ParachainStaking>("ParachainStaking");
+
+    is_pallet_prefix::<manta_runtime::Sudo>("Sudo");
+
+    is_pallet_prefix::<manta_runtime::Assets>("Assets");
+    is_pallet_prefix::<manta_runtime::AssetManager>("AssetManager");
 
     let prefix = |pallet_name, storage_name| {
         let mut res = [0u8; 32];
@@ -137,38 +152,35 @@ fn verify_manta_pallet_indices() {
     is_pallet_index::<manta_runtime::ParachainSystem>(1);
     is_pallet_index::<manta_runtime::Timestamp>(2);
     is_pallet_index::<manta_runtime::ParachainInfo>(3);
+
     is_pallet_index::<manta_runtime::Balances>(10);
     is_pallet_index::<manta_runtime::TransactionPayment>(11);
+
+    is_pallet_index::<manta_runtime::ParachainStaking>(48);
+
+    is_pallet_index::<manta_runtime::AuthorInherent>(60);
+    is_pallet_index::<manta_runtime::AuraAuthorFilter>(63);
+
     is_pallet_index::<manta_runtime::Authorship>(20);
     is_pallet_index::<manta_runtime::CollatorSelection>(21);
     is_pallet_index::<manta_runtime::Session>(22);
     is_pallet_index::<manta_runtime::Aura>(23);
+
     is_pallet_index::<manta_runtime::Treasury>(26);
+
     is_pallet_index::<manta_runtime::Preimage>(28);
+
     is_pallet_index::<manta_runtime::XcmpQueue>(30);
     is_pallet_index::<manta_runtime::PolkadotXcm>(31);
     is_pallet_index::<manta_runtime::CumulusXcm>(32);
     is_pallet_index::<manta_runtime::DmpQueue>(33);
     is_pallet_index::<manta_runtime::XTokens>(34);
+
     is_pallet_index::<manta_runtime::Utility>(40);
     is_pallet_index::<manta_runtime::Multisig>(41);
+
+    is_pallet_index::<manta_runtime::Sudo>(42);
+
     is_pallet_index::<manta_runtime::Assets>(45);
     is_pallet_index::<manta_runtime::AssetManager>(46);
-    is_pallet_index::<manta_runtime::ParachainStaking>(48);
-    is_pallet_index::<manta_runtime::AuthorInherent>(60);
-    is_pallet_index::<manta_runtime::AuraAuthorFilter>(63);
-
-    // Check removed pallets.
-    ExtBuilder::default().build().execute_with(|| {
-        use frame_support::metadata::{v14::META_RESERVED, RuntimeMetadata};
-
-        let runtime_metadata = manta_runtime::Runtime::metadata();
-        assert_eq!(runtime_metadata.0, META_RESERVED);
-        if let RuntimeMetadata::V14(v14) = runtime_metadata.1 {
-            // Ensure sudo=42 has been removed, no one is taking this index.
-            assert!(v14.pallets.iter().any(|pallet| pallet.index != 42));
-            // AuraExt
-            assert!(v14.pallets.iter().any(|pallet| pallet.index != 24));
-        }
-    });
 }

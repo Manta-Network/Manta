@@ -341,29 +341,46 @@ fn verify_pallet_prefixes() {
     is_pallet_prefix::<calamari_runtime::Timestamp>("Timestamp");
     is_pallet_prefix::<calamari_runtime::ParachainInfo>("ParachainInfo");
     is_pallet_prefix::<calamari_runtime::TransactionPause>("TransactionPause");
+
     is_pallet_prefix::<calamari_runtime::Balances>("Balances");
     is_pallet_prefix::<calamari_runtime::TransactionPayment>("TransactionPayment");
+
     is_pallet_prefix::<calamari_runtime::Democracy>("Democracy");
     is_pallet_prefix::<calamari_runtime::Council>("Council");
     is_pallet_prefix::<calamari_runtime::CouncilMembership>("CouncilMembership");
     is_pallet_prefix::<calamari_runtime::TechnicalCommittee>("TechnicalCommittee");
     is_pallet_prefix::<calamari_runtime::TechnicalMembership>("TechnicalMembership");
+
+    is_pallet_prefix::<calamari_runtime::ParachainStaking>("ParachainStaking");
+
+    is_pallet_prefix::<calamari_runtime::AuthorInherent>("AuthorInherent");
+    is_pallet_prefix::<calamari_runtime::AuraAuthorFilter>("AuraAuthorFilter");
+
     is_pallet_prefix::<calamari_runtime::Authorship>("Authorship");
     is_pallet_prefix::<calamari_runtime::CollatorSelection>("CollatorSelection");
     is_pallet_prefix::<calamari_runtime::Session>("Session");
     is_pallet_prefix::<calamari_runtime::Aura>("Aura");
+
     is_pallet_prefix::<calamari_runtime::Treasury>("Treasury");
+    is_pallet_prefix::<calamari_runtime::Preimage>("Preimage");
+
     is_pallet_prefix::<calamari_runtime::Scheduler>("Scheduler");
+
     is_pallet_prefix::<calamari_runtime::XcmpQueue>("XcmpQueue");
     is_pallet_prefix::<calamari_runtime::PolkadotXcm>("PolkadotXcm");
     is_pallet_prefix::<calamari_runtime::CumulusXcm>("CumulusXcm");
     is_pallet_prefix::<calamari_runtime::DmpQueue>("DmpQueue");
+    is_pallet_prefix::<calamari_runtime::XTokens>("XTokens");
+
     is_pallet_prefix::<calamari_runtime::Utility>("Utility");
     is_pallet_prefix::<calamari_runtime::Multisig>("Multisig");
+
+    is_pallet_prefix::<calamari_runtime::Assets>("Assets");
+    is_pallet_prefix::<calamari_runtime::AssetManager>("AssetManager");
+    is_pallet_prefix::<calamari_runtime::MantaSbt>("MantaSbt");
+    is_pallet_prefix::<calamari_runtime::MantaPay>("MantaPay");
+
     is_pallet_prefix::<calamari_runtime::CalamariVesting>("CalamariVesting");
-    is_pallet_prefix::<calamari_runtime::AuthorInherent>("AuthorInherent");
-    is_pallet_prefix::<calamari_runtime::AuraAuthorFilter>("AuraAuthorFilter");
-    is_pallet_prefix::<calamari_runtime::ParachainStaking>("ParachainStaking");
 
     let prefix = |pallet_name, storage_name| {
         let mut res = [0u8; 32];
@@ -461,33 +478,47 @@ fn verify_calamari_pallet_indices() {
     is_pallet_index::<calamari_runtime::Timestamp>(2);
     is_pallet_index::<calamari_runtime::ParachainInfo>(3);
     is_pallet_index::<calamari_runtime::TransactionPause>(9);
+
     is_pallet_index::<calamari_runtime::Balances>(10);
     is_pallet_index::<calamari_runtime::TransactionPayment>(11);
+
     is_pallet_index::<calamari_runtime::Democracy>(14);
     is_pallet_index::<calamari_runtime::Council>(15);
     is_pallet_index::<calamari_runtime::CouncilMembership>(16);
     is_pallet_index::<calamari_runtime::TechnicalCommittee>(17);
     is_pallet_index::<calamari_runtime::TechnicalMembership>(18);
+
+    is_pallet_index::<calamari_runtime::ParachainStaking>(48);
+
+    is_pallet_index::<calamari_runtime::AuthorInherent>(60);
+    is_pallet_index::<calamari_runtime::AuraAuthorFilter>(63);
+
     is_pallet_index::<calamari_runtime::Authorship>(20);
     is_pallet_index::<calamari_runtime::CollatorSelection>(21);
     is_pallet_index::<calamari_runtime::Session>(22);
     is_pallet_index::<calamari_runtime::Aura>(23);
+
     is_pallet_index::<calamari_runtime::Treasury>(26);
+
     is_pallet_index::<calamari_runtime::Preimage>(28);
+
     is_pallet_index::<calamari_runtime::Scheduler>(29);
+
     is_pallet_index::<calamari_runtime::XcmpQueue>(30);
     is_pallet_index::<calamari_runtime::PolkadotXcm>(31);
     is_pallet_index::<calamari_runtime::CumulusXcm>(32);
     is_pallet_index::<calamari_runtime::DmpQueue>(33);
     is_pallet_index::<calamari_runtime::XTokens>(34);
+
     is_pallet_index::<calamari_runtime::Utility>(40);
     is_pallet_index::<calamari_runtime::Multisig>(41);
+
     is_pallet_index::<calamari_runtime::Assets>(45);
     is_pallet_index::<calamari_runtime::AssetManager>(46);
-    is_pallet_index::<calamari_runtime::ParachainStaking>(48);
+    is_pallet_index::<calamari_runtime::MantaPay>(47);
+    is_pallet_index::<calamari_runtime::MantaSbt>(49);
+
     is_pallet_index::<calamari_runtime::CalamariVesting>(50);
-    is_pallet_index::<calamari_runtime::AuthorInherent>(60);
-    is_pallet_index::<calamari_runtime::AuraAuthorFilter>(63);
 
     // Check removed pallets.
     ExtBuilder::default().build().execute_with(|| {

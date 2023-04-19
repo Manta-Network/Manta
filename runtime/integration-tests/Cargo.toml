@@ -13,23 +13,23 @@ manta-runtime = { path = "../manta", optional = true }
 
 [dev-dependencies]
 codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
-scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
-lazy_static = "1.4.0"
+frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28", default-features = false }
 frame-system = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
-frame-support = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
-pallet-balances = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
-pallet-democracy = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
-pallet-collective = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
-pallet-session = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
-pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
-pallet-scheduler = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.28" }
+lazy_static = "1.4.0"
 pallet-assets = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.28" }
+pallet-balances = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+pallet-collective = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+pallet-democracy = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+pallet-scheduler = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+pallet-session = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+pallet-transaction-payment = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 pallet-utility = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.28" }
-pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.28" }
+pallet-xcm = { git = 'https://github.com/paritytech/polkadot.git', default-features = false, branch = "release-v0.9.28" }
+scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 sp-arithmetic = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 sp-core = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
-sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 sp-io = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
+sp-runtime = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 sp-std = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 xcm = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.28" }
 xcm-builder = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.28" }
@@ -40,6 +40,7 @@ polkadot-parachain = { git = 'https://github.com/paritytech/polkadot.git', branc
 polkadot-runtime-parachains = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.28" }
 xcm-simulator = { git = 'https://github.com/paritytech/polkadot.git', branch = "release-v0.9.28" }
 
+# Cumulus dependencies
 cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.28" }
 cumulus-pallet-parachain-system = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.28" }
 cumulus-pallet-xcm = { git = 'https://github.com/paritytech/cumulus.git', branch = "polkadot-v0.9.28" }
@@ -54,25 +55,24 @@ orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-lib
 
 # Self dependencies
 pallet-asset-manager = { path = '../../pallets/asset-manager' }
-runtime-common = { path = '../common', features = ["test-helpers"] }
-
 calamari-vesting = { path = '../../pallets/vesting', default-features = false }
+pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
+pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
+pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
+pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
+
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 manta-support = { package = "pallet-manta-support", path = "../../pallets/manta-support", default-features = false }
-# Self dependencies
-pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
-pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
-pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
-pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
-session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
+runtime-common = { path = '../common', features = ["test-helpers"] }
 nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.1", default-features = false }
+session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
 
 [features]
 default = ["calamari"]
 calamari = [
-    "calamari-runtime"
+  "calamari-runtime",
 ]
 manta = [
-    "manta-runtime"
+  "manta-runtime",
 ]
