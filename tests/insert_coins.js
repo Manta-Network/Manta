@@ -1,4 +1,6 @@
 const fs = require('fs').promises;
+const { Keyring } = require('@polkadot/keyring');
+const { ApiPromise, WsProvider } = require('@polkadot/api');
 
 const keyring = new Keyring({
     type: 'sr25519'
@@ -18,9 +20,9 @@ async function main() {
     const api = await createPromiseApi(nodeAddress);
     const sender = keyring.addFromMnemonic("bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice");
 
-    const mints_file = '/home/georgi/Desktop/workspace/Manta/precomputed-15k-iterations/precomputed_mints_v3-5';
-    const transfers_file = '/home/georgi/Desktop/workspace/Manta/precomputed-15k-iterations/precomputed_transfers_v3-5';
-    const reclaims_file = '/home/georgi/Desktop/workspace/Manta/precomputed-15k-iterations/precomputed_reclaims_v3-5';
+    const mints_file = './data/precomputed_mints';
+    const transfers_file = './data/precomputed_transfers';
+    const reclaims_file = './data/precomputed_reclaims';
 
     const mints_buffer = await fs.readFile(mints_file);
     const transfers_buffer = await fs.readFile(transfers_file);
@@ -29,16 +31,17 @@ async function main() {
     const mints_offset = 2;
     const transfers_offset = 4;
     const reclaims_offset = 4;
-    const total_iterations = 15000;
-    const mint_size = 552;
-    const transfer_size = 100;
+    const total_iterations = 14000;
+    const mint_size = 553;
+    const transfer_size = 1291;
+    const reclaim_size = 1001;
 
     let batches_sent = 0;
     const transactions = [];
 
     for (let i = 0; i < total_iterations; i++) {
         const mints_start = mints_offset + i * mint_size;
-        const mint = api.tx.mantaPay.toPrivate(mints_buffer.subarray(mints_start, mint_size + mints_start));
+        const mint = api.tx.mantaPay.toPrivate(mints_buffer.subarray(mints_start, mints_start + mint_size));
         transactions.push(mint);
 
         const transfers_start = transfers_offset + i * (2 * mint_size + transfer_size);
@@ -59,17 +62,17 @@ async function main() {
                 console.log("tx %i success.", status.nonce);
             }
             if (status.isDropped || status.isUsurped || status.isFinalityTimeout || status.isRetracted) {
-                console.err(`tx %i ${status.type}.`, status.nonce);
+                console.log(`tx %i ${status.type}.`, status.nonce);
             }
         });
 
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        await new Promise(resolve => setTimeout(resolve, 12000));
         transactions.length = 0;
 
-        const reclaims_start = reclaims_offset + i * (2 * mint_size + transfer_size);
+        const reclaims_start = reclaims_offset + i * (2 * mint_size + reclaim_size);
         const reclaim_mint_1 = api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start, reclaims_start + mint_size));
-        const reclaim_mint_2 = api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start, reclaims_start + mint_size));
-        const reclaim = api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start, reclaims_start + mint_size));
+        const reclaim_mint_2 = api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start + mint_size, reclaims_start + 2 * mint_size));
+        const reclaim = api.tx.mantaPay.toPublic(reclaims_buffer.subarray(reclaims_start + 2 * mint_size, reclaims_start + 2 * mint_size + reclaim_size));
         transactions.push(reclaim_mint_1);
         transactions.push(reclaim_mint_2);
         transactions.push(reclaim);
@@ -84,13 +87,14 @@ async function main() {
                 console.log("tx %i success.", status.nonce);
             }
             if (status.isDropped || status.isUsurped || status.isFinalityTimeout || status.isRetracted) {
-                console.err(`tx %i ${status.type}.`, status.nonce);
+                console.log(`tx %i ${status.type}.`, status.nonce);
             }
         });
 
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        batches_sent++;
+        console.log("Batches sent: ", batches_sent);
+        await new Promise(resolve => setTimeout(resolve, 12000));
         transactions.length = 0;
-
     }
 }
 
