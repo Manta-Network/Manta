@@ -314,12 +314,10 @@ pub mod pallet {
                 KeepAlive,
             )?;
 
-            // Attempt to stake them with some collator
-            // TODO: get highest APY collator available
-            // TEMP: Get first active collator
-            let some_collator =
-                pallet_parachain_staking::Pallet::<T>::selected_candidates()[0].clone(); // no panic, at least one collator must be chosen or the chain is borked
-            Self::do_stake(some_collator, amount)?;
+            // Attempt to stake them
+            for (some_collator, balance) in Self::calculate_deposit_distribution(amount) {
+                Self::do_stake(some_collator, balance)?;
+            }
 
             // Add to active funds
             ActiveBalancePerUser::<T>::mutate(caller_account.clone(), |balance| *balance += amount);
@@ -368,7 +366,7 @@ pub mod pallet {
 
             let now = <frame_system::Pallet<T>>::block_number();
 
-            // Ensure user has enough funds active and mark them as offboarding
+            // Ensure user has enough funds active and mark them as offboarding (remove from `ActiveFundsPerUser`)
             ActiveBalancePerUser::<T>::try_mutate(caller.clone(), |balance| {
                 // Withdraw only what's active
                 ensure!(*balance >= amount, Error::<T>::WithdrawAboveDeposit);
@@ -666,7 +664,7 @@ pub mod pallet {
 
             // pay out tokens due for withdrawals before doing the lottery drawing (reduces winning claim by gas fees paid)
             Self::process_matured_withdrawals(origin)?;
-            Self::do_rebalance_remaining_funds();
+            Self::do_rebalance_remaining_funds()?;
             Self::update_active_funds()?;
 
             Ok(())
@@ -682,6 +680,7 @@ pub mod pallet {
         /// * errors defined by the do_process_matured_withdrawals function.
         #[pallet::weight(0)]
         pub fn process_matured_withdrawals(origin: OriginFor<T>) -> DispatchResult {
+            log::trace!("process_matured_withdrawals");
             // T::ManageOrigin::ensure_origin(origin.clone())?;
             Self::finish_unstaking_collators();
             Self::do_process_matured_withdrawals()?;
@@ -731,8 +730,6 @@ pub mod pallet {
         }
 
         fn do_stake(collator: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
-            let some_collator = collator;
-
             // preconditions
             if Self::lottery_funds_surplus().is_zero() {
                 return Err(Error::<T>::PotBalanceTooLow.into());
@@ -744,7 +741,7 @@ pub mod pallet {
 
             pallet_parachain_staking::Pallet::<T>::delegate(
                 RawOrigin::Signed(Self::account_id()).into(),
-                some_collator,
+                collator.clone(),
                 amount.into(),
                 CANDIDATE_DELEGATION_COUNT,
                 DELEGATION_COUNT,
@@ -754,13 +751,14 @@ pub mod pallet {
                 e
             });
 
+            log::debug!("Delegated {:?} tokens to {:?}", amount, collator);
             Ok(()) // TODO: Error handling
         }
 
         fn do_unstake_collator(now: T::BlockNumber, some_collator: T::AccountId) -> DispatchResult {
             // TODO: Find the smallest currently active delegation larger than `amount`
             let delegated_amount_to_be_unstaked = StakedCollators::<T>::take(some_collator.clone());
-            if delegated_amount_to_be_unstaked.is_zero(){
+            if delegated_amount_to_be_unstaked.is_zero() {
                 log::error!("requested to unstake a collator that isn't staked");
                 return Err(Error::<T>::TODO.into());
             };
@@ -789,6 +787,7 @@ pub mod pallet {
         }
 
         fn update_active_funds() -> DispatchResult {
+            log::trace!("update_active_funds");
             Ok(())
         }
 
@@ -805,15 +804,31 @@ pub mod pallet {
 
                     // Recover funds locked in the collator
                     // There can only be one request per collator and it is always a full revoke_delegation call
+                    let delegation_requests_against_this_collator = pallet_parachain_staking::Pallet::<T>::delegation_scheduled_requests(collator.account.clone());
+                    let balance_to_unstake;
+                    match delegation_requests_against_this_collator.iter().find(|request|request.delegator == Self::account_id()){
+                        Some(our_request) if matches!(our_request.action, pallet_parachain_staking::DelegationAction::Revoke(_)) => {
+                            if T::BlockNumber::from(our_request.when_executable) > now {
+                                    log::error!("Collator {:?} finished our unstaking timelock but not the pallet_parachain_staking one. leaving in queue",collator.account.clone());
+                                return Some(collator.clone());
+                            };
+                            balance_to_unstake = our_request.action.amount();
+                        }
+                        _ => {
+                                log::error!( "Expected revoke_delegation request not found on collator {:?}. Leaving in withdraw queue",collator.account.clone() );
+                                return Some(collator.clone());
+                            }
+                    };
                     match pallet_parachain_staking::Pallet::<T>::execute_delegation_request(
                         RawOrigin::Signed(Self::account_id()).into(),
                         Self::account_id(),
                         collator.account.clone(),
                     ){
                         Ok(_) => {
-                            // collator was unstaked, TODO: update bookkeeping
-                            // <T as Config>::RemainingUnstakingBalance::mutate(|balance|(*balance).checked_sub(collator.balance));
-
+                            // collator was unstaked
+                            // TODO: check if other bookkeeping needs updating
+                            SumOfDeposits::<T>::mutate(|balance| *balance = (*balance).saturating_sub(balance_to_unstake)); // XXX: Maybe checked_sub
+                            log::debug!("Unstaked {:?} from collator {:?}",balance_to_unstake,collator.account.clone());
                             // remove from unstaking collators
                              return None;
                         },
@@ -836,20 +851,18 @@ pub mod pallet {
             });
         }
 
-        fn do_rebalance_remaining_funds() {
+        fn do_rebalance_remaining_funds() -> DispatchResult {
+            log::trace!("do_rebalance_remaining_funds");
             // Only restake what isn't needed to service outstanding withdrawal requests
             let stakable_balance = Self::lottery_funds_surplus_idle();
 
-            // TODO: Find highest APY for this deposit (possibly balance deposit to multiple collators)
-            let some_output: Vec<(T::AccountId, BalanceOf<T>)> = vec![(
-                pallet_parachain_staking::Pallet::<T>::selected_candidates()[0].clone(), // no panic, at least one collator must be chosen or the chain is borked
-                stakable_balance,
-            )];
-
-            // Stake it to one or more collators
-            for (collator, balance) in some_output {
-                Self::do_stake(collator, balance);
+            for (collator, amount_to_stake) in
+                Self::calculate_deposit_distribution(stakable_balance)
+            {
+                Self::do_stake(collator, amount_to_stake)?;
+                TotalPot::<T>::mutate(|balance| *balance += amount_to_stake);
             }
+            Ok(())
         }
 
         /// This fn schedules a single shot payout of all matured withdrawals
