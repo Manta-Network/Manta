@@ -90,31 +90,34 @@ impl<T: Config> Pallet<T> {
                 underallocated_collators.push((collator.clone(), mean_stake - stake_on_collator));
             }
         }
-        underallocated_collators.sort_unstable_by(|a, b| a.1.cmp(&b.1));
-        let (_rest, mut last) =
-            underallocated_collators.split_at(underallocated_collators.len().saturating_sub(4)); // TODO: 4 is hardcoded make configurable
-        let total_underallocation = last
-            .into_iter()
-            .map(|a| a.1)
-            .reduce(|acc, balance| acc + balance)
-            .unwrap();
-        let deposit_to_distribute = remaining_deposit;
-        for (account, balance) in last {
-            // If a proportional deposit is over the min deposit and can get us into the top balance, deposit it, if not just skip it
-            let info = pallet_parachain_staking::Pallet::<T>::candidate_info(account.clone())
-                .expect("is active collator, therefor it has collator info. qed");
-            let collator_proportion =
-                Percent::from_rational(balance.clone(), total_underallocation);
-            let tokens = collator_proportion.mul_ceil(deposit_to_distribute);
-            let deposit = remaining_deposit.saturating_sub(tokens);
-            let our_stake = StakedCollators::<T>::get(account.clone());
-            if deposit > <T as pallet_parachain_staking::Config>::MinDelegation::get()
-                && our_stake + deposit > info.lowest_top_delegation_amount
-            {
-                deposits.push((account.clone(), tokens.min(deposit)));
-            };
-            if remaining_deposit.is_zero() {
-                break;
+        log::debug!("Underallocated: {:?}", underallocated_collators);
+        if !underallocated_collators.is_empty() {
+            underallocated_collators.sort_unstable_by(|a, b| a.1.cmp(&b.1));
+            let (_rest, mut last) =
+                underallocated_collators.split_at(underallocated_collators.len().saturating_sub(4)); // TODO: 4 is hardcoded make configurable
+            let total_underallocation = last
+                .into_iter()
+                .map(|a| a.1)
+                .reduce(|acc, balance| acc + balance)
+                .unwrap();
+            let deposit_to_distribute = remaining_deposit;
+            for (account, balance) in last {
+                // If a proportional deposit is over the min deposit and can get us into the top balance, deposit it, if not just skip it
+                let info = pallet_parachain_staking::Pallet::<T>::candidate_info(account.clone())
+                    .expect("is active collator, therefor it has collator info. qed");
+                let collator_proportion =
+                    Percent::from_rational(balance.clone(), total_underallocation);
+                let tokens = collator_proportion.mul_ceil(deposit_to_distribute);
+                let deposit = remaining_deposit.saturating_sub(tokens);
+                let our_stake = StakedCollators::<T>::get(account.clone());
+                if deposit > <T as pallet_parachain_staking::Config>::MinDelegation::get()
+                    && our_stake + deposit > info.lowest_top_delegation_amount
+                {
+                    deposits.push((account.clone(), tokens.min(deposit)));
+                };
+                if remaining_deposit.is_zero() {
+                    break;
+                }
             }
         }
         // if we had to skip a collator above due to not getting into the top deposit, we just lump the rest into the collator with the lowest stake
@@ -138,9 +141,11 @@ impl<T: Config> Pallet<T> {
             if let Some(random_collator) = active_collators.get(random_index) {
                 deposits.push((random_collator.clone(), remaining_deposit));
                 log::warn!(
-                    "Failed to select staking outputs. Staking randomly to {:?}",
+                    "Failed to select staking outputs. Staking {:?} randomly to {:?}",
+                    remaining_deposit,
                     random_collator
                 );
+                remaining_deposit.set_zero();
             }
         }
 
@@ -191,12 +196,14 @@ impl<T: Config> Pallet<T> {
         // since these collators are inactive, we just unstake in any order until we have satisfied the withdrawal request
         for collator in inactive_collators_we_are_staked_with {
             let balance = StakedCollators::<T>::get(&collator);
+            log::debug!("Unstaking {:?} from inactive {:?}", balance, collator);
             remaining_balance = remaining_balance.saturating_sub(balance);
             withdrawals.push(collator.clone());
             if remaining_balance.is_zero() {
                 return withdrawals;
             }
         }
+        log::debug!("Remaining after inactive: {:?}", remaining_balance);
 
         // If we have balance to withdraw left over, we have to unstake some healthy collator.
         // Unstake starting from the highest overallocated collator ( since that yields the lowest APY ) going down until request is satisfied
@@ -205,6 +212,7 @@ impl<T: Config> Pallet<T> {
                 .intersection(&active_collators)
                 .cloned()
                 .collect();
+        log::debug!("{:?}", apy_ordered_active_collators_we_are_staked_with);
         apy_ordered_active_collators_we_are_staked_with.sort_by(|a, b| {
             let ainfo = pallet_parachain_staking::Pallet::<T>::candidate_info(a.clone())
                 .expect("is active collator, therefore it has collator info. qed");
@@ -212,8 +220,10 @@ impl<T: Config> Pallet<T> {
                 .expect("is active collator, therefore it has collator info. qed");
             binfo.total_counted.cmp(&ainfo.total_counted)
         });
+        log::debug!("{:?}", apy_ordered_active_collators_we_are_staked_with);
         for c in apy_ordered_active_collators_we_are_staked_with {
             let our_stake = StakedCollators::<T>::get(c.clone()).clone();
+            log::debug!("Unstaking {:?} from active {:?}", our_stake, c);
             withdrawals.push(c);
             remaining_balance = remaining_balance.saturating_sub(our_stake);
             if remaining_balance.is_zero() {
@@ -228,7 +238,7 @@ impl<T: Config> Pallet<T> {
             );
         }
         if withdrawals.is_empty() {
-            log::error!("COULD NOT FIND ANY COLLATOR TO STAKE TO");
+            log::error!("COULD NOT FIND ANY COLLATOR TO WITHDRAW FROM");
         }
         log::debug!("Withdrawals: {:?}", withdrawals);
         withdrawals

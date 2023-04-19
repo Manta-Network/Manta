@@ -363,9 +363,8 @@ pub mod pallet {
                 Self::not_in_drawing_freezeout(),
                 Error::<T>::TooCloseToDrawing
             );
-
             let now = <frame_system::Pallet<T>>::block_number();
-
+            log::debug!("Requesting withdraw of {:?} tokens", amount);
             // Ensure user has enough funds active and mark them as offboarding (remove from `ActiveFundsPerUser`)
             ActiveBalancePerUser::<T>::try_mutate(caller.clone(), |balance| {
                 // Withdraw only what's active
@@ -747,12 +746,13 @@ pub mod pallet {
                 DELEGATION_COUNT,
             )
             .map_err(|e| {
-                log::error!("Could not delegate to collator with error {:?}", e);
-                e
-            });
+                log::error!("Could not delegate {:?} to collator {:?} with error {:?}", amount.clone(),collator.clone(), e);
+                e.error
+            })?;
+            StakedCollators::<T>::mutate(&collator, |balance| *balance += amount);
 
             log::debug!("Delegated {:?} tokens to {:?}", amount, collator);
-            Ok(()) // TODO: Error handling
+            Ok(())
         }
 
         fn do_unstake_collator(now: T::BlockNumber, some_collator: T::AccountId) -> DispatchResult {
