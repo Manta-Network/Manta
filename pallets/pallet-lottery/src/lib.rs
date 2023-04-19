@@ -520,7 +520,7 @@ pub mod pallet {
 
             let now = <frame_system::Pallet<T>>::block_number();
             ensure!(
-                Self::next_drawing_at().is_some(),
+                Self::next_drawing_at().is_none(),
                 Error::<T>::LotteryIsRunning
             );
             // Pallet has enough funds to pay gas fees for at least the first drawing
