@@ -27,7 +27,7 @@ use sp_runtime::Percent;
 use sp_std::{vec, vec::Vec};
 
 impl<T: Config> Pallet<T> {
-    fn calculate_deposit_distribution(
+    pub(crate) fn calculate_deposit_distribution(
         new_deposit: BalanceOf<T>,
     ) -> Vec<(T::AccountId, BalanceOf<T>)> {
         if new_deposit < <T as pallet_parachain_staking::Config>::MinDelegation::get() {
@@ -153,11 +153,13 @@ impl<T: Config> Pallet<T> {
         if deposits.is_empty() {
             log::error!("COULD NOT FIND ANY COLLATOR TO STAKE TO");
         }
-        log::debug!("Depsits: {:?}",deposits);
+        log::debug!("Depsits: {:?}", deposits);
         deposits
     }
 
-    fn calculate_withdrawal_distribution(withdrawal_amount: BalanceOf<T>) -> Vec<T::AccountId> {
+    pub(crate) fn calculate_withdrawal_distribution(
+        withdrawal_amount: BalanceOf<T>,
+    ) -> Vec<T::AccountId> {
         if withdrawal_amount.is_zero() {
             return vec![];
         }
@@ -198,17 +200,18 @@ impl<T: Config> Pallet<T> {
 
         // If we have balance to withdraw left over, we have to unstake some healthy collator.
         // Unstake starting from the highest overallocated collator ( since that yields the lowest APY ) going down until request is satisfied
-        let mut apy_ordered_active_collators_we_are_staked_with: Vec<_> = collators_we_are_staked_with
-            .intersection(&active_collators)
-            .cloned()
-            .collect();
+        let mut apy_ordered_active_collators_we_are_staked_with: Vec<_> =
+            collators_we_are_staked_with
+                .intersection(&active_collators)
+                .cloned()
+                .collect();
         apy_ordered_active_collators_we_are_staked_with.sort_by(|a, b| {
-                let ainfo = pallet_parachain_staking::Pallet::<T>::candidate_info(a.clone())
-                    .expect("is active collator, therefore it has collator info. qed");
-                let binfo = pallet_parachain_staking::Pallet::<T>::candidate_info(b.clone())
-                    .expect("is active collator, therefore it has collator info. qed");
-                binfo.total_counted.cmp(&ainfo.total_counted)
-            });
+            let ainfo = pallet_parachain_staking::Pallet::<T>::candidate_info(a.clone())
+                .expect("is active collator, therefore it has collator info. qed");
+            let binfo = pallet_parachain_staking::Pallet::<T>::candidate_info(b.clone())
+                .expect("is active collator, therefore it has collator info. qed");
+            binfo.total_counted.cmp(&ainfo.total_counted)
+        });
         for c in apy_ordered_active_collators_we_are_staked_with {
             let our_stake = StakedCollators::<T>::get(c.clone()).clone();
             withdrawals.push(c);
@@ -227,7 +230,7 @@ impl<T: Config> Pallet<T> {
         if withdrawals.is_empty() {
             log::error!("COULD NOT FIND ANY COLLATOR TO STAKE TO");
         }
-        log::debug!("Withdrawals: {:?}",withdrawals);
+        log::debug!("Withdrawals: {:?}", withdrawals);
         withdrawals
     }
 

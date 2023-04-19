@@ -404,24 +404,28 @@ pub mod pallet {
                     .ok_or("not enough left to handle this request from current unstaking funds")
             })
             .or_else(|_| {
-                // Withdrawal needs an extra collator to unstake to have enough funds to serve withdrawals, do it
+                // Withdrawal needs extra collators to unstake to have enough funds to serve withdrawals, do it
+                let reserve = RemainingUnstakingBalance::<T>::get();
+                let mut remaining = amount - reserve;
 
-                // If this fails, something weird is going on or the next line needs to be implemented
-                // TODO: add some arithmetic to only unstake the diff between needed and remaining instead of using needed
-                // TODO: Error handling
-                Self::do_unstake_collator(now);
-
-                // TODO: Try mutate again
+                // unstake collators as necessary. This updates `RemainingUnstakingBalance`
+                for collator_to_unstake in Self::calculate_withdrawal_distribution(remaining){
+                    let our_stake = StakedCollators::<T>::get(collator_to_unstake.clone());
+                    remaining = remaining.saturating_sub(our_stake);
+                    // If this fails, something weird is going on
+                    Self::do_unstake_collator(now,collator_to_unstake)?; // TODO: Error handling
+                }
+                if !remaining.is_zero() {
+                    log::error!("Somehow didn't manage to handle the requested balance. Have {:?} left over",remaining);
+                }
                 RemainingUnstakingBalance::<T>::try_mutate(|remaining| {
                     *remaining = (*remaining).saturating_sub(amount);
-                    // remaining -= amount;
-                    (*remaining > 0u32.into()).then(|| ()).ok_or(
-                        "not enough left to handle this request from current unstaking funds",
-                    )
+                    (*remaining > 0u32.into())
+                        .then(|| ())
+                        .ok_or("not enough left to handle this request from current unstaking funds")
                 })
-            }); // TODO: Error handling
-                // .or_else(|_| Error::<T>::WithdrawFailed.into())?;
-                // END UNSTAKING SECTION
+            })?;
+            // END UNSTAKING SECTION
 
             // RAD: What happens if delegation_execute_scheduled_request fails?
             Self::deposit_event(Event::ScheduledWithdraw(caller, amount));
@@ -753,19 +757,13 @@ pub mod pallet {
             Ok(()) // TODO: Error handling
         }
 
-        fn do_unstake_collator(now: T::BlockNumber) -> DispatchResult {
-            let some_collator =
-                pallet_parachain_staking::Pallet::<T>::selected_candidates()[0].clone(); // no panic, at least one collator must be chosen or the chain is borked
-
+        fn do_unstake_collator(now: T::BlockNumber, some_collator: T::AccountId) -> DispatchResult {
             // TODO: Find the smallest currently active delegation larger than `amount`
-            let my_delegations =
-                pallet_parachain_staking::Pallet::<T>::delegator_state(&Self::account_id())
-                    .ok_or(pallet_parachain_staking::Error::<T>::DelegatorDNE)?;
-            let delegated_amount_to_be_unstaked: BalanceOf<T> = 0u32.into();
-
-            // TODO: If none can be found, find a combination of collators so it can
-            // TODO: If it still can't be found, either there's a logic bug or we've been hacked
-
+            let delegated_amount_to_be_unstaked = StakedCollators::<T>::take(some_collator.clone());
+            if delegated_amount_to_be_unstaked.is_zero(){
+                log::error!("requested to unstake a collator that isn't staked");
+                return Err(Error::<T>::TODO.into());
+            };
             // unstake from parachain staking
             // NOTE: All funds that were delegated here no longer produce staking rewards
             pallet_parachain_staking::Pallet::<T>::schedule_revoke_delegation(
@@ -787,13 +785,6 @@ pub mod pallet {
                 })
             });
 
-            // unstake from parachain staking
-            // NOTE: All funds that were delegated here no longer produce staking rewards
-            pallet_parachain_staking::Pallet::<T>::schedule_revoke_delegation(
-                RawOrigin::Signed(Self::account_id()).into(),
-                some_collator,
-            )
-            .map_err(|_| Error::<T>::TODO)?;
             Ok(())
         }
 
