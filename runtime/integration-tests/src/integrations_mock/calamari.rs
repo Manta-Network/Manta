@@ -148,7 +148,7 @@ fn fast_track_available() {
 fn sanity_check_governance_periods() {
     assert_eq!(LaunchPeriod::get(), 7 * DAYS);
     assert_eq!(VotingPeriod::get(), 7 * DAYS);
-    assert_eq!(EnactmentPeriod::get(), 1 * DAYS);
+    assert_eq!(EnactmentPeriod::get(), DAYS);
 }
 
 #[test]

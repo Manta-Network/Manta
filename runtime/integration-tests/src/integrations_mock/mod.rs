@@ -23,32 +23,40 @@ pub mod mock;
 
 pub use mock::run_to_block;
 
-#[cfg(feature = "calamari")]
-pub use calamari_runtime::{
-    currency::KMA,
-    fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
-    opaque::SessionKeys,
-    staking::{self, EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR},
-    xcm_config::{XcmExecutorConfig, XcmFeesAccount},
-    AssetManager, Assets, AuthorInherent, Authorship, Balances, CalamariVesting, Call,
-    CollatorSelection, Council, DefaultBlocksPerRound, Democracy, EnactmentPeriod, Event,
-    InflationInfo, LaunchPeriod, LeaveDelayRounds, NativeTokenExistentialDeposit, Origin,
-    ParachainStaking, Period, PolkadotXcm, Range, Runtime, Scheduler, Session, System,
-    TechnicalCommittee, Timestamp, TransactionPause, TransactionPayment, Treasury, Utility,
-    VotingPeriod,
-};
-#[cfg(feature = "manta")]
-pub use manta_runtime::{
-    assets_config::MantaConcreteFungibleLedger,
-    currency::MANTA as KMA,
-    opaque::SessionKeys,
-    staking::{self, EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR},
-    xcm_config::{XcmExecutorConfig, XcmFeesAccount},
-    AssetManager, Assets, AuthorInherent, Authorship, Balances, Call, CollatorSelection,
-    DefaultBlocksPerRound, Event, InflationInfo, LeaveDelayRounds, NativeTokenExistentialDeposit,
-    Origin, ParachainStaking, Period, PolkadotXcm, Range, Runtime, Session, System, Timestamp,
-    TransactionPayment, Treasury, Utility,
-};
+cfg_if::cfg_if! {
+    if #[cfg(feature = "calamari")] {
+        pub use calamari_runtime::{
+            currency::KMA,
+            fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
+            opaque::SessionKeys,
+            staking::{self, EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR},
+            xcm_config::{XcmExecutorConfig, XcmFeesAccount},
+            AssetManager, Assets, AuthorInherent, Authorship, Balances, CalamariVesting, Call,
+            CollatorSelection, Council, DefaultBlocksPerRound, Democracy, EnactmentPeriod, Event,
+            InflationInfo, LaunchPeriod, LeaveDelayRounds, NativeTokenExistentialDeposit, Origin,
+            ParachainStaking, Period, PolkadotXcm, Range, Runtime, Scheduler, Session, System,
+            TechnicalCommittee, Timestamp, TransactionPause, TransactionPayment, Treasury, Utility,
+            VotingPeriod,
+        };
+        type RuntimeAssetConfig = calamari_runtime::assets_config::CalamariAssetConfig;
+        type RuntimeConcreteFungibleLedger =
+            calamari_runtime::assets_config::CalamariConcreteFungibleLedger;
+    } else {
+        pub use manta_runtime::{
+            assets_config::MantaConcreteFungibleLedger,
+            currency::MANTA as KMA,
+            opaque::SessionKeys,
+            staking::{self, EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR},
+            xcm_config::{XcmExecutorConfig, XcmFeesAccount},
+            AssetManager, Assets, AuthorInherent, Authorship, Balances, Call, CollatorSelection,
+            DefaultBlocksPerRound, Event, InflationInfo, LeaveDelayRounds, NativeTokenExistentialDeposit,
+            Origin, ParachainStaking, Period, PolkadotXcm, Range, Runtime, Session, System, Timestamp,
+            TransactionPayment, Treasury, Utility,
+        };
+        type RuntimeAssetConfig = manta_runtime::assets_config::MantaAssetConfig;
+        type RuntimeConcreteFungibleLedger = manta_runtime::assets_config::MantaConcreteFungibleLedger;
+    }
+}
 
 use codec::Encode;
 use frame_support::{
@@ -61,17 +69,6 @@ use nimbus_primitives::NIMBUS_ENGINE_ID;
 use session_key_primitives::util::unchecked_account_id;
 use sp_core::sr25519::Public;
 use sp_runtime::{traits::Header as HeaderT, DigestItem};
-
-#[cfg(feature = "calamari")]
-type RuntimeAssetConfig = calamari_runtime::assets_config::CalamariAssetConfig;
-#[cfg(feature = "manta")]
-type RuntimeAssetConfig = manta_runtime::assets_config::MantaAssetConfig;
-
-#[cfg(feature = "calamari")]
-type RuntimeConcreteFungibleLedger =
-    calamari_runtime::assets_config::CalamariConcreteFungibleLedger;
-#[cfg(feature = "manta")]
-type RuntimeConcreteFungibleLedger = manta_runtime::assets_config::MantaConcreteFungibleLedger;
 
 pub const INITIAL_BALANCE: Balance = 1_000_000_000_000 * KMA;
 

@@ -65,10 +65,13 @@ use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 
-#[cfg(feature = "calamari")]
-type RuntimeXcmWeight = calamari_runtime::weights::xcm::CalamariXcmWeight<Call>;
-#[cfg(feature = "manta")]
-type RuntimeXcmWeight = manta_runtime::weights::xcm::MantaXcmWeight<Call>;
+cfg_if::cfg_if! {
+    if #[cfg(feature = "calamari")] {
+        type RuntimeXcmWeight = calamari_runtime::weights::xcm::CalamariXcmWeight<Call>;
+    } else {
+        type RuntimeXcmWeight = manta_runtime::weights::xcm::MantaXcmWeight<Call>;
+    }
+}
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;

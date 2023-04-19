@@ -3902,6 +3902,7 @@ version = "4.0.5"
 dependencies = [
  "calamari-runtime",
  "calamari-vesting",
+ "cfg-if 1.0.0",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
