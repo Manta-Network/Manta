@@ -18,13 +18,13 @@ use super::*;
 use codec::alloc::collections::BTreeSet;
 use frame_support::ensure;
 use frame_support::traits::Get;
+use frame_support::traits::Randomness;
 use pallet_parachain_staking::BalanceOf;
 use sp_runtime::traits::Saturating;
 use sp_runtime::traits::Zero;
 use sp_runtime::PerThing;
 use sp_runtime::Percent;
 use sp_std::{vec, vec::Vec};
-use frame_support::traits::Randomness;
 
 impl<T: Config> Pallet<T> {
     fn calculate_deposit_distribution(
@@ -76,13 +76,8 @@ impl<T: Config> Pallet<T> {
         // second concern: We want to maximize staking APY earned, so we want to balance the staking pools with our deposits while conserving gas
         let mut collator_balances: Vec<(T::AccountId, BalanceOf<T>)> = vec![];
         // We only consider active collators for deposits
-        let total_staked = pallet_parachain_staking::Pallet::<T>::staked(
-            pallet_parachain_staking::Pallet::<T>::round().current,
-        ); // TODO: Also consider points / pointsAwarded to not stake to collators missing blocks
-        let mean_stake =
-            Percent::from_rational(1, pallet_parachain_staking::Pallet::<T>::total_selected())
-                .mul_ceil(total_staked)
-                .into(); // this overshoots the amount if there's a remainder
+        // TODO: Also consider points / pointsAwarded to not stake to collators missing blocks
+        let mean_stake = Self::average_stake_per_collator();
 
         // build collator => deviation from mean map
         let mut underallocated_collators = vec![];
@@ -130,16 +125,17 @@ impl<T: Config> Pallet<T> {
             deposits.push(last);
         }
 
-        // fallback : just assign to a random active collator
+        // fallback: just assign to a random active collator
         if !remaining_deposit.is_zero() {
             let active_collators = pallet_parachain_staking::Pallet::<T>::selected_candidates();
             // TODO: Better randomness
             use sp_runtime::traits::SaturatedConversion;
-            let nonce : u128 = Self::total_pot().saturated_into();
-            let random = sp_core::U256::from_big_endian(T::RandomnessSource::random(&nonce.to_be_bytes()).0.as_ref());
-            let random_index : usize = random.low_u64() as usize % active_collators.len();
-            if let Some(random_collator) = active_collators.get(random_index)
-            {
+            let nonce: u128 = Self::total_pot().saturated_into();
+            let random = sp_core::U256::from_big_endian(
+                T::RandomnessSource::random(&nonce.to_be_bytes()).0.as_ref(),
+            );
+            let random_index: usize = random.low_u64() as usize % active_collators.len();
+            if let Some(random_collator) = active_collators.get(random_index) {
                 deposits.push((random_collator.clone(), remaining_deposit));
                 log::warn!(
                     "Failed to select staking outputs. Staking randomly to {:?}",
@@ -157,6 +153,7 @@ impl<T: Config> Pallet<T> {
         if deposits.is_empty() {
             log::error!("COULD NOT FIND ANY COLLATOR TO STAKE TO");
         }
+        log::debug!("Depsits: {:?}",deposits);
         deposits
     }
 
@@ -166,18 +163,31 @@ impl<T: Config> Pallet<T> {
         }
         let mut withdrawals = vec![];
         let mut remaining_balance = withdrawal_amount;
+
         // first concern: If there are inactive collators we are staked with, prefer these
+        let now = <frame_system::Pallet<T>>::block_number();
+        let info = pallet_parachain_staking::Pallet::<T>::round();
         let active_collators: BTreeSet<_> =
             pallet_parachain_staking::Pallet::<T>::selected_candidates()
                 .into_iter()
+                .filter(|collator| {
+                    // being selected is not enough, it must also be actively participating in block production
+                    // but we need to ensure it had a chance to produce blocks, so we only check this if we're at least 25% into a round
+                    if now < info.first + (info.length / 4u32).into() {
+                        return true;
+                    }
+                    !pallet_parachain_staking::Pallet::<T>::awarded_pts(info.current, collator)
+                        .is_zero()
+                })
                 .collect();
         let collators_we_are_staked_with: BTreeSet<_> = StakedCollators::<T>::iter_keys().collect();
         let inactive_collators_we_are_staked_with: BTreeSet<_> = collators_we_are_staked_with
             .difference(&active_collators)
             .cloned()
             .collect();
+
+        // since these collators are inactive, we just unstake in any order until we have satisfied the withdrawal request
         for collator in inactive_collators_we_are_staked_with {
-            // unstake them
             let balance = StakedCollators::<T>::get(&collator);
             remaining_balance = remaining_balance.saturating_sub(balance);
             withdrawals.push(collator.clone());
@@ -186,8 +196,48 @@ impl<T: Config> Pallet<T> {
             }
         }
 
-        // If we have balance to withdraw left over, we have to unstake some healthy collator. Choose the one with the smallest amount to cover the withdrawal amount
-        // TODO
-        vec![]
+        // If we have balance to withdraw left over, we have to unstake some healthy collator.
+        // Unstake starting from the highest overallocated collator ( since that yields the lowest APY ) going down until request is satisfied
+        let mut apy_ordered_active_collators_we_are_staked_with: Vec<_> = collators_we_are_staked_with
+            .intersection(&active_collators)
+            .cloned()
+            .collect();
+        apy_ordered_active_collators_we_are_staked_with.sort_by(|a, b| {
+                let ainfo = pallet_parachain_staking::Pallet::<T>::candidate_info(a.clone())
+                    .expect("is active collator, therefore it has collator info. qed");
+                let binfo = pallet_parachain_staking::Pallet::<T>::candidate_info(b.clone())
+                    .expect("is active collator, therefore it has collator info. qed");
+                binfo.total_counted.cmp(&ainfo.total_counted)
+            });
+        for c in apy_ordered_active_collators_we_are_staked_with {
+            let our_stake = StakedCollators::<T>::get(c.clone()).clone();
+            withdrawals.push(c);
+            remaining_balance = remaining_balance.saturating_sub(our_stake);
+            if remaining_balance.is_zero() {
+                break;
+            }
+        }
+
+        if !remaining_balance.is_zero() {
+            log::error!(
+                "We have {:?} left that COULD NOT BE UNSTAKED",
+                remaining_balance
+            );
+        }
+        if withdrawals.is_empty() {
+            log::error!("COULD NOT FIND ANY COLLATOR TO STAKE TO");
+        }
+        log::debug!("Withdrawals: {:?}",withdrawals);
+        withdrawals
+    }
+
+    fn average_stake_per_collator() -> BalanceOf<T> {
+        let total_staked = pallet_parachain_staking::Pallet::<T>::staked(
+            pallet_parachain_staking::Pallet::<T>::round().current,
+        );
+        // this overshoots the amount if there's a remainder
+        Percent::from_rational(1, pallet_parachain_staking::Pallet::<T>::total_selected())
+            .mul_ceil(total_staked)
+            .into()
     }
 }
