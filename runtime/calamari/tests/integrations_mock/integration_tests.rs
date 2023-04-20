@@ -650,7 +650,7 @@ fn collator_with_large_stake_but_too_low_self_bond_not_selected_for_block_produc
                 FERDIE.clone(),
             ] {
                 assert_ok!(ParachainStaking::candidate_bond_more(
-                    Origin::signed(collator.clone()),
+                    RuntimeOrigin::signed(collator.clone()),
                     MIN_BOND_TO_BE_CONSIDERED_COLLATOR - EARLY_COLLATOR_MINIMUM_STAKE
                 ));
             }
@@ -658,7 +658,7 @@ fn collator_with_large_stake_but_too_low_self_bond_not_selected_for_block_produc
             // Delegate a large amount of tokens to EVE and ALICE
             for collator in vec![EVE.clone(), ALICE.clone()] {
                 assert_ok!(ParachainStaking::delegate(
-                    Origin::signed(USER.clone()),
+                    RuntimeOrigin::signed(USER.clone()),
                     collator,
                     100_000_000 * KMA,
                     50,

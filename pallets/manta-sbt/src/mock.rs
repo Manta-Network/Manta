@@ -18,10 +18,13 @@
 
 use frame_support::{
     parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32, ConstU64, Everything, GenesisBuild, IsInVec},
+    traits::{
+        AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, ConstU64, Everything, GenesisBuild,
+        IsInVec,
+    },
     PalletId,
 };
-use frame_system::EnsureRoot;
+use frame_system::{EnsureRoot, EnsureSigned};
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
@@ -75,8 +78,8 @@ impl frame_system::Config for Test {
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Hash = H256;
@@ -84,7 +87,7 @@ impl frame_system::Config for Test {
     type AccountId = AccountId32;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = ();
     type PalletInfo = PalletInfo;
@@ -106,7 +109,7 @@ parameter_types! {
 impl pallet_balances::Config for Test {
     type MaxLocks = MaxLocks;
     type Balance = Balance;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
@@ -130,7 +133,7 @@ parameter_types! {
 }
 
 impl crate::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = crate::weights::SubstrateWeight<Test>;
     type PalletId = MantaSBTPalletId;
     type Currency = Balances;
@@ -150,7 +153,7 @@ parameter_types! {
 }
 
 impl pallet_assets::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type AssetId = StandardAssetId;
     type Currency = Balances;
@@ -164,6 +167,12 @@ impl pallet_assets::Config for Test {
     type Freezer = ();
     type Extra = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Test>;
+    type RemoveItemsLimit = ConstU32<1000>;
+    type AssetIdParameter = StandardAssetId;
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId32>>;
+    type CallbackHandle = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
 }
 
 pub struct MantaAssetRegistry;
@@ -184,7 +193,7 @@ impl AssetRegistry for MantaAssetRegistry {
         is_sufficient: bool,
     ) -> DispatchResult {
         Assets::force_create(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             AssetManager::account_id(),
             is_sufficient,
@@ -192,7 +201,7 @@ impl AssetRegistry for MantaAssetRegistry {
         )?;
 
         Assets::force_set_metadata(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             metadata.name,
             metadata.symbol,
@@ -206,7 +215,7 @@ impl AssetRegistry for MantaAssetRegistry {
         metadata: AssetStorageMetadata,
     ) -> DispatchResult {
         Assets::force_set_metadata(
-            Origin::root(),
+            RuntimeOrigin::root(),
             *asset_id,
             metadata.name,
             metadata.symbol,
@@ -259,7 +268,7 @@ impl AssetConfig<Test> for MantaAssetConfig {
 }
 
 impl pallet_asset_manager::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type AssetId = StandardAssetId;
     type Balance = Balance;
     type Location = AssetLocation;
@@ -274,7 +283,7 @@ parameter_types! {
 }
 
 impl pallet_manta_pay::Config for Test {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = pallet_manta_pay::weights::SubstrateWeight<Test>;
     type PalletId = MantaPayPalletId;
     type AssetConfig = MantaAssetConfig;
@@ -285,8 +294,8 @@ parameter_types! {
 }
 
 impl pallet_tx_pause::Config for Test {
-    type Event = Event;
-    type Call = Call;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
     type MaxCallNames = ConstU32<25>;
     type PauseOrigin = EnsureRoot<AccountId32>;
     type UnpauseOrigin = EnsureRoot<AccountId32>;
