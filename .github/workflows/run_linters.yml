@@ -76,8 +76,8 @@ jobs:
           protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
-          rustup toolchain install nightly-2022-11-15
-          rustup default nightly-2022-11-15
+          rustup toolchain install nightly-2023-03-13
+          rustup default nightly-2023-03-13
           cargo install taplo-cli
       - name: Check Formatting
         env:

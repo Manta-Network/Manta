@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'calamari-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.0.3'
+version = '4.0.6'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
@@ -92,8 +92,10 @@ orml-xtokens = { git = 'https://github.com/manta-network/open-runtime-module-lib
 calamari-vesting = { path = '../../pallets/vesting', default-features = false }
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
 manta-primitives = { path = '../../primitives/manta', default-features = false }
+manta-support = { package = "pallet-manta-support", path = "../../pallets/manta-support", default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
 pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
+pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
 pallet-parachain-staking = { path = '../../pallets/parachain-staking', default-features = false }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
@@ -148,6 +150,7 @@ orml-xtokens = { git = "https://github.com/manta-network/open-runtime-module-lib
 
 # Self dependencies
 pallet-asset-manager = { path = '../../pallets/asset-manager' }
+runtime-common = { path = '../common', features = ["test-helpers"] }
 
 [features]
 default = ['std']
@@ -183,6 +186,7 @@ runtime-benchmarks = [
   'cumulus-pallet-parachain-system/runtime-benchmarks',
   'pallet-manta-pay/runtime-benchmarks',
   'pallet-xcm-benchmarks/runtime-benchmarks',
+  'pallet-manta-sbt/runtime-benchmarks',
 ]
 try-runtime = [
   'frame-try-runtime',
@@ -220,6 +224,7 @@ try-runtime = [
   'orml-xtokens/try-runtime',
   'pallet-manta-pay/try-runtime',
   'calamari-vesting/try-runtime',
+  'pallet-manta-sbt/try-runtime',
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
@@ -289,4 +294,6 @@ std = [
   'orml-traits/std',
   'orml-xtokens/std',
   'pallet-manta-pay/std',
+  'pallet-manta-sbt/std',
+  'manta-support/std',
 ]

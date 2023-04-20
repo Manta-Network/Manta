@@ -30,7 +30,7 @@ use manta_pay::{
     parameters::load_parameters,
     test,
 };
-use pallet_manta_pay::types::{AccountId, TransferPost};
+use manta_support::manta_pay::{AccountId, TransferPost};
 use rand_chacha::ChaCha20Rng;
 use scale_codec::Encode;
 use std::{

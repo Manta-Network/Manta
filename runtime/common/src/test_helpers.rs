@@ -14,11 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
-#![cfg(test)]
-
-pub mod integrations_mock;
-pub mod xcm_mock;
-
 use sp_std::vec;
 use xcm::{
     latest::{
@@ -37,7 +32,7 @@ use xcm::{
 };
 
 // 4_000_000_000 is a typical configuration value provided to dApp developers for `dest_weight`
-// argument when sending xcm message to Calamari. ie moonbeam, sub-wallet, phala, etc
+// argument when sending xcm message to Manta. ie moonbeam, sub-wallet, phala, etc
 pub const ADVERTISED_DEST_WEIGHT: u64 = 4_000_000_000;
 
 // Composition of self_reserve message composed by xTokens on the sender side

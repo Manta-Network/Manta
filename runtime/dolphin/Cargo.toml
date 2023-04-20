@@ -5,7 +5,7 @@ homepage = 'https://manta.network'
 license = 'GPL-3.0'
 name = 'dolphin-runtime'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.0.3'
+version = '4.0.6'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
@@ -91,8 +91,10 @@ xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-fea
 # Self dependencies
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
 manta-primitives = { path = '../../primitives/manta', default-features = false }
+manta-support = { package = "pallet-manta-support", path = "../../pallets/manta-support", default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
 pallet-manta-pay = { path = '../../pallets/manta-pay', default-features = false, features = ["runtime"] }
+pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false, features = ["runtime"] }
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
@@ -135,6 +137,7 @@ runtime-benchmarks = [
   'pallet-treasury/runtime-benchmarks',
   'pallet-assets/runtime-benchmarks',
   'pallet-manta-pay/runtime-benchmarks',
+  'pallet-manta-sbt/runtime-benchmarks',
   'pallet-asset-manager/runtime-benchmarks',
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
   'cumulus-pallet-parachain-system/runtime-benchmarks',
@@ -176,6 +179,7 @@ try-runtime = [
   'cumulus-pallet-xcm/try-runtime',
   'orml-xtokens/try-runtime',
   'pallet-manta-pay/try-runtime',
+  'pallet-manta-sbt/try-runtime',
   'pallet-sudo/try-runtime',
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
@@ -184,6 +188,7 @@ std = [
   'codec/std',
   'serde',
   'sp-consensus-aura/std',
+  'nimbus-primitives/std',
   'pallet-aura/std',
   'sp-api/std',
   'sp-std/std',
@@ -246,4 +251,6 @@ std = [
   'pallet-treasury/std',
   'pallet-assets/std',
   'pallet-manta-pay/std',
+  'pallet-manta-sbt/std',
+  'manta-support/std',
 ]

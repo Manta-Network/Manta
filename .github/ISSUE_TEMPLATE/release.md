@@ -23,7 +23,9 @@ These checks should be performed on the codebase prior to freezing our release c
     - [ ] Verify [benchmarks](#benchmarks) have been updated for any modified
         runtime logic.
     - [ ] Check for any upstream storage migrations and perform tests with `try-runtime`, if any.
-    - [ ] Grep github actions files for `POLKADOT_BINARY` and `_BINARY` and update them
+    - [ ] Grep github actions files for the following version URLs and update them
+        - `https://github.com/paritytech/polkadot/releases/download/v`
+        - `https://github.com/Manta-Network/Manta/releases/download/v`
     - [ ] Generate new changelog using `dev-tools` repo
     - [ ] Merge when green and reviewed
     - [ ] Tag the release with the same version you used on the release PR. IMPORTANT: Use the `manta` branch commit for the tag, NOT a `release-` or other branch

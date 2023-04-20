@@ -58,6 +58,7 @@ use manta_primitives::{
     constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
     types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
 };
+use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
 use pallet_session::ShouldEndSession;
 use runtime_common::{
@@ -80,7 +81,6 @@ pub mod staking;
 pub mod xcm_config;
 
 use currency::*;
-use fee::WeightToFee;
 use impls::DealWithFees;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
@@ -132,7 +132,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 4030,
+    spec_version: 4060,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 11,
@@ -294,6 +294,7 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::Balances(_)
             | RuntimeCall::Preimage(_)
             | RuntimeCall::MantaPay(_)
+            | RuntimeCall::MantaSbt(_)
             | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..}
                 | orml_xtokens::Call::transfer_multicurrencies {..})
             | RuntimeCall::TransactionPause(_)
@@ -368,13 +369,14 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    /// Relay Chain `TransactionLengthToFeeCoeff` / 10
+    /// Relay Chain `TransactionLengthToFeeCoeff` / 10 (1_000_000 on Kusama)
     pub const TransactionLengthToFeeCoeff: Balance = mKMA / 100;
+    pub const WeightToFeeCoeff: Balance = 5_000;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
-    type WeightToFee = WeightToFee;
+    type WeightToFee = ConstantMultiplier<Balance, WeightToFeeCoeff>;
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthToFeeCoeff>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<5>;
@@ -848,6 +850,7 @@ construct_runtime!(
         Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 45,
         AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Config<T>, Event<T>} = 46,
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
+        MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 49,
 
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
@@ -912,10 +915,7 @@ mod benches {
         [pallet_scheduler, Scheduler]
         [pallet_session, SessionBench::<Runtime>]
         [pallet_assets, Assets]
-        // XCM
-        [cumulus_pallet_xcmp_queue, XcmpQueue]
-        [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
-        [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
+
         // Manta pallets
         [calamari_vesting, CalamariVesting]
         [pallet_tx_pause, TransactionPause]
@@ -923,6 +923,12 @@ mod benches {
         [pallet_asset_manager, AssetManager]
         [pallet_parachain_staking, ParachainStaking]
         [pallet_manta_pay, MantaPay]
+        [pallet_manta_sbt, MantaSbt]
+                // XCM
+                [cumulus_pallet_xcmp_queue, XcmpQueue]
+                [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
+                [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
+
         // Nimbus pallets
         // [pallet_author_inherent, AuthorInherent]
     );
@@ -1056,11 +1062,24 @@ impl_runtime_apis! {
 
     impl pallet_manta_pay::runtime::PullLedgerDiffApi<Block> for Runtime {
         fn pull_ledger_diff(
-            checkpoint: pallet_manta_pay::RawCheckpoint,
+            checkpoint: RawCheckpoint,
             max_receiver: u64,
             max_sender: u64
-        ) -> pallet_manta_pay::PullResponse {
+        ) -> PullResponse {
             MantaPay::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
+        }
+        fn initial_pull(checkpoint: RawCheckpoint, max_receiver: u64) -> InitialSyncResponse {
+            MantaPay::initial_pull(checkpoint.into(), max_receiver)
+        }
+    }
+
+    impl pallet_manta_sbt::runtime::SBTPullLedgerDiffApi<Block> for Runtime {
+        fn sbt_pull_ledger_diff(
+            checkpoint: RawCheckpoint,
+            max_receiver: u64,
+            max_sender: u64
+        ) -> PullResponse {
+            MantaSbt::pull_ledger_diff(checkpoint.into(), max_receiver, max_sender)
         }
     }
 
@@ -1155,7 +1174,7 @@ impl_runtime_apis! {
                 ));
                 pub const CheckedAccount: Option<AccountId> = None;
                 pub const KsmLocation: MultiLocation = MultiLocation::parent();
-                pub KmaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(2084)));
+                pub KmaLocation: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
             }
 
             impl pallet_xcm_benchmarks::Config for Runtime {
