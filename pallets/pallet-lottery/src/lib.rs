@@ -118,13 +118,10 @@ pub mod pallet {
             Self::PalletsOrigin,
             Hash = Self::Hash,
         >;
-        /// The currency mechanism.
-        // NOTE: Use Currency trait from pallet_parachain_staking
-        // type Currency: LockableCurrency<Self::AccountId>
-        //     + Into<<Self as pallet_parachain_staking::Config>::Currency>
-        //     + From<<Self as pallet_parachain_staking::Config>::Currency>;
         // Randomness source to use for determining lottery winner
         type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
+        /// Something that can estimate the cost of sending an extrinsic
+        type EstimateCallFee: frame_support::traits::EstimateCallFee<pallet_parachain_staking::Call<Self>, BalanceOf<Self>>;
         /// Origin that can manage lottery parameters and start/stop drawings
         type ManageOrigin: EnsureOrigin<<Self as frame_system::Config>::Origin>;
         /// Overarching type of all pallets origins.
@@ -277,6 +274,7 @@ pub mod pallet {
         TooCloseToDrawing,
         PotBalanceTooLow,
         PotBalanceBelowGasReserve,
+        PotBalanceTooLowToPayTxFee,
         NoWinnerFound,
         DepositBelowMinAmount,
         WithdrawBelowMinAmount,
@@ -599,6 +597,11 @@ pub mod pallet {
                     &Self::account_id(),
                 );
             let winning_claim = Self::lottery_funds_surplus_idle();
+            log::debug!(
+                "total funds: {:?}, surplus funds/winner payout: {:?}",
+                total_funds_in_pallet.clone(),
+                winning_claim.clone()
+            );
             ensure!(winning_claim > 0u32.into(), Error::<T>::PotBalanceTooLow);
             ensure!(
                 // Prevent granting funds to a user that would have to be paid from deposit money (we're a casino, not a bank)
@@ -608,7 +611,6 @@ pub mod pallet {
                     < Self::sum_of_deposits(),
                 Error::<T>::PotBalanceTooLow
             );
-            log::debug!("total funds: {:?}, winning claim: {:?}",total_funds_in_pallet.clone(),winning_claim.clone());
 
             // Match random number to winner. We select a winning **balance** and then just add up accounts in the order they're stored until the sum of balance exceeds the winning amount
             // IMPORTANT: This order and active balances must be locked to modification after the random seed is created (relay BABE randomness, 2 epochs ago)
@@ -751,6 +753,10 @@ pub mod pallet {
 
             // If we're already delegated to this collator, we must call `delegate_more`
             if StakedCollators::<T>::get(&collator).is_zero() {
+
+            // Ensure the pallet has enough gas to pay for this
+            let fee_estimate : BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(&pallet_parachain_staking::Call::delegate {candidate: collator.clone(), amount, candidate_delegation_count:CANDIDATE_DELEGATION_COUNT, delegation_count: DELEGATION_COUNT}, None.into());
+            ensure!(Self::lottery_funds_surplus() > fee_estimate, Error::<T>::PotBalanceTooLowToPayTxFee);
                 pallet_parachain_staking::Pallet::<T>::delegate(
                     RawOrigin::Signed(Self::account_id()).into(),
                     collator.clone(),
@@ -768,6 +774,9 @@ pub mod pallet {
                     e.error
                 })?;
             } else {
+                // Ensure the pallet has enough gas to pay for this
+                let fee_estimate : BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(&pallet_parachain_staking::Call::delegator_bond_more{ candidate: collator.clone(), more: amount.clone() }, None.into());
+                ensure!(Self::lottery_funds_surplus() > fee_estimate, Error::<T>::PotBalanceTooLowToPayTxFee);
                 pallet_parachain_staking::Pallet::<T>::delegator_bond_more(
                     RawOrigin::Signed(Self::account_id()).into(),
                     collator.clone(),
@@ -801,6 +810,9 @@ pub mod pallet {
                 some_collator.clone(),
                 delegated_amount_to_be_unstaked.clone()
             );
+            // Ensure the pallet has enough gas to pay for this
+            let fee_estimate : BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(&pallet_parachain_staking::Call::schedule_revoke_delegation { collator: some_collator.clone() }, None.into());
+            ensure!(Self::lottery_funds_surplus() > fee_estimate, Error::<T>::PotBalanceTooLowToPayTxFee);
             // unstake from parachain staking
             // NOTE: All funds that were delegated here no longer produce staking rewards
             pallet_parachain_staking::Pallet::<T>::schedule_revoke_delegation(
@@ -857,6 +869,12 @@ pub mod pallet {
                                 log::error!( "Expected revoke_delegation request not found on collator {:?}. Leaving in withdraw queue",collator.account.clone() );
                                 return Some(collator.clone());
                             }
+                    };
+                    // Ensure the pallet has enough gas to pay for this
+                    let fee_estimate : BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(&pallet_parachain_staking::Call::execute_delegation_request { delegator: Self::account_id() , candidate: collator.account.clone()  }, None.into());
+                    if Self::lottery_funds_surplus() <= fee_estimate{
+                        log::warn!("could not finish unstaking delegation because the pallet is out of funds to pay TX fees. Skipping");
+                        Some(collator.clone());
                     };
                     match pallet_parachain_staking::Pallet::<T>::execute_delegation_request(
                         RawOrigin::Signed(Self::account_id()).into(),

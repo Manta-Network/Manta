@@ -420,6 +420,7 @@ impl pallet_lottery::Config for Runtime {
     type Call = Call;
     type Event = Event;
     type Scheduler = Scheduler;
+    type EstimateCallFee = TransactionPayment;
     type RandomnessSource = Randomness;
     type ManageOrigin = RootOrHalfCouncil;
     type PalletsOrigin = OriginCaller;
