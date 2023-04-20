@@ -608,7 +608,7 @@ pub mod pallet {
                 total_funds_in_pallet
                     .saturating_sub(winning_claim)
                     .saturating_sub(Self::total_unclaimed_winnings())
-                    < Self::sum_of_deposits(),
+                    >= Self::sum_of_deposits(),
                 Error::<T>::PotBalanceTooLow
             );
 
@@ -833,6 +833,8 @@ pub mod pallet {
                     since: now,
                 })
             });
+
+            TotalPot::<T>::mutate(|pot| *pot = (*pot).saturating_sub(delegated_amount_to_be_unstaked));
 
             Ok(())
         }
