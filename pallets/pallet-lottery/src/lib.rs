@@ -592,7 +592,8 @@ pub mod pallet {
         #[pallet::weight(0)]
         pub fn draw_lottery(origin: OriginFor<T>) -> DispatchResult {
             // T::ManageOrigin::ensure_origin(origin.clone())?;
-
+            let now = <frame_system::Pallet<T>>::block_number();
+            log::trace!("Drawing lottery called at block {:?}", now.clone());
             let total_funds_in_pallet =
                 <T as pallet_parachain_staking::Config>::Currency::total_balance(
                     &Self::account_id(),
@@ -607,6 +608,7 @@ pub mod pallet {
                     < Self::sum_of_deposits(),
                 Error::<T>::PotBalanceTooLow
             );
+            log::debug!("total funds: {:?}, winning claim: {:?}",total_funds_in_pallet.clone(),winning_claim.clone());
 
             // Match random number to winner. We select a winning **balance** and then just add up accounts in the order they're stored until the sum of balance exceeds the winning amount
             // IMPORTANT: This order and active balances must be locked to modification after the random seed is created (relay BABE randomness, 2 epochs ago)
@@ -629,6 +631,11 @@ pub mod pallet {
                 .map_err(|_| ArithmeticError::Overflow)?
                 % Self::total_pot().into();
 
+            log::debug!(
+                "hash: {:?}, winning balance: {:?}",
+                random_hash,
+                winning_balance
+            );
             let mut winner: Option<T::AccountId> = None;
             let mut count: BalanceOf<T> = 0u32.into();
             for (account, balance) in ActiveBalancePerUser::<T>::iter() {
@@ -657,6 +664,11 @@ pub mod pallet {
                     .ok_or(ArithmeticError::Overflow)?;
                 Ok::<(), ArithmeticError>(())
             })?;
+            log::debug!(
+                "winning of {:?} added to claim for account {:?}",
+                winning_balance,
+                winner
+            );
 
             Self::deposit_event(Event::LotteryWinner(winner.unwrap(), winning_claim));
 
@@ -737,17 +749,40 @@ pub mod pallet {
             const CANDIDATE_DELEGATION_COUNT: u32 = 500;
             const DELEGATION_COUNT: u32 = 500;
 
-            pallet_parachain_staking::Pallet::<T>::delegate(
-                RawOrigin::Signed(Self::account_id()).into(),
-                collator.clone(),
-                amount.into(),
-                CANDIDATE_DELEGATION_COUNT,
-                DELEGATION_COUNT,
-            )
-            .map_err(|e| {
-                log::error!("Could not delegate {:?} to collator {:?} with error {:?}", amount.clone(),collator.clone(), e);
-                e.error
-            })?;
+            // If we're already delegated to this collator, we must call `delegate_more`
+            if StakedCollators::<T>::get(&collator).is_zero() {
+                pallet_parachain_staking::Pallet::<T>::delegate(
+                    RawOrigin::Signed(Self::account_id()).into(),
+                    collator.clone(),
+                    amount.into(),
+                    CANDIDATE_DELEGATION_COUNT,
+                    DELEGATION_COUNT,
+                )
+                .map_err(|e| {
+                    log::error!(
+                        "Could not delegate {:?} to collator {:?} with error {:?}",
+                        amount.clone(),
+                        collator.clone(),
+                        e
+                    );
+                    e.error
+                })?;
+            } else {
+                pallet_parachain_staking::Pallet::<T>::delegator_bond_more(
+                    RawOrigin::Signed(Self::account_id()).into(),
+                    collator.clone(),
+                    amount.clone(),
+                )
+                .map_err(|e| {
+                    log::error!(
+                        "Could not bond more {:?} to collator {:?} with error {:?}",
+                        amount.clone(),
+                        collator.clone(),
+                        e
+                    );
+                    e.error
+                })?;
+            }
             StakedCollators::<T>::mutate(&collator, |balance| *balance += amount);
 
             log::debug!("Delegated {:?} tokens to {:?}", amount, collator);
@@ -761,13 +796,18 @@ pub mod pallet {
                 log::error!("requested to unstake a collator that isn't staked");
                 return Err(Error::<T>::TODO.into());
             };
+            log::debug!(
+                "Unstaking collator {:?} with balance {:?}",
+                some_collator.clone(),
+                delegated_amount_to_be_unstaked.clone()
+            );
             // unstake from parachain staking
             // NOTE: All funds that were delegated here no longer produce staking rewards
             pallet_parachain_staking::Pallet::<T>::schedule_revoke_delegation(
                 RawOrigin::Signed(Self::account_id()).into(),
                 some_collator.clone(),
             )
-            .map_err(|_| Error::<T>::TODO)?; // TODO: Error handling
+            .map_err(|e| e.error)?;
 
             // TODO: Update remaining balance
             RemainingUnstakingBalance::<T>::mutate(|bal| {

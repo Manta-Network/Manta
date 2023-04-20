@@ -212,7 +212,6 @@ impl<T: Config> Pallet<T> {
                 .intersection(&active_collators)
                 .cloned()
                 .collect();
-        log::debug!("{:?}", apy_ordered_active_collators_we_are_staked_with);
         apy_ordered_active_collators_we_are_staked_with.sort_by(|a, b| {
             let ainfo = pallet_parachain_staking::Pallet::<T>::candidate_info(a.clone())
                 .expect("is active collator, therefore it has collator info. qed");
@@ -220,7 +219,10 @@ impl<T: Config> Pallet<T> {
                 .expect("is active collator, therefore it has collator info. qed");
             binfo.total_counted.cmp(&ainfo.total_counted)
         });
-        log::debug!("{:?}", apy_ordered_active_collators_we_are_staked_with);
+        log::debug!(
+            "Active collators: {:?}",
+            apy_ordered_active_collators_we_are_staked_with.len()
+        );
         for c in apy_ordered_active_collators_we_are_staked_with {
             let our_stake = StakedCollators::<T>::get(c.clone()).clone();
             log::debug!("Unstaking {:?} from active {:?}", our_stake, c);
@@ -240,7 +242,7 @@ impl<T: Config> Pallet<T> {
         if withdrawals.is_empty() {
             log::error!("COULD NOT FIND ANY COLLATOR TO WITHDRAW FROM");
         }
-        log::debug!("Withdrawals: {:?}", withdrawals);
+        log::debug!("Withdrawals: {:?}", withdrawals.len());
         withdrawals
     }
 
