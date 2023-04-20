@@ -613,15 +613,14 @@ pub mod pallet {
             let random = T::RandomnessSource::random(&[0u8, 1]);
             let randomness_established_at_block = random.1;
 
-            // Ensure freezeout started before the randomness was known to prevent manipulation
-            let now = <frame_system::Pallet<T>>::block_number();
-            // TODO: Enable when using pallet_randomness
-            // ensure!(
-            //     randomness_established_at_block
-            //         .saturating_add(<T as Config>::DrawingFreezeout::get())
-            //         < Self::next_drawing(),
-            //     Error::<T>::PalletMisconfigured
-            // );
+            // Ensure freezeout period started before the randomness was known to prevent manipulation of the winning set
+            ensure!(
+                Self::next_drawing_at().is_some()
+                    && randomness_established_at_block
+                        .saturating_add(<T as Config>::DrawingFreezeout::get())
+                        < Self::next_drawing_at().unwrap(),
+                Error::<T>::PalletMisconfigured
+            );
 
             let random_hash = random.0;
             let as_number = U256::from_big_endian(random_hash.as_ref());
