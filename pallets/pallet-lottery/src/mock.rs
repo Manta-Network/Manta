@@ -20,22 +20,22 @@ use core::marker::PhantomData;
 use crate as pallet_lottery;
 use crate::{pallet, Config};
 use calamari_runtime::currency::{mKMA, KMA};
-use frame_support::traits::{ConstU8, ConstU128, ConstU32};
+use frame_support::traits::{ConstU128, ConstU32, ConstU8};
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{Everything, GenesisBuild, LockIdentifier, OnFinalize, OnInitialize},
     weights::Weight,
 };
 use frame_system::pallet_prelude::*;
-use pallet_parachain_staking::{InflationInfo,Range};
 use manta_primitives::types::{BlockNumber, Header};
+use pallet_parachain_staking::{InflationInfo, Range};
 use sp_core::H256;
 use sp_io;
+use sp_runtime::traits::Hash;
 use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
     Perbill, Percent,
 };
-use sp_runtime::traits::Hash;
 
 pub type AccountId = u64;
 pub type Balance = u128;
@@ -70,7 +70,7 @@ impl<T: Config> frame_support::traits::Randomness<T::Hash, BlockNumberFor<T>>
 {
     fn random(subject: &[u8]) -> (T::Hash, BlockNumberFor<T>) {
         use rand::{rngs::OsRng, RngCore};
-        let mut digest:Vec<_> = [0u8; 32].into();
+        let mut digest: Vec<_> = [0u8; 32].into();
         OsRng.fill_bytes(&mut digest);
         digest.extend_from_slice(subject);
         let randomness = T::Hashing::hash(&digest);
@@ -141,10 +141,10 @@ impl pallet_preimage::Config for Test {
     type MaxSize = PreimageMaxSize;
     // The sum of the below 2 amounts will get reserved every time someone submits a preimage.
     // Their sum will be unreserved when the preimage is requested, i.e. when it is going to be used.
-    type BaseDeposit = ConstU128<{1 * KMA}>;
-    type ByteDeposit = ConstU128<{1 * KMA}>;
+    type BaseDeposit = ConstU128<{ 1 * KMA }>;
+    type ByteDeposit = ConstU128<{ 1 * KMA }>;
 }
-use sp_std::{cmp::Ordering};
+use sp_std::cmp::Ordering;
 pub struct OriginPrivilegeCmp;
 impl frame_support::traits::PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
     fn cmp_privilege(left: &OriginCaller, right: &OriginCaller) -> Option<Ordering> {
@@ -267,11 +267,8 @@ impl pallet_parachain_staking::Config for Test {
 
 impl block_author::Config for Test {}
 
-
-
-
-use frame_system::EnsureRoot;
 use frame_support::PalletId;
+use frame_system::EnsureRoot;
 use manta_primitives::constants::time::MINUTES;
 use manta_primitives::constants::LOTTERY_PALLET_ID;
 parameter_types! {
@@ -285,14 +282,20 @@ parameter_types! {
 }
 
 use frame_support::traits::Currency;
-pub type BalanceOf<T> = <<T as pallet_parachain_staking::Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
-pub struct MockEstimateFee{}
-impl frame_support::traits::EstimateCallFee<pallet_parachain_staking::Call<Test>, BalanceOf<Test>> for MockEstimateFee
+pub type BalanceOf<T> = <<T as pallet_parachain_staking::Config>::Currency as Currency<
+    <T as frame_system::Config>::AccountId,
+>>::Balance;
+pub struct MockEstimateFee {}
+impl frame_support::traits::EstimateCallFee<pallet_parachain_staking::Call<Test>, BalanceOf<Test>>
+    for MockEstimateFee
 {
-        fn estimate_call_fee(_call: &pallet_parachain_staking::Call<Test>, _post_info: frame_support::weights::PostDispatchInfo) -> BalanceOf<Test> {
-            10 * KMA
-        }
+    fn estimate_call_fee(
+        _call: &pallet_parachain_staking::Call<Test>,
+        _post_info: frame_support::weights::PostDispatchInfo,
+    ) -> BalanceOf<Test> {
+        10 * KMA
     }
+}
 impl Config for Test {
     type Call = Call;
     type Event = Event;
@@ -351,6 +354,11 @@ impl Default for ExtBuilder {
 }
 
 impl ExtBuilder {
+    pub(crate) fn with_funded_lottery_account(mut self, balance: Balance) -> Self {
+        self.balances.push((crate::Pallet::<Test>::account_id(), balance));
+        self
+    }
+
     pub(crate) fn with_balances(mut self, balances: Vec<(AccountId, Balance)>) -> Self {
         self.balances = balances;
         self
@@ -362,10 +370,7 @@ impl ExtBuilder {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn with_inflation(
-        mut self,
-        inflation: InflationInfo<Balance>,
-    ) -> Self {
+    pub(crate) fn with_inflation(mut self, inflation: InflationInfo<Balance>) -> Self {
         self.inflation = inflation;
         self
     }

@@ -395,32 +395,42 @@ pub mod pallet {
             // 3. Add balance overshoot to "remaining balance" to handle further requests from
 
             // If the withdrawal fits in the currently unstaking funds, do nothing else
-            RemainingUnstakingBalance::<T>::try_mutate(|remaining| {
-                *remaining = (*remaining).saturating_sub(amount);
-                (*remaining > 0u32.into())
-                    .then(|| ())
-                    .ok_or("not enough left to handle this request from current unstaking funds")
+            RemainingUnstakingBalance::<T>::try_mutate(|remaining_balance| {
+                match (*remaining_balance).checked_sub(&amount){
+                    Some(subtracted) => {
+                        *remaining_balance = subtracted;
+                        Ok(())
+                    }
+                    _ => {
+                        Err("not enough left to handle this request from current unstaking funds")
+                    }
+                }
             })
             .or_else(|_| {
                 // Withdrawal needs extra collators to unstake to have enough funds to serve withdrawals, do it
                 let reserve = RemainingUnstakingBalance::<T>::get();
-                let mut remaining = amount - reserve;
+                let mut remaining_to_withdraw = amount - reserve;
 
                 // unstake collators as necessary. This updates `RemainingUnstakingBalance`
-                for collator_to_unstake in Self::calculate_withdrawal_distribution(remaining){
+                for collator_to_unstake in Self::calculate_withdrawal_distribution(remaining_to_withdraw){
                     let our_stake = StakedCollators::<T>::get(collator_to_unstake.clone());
-                    remaining = remaining.saturating_sub(our_stake);
+                    remaining_to_withdraw = remaining_to_withdraw.saturating_sub(our_stake);
                     // If this fails, something weird is going on
                     Self::do_unstake_collator(now,collator_to_unstake)?; // TODO: Error handling
                 }
-                if !remaining.is_zero() {
-                    log::error!("Somehow didn't manage to handle the requested balance. Have {:?} left over",remaining);
+                if !remaining_to_withdraw.is_zero() {
+                    log::error!("Somehow didn't manage to handle the requested balance. Have {:?} left over",remaining_to_withdraw);
                 }
-                RemainingUnstakingBalance::<T>::try_mutate(|remaining| {
-                    *remaining = (*remaining).saturating_sub(amount);
-                    (*remaining > 0u32.into())
-                        .then(|| ())
-                        .ok_or("not enough left to handle this request from current unstaking funds")
+                RemainingUnstakingBalance::<T>::try_mutate(|remaining_balance| {
+                    match (*remaining_balance).checked_sub(&amount){
+                        Some(subtracted) => {
+                            *remaining_balance = subtracted;
+                            Ok(())
+                        }
+                        _ => {
+                            Err("not enough left to handle this request after unstaking additional collators")
+                        }
+                    }
                 })
             })?;
             // END UNSTAKING SECTION
