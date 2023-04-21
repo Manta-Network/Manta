@@ -71,6 +71,8 @@ use xcm::latest::prelude::*;
 
 pub mod assets_config;
 pub mod currency;
+#[cfg(test)]
+mod diff_gas_fees;
 pub mod fee;
 pub mod impls;
 pub mod migrations;
