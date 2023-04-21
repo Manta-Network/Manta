@@ -16,12 +16,15 @@
 
 use super::*;
 use codec::alloc::collections::BTreeSet;
+use frame_support::dispatch::RawOrigin;
 use frame_support::ensure;
+use frame_support::traits::EstimateCallFee;
 use frame_support::traits::Get;
 use frame_support::traits::Randomness;
 use pallet_parachain_staking::BalanceOf;
 use sp_runtime::traits::Saturating;
 use sp_runtime::traits::Zero;
+use sp_runtime::DispatchResult;
 use sp_runtime::PerThing;
 use sp_runtime::Percent;
 use sp_std::{vec, vec::Vec};
@@ -83,16 +86,17 @@ impl<T: Config> Pallet<T> {
         let mut underallocated_collators = vec![];
         for collator in active_collators.iter() {
             let our_stake = StakedCollators::<T>::get(collator.clone()).clone();
-            let info = pallet_parachain_staking::Pallet::<T>::candidate_info(collator.clone())
-                .expect("is active collator, therefor it has collator info. qed");
-            let stake_on_collator = info.total_counted.saturating_sub(our_stake);
+            let stake_on_collator =
+                pallet_parachain_staking::Pallet::<T>::candidate_info(collator.clone())
+                    .expect("is active collator, therefor it has collator info. qed")
+                    .total_counted;
             if stake_on_collator < mean_stake {
-                underallocated_collators.push((collator.clone(), mean_stake - stake_on_collator));
+                underallocated_collators.push((collator.clone(), stake_on_collator));
             }
         }
         log::debug!("Underallocated: {:?}", underallocated_collators);
         if !underallocated_collators.is_empty() {
-            underallocated_collators.sort_unstable_by(|a, b| a.1.cmp(&b.1));
+            underallocated_collators.sort_unstable_by(|a, b| a.1.cmp(&b.1)); // XXX: Sorting on each deposit. Might be better to add a presorted storage item
             let (_rest, mut last) =
                 underallocated_collators.split_at(underallocated_collators.len().saturating_sub(4)); // TODO: 4 is hardcoded make configurable
             let total_underallocation = last
@@ -255,4 +259,171 @@ impl<T: Config> Pallet<T> {
             .mul_ceil(total_staked)
             .into()
     }
+
+    pub(crate) fn do_stake_one_collator(
+        collator: T::AccountId,
+        amount: BalanceOf<T>,
+    ) -> DispatchResult {
+        // preconditions
+        if Self::lottery_funds_surplus().is_zero() {
+            return Err(Error::<T>::PotBalanceTooLow.into());
+        }
+
+        // TODO: Calculate these from current values
+        const CANDIDATE_DELEGATION_COUNT: u32 = 500;
+        const DELEGATION_COUNT: u32 = 500;
+
+        // If we're already delegated to this collator, we must call `delegate_more`
+        if StakedCollators::<T>::get(&collator).is_zero() {
+            // Ensure the pallet has enough gas to pay for this
+            let fee_estimate: BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(
+                &pallet_parachain_staking::Call::delegate {
+                    candidate: collator.clone(),
+                    amount,
+                    candidate_delegation_count: CANDIDATE_DELEGATION_COUNT,
+                    delegation_count: DELEGATION_COUNT,
+                },
+                None.into(),
+            );
+            ensure!(
+                Self::lottery_funds_surplus() > fee_estimate,
+                Error::<T>::PotBalanceTooLowToPayTxFee
+            );
+            pallet_parachain_staking::Pallet::<T>::delegate(
+                RawOrigin::Signed(Self::account_id()).into(),
+                collator.clone(),
+                amount.into(),
+                CANDIDATE_DELEGATION_COUNT,
+                DELEGATION_COUNT,
+            )
+            .map_err(|e| {
+                log::error!(
+                    "Could not delegate {:?} to collator {:?} with error {:?}",
+                    amount.clone(),
+                    collator.clone(),
+                    e
+                );
+                e.error
+            })?;
+        } else {
+            // Ensure the pallet has enough gas to pay for this
+            let fee_estimate: BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(
+                &pallet_parachain_staking::Call::delegator_bond_more {
+                    candidate: collator.clone(),
+                    more: amount.clone(),
+                },
+                None.into(),
+            );
+            ensure!(
+                Self::lottery_funds_surplus() > fee_estimate,
+                Error::<T>::PotBalanceTooLowToPayTxFee
+            );
+            pallet_parachain_staking::Pallet::<T>::delegator_bond_more(
+                RawOrigin::Signed(Self::account_id()).into(),
+                collator.clone(),
+                amount.clone(),
+            )
+            .map_err(|e| {
+                log::error!(
+                    "Could not bond more {:?} to collator {:?} with error {:?}",
+                    amount.clone(),
+                    collator.clone(),
+                    e
+                );
+                e.error
+            })?;
+        }
+        StakedCollators::<T>::mutate(&collator, |balance| *balance += amount);
+
+        log::debug!("Delegated {:?} tokens to {:?}", amount, collator);
+        Ok(())
+    }
+
+    pub(crate) fn do_unstake_collator(
+        now: T::BlockNumber,
+        some_collator: T::AccountId,
+    ) -> DispatchResult {
+        let delegated_amount_to_be_unstaked = StakedCollators::<T>::take(some_collator.clone());
+        if delegated_amount_to_be_unstaked.is_zero() {
+            log::error!("requested to unstake a collator that isn't staked");
+            return Err(Error::<T>::TODO.into());
+        };
+        log::debug!(
+            "Unstaking collator {:?} with balance {:?}",
+            some_collator.clone(),
+            delegated_amount_to_be_unstaked.clone()
+        );
+        // Ensure the pallet has enough gas to pay for this
+        let fee_estimate: BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(
+            &pallet_parachain_staking::Call::schedule_revoke_delegation {
+                collator: some_collator.clone(),
+            },
+            None.into(),
+        );
+        ensure!(
+            Self::lottery_funds_surplus() > fee_estimate,
+            Error::<T>::PotBalanceTooLowToPayTxFee
+        );
+        // unstake from parachain staking
+        // NOTE: All funds that were delegated here will no longer produce staking rewards
+        pallet_parachain_staking::Pallet::<T>::schedule_revoke_delegation(
+            RawOrigin::Signed(Self::account_id()).into(),
+            some_collator.clone(),
+        )
+        .map_err(|e| e.error)?;
+
+        // Update bookkeeping
+        RemainingUnstakingBalance::<T>::mutate(|bal| {
+            *bal = (*bal).saturating_add(delegated_amount_to_be_unstaked.into());
+        });
+        UnstakingCollators::<T>::mutate(|collators| {
+            collators.push(UnstakingCollator {
+                account: some_collator.clone(),
+                since: now,
+            })
+        });
+        TotalPot::<T>::mutate(|pot| *pot = (*pot).saturating_sub(delegated_amount_to_be_unstaked));
+
+        Ok(())
+    }
+}
+
+#[test]
+fn sorting_collators_works() {
+    use codec::alloc::collections::HashMap;
+    use manta_primitives::types::AccountId;
+
+    const AL: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
+    const BO: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([1u8; 32]);
+    const CH: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([2u8; 32]);
+    const DA: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([3u8; 32]);
+    const EV: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([4u8; 32]);
+    let active_collators = vec![DA.clone(), BO.clone(), CH.clone(), AL.clone(), EV.clone()];
+
+    let mut staked: HashMap<AccountId, u32> = HashMap::new();
+    staked.insert(AL.clone(), 10);
+    staked.insert(BO.clone(), 11);
+    staked.insert(CH.clone(), 12);
+    staked.insert(DA.clone(), 13);
+    staked.insert(EV.clone(), 14);
+
+    let mean_stake = (10 + 11 + 12 + 13 + 14) / 5;
+
+    // logic under test
+    let mut underallocated_collators = vec![];
+    for collator in active_collators.iter() {
+        let total_stake = staked.get(collator).unwrap().clone();
+        if total_stake < mean_stake {
+            underallocated_collators.push((collator.clone(), total_stake));
+        }
+    }
+    assert_eq!(underallocated_collators[0], (BO.clone(), 11));
+    assert_eq!(underallocated_collators[1], (AL.clone(), 10));
+
+    underallocated_collators.sort_unstable_by(|a, b| a.1.cmp(&b.1));
+    let (_rest, mut last) =
+        underallocated_collators.split_at(underallocated_collators.len().saturating_sub(4)); // TODO: 4 is hardcoded make configurable
+
+    assert_eq!(underallocated_collators[0], (AL.clone(), 10));
+    assert_eq!(underallocated_collators[1], (BO.clone(), 11));
 }

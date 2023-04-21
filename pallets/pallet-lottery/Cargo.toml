@@ -27,6 +27,7 @@ session-key-primitives = { path = '../../primitives/session-keys', default-featu
 [dev-dependencies]
 rand = "0.8"
 similar-asserts = "1.1.0"
+lazy_static = "1.4.0"
 calamari-runtime = { path = "../../runtime/calamari", default-features = false }
 manta-collator-selection = { path = "../collator-selection", default-features = false }
 pallet-randomness = { path = '../randomness', default-features = false }
