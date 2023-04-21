@@ -348,7 +348,7 @@ impl Default for ExtBuilder {
                     ideal: Perbill::from_percent(5),
                     max: Perbill::from_percent(5),
                 },
-            },
+            }
         }
     }
 }
@@ -392,6 +392,9 @@ impl ExtBuilder {
         }
         .assimilate_storage(&mut t)
         .expect("Parachain Staking's storage can be assimilated");
+        pallet_lottery::GenesisConfig::<Test>::default()
+        .assimilate_storage(&mut t)
+        .expect("pallet_lottery's storage can be assimilated");
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));

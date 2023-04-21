@@ -536,9 +536,7 @@ pub mod pallet {
             );
             // Pallet has enough funds to pay gas fees for at least the first drawing
             ensure!(
-                pallet_parachain_staking::Pallet::<T>::get_delegator_stakable_free_balance(
-                    &Self::account_id()
-                ) >= Self::gas_reserve(),
+                Self::lottery_funds_surplus() >= Self::gas_reserve(),
                 Error::<T>::PotBalanceBelowGasReserve
             );
 
