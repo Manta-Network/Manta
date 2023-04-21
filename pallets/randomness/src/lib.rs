@@ -202,7 +202,7 @@ pub mod pallet {
             digest.extend_from_slice(randomness_output.as_ref());
             digest.extend_from_slice(subject);
             let randomness = T::Hashing::hash(digest.as_slice());
-            let block_number = frame_system::Pallet::<T>::block_number();
+            let block_number = frame_system::Pallet::<T>::block_number(); // TODO: Randomness Established at start of Epoch!
             (randomness, block_number)
         }
     }

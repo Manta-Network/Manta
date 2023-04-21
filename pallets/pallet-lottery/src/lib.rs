@@ -121,7 +121,10 @@ pub mod pallet {
         // Randomness source to use for determining lottery winner
         type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
         /// Something that can estimate the cost of sending an extrinsic
-        type EstimateCallFee: frame_support::traits::EstimateCallFee<pallet_parachain_staking::Call<Self>, BalanceOf<Self>>;
+        type EstimateCallFee: frame_support::traits::EstimateCallFee<
+            pallet_parachain_staking::Call<Self>,
+            BalanceOf<Self>,
+        >;
         /// Origin that can manage lottery parameters and start/stop drawings
         type ManageOrigin: EnsureOrigin<<Self as frame_system::Config>::Origin>;
         /// Overarching type of all pallets origins.
@@ -618,13 +621,13 @@ pub mod pallet {
             let randomness_established_at_block = random.1;
 
             // Ensure freezeout period started before the randomness was known to prevent manipulation of the winning set
-            ensure!(
-                Self::next_drawing_at().is_some()
-                    && randomness_established_at_block
-                        .saturating_add(<T as Config>::DrawingFreezeout::get())
-                        < Self::next_drawing_at().unwrap(),
-                Error::<T>::PalletMisconfigured
-            );
+            // ensure!(
+            //     Self::next_drawing_at().is_some()
+            //         && randomness_established_at_block
+            //             .saturating_add(<T as Config>::DrawingFreezeout::get())
+            //             < Self::next_drawing_at().unwrap(),
+            //     Error::<T>::PalletMisconfigured
+            // );
 
             let random_hash = random.0;
             let as_number = U256::from_big_endian(random_hash.as_ref());
@@ -753,10 +756,20 @@ pub mod pallet {
 
             // If we're already delegated to this collator, we must call `delegate_more`
             if StakedCollators::<T>::get(&collator).is_zero() {
-
-            // Ensure the pallet has enough gas to pay for this
-            let fee_estimate : BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(&pallet_parachain_staking::Call::delegate {candidate: collator.clone(), amount, candidate_delegation_count:CANDIDATE_DELEGATION_COUNT, delegation_count: DELEGATION_COUNT}, None.into());
-            ensure!(Self::lottery_funds_surplus() > fee_estimate, Error::<T>::PotBalanceTooLowToPayTxFee);
+                // Ensure the pallet has enough gas to pay for this
+                let fee_estimate: BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(
+                    &pallet_parachain_staking::Call::delegate {
+                        candidate: collator.clone(),
+                        amount,
+                        candidate_delegation_count: CANDIDATE_DELEGATION_COUNT,
+                        delegation_count: DELEGATION_COUNT,
+                    },
+                    None.into(),
+                );
+                ensure!(
+                    Self::lottery_funds_surplus() > fee_estimate,
+                    Error::<T>::PotBalanceTooLowToPayTxFee
+                );
                 pallet_parachain_staking::Pallet::<T>::delegate(
                     RawOrigin::Signed(Self::account_id()).into(),
                     collator.clone(),
@@ -775,8 +788,17 @@ pub mod pallet {
                 })?;
             } else {
                 // Ensure the pallet has enough gas to pay for this
-                let fee_estimate : BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(&pallet_parachain_staking::Call::delegator_bond_more{ candidate: collator.clone(), more: amount.clone() }, None.into());
-                ensure!(Self::lottery_funds_surplus() > fee_estimate, Error::<T>::PotBalanceTooLowToPayTxFee);
+                let fee_estimate: BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(
+                    &pallet_parachain_staking::Call::delegator_bond_more {
+                        candidate: collator.clone(),
+                        more: amount.clone(),
+                    },
+                    None.into(),
+                );
+                ensure!(
+                    Self::lottery_funds_surplus() > fee_estimate,
+                    Error::<T>::PotBalanceTooLowToPayTxFee
+                );
                 pallet_parachain_staking::Pallet::<T>::delegator_bond_more(
                     RawOrigin::Signed(Self::account_id()).into(),
                     collator.clone(),
@@ -811,8 +833,16 @@ pub mod pallet {
                 delegated_amount_to_be_unstaked.clone()
             );
             // Ensure the pallet has enough gas to pay for this
-            let fee_estimate : BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(&pallet_parachain_staking::Call::schedule_revoke_delegation { collator: some_collator.clone() }, None.into());
-            ensure!(Self::lottery_funds_surplus() > fee_estimate, Error::<T>::PotBalanceTooLowToPayTxFee);
+            let fee_estimate: BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(
+                &pallet_parachain_staking::Call::schedule_revoke_delegation {
+                    collator: some_collator.clone(),
+                },
+                None.into(),
+            );
+            ensure!(
+                Self::lottery_funds_surplus() > fee_estimate,
+                Error::<T>::PotBalanceTooLowToPayTxFee
+            );
             // unstake from parachain staking
             // NOTE: All funds that were delegated here no longer produce staking rewards
             pallet_parachain_staking::Pallet::<T>::schedule_revoke_delegation(
@@ -834,7 +864,9 @@ pub mod pallet {
                 })
             });
 
-            TotalPot::<T>::mutate(|pot| *pot = (*pot).saturating_sub(delegated_amount_to_be_unstaked));
+            TotalPot::<T>::mutate(|pot| {
+                *pot = (*pot).saturating_sub(delegated_amount_to_be_unstaked)
+            });
 
             Ok(())
         }

@@ -6565,19 +6565,29 @@ dependencies = [
 name = "pallet-lottery"
 version = "0.1.0"
 dependencies = [
+ "calamari-runtime",
  "frame-support",
  "frame-system",
  "log",
+ "manta-collator-selection",
  "manta-primitives",
+ "pallet-balances",
  "pallet-parachain-staking",
+ "pallet-preimage",
+ "pallet-randomness",
+ "pallet-scheduler",
+ "pallet-transaction-payment",
  "parity-scale-codec",
+ "rand 0.8.5",
  "runtime-common",
  "scale-info",
  "session-key-primitives",
+ "similar-asserts",
  "sp-arithmetic",
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "sp-staking",
  "sp-std",
 ]
 

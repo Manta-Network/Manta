@@ -730,11 +730,6 @@ impl pallet_author_inherent::Config for Runtime {
     type CanAuthor = AuraAuthorFilter;
 }
 
-parameter_types! {
-    pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
-        RuntimeBlockWeights::get().max_block;
-    pub const NoPreimagePostponement: Option<u32> = Some(10);
-}
 
 type ScheduleOrigin = RootOrHalfCouncil;
 /// Used the compare the privilege of an origin inside the scheduler.
@@ -759,6 +754,11 @@ impl PrivilegeCmp<OriginCaller> for OriginPrivilegeCmp {
     }
 }
 
+parameter_types! {
+    pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+        RuntimeBlockWeights::get().max_block;
+    pub const NoPreimagePostponement: Option<u32> = Some(10);
+}
 impl pallet_scheduler::Config for Runtime {
     type Event = Event;
     type Origin = Origin;
