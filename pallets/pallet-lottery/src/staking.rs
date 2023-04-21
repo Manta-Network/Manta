@@ -25,6 +25,9 @@ use sp_runtime::traits::Zero;
 use sp_runtime::PerThing;
 use sp_runtime::Percent;
 use sp_std::{vec, vec::Vec};
+use frame_support::dispatch::RawOrigin;
+use sp_runtime::DispatchResult;
+use frame_support::traits::EstimateCallFee;
 
 impl<T: Config> Pallet<T> {
     pub(crate) fn calculate_deposit_distribution(
@@ -255,4 +258,131 @@ impl<T: Config> Pallet<T> {
             .mul_ceil(total_staked)
             .into()
     }
+
+    pub(crate) fn do_stake_one_collator(collator: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
+            // preconditions
+            if Self::lottery_funds_surplus().is_zero() {
+                return Err(Error::<T>::PotBalanceTooLow.into());
+            }
+
+            // TODO: Calculate these from current values
+            const CANDIDATE_DELEGATION_COUNT: u32 = 500;
+            const DELEGATION_COUNT: u32 = 500;
+
+            // If we're already delegated to this collator, we must call `delegate_more`
+            if StakedCollators::<T>::get(&collator).is_zero() {
+                // Ensure the pallet has enough gas to pay for this
+                let fee_estimate: BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(
+                    &pallet_parachain_staking::Call::delegate {
+                        candidate: collator.clone(),
+                        amount,
+                        candidate_delegation_count: CANDIDATE_DELEGATION_COUNT,
+                        delegation_count: DELEGATION_COUNT,
+                    },
+                    None.into(),
+                );
+                ensure!(
+                    Self::lottery_funds_surplus() > fee_estimate,
+                    Error::<T>::PotBalanceTooLowToPayTxFee
+                );
+                pallet_parachain_staking::Pallet::<T>::delegate(
+                    RawOrigin::Signed(Self::account_id()).into(),
+                    collator.clone(),
+                    amount.into(),
+                    CANDIDATE_DELEGATION_COUNT,
+                    DELEGATION_COUNT,
+                )
+                .map_err(|e| {
+                    log::error!(
+                        "Could not delegate {:?} to collator {:?} with error {:?}",
+                        amount.clone(),
+                        collator.clone(),
+                        e
+                    );
+                    e.error
+                })?;
+            } else {
+                // Ensure the pallet has enough gas to pay for this
+                let fee_estimate: BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(
+                    &pallet_parachain_staking::Call::delegator_bond_more {
+                        candidate: collator.clone(),
+                        more: amount.clone(),
+                    },
+                    None.into(),
+                );
+                ensure!(
+                    Self::lottery_funds_surplus() > fee_estimate,
+                    Error::<T>::PotBalanceTooLowToPayTxFee
+                );
+                pallet_parachain_staking::Pallet::<T>::delegator_bond_more(
+                    RawOrigin::Signed(Self::account_id()).into(),
+                    collator.clone(),
+                    amount.clone(),
+                )
+                .map_err(|e| {
+                    log::error!(
+                        "Could not bond more {:?} to collator {:?} with error {:?}",
+                        amount.clone(),
+                        collator.clone(),
+                        e
+                    );
+                    e.error
+                })?;
+            }
+            StakedCollators::<T>::mutate(&collator, |balance| *balance += amount);
+
+            log::debug!("Delegated {:?} tokens to {:?}", amount, collator);
+            Ok(())
+        }
+
+        pub(crate) fn do_unstake_collator(now: T::BlockNumber, some_collator: T::AccountId) -> DispatchResult {
+            // TODO: Find the smallest currently active delegation larger than `amount`
+            let delegated_amount_to_be_unstaked = StakedCollators::<T>::take(some_collator.clone());
+            if delegated_amount_to_be_unstaked.is_zero() {
+                log::error!("requested to unstake a collator that isn't staked");
+                return Err(Error::<T>::TODO.into());
+            };
+            log::debug!(
+                "Unstaking collator {:?} with balance {:?}",
+                some_collator.clone(),
+                delegated_amount_to_be_unstaked.clone()
+            );
+            // Ensure the pallet has enough gas to pay for this
+            let fee_estimate: BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(
+                &pallet_parachain_staking::Call::schedule_revoke_delegation {
+                    collator: some_collator.clone(),
+                },
+                None.into(),
+            );
+            ensure!(
+                Self::lottery_funds_surplus() > fee_estimate,
+                Error::<T>::PotBalanceTooLowToPayTxFee
+            );
+            // unstake from parachain staking
+            // NOTE: All funds that were delegated here no longer produce staking rewards
+            pallet_parachain_staking::Pallet::<T>::schedule_revoke_delegation(
+                RawOrigin::Signed(Self::account_id()).into(),
+                some_collator.clone(),
+            )
+            .map_err(|e| e.error)?;
+
+            // TODO: Update remaining balance
+            RemainingUnstakingBalance::<T>::mutate(|bal| {
+                *bal = (*bal).saturating_add(delegated_amount_to_be_unstaked.into());
+            });
+
+            // update unstaking storage
+            UnstakingCollators::<T>::mutate(|collators| {
+                collators.push(UnstakingCollator {
+                    account: some_collator.clone(),
+                    since: now,
+                })
+            });
+
+            TotalPot::<T>::mutate(|pot| {
+                *pot = (*pot).saturating_sub(delegated_amount_to_be_unstaked)
+            });
+
+            Ok(())
+        }
 }
