@@ -77,10 +77,10 @@ mod tests;
 pub mod weights;
 
 pub use pallet::*;
-pub use ::function_name::named;
-// pub use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
+    pub use ::function_name::named;
+    pub use frame_system::WeightInfo;
     use frame_support::{
         ensure, log,
         pallet_prelude::*,
@@ -91,7 +91,6 @@ pub mod pallet {
         },
         PalletId,
     };
-    pub use frame_system::WeightInfo;
     use frame_system::{pallet_prelude::*, RawOrigin};
     use manta_primitives::constants::time::{DAYS, MINUTES};
     use pallet_parachain_staking::BalanceOf;
@@ -142,7 +141,7 @@ pub mod pallet {
         type DrawingFreezeout: Get<Self::BlockNumber>;
         /// Time in blocks until a collator is done unstaking
         #[pallet::constant]
-        type UnstakeLockTime: Get<Self::BlockNumber>;
+        type UnstakeLockTime: Get<Self::BlockNumber>; // XXX: could maybe alculate this from staking LeaveDelayRounds * DefaultBlocksPerRound
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
     }
@@ -385,9 +384,8 @@ pub mod pallet {
                         .checked_sub(&amount)
                         .ok_or(ArithmeticError::Underflow)
                 })?;
-                // Ok(())
                 Ok::<(), DispatchError>(())
-            }); // TODO: Error handling
+            })?;
 
             // Unstaking workflow
             // 1. See if this withdrawal can be serviced with left-over balance from an already unstaking collator, if so deduct remaining balance and schedule the request
@@ -416,7 +414,7 @@ pub mod pallet {
                     let our_stake = StakedCollators::<T>::get(collator_to_unstake.clone());
                     remaining_to_withdraw = remaining_to_withdraw.saturating_sub(our_stake);
                     // If this fails, something weird is going on
-                    Self::do_unstake_collator(now,collator_to_unstake)?; // TODO: Error handling
+                    Self::do_unstake_collator(now,collator_to_unstake)?;
                 }
                 if !remaining_to_withdraw.is_zero() {
                     log::error!("Somehow didn't manage to handle the requested balance. Have {:?} left over",remaining_to_withdraw);
@@ -628,7 +626,7 @@ pub mod pallet {
             let random = T::RandomnessSource::random(&[0u8, 1]);
             let randomness_established_at_block = random.1;
 
-            // Ensure freezeout period started before the randomness was known to prevent manipulation of the winning set
+            // TODO: Ensure freezeout period started before the randomness was known to prevent manipulation of the winning set
             // ensure!(
             //     Self::next_drawing_at().is_some()
             //         && randomness_established_at_block
@@ -705,6 +703,7 @@ pub mod pallet {
         pub fn process_matured_withdrawals(origin: OriginFor<T>) -> DispatchResult {
             log::trace!("process_matured_withdrawals");
             // T::ManageOrigin::ensure_origin(origin.clone())?;
+            // TODO: these two fns share a duplicate a lot of code, refactor it into here
             Self::finish_unstaking_collators();
             Self::do_process_matured_withdrawals()?;
             Ok(())
@@ -823,8 +822,9 @@ pub mod pallet {
             });
         }
 
+        #[named]
         fn do_rebalance_remaining_funds() -> DispatchResult {
-            log::trace!("do_rebalance_remaining_funds");
+            log::trace!(function_name!());
             // Only restake what isn't needed to service outstanding withdrawal requests
             let stakable_balance = Self::lottery_funds_surplus_idle();
 
@@ -841,28 +841,39 @@ pub mod pallet {
         /// Main usage: Automatic execution in the course of a drawing
         /// It can also be manually invoke by T::ManageOrigin to reprocess withdrawals that
         /// previously failed, e.g. due to the pallet running out of gas funds
+        /// A withdrawal is considered "matured" if its staking timelock expired
+        #[named]
         fn do_process_matured_withdrawals() -> DispatchResult {
+            log::trace!(function_name!());
             if <WithdrawalRequestQueue<T>>::get().is_empty() {
                 return Ok(()); // nothing to do
             }
 
             let now = <frame_system::Pallet<T>>::block_number();
-            let funds_available_to_withdraw = Self::lottery_funds_surplus_idle();
+            let funds_available_to_withdraw = Self::lottery_funds_surplus();
+            log::debug!("Withdrawable funds: {:?}",funds_available_to_withdraw.clone());
             if funds_available_to_withdraw.is_zero() {
                 return Ok(()); // nothing to do
             }
-
             // Pay down the list from top (oldest) to bottom until we've paid out everyone or run out of available funds
-            <WithdrawalRequestQueue<T>>::try_mutate(|request_vec| {
-                ensure!(!request_vec.is_empty(), "nothing to withdraw");
+            <WithdrawalRequestQueue<T>>::mutate(|request_vec|-> Result<(),DispatchError> {
                 let mut left_overs: Vec<Request<_, _, _>> = Vec::new();
                 for request in request_vec.iter() {
+                    // Don't pay anyone still timelocked
+                    if now < request.block + <T as Config>::UnstakeLockTime::get(){
+                        left_overs.push((*request).clone());
+                        continue;
+                    }
+                    // stop paying people if we've run out of free funds.
+                    // The assumption is the collators serving these requests will
+                    // finish unstaking next round ( next lottery drawing )
                     if request.balance > funds_available_to_withdraw {
                         left_overs.push((*request).clone());
                         continue;
                     }
                     // we know we can pay this out, do it
                     <SumOfDeposits<T>>::mutate(|sum| (*sum).saturating_sub(request.balance));
+                    log::debug!("Transferring {:?} to {:?}",request.balance.clone(), request.user.clone());
                     <T as pallet_parachain_staking::Config>::Currency::transfer(
                         &Self::account_id(),
                         &request.user,
@@ -870,17 +881,16 @@ pub mod pallet {
                         KeepAlive,
                     )?;
                 }
+                log::debug!("Have {:?} requests left over after transfers",left_overs.len());
                 // Update T::WithdrawalRequestQueue if we paid at least one guy
                 if left_overs.len() != (*request_vec).len() {
                     request_vec.clear();
                     for c in left_overs {
                         request_vec.push(c);
                     }
-                    Ok(())
-                } else {
-                    Err("no changes")
                 }
-            });
+                Ok(())
+            })?;
             Ok(())
         }
     }
