@@ -130,7 +130,7 @@ impl<T: Config> Pallet<T> {
         if !deposits.is_empty() && !remaining_deposit.is_zero() {
             let mut last = deposits.pop().unwrap();
             last.1 += remaining_deposit;
-            remaining_deposit -= last.1;
+            remaining_deposit.set_zero();
             deposits.push(last);
         }
 
@@ -164,7 +164,7 @@ impl<T: Config> Pallet<T> {
         if deposits.is_empty() {
             log::error!("COULD NOT FIND ANY COLLATOR TO STAKE TO");
         }
-        log::debug!("Depsits: {:?}", deposits);
+        log::debug!("Deposits: {:?}", deposits);
         deposits
     }
 
