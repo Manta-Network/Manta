@@ -77,7 +77,7 @@ mod tests;
 pub mod weights;
 
 pub use pallet::*;
-
+pub use ::function_name::named;
 // pub use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {

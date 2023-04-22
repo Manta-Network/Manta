@@ -30,9 +30,11 @@ use sp_runtime::Percent;
 use sp_std::{vec, vec::Vec};
 
 impl<T: Config> Pallet<T> {
+    #[named]
     pub(crate) fn calculate_deposit_distribution(
         new_deposit: BalanceOf<T>,
     ) -> Vec<(T::AccountId, BalanceOf<T>)> {
+                log::trace!(function_name!());
         if new_deposit < <T as pallet_parachain_staking::Config>::MinDelegation::get() {
             return vec![];
         }
@@ -166,9 +168,11 @@ impl<T: Config> Pallet<T> {
         deposits
     }
 
+    #[named]
     pub(crate) fn calculate_withdrawal_distribution(
         withdrawal_amount: BalanceOf<T>,
     ) -> Vec<T::AccountId> {
+        log::trace!(function_name!());
         if withdrawal_amount.is_zero() {
             return vec![];
         }
@@ -260,10 +264,12 @@ impl<T: Config> Pallet<T> {
             .into()
     }
 
+    #[named]
     pub(crate) fn do_stake_one_collator(
         collator: T::AccountId,
         amount: BalanceOf<T>,
     ) -> DispatchResult {
+        log::trace!(function_name!());
         // preconditions
         if Self::lottery_funds_surplus().is_zero() {
             return Err(Error::<T>::PotBalanceTooLow.into());
@@ -339,10 +345,12 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
+    #[named]
     pub(crate) fn do_unstake_collator(
         now: T::BlockNumber,
         some_collator: T::AccountId,
     ) -> DispatchResult {
+        log::trace!(function_name!());
         let delegated_amount_to_be_unstaked = StakedCollators::<T>::take(some_collator.clone());
         if delegated_amount_to_be_unstaked.is_zero() {
             log::error!("requested to unstake a collator that isn't staked");
