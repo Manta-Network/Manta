@@ -838,7 +838,9 @@ pub mod pallet {
         }
 
         /// This fn schedules a single shot payout of all matured withdrawals
-        /// **It is meant to be executed in the course of a drawing**
+        /// Main usage: Automatic execution in the course of a drawing
+        /// It can also be manually invoke by T::ManageOrigin to reprocess withdrawals that
+        /// previously failed, e.g. due to the pallet running out of gas funds
         fn do_process_matured_withdrawals() -> DispatchResult {
             if <WithdrawalRequestQueue<T>>::get().is_empty() {
                 return Ok(()); // nothing to do
@@ -852,7 +854,7 @@ pub mod pallet {
 
             // Pay down the list from top (oldest) to bottom until we've paid out everyone or run out of available funds
             <WithdrawalRequestQueue<T>>::try_mutate(|request_vec| {
-                ensure!((*request_vec).is_empty(), "nothing to withdraw");
+                ensure!(!request_vec.is_empty(), "nothing to withdraw");
                 let mut left_overs: Vec<Request<_, _, _>> = Vec::new();
                 for request in request_vec.iter() {
                     if request.balance > funds_available_to_withdraw {

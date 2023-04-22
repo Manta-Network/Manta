@@ -25,16 +25,16 @@ runtime-common = { path = "../../runtime/common", default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
 
 [dev-dependencies]
-rand = "0.8"
-similar-asserts = "1.1.0"
-lazy_static = "1.4.0"
 calamari-runtime = { path = "../../runtime/calamari", default-features = false }
+lazy_static = "1.4.0"
 manta-collator-selection = { path = "../collator-selection", default-features = false }
-pallet-randomness = { path = '../randomness', default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28" }
 pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28" }
+pallet-randomness = { path = '../randomness', default-features = false }
 pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28" }
+rand = "0.8"
+similar-asserts = "1.1.0"
 sp-staking = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.28" }
 
 [features]

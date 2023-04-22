@@ -25,21 +25,21 @@ use crate::{
     assert_eq_events, assert_eq_last_events, assert_event_emitted, assert_last_event,
     assert_tail_eq,
     mock::{
-        roll_one_block, roll_to, roll_to_round_begin, roll_to_round_end, Balances,
-        CollatorSelection, Event as MetaEvent, ExtBuilder, Lottery, Origin, ParachainStaking, Test,
-        AccountId, Balance,
+        roll_one_block, roll_to, roll_to_round_begin, roll_to_round_end, AccountId, Balance,
+        Balances, CollatorSelection, Event as MetaEvent, ExtBuilder, Lottery, Origin,
+        ParachainStaking, Test,
     },
     Error, Event,
 };
 
 use frame_support::{assert_noop, assert_ok};
+use frame_system::RawOrigin;
 use pallet_parachain_staking::{
     AtStake, Bond, CollatorStatus, DelegatorStatus, InflationInfo, Range, DELEGATOR_LOCK_ID,
 };
-use sp_runtime::{traits::Zero, DispatchError, ModuleError, Perbill, Percent};
 use session_key_primitives::util::unchecked_account_id;
-use frame_system::RawOrigin;
 use sp_core::sr25519::Public;
+use sp_runtime::{traits::Zero, DispatchError, ModuleError, Perbill, Percent};
 
 lazy_static::lazy_static! {
     pub(crate) static ref ALICE: AccountId = 1;
@@ -83,14 +83,12 @@ fn call_manager_extrinsics_as_normal_user_should_not_work() {
 }
 #[test]
 fn starting_lottery_without_gas_should_not_work() {
-    ExtBuilder::default()
-        .build()
-        .execute_with(|| {
-            assert_noop!(
-                Lottery::start_lottery(RawOrigin::Root.into()),
-                Error::<Test>::PotBalanceBelowGasReserve
-            );
-        });
+    ExtBuilder::default().build().execute_with(|| {
+        assert_noop!(
+            Lottery::start_lottery(RawOrigin::Root.into()),
+            Error::<Test>::PotBalanceBelowGasReserve
+        );
+    });
 }
 #[test]
 fn starting_funded_lottery_should_work() {
@@ -107,20 +105,87 @@ fn depositing_and_withdrawing_should_work() {
     ExtBuilder::default()
         .with_balances(vec![
             (ALICE.clone(), HIGH_BALANCE.clone()),
-            (BOB.clone(),HIGH_BALANCE)
+            (BOB.clone(), HIGH_BALANCE),
         ])
-        .with_candidates(vec![
-            (BOB.clone(),balance)
-        ])
+        .with_candidates(vec![(BOB.clone(), balance)])
         .with_funded_lottery_account(HIGH_BALANCE.clone())
         .build()
         .execute_with(|| {
-            assert!(HIGH_BALANCE>balance);
-            assert_ok!(
-                Lottery::deposit(Origin::signed(ALICE.clone()),balance.clone())
+            assert!(HIGH_BALANCE > balance);
+            assert_ok!(Lottery::deposit(
+                Origin::signed(ALICE.clone()),
+                balance.clone()
+            ));
+            assert_eq!(Lottery::sum_of_deposits(), balance);
+            assert_eq!(Lottery::total_pot(), balance);
+            assert_ok!(Lottery::request_withdraw(
+                Origin::signed(ALICE.clone()),
+                balance.clone()
+            ));
+            assert_eq!(Lottery::sum_of_deposits(), balance);
+            assert_eq!(Lottery::total_pot(), 0);
+        });
+}
+#[test]
+fn depositing_and_withdrawing_leaves_correct_balance_with_user() {
+    let balance = 500_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE.clone(), HIGH_BALANCE),
+            (BOB.clone(), HIGH_BALANCE),
+        ])
+        .with_candidates(vec![(BOB.clone(), balance)])
+        .with_funded_lottery_account(HIGH_BALANCE.clone())
+        .build()
+        .execute_with(|| {
+            assert!(HIGH_BALANCE > balance);
+            let alice_starting_balance = Balances::free_balance(ALICE.clone());
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE.clone()), balance));
+            assert!(Balances::free_balance(ALICE.clone()) <= alice_starting_balance - balance);
+            assert_eq!(Lottery::sum_of_deposits(), balance);
+            assert_eq!(Lottery::total_pot(), balance);
+            assert_ok!(Lottery::request_withdraw(
+                Origin::signed(ALICE.clone()),
+                balance.clone()
+            ));
+            assert_eq!(Lottery::sum_of_deposits(), balance);
+            assert_eq!(Lottery::total_pot(), 0);
+            let alice_balance_after_request = Balances::free_balance(ALICE.clone());
+            assert!(alice_balance_after_request <= alice_starting_balance - balance);
+            roll_to_round_begin(3);
+            assert_ok!(Lottery::process_matured_withdrawals(RawOrigin::Root.into()));
+            assert_eq!(Lottery::sum_of_deposits(), 0);
+            assert_eq!(
+                Balances::free_balance(ALICE.clone()),
+                alice_balance_after_request + balance
             );
-            assert_ok!(
-                Lottery::request_withdraw(Origin::signed(ALICE.clone()),balance.clone())
+        });
+}
+#[test]
+fn double_processing_withdrawals_does_not_double_pay() {
+    let balance = 500_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE.clone(), HIGH_BALANCE),
+            (BOB.clone(), HIGH_BALANCE),
+        ])
+        .with_candidates(vec![(BOB.clone(), balance)])
+        .with_funded_lottery_account(HIGH_BALANCE.clone())
+        .build()
+        .execute_with(|| {
+            assert!(HIGH_BALANCE > balance);
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE.clone()), balance));
+            assert_ok!(Lottery::request_withdraw(
+                Origin::signed(ALICE.clone()),
+                balance.clone()
+            ));
+            let alice_balance_after_request = Balances::free_balance(ALICE.clone());
+            roll_to_round_begin(3);
+            assert_ok!(Lottery::process_matured_withdrawals(RawOrigin::Root.into()));
+            assert_ok!(Lottery::process_matured_withdrawals(RawOrigin::Root.into()));
+            assert_eq!(
+                Balances::free_balance(ALICE.clone()),
+                alice_balance_after_request + balance
             );
         });
 }

@@ -348,14 +348,15 @@ impl Default for ExtBuilder {
                     ideal: Perbill::from_percent(5),
                     max: Perbill::from_percent(5),
                 },
-            }
+            },
         }
     }
 }
 
 impl ExtBuilder {
     pub(crate) fn with_funded_lottery_account(mut self, balance: Balance) -> Self {
-        self.balances.push((crate::Pallet::<Test>::account_id(), balance));
+        self.balances
+            .push((crate::Pallet::<Test>::account_id(), balance));
         self
     }
 
@@ -393,8 +394,8 @@ impl ExtBuilder {
         .assimilate_storage(&mut t)
         .expect("Parachain Staking's storage can be assimilated");
         pallet_lottery::GenesisConfig::<Test>::default()
-        .assimilate_storage(&mut t)
-        .expect("pallet_lottery's storage can be assimilated");
+            .assimilate_storage(&mut t)
+            .expect("pallet_lottery's storage can be assimilated");
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
