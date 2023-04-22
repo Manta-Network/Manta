@@ -92,7 +92,7 @@ impl<T: Config> Pallet<T> {
                 pallet_parachain_staking::Pallet::<T>::candidate_info(collator.clone())
                     .expect("is active collator, therefor it has collator info. qed")
                     .total_counted;
-            if stake_on_collator < mean_stake {
+            if stake_on_collator <= mean_stake {
                 underallocated_collators.push((collator.clone(), stake_on_collator));
             }
         }

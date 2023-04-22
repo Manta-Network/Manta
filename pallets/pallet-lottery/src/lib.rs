@@ -848,13 +848,12 @@ pub mod pallet {
             if <WithdrawalRequestQueue<T>>::get().is_empty() {
                 return Ok(()); // nothing to do
             }
-
-            let now = <frame_system::Pallet<T>>::block_number();
             let funds_available_to_withdraw = Self::lottery_funds_surplus();
             log::debug!("Withdrawable funds: {:?}",funds_available_to_withdraw.clone());
             if funds_available_to_withdraw.is_zero() {
                 return Ok(()); // nothing to do
             }
+            let now = <frame_system::Pallet<T>>::block_number();
             // Pay down the list from top (oldest) to bottom until we've paid out everyone or run out of available funds
             <WithdrawalRequestQueue<T>>::mutate(|request_vec|-> Result<(),DispatchError> {
                 let mut left_overs: Vec<Request<_, _, _>> = Vec::new();
