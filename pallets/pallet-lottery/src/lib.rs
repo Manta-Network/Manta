@@ -611,83 +611,21 @@ pub mod pallet {
                 total_funds_in_pallet.clone(),
                 winning_claim.clone()
             );
-            ensure!(winning_claim > 0u32.into(), Error::<T>::PotBalanceTooLow);
-            ensure!(
-                // Prevent granting funds to a user that would have to be paid from deposit money (we're a casino, not a bank)
-                total_funds_in_pallet
-                    .saturating_sub(winning_claim)
-                    .saturating_sub(Self::total_unclaimed_winnings())
-                    >= Self::sum_of_deposits(),
-                Error::<T>::PotBalanceTooLow
-            );
-
-            // Match random number to winner. We select a winning **balance** and then just add up accounts in the order they're stored until the sum of balance exceeds the winning amount
-            // IMPORTANT: This order and active balances must be locked to modification after the random seed is created (relay BABE randomness, 2 epochs ago)
-            let random = T::RandomnessSource::random(&[0u8, 1]);
-            let randomness_established_at_block = random.1;
-
-            // TODO: Ensure freezeout period started before the randomness was known to prevent manipulation of the winning set
-            // ensure!(
-            //     Self::next_drawing_at().is_some()
-            //         && randomness_established_at_block
-            //             .saturating_add(<T as Config>::DrawingFreezeout::get())
-            //             < Self::next_drawing_at().unwrap(),
-            //     Error::<T>::PalletMisconfigured
-            // );
-
-            let random_hash = random.0;
-            let as_number = U256::from_big_endian(random_hash.as_ref());
-            let winning_number = as_number.low_u128();
-            let winning_balance: BalanceOf<T> = BalanceOf::<T>::try_from(winning_number)
-                .map_err(|_| ArithmeticError::Overflow)?
-                % Self::total_pot().into();
-
-            log::debug!(
-                "hash: {:?}, winning balance: {:?}",
-                random_hash,
-                winning_balance
-            );
-            let mut winner: Option<T::AccountId> = None;
-            let mut count: BalanceOf<T> = 0u32.into();
-            for (account, balance) in ActiveBalancePerUser::<T>::iter() {
-                count += balance;
-                if count >= winning_balance {
-                    winner = Some(account);
-                    break;
-                }
+            if !winning_claim.is_zero(){
+                ensure!(
+                    // Prevent granting funds to a user that would have to be paid from deposit money (we're a casino, not a bank)
+                    total_funds_in_pallet
+                        .saturating_sub(winning_claim)
+                        .saturating_sub(Self::total_unclaimed_winnings())
+                        >= Self::sum_of_deposits(),
+                    Error::<T>::PotBalanceTooLow
+                );
+                Self::select_winner(winning_claim)?;
             }
-            // Should be impossible: If no winner was selected, return Error
-            ensure!(winner.is_some(), Error::<T>::NoWinnerFound);
 
-            // Allow winner to manually claim their winnings later
-            UnclaimedWinningsByAccount::<T>::mutate(
-                winner
-                    .clone()
-                    .expect("we checked a winner exists before. qed"),
-                |maybe_balance| match *maybe_balance {
-                    Some(balance) => (*maybe_balance) = Some(balance.saturating_add(winning_claim)),
-                    None => (*maybe_balance) = Some(winning_claim),
-                },
-            );
-            TotalUnclaimedWinnings::<T>::try_mutate(|old| {
-                *old = (*old)
-                    .checked_add(&winning_claim)
-                    .ok_or(ArithmeticError::Overflow)?;
-                Ok::<(), ArithmeticError>(())
-            })?;
-            log::debug!(
-                "winning of {:?} added to claim for account {:?}",
-                winning_balance,
-                winner
-            );
-
-            Self::deposit_event(Event::LotteryWinner(winner.unwrap(), winning_claim));
-
-            // pay out tokens due for withdrawals before doing the lottery drawing (reduces winning claim by gas fees paid)
+            // unstake, pay out tokens due for withdrawals and restake excess funds // XXX: This might not work well with multiphase withdrawals
             Self::process_matured_withdrawals(origin)?;
-            Self::do_rebalance_remaining_funds()?;
-            Self::update_active_funds()?;
-
+            Self::update_active_funds()?; // TODO: Figure out what to do with this
             Ok(())
         }
 
@@ -706,6 +644,7 @@ pub mod pallet {
             // TODO: these two fns share a duplicate a lot of code, refactor it into here
             Self::finish_unstaking_collators();
             Self::do_process_matured_withdrawals()?;
+            Self::do_rebalance_remaining_funds()?;
             Ok(())
         }
 
@@ -753,6 +692,70 @@ pub mod pallet {
 
         fn update_active_funds() -> DispatchResult {
             log::trace!("update_active_funds");
+            Ok(())
+        }
+
+        fn select_winner(payout_for_winner: BalanceOf<T>) -> DispatchResult{
+            // Match random number to winner. We select a winning **balance** and then just add up accounts in the order they're stored until the sum of balance exceeds the winning amount
+            // IMPORTANT: This order and active balances must be locked to modification after the random seed is created (relay BABE randomness, 2 epochs ago)
+            let random = T::RandomnessSource::random(&[0u8, 1]);
+            let randomness_established_at_block = random.1;
+
+            // TODO: Ensure freezeout period started before the randomness was known to prevent manipulation of the winning set
+            // ensure!(
+            //     Self::next_drawing_at().is_some()
+            //         && randomness_established_at_block
+            //             .saturating_add(<T as Config>::DrawingFreezeout::get())
+            //             < Self::next_drawing_at().unwrap(),
+            //     Error::<T>::PalletMisconfigured
+            // );
+
+            let random_hash = random.0;
+            let as_number = U256::from_big_endian(random_hash.as_ref());
+            let winning_number = as_number.low_u128();
+            let winning_balance: BalanceOf<T> = BalanceOf::<T>::try_from(winning_number)
+                .map_err(|_| ArithmeticError::Overflow)?
+                % Self::total_pot().into();
+
+            log::debug!(
+                "hash: {:?}, winning balance: {:?}",
+                random_hash,
+                winning_balance
+            );
+            let mut winner: Option<T::AccountId> = None;
+            let mut count: BalanceOf<T> = 0u32.into();
+            for (account, balance) in ActiveBalancePerUser::<T>::iter() {
+                count += balance;
+                if count >= winning_balance {
+                    winner = Some(account);
+                    break;
+                }
+            }
+            // Should be impossible: If no winner was selected, return Error
+            ensure!(winner.is_some(), Error::<T>::NoWinnerFound);
+
+            // Allow winner to manually claim their winnings later
+            UnclaimedWinningsByAccount::<T>::mutate(
+                winner
+                    .clone()
+                    .expect("we checked a winner exists before. qed"),
+                |maybe_balance| match *maybe_balance {
+                    Some(balance) => (*maybe_balance) = Some(balance.saturating_add(payout_for_winner)),
+                    None => (*maybe_balance) = Some(payout_for_winner),
+                },
+            );
+            TotalUnclaimedWinnings::<T>::try_mutate(|old| {
+                *old = (*old)
+                    .checked_add(&payout_for_winner)
+                    .ok_or(ArithmeticError::Overflow)?;
+                Ok::<(), ArithmeticError>(())
+            })?;
+            log::debug!(
+                "winning of {:?} added to claim for account {:?}",
+                payout_for_winner,
+                winner
+            );
+            Self::deposit_event(Event::LotteryWinner(winner.unwrap(), payout_for_winner));
             Ok(())
         }
 
@@ -826,7 +829,13 @@ pub mod pallet {
         fn do_rebalance_remaining_funds() -> DispatchResult {
             log::trace!(function_name!());
             // Only restake what isn't needed to service outstanding withdrawal requests
+
+            // TODO: If we have outstanding out-of-timelock withdrawal requests, do nothing
             let stakable_balance = Self::lottery_funds_surplus_idle();
+            if stakable_balance.is_zero(){
+                log::debug!("Nothing to restake");
+                return Ok(());
+            }
 
             for (collator, amount_to_stake) in
                 Self::calculate_deposit_distribution(stakable_balance)
@@ -910,15 +919,15 @@ pub mod pallet {
         }
         /// funds in the lottery pallet that are not needed/reserved for anything
         pub fn lottery_funds_surplus_idle() -> BalanceOf<T> {
-            let outstanding_withdrawal_requests = <WithdrawalRequestQueue<T>>::get()
-                .iter()
-                .map(|request| request.balance)
-                .reduce(|acc, e| acc + e)
-                .unwrap_or(0u32.into());
+            // let outstanding_withdrawal_requests = <WithdrawalRequestQueue<T>>::get()
+                // .iter()
+                // .map(|request| request.balance)
+                // .reduce(|acc, e| acc + e)
+                // .unwrap_or(0u32.into());
 
             Self::lottery_funds_surplus()
                 .saturating_sub(Self::gas_reserve())
-                .saturating_sub(outstanding_withdrawal_requests)
+                // .saturating_sub(outstanding_withdrawal_requests)
         }
         /// Returns if we're within the pre-drawing time where deposits/withdrawals are frozen
         pub fn not_in_drawing_freezeout() -> bool {
