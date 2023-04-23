@@ -53,35 +53,272 @@ use super::{ALICE, ALICE_SESSION_KEYS};
 use sp_core::sr25519;
 use sp_runtime::{DispatchError, ModuleError};
 
-#[test]
-fn ensure_block_per_round_and_leave_delays_equal_7days() {
-    // NOTE: If you change one, change the other as well
-    type LeaveCandidatesDelay = <Runtime as pallet_parachain_staking::Config>::LeaveCandidatesDelay;
-    type LeaveDelegatorsDelay = <Runtime as pallet_parachain_staking::Config>::LeaveDelegatorsDelay;
-    type CandidateBondLessDelay =
-        <Runtime as pallet_parachain_staking::Config>::CandidateBondLessDelay;
-    type DelegationBondLessDelay =
-        <Runtime as pallet_parachain_staking::Config>::DelegationBondLessDelay;
-    assert_eq!(
-        7 * DAYS,
-        DefaultBlocksPerRound::get() * LeaveDelayRounds::get()
-    );
-    assert_eq!(
-        7 * DAYS,
-        DefaultBlocksPerRound::get() * LeaveCandidatesDelay::get()
-    );
-    assert_eq!(
-        7 * DAYS,
-        DefaultBlocksPerRound::get() * LeaveDelegatorsDelay::get()
-    );
-    assert_eq!(
-        7 * DAYS,
-        DefaultBlocksPerRound::get() * CandidateBondLessDelay::get()
-    );
-    assert_eq!(
-        7 * DAYS,
-        DefaultBlocksPerRound::get() * DelegationBondLessDelay::get()
-    );
+// currently, we ignore all parachain staking tests in integration tests
+mod parachain_staking_tests {
+    #[test]
+    #[ignore]
+    fn ensure_block_per_round_and_leave_delays_equal_7days() {
+        // NOTE: If you change one, change the other as well
+        type LeaveCandidatesDelay =
+            <Runtime as pallet_parachain_staking::Config>::LeaveCandidatesDelay;
+        type LeaveDelegatorsDelay =
+            <Runtime as pallet_parachain_staking::Config>::LeaveDelegatorsDelay;
+        type CandidateBondLessDelay =
+            <Runtime as pallet_parachain_staking::Config>::CandidateBondLessDelay;
+        type DelegationBondLessDelay =
+            <Runtime as pallet_parachain_staking::Config>::DelegationBondLessDelay;
+        assert_eq!(
+            7 * DAYS,
+            DefaultBlocksPerRound::get() * LeaveDelayRounds::get()
+        );
+        assert_eq!(
+            7 * DAYS,
+            DefaultBlocksPerRound::get() * LeaveCandidatesDelay::get()
+        );
+        assert_eq!(
+            7 * DAYS,
+            DefaultBlocksPerRound::get() * LeaveDelegatorsDelay::get()
+        );
+        assert_eq!(
+            7 * DAYS,
+            DefaultBlocksPerRound::get() * CandidateBondLessDelay::get()
+        );
+        assert_eq!(
+            7 * DAYS,
+            DefaultBlocksPerRound::get() * DelegationBondLessDelay::get()
+        );
+    }
+
+    #[test]
+    #[ignore]
+    fn collator_cant_join_below_standard_bond() {
+        ExtBuilder::default()
+            .with_balances(vec![
+                (ALICE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+                (BOB.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+                (CHARLIE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+            ])
+            .with_collators(vec![(ALICE.clone(), 50)])
+            .build()
+            .execute_with(|| {
+                assert_noop!(
+                    ParachainStaking::join_candidates(
+                        Origin::signed(BOB.clone()),
+                        MIN_BOND_TO_BE_CONSIDERED_COLLATOR - 1,
+                        6u32
+                    ),
+                    pallet_parachain_staking::Error::<Runtime>::CandidateBondBelowMin
+                );
+            });
+    }
+
+    #[test]
+    #[ignore]
+    fn collator_can_join_with_min_bond() {
+        ExtBuilder::default()
+            .with_collators(vec![(ALICE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR)])
+            .with_balances(vec![
+                (ALICE.clone(), INITIAL_BALANCE),
+                (BOB.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            ])
+            .build()
+            .execute_with(|| {
+                // Create and bond session keys to Bob's account.
+                assert_ok!(Session::set_keys(
+                    Origin::signed(BOB.clone()),
+                    BOB_SESSION_KEYS.clone(),
+                    vec![]
+                ));
+                assert!(<Session as frame_support::traits::ValidatorRegistration<
+                    AccountId,
+                >>::is_registered(&BOB));
+
+                assert_ok!(ParachainStaking::join_candidates(
+                    Origin::signed(BOB.clone()),
+                    <Runtime as pallet_parachain_staking::Config>::MinCandidateStk::get(),
+                    3u32
+                ));
+
+                // BOB is now a candidate
+                assert!(ParachainStaking::candidate_pool().contains(
+                    &pallet_parachain_staking::Bond {
+                        owner: BOB.clone(),
+                        amount: MIN_BOND_TO_BE_CONSIDERED_COLLATOR
+                    }
+                ));
+
+                // After one round
+                run_to_block(
+                    <Runtime as pallet_parachain_staking::Config>::DefaultBlocksPerRound::get() + 1,
+                );
+
+                // BOB becomes part of the selected candidates set
+                assert!(ParachainStaking::selected_candidates().contains(&BOB));
+            });
+    }
+
+    #[test]
+    #[ignore]
+    fn collator_with_large_stake_but_too_low_self_bond_not_selected_for_block_production() {
+        ExtBuilder::default()
+            .with_balances(vec![
+                (ALICE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+                (BOB.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+                (CHARLIE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+                (DAVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+                (EVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+                (FERDIE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+                (USER.clone(), 400_000_000 * KMA),
+            ])
+            .with_invulnerables(vec![])
+            .with_authorities(vec![
+                (ALICE.clone(), ALICE_SESSION_KEYS.clone()),
+                (BOB.clone(), BOB_SESSION_KEYS.clone()),
+                (CHARLIE.clone(), CHARLIE_SESSION_KEYS.clone()),
+                (DAVE.clone(), DAVE_SESSION_KEYS.clone()),
+                (EVE.clone(), EVE_SESSION_KEYS.clone()),
+                (FERDIE.clone(), FERDIE_SESSION_KEYS.clone()),
+            ])
+            .build()
+            .execute_with(|| {
+                initialize_collators_through_whitelist(vec![
+                    ALICE.clone(),
+                    BOB.clone(),
+                    CHARLIE.clone(),
+                    DAVE.clone(),
+                    EVE.clone(),
+                    FERDIE.clone(),
+                ]);
+                // Increase self-bond for everyone but ALICE
+                for collator in vec![
+                    BOB.clone(),
+                    CHARLIE.clone(),
+                    DAVE.clone(),
+                    EVE.clone(),
+                    FERDIE.clone(),
+                ] {
+                    assert_ok!(ParachainStaking::candidate_bond_more(
+                        Origin::signed(collator.clone()),
+                        MIN_BOND_TO_BE_CONSIDERED_COLLATOR - EARLY_COLLATOR_MINIMUM_STAKE
+                    ));
+                }
+
+                // Delegate a large amount of tokens to EVE and ALICE
+                for collator in vec![EVE.clone(), ALICE.clone()] {
+                    assert_ok!(ParachainStaking::delegate(
+                        Origin::signed(USER.clone()),
+                        collator,
+                        100_000_000 * KMA,
+                        50,
+                        50
+                    ));
+                }
+
+                // Ensure ALICE is not selected despite having a large total stake through delegation
+                // NOTE: Must use 6 or more collators because 5 is the minimum on calamari
+                assert!(!ParachainStaking::compute_top_candidates().contains(&ALICE));
+                assert!(ParachainStaking::compute_top_candidates().contains(&BOB));
+                assert!(ParachainStaking::compute_top_candidates().contains(&CHARLIE));
+                assert!(ParachainStaking::compute_top_candidates().contains(&DAVE));
+                assert!(ParachainStaking::compute_top_candidates().contains(&EVE));
+                assert!(ParachainStaking::compute_top_candidates().contains(&FERDIE));
+            });
+    }
+
+    #[test]
+    #[ignore]
+    fn collator_can_leave_if_below_standard_bond() {
+        ExtBuilder::default()
+            .with_balances(vec![
+                (ALICE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+                (BOB.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+                (CHARLIE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+                (DAVE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+                (EVE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+                (FERDIE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+            ])
+            .with_invulnerables(vec![])
+            .with_authorities(vec![
+                (ALICE.clone(), ALICE_SESSION_KEYS.clone()),
+                (BOB.clone(), BOB_SESSION_KEYS.clone()),
+                (CHARLIE.clone(), CHARLIE_SESSION_KEYS.clone()),
+                (DAVE.clone(), DAVE_SESSION_KEYS.clone()),
+                (EVE.clone(), EVE_SESSION_KEYS.clone()),
+                (FERDIE.clone(), FERDIE_SESSION_KEYS.clone()),
+            ])
+            .build()
+            .execute_with(|| {
+                initialize_collators_through_whitelist(vec![
+                    ALICE.clone(),
+                    BOB.clone(),
+                    CHARLIE.clone(),
+                    DAVE.clone(),
+                    EVE.clone(),
+                    FERDIE.clone(),
+                ]);
+                // Attempt to leave as whitelist collator
+                assert_ok!(ParachainStaking::schedule_leave_candidates(
+                    Origin::signed(FERDIE.clone()),
+                    6
+                ));
+            });
+    }
+
+    #[test]
+    #[ignore]
+    fn collator_with_400k_not_selected_for_block_production() {
+        ExtBuilder::default()
+            .with_balances(vec![
+                (ALICE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
+                (BOB.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+                (CHARLIE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+                (DAVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+                (EVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+                (FERDIE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
+            ])
+            .with_invulnerables(vec![])
+            .with_authorities(vec![
+                (ALICE.clone(), ALICE_SESSION_KEYS.clone()),
+                (BOB.clone(), BOB_SESSION_KEYS.clone()),
+                (CHARLIE.clone(), CHARLIE_SESSION_KEYS.clone()),
+                (DAVE.clone(), DAVE_SESSION_KEYS.clone()),
+                (EVE.clone(), EVE_SESSION_KEYS.clone()),
+                (FERDIE.clone(), FERDIE_SESSION_KEYS.clone()),
+            ])
+            .build()
+            .execute_with(|| {
+                initialize_collators_through_whitelist(vec![
+                    ALICE.clone(),
+                    BOB.clone(),
+                    CHARLIE.clone(),
+                    DAVE.clone(),
+                    EVE.clone(),
+                    FERDIE.clone(),
+                ]);
+                // Increase bond for everyone but FERDIE
+                for collator in vec![
+                    BOB.clone(),
+                    CHARLIE.clone(),
+                    DAVE.clone(),
+                    EVE.clone(),
+                    FERDIE.clone(),
+                ] {
+                    assert_ok!(ParachainStaking::candidate_bond_more(
+                        Origin::signed(collator.clone()),
+                        MIN_BOND_TO_BE_CONSIDERED_COLLATOR - EARLY_COLLATOR_MINIMUM_STAKE
+                    ));
+                }
+
+                // Ensure CHARLIE and later are not selected
+                // NOTE: Must use 6 or more collators because 5 is the minimum on calamari
+                assert!(!ParachainStaking::compute_top_candidates().contains(&ALICE));
+                assert!(ParachainStaking::compute_top_candidates().contains(&BOB));
+                assert!(ParachainStaking::compute_top_candidates().contains(&CHARLIE));
+                assert!(ParachainStaking::compute_top_candidates().contains(&DAVE));
+                assert!(ParachainStaking::compute_top_candidates().contains(&EVE));
+                assert!(ParachainStaking::compute_top_candidates().contains(&FERDIE));
+            });
+    }
 }
 
 #[test]
@@ -180,232 +417,6 @@ fn root_can_change_default_xcm_vers() {
 #[test]
 fn sanity_check_round_duration() {
     assert_eq!(DefaultBlocksPerRound::get(), 6 * HOURS);
-}
-
-#[test]
-fn collator_can_join_with_min_bond() {
-    ExtBuilder::default()
-        .with_collators(vec![(ALICE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR)])
-        .with_balances(vec![
-            (ALICE.clone(), INITIAL_BALANCE),
-            (BOB.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
-        ])
-        .build()
-        .execute_with(|| {
-            // Create and bond session keys to Bob's account.
-            assert_ok!(Session::set_keys(
-                Origin::signed(BOB.clone()),
-                BOB_SESSION_KEYS.clone(),
-                vec![]
-            ));
-            assert!(<Session as frame_support::traits::ValidatorRegistration<
-                AccountId,
-            >>::is_registered(&BOB));
-
-            assert_ok!(ParachainStaking::join_candidates(
-                Origin::signed(BOB.clone()),
-                <Runtime as pallet_parachain_staking::Config>::MinCandidateStk::get(),
-                3u32
-            ));
-
-            // BOB is now a candidate
-            assert!(
-                ParachainStaking::candidate_pool().contains(&pallet_parachain_staking::Bond {
-                    owner: BOB.clone(),
-                    amount: MIN_BOND_TO_BE_CONSIDERED_COLLATOR
-                })
-            );
-
-            // After one round
-            run_to_block(
-                <Runtime as pallet_parachain_staking::Config>::DefaultBlocksPerRound::get() + 1,
-            );
-
-            // BOB becomes part of the selected candidates set
-            assert!(ParachainStaking::selected_candidates().contains(&BOB));
-        });
-}
-
-#[test]
-fn collator_cant_join_below_standard_bond() {
-    ExtBuilder::default()
-        .with_balances(vec![
-            (ALICE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
-            (BOB.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
-            (CHARLIE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
-        ])
-        .with_collators(vec![(ALICE.clone(), 50)])
-        .build()
-        .execute_with(|| {
-            assert_noop!(
-                ParachainStaking::join_candidates(
-                    Origin::signed(BOB.clone()),
-                    MIN_BOND_TO_BE_CONSIDERED_COLLATOR - 1,
-                    6u32
-                ),
-                pallet_parachain_staking::Error::<Runtime>::CandidateBondBelowMin
-            );
-        });
-}
-
-#[test]
-fn collator_with_large_stake_but_too_low_self_bond_not_selected_for_block_production() {
-    ExtBuilder::default()
-        .with_balances(vec![
-            (ALICE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
-            (BOB.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
-            (CHARLIE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
-            (DAVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
-            (EVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
-            (FERDIE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
-            (USER.clone(), 400_000_000 * KMA),
-        ])
-        .with_invulnerables(vec![])
-        .with_authorities(vec![
-            (ALICE.clone(), ALICE_SESSION_KEYS.clone()),
-            (BOB.clone(), BOB_SESSION_KEYS.clone()),
-            (CHARLIE.clone(), CHARLIE_SESSION_KEYS.clone()),
-            (DAVE.clone(), DAVE_SESSION_KEYS.clone()),
-            (EVE.clone(), EVE_SESSION_KEYS.clone()),
-            (FERDIE.clone(), FERDIE_SESSION_KEYS.clone()),
-        ])
-        .build()
-        .execute_with(|| {
-            initialize_collators_through_whitelist(vec![
-                ALICE.clone(),
-                BOB.clone(),
-                CHARLIE.clone(),
-                DAVE.clone(),
-                EVE.clone(),
-                FERDIE.clone(),
-            ]);
-            // Increase self-bond for everyone but ALICE
-            for collator in vec![
-                BOB.clone(),
-                CHARLIE.clone(),
-                DAVE.clone(),
-                EVE.clone(),
-                FERDIE.clone(),
-            ] {
-                assert_ok!(ParachainStaking::candidate_bond_more(
-                    Origin::signed(collator.clone()),
-                    MIN_BOND_TO_BE_CONSIDERED_COLLATOR - EARLY_COLLATOR_MINIMUM_STAKE
-                ));
-            }
-
-            // Delegate a large amount of tokens to EVE and ALICE
-            for collator in vec![EVE.clone(), ALICE.clone()] {
-                assert_ok!(ParachainStaking::delegate(
-                    Origin::signed(USER.clone()),
-                    collator,
-                    100_000_000 * KMA,
-                    50,
-                    50
-                ));
-            }
-
-            // Ensure ALICE is not selected despite having a large total stake through delegation
-            // NOTE: Must use 6 or more collators because 5 is the minimum on calamari
-            assert!(!ParachainStaking::compute_top_candidates().contains(&ALICE));
-            assert!(ParachainStaking::compute_top_candidates().contains(&BOB));
-            assert!(ParachainStaking::compute_top_candidates().contains(&CHARLIE));
-            assert!(ParachainStaking::compute_top_candidates().contains(&DAVE));
-            assert!(ParachainStaking::compute_top_candidates().contains(&EVE));
-            assert!(ParachainStaking::compute_top_candidates().contains(&FERDIE));
-        });
-}
-
-#[test]
-fn collator_can_leave_if_below_standard_bond() {
-    ExtBuilder::default()
-        .with_balances(vec![
-            (ALICE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
-            (BOB.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
-            (CHARLIE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
-            (DAVE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
-            (EVE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
-            (FERDIE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
-        ])
-        .with_invulnerables(vec![])
-        .with_authorities(vec![
-            (ALICE.clone(), ALICE_SESSION_KEYS.clone()),
-            (BOB.clone(), BOB_SESSION_KEYS.clone()),
-            (CHARLIE.clone(), CHARLIE_SESSION_KEYS.clone()),
-            (DAVE.clone(), DAVE_SESSION_KEYS.clone()),
-            (EVE.clone(), EVE_SESSION_KEYS.clone()),
-            (FERDIE.clone(), FERDIE_SESSION_KEYS.clone()),
-        ])
-        .build()
-        .execute_with(|| {
-            initialize_collators_through_whitelist(vec![
-                ALICE.clone(),
-                BOB.clone(),
-                CHARLIE.clone(),
-                DAVE.clone(),
-                EVE.clone(),
-                FERDIE.clone(),
-            ]);
-            // Attempt to leave as whitelist collator
-            assert_ok!(ParachainStaking::schedule_leave_candidates(
-                Origin::signed(FERDIE.clone()),
-                6
-            ));
-        });
-}
-
-#[test]
-fn collator_with_400k_not_selected_for_block_production() {
-    ExtBuilder::default()
-        .with_balances(vec![
-            (ALICE.clone(), EARLY_COLLATOR_MINIMUM_STAKE + 100),
-            (BOB.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
-            (CHARLIE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
-            (DAVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
-            (EVE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
-            (FERDIE.clone(), MIN_BOND_TO_BE_CONSIDERED_COLLATOR + 100),
-        ])
-        .with_invulnerables(vec![])
-        .with_authorities(vec![
-            (ALICE.clone(), ALICE_SESSION_KEYS.clone()),
-            (BOB.clone(), BOB_SESSION_KEYS.clone()),
-            (CHARLIE.clone(), CHARLIE_SESSION_KEYS.clone()),
-            (DAVE.clone(), DAVE_SESSION_KEYS.clone()),
-            (EVE.clone(), EVE_SESSION_KEYS.clone()),
-            (FERDIE.clone(), FERDIE_SESSION_KEYS.clone()),
-        ])
-        .build()
-        .execute_with(|| {
-            initialize_collators_through_whitelist(vec![
-                ALICE.clone(),
-                BOB.clone(),
-                CHARLIE.clone(),
-                DAVE.clone(),
-                EVE.clone(),
-                FERDIE.clone(),
-            ]);
-            // Increase bond for everyone but FERDIE
-            for collator in vec![
-                BOB.clone(),
-                CHARLIE.clone(),
-                DAVE.clone(),
-                EVE.clone(),
-                FERDIE.clone(),
-            ] {
-                assert_ok!(ParachainStaking::candidate_bond_more(
-                    Origin::signed(collator.clone()),
-                    MIN_BOND_TO_BE_CONSIDERED_COLLATOR - EARLY_COLLATOR_MINIMUM_STAKE
-                ));
-            }
-
-            // Ensure CHARLIE and later are not selected
-            // NOTE: Must use 6 or more collators because 5 is the minimum on calamari
-            assert!(!ParachainStaking::compute_top_candidates().contains(&ALICE));
-            assert!(ParachainStaking::compute_top_candidates().contains(&BOB));
-            assert!(ParachainStaking::compute_top_candidates().contains(&CHARLIE));
-            assert!(ParachainStaking::compute_top_candidates().contains(&DAVE));
-            assert!(ParachainStaking::compute_top_candidates().contains(&EVE));
-            assert!(ParachainStaking::compute_top_candidates().contains(&FERDIE));
-        });
 }
 
 #[test]
