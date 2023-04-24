@@ -55,6 +55,8 @@ use sp_runtime::{DispatchError, ModuleError};
 
 // currently, we ignore all parachain staking tests in integration tests
 mod parachain_staking_tests {
+    use super::*;
+
     #[test]
     #[ignore]
     fn ensure_block_per_round_and_leave_delays_equal_7days() {
