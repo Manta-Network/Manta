@@ -48,24 +48,6 @@ where
     }
 }
 
-/// Merkle Tree Parameters Decode Error Type
-pub type MTParametersError = codec::DecodeError<
-    <&'static [u8] as codec::Read>::Error,
-    <config::UtxoAccumulatorModel as codec::Decode>::Error,
->;
-
-/// Utxo Accumulator Item Hash Decode Error Type
-pub type UtxoItemHashError = codec::DecodeError<
-    <&'static [u8] as codec::Read>::Error,
-    <config::utxo::UtxoAccumulatorItemHash as codec::Decode>::Error,
->;
-
-/// Verification Context Decode Error Type
-pub type VerifyingContextError = codec::DecodeError<
-    <&'static [u8] as codec::Read>::Error,
-    <config::VerifyingContext as codec::Decode>::Error,
->;
-
 /// Receiver Ledger Error
 pub enum ReceiverLedgerError<T>
 where

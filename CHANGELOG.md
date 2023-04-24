@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## v4.0.6
+### Added
+- [\#1067](https://github.com/Manta-Network/Manta/pull/1067) Refactor manta genesis files, add `manta-testnet` [MA]
+
+### Changed
+- [\#1071](https://github.com/Manta-Network/Manta/pull/1071) Charge 0-asset XCM instructions as if they were 1-asset [MACADO]
+
+### Fixed
+- [\#1068](https://github.com/Manta-Network/Manta/pull/1068) Do not skip integration tests [CA]
+- [\#1069](https://github.com/Manta-Network/Manta/pull/1069) Enable manta runtime xcm tests [MA]
+
+## v4.0.5
+### Added
+- [\#1012](https://github.com/Manta-Network/Manta/pull/1012) Add zkSBTs [MACADO]
+- [\#1046](https://github.com/Manta-Network/Manta/pull/1046) Initial pull method [MACADO]
+- [\#1057](https://github.com/Manta-Network/Manta/pull/1057) Add Evm Allowlist Feature to SBT Pallet [CADO]
+- [\#1050](https://github.com/Manta-Network/Manta/pull/1050) XCMP, xTokens, Assets, AssetManager and Treasury for Manta [MACA]
+
+### Changed
+- [\#1053](https://github.com/Manta-Network/Manta/pull/1053) Minor: don't fail CI on congestion test failure
+- [\#1058](https://github.com/Manta-Network/Manta/pull/1058) Archive nodes as bootnodes to Manta genesis [MA]
+
+### Fixed
+- [\#1064](https://github.com/Manta-Network/Manta/pull/1064) add chain id [CA]
+
 ## v4.0.4
 ### Fixed
 - [\#1043](https://github.com/Manta-Network/Manta/pull/1043) Add self-bond filter condition when computing new set of collators [CA]

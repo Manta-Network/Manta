@@ -17,7 +17,7 @@ env:
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
-  POLKADOT_BINARY: https://github.com/paritytech/polkadot/releases/download/v0.9.39-1/polkadot
+  POLKADOT_BINARY: https://github.com/paritytech/polkadot/releases/download/v0.9.41/polkadot
 jobs:
   print-rust-versions:
     if: contains(github.event.pull_request.labels.*.name, 'A-dolphin' || github.ref == 'refs/heads/manta')

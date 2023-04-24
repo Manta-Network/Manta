@@ -22,12 +22,18 @@ use manta_runtime::{
     opaque::SessionKeys, staking::NORMAL_COLLATOR_MINIMUM_STAKE, GenesisConfig,
     ParachainStakingConfig, PolkadotXcmConfig,
 };
-use session_key_primitives::util::unchecked_account_id;
+use sc_network::config::MultiaddrWithPeerId;
+
+mod local_testnets_geneses;
+mod public_testnet_genesis;
+
 /// Manta Protocol Identifier
 pub const MANTA_PROTOCOL_ID: &str = "manta";
 
 /// Polkadot Relaychain Local Network Identifier
 pub const POLKADOT_RELAYCHAIN: &str = "polkadot";
+
+pub const POLKADOT_STAGING_NET: &str = "polkadot_staging_testnet";
 
 /// Polkadot Relaychain Local Network Identifier
 pub const POLKADOT_RELAYCHAIN_LOCAL_NET: &str = "polkadot-local";
@@ -41,6 +47,18 @@ pub const SAFE_XCM_VERSION: u32 = 2;
 /// Manta Chain Specification
 pub type MantaChainSpec = sc_service::GenericChainSpec<manta_runtime::GenesisConfig, Extensions>;
 
+#[derive(Clone)]
+struct Collator {
+    acc: AccountId,
+    nodeid: Option<MultiaddrWithPeerId>,
+    keys: SessionKeys,
+}
+impl Collator {
+    fn new(acc: AccountId, nodeid: Option<MultiaddrWithPeerId>, keys: SessionKeys) -> Collator {
+        Self { acc, nodeid, keys }
+    }
+}
+
 /// Returns the [`Properties`] for the Manta parachain.
 pub fn manta_properties() -> Properties {
     let mut p = Properties::new();
@@ -50,106 +68,41 @@ pub fn manta_properties() -> Properties {
     p
 }
 
+/// Returns the Manta mainnet chainspec
+pub fn manta_mainnet_config() -> Result<MantaChainSpec, String> {
+    MantaChainSpec::from_json_bytes(&include_bytes!("../../../../genesis/manta-genesis.json")[..])
+}
+/// Returns the Manta testnet chainspec.
+pub fn manta_testnet_config() -> MantaChainSpec {
+    // NOTE: The public testnet is expected to be reset frequently
+    // and the `manta build-spec`-generated genesis is held in the ansible deployment
+    // There is no need to maintain a checked-in genesis.json in this repo as well
+    public_testnet_genesis::genesis_spec()
+}
+/// Returns the Manta development chainspec.
+pub fn manta_local_config() -> MantaChainSpec {
+    local_testnets_geneses::genesis_spec_local()
+}
 /// Returns the Manta development chainspec.
 pub fn manta_development_config() -> MantaChainSpec {
-    MantaChainSpec::from_genesis(
-        "Manta Parachain Development",
-        "manta_dev",
-        ChainType::Local,
-        move || {
-            manta_dev_genesis(
-                vec![(
-                    unchecked_account_id::<sr25519::Public>("Alice"),
-                    SessionKeys::from_seed_unchecked("Alice"),
-                )],
-                unchecked_account_id::<sr25519::Public>("Alice"),
-                // Delegations
-                vec![],
-                vec![
-                    unchecked_account_id::<sr25519::Public>("Alice"),
-                    unchecked_account_id::<sr25519::Public>("Bob"),
-                    unchecked_account_id::<sr25519::Public>("Alice//stash"),
-                    unchecked_account_id::<sr25519::Public>("Bob//stash"),
-                ],
-            )
-        },
-        vec![],
-        None,
-        Some(MANTA_PROTOCOL_ID),
-        None,
-        Some(manta_properties()),
-        Extensions {
-            relay_chain: POLKADOT_RELAYCHAIN_DEV_NET.into(),
-            para_id: MANTA_PARACHAIN_ID,
-        },
-    )
+    local_testnets_geneses::genesis_spec_dev()
 }
 
-/// Returns the Manta local chainspec.
-pub fn manta_local_config() -> MantaChainSpec {
-    MantaChainSpec::from_genesis(
-        "Manta Parachain Local",
-        "manta_local",
-        ChainType::Local,
-        move || {
-            manta_dev_genesis(
-                vec![
-                    (
-                        unchecked_account_id::<sr25519::Public>("Alice"),
-                        SessionKeys::from_seed_unchecked("Alice"),
-                    ),
-                    (
-                        unchecked_account_id::<sr25519::Public>("Bob"),
-                        SessionKeys::from_seed_unchecked("Bob"),
-                    ),
-                    (
-                        unchecked_account_id::<sr25519::Public>("Charlie"),
-                        SessionKeys::from_seed_unchecked("Charlie"),
-                    ),
-                    (
-                        unchecked_account_id::<sr25519::Public>("Dave"),
-                        SessionKeys::from_seed_unchecked("Dave"),
-                    ),
-                    (
-                        unchecked_account_id::<sr25519::Public>("Eve"),
-                        SessionKeys::from_seed_unchecked("Eve"),
-                    ),
-                ],
-                unchecked_account_id::<sr25519::Public>("Alice"),
-                // Delegations
-                vec![],
-                vec![
-                    unchecked_account_id::<sr25519::Public>("Alice"),
-                    unchecked_account_id::<sr25519::Public>("Bob"),
-                    unchecked_account_id::<sr25519::Public>("Charlie"),
-                    unchecked_account_id::<sr25519::Public>("Dave"),
-                    unchecked_account_id::<sr25519::Public>("Eve"),
-                    unchecked_account_id::<sr25519::Public>("Alice//stash"),
-                    unchecked_account_id::<sr25519::Public>("Bob//stash"),
-                    unchecked_account_id::<sr25519::Public>("Charlie//stash"),
-                    unchecked_account_id::<sr25519::Public>("Dave//stash"),
-                    unchecked_account_id::<sr25519::Public>("Eve//stash"),
-                ],
-            )
-        },
-        vec![],
-        None,
-        Some(MANTA_PROTOCOL_ID),
-        None,
-        Some(manta_properties()),
-        Extensions {
-            relay_chain: POLKADOT_RELAYCHAIN_LOCAL_NET.into(),
-            para_id: MANTA_PARACHAIN_ID,
-        },
-    )
-}
+// common helper to create the above configs
+fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
+    let root_key = genesis_collators.first().unwrap().acc.clone();
 
-fn manta_dev_genesis(
-    invulnerables: Vec<(AccountId, SessionKeys)>,
-    root_key: AccountId,
-    delegations: Vec<(AccountId, AccountId, Balance)>,
-    endowed_accounts: Vec<AccountId>,
-) -> GenesisConfig {
+    const INITIAL_COLLATOR_BALANCE: Balance = 1_000_000_000 * MANTA;
+    let endowments = genesis_collators
+        .iter()
+        .map(|collator| (collator.acc.clone(), INITIAL_COLLATOR_BALANCE))
+        .collect::<Vec<_>>();
+    #[allow(clippy::assertions_on_constants)]
+    const _: () = assert!(
+        NORMAL_COLLATOR_MINIMUM_STAKE < INITIAL_COLLATOR_BALANCE,
+        "won't be able to register collator, balance in account set too low"
+    );
+
     GenesisConfig {
         system: manta_runtime::SystemConfig {
             code: manta_runtime::WASM_BINARY
@@ -157,48 +110,37 @@ fn manta_dev_genesis(
                 .to_vec(),
         },
         balances: manta_runtime::BalancesConfig {
-            balances: endowed_accounts[..endowed_accounts.len() / 2]
-                .iter()
-                .map(|k| {
-                    (
-                        k.clone(),
-                        10 * MANTA_ENDOWMENT / ((endowed_accounts.len() / 2) as Balance),
-                    )
-                })
-                .collect(),
+            balances: endowments,
         },
-        // no need to pass anything to aura, in fact it will panic if we do. Session will take care
-        // of this.
+        // empty aura authorities, collators registered with parachain staking instead
         aura: Default::default(),
         sudo: manta_runtime::SudoConfig {
             key: Some(root_key),
         },
         parachain_staking: ParachainStakingConfig {
-            candidates: invulnerables
+            candidates: genesis_collators
                 .iter()
-                .cloned()
-                .map(|(account, _)| (account, NORMAL_COLLATOR_MINIMUM_STAKE))
+                .map(|collator| (collator.acc.clone(), NORMAL_COLLATOR_MINIMUM_STAKE))
                 .collect(),
-            delegations,
+            delegations: vec![],
             inflation_config: manta_runtime::staking::inflation_config::<manta_runtime::Runtime>(),
         },
         parachain_info: manta_runtime::ParachainInfoConfig {
             parachain_id: MANTA_PARACHAIN_ID.into(),
         },
         collator_selection: manta_runtime::CollatorSelectionConfig {
-            invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-            candidacy_bond: 10_000 * MANTA, // How many tokens will be reserved as collator
+            invulnerables: vec![],
+            candidacy_bond: 0,
             ..Default::default()
         },
         session: manta_runtime::SessionConfig {
-            keys: invulnerables
+            keys: genesis_collators
                 .iter()
-                .cloned()
-                .map(|(acc, session_keys)| {
+                .map(|collator| {
                     (
-                        acc.clone(),  // account id
-                        acc,          // validator id
-                        session_keys, // collator session keys
+                        collator.acc.clone(),  // account id
+                        collator.acc.clone(),  // validator id
+                        collator.keys.clone(), // collator session keys
                     )
                 })
                 .collect(),
@@ -207,19 +149,6 @@ fn manta_dev_genesis(
         polkadot_xcm: PolkadotXcmConfig {
             safe_xcm_version: Some(SAFE_XCM_VERSION),
         },
+        asset_manager: Default::default(),
     }
-}
-
-/// Returns the Manta testnet chainspec.
-pub fn manta_testnet_config() -> Result<MantaChainSpec, String> {
-    let mut spec = MantaChainSpec::from_json_bytes(
-        &include_bytes!("../../../../genesis/manta-testnet-genesis.json")[..],
-    )?;
-    spec.extensions_mut().para_id = MANTA_PARACHAIN_ID;
-    Ok(spec)
-}
-
-/// Returns the Manta mainnet chainspec
-pub fn manta_config() -> Result<MantaChainSpec, String> {
-    MantaChainSpec::from_json_bytes(&include_bytes!("../../../../genesis/manta-genesis.json")[..])
 }
