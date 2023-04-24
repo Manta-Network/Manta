@@ -34,7 +34,7 @@ use manta_primitives::{
         AssetConfig, AssetIdLocationConvert, AssetIdType, AssetLocation, AssetRegistry,
         AssetRegistryMetadata, AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
-    constants::{ASSET_MANAGER_PALLET_ID, MANTA_DECIMAL, WEIGHT_PER_SECOND},
+    constants::{ASSET_MANAGER_PALLET_ID, MANTA_DECIMAL},
     types::{BlockNumber, Header, MantaAssetId},
     xcm::{FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter, MultiNativeAsset},
 };

@@ -24,10 +24,10 @@ use codec::{Decode, Encode};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
     match_types, parameter_types,
-    traits::{AsEnsureOriginWithArg, Currency, Everything, Nothing},
+    traits::{Currency, Everything, Nothing},
     weights::Weight,
 };
-use frame_system::{EnsureRoot, EnsureSigned};
+use frame_system::EnsureRoot;
 use manta_primitives::{
     assets::AssetIdLocationConvert,
     types::{AccountId, MantaAssetId},
