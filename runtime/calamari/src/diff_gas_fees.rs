@@ -20,7 +20,7 @@ use crate::{Runtime, TransactionPayment};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::DispatchInfo,
-    traits::{schedule::MaybeHashed, OriginTrait},
+    traits::{schedule::MaybeHashed, OriginTrait, WrapperKeepOpaque},
     weights::GetDispatchInfo,
 };
 use manta_primitives::assets::{AssetRegistryMetadata, TestingDefault};
@@ -31,9 +31,11 @@ use sp_runtime::{
     traits::{Hash, Saturating},
     AccountId32, Perbill, Percent,
 };
+use xcm::prelude::*;
 
 const GAS_FEE_FLUCTUATION: Percent = Percent::from_percent(10);
 const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
+const BOB: AccountId32 = AccountId32::new([2u8; 32]);
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct GasFeeDetail {
@@ -51,13 +53,32 @@ fn get_call_details(call: &crate::Call) -> (DispatchInfo, u32) {
 
 #[test]
 fn diff_gas_fees() {
-    const VERSION: &str = env!("CARGO_PKG_VERSION");
-    let csv_path = format!("{VERSION}-tx-fees.csv");
+    const CURRENT_PATH: &str = env!("CARGO_MANIFEST_DIR");
+    let mut latest_version = String::new();
+    for file in std::fs::read_dir(format!("{CURRENT_PATH}/tx-fees-data")).unwrap() {
+        let _version = file
+            .unwrap()
+            .path()
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .split("-tx-fees.csv")
+            .collect::<Vec<&str>>()[0]
+            .to_string();
+        let _version = version_compare::Version::from(&_version).unwrap();
+        let version = version_compare::Version::from(&latest_version).unwrap();
+        if version < _version {
+            latest_version = _version.to_string();
+        }
+    }
+    let version = version_compare::Version::from(&latest_version).unwrap();
+    let csv_path = format!("{CURRENT_PATH}/tx-fees-data/{version}-tx-fees.csv");
     let mut rdr = csv::Reader::from_path(csv_path).unwrap();
 
     let all_extrinsics_gas_fees = calculate_all_current_extrinsic_gas_fee();
 
-    let mut last_release_gas_fees = rdr.deserialize().into_iter().map(|e| {
+    let mut last_release_gas_fees = rdr.deserialize().map(|e| {
         let record: GasFeeDetail = e.unwrap();
         record
     });
@@ -66,14 +87,14 @@ fn diff_gas_fees() {
         module,
         extrinsic,
         gas_fee,
-    } in all_extrinsics_gas_fees
+    } in all_extrinsics_gas_fees.iter()
     {
-        match last_release_gas_fees.find(|e| e.extrinsic == extrinsic) {
+        match last_release_gas_fees.find(|e| e.extrinsic.eq(extrinsic)) {
             Some(found) => {
                 let fluctuation = Percent::from_float((gas_fee - found.gas_fee).abs() / found.gas_fee);
-                assert!(fluctuation <= GAS_FEE_FLUCTUATION, "The gas fee fluctuation for the extrinsic {extrinsic} is {:?}, bigger than {:?}.", fluctuation, GAS_FEE_FLUCTUATION);
+                assert!(fluctuation <= GAS_FEE_FLUCTUATION, "The tx fee fluctuation for the extrinsic {extrinsic} is {:?}, bigger than {:?}.", fluctuation, GAS_FEE_FLUCTUATION);
             }
-            None => panic!("The extrinsic {module}.{extrinsic} is missing from current gas fees list, please add to latest csv file."),
+            None => panic!("The extrinsic {module}.{extrinsic} is missing from current tx fees list, please add it to latest csv file."),
         }
     }
 }
@@ -82,7 +103,8 @@ fn diff_gas_fees() {
 #[ignore]
 fn write_all_current_extrinsic_gas_fee_to_csv() {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
-    let csv_path = format!("{VERSION}-tx-fees.csv");
+    const CURRENT_PATH: &str = env!("CARGO_MANIFEST_DIR");
+    let csv_path = format!("{CURRENT_PATH}/tx-fees-data/{VERSION}-tx-fees.csv");
 
     let mut wtr = csv::Writer::from_path(csv_path).unwrap();
     let all_extrinsics_gas_fees = calculate_all_current_extrinsic_gas_fee();
@@ -109,12 +131,66 @@ fn calculate_all_current_extrinsic_gas_fee() -> Vec<GasFeeDetail> {
     let mut calamari_runtime_calls = vec![];
     // frame_system
     {
+        // fill_block
+        let call = crate::Call::System(frame_system::Call::fill_block {
+            ratio: Perbill::from_percent(20),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("frame_system", "fill_block", dispatch_info, call_len));
+
         // remark
         let call = crate::Call::System(frame_system::Call::remark {
             remark: vec![1u8; 32],
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("frame_system", "remark", dispatch_info, call_len));
+
+        // set_heap_pages
+        let call = crate::Call::System(frame_system::Call::set_heap_pages { pages: 64 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("frame_system", "set_heap_pages", dispatch_info, call_len));
+
+        // set_code
+        let call = crate::Call::System(frame_system::Call::set_code {
+            code: vec![1u8; 32],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("frame_system", "set_code", dispatch_info, call_len));
+
+        // set_code_without_checks
+        let call = crate::Call::System(frame_system::Call::set_code_without_checks {
+            code: vec![1u8; 32],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "frame_system",
+            "set_code_without_checks",
+            dispatch_info,
+            call_len,
+        ));
+
+        // set_storage
+        let call = crate::Call::System(frame_system::Call::set_storage {
+            items: vec![(vec![1u8; 32], vec![2u8; 32])],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("frame_system", "set_storage", dispatch_info, call_len));
+
+        // kill_storage
+        let call = crate::Call::System(frame_system::Call::kill_storage {
+            keys: vec![vec![1u8; 32], vec![2u8; 32]],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("frame_system", "kill_storage", dispatch_info, call_len));
+
+        // kill_prefix
+        let call = crate::Call::System(frame_system::Call::kill_prefix {
+            prefix: vec![1u8; 32],
+            subkeys: 8,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("frame_system", "kill_prefix", dispatch_info, call_len));
+
         // remark_with_event
         let call = crate::Call::System(frame_system::Call::remark_with_event {
             remark: vec![1u8; 32],
@@ -124,28 +200,751 @@ fn calculate_all_current_extrinsic_gas_fee() -> Vec<GasFeeDetail> {
     }
 
     // pallet_treasury
-    {}
+    {
+        // propose_spend
+        let call = crate::Call::Treasury(pallet_treasury::Call::propose_spend {
+            value: 8,
+            beneficiary: ALICE.into(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_treasury", "propose_spend", dispatch_info, call_len));
+
+        // reject_proposal
+        let call = crate::Call::Treasury(pallet_treasury::Call::reject_proposal { proposal_id: 8 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_treasury",
+            "reject_proposal",
+            dispatch_info,
+            call_len,
+        ));
+
+        // approve_proposal
+        let call =
+            crate::Call::Treasury(pallet_treasury::Call::approve_proposal { proposal_id: 8 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_treasury",
+            "approve_proposal",
+            dispatch_info,
+            call_len,
+        ));
+
+        // spend
+        let call = crate::Call::Treasury(pallet_treasury::Call::spend {
+            amount: 8,
+            beneficiary: ALICE.into(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_treasury", "spend", dispatch_info, call_len));
+
+        // remove_approval
+        let call = crate::Call::Treasury(pallet_treasury::Call::remove_approval { proposal_id: 8 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_treasury",
+            "remove_approval",
+            dispatch_info,
+            call_len,
+        ));
+    }
 
     // pallet_timestamp
-    {}
+    {
+        // set
+        let call = crate::Call::Timestamp(pallet_timestamp::Call::set {
+            now: Default::default(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_timestamp", "set", dispatch_info, call_len));
+    }
 
     // pallet_preimage
-    {}
+    {
+        // note_preimage
+        let call = crate::Call::Preimage(pallet_preimage::Call::note_preimage {
+            bytes: vec![1u8; 32],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_preimage", "note_preimage", dispatch_info, call_len));
+
+        // unnote_preimage
+        let call = crate::Call::Preimage(pallet_preimage::Call::unnote_preimage {
+            hash: Default::default(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_preimage",
+            "unnote_preimage",
+            dispatch_info,
+            call_len,
+        ));
+
+        // request_preimage
+        let call = crate::Call::Preimage(pallet_preimage::Call::request_preimage {
+            hash: Default::default(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_preimage",
+            "request_preimage",
+            dispatch_info,
+            call_len,
+        ));
+
+        // unrequest_preimage
+        let call = crate::Call::Preimage(pallet_preimage::Call::unrequest_preimage {
+            hash: Default::default(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_preimage",
+            "unrequest_preimage",
+            dispatch_info,
+            call_len,
+        ));
+    }
 
     // pallet_multisig
-    {}
+    {
+        // as_multi_threshold_1
+        let dummy_call = crate::Call::Preimage(pallet_preimage::Call::unrequest_preimage {
+            hash: Default::default(),
+        });
+        let call = crate::Call::Multisig(pallet_multisig::Call::as_multi_threshold_1 {
+            other_signatories: vec![ALICE],
+            call: Box::new(dummy_call.clone()),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_multisig",
+            "as_multi_threshold_1",
+            dispatch_info,
+            call_len,
+        ));
+
+        // as_multi
+        let call = crate::Call::Multisig(pallet_multisig::Call::as_multi {
+            threshold: 2,
+            other_signatories: vec![ALICE],
+            maybe_timepoint: None,
+            call: WrapperKeepOpaque::<<Runtime as frame_system::Config>::Call>::from_encoded(
+                dummy_call.encode(),
+            ),
+            store_call: true,
+            max_weight: 64,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_multisig", "as_multi", dispatch_info, call_len));
+
+        // approve_as_multi
+        let call = crate::Call::Multisig(pallet_multisig::Call::approve_as_multi {
+            threshold: 2,
+            other_signatories: vec![ALICE],
+            maybe_timepoint: None,
+            call_hash: [1u8; 32],
+            max_weight: 64,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_multisig",
+            "approve_as_multi",
+            dispatch_info,
+            call_len,
+        ));
+
+        // cancel_as_multi
+        let call = crate::Call::Multisig(pallet_multisig::Call::cancel_as_multi {
+            threshold: 2,
+            other_signatories: vec![ALICE],
+            timepoint: Default::default(),
+            call_hash: [1u8; 32],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_multisig",
+            "cancel_as_multi",
+            dispatch_info,
+            call_len,
+        ));
+    }
 
     // pallet_membership
-    {}
+    {
+        // add_member
+        let call =
+            crate::Call::CouncilMembership(pallet_membership::Call::add_member { who: ALICE });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_membership", "add_member", dispatch_info, call_len));
+
+        // remove_member
+        let call =
+            crate::Call::CouncilMembership(pallet_membership::Call::remove_member { who: ALICE });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_membership",
+            "remove_member",
+            dispatch_info,
+            call_len,
+        ));
+
+        // swap_member
+        let call = crate::Call::CouncilMembership(pallet_membership::Call::swap_member {
+            remove: ALICE,
+            add: BOB,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_membership", "swap_member", dispatch_info, call_len));
+
+        // reset_members
+        let call = crate::Call::CouncilMembership(pallet_membership::Call::reset_members {
+            members: vec![ALICE, BOB],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_membership",
+            "reset_members",
+            dispatch_info,
+            call_len,
+        ));
+
+        // change_key
+        let call =
+            crate::Call::CouncilMembership(pallet_membership::Call::change_key { new: ALICE });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_membership", "change_key", dispatch_info, call_len));
+
+        // set_prime
+        let call =
+            crate::Call::CouncilMembership(pallet_membership::Call::set_prime { who: ALICE });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_membership", "set_prime", dispatch_info, call_len));
+
+        // set_prime
+        let call = crate::Call::CouncilMembership(pallet_membership::Call::clear_prime {});
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_membership", "clear_prime", dispatch_info, call_len));
+    }
 
     // pallet_democracy
-    {}
+    {
+        // propose
+        let call = crate::Call::Democracy(pallet_democracy::Call::propose {
+            proposal_hash: Default::default(),
+            value: 1,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_democracy", "propose", dispatch_info, call_len));
+
+        // second
+        let call = crate::Call::Democracy(pallet_democracy::Call::second {
+            proposal: 3,
+            seconds_upper_bound: 1,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_democracy", "second", dispatch_info, call_len));
+
+        // vote
+        let call = crate::Call::Democracy(pallet_democracy::Call::vote {
+            ref_index: 3,
+            vote: pallet_democracy::AccountVote::Standard {
+                vote: Default::default(),
+                balance: 2,
+            },
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_democracy", "vote", dispatch_info, call_len));
+
+        // emergency_cancel
+        let call =
+            crate::Call::Democracy(pallet_democracy::Call::emergency_cancel { ref_index: 3 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_democracy",
+            "emergency_cancel",
+            dispatch_info,
+            call_len,
+        ));
+
+        // external_propose
+        let call = crate::Call::Democracy(pallet_democracy::Call::external_propose {
+            proposal_hash: Default::default(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_democracy",
+            "external_propose",
+            dispatch_info,
+            call_len,
+        ));
+
+        // external_propose_majority
+        let call = crate::Call::Democracy(pallet_democracy::Call::external_propose_majority {
+            proposal_hash: Default::default(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_democracy",
+            "external_propose_majority",
+            dispatch_info,
+            call_len,
+        ));
+
+        // external_propose_default
+        let call = crate::Call::Democracy(pallet_democracy::Call::external_propose_default {
+            proposal_hash: Default::default(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_democracy",
+            "external_propose_default",
+            dispatch_info,
+            call_len,
+        ));
+
+        // fast_track
+        let call = crate::Call::Democracy(pallet_democracy::Call::fast_track {
+            proposal_hash: Default::default(),
+            voting_period: 300,
+            delay: 30,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_democracy", "fast_track", dispatch_info, call_len));
+
+        // veto_external
+        let call = crate::Call::Democracy(pallet_democracy::Call::veto_external {
+            proposal_hash: Default::default(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_democracy", "veto_external", dispatch_info, call_len));
+
+        // cancel_referendum
+        let call =
+            crate::Call::Democracy(pallet_democracy::Call::cancel_referendum { ref_index: 3 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_democracy",
+            "cancel_referendum",
+            dispatch_info,
+            call_len,
+        ));
+
+        // cancel_queued
+        let call = crate::Call::Democracy(pallet_democracy::Call::cancel_queued { which: 3 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_democracy", "cancel_queued", dispatch_info, call_len));
+
+        // delegate
+        let call = crate::Call::Democracy(pallet_democracy::Call::delegate {
+            to: ALICE,
+            conviction: pallet_democracy::Conviction::Locked3x,
+            balance: 3,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_democracy", "delegate", dispatch_info, call_len));
+
+        // undelegate
+        let call = crate::Call::Democracy(pallet_democracy::Call::undelegate {});
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_democracy", "undelegate", dispatch_info, call_len));
+
+        // clear_public_proposals
+        let call = crate::Call::Democracy(pallet_democracy::Call::clear_public_proposals {});
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_democracy",
+            "clear_public_proposals",
+            dispatch_info,
+            call_len,
+        ));
+
+        // note_preimage
+        let call = crate::Call::Democracy(pallet_democracy::Call::note_preimage {
+            encoded_proposal: vec![1u8; 32],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_democracy", "note_preimage", dispatch_info, call_len));
+
+        // note_preimage_operational
+        let call = crate::Call::Democracy(pallet_democracy::Call::note_preimage_operational {
+            encoded_proposal: vec![1u8; 32],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_democracy",
+            "note_preimage_operational",
+            dispatch_info,
+            call_len,
+        ));
+
+        // note_imminent_preimage
+        let call = crate::Call::Democracy(pallet_democracy::Call::note_imminent_preimage {
+            encoded_proposal: vec![1u8; 32],
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_democracy",
+            "note_imminent_preimage",
+            dispatch_info,
+            call_len,
+        ));
+
+        // note_imminent_preimage_operational
+        let call =
+            crate::Call::Democracy(pallet_democracy::Call::note_imminent_preimage_operational {
+                encoded_proposal: vec![1u8; 32],
+            });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_democracy",
+            "note_imminent_preimage_operational",
+            dispatch_info,
+            call_len,
+        ));
+
+        // reap_preimage
+        let call = crate::Call::Democracy(pallet_democracy::Call::reap_preimage {
+            proposal_hash: Default::default(),
+            proposal_len_upper_bound: 2,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_democracy", "reap_preimage", dispatch_info, call_len));
+
+        // unlock
+        let call = crate::Call::Democracy(pallet_democracy::Call::unlock { target: ALICE });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_democracy", "unlock", dispatch_info, call_len));
+
+        // remove_vote
+        let call = crate::Call::Democracy(pallet_democracy::Call::remove_vote { index: 2 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_democracy", "remove_vote", dispatch_info, call_len));
+
+        // remove_other_vote
+        let call = crate::Call::Democracy(pallet_democracy::Call::remove_other_vote {
+            target: ALICE,
+            index: 2,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_democracy",
+            "remove_other_vote",
+            dispatch_info,
+            call_len,
+        ));
+
+        // enact_proposal
+        let call = crate::Call::Democracy(pallet_democracy::Call::enact_proposal {
+            proposal_hash: Default::default(),
+            index: 2,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_democracy",
+            "enact_proposal",
+            dispatch_info,
+            call_len,
+        ));
+
+        // blacklist
+        let call = crate::Call::Democracy(pallet_democracy::Call::blacklist {
+            proposal_hash: Default::default(),
+            maybe_ref_index: Some(2),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_democracy", "blacklist", dispatch_info, call_len));
+
+        // cancel_proposal
+        let call =
+            crate::Call::Democracy(pallet_democracy::Call::cancel_proposal { prop_index: 2 });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_democracy",
+            "cancel_proposal",
+            dispatch_info,
+            call_len,
+        ));
+    }
 
     // pallet_collective
-    {}
+    {
+        // set_members
+        let call = crate::Call::TechnicalCommittee(pallet_collective::Call::set_members {
+            new_members: vec![ALICE, BOB],
+            prime: Some(ALICE),
+            old_count: 6,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_collective", "set_members", dispatch_info, call_len));
+
+        // execute
+        let dummy_call =
+            crate::Call::Democracy(pallet_democracy::Call::cancel_proposal { prop_index: 2 });
+        let call = crate::Call::TechnicalCommittee(pallet_collective::Call::execute {
+            proposal: Box::new(dummy_call.clone()),
+            length_bound: 6,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_collective", "execute", dispatch_info, call_len));
+
+        // propose
+        let call = crate::Call::TechnicalCommittee(pallet_collective::Call::propose {
+            threshold: 3,
+            proposal: Box::new(dummy_call),
+            length_bound: 6,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_collective", "propose", dispatch_info, call_len));
+
+        // vote
+        let call = crate::Call::TechnicalCommittee(pallet_collective::Call::vote {
+            proposal: Default::default(),
+            index: 2,
+            approve: true,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_collective", "vote", dispatch_info, call_len));
+
+        // close
+        let call = crate::Call::TechnicalCommittee(pallet_collective::Call::close {
+            proposal_hash: Default::default(),
+            index: 2,
+            proposal_weight_bound: 2,
+            length_bound: 6,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("pallet_collective", "close", dispatch_info, call_len));
+
+        // disapprove_proposal
+        let call = crate::Call::TechnicalCommittee(pallet_collective::Call::disapprove_proposal {
+            proposal_hash: Default::default(),
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_collective",
+            "disapprove_proposal",
+            dispatch_info,
+            call_len,
+        ));
+    }
 
     // cumulus_pallet_xcmp_queue
-    {}
+    {
+        // service_overweight
+        let call = crate::Call::XcmpQueue(cumulus_pallet_xcmp_queue::Call::service_overweight {
+            index: 1,
+            weight_limit: 64,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "cumulus_pallet_xcmp_queue",
+            "service_overweight",
+            dispatch_info,
+            call_len,
+        ));
+
+        // suspend_xcm_execution
+        let call =
+            crate::Call::XcmpQueue(cumulus_pallet_xcmp_queue::Call::suspend_xcm_execution {});
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "cumulus_pallet_xcmp_queue",
+            "suspend_xcm_execution",
+            dispatch_info,
+            call_len,
+        ));
+
+        // resume_xcm_execution
+        let call = crate::Call::XcmpQueue(cumulus_pallet_xcmp_queue::Call::resume_xcm_execution {});
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "cumulus_pallet_xcmp_queue",
+            "resume_xcm_execution",
+            dispatch_info,
+            call_len,
+        ));
+
+        // update_suspend_threshold
+        let call =
+            crate::Call::XcmpQueue(cumulus_pallet_xcmp_queue::Call::update_suspend_threshold {
+                new: 2,
+            });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "cumulus_pallet_xcmp_queue",
+            "update_suspend_threshold",
+            dispatch_info,
+            call_len,
+        ));
+
+        // update_drop_threshold
+        let call =
+            crate::Call::XcmpQueue(cumulus_pallet_xcmp_queue::Call::update_suspend_threshold {
+                new: 2,
+            });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "cumulus_pallet_xcmp_queue",
+            "update_drop_threshold",
+            dispatch_info,
+            call_len,
+        ));
+
+        // update_resume_threshold
+        let call =
+            crate::Call::XcmpQueue(cumulus_pallet_xcmp_queue::Call::update_resume_threshold {
+                new: 2,
+            });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "cumulus_pallet_xcmp_queue",
+            "update_resume_threshold",
+            dispatch_info,
+            call_len,
+        ));
+
+        // update_threshold_weight
+        let call =
+            crate::Call::XcmpQueue(cumulus_pallet_xcmp_queue::Call::update_threshold_weight {
+                new: 64,
+            });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "cumulus_pallet_xcmp_queue",
+            "update_threshold_weight",
+            dispatch_info,
+            call_len,
+        ));
+
+        // update_weight_restrict_decay
+        let call = crate::Call::XcmpQueue(
+            cumulus_pallet_xcmp_queue::Call::update_weight_restrict_decay { new: 64 },
+        );
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "cumulus_pallet_xcmp_queue",
+            "update_weight_restrict_decay",
+            dispatch_info,
+            call_len,
+        ));
+
+        // update_xcmp_max_individual_weight
+        let call = crate::Call::XcmpQueue(
+            cumulus_pallet_xcmp_queue::Call::update_xcmp_max_individual_weight { new: 64 },
+        );
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "cumulus_pallet_xcmp_queue",
+            "update_xcmp_max_individual_weight",
+            dispatch_info,
+            call_len,
+        ));
+    }
+
+    // orml_xtokens
+    // cannot run this part out side of mock runtime.
+    t.execute_with(|| {
+        // transfer
+        let dest = VersionedMultiLocation::V1(Default::default());
+        let call = crate::Call::XTokens(orml_xtokens::Call::transfer {
+            currency_id: crate::xcm_config::CurrencyId::MantaCurrency(1),
+            amount: 10,
+            dest: Box::new(dest.clone()),
+            dest_weight: 64,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("orml_xtokens", "transfer", dispatch_info, call_len));
+
+        // transfer_multiasset
+        let _asset = MultiAsset {
+            id: Concrete(MultiLocation {
+                parents: 1,
+                interior: X1(Parachain(1)),
+            }),
+            fun: Fungible(10000000000000),
+        };
+        let asset = xcm::VersionedMultiAsset::V1(_asset.clone());
+        let call = crate::Call::XTokens(orml_xtokens::Call::transfer_multiasset {
+            asset: Box::new(asset.clone()),
+            dest: Box::new(dest.clone()),
+            dest_weight: 64,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "orml_xtokens",
+            "transfer_multiasset",
+            dispatch_info,
+            call_len,
+        ));
+
+        // transfer_with_fee
+        let call = crate::Call::XTokens(orml_xtokens::Call::transfer_with_fee {
+            currency_id: crate::xcm_config::CurrencyId::MantaCurrency(1),
+            amount: 10,
+            fee: 20,
+            dest: Box::new(dest.clone()),
+            dest_weight: 64,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push(("orml_xtokens", "transfer_with_fee", dispatch_info, call_len));
+
+        // transfer_multiasset_with_fee
+        let _fee_asset = MultiAsset {
+            id: Concrete(MultiLocation {
+                parents: 1,
+                interior: X1(Parachain(1)),
+            }),
+            fun: Fungible(5000000000000),
+        };
+        let fee_asset = xcm::VersionedMultiAsset::V1(_fee_asset.clone());
+        let call = crate::Call::XTokens(orml_xtokens::Call::transfer_multiasset_with_fee {
+            asset: Box::new(asset),
+            fee: Box::new(fee_asset),
+            dest: Box::new(dest.clone()),
+            dest_weight: 64,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "orml_xtokens",
+            "transfer_multiasset_with_fee",
+            dispatch_info,
+            call_len,
+        ));
+
+        // transfer_multicurrencies
+        let call = crate::Call::XTokens(orml_xtokens::Call::transfer_multicurrencies {
+            currencies: vec![
+                (crate::xcm_config::CurrencyId::MantaCurrency(1), 10),
+                (crate::xcm_config::CurrencyId::MantaCurrency(2), 20),
+            ],
+            fee_item: 1,
+            dest: Box::new(dest.clone()),
+            dest_weight: 64,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "orml_xtokens",
+            "transfer_multicurrencies",
+            dispatch_info,
+            call_len,
+        ));
+
+        // transfer_multiassets
+        let assets = xcm::VersionedMultiAssets::V1(MultiAssets::from(vec![_asset, _fee_asset]));
+        let call = crate::Call::XTokens(orml_xtokens::Call::transfer_multiassets {
+            assets: Box::new(assets),
+            fee_item: 1,
+            dest: Box::new(dest),
+            dest_weight: 64,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "orml_xtokens",
+            "transfer_multiassets",
+            dispatch_info,
+            call_len,
+        ));
+    });
 
     // calamari_vesting
     {
@@ -1159,25 +1958,23 @@ fn calculate_all_current_extrinsic_gas_fee() -> Vec<GasFeeDetail> {
 
         // schedule
         let hash = <Runtime as frame_system::Config>::Hashing::hash_of(&call);
-        let hashed = MaybeHashed::Hash(hash.clone());
+        let hashed = MaybeHashed::Hash(hash);
         let call = crate::Call::Scheduler(pallet_scheduler::Call::schedule {
             when: 1,
             maybe_periodic: None,
             priority: 1,
-            call: Box::new(hashed),
+            call: Box::new(hashed.clone()),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push(("pallet_scheduler", "schedule", dispatch_info, call_len));
 
         // schedule_named
-        let hash = <Runtime as frame_system::Config>::Hashing::hash_of(&call);
-        let hashed = MaybeHashed::Hash(hash.clone());
         let call = crate::Call::Scheduler(pallet_scheduler::Call::schedule_named {
             id: vec![1u8; 32],
             when: 1,
             maybe_periodic: None,
             priority: 1,
-            call: Box::new(hashed),
+            call: Box::new(hashed.clone()),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -1194,13 +1991,11 @@ fn calculate_all_current_extrinsic_gas_fee() -> Vec<GasFeeDetail> {
         calamari_runtime_calls.push(("pallet_scheduler", "cancel_named", dispatch_info, call_len));
 
         // schedule_after
-        let hash = <Runtime as frame_system::Config>::Hashing::hash_of(&call);
-        let hashed = MaybeHashed::Hash(hash.clone());
         let call = crate::Call::Scheduler(pallet_scheduler::Call::schedule_after {
             after: 1,
             maybe_periodic: None,
             priority: 1,
-            call: Box::new(hashed),
+            call: Box::new(hashed.clone()),
         });
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
@@ -1211,8 +2006,6 @@ fn calculate_all_current_extrinsic_gas_fee() -> Vec<GasFeeDetail> {
         ));
 
         // schedule_named_after
-        let hash = <Runtime as frame_system::Config>::Hashing::hash_of(&call);
-        let hashed = MaybeHashed::Hash(hash.clone());
         let call = crate::Call::Scheduler(pallet_scheduler::Call::schedule_named_after {
             id: vec![1u8; 32],
             after: 1,
@@ -1234,7 +2027,7 @@ fn calculate_all_current_extrinsic_gas_fee() -> Vec<GasFeeDetail> {
         // set_keys
         let keys = crate::opaque::SessionKeys::from_seed_unchecked("//Alice");
         let call = crate::Call::Session(pallet_session::Call::set_keys {
-            keys: keys,
+            keys,
             proof: vec![1u8; 32],
         });
         let (dispatch_info, call_len) = get_call_details(&call);
