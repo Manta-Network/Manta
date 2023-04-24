@@ -189,3 +189,71 @@ fn double_processing_withdrawals_does_not_double_pay() {
             );
         });
 }
+#[test]
+fn staking_to_one_underallocated_collator_works() {
+    let balance4 = 40_000_000 * UNIT;
+    let balance5 = 50_000_000 * UNIT;
+    let balance6 = 60_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE.clone(), HIGH_BALANCE),
+            (BOB.clone(), HIGH_BALANCE),
+            (CHARLIE.clone(), HIGH_BALANCE),
+        ])
+        .with_candidates(vec![
+            (ALICE.clone(), balance4),
+            (BOB.clone(), balance5),
+            (CHARLIE.clone(), balance6),
+        ])
+        .build()
+        .execute_with(|| {
+            assert!(HIGH_BALANCE > balance6 + balance5 + balance4);
+            assert_eq!(
+                ParachainStaking::candidate_info(ALICE.clone())
+                    .unwrap()
+                    .total_counted,
+                balance4
+            );
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE.clone()), balance6));
+            // Median = 50k, ALICE is the only underallocated, gets all tokend
+            assert_eq!(
+                ParachainStaking::candidate_info(ALICE.clone())
+                    .unwrap()
+                    .total_counted,
+                balance4 + balance6
+            );
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE.clone()), balance5));
+            //  Median = 60k, BOB is the only underallocated, gets all token
+            assert_eq!(
+                ParachainStaking::candidate_info(BOB.clone())
+                    .unwrap()
+                    .total_counted,
+                balance5 + balance5
+            );
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE.clone()), balance4));
+            // Median = 100k CHARLIE is the only underallocated, gets all token
+            assert_eq!(
+                ParachainStaking::candidate_info(CHARLIE.clone())
+                    .unwrap()
+                    .total_counted,
+                balance6 + balance4
+            );
+            // Now all 3 tie at 100k, there is no underallocation, deposit is given randomly
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE.clone()), balance6));
+            assert!(
+                (ParachainStaking::candidate_info(ALICE.clone())
+                    .unwrap()
+                    .total_counted
+                    == balance4 + balance6 + balance6)
+                    || (ParachainStaking::candidate_info(BOB.clone())
+                        .unwrap()
+                        .total_counted
+                        == balance5 + balance5 + balance6)
+                    || (ParachainStaking::candidate_info(CHARLIE.clone())
+                        .unwrap()
+                        .total_counted
+                        == balance6 + balance4 + balance6),
+            );
+        });
+}
+

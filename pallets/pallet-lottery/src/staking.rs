@@ -35,7 +35,10 @@ impl<T: Config> Pallet<T> {
         new_deposit: BalanceOf<T>,
     ) -> Vec<(T::AccountId, BalanceOf<T>)> {
         log::trace!(function_name!());
-        log::debug!("Calculating distribution for deposit of {:?} tokens", new_deposit);
+        log::debug!(
+            "Calculating distribution for deposit of {:?} tokens",
+            new_deposit
+        );
         if new_deposit < <T as pallet_parachain_staking::Config>::MinDelegation::get() {
             return vec![];
         }
@@ -80,49 +83,124 @@ impl<T: Config> Pallet<T> {
         }
 
         // second concern: We want to maximize staking APY earned, so we want to balance the staking pools with our deposits while conserving gas
-        let mut collator_balances: Vec<(T::AccountId, BalanceOf<T>)> = vec![];
         // We only consider active collators for deposits
         // TODO: Also consider points / pointsAwarded to not stake to collators missing blocks
-        let mean_stake = Self::average_stake_per_collator();
+
+        let top_collator_accounts = pallet_parachain_staking::Pallet::<T>::compute_top_candidates(); // XXX/TODO: This can select collators that are not joined but not yet active
+        let mut collators_and_counted_balances: Vec<_> = top_collator_accounts
+            .iter()
+            .map(|collator| {
+                (
+                    collator,
+                    pallet_parachain_staking::Pallet::<T>::candidate_info(collator.clone())
+                        .expect("is active collator, therefore it has collator info. qed")
+                        .total_counted,
+                )
+            })
+            .collect();
+        // sort ascending by counted stake
+        collators_and_counted_balances.sort_by(|a, b| a.1.cmp(&b.1));
+        debug_assert!(
+            collators_and_counted_balances.len() == 1
+                || pallet_parachain_staking::Pallet::<T>::candidate_info(
+                    collators_and_counted_balances[0].0.clone()
+                )
+                .unwrap()
+                .total_counted
+                    <= pallet_parachain_staking::Pallet::<T>::candidate_info(
+                        collators_and_counted_balances[1].0.clone()
+                    )
+                    .unwrap()
+                    .total_counted
+        );
+
+        let median_collator_balance = collators_and_counted_balances
+            [collators_and_counted_balances.len() / 2]
+            .1
+            .clone();
 
         // build collator => deviation from mean map
-        let mut underallocated_collators = vec![];
-        for collator in active_collators.iter() {
-            let stake_on_collator =
-                pallet_parachain_staking::Pallet::<T>::candidate_info(collator.clone())
-                    .expect("is active collator, therefor it has collator info. qed")
-                    .total_counted;
-            if stake_on_collator <= mean_stake {
-                underallocated_collators.push((collator.clone(), mean_stake - stake_on_collator));
-            }
-        }
-        log::debug!("Total Underallocated collators: {:?}", underallocated_collators.len());
+        let mut underallocated_collators: Vec<_> =
+            collators_and_counted_balances[..collators_and_counted_balances.len() / 2].to_vec();
+        let mut underallocated_collators: Vec<_> = underallocated_collators
+            .into_iter()
+            .filter_map(|(collator, balance)| {
+                let underallocation = median_collator_balance.saturating_sub(balance);
+                if !underallocation.is_zero() {
+                    Some((collator, underallocation))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        // After this calculation, underallocated_collators is in descending order of underallocation
+
+        // take up to 4 collators with the highest deficit ( stopping at mean )
+        let num_collators_to_take = core::cmp::min(4, underallocated_collators.len());
+        let underallocated_collators = underallocated_collators[..num_collators_to_take].to_vec();
+
+        debug_assert!(
+            underallocated_collators.is_empty()
+                || pallet_parachain_staking::Pallet::<T>::candidate_info(
+                    underallocated_collators[0].0.clone()
+                )
+                .unwrap()
+                .total_counted
+                    <= median_collator_balance
+        );
+        debug_assert!(
+            underallocated_collators.len() < 2
+                || pallet_parachain_staking::Pallet::<T>::candidate_info(
+                    underallocated_collators[0].0.clone()
+                )
+                .unwrap()
+                .total_counted
+                    <= pallet_parachain_staking::Pallet::<T>::candidate_info(
+                        underallocated_collators[1].0.clone()
+                    )
+                    .unwrap()
+                    .total_counted
+        );
+        debug_assert!(
+            underallocated_collators.len() < 2
+                || underallocated_collators[0].1.clone() >= underallocated_collators[1].1.clone()
+        );
+        log::debug!(
+            "Total Underallocated collators: {:?}",
+            underallocated_collators.len()
+        );
         if !underallocated_collators.is_empty() {
-            underallocated_collators.sort_unstable_by(|a, b| a.1.cmp(&b.1)); // XXX: Sorting on each deposit. Might be better to add a presorted storage item
-            let (_rest, mut last) =
-                underallocated_collators.split_at(underallocated_collators.len().saturating_sub(4)); // TODO: 4 is hardcoded make configurable
-            let total_underallocation = last
-                .into_iter()
+            let total_underallocation = underallocated_collators
+                .iter()
+                .cloned()
                 .map(|a| a.1)
                 .reduce(|acc, balance| acc + balance)
                 .unwrap();
-            log::debug!("Underallocated tokens {:?} on selected collators: {:?}", total_underallocation, underallocated_collators);
+            log::debug!(
+                "Underallocated tokens {:?} on selected collators: {:?}",
+                total_underallocation,
+                underallocated_collators.clone()
+            );
             let deposit_to_distribute = remaining_deposit;
-            for (account, tokens_to_reach_mean) in last {
+            for (account, tokens_to_reach_mean) in underallocated_collators {
                 // If a proportional deposit is over the min deposit and can get us into the top balance, deposit it, if not just skip it
                 let info = pallet_parachain_staking::Pallet::<T>::candidate_info(account.clone())
                     .expect("is active collator, therefor it has collator info. qed");
                 let collator_proportion =
                     Percent::from_rational(tokens_to_reach_mean.clone(), total_underallocation);
                 let to_reach_mean = collator_proportion.mul_ceil(deposit_to_distribute);
-                let to_deposit= to_reach_mean.min(remaining_deposit);
+                let to_deposit = to_reach_mean.min(remaining_deposit);
                 let our_stake = StakedCollators::<T>::get(account.clone());
                 if to_deposit > <T as pallet_parachain_staking::Config>::MinDelegation::get()
-                    &&  to_deposit + our_stake > info.lowest_top_delegation_amount
+                    && to_deposit + our_stake > info.lowest_top_delegation_amount
                 {
-                    deposits.push((account.clone(),to_deposit));
+                    deposits.push((account.clone(), to_deposit));
                     remaining_deposit -= to_deposit;
-                    log::debug!("Selected collator {:?} for deposit of {:?} token", account.clone(), to_deposit);
+                    log::debug!(
+                        "Selected collator {:?} for deposit of {:?} token",
+                        account.clone(),
+                        to_deposit
+                    );
                 };
                 if remaining_deposit.is_zero() {
                     break;
@@ -131,10 +209,10 @@ impl<T: Config> Pallet<T> {
         }
         // if we had to skip a collator above due to not getting into the top deposit, we just lump the rest into the collator with the lowest stake
         if !deposits.is_empty() && !remaining_deposit.is_zero() {
-            let mut last = deposits.pop().unwrap();
-            last.1 += remaining_deposit;
+            let mut underallocated_collators = deposits.pop().unwrap();
+            underallocated_collators.1 += remaining_deposit;
             remaining_deposit.set_zero();
-            deposits.push(last);
+            deposits.push(underallocated_collators);
         }
 
         // fallback: just assign to a random active collator
@@ -260,8 +338,8 @@ impl<T: Config> Pallet<T> {
     fn average_stake_per_collator() -> BalanceOf<T> {
         let total_staked = pallet_parachain_staking::Pallet::<T>::staked(
             pallet_parachain_staking::Pallet::<T>::round().current,
-        );
-        // this overshoots the amount if there's a remainder
+        ); // XXX/TODO: pallet_parachain_staking::Pallet::<T>::Staked storage is only updated *at the beginning of a round* this is not suitable multi-transfers in the same block don't get recalculated
+           // this overshoots the amount if there's a remainder
         Percent::from_rational(1, pallet_parachain_staking::Pallet::<T>::total_selected())
             .mul_ceil(total_staked)
             .into()
