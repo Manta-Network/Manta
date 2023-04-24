@@ -256,4 +256,3 @@ fn staking_to_one_underallocated_collator_works() {
             );
         });
 }
-

@@ -281,7 +281,9 @@ pub mod pallet {
         DepositBelowMinAmount,
         WithdrawBelowMinAmount,
         WithdrawAboveDeposit,
+        NoDepositForAccount,
         WithdrawFailed,
+        ArithmeticUnderflow,
         PalletMisconfigured,
         TODO,
     }
@@ -349,7 +351,7 @@ pub mod pallet {
         /// * `amount` is below the minimum withdraw amount
         /// * `amount` is larger than the user's total deposit
         /// * It is too close to the drawing
-        /// * The user has not enough active funds
+        /// * The user has no or not enough active funds
         /// * There are any arithmetic underflows
         #[pallet::weight(0)]
         pub fn request_withdraw(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
@@ -366,25 +368,33 @@ pub mod pallet {
             let now = <frame_system::Pallet<T>>::block_number();
             log::debug!("Requesting withdraw of {:?} tokens", amount);
             // Ensure user has enough funds active and mark them as offboarding (remove from `ActiveFundsPerUser`)
-            ActiveBalancePerUser::<T>::try_mutate_exists(caller.clone(), |balance| {
-                // Withdraw only what's active
-                ensure!(*balance >= amount, Error::<T>::WithdrawAboveDeposit);
-                // Mark funds as offboarding
-                WithdrawalRequestQueue::<T>::mutate(|withdraw_vec| {
-                    withdraw_vec.push(Request {
-                        user: caller.clone(),
-                        block: now,
-                        balance: amount,
-                    })
-                });
-                // store reduced balance
-                *balance -= amount;
-                TotalPot::<T>::try_mutate(|pot| {
-                    (*pot)
-                        .checked_sub(&amount)
-                        .ok_or(ArithmeticError::Underflow)
-                })?;
-                Ok::<(), DispatchError>(())
+            ActiveBalancePerUser::<T>::try_mutate_exists(caller.clone(), |maybe_balance| {
+                match maybe_balance {
+                    None => Err(Error::<T>::NoDepositForAccount),
+                    Some(balance) => {
+                        // Withdraw only what's active
+                        ensure!(*balance >= amount, Error::<T>::WithdrawAboveDeposit);
+                        // Mark funds as offboarding
+                        WithdrawalRequestQueue::<T>::mutate(|withdraw_vec| {
+                            withdraw_vec.push(Request {
+                                user: caller.clone(),
+                                block: now,
+                                balance: amount,
+                            })
+                        });
+                        // store reduced balance
+                        *maybe_balance = match balance.checked_sub(&amount).ok_or(Error::<T>::ArithmeticUnderflow)?{
+                            x if x.is_zero() => None,
+                            x => Some(x)
+                        };
+                        TotalPot::<T>::try_mutate(|pot| {
+                            (*pot)
+                                .checked_sub(&amount)
+                                .ok_or(Error::<T>::ArithmeticUnderflow)
+                        })?;
+                        Ok(())
+                    }
+                }
             })?;
 
             // Unstaking workflow
@@ -761,17 +771,21 @@ pub mod pallet {
             Ok(())
         }
 
-        /// NOTE: This code assumes UnstakingCollators is sorted
+        /// Unstake any collators we can unstake
+        /// This is infallible, if any step fails we just leave the collator in the request queue
         fn finish_unstaking_collators() {
             let now = <frame_system::Pallet<T>>::block_number();
-            let unstaking = UnstakingCollators::<T>::get();
-            UnstakingCollators::<T>::try_mutate_exists(|unstaking| {
-                let remaining_collators = unstaking.iter().filter_map(|collator| {
+            let mut unstaking = UnstakingCollators::<T>::get();
+            let original_len = unstaking.len();
+            if unstaking.is_empty() {
+                return;
+            };
+            // Unstake what we can (false), leave the rest (true)
+            unstaking.retain(|collator|{
                     // Leave collators that are not finished unstaking alone
                     if collator.since + <T as Config>::UnstakeLockTime::get() > now {
-                        return Some(collator.clone());
+                        return true;
                     };
-
                     // Recover funds locked in the collator
                     // There can only be one request per collator and it is always a full revoke_delegation call
                     let delegation_requests_against_this_collator = pallet_parachain_staking::Pallet::<T>::delegation_scheduled_requests(collator.account.clone());
@@ -779,52 +793,49 @@ pub mod pallet {
                     match delegation_requests_against_this_collator.iter().find(|request|request.delegator == Self::account_id()){
                         Some(our_request) if matches!(our_request.action, pallet_parachain_staking::DelegationAction::Revoke(_)) => {
                             if T::BlockNumber::from(our_request.when_executable) > now {
-                                    log::error!("Collator {:?} finished our unstaking timelock but not the pallet_parachain_staking one. leaving in queue",collator.account.clone());
-                                return Some(collator.clone());
+                                log::error!("Collator {:?} finished our unstaking timelock but not the pallet_parachain_staking one. leaving in queue",collator.account.clone());
+                                return true;
                             };
                             balance_to_unstake = our_request.action.amount();
                         }
                         _ => {
                                 log::error!( "Expected revoke_delegation request not found on collator {:?}. Leaving in withdraw queue",collator.account.clone() );
-                                return Some(collator.clone());
+                                return true;
                             }
                     };
                     // Ensure the pallet has enough gas to pay for this
                     let fee_estimate : BalanceOf<T> = T::EstimateCallFee::estimate_call_fee(&pallet_parachain_staking::Call::execute_delegation_request { delegator: Self::account_id() , candidate: collator.account.clone()  }, None.into());
                     if Self::lottery_funds_surplus() <= fee_estimate{
                         log::warn!("could not finish unstaking delegation because the pallet is out of funds to pay TX fees. Skipping");
-                        Some(collator.clone());
+                        return true;
                     };
                     match pallet_parachain_staking::Pallet::<T>::execute_delegation_request(
                         RawOrigin::Signed(Self::account_id()).into(),
                         Self::account_id(),
                         collator.account.clone(),
                     ){
+                        Err(e) => {
+                            log::error!("Collator finished unstaking timelock but could not be removed with error {:?}",e);
+                            return true;
+                        },
                         Ok(_) => {
                             // collator was unstaked
                             // TODO: check if other bookkeeping needs updating
                             SumOfDeposits::<T>::mutate(|balance| *balance = (*balance).saturating_sub(balance_to_unstake)); // XXX: Maybe checked_sub
                             log::debug!("Unstaked {:?} from collator {:?}",balance_to_unstake,collator.account.clone());
-                            // remove from unstaking collators
-                             return None;
-                        },
-                        Err(e) => {
-                            log::error!("Collator finished unstaking timelock but could not be removed with error {:?}",e);
-                            return Some(collator.clone());
+                            // don't retain this collator in the unstaking collators vec
+                            return false;
                         },
                     };
-                }).collect::<Vec<_>>();
-
-                if remaining_collators.len() != unstaking.len() {
-                    unstaking.clear();
-                    for c in remaining_collators {
-                        unstaking.push(c.clone());
-                    }
-                    Ok(())
-                } else {
-                    Err("no change")
-                }
             });
+            if original_len != unstaking.len() {
+                log::debug!(
+                    "Finished unstaking {:?} out of {:?} requests",
+                    original_len - unstaking.len(),
+                    original_len
+                );
+                UnstakingCollators::<T>::put(unstaking);
+            }
         }
 
         #[named]
