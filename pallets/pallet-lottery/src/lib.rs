@@ -80,7 +80,6 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
     pub use ::function_name::named;
-    pub use frame_system::WeightInfo;
     use frame_support::{
         ensure, log,
         pallet_prelude::*,
@@ -91,6 +90,7 @@ pub mod pallet {
         },
         PalletId,
     };
+    pub use frame_system::WeightInfo;
     use frame_system::{pallet_prelude::*, RawOrigin};
     use manta_primitives::constants::time::{DAYS, MINUTES};
     use pallet_parachain_staking::BalanceOf;
@@ -366,7 +366,7 @@ pub mod pallet {
             let now = <frame_system::Pallet<T>>::block_number();
             log::debug!("Requesting withdraw of {:?} tokens", amount);
             // Ensure user has enough funds active and mark them as offboarding (remove from `ActiveFundsPerUser`)
-            ActiveBalancePerUser::<T>::try_mutate(caller.clone(), |balance| {
+            ActiveBalancePerUser::<T>::try_mutate_exists(caller.clone(), |balance| {
                 // Withdraw only what's active
                 ensure!(*balance >= amount, Error::<T>::WithdrawAboveDeposit);
                 // Mark funds as offboarding
@@ -536,7 +536,7 @@ pub mod pallet {
             ensure!(
                 Self::lottery_funds_surplus() >= Self::gas_reserve(),
                 Error::<T>::PotBalanceBelowGasReserve
-            );
+            ); // XXX: If we seed more than gas_reserve, the excess will be paid out to the winner on the next drawing! This could be a feature for doping the winning balance
 
             let drawing_interval = <T as Config>::DrawingInterval::get();
             ensure!(
@@ -611,7 +611,7 @@ pub mod pallet {
                 total_funds_in_pallet.clone(),
                 winning_claim.clone()
             );
-            if !winning_claim.is_zero(){
+            if !winning_claim.is_zero() {
                 ensure!(
                     // Prevent granting funds to a user that would have to be paid from deposit money (we're a casino, not a bank)
                     total_funds_in_pallet
@@ -695,7 +695,7 @@ pub mod pallet {
             Ok(())
         }
 
-        fn select_winner(payout_for_winner: BalanceOf<T>) -> DispatchResult{
+        fn select_winner(payout_for_winner: BalanceOf<T>) -> DispatchResult {
             // Match random number to winner. We select a winning **balance** and then just add up accounts in the order they're stored until the sum of balance exceeds the winning amount
             // IMPORTANT: This order and active balances must be locked to modification after the random seed is created (relay BABE randomness, 2 epochs ago)
             let random = T::RandomnessSource::random(&[0u8, 1]);
@@ -740,7 +740,9 @@ pub mod pallet {
                     .clone()
                     .expect("we checked a winner exists before. qed"),
                 |maybe_balance| match *maybe_balance {
-                    Some(balance) => (*maybe_balance) = Some(balance.saturating_add(payout_for_winner)),
+                    Some(balance) => {
+                        (*maybe_balance) = Some(balance.saturating_add(payout_for_winner))
+                    }
                     None => (*maybe_balance) = Some(payout_for_winner),
                 },
             );
@@ -763,7 +765,7 @@ pub mod pallet {
         fn finish_unstaking_collators() {
             let now = <frame_system::Pallet<T>>::block_number();
             let unstaking = UnstakingCollators::<T>::get();
-            UnstakingCollators::<T>::try_mutate(|unstaking| {
+            UnstakingCollators::<T>::try_mutate_exists(|unstaking| {
                 let remaining_collators = unstaking.iter().filter_map(|collator| {
                     // Leave collators that are not finished unstaking alone
                     if collator.since + <T as Config>::UnstakeLockTime::get() > now {
@@ -832,7 +834,7 @@ pub mod pallet {
 
             // TODO: If we have outstanding out-of-timelock withdrawal requests, do nothing
             let stakable_balance = Self::lottery_funds_surplus_idle();
-            if stakable_balance.is_zero(){
+            if stakable_balance.is_zero() {
                 log::debug!("Nothing to restake");
                 return Ok(());
             }
@@ -858,17 +860,20 @@ pub mod pallet {
                 return Ok(()); // nothing to do
             }
             let funds_available_to_withdraw = Self::lottery_funds_surplus();
-            log::debug!("Withdrawable funds: {:?}",funds_available_to_withdraw.clone());
+            log::debug!(
+                "Withdrawable funds: {:?}",
+                funds_available_to_withdraw.clone()
+            );
             if funds_available_to_withdraw.is_zero() {
                 return Ok(()); // nothing to do
             }
             let now = <frame_system::Pallet<T>>::block_number();
             // Pay down the list from top (oldest) to bottom until we've paid out everyone or run out of available funds
-            <WithdrawalRequestQueue<T>>::mutate(|request_vec|-> Result<(),DispatchError> {
+            <WithdrawalRequestQueue<T>>::mutate(|request_vec| -> Result<(), DispatchError> {
                 let mut left_overs: Vec<Request<_, _, _>> = Vec::new();
                 for request in request_vec.iter() {
                     // Don't pay anyone still timelocked
-                    if now < request.block + <T as Config>::UnstakeLockTime::get(){
+                    if now < request.block + <T as Config>::UnstakeLockTime::get() {
                         left_overs.push((*request).clone());
                         continue;
                     }
@@ -881,7 +886,11 @@ pub mod pallet {
                     }
                     // we know we can pay this out, do it
                     <SumOfDeposits<T>>::mutate(|sum| (*sum).saturating_sub(request.balance));
-                    log::debug!("Transferring {:?} to {:?}",request.balance.clone(), request.user.clone());
+                    log::debug!(
+                        "Transferring {:?} to {:?}",
+                        request.balance.clone(),
+                        request.user.clone()
+                    );
                     <T as pallet_parachain_staking::Config>::Currency::transfer(
                         &Self::account_id(),
                         &request.user,
@@ -889,7 +898,10 @@ pub mod pallet {
                         KeepAlive,
                     )?;
                 }
-                log::debug!("Have {:?} requests left over after transfers",left_overs.len());
+                log::debug!(
+                    "Have {:?} requests left over after transfers",
+                    left_overs.len()
+                );
                 // Update T::WithdrawalRequestQueue if we paid at least one guy
                 if left_overs.len() != (*request_vec).len() {
                     request_vec.clear();
@@ -920,14 +932,13 @@ pub mod pallet {
         /// funds in the lottery pallet that are not needed/reserved for anything
         pub fn lottery_funds_surplus_idle() -> BalanceOf<T> {
             // let outstanding_withdrawal_requests = <WithdrawalRequestQueue<T>>::get()
-                // .iter()
-                // .map(|request| request.balance)
-                // .reduce(|acc, e| acc + e)
-                // .unwrap_or(0u32.into());
+            // .iter()
+            // .map(|request| request.balance)
+            // .reduce(|acc, e| acc + e)
+            // .unwrap_or(0u32.into());
 
-            Self::lottery_funds_surplus()
-                .saturating_sub(Self::gas_reserve())
-                // .saturating_sub(outstanding_withdrawal_requests)
+            Self::lottery_funds_surplus().saturating_sub(Self::gas_reserve())
+            // .saturating_sub(outstanding_withdrawal_requests)
         }
         /// Returns if we're within the pre-drawing time where deposits/withdrawals are frozen
         pub fn not_in_drawing_freezeout() -> bool {
