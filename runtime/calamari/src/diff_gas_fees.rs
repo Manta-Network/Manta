@@ -66,6 +66,9 @@ fn diff_gas_fees() {
             .split("-tx-fees.csv")
             .collect::<Vec<&str>>()[0]
             .to_string();
+        if _version.contains("README.md") {
+            continue;
+        }
         let _version = version_compare::Version::from(&_version).unwrap();
         let version = version_compare::Version::from(&latest_version).unwrap();
         if version < _version {
