@@ -139,6 +139,7 @@ impl crate::Config for Test {
     type SbtMetadataBound = ConstU32<200>;
     type AdminOrigin = EnsureRoot<AccountId32>;
     type Now = Timestamp;
+    type RegistryBound = ConstU32<200>;
 }
 
 parameter_types! {

@@ -43,7 +43,7 @@
 //! `set_mint_chain_info`: `AdminOrigin` must set a time range for a particular `MintType` to be valid.
 //! `allowlist_evm_account`: Account set in `change_allowlist_account` can allow a particular `EvmAddress` one free mint of zkSBT.
 //!
-//! Second step a user that has been added to `EvmAddressAllowlist` can now mint their zkSBT.
+//! Second step a user that has been added to `EvmAccountAllowlist` can now mint their zkSBT.
 //!
 //! `mint_sbt_eth`: User must generate a zkp corresponding to the reserved `AssetId` mapped to their `EvmAddress`.
 //! Subsequently user must generate signature by signing zkp with their eth private key.
@@ -119,6 +119,8 @@ pub mod runtime;
 // One in encoded form, used to check that value input in `ToPrivate` post is one
 const ENCODED_ONE: [u8; 16] = 1u128.to_le_bytes();
 
+const MANTA_MINT_ID: MintId = 0;
+
 /// Type alias for currency balance.
 pub type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -149,6 +151,9 @@ pub enum MintType {
     Manta,
 }
 
+/// Each mint type shall have a unique id
+pub type MintId = u32;
+
 impl From<EvmAddressType> for MintType {
     fn from(address_type: EvmAddressType) -> Self {
         match address_type {
@@ -166,17 +171,40 @@ pub enum MintStatus {
 }
 
 /// Info about a particular `MintType`
+///
+/// Deprecated remove after migration
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct MintChainInfo<Moment> {
     pub start_time: Moment,
     pub end_time: Option<Moment>,
 }
 
+/// Mint metadata that corresponds to an assigned `MintId`
+#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[scale_info(skip_type_params(Bound))]
+pub struct RegisteredMint<Moment, Bound: Get<u32>> {
+    pub mint_name: BoundedVec<u8, Bound>,
+    pub start_time: Moment,
+    pub end_time: Option<Moment>,
+}
+
 /// Metadata stored for a minted zkSBT
+///
+/// Deprecated remove after migration
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(Bound))]
 pub struct Metadata<Bound: Get<u32>> {
     pub mint_type: MintType,
+    pub collection_id: Option<u128>,
+    pub item_id: Option<u128>,
+    pub extra: Option<BoundedVec<u8, Bound>>,
+}
+
+/// Mint Metadata stored for a minted zkSBT
+#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[scale_info(skip_type_params(Bound))]
+pub struct MetadataV2<Bound: Get<u32>> {
+    pub mint_id: MintId,
     pub collection_id: Option<u128>,
     pub item_id: Option<u128>,
     pub extra: Option<BoundedVec<u8, Bound>>,
@@ -231,6 +259,10 @@ pub mod pallet {
         /// Max size in bytes of stored metadata
         #[pallet::constant]
         type SbtMetadataBound: Get<u32>;
+
+        /// Max size in bytes of `mint_name` entered in `RegisteredMint`
+        #[pallet::constant]
+        type RegistryBound: Get<u32>;
     }
 
     /// Counter for SBT AssetId. Increments by one everytime a new asset id is requested.
@@ -239,23 +271,57 @@ pub mod pallet {
     #[pallet::storage]
     pub(super) type NextSbtId<T: Config> = StorageValue<_, StandardAssetId, OptionQuery>;
 
+    /// Counter for SBT MintId. Increments by one everytime a mint is created
+    ///
+    /// Should only ever be modified by `next_sbt_id_and_increment()`
+    #[pallet::storage]
+    pub(super) type NextMintId<T: Config> = StorageValue<_, StandardAssetId, OptionQuery>;
+
     /// Account that can add evm accounts to allowlist
     #[pallet::storage]
     pub(super) type AllowlistAccount<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
 
     /// Allowlist for Evm Accounts
+    ///
+    /// Deprecated delete after migration
     #[pallet::storage]
     pub(super) type EvmAddressAllowlist<T: Config> =
         StorageMap<_, Blake2_128Concat, EvmAddressType, MintStatus, OptionQuery>;
 
+    /// Allowlist for Evm Accounts
+    #[pallet::storage]
+    pub(super) type EvmAccountAllowlist<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128Concat,
+        MintId,
+        Blake2_128Concat,
+        EvmAddress,
+        MintStatus,
+        OptionQuery,
+    >;
+
     /// Range of time and chain_id at which evm mints for each `MintType` are possible.
+    ///
+    /// Deprecated delete after migration
     #[pallet::storage]
     pub(super) type MintChainInfos<T: Config> =
         StorageMap<_, Blake2_128Concat, MintType, MintChainInfo<Moment<T>>, OptionQuery>;
 
+    /// Registers a number for mint type
+    #[pallet::storage]
+    pub(super) type MintIdRegistar<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        MintId,
+        RegisteredMint<Moment<T>, T::RegistryBound>,
+        OptionQuery,
+    >;
+
     /// SBT Metadata maps `StandardAsset` to the correstonding SBT metadata
     ///
     /// Metadata is raw bytes that correspond to an image
+    ///
+    /// Deprecated delete after migration
     #[pallet::storage]
     pub(super) type SbtMetadata<T: Config> = StorageMap<
         _,
@@ -264,6 +330,13 @@ pub mod pallet {
         Metadata<T::SbtMetadataBound>,
         OptionQuery,
     >;
+
+    /// SBT Metadata maps `StandardAsset` to the correstonding SBT metadata
+    ///
+    /// Metadata is raw bytes that correspond to an image
+    #[pallet::storage]
+    pub(super) type SbtMetadataV2<T: Config> =
+        StorageMap<_, Blake2_128Concat, StandardAssetId, MetadataV2<T::SbtMetadataBound>>;
 
     /// Allowlists accounts to be able to mint SBTs with designated `StandardAssetId`
     #[pallet::storage]
@@ -324,14 +397,14 @@ pub mod pallet {
             // Checks that it is indeed a to_private post with a value of 1 and has correct asset_id
             Self::check_post_shape(&post, start_id)?;
 
-            let sbt_metadata = Metadata::<T::SbtMetadataBound> {
-                mint_type: MintType::Manta,
+            let sbt_metadata = MetadataV2::<T::SbtMetadataBound> {
+                mint_id: MANTA_MINT_ID,
                 collection_id: None,
                 item_id: None,
                 extra: Some(metadata),
             };
 
-            SbtMetadata::<T>::insert(start_id, sbt_metadata);
+            SbtMetadataV2::<T>::insert(start_id, sbt_metadata);
             let increment_start_id = start_id
                 .checked_add(One::one())
                 .ok_or(ArithmeticError::Overflow)?;
@@ -390,13 +463,13 @@ pub mod pallet {
         #[transactional]
         pub fn allowlist_evm_account(
             origin: OriginFor<T>,
-            evm_address: EvmAddressType,
+            mint_id: MintId,
+            evm_address: EvmAddress,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
 
-            let mint_type: MintType = evm_address.into();
             let chain_info =
-                MintChainInfos::<T>::get(mint_type).ok_or(Error::<T>::MintNotAvailable)?;
+                MintIdRegistar::<T>::get(mint_id).ok_or(Error::<T>::MintNotAvailable)?;
             Self::check_mint_time(&chain_info)?;
 
             let allowlist_account =
@@ -404,16 +477,17 @@ pub mod pallet {
             ensure!(who == allowlist_account, Error::<T>::NotAllowlistAccount);
 
             ensure!(
-                !EvmAddressAllowlist::<T>::contains_key(evm_address),
+                !EvmAccountAllowlist::<T>::contains_key(mint_id, evm_address),
                 Error::<T>::AlreadyInAllowlist
             );
 
             let asset_id = Self::next_sbt_id_and_increment()?;
             let mint_status = MintStatus::Available(asset_id);
-            EvmAddressAllowlist::<T>::insert(evm_address, mint_status);
+            EvmAccountAllowlist::<T>::insert(mint_id, evm_address, mint_status);
 
             Self::deposit_event(Event::<T>::AllowlistEvmAddress {
                 address: evm_address,
+                mint_id,
                 asset_id,
             });
             Ok(())
@@ -431,53 +505,47 @@ pub mod pallet {
             post: Box<TransferPost>,
             chain_id: u64,
             eth_signature: Eip712Signature,
-            address_type: EvmAddressType,
+            mint_id: MintId,
             collection_id: Option<u128>,
             item_id: Option<u128>,
             metadata: Option<BoundedVec<u8, T::SbtMetadataBound>>,
         ) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            let mint_type = address_type.into();
             let chain_info =
-                MintChainInfos::<T>::get(mint_type).ok_or(Error::<T>::MintNotAvailable)?;
+                MintIdRegistar::<T>::get(mint_id).ok_or(Error::<T>::MintNotAvailable)?;
 
             // check that mint type is within time window
             Self::check_mint_time(&chain_info)?;
 
             let address = Self::verify_eip712_signature(&post.proof, &eth_signature, chain_id)
                 .ok_or(Error::<T>::BadSignature)?;
-            // Check signature
-            match address_type {
-                EvmAddressType::Bab(eth_address) | EvmAddressType::Galxe(eth_address) => {
-                    ensure!(eth_address == address, Error::<T>::BadSignature);
-                }
-            }
 
-            let mint_status =
-                EvmAddressAllowlist::<T>::get(address_type).ok_or(Error::<T>::NotAllowlisted)?;
+            let mint_status = EvmAccountAllowlist::<T>::get(mint_id, address)
+                .ok_or(Error::<T>::NotAllowlisted)?;
             let asset_id = match mint_status {
                 MintStatus::Available(asset) => asset,
                 MintStatus::AlreadyMinted => return Err(Error::<T>::AlreadyMinted.into()),
             };
             // Change status to minted
-            EvmAddressAllowlist::<T>::insert(address_type, MintStatus::AlreadyMinted);
+            EvmAccountAllowlist::<T>::insert(mint_id, address, MintStatus::AlreadyMinted);
 
             Self::check_post_shape(&post, asset_id)?;
 
-            let sbt_metadata = Metadata::<T::SbtMetadataBound> {
-                mint_type,
+            let sbt_metadata = MetadataV2::<T::SbtMetadataBound> {
+                mint_id,
                 collection_id,
                 item_id,
                 extra: metadata,
             };
 
-            SbtMetadata::<T>::insert(asset_id, sbt_metadata);
+            SbtMetadataV2::<T>::insert(asset_id, sbt_metadata);
 
             Self::post_transaction(vec![who], *post)?;
             Self::deposit_event(Event::<T>::MintSbtEvm {
                 asset_id,
-                address: address_type,
+                mint_id,
+                address,
             });
             Ok(().into())
         }
@@ -503,9 +571,10 @@ pub mod pallet {
         #[transactional]
         pub fn set_mint_chain_info(
             origin: OriginFor<T>,
-            mint_type: MintType,
+            mint_id: MintId,
             start_time: Moment<T>,
             end_time: Option<Moment<T>>,
+            mint_name: BoundedVec<u8, T::RegistryBound>,
         ) -> DispatchResult {
             T::AdminOrigin::ensure_origin(origin)?;
 
@@ -513,14 +582,15 @@ pub mod pallet {
                 ensure!(end > start_time, Error::<T>::InvalidTimeRange);
             }
 
-            let mint_chain_info = MintChainInfo::<Moment<T>> {
+            let mint_chain_info = RegisteredMint::<Moment<T>, T::RegistryBound> {
                 start_time,
                 end_time,
+                mint_name,
             };
-            MintChainInfos::<T>::insert(mint_type, mint_chain_info);
+            MintIdRegistar::<T>::insert(mint_id, mint_chain_info);
 
             Self::deposit_event(Event::<T>::MintChainInfo {
-                mint_type,
+                mint_id,
                 start_time,
                 end_time,
             });
@@ -551,14 +621,18 @@ pub mod pallet {
         /// Evm Address is Allowlisted
         AllowlistEvmAddress {
             /// Eth Address that is now allowlisted to mint an SBT
-            address: EvmAddressType,
+            address: EvmAddress,
+            /// An integer that corresponds to mint type
+            mint_id: MintId,
             /// AssetId that is reserved for above Eth address
             asset_id: StandardAssetId,
         },
         /// Sbt is minted using Allowlisted Eth account
         MintSbtEvm {
             /// Eth Address that is used to mint sbt
-            address: EvmAddressType,
+            address: EvmAddress,
+            /// An integer that corresponds to the mint type
+            mint_id: MintId,
             /// AssetId of minted SBT
             asset_id: StandardAssetId,
         },
@@ -568,8 +642,8 @@ pub mod pallet {
             account: Option<T::AccountId>,
         },
         MintChainInfo {
-            /// Chain Type that mint SBT
-            mint_type: MintType,
+            /// `MintId` to be updated
+            mint_id: MintId,
             /// Start time at which minting is valid
             start_time: Moment<T>,
             /// End time at which minting will no longer be valid, None represents no end time.
@@ -734,7 +808,7 @@ pub mod pallet {
         /// Incorrect EVM based signature
         BadSignature,
 
-        /// Eth account is not allowlisted for free mint
+        /// Eth account is not allowlisted for free mint, can also be caused by an incorrect signature (recovers an invalid account)
         NotAllowlisted,
 
         /// Account is not the privileged account able to allowlist eth addresses
@@ -966,7 +1040,9 @@ where
 
     /// Checks that mint type is available to mint within time window defined in `MintChainInfos`
     #[inline]
-    fn check_mint_time(mint_chain_info: &MintChainInfo<Moment<T>>) -> DispatchResult {
+    fn check_mint_time(
+        mint_chain_info: &RegisteredMint<Moment<T>, T::RegistryBound>,
+    ) -> DispatchResult {
         let current_time = T::Now::now();
 
         let (start_time, end_time) = (mint_chain_info.start_time, mint_chain_info.end_time);
