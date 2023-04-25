@@ -709,6 +709,13 @@ pub mod pallet {
         }
 
         fn select_winner(payout_for_winner: BalanceOf<T>) -> DispatchResult {
+            if Self::total_pot().is_zero() {
+                log::warn!(
+                    "No funds eligible for drawing at block {:?} ",
+                    <frame_system::Pallet<T>>::block_number()
+                );
+                return Ok(());
+            }
             // Match random number to winner. We select a winning **balance** and then just add up accounts in the order they're stored until the sum of balance exceeds the winning amount
             // IMPORTANT: This order and active balances must be locked to modification after the random seed is created (relay BABE randomness, 2 epochs ago)
             let random = T::RandomnessSource::random(&[0u8, 1]);

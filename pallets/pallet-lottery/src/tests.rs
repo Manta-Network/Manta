@@ -256,3 +256,54 @@ fn staking_to_one_underallocated_collator_works() {
             );
         });
 }
+
+#[test]
+fn unstaking_works_with_0_collators_left() {
+    let balance = 50_000_000 * UNIT;
+    ExtBuilder::default()
+        .with_balances(vec![
+            (ALICE.clone(), HIGH_BALANCE),
+            (BOB.clone(), HIGH_BALANCE),
+        ])
+        .with_candidates(vec![(ALICE.clone(), balance), (BOB.clone(), balance)])
+        .with_funded_lottery_account(HIGH_BALANCE.clone())
+        .build()
+        .execute_with(|| {
+            assert!(HIGH_BALANCE > balance);
+            assert_eq!(
+                ParachainStaking::candidate_info(ALICE.clone())
+                    .unwrap()
+                    .total_counted,
+                balance
+            );
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 0);
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE.clone()), balance));
+            assert_ok!(Lottery::deposit(Origin::signed(ALICE.clone()), balance));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 2);
+            assert_eq!(
+                Balances::free_balance(ALICE.clone()),
+                HIGH_BALANCE - 2 * balance
+            );
+            assert_eq!(
+                ParachainStaking::candidate_info(ALICE.clone())
+                    .unwrap()
+                    .total_counted,
+                balance * 2
+            );
+            assert_eq!(
+                ParachainStaking::candidate_info(BOB.clone())
+                    .unwrap()
+                    .total_counted,
+                balance * 2
+            );
+            assert_ok!(Lottery::request_withdraw(
+                Origin::signed(ALICE.clone()),
+                balance * 2
+            ));
+            assert_eq!(crate::StakedCollators::<Test>::iter().count(), 0);
+            assert_ok!(Lottery::start_lottery(RawOrigin::Root.into()));
+            roll_to_round_begin(3);
+            // by now the withdrawal should have happened by way of lottery drawing
+            assert_eq!(Balances::free_balance(ALICE.clone()), HIGH_BALANCE);
+        });
+}
