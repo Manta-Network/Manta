@@ -383,9 +383,12 @@ pub mod pallet {
                             })
                         });
                         // store reduced balance
-                        *maybe_balance = match balance.checked_sub(&amount).ok_or(Error::<T>::ArithmeticUnderflow)?{
+                        *maybe_balance = match balance
+                            .checked_sub(&amount)
+                            .ok_or(Error::<T>::ArithmeticUnderflow)?
+                        {
                             x if x.is_zero() => None,
-                            x => Some(x)
+                            x => Some(x),
                         };
                         TotalPot::<T>::try_mutate(|pot| {
                             (*pot)

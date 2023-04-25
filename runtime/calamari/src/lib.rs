@@ -732,7 +732,6 @@ impl pallet_author_inherent::Config for Runtime {
     type CanAuthor = AuraAuthorFilter;
 }
 
-
 type ScheduleOrigin = RootOrHalfCouncil;
 /// Used the compare the privilege of an origin inside the scheduler.
 pub struct OriginPrivilegeCmp;
