@@ -28,20 +28,22 @@ use manta_support::manta_pay::TransferPost;
 use pallet_transaction_payment::Multiplier;
 use runtime_common::MinimumMultiplier;
 use sp_runtime::{
-    traits::{Hash, Saturating},
+    traits::{Hash, One, Saturating, Zero},
     AccountId32, Perbill, Percent,
 };
+use std::str::FromStr;
 use xcm::prelude::*;
 
-const GAS_FEE_FLUCTUATION: Percent = Percent::from_percent(10);
+const TX_FEE_FLUCTUATION: Percent = Percent::from_percent(10);
 const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
 const BOB: AccountId32 = AccountId32::new([2u8; 32]);
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct GasFeeDetail {
+struct TxFeeDetail {
     module: String,
     extrinsic: String,
-    gas_fee: f64,
+    tx_fee_with_decimal: String,
+    tx_fee_without_decimal: String,
 }
 
 fn get_call_details(call: &crate::Call) -> (DispatchInfo, u32) {
@@ -52,7 +54,7 @@ fn get_call_details(call: &crate::Call) -> (DispatchInfo, u32) {
 }
 
 #[test]
-fn diff_gas_fees() {
+fn diff_tx_fees() {
     const CURRENT_PATH: &str = env!("CARGO_MANIFEST_DIR");
     let mut latest_version = String::new();
     for file in std::fs::read_dir(format!("{CURRENT_PATH}/tx-fees-data")).unwrap() {
@@ -79,23 +81,33 @@ fn diff_gas_fees() {
     let csv_path = format!("{CURRENT_PATH}/tx-fees-data/{version}-tx-fees.csv");
     let mut rdr = csv::Reader::from_path(csv_path).unwrap();
 
-    let all_extrinsics_gas_fees = calculate_all_current_extrinsic_gas_fee();
+    let all_extrinsics_tx_fees = calculate_all_current_extrinsic_tx_fee();
 
-    let mut last_release_gas_fees = rdr.deserialize().map(|e| {
-        let record: GasFeeDetail = e.unwrap();
+    let mut last_release_tx_fees = rdr.deserialize().map(|e| {
+        let record: TxFeeDetail = e.unwrap();
         record
     });
 
-    for GasFeeDetail {
+    for TxFeeDetail {
         module,
         extrinsic,
-        gas_fee,
-    } in all_extrinsics_gas_fees.iter()
+        tx_fee_with_decimal,
+        ..
+    } in all_extrinsics_tx_fees.iter()
     {
-        match last_release_gas_fees.find(|e| e.extrinsic.eq(extrinsic)) {
+        match last_release_tx_fees.find(|e| e.extrinsic.eq(extrinsic)) {
             Some(found) => {
-                let fluctuation = Percent::from_float((gas_fee - found.gas_fee).abs() / found.gas_fee);
-                assert!(fluctuation <= GAS_FEE_FLUCTUATION, "The tx fee fluctuation for the extrinsic {extrinsic} is {:?}, bigger than {:?}.", fluctuation, GAS_FEE_FLUCTUATION);
+                let tx_fee_with_decimal = Multiplier::from_str(tx_fee_with_decimal).unwrap();
+                let last_tx_fee = Multiplier::from_str(&found.tx_fee_with_decimal).unwrap();
+                let fluctuation = {
+                    let diff_value = tx_fee_with_decimal - last_tx_fee;
+                    if diff_value < Multiplier::zero() {
+                        Percent::from_float(diff_value.neg().to_float())
+                    } else {
+                        Percent::from_float(diff_value.to_float())
+                    }
+                };
+                assert!(fluctuation <= TX_FEE_FLUCTUATION, "The tx fee fluctuation for the extrinsic {extrinsic} is {:?}, bigger than {:?}.", fluctuation, TX_FEE_FLUCTUATION);
             }
             None => panic!("The extrinsic {module}.{extrinsic} is missing from current tx fees list, please add it to latest csv file."),
         }
@@ -103,23 +115,22 @@ fn diff_gas_fees() {
 }
 
 #[test]
-#[ignore]
-fn write_all_current_extrinsic_gas_fee_to_csv() {
+// #[ignore]
+fn write_all_current_extrinsic_tx_fee_to_csv() {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
     const CURRENT_PATH: &str = env!("CARGO_MANIFEST_DIR");
     let csv_path = format!("{CURRENT_PATH}/tx-fees-data/{VERSION}-tx-fees.csv");
 
     let mut wtr = csv::Writer::from_path(csv_path).unwrap();
-    let all_extrinsics_gas_fees = calculate_all_current_extrinsic_gas_fee();
+    let all_extrinsics_tx_fees = calculate_all_current_extrinsic_tx_fee();
 
-    for extrinsic in all_extrinsics_gas_fees {
+    for extrinsic in all_extrinsics_tx_fees {
         wtr.serialize(extrinsic).unwrap();
     }
     wtr.flush().unwrap();
 }
 
-fn calculate_all_current_extrinsic_gas_fee() -> Vec<GasFeeDetail> {
-    let multiplier = MinimumMultiplier::get();
+fn calculate_all_current_extrinsic_tx_fee() -> Vec<TxFeeDetail> {
     let decimal: Multiplier = Multiplier::from_u32(10).saturating_pow(12);
 
     let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
@@ -128,7 +139,7 @@ fn calculate_all_current_extrinsic_gas_fee() -> Vec<GasFeeDetail> {
         .into();
     // set the minimum
     t.execute_with(|| {
-        pallet_transaction_payment::NextFeeMultiplier::<Runtime>::set(multiplier);
+        pallet_transaction_payment::NextFeeMultiplier::<Runtime>::set(Multiplier::one());
     });
 
     let mut calamari_runtime_calls = vec![];
@@ -1839,7 +1850,35 @@ fn calculate_all_current_extrinsic_gas_fee() -> Vec<GasFeeDetail> {
         let (dispatch_info, call_len) = get_call_details(&call);
         calamari_runtime_calls.push((
             "pallet_parachain_staking",
-            "delegate",
+            "delegate_1_2_3",
+            dispatch_info,
+            call_len,
+        ));
+
+        let call = crate::Call::ParachainStaking(pallet_parachain_staking::Call::delegate {
+            candidate: ALICE,
+            amount: 1,
+            candidate_delegation_count: 25,
+            delegation_count: 3,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_parachain_staking",
+            "delegate_1_25_3",
+            dispatch_info,
+            call_len,
+        ));
+
+        let call = crate::Call::ParachainStaking(pallet_parachain_staking::Call::delegate {
+            candidate: ALICE,
+            amount: 1,
+            candidate_delegation_count: 2,
+            delegation_count: 100,
+        });
+        let (dispatch_info, call_len) = get_call_details(&call);
+        calamari_runtime_calls.push((
+            "pallet_parachain_staking",
+            "delegate_1_2_100",
             dispatch_info,
             call_len,
         ));
@@ -2151,19 +2190,23 @@ fn calculate_all_current_extrinsic_gas_fee() -> Vec<GasFeeDetail> {
         calamari_runtime_calls.push(("pallet_utility", "force_batch", dispatch_info, call_len));
     }
 
-    let mut all_extrinsics_gas_fees = vec![];
+    let mut all_extrinsics_tx_fees = vec![];
     t.execute_with(|| {
         for (pallet_name, extrinsic_name, dispatch_info, call_len) in calamari_runtime_calls {
-            let fee = TransactionPayment::compute_fee(call_len, &dispatch_info, 0);
-            let float_gax_fees = Multiplier::try_from(fee).unwrap().div(decimal).to_float();
-            let gas_fee = GasFeeDetail {
+            let tx_fee_with_decimal = TransactionPayment::compute_fee(call_len, &dispatch_info, 0);
+            let tx_fee_without_decimal = Multiplier::try_from(tx_fee_with_decimal)
+                .unwrap()
+                .div(decimal)
+                .to_float();
+            let tx_fee = TxFeeDetail {
                 module: pallet_name.to_owned(),
                 extrinsic: extrinsic_name.to_owned(),
-                gas_fee: float_gax_fees,
+                tx_fee_with_decimal: tx_fee_with_decimal.to_string(),
+                tx_fee_without_decimal: tx_fee_without_decimal.to_string(),
             };
-            all_extrinsics_gas_fees.push(gas_fee);
+            all_extrinsics_tx_fees.push(tx_fee);
         }
     });
 
-    all_extrinsics_gas_fees
+    all_extrinsics_tx_fees
 }
