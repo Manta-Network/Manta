@@ -29,7 +29,7 @@ use frame_support::{
     PalletId,
 };
 use frame_system as system;
-use frame_system::{EnsureNever, EnsureRoot, EnsureSigned};
+use frame_system::{EnsureNever, EnsureRoot};
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
