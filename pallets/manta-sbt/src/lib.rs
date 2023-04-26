@@ -313,7 +313,7 @@ pub mod pallet {
 
     /// Registers a number for mint type
     #[pallet::storage]
-    pub(super) type MintIdRegistar<T: Config> = StorageMap<
+    pub(super) type MintIdRegistry<T: Config> = StorageMap<
         _,
         Blake2_128Concat,
         MintId,
@@ -473,7 +473,7 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
 
             let chain_info =
-                MintIdRegistar::<T>::get(mint_id).ok_or(Error::<T>::MintNotAvailable)?;
+                MintIdRegistry::<T>::get(mint_id).ok_or(Error::<T>::MintNotAvailable)?;
             Self::check_mint_time(&chain_info)?;
 
             let allowlist_account =
@@ -517,7 +517,7 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
 
             let chain_info =
-                MintIdRegistar::<T>::get(mint_id).ok_or(Error::<T>::MintNotAvailable)?;
+                MintIdRegistry::<T>::get(mint_id).ok_or(Error::<T>::MintNotAvailable)?;
 
             // check that mint type is within time window
             Self::check_mint_time(&chain_info)?;
@@ -591,7 +591,7 @@ pub mod pallet {
                 end_time,
                 mint_name: mint_name.clone(),
             };
-            MintIdRegistar::<T>::mutate(mint_id, |mint_info| {
+            MintIdRegistry::<T>::mutate(mint_id, |mint_info| {
                 match mint_info {
                     Some(_) => *mint_info = Some(mint_id_info),
                     // if value does not exist then return error, can only create mint id from `new_mint_info`
@@ -629,7 +629,7 @@ pub mod pallet {
             };
             let mint_id = Self::next_mint_id_and_increment()?;
 
-            MintIdRegistar::<T>::insert(mint_id, mint_chain_info);
+            MintIdRegistry::<T>::insert(mint_id, mint_chain_info);
 
             Self::deposit_event(Event::<T>::NewMintInfo {
                 start_time,

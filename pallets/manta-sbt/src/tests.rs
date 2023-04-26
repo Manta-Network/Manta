@@ -19,7 +19,7 @@
 use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, Origin as MockOrigin, Test, Timestamp},
     AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, MintId,
-    MintIdRegistar, MintStatus, ReservedIds, SbtMetadataV2, MANTA_MINT_ID,
+    MintIdRegistry, MintStatus, ReservedIds, SbtMetadataV2, MANTA_MINT_ID,
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
@@ -728,7 +728,7 @@ fn new_mint_info_works() {
             None,
             bvec![]
         ));
-        let registered_mint = MintIdRegistar::<Test>::get(bab_id).unwrap();
+        let registered_mint = MintIdRegistry::<Test>::get(bab_id).unwrap();
         assert_eq!(registered_mint.start_time, 0);
         assert_eq!(registered_mint.end_time, None);
         assert_eq!(registered_mint.mint_name, vec![]);
