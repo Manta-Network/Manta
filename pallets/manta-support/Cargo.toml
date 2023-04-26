@@ -13,7 +13,7 @@ version = '4.0.6'
 # utils
 anyhow = { version = "1.0.55", optional = true, default-features = false }
 base64 = { version = "0.20", default-features = false, features = ["alloc"] }
-indoc = { version = "1.0.3", optional = true, default-features = false }
+indoc = { version = "2.0.1", optional = true, default-features = false }
 rand_chacha = { version = "0.3.1", optional = true, default-features = false }
 tempfile = { version = "3.3.0", optional = true, default-features = false }
 
@@ -21,7 +21,7 @@ tempfile = { version = "3.3.0", optional = true, default-features = false }
 frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false, optional = true }
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", default-features = false }
-scale-codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
+scale-codec = { package = "parity-scale-codec", version = '3.4.0', default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 sp-api = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37", optional = true, default-features = false }
 sp-blockchain = { git = 'https://github.com/paritytech/substrate.git', branch = "polkadot-v0.9.37", optional = true, default-features = false }

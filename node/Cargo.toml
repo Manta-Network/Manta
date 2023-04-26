@@ -15,11 +15,11 @@ version = '4.0.6'
 targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
-async-trait = "0.1.52"
+async-trait = "0.1.66"
 cfg-if = "1.0.0"
 clap = { version = "4.1.8", features = ["derive"] }
-codec = { package = 'parity-scale-codec', version = '3.1.2' }
-futures = "0.3.21"
+codec = { package = 'parity-scale-codec', version = '3.4.0' }
+futures = "0.3.26"
 hex-literal = "0.3"
 log = "0.4.16"
 serde = { version = "1.0.140", features = ["derive"] }
