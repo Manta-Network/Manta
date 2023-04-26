@@ -34,7 +34,7 @@ use frame_support::{
     traits::{AsEnsureOriginWithArg, ConstU32},
     PalletId,
 };
-use frame_system::{EnsureRoot, EnsureSigned};
+use frame_system::{EnsureNever, EnsureRoot};
 
 use xcm::VersionedMultiLocation;
 
@@ -64,7 +64,7 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = MantaAssetId;
-    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureNever<AccountId>>;
     type CallbackHandle = ();
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();

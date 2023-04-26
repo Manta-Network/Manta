@@ -24,7 +24,7 @@ use frame_support::{
     },
     PalletId,
 };
-use frame_system::{EnsureRoot, EnsureSigned};
+use frame_system::{EnsureNever, EnsureRoot};
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
@@ -169,7 +169,7 @@ impl pallet_assets::Config for Test {
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Test>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = StandardAssetId;
-    type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId32>>;
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureNever<AccountId32>>;
     type CallbackHandle = ();
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();
