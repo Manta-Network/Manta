@@ -418,9 +418,8 @@ fn allowlist_account_works() {
             ),
             Error::<Test>::MintNotAvailable,
         );
-        assert_ok!(MantaSBTPallet::set_mint_chain_info(
+        assert_ok!(MantaSBTPallet::new_mint_info(
             MockOrigin::root(),
-            bab_id,
             5,
             None,
             bvec![]
@@ -494,9 +493,8 @@ fn mint_sbt_eth_works() {
         ));
         let alice_eth_account = MantaSBTPallet::eth_address(&alice_eth());
         Timestamp::set_timestamp(10);
-        assert_ok!(MantaSBTPallet::set_mint_chain_info(
+        assert_ok!(MantaSBTPallet::new_mint_info(
             MockOrigin::root(),
-            bab_id,
             0,
             None,
             bvec![]
@@ -628,9 +626,8 @@ fn timestamp_range_fails() {
             MockOrigin::root(),
             Some(ALICE)
         ));
-        assert_ok!(MantaSBTPallet::set_mint_chain_info(
+        assert_ok!(MantaSBTPallet::new_mint_info(
             MockOrigin::root(),
-            1,
             0,
             None,
             bvec![]
@@ -642,7 +639,7 @@ fn timestamp_range_fails() {
             bab_id,
             alice_eth_account
         ));
-        assert_ok!(MantaSBTPallet::set_mint_chain_info(
+        assert_ok!(MantaSBTPallet::update_mint_info(
             MockOrigin::root(),
             bab_id,
             10,
@@ -692,7 +689,7 @@ fn timestamp_range_fails() {
         );
 
         // with None as end time works
-        assert_ok!(MantaSBTPallet::set_mint_chain_info(
+        assert_ok!(MantaSBTPallet::update_mint_info(
             MockOrigin::root(),
             bab_id,
             10,
@@ -713,27 +710,20 @@ fn timestamp_range_fails() {
 }
 
 #[test]
-fn set_mint_chain_info_works() {
+fn new_mint_info_works() {
     new_test_ext().execute_with(|| {
         let bab_id = 1;
         assert_noop!(
-            MantaSBTPallet::set_mint_chain_info(
-                MockOrigin::signed(ALICE),
-                bab_id,
-                0,
-                None,
-                bvec![]
-            ),
+            MantaSBTPallet::new_mint_info(MockOrigin::signed(ALICE), 0, None, bvec![]),
             DispatchError::BadOrigin
         );
         assert_noop!(
-            MantaSBTPallet::set_mint_chain_info(MockOrigin::root(), bab_id, 10, Some(5), bvec![]),
+            MantaSBTPallet::new_mint_info(MockOrigin::root(), 10, Some(5), bvec![]),
             Error::<Test>::InvalidTimeRange
         );
 
-        assert_ok!(MantaSBTPallet::set_mint_chain_info(
+        assert_ok!(MantaSBTPallet::new_mint_info(
             MockOrigin::root(),
-            bab_id,
             0,
             None,
             bvec![]

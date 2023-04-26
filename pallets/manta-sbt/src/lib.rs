@@ -132,6 +132,8 @@ type EvmAddress = H160;
 pub type Eip712Signature = [u8; 65];
 
 /// Enum with each possible type of allowlisted Eth Address
+///
+/// Type is deprecated delete after migration
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub enum EvmAddressType {
     /// BAB holder
@@ -141,6 +143,8 @@ pub enum EvmAddressType {
 }
 
 /// Different mint types
+///
+/// Type is deprecated delete after migration
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub enum MintType {
     /// Bab allowlist mint
@@ -271,11 +275,11 @@ pub mod pallet {
     #[pallet::storage]
     pub(super) type NextSbtId<T: Config> = StorageValue<_, StandardAssetId, OptionQuery>;
 
-    /// Counter for SBT MintId. Increments by one everytime a mint is created
+    /// Counter for MintId. Increments by one everytime a new mint type is created (Bab, Galxe, etc.)
     ///
-    /// Should only ever be modified by `next_sbt_id_and_increment()`
+    /// Should only ever be modified by `next_mint_id_and_increment()`
     #[pallet::storage]
-    pub(super) type NextMintId<T: Config> = StorageValue<_, StandardAssetId, OptionQuery>;
+    pub(super) type NextMintId<T: Config> = StorageValue<_, MintId, OptionQuery>;
 
     /// Account that can add evm accounts to allowlist
     #[pallet::storage]
@@ -457,7 +461,7 @@ pub mod pallet {
 
         /// Adds EvmAddress to allowlist and reserve an unique AssetId for this account. Requires caller to be the `AllowlistAccount`.
         ///
-        /// `EvmAddressType` creates multiple allowlists, so an `EvmAddress` can have multiple free mints for different `MintTypes`.
+        /// Uses `mint_id` to specify which mint, this is so a `EvmAddress` can have multiple free mints for different `MintIds`.
         #[pallet::call_index(2)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::allowlist_evm_account())]
         #[transactional]
@@ -565,11 +569,11 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Sets the time range and chain_id of which a `MintType` will be valid. Requires `AdminOrigin`
+        /// Updates the time range of which a `MintId` will be valid. Also can update `mint_name` Requires `AdminOrigin`
         #[pallet::call_index(5)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_mint_chain_info())]
         #[transactional]
-        pub fn set_mint_chain_info(
+        pub fn update_mint_info(
             origin: OriginFor<T>,
             mint_id: MintId,
             start_time: Moment<T>,
@@ -582,17 +586,56 @@ pub mod pallet {
                 ensure!(end > start_time, Error::<T>::InvalidTimeRange);
             }
 
-            let mint_chain_info = RegisteredMint::<Moment<T>, T::RegistryBound> {
+            let mint_id_info = RegisteredMint::<Moment<T>, T::RegistryBound> {
                 start_time,
                 end_time,
-                mint_name,
+                mint_name: mint_name.clone(),
             };
-            MintIdRegistar::<T>::insert(mint_id, mint_chain_info);
+            MintIdRegistar::<T>::mutate(mint_id, |mint_info| {
+                match mint_info {
+                    Some(_) => *mint_info = Some(mint_id_info),
+                    // if value does not exist then return error, can only create mint id from `new_mint_info`
+                    None => return Err(Error::<T>::InvalidMintId),
+                }
+                Ok(())
+            })?;
 
-            Self::deposit_event(Event::<T>::MintChainInfo {
+            Self::deposit_event(Event::<T>::UpdateMintInfo {
                 mint_id,
                 start_time,
                 end_time,
+                mint_name: mint_name.to_vec(),
+            });
+            Ok(())
+        }
+
+        #[pallet::call_index(6)]
+        #[pallet::weight(0)]
+        pub fn new_mint_info(
+            origin: OriginFor<T>,
+            start_time: Moment<T>,
+            end_time: Option<Moment<T>>,
+            mint_name: BoundedVec<u8, T::RegistryBound>,
+        ) -> DispatchResult {
+            T::AdminOrigin::ensure_origin(origin)?;
+
+            if let Some(end) = end_time {
+                ensure!(end > start_time, Error::<T>::InvalidTimeRange);
+            }
+            let mint_chain_info = RegisteredMint::<Moment<T>, T::RegistryBound> {
+                start_time,
+                end_time,
+                mint_name: mint_name.clone(),
+            };
+            let mint_id = Self::next_mint_id_and_increment()?;
+
+            MintIdRegistar::<T>::insert(mint_id, mint_chain_info);
+
+            Self::deposit_event(Event::<T>::NewMintInfo {
+                start_time,
+                end_time,
+                mint_id,
+                mint_name: mint_name.to_vec(),
             });
             Ok(())
         }
@@ -641,13 +684,25 @@ pub mod pallet {
             /// Account that is now the new privileged allowlist account
             account: Option<T::AccountId>,
         },
-        MintChainInfo {
+        UpdateMintInfo {
             /// `MintId` to be updated
             mint_id: MintId,
             /// Start time at which minting is valid
             start_time: Moment<T>,
             /// End time at which minting will no longer be valid, None represents no end time.
             end_time: Option<Moment<T>>,
+            /// Name of mint
+            mint_name: Vec<u8>,
+        },
+        NewMintInfo {
+            /// new `MintId` generated
+            mint_id: MintId,
+            /// Start time at which minting is valid
+            start_time: Moment<T>,
+            /// End time at which minting will no longer be valid, None represents no end time.
+            end_time: Option<Moment<T>>,
+            /// Name of mint
+            mint_name: Vec<u8>,
         },
     }
 
@@ -825,6 +880,9 @@ pub mod pallet {
 
         /// Time range is invalid (start_time > end_time)
         InvalidTimeRange,
+
+        /// MintId does not exist, cannot update a nonexistant MintId
+        InvalidMintId,
     }
 }
 
@@ -967,6 +1025,29 @@ where
         })
     }
 
+    /// Returns and increments the [`NextMintId`] by one.
+    #[inline]
+    fn next_mint_id_and_increment() -> Result<MintId, DispatchError> {
+        NextMintId::<T>::try_mutate(|maybe_val| {
+            match maybe_val {
+                Some(current) => {
+                    let id = *current;
+                    *maybe_val = Some(
+                        current
+                            .checked_add(One::one())
+                            .ok_or(ArithmeticError::Overflow)?,
+                    );
+                    Ok(id)
+                }
+                // If storage is empty, starts at value of one (Native SBT has value of zero)
+                None => {
+                    *maybe_val = Some(2);
+                    Ok(One::one())
+                }
+            }
+        })
+    }
+
     /// Checks that post is `ToPrivate` with a value of one
     #[inline]
     fn check_post_shape(post: &TransferPost, asset_id: StandardAssetId) -> DispatchResult {
@@ -1038,7 +1119,7 @@ where
         keccak_256(domain_seperator_msg.as_slice())
     }
 
-    /// Checks that mint type is available to mint within time window defined in `MintChainInfos`
+    /// Checks that mint type is available to mint within time window defined in `MintRegistrar`
     #[inline]
     fn check_mint_time(
         mint_chain_info: &RegisteredMint<Moment<T>, T::RegistryBound>,
