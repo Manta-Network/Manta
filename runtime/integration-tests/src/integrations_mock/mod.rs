@@ -16,13 +16,15 @@
 
 #![cfg(test)]
 
-pub mod calamari;
-pub mod common;
-pub mod manta;
 pub mod mock;
+pub mod test_calamari;
+pub mod test_common;
+pub mod test_manta;
 
 pub use mock::run_to_block;
 
+// Compilation errors would happen without default imports.
+// See run_linters.yml => SKIP_WASM_BUILD=1 cargo check --no-default-features
 cfg_if::cfg_if! {
     if #[cfg(feature = "calamari")] {
         pub use calamari_runtime::{
@@ -138,7 +140,7 @@ pub fn initialize_collators_through_whitelist(collators: Vec<AccountId>) {
     ));
 }
 
-#[allow(dead_code)]
+#[cfg(feature = "calamari")]
 fn seal_header(mut header: Header, author: AccountId) -> Header {
     {
         let digest = header.digest_mut();
