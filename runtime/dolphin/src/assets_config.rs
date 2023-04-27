@@ -37,7 +37,7 @@ use frame_support::{
     traits::{AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, EitherOfDiverse},
     PalletId,
 };
-use frame_system::{EnsureNever, EnsureRoot};
+use frame_system::EnsureRoot;
 use xcm::VersionedMultiLocation;
 
 parameter_types! {
@@ -66,7 +66,10 @@ impl pallet_assets::Config for Runtime {
     type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
     type AssetIdParameter = DolphinAssetId;
-    type CreateOrigin = AsEnsureOriginWithArg<EnsureNever<AccountId>>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
+    #[cfg(not(feature = "runtime-benchmarks"))]
+    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureNever<AccountId>>;
     type CallbackHandle = ();
     #[cfg(feature = "runtime-benchmarks")]
     type BenchmarkHelper = ();
