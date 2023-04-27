@@ -209,5 +209,6 @@ impl pallet_manta_sbt::Config for Runtime {
         pallet_collective::EnsureMembers<AccountId, TechnicalCollective, 2>,
     >;
     type Now = Timestamp;
+    type RegistryBound = ConstU32<300>;
     type WeightInfo = ();
 }

@@ -194,6 +194,7 @@ impl pallet_manta_sbt::Config for Runtime {
     type MintsPerReserve = ConstU16<5>;
     type ReservePrice = ConstU128<{ 100_000 * KMA }>;
     type SbtMetadataBound = ConstU32<300>;
+    type RegistryBound = ConstU32<300>;
     type AdminOrigin = EitherOfDiverse<
         EnsureRoot<AccountId>,
         pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>,

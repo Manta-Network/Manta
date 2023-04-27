@@ -461,7 +461,7 @@ pub mod pallet {
 
         /// Adds EvmAddress to allowlist and reserve an unique AssetId for this account. Requires caller to be the `AllowlistAccount`.
         ///
-        /// Uses `mint_id` to specify which mint, this is so a `EvmAddress` can have multiple free mints for different `MintIds`.
+        /// Uses `mint_id` to specify which mint, this is so an `EvmAddress` can have multiple free mints for different `MintIds`.
         #[pallet::call_index(2)]
         #[pallet::weight(<T as pallet::Config>::WeightInfo::allowlist_evm_account())]
         #[transactional]
