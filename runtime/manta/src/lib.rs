@@ -225,7 +225,7 @@ impl Contains<Call> for MantaFilter {
             | Call::TechnicalCommittee(_)
             | Call::CouncilMembership(_)
             | Call::TechnicalMembership(_)
-            | Call::Scheduler(_)    
+            | Call::Scheduler(_)
             // Sudo also cannot be filtered because it is used in runtime upgrade.
             | Call::Sudo(_)
             | Call::Multisig(_)
