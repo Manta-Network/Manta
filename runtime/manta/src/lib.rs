@@ -464,9 +464,9 @@ parameter_types! {
     // Our NORMAL_DISPATCH_RATIO is 70% of the 5MB limit
     // So anything more than 3.5MB doesn't make sense here
     pub const PreimageMaxSize: u32 = 3584 * 1024;
-    pub const PreimageBaseDeposit: Balance = 1 * MANTA;
+    pub const PreimageBaseDeposit: Balance = 4 * mMANTA;
     // One cent: $10,000 / MB
-    pub const PreimageByteDeposit: Balance = 1 * cMANTA;
+    pub const PreimageByteDeposit: Balance = 40 * uMANTA;
 }
 
 impl pallet_preimage::Config for Runtime {
@@ -544,7 +544,7 @@ parameter_types! {
     pub VotingPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 5 * MINUTES, "MANTA_VOTINGPERIOD");
     pub FastTrackVotingPeriod: BlockNumber = prod_or_fast!(3 * HOURS, 2 * MINUTES, "MANTA_FASTTRACKVOTINGPERIOD");
     pub const InstantAllowed: bool = true;
-    pub const MinimumDeposit: Balance = 1000 * MANTA;
+    pub const MinimumDeposit: Balance = 4 * MANTA;
     pub EnactmentPeriod: BlockNumber = prod_or_fast!(1 * DAYS, 2 * MINUTES, "MANTA_ENACTMENTPERIOD");
     pub CooloffPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 2 * MINUTES, "MANTA_COOLOFFPERIOD");
 }
