@@ -40,7 +40,6 @@ jobs:
           echo "::set-output name=stable::$(rustc +stable --version)"
           echo "::set-output name=nightly::$(rustc +nightly --version)"
   build-runtimes:
-    needs: check-for-runtime-upgrade
     runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
@@ -90,7 +89,7 @@ jobs:
           name: config-for-runtime-upgrade-test
           path: .github/resources/config-for-runtime-upgrade-test.json
   runtime-upgrade-test:
-    needs: [build-runtimes, start-runtime-upgrade-tester, check-for-runtime-upgrade, parse-runtimes]
+    needs: [build-runtimes, start-runtime-upgrade-tester]
     runs-on: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
     timeout-minutes: 90
     strategy:
@@ -227,7 +226,7 @@ jobs:
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-runtime-upgrade-tester:
     if: ${{ always() }}
-    needs: [runtime-upgrade-test, check-for-runtime-upgrade, start-runtime-upgrade-tester]
+    needs: [runtime-upgrade-test, start-runtime-upgrade-tester]
     runs-on: ubuntu-20.04
     steps:
       - continue-on-error: true
