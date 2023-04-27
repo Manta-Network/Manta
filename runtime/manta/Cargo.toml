@@ -158,6 +158,7 @@ try-runtime = [
   'pallet-xcm/try-runtime',
   "cumulus-pallet-dmp-queue/try-runtime",
   'pallet-aura-style-filter/try-runtime',
+  'pallet-author-inherent/try-runtime',
   'manta-collator-selection/try-runtime',
   'pallet-sudo/try-runtime',
   'cumulus-pallet-xcmp-queue/try-runtime',
