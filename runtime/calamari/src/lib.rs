@@ -930,7 +930,7 @@ mod benches {
                 [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
 
         // Nimbus pallets
-        // [pallet_author_inherent, AuthorInherent]
+        [pallet_author_inherent, AuthorInherent]
     );
 }
 
