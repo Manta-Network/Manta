@@ -74,14 +74,12 @@ pub use sp_runtime::BuildStorage;
 
 pub mod assets_config;
 pub mod currency;
-pub mod fee;
 pub mod impls;
 mod nimbus_session_adapter;
 pub mod staking;
 pub mod xcm_config;
 
 use currency::*;
-use fee::WeightToFee;
 use impls::DealWithFees;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
@@ -278,15 +276,16 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    pub const TransactionLengthToFeeCoeff: Balance = mMANTA / 10;
+    pub const TransactionLengthToFeeCoeff: Balance = 40 * uMANTA;
+    pub const WeightToFeeCoeff: Balance = 20;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
-    type WeightToFee = WeightToFee;
+    type WeightToFee = ConstantMultiplier<Balance, WeightToFeeCoeff>;
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthToFeeCoeff>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
-    type OperationalFeeMultiplier = ConstU8<5>;
+    type OperationalFeeMultiplier = ConstU8<1>;
     type Event = Event;
 }
 
