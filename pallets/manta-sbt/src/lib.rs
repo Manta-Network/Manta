@@ -267,6 +267,10 @@ pub mod pallet {
         /// Max size in bytes of `mint_name` entered in `RegisteredMint`
         #[pallet::constant]
         type RegistryBound: Get<u32>;
+
+        /// The minimum weight that should remain as lazy migration executes.
+        #[pallet::constant]
+        type MinimumWeightRemainInBlock: Get<Weight>;
     }
 
     /// Counter for SBT AssetId. Increments by one everytime a new asset id is requested.
@@ -641,6 +645,53 @@ pub mod pallet {
         }
     }
 
+    #[pallet::hooks]
+    impl<T: Config> Hooks<T::BlockNumber> for Pallet<T>
+    where
+        T::AccountId: From<AccountId> + Into<AccountId>,
+    {
+        /// Migrates sbt pallet to new storage scheme
+        ///
+        /// remove once migration is complete
+        fn on_idle(_n: T::BlockNumber, remaining_weight: Weight) -> Weight {
+            let mut weight_tracking = remaining_weight;
+            if weight_tracking <= T::MinimumWeightRemainInBlock::get() {
+                // return total weight so all the weight is exhausted
+                return remaining_weight;
+            }
+            let two_writes_one_read = T::DbWeight::get()
+                .write
+                .saturating_mul(2)
+                .saturating_add(T::DbWeight::get().read);
+
+            for (mint_type, mint_info) in MintChainInfos::<T>::drain() {
+                weight_tracking -= two_writes_one_read;
+                if weight_tracking <= T::MinimumWeightRemainInBlock::get() {
+                    break;
+                }
+                Self::migrate_mint_info(mint_type, mint_info);
+            }
+
+            for (evm_address_type, mint_status) in EvmAddressAllowlist::<T>::drain() {
+                weight_tracking -= two_writes_one_read;
+                if weight_tracking <= T::MinimumWeightRemainInBlock::get() {
+                    break;
+                }
+                Self::migrate_evm_address_type(evm_address_type, mint_status)
+            }
+
+            for (asset_id, old_metadata) in SbtMetadata::<T>::drain() {
+                weight_tracking -= two_writes_one_read;
+                if weight_tracking <= T::MinimumWeightRemainInBlock::get() {
+                    break;
+                }
+                Self::migrate_metadata(asset_id, old_metadata);
+            }
+            // return total weight so all weight is exhausted
+            remaining_weight
+        }
+    }
+
     /// Event
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -886,8 +937,9 @@ pub mod pallet {
     }
 }
 
-impl<T: Config> Pallet<T>
+impl<T> Pallet<T>
 where
+    T: Config,
     T::AccountId: From<AccountId> + Into<AccountId>,
 {
     /// Maximum Number of Updates per Shard (based on benchmark result)
@@ -1168,6 +1220,73 @@ where
         r[0..64].copy_from_slice(&sig.serialize()[..]);
         r[64] = recovery_id.serialize();
         r
+    }
+
+    #[inline]
+    pub fn migrate_evm_address_type(evm_address: EvmAddressType, mint_status: MintStatus) {
+        match evm_address {
+            EvmAddressType::Bab(address) => {
+                // bab has MintId of 1
+                let bab_id = 1;
+                EvmAccountAllowlist::<T>::insert(bab_id, address, mint_status)
+            }
+            EvmAddressType::Galxe(address) => {
+                // galxe has MintId of 2
+                let galxe_id = 2;
+                EvmAccountAllowlist::<T>::insert(galxe_id, address, mint_status)
+            }
+        }
+    }
+
+    /// Migrate to `MetadataV2`
+    ///
+    /// Delete once migration is complete
+    #[inline]
+    pub fn migrate_metadata(
+        asset_id: StandardAssetId,
+        old_metadata: Metadata<T::SbtMetadataBound>,
+    ) {
+        let mint_id: MintId = match old_metadata.mint_type {
+            MintType::Manta => MANTA_MINT_ID,
+            MintType::Bab => 1,
+            MintType::Galxe => 2,
+        };
+        let new_metadata = MetadataV2::<T::SbtMetadataBound> {
+            mint_id,
+            collection_id: old_metadata.collection_id,
+            item_id: old_metadata.item_id,
+            extra: old_metadata.extra,
+        };
+        SbtMetadataV2::<T>::insert(asset_id, new_metadata);
+    }
+
+    /// Migrate to `MintIdRegistry`
+    ///
+    /// Delete once migration is complete
+    #[inline]
+    pub fn migrate_mint_info(mint_type: MintType, mint_info: MintChainInfo<Moment<T>>) {
+        let (mint_id, mint_name) = match mint_type {
+            MintType::Manta => (
+                MANTA_MINT_ID,
+                b"manta".to_vec().try_into().unwrap_or_default(),
+            ),
+            MintType::Bab => (1, b"Bab".to_vec().try_into().unwrap_or_default()),
+            MintType::Galxe => (2, b"Galxe".to_vec().try_into().unwrap_or_default()),
+        };
+        let mint_registry = RegisteredMint::<Moment<T>, T::RegistryBound> {
+            mint_name,
+            start_time: mint_info.start_time,
+            end_time: mint_info.end_time,
+        };
+        MintIdRegistry::<T>::insert(mint_id, mint_registry)
+    }
+
+    /// needed so `NextMintId` is correct value
+    ///
+    /// remove once migration is complete
+    #[inline]
+    pub fn set_next_mint_id(mint_id: MintId) {
+        NextMintId::<T>::put(mint_id);
     }
 }
 

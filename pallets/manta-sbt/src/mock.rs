@@ -140,6 +140,7 @@ impl crate::Config for Test {
     type AdminOrigin = EnsureRoot<AccountId32>;
     type Now = Timestamp;
     type RegistryBound = ConstU32<200>;
+    type MinimumWeightRemainInBlock = ConstU64<100>;
 }
 
 parameter_types! {
