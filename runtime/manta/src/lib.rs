@@ -278,7 +278,6 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    /// Relay Chain `TransactionLengthToFeeCoeff` / 10
     pub const TransactionLengthToFeeCoeff: Balance = mMANTA / 10;
 }
 
