@@ -1222,6 +1222,9 @@ where
         r
     }
 
+    /// Migrate to `EvmAccountAllowlist` from `EvmAddressAllowlist`
+    ///
+    /// Delete once migration is complete
     #[inline]
     pub fn migrate_evm_address_type(evm_address: EvmAddressType, mint_status: MintStatus) {
         match evm_address {

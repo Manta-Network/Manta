@@ -26,6 +26,7 @@ use manta_primitives::{
     },
     constants::{
         ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL, MANTA_PAY_PALLET_ID, MANTA_SBT_PALLET_ID,
+        WEIGHT_PER_MILLIS,
     },
     types::{AccountId, Balance, CalamariAssetId},
 };
@@ -33,7 +34,7 @@ use manta_primitives::{
 use frame_support::{
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32, EitherOfDiverse},
+    traits::{ConstU128, ConstU16, ConstU32, ConstU64, EitherOfDiverse},
     PalletId,
 };
 
@@ -199,6 +200,7 @@ impl pallet_manta_sbt::Config for Runtime {
         EnsureRoot<AccountId>,
         pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>,
     >;
+    type MinimumWeightRemainInBlock = ConstU64<{ 25 * WEIGHT_PER_MILLIS }>;
     type Now = Timestamp;
     type WeightInfo = weights::pallet_manta_sbt::SubstrateWeight<Runtime>;
 }
