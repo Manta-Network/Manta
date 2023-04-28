@@ -25,22 +25,10 @@ env:
   POLKADOT_BINARY: ${{github.event.inputs.polkadot_url}}
   MANTA_BINARY: ${{github.event.inputs.manta_base_url}}
 jobs:
-  print-rust-versions:
-    runs-on: ubuntu-20.04
-    container:
-      image: paritytech/ci-linux:production
-    outputs:
-      rustc-stable: ${{ steps.get-rust-versions.outputs.stable }}
-      rustc-nightly: ${{ steps.get-rust-versions.outputs.nightly }}
-    env:
-      CARGO_TERM_COLOR: always
-    steps:
-      - id: get-rust-versions
-        run: |
-          echo "::set-output name=stable::$(rustc +stable --version)"
-          echo "::set-output name=nightly::$(rustc +nightly --version)"
   build-runtimes:
-    runs-on: ubuntu-20.04
+    needs: [start-runtime-upgrade-tester]
+    runs-on: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
+    timeout-minutes: 90
     env:
       CARGO_TERM_COLOR: always
     strategy:
@@ -82,27 +70,6 @@ jobs:
           path: |
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
-      - if: always()
-        name: upload
-        uses: actions/upload-artifact@v2
-        with:
-          name: config-for-runtime-upgrade-test
-          path: .github/resources/config-for-runtime-upgrade-test.json
-  runtime-upgrade-test:
-    needs: [build-runtimes, start-runtime-upgrade-tester]
-    runs-on: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
-    timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        runtime:
-          - name: manta
-            chain-spec: manta-local
-          - name: calamari
-            chain-spec: calamari-local
-          - name: dolphin
-            chain-spec: dolphin-local
-    steps:
       - run: |
           ls -ahl ${{ github.workspace }}/
           mkdir -p $HOME/.local/share/${{ matrix.runtime.name }}-pc
@@ -138,14 +105,10 @@ jobs:
             ' $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json
           ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-pc/
           manta-base export-state --chain $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-state.json || true
-      - name: fetch config-for-runtime-upgrade-test
-        uses: actions/download-artifact@v2
-        with:
-          name: config-for-runtime-upgrade-test
       - name: create launch config
         run: |
           ls -a
-          cat config-for-runtime-upgrade-test.json | \
+          cat .github/resources/config-for-runtime-upgrade-test.json | \
           jq \
             --arg relaychain_bin $HOME/.local/bin/polkadot \
             --arg relaychain_id rococo-local-base \
@@ -224,9 +187,19 @@ jobs:
           aws-instance-root-volume-size: 64
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
+      - name: init
+        run: |
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev yarn
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup default stable
+          rustup update
+          rustup target add wasm32-unknown-unknown
   stop-runtime-upgrade-tester:
     if: ${{ always() }}
-    needs: [runtime-upgrade-test, start-runtime-upgrade-tester]
+    needs: [build-runtimes, start-runtime-upgrade-tester]
     runs-on: ubuntu-20.04
     steps:
       - continue-on-error: true
