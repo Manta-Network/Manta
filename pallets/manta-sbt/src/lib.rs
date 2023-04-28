@@ -1271,7 +1271,7 @@ where
         let (mint_id, mint_name) = match mint_type {
             MintType::Manta => (
                 MANTA_MINT_ID,
-                b"manta".to_vec().try_into().unwrap_or_default(),
+                b"Manta".to_vec().try_into().unwrap_or_default(),
             ),
             MintType::Bab => (1, b"Bab".to_vec().try_into().unwrap_or_default()),
             MintType::Galxe => (2, b"Galxe".to_vec().try_into().unwrap_or_default()),

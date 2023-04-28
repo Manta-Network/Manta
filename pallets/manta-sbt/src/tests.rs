@@ -18,10 +18,14 @@
 
 use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, Origin as MockOrigin, Test, Timestamp},
-    AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, MintId,
-    MintIdRegistry, MintStatus, ReservedIds, SbtMetadataV2, MANTA_MINT_ID,
+    AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, MintChainInfo,
+    MintChainInfos, MintId, MintIdRegistry, MintStatus, MintType, Moment, RegisteredMint,
+    ReservedIds, SbtMetadataV2, MANTA_MINT_ID,
 };
-use frame_support::{assert_noop, assert_ok, traits::Get};
+use frame_support::{
+    assert_noop, assert_ok,
+    traits::{Get, OnIdle},
+};
 use manta_crypto::{
     arkworks::constraint::fp::Fp,
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
@@ -732,5 +736,74 @@ fn new_mint_info_works() {
         assert_eq!(registered_mint.start_time, 0);
         assert_eq!(registered_mint.end_time, None);
         assert_eq!(registered_mint.mint_name, vec![]);
+    })
+}
+
+#[test]
+fn update_mint_info_works() {
+    new_test_ext().execute_with(|| {
+        let bab_id = 1;
+        assert_noop!(
+            MantaSBTPallet::update_mint_info(MockOrigin::root(), bab_id, 10, Some(20), bvec![]),
+            Error::<Test>::InvalidMintId
+        );
+        assert_noop!(
+            MantaSBTPallet::update_mint_info(
+                MockOrigin::signed(ALICE),
+                bab_id,
+                10,
+                Some(20),
+                bvec![]
+            ),
+            DispatchError::BadOrigin
+        );
+
+        assert_ok!(MantaSBTPallet::new_mint_info(
+            MockOrigin::root(),
+            0,
+            None,
+            bvec![]
+        ));
+        assert_noop!(
+            MantaSBTPallet::update_mint_info(MockOrigin::root(), bab_id, 10, Some(5), bvec![]),
+            Error::<Test>::InvalidTimeRange
+        );
+
+        assert_ok!(MantaSBTPallet::update_mint_info(
+            MockOrigin::root(),
+            bab_id,
+            10,
+            Some(20),
+            bvec![]
+        ));
+    })
+}
+
+#[test]
+fn on_idle_test() {
+    new_test_ext().execute_with(|| {
+        let example_info = MintChainInfo::<Moment<Test>> {
+            start_time: 0,
+            end_time: None,
+        };
+        let migrated_bab_info =
+            RegisteredMint::<Moment<Test>, <Test as crate::Config>::RegistryBound> {
+                start_time: 0,
+                end_time: None,
+                mint_name: b"Bab".to_vec().try_into().unwrap(),
+            };
+
+        MintChainInfos::<Test>::insert(MintType::Bab, example_info.clone());
+        MintChainInfos::<Test>::insert(MintType::Galxe, example_info.clone());
+        MantaSBTPallet::on_idle(0, 100000);
+        assert!(MintChainInfos::<Test>::iter().next().is_none());
+        assert_eq!(
+            MintIdRegistry::<Test>::get(1).unwrap().mint_name,
+            migrated_bab_info.mint_name
+        );
+        assert_eq!(
+            MintIdRegistry::<Test>::get(1).unwrap().start_time,
+            migrated_bab_info.start_time
+        );
     })
 }
