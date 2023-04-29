@@ -665,26 +665,29 @@ pub mod pallet {
                 .saturating_add(T::DbWeight::get().read);
 
             for (mint_type, mint_info) in MintChainInfos::<T>::drain() {
-                weight_tracking -= two_writes_one_read;
                 if weight_tracking <= T::MinimumWeightRemainInBlock::get() {
                     break;
                 }
+
+                weight_tracking = weight_tracking.saturating_sub(two_writes_one_read);
                 Self::migrate_mint_info(mint_type, mint_info);
             }
 
             for (evm_address_type, mint_status) in EvmAddressAllowlist::<T>::drain() {
-                weight_tracking -= two_writes_one_read;
                 if weight_tracking <= T::MinimumWeightRemainInBlock::get() {
                     break;
                 }
+                weight_tracking = weight_tracking.saturating_sub(two_writes_one_read);
+
                 Self::migrate_evm_address_type(evm_address_type, mint_status)
             }
 
             for (asset_id, old_metadata) in SbtMetadata::<T>::drain() {
-                weight_tracking -= two_writes_one_read;
                 if weight_tracking <= T::MinimumWeightRemainInBlock::get() {
                     break;
                 }
+                weight_tracking = weight_tracking.saturating_sub(two_writes_one_read);
+
                 Self::migrate_metadata(asset_id, old_metadata);
             }
             // return total weight so all weight is exhausted

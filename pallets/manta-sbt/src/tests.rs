@@ -836,5 +836,19 @@ fn on_idle_test() {
 
 #[test]
 fn on_idle_weight_test() {
-    new_test_ext().execute_with(|| {})
+    new_test_ext().execute_with(|| {
+        for i in 1..5000 {
+            let metadata = Metadata::<<Test as crate::Config>::SbtMetadataBound> {
+                mint_type: MintType::Galxe,
+                collection_id: None,
+                item_id: None,
+                extra: Some(b"metadata".to_vec().try_into().unwrap()),
+            };
+            SbtMetadata::<Test>::insert(i, metadata);
+        }
+        MantaSBTPallet::on_idle(0, 1000000);
+
+        // Will not try to migrate in one block
+        assert!(SbtMetadata::<Test>::iter().next().is_some());
+    })
 }
