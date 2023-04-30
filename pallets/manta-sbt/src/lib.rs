@@ -575,7 +575,7 @@ pub mod pallet {
 
         /// Updates the time range of which a `MintId` will be valid. Also can update `mint_name` Requires `AdminOrigin`
         #[pallet::call_index(5)]
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::set_mint_chain_info())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::update_mint_info())]
         #[transactional]
         pub fn update_mint_info(
             origin: OriginFor<T>,
@@ -614,7 +614,7 @@ pub mod pallet {
         }
 
         #[pallet::call_index(6)]
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::new_mint_info())]
         pub fn new_mint_info(
             origin: OriginFor<T>,
             start_time: Moment<T>,

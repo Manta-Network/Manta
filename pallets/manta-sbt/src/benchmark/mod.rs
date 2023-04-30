@@ -87,6 +87,21 @@ benchmarks! {
         vec![].try_into().unwrap()
     )
 
+    update_mint_info {
+        MantaSBTPallet::<T>::new_mint_info(
+            RawOrigin::Root.into(),
+            0_u32.into(),
+            None,
+            vec![].try_into().unwrap()
+        )?;
+    }: update_mint_info (
+        RawOrigin::Root,
+        1,
+        5u32.into(),
+        None,
+        vec![].try_into().unwrap()
+    )
+
     mint_sbt_eth {
         let bab_id = 1;
         let caller: T::AccountId = whitelisted_caller();
