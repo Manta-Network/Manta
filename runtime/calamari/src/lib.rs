@@ -230,7 +230,6 @@ impl Contains<Call> for BaseFilter {
                                 | pallet_democracy::Call::second {..}
                                 | pallet_democracy::Call::cancel_proposal {..}
                                 | pallet_democracy::Call::clear_public_proposals {..}
-                                | pallet_democracy::Call::external_propose {..}
                                 | pallet_democracy::Call::external_propose_majority {..})
             | Call::Treasury(_) // Treasury calls are filtered while it is accumulating funds.
             // Everything except transfer() is filtered out until it is practically needed:
@@ -247,6 +246,7 @@ impl Contains<Call> for BaseFilter {
             | Call::Multisig(_)
             | Call::Democracy(pallet_democracy::Call::vote {..}
                                 | pallet_democracy::Call::emergency_cancel {..}
+                                | pallet_democracy::Call::external_propose {..}
                                 | pallet_democracy::Call::external_propose_default {..}
                                 | pallet_democracy::Call::fast_track  {..}
                                 | pallet_democracy::Call::veto_external {..}
