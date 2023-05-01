@@ -59,7 +59,7 @@ jobs:
         id: srtool-build
         uses: chevdor/srtool-actions@v0.4.0
         with:
-          image: paritytech/srtool
+          image: paritytech/srtool:1.66.1
           chain: ${{ matrix.runtime.name }}
       - name: persist srtool digest
         run: >
