@@ -7,7 +7,7 @@ license = 'GPL-3.0'
 name = 'pallet-manta-support'
 readme = 'README.md'
 repository = 'https://github.com/Manta-Network/Manta/'
-version = '4.0.6'
+version = '4.0.6-1'
 
 [dependencies]
 # utils
