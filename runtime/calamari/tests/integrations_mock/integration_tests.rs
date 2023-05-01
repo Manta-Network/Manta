@@ -19,7 +19,7 @@
 #![cfg(test)]
 #![allow(clippy::identity_op)] // keep e.g. 1 * DAYS for legibility
 
-use super::{super::*, mock::*, *};
+use super::{mock::*, *};
 
 pub use calamari_runtime::{
     assets_config::{CalamariAssetConfig, CalamariConcreteFungibleLedger},

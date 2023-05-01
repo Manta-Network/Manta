@@ -33,7 +33,7 @@ impl Collator {
     }
 }
 
-fn manta_mainnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
+fn genesis_config(genesis_collators: Vec<Collator>) -> GenesisConfig {
     const TOTAL_ISSUANCE: Balance = 1_000_000_000 * MANTA;
     const INITIAL_CONTROLLER_BALANCE: Balance = 5_000 * MANTA;
     const INITIAL_COLLATOR_BALANCE: Balance = 100 * MANTA;
@@ -133,27 +133,27 @@ fn manta_mainnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
     }
 }
 
-pub fn manta_mainnet_config() -> MantaChainSpec {
+pub fn genesis_spec() -> MantaChainSpec {
     let genesis_collators: Vec<Collator> = vec![
         Collator::new( // c1: dfWh1oFWNxrmrHdiGdVpQQD6Pp3SmY5NrNsAGNRCxgaqJuZif
             hex!("0619e4018531059b677d70b476b72431d3e88fe71d2c27bba5d945975e824956").into(),
-            "/dns/c1.manta.systems/tcp/30333/p2p/12D3KooWSNwD7tJkqKGdMfCVTJbbzrGFTGbXoeMFZCTwEytpFCM4".parse().unwrap(),
+            Some("/dns/c1.manta.systems/tcp/30333/p2p/12D3KooWSNwD7tJkqKGdMfCVTJbbzrGFTGbXoeMFZCTwEytpFCM4".parse().unwrap()),
             SessionKeys::new((
                 hex!("4852f3c0a603d7da194fbff174c24700f3f89d86b462760033bdcb1663c76c60").unchecked_into(), // ss58: dfYBquhamT9Tm8vZy2aNZsLA8ti9TS1DH2Sb5CrdqEGkYxkS2
                 hex!("ba09b2e06ab0fa1eefa8e8722f82144a3a25fd3703b28d7377780ad0c2a91256").unchecked_into() // ss58: dfakwcBogWNbwGEbKVAwoKPf2U4Hf6vz9szfVhhdiQwtg2rEL
             ))
         ),
         Collator::new( // c2: dfWbekcVeiw3kzPEw6SiDafzrNM8eWAHTM2ideHQF6jWgS85f
-            hex!("0202d1760e33f60f977fcff88b611cb95e66d0b3b74c12ac6c8037b8b9764a31").into(),
-            "/dns/c2.manta.systems/tcp/30333/p2p/12D3KooWSyPTkVytQwurRBt73wPQDTgypw88bdhsE4Rb6RnQvCJ9".parse().unwrap(),
+            Some(hex!("0202d1760e33f60f977fcff88b611cb95e66d0b3b74c12ac6c8037b8b9764a31").into(),
+            "/dns/c2.manta.systems/tcp/30333/p2p/12D3KooWSyPTkVytQwurRBt73wPQDTgypw88bdhsE4Rb6RnQvCJ9".parse().unwrap()),
             SessionKeys::new((
                 hex!("8a8af929d1219802dc8155d0b5381c41d49a185aae2c8bf3537d5c124a63a63e").unchecked_into(), // ss58: dfZgfiDzgdPNwREcJ9hqobyufda6EH2C4p6vDrzeMDvbJwpdm"
                 hex!("48c832d59679790f579d6009f5bb56ef0b52da49d7e4c504fe50847d04b12474").unchecked_into(), // ss58: dfYCSjotLLwrHFhkskh7R6HE5ibUDVNTaZ5DqMH2rNseViATG"
             ))
         ),
         Collator::new( // c3: dfYLLvDCZ847eDqvGAf9h9eGmaGi7RgdfAyvfqVqUBFzsEipm
-            hex!("4ece9156edd66af83b0c6afe17878844d873a08fd05bd9dbc17f9712814e9952").into(),
-            "/dns/c3.manta.systems/tcp/30333/p2p/12D3KooWJwHqCEjTF46eAUDspKKwxa15TMfs7x8DNr3Gs71Qr64j".parse().unwrap(),
+            Some(hex!("4ece9156edd66af83b0c6afe17878844d873a08fd05bd9dbc17f9712814e9952").into(),
+            "/dns/c3.manta.systems/tcp/30333/p2p/12D3KooWJwHqCEjTF46eAUDspKKwxa15TMfs7x8DNr3Gs71Qr64j".parse().unwrap()),
             SessionKeys::new((
                 hex!("b24d5e9296399d0b66e21dd2b3498d43a67653605455203348d141ef520a9a15").unchecked_into(), // ss58: dfaaoKuam626pYJGb4enxS8NmEGvsWcHADFptCm4RVAWmsLEG"
                 hex!("c082e23285092adfa2faebc7683e6a3012e88b59f25c4eb6655c8266da23d30b").unchecked_into(), // ss58: dfauRtpMasGNxTTa5kBjR4LcqGmGrnA53vd3UP9NqF6WctyZ3"
@@ -161,7 +161,7 @@ pub fn manta_mainnet_config() -> MantaChainSpec {
         ),
         Collator::new( // c4: dfZKTGZS2A7YJmiunthXUNkongd1VMMdrhn7cPxzG2HYxHant
             hex!("7a5cef43508640b6839c37a41272dec83dda4df28503bd87436c197d213f692c").into(),
-            "/dns/c4.manta.systems/tcp/30333/p2p/12D3KooWAgZYhwfUo7brgZK2TvArK6XNUtZnzk1cSNfyD9kX1rDE".parse().unwrap(),
+            Some("/dns/c4.manta.systems/tcp/30333/p2p/12D3KooWAgZYhwfUo7brgZK2TvArK6XNUtZnzk1cSNfyD9kX1rDE".parse().unwrap()),
             SessionKeys::new((
                 hex!("a2d32cfe62273ab87ee00d33bc81abb038292e2dd1e9584b1e81f295ba8ee25a").unchecked_into(), // ss58: dfaEWJu9HfkmHyR2aQac3ZRCnBqsgFS6qncpGRYC2jpv2W1uS
                 hex!("a82c54273056aa45a1f43bbead30b749ab2750f1091e21ae7ad17c686c4e2f5d").unchecked_into(), // ss58: dfaMX2rcfXj3aYaMp49iWVrRgkxRj7eeYRnGPTAbUVBXTNQnq
@@ -169,7 +169,7 @@ pub fn manta_mainnet_config() -> MantaChainSpec {
         ),
         Collator::new( // c5: dfY1E1gYvTvJqnwpSnLfYEHpHEdSNW69dcJQRRKKW1UN7ts9s
             hex!("4039a894994d326e32801a0fc19a267383b6231e74bc9c3fd1021d949d849406").into(),
-            "/dns/c5.manta.systems/tcp/30333/p2p/12D3KooWNHVexSGRVeLb7rt7tYS5Y3k5Up9amQn1GyTDCi7L9LLf".parse().unwrap(),
+            Some("/dns/c5.manta.systems/tcp/30333/p2p/12D3KooWNHVexSGRVeLb7rt7tYS5Y3k5Up9amQn1GyTDCi7L9LLf".parse().unwrap()),
             SessionKeys::new((
                 hex!("1eda33797b226fed66ea3ac327a77f26b594b90bc9e9af7416a651bef07a7c72").unchecked_into(), // ss58: dfXFU5LYyQj5vzHeaHbVfhyenuibJJPGSpPonKCPNw6qsUwSm
                 hex!("bec2a422e8b72b6f5423eb2ec59d9727e580227e0e0327247d516593ec7b5312").unchecked_into(), // ss58: dfas8jnCTfPXtVvwAu15PtX6WAc3rw4iacCHeuj7qniepWtJE
@@ -182,10 +182,10 @@ pub fn manta_mainnet_config() -> MantaChainSpec {
         "Manta Parachain",
         "manta",
         ChainType::Live,
-        move || manta_mainnet_genesis(genesis_collators.clone()),
-        genesis_collators_clone
+        move || genesis_config(genesis_collators_clone.clone()),
+        genesis_collators
             .into_iter()
-            .map(|collator| collator.nodeid)
+            .filter_map(|collator| collator.nodeid)
             .collect(),
         Some(
             TelemetryEndpoints::new(vec![

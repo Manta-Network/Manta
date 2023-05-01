@@ -34,7 +34,6 @@ use xcm_executor::traits::{Convert, WeightBounds};
 use xcm_simulator::TestExt;
 
 use super::{
-    super::*,
     parachain::{
         create_asset_location, create_asset_metadata, register_assets_on_parachain, AssetManager,
         ParaTokenPerSecond, XcmExecutorConfig as ParaXcmExecutorConfig, PALLET_ASSET_INDEX,
