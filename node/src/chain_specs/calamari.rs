@@ -23,8 +23,8 @@ use calamari_runtime::{
     currency::KMA, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig,
     ParachainStakingConfig, TechnicalCommitteeConfig,
 };
-use sp_core::crypto::UncheckedInto;
 use session_key_primitives::util::unchecked_account_id;
+use sp_core::crypto::UncheckedInto;
 /// Calamari Protocol Identifier
 pub const CALAMARI_PROTOCOL_ID: &str = "calamari";
 
@@ -247,7 +247,16 @@ pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
             "/dns/c4.calamari.seabird.systems/tcp/30333/p2p/12D3KooWHQP3VNMaUS8z38SfiFhk3iWw2CARLGUv4WPvrPeV9ijR".parse().unwrap(),
             "/dns/c5.calamari.seabird.systems/tcp/30333/p2p/12D3KooWDzwzNhzASBtq6jV1VHs7SHbJ7b4Dvccy75GSVJAhsfaX".parse().unwrap(),
         ],
-        None,
+        Some(
+            sc_telemetry::TelemetryEndpoints::new(vec![
+                (
+                    "/dns/api.telemetry.pelagos.systems/tcp/443/x-parity-wss/%2Fsubmit%2F"
+                        .to_string(),
+                    0,
+                ),
+            ])
+            .unwrap(),
+        ),
         Some(CALAMARI_PROTOCOL_ID),
         None,
         Some(calamari_properties()),
