@@ -15,13 +15,12 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    fp_decode,
+    fp_decode, id_from_field,
     mock::{
         new_test_ext, Assets, MantaAssetConfig, MantaAssetRegistry, MantaPay, Origin as MockOrigin,
         Test,
     },
-    types::{fp_encode, AssetId, AssetValue, TransferPost as PalletTransferPost},
-    Error, FungibleLedger, StandardAssetId,
+    Error, FungibleLedger,
 };
 use frame_support::{assert_noop, assert_ok};
 use manta_accounting::transfer::test::value_distribution;
@@ -37,6 +36,10 @@ use manta_pay::{
     },
     parameters::{self, load_transfer_parameters, load_utxo_accumulator_model},
     test,
+};
+use manta_support::manta_pay::{
+    field_from_id, fp_encode, AssetId, AssetValue, StandardAssetId,
+    TransferPost as PalletTransferPost,
 };
 
 use manta_crypto::accumulator::Accumulator;
@@ -93,7 +96,7 @@ where
         &PROVING_CONTEXT.to_private,
         &PARAMETERS,
         &mut utxo_accumulator,
-        MantaPay::id_from_field(asset_id).unwrap().into(),
+        id_from_field(asset_id).unwrap().into(),
         value,
         rng,
     ))
@@ -129,7 +132,7 @@ where
     for value in values {
         assert_ok!(MantaPay::to_private(
             MockOrigin::signed(ALICE),
-            sample_to_private(MantaPay::field_from_id(id), *value, rng)
+            sample_to_private(field_from_id(id), *value, rng)
         ));
     }
 }
@@ -387,7 +390,7 @@ fn to_private_with_zero_should_not_work() {
         assert_noop!(
             MantaPay::to_private(
                 MockOrigin::signed(ALICE),
-                sample_to_private(MantaPay::field_from_id(asset_id), 0, &mut rng)
+                sample_to_private(field_from_id(asset_id), 0, &mut rng)
             ),
             Error::<Test>::ZeroTransfer
         );
@@ -442,7 +445,7 @@ fn overdrawn_mint_should_not_work() {
                 MantaPay::to_private(
                     MockOrigin::signed(ALICE),
                     sample_to_private(
-                        MantaPay::field_from_id(asset_id),
+                        field_from_id(asset_id),
                         total_supply + TEST_DEFAULT_ASSET_ED + 1,
                         &mut rng
                     )
@@ -462,7 +465,7 @@ fn to_private_without_init_should_not_work() {
             assert_noop!(
                 MantaPay::to_private(
                     MockOrigin::signed(ALICE),
-                    sample_to_private(MantaPay::field_from_id(rng.gen()), 100, &mut rng)
+                    sample_to_private(field_from_id(rng.gen()), 100, &mut rng)
                 ),
                 Error::<Test>::InvalidSourceAccount,
             );
@@ -478,7 +481,7 @@ fn mint_existing_coin_should_not_work() {
         new_test_ext().execute_with(|| {
             let asset_id = rng.gen();
             initialize_test(asset_id, 32579u128);
-            let mint_post = sample_to_private(MantaPay::field_from_id(asset_id), 100, &mut rng);
+            let mint_post = sample_to_private(field_from_id(asset_id), 100, &mut rng);
             assert_ok!(MantaPay::to_private(
                 MockOrigin::signed(ALICE),
                 mint_post.clone()
@@ -724,14 +727,14 @@ fn check_number_conversions() {
     let mut rng = OsRng;
 
     let start = rng.gen();
-    let expected = MantaPay::field_from_id(start);
+    let expected = field_from_id(start);
 
     let fp = Fp::<ConstraintField>::from(start);
     let encoded = fp_encode(fp).unwrap();
 
     assert_eq!(expected, encoded);
 
-    let id_from_field = MantaPay::id_from_field(encoded).unwrap();
+    let id_from_field = id_from_field(encoded).unwrap();
     let decoded: Fp<ConstraintField> = fp_decode(expected.to_vec()).unwrap();
     assert_eq!(start, id_from_field);
     assert_eq!(fp, decoded);
@@ -763,7 +766,7 @@ fn pull_ledger_diff_should_work() {
         assert!(!runtime_pull_response.should_continue);
 
         // convert runtime response into native response
-        let dense_pull_response: crate::types::DensePullResponse =
+        let dense_pull_response: manta_support::manta_pay::DensePullResponse =
             runtime_pull_response.clone().into();
 
         let dense_receivers = base64::decode(dense_pull_response.receivers).unwrap();

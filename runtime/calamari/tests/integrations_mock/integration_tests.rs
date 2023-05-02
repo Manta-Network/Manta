@@ -40,6 +40,11 @@ use frame_support::{
     traits::{tokens::ExistenceRequirement, Get, PalletInfo, StorageInfo, StorageInfoTrait},
     StorageHasher, Twox128,
 };
+use runtime_common::test_helpers::{
+    self_reserve_xcm_message_receiver_side, self_reserve_xcm_message_sender_side,
+    to_reserve_xcm_message_receiver_side, to_reserve_xcm_message_sender_side,
+    ADVERTISED_DEST_WEIGHT,
+};
 
 use manta_primitives::{
     assets::{
