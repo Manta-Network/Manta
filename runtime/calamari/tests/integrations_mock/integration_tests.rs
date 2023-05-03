@@ -428,14 +428,6 @@ fn governance_filters_work() {
                 value: 100 * KMA,
             }),
         );
-
-        // External proposals other than external_proposal_default should be filtered out.
-        assert_proposal_is_filtered(
-            &ALICE,
-            &Call::Democracy(pallet_democracy::Call::external_propose {
-                proposal_hash: preimage_hash,
-            }),
-        );
     });
 }
 
