@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v4.0.7
+### Added
+- [\#1086](https://github.com/Manta-Network/Manta/pull/1086) Add SBT Registry [CADO]
+
+### Changed
+- [\#1093](https://github.com/Manta-Network/Manta/pull/1093) Enable democracy.external_propose_majority [CA]
+
+### Fixed
+- [\#1084](https://github.com/Manta-Network/Manta/pull/1084) Use safe-math in xcm buy_weight impl [CA]
+
 ## v4.0.6
 ### Added
 - [\#1067](https://github.com/Manta-Network/Manta/pull/1067) Refactor manta genesis files, add `manta-testnet` [MA]
