@@ -1,14 +1,13 @@
 # CHANGELOG
 
-## v4.0.7
-### Added
-- [\#1086](https://github.com/Manta-Network/Manta/pull/1086) Add SBT Registry [CADO]
-
+ ## v4.0.7
 ### Changed
-- [\#1093](https://github.com/Manta-Network/Manta/pull/1093) Enable democracy.external_propose_majority [CA]
-
+- [\#1084](https://github.com/Manta-Network/Manta/pull/1084) Use safe-math in xcm `buy_weight` impl [MACA]
+- [\#1093](https://github.com/Manta-Network/Manta/pull/1093) Enable `democracy.external_propose_majority` on calamari [CA]
+- [\#1086](https://github.com/Manta-Network/Manta/pull/1086) Add SBT Registry [CADO]
+ 
 ### Fixed
-- [\#1084](https://github.com/Manta-Network/Manta/pull/1084) Use safe-math in xcm buy_weight impl [CA]
+- [\#1078](https://github.com/Manta-Network/Manta/pull/1078) Update stress benchmark test [CADO]
 
 ## v4.0.6
 ### Added
