@@ -180,7 +180,9 @@ where
                     XcmError::TooExpensive
                 })?;
 
-                let amount = units_per_second * (weight as u128) / (WEIGHT_PER_SECOND as u128);
+                let amount =
+                    (units_per_second.saturating_mul(weight as u128)) / (WEIGHT_PER_SECOND as u128);
+
                 // we don't need to proceed if amount is zero.
                 // This is very useful in tests.
                 if amount.is_zero() {
@@ -248,8 +250,9 @@ where
     fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
         if let Some((id, prev_amount, units_per_second)) = &mut self.refund_cache {
             let weight = weight.min(self.weight);
-            self.weight -= weight;
-            let amount = *units_per_second * (weight as u128) / (WEIGHT_PER_SECOND as u128);
+            self.weight = self.weight.saturating_sub(weight);
+            let amount =
+                ((*units_per_second).saturating_mul(weight as u128)) / (WEIGHT_PER_SECOND as u128);
             *prev_amount = prev_amount.saturating_sub(amount);
             Some(MultiAsset {
                 fun: Fungibility::Fungible(amount),

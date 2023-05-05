@@ -133,10 +133,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("calamari"),
     impl_name: create_runtime_str!("calamari"),
     authoring_version: 2,
-    spec_version: 4060,
+    spec_version: 4070,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 11,
+    transaction_version: 12,
     state_version: 0,
 };
 
@@ -226,15 +226,12 @@ impl Contains<Call> for BaseFilter {
             | Call::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
             // It's a call only for vesting crowdloan contributors' token, normal user should not use it.
             | Call::CalamariVesting(calamari_vesting::Call::vested_transfer {..})
-            // For now disallow public proposal workflows, treasury workflows,
-            // as well as external_propose and external_propose_majority.
+            // For now disallow public proposal workflows, treasury workflows.
             | Call::Democracy(
                                 pallet_democracy::Call::propose {..}
                                 | pallet_democracy::Call::second {..}
                                 | pallet_democracy::Call::cancel_proposal {..}
-                                | pallet_democracy::Call::clear_public_proposals {..}
-                                | pallet_democracy::Call::external_propose {..}
-                                | pallet_democracy::Call::external_propose_majority {..})
+                                | pallet_democracy::Call::clear_public_proposals {..})
             | Call::Treasury(_) // Treasury calls are filtered while it is accumulating funds.
             // Everything except transfer() is filtered out until it is practically needed:
             | Call::XTokens(
@@ -250,7 +247,9 @@ impl Contains<Call> for BaseFilter {
             | Call::Multisig(_)
             | Call::Democracy(pallet_democracy::Call::vote {..}
                                 | pallet_democracy::Call::emergency_cancel {..}
+                                | pallet_democracy::Call::external_propose {..}
                                 | pallet_democracy::Call::external_propose_default {..}
+                                | pallet_democracy::Call::external_propose_majority {..}
                                 | pallet_democracy::Call::fast_track  {..}
                                 | pallet_democracy::Call::veto_external {..}
                                 | pallet_democracy::Call::cancel_referendum {..}
@@ -972,7 +971,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExt
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
-pub type OnRuntimeUpgradeHooks = ();
+pub type OnRuntimeUpgradeHooks = migrations::init_sbt_counter::InitializeSbtCounter<Runtime>;
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
