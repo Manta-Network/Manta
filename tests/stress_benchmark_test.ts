@@ -18,9 +18,9 @@ const test_config = {
   total_iterations: 15000,
   start_iteration: 14000,
   tests_iterations: 100,
-  mint_size: 552,
-  transfer_size: 1290,
-  reclaim_size: 968,
+  mint_size: 553,
+  transfer_size: 1291,
+  reclaim_size: 1001,
   expected_tps: 0.5,
 };
 

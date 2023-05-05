@@ -148,6 +148,7 @@ mod constants_tests {
         };
 
         assert_eq!(WEIGHT_PER_SECOND, IMPORTED_WEIGHT_PER_SECOND);
+        assert_ne!(WEIGHT_PER_SECOND, 0);
         assert_eq!(WEIGHT_PER_MILLIS, IMPORTED_WEIGHT_PER_MILLIS);
         assert_eq!(WEIGHT_PER_MICROS, IMPORTED_WEIGHT_PER_MICROS);
         assert_eq!(WEIGHT_PER_NANOS, IMPORTED_WEIGHT_PER_NANOS);

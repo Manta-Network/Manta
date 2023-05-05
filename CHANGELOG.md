@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## v4.0.7
+### Changed
+- [\#1084](https://github.com/Manta-Network/Manta/pull/1084) Use safe-math in xcm `buy_weight` impl [MACA]
+- [\#1093](https://github.com/Manta-Network/Manta/pull/1093) Enable `democracy.external_propose_majority` on calamari [CA]
+- [\#1086](https://github.com/Manta-Network/Manta/pull/1086) Add SBT Registry [CADO]
+
+### Fixed
+- [\#1078](https://github.com/Manta-Network/Manta/pull/1078) Update stress benchmark test [CADO]
+
+## v4.0.6
+### Added
+- [\#1067](https://github.com/Manta-Network/Manta/pull/1067) Refactor manta genesis files, add `manta-testnet` [MA]
+
+### Changed
+- [\#1071](https://github.com/Manta-Network/Manta/pull/1071) Charge 0-asset XCM instructions as if they were 1-asset [MACADO]
+
+### Fixed
+- [\#1068](https://github.com/Manta-Network/Manta/pull/1068) Do not skip integration tests [CA]
+- [\#1069](https://github.com/Manta-Network/Manta/pull/1069) Enable manta runtime xcm tests [MA]
+
 ## v4.0.5
 ### Added
 - [\#1012](https://github.com/Manta-Network/Manta/pull/1012) Add zkSBTs [MACADO]

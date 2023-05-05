@@ -19,6 +19,7 @@
 use frame_support::{
     parameter_types,
     traits::{ConstU128, ConstU16, ConstU32, ConstU64, Everything, GenesisBuild, IsInVec},
+    weights::RuntimeDbWeight,
     PalletId,
 };
 use frame_system::EnsureRoot;
@@ -68,13 +69,17 @@ frame_support::construct_runtime!(
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
     pub const SS58Prefix: u8 = manta_primitives::constants::CALAMARI_SS58PREFIX;
+    pub const MockRocksDbWeight: RuntimeDbWeight = RuntimeDbWeight {
+        read: 250,
+        write: 1000,
+    };
 }
 
 impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockWeights = ();
     type BlockLength = ();
-    type DbWeight = ();
+    type DbWeight = MockRocksDbWeight;
     type Origin = Origin;
     type Call = Call;
     type Index = u64;
@@ -139,6 +144,8 @@ impl crate::Config for Test {
     type SbtMetadataBound = ConstU32<200>;
     type AdminOrigin = EnsureRoot<AccountId32>;
     type Now = Timestamp;
+    type RegistryBound = ConstU32<200>;
+    type MinimumWeightRemainInBlock = ConstU64<10000>;
 }
 
 parameter_types! {
