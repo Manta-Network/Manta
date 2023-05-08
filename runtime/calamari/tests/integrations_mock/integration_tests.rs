@@ -98,7 +98,7 @@ fn propose_council_motion(council_motion: &RuntimeCall, proposer: &AccountId) ->
     BlakeTwo256::hash_of(&council_motion)
 }
 
-fn start_governance_assertions(proposer: &AccountId) -> H256 {
+fn start_supermajority_against_governance_assertions(proposer: &AccountId) -> H256 {
     // Setup the preimage and preimage hash
     let runtime_call = RuntimeCall::System(frame_system::Call::remark { remark: vec![0] });
     let preimage_hash = note_preimage(proposer, &runtime_call);
@@ -122,6 +122,49 @@ fn start_governance_assertions(proposer: &AccountId) -> H256 {
     // No voting required because there's only 1 seat.
     let council_motion =
         RuntimeCall::Democracy(pallet_democracy::Call::external_propose_default { proposal });
+    let council_motion_hash = propose_council_motion(&council_motion, proposer);
+
+    assert_eq!(
+        last_event(),
+        calamari_runtime::RuntimeEvent::Council(pallet_collective::Event::Executed {
+            proposal_hash: council_motion_hash,
+            result: Ok(())
+        })
+    );
+
+    preimage_hash
+}
+
+fn start_majority_carries_governance_assertions(proposer: &AccountId) -> H256 {
+    let democracy_proposal = RuntimeCall::System(frame_system::Call::remark { remark: vec![0] });
+
+    // Setup the preimage and preimage hash
+    let preimage_hash = note_preimage(
+        proposer,
+        &RuntimeCall::System(frame_system::Call::remark { remark: vec![0] }),
+    );
+
+    // Setup the Council and Technical Committee
+    assert_ok!(Council::set_members(
+        root_origin(),
+        vec![proposer.clone()],
+        None,
+        0
+    ));
+    assert_ok!(TechnicalCommittee::set_members(
+        root_origin(),
+        vec![proposer.clone()],
+        None,
+        0
+    ));
+
+    let bounded_democracy_proposal = Preimage::bound(democracy_proposal).unwrap();
+    // Setup and propose the Council motion for external_propose_default routine
+    // No voting required because there's only 1 seat.
+    let council_motion =
+        RuntimeCall::Democracy(pallet_democracy::Call::external_propose_majority {
+            proposal: bounded_democracy_proposal,
+        });
     let council_motion_hash = propose_council_motion(&council_motion, proposer);
 
     assert_eq!(
@@ -227,9 +270,50 @@ fn ensure_block_per_round_and_leave_delays_equal_7days() {
 }
 
 #[test]
-fn slow_governance_works() {
+fn slow_majority_carries_governance_works() {
     ExtBuilder::default().build().execute_with(|| {
-        let _preimage_hash = start_governance_assertions(&ALICE);
+        let _preimage_hash = start_majority_carries_governance_assertions(&ALICE);
+
+        let start_of_referendum = LaunchPeriod::get();
+        let referendum_index = 0;
+
+        run_to_block(start_of_referendum - 1);
+        assert_eq!(0, Democracy::referendum_count());
+
+        // 7 days in the external proposal queue before the referendum starts.
+        run_to_block(start_of_referendum);
+        assert_eq!(
+            last_event(),
+            calamari_runtime::RuntimeEvent::Democracy(pallet_democracy::Event::Started {
+                ref_index: referendum_index,
+                threshold: pallet_democracy::VoteThreshold::SimpleMajority
+            })
+        );
+        // Time to vote for the referendum with some amount
+        assert_ok!(Democracy::vote(
+            RuntimeOrigin::signed(ALICE.clone()),
+            0,
+            pallet_democracy::AccountVote::Standard {
+                vote: pallet_democracy::Vote {
+                    aye: true,
+                    conviction: pallet_democracy::Conviction::None
+                },
+                balance: 10 * KMA
+            }
+        ));
+
+        end_governance_assertions(
+            referendum_index,
+            start_of_referendum + VotingPeriod::get(),
+            EnactmentPeriod::get(),
+        );
+    });
+}
+
+#[test]
+fn slow_supermajority_against_governance_works() {
+    ExtBuilder::default().build().execute_with(|| {
+        let _preimage_hash = start_supermajority_against_governance_assertions(&ALICE);
 
         let start_of_referendum = LaunchPeriod::get();
         let referendum_index = 0;
@@ -270,7 +354,7 @@ fn slow_governance_works() {
 #[test]
 fn fast_track_governance_works() {
     ExtBuilder::default().build().execute_with(|| {
-        let preimage_hash = start_governance_assertions(&ALICE);
+        let preimage_hash = start_supermajority_against_governance_assertions(&ALICE);
 
         let voting_period = 5;
         let enactment_period = 5;
@@ -350,20 +434,6 @@ fn governance_filters_work() {
                 proposal: proposal.clone(),
                 value: 100 * KMA,
             }),
-        );
-
-        // External proposals other than external_proposal_default should be filtered out.
-        assert_proposal_is_filtered(
-            &ALICE,
-            &RuntimeCall::Democracy(pallet_democracy::Call::external_propose {
-                proposal: proposal.clone(),
-            }),
-        );
-
-        // External proposals other than external_proposal_default should be filtered out.
-        assert_proposal_is_filtered(
-            &ALICE,
-            &RuntimeCall::Democracy(pallet_democracy::Call::external_propose_majority { proposal }),
         );
     });
 }

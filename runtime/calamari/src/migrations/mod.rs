@@ -15,5 +15,6 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 pub mod asset_id;
+pub mod init_sbt_counter;
 pub mod staking;
 pub mod sudo;
