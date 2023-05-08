@@ -431,7 +431,7 @@ fn governance_filters_work() {
         assert_proposal_is_filtered(
             &ALICE,
             &RuntimeCall::Democracy(pallet_democracy::Call::propose {
-                proposal: proposal.clone(),
+                proposal,
                 value: 100 * KMA,
             }),
         );
