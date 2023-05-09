@@ -24,6 +24,8 @@ use frame_support::{
     pallet_prelude::Weight,
     traits::{Get, OnRuntimeUpgrade},
 };
+use sp_std::vec::Vec;
+
 pub struct RemoveSudo<T>(PhantomData<T>);
 impl<T: frame_system::Config> OnRuntimeUpgrade for RemoveSudo<T> {
     fn on_runtime_upgrade() -> Weight {
@@ -35,26 +37,26 @@ impl<T: frame_system::Config> OnRuntimeUpgrade for RemoveSudo<T> {
             log::info!(target: "OnRuntimeUpgrade", "✅ Sudo key has been removed.");
             log::info!(target: "OnRuntimeUpgrade", "✅ The pallet version has been removed.");
             T::DbWeight::get()
-                .reads(1 as Weight)
-                .saturating_add(T::DbWeight::get().writes(1 as Weight))
+                .reads(1)
+                .saturating_add(T::DbWeight::get().writes(1_u64))
         } else {
-            T::DbWeight::get().reads(1 as Weight)
+            T::DbWeight::get().reads(1)
         }
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
         if have_storage_value(b"Sudo", b"Key", b"") {
             log::info!(target: "OnRuntimeUpgrade", "✅ Sudo key will be removed soon.");
             log::info!(target: "OnRuntimeUpgrade", "✅ The pallet version will be removed soon.");
-            Ok(())
+            Ok(Vec::new())
         } else {
             Err("Sudo doesn't exist.")
         }
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
         if have_storage_value(b"Sudo", b"Key", b"") {
             Err("Failed to remove sudo module.")
         } else {

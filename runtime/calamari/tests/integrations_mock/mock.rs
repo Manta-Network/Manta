@@ -20,8 +20,9 @@ use crate::integrations_mock::*;
 
 use calamari_runtime::opaque::SessionKeys;
 pub use calamari_runtime::{
-    assets_config::CalamariAssetConfig, currency::KMA, AuthorInherent, Call, CollatorSelection,
-    Democracy, InflationInfo, Range, Runtime, Scheduler, Session, System, TransactionPayment,
+    assets_config::CalamariAssetConfig, currency::KMA, AuthorInherent, CollatorSelection,
+    Democracy, InflationInfo, Preimage, Range, Runtime, RuntimeCall, Scheduler, Session, System,
+    TransactionPayment,
 };
 use frame_support::traits::{GenesisBuild, OnFinalize, OnInitialize};
 use manta_primitives::{
@@ -194,5 +195,6 @@ pub fn run_to_block(n: u32) {
         ParachainStaking::on_initialize(System::block_number());
         Scheduler::on_initialize(System::block_number());
         Democracy::on_initialize(System::block_number());
+        Preimage::on_initialize(System::block_number());
     }
 }

@@ -14,8 +14,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@polkadot/api": "^7.15.1",
-    "@polkadot/types": "^7.15.1",
+    "@polkadot/api": "^9.14.2",
+    "@polkadot/types": "^9.14.2",
     "@types/minimist": "^1.2.2",
     "@types/yargs": "^17.0.0",
     "minimist": "^1.2.5",

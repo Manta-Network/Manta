@@ -4,11 +4,9 @@ on:
     inputs:
       manta_base_url:
         description: The base manta binary url, that will be upgraded
-        default: https://github.com/Manta-Network/Manta/releases/download/v4.0.5/manta
         required: true
       polkadot_url:
         description: The polkadot binary url to be used for the relay chain
-        default: https://github.com/paritytech/polkadot/releases/download/v0.9.41/polkadot
         required: true
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}

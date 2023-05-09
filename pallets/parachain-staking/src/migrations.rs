@@ -30,8 +30,6 @@ use crate::{
     BalanceOf, Bond, BottomDelegations, CandidateInfo, CandidateMetadata, CapacityStatus,
     CollatorCandidate, Config, Delegations, Event, Pallet, Points, Round, Staked, TopDelegations,
 };
-#[cfg(feature = "try-runtime")]
-use frame_support::traits::OnRuntimeUpgradeHelpersExt;
 use frame_support::Twox64Concat;
 extern crate alloc;
 #[cfg(feature = "try-runtime")]
@@ -159,7 +157,7 @@ impl<T: Config> OnRuntimeUpgrade for SplitDelegatorStateIntoDelegationScheduledR
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
         let mut expected_delegator_state_entries = 0u64;
         let mut expected_requests = 0u64;
         for (_key, state) in migration::storage_iter::<OldDelegator<T::AccountId, BalanceOf<T>>>(
@@ -193,11 +191,11 @@ impl<T: Config> OnRuntimeUpgrade for SplitDelegatorStateIntoDelegationScheduledR
 
         use frame_support::migration;
 
-        Ok(())
+        Ok(Vec::new())
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
         // Scheduled decrease amount (bond_less) is correctly migrated
         let mut actual_delegator_state_entries = 0;
         for (delegator, state) in <DelegatorState<T>>::iter() {
@@ -326,7 +324,7 @@ impl<T: Config> OnRuntimeUpgrade for PatchIncorrectDelegationSums<T> {
         top + bottom + 100_000_000_000
     }
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
         // get total counted for all candidates
         for (account, state) in <CandidateInfo<T>>::iter() {
             Self::set_temp_storage(
@@ -334,11 +332,11 @@ impl<T: Config> OnRuntimeUpgrade for PatchIncorrectDelegationSums<T> {
                 &format!("Candidate{:?}TotalCounted", account)[..],
             );
         }
-        Ok(())
+        Ok(Vec::new())
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
         // ensure new total counted = top_delegations.sum() + collator self bond
         for (account, state) in <CandidateInfo<T>>::iter() {
             let old_count =
@@ -506,7 +504,7 @@ impl<T: Config> OnRuntimeUpgrade for SplitCandidateStateToDecreasePoV<T> {
         migrated_count.saturating_mul(3 * weight.write + weight.read)
     }
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
         // get delegation count for all candidates to check consistency
         for (account, state) in <CandidateState<T>>::iter() {
             // insert top + bottom into some temp map?
@@ -517,11 +515,11 @@ impl<T: Config> OnRuntimeUpgrade for SplitCandidateStateToDecreasePoV<T> {
                 &format!("Candidate{:?}DelegationCount", account)[..],
             );
         }
-        Ok(())
+        Ok(Vec::new())
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
         // check that top + bottom are the same as the expected (stored in temp)
         for (account, state) in <CandidateInfo<T>>::iter() {
             let expected_count: u32 =
@@ -591,7 +589,7 @@ impl<T: Config> OnRuntimeUpgrade for RemoveExitQueue<T> {
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
         use frame_support::storage::migration::storage_iter;
 
         let pallet_prefix: &[u8] = b"ParachainStaking";
@@ -643,11 +641,11 @@ impl<T: Config> OnRuntimeUpgrade for RemoveExitQueue<T> {
 
             Self::set_temp_storage(example_nominator, "example_nominator");
         }
-        Ok(())
+        Ok(Vec::new())
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
         // Check number of candidates matches what was set aside in pre_upgrade
         let old_candidate_count: u64 = Self::get_temp_storage("old_collator_count")
             .expect("We stored the old collator candidate count so it should be there");
@@ -715,13 +713,13 @@ impl<T: Config> OnRuntimeUpgrade for PurgeStaleStorage<T> {
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
         // trivial migration
-        Ok(())
+        Ok(Vec::new())
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
         // expect only the storage items for the last 2 rounds to be stored
         let staked_count = Staked::<T>::iter().count() as u32;
         let points_count = Points::<T>::iter().count() as u32;

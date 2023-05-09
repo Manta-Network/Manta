@@ -45,9 +45,11 @@ use cumulus_pallet_parachain_system::{
     RelaychainBlockNumberProvider,
 };
 use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32, ConstU8, Contains, Currency, NeverEnsureOrigin},
-    weights::{ConstantMultiplier, DispatchClass, Weight},
+    construct_runtime,
+    dispatch::DispatchClass,
+    parameter_types,
+    traits::{ConstU128, ConstU32, ConstU8, Contains, Currency, NeverEnsureOrigin},
+    weights::{ConstantMultiplier, Weight},
     PalletId,
 };
 
@@ -129,7 +131,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("manta"),
     impl_name: create_runtime_str!("manta"),
     authoring_version: 1,
-    spec_version: 4060,
+    spec_version: 4070,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -152,7 +154,9 @@ pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(70);
 
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
-pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_ref_time(WEIGHT_PER_SECOND)
+    .saturating_div(2)
+    .set_proof_size(cumulus_primitives_core::relay_chain::v2::MAX_POV_SIZE as u64);
 
 parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
@@ -181,11 +185,11 @@ parameter_types! {
 
 // Don't allow permission-less asset creation.
 pub struct MantaFilter;
-impl Contains<Call> for MantaFilter {
-    fn contains(call: &Call) -> bool {
+impl Contains<RuntimeCall> for MantaFilter {
+    fn contains(call: &RuntimeCall) -> bool {
         if matches!(
             call,
-            Call::Timestamp(_) | Call::ParachainSystem(_) | Call::System(_)
+            RuntimeCall::Timestamp(_) | RuntimeCall::ParachainSystem(_) | RuntimeCall::System(_)
         ) {
             // always allow core call
             // pallet-timestamp and parachainSystem could not be filtered because they are used in communication between releychain and parachain.
@@ -197,15 +201,15 @@ impl Contains<Call> for MantaFilter {
         match call {
             // Explicitly DISALLOWED calls ( Pallet user extrinsics we don't want used WITH REASONING )
             // Explicitly ALLOWED calls
-            | Call::Authorship(_)
+            | RuntimeCall::Authorship(_)
             // Sudo also cannot be filtered because it is used in runtime upgrade.
-            | Call::Sudo(_)
-            | Call::Multisig(_)
-            | Call::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
-            | Call::Balances(_)
-            | Call::XTokens(orml_xtokens::Call::transfer {..})
-            | Call::Preimage(_)
-            | Call::Utility(_) => true,
+            | RuntimeCall::Sudo(_)
+            | RuntimeCall::Multisig(_)
+            | RuntimeCall::AuthorInherent(pallet_author_inherent::Call::kick_off_authorship_validation {..}) // executes unsigned on every block
+            | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..})
+            | RuntimeCall::Balances(_)
+            | RuntimeCall::Preimage(_)
+            | RuntimeCall::Utility(_) => true,
 
             // DISALLOW anything else
             | _ => false
@@ -219,15 +223,15 @@ impl frame_system::Config for Runtime {
     type BlockWeights = RuntimeBlockWeights;
     type BlockLength = RuntimeBlockLength;
     type AccountId = AccountId;
-    type Call = Call;
+    type RuntimeCall = RuntimeCall;
     type Lookup = AccountIdLookup<AccountId, ()>;
     type Index = Index;
     type BlockNumber = BlockNumber;
     type Hash = Hash;
     type Hashing = BlakeTwo256;
     type Header = Header;
-    type Event = Event;
-    type Origin = Origin;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeOrigin = RuntimeOrigin;
     type BlockHashCount = BlockHashCount;
     type DbWeight = RocksDbWeight;
     type Version = Version;
@@ -270,7 +274,7 @@ impl pallet_balances::Config for Runtime {
     type ReserveIdentifier = [u8; 8];
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = NativeTokenExistentialDeposit;
     type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
@@ -287,7 +291,7 @@ impl pallet_transaction_payment::Config for Runtime {
     type LengthToFee = ConstantMultiplier<Balance, TransactionLengthToFeeCoeff>;
     type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
     type OperationalFeeMultiplier = ConstU8<1>;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
 }
 
 parameter_types! {
@@ -298,25 +302,25 @@ parameter_types! {
 }
 
 impl pallet_multisig::Config for Runtime {
-    type Event = Event;
-    type Call = Call;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
     type Currency = Balances;
     type DepositBase = DepositBase;
     type DepositFactor = DepositFactor;
-    type MaxSignatories = ConstU16<100>;
+    type MaxSignatories = ConstU32<100>;
     type WeightInfo = weights::pallet_multisig::SubstrateWeight<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
-    type Event = Event;
-    type Call = Call;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
     type PalletsOrigin = OriginCaller;
     type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;
 }
 
 impl pallet_sudo::Config for Runtime {
-    type Event = Event;
-    type Call = Call;
+    type RuntimeEvent = RuntimeEvent;
+    type RuntimeCall = RuntimeCall;
 }
 
 impl pallet_aura_style_filter::Config for Runtime {
@@ -334,7 +338,7 @@ parameter_types! {
     pub LeaveDelayRounds: BlockNumber = prod_or_fast!(28,1,"MANTA_LEAVEDELAYROUNDS"); // == 7 * DAYS / 6 * HOURS
 }
 impl pallet_parachain_staking::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type BlockAuthor = AuthorInherent;
     type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
@@ -400,10 +404,9 @@ parameter_types! {
 
 impl pallet_preimage::Config for Runtime {
     type WeightInfo = weights::pallet_preimage::SubstrateWeight<Runtime>;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type ManagerOrigin = EnsureRoot<AccountId>;
-    type MaxSize = PreimageMaxSize;
     type BaseDeposit = PreimageBaseDeposit;
     type ByteDeposit = PreimageByteDeposit;
 }
@@ -424,7 +427,7 @@ parameter_types! {
     pub const Offset: u32 = 0;
 }
 impl pallet_session::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     // we don't have stash and controller, thus we don't need the convert as well.
     type ValidatorIdOf = IdentityCollator;
@@ -452,7 +455,7 @@ parameter_types! {
 pub type CollatorSelectionUpdateOrigin = EnsureRoot<AccountId>;
 
 impl manta_collator_selection::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type UpdateOrigin = CollatorSelectionUpdateOrigin;
     type PotId = PotId;
@@ -482,7 +485,7 @@ impl pallet_treasury::Config for Runtime {
     type Currency = Balances;
     type ApproveOrigin = EnsureRoot<AccountId>;
     type RejectOrigin = EnsureRoot<AccountId>;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type OnSlash = Treasury;
     type ProposalBond = ProposalBond;
     type ProposalBondMinimum = ProposalBondMinimum;
@@ -570,9 +573,10 @@ pub type SignedExtra = (
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+pub type UncheckedExtrinsic =
+    generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
-pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
+pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
 /// Types for runtime upgrading.
 /// Each type should implement trait `OnRuntimeUpgrade`.
@@ -583,7 +587,7 @@ pub type Executive = frame_executive::Executive<
     Block,
     frame_system::ChainContext<Runtime>,
     Runtime,
-    AllPalletsReversedWithSystemFirst,
+    AllPalletsWithSystem,
     OnRuntimeUpgradeHooks,
 >;
 
@@ -720,17 +724,17 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, Call>
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, RuntimeCall>
         for Runtime
     {
         fn query_call_info(
-            call: Call,
+            call: RuntimeCall,
             len: u32,
         ) -> pallet_transaction_payment::RuntimeDispatchInfo<Balance> {
             TransactionPayment::query_call_info(call, len)
         }
         fn query_call_fee_details(
-            call: Call,
+            call: RuntimeCall,
             len: u32,
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_call_fee_details(call, len)
@@ -777,13 +781,18 @@ impl_runtime_apis! {
 
     #[cfg(feature = "try-runtime")]
     impl frame_try_runtime::TryRuntime<Block> for Runtime {
-        fn on_runtime_upgrade() -> (Weight, Weight) {
-            let weight = Executive::try_runtime_upgrade().unwrap();
+        fn on_runtime_upgrade(checks: frame_try_runtime::UpgradeCheckSelect) -> (Weight, Weight) {
+            let weight = Executive::try_runtime_upgrade(checks).unwrap();
             (weight, RuntimeBlockWeights::get().max_block)
         }
 
-        fn execute_block_no_check(block: Block) -> Weight {
-            Executive::execute_block_no_check(block)
+        fn execute_block(
+            block: Block,
+            state_root_check: bool,
+            signature_check: bool,
+            select: frame_try_runtime::TryStateSelect
+        ) -> Weight {
+            Executive::try_execute_block(block, state_root_check, signature_check, select).expect("try_execute_block failed")
         }
     }
 
@@ -801,7 +810,7 @@ impl_runtime_apis! {
             let mut list = Vec::<BenchmarkList>::new();
             list_benchmarks!(list, extra);
 
-            let storage_info = AllPalletsReversedWithSystemFirst::storage_info();
+            let storage_info = AllPalletsWithSystem::storage_info();
             (list, storage_info)
         }
 
@@ -882,7 +891,7 @@ impl_runtime_apis! {
             }
 
             impl pallet_xcm_benchmarks::generic::Config for Runtime {
-                type Call = Call;
+                type RuntimeCall = RuntimeCall;
 
                 fn worst_case_response() -> (u64, Response) {
                     (0u64, Response::Version(Default::default()))
