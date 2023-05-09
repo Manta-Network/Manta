@@ -2,6 +2,10 @@ name: runtime upgrade test
 on:
   workflow_dispatch:
     inputs:
+      chain_spec:
+        description: The chain spec to be used for runtime upgrade. Required.
+        default: calamari-local
+        required: true
       manta_base_url:
         description: The base manta binary url, that will be upgraded
         required: true
@@ -20,6 +24,7 @@ env:
   AWS_INSTANCE_ROOT_VOLUME_SIZE: 128
   AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
   AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
+  CHAIN_SPEC: ${{github.event.inputs.chain_spec}}
   POLKADOT_BINARY: ${{github.event.inputs.polkadot_url}}
   MANTA_BINARY: ${{github.event.inputs.manta_base_url}}
 jobs:
@@ -41,43 +46,37 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
-    strategy:
-      matrix:
-        runtime:
-          - name: calamari
-          - name: manta
-          - name: dolphin
     steps:
       - uses: actions/checkout@v2
       - name: cache target dir
         uses: actions/cache@v2
         with:
-          path: "${{ github.workspace }}/runtime/${{ matrix.runtime.name }}/target"
-          key: srtool-target-${{ matrix.runtime.name }}-${{ github.sha }}
+          path: "${{ github.workspace }}/runtime/$CHAIN_SPEC/target"
+          key: srtool-target-$CHAIN_SPEC-${{ github.sha }}
           restore-keys: |
-            srtool-target-${{ matrix.runtime.name }}
+            srtool-target-$CHAIN_SPEC
       - name: build runtime
         id: srtool-build
         uses: chevdor/srtool-actions@v0.4.0
         with:
           image: paritytech/srtool
           tag: 1.66.1
-          chain: ${{ matrix.runtime.name }}
+          chain: $CHAIN_SPEC
       - name: persist srtool digest
         run: >
           echo '${{ steps.srtool-build.outputs.json }}' |
-          jq > ${{ matrix.runtime.name }}-srtool-output.json
+          jq > $CHAIN_SPEC-srtool-output.json
       - if: always()
         name: upload srtool json
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.runtime.name }}-srtool-json
-          path: ${{ matrix.runtime.name }}-srtool-output.json
+          name: $CHAIN_SPEC-srtool-json
+          path: $CHAIN_SPEC-srtool-output.json
       - if: always()
         name: upload runtime
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.runtime.name }}-runtime
+          name: $CHAIN_SPEC-runtime
           path: |
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
@@ -91,18 +90,10 @@ jobs:
     needs: [build-runtimes, start-runtime-upgrade-tester]
     runs-on: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
     timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        runtime:
-          - name: manta
-            chain-spec: manta-local
-          - name: calamari
-            chain-spec: calamari-local
     steps:
       - run: |
           ls -ahl ${{ github.workspace }}/
-          mkdir -p $HOME/.local/share/${{ matrix.runtime.name }}-pc
+          mkdir -p $HOME/.local/share/$CHAIN_SPEC-pc
           mkdir -p $HOME/.local/bin
           echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
@@ -121,20 +112,20 @@ jobs:
           ls -ahl $HOME/.local/bin/
       - id: create-chainspec
         run: |
-          manta-base build-spec --chain ${{ matrix.runtime.chain-spec }} --disable-default-bootnode --raw > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json
+          manta-base build-spec --chain $CHAIN_SPEC --disable-default-bootnode --raw > $HOME/.local/share/$CHAIN_SPEC-pc/$CHAIN_SPEC-spec.json
           jq \
             --sort-keys \
-            --arg name "${{ matrix.runtime.name }} testnet base" \
-            --arg id ${{ matrix.runtime.chain-spec }}-base \
+            --arg name "$CHAIN_SPEC testnet base" \
+            --arg id $CHAIN_SPEC-base \
             --arg relay_chain rococo-local-base \
             '. |
               .name = $name |
               .id = $id |
               .relay_chain = $relay_chain |
               .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
-            ' $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json
-          ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-pc/
-          manta-base export-state --chain $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-state.json || true
+            ' $HOME/.local/share/$CHAIN_SPEC-pc/$CHAIN_SPEC-spec.json > $HOME/.local/share/$CHAIN_SPEC-pc/$CHAIN_SPEC-base-spec.json
+          ls -ahl $HOME/.local/share/$CHAIN_SPEC-pc/
+          manta-base export-state --chain $HOME/.local/share/$CHAIN_SPEC-pc/$CHAIN_SPEC-base-spec.json > $HOME/.local/share/$CHAIN_SPEC-pc/$CHAIN_SPEC-state.json || true
       - name: fetch config-for-runtime-upgrade-test
         uses: actions/download-artifact@v2
         with:
@@ -148,16 +139,16 @@ jobs:
             --arg relaychain_id rococo-local-base \
             --arg relaychain_name "rococo local base" \
             --arg parachains_bin $HOME/.local/bin/manta-base \
-            --arg parachains_spec $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json \
+            --arg parachains_spec $HOME/.local/share/$CHAIN_SPEC-pc/$CHAIN_SPEC-base-spec.json \
             '.
               | .relaychain.bin = $relaychain_bin
               | .relaychain.mutation.id = $relaychain_id
               | .relaychain.mutation.name = $relaychain_name
               | .parachains[].bin = $parachains_bin
               | .parachains[].chain = $parachains_spec
-            ' > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
-          jq . $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
-          ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-pc/
+            ' > $HOME/.local/share/$CHAIN_SPEC-pc/$CHAIN_SPEC-base-launch-config.json
+          jq . $HOME/.local/share/$CHAIN_SPEC-pc/$CHAIN_SPEC-base-launch-config.json
+          ls -ahl $HOME/.local/share/$CHAIN_SPEC-pc/
       - uses: actions/checkout@v2
         with:
           repository: paritytech/polkadot-launch
@@ -173,14 +164,14 @@ jobs:
           yarn build
           pm2 start dist/cli.js \
             --name polkadot-launch \
-            --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.runtime.chain-spec }}-stdout.log \
-            --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.runtime.chain-spec }}-stderr.log \
+            --output ${{ github.workspace }}/polkadot-launch-for-$CHAIN_SPEC-stdout.log \
+            --error ${{ github.workspace }}/polkadot-launch-for-$CHAIN_SPEC-stderr.log \
             --no-autorestart \
-            -- $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
-      - name: fetch new ${{ matrix.runtime.name }}_runtime.compact.compressed.wasm
+            -- $HOME/.local/share/$CHAIN_SPEC-pc/$CHAIN_SPEC-base-launch-config.json
+      - name: fetch new $CHAIN_SPEC_runtime.compact.compressed.wasm
         uses: actions/download-artifact@v2
         with:
-          name: ${{ matrix.runtime.name }}-runtime
+          name: $CHAIN_SPEC-runtime
       - uses: actions/checkout@v2
         with:
           repository: Manta-Network/Manta
@@ -188,7 +179,7 @@ jobs:
       - name: run test suites
         run: |
           sleep 120
-          cp ${{ github.workspace }}/${{ matrix.runtime.name }}_runtime.compact.compressed.wasm ${{ github.workspace }}/Manta/tests/calamari.wasm
+          cp ${{ github.workspace }}/$CHAIN_SPEC_runtime.compact.compressed.wasm ${{ github.workspace }}/Manta/tests/calamari.wasm
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
@@ -196,7 +187,7 @@ jobs:
           if [ $? != 0 ]; then echo "Runtime upgrade failed!"; exit 1; fi
       - uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.chain-spec.id }}-alice.log
+          name: $CHAIN_SPEC-alice.log
           path: ${{ github.workspace }}/polkadot-launch/9921.log
   # HELPER JOBS BELOW
   start-runtime-upgrade-tester:
