@@ -209,6 +209,8 @@ impl Contains<RuntimeCall> for MantaFilter {
             | RuntimeCall::Democracy(pallet_democracy::Call::vote {..}
                 | pallet_democracy::Call::emergency_cancel {..}
                 | pallet_democracy::Call::external_propose_default {..}
+                | pallet_democracy::Call::external_propose_majority {..}
+                | pallet_democracy::Call::external_propose {..}
                 | pallet_democracy::Call::fast_track  {..}
                 | pallet_democracy::Call::veto_external {..}
                 | pallet_democracy::Call::cancel_referendum {..}
