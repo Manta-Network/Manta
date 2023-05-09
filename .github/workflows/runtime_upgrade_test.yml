@@ -23,10 +23,23 @@ env:
   POLKADOT_BINARY: ${{github.event.inputs.polkadot_url}}
   MANTA_BINARY: ${{github.event.inputs.manta_base_url}}
 jobs:
-  runtime-upgrade-test:
-    needs: [start-runtime-upgrade-tester]
-    runs-on: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
-    timeout-minutes: 90
+  print-rust-versions:
+    runs-on: ubuntu-20.04
+    container:
+      image: paritytech/ci-linux:production
+    outputs:
+      rustc-stable: ${{ steps.get-rust-versions.outputs.stable }}
+      rustc-nightly: ${{ steps.get-rust-versions.outputs.nightly }}
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - id: get-rust-versions
+        run: |
+          echo "::set-output name=stable::$(rustc +stable --version)"
+          echo "::set-output name=nightly::$(rustc +nightly --version)"
+  build-runtimes:
+    needs: check-for-runtime-upgrade
+    runs-on: ubuntu-20.04
     env:
       CARGO_TERM_COLOR: always
     strategy:
@@ -68,9 +81,28 @@ jobs:
           path: |
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
+      - if: always()
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: config-for-runtime-upgrade-test
+          path: .github/resources/config-for-runtime-upgrade-test.json
+  runtime-upgrade-test:
+    needs: [build-runtimes, start-runtime-upgrade-tester, check-for-runtime-upgrade, parse-runtimes]
+    runs-on: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime:
+          - name: manta
+            chain-spec: manta-local
+          - name: calamari
+            chain-spec: calamari-local
+    steps:
       - run: |
           ls -ahl ${{ github.workspace }}/
-          mkdir -p $HOME/.local/share/${{ matrix.runtime.name }}-local
+          mkdir -p $HOME/.local/share/${{ matrix.runtime.name }}-pc
           mkdir -p $HOME/.local/bin
           echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
@@ -89,10 +121,10 @@ jobs:
           ls -ahl $HOME/.local/bin/
       - id: create-chainspec
         run: |
-          manta-base build-spec --chain ${{ matrix.runtime.chain-spec }} --disable-default-bootnode --raw > $HOME/.local/share/${{ matrix.runtime.name }}-local/${{ matrix.runtime.chain-spec }}-spec.json
+          manta-base build-spec --chain ${{ matrix.runtime.chain-spec }} --disable-default-bootnode --raw > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json
           jq \
             --sort-keys \
-            --arg name "${{ matrix.runtime.name }}-local testnet base" \
+            --arg name "${{ matrix.runtime.name }} testnet base" \
             --arg id ${{ matrix.runtime.chain-spec }}-base \
             --arg relay_chain rococo-local-base \
             '. |
@@ -100,28 +132,32 @@ jobs:
               .id = $id |
               .relay_chain = $relay_chain |
               .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
-            ' $HOME/.local/share/${{ matrix.runtime.name }}-local/${{ matrix.runtime.chain-spec }}-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-local/${{ matrix.runtime.chain-spec }}-base-spec.json
-          ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-local/
-          manta-base export-state --chain $HOME/.local/share/${{ matrix.runtime.name }}-local/${{ matrix.runtime.chain-spec }}-base-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-local/${{ matrix.runtime.chain-spec }}-state.json || true
+            ' $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json
+          ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-pc/
+          manta-base export-state --chain $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-state.json || true
+      - name: fetch config-for-runtime-upgrade-test
+        uses: actions/download-artifact@v2
+        with:
+          name: config-for-runtime-upgrade-test
       - name: create launch config
         run: |
           ls -a
-          cat .github/resources/config-for-runtime-upgrade-test.json | \
+          cat config-for-runtime-upgrade-test.json | \
           jq \
             --arg relaychain_bin $HOME/.local/bin/polkadot \
             --arg relaychain_id rococo-local-base \
             --arg relaychain_name "rococo local base" \
             --arg parachains_bin $HOME/.local/bin/manta-base \
-            --arg parachains_spec $HOME/.local/share/${{ matrix.runtime.name }}-local/${{ matrix.runtime.chain-spec }}-base-spec.json \
+            --arg parachains_spec $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-spec.json \
             '.
               | .relaychain.bin = $relaychain_bin
               | .relaychain.mutation.id = $relaychain_id
               | .relaychain.mutation.name = $relaychain_name
               | .parachains[].bin = $parachains_bin
               | .parachains[].chain = $parachains_spec
-            ' > $HOME/.local/share/${{ matrix.runtime.name }}-local/${{ matrix.runtime.chain-spec }}-base-launch-config.json
-          jq . $HOME/.local/share/${{ matrix.runtime.name }}-local/${{ matrix.runtime.chain-spec }}-base-launch-config.json
-          ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-local/
+            ' > $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
+          jq . $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
+          ls -ahl $HOME/.local/share/${{ matrix.runtime.name }}-pc/
       - uses: actions/checkout@v2
         with:
           repository: paritytech/polkadot-launch
@@ -140,7 +176,7 @@ jobs:
             --output ${{ github.workspace }}/polkadot-launch-for-${{ matrix.runtime.chain-spec }}-stdout.log \
             --error ${{ github.workspace }}/polkadot-launch-for-${{ matrix.runtime.chain-spec }}-stderr.log \
             --no-autorestart \
-            -- $HOME/.local/share/${{ matrix.runtime.name }}-local/${{ matrix.runtime.chain-spec }}-base-launch-config.json
+            -- $HOME/.local/share/${{ matrix.runtime.name }}-pc/${{ matrix.runtime.chain-spec }}-base-launch-config.json
       - name: fetch new ${{ matrix.runtime.name }}_runtime.compact.compressed.wasm
         uses: actions/download-artifact@v2
         with:
@@ -185,19 +221,9 @@ jobs:
           aws-instance-root-volume-size: 64
           aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
-      - name: init
-        run: |
-          sudo apt update
-          sudo apt install -y pkg-config libssl-dev yarn
-          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
-          source ${HOME}/.cargo/env
-          rustup toolchain install stable
-          rustup default stable
-          rustup update
-          rustup target add wasm32-unknown-unknown
   stop-runtime-upgrade-tester:
     if: ${{ always() }}
-    needs: [runtime-upgrade-test, start-runtime-upgrade-tester]
+    needs: [runtime-upgrade-test, check-for-runtime-upgrade, start-runtime-upgrade-tester]
     runs-on: ubuntu-20.04
     steps:
       - continue-on-error: true
