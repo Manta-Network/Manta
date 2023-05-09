@@ -372,6 +372,12 @@ pub fn run_with(cli: Cli) -> Result {
                 BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
                     construct_benchmark_partials!(config, |partials| cmd.run(partials.client))
                 }),
+                #[cfg(not(feature = "runtime-benchmarks"))]
+                BenchmarkCmd::Storage(_) => Err(
+                    "Storage benchmarking can be enabled with `--features runtime-benchmarks`."
+                        .into(),
+                ),
+                #[cfg(feature = "runtime-benchmarks")]
                 BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
                     construct_benchmark_partials!(config, |partials| {
                         let db = partials.backend.expose_db();
@@ -389,6 +395,8 @@ pub fn run_with(cli: Cli) -> Result {
         }
         #[cfg(feature = "try-runtime")]
         Some(Subcommand::TryRuntime(cmd)) => {
+            use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
+
             // grab the task manager.
             let runner = cli.create_runner(cmd)?;
             let registry = &runner
@@ -401,13 +409,22 @@ pub fn run_with(cli: Cli) -> Result {
                     .map_err(|e| format!("Error: {e:?}"))?;
 
             if runner.config().chain_spec.is_manta() {
-                runner.async_run(|config| {
-                    Ok((cmd.run::<Block, MantaRuntimeExecutor>(config), task_manager))
+                runner.async_run(|_config| {
+                    Ok((
+                        cmd.run::<Block, ExtendedHostFunctions<
+                            sp_io::SubstrateHostFunctions,
+                            <MantaRuntimeExecutor as NativeExecutionDispatch>::ExtendHostFunctions,
+                        >>(),
+                        task_manager,
+                    ))
                 })
             } else if runner.config().chain_spec.is_calamari() {
-                runner.async_run(|config| {
+                runner.async_run(|_config| {
                     Ok((
-                        cmd.run::<Block, CalamariRuntimeExecutor>(config),
+                        cmd.run::<Block, ExtendedHostFunctions<
+							sp_io::SubstrateHostFunctions,
+							<CalamariRuntimeExecutor as NativeExecutionDispatch>::ExtendHostFunctions,
+						>>(),
                         task_manager,
                     ))
                 })
@@ -583,7 +600,7 @@ impl CliConfiguration<Self> for RelayChainCli {
     fn base_path(&self) -> Result<Option<BasePath>> {
         Ok(self
             .shared_params()
-            .base_path()
+            .base_path()?
             .or_else(|| self.base_path.clone().map(Into::into)))
     }
 
@@ -638,10 +655,6 @@ impl CliConfiguration<Self> for RelayChainCli {
 
     fn transaction_pool(&self, is_dev: bool) -> Result<sc_service::config::TransactionPoolOptions> {
         self.base.base.transaction_pool(is_dev)
-    }
-
-    fn state_cache_child_ratio(&self) -> Result<Option<usize>> {
-        self.base.base.state_cache_child_ratio()
     }
 
     fn rpc_methods(&self) -> Result<sc_service::config::RpcMethods> {

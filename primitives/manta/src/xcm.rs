@@ -28,7 +28,6 @@ use crate::assets::{AssetIdLocationMap, UnitsPerSecond};
 use frame_support::{
     pallet_prelude::Get,
     traits::{fungibles::Mutate, tokens::ExistenceRequirement},
-    weights::Weight,
 };
 use frame_system::Config;
 use xcm::{
@@ -116,7 +115,7 @@ where
     R: TakeRevenue,
 {
     /// Weight
-    weight: Weight,
+    weight: u64,
 
     /// Refund Cache
     refund_cache: Option<(MultiLocation, u128, u128)>,
@@ -134,7 +133,7 @@ where
     #[inline]
     fn new() -> Self {
         Self {
-            weight: Zero::zero(),
+            weight: 0,
             refund_cache: None,
             __: PhantomData,
         }
@@ -143,7 +142,7 @@ where
     /// Buys weight for XCM execution. We always return the [`TooExpensive`](Error::TooExpensive)
     /// error if this fails.
     #[inline]
-    fn buy_weight(&mut self, weight: Weight, payment: Assets) -> Result<Assets> {
+    fn buy_weight(&mut self, weight: u64, payment: Assets) -> Result<Assets> {
         log::debug!(
             target: "FirstAssetTrader::buy_weight",
             "weight: {:?}, payment: {:?}",
@@ -247,7 +246,7 @@ where
 
     ///
     #[inline]
-    fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
+    fn refund_weight(&mut self, weight: u64) -> Option<MultiAsset> {
         if let Some((id, prev_amount, units_per_second)) = &mut self.refund_cache {
             let weight = weight.min(self.weight);
             self.weight = self.weight.saturating_sub(weight);
