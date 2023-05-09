@@ -17,7 +17,7 @@
 //! Tests for Manta-SBT
 
 use crate::{
-    mock::{new_test_ext, Balances, MantaSBTPallet, Origin as MockOrigin, Test, Timestamp},
+    mock::{new_test_ext, Balances, MantaSBTPallet, RuntimeOrigin as MockOrigin, Test, Timestamp},
     AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, MintId,
     MintIdRegistry, MintStatus, ReservedIds, SbtMetadataV2, MANTA_MINT_ID,
 };
