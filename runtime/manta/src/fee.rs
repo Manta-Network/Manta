@@ -44,7 +44,7 @@ impl WeightToFeePolynomial for WeightToFee {
         // in Manta Parachain, we map to 1/10 of that, or 1/100 CENT
         // TODO, revisit here to figure out why use this polynomial
         let p = currency::cMANTA;
-        let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
+        let q = 100 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
         smallvec![WeightToFeeCoefficient {
             degree: 1,
             negative: false,

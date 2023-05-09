@@ -46,7 +46,7 @@ use cumulus_primitives_parachain_inherent::{
 };
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainInterface, RelayChainResult};
-use cumulus_relay_chain_rpc_interface::{create_client_and_start_worker, RelayChainRpcInterface};
+use cumulus_relay_chain_minimal_node::build_minimal_relay_chain_node;
 
 use nimbus_consensus::{
     BuildNimbusConsensusParams, NimbusConsensus, NimbusManualSealConsensusDataProvider,
@@ -64,21 +64,21 @@ pub async fn build_relay_chain_interface(
     Arc<(dyn RelayChainInterface + 'static)>,
     Option<CollatorPair>,
 )> {
-    match collator_options.relay_chain_rpc_url {
-        Some(relay_chain_url) => {
-            let client = create_client_and_start_worker(relay_chain_url, task_manager).await?;
-            Ok((
-                Arc::new(RelayChainRpcInterface::new(client)) as Arc<_>,
-                None,
-            ))
-        }
-        None => build_inprocess_relay_chain(
+    if !collator_options.relay_chain_rpc_urls.is_empty() {
+        build_minimal_relay_chain_node(
+            polkadot_config,
+            task_manager,
+            collator_options.relay_chain_rpc_urls,
+        )
+        .await
+    } else {
+        build_inprocess_relay_chain(
             polkadot_config,
             parachain_config,
             telemetry_worker_handle,
             task_manager,
             hwbench,
-        ),
+        )
     }
 }
 
@@ -86,6 +86,7 @@ pub async fn build_relay_chain_interface(
 pub fn build_nimbus_consensus<RuntimeApi>(
     id: ParaId,
     client: Arc<Client<RuntimeApi>>,
+    backend: Arc<sc_client_db::Backend<Block>>,
     prometheus_registry: Option<&Registry>,
     telemetry: Option<TelemetryHandle>,
     task_manager: &TaskManager,
@@ -141,6 +142,7 @@ where
         para_id: id,
         proposer_factory,
         block_import: client.clone(),
+        backend,
         parachain_client: client,
         keystore,
         skip_prediction: force_authoring,
@@ -215,6 +217,8 @@ where
                     current_para_block,
                     relay_offset: 1000,
                     relay_blocks_per_para_block: 2,
+                    para_blocks_per_relay_epoch: 0,
+                    relay_randomness_config: (),
                     xcm_config: MockXcmConfig::new(
                         &*client_for_xcm,
                         block,

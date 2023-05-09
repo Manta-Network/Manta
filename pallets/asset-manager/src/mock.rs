@@ -22,10 +22,14 @@
 use crate as pallet_asset_manager;
 use crate::mock::sp_api_hidden_includes_construct_runtime::hidden_include::traits::GenesisBuild;
 use frame_support::{
-    construct_runtime, pallet_prelude::DispatchResult, parameter_types, traits::ConstU32, PalletId,
+    construct_runtime,
+    pallet_prelude::DispatchResult,
+    parameter_types,
+    traits::{AsEnsureOriginWithArg, ConstU32},
+    PalletId,
 };
 use frame_system as system;
-use frame_system::EnsureRoot;
+use frame_system::{EnsureNever, EnsureRoot};
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
@@ -51,8 +55,8 @@ impl system::Config for Runtime {
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Hash = H256;
@@ -60,7 +64,7 @@ impl system::Config for Runtime {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = ConstU32<250>;
     type Version = ();
     type PalletInfo = PalletInfo;
@@ -83,7 +87,7 @@ parameter_types! {
 }
 
 impl pallet_assets::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type AssetId = CalamariAssetId;
     type Currency = Balances;
@@ -97,6 +101,12 @@ impl pallet_assets::Config for Runtime {
     type Freezer = ();
     type Extra = ();
     type WeightInfo = ();
+    type RemoveItemsLimit = ConstU32<1000>;
+    type AssetIdParameter = CalamariAssetId;
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureNever<AccountId>>;
+    type CallbackHandle = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
 }
 
 parameter_types! {
@@ -108,7 +118,7 @@ parameter_types! {
 impl pallet_balances::Config for Runtime {
     type MaxLocks = MaxLocks;
     type Balance = Balance;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
@@ -135,7 +145,7 @@ impl AssetRegistry for MantaAssetRegistry {
         is_sufficient: bool,
     ) -> DispatchResult {
         Assets::force_create(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             AssetManager::account_id(),
             is_sufficient,
@@ -143,7 +153,7 @@ impl AssetRegistry for MantaAssetRegistry {
         )?;
 
         Assets::force_set_metadata(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             metadata.name,
             metadata.symbol,
@@ -157,7 +167,7 @@ impl AssetRegistry for MantaAssetRegistry {
         metadata: AssetStorageMetadata,
     ) -> DispatchResult {
         Assets::force_set_metadata(
-            Origin::root(),
+            RuntimeOrigin::root(),
             *asset_id,
             metadata.name,
             metadata.symbol,
@@ -209,7 +219,7 @@ impl AssetConfig<Runtime> for MantaAssetConfig {
 }
 
 impl pallet_asset_manager::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type AssetId = CalamariAssetId;
     type Balance = Balance;
     type Location = AssetLocation;

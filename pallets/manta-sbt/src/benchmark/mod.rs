@@ -15,8 +15,8 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-    benchmark::precomputed_coins::TO_PRIVATE, AccountId, Box, Call, Config, EvmAddressType,
-    MintType, Pallet, Pallet as MantaSBTPallet, TransferPost,
+    benchmark::precomputed_coins::TO_PRIVATE, AccountId, Box, Call, Config, Pallet,
+    Pallet as MantaSBTPallet, TransferPost,
 };
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, vec, whitelisted_caller};
 use frame_support::traits::{Currency, Get};
@@ -66,41 +66,60 @@ benchmarks! {
             RawOrigin::Root.into(),
             Some(caller.clone())
         )?;
-        MantaSBTPallet::<T>::set_mint_chain_info(
+        MantaSBTPallet::<T>::new_mint_info(
             RawOrigin::Root.into(),
-            MintType::Bab,
             0_u32.into(),
-            None
+            None,
+            vec![].try_into().unwrap()
         )?;
+        let bab_id = 1;
     }: allowlist_evm_account (
         RawOrigin::Signed(caller),
-        EvmAddressType::Bab(H160::default())
+        bab_id,
+        H160::default()
     )
 
-    set_mint_chain_info {
-    }: set_mint_chain_info (
+    new_mint_info {
+    }: new_mint_info (
         RawOrigin::Root,
-        MintType::Bab,
         5u32.into(),
-        Some(10u32.into())
+        Some(10u32.into()),
+        vec![].try_into().unwrap()
+    )
+
+    update_mint_info {
+        MantaSBTPallet::<T>::new_mint_info(
+            RawOrigin::Root.into(),
+            0_u32.into(),
+            None,
+            vec![].try_into().unwrap()
+        )?;
+    }: update_mint_info (
+        RawOrigin::Root,
+        1,
+        5u32.into(),
+        None,
+        vec![].try_into().unwrap()
     )
 
     mint_sbt_eth {
+        let bab_id = 1;
         let caller: T::AccountId = whitelisted_caller();
         MantaSBTPallet::<T>::change_allowlist_account(
             RawOrigin::Root.into(),
             Some(caller.clone())
         )?;
-        let bab_alice = EvmAddressType::Bab(MantaSBTPallet::<T>::eth_address(&alice()));
-        MantaSBTPallet::<T>::set_mint_chain_info(
+        let bab_alice = MantaSBTPallet::<T>::eth_address(&alice());
+        MantaSBTPallet::<T>::new_mint_info(
             RawOrigin::Root.into(),
-            MintType::Bab,
             0_u32.into(),
-            None
+            None,
+            vec![].try_into().unwrap()
         )?;
 
         MantaSBTPallet::<T>::allowlist_evm_account(
             RawOrigin::Signed(caller.clone()).into(),
+            bab_id,
             bab_alice,
         )?;
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
@@ -112,7 +131,7 @@ benchmarks! {
         Box::new(mint_post),
         0,
         signature,
-        bab_alice,
+        bab_id,
         Some(0),
         Some(0),
         Some(vec![0].try_into().unwrap())

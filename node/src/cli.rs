@@ -52,7 +52,7 @@ pub enum Subcommand {
 
     /// Sub-commands concerned with benchmarking.
     /// The pallet benchmarking moved to the `pallet` sub-command.
-    #[clap(subcommand)]
+    #[command(subcommand)]
     Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 
     /// Try some command against runtime state.
@@ -67,18 +67,18 @@ pub enum Subcommand {
 
 /// Node CLI
 #[derive(Debug, Parser)]
-#[clap(
+#[command(
     propagate_version = true,
     args_conflicts_with_subcommands = true,
     subcommand_negates_reqs = true
 )]
 pub struct Cli {
     /// Subcommand
-    #[clap(subcommand)]
+    #[command(subcommand)]
     pub subcommand: Option<Subcommand>,
 
     /// Cumulus Client Running CLI
-    #[clap(flatten)]
+    #[command(flatten)]
     pub run: cumulus_client_cli::RunCmd,
 
     /// Disable automatic hardware benchmarks.
@@ -88,11 +88,11 @@ pub struct Cli {
     ///
     /// The results are then printed out in the logs, and also sent as part of
     /// telemetry, if telemetry is enabled.
-    #[clap(long)]
+    #[arg(long)]
     pub no_hardware_benchmarks: bool,
 
     /// Relay chain arguments
-    #[clap(raw = true, conflicts_with = "relay-chain-rpc-url")]
+    #[arg(raw = true)]
     pub relaychain_args: Vec<String>,
 }
 
