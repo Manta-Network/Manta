@@ -74,6 +74,7 @@ pub use sp_runtime::BuildStorage;
 
 pub mod assets_config;
 pub mod currency;
+pub mod fee;
 pub mod impls;
 mod nimbus_session_adapter;
 pub mod staking;
