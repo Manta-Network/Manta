@@ -234,7 +234,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Weight information for extrinsics in this pallet.
         type WeightInfo: WeightInfo;
@@ -243,7 +243,7 @@ pub mod pallet {
         type Currency: ReservableCurrency<Self::AccountId>;
 
         /// The origin which can change the privileged allowlist account and set time range for mints
-        type AdminOrigin: EnsureOrigin<Self::Origin>;
+        type AdminOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
         /// Gets the current on-chain time
         type Now: Time;
@@ -655,7 +655,7 @@ pub mod pallet {
         /// remove once migration is complete
         fn on_idle(_n: T::BlockNumber, remaining_weight: Weight) -> Weight {
             let mut weight_tracking = remaining_weight;
-            if weight_tracking <= T::MinimumWeightRemainInBlock::get() {
+            if weight_tracking.ref_time() <= T::MinimumWeightRemainInBlock::get().ref_time() {
                 // return total weight so all the weight is exhausted
                 return remaining_weight;
             }
@@ -665,28 +665,31 @@ pub mod pallet {
                 .saturating_add(T::DbWeight::get().read);
 
             for (mint_type, mint_info) in MintChainInfos::<T>::drain() {
-                if weight_tracking <= T::MinimumWeightRemainInBlock::get() {
+                if weight_tracking.ref_time() <= T::MinimumWeightRemainInBlock::get().ref_time() {
                     break;
                 }
 
-                weight_tracking = weight_tracking.saturating_sub(two_writes_one_read);
+                weight_tracking =
+                    weight_tracking.saturating_sub(Weight::from_ref_time(two_writes_one_read));
                 Self::migrate_mint_info(mint_type, mint_info);
             }
 
             for (evm_address_type, mint_status) in EvmAddressAllowlist::<T>::drain() {
-                if weight_tracking <= T::MinimumWeightRemainInBlock::get() {
+                if weight_tracking.ref_time() <= T::MinimumWeightRemainInBlock::get().ref_time() {
                     break;
                 }
-                weight_tracking = weight_tracking.saturating_sub(two_writes_one_read);
+                weight_tracking =
+                    weight_tracking.saturating_sub(Weight::from_ref_time(two_writes_one_read));
 
                 Self::migrate_evm_address_type(evm_address_type, mint_status)
             }
 
             for (asset_id, old_metadata) in SbtMetadata::<T>::drain() {
-                if weight_tracking <= T::MinimumWeightRemainInBlock::get() {
+                if weight_tracking.ref_time() <= T::MinimumWeightRemainInBlock::get().ref_time() {
                     break;
                 }
-                weight_tracking = weight_tracking.saturating_sub(two_writes_one_read);
+                weight_tracking =
+                    weight_tracking.saturating_sub(Weight::from_ref_time(two_writes_one_read));
 
                 Self::migrate_metadata(asset_id, old_metadata);
             }

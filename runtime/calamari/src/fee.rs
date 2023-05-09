@@ -47,7 +47,7 @@ mod multiplier_tests {
         sp_api_hidden_includes_construct_runtime::hidden_include::traits::Hooks, Runtime,
         RuntimeBlockWeights as BlockWeights, System, TransactionPayment, KMA,
     };
-    use frame_support::{dispatch::DispatchInfo, weights::DispatchClass};
+    use frame_support::dispatch::{DispatchClass, DispatchInfo};
     use manta_primitives::constants::time::DAYS;
     use pallet_transaction_payment::Multiplier;
     use runtime_common::MinimumMultiplier;

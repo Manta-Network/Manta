@@ -65,22 +65,23 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     // Storage: MantaSbt Shards (r:0 w:1)
     // Storage: MantaSbt SbtMetadataV2 (r:0 w:1)
     fn to_private() -> Weight {
-        (30_118_417_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(3 as Weight))
-            .saturating_add(T::DbWeight::get().writes(6 as Weight))
+        Weight::from_ref_time(30_118_417_000)
+            .saturating_add(T::DbWeight::get().reads(3u64))
+            .saturating_add(T::DbWeight::get().writes(6u64))
     }
     // Storage: System Account (r:1 w:1)
     // Storage: MantaSbt NextSbtId (r:1 w:1)
     // Storage: MantaSbt ReservedIds (r:0 w:1)
     fn reserve_sbt() -> Weight {
-        (48_730_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(3 as Weight))
+        Weight::from_ref_time(48_730_000)
+            .saturating_add(T::DbWeight::get().reads(2u64))
+            .saturating_add(T::DbWeight::get().writes(3u64))
     }
-    // Storage: MantaSbt AllowlistAccount (r:0 w:1)
+   
+
     fn change_allowlist_account() -> Weight {
-        (13_553_000 as Weight)
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+        Weight::from_ref_time(13_553_000)
+            .saturating_add(T::DbWeight::get().writes(1u64))
     }
     // Storage: MantaSbt MintIdRegistry (r:1 w:0)
     // Storage: Timestamp Now (r:1 w:0)
@@ -88,22 +89,22 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     // Storage: MantaSbt EvmAccountAllowlist (r:1 w:1)
     // Storage: MantaSbt NextSbtId (r:1 w:1)
     fn allowlist_evm_account() -> Weight {
-        (28_472_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(5 as Weight))
-            .saturating_add(T::DbWeight::get().writes(2 as Weight))
+        Weight::from_ref_time(28_472_000)
+            .saturating_add(T::DbWeight::get().reads(5u64))
+            .saturating_add(T::DbWeight::get().writes(2u64))
     }
     // Storage: MantaSbt NextMintId (r:1 w:1)
     // Storage: MantaSbt MintIdRegistry (r:0 w:1)
     fn new_mint_info() -> Weight {
-        (15_471_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(1 as Weight))
-            .saturating_add(T::DbWeight::get().writes(2 as Weight))
+        Weight::from_ref_time(15_471_000)
+            .saturating_add(T::DbWeight::get().reads(1u64))
+            .saturating_add(T::DbWeight::get().writes(2u64))
     }
     // Storage: MantaSbt MintIdRegistry (r:1 w:1)
     fn update_mint_info() -> Weight {
-        (16_570_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(1 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+        Weight::from_ref_time(16_570_000)
+            .saturating_add(T::DbWeight::get().reads(1u64))
+            .saturating_add(T::DbWeight::get().writes(1u64))
     }
     // Storage: MantaSbt MintIdRegistry (r:1 w:0)
     // Storage: Timestamp Now (r:1 w:0)
@@ -115,9 +116,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     // Storage: MantaSbt Shards (r:0 w:1)
     // Storage: MantaSbt SbtMetadataV2 (r:0 w:1)
     fn mint_sbt_eth() -> Weight {
-        (30_190_491_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(6 as Weight))
-            .saturating_add(T::DbWeight::get().writes(6 as Weight))
+        Weight::from_ref_time(30_190_491_000)
+            .saturating_add(T::DbWeight::get().reads(6u64))
+            .saturating_add(T::DbWeight::get().writes(6u64))
     }
 }
 
@@ -130,22 +131,23 @@ impl WeightInfo for () {
     // Storage: MantaSbt Shards (r:0 w:1)
     // Storage: MantaSbt SbtMetadataV2 (r:0 w:1)
     fn to_private() -> Weight {
-        (30_118_417_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(3 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(6 as Weight))
+        Weight::from_ref_time(30_118_417_000)
+            .saturating_add(RocksDbWeight::get().reads(3u64))
+            .saturating_add(RocksDbWeight::get().writes(6u64))
     }
     // Storage: System Account (r:1 w:1)
     // Storage: MantaSbt NextSbtId (r:1 w:1)
     // Storage: MantaSbt ReservedIds (r:0 w:1)
     fn reserve_sbt() -> Weight {
-        (48_730_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(3 as Weight))
+        Weight::from_ref_time(48_730_000)
+            .saturating_add(RocksDbWeight::get().reads(2u64))
+            .saturating_add(RocksDbWeight::get().writes(3u64))
     }
-    // Storage: MantaSbt AllowlistAccount (r:0 w:1)
+   
+
     fn change_allowlist_account() -> Weight {
-        (13_553_000 as Weight)
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+        Weight::from_ref_time(13_553_000)
+            .saturating_add(RocksDbWeight::get().writes(1u64))
     }
     // Storage: MantaSbt MintIdRegistry (r:1 w:0)
     // Storage: Timestamp Now (r:1 w:0)
@@ -153,22 +155,22 @@ impl WeightInfo for () {
     // Storage: MantaSbt EvmAccountAllowlist (r:1 w:1)
     // Storage: MantaSbt NextSbtId (r:1 w:1)
     fn allowlist_evm_account() -> Weight {
-        (28_472_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(5 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
+        Weight::from_ref_time(28_472_000u64)
+            .saturating_add(RocksDbWeight::get().reads(5u64))
+            .saturating_add(RocksDbWeight::get().writes(2u64))
     }
     // Storage: MantaSbt NextMintId (r:1 w:1)
     // Storage: MantaSbt MintIdRegistry (r:0 w:1)
     fn new_mint_info() -> Weight {
-        (15_471_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(2 as Weight))
+        Weight::from_ref_time(15_471_000u64)
+            .saturating_add(RocksDbWeight::get().reads(1u64))
+            .saturating_add(RocksDbWeight::get().writes(2u64))
     }
     // Storage: MantaSbt MintIdRegistry (r:1 w:1)
     fn update_mint_info() -> Weight {
-        (16_570_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+        Weight::from_ref_time(16_570_000u64)
+            .saturating_add(RocksDbWeight::get().reads(1u64))
+            .saturating_add(RocksDbWeight::get().writes(1u64))
     }
     // Storage: MantaSbt MintIdRegistry (r:1 w:0)
     // Storage: Timestamp Now (r:1 w:0)
@@ -180,8 +182,8 @@ impl WeightInfo for () {
     // Storage: MantaSbt Shards (r:0 w:1)
     // Storage: MantaSbt SbtMetadataV2 (r:0 w:1)
     fn mint_sbt_eth() -> Weight {
-        (30_190_491_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(6 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(6 as Weight))
+        Weight::from_ref_time(30_190_491_000u64)
+            .saturating_add(RocksDbWeight::get().reads(6u64))
+            .saturating_add(RocksDbWeight::get().writes(6u64))
     }
 }

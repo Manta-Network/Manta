@@ -15,8 +15,9 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    weights, xcm_config::SelfReserve, AssetManager, Assets, Balances, Event,
-    NativeTokenExistentialDeposit, Origin, Runtime, TechnicalCollective, Timestamp, KMA,
+    weights, xcm_config::SelfReserve, AssetManager, Assets, Balances,
+    NativeTokenExistentialDeposit, Runtime, RuntimeEvent, RuntimeOrigin, TechnicalCollective,
+    Timestamp, KMA,
 };
 
 use manta_primitives::{
@@ -34,7 +35,8 @@ use manta_primitives::{
 use frame_support::{
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{ConstU128, ConstU16, ConstU32, ConstU64, EitherOfDiverse},
+    traits::{AsEnsureOriginWithArg, ConstU128, ConstU16, ConstU32, EitherOfDiverse},
+    weights::Weight,
     PalletId,
 };
 
@@ -52,7 +54,7 @@ parameter_types! {
 }
 
 impl pallet_assets::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
     type AssetId = CalamariAssetId;
     type Currency = Balances;
@@ -66,6 +68,15 @@ impl pallet_assets::Config for Runtime {
     type Freezer = ();
     type Extra = ();
     type WeightInfo = weights::pallet_assets::SubstrateWeight<Runtime>;
+    type RemoveItemsLimit = ConstU32<1000>;
+    type AssetIdParameter = CalamariAssetId;
+    #[cfg(feature = "runtime-benchmarks")]
+    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
+    #[cfg(not(feature = "runtime-benchmarks"))]
+    type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureNever<AccountId>>;
+    type CallbackHandle = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
 }
 
 pub struct CalamariAssetRegistry;
@@ -86,7 +97,7 @@ impl AssetRegistry for CalamariAssetRegistry {
         is_sufficient: bool,
     ) -> DispatchResult {
         Assets::force_create(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             sp_runtime::MultiAddress::Id(AssetManager::account_id()),
             is_sufficient,
@@ -94,7 +105,7 @@ impl AssetRegistry for CalamariAssetRegistry {
         )?;
 
         Assets::force_set_metadata(
-            Origin::root(),
+            RuntimeOrigin::root(),
             asset_id,
             metadata.name,
             metadata.symbol,
@@ -108,7 +119,7 @@ impl AssetRegistry for CalamariAssetRegistry {
         metadata: AssetStorageMetadata,
     ) -> DispatchResult {
         Assets::force_set_metadata(
-            Origin::root(),
+            RuntimeOrigin::root(),
             *asset_id,
             metadata.name,
             metadata.symbol,
@@ -163,7 +174,7 @@ impl AssetConfig<Runtime> for CalamariAssetConfig {
 }
 
 impl pallet_asset_manager::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type AssetId = CalamariAssetId;
     type Balance = Balance;
     type Location = AssetLocation;
@@ -178,7 +189,7 @@ parameter_types! {
 }
 
 impl pallet_manta_pay::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type WeightInfo = weights::pallet_manta_pay::SubstrateWeight<Runtime>;
     type AssetConfig = CalamariAssetConfig;
     type PalletId = MantaPayPalletId;
@@ -186,10 +197,11 @@ impl pallet_manta_pay::Config for Runtime {
 
 parameter_types! {
     pub const MantaSbtPalletId: PalletId = MANTA_SBT_PALLET_ID;
+    pub const MinimumWeightRemainInBlock: Weight = Weight::from_ref_time(25 * WEIGHT_PER_MILLIS);
 }
 
 impl pallet_manta_sbt::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type PalletId = MantaSbtPalletId;
     type Currency = Balances;
     type MintsPerReserve = ConstU16<5>;
@@ -200,7 +212,7 @@ impl pallet_manta_sbt::Config for Runtime {
         EnsureRoot<AccountId>,
         pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 2, 3>,
     >;
-    type MinimumWeightRemainInBlock = ConstU64<{ 25 * WEIGHT_PER_MILLIS }>;
+    type MinimumWeightRemainInBlock = MinimumWeightRemainInBlock;
     type Now = Timestamp;
     type WeightInfo = weights::pallet_manta_sbt::SubstrateWeight<Runtime>;
 }

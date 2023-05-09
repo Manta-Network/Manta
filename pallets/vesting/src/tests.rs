@@ -17,7 +17,7 @@
 use super::{Event as PalletEvent, *};
 use chrono::prelude::*;
 use frame_support::{assert_noop, assert_ok};
-use mock::{Event as MockEvent, *};
+use mock::{RuntimeEvent as MockEvent, *};
 
 #[test]
 fn alice_vesting_for_bob_should_work() {
@@ -28,7 +28,7 @@ fn alice_vesting_for_bob_should_work() {
             // Cannot vest tokens that is less than expected.
             assert_noop!(
                 CalamariVesting::vested_transfer(
-                    Origin::signed(ALICE),
+                    RuntimeOrigin::signed(ALICE),
                     BOB,
                     MinVestedTransfer::get() - 1
                 ),
@@ -37,20 +37,24 @@ fn alice_vesting_for_bob_should_work() {
 
             // Signer cannot vest tokens that exceeds all he has.
             assert_noop!(
-                CalamariVesting::vested_transfer(Origin::signed(ALICE), BOB, ALICE_DEPOSIT + 1),
+                CalamariVesting::vested_transfer(
+                    RuntimeOrigin::signed(ALICE),
+                    BOB,
+                    ALICE_DEPOSIT + 1
+                ),
                 Error::<Test>::BalanceLow
             );
 
             let unvested = 100;
             assert_ok!(CalamariVesting::vested_transfer(
-                Origin::signed(ALICE),
+                RuntimeOrigin::signed(ALICE),
                 BOB,
                 unvested
             ));
 
             // Cannot vest tokens the same user more than twice.
             assert_noop!(
-                CalamariVesting::vested_transfer(Origin::signed(ALICE), BOB, unvested),
+                CalamariVesting::vested_transfer(RuntimeOrigin::signed(ALICE), BOB, unvested),
                 Error::<Test>::ExistingVestingSchedule
             );
 
@@ -60,7 +64,7 @@ fn alice_vesting_for_bob_should_work() {
 
             // Now Bob cannot claim any token.
             assert_noop!(
-                CalamariVesting::vest(Origin::signed(BOB)),
+                CalamariVesting::vest(RuntimeOrigin::signed(BOB)),
                 Error::<Test>::ClaimTooEarly,
             );
 
@@ -76,7 +80,7 @@ fn alice_vesting_for_bob_should_work() {
             let now = VestingSchedule::<Test>::get()[first_round].1 * 1000 + 1;
             Timestamp::set_timestamp(now);
 
-            assert_ok!(CalamariVesting::vest(Origin::signed(BOB)));
+            assert_ok!(CalamariVesting::vest(RuntimeOrigin::signed(BOB)));
             assert_eq!(Balances::free_balance(BOB), unvested);
 
             // BOB cannot transfer more than 1th round of vested tokens.
@@ -89,11 +93,15 @@ fn alice_vesting_for_bob_should_work() {
             )));
 
             assert_noop!(
-                Balances::transfer(Origin::signed(BOB), ALICE, vested + 1),
+                Balances::transfer(RuntimeOrigin::signed(BOB), ALICE, vested + 1),
                 pallet_balances::Error::<Test, _>::LiquidityRestrictions,
             );
 
-            assert_ok!(Balances::transfer(Origin::signed(BOB), ALICE, vested));
+            assert_ok!(Balances::transfer(
+                RuntimeOrigin::signed(BOB),
+                ALICE,
+                vested
+            ));
             assert_eq!(
                 Balances::free_balance(ALICE),
                 ALICE_DEPOSIT - unvested + vested
@@ -106,7 +114,7 @@ fn alice_vesting_for_bob_should_work() {
             let now = VestingSchedule::<Test>::get()[last_round].1 * 1000 + 1;
             Timestamp::set_timestamp(now);
 
-            assert_ok!(CalamariVesting::vest(Origin::signed(BOB)));
+            assert_ok!(CalamariVesting::vest(RuntimeOrigin::signed(BOB)));
             assert_eq!(Balances::free_balance(BOB), unvested - vested);
 
             // Check vested done event
@@ -116,7 +124,7 @@ fn alice_vesting_for_bob_should_work() {
 
             // Now, Bob can transfer all his tokens.
             assert_ok!(Balances::transfer(
-                Origin::signed(BOB),
+                RuntimeOrigin::signed(BOB),
                 ALICE,
                 unvested - vested
             ));
@@ -136,7 +144,7 @@ fn alice_vesting_for_bob_claim_slowly_should_work() {
         .execute_with(|| {
             let unvested = 100;
             assert_ok!(CalamariVesting::vested_transfer(
-                Origin::signed(ALICE),
+                RuntimeOrigin::signed(ALICE),
                 BOB,
                 unvested
             ));
@@ -146,7 +154,7 @@ fn alice_vesting_for_bob_claim_slowly_should_work() {
 
             // Now Bob cannot claim any token.
             assert_noop!(
-                CalamariVesting::vest(Origin::signed(BOB)),
+                CalamariVesting::vest(RuntimeOrigin::signed(BOB)),
                 Error::<Test>::ClaimTooEarly,
             );
 
@@ -161,7 +169,7 @@ fn alice_vesting_for_bob_claim_slowly_should_work() {
             let now = VestingSchedule::<Test>::get()[fourth_round].1 * 1000 + 1;
             Timestamp::set_timestamp(now);
 
-            assert_ok!(CalamariVesting::vest(Origin::signed(BOB)));
+            assert_ok!(CalamariVesting::vest(RuntimeOrigin::signed(BOB)));
             assert_eq!(Balances::free_balance(BOB), unvested);
 
             // Calculate how many tokens that have been vested.
@@ -171,11 +179,15 @@ fn alice_vesting_for_bob_claim_slowly_should_work() {
                 .fold(Percent::from_percent(0), |acc, p| acc.saturating_add(p))
                 * unvested;
             assert_noop!(
-                Balances::transfer(Origin::signed(BOB), ALICE, vested + 1),
+                Balances::transfer(RuntimeOrigin::signed(BOB), ALICE, vested + 1),
                 pallet_balances::Error::<Test, _>::LiquidityRestrictions,
             );
 
-            assert_ok!(Balances::transfer(Origin::signed(BOB), ALICE, vested));
+            assert_ok!(Balances::transfer(
+                RuntimeOrigin::signed(BOB),
+                ALICE,
+                vested
+            ));
             assert_eq!(
                 Balances::free_balance(ALICE),
                 ALICE_DEPOSIT - unvested + vested
@@ -192,7 +204,7 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
         .execute_with(|| {
             let unvested = 100;
             assert_ok!(CalamariVesting::vested_transfer(
-                Origin::signed(ALICE),
+                RuntimeOrigin::signed(ALICE),
                 BOB,
                 unvested
             ));
@@ -207,7 +219,7 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
             let now = VestingSchedule::<Test>::get()[first_round].1 * 1000 + 1;
             Timestamp::set_timestamp(now);
 
-            assert_ok!(CalamariVesting::vest(Origin::signed(BOB)));
+            assert_ok!(CalamariVesting::vest(RuntimeOrigin::signed(BOB)));
             assert_eq!(Balances::free_balance(BOB), unvested);
 
             // BOB cannot transfer more than 1th round of vested tokens.
@@ -220,11 +232,15 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
             )));
 
             assert_noop!(
-                Balances::transfer(Origin::signed(BOB), ALICE, vested_1 + 1),
+                Balances::transfer(RuntimeOrigin::signed(BOB), ALICE, vested_1 + 1),
                 pallet_balances::Error::<Test, _>::LiquidityRestrictions,
             );
 
-            assert_ok!(Balances::transfer(Origin::signed(BOB), ALICE, vested_1));
+            assert_ok!(Balances::transfer(
+                RuntimeOrigin::signed(BOB),
+                ALICE,
+                vested_1
+            ));
             assert_eq!(
                 Balances::free_balance(ALICE),
                 ALICE_DEPOSIT - unvested + vested_1
@@ -237,7 +253,7 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
             let now = VestingSchedule::<Test>::get()[sixth_round].1 * 1000 + 1;
             Timestamp::set_timestamp(now);
 
-            assert_ok!(CalamariVesting::vest(Origin::signed(BOB)));
+            assert_ok!(CalamariVesting::vest(RuntimeOrigin::signed(BOB)));
 
             // All vested for 5th round.
             let vested_0_to_4 = VestingSchedule::<Test>::get()[..=sixth_round]
@@ -246,7 +262,11 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
                 .fold(Percent::from_percent(0), |acc, p| acc.saturating_add(p))
                 * unvested;
             assert_noop!(
-                Balances::transfer(Origin::signed(BOB), ALICE, vested_0_to_4 + 1 - vested_1),
+                Balances::transfer(
+                    RuntimeOrigin::signed(BOB),
+                    ALICE,
+                    vested_0_to_4 + 1 - vested_1
+                ),
                 pallet_balances::Error::<Test, _>::LiquidityRestrictions,
             );
 
@@ -263,7 +283,7 @@ fn alice_vesting_for_bob_claim_arbitrarily_should_work() {
             );
 
             assert_ok!(Balances::transfer(
-                Origin::signed(BOB),
+                RuntimeOrigin::signed(BOB),
                 ALICE,
                 vested_0_to_4 - vested_1
             ));
@@ -280,7 +300,7 @@ fn vesting_complete_should_work() {
         .execute_with(|| {
             let unvested = 100;
             assert_ok!(CalamariVesting::vested_transfer(
-                Origin::signed(ALICE),
+                RuntimeOrigin::signed(ALICE),
                 BOB,
                 unvested
             ));
@@ -289,7 +309,7 @@ fn vesting_complete_should_work() {
 
             // Now Bob cannot claim any token.
             assert_noop!(
-                CalamariVesting::vest(Origin::signed(BOB)),
+                CalamariVesting::vest(RuntimeOrigin::signed(BOB)),
                 Error::<Test>::ClaimTooEarly,
             );
 
@@ -300,7 +320,7 @@ fn vesting_complete_should_work() {
 
             // Now Bob cannot transfer locked tokens.
             assert_noop!(
-                Balances::transfer(Origin::signed(BOB), ALICE, 1),
+                Balances::transfer(RuntimeOrigin::signed(BOB), ALICE, 1),
                 pallet_balances::Error::<Test, _>::LiquidityRestrictions,
             );
 
@@ -310,7 +330,7 @@ fn vesting_complete_should_work() {
             let now = VestingSchedule::<Test>::get()[last_round].1 * 1000 + 1;
             Timestamp::set_timestamp(now);
 
-            assert_ok!(CalamariVesting::vest(Origin::signed(BOB)));
+            assert_ok!(CalamariVesting::vest(RuntimeOrigin::signed(BOB)));
             assert_eq!(Balances::free_balance(BOB), unvested);
 
             // Check vested done event
@@ -320,7 +340,11 @@ fn vesting_complete_should_work() {
             let vested = unvested;
 
             // Now, Bob can transfer all his tokens.
-            assert_ok!(Balances::transfer(Origin::signed(BOB), ALICE, vested));
+            assert_ok!(Balances::transfer(
+                RuntimeOrigin::signed(BOB),
+                ALICE,
+                vested
+            ));
             assert_eq!(Balances::free_balance(ALICE), ALICE_DEPOSIT);
             assert_eq!(Balances::free_balance(BOB), 0);
 
@@ -364,7 +388,7 @@ fn partially_update_vesting_schedule_should_work() {
             .unwrap_or_default();
 
             assert_ok!(CalamariVesting::update_vesting_schedule(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 new_schedule.clone()
             ));
             // Check storage
@@ -402,7 +426,7 @@ fn update_brand_new_vesting_schedule_should_work() {
             )
             .unwrap_or_default();
             assert_ok!(CalamariVesting::update_vesting_schedule(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 new_schedule.clone()
             ));
             // Check storage
@@ -430,7 +454,10 @@ fn invalid_schedule_should_not_be_updated() {
             let wrong_length_schedule: BoundedVec<u64, <Test as Config>::MaxScheduleLength> =
                 BoundedVec::try_from(vec![1, 2, 3, 4, 5, 6, 7]).unwrap_or_default();
             assert_noop!(
-                CalamariVesting::update_vesting_schedule(Origin::root(), wrong_length_schedule),
+                CalamariVesting::update_vesting_schedule(
+                    RuntimeOrigin::root(),
+                    wrong_length_schedule
+                ),
                 Error::<Test>::InvalidScheduleLength,
             );
 
@@ -438,7 +465,10 @@ fn invalid_schedule_should_not_be_updated() {
             let wrong_length_schedule: BoundedVec<u64, <Test as Config>::MaxScheduleLength> =
                 BoundedVec::try_from(vec![1, 2, 3, 4, 5]).unwrap_or_default();
             assert_noop!(
-                CalamariVesting::update_vesting_schedule(Origin::root(), wrong_length_schedule),
+                CalamariVesting::update_vesting_schedule(
+                    RuntimeOrigin::root(),
+                    wrong_length_schedule
+                ),
                 Error::<Test>::InvalidScheduleLength,
             );
 
@@ -446,7 +476,7 @@ fn invalid_schedule_should_not_be_updated() {
             let invalid_schedule: BoundedVec<u64, <Test as Config>::MaxScheduleLength> =
                 BoundedVec::try_from(vec![1, 2, 9, 4, 8, 6]).unwrap_or_default();
             assert_noop!(
-                CalamariVesting::update_vesting_schedule(Origin::root(), invalid_schedule),
+                CalamariVesting::update_vesting_schedule(RuntimeOrigin::root(), invalid_schedule),
                 Error::<Test>::UnsortedSchedule,
             );
 
@@ -478,7 +508,7 @@ fn invalid_schedule_should_not_be_updated() {
             .unwrap_or_default();
 
             assert_noop!(
-                CalamariVesting::update_vesting_schedule(Origin::root(), invalid_schedule),
+                CalamariVesting::update_vesting_schedule(RuntimeOrigin::root(), invalid_schedule),
                 Error::<Test>::InvalidSchedule,
             );
         });

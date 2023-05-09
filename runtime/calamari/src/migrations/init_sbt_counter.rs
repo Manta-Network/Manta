@@ -16,6 +16,7 @@
 
 use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade};
 use sp_runtime::traits::PhantomData;
+use sp_std::vec::Vec;
 
 pub struct InitializeSbtCounter<T>(PhantomData<T>);
 
@@ -38,17 +39,17 @@ where
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
         let storage_version = pallet_manta_sbt::Pallet::<T>::on_chain_storage_version();
         if storage_version == 0 {
-            Ok(())
+            Ok(Vec::new())
         } else {
             Err("Storage version has already been migrated")
         }
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
         let storage_version = pallet_manta_sbt::Pallet::<T>::on_chain_storage_version();
         if storage_version == 1 {
             Ok(())
