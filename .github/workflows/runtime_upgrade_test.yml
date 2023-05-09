@@ -87,7 +87,7 @@ jobs:
           name: config-for-runtime-upgrade-test
           path: .github/resources/config-for-runtime-upgrade-test.json
   runtime-upgrade-test:
-    needs: [build-runtimes, start-runtime-upgrade-tester, parse-runtimes]
+    needs: [build-runtimes, start-runtime-upgrade-tester]
     runs-on: ${{ needs.start-runtime-upgrade-tester.outputs.runner-label }}
     timeout-minutes: 90
     strategy:
@@ -218,7 +218,7 @@ jobs:
           aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
           aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
           aws-instance-root-volume-size: 64
-          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+          aws-image-search-pattern: ${{ env.AWS_fIMAGE_SEARCH_PATTERN }}
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-runtime-upgrade-tester:
     if: ${{ always() }}
