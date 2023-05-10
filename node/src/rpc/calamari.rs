@@ -78,6 +78,5 @@ where
     module
         .merge(ZenlinkProtocol::new(client).into_rpc())
         .map_err(|e| sc_service::Error::Other(e.to_string()))?;
-
     Ok(module)
 }
