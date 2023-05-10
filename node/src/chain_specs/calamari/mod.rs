@@ -16,6 +16,9 @@
 
 //! Calamari Chain Specifications
 
+mod dev_genesis;
+use dev_genesis::calamari_dev_genesis;
+
 use super::*;
 use crate::command::CALAMARI_PARACHAIN_ID;
 #[allow(unused_imports)]
@@ -23,6 +26,7 @@ use calamari_runtime::{
     currency::KMA, opaque::SessionKeys, CouncilConfig, DemocracyConfig, GenesisConfig,
     LotteryConfig, ParachainStakingConfig, TechnicalCommitteeConfig,
 };
+use sc_telemetry::TelemetryEndpoints;
 use session_key_primitives::util::unchecked_account_id;
 /// Calamari Protocol Identifier
 pub const CALAMARI_PROTOCOL_ID: &str = "calamari";
@@ -156,95 +160,10 @@ pub fn calamari_local_config(localdev: bool) -> CalamariChainSpec {
     )
 }
 
-fn calamari_dev_genesis(
-    invulnerables: Vec<(AccountId, SessionKeys)>,
-    delegations: Vec<(AccountId, AccountId, Balance)>,
-    endowed_accounts: Vec<AccountId>,
-) -> GenesisConfig {
-    GenesisConfig {
-        system: calamari_runtime::SystemConfig {
-            code: calamari_runtime::WASM_BINARY
-                .expect("WASM binary was not build, please build it!")
-                .to_vec(),
-        },
-        balances: calamari_runtime::BalancesConfig {
-            balances: endowed_accounts[..endowed_accounts.len() / 2]
-                .iter()
-                .map(|k| {
-                    (
-                        k.clone(),
-                        100 * CALAMARI_ENDOWMENT / ((endowed_accounts.len() / 2) as Balance),
-                    )
-                })
-                .collect(),
-        },
-        // no need to pass anything to aura, in fact it will panic if we do. Session will take care
-        // of this.
-        aura: Default::default(),
-        parachain_staking: ParachainStakingConfig {
-            candidates: invulnerables
-                .iter()
-                .cloned()
-                .map(|(account, _)| {
-                    (
-                        account,
-                        calamari_runtime::staking::NORMAL_COLLATOR_MINIMUM_STAKE,
-                    )
-                })
-                .collect(),
-            delegations,
-            inflation_config: calamari_runtime::staking::inflation_config::<
-                calamari_runtime::Runtime,
-            >(),
-        },
-        parachain_info: calamari_runtime::ParachainInfoConfig {
-            parachain_id: CALAMARI_PARACHAIN_ID.into(),
-        },
-        collator_selection: calamari_runtime::CollatorSelectionConfig {
-            invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-            candidacy_bond: 400_000 * KMA, // How many tokens will be reserved as collator
-            ..Default::default()
-        },
-        session: calamari_runtime::SessionConfig {
-            keys: invulnerables
-                .iter()
-                .cloned()
-                .map(|(acc, session_keys)| {
-                    (
-                        acc.clone(),  // account id
-                        acc,          // validator id
-                        session_keys, // collator session keys
-                    )
-                })
-                .collect(),
-        },
-        democracy: DemocracyConfig::default(),
-        council: CouncilConfig {
-            members: endowed_accounts.iter().take(1).cloned().collect(),
-            phantom: Default::default(),
-        },
-        technical_committee: TechnicalCommitteeConfig {
-            members: endowed_accounts.iter().take(1).cloned().collect(),
-            phantom: Default::default(),
-        },
-        council_membership: Default::default(),
-        technical_membership: Default::default(),
-        asset_manager: Default::default(),
-        parachain_system: Default::default(),
-        polkadot_xcm: calamari_runtime::PolkadotXcmConfig {
-            safe_xcm_version: Some(SAFE_XCM_VERSION),
-        },
-        lottery: LotteryConfig {
-            min_deposit: 5_000 * KMA,
-            min_withdraw: 1 * KMA,
-            gas_reserve: 10_000 * KMA,
-        },
-    }
-}
 /// Returns the Calamari testnet chainspec.
 pub fn calamari_testnet_config() -> Result<CalamariChainSpec, String> {
     let mut spec = CalamariChainSpec::from_json_bytes(
-        &include_bytes!("../../../genesis/calamari-testnet-genesis.json")[..],
+        &include_bytes!("../../../../genesis/calamari-testnet-genesis.json")[..],
     )?;
     spec.extensions_mut().para_id = CALAMARI_PARACHAIN_ID;
     Ok(spec)
@@ -253,6 +172,79 @@ pub fn calamari_testnet_config() -> Result<CalamariChainSpec, String> {
 /// Returns the Calamari mainnet chainspec.
 pub fn calamari_config() -> Result<CalamariChainSpec, String> {
     CalamariChainSpec::from_json_bytes(
-        &include_bytes!("../../../genesis/calamari-genesis.json")[..],
+        &include_bytes!("../../../../genesis/calamari-genesis.json")[..],
+    )
+}
+
+/// Returns the Calamari Baikal internal testnet chainspec.
+pub fn calamari_baikal_config() -> CalamariChainSpec {
+    let boot_nodes = vec![
+		"/dns/crispy.baikal.testnet.calamari.systems/tcp/30333/p2p/12D3KooWSxTYS1UrAeowqsmetyQidbQsztHZcUj7sDzuGcVRoyp2".parse().unwrap(),
+		"/dns/crunchy.baikal.testnet.calamari.systems/tcp/30333/p2p/12D3KooWQp2SFroUMVpS5BBHEa4sGexsUzxo9aVoD68BiuWTABqB".parse().unwrap(),
+		"/dns/hotdog.baikal.testnet.calamari.systems/tcp/30333/p2p/12D3KooWEpQZzewqvRoMC4DTdm9MAYYGnLSZsVqLeVd2SRfMrY21".parse().unwrap(),
+		"/dns/tasty.baikal.testnet.calamari.systems/tcp/30333/p2p/12D3KooWGLKo6GXmP8g79jHrUTgScz4EdbkE9rcbsRyxZCKVQ3nn".parse().unwrap(),
+		"/dns/tender.baikal.testnet.calamari.systems/tcp/30333/p2p/12D3KooWRSpMo8JrcNNdnv4oE5ZMzBFToPXsKvzPx4MCsDphPRHm".parse().unwrap(),
+	];
+
+    CalamariChainSpec::from_genesis(
+        "Calamari Baikal Parachain",
+        "calamari_baikal",
+        ChainType::Live,
+        move || {
+            let invulnerables = vec![
+                (
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    SessionKeys::from_seed_unchecked("Alice"),
+                ),
+                (
+                    unchecked_account_id::<sr25519::Public>("Bob"),
+                    SessionKeys::from_seed_unchecked("Bob"),
+                ),
+                (
+                    unchecked_account_id::<sr25519::Public>("Charlie"),
+                    SessionKeys::from_seed_unchecked("Charlie"),
+                ),
+                (
+                    unchecked_account_id::<sr25519::Public>("Dave"),
+                    SessionKeys::from_seed_unchecked("Dave"),
+                ),
+                (
+                    unchecked_account_id::<sr25519::Public>("Eve"),
+                    SessionKeys::from_seed_unchecked("Eve"),
+                ),
+            ];
+            calamari_dev_genesis(
+                invulnerables,
+                // Delegations
+                vec![],
+                vec![
+                    unchecked_account_id::<sr25519::Public>("Alice"),
+                    unchecked_account_id::<sr25519::Public>("Bob"),
+                    unchecked_account_id::<sr25519::Public>("Charlie"),
+                    unchecked_account_id::<sr25519::Public>("Dave"),
+                    unchecked_account_id::<sr25519::Public>("Eve"),
+                    unchecked_account_id::<sr25519::Public>("Alice//stash"),
+                    unchecked_account_id::<sr25519::Public>("Bob//stash"),
+                    unchecked_account_id::<sr25519::Public>("Charlie//stash"),
+                    unchecked_account_id::<sr25519::Public>("Dave//stash"),
+                    unchecked_account_id::<sr25519::Public>("Eve//stash"),
+                ],
+            )
+        },
+        boot_nodes,
+        Some(
+            TelemetryEndpoints::new(vec![(
+                "/dns/api.telemetry.pelagos.systems/tcp/443/x-parity-wss/%2Fsubmit%2F".to_string(),
+                0,
+            )])
+            .unwrap(),
+        ),
+        Some(CALAMARI_PROTOCOL_ID),
+        None,
+        Some(calamari_properties()),
+        Extensions {
+            relay_chain: KUSAMA_RELAYCHAIN_LOCAL_NET.into(),
+            para_id: CALAMARI_PARACHAIN_ID,
+        },
     )
 }

@@ -107,6 +107,7 @@ fn load_spec(id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
         // calamari chainspec
         "calamari-dev" => Ok(Box::new(chain_specs::calamari_development_config())),
         "calamari-local" => Ok(Box::new(chain_specs::calamari_local_config(false))),
+        "calamari-baikal" => Ok(Box::new(chain_specs::calamari_baikal_config())),
         "calamari-localdev" => Ok(Box::new(chain_specs::calamari_local_config(true))),
         "calamari-testnet" => Ok(Box::new(chain_specs::calamari_testnet_config()?)),
         "calamari" => Ok(Box::new(chain_specs::calamari_config()?)),
