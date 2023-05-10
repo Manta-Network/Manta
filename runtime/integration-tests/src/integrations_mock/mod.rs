@@ -63,9 +63,7 @@ cfg_if::cfg_if! {
 use codec::Encode;
 use frame_support::{assert_ok, dispatch::DispatchInfo, weights::Weight};
 use lazy_static::lazy_static;
-use manta_primitives::{
-    types::{AccountId, Balance, Header},
-};
+use manta_primitives::types::{AccountId, Balance, Header};
 use nimbus_primitives::NIMBUS_ENGINE_ID;
 use session_key_primitives::util::unchecked_account_id;
 use sp_core::sr25519::Public;
