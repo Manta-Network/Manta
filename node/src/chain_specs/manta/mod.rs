@@ -152,11 +152,19 @@ fn manta_devnet_genesis(genesis_collators: Vec<Collator>) -> GenesisConfig {
         asset_manager: Default::default(),
         democracy: DemocracyConfig::default(),
         council: CouncilConfig {
-            members: endowments.iter().map(|endowed| endowed.0.clone()).collect(),
+            members: endowments
+                .iter()
+                .map(|endowed| endowed.0.clone())
+                .take(1)
+                .collect(),
             phantom: Default::default(),
         },
         technical_committee: TechnicalCommitteeConfig {
-            members: endowments.iter().map(|endowed| endowed.0.clone()).collect(),
+            members: endowments
+                .iter()
+                .map(|endowed| endowed.0.clone())
+                .take(1)
+                .collect(),
             phantom: Default::default(),
         },
         council_membership: Default::default(),
