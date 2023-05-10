@@ -39,31 +39,31 @@ jobs:
         uses: actions/cache@v2
         with:
           path: "${{ github.workspace }}/runtime/${{ env.RUNTIME }}/target"
-          key: srtool-target-${{ env.RUNTIME }-${{ github.sha }}
+          key: srtool-target-${{ env.RUNTIME }}-${{ github.sha }}
           restore-keys: |
-            srtool-target-${{ env.RUNTIME }
+            srtool-target-${{ env.RUNTIME }}
       - name: build runtime
         id: srtool-build
         uses: chevdor/srtool-actions@v0.4.0
         with:
           image: paritytech/srtool
           tag: 1.66.1
-          chain: ${{ env.RUNTIME }
+          chain: ${{ env.RUNTIME }}
       - name: persist srtool digest
         run: >
           echo '${{ steps.srtool-build.outputs.json }}' |
-          jq > ${{ env.RUNTIME }-srtool-output.json
+          jq > ${{ env.RUNTIME }}-srtool-output.json
       - if: always()
         name: upload srtool json
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.RUNTIME }-srtool-json
-          path: ${{ env.RUNTIME }-srtool-output.json
+          name: ${{ env.RUNTIME }}-srtool-json
+          path: ${{ env.RUNTIME }}-srtool-output.json
       - if: always()
         name: upload runtime
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.RUNTIME }-runtime
+          name: ${{ env.RUNTIME }}-runtime
           path: |
             ${{ steps.srtool-build.outputs.wasm }}
             ${{ steps.srtool-build.outputs.wasm_compressed }}
@@ -80,7 +80,7 @@ jobs:
     steps:
       - run: |
           ls -ahl ${{ github.workspace }}/
-          mkdir -p $HOME/.local/share/${{ env.RUNTIME }-pc
+          mkdir -p $HOME/.local/share/${{ env.RUNTIME }}-pc
           mkdir -p $HOME/.local/bin
           echo "${HOME}/.nvm/versions/node/v16.3.0/bin" >> $GITHUB_PATH
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
@@ -99,10 +99,10 @@ jobs:
           ls -ahl $HOME/.local/bin/
       - id: create-chainspec
         run: |
-          manta-base build-spec --chain ${{ env.RUNTIME_SPEC }} --disable-default-bootnode --raw > $HOME/.local/share/${{ env.RUNTIME }-pc/${{ env.RUNTIME_SPEC }}-spec.json
+          manta-base build-spec --chain ${{ env.RUNTIME_SPEC }} --disable-default-bootnode --raw > $HOME/.local/share/${{ env.RUNTIME }}-pc/${{ env.RUNTIME_SPEC }}-spec.json
           jq \
             --sort-keys \
-            --arg name "${{ env.RUNTIME } testnet base" \
+            --arg name "${{ env.RUNTIME }} testnet base" \
             --arg id ${{ env.RUNTIME_SPEC }}-base \
             --arg relay_chain rococo-local-base \
             '. |
@@ -110,9 +110,9 @@ jobs:
               .id = $id |
               .relay_chain = $relay_chain |
               .telemetryEndpoints = [["/dns/api.telemetry.manta.systems/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]]
-            ' $HOME/.local/share/${{ env.RUNTIME }-pc/${{ env.RUNTIME_SPEC }}-spec.json > $HOME/.local/share/${{ env.RUNTIME }-pc/${{ env.RUNTIME_SPEC }}-base-spec.json
-          ls -ahl $HOME/.local/share/${{ env.RUNTIME }-pc/
-          manta-base export-state --chain $HOME/.local/share/${{ env.RUNTIME }-pc/${{ env.RUNTIME_SPEC }}-base-spec.json > $HOME/.local/share/${{ env.RUNTIME }-pc/${{ env.RUNTIME_SPEC }}-state.json || true
+            ' $HOME/.local/share/${{ env.RUNTIME }}-pc/${{ env.RUNTIME_SPEC }}-spec.json > $HOME/.local/share/${{ env.RUNTIME }}-pc/${{ env.RUNTIME_SPEC }}-base-spec.json
+          ls -ahl $HOME/.local/share/${{ env.RUNTIME }}-pc/
+          manta-base export-state --chain $HOME/.local/share/${{ env.RUNTIME }}-pc/${{ env.RUNTIME_SPEC }}-base-spec.json > $HOME/.local/share/${{ env.RUNTIME }}-pc/${{ env.RUNTIME_SPEC }}-state.json || true
       - name: fetch config-for-runtime-upgrade-test
         uses: actions/download-artifact@v2
         with:
@@ -126,16 +126,16 @@ jobs:
             --arg relaychain_id rococo-local-base \
             --arg relaychain_name "rococo local base" \
             --arg parachains_bin $HOME/.local/bin/manta-base \
-            --arg parachains_spec $HOME/.local/share/${{ env.RUNTIME }-pc/${{ env.RUNTIME_SPEC }}-base-spec.json \
+            --arg parachains_spec $HOME/.local/share/${{ env.RUNTIME }}-pc/${{ env.RUNTIME_SPEC }}-base-spec.json \
             '.
               | .relaychain.bin = $relaychain_bin
               | .relaychain.mutation.id = $relaychain_id
               | .relaychain.mutation.name = $relaychain_name
               | .parachains[].bin = $parachains_bin
               | .parachains[].chain = $parachains_spec
-            ' > $HOME/.local/share/${{ env.RUNTIME }-pc/${{ env.RUNTIME_SPEC }}-base-launch-config.json
-          jq . $HOME/.local/share/${{ env.RUNTIME }-pc/${{ env.RUNTIME_SPEC }}-base-launch-config.json
-          ls -ahl $HOME/.local/share/${{ env.RUNTIME }-pc/
+            ' > $HOME/.local/share/${{ env.RUNTIME }}-pc/${{ env.RUNTIME_SPEC }}-base-launch-config.json
+          jq . $HOME/.local/share/${{ env.RUNTIME }}-pc/${{ env.RUNTIME_SPEC }}-base-launch-config.json
+          ls -ahl $HOME/.local/share/${{ env.RUNTIME }}-pc/
       - uses: actions/checkout@v2
         with:
           repository: paritytech/polkadot-launch
@@ -154,11 +154,11 @@ jobs:
             --output ${{ github.workspace }}/polkadot-launch-for-${{ env.RUNTIME_SPEC }}-stdout.log \
             --error ${{ github.workspace }}/polkadot-launch-for-${{ env.RUNTIME_SPEC }}-stderr.log \
             --no-autorestart \
-            -- $HOME/.local/share/${{ env.RUNTIME }-pc/${{ env.RUNTIME_SPEC }}-base-launch-config.json
-      - name: fetch new ${{ env.RUNTIME }_runtime.compact.compressed.wasm
+            -- $HOME/.local/share/${{ env.RUNTIME }}-pc/${{ env.RUNTIME_SPEC }}-base-launch-config.json
+      - name: fetch new ${{ env.RUNTIME }}_runtime.compact.compressed.wasm
         uses: actions/download-artifact@v2
         with:
-          name: ${{ env.RUNTIME }-runtime
+          name: ${{ env.RUNTIME }}-runtime
       - uses: actions/checkout@v2
         with:
           repository: Manta-Network/Manta
@@ -166,7 +166,7 @@ jobs:
       - name: run test suites
         run: |
           sleep 120
-          cp ${{ github.workspace }}/${{ env.RUNTIME }_runtime.compact.compressed.wasm ${{ github.workspace }}/Manta/tests/calamari.wasm
+          cp ${{ github.workspace }}/${{ env.RUNTIME }}_runtime.compact.compressed.wasm ${{ github.workspace }}/Manta/tests/calamari.wasm
           cd ${{ github.workspace }}/Manta/tests
           yarn install
           yarn
