@@ -17,11 +17,7 @@
 //! Manta Protocol Constants
 
 use crate::types::Balance;
-use frame_support::{
-    parameter_types,
-    weights::{RuntimeDbWeight, Weight},
-    PalletId,
-};
+use frame_support::{parameter_types, weights::RuntimeDbWeight, PalletId};
 
 /// Calamari SS58 Prefix
 pub const CALAMARI_SS58PREFIX: u8 = 78;
@@ -107,13 +103,13 @@ pub const TEST_DEFAULT_ASSET_ED: Balance = 1;
 pub const TEST_DEFAULT_ASSET_ED2: Balance = 2;
 
 /// 1_000_000_000_000
-pub const WEIGHT_PER_SECOND: Weight = 1_000_000_000_000;
+pub const WEIGHT_PER_SECOND: u64 = 1_000_000_000_000;
 /// 1_000_000_000
-pub const WEIGHT_PER_MILLIS: Weight = WEIGHT_PER_SECOND / 1000;
+pub const WEIGHT_PER_MILLIS: u64 = WEIGHT_PER_SECOND / 1000;
 /// 1_000_000
-pub const WEIGHT_PER_MICROS: Weight = WEIGHT_PER_MILLIS / 1000;
+pub const WEIGHT_PER_MICROS: u64 = WEIGHT_PER_MILLIS / 1000;
 /// 1_000
-pub const WEIGHT_PER_NANOS: Weight = WEIGHT_PER_MICROS / 1000;
+pub const WEIGHT_PER_NANOS: u64 = WEIGHT_PER_MICROS / 1000;
 
 parameter_types! {
     /// By default, Substrate uses RocksDB, so this will be the weight used throughout
@@ -141,10 +137,10 @@ mod constants_tests {
     #[test]
     fn sanity_check_weight_per_time_constants() {
         use frame_support::weights::constants::{
-            WEIGHT_PER_MICROS as IMPORTED_WEIGHT_PER_MICROS,
-            WEIGHT_PER_MILLIS as IMPORTED_WEIGHT_PER_MILLIS,
-            WEIGHT_PER_NANOS as IMPORTED_WEIGHT_PER_NANOS,
-            WEIGHT_PER_SECOND as IMPORTED_WEIGHT_PER_SECOND,
+            WEIGHT_REF_TIME_PER_MICROS as IMPORTED_WEIGHT_PER_MICROS,
+            WEIGHT_REF_TIME_PER_MILLIS as IMPORTED_WEIGHT_PER_MILLIS,
+            WEIGHT_REF_TIME_PER_NANOS as IMPORTED_WEIGHT_PER_NANOS,
+            WEIGHT_REF_TIME_PER_SECOND as IMPORTED_WEIGHT_PER_SECOND,
         };
 
         assert_eq!(WEIGHT_PER_SECOND, IMPORTED_WEIGHT_PER_SECOND);

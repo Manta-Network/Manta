@@ -16,16 +16,16 @@
 
 #![cfg(feature = "runtime-benchmarks")]
 
-use crate::{Call, Config, Event, Pallet};
+use crate::{Call, Config, Pallet};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::traits::Get;
 use frame_system::{EventRecord, RawOrigin};
 use manta_primitives::assets::{AssetConfig, TestingDefault, UnitsPerSecond};
 use xcm::latest::prelude::*;
 
-fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
+fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
     let events = frame_system::Pallet::<T>::events();
-    let system_event: <T as frame_system::Config>::Event = generic_event.into();
+    let system_event: <T as frame_system::Config>::RuntimeEvent = generic_event.into();
     let EventRecord { event, .. } = &events[events.len() - 1];
     assert_eq!(event, &system_event);
 }
@@ -95,7 +95,7 @@ benchmarks! {
         let some_valid_asset_id = <T as Config>::AssetId::from(assets_count);
     }: _(RawOrigin::Root, some_valid_asset_id, metadata.clone())
     verify {
-        assert_last_event::<T>(Event::AssetMetadataUpdated { asset_id: some_valid_asset_id, metadata }.into());
+        assert_last_event::<T>(crate::Event::AssetMetadataUpdated { asset_id: some_valid_asset_id, metadata }.into());
     }
 
     mint_asset {
@@ -114,7 +114,7 @@ benchmarks! {
         let some_valid_asset_id = <T as Config>::AssetId::from(assets_count);
     }: _(RawOrigin::Root, <T as Config>::AssetId::from(assets_count), beneficiary.clone(), <T as Config>::Balance::from(amount) )
     verify {
-        assert_last_event::<T>(Event::AssetMinted { asset_id: some_valid_asset_id, beneficiary, amount: <T as Config>::Balance::from(amount) }.into());
+        assert_last_event::<T>(crate::Event::AssetMinted { asset_id: some_valid_asset_id, beneficiary, amount: <T as Config>::Balance::from(amount) }.into());
     }
 
     set_min_xcm_fee {

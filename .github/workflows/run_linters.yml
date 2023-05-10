@@ -69,7 +69,11 @@ jobs:
         run: sccache --start-server
       - name: init rust toolchain
         # NOTE: We use nightly Rust only to get nightly fmt & clippy
+        # TODO: use nightly after https://github.com/clap-rs/clap/issues/4733 fixed.
         run: |
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install nightly-2023-03-13

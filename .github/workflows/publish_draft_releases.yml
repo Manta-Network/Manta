@@ -57,6 +57,7 @@ jobs:
         uses: chevdor/srtool-actions@v0.4.0
         with:
           image: paritytech/srtool
+          tag: 1.66.1
           chain: ${{ matrix.runtime.name }}
       - name: persist srtool digest
         run: >
@@ -118,7 +119,8 @@ jobs:
       - name: init
         run: |
           sudo apt update
-          sudo apt install -y pkg-config libssl-dev
+          sudo apt install -y pkg-config libssl-dev protobuf-compiler
+          protoc --version
           curl -s https://sh.rustup.rs -sSf | sh -s -- -y
           source ${HOME}/.cargo/env
           rustup toolchain install stable

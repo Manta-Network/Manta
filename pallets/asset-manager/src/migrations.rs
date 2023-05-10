@@ -24,6 +24,7 @@ use frame_support::{
     pallet_prelude::Weight,
     traits::{Get, OnRuntimeUpgrade, PalletInfoAccess, StorageVersion},
 };
+use sp_std::vec::Vec;
 
 /// Storage migration to populate the existing assets'
 /// entries in the new AllowedDestParaIds storage item
@@ -38,8 +39,8 @@ where
         let storage_version = <T as GetStorageVersion>::on_chain_storage_version();
         if storage_version < 1 {
             log::info!(target: "asset-manager", "Start to execute storage migration for asset-manager.");
-            let mut reads: Weight = 0;
-            let mut writes: Weight = 0;
+            let mut reads: u64 = 0;
+            let mut writes: u64 = 0;
             LocationAssetId::<T>::iter().for_each(|(location, _asset_id)| {
                 reads += 1;
                 if let Some(para_id) =
@@ -66,16 +67,16 @@ where
     }
 
     #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
+    fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
         let storage_version = <T as GetStorageVersion>::on_chain_storage_version();
         if storage_version >= 1 {
             return Err("Storage version is >= 1, the migration won't be executed.");
         }
-        Ok(())
+        Ok(Vec::new())
     }
 
     #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
+    fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
         let storage_version = <T as GetStorageVersion>::on_chain_storage_version();
         if storage_version < 1 {
             return Err("Storage version is >= 1, the migration won't be executed.");

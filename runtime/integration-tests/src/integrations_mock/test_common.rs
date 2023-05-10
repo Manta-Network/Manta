@@ -105,7 +105,7 @@ mod parachain_staking_tests {
             .execute_with(|| {
                 assert_noop!(
                     ParachainStaking::join_candidates(
-                        Origin::signed(BOB.clone()),
+                        RuntimeOrigin::signed(BOB.clone()),
                         MIN_BOND_TO_BE_CONSIDERED_COLLATOR - 1,
                         6u32
                     ),
@@ -127,7 +127,7 @@ mod parachain_staking_tests {
             .execute_with(|| {
                 // Create and bond session keys to Bob's account.
                 assert_ok!(Session::set_keys(
-                    Origin::signed(BOB.clone()),
+                    RuntimeOrigin::signed(BOB.clone()),
                     BOB_SESSION_KEYS.clone(),
                     vec![]
                 ));
@@ -136,7 +136,7 @@ mod parachain_staking_tests {
                 >>::is_registered(&BOB));
 
                 assert_ok!(ParachainStaking::join_candidates(
-                    Origin::signed(BOB.clone()),
+                    RuntimeOrigin::signed(BOB.clone()),
                     <Runtime as pallet_parachain_staking::Config>::MinCandidateStk::get(),
                     3u32
                 ));
@@ -200,7 +200,7 @@ mod parachain_staking_tests {
                     FERDIE.clone(),
                 ] {
                     assert_ok!(ParachainStaking::candidate_bond_more(
-                        Origin::signed(collator.clone()),
+                        RuntimeOrigin::signed(collator.clone()),
                         MIN_BOND_TO_BE_CONSIDERED_COLLATOR - EARLY_COLLATOR_MINIMUM_STAKE
                     ));
                 }
@@ -208,7 +208,7 @@ mod parachain_staking_tests {
                 // Delegate a large amount of tokens to EVE and ALICE
                 for collator in vec![EVE.clone(), ALICE.clone()] {
                     assert_ok!(ParachainStaking::delegate(
-                        Origin::signed(USER.clone()),
+                        RuntimeOrigin::signed(USER.clone()),
                         collator,
                         100_000_000 * KMA,
                         50,
@@ -260,7 +260,7 @@ mod parachain_staking_tests {
                 ]);
                 // Attempt to leave as whitelist collator
                 assert_ok!(ParachainStaking::schedule_leave_candidates(
-                    Origin::signed(FERDIE.clone()),
+                    RuntimeOrigin::signed(FERDIE.clone()),
                     6
                 ));
             });
@@ -306,7 +306,7 @@ mod parachain_staking_tests {
                     FERDIE.clone(),
                 ] {
                     assert_ok!(ParachainStaking::candidate_bond_more(
-                        Origin::signed(collator.clone()),
+                        RuntimeOrigin::signed(collator.clone()),
                         MIN_BOND_TO_BE_CONSIDERED_COLLATOR - EARLY_COLLATOR_MINIMUM_STAKE
                     ));
                 }
@@ -338,7 +338,7 @@ fn balances_operations_should_work() {
 
             // Basic transfer should work
             assert_ok!(Balances::transfer(
-                Origin::signed(ALICE.clone()),
+                RuntimeOrigin::signed(ALICE.clone()),
                 sp_runtime::MultiAddress::Id(CHARLIE.clone()),
                 transfer_amount,
             ));
@@ -364,7 +364,7 @@ fn balances_operations_should_work() {
             // Should not be able to transfer all with this call
             assert_err!(
                 Balances::transfer_keep_alive(
-                    Origin::signed(ALICE.clone()),
+                    RuntimeOrigin::signed(ALICE.clone()),
                     sp_runtime::MultiAddress::Id(CHARLIE.clone()),
                     INITIAL_BALANCE,
                 ),
@@ -373,7 +373,7 @@ fn balances_operations_should_work() {
 
             // Transfer all down to zero
             assert_ok!(Balances::transfer_all(
-                Origin::signed(BOB.clone()),
+                RuntimeOrigin::signed(BOB.clone()),
                 sp_runtime::MultiAddress::Id(CHARLIE.clone()),
                 false
             ));
@@ -382,7 +382,7 @@ fn balances_operations_should_work() {
 
             // Transfer all but keep alive with ED
             assert_ok!(Balances::transfer_all(
-                Origin::signed(DAVE.clone()),
+                RuntimeOrigin::signed(DAVE.clone()),
                 sp_runtime::MultiAddress::Id(ALICE.clone()),
                 true
             ));
@@ -394,7 +394,7 @@ fn balances_operations_should_work() {
             // Even though keep alive is set to false alice cannot fall below the ED
             // because it has an outstanding consumer reference, from being a collator.
             assert_ok!(Balances::transfer_all(
-                Origin::signed(ALICE.clone()),
+                RuntimeOrigin::signed(ALICE.clone()),
                 sp_runtime::MultiAddress::Id(CHARLIE.clone()),
                 false
             ));
@@ -941,7 +941,7 @@ fn concrete_fungible_ledger_can_withdraw_works() {
             );
 
             assert_ok!(Assets::freeze(
-                Origin::signed(AssetManager::account_id()),
+                RuntimeOrigin::signed(AssetManager::account_id()),
                 <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
                 sp_runtime::MultiAddress::Id(ALICE.clone()),
             ));
@@ -961,13 +961,13 @@ fn concrete_fungible_ledger_can_withdraw_works() {
 #[test]
 fn test_receiver_side_weights() {
     let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(
-        &mut self_reserve_xcm_message_receiver_side::<Call>(),
+        &mut self_reserve_xcm_message_receiver_side::<RuntimeCall>(),
     )
     .unwrap();
     assert!(weight <= ADVERTISED_DEST_WEIGHT);
 
     let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(
-        &mut to_reserve_xcm_message_receiver_side::<Call>(),
+        &mut to_reserve_xcm_message_receiver_side::<RuntimeCall>(),
     )
     .unwrap();
     assert!(weight <= ADVERTISED_DEST_WEIGHT);
@@ -975,11 +975,11 @@ fn test_receiver_side_weights() {
 
 #[test]
 fn test_sender_side_xcm_weights() {
-    let mut msg = self_reserve_xcm_message_sender_side::<Call>();
+    let mut msg = self_reserve_xcm_message_sender_side::<RuntimeCall>();
     let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
     assert!(weight < ADVERTISED_DEST_WEIGHT);
 
-    let mut msg = to_reserve_xcm_message_sender_side::<Call>();
+    let mut msg = to_reserve_xcm_message_sender_side::<RuntimeCall>();
     let weight = <XcmExecutorConfig as xcm_executor::Config>::Weigher::weight(&mut msg).unwrap();
     assert!(weight < ADVERTISED_DEST_WEIGHT);
 }

@@ -21,7 +21,7 @@ use frame_support::{
     assert_noop, assert_ok,
     codec::Encode,
     dispatch::Dispatchable,
-    traits::{PalletInfo, StorageInfo, StorageInfoTrait},
+    traits::{PalletInfo, StorageInfo, StorageInfoTrait, StorePreimage},
     StorageHasher, Twox128,
 };
 use manta_primitives::{constants::time::DAYS, types::AccountId};
@@ -35,20 +35,20 @@ use sp_runtime::{
 const PALLET_NAME: &[u8] = b"Utility";
 const FUNCTION_NAME: &[u8] = b"batch";
 
-fn note_preimage(proposer: &AccountId, proposal_call: &Call) -> H256 {
+fn note_preimage(proposer: &AccountId, proposal_call: &RuntimeCall) -> H256 {
     let preimage = proposal_call.encode();
     let preimage_hash = BlakeTwo256::hash(&preimage[..]);
-    assert_ok!(Democracy::note_preimage(
-        Origin::signed(proposer.clone()),
+    assert_ok!(Preimage::note_preimage(
+        RuntimeOrigin::signed(proposer.clone()),
         preimage
     ));
     preimage_hash
 }
 
-fn propose_council_motion(council_motion: &Call, proposer: &AccountId) -> H256 {
+fn propose_council_motion(council_motion: &RuntimeCall, proposer: &AccountId) -> H256 {
     let council_motion_len: u32 = council_motion.using_encoded(|p| p.len() as u32);
     assert_ok!(Council::propose(
-        Origin::signed(proposer.clone()),
+        RuntimeOrigin::signed(proposer.clone()),
         1,
         Box::new(council_motion.clone()),
         council_motion_len
@@ -57,12 +57,11 @@ fn propose_council_motion(council_motion: &Call, proposer: &AccountId) -> H256 {
     BlakeTwo256::hash_of(&council_motion)
 }
 
-fn start_governance_assertions(proposer: &AccountId) -> H256 {
+fn start_supermajority_against_governance_assertions(proposer: &AccountId) -> H256 {
     // Setup the preimage and preimage hash
-    let preimage_hash = note_preimage(
-        proposer,
-        &Call::System(frame_system::Call::remark { remark: vec![0] }),
-    );
+    let runtime_call = RuntimeCall::System(frame_system::Call::remark { remark: vec![0] });
+    let preimage_hash = note_preimage(proposer, &runtime_call);
+    let proposal = Preimage::bound(runtime_call).unwrap();
 
     // Setup the Council and Technical Committee
     assert_ok!(Council::set_members(
@@ -80,14 +79,56 @@ fn start_governance_assertions(proposer: &AccountId) -> H256 {
 
     // Setup and propose the Council motion for external_propose_default routine
     // No voting required because there's only 1 seat.
-    let council_motion = Call::Democracy(pallet_democracy::Call::external_propose_default {
-        proposal_hash: preimage_hash,
-    });
+    let council_motion =
+        RuntimeCall::Democracy(pallet_democracy::Call::external_propose_default { proposal });
     let council_motion_hash = propose_council_motion(&council_motion, proposer);
 
     assert_eq!(
         last_event(),
-        Event::Council(pallet_collective::Event::Executed {
+        calamari_runtime::RuntimeEvent::Council(pallet_collective::Event::Executed {
+            proposal_hash: council_motion_hash,
+            result: Ok(())
+        })
+    );
+
+    preimage_hash
+}
+
+fn start_majority_carries_governance_assertions(proposer: &AccountId) -> H256 {
+    let democracy_proposal = RuntimeCall::System(frame_system::Call::remark { remark: vec![0] });
+
+    // Setup the preimage and preimage hash
+    let preimage_hash = note_preimage(
+        proposer,
+        &RuntimeCall::System(frame_system::Call::remark { remark: vec![0] }),
+    );
+
+    // Setup the Council and Technical Committee
+    assert_ok!(Council::set_members(
+        root_origin(),
+        vec![proposer.clone()],
+        None,
+        0
+    ));
+    assert_ok!(TechnicalCommittee::set_members(
+        root_origin(),
+        vec![proposer.clone()],
+        None,
+        0
+    ));
+
+    let bounded_democracy_proposal = Preimage::bound(democracy_proposal).unwrap();
+    // Setup and propose the Council motion for external_propose_default routine
+    // No voting required because there's only 1 seat.
+    let council_motion =
+        RuntimeCall::Democracy(pallet_democracy::Call::external_propose_majority {
+            proposal: bounded_democracy_proposal,
+        });
+    let council_motion_hash = propose_council_motion(&council_motion, proposer);
+
+    assert_eq!(
+        last_event(),
+        RuntimeEvent::Council(pallet_collective::Event::Executed {
             proposal_hash: council_motion_hash,
             result: Ok(())
         })
@@ -105,7 +146,7 @@ fn end_governance_assertions(referendum_index: u32, end_of_referendum: u32, enac
     run_to_block(end_of_referendum);
     assert_eq!(
         last_event(),
-        Event::Scheduler(pallet_scheduler::Event::Scheduled {
+        RuntimeEvent::Scheduler(pallet_scheduler::Event::Scheduled {
             when: time_of_enactment,
             index: referendum_index
         })
@@ -115,20 +156,23 @@ fn end_governance_assertions(referendum_index: u32, end_of_referendum: u32, enac
     run_to_block(time_of_enactment);
     assert_eq!(
         last_event(),
-        Event::Scheduler(pallet_scheduler::Event::Dispatched {
+        RuntimeEvent::Scheduler(pallet_scheduler::Event::Dispatched {
             task: (time_of_enactment, referendum_index),
-            id: Some(vec![100, 101, 109, 111, 99, 114, 97, 99, 0, 0, 0, 0]),
+            id: Some([
+                100, 101, 109, 111, 99, 114, 97, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0
+            ]),
             result: Ok(())
         })
     );
 }
 
-fn assert_proposal_is_filtered(proposer: &AccountId, motion: &Call) {
+fn assert_proposal_is_filtered(proposer: &AccountId, motion: &RuntimeCall) {
     let council_motion_hash = propose_council_motion(motion, proposer);
 
     assert_eq!(
         last_event(),
-        Event::Council(pallet_collective::Event::Executed {
+        RuntimeEvent::Council(pallet_collective::Event::Executed {
             proposal_hash: council_motion_hash,
             result: Err(DispatchError::Module(ModuleError {
                 index: 0,
@@ -141,7 +185,7 @@ fn assert_proposal_is_filtered(proposer: &AccountId, motion: &Call) {
 
 #[test]
 fn fast_track_available() {
-    assert!(<Runtime as pallet_democracy::Config>::InstantAllowed::get());
+    assert!(<calamari_runtime::Runtime as pallet_democracy::Config>::InstantAllowed::get());
 }
 
 #[test]
@@ -152,9 +196,9 @@ fn sanity_check_governance_periods() {
 }
 
 #[test]
-fn slow_governance_works() {
+fn slow_majority_carries_governance_works() {
     ExtBuilder::default().build().execute_with(|| {
-        let _preimage_hash = start_governance_assertions(&ALICE);
+        let _preimage_hash = start_majority_carries_governance_assertions(&ALICE);
 
         let start_of_referendum = LaunchPeriod::get();
         let referendum_index = 0;
@@ -166,14 +210,55 @@ fn slow_governance_works() {
         run_to_block(start_of_referendum);
         assert_eq!(
             last_event(),
-            Event::Democracy(pallet_democracy::Event::Started {
+            RuntimeEvent::Democracy(pallet_democracy::Event::Started {
+                ref_index: referendum_index,
+                threshold: pallet_democracy::VoteThreshold::SimpleMajority
+            })
+        );
+        // Time to vote for the referendum with some amount
+        assert_ok!(Democracy::vote(
+            RuntimeOrigin::signed(ALICE.clone()),
+            0,
+            pallet_democracy::AccountVote::Standard {
+                vote: pallet_democracy::Vote {
+                    aye: true,
+                    conviction: pallet_democracy::Conviction::None
+                },
+                balance: 10 * KMA
+            }
+        ));
+
+        end_governance_assertions(
+            referendum_index,
+            start_of_referendum + VotingPeriod::get(),
+            EnactmentPeriod::get(),
+        );
+    });
+}
+
+#[test]
+fn slow_supermajority_against_governance_works() {
+    ExtBuilder::default().build().execute_with(|| {
+        let _preimage_hash = start_supermajority_against_governance_assertions(&ALICE);
+
+        let start_of_referendum = LaunchPeriod::get();
+        let referendum_index = 0;
+
+        run_to_block(start_of_referendum - 1);
+        assert_eq!(0, Democracy::referendum_count());
+
+        // 7 days in the external proposal queue before the referendum starts.
+        run_to_block(start_of_referendum);
+        assert_eq!(
+            last_event(),
+            RuntimeEvent::Democracy(pallet_democracy::Event::Started {
                 ref_index: referendum_index,
                 threshold: pallet_democracy::VoteThreshold::SuperMajorityAgainst
             })
         );
         // Time to vote for the referendum with some amount
         assert_ok!(Democracy::vote(
-            Origin::signed(ALICE.clone()),
+            RuntimeOrigin::signed(ALICE.clone()),
             0,
             pallet_democracy::AccountVote::Standard {
                 vote: pallet_democracy::Vote {
@@ -195,7 +280,7 @@ fn slow_governance_works() {
 #[test]
 fn fast_track_governance_works() {
     ExtBuilder::default().build().execute_with(|| {
-        let preimage_hash = start_governance_assertions(&ALICE);
+        let preimage_hash = start_supermajority_against_governance_assertions(&ALICE);
 
         let voting_period = 5;
         let enactment_period = 5;
@@ -204,7 +289,7 @@ fn fast_track_governance_works() {
         // Setup and propose the Technical Committee motion for the fast_track routine
         // No voting required because there's only 1 seat.
         // Voting and delay periods of 5 blocks so this should be enacted on block 11
-        let tech_committee_motion = Call::Democracy(pallet_democracy::Call::fast_track {
+        let tech_committee_motion = RuntimeCall::Democracy(pallet_democracy::Call::fast_track {
             proposal_hash: preimage_hash,
             voting_period,
             delay: enactment_period,
@@ -213,7 +298,7 @@ fn fast_track_governance_works() {
             tech_committee_motion.using_encoded(|p| p.len() as u32);
         let tech_committee_motion_hash = BlakeTwo256::hash_of(&tech_committee_motion);
         assert_ok!(TechnicalCommittee::propose(
-            Origin::signed(ALICE.clone()),
+            RuntimeOrigin::signed(ALICE.clone()),
             1,
             Box::new(tech_committee_motion),
             tech_committee_motion_len
@@ -221,7 +306,7 @@ fn fast_track_governance_works() {
         // Make sure the motion was actually executed
         assert_eq!(
             last_event(),
-            Event::TechnicalCommittee(pallet_collective::Event::Executed {
+            RuntimeEvent::TechnicalCommittee(pallet_collective::Event::Executed {
                 proposal_hash: tech_committee_motion_hash,
                 result: Ok(())
             })
@@ -229,7 +314,7 @@ fn fast_track_governance_works() {
 
         // Time to vote for the referendum with some amount
         assert_ok!(Democracy::vote(
-            Origin::signed(ALICE.clone()),
+            RuntimeOrigin::signed(ALICE.clone()),
             referendum_index,
             pallet_democracy::AccountVote::Standard {
                 vote: pallet_democracy::Vote {
@@ -251,14 +336,12 @@ fn fast_track_governance_works() {
 
 #[test]
 fn governance_filters_work() {
-    assert!(<Runtime as pallet_democracy::Config>::InstantAllowed::get());
+    assert!(<calamari_runtime::Runtime as pallet_democracy::Config>::InstantAllowed::get());
 
     ExtBuilder::default().build().execute_with(|| {
         // Setup the preimage and preimage hash
-        let preimage_hash = note_preimage(
-            &ALICE,
-            &Call::System(frame_system::Call::remark { remark: vec![0] }),
-        );
+        let runtime_call = RuntimeCall::System(frame_system::Call::remark { remark: vec![0] });
+        let proposal = Preimage::bound(runtime_call).unwrap();
 
         // Setup the Council
         assert_ok!(Council::set_members(
@@ -271,25 +354,9 @@ fn governance_filters_work() {
         // Public proposals should be filtered out.
         assert_proposal_is_filtered(
             &ALICE,
-            &Call::Democracy(pallet_democracy::Call::propose {
-                proposal_hash: preimage_hash,
+            &RuntimeCall::Democracy(pallet_democracy::Call::propose {
+                proposal,
                 value: 100 * KMA,
-            }),
-        );
-
-        // External proposals other than external_proposal_default should be filtered out.
-        assert_proposal_is_filtered(
-            &ALICE,
-            &Call::Democracy(pallet_democracy::Call::external_propose {
-                proposal_hash: preimage_hash,
-            }),
-        );
-
-        // External proposals other than external_proposal_default should be filtered out.
-        assert_proposal_is_filtered(
-            &ALICE,
-            &Call::Democracy(pallet_democracy::Call::external_propose_majority {
-                proposal_hash: preimage_hash,
             }),
         );
     });
@@ -300,7 +367,7 @@ fn calamari_vesting_works() {
     ExtBuilder::default().build().execute_with(|| {
         let unvested = 100 * KMA;
         assert_ok!(CalamariVesting::vested_transfer(
-            Origin::signed(ALICE.clone()),
+            RuntimeOrigin::signed(ALICE.clone()),
             sp_runtime::MultiAddress::Id(BOB.clone()),
             unvested
         ));
@@ -315,7 +382,7 @@ fn calamari_vesting_works() {
             // Timestamp expects milliseconds, so multiply by 1_000 to convert from seconds.
             let now = schedule[period].1 * 1_000 + 1;
             Timestamp::set_timestamp(now);
-            assert_ok!(CalamariVesting::vest(Origin::signed(BOB.clone())));
+            assert_ok!(CalamariVesting::vest(RuntimeOrigin::signed(BOB.clone())));
             vested += schedule[period].0 * unvested;
             assert_eq!(Balances::usable_balance(BOB.clone()), vested);
         }
@@ -419,6 +486,13 @@ fn verify_pallet_prefixes() {
             },
             StorageInfo {
                 pallet_name: b"Balances".to_vec(),
+                storage_name: b"InactiveIssuance".to_vec(),
+                prefix: prefix(b"Balances", b"InactiveIssuance"),
+                max_values: Some(1),
+                max_size: Some(16),
+            },
+            StorageInfo {
+                pallet_name: b"Balances".to_vec(),
                 storage_name: b"Account".to_vec(),
                 prefix: prefix(b"Balances", b"Account"),
                 max_values: None,
@@ -438,13 +512,6 @@ fn verify_pallet_prefixes() {
                 max_values: None,
                 max_size: Some(1249),
             },
-            StorageInfo {
-                pallet_name: b"Balances".to_vec(),
-                storage_name: b"StorageVersion".to_vec(),
-                prefix: prefix(b"Balances", b"StorageVersion"),
-                max_values: Some(1),
-                max_size: Some(1),
-            }
         ]
     );
 }
@@ -537,23 +604,23 @@ fn verify_calamari_pallet_indices() {
 
 fn pause_transaction_storage_event_works(pause: bool) {
     if pause {
-        System::assert_last_event(Event::TransactionPause(
-            pallet_tx_pause::Event::<Runtime>::TransactionPaused(
-                PALLET_NAME.to_vec(),
-                FUNCTION_NAME.to_vec(),
-            ),
-        ));
+        System::assert_last_event(RuntimeEvent::TransactionPause(pallet_tx_pause::Event::<
+            Runtime,
+        >::TransactionPaused(
+            PALLET_NAME.to_vec(),
+            FUNCTION_NAME.to_vec(),
+        )));
         assert_eq!(
             TransactionPause::paused_transactions((PALLET_NAME.to_vec(), FUNCTION_NAME.to_vec(),)),
             Some(())
         );
     } else {
-        System::assert_has_event(Event::TransactionPause(
-            pallet_tx_pause::Event::<Runtime>::TransactionUnpaused(
-                PALLET_NAME.to_vec(),
-                FUNCTION_NAME.to_vec(),
-            ),
-        ));
+        System::assert_has_event(RuntimeEvent::TransactionPause(pallet_tx_pause::Event::<
+            Runtime,
+        >::TransactionUnpaused(
+            PALLET_NAME.to_vec(),
+            FUNCTION_NAME.to_vec(),
+        )));
         assert_eq!(
             TransactionPause::paused_transactions((PALLET_NAME.to_vec(), FUNCTION_NAME.to_vec(),)),
             None
@@ -566,17 +633,19 @@ fn pause_transactions_storage_event_works(pause: bool, pallet: bool) {
 
     if pause {
         if pallet {
-            System::assert_last_event(Event::TransactionPause(
-                pallet_tx_pause::Event::<Runtime>::PalletPaused(PALLET_NAME.to_vec()),
-            ));
+            System::assert_last_event(RuntimeEvent::TransactionPause(pallet_tx_pause::Event::<
+                Runtime,
+            >::PalletPaused(
+                PALLET_NAME.to_vec()
+            )));
         } else {
             for function_name in function_names.clone() {
-                System::assert_has_event(Event::TransactionPause(
-                    pallet_tx_pause::Event::<Runtime>::TransactionPaused(
-                        PALLET_NAME.to_vec(),
-                        function_name,
-                    ),
-                ));
+                System::assert_has_event(RuntimeEvent::TransactionPause(pallet_tx_pause::Event::<
+                    Runtime,
+                >::TransactionPaused(
+                    PALLET_NAME.to_vec(),
+                    function_name,
+                )));
             }
         }
         for function_name in function_names {
@@ -587,17 +656,19 @@ fn pause_transactions_storage_event_works(pause: bool, pallet: bool) {
         }
     } else {
         if pallet {
-            System::assert_last_event(Event::TransactionPause(
-                pallet_tx_pause::Event::<Runtime>::PalletUnpaused(PALLET_NAME.to_vec()),
-            ));
+            System::assert_last_event(RuntimeEvent::TransactionPause(pallet_tx_pause::Event::<
+                Runtime,
+            >::PalletUnpaused(
+                PALLET_NAME.to_vec()
+            )));
         } else {
             for function_name in function_names.clone() {
-                System::assert_has_event(Event::TransactionPause(
-                    pallet_tx_pause::Event::<Runtime>::TransactionUnpaused(
-                        PALLET_NAME.to_vec(),
-                        function_name,
-                    ),
-                ));
+                System::assert_has_event(RuntimeEvent::TransactionPause(pallet_tx_pause::Event::<
+                    Runtime,
+                >::TransactionUnpaused(
+                    PALLET_NAME.to_vec(),
+                    function_name,
+                )));
             }
         }
         for function_name in function_names {
@@ -615,7 +686,7 @@ fn tx_pause_works() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
             TransactionPause::pause_transaction(
-                Origin::signed(alice),
+                RuntimeOrigin::signed(alice),
                 b"Balances".to_vec(),
                 b"transfer".to_vec()
             ),
@@ -709,18 +780,18 @@ fn reward_fees_to_block_author_and_treasury() {
             System::initialize(&1, &Default::default(), header.digest());
             assert_eq!(Authorship::author().unwrap(), author);
 
-            let call = Call::Balances(pallet_balances::Call::transfer {
+            let call = RuntimeCall::Balances(pallet_balances::Call::transfer {
                 dest: sp_runtime::MultiAddress::Id(CHARLIE.clone()),
                 value: 10 * KMA,
             });
 
             let len = 10;
-            let info = info_from_weight(100);
+            let info = info_from_weight(Weight::from_ref_time(100));
             let maybe_pre = ChargeTransactionPayment::<Runtime>::from(0)
                 .pre_dispatch(&BOB, &call, &info, len)
                 .unwrap();
 
-            let res = call.dispatch(Origin::signed(BOB.clone()));
+            let res = call.dispatch(RuntimeOrigin::signed(BOB.clone()));
 
             let post_info = match res {
                 Ok(info) => info,
