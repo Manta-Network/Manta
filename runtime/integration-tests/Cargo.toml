@@ -11,6 +11,9 @@ version = "4.0.7"
 calamari-runtime = { path = "../calamari", optional = true }
 cfg-if = "1.0"
 manta-runtime = { path = "../manta", optional = true }
+pallet-conviction-voting = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", features = ["runtime-benchmarks"] }
+pallet-ranked-collective = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", features = ["runtime-benchmarks"] }
+pallet-referenda = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", features = ["runtime-benchmarks"] }
 
 [dev-dependencies]
 codec = { package = "parity-scale-codec", version = '3.1.2', default-features = false, features = ["derive", "max-encoded-len"] }
@@ -68,10 +71,6 @@ manta-support = { package = "pallet-manta-support", path = "../../pallets/manta-
 nimbus-primitives = { git = "https://github.com/manta-network/nimbus.git", tag = "v4.0.7", default-features = false }
 runtime-common = { path = '../common', features = ["test-helpers"] }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
-
-pallet-conviction-voting = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", features = ["runtime-benchmarks"] }
-pallet-ranked-collective = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", features = ["runtime-benchmarks"] }
-pallet-referenda = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37", features = ["runtime-benchmarks"] }
 
 [features]
 calamari = [
