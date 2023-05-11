@@ -650,12 +650,12 @@ parameter_types! {
     pub const MaxAssetsForTransfer: usize = 3;
 }
 
-const NATIVE_ASSET_IDX: MantaAssetId =
-    <ParachainAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
+const DISABLED_ASSET_IDX: MantaAssetId =
+    <ParachainAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get() + 3;
 
 match_types! {
     pub type DisabledOutgoingAssets: impl Contains<CurrencyId> = {
-        CurrencyId::MantaCurrency(NATIVE_ASSET_IDX)
+        CurrencyId::MantaCurrency(DISABLED_ASSET_IDX)
     };
 }
 
