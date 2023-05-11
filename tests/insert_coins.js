@@ -20,7 +20,7 @@ async function main() {
     const api = await createPromiseApi(nodeAddress);
     const sender = keyring.addFromMnemonic("bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice");
 
-    const mints_file = './data/precomputed_mints';
+    const mints_file = './data/precomputed_mints_v3-11';
     const transfers_file = './data/precomputed_transfers';
     const reclaims_file = './data/precomputed_reclaims';
 
@@ -44,15 +44,41 @@ async function main() {
         const mint = api.tx.mantaPay.toPrivate(mints_buffer.subarray(mints_start, mints_start + mint_size));
         transactions.push(mint);
 
-        const transfers_start = transfers_offset + i * (2 * mint_size + transfer_size);
-        const transfer_mint_1 = api.tx.mantaPay.toPrivate(transfers_buffer.subarray(transfers_start, transfers_start + mint_size));
-        const transfer_mint_2 = api.tx.mantaPay.toPrivate(transfers_buffer.subarray(transfers_start + mint_size, transfers_start + 2 * mint_size));
-        const transfer = api.tx.mantaPay.privateTransfer(transfers_buffer.subarray(transfers_start + 2 * mint_size, transfers_start + 2 * mint_size + transfer_size));
-        transactions.push(transfer_mint_1);
-        transactions.push(transfer_mint_2);
-        transactions.push(transfer);
+        // const transfers_start = transfers_offset + i * (2 * mint_size + transfer_size);
+        // const transfer_mint_1 = api.tx.mantaPay.toPrivate(transfers_buffer.subarray(transfers_start, transfers_start + mint_size));
+        // const transfer_mint_2 = api.tx.mantaPay.toPrivate(transfers_buffer.subarray(transfers_start + mint_size, transfers_start + 2 * mint_size));
+        // const transfer = api.tx.mantaPay.privateTransfer(transfers_buffer.subarray(transfers_start + 2 * mint_size, transfers_start + 2 * mint_size + transfer_size));
+        // transactions.push(transfer_mint_1);
+        // transactions.push(transfer_mint_2);
+        // transactions.push(transfer);
 
-        await api.tx.utility.forceBatch(transactions).signAndSend(sender, {
+        // await api.tx.utility.forceBatch(transactions).signAndSend(sender, {
+        //     nonce: -1
+        // }, ({
+        //     events = [],
+        //     status
+        // }) => {
+        //     if (status.isFinalized) {
+        //         console.log("tx %i success.", status.nonce);
+        //     }
+        //     if (status.isDropped || status.isUsurped || status.isFinalityTimeout || status.isRetracted) {
+        //         console.log(`tx %i ${status.type}.`, status.nonce);
+        //     }
+        // });
+
+        // await new Promise(resolve => setTimeout(resolve, 12000));
+        // transactions.length = 0;
+
+        // const reclaims_start = reclaims_offset + i * (2 * mint_size + reclaim_size);
+        // const reclaim_mint_1 = api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start, reclaims_start + mint_size));
+        // const reclaim_mint_2 = api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start + mint_size, reclaims_start + 2 * mint_size));
+        // const reclaim = api.tx.mantaPay.toPublic(reclaims_buffer.subarray(reclaims_start + 2 * mint_size, reclaims_start + 2 * mint_size + reclaim_size));
+        // transactions.push(reclaim_mint_1);
+        // transactions.push(reclaim_mint_2);
+        // transactions.push(reclaim);
+if(i % 7 == 0) {
+    console.log("batch size: ", transactions.length);
+    await api.tx.utility.forceBatch(transactions).signAndSend(sender, {
             nonce: -1
         }, ({
             events = [],
@@ -65,36 +91,10 @@ async function main() {
                 console.log(`tx %i ${status.type}.`, status.nonce);
             }
         });
-
-        await new Promise(resolve => setTimeout(resolve, 12000));
-        transactions.length = 0;
-
-        const reclaims_start = reclaims_offset + i * (2 * mint_size + reclaim_size);
-        const reclaim_mint_1 = api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start, reclaims_start + mint_size));
-        const reclaim_mint_2 = api.tx.mantaPay.toPrivate(reclaims_buffer.subarray(reclaims_start + mint_size, reclaims_start + 2 * mint_size));
-        const reclaim = api.tx.mantaPay.toPublic(reclaims_buffer.subarray(reclaims_start + 2 * mint_size, reclaims_start + 2 * mint_size + reclaim_size));
-        transactions.push(reclaim_mint_1);
-        transactions.push(reclaim_mint_2);
-        transactions.push(reclaim);
-
-        await api.tx.utility.forceBatch(transactions).signAndSend(sender, {
-            nonce: -1
-        }, ({
-            events = [],
-            status
-        }) => {
-            if (status.isFinalized) {
-                console.log("tx %i success.", status.nonce);
-            }
-            if (status.isDropped || status.isUsurped || status.isFinalityTimeout || status.isRetracted) {
-                console.log(`tx %i ${status.type}.`, status.nonce);
-            }
-        });
-
-        batches_sent++;
         console.log("Batches sent: ", batches_sent);
         await new Promise(resolve => setTimeout(resolve, 12000));
         transactions.length = 0;
+}
     }
 }
 

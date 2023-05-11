@@ -3404,6 +3404,13 @@ fn send_disabled_asset_should_fail() {
             ),
             orml_xtokens::Error::<parachain::Runtime>::AssetDisabledForOutgoingTransfers
         );
+        assert_ok!(parachain::XTokens::transfer(
+            parachain::RuntimeOrigin::signed(ALICE),
+            parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
+            10,
+            Box::new(VersionedMultiLocation::V1(dest.clone())),
+            xcm_simulator::Limited(ADVERTISED_DEST_WEIGHT)
+        ));
         assert_err!(
             parachain::XTokens::transfer_multicurrencies(
                 Some(ALICE).into(),
@@ -3436,5 +3443,15 @@ fn send_disabled_asset_should_fail() {
             ),
             orml_xtokens::Error::<parachain::Runtime>::AssetDisabledForOutgoingTransfers
         );
+        assert_ok!(parachain::XTokens::transfer_multicurrencies(
+            Some(ALICE).into(),
+            vec![
+                (parachain::CurrencyId::MantaCurrency(a_asset_id_on_a), 10),
+                (parachain::CurrencyId::MantaCurrency(a_asset_id_on_a), fee)
+            ],
+            1,
+            Box::new(VersionedMultiLocation::V1(dest.clone())),
+            xcm_simulator::Limited(ADVERTISED_DEST_WEIGHT),
+        ));
     });
 }
