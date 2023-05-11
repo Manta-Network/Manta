@@ -254,9 +254,9 @@ pub mod pallet {
             min_xcm_fee: u128,
         },
 
-        ///
-        AssetFilteredForOutgoingTransfers {
-            ///
+        /// An asset location has been filtered from outgoing transfers
+        AssetLocationFilteredForOutgoingTransfers {
+            /// The asset location which can't be transferred out
             filtered_location: T::Location,
         },
     }
@@ -576,8 +576,8 @@ pub mod pallet {
             filtered_location: T::Location,
         ) -> DispatchResult {
             T::ModifierOrigin::ensure_origin(origin)?;
-            FilteredOutgoingAssetLocations::<T>::insert(&filtered_location.clone().into(), ());
-            Self::deposit_event(Event::<T>::AssetFilteredForOutgoingTransfers {
+            FilteredOutgoingAssetLocations::<T>::insert(filtered_location.clone().into(), ());
+            Self::deposit_event(Event::<T>::AssetLocationFilteredForOutgoingTransfers {
                 filtered_location,
             });
             Ok(())
