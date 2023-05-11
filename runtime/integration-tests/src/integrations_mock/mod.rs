@@ -27,6 +27,10 @@ pub use mock::run_to_block;
 // See run_linters.yml => SKIP_WASM_BUILD=1 cargo check --no-default-features
 cfg_if::cfg_if! {
     if #[cfg(feature = "calamari")] {
+        use codec::Encode;
+        use manta_primitives::types::Header;
+        use nimbus_primitives::NIMBUS_ENGINE_ID;
+        use sp_runtime::{traits::Header as HeaderT, DigestItem};
         pub use calamari_runtime::{
             currency::KMA,
             fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
@@ -60,14 +64,11 @@ cfg_if::cfg_if! {
     }
 }
 
-use codec::Encode;
 use frame_support::{assert_ok, dispatch::DispatchInfo, weights::Weight};
 use lazy_static::lazy_static;
-use manta_primitives::types::{AccountId, Balance, Header};
-use nimbus_primitives::NIMBUS_ENGINE_ID;
+use manta_primitives::types::{AccountId, Balance};
 use session_key_primitives::util::unchecked_account_id;
 use sp_core::sr25519::Public;
-use sp_runtime::{traits::Header as HeaderT, DigestItem};
 
 pub const INITIAL_BALANCE: Balance = 1_000_000_000_000 * KMA;
 
