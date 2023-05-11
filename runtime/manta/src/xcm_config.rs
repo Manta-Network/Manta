@@ -29,7 +29,7 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use manta_primitives::{
-    assets::AssetIdLocationConvert,
+    assets::{AssetConfig, AssetIdLocationConvert},
     types::{AccountId, MantaAssetId},
     xcm::{
         AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
@@ -313,9 +313,12 @@ parameter_types! {
     pub const MaxAssetsForTransfer: usize = 2;
 }
 
+const NATIVE_ASSET_IDX: MantaAssetId =
+    <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
+
 match_types! {
     pub type DisabledOutgoingAssets: impl Contains<CurrencyId> = {
-        CurrencyId::MantaCurrency(1)
+        CurrencyId::MantaCurrency(NATIVE_ASSET_IDX)
     };
 }
 

@@ -650,6 +650,15 @@ parameter_types! {
     pub const MaxAssetsForTransfer: usize = 3;
 }
 
+const NATIVE_ASSET_IDX: MantaAssetId =
+    <ParachainAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
+
+match_types! {
+    pub type DisabledOutgoingAssets: impl Contains<CurrencyId> = {
+        CurrencyId::MantaCurrency(NATIVE_ASSET_IDX)
+    };
+}
+
 // The XCM message wrapper wrapper
 impl orml_xtokens::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
@@ -669,7 +678,7 @@ impl orml_xtokens::Config for Runtime {
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
     type MinXcmFee = AssetManager;
     type MultiLocationsFilter = AssetManager;
-    type OutgoingAssetsFilter = ();
+    type OutgoingAssetsFilter = DisabledOutgoingAssets;
     type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
 }
 
