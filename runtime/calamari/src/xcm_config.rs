@@ -360,5 +360,6 @@ impl orml_xtokens::Config for Runtime {
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
     type MinXcmFee = AssetManager;
     type MultiLocationsFilter = AssetManager;
+    type OutgoingAssetsFilter = ();
     type ReserveProvider = AbsoluteReserveProvider;
 }
