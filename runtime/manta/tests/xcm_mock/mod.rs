@@ -29,7 +29,6 @@ pub const INITIAL_BALANCE: u128 = 10_000_000_000_000_000;
 pub const PARA_A_ID: u32 = 1;
 pub const PARA_B_ID: u32 = 2;
 pub const PARA_C_ID: u32 = 3;
-pub const PARA_D_ID: u32 = 4;
 
 decl_test_parachain! {
     pub struct ParaA {

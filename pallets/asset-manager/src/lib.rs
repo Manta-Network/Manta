@@ -569,7 +569,7 @@ pub mod pallet {
         /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
         /// * `filtered_location`: Multilocation to be filtered.
         #[pallet::call_index(6)]
-        #[pallet::weight(0)]
+        #[pallet::weight(T::WeightInfo::update_outgoing_filtered_assets())]
         #[transactional]
         pub fn update_outgoing_filtered_assets(
             origin: OriginFor<T>,
