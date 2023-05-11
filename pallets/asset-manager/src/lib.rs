@@ -253,6 +253,12 @@ pub mod pallet {
             /// Updated Minimum XCM Fee
             min_xcm_fee: u128,
         },
+
+        ///
+        AssetFilteredForOutgoingTransfers {
+            ///
+            filtered_location: T::Location,
+        },
     }
 
     /// Asset Manager Error
@@ -324,6 +330,12 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn get_para_id)]
     pub type AllowedDestParaIds<T: Config> = StorageMap<_, Blake2_128Concat, ParaId, AssetCount>;
+
+    /// Multilocation of assets that should not be transfered out of the chain
+    #[pallet::storage]
+    #[pallet::getter(fn get_filtered_location)]
+    pub type FilteredOutgoingAssetLocations<T: Config> =
+        StorageMap<_, Blake2_128Concat, Option<MultiLocation>, ()>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
@@ -551,6 +563,25 @@ pub mod pallet {
             });
             Ok(())
         }
+
+        /// Set min xcm fee for asset/s on their reserve chain.
+        ///
+        /// * `origin`: Caller of this extrinsic, the access control is specified by `ForceOrigin`.
+        /// * `filtered_location`: Multilocation to be filtered.
+        #[pallet::call_index(6)]
+        #[pallet::weight(0)]
+        #[transactional]
+        pub fn update_outgoing_filtered_assets(
+            origin: OriginFor<T>,
+            filtered_location: T::Location,
+        ) -> DispatchResult {
+            T::ModifierOrigin::ensure_origin(origin)?;
+            FilteredOutgoingAssetLocations::<T>::insert(&filtered_location.clone().into(), ());
+            Self::deposit_event(Event::<T>::AssetFilteredForOutgoingTransfers {
+                filtered_location,
+            });
+            Ok(())
+        }
     }
 
     impl<T> Pallet<T>
@@ -602,6 +633,10 @@ pub mod pallet {
                 AllowedDestParaIds::<T>::insert(para_id, <AssetCount as One>::one());
                 Ok(())
             }
+        }
+
+        pub fn check_outgoing_assets_filter(asset_location: &Option<MultiLocation>) -> bool {
+            FilteredOutgoingAssetLocations::<T>::contains_key(asset_location)
         }
     }
 

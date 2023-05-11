@@ -3353,18 +3353,12 @@ fn send_disabled_asset_should_fail() {
 
     let para_a_source_location = create_asset_location(1, PARA_A_ID);
     let para_b_source_location = create_asset_location(1, PARA_B_ID);
-    let para_c_source_location = create_asset_location(1, PARA_C_ID);
-    let para_d_source_location = create_asset_location(1, PARA_D_ID);
-    let relay_source_location = AssetLocation(VersionedMultiLocation::V1(MultiLocation::parent()));
 
     let amount = INITIAL_BALANCE;
     let fee = 40;
 
     let para_a_asset_metadata = create_asset_metadata("ParaAToken", "ParaA", 18, 1, false, false);
     let para_b_asset_metadata = create_asset_metadata("ParaBToken", "ParaB", 18, 1, false, false);
-    let para_c_asset_metadata = create_asset_metadata("ParaCToken", "ParaC", 18, 1, false, false);
-    let relay_asset_metadata = create_asset_metadata("Polkadot", "DOT", 12, 1, false, true);
-    let para_d_asset_metadata = create_asset_metadata("ParaDToken", "ParaD", 18, 1, false, false);
 
     let a_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_a_source_location,
@@ -3372,27 +3366,9 @@ fn send_disabled_asset_should_fail() {
         Some(0u128),
         None,
     );
-    let _ = register_assets_on_parachain::<ParaA>(
+    let b_asset_id_on_a = register_assets_on_parachain::<ParaA>(
         &para_b_source_location,
         &para_b_asset_metadata,
-        Some(0u128),
-        None,
-    );
-    let _ = register_assets_on_parachain::<ParaA>(
-        &para_c_source_location,
-        &para_c_asset_metadata,
-        Some(0u128),
-        None,
-    );
-    let _ = register_assets_on_parachain::<ParaA>(
-        &relay_source_location,
-        &relay_asset_metadata,
-        Some(0u128),
-        None,
-    );
-    let d_asset_id_on_a = register_assets_on_parachain::<ParaA>(
-        &para_d_source_location,
-        &para_d_asset_metadata,
         Some(0u128),
         None,
     );
@@ -3409,15 +3385,19 @@ fn send_disabled_asset_should_fail() {
     };
 
     ParaA::execute_with(|| {
+        assert_ok!(AssetManager::update_outgoing_filtered_assets(
+            parachain::RuntimeOrigin::root(),
+            para_b_source_location,
+        ));
         assert_ok!(parachain::Assets::mint_into(
-            d_asset_id_on_a,
+            b_asset_id_on_a,
             &ALICE,
             amount + 1000
         ));
         assert_err!(
             parachain::XTokens::transfer(
                 parachain::RuntimeOrigin::signed(ALICE),
-                parachain::CurrencyId::MantaCurrency(d_asset_id_on_a),
+                parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
                 amount,
                 Box::new(VersionedMultiLocation::V1(dest.clone())),
                 xcm_simulator::Limited(ADVERTISED_DEST_WEIGHT)
@@ -3432,11 +3412,11 @@ fn send_disabled_asset_should_fail() {
                         parachain::CurrencyId::MantaCurrency(a_asset_id_on_a),
                         amount
                     ),
-                    (parachain::CurrencyId::MantaCurrency(d_asset_id_on_a), fee)
+                    (parachain::CurrencyId::MantaCurrency(b_asset_id_on_a), fee)
                 ],
                 1,
                 Box::new(VersionedMultiLocation::V1(dest.clone())),
-                xcm_simulator::Limited(40),
+                xcm_simulator::Limited(ADVERTISED_DEST_WEIGHT),
             ),
             orml_xtokens::Error::<parachain::Runtime>::AssetDisabledForOutgoingTransfers
         );
@@ -3445,14 +3425,14 @@ fn send_disabled_asset_should_fail() {
                 Some(ALICE).into(),
                 vec![
                     (
-                        parachain::CurrencyId::MantaCurrency(d_asset_id_on_a),
+                        parachain::CurrencyId::MantaCurrency(b_asset_id_on_a),
                         amount
                     ),
                     (parachain::CurrencyId::MantaCurrency(a_asset_id_on_a), fee)
                 ],
                 1,
                 Box::new(VersionedMultiLocation::V1(dest.clone())),
-                xcm_simulator::Limited(40),
+                xcm_simulator::Limited(ADVERTISED_DEST_WEIGHT),
             ),
             orml_xtokens::Error::<parachain::Runtime>::AssetDisabledForOutgoingTransfers
         );

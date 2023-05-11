@@ -24,7 +24,7 @@ use frame_support::{
     assert_ok, construct_runtime, match_types,
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU32, Currency, Everything, Nothing},
+    traits::{AsEnsureOriginWithArg, ConstU32, Contains, Currency, Everything, Nothing},
     weights::Weight,
     PalletId,
 };
@@ -47,7 +47,7 @@ use polkadot_parachain::primitives::{
 use scale_info::TypeInfo;
 use sp_core::H256;
 use sp_runtime::{
-    traits::{BlakeTwo256, Hash, IdentityLookup},
+    traits::{BlakeTwo256, Convert, Hash, IdentityLookup},
     AccountId32,
 };
 use sp_std::prelude::*;
@@ -630,7 +630,7 @@ pub enum CurrencyId {
 
 /// Maps a xTokens CurrencyId to a xcm MultiLocation implemented by some asset manager
 pub struct CurrencyIdtoMultiLocation<AssetXConverter>(sp_std::marker::PhantomData<AssetXConverter>);
-impl<AssetXConverter> sp_runtime::traits::Convert<CurrencyId, Option<MultiLocation>>
+impl<AssetXConverter> Convert<CurrencyId, Option<MultiLocation>>
     for CurrencyIdtoMultiLocation<AssetXConverter>
 where
     AssetXConverter: xcm_executor::traits::Convert<MultiLocation, MantaAssetId>,
@@ -650,13 +650,12 @@ parameter_types! {
     pub const MaxAssetsForTransfer: usize = 3;
 }
 
-const DISABLED_ASSET_IDX: MantaAssetId =
-    <ParachainAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get() + 3;
-
-match_types! {
-    pub type DisabledOutgoingAssets: impl Contains<CurrencyId> = {
-        CurrencyId::MantaCurrency(DISABLED_ASSET_IDX)
-    };
+impl Contains<CurrencyId> for AssetManager {
+    fn contains(id: &CurrencyId) -> bool {
+        let asset_id =
+            CurrencyIdtoMultiLocation::<AssetIdLocationConvert<AssetManager>>::convert(id.clone());
+        Self::check_outgoing_assets_filter(&asset_id)
+    }
 }
 
 // The XCM message wrapper wrapper
@@ -678,7 +677,7 @@ impl orml_xtokens::Config for Runtime {
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
     type MinXcmFee = AssetManager;
     type MultiLocationsFilter = AssetManager;
-    type OutgoingAssetsFilter = DisabledOutgoingAssets;
+    type OutgoingAssetsFilter = AssetManager;
     type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
 }
 
