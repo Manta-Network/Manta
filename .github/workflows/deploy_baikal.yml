@@ -24,8 +24,6 @@ jobs:
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     env:
       CARGO_TERM_COLOR: always
-    outputs:
-      manta-bin: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
     steps:
       - uses: actions/checkout@v2
       - name: install sccache
@@ -87,7 +85,7 @@ jobs:
           name: manta-fast
           path: target/release/manta
   build-genesis-files:
-    needs: [build-node-current]
+    needs: [start-node-builder-current, build-node-current]
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     steps:
       - uses: actions/download-artifact@v2
@@ -115,8 +113,8 @@ jobs:
           name: ${{env.CHAIN}}-genesis.wasm
           path: ${{env.CHAIN}}-genesis.wasm
   push-to-s3:
+    needs: [start-node-builder-current, build-node-current, build-genesis-files]
     runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
-    needs: [build-node-current, build-genesis-files]
     steps:
       - uses: actions/download-artifact@v2
         with:
