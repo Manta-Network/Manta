@@ -16,7 +16,6 @@ env:
 jobs:
   start-unit-test-checks:
     runs-on: ubuntu-20.04
-    timeout-minutes: 150
     outputs:
       runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
       aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
