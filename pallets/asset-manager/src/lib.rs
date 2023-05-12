@@ -108,6 +108,8 @@ pub mod pallet {
         /// attributes.
         type ModifierOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
+        type SuspenderOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
         /// Pallet ID
         type PalletId: Get<PalletId>;
 
