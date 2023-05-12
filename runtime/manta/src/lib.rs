@@ -462,9 +462,9 @@ parameter_types! {
     // Our NORMAL_DISPATCH_RATIO is 70% of the 5MB limit
     // So anything more than 3.5MB doesn't make sense here
     pub const PreimageMaxSize: u32 = 3584 * 1024;
-    pub const PreimageBaseDeposit: Balance = 4 * mMANTA;
+    pub const PreimageBaseDeposit: Balance = 40 * mMANTA;
     // One cent: $10,000 / MB
-    pub const PreimageByteDeposit: Balance = 40 * uMANTA;
+    pub const PreimageByteDeposit: Balance = 400 * uMANTA;
 }
 
 impl pallet_preimage::Config for Runtime {
@@ -541,7 +541,7 @@ parameter_types! {
     pub VotingPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 5 * MINUTES, "MANTA_VOTING_PERIOD");
     pub FastTrackVotingPeriod: BlockNumber = prod_or_fast!(3 * HOURS, 2 * MINUTES, "MANTA_FAST_TRACK_VOTING_PERIOD");
     pub const InstantAllowed: bool = true;
-    pub const MinimumDeposit: Balance = 4 * MANTA;
+    pub const MinimumDeposit: Balance = 40 * MANTA;
     pub EnactmentPeriod: BlockNumber = prod_or_fast!(1 * DAYS, 2 * MINUTES, "MANTA_ENACTMENTPERIOD");
     pub CooloffPeriod: BlockNumber = prod_or_fast!(7 * DAYS, 2 * MINUTES, "MANTA_COOLOFFPERIOD");
 }
@@ -666,8 +666,8 @@ impl pallet_membership::Config<TechnicalMembershipInstance> for Runtime {
 
 parameter_types! {
     pub const ProposalBond: Permill = Permill::from_percent(1);
-    pub const ProposalBondMinimum: Balance = 3 * MANTA;
-    pub const ProposalBondMaximum: Balance = 50 * MANTA;
+    pub const ProposalBondMinimum: Balance = 30 * MANTA;
+    pub const ProposalBondMaximum: Balance = 500 * MANTA;
     pub SpendPeriod: BlockNumber = prod_or_fast!(14 * DAYS, 2 * MINUTES, "MANTA_SPEND_PERIOD");
     pub const Burn: Permill = Permill::from_percent(0);
     pub const TreasuryPalletId: PalletId = TREASURY_PALLET_ID;
