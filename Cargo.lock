@@ -6373,7 +6373,7 @@ dependencies = [
 [[package]]
 name = "orml-tokens"
 version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.37#16b6c1149a15674d21c87244b7988a667e2c14d9"
+source = "git+https://github.com/manta-network/open-runtime-module-library.git?branch=polkadot-v0.9.37#05f0007b30c98303078ee64d34390233d6ffb30e"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -14803,7 +14803,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#ec82341a22e0e32150f484a7169cb1f5ff242353"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
@@ -14826,7 +14826,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol-rpc"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#ec82341a22e0e32150f484a7169cb1f5ff242353"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec",
@@ -14841,7 +14841,7 @@ dependencies = [
 [[package]]
 name = "zenlink-protocol-runtime-api"
 version = "0.4.4"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#ec82341a22e0e32150f484a7169cb1f5ff242353"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -14852,7 +14852,7 @@ dependencies = [
 [[package]]
 name = "zenlink-stable-amm"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#ec82341a22e0e32150f484a7169cb1f5ff242353"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -14869,7 +14869,7 @@ dependencies = [
 [[package]]
 name = "zenlink-stable-amm-rpc"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#ec82341a22e0e32150f484a7169cb1f5ff242353"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec",
@@ -14883,7 +14883,7 @@ dependencies = [
 [[package]]
 name = "zenlink-stable-amm-runtime-api"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#ec82341a22e0e32150f484a7169cb1f5ff242353"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
 dependencies = [
  "parity-scale-codec",
  "sp-api",
@@ -14894,7 +14894,7 @@ dependencies = [
 [[package]]
 name = "zenlink-swap-router"
 version = "0.1.0"
-source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#ec82341a22e0e32150f484a7169cb1f5ff242353"
+source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
 dependencies = [
  "frame-support",
  "frame-system",

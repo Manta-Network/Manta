@@ -15,18 +15,15 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    AssetManager, Assets, Balances, ParachainInfo, Runtime, RuntimeEvent, Timestamp,
-    ZenlinkProtocol, ZenlinkStableAMM,
+    AssetManager, Balances, ParachainInfo, Runtime, RuntimeEvent, Timestamp, ZenlinkProtocol,
+    ZenlinkStableAMM,
 };
 use crate::{
-    assets_config::{DolphinAssetConfig, DolphinConcreteFungibleLedger},
-    xcm_config::RelayNetwork,
-    MantaCurrencies,
+    assets_config::DolphinConcreteFungibleLedger, xcm_config::RelayNetwork, MantaCurrencies,
 };
 use frame_support::{parameter_types, traits::ExistenceRequirement, PalletId};
 use manta_primitives::{
     assets::{AssetIdLocationMap, AssetIdLpMap, FungibleLedger},
-    currencies::Currencies,
     types::{AccountId, DolphinAssetId, PoolId},
 };
 use orml_traits::MultiCurrency;

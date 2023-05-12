@@ -22,7 +22,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkad
 sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
 
 manta-primitives = { path = '../../primitives/manta', default-features = false }
-orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.37", default-features = false }
+orml-traits = { git = "https://github.com/manta-network/open-runtime-module-library.git", branch = "polkadot-v0.9.37", default-features = false }
 
 [dev-dependencies]
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
