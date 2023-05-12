@@ -885,14 +885,18 @@ where
     ) -> PullResponse {
         let (more_receivers, receivers) =
             Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
-        let senders_receivers_total = (0..=255)
+        let mut receivers_total = (0..=255)
             .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128 + 1u128)
             .sum::<u128>();
+        if receivers_total < 256u128 {
+            // The cast is fine because the vector sizes are limited by PULL_MAX_RECEIVER_UPDATE_SIZE
+            receivers_total = receivers.len() as u128;
+        }
         PullResponse {
             should_continue: more_receivers,
             receivers,
             senders: vec![],
-            senders_receivers_total: asset_value_encode(senders_receivers_total),
+            senders_receivers_total: asset_value_encode(receivers_total),
         }
     }
 
