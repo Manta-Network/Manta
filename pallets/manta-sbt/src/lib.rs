@@ -886,7 +886,7 @@ where
         let (more_receivers, receivers) =
             Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
         let senders_receivers_total = (0..=255)
-            .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128 + 1)
+            .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128 + 1u128)
             .sum::<u128>();
         PullResponse {
             should_continue: more_receivers,
