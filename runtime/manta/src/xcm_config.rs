@@ -29,7 +29,7 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use manta_primitives::{
-    assets::{AssetConfig, AssetIdLocationConvert},
+    assets::AssetIdLocationConvert,
     types::{AccountId, MantaAssetId},
     xcm::{
         AccountIdToMultiLocation, FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter,
