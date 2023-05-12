@@ -87,8 +87,8 @@ jobs:
           name: manta-fast
           path: target/release/manta
   build-genesis-files:
-    runs-on: ubuntu-20.04
     needs: [build-node-current]
+    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     steps:
       - uses: actions/download-artifact@v2
         with:
@@ -115,7 +115,7 @@ jobs:
           name: ${{env.CHAIN}}-genesis.wasm
           path: ${{env.CHAIN}}-genesis.wasm
   push-to-s3:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
     needs: [build-node-current, build-genesis-files]
     steps:
       - uses: actions/download-artifact@v2
@@ -162,7 +162,7 @@ jobs:
           aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
   stop-node-builder-current:
     if: ${{ always() }}
-    needs: [start-node-builder-current, build-node-current]
+    needs: [start-node-builder-current, build-node-current, build-genesis-files, push-to-s3]
     runs-on: ubuntu-20.04
     steps:
       - continue-on-error: true
