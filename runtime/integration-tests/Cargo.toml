@@ -74,11 +74,13 @@ session-key-primitives = { path = '../../primitives/session-keys', default-featu
 
 [features]
 calamari = [
-  "calamari-runtime/runtime-benchmarks",
+  "dep:calamari-runtime",
+  "calamari-runtime?/runtime-benchmarks",
   "runtime-benchmarks",
 ]
 manta = [
-  "manta-runtime/runtime-benchmarks",
+  "dep:manta-runtime",
+  "manta-runtime?/runtime-benchmarks",
   "runtime-benchmarks",
 ]
 runtime-benchmarks = []

@@ -59,6 +59,10 @@ pallet-transaction-payment-rpc-runtime-api = { git = 'https://github.com/parityt
 pallet-treasury = { git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 pallet-utility = { git = 'https://github.com/paritytech/substrate.git', default-features = false, branch = "polkadot-v0.9.37" }
 
+pallet-conviction-voting = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+pallet-ranked-collective = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+pallet-referenda = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }
+
 # Cumulus dependencies
 cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.37" }
 cumulus-pallet-parachain-system = { git = 'https://github.com/paritytech/cumulus.git', default-features = false, branch = "polkadot-v0.9.37" }
@@ -139,6 +143,9 @@ runtime-benchmarks = [
   'cumulus-pallet-xcmp-queue/runtime-benchmarks',
   'cumulus-pallet-parachain-system/runtime-benchmarks',
   'pallet-xcm-benchmarks/runtime-benchmarks',
+  'pallet-ranked-collective/runtime-benchmarks',
+  'pallet-referenda/runtime-benchmarks',
+  'pallet-conviction-voting/runtime-benchmarks',
 ]
 try-runtime = [
   "frame-support/try-runtime",
@@ -228,6 +235,9 @@ std = [
   "cumulus-primitives-utility/std",
   "pallet-author-inherent/std",
   "pallet-aura-style-filter/std",
+  'pallet-ranked-collective/std',
+  'pallet-referenda/std',
+  'pallet-conviction-voting/std',
   'session-key-primitives/std',
   'xcm/std',
   'sp-application-crypto/std',
