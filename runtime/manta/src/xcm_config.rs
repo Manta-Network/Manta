@@ -314,15 +314,6 @@ parameter_types! {
     pub const MaxAssetsForTransfer: usize = 2;
 }
 
-const NATIVE_ASSET_IDX: MantaAssetId =
-    <MantaAssetConfig as AssetConfig<Runtime>>::NativeAssetId::get();
-
-match_types! {
-    pub type DisabledOutgoingAssets: impl Contains<CurrencyId> = {
-        CurrencyId::MantaCurrency(NATIVE_ASSET_IDX)
-    };
-}
-
 impl Contains<CurrencyId> for AssetManager {
     fn contains(id: &CurrencyId) -> bool {
         let asset_id =
