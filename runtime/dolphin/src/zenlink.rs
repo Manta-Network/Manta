@@ -140,6 +140,7 @@ impl ConvertMultiLocation<ZenlinkAssetId> for MantaAssetIdConverter {
     fn make_x3_location(asset_id: &ZenlinkAssetId) -> MultiLocation {
         let asset_index = asset_id.asset_index;
         if asset_index == ZenlinkNativeAssetId::get() {
+            // Notice: native asset is register as (1, Parachain(id)) location now.
             return MultiLocation::new(1, X1(Parachain(SelfParaId::get())));
         }
         let asset = asset_index as DolphinAssetId;
@@ -158,9 +159,7 @@ impl GenerateLpAssetId<ZenlinkAssetId> for AssetManagerLpGenerate {
         asset_0: ZenlinkAssetId,
         asset_1: ZenlinkAssetId,
     ) -> Option<ZenlinkAssetId> {
-        // LP asset id is registered on AssetManager based on two asset id
-        // Notice: Manta native asset id is 1, but Zenlink native asset id is 0.
-        // When asset index is 0, the asset type need to be LOCAL.
+        // LP asset id is registered on AssetManager based on two asset id.
         let asset_id_0 = LocalAssetAdaptor::asset_id_convert(asset_0);
         let asset_id_1 = LocalAssetAdaptor::asset_id_convert(asset_1);
         if asset_id_0.is_none() || asset_id_1.is_none() {
@@ -190,7 +189,9 @@ impl LocalAssetAdaptor {
             asset_id.asset_type,
             asset_id.asset_index,
         );
+        // Notice: Manta native asset id is 1, but Zenlink native asset id is 0.
         if asset_id.asset_index == ZenlinkNativeAssetId::get() {
+            // When Zenlink asset index is 0, the asset type need to be NATIVE(0).
             return if asset_id.asset_type != NATIVE {
                 None
             } else {
