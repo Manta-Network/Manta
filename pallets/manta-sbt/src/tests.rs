@@ -17,9 +17,9 @@
 //! Tests for Manta-SBT
 
 use crate::{
-    mock::{new_test_ext, Balances, MantaSBTPallet, Origin as MockOrigin, Test, Timestamp},
-    AllowlistAccount, DispatchError, Error, EvmAddress, EvmAddressAllowlist, EvmAddressType,
-    MintChainInfo, MintChainInfos, MintStatus, MintType, Moment, ReservedIds, SbtMetadata,
+    mock::{new_test_ext, Balances, MantaSBTPallet, RuntimeOrigin as MockOrigin, Test, Timestamp},
+    AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, MintId,
+    MintIdRegistry, MintStatus, ReservedIds, SbtMetadataV2, MANTA_MINT_ID,
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
@@ -124,10 +124,10 @@ fn to_private_should_work() {
             Box::new(post),
             bvec![0]
         ));
-        assert_eq!(SbtMetadata::<Test>::get(1).unwrap().extra, Some(bvec![0]));
+        assert_eq!(SbtMetadataV2::<Test>::get(1).unwrap().extra, Some(bvec![0]));
         assert_eq!(
-            SbtMetadata::<Test>::get(1).unwrap().mint_type,
-            MintType::Manta
+            SbtMetadataV2::<Test>::get(1).unwrap().mint_id,
+            MANTA_MINT_ID
         );
     });
 }
@@ -409,24 +409,27 @@ fn change_allowlist_account_works() {
 #[test]
 fn allowlist_account_works() {
     new_test_ext().execute_with(|| {
+        let bab_id: MintId = 1;
         assert_noop!(
             MantaSBTPallet::allowlist_evm_account(
                 MockOrigin::signed(ALICE),
-                EvmAddressType::Bab(EvmAddress::default())
+                bab_id,
+                EvmAddress::default(),
             ),
             Error::<Test>::MintNotAvailable,
         );
-        assert_ok!(MantaSBTPallet::set_mint_chain_info(
+        assert_ok!(MantaSBTPallet::new_mint_info(
             MockOrigin::root(),
-            MintType::Bab,
             5,
-            None
+            None,
+            bvec![]
         ));
         Timestamp::set_timestamp(2);
         assert_noop!(
             MantaSBTPallet::allowlist_evm_account(
                 MockOrigin::signed(ALICE),
-                EvmAddressType::Bab(EvmAddress::default())
+                bab_id,
+                EvmAddress::default()
             ),
             Error::<Test>::MintNotAvailable,
         );
@@ -435,12 +438,13 @@ fn allowlist_account_works() {
         assert_noop!(
             MantaSBTPallet::allowlist_evm_account(
                 MockOrigin::signed(ALICE),
-                EvmAddressType::Bab(EvmAddress::default())
+                bab_id,
+                EvmAddress::default()
             ),
             Error::<Test>::NotAllowlistAccount,
         );
         assert_eq!(
-            EvmAddressAllowlist::<Test>::get(EvmAddressType::Bab(EvmAddress::default())),
+            EvmAccountAllowlist::<Test>::get(1, EvmAddress::default()),
             None
         );
 
@@ -450,17 +454,19 @@ fn allowlist_account_works() {
         ));
         assert_ok!(MantaSBTPallet::allowlist_evm_account(
             MockOrigin::signed(ALICE),
-            EvmAddressType::Bab(EvmAddress::default())
+            bab_id,
+            EvmAddress::default(),
         ));
         assert_eq!(
-            EvmAddressAllowlist::<Test>::get(EvmAddressType::Bab(EvmAddress::default())).unwrap(),
+            EvmAccountAllowlist::<Test>::get(bab_id, EvmAddress::default()).unwrap(),
             MintStatus::Available(1)
         );
 
         assert_noop!(
             MantaSBTPallet::allowlist_evm_account(
                 MockOrigin::signed(ALICE),
-                EvmAddressType::Bab(EvmAddress::default())
+                bab_id,
+                EvmAddress::default(),
             ),
             Error::<Test>::AlreadyInAllowlist,
         );
@@ -468,7 +474,8 @@ fn allowlist_account_works() {
         assert_noop!(
             MantaSBTPallet::allowlist_evm_account(
                 MockOrigin::signed(BOB),
-                EvmAddressType::Bab(EvmAddress::default())
+                bab_id,
+                EvmAddress::default()
             ),
             Error::<Test>::NotAllowlistAccount,
         );
@@ -479,17 +486,18 @@ fn allowlist_account_works() {
 fn mint_sbt_eth_works() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
+        let bab_id = 1;
         assert_ok!(MantaSBTPallet::change_allowlist_account(
             MockOrigin::root(),
             Some(ALICE)
         ));
-        let evm_mint_type = EvmAddressType::Bab(MantaSBTPallet::eth_address(&alice_eth()));
+        let alice_eth_account = MantaSBTPallet::eth_address(&alice_eth());
         Timestamp::set_timestamp(10);
-        assert_ok!(MantaSBTPallet::set_mint_chain_info(
+        assert_ok!(MantaSBTPallet::new_mint_info(
             MockOrigin::root(),
-            MintType::Bab,
             0,
-            None
+            None,
+            bvec![]
         ));
 
         let value = 1;
@@ -504,7 +512,7 @@ fn mint_sbt_eth_works() {
                 post.clone(),
                 1,
                 MantaSBTPallet::eth_sign(&alice_eth(), &post.proof, 1),
-                evm_mint_type,
+                bab_id,
                 Some(0),
                 Some(0),
                 Some(bvec![0])
@@ -514,7 +522,8 @@ fn mint_sbt_eth_works() {
         // allowlist account
         assert_ok!(MantaSBTPallet::allowlist_evm_account(
             MockOrigin::signed(ALICE),
-            evm_mint_type
+            bab_id,
+            alice_eth_account
         ));
 
         // wrong signature fails
@@ -524,12 +533,12 @@ fn mint_sbt_eth_works() {
                 post.clone(),
                 1,
                 MantaSBTPallet::eth_sign(&alice_eth(), &[0; 128], 1),
-                evm_mint_type,
+                bab_id,
                 Some(0),
                 Some(0),
                 Some(bvec![0])
             ),
-            Error::<Test>::BadSignature
+            Error::<Test>::NotAllowlisted
         );
         assert_noop!(
             MantaSBTPallet::mint_sbt_eth(
@@ -537,12 +546,12 @@ fn mint_sbt_eth_works() {
                 post.clone(),
                 1,
                 MantaSBTPallet::eth_sign(&bob_eth(), &[0; 128], 1),
-                evm_mint_type,
+                bab_id,
                 Some(0),
                 Some(0),
                 Some(bvec![0])
             ),
-            Error::<Test>::BadSignature
+            Error::<Test>::NotAllowlisted
         );
         assert_noop!(
             MantaSBTPallet::mint_sbt_eth(
@@ -550,12 +559,12 @@ fn mint_sbt_eth_works() {
                 post.clone(),
                 1,
                 MantaSBTPallet::eth_sign(&bob_eth(), &post.proof, 2),
-                evm_mint_type,
+                bab_id,
                 Some(0),
                 Some(0),
                 Some(bvec![0])
             ),
-            Error::<Test>::BadSignature
+            Error::<Test>::NotAllowlisted
         );
         assert_noop!(
             MantaSBTPallet::mint_sbt_eth(
@@ -563,12 +572,12 @@ fn mint_sbt_eth_works() {
                 post.clone(),
                 2,
                 MantaSBTPallet::eth_sign(&bob_eth(), &post.proof, 1),
-                evm_mint_type,
+                bab_id,
                 Some(0),
                 Some(0),
                 Some(bvec![0])
             ),
-            Error::<Test>::BadSignature
+            Error::<Test>::NotAllowlisted
         );
 
         assert_ok!(MantaSBTPallet::mint_sbt_eth(
@@ -576,20 +585,20 @@ fn mint_sbt_eth_works() {
             post.clone(),
             1,
             MantaSBTPallet::eth_sign(&alice_eth(), &post.proof, 1),
-            evm_mint_type,
+            bab_id,
             Some(0),
             Some(0),
             Some(bvec![0])
         ));
-        let sbt_metadata = SbtMetadata::<Test>::get(1).unwrap();
+        let sbt_metadata = SbtMetadataV2::<Test>::get(1).unwrap();
         assert_eq!(sbt_metadata.collection_id, Some(0));
         assert_eq!(sbt_metadata.item_id, Some(0));
         assert_eq!(sbt_metadata.extra, Some(bvec![0]));
-        assert_eq!(sbt_metadata.mint_type, MintType::Bab);
+        assert_eq!(sbt_metadata.mint_id, bab_id);
 
         // Account is already minted
         assert_eq!(
-            EvmAddressAllowlist::<Test>::get(evm_mint_type).unwrap(),
+            EvmAccountAllowlist::<Test>::get(bab_id, alice_eth_account).unwrap(),
             MintStatus::AlreadyMinted
         );
         assert_noop!(
@@ -598,7 +607,7 @@ fn mint_sbt_eth_works() {
                 post.clone(),
                 1,
                 MantaSBTPallet::eth_sign(&alice_eth(), &post.proof, 1),
-                evm_mint_type,
+                bab_id,
                 Some(0),
                 Some(0),
                 Some(bvec![0])
@@ -612,31 +621,35 @@ fn mint_sbt_eth_works() {
 fn timestamp_range_fails() {
     let mut rng = OsRng;
     new_test_ext().execute_with(|| {
+        let bab_id = 1;
         assert_ok!(MantaSBTPallet::change_allowlist_account(
             MockOrigin::root(),
             Some(ALICE)
         ));
-        assert_ok!(MantaSBTPallet::set_mint_chain_info(
+        assert_ok!(MantaSBTPallet::new_mint_info(
             MockOrigin::root(),
-            MintType::Bab,
             0,
-            None
+            None,
+            bvec![]
         ));
         Timestamp::set_timestamp(1);
-        let evm_mint_type = EvmAddressType::Bab(MantaSBTPallet::eth_address(&alice_eth()));
+        let alice_eth_account = MantaSBTPallet::eth_address(&alice_eth());
         assert_ok!(MantaSBTPallet::allowlist_evm_account(
             MockOrigin::signed(ALICE),
-            evm_mint_type
+            bab_id,
+            alice_eth_account
         ));
-        assert_ok!(MantaSBTPallet::set_mint_chain_info(
+        assert_ok!(MantaSBTPallet::update_mint_info(
             MockOrigin::root(),
-            MintType::Bab,
+            bab_id,
             10,
-            Some(20)
+            Some(20),
+            bvec![]
         ));
 
         let value = 1;
-        let storage_id = match EvmAddressAllowlist::<Test>::get(evm_mint_type).unwrap() {
+        let storage_id = match EvmAccountAllowlist::<Test>::get(bab_id, alice_eth_account).unwrap()
+        {
             MintStatus::Available(asset_id) => asset_id,
             MintStatus::AlreadyMinted => panic!("should not be minted"),
         };
@@ -651,7 +664,7 @@ fn timestamp_range_fails() {
                 post.clone(),
                 1,
                 MantaSBTPallet::eth_sign(&alice_eth(), &post.proof, 0),
-                evm_mint_type,
+                bab_id,
                 Some(0),
                 Some(0),
                 Some(bvec![0])
@@ -667,7 +680,7 @@ fn timestamp_range_fails() {
                 post.clone(),
                 1,
                 MantaSBTPallet::eth_sign(&alice_eth(), &post.proof, 1),
-                evm_mint_type,
+                bab_id,
                 Some(0),
                 Some(0),
                 Some(bvec![0])
@@ -676,18 +689,19 @@ fn timestamp_range_fails() {
         );
 
         // with None as end time works
-        assert_ok!(MantaSBTPallet::set_mint_chain_info(
+        assert_ok!(MantaSBTPallet::update_mint_info(
             MockOrigin::root(),
-            MintType::Bab,
+            bab_id,
             10,
-            None
+            None,
+            bvec![]
         ));
         assert_ok!(MantaSBTPallet::mint_sbt_eth(
             MockOrigin::signed(ALICE),
             post.clone(),
             1,
             MantaSBTPallet::eth_sign(&alice_eth(), &post.proof, 1),
-            evm_mint_type,
+            bab_id,
             Some(0),
             Some(0),
             Some(bvec![0])
@@ -696,29 +710,67 @@ fn timestamp_range_fails() {
 }
 
 #[test]
-fn set_mint_chain_info_works() {
+fn new_mint_info_works() {
     new_test_ext().execute_with(|| {
+        let bab_id = 1;
         assert_noop!(
-            MantaSBTPallet::set_mint_chain_info(MockOrigin::signed(ALICE), MintType::Bab, 0, None),
+            MantaSBTPallet::new_mint_info(MockOrigin::signed(ALICE), 0, None, bvec![]),
             DispatchError::BadOrigin
         );
         assert_noop!(
-            MantaSBTPallet::set_mint_chain_info(MockOrigin::root(), MintType::Bab, 10, Some(5)),
+            MantaSBTPallet::new_mint_info(MockOrigin::root(), 10, Some(5), bvec![]),
             Error::<Test>::InvalidTimeRange
         );
 
-        assert_ok!(MantaSBTPallet::set_mint_chain_info(
+        assert_ok!(MantaSBTPallet::new_mint_info(
             MockOrigin::root(),
-            MintType::Bab,
             0,
-            None
+            None,
+            bvec![]
         ));
-        assert_eq!(
-            MintChainInfos::<Test>::get(MintType::Bab).unwrap(),
-            MintChainInfo::<Moment<Test>> {
-                start_time: 0,
-                end_time: None
-            }
+        let registered_mint = MintIdRegistry::<Test>::get(bab_id).unwrap();
+        assert_eq!(registered_mint.start_time, 0);
+        assert_eq!(registered_mint.end_time, None);
+        assert_eq!(registered_mint.mint_name, vec![]);
+    })
+}
+
+#[test]
+fn update_mint_info_works() {
+    new_test_ext().execute_with(|| {
+        let bab_id = 1;
+        assert_noop!(
+            MantaSBTPallet::update_mint_info(MockOrigin::root(), bab_id, 10, Some(20), bvec![]),
+            Error::<Test>::InvalidMintId
         );
+        assert_noop!(
+            MantaSBTPallet::update_mint_info(
+                MockOrigin::signed(ALICE),
+                bab_id,
+                10,
+                Some(20),
+                bvec![]
+            ),
+            DispatchError::BadOrigin
+        );
+
+        assert_ok!(MantaSBTPallet::new_mint_info(
+            MockOrigin::root(),
+            0,
+            None,
+            bvec![]
+        ));
+        assert_noop!(
+            MantaSBTPallet::update_mint_info(MockOrigin::root(), bab_id, 10, Some(5), bvec![]),
+            Error::<Test>::InvalidTimeRange
+        );
+
+        assert_ok!(MantaSBTPallet::update_mint_info(
+            MockOrigin::root(),
+            bab_id,
+            10,
+            Some(20),
+            bvec![]
+        ));
     })
 }

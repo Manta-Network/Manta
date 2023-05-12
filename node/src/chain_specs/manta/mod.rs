@@ -22,7 +22,7 @@ use manta_runtime::{
     opaque::SessionKeys, staking::NORMAL_COLLATOR_MINIMUM_STAKE, GenesisConfig,
     ParachainStakingConfig, PolkadotXcmConfig,
 };
-use sc_network::config::MultiaddrWithPeerId;
+use sc_network_common::config::MultiaddrWithPeerId;
 
 mod local_testnets_geneses;
 mod public_testnet_genesis;

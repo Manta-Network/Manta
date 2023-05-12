@@ -16,20 +16,55 @@
 
 #![cfg(test)]
 
-pub mod integration_tests;
 pub mod mock;
+pub mod test_calamari;
+pub mod test_common;
+pub mod test_manta;
 
-use calamari_runtime::opaque::SessionKeys;
-pub use calamari_runtime::{
-    currency::KMA,
-    staking::{EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR},
-    CollatorSelection, Event, Origin, ParachainStaking, Runtime, System,
-};
+pub use mock::run_to_block;
 
-use frame_support::{
-    assert_ok,
-    weights::{DispatchInfo, Weight},
-};
+// Compilation errors would happen without default imports.
+// See run_linters.yml => SKIP_WASM_BUILD=1 cargo check --no-default-features
+cfg_if::cfg_if! {
+    if #[cfg(feature = "calamari")] {
+        use codec::Encode;
+        use manta_primitives::types::Header;
+        use nimbus_primitives::NIMBUS_ENGINE_ID;
+        use sp_runtime::{traits::Header as HeaderT, DigestItem};
+        pub use calamari_runtime::{
+            currency::KMA,
+            fee::{FEES_PERCENTAGE_TO_AUTHOR, FEES_PERCENTAGE_TO_TREASURY},
+            opaque::SessionKeys,
+            staking::{self, EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR},
+            xcm_config::{XcmExecutorConfig, XcmFeesAccount},
+            AssetManager, Assets, AuthorInherent, Authorship, Balances, CalamariVesting, RuntimeCall,
+            CollatorSelection, Council, DefaultBlocksPerRound, Democracy, EnactmentPeriod, RuntimeEvent,
+            InflationInfo, LaunchPeriod, LeaveDelayRounds, NativeTokenExistentialDeposit, RuntimeOrigin,
+            ParachainStaking, Period, PolkadotXcm, Range, Runtime, Scheduler, Session, System,
+            TechnicalCommittee, Timestamp, TransactionPause, TransactionPayment, Treasury, Utility,
+            VotingPeriod, Preimage,
+        };
+        type RuntimeAssetConfig = calamari_runtime::assets_config::CalamariAssetConfig;
+        type RuntimeConcreteFungibleLedger =
+            calamari_runtime::assets_config::CalamariConcreteFungibleLedger;
+    } else {
+        pub use manta_runtime::{
+            assets_config::MantaConcreteFungibleLedger,
+            currency::MANTA as KMA,
+            opaque::SessionKeys,
+            staking::{self, EARLY_COLLATOR_MINIMUM_STAKE, MIN_BOND_TO_BE_CONSIDERED_COLLATOR},
+            xcm_config::{XcmExecutorConfig, XcmFeesAccount},
+            AssetManager, Assets, AuthorInherent, Authorship, Balances, RuntimeCall, CollatorSelection,
+            DefaultBlocksPerRound, RuntimeEvent, InflationInfo, LeaveDelayRounds, NativeTokenExistentialDeposit,
+            RuntimeOrigin, ParachainStaking, Period, PolkadotXcm, Range, Runtime, Session, System, Timestamp,
+            TransactionPayment, Treasury, Utility,
+        };
+        type RuntimeAssetConfig = manta_runtime::assets_config::MantaAssetConfig;
+        type RuntimeConcreteFungibleLedger = manta_runtime::assets_config::MantaConcreteFungibleLedger;
+    }
+}
+
+use frame_support::{assert_ok, dispatch::DispatchInfo, weights::Weight};
 use lazy_static::lazy_static;
 use manta_primitives::types::{AccountId, Balance};
 use session_key_primitives::util::unchecked_account_id;
@@ -65,12 +100,12 @@ pub fn info_from_weight(w: Weight) -> DispatchInfo {
     }
 }
 
-pub fn last_event() -> Event {
+pub fn last_event() -> RuntimeEvent {
     System::events().pop().expect("Event expected").event
 }
 
-pub fn root_origin() -> <Runtime as frame_system::Config>::Origin {
-    <Runtime as frame_system::Config>::Origin::root()
+pub fn root_origin() -> <Runtime as frame_system::Config>::RuntimeOrigin {
+    <Runtime as frame_system::Config>::RuntimeOrigin::root()
 }
 
 pub fn initialize_collators_through_whitelist(collators: Vec<AccountId>) {
@@ -91,7 +126,7 @@ pub fn initialize_collators_through_whitelist(collators: Vec<AccountId>) {
     assert_ok!(ParachainStaking::initialize_pallet(
         1,
         collators,
-        calamari_runtime::staking::inflation_config::<Runtime>()
+        staking::inflation_config::<Runtime>()
     ));
     assert_eq!(
         ParachainStaking::candidate_pool().len(),
@@ -101,4 +136,19 @@ pub fn initialize_collators_through_whitelist(collators: Vec<AccountId>) {
         root_origin(),
         candidate_count
     ));
+}
+
+#[cfg(feature = "calamari")]
+fn seal_header(mut header: Header, author: AccountId) -> Header {
+    {
+        let digest = header.digest_mut();
+        digest
+            .logs
+            .push(DigestItem::PreRuntime(NIMBUS_ENGINE_ID, author.encode()));
+        digest
+            .logs
+            .push(DigestItem::Seal(NIMBUS_ENGINE_ID, author.encode()));
+    }
+
+    header
 }

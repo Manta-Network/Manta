@@ -17,8 +17,8 @@
 use crate::{
     fp_decode, id_from_field,
     mock::{
-        new_test_ext, Assets, MantaAssetConfig, MantaAssetRegistry, MantaPay, Origin as MockOrigin,
-        Test,
+        new_test_ext, Assets, MantaAssetConfig, MantaAssetRegistry, MantaPay,
+        RuntimeOrigin as MockOrigin, Test,
     },
     Error, FungibleLedger,
 };

@@ -43,7 +43,7 @@ pub const INITIAL_VALUE: u128 = 1_000_000_000_000_000_000_000u128;
 pub fn assert_last_event<T, E>(event: E)
 where
     T: Config,
-    E: Into<<T as Config>::Event>,
+    E: Into<<T as Config>::RuntimeEvent>,
 {
     let events = frame_system::Pallet::<T>::events();
     assert_eq!(events[events.len() - 1].event, event.into().into());
@@ -84,7 +84,7 @@ benchmarks! {
     where_clause {  where T::AccountId: From<AccountId> + Into<AccountId> }
     to_private {
         let caller: T::AccountId = whitelisted_caller();
-        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
         let mint_post = TransferPost::decode(&mut &*TO_PRIVATE).unwrap();
         let asset = mint_post.source(0).unwrap();
         init_asset::<T>(&caller, id_from_field(asset.id).unwrap(), asset_value_decode(asset.value));
@@ -98,7 +98,7 @@ benchmarks! {
 
     to_public {
         let caller: T::AccountId = whitelisted_caller();
-        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         for coin in TO_PUBLIC_INPUT {
             Pallet::<T>::to_private(
@@ -118,7 +118,7 @@ benchmarks! {
 
     private_transfer {
         let caller: T::AccountId = whitelisted_caller();
-        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         for coin in PRIVATE_TRANSFER_INPUT {
             Pallet::<T>::to_private(
@@ -136,7 +136,7 @@ benchmarks! {
 
     public_transfer {
         let caller: T::AccountId = whitelisted_caller();
-        let origin = T::Origin::from(RawOrigin::Signed(caller.clone()));
+        let origin = T::RuntimeOrigin::from(RawOrigin::Signed(caller.clone()));
         init_asset::<T>(&caller, <T::AssetConfig as AssetConfig<T>>::StartNonNativeAssetId::get(), INITIAL_VALUE);
         let asset = Asset::new(field_from_id(8u128), asset_value_encode(100));
         let sink = Pallet::<T>::account_id();

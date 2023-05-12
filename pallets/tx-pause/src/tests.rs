@@ -24,14 +24,14 @@
 use super::*;
 use frame_support::{assert_noop, assert_ok};
 use frame_system::RawOrigin;
-use mock::{Event, *};
+use mock::{RuntimeEvent as Event, *};
 use sp_runtime::traits::BadOrigin;
 
-const REMARK_CALL: &<Runtime as frame_system::Config>::Call =
-    &mock::Call::System(frame_system::Call::remark { remark: vec![] });
+const REMARK_CALL: &<Runtime as frame_system::Config>::RuntimeCall =
+    &mock::RuntimeCall::System(frame_system::Call::remark { remark: vec![] });
 
-const SETCODE_CALL: &<Runtime as frame_system::Config>::Call =
-    &mock::Call::System(frame_system::Call::set_code { code: vec![] });
+const SETCODE_CALL: &<Runtime as frame_system::Config>::RuntimeCall =
+    &mock::RuntimeCall::System(frame_system::Call::set_code { code: vec![] });
 
 #[test]
 fn pause_transaction_work() {
@@ -43,7 +43,7 @@ fn pause_transaction_work() {
         System::set_block_number(1);
         assert_noop!(
             TransactionPause::pause_transaction(
-                Origin::signed(1),
+                RuntimeOrigin::signed(1),
                 b"Balances".to_vec(),
                 b"transfer".to_vec()
             ),
@@ -136,7 +136,7 @@ fn unpause_transaction_work() {
 
         assert_noop!(
             TransactionPause::unpause_transaction(
-                Origin::signed(1),
+                RuntimeOrigin::signed(1),
                 b"System".to_vec(),
                 b"remark".to_vec()
             ),
@@ -194,7 +194,7 @@ fn pause_unpause_transactions_work() {
 
         assert_noop!(
             TransactionPause::unpause_transactions(
-                Origin::signed(1),
+                RuntimeOrigin::signed(1),
                 vec![(
                     b"System".to_vec(),
                     vec![b"remark".to_vec(), b"set_code".to_vec()]
@@ -240,7 +240,7 @@ fn pause_unpause_pallets_work() {
     ExtBuilder::default().build().execute_with(|| {
         System::set_block_number(1);
         assert_noop!(
-            TransactionPause::pause_pallets(Origin::signed(1), vec![b"Balances".to_vec()]),
+            TransactionPause::pause_pallets(RuntimeOrigin::signed(1), vec![b"Balances".to_vec()]),
             BadOrigin
         );
         assert_noop!(
@@ -279,7 +279,7 @@ fn pause_unpause_pallets_work() {
 
         // unpause pallets
         assert_noop!(
-            TransactionPause::unpause_pallets(Origin::signed(1), vec![b"System".to_vec()],),
+            TransactionPause::unpause_pallets(RuntimeOrigin::signed(1), vec![b"System".to_vec()],),
             BadOrigin
         );
         assert_ok!(TransactionPause::unpause_pallets(
@@ -316,12 +316,12 @@ fn pause_pallets_weight_works() {
         let max_call_len: u32 =
             <<Runtime as Config>::MaxCallNames as sp_runtime::traits::Get<u32>>::get();
         let weight_per_tx: Weight = <Runtime as Config>::WeightInfo::pause_transaction();
-        let initial_weight = weight_per_tx.saturating_mul(max_call_len as Weight);
+        let initial_weight = weight_per_tx.saturating_mul(max_call_len as u64);
 
         let ps = ps.unwrap();
         let actual_weight = ps.actual_weight.unwrap();
-        assert_eq!(actual_weight, weight_per_tx.saturating_mul(size as Weight));
-        assert!(actual_weight < initial_weight);
+        assert_eq!(actual_weight, weight_per_tx.saturating_mul(size as u64));
+        assert!(actual_weight.ref_time() < initial_weight.ref_time());
 
         let ps2: DispatchResultWithPostInfo =
             TransactionPause::unpause_pallets(RawOrigin::Root.into(), vec![b"System".to_vec()]);
