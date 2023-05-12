@@ -1,0 +1,179 @@
+# this builds a fast-runtime `manta` binary, the `calamari-baikal` runtime and a genesis state and uploads it to S3 for deployment to baikal via ansible
+# baikal is not meant to be upgraded, it is meant to be redeployed with every change
+name: build and prepare baikal deployment
+on:
+  push:
+    tags:
+      - 'baikal-deployment'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+env:
+  AWS_INSTANCE_SSH_PUBLIC_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPb24HEQ++aNFWaqVyMtIs6GotUB8R+q61XOoI2z6uMj
+  AWS_REGION: us-east-1
+  AWS_SUBNET_ID: subnet-08c26caf0a52b7c19
+  AWS_SECURITY_GROUP_ID: sg-0315bffea9042ac9b
+  AWS_INSTANCE_TYPE: c5.9xlarge
+  AWS_INSTANCE_ROOT_VOLUME_SIZE: 32
+  AWS_IMAGE_SEARCH_PATTERN: ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*
+  AWS_IMAGE_SEARCH_OWNERS: '["099720109477"]'
+  CHAIN: "calamari-baikal"
+jobs:
+  build-node-current:
+    needs: start-node-builder-current
+    runs-on: ${{ needs.start-node-builder-current.outputs.runner-label }}
+    env:
+      CARGO_TERM_COLOR: always
+    outputs:
+      manta-bin: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: install sccache
+        env:
+          SCCACHE_RELEASE_URL: https://github.com/mozilla/sccache/releases/download
+          SCCACHE_VERSION: v0.2.15
+        run: |
+          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
+          mkdir -p $HOME/.local/bin
+          curl -L "$SCCACHE_RELEASE_URL/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
+          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
+          chmod +x $HOME/.local/bin/sccache
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            cargo-
+      - name: cache sccache
+        uses: actions/cache@v2
+        continue-on-error: false
+        with:
+          path: /home/runner/.cache/sccache
+          key: sccache-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            sccache-
+      - name: start sccache server
+        run: sccache --start-server
+      - name: init
+        run: |
+          sudo apt update
+          sudo apt install -y pkg-config libssl-dev
+          curl -s https://sh.rustup.rs -sSf | sh -s -- -y
+          source ${HOME}/.cargo/env
+          rustup toolchain install stable
+          rustup default stable
+          rustup update
+          rustup target add wasm32-unknown-unknown
+      - name: build
+        env:
+          RUST_BACKTRACE: full
+          RUSTC_WRAPPER: sccache
+          SCCACHE_CACHE_SIZE: 2G
+          SCCACHE_DIR: /home/runner/.cache/sccache
+        run: |
+          source ${HOME}/.cargo/env
+          RUSTC_BOOTSTRAP=1 cargo build --release --features=fast-runtime
+      - name: stop sccache server
+        run: sccache --stop-server || true
+      - if: always()
+        name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: manta-fast
+          path: target/release/manta
+  build-genesis-files:
+    runs-on: ubuntu-20.04
+    needs: [build-node-current]
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: manta-fast
+      - name: Export genesis files
+        run: |
+          ./manta-fast build-spec --chain $CHAIN --raw > $CHAIN-genesis.json
+          ./manta-fast export-genesis-state --chain $CHAIN > $CHAIN-genesis.state
+          ./manta-fast export-genesis-wasm --chain $CHAIN > $CHAIN-genesis.wasm
+      # upload artifacts
+      - name: upload genesis
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{env.CHAIN}}-genesis.json
+          path: ${{env.CHAIN}}-genesis.json
+      - name: upload state
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{env.CHAIN}}-genesis.state
+          path: ${{env.CHAIN}}-genesis.state
+      - name: upload wasm
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{env.CHAIN}}-genesis.wasm
+          path: ${{env.CHAIN}}-genesis.wasm
+  push-to-s3:
+    runs-on: ubuntu-20.04
+    needs: [build-node-current, build-genesis-files]
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name:
+            - manta-fast
+            - ${{env.CHAIN}}-genesis.json
+            - ${{env.CHAIN}}-genesis.state
+            - ${{env.CHAIN}}-genesis.wasm
+      - uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --acl public-read --follow-symlinks --delete
+        env:
+          AWS_S3_BUCKET: public-baikal
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: 'us-east-1'
+          SOURCE_DIR:
+            - manta-fast
+            - ${{env.CHAIN}}-genesis.json
+            - ${{env.CHAIN}}-genesis.state
+            - ${{env.CHAIN}}-genesis.wasm
+  start-node-builder-current:
+    runs-on: ubuntu-20.04
+    outputs:
+      runner-label: ${{ steps.start-self-hosted-runner.outputs.runner-label }}
+      aws-region: ${{ steps.start-self-hosted-runner.outputs.aws-region }}
+      aws-instance-id: ${{ steps.start-self-hosted-runner.outputs.aws-instance-id }}
+    steps:
+      - id: start-self-hosted-runner
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: start
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-instance-ssh-public-key: ${{ env.AWS_INSTANCE_SSH_PUBLIC_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-subnet-id: ${{ env.AWS_SUBNET_ID }}
+          aws-security-group-id: ${{ env.AWS_SECURITY_GROUP_ID }}
+          aws-instance-type: ${{ env.AWS_INSTANCE_TYPE }}
+          aws-instance-root-volume-size: 32
+          aws-image-search-pattern: ${{ env.AWS_IMAGE_SEARCH_PATTERN }}
+          aws-image-search-owners: ${{ env.AWS_IMAGE_SEARCH_OWNERS }}
+  stop-node-builder-current:
+    if: ${{ always() }}
+    needs: [start-node-builder-current, build-node-current]
+    runs-on: ubuntu-20.04
+    steps:
+      - continue-on-error: true
+        uses: audacious-network/aws-github-runner@v1.0.33
+        with:
+          mode: stop
+          github-token: ${{ secrets.SELF_HOSTED_RUNNER_TOKEN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.start-node-builder-current.outputs.aws-region }}
+          runner-label: ${{ needs.start-node-builder-current.outputs.runner-label }}
+          aws-instance-id: ${{ needs.start-node-builder-current.outputs.aws-instance-id }}
+      - name: discard stopper success/failure
+        run: true
