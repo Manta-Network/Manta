@@ -611,7 +611,7 @@ pub mod pallet {
                 Self::pull_receivers(*checkpoint.receiver_index, max_receivers);
             let (more_senders, senders) = Self::pull_senders(checkpoint.sender_index, max_senders);
             let senders_receivers_total = (0..=255)
-                .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128)
+                .map(|i| ShardTrees::<T>::get(i).current_path.leaf_index as u128 + 1u128)
                 .sum::<u128>()
                 + NullifierSetSize::<T>::get() as u128;
             PullResponse {
