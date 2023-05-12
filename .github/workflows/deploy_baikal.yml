@@ -120,11 +120,16 @@ jobs:
     steps:
       - uses: actions/download-artifact@v2
         with:
-          name:
-            - manta-fast
-            - ${{env.CHAIN}}-genesis.json
-            - ${{env.CHAIN}}-genesis.state
-            - ${{env.CHAIN}}-genesis.wasm
+          name: manta-fast
+      - uses: actions/download-artifact@v2
+        with:
+          name: ${{env.CHAIN}}-genesis.json
+      - uses: actions/download-artifact@v2
+        with:
+          name: ${{env.CHAIN}}-genesis.state
+      - uses: actions/download-artifact@v2
+        with:
+          name: ${{env.CHAIN}}-genesis.wasm
       - uses: jakejarvis/s3-sync-action@master
         with:
           args: --acl public-read --follow-symlinks --delete
