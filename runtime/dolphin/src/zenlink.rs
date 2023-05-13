@@ -15,8 +15,8 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    AssetManager, Balances, ParachainInfo, Runtime, RuntimeEvent, Timestamp,
-    ZenlinkProtocol, ZenlinkStableAMM,
+    AssetManager, Balances, ParachainInfo, Runtime, RuntimeEvent, Timestamp, ZenlinkProtocol,
+    ZenlinkStableAMM,
 };
 use crate::{
     assets_config::DolphinConcreteFungibleLedger, xcm_config::RelayNetwork, MantaCurrencies,
@@ -33,8 +33,8 @@ use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{AccountId32Aliases, SiblingParachainConvertsVia};
 use zenlink_protocol::{
-    make_x2_location, AssetBalance, AssetId as ZenlinkAssetId,
-    ConvertMultiLocation, GenerateLpAssetId, LocalAssetHandler, ZenlinkMultiAssets, LOCAL, NATIVE,
+    make_x2_location, AssetBalance, AssetId as ZenlinkAssetId, ConvertMultiLocation,
+    GenerateLpAssetId, LocalAssetHandler, ZenlinkMultiAssets, LOCAL, NATIVE,
 };
 use zenlink_stable_amm::traits::{StablePoolLpCurrencyIdGenerate, ValidateCurrency};
 

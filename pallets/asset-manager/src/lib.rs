@@ -50,11 +50,9 @@ pub mod pallet {
         transactional, PalletId,
     };
     use frame_system::pallet_prelude::*;
-    use manta_primitives::{
-        assets::{
-            self, AssetConfig, AssetIdLocationMap, AssetIdLpMap, AssetIdType, AssetMetadata,
-            AssetRegistry, FungibleLedger, LocationType,
-        },
+    use manta_primitives::assets::{
+        self, AssetConfig, AssetIdLocationMap, AssetIdLpMap, AssetIdType, AssetMetadata,
+        AssetRegistry, FungibleLedger, LocationType,
     };
     use orml_traits::GetByKey;
     use sp_runtime::{
@@ -368,7 +366,8 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn pool_id_lp)]
-    pub(super) type PoolIdLp<T: Config> = StorageMap<_, Blake2_128Concat, T::AssetId, (T::AssetId, T::AssetId)>;
+    pub(super) type PoolIdLp<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AssetId, (T::AssetId, T::AssetId)>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {

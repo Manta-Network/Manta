@@ -20,27 +20,28 @@
 #![allow(non_upper_case_globals)]
 
 use frame_support::{
+    dispatch::DispatchResult,
     ord_parameter_types, parameter_types,
-    traits::{GenesisBuild, Nothing},
+    traits::{AsEnsureOriginWithArg, GenesisBuild, Nothing},
     PalletId,
 };
-use frame_support::dispatch::DispatchResult;
-use frame_support::traits::AsEnsureOriginWithArg;
 use frame_system::{EnsureNever, EnsureRoot, EnsureSignedBy};
 // use manta_primitives::{CurrencyId, TokenSymbol};
+use manta_primitives::{
+    assets::{
+        AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
+        AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
+    },
+    constants::{ASSET_MANAGER_PALLET_ID, ASSET_STRING_LIMIT},
+    currencies::Currencies,
+    types::{CalamariAssetId, DolphinAssetId},
+};
 use sp_core::{ConstU32, H256};
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
     AccountId32,
 };
-use manta_primitives::{
-    assets::{AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata, AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative},
-    constants::{ASSET_MANAGER_PALLET_ID, ASSET_STRING_LIMIT},
-    currencies::Currencies,
-    types::CalamariAssetId
-};
-use manta_primitives::types::DolphinAssetId;
 use xcm::{
     prelude::{Parachain, X1},
     v2::MultiLocation,
@@ -307,7 +308,10 @@ impl Default for ExtBuilder {
 }
 
 impl ExtBuilder {
-    pub fn balances(mut self, endowed_accounts: Vec<(AccountId, CalamariAssetId, Balance)>) -> Self {
+    pub fn balances(
+        mut self,
+        endowed_accounts: Vec<(AccountId, CalamariAssetId, Balance)>,
+    ) -> Self {
         self.endowed_accounts = endowed_accounts;
         self
     }
@@ -348,8 +352,8 @@ impl ExtBuilder {
         pallet_asset_manager::GenesisConfig::<Runtime> {
             start_id: <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
         }
-            .assimilate_storage(&mut t)
-            .unwrap();
+        .assimilate_storage(&mut t)
+        .unwrap();
 
         pallet_balances::GenesisConfig::<Runtime> {
             balances: self
