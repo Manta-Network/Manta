@@ -18,15 +18,10 @@
 
 use crate::{
     mock::{new_test_ext, Balances, MantaSBTPallet, RuntimeOrigin as MockOrigin, Test, Timestamp},
-    AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, EvmAddressAllowlist,
-    EvmAddressType, Metadata, MintChainInfo, MintChainInfos, MintId, MintIdRegistry, MintStatus,
-    MintType, Moment, RegisteredMint, ReservedIds, SbtMetadata, SbtMetadataV2, MANTA_MINT_ID,
+    AllowlistAccount, DispatchError, Error, EvmAccountAllowlist, EvmAddress, MintId,
+    MintIdRegistry, MintStatus, ReservedIds, SbtMetadataV2, MANTA_MINT_ID,
 };
-use frame_support::{
-    assert_noop, assert_ok,
-    traits::{Get, OnIdle},
-    weights::Weight,
-};
+use frame_support::{assert_noop, assert_ok, traits::Get};
 use manta_crypto::{
     arkworks::constraint::fp::Fp,
     merkle_tree::{forest::TreeArrayMerkleForest, full::Full},
@@ -777,79 +772,5 @@ fn update_mint_info_works() {
             Some(20),
             bvec![]
         ));
-    })
-}
-
-#[test]
-fn on_idle_test() {
-    new_test_ext().execute_with(|| {
-        let example_info = MintChainInfo::<Moment<Test>> {
-            start_time: 0,
-            end_time: None,
-        };
-        let migrated_bab_info =
-            RegisteredMint::<Moment<Test>, <Test as crate::Config>::RegistryBound> {
-                start_time: 0,
-                end_time: None,
-                mint_name: b"Bab".to_vec().try_into().unwrap(),
-            };
-
-        MintChainInfos::<Test>::insert(MintType::Bab, example_info.clone());
-        MintChainInfos::<Test>::insert(MintType::Galxe, example_info);
-        MantaSBTPallet::on_idle(0, Weight::from_ref_time(100000));
-        assert!(MintChainInfos::<Test>::iter().next().is_none());
-        assert_eq!(
-            MintIdRegistry::<Test>::get(1).unwrap().mint_name,
-            migrated_bab_info.mint_name
-        );
-        assert_eq!(
-            MintIdRegistry::<Test>::get(1).unwrap().start_time,
-            migrated_bab_info.start_time
-        );
-
-        let asset_id = 1;
-        let metadata = Metadata::<<Test as crate::Config>::SbtMetadataBound> {
-            mint_type: MintType::Galxe,
-            collection_id: None,
-            item_id: None,
-            extra: Some(b"metadata".to_vec().try_into().unwrap()),
-        };
-        SbtMetadata::<Test>::insert(asset_id, metadata);
-        MantaSBTPallet::on_idle(0, Weight::from_ref_time(100000));
-        assert!(SbtMetadata::<Test>::iter().next().is_none());
-        // Converts Galxe correctly to value of 2
-        assert_eq!(SbtMetadataV2::<Test>::get(asset_id).unwrap().mint_id, 2);
-        assert_eq!(
-            SbtMetadataV2::<Test>::get(asset_id).unwrap().extra.unwrap(),
-            b"metadata".to_vec()
-        );
-
-        let address_type = EvmAddressType::Bab(EvmAddress::default());
-        EvmAddressAllowlist::<Test>::insert(address_type, MintStatus::AlreadyMinted);
-        MantaSBTPallet::on_idle(0, Weight::from_ref_time(100000));
-        assert!(EvmAddressAllowlist::<Test>::iter().next().is_none());
-        assert_eq!(
-            EvmAccountAllowlist::<Test>::get(1, EvmAddress::default()).unwrap(),
-            MintStatus::AlreadyMinted
-        );
-    })
-}
-
-#[test]
-fn on_idle_weight_test() {
-    new_test_ext().execute_with(|| {
-        for i in 1..5000 {
-            let metadata = Metadata::<<Test as crate::Config>::SbtMetadataBound> {
-                mint_type: MintType::Galxe,
-                collection_id: None,
-                item_id: None,
-                extra: Some(b"metadata".to_vec().try_into().unwrap()),
-            };
-            SbtMetadata::<Test>::insert(i, metadata);
-        }
-        MantaSBTPallet::on_idle(0, Weight::from_ref_time(1000000));
-
-        // Will not try to migrate in one block
-        assert!(SbtMetadata::<Test>::iter().next().is_some());
     })
 }

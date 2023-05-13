@@ -47,7 +47,6 @@ jobs:
         runtime:
           - name: calamari
           - name: manta
-          - name: dolphin
     steps:
       - uses: actions/checkout@v2
       - name: cache target dir
@@ -99,8 +98,6 @@ jobs:
             chain-spec: manta-local
           - name: calamari
             chain-spec: calamari-local
-          - name: dolphin
-            chain-spec: dolphin-local
     steps:
       - run: |
           ls -ahl ${{ github.workspace }}/

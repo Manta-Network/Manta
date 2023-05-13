@@ -16,20 +16,14 @@
 
 #![cfg(test)]
 
-use crate::integrations_mock::*;
-
-use calamari_runtime::opaque::SessionKeys;
-pub use calamari_runtime::{
-    assets_config::CalamariAssetConfig, currency::KMA, AuthorInherent, CollatorSelection,
-    Democracy, InflationInfo, Preimage, Range, Runtime, RuntimeCall, Scheduler, Session, System,
-    TransactionPayment,
-};
+use super::{ALICE, ALICE_SESSION_KEYS, *};
 use frame_support::traits::{GenesisBuild, OnFinalize, OnInitialize};
 use manta_primitives::{
     assets::AssetConfig,
     types::{AccountId, Balance},
 };
 use sp_arithmetic::Perbill;
+
 pub struct ExtBuilder {
     balances: Vec<(AccountId, Balance)>,
     authorities: Vec<(AccountId, SessionKeys)>,
@@ -161,7 +155,7 @@ impl ExtBuilder {
         .unwrap();
 
         pallet_asset_manager::GenesisConfig::<Runtime> {
-            start_id: <CalamariAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+            start_id: <RuntimeAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
         }
         .assimilate_storage(&mut t)
         .unwrap();
@@ -193,8 +187,10 @@ pub fn run_to_block(n: u32) {
         AuthorInherent::on_initialize(System::block_number());
         Session::on_initialize(System::block_number());
         ParachainStaking::on_initialize(System::block_number());
-        Scheduler::on_initialize(System::block_number());
-        Democracy::on_initialize(System::block_number());
-        Preimage::on_initialize(System::block_number());
+        #[cfg(feature = "calamari")]
+        {
+            Scheduler::on_initialize(System::block_number());
+            Democracy::on_initialize(System::block_number());
+        }
     }
 }

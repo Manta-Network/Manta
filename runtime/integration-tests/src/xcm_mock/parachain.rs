@@ -24,33 +24,33 @@ use frame_support::{
     assert_ok, construct_runtime, match_types,
     pallet_prelude::DispatchResult,
     parameter_types,
-    traits::{AsEnsureOriginWithArg, ConstU32, Contains, Currency, Everything, Nothing},
+    traits::{AsEnsureOriginWithArg, ConstU32, Currency, Everything, Nothing},
     weights::Weight,
     PalletId,
 };
 use frame_system::{EnsureNever, EnsureRoot};
+use scale_info::TypeInfo;
+use sp_core::H256;
+use sp_runtime::{
+    traits::{BlakeTwo256, Hash, IdentityLookup},
+    AccountId32,
+};
+use sp_std::prelude::*;
+
 use manta_primitives::{
     assets::{
         AssetConfig, AssetIdLocationConvert, AssetIdType, AssetLocation, AssetRegistry,
         AssetRegistryMetadata, AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
-    constants::{ASSET_MANAGER_PALLET_ID, MANTA_DECIMAL},
-    types::{BlockNumber, Header, MantaAssetId},
+    constants::{ASSET_MANAGER_PALLET_ID, CALAMARI_DECIMAL, WEIGHT_PER_SECOND},
+    types::{BlockNumber, CalamariAssetId, Header},
     xcm::{FirstAssetTrader, IsNativeConcrete, MultiAssetAdapter, MultiNativeAsset},
 };
-use manta_runtime::MAXIMUM_BLOCK_WEIGHT;
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain::primitives::{
     DmpMessageHandler, Id as ParaId, Sibling, XcmpMessageFormat, XcmpMessageHandler,
 };
-use scale_info::TypeInfo;
-use sp_core::H256;
-use sp_runtime::{
-    traits::{BlakeTwo256, Convert, Hash, IdentityLookup},
-    AccountId32,
-};
-use sp_std::prelude::*;
 use xcm::{latest::prelude::*, Version as XcmVersion, VersionedMultiLocation, VersionedXcm};
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -64,6 +64,14 @@ use xcm_simulator::{DmpMessageHandlerT, Get, TestExt, XcmpMessageHandlerT};
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "calamari")] {
+        type RuntimeXcmWeight = calamari_runtime::weights::xcm::CalamariXcmWeight<RuntimeCall>;
+    } else {
+        type RuntimeXcmWeight = manta_runtime::weights::xcm::MantaXcmWeight<RuntimeCall>;
+    }
+}
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
@@ -115,13 +123,13 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
+    pub const ReservedXcmpWeight: Weight = Weight::from_ref_time(WEIGHT_PER_SECOND.saturating_div(4));
+    pub const ReservedDmpWeight: Weight = Weight::from_ref_time(WEIGHT_PER_SECOND.saturating_div(4));
 }
 
 parameter_types! {
-    pub const DotLocation: MultiLocation = MultiLocation::parent();
-    pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
+    pub const KsmLocation: MultiLocation = MultiLocation::parent();
+    pub const RelayNetwork: NetworkId = NetworkId::Kusama;
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
     pub SelfReserve: MultiLocation = MultiLocation::new(1, X1(Parachain(ParachainInfo::parachain_id().into())));
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();
@@ -139,7 +147,7 @@ parameter_types! {
 impl pallet_assets::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type Balance = Balance;
-    type AssetId = MantaAssetId;
+    type AssetId = CalamariAssetId;
     type Currency = Balances;
     type ForceOrigin = EnsureRoot<AccountId>;
     type AssetDeposit = AssetDeposit;
@@ -152,7 +160,7 @@ impl pallet_assets::Config for Runtime {
     type Extra = ();
     type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
     type RemoveItemsLimit = ConstU32<1000>;
-    type AssetIdParameter = MantaAssetId;
+    type AssetIdParameter = CalamariAssetId;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureNever<AccountId>>;
     type CallbackHandle = ();
     #[cfg(feature = "runtime-benchmarks")]
@@ -190,7 +198,7 @@ pub type XcmOriginToCallOrigin = (
 );
 
 parameter_types! {
-    pub const UnitWeightCost: Weight = Weight::from_ref_time(1_000_000_000);
+    pub const UnitWeightCost: u64 = 1_000_000_000;
     // Used in native traders
     // This might be able to skipped.
     // We have to use `here()` because of reanchoring logic
@@ -209,7 +217,12 @@ pub type MultiAssetTransactor = MultiAssetAdapter<
     // Used when the incoming asset is a fungible concrete asset matching the given location or name:
     IsNativeConcrete<SelfReserve>,
     // Used to match incoming assets which are not the native asset.
-    ConvertedConcreteAssetId<MantaAssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
+    ConvertedConcreteAssetId<
+        CalamariAssetId,
+        Balance,
+        AssetIdLocationConvert<AssetManager>,
+        JustTry,
+    >,
 >;
 
 pub type XcmRouter = super::ParachainXcmRouter<MsgQueue>;
@@ -269,7 +282,12 @@ impl TakeRevenue for XcmNativeFeeToTreasury {
 pub type XcmFeesToAccount = manta_primitives::xcm::XcmFeesToAccount<
     AccountId,
     Assets,
-    ConvertedConcreteAssetId<MantaAssetId, Balance, AssetIdLocationConvert<AssetManager>, JustTry>,
+    ConvertedConcreteAssetId<
+        CalamariAssetId,
+        Balance,
+        AssetIdLocationConvert<AssetManager>,
+        JustTry,
+    >,
     XcmFeesAccount,
 >;
 
@@ -285,11 +303,7 @@ impl Config for XcmExecutorConfig {
     type IsTeleporter = ();
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = Barrier;
-    type Weigher = WeightInfoBounds<
-        manta_runtime::weights::xcm::MantaXcmWeight<RuntimeCall>,
-        RuntimeCall,
-        MaxInstructions,
-    >;
+    type Weigher = WeightInfoBounds<RuntimeXcmWeight, RuntimeCall, MaxInstructions>;
     // Trader is the means to purchasing weight credit for XCM execution.
     // We define two traders:
     // The first one will charge parachain's native currency, who's `MultiLocation`
@@ -394,10 +408,14 @@ pub mod mock_msg_queue {
                     let location = (1, Parachain(sender.into()));
                     match T::XcmExecutor::execute_xcm(location, xcm, max_weight.ref_time()) {
                         Outcome::Error(e) => (Err(e), Event::Fail(Some(hash), e)),
-                        Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
+                        Outcome::Complete(w) => {
+                            (Ok(Weight::from_ref_time(w)), Event::Success(Some(hash)))
+                        }
                         // As far as the caller is concerned, this was dispatched without error, so
                         // we just report the weight used.
-                        Outcome::Incomplete(w, e) => (Ok(w), Event::Fail(Some(hash), e)),
+                        Outcome::Incomplete(w, e) => {
+                            (Ok(Weight::from_ref_time(w)), Event::Fail(Some(hash), e))
+                        }
                     }
                 }
                 Err(()) => (
@@ -406,7 +424,7 @@ pub mod mock_msg_queue {
                 ),
             };
             Self::deposit_event(event);
-            Ok(Weight::from_ref_time(result?))
+            result
         }
     }
 
@@ -493,11 +511,7 @@ impl pallet_xcm::Config for Runtime {
     // Do not allow teleports
     type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Nothing;
-    type Weigher = WeightInfoBounds<
-        manta_runtime::weights::xcm::MantaXcmWeight<RuntimeCall>,
-        RuntimeCall,
-        MaxInstructions,
-    >;
+    type Weigher = WeightInfoBounds<RuntimeXcmWeight, RuntimeCall, MaxInstructions>;
     type LocationInverter = LocationInverter<Ancestry>;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
@@ -515,19 +529,19 @@ pub(crate) fn set_current_xcm_version(version: XcmVersion) {
     CurrentXcmVersion::set(version);
 }
 
-pub struct MantaAssetRegistry;
-impl BalanceType for MantaAssetRegistry {
+pub struct CalamariAssetRegistry;
+impl BalanceType for CalamariAssetRegistry {
     type Balance = Balance;
 }
-impl AssetIdType for MantaAssetRegistry {
-    type AssetId = MantaAssetId;
+impl AssetIdType for CalamariAssetRegistry {
+    type AssetId = CalamariAssetId;
 }
-impl AssetRegistry for MantaAssetRegistry {
+impl AssetRegistry for CalamariAssetRegistry {
     type Metadata = AssetStorageMetadata;
     type Error = sp_runtime::DispatchError;
 
     fn create_asset(
-        asset_id: MantaAssetId,
+        asset_id: CalamariAssetId,
         metadata: AssetStorageMetadata,
         min_balance: Balance,
         is_sufficient: bool,
@@ -551,7 +565,7 @@ impl AssetRegistry for MantaAssetRegistry {
     }
 
     fn update_asset_metadata(
-        asset_id: &MantaAssetId,
+        asset_id: &CalamariAssetId,
         metadata: AssetStorageMetadata,
     ) -> DispatchResult {
         Assets::force_set_metadata(
@@ -566,15 +580,15 @@ impl AssetRegistry for MantaAssetRegistry {
 }
 
 parameter_types! {
-    pub const StartNonNativeAssetId: MantaAssetId = 8;
-    pub const NativeAssetId: MantaAssetId = 1;
+    pub const StartNonNativeAssetId: CalamariAssetId = 8;
+    pub const NativeAssetId: CalamariAssetId = 1;
     pub NativeAssetLocation: AssetLocation = AssetLocation(
         VersionedMultiLocation::V1(SelfReserve::get()));
     pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
         metadata: AssetStorageMetadata {
             name: b"ParaAToken".to_vec(),
             symbol: b"ParaA".to_vec(),
-            decimals: MANTA_DECIMAL,
+            decimals: CALAMARI_DECIMAL,
             is_frozen: false,
         },
         min_balance: 1,
@@ -590,7 +604,7 @@ impl LocationType for ParachainAssetConfig {
     type Location = AssetLocation;
 }
 impl AssetIdType for ParachainAssetConfig {
-    type AssetId = MantaAssetId;
+    type AssetId = CalamariAssetId;
 }
 impl BalanceType for ParachainAssetConfig {
     type Balance = Balance;
@@ -602,13 +616,13 @@ impl AssetConfig<Runtime> for ParachainAssetConfig {
     type NativeAssetLocation = NativeAssetLocation;
     type NativeAssetMetadata = NativeAssetMetadata;
     type StorageMetadata = AssetStorageMetadata;
-    type AssetRegistry = MantaAssetRegistry;
+    type AssetRegistry = CalamariAssetRegistry;
     type FungibleLedger = NativeAndNonNative<Runtime, ParachainAssetConfig, Balances, Assets>;
 }
 
 impl pallet_asset_manager::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type AssetId = MantaAssetId;
+    type AssetId = CalamariAssetId;
     type Balance = Balance;
     type Location = AssetLocation;
     type AssetConfig = ParachainAssetConfig;
@@ -626,15 +640,15 @@ impl cumulus_pallet_xcm::Config for Runtime {
 // We wrap AssetId for XToken
 #[derive(Clone, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
 pub enum CurrencyId {
-    MantaCurrency(MantaAssetId),
+    MantaCurrency(CalamariAssetId),
 }
 
 /// Maps a xTokens CurrencyId to a xcm MultiLocation implemented by some asset manager
 pub struct CurrencyIdtoMultiLocation<AssetXConverter>(sp_std::marker::PhantomData<AssetXConverter>);
-impl<AssetXConverter> Convert<CurrencyId, Option<MultiLocation>>
+impl<AssetXConverter> sp_runtime::traits::Convert<CurrencyId, Option<MultiLocation>>
     for CurrencyIdtoMultiLocation<AssetXConverter>
 where
-    AssetXConverter: xcm_executor::traits::Convert<MultiLocation, MantaAssetId>,
+    AssetXConverter: xcm_executor::traits::Convert<MultiLocation, CalamariAssetId>,
 {
     fn convert(currency: CurrencyId) -> Option<MultiLocation> {
         match currency {
@@ -651,14 +665,6 @@ parameter_types! {
     pub const MaxAssetsForTransfer: usize = 3;
 }
 
-impl Contains<CurrencyId> for AssetManager {
-    fn contains(id: &CurrencyId) -> bool {
-        let asset_id =
-            CurrencyIdtoMultiLocation::<AssetIdLocationConvert<AssetManager>>::convert(id.clone());
-        Self::check_outgoing_assets_filter(&asset_id)
-    }
-}
-
 // The XCM message wrapper wrapper
 impl orml_xtokens::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
@@ -668,17 +674,13 @@ impl orml_xtokens::Config for Runtime {
     type CurrencyIdConvert = CurrencyIdtoMultiLocation<AssetIdLocationConvert<AssetManager>>;
     type XcmExecutor = XcmExecutor<XcmExecutorConfig>;
     type SelfLocation = SelfReserve;
-    type Weigher = WeightInfoBounds<
-        manta_runtime::weights::xcm::MantaXcmWeight<RuntimeCall>,
-        RuntimeCall,
-        MaxInstructions,
-    >;
+    type Weigher = WeightInfoBounds<RuntimeXcmWeight, RuntimeCall, MaxInstructions>;
     type BaseXcmWeight = BaseXcmWeight;
     type LocationInverter = LocationInverter<Ancestry>;
     type MaxAssetsForTransfer = MaxAssetsForTransfer;
     type MinXcmFee = AssetManager;
     type MultiLocationsFilter = AssetManager;
-    type OutgoingAssetsFilter = AssetManager;
+    type OutgoingAssetsFilter = ();
     type ReserveProvider = orml_traits::location::AbsoluteReserveProvider;
 }
 
@@ -764,8 +766,8 @@ pub(crate) fn create_asset_location(parents: u8, para_id: u32) -> AssetLocation 
 fn insert_dummy_data(
     dummy_mult_loc: MultiLocation,
     dummy_asset_metadata: &AssetRegistryMetadata<Balance>,
-    start_from: MantaAssetId,
-    insert_until: MantaAssetId,
+    start_from: CalamariAssetId,
+    insert_until: CalamariAssetId,
 ) {
     let mut next_asset_id = start_from;
     let mut next_dummy_mult_loc = dummy_mult_loc;
@@ -785,7 +787,7 @@ pub(crate) fn register_assets_on_parachain<P>(
     asset_metadata: &AssetRegistryMetadata<Balance>,
     units_per_second: Option<u128>,
     mint_asset: Option<(AccountId, Balance, bool, bool)>,
-) -> MantaAssetId
+) -> CalamariAssetId
 where
     P: XcmpMessageHandlerT + DmpMessageHandlerT + TestExt,
 {
