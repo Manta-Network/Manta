@@ -192,7 +192,6 @@ try-runtime = [
   'pallet-manta-sbt/try-runtime',
   'pallet-sudo/try-runtime',
   "zenlink-protocol/try-runtime",
-  #	"merkle-distributor/try-runtime",
   "zenlink-stable-amm/try-runtime",
   "zenlink-swap-router/try-runtime",
 ]
@@ -270,4 +269,6 @@ std = [
   "zenlink-stable-amm/std",
   "zenlink-stable-amm-runtime-api/std",
   "zenlink-swap-router/std",
+  "manta-farming/std",
+  "manta-farming-rpc-runtime-api/std"
 ]

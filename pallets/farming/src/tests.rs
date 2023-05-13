@@ -476,7 +476,7 @@ fn reset() {
 #[test]
 fn create_farming_pool() {
     ExtBuilder::default()
-        // .one_hundred_for_alice_n_bob()
+        .one_hundred_for_alice_n_bob()
         .build()
         .execute_with(|| {
             let mut tokens_proportion_map = BTreeMap::<CurrencyIdOf<Runtime>, Perbill>::new();

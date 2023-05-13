@@ -17,7 +17,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg(feature = "runtime-benchmarks")]
 
-use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
+use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, vec, whitelisted_caller};
 use frame_support::{assert_ok, sp_runtime::traits::UniqueSaturatedFrom};
 use frame_system::{Pallet as System, RawOrigin};
 
@@ -61,7 +61,7 @@ benchmarks! {
             BlockNumberFor::<T>::from(6u32),
             5,
         ));
-        let charge_rewards = vec![(ksm_asset_id,BalanceOf::<T>::unique_saturated_from(300000u128))];
+        let charge_rewards = vec![(ksm_asset_id, BalanceOf::<T>::unique_saturated_from(300000u128))];
         assert_ok!(Farming::<T>::charge(RawOrigin::Signed(caller.clone()).into(), 0, charge_rewards));
     }: _(RawOrigin::Signed(caller.clone()), 0, token_amount, None)
 
@@ -137,3 +137,11 @@ benchmarks! {
         // System::<T>::set_block_number(System::<T>::block_number() + BlockNumberFor::<T>::from(10u32));
     }: _(RawOrigin::Signed(caller.clone()), 0)
 }
+
+impl_benchmark_test_suite!(
+    Farming,
+    crate::mock::ExtBuilder::default()
+        .one_hundred_precision_for_each_currency_type_for_whitelist_account()
+        .build(),
+    crate::mock::Runtime
+);

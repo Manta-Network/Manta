@@ -308,6 +308,18 @@ impl Default for ExtBuilder {
 }
 
 impl ExtBuilder {
+    #[cfg(feature = "runtime-benchmarks")]
+    pub fn one_hundred_precision_for_each_currency_type_for_whitelist_account(self) -> Self {
+        use frame_benchmarking::whitelisted_caller;
+        let whitelist_caller: AccountId = whitelisted_caller();
+        log::info!("whitelist_caller:{:?}", whitelist_caller.clone());
+        self.balances(vec![(
+            whitelist_caller.clone(),
+            KSM,
+            1000_000_000_000_000_000,
+        )])
+    }
+
     pub fn balances(
         mut self,
         endowed_accounts: Vec<(AccountId, CalamariAssetId, Balance)>,
@@ -321,8 +333,8 @@ impl ExtBuilder {
             (ALICE, 1, 100),
             (BOB, 1, 100),
             (CHARLIE, 1, 100),
-            // (ALICE, KSM, 3000),
-            // (BOB, KSM, 10000000),
+            (ALICE, KSM, 3000),
+            (BOB, KSM, 10000000),
         ])
     }
 
@@ -331,21 +343,24 @@ impl ExtBuilder {
             .build_storage::<Runtime>()
             .unwrap();
 
+        let initial_asset_accounts = self
+            .endowed_accounts
+            .clone()
+            .into_iter()
+            .filter(|(_, asset_id, _)| *asset_id != 1)
+            .map(|(account_id, asset_id, initial_balance)| (asset_id, account_id, initial_balance))
+            .collect::<Vec<_>>();
+
         let config: pallet_assets::GenesisConfig<Runtime> = pallet_assets::GenesisConfig {
             assets: vec![
                 // id, owner, is_sufficient, min_balance
-                (8, ALICE, true, 1),
+                (KSM, ALICE, true, 1),
             ],
             metadata: vec![
                 // id, name, symbol, decimals
-                (8, "KSM".into(), "Kusama".into(), 12),
+                (KSM, "KSM".into(), "Kusama".into(), 12),
             ],
-            accounts: vec![
-                // id, account_id, balance
-                (8, ALICE, 3000),
-                (8, BOB, 10_000_000),
-                // (8, TREASURY_ACCOUNT, 1_000_000_000),
-            ],
+            accounts: initial_asset_accounts,
         };
         config.assimilate_storage(&mut t).unwrap();
 

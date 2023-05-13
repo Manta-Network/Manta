@@ -5481,6 +5481,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex-literal",
+ "log",
  "manta-primitives",
  "orml-traits",
  "pallet-asset-manager",

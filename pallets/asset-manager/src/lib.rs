@@ -162,7 +162,7 @@ pub mod pallet {
         }
 
         fn lp_asset_pool(pool_id: &Self::AssetId) -> Option<Self::AssetId> {
-            PoolIdLp::<T>::get(pool_id).and_then(|_| Some(pool_id.clone()))
+            PoolIdLp::<T>::get(pool_id).map(|_| *pool_id)
         }
     }
 

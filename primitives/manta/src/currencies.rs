@@ -92,7 +92,8 @@ where
         if currency_id == A::NativeAssetId::get() {
             Native::free_balance(who)
         } else {
-            NonNative::reducible_balance(currency_id, who, true)
+            // NonNative::reducible_balance(currency_id, who, true)
+            NonNative::balance(currency_id, who)
         }
     }
 

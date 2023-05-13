@@ -167,12 +167,10 @@ impl GenerateLpAssetId<ZenlinkAssetId> for AssetManagerLpGenerate {
         }
         let lp_asset_id: Option<DolphinAssetId> =
             <AssetManager as AssetIdLpMap>::lp_asset_id(&asset_id_0.unwrap(), &asset_id_1.unwrap());
-        lp_asset_id.and_then(|lp_asset| {
-            Some(ZenlinkAssetId {
-                chain_id: SelfParaId::get(),
-                asset_type: LOCAL,
-                asset_index: lp_asset as u64,
-            })
+        lp_asset_id.map(|lp_asset| ZenlinkAssetId {
+            chain_id: SelfParaId::get(),
+            asset_type: LOCAL,
+            asset_index: lp_asset as u64,
         })
     }
 }

@@ -389,6 +389,8 @@ pub mod pallet {
             rewards
                 .iter()
                 .try_for_each(|(reward_currency, reward)| -> DispatchResult {
+                    // let bal = T::MultiCurrency::free_balance(reward_currency.clone(), &exchanger);
+                    // log::info!("token:{:?},balance:{:?},ex:{:?}", reward_currency.clone(), bal, &exchanger);
                     T::MultiCurrency::transfer(
                         *reward_currency,
                         &exchanger,
@@ -434,6 +436,8 @@ pub mod pallet {
             let native_amount = pool_info.basic_token.1.saturating_reciprocal_mul(add_value);
             pool_info.tokens_proportion.iter().try_for_each(
                 |(token, proportion)| -> DispatchResult {
+                    // let bal = T::MultiCurrency::free_balance(token.clone(), &exchanger);
+                    // log::info!("token:{:?},balance:{:?},ex:{:?}", token.clone(), bal, &exchanger);
                     T::MultiCurrency::transfer(
                         *token,
                         &exchanger,
