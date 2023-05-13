@@ -72,4 +72,4 @@ pub type DigestItem = generic::DigestItem;
 pub type Moment = u64;
 
 /// DEX pool ID.
-pub type PoolId = u32;
+pub type PoolId = u128;

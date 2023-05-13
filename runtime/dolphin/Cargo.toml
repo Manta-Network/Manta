@@ -90,6 +90,8 @@ xcm-executor = { git = 'https://github.com/paritytech/polkadot.git', default-fea
 
 # Self dependencies
 manta-collator-selection = { path = '../../pallets/collator-selection', default-features = false }
+manta-farming = { path = '../../pallets/farming', default-features = false }
+manta-farming-rpc-runtime-api = { path = '../../pallets/farming/rpc/runtime-api', default-features = false }
 manta-primitives = { path = '../../primitives/manta', default-features = false }
 manta-support = { package = "pallet-manta-support", path = "../../pallets/manta-support", default-features = false }
 pallet-asset-manager = { path = '../../pallets/asset-manager', default-features = false }
@@ -98,8 +100,6 @@ pallet-manta-sbt = { path = '../../pallets/manta-sbt', default-features = false,
 pallet-tx-pause = { path = '../../pallets/tx-pause', default-features = false }
 runtime-common = { path = '../common', default-features = false }
 session-key-primitives = { path = '../../primitives/session-keys', default-features = false }
-manta-farming = { path = '../../pallets/farming', default-features = false }
-manta-farming-rpc-runtime-api = { path = '../../pallets/farming/rpc/runtime-api', default-features = false }
 
 # Third party (vendored) dependencies
 orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.37" }
@@ -192,9 +192,9 @@ try-runtime = [
   'pallet-manta-sbt/try-runtime',
   'pallet-sudo/try-runtime',
   "zenlink-protocol/try-runtime",
-#	"merkle-distributor/try-runtime",
-	"zenlink-stable-amm/try-runtime",
-	"zenlink-swap-router/try-runtime",
+  #	"merkle-distributor/try-runtime",
+  "zenlink-stable-amm/try-runtime",
+  "zenlink-swap-router/try-runtime",
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
@@ -266,9 +266,9 @@ std = [
   'pallet-assets/std',
   'pallet-manta-pay/std',
   "zenlink-protocol/std",
-	"zenlink-protocol-runtime-api/std",
-	"zenlink-stable-amm/std",
-	"zenlink-stable-amm-runtime-api/std",
-	"zenlink-swap-router/std",
-#	"merkle-distributor/std",
+  "zenlink-protocol-runtime-api/std",
+  "zenlink-stable-amm/std",
+  "zenlink-stable-amm-runtime-api/std",
+  "zenlink-swap-router/std",
+  #	"merkle-distributor/std",
 ]

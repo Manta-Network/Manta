@@ -17,7 +17,7 @@
 //! Asset Utilities
 use crate::{
     constants::TEST_DEFAULT_ASSET_ED,
-    types::{Balance as MantaBalance, PoolId},
+    types::Balance as MantaBalance,
 };
 use alloc::vec::Vec;
 use codec::{Decode, Encode};
@@ -298,7 +298,7 @@ pub trait AssetIdLpMap: AssetIdType {
     fn lp_asset_id(asset_id0: &Self::AssetId, asset_id1: &Self::AssetId) -> Option<Self::AssetId>;
 
     /// Returns the `lp_asset_id` by PoolId
-    fn lp_asset_pool(pool_id: &PoolId) -> Option<Self::AssetId>;
+    fn lp_asset_pool(pool_id: &Self::AssetId) -> Option<Self::AssetId>;
 }
 
 /// Defines the units per second charged given an `AssetId`.

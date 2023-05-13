@@ -34,14 +34,15 @@ benchmarks! {
         let basic_rewards = vec![(KSM, token_amount)];
         let gauge_basic_rewards = vec![(KSM, token_amount)];
     }: _(RawOrigin::Root,
-    tokens_proportion.clone(),
-    basic_rewards.clone(),
-    Some((KSM, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
-    BalanceOf::<T>::unique_saturated_from(0u128),
-    BlockNumberFor::<T>::from(0u32),
-    BlockNumberFor::<T>::from(7u32),
-    BlockNumberFor::<T>::from(6u32),
-    5)
+        tokens_proportion.clone(),
+        basic_rewards.clone(),
+        Some((KSM, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
+        BalanceOf::<T>::unique_saturated_from(0u128),
+        BlockNumberFor::<T>::from(0u32),
+        BlockNumberFor::<T>::from(7u32),
+        BlockNumberFor::<T>::from(6u32),
+        5
+    )
 
     deposit {
         let caller: T::AccountId = whitelisted_caller();

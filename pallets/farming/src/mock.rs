@@ -24,31 +24,41 @@ use frame_support::{
     traits::{GenesisBuild, Nothing},
     PalletId,
 };
-use frame_system::EnsureSignedBy;
-use node_primitives::{CurrencyId, TokenSymbol};
-use sp_core::H256;
+use frame_support::dispatch::DispatchResult;
+use frame_support::traits::AsEnsureOriginWithArg;
+use frame_system::{EnsureNever, EnsureRoot, EnsureSignedBy};
+// use manta_primitives::{CurrencyId, TokenSymbol};
+use sp_core::{ConstU32, H256};
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
     AccountId32,
 };
+use manta_primitives::{
+    assets::{AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata, AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative},
+    constants::{ASSET_MANAGER_PALLET_ID, ASSET_STRING_LIMIT},
+    currencies::Currencies,
+    types::CalamariAssetId
+};
+use manta_primitives::types::DolphinAssetId;
+use xcm::{
+    prelude::{Parachain, X1},
+    v2::MultiLocation,
+    VersionedMultiLocation,
+};
 
-use crate as bifrost_farming;
-
-pub type BlockNumber = u64;
-pub type Amount = i128;
-pub type Balance = u64;
+use crate as manta_farming;
 
 pub type AccountId = AccountId32;
-pub const BNC: CurrencyId = CurrencyId::Native(TokenSymbol::ASG);
-pub const DOT: CurrencyId = CurrencyId::Token(TokenSymbol::DOT);
-pub const vDOT: CurrencyId = CurrencyId::VToken(TokenSymbol::DOT);
-pub const KSM: CurrencyId = CurrencyId::Token(TokenSymbol::KSM);
-pub const vsKSM: CurrencyId = CurrencyId::VSToken(TokenSymbol::KSM);
+pub type Amount = i128;
+pub type Balance = u128;
+pub type BlockNumber = u64;
+
+pub const KSM: DolphinAssetId = 8;
+
 pub const ALICE: AccountId = AccountId32::new([0u8; 32]);
 pub const BOB: AccountId = AccountId32::new([1u8; 32]);
 pub const CHARLIE: AccountId = AccountId32::new([3u8; 32]);
-pub const vsBond: CurrencyId = CurrencyId::VSBond(TokenSymbol::BNC, 2001, 0, 8);
 pub const TREASURY_ACCOUNT: AccountId = AccountId32::new([9u8; 32]);
 
 frame_support::construct_runtime!(
@@ -58,10 +68,10 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Tokens: orml_tokens::{Pallet, Call, Storage, Config<T>, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Currencies: orml_currencies::{Pallet, Call, Storage},
-        Farming: bifrost_farming::{Pallet, Call, Storage, Event<T>}
+        Assets: pallet_assets::{Pallet, Storage, Config<T>, Event<T>},
+        AssetManager: pallet_asset_manager::{Pallet, Call, Storage, Event<T>},
+        Farming: manta_farming::{Pallet, Call, Storage, Event<T>}
     }
 );
 
@@ -99,23 +109,8 @@ impl frame_system::Config for Runtime {
 }
 
 parameter_types! {
-    pub const GetNativeCurrencyId: CurrencyId = CurrencyId::Native(TokenSymbol::ASG);
-}
-
-pub type AdaptedBasicCurrency =
-    orml_currencies::BasicCurrencyAdapter<Runtime, Balances, Amount, BlockNumber>;
-
-impl orml_currencies::Config for Runtime {
-    type GetNativeCurrencyId = GetNativeCurrencyId;
-    type MultiCurrency = Tokens;
-    type NativeCurrency = AdaptedBasicCurrency;
-    type WeightInfo = ();
-}
-
-parameter_types! {
     pub const ExistentialDeposit: Balance = 1;
 }
-
 impl pallet_balances::Config for Runtime {
     type AccountStore = frame_system::Pallet<Runtime>;
     type Balance = Balance;
@@ -128,23 +123,152 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = ();
 }
 
-orml_traits::parameter_type_with_key! {
-    pub ExistentialDeposits: |_currency_id: CurrencyId| -> Balance {
-        0
-    };
+parameter_types! {
+    // Does not really matter as this will be only called by root
+    pub const AssetDeposit: Balance = 0;
+    pub const AssetAccountDeposit: Balance = 0;
+    pub const ApprovalDeposit: Balance = 0;
+    pub const AssetsStringLimit: u32 = 50;
+    pub const MetadataDepositBase: Balance = 0;
+    pub const MetadataDepositPerByte: Balance = 0;
 }
-impl orml_tokens::Config for Runtime {
-    type Amount = i128;
-    type Balance = Balance;
-    type CurrencyId = CurrencyId;
-    type DustRemovalWhitelist = Nothing;
+
+impl pallet_assets::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type ExistentialDeposits = ExistentialDeposits;
-    type MaxLocks = ();
-    type MaxReserves = ();
-    type ReserveIdentifier = [u8; 8];
+    type Balance = Balance;
+    type AssetId = CalamariAssetId;
+    type Currency = Balances;
+    type ForceOrigin = EnsureRoot<AccountId32>;
+    type AssetDeposit = AssetDeposit;
+    type AssetAccountDeposit = AssetAccountDeposit;
+    type MetadataDepositBase = MetadataDepositBase;
+    type MetadataDepositPerByte = MetadataDepositPerByte;
+    type ApprovalDeposit = ApprovalDeposit;
+    type StringLimit = AssetsStringLimit;
+    type Freezer = ();
+    type Extra = ();
+    type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    type RemoveItemsLimit = ConstU32<1000>;
+    type AssetIdParameter = CalamariAssetId;
+    type CreateOrigin = AsEnsureOriginWithArg<EnsureNever<AccountId32>>;
+    type CallbackHandle = ();
+    #[cfg(feature = "runtime-benchmarks")]
+    type BenchmarkHelper = ();
+}
+
+pub struct MantaAssetRegistry;
+impl BalanceType for MantaAssetRegistry {
+    type Balance = Balance;
+}
+impl AssetIdType for MantaAssetRegistry {
+    type AssetId = CalamariAssetId;
+}
+impl AssetRegistry for MantaAssetRegistry {
+    type Metadata = AssetStorageMetadata;
+    type Error = sp_runtime::DispatchError;
+
+    fn create_asset(
+        asset_id: CalamariAssetId,
+        metadata: AssetStorageMetadata,
+        min_balance: Balance,
+        is_sufficient: bool,
+    ) -> DispatchResult {
+        Assets::force_create(
+            RuntimeOrigin::root(),
+            asset_id,
+            AssetManager::account_id(),
+            is_sufficient,
+            min_balance,
+        )?;
+
+        Assets::force_set_metadata(
+            RuntimeOrigin::root(),
+            asset_id,
+            metadata.name,
+            metadata.symbol,
+            metadata.decimals,
+            metadata.is_frozen,
+        )?;
+
+        Assets::force_asset_status(
+            RuntimeOrigin::root(),
+            asset_id,
+            AssetManager::account_id(),
+            AssetManager::account_id(),
+            AssetManager::account_id(),
+            AssetManager::account_id(),
+            min_balance,
+            is_sufficient,
+            metadata.is_frozen,
+        )
+    }
+
+    fn update_asset_metadata(
+        asset_id: &CalamariAssetId,
+        metadata: AssetStorageMetadata,
+    ) -> DispatchResult {
+        Assets::force_set_metadata(
+            RuntimeOrigin::root(),
+            *asset_id,
+            metadata.name,
+            metadata.symbol,
+            metadata.decimals,
+            metadata.is_frozen,
+        )
+    }
+}
+
+parameter_types! {
+    pub const DummyAssetId: CalamariAssetId = 0;
+    pub const NativeAssetId: CalamariAssetId = 1;
+    pub const StartNonNativeAssetId: CalamariAssetId = 8;
+    pub NativeAssetLocation: AssetLocation = AssetLocation(
+        VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(1024)))));
+    pub NativeAssetMetadata: AssetRegistryMetadata<Balance> = AssetRegistryMetadata {
+        metadata: AssetStorageMetadata {
+            name: b"Calamari".to_vec(),
+            symbol: b"KAR".to_vec(),
+            decimals: 12,
+            is_frozen: false,
+        },
+        min_balance: 1u128,
+        is_sufficient: true,
+    };
+    pub const AssetManagerPalletId: PalletId = ASSET_MANAGER_PALLET_ID;
+}
+
+/// AssetConfig implementations for this runtime
+#[derive(Clone, Eq, PartialEq)]
+pub struct MantaAssetConfig;
+impl LocationType for MantaAssetConfig {
+    type Location = AssetLocation;
+}
+impl AssetIdType for MantaAssetConfig {
+    type AssetId = CalamariAssetId;
+}
+impl BalanceType for MantaAssetConfig {
+    type Balance = Balance;
+}
+impl AssetConfig<Runtime> for MantaAssetConfig {
+    type NativeAssetId = NativeAssetId;
+    type StartNonNativeAssetId = StartNonNativeAssetId;
+    type AssetRegistryMetadata = AssetRegistryMetadata<Balance>;
+    type NativeAssetLocation = NativeAssetLocation;
+    type NativeAssetMetadata = NativeAssetMetadata;
+    type StorageMetadata = AssetStorageMetadata;
+    type AssetRegistry = MantaAssetRegistry;
+    type FungibleLedger = NativeAndNonNative<Runtime, MantaAssetConfig, Balances, Assets>;
+}
+
+impl pallet_asset_manager::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type AssetId = CalamariAssetId;
+    type Balance = Balance;
+    type Location = AssetLocation;
+    type AssetConfig = MantaAssetConfig;
+    type ModifierOrigin = EnsureRoot<AccountId32>;
+    type PalletId = AssetManagerPalletId;
     type WeightInfo = ();
-    type CurrencyHooks = ();
 }
 
 parameter_types! {
@@ -157,9 +281,12 @@ ord_parameter_types! {
     pub const One: AccountId = ALICE;
 }
 
-impl bifrost_farming::Config for Runtime {
+type MantaCurrencies = Currencies<Runtime, MantaAssetConfig, Balances, Assets>;
+
+impl manta_farming::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type MultiCurrency = Currencies;
+    type CurrencyId = CalamariAssetId;
+    type MultiCurrency = MantaCurrencies;
     type ControlOrigin = EnsureSignedBy<One, AccountId>;
     type TreasuryAccount = TreasuryAccount;
     type Keeper = FarmingKeeperPalletId;
@@ -168,7 +295,7 @@ impl bifrost_farming::Config for Runtime {
 }
 
 pub struct ExtBuilder {
-    endowed_accounts: Vec<(AccountId, CurrencyId, Balance)>,
+    endowed_accounts: Vec<(AccountId, CalamariAssetId, Balance)>,
 }
 
 impl Default for ExtBuilder {
@@ -180,30 +307,19 @@ impl Default for ExtBuilder {
 }
 
 impl ExtBuilder {
-    pub fn balances(mut self, endowed_accounts: Vec<(AccountId, CurrencyId, Balance)>) -> Self {
+    pub fn balances(mut self, endowed_accounts: Vec<(AccountId, CalamariAssetId, Balance)>) -> Self {
         self.endowed_accounts = endowed_accounts;
         self
     }
 
     pub fn one_hundred_for_alice_n_bob(self) -> Self {
         self.balances(vec![
-            (ALICE, BNC, 100),
-            (BOB, BNC, 100),
-            (CHARLIE, BNC, 100),
-            (ALICE, DOT, 100),
-            (ALICE, vDOT, 100),
-            (ALICE, KSM, 3000),
-            (BOB, vsKSM, 100),
-            (BOB, KSM, 10000000),
-            (BOB, vsBond, 100),
+            (ALICE, 1, 100),
+            (BOB, 1, 100),
+            (CHARLIE, 1, 100),
+            // (ALICE, KSM, 3000),
+            // (BOB, KSM, 10000000),
         ])
-    }
-
-    #[cfg(feature = "runtime-benchmarks")]
-    pub fn one_hundred_precision_for_each_currency_type_for_whitelist_account(self) -> Self {
-        use frame_benchmarking::whitelisted_caller;
-        let whitelist_caller: AccountId = whitelisted_caller();
-        self.balances(vec![(whitelist_caller.clone(), KSM, 100_000_000_000_000)])
     }
 
     pub fn build(self) -> sp_io::TestExternalities {
@@ -211,29 +327,42 @@ impl ExtBuilder {
             .build_storage::<Runtime>()
             .unwrap();
 
+        let config: pallet_assets::GenesisConfig<Runtime> = pallet_assets::GenesisConfig {
+            assets: vec![
+                // id, owner, is_sufficient, min_balance
+                (8, ALICE, true, 1),
+            ],
+            metadata: vec![
+                // id, name, symbol, decimals
+                (8, "KSM".into(), "Kusama".into(), 12),
+            ],
+            accounts: vec![
+                // id, account_id, balance
+                (8, ALICE, 3000),
+                (8, BOB, 10_000_000),
+                // (8, TREASURY_ACCOUNT, 1_000_000_000),
+            ],
+        };
+        config.assimilate_storage(&mut t).unwrap();
+
+        pallet_asset_manager::GenesisConfig::<Runtime> {
+            start_id: <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+        }
+            .assimilate_storage(&mut t)
+            .unwrap();
+
         pallet_balances::GenesisConfig::<Runtime> {
             balances: self
                 .endowed_accounts
                 .clone()
                 .into_iter()
-                .filter(|(_, currency_id, _)| *currency_id == BNC)
+                .filter(|(_, asset_id, _)| *asset_id == 1)
                 .map(|(account_id, _, initial_balance)| (account_id, initial_balance))
                 .collect::<Vec<_>>(),
         }
         .assimilate_storage(&mut t)
         .unwrap();
 
-        orml_tokens::GenesisConfig::<Runtime> {
-            balances: self
-                .endowed_accounts
-                .clone()
-                .into_iter()
-                .filter(|(_, currency_id, _)| *currency_id != BNC)
-                .collect::<Vec<_>>(),
-        }
-        .assimilate_storage(&mut t)
-        .unwrap();
-
-        t.into()
+        sp_io::TestExternalities::new(t)
     }
 }

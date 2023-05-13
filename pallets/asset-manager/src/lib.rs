@@ -55,7 +55,6 @@ pub mod pallet {
             self, AssetConfig, AssetIdLocationMap, AssetIdLpMap, AssetIdType, AssetMetadata,
             AssetRegistry, FungibleLedger, LocationType,
         },
-        types::PoolId,
     };
     use orml_traits::GetByKey;
     use sp_runtime::{
@@ -164,8 +163,8 @@ pub mod pallet {
             AssetIdLp::<T>::get((asset_id0, asset_id1))
         }
 
-        fn lp_asset_pool(pool_id: &PoolId) -> Option<Self::AssetId> {
-            PoolIdLp::<T>::get(pool_id)
+        fn lp_asset_pool(pool_id: &Self::AssetId) -> Option<Self::AssetId> {
+            PoolIdLp::<T>::get(pool_id).and_then(|_| Some(pool_id.clone()))
         }
     }
 
@@ -369,7 +368,7 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn pool_id_lp)]
-    pub(super) type PoolIdLp<T: Config> = StorageMap<_, Blake2_128Concat, PoolId, T::AssetId>;
+    pub(super) type PoolIdLp<T: Config> = StorageMap<_, Blake2_128Concat, T::AssetId, (T::AssetId, T::AssetId)>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
@@ -402,44 +401,6 @@ pub mod pallet {
             }
 
             Self::deposit_event(Event::<T>::AssetRegistered {
-                asset_id,
-                location: location.clone(),
-                metadata: metadata.clone(),
-            });
-            Ok(())
-        }
-
-        #[pallet::call_index(6)]
-        #[pallet::weight(T::WeightInfo::register_asset())]
-        #[transactional]
-        pub fn register_lp_asset(
-            origin: OriginFor<T>,
-            pool_id: PoolId,
-            asset_0: T::AssetId,
-            asset_1: T::AssetId,
-            location: T::Location,
-            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
-        ) -> DispatchResult {
-            T::ModifierOrigin::ensure_origin(origin)?;
-
-            let (asset_id0, asset_id1) = Self::sort_asset_id(asset_0, asset_1);
-            ensure!(
-                !AssetIdLp::<T>::contains_key((&asset_id0, &asset_id1)),
-                Error::<T>::AssetAlreadyRegistered
-            );
-            ensure!(
-                !PoolIdLp::<T>::contains_key(&pool_id),
-                Error::<T>::AssetAlreadyRegistered
-            );
-
-            let asset_id = Self::do_register_asset(&location, &metadata)?;
-
-            AssetIdLp::<T>::insert((asset_id0, asset_id1), asset_id);
-            PoolIdLp::<T>::insert(pool_id, asset_id);
-
-            Self::deposit_event(Event::<T>::LPAssetRegistered {
-                asset_id0,
-                asset_id1,
                 asset_id,
                 location: location.clone(),
                 metadata: metadata.clone(),
@@ -619,6 +580,39 @@ pub mod pallet {
             Self::deposit_event(Event::<T>::MinXcmFeeUpdated {
                 reserve_chain,
                 min_xcm_fee,
+            });
+            Ok(())
+        }
+
+        #[pallet::call_index(6)]
+        #[pallet::weight(T::WeightInfo::register_asset())]
+        #[transactional]
+        pub fn register_lp_asset(
+            origin: OriginFor<T>,
+            asset_0: T::AssetId,
+            asset_1: T::AssetId,
+            location: T::Location,
+            metadata: <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata,
+        ) -> DispatchResult {
+            T::ModifierOrigin::ensure_origin(origin)?;
+
+            let (asset_id0, asset_id1) = Self::sort_asset_id(asset_0, asset_1);
+            ensure!(
+                !AssetIdLp::<T>::contains_key((&asset_id0, &asset_id1)),
+                Error::<T>::AssetAlreadyRegistered
+            );
+
+            let asset_id = Self::do_register_asset(&location, &metadata)?;
+
+            AssetIdLp::<T>::insert((asset_id0, asset_id1), asset_id);
+            PoolIdLp::<T>::insert(asset_id, (asset_id0, asset_id1));
+
+            Self::deposit_event(Event::<T>::LPAssetRegistered {
+                asset_id0,
+                asset_id1,
+                asset_id,
+                location: location.clone(),
+                metadata: metadata.clone(),
             });
             Ok(())
         }

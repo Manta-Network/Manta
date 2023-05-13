@@ -1100,60 +1100,60 @@ impl_runtime_apis! {
         }
     }
 
-    impl zenlink_stable_amm_runtime_api::StableAmmApi<Block, DolphinAssetId, u128, AccountId, u32> for Runtime{
+    impl zenlink_stable_amm_runtime_api::StableAmmApi<Block, DolphinAssetId, u128, AccountId, u128> for Runtime{
         fn get_virtual_price(pool_id: PoolId)->Balance{
             ZenlinkStableAMM::get_virtual_price(pool_id)
         }
 
-        fn get_a(pool_id: PoolId)->Balance{
+        fn get_a(pool_id: PoolId) -> Balance {
             ZenlinkStableAMM::get_a(pool_id)
         }
 
-        fn get_a_precise(pool_id: PoolId)->Balance{
+        fn get_a_precise(pool_id: PoolId) -> Balance {
             ZenlinkStableAMM::get_a(pool_id) * 100
         }
 
-        fn get_currencies(pool_id: PoolId)->Vec<DolphinAssetId>{
+        fn get_currencies(pool_id: PoolId) -> Vec<DolphinAssetId> {
             ZenlinkStableAMM::get_currencies(pool_id)
         }
 
-        fn get_currency(pool_id: PoolId, index: u32)->Option<DolphinAssetId>{
+        fn get_currency(pool_id: PoolId, index: u32) -> Option<DolphinAssetId> {
             ZenlinkStableAMM::get_currency(pool_id, index)
         }
 
-        fn get_lp_currency(pool_id: PoolId)->Option<DolphinAssetId>{
+        fn get_lp_currency(pool_id: PoolId) -> Option<DolphinAssetId> {
             ZenlinkStableAMM::get_lp_currency(pool_id)
         }
 
-        fn get_currency_precision_multipliers(pool_id: PoolId)->Vec<Balance>{
+        fn get_currency_precision_multipliers(pool_id: PoolId) -> Vec<Balance> {
             ZenlinkStableAMM::get_currency_precision_multipliers(pool_id)
         }
 
-        fn get_currency_balances(pool_id: PoolId)->Vec<Balance>{
+        fn get_currency_balances(pool_id: PoolId) -> Vec<Balance> {
             ZenlinkStableAMM::get_currency_balances(pool_id)
         }
 
-        fn get_number_of_currencies(pool_id: PoolId)->u32{
+        fn get_number_of_currencies(pool_id: PoolId) -> u32 {
             ZenlinkStableAMM::get_number_of_currencies(pool_id)
         }
 
-        fn get_admin_balances(pool_id: PoolId)->Vec<Balance>{
+        fn get_admin_balances(pool_id: PoolId) -> Vec<Balance> {
             ZenlinkStableAMM::get_admin_balances(pool_id)
         }
 
-        fn calculate_currency_amount(pool_id: PoolId, amounts:Vec<Balance>, deposit: bool)->Balance{
+        fn calculate_currency_amount(pool_id: PoolId, amounts:Vec<Balance>, deposit: bool) -> Balance {
             ZenlinkStableAMM::stable_amm_calculate_currency_amount(pool_id, &amounts, deposit).unwrap_or_default()
         }
 
-        fn calculate_swap(pool_id: PoolId, in_index: u32, out_index: u32, in_amount: Balance)->Balance{
+        fn calculate_swap(pool_id: PoolId, in_index: u32, out_index: u32, in_amount: Balance) -> Balance {
             ZenlinkStableAMM::stable_amm_calculate_swap_amount(pool_id, in_index as usize, out_index as usize, in_amount).unwrap_or_default()
         }
 
-        fn calculate_remove_liquidity(pool_id: PoolId, amount: Balance)->Vec<Balance>{
+        fn calculate_remove_liquidity(pool_id: PoolId, amount: Balance) -> Vec<Balance> {
             ZenlinkStableAMM::stable_amm_calculate_remove_liquidity(pool_id, amount).unwrap_or_default()
         }
 
-        fn calculate_remove_liquidity_one_currency(pool_id: PoolId, amount:Balance, index: u32)->Balance{
+        fn calculate_remove_liquidity_one_currency(pool_id: PoolId, amount:Balance, index: u32) -> Balance {
             ZenlinkStableAMM::stable_amm_calculate_remove_liquidity_one_currency(pool_id, amount, index).unwrap_or_default()
         }
     }

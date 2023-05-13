@@ -15,7 +15,7 @@
 // along with Manta.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::{
-    AssetManager, Assets, Balances, ParachainInfo, Runtime, RuntimeEvent, Timestamp,
+    AssetManager, Balances, ParachainInfo, Runtime, RuntimeEvent, Timestamp,
     ZenlinkProtocol, ZenlinkStableAMM,
 };
 use crate::{
@@ -24,7 +24,7 @@ use crate::{
 use frame_support::{parameter_types, traits::ExistenceRequirement, PalletId};
 use manta_primitives::{
     assets::{AssetIdLocationMap, AssetIdLpMap, AssetLocation, FungibleLedger},
-    types::{AccountId, DolphinAssetId, PoolId},
+    types::{AccountId, DolphinAssetId},
 };
 use orml_traits::MultiCurrency;
 use polkadot_parachain::primitives::Sibling;
@@ -33,7 +33,7 @@ use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{AccountId32Aliases, SiblingParachainConvertsVia};
 use zenlink_protocol::{
-    make_x2_location, AssetBalance, AssetId as ZenlinkAssetId, AssetIdConverter,
+    make_x2_location, AssetBalance, AssetId as ZenlinkAssetId,
     ConvertMultiLocation, GenerateLpAssetId, LocalAssetHandler, ZenlinkMultiAssets, LOCAL, NATIVE,
 };
 use zenlink_stable_amm::traits::{StablePoolLpCurrencyIdGenerate, ValidateCurrency};
@@ -88,7 +88,7 @@ impl zenlink_stable_amm::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type CurrencyId = DolphinAssetId;
     type MultiCurrency = MantaCurrencies;
-    type PoolId = u32;
+    type PoolId = DolphinAssetId;
     type TimeProvider = Timestamp;
     type EnsurePoolAsset = StableAmmVerifyPoolAsset;
     type LpGenerate = PoolLpGenerate;
@@ -99,7 +99,7 @@ impl zenlink_stable_amm::Config for Runtime {
 
 impl zenlink_swap_router::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type StablePoolId = u32;
+    type StablePoolId = DolphinAssetId;
     type Balance = u128;
     type StableCurrencyId = DolphinAssetId;
     type NormalCurrencyId = ZenlinkAssetId;
@@ -125,8 +125,8 @@ impl ValidateCurrency<DolphinAssetId> for StableAmmVerifyPoolAsset {
 
 pub struct PoolLpGenerate;
 
-impl StablePoolLpCurrencyIdGenerate<DolphinAssetId, PoolId> for PoolLpGenerate {
-    fn generate_by_pool_id(pool_id: PoolId) -> DolphinAssetId {
+impl StablePoolLpCurrencyIdGenerate<DolphinAssetId, DolphinAssetId> for PoolLpGenerate {
+    fn generate_by_pool_id(pool_id: DolphinAssetId) -> DolphinAssetId {
         <AssetManager as AssetIdLpMap>::lp_asset_pool(&pool_id).expect("must find asset id")
     }
 }
