@@ -18,6 +18,7 @@
 
 use frame_support::{assert_err, assert_ok};
 use manta_primitives::types::DolphinAssetId;
+use sp_runtime::traits::AccountIdConversion;
 
 use crate::{mock::*, *};
 
@@ -100,6 +101,8 @@ fn init_no_gauge() -> (PoolId, BalanceOf<Runtime>) {
 
 #[test]
 fn claim() {
+    let keeper_account = FarmingKeeperPalletId::get().into_account_truncating();
+
     ExtBuilder::default()
         .one_hundred_for_alice_n_bob()
         .build()
@@ -123,17 +126,24 @@ fn claim() {
             Farming::on_initialize(0);
             assert_ok!(Farming::close_pool(RuntimeOrigin::signed(ALICE), pid));
 
-            // TODO: BalanceLow
-            // assert_ok!(Farming::force_retire_pool(
-            //     RuntimeOrigin::signed(ALICE),
-            //     pid
-            // ));
-            // assert_eq!(Assets::balance(KSM, &ALICE), 5000); // 3000 + 1000 + 1000
-            // Farming::on_initialize(0);
-            // assert_err!(
-            //     Farming::force_retire_pool(RuntimeOrigin::signed(ALICE), pid),
-            //     Error::<Runtime>::InvalidPoolState
-            // );
+            // Fund token to keeper_account
+            assert_ok!(Assets::mint(
+                RuntimeOrigin::signed(ALICE),
+                KSM,
+                keeper_account,
+                100
+            ));
+
+            assert_ok!(Farming::force_retire_pool(
+                RuntimeOrigin::signed(ALICE),
+                pid
+            ));
+            assert_eq!(Assets::balance(KSM, &ALICE), 5000); // 3000 + 1000 + 1000
+            Farming::on_initialize(0);
+            assert_err!(
+                Farming::force_retire_pool(RuntimeOrigin::signed(ALICE), pid),
+                Error::<Runtime>::InvalidPoolState
+            );
         });
 }
 
@@ -321,6 +331,8 @@ fn gauge_withdraw() {
 
 #[test]
 fn retire() {
+    let keeper_account = FarmingKeeperPalletId::get().into_account_truncating();
+
     ExtBuilder::default()
         .one_hundred_for_alice_n_bob()
         .build()
@@ -344,15 +356,22 @@ fn retire() {
             assert_eq!(Assets::balance(KSM, &ALICE), 800);
             assert_ok!(Farming::close_pool(RuntimeOrigin::signed(ALICE), pid));
 
-            // TODO: BalanceLow
-            // assert_ok!(Farming::set_retire_limit(RuntimeOrigin::signed(ALICE), 10));
-            // System::set_block_number(System::block_number() + 1000);
-            // assert_ok!(Farming::force_retire_pool(
-            //     RuntimeOrigin::signed(ALICE),
-            //     pid
-            // ));
-            // assert_eq!(Assets::balance(KSM, &ALICE), 3000);
-            // assert_eq!(Farming::shares_and_withdrawn_rewards(pid, &ALICE), None);
+            // Fund token to keeper_account
+            assert_ok!(Assets::mint(
+                RuntimeOrigin::signed(ALICE),
+                KSM,
+                keeper_account,
+                100
+            ));
+
+            assert_ok!(Farming::set_retire_limit(RuntimeOrigin::signed(ALICE), 10));
+            System::set_block_number(System::block_number() + 1000);
+            assert_ok!(Farming::force_retire_pool(
+                RuntimeOrigin::signed(ALICE),
+                pid
+            ));
+            assert_eq!(Assets::balance(KSM, &ALICE), 3000);
+            assert_eq!(Farming::shares_and_withdrawn_rewards(pid, &ALICE), None);
         })
 }
 

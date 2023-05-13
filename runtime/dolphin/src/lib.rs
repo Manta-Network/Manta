@@ -868,6 +868,7 @@ mod benches {
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
         [pallet_asset_manager, AssetManager]
+        [manta_farming, Farming]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );

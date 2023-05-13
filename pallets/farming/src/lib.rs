@@ -75,6 +75,7 @@ pub mod pallet {
 
         /// The currency ID type
         type CurrencyId: Parameter
+            + AtLeast32BitUnsigned
             + Default //TODO: remove Default trait bound
             + Member
             + Copy

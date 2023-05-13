@@ -20,7 +20,6 @@
 use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_support::{assert_ok, sp_runtime::traits::UniqueSaturatedFrom};
 use frame_system::{Pallet as System, RawOrigin};
-use node_primitives::{CurrencyId, TokenSymbol};
 
 use crate::{Pallet as Farming, *};
 
@@ -28,15 +27,15 @@ benchmarks! {
     on_initialize {}:{Farming::<T>::on_initialize(T::BlockNumber::from(10u32));}
 
     create_farming_pool {
+        let ksm_asset_id = CurrencyIdOf::<T>::unique_saturated_from(8u128);
         let token_amount = BalanceOf::<T>::unique_saturated_from(1000u128);
-        const KSM: CurrencyId = CurrencyId::Token(TokenSymbol::KSM);
-        let tokens_proportion = vec![(KSM, Perbill::from_percent(100))];
-        let basic_rewards = vec![(KSM, token_amount)];
-        let gauge_basic_rewards = vec![(KSM, token_amount)];
+        let tokens_proportion = vec![(ksm_asset_id, Perbill::from_percent(100))];
+        let basic_rewards = vec![(ksm_asset_id, token_amount)];
+        let gauge_basic_rewards = vec![(ksm_asset_id, token_amount)];
     }: _(RawOrigin::Root,
         tokens_proportion.clone(),
         basic_rewards.clone(),
-        Some((KSM, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
+        Some((ksm_asset_id, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
         BalanceOf::<T>::unique_saturated_from(0u128),
         BlockNumberFor::<T>::from(0u32),
         BlockNumberFor::<T>::from(7u32),
@@ -45,46 +44,46 @@ benchmarks! {
     )
 
     deposit {
+        let ksm_asset_id = CurrencyIdOf::<T>::unique_saturated_from(8u128);
         let caller: T::AccountId = whitelisted_caller();
         let token_amount = BalanceOf::<T>::unique_saturated_from(1000u128);
-        const KSM: CurrencyId = CurrencyId::Token(TokenSymbol::KSM);
-        let tokens_proportion = vec![(KSM, Perbill::from_percent(100))];
-        let basic_rewards = vec![(KSM, token_amount)];
-        let gauge_basic_rewards = vec![(KSM, token_amount)];
+        let tokens_proportion = vec![(ksm_asset_id, Perbill::from_percent(100))];
+        let basic_rewards = vec![(ksm_asset_id, token_amount)];
+        let gauge_basic_rewards = vec![(ksm_asset_id, token_amount)];
         assert_ok!(Farming::<T>::create_farming_pool(
             RawOrigin::Root.into(),
             tokens_proportion.clone(),
             basic_rewards.clone(),
-            Some((KSM, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
+            Some((ksm_asset_id, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
             BalanceOf::<T>::unique_saturated_from(0u128),
             BlockNumberFor::<T>::from(0u32),
             BlockNumberFor::<T>::from(7u32),
             BlockNumberFor::<T>::from(6u32),
             5,
         ));
-        let charge_rewards = vec![(KSM,BalanceOf::<T>::unique_saturated_from(300000u128))];
+        let charge_rewards = vec![(ksm_asset_id,BalanceOf::<T>::unique_saturated_from(300000u128))];
         assert_ok!(Farming::<T>::charge(RawOrigin::Signed(caller.clone()).into(), 0, charge_rewards));
     }: _(RawOrigin::Signed(caller.clone()), 0, token_amount, None)
 
     withdraw {
+        let ksm_asset_id = CurrencyIdOf::<T>::unique_saturated_from(8u128);
         let caller: T::AccountId = whitelisted_caller();
         let token_amount = BalanceOf::<T>::unique_saturated_from(1000u128);
-        const KSM: CurrencyId = CurrencyId::Token(TokenSymbol::KSM);
-        let tokens_proportion = vec![(KSM, Perbill::from_percent(100))];
-        let basic_rewards = vec![(KSM, token_amount)];
-        let gauge_basic_rewards = vec![(KSM, token_amount)];
+        let tokens_proportion = vec![(ksm_asset_id, Perbill::from_percent(100))];
+        let basic_rewards = vec![(ksm_asset_id, token_amount)];
+        let gauge_basic_rewards = vec![(ksm_asset_id, token_amount)];
         assert_ok!(Farming::<T>::create_farming_pool(
             RawOrigin::Root.into(),
             tokens_proportion.clone(),
             basic_rewards.clone(),
-            Some((KSM, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
+            Some((ksm_asset_id, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
             BalanceOf::<T>::unique_saturated_from(0u128),
             BlockNumberFor::<T>::from(0u32),
             BlockNumberFor::<T>::from(7u32),
             BlockNumberFor::<T>::from(6u32),
             5,
         ));
-        let charge_rewards = vec![(KSM,BalanceOf::<T>::unique_saturated_from(300000u128))];
+        let charge_rewards = vec![(ksm_asset_id,BalanceOf::<T>::unique_saturated_from(300000u128))];
         assert_ok!(Farming::<T>::charge(RawOrigin::Signed(caller.clone()).into(), 0, charge_rewards));
         assert_ok!(Farming::<T>::deposit(RawOrigin::Signed(caller.clone()).into(), 0, token_amount, None));
     }: _(RawOrigin::Signed(caller.clone()), 0, None)
@@ -92,22 +91,22 @@ benchmarks! {
     claim {
         let caller: T::AccountId = whitelisted_caller();
         let token_amount = BalanceOf::<T>::unique_saturated_from(1000u128);
-        const KSM: CurrencyId = CurrencyId::Token(TokenSymbol::KSM);
-        let tokens_proportion = vec![(KSM, Perbill::from_percent(100))];
-        let basic_rewards = vec![(KSM, token_amount)];
-        let gauge_basic_rewards = vec![(KSM, token_amount)];
+        let ksm_asset_id = CurrencyIdOf::<T>::unique_saturated_from(8u128);
+        let tokens_proportion = vec![(ksm_asset_id, Perbill::from_percent(100))];
+        let basic_rewards = vec![(ksm_asset_id, token_amount)];
+        let gauge_basic_rewards = vec![(ksm_asset_id, token_amount)];
         assert_ok!(Farming::<T>::create_farming_pool(
             RawOrigin::Root.into(),
             tokens_proportion.clone(),
             basic_rewards.clone(),
-            Some((KSM, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
+            Some((ksm_asset_id, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
             BalanceOf::<T>::unique_saturated_from(0u128),
             BlockNumberFor::<T>::from(0u32),
             BlockNumberFor::<T>::from(7u32),
             BlockNumberFor::<T>::from(6u32),
             5,
         ));
-        let charge_rewards = vec![(KSM,BalanceOf::<T>::unique_saturated_from(300000u128))];
+        let charge_rewards = vec![(ksm_asset_id,BalanceOf::<T>::unique_saturated_from(300000u128))];
         assert_ok!(Farming::<T>::charge(RawOrigin::Signed(caller.clone()).into(), 0, charge_rewards));
         assert_ok!(Farming::<T>::deposit(RawOrigin::Signed(caller.clone()).into(), 0, token_amount, None));
         System::<T>::set_block_number(System::<T>::block_number() + BlockNumberFor::<T>::from(10u32));
@@ -115,24 +114,24 @@ benchmarks! {
     }: _(RawOrigin::Signed(caller.clone()), 0)
 
     gauge_withdraw {
+        let ksm_asset_id = CurrencyIdOf::<T>::unique_saturated_from(8u128);
         let caller: T::AccountId = whitelisted_caller();
         let token_amount = BalanceOf::<T>::unique_saturated_from(1000u128);
-        const KSM: CurrencyId = CurrencyId::Token(TokenSymbol::KSM);
-        let tokens_proportion = vec![(KSM, Perbill::from_percent(100))];
-        let basic_rewards = vec![(KSM, token_amount)];
-        let gauge_basic_rewards = vec![(KSM, token_amount)];
+        let tokens_proportion = vec![(ksm_asset_id, Perbill::from_percent(100))];
+        let basic_rewards = vec![(ksm_asset_id, token_amount)];
+        let gauge_basic_rewards = vec![(ksm_asset_id, token_amount)];
         assert_ok!(Farming::<T>::create_farming_pool(
             RawOrigin::Root.into(),
             tokens_proportion.clone(),
             basic_rewards.clone(),
-            Some((KSM, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
+            Some((ksm_asset_id, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
             BalanceOf::<T>::unique_saturated_from(0u128),
             BlockNumberFor::<T>::from(0u32),
             BlockNumberFor::<T>::from(7u32),
             BlockNumberFor::<T>::from(6u32),
             5,
         ));
-        let charge_rewards = vec![(KSM,BalanceOf::<T>::unique_saturated_from(300000u128))];
+        let charge_rewards = vec![(ksm_asset_id,BalanceOf::<T>::unique_saturated_from(300000u128))];
         assert_ok!(Farming::<T>::charge(RawOrigin::Signed(caller.clone()).into(), 0, charge_rewards));
         assert_ok!(Farming::<T>::deposit(RawOrigin::Signed(caller.clone()).into(), 0, token_amount, Some((BalanceOf::<T>::unique_saturated_from(100u128), BlockNumberFor::<T>::from(100u32)))));
         // System::<T>::set_block_number(System::<T>::block_number() + BlockNumberFor::<T>::from(10u32));

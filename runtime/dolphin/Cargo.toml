@@ -105,7 +105,6 @@ session-key-primitives = { path = '../../primitives/session-keys', default-featu
 orml-traits = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.37" }
 orml-xtokens = { git = 'https://github.com/manta-network/open-runtime-module-library.git', default-features = false, branch = "polkadot-v0.9.37" }
 
-#merkle-distributor = { git = 'https://github.com/manta-network/merkle-distributor', rev = "41cdaa648ad67b69ec61b1958206c960e78aa075", default-features = false }
 zenlink-protocol = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37", default-features = false }
 zenlink-protocol-runtime-api = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37", default-features = false }
 zenlink-stable-amm = { git = 'https://github.com/manta-network/Zenlink', branch = "polkadot-v0.9.37", default-features = false }
@@ -155,6 +154,7 @@ runtime-benchmarks = [
   'pallet-ranked-collective/runtime-benchmarks',
   'pallet-referenda/runtime-benchmarks',
   'pallet-conviction-voting/runtime-benchmarks',
+  'manta-farming/runtime-benchmarks',
 ]
 try-runtime = [
   "frame-support/try-runtime",
@@ -270,5 +270,4 @@ std = [
   "zenlink-stable-amm/std",
   "zenlink-stable-amm-runtime-api/std",
   "zenlink-swap-router/std",
-  #	"merkle-distributor/std",
 ]
