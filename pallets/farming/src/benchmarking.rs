@@ -18,7 +18,7 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use crate::{Pallet as Farming, *};
-use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, vec, whitelisted_caller};
+use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_support::{assert_ok, sp_runtime::traits::UniqueSaturatedFrom};
 use frame_system::{Pallet as System, RawOrigin};
 use manta_primitives::assets::{AssetConfig, FungibleLedger, TestingDefault};
@@ -182,11 +182,3 @@ benchmarks! {
         // System::<T>::set_block_number(System::<T>::block_number() + BlockNumberFor::<T>::from(10u32));
     }: _(RawOrigin::Signed(caller.clone()), 0)
 }
-
-impl_benchmark_test_suite!(
-    Farming,
-    crate::mock::ExtBuilder::default()
-        .one_hundred_precision_for_each_currency_type_for_whitelist_account()
-        .build(),
-    crate::mock::Runtime
-);

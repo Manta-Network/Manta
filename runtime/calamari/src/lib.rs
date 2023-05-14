@@ -957,6 +957,10 @@ mod benches {
         [pallet_parachain_staking, ParachainStaking]
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
+        // Dex
+        [zenlink_protocol, ZenlinkProtocol]
+        [zenlink_stable_amm, ZenlinkStableAMM]
+        [zenlink_swap_router, ZenlinkSwapRouter]
         [manta_farming, Farming]
         // XCM
         [cumulus_pallet_xcmp_queue, XcmpQueue]

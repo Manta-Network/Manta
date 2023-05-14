@@ -33,8 +33,8 @@ use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{AccountId32Aliases, SiblingParachainConvertsVia};
 use zenlink_protocol::{
-    make_x2_location, AssetBalance, AssetId as ZenlinkAssetId, ConvertMultiLocation,
-    GenerateLpAssetId, LocalAssetHandler, ZenlinkMultiAssets, LOCAL, NATIVE,
+    AssetBalance, AssetId as ZenlinkAssetId, ConvertMultiLocation, GenerateLpAssetId,
+    LocalAssetHandler, ZenlinkMultiAssets, LOCAL, NATIVE,
 };
 use zenlink_stable_amm::traits::{StablePoolLpCurrencyIdGenerate, ValidateCurrency};
 

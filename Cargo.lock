@@ -14876,6 +14876,7 @@ version = "0.4.4"
 source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
 dependencies = [
  "cumulus-primitives-core",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -14924,6 +14925,7 @@ name = "zenlink-stable-amm"
 version = "0.1.0"
 source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "orml-traits",
@@ -14966,6 +14968,7 @@ name = "zenlink-swap-router"
 version = "0.1.0"
 source = "git+https://github.com/manta-network/Zenlink?branch=polkadot-v0.9.37#bbe67e554260f1ea8edd667e35b12f6766fa019c"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "orml-traits",

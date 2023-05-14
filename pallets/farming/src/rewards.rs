@@ -137,11 +137,7 @@ pub enum Action {
 impl PoolState {
     pub fn state_valid(action: Action, state: PoolState) -> bool {
         match action {
-            Action::Deposit => {
-                state == PoolState::Ongoing
-                    || state == PoolState::Charged
-                    || state == PoolState::UnCharged
-            }
+            Action::Deposit => state == PoolState::Ongoing || state == PoolState::Charged,
             Action::Withdraw => {
                 state == PoolState::Ongoing
                     || state == PoolState::Charged
