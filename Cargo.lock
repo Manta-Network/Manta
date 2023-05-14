@@ -4170,6 +4170,65 @@ dependencies = [
 ]
 
 [[package]]
+name = "integration-tests"
+version = "4.0.7"
+dependencies = [
+ "calamari-runtime",
+ "calamari-vesting",
+ "cfg-if",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
+ "cumulus-primitives-parachain-inherent",
+ "cumulus-test-relay-sproof-builder",
+ "frame-support",
+ "frame-system",
+ "lazy_static",
+ "manta-collator-selection",
+ "manta-primitives",
+ "manta-runtime",
+ "nimbus-primitives",
+ "orml-traits",
+ "orml-xtokens",
+ "pallet-asset-manager",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-collective",
+ "pallet-conviction-voting",
+ "pallet-democracy",
+ "pallet-manta-pay",
+ "pallet-manta-sbt",
+ "pallet-manta-support",
+ "pallet-parachain-staking",
+ "pallet-ranked-collective",
+ "pallet-referenda",
+ "pallet-scheduler",
+ "pallet-session",
+ "pallet-transaction-payment",
+ "pallet-tx-pause",
+ "pallet-utility",
+ "pallet-xcm",
+ "parachain-info",
+ "parity-scale-codec",
+ "polkadot-core-primitives",
+ "polkadot-parachain",
+ "polkadot-runtime-parachains",
+ "runtime-common",
+ "scale-info",
+ "session-key-primitives",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
+ "xcm-simulator",
+]
+
+[[package]]
 name = "interceptor"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
