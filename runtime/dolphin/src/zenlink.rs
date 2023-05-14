@@ -200,7 +200,7 @@ impl LocalAssetAdaptor {
 
         // Must have location mapping of asset id
         let location = AssetManager::location(&manta_asset_id);
-        location.and_then(|_| Some(manta_asset_id))
+        location.map(|_| manta_asset_id)
     }
 }
 
@@ -233,11 +233,7 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
 
     fn local_is_exists(asset_id: ZenlinkAssetId) -> bool {
         let manta_asset_id = LocalAssetAdaptor::asset_id_convert(asset_id);
-        if let Some(_manta_asset_id) = manta_asset_id {
-            true
-        } else {
-            false
-        }
+        manta_asset_id.is_some()
     }
 
     fn local_deposit(

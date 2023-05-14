@@ -224,7 +224,10 @@ where
                     .gauge_amount
                     .checked_add(&gauge_value)
                     .ok_or(ArithmeticError::Overflow)?;
-                gauge_info.gauge_stop_block = gauge_info.gauge_stop_block + gauge_block;
+                gauge_info.gauge_stop_block = gauge_info
+                    .gauge_stop_block
+                    .checked_add(&gauge_block)
+                    .ok_or(ArithmeticError::Overflow)?;
 
                 gauge_pool_info.total_time_factor = gauge_pool_info
                     .total_time_factor
@@ -290,7 +293,7 @@ where
                     )|
                      -> DispatchResult {
                         let reward = reward_amount
-                            .checked_sub(&total_gauged_reward)
+                            .checked_sub(total_gauged_reward)
                             .ok_or(ArithmeticError::Overflow)?;
                         // gauge_reward = gauge rate * gauge rewards * existing rewards in the
                         // gauge pool
@@ -318,7 +321,7 @@ where
 
                         if reward_to_claim < ed {
                             let receiver_balance =
-                                T::MultiCurrency::total_balance(*reward_currency, &who);
+                                T::MultiCurrency::total_balance(*reward_currency, who);
 
                             let receiver_balance_after = receiver_balance
                                 .checked_add(&reward_to_claim)
@@ -343,7 +346,7 @@ where
 
                     if gauge_info.gauge_amount < ed {
                         let receiver_balance =
-                            T::MultiCurrency::total_balance(gauge_pool_info.token, &who);
+                            T::MultiCurrency::total_balance(gauge_pool_info.token, who);
 
                         let receiver_balance_after = receiver_balance
                             .checked_add(&gauge_info.gauge_amount)
@@ -464,7 +467,7 @@ where
                     )|
                      -> DispatchResult {
                         let reward = reward_amount
-                            .checked_sub(&total_gauged_reward)
+                            .checked_sub(total_gauged_reward)
                             .ok_or(ArithmeticError::Overflow)?;
                         // gauge_reward = gauge rate * gauge rewards * existing rewards in the
                         // gauge pool

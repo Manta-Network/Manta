@@ -384,7 +384,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let exchanger = ensure_signed(origin)?;
 
-            let mut pool_info = Self::pool_infos(&pid).ok_or(Error::<T>::PoolDoesNotExist)?;
+            let mut pool_info = Self::pool_infos(pid).ok_or(Error::<T>::PoolDoesNotExist)?;
             // ensure!(pool_info.state == PoolState::UnCharged, Error::<T>::InvalidPoolState);
             rewards
                 .iter()
@@ -399,7 +399,7 @@ pub mod pallet {
                     )
                 })?;
             pool_info.state = PoolState::Charged;
-            PoolInfos::<T>::insert(&pid, pool_info);
+            PoolInfos::<T>::insert(pid, pool_info);
 
             Self::deposit_event(Event::Charged {
                 who: exchanger,
@@ -419,7 +419,7 @@ pub mod pallet {
         ) -> DispatchResult {
             let exchanger = ensure_signed(origin)?;
 
-            let mut pool_info = Self::pool_infos(&pid).ok_or(Error::<T>::PoolDoesNotExist)?;
+            let mut pool_info = Self::pool_infos(pid).ok_or(Error::<T>::PoolDoesNotExist)?;
             ensure!(
                 PoolState::state_valid(Action::Deposit, pool_info.state),
                 Error::<T>::InvalidPoolState
@@ -478,13 +478,13 @@ pub mod pallet {
         ) -> DispatchResult {
             let exchanger = ensure_signed(origin)?;
 
-            let pool_info = Self::pool_infos(&pid).ok_or(Error::<T>::PoolDoesNotExist)?;
+            let pool_info = Self::pool_infos(pid).ok_or(Error::<T>::PoolDoesNotExist)?;
             ensure!(
                 PoolState::state_valid(Action::Withdraw, pool_info.state),
                 Error::<T>::InvalidPoolState
             );
 
-            let share_info = Self::shares_and_withdrawn_rewards(&pid, &exchanger)
+            let share_info = Self::shares_and_withdrawn_rewards(pid, &exchanger)
                 .ok_or(Error::<T>::ShareInfoNotExists)?;
             ensure!(
                 share_info.withdraw_list.len() < pool_info.withdraw_limit_count.into(),
@@ -506,14 +506,14 @@ pub mod pallet {
         pub fn claim(origin: OriginFor<T>, pid: PoolId) -> DispatchResult {
             let exchanger = ensure_signed(origin)?;
 
-            let pool_info = Self::pool_infos(&pid).ok_or(Error::<T>::PoolDoesNotExist)?;
+            let pool_info = Self::pool_infos(pid).ok_or(Error::<T>::PoolDoesNotExist)?;
             ensure!(
                 PoolState::state_valid(Action::Claim, pool_info.state),
                 Error::<T>::InvalidPoolState
             );
 
             let current_block_number: BlockNumberFor<T> = frame_system::Pallet::<T>::block_number();
-            let share_info = Self::shares_and_withdrawn_rewards(&pid, &exchanger)
+            let share_info = Self::shares_and_withdrawn_rewards(pid, &exchanger)
                 .ok_or(Error::<T>::ShareInfoNotExists)?;
             ensure!(
                 share_info.claim_last_block + pool_info.claim_limit_time <= current_block_number,
@@ -538,7 +538,7 @@ pub mod pallet {
         pub fn withdraw_claim(origin: OriginFor<T>, pid: PoolId) -> DispatchResult {
             let exchanger = ensure_signed(origin)?;
 
-            let pool_info = Self::pool_infos(&pid).ok_or(Error::<T>::PoolDoesNotExist)?;
+            let pool_info = Self::pool_infos(pid).ok_or(Error::<T>::PoolDoesNotExist)?;
             Self::process_withdraw_list(&exchanger, pid, &pool_info, false)?;
 
             Self::deposit_event(Event::WithdrawClaimed {
@@ -553,7 +553,7 @@ pub mod pallet {
         pub fn force_retire_pool(origin: OriginFor<T>, pid: PoolId) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 
-            let mut pool_info = Self::pool_infos(&pid).ok_or(Error::<T>::PoolDoesNotExist)?;
+            let mut pool_info = Self::pool_infos(pid).ok_or(Error::<T>::PoolDoesNotExist)?;
             ensure!(
                 PoolState::state_valid(Action::ForceRetirePool, pool_info.state),
                 Error::<T>::InvalidPoolState
@@ -582,11 +582,11 @@ pub mod pallet {
                     let mut gauge_pool_info =
                         Self::gauge_pool_infos(gid).ok_or(Error::<T>::GaugePoolNotExist)?;
                     gauge_pool_info.gauge_state = GaugeState::Unbond;
-                    GaugePoolInfos::<T>::insert(&gid, gauge_pool_info);
+                    GaugePoolInfos::<T>::insert(gid, gauge_pool_info);
                 }
                 pool_info.state = PoolState::Retired;
                 pool_info.gauge = None;
-                PoolInfos::<T>::insert(&pid, pool_info);
+                PoolInfos::<T>::insert(pid, pool_info);
                 Self::deposit_event(Event::AllRetired { pid });
             } else {
                 Self::deposit_event(Event::PartiallyRetired { pid });
@@ -612,14 +612,14 @@ pub mod pallet {
         pub fn close_pool(origin: OriginFor<T>, pid: PoolId) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 
-            let mut pool_info = Self::pool_infos(&pid).ok_or(Error::<T>::PoolDoesNotExist)?;
+            let mut pool_info = Self::pool_infos(pid).ok_or(Error::<T>::PoolDoesNotExist)?;
             ensure!(
                 PoolState::state_valid(Action::ClosePool, pool_info.state),
                 Error::<T>::InvalidPoolState
             );
 
             pool_info.state = PoolState::Dead;
-            PoolInfos::<T>::insert(&pid, pool_info);
+            PoolInfos::<T>::insert(pid, pool_info);
 
             Self::deposit_event(Event::FarmingPoolClosed { pid });
             Ok(())
@@ -644,7 +644,7 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 
-            let mut pool_info = Self::pool_infos(&pid).ok_or(Error::<T>::PoolDoesNotExist)?;
+            let mut pool_info = Self::pool_infos(pid).ok_or(Error::<T>::PoolDoesNotExist)?;
             ensure!(
                 PoolState::state_valid(Action::ResetPool, pool_info.state),
                 Error::<T>::InvalidPoolState
@@ -700,7 +700,7 @@ pub mod pallet {
         pub fn kill_pool(origin: OriginFor<T>, pid: PoolId) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 
-            let pool_info = Self::pool_infos(&pid).ok_or(Error::<T>::PoolDoesNotExist)?;
+            let pool_info = Self::pool_infos(pid).ok_or(Error::<T>::PoolDoesNotExist)?;
             ensure!(
                 pool_info.state == PoolState::Retired || pool_info.state == PoolState::UnCharged,
                 Error::<T>::InvalidPoolState
@@ -726,7 +726,7 @@ pub mod pallet {
         ) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 
-            let mut pool_info = Self::pool_infos(&pid).ok_or(Error::<T>::PoolDoesNotExist)?;
+            let mut pool_info = Self::pool_infos(pid).ok_or(Error::<T>::PoolDoesNotExist)?;
             ensure!(
                 PoolState::state_valid(Action::EditPool, pool_info.state),
                 Error::<T>::InvalidPoolState
@@ -814,7 +814,7 @@ pub mod pallet {
         pub fn force_gauge_claim(origin: OriginFor<T>, gid: PoolId) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 
-            let gauge_infos = GaugeInfos::<T>::iter_prefix_values(&gid);
+            let gauge_infos = GaugeInfos::<T>::iter_prefix_values(gid);
             let retire_limit = RetireLimit::<T>::get();
             let mut all_retired = true;
             for (retire_count, gauge_info) in gauge_infos.enumerate() {

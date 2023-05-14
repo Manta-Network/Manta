@@ -100,7 +100,7 @@ where
                 Some(format!("{:?}", e)),
             ))),
         }
-        .map_err(|e| jsonrpsee::core::Error::Call(e))
+        .map_err(jsonrpsee::core::Error::Call)
     }
 
     fn get_gauge_rewards(
@@ -125,6 +125,6 @@ where
                 Some(format!("{:?}", e)),
             ))),
         }
-        .map_err(|e| jsonrpsee::core::Error::Call(e))
+        .map_err(jsonrpsee::core::Error::Call)
     }
 }

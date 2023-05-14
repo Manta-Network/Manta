@@ -244,7 +244,7 @@ impl<T: Config> Pallet<T> {
                     .or_insert(reward_inflation);
             });
         SharesAndWithdrawnRewards::<T>::insert(pid, who, share_info);
-        PoolInfos::<T>::insert(&pid, pool_info);
+        PoolInfos::<T>::insert(pid, pool_info);
     }
 
     pub fn remove_share(
@@ -387,7 +387,7 @@ impl<T: Config> Pallet<T> {
 								let mut account_to_send = who.clone();
 
 								if reward_to_withdraw < ed {
-									let receiver_balance = T::MultiCurrency::total_balance(*reward_currency, &who);
+									let receiver_balance = T::MultiCurrency::total_balance(*reward_currency, who);
 
 									let receiver_balance_after =
 										receiver_balance.checked_add(&reward_to_withdraw).ok_or(ArithmeticError::Overflow)?;
@@ -442,7 +442,7 @@ impl<T: Config> Pallet<T> {
 
                                         if withdraw_amount < ed {
                                             let receiver_balance =
-                                                T::MultiCurrency::total_balance(*token, &who);
+                                                T::MultiCurrency::total_balance(*token, who);
 
                                             let receiver_balance_after = receiver_balance
                                                 .checked_add(&withdraw_amount)
