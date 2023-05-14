@@ -22,7 +22,7 @@
 use frame_support::{
     dispatch::DispatchResult,
     ord_parameter_types, parameter_types,
-    traits::{AsEnsureOriginWithArg, GenesisBuild, Nothing},
+    traits::{AsEnsureOriginWithArg, EitherOfDiverse, GenesisBuild, Nothing},
     PalletId,
 };
 use frame_system::{EnsureNever, EnsureRoot, EnsureSignedBy};
@@ -153,8 +153,6 @@ impl pallet_assets::Config for Runtime {
     type AssetIdParameter = CalamariAssetId;
     type CreateOrigin = AsEnsureOriginWithArg<EnsureNever<AccountId32>>;
     type CallbackHandle = ();
-    #[cfg(feature = "runtime-benchmarks")]
-    type BenchmarkHelper = ();
 }
 
 pub struct MantaAssetRegistry;
@@ -288,7 +286,7 @@ impl manta_farming::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type CurrencyId = CalamariAssetId;
     type MultiCurrency = MantaCurrencies;
-    type ControlOrigin = EnsureSignedBy<One, AccountId>;
+    type ControlOrigin = EitherOfDiverse<EnsureRoot<AccountId>, EnsureSignedBy<One, AccountId>>;
     type TreasuryAccount = TreasuryAccount;
     type Keeper = FarmingKeeperPalletId;
     type RewardIssuer = FarmingRewardIssuerPalletId;
