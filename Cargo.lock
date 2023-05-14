@@ -1103,6 +1103,8 @@ dependencies = [
  "lazy_static",
  "log",
  "manta-collator-selection",
+ "manta-farming",
+ "manta-farming-rpc-runtime-api",
  "manta-primitives",
  "nimbus-primitives",
  "orml-traits",
@@ -1166,6 +1168,11 @@ dependencies = [
  "xcm-builder",
  "xcm-executor",
  "xcm-simulator",
+ "zenlink-protocol",
+ "zenlink-protocol-runtime-api",
+ "zenlink-stable-amm",
+ "zenlink-stable-amm-runtime-api",
+ "zenlink-swap-router",
 ]
 
 [[package]]

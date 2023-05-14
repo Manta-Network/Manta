@@ -56,6 +56,7 @@ use frame_system::{
 };
 use manta_primitives::{
     constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
+    currencies::Currencies,
     types::{
         AccountId, Balance, BlockNumber, DolphinAssetId, Hash, Header, Index, PoolId, Signature,
     },
@@ -83,7 +84,6 @@ pub mod zenlink;
 use crate::assets_config::DolphinAssetConfig;
 use currency::*;
 use impls::DealWithFees;
-use manta_primitives::currencies::Currencies;
 
 pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
@@ -291,11 +291,11 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::MantaPay(_)
             | RuntimeCall::Preimage(_)
             | RuntimeCall::MantaSbt(_)
+            | RuntimeCall::TransactionPause(_)
             | RuntimeCall::ZenlinkProtocol(_)
             | RuntimeCall::ZenlinkStableAMM(_)
             | RuntimeCall::ZenlinkSwapRouter(_)
             | RuntimeCall::Farming(_)
-            | RuntimeCall::TransactionPause(_)
             | RuntimeCall::Utility(_) => true,
 
             // DISALLOW anything else
@@ -796,10 +796,10 @@ construct_runtime!(
         MantaPay: pallet_manta_pay::{Pallet, Call, Storage, Event<T>} = 47,
         MantaSbt: pallet_manta_sbt::{Pallet, Call, Storage, Event<T>} = 48,
 
-        ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 50,
-        ZenlinkStableAMM: zenlink_stable_amm::{Pallet, Call, Storage, Event<T>} = 51,
-        ZenlinkSwapRouter: zenlink_swap_router::{Pallet, Call, Event<T>} = 52,
-        Farming: manta_farming::{Pallet, Call, Storage, Event<T>} = 55,
+        ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 51,
+        ZenlinkStableAMM: zenlink_stable_amm::{Pallet, Call, Storage, Event<T>} = 52,
+        ZenlinkSwapRouter: zenlink_swap_router::{Pallet, Call, Event<T>} = 53,
+        Farming: manta_farming::{Pallet, Call, Storage, Event<T>} = 54,
     }
 );
 
@@ -1044,7 +1044,6 @@ impl_runtime_apis! {
             owner: AccountId
         ) -> AssetBalance {
             <<Runtime as zenlink_protocol::Config>::MultiAssetsHandler as MultiAssetsHandler<AccountId, ZenlinkAssetId>>::balance_of(asset_id, &owner)
-            // AssetBalance::default()
         }
 
         fn get_sovereigns_info(

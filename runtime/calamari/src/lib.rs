@@ -29,7 +29,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+    traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, Perbill, Percent, Permill,
 };
@@ -56,7 +56,10 @@ use frame_system::{
 };
 use manta_primitives::{
     constants::{time::*, RocksDbWeight, STAKING_PALLET_ID, TREASURY_PALLET_ID, WEIGHT_PER_SECOND},
-    types::{AccountId, Balance, BlockNumber, Hash, Header, Index, Signature},
+    currencies::Currencies,
+    types::{
+        AccountId, Balance, BlockNumber, CalamariAssetId, Hash, Header, Index, PoolId, Signature,
+    },
 };
 use manta_support::manta_pay::{InitialSyncResponse, PullResponse, RawCheckpoint};
 pub use pallet_parachain_staking::{InflationInfo, Range};
@@ -65,6 +68,8 @@ use runtime_common::{
     prod_or_fast, BlockExecutionWeight, BlockHashCount, ExtrinsicBaseWeight, SlowAdjustingFeeUpdate,
 };
 use session_key_primitives::{AuraId, NimbusId, VrfId};
+use zenlink_protocol::{AssetBalance, AssetId as ZenlinkAssetId, MultiAssetsHandler, PairInfo};
+use zenlink_stable_amm::traits::StableAmmApi;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -79,7 +84,9 @@ pub mod migrations;
 mod nimbus_session_adapter;
 pub mod staking;
 pub mod xcm_config;
+pub mod zenlink;
 
+use crate::assets_config::CalamariAssetConfig;
 use currency::*;
 use impls::DealWithFees;
 
@@ -297,6 +304,10 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::XTokens(orml_xtokens::Call::transfer {..}
                 | orml_xtokens::Call::transfer_multicurrencies {..})
             | RuntimeCall::TransactionPause(_)
+            | RuntimeCall::ZenlinkProtocol(_)
+            | RuntimeCall::ZenlinkStableAMM(_)
+            | RuntimeCall::ZenlinkSwapRouter(_)
+            | RuntimeCall::Farming(_)
             | RuntimeCall::Utility(_) => true,
 
             // DISALLOW anything else
@@ -787,6 +798,25 @@ impl calamari_vesting::Config for Runtime {
     type WeightInfo = weights::calamari_vesting::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub const FarmingKeeperPalletId: PalletId = PalletId(*b"mt/fmkpr");
+    pub const FarmingRewardIssuerPalletId: PalletId = PalletId(*b"mt/fmrir");
+    pub TreasuryAccount: AccountId = TreasuryPalletId::get().into_account_truncating();
+}
+
+type MantaCurrencies = Currencies<Runtime, CalamariAssetConfig, Balances, Assets>;
+
+impl manta_farming::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type CurrencyId = CalamariAssetId;
+    type MultiCurrency = MantaCurrencies;
+    type ControlOrigin = CollatorSelectionUpdateOrigin;
+    type TreasuryAccount = TreasuryAccount;
+    type Keeper = FarmingKeeperPalletId;
+    type RewardIssuer = FarmingRewardIssuerPalletId;
+    type WeightInfo = ();
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -853,6 +883,11 @@ construct_runtime!(
 
         // Calamari stuff
         CalamariVesting: calamari_vesting::{Pallet, Call, Storage, Event<T>} = 50,
+
+        ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 51,
+        ZenlinkStableAMM: zenlink_stable_amm::{Pallet, Call, Storage, Event<T>} = 52,
+        ZenlinkSwapRouter: zenlink_swap_router::{Pallet, Call, Event<T>} = 53,
+        Farming: manta_farming::{Pallet, Call, Storage, Event<T>} = 54,
     }
 );
 
@@ -914,7 +949,6 @@ mod benches {
         [pallet_scheduler, Scheduler]
         [pallet_session, SessionBench::<Runtime>]
         [pallet_assets, Assets]
-
         // Manta pallets
         [calamari_vesting, CalamariVesting]
         [pallet_tx_pause, TransactionPause]
@@ -923,11 +957,11 @@ mod benches {
         [pallet_parachain_staking, ParachainStaking]
         [pallet_manta_pay, MantaPay]
         [pallet_manta_sbt, MantaSbt]
-                // XCM
-                [cumulus_pallet_xcmp_queue, XcmpQueue]
-                [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
-                [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
-
+        [manta_farming, Farming]
+        // XCM
+        [cumulus_pallet_xcmp_queue, XcmpQueue]
+        [pallet_xcm_benchmarks::fungible, pallet_xcm_benchmarks::fungible::Pallet::<Runtime>]
+        [pallet_xcm_benchmarks::generic, pallet_xcm_benchmarks::generic::Pallet::<Runtime>]
         // Nimbus pallets
         [pallet_author_inherent, AuthorInherent]
     );
@@ -1111,6 +1145,142 @@ impl_runtime_apis! {
                 // We're not changing rounds, `PotentialAuthors` is not changing, just use can_author
                 <AuthorInherent as nimbus_primitives::CanAuthor<_>>::can_author(&author, &relay_parent)
             }
+        }
+    }
+
+        // zenlink runtime outer apis
+    impl zenlink_protocol_runtime_api::ZenlinkProtocolApi<Block, AccountId, ZenlinkAssetId> for Runtime {
+
+        fn get_balance(
+            asset_id: ZenlinkAssetId,
+            owner: AccountId
+        ) -> AssetBalance {
+            <<Runtime as zenlink_protocol::Config>::MultiAssetsHandler as MultiAssetsHandler<AccountId, ZenlinkAssetId>>::balance_of(asset_id, &owner)
+        }
+
+        fn get_sovereigns_info(
+            asset_id: ZenlinkAssetId
+        ) -> Vec<(u32, AccountId, AssetBalance)> {
+            ZenlinkProtocol::get_sovereigns_info(&asset_id)
+        }
+
+        fn get_pair_by_asset_id(
+            asset_0: ZenlinkAssetId,
+            asset_1: ZenlinkAssetId
+        ) -> Option<PairInfo<AccountId, AssetBalance, ZenlinkAssetId>> {
+            ZenlinkProtocol::get_pair_by_asset_id(asset_0, asset_1)
+        }
+
+        fn get_amount_in_price(
+            supply: AssetBalance,
+            path: Vec<ZenlinkAssetId>
+        ) -> AssetBalance {
+            ZenlinkProtocol::desired_in_amount(supply, path)
+        }
+
+        fn get_amount_out_price(
+            supply: AssetBalance,
+            path: Vec<ZenlinkAssetId>
+        ) -> AssetBalance {
+            ZenlinkProtocol::supply_out_amount(supply, path)
+        }
+
+        fn get_estimate_lptoken(
+            token_0: ZenlinkAssetId,
+            token_1: ZenlinkAssetId,
+            amount_0_desired: AssetBalance,
+            amount_1_desired: AssetBalance,
+            amount_0_min: AssetBalance,
+            amount_1_min: AssetBalance,
+        ) -> AssetBalance{
+            ZenlinkProtocol::get_estimate_lptoken(
+                token_0,
+                token_1,
+                amount_0_desired,
+                amount_1_desired,
+                amount_0_min,
+                amount_1_min
+            )
+        }
+
+        fn calculate_remove_liquidity(
+            asset_0: ZenlinkAssetId,
+            asset_1: ZenlinkAssetId,
+            amount: AssetBalance,
+        ) -> Option<(AssetBalance, AssetBalance)> {
+            ZenlinkProtocol::calculate_remove_liquidity(
+                asset_0,
+                asset_1,
+                amount
+            )
+        }
+    }
+
+    impl zenlink_stable_amm_runtime_api::StableAmmApi<Block, CalamariAssetId, u128, AccountId, u128> for Runtime{
+        fn get_virtual_price(pool_id: PoolId)->Balance{
+            ZenlinkStableAMM::get_virtual_price(pool_id)
+        }
+
+        fn get_a(pool_id: PoolId) -> Balance {
+            ZenlinkStableAMM::get_a(pool_id)
+        }
+
+        fn get_a_precise(pool_id: PoolId) -> Balance {
+            ZenlinkStableAMM::get_a(pool_id) * 100
+        }
+
+        fn get_currencies(pool_id: PoolId) -> Vec<CalamariAssetId> {
+            ZenlinkStableAMM::get_currencies(pool_id)
+        }
+
+        fn get_currency(pool_id: PoolId, index: u32) -> Option<CalamariAssetId> {
+            ZenlinkStableAMM::get_currency(pool_id, index)
+        }
+
+        fn get_lp_currency(pool_id: PoolId) -> Option<CalamariAssetId> {
+            ZenlinkStableAMM::get_lp_currency(pool_id)
+        }
+
+        fn get_currency_precision_multipliers(pool_id: PoolId) -> Vec<Balance> {
+            ZenlinkStableAMM::get_currency_precision_multipliers(pool_id)
+        }
+
+        fn get_currency_balances(pool_id: PoolId) -> Vec<Balance> {
+            ZenlinkStableAMM::get_currency_balances(pool_id)
+        }
+
+        fn get_number_of_currencies(pool_id: PoolId) -> u32 {
+            ZenlinkStableAMM::get_number_of_currencies(pool_id)
+        }
+
+        fn get_admin_balances(pool_id: PoolId) -> Vec<Balance> {
+            ZenlinkStableAMM::get_admin_balances(pool_id)
+        }
+
+        fn calculate_currency_amount(pool_id: PoolId, amounts:Vec<Balance>, deposit: bool) -> Balance {
+            ZenlinkStableAMM::stable_amm_calculate_currency_amount(pool_id, &amounts, deposit).unwrap_or_default()
+        }
+
+        fn calculate_swap(pool_id: PoolId, in_index: u32, out_index: u32, in_amount: Balance) -> Balance {
+            ZenlinkStableAMM::stable_amm_calculate_swap_amount(pool_id, in_index as usize, out_index as usize, in_amount).unwrap_or_default()
+        }
+
+        fn calculate_remove_liquidity(pool_id: PoolId, amount: Balance) -> Vec<Balance> {
+            ZenlinkStableAMM::stable_amm_calculate_remove_liquidity(pool_id, amount).unwrap_or_default()
+        }
+
+        fn calculate_remove_liquidity_one_currency(pool_id: PoolId, amount:Balance, index: u32) -> Balance {
+            ZenlinkStableAMM::stable_amm_calculate_remove_liquidity_one_currency(pool_id, amount, index).unwrap_or_default()
+        }
+    }
+
+    impl manta_farming_rpc_runtime_api::FarmingRuntimeApi<Block, AccountId, CalamariAssetId, PoolId> for Runtime {
+        fn get_farming_rewards(who: AccountId, pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {
+            Farming::get_farming_rewards(&who, pid).unwrap_or(Vec::new())
+        }
+
+        fn get_gauge_rewards(who: AccountId, pid: PoolId) -> Vec<(CalamariAssetId, Balance)> {
+            Farming::get_gauge_rewards(&who, pid).unwrap_or(Vec::new())
         }
     }
 

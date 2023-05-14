@@ -19,12 +19,12 @@ use super::{
     ZenlinkStableAMM,
 };
 use crate::{
-    assets_config::DolphinConcreteFungibleLedger, xcm_config::RelayNetwork, MantaCurrencies,
+    assets_config::CalamariConcreteFungibleLedger, xcm_config::RelayNetwork, MantaCurrencies,
 };
 use frame_support::{parameter_types, traits::ExistenceRequirement, PalletId};
 use manta_primitives::{
     assets::{AssetIdLocationMap, AssetIdLpMap, AssetLocation, FungibleLedger},
-    types::{AccountId, DolphinAssetId},
+    types::{AccountId, CalamariAssetId},
 };
 use orml_traits::MultiCurrency;
 use polkadot_parachain::primitives::Sibling;
@@ -42,7 +42,7 @@ parameter_types! {
     pub const ZenlinkPalletId: PalletId = PalletId(*b"/zenlink");
     pub const GetExchangeFee: (u32, u32) = (3, 1000);   // 0.3%
     pub SelfParaId: u32 = ParachainInfo::parachain_id().into();
-    pub MantaNativeAssetId: DolphinAssetId = 1;
+    pub MantaNativeAssetId: CalamariAssetId = 1;
     pub ZenlinkNativeAssetId: u64 = 0;
 
     pub const AnyNetwork: NetworkId = NetworkId::Any;
@@ -80,9 +80,9 @@ parameter_types! {
 
 impl zenlink_stable_amm::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type CurrencyId = DolphinAssetId;
+    type CurrencyId = CalamariAssetId;
     type MultiCurrency = MantaCurrencies;
-    type PoolId = DolphinAssetId;
+    type PoolId = CalamariAssetId;
     type TimeProvider = Timestamp;
     type EnsurePoolAsset = StableAmmVerifyPoolAsset;
     type LpGenerate = PoolLpGenerate;
@@ -93,9 +93,9 @@ impl zenlink_stable_amm::Config for Runtime {
 
 impl zenlink_swap_router::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type StablePoolId = DolphinAssetId;
+    type StablePoolId = CalamariAssetId;
     type Balance = u128;
-    type StableCurrencyId = DolphinAssetId;
+    type StableCurrencyId = CalamariAssetId;
     type NormalCurrencyId = ZenlinkAssetId;
     type NormalAmm = ZenlinkProtocol;
     type StableAMM = ZenlinkStableAMM;
@@ -104,12 +104,12 @@ impl zenlink_swap_router::Config for Runtime {
 
 pub struct StableAmmVerifyPoolAsset;
 
-impl ValidateCurrency<DolphinAssetId> for StableAmmVerifyPoolAsset {
-    fn validate_pooled_currency(_currencies: &[DolphinAssetId]) -> bool {
+impl ValidateCurrency<CalamariAssetId> for StableAmmVerifyPoolAsset {
+    fn validate_pooled_currency(_currencies: &[CalamariAssetId]) -> bool {
         true
     }
 
-    fn validate_pool_lp_currency(_currency_id: DolphinAssetId) -> bool {
+    fn validate_pool_lp_currency(_currency_id: CalamariAssetId) -> bool {
         if <MantaCurrencies as MultiCurrency<<Runtime as frame_system::Config>::AccountId>>::total_issuance(_currency_id) > 0 {
             return false;
         }
@@ -119,8 +119,8 @@ impl ValidateCurrency<DolphinAssetId> for StableAmmVerifyPoolAsset {
 
 pub struct PoolLpGenerate;
 
-impl StablePoolLpCurrencyIdGenerate<DolphinAssetId, DolphinAssetId> for PoolLpGenerate {
-    fn generate_by_pool_id(pool_id: DolphinAssetId) -> DolphinAssetId {
+impl StablePoolLpCurrencyIdGenerate<CalamariAssetId, CalamariAssetId> for PoolLpGenerate {
+    fn generate_by_pool_id(pool_id: CalamariAssetId) -> CalamariAssetId {
         <AssetManager as AssetIdLpMap>::lp_asset_pool(&pool_id).expect("must find asset id")
     }
 }
@@ -137,7 +137,7 @@ impl ConvertMultiLocation<ZenlinkAssetId> for MantaAssetIdConverter {
             // Notice: native asset is register as (1, Parachain(id)) location now.
             return MultiLocation::new(1, X1(Parachain(SelfParaId::get())));
         }
-        let asset = asset_index as DolphinAssetId;
+        let asset = asset_index as CalamariAssetId;
         let asset_location: AssetLocation =
             AssetManager::location(&asset).expect("Asset should have Location!");
         asset_location
@@ -159,7 +159,7 @@ impl GenerateLpAssetId<ZenlinkAssetId> for AssetManagerLpGenerate {
         if asset_id_0.is_none() || asset_id_1.is_none() {
             return None;
         }
-        let lp_asset_id: Option<DolphinAssetId> =
+        let lp_asset_id: Option<CalamariAssetId> =
             <AssetManager as AssetIdLpMap>::lp_asset_id(&asset_id_0.unwrap(), &asset_id_1.unwrap());
         lp_asset_id.map(|lp_asset| ZenlinkAssetId {
             chain_id: SelfParaId::get(),
@@ -173,7 +173,7 @@ impl GenerateLpAssetId<ZenlinkAssetId> for AssetManagerLpGenerate {
 pub struct LocalAssetAdaptor;
 
 impl LocalAssetAdaptor {
-    fn asset_id_convert(asset_id: ZenlinkAssetId) -> Option<DolphinAssetId> {
+    fn asset_id_convert(asset_id: ZenlinkAssetId) -> Option<CalamariAssetId> {
         // Notice: Manta native asset id is 1, but Zenlink native asset id is 0.
         if asset_id.asset_index == ZenlinkNativeAssetId::get() {
             // When Zenlink asset index is 0, the asset type need to be NATIVE(0).
@@ -183,7 +183,7 @@ impl LocalAssetAdaptor {
                 Some(MantaNativeAssetId::get())
             };
         }
-        let manta_asset_id = asset_id.asset_index as DolphinAssetId;
+        let manta_asset_id = asset_id.asset_index as CalamariAssetId;
 
         // Must have location mapping of asset id
         let location = AssetManager::location(&manta_asset_id);
@@ -195,7 +195,7 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
     fn local_balance_of(asset_id: ZenlinkAssetId, who: &sp_runtime::AccountId32) -> AssetBalance {
         let manta_asset_id = LocalAssetAdaptor::asset_id_convert(asset_id);
         if let Some(manta_asset_id) = manta_asset_id {
-            <DolphinConcreteFungibleLedger as FungibleLedger>::balance(manta_asset_id, who)
+            <CalamariConcreteFungibleLedger as FungibleLedger>::balance(manta_asset_id, who)
         } else {
             AssetBalance::default()
         }
@@ -204,7 +204,7 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
     fn local_total_supply(asset_id: ZenlinkAssetId) -> AssetBalance {
         let manta_asset_id = LocalAssetAdaptor::asset_id_convert(asset_id);
         if let Some(manta_asset_id) = manta_asset_id {
-            <DolphinConcreteFungibleLedger as FungibleLedger>::supply(manta_asset_id)
+            <CalamariConcreteFungibleLedger as FungibleLedger>::supply(manta_asset_id)
         } else {
             AssetBalance::default()
         }
@@ -222,7 +222,7 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
     ) -> Result<AssetBalance, DispatchError> {
         let manta_asset_id = LocalAssetAdaptor::asset_id_convert(asset_id);
         if let Some(manta_asset_id) = manta_asset_id {
-            <DolphinConcreteFungibleLedger as FungibleLedger>::deposit_minting(
+            <CalamariConcreteFungibleLedger as FungibleLedger>::deposit_minting(
                 manta_asset_id,
                 origin,
                 amount,
@@ -241,7 +241,7 @@ impl LocalAssetHandler<sp_runtime::AccountId32> for LocalAssetAdaptor {
     ) -> Result<AssetBalance, DispatchError> {
         let manta_asset_id = LocalAssetAdaptor::asset_id_convert(asset_id);
         if let Some(manta_asset_id) = manta_asset_id {
-            <DolphinConcreteFungibleLedger as FungibleLedger>::withdraw_burning(
+            <CalamariConcreteFungibleLedger as FungibleLedger>::withdraw_burning(
                 manta_asset_id,
                 origin,
                 amount,

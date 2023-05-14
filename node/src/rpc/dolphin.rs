@@ -52,7 +52,6 @@ where
         AccountId,
         PoolId,
     >,
-
     P: TransactionPool + Sync + Send + 'static,
 {
     use frame_rpc_system::{System, SystemApiServer};
