@@ -7,8 +7,8 @@ version = "4.0.3"
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 hex-literal = { version = "0.3.1" }
-scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
 log = { version = "0.4.16", default-features = false }
+scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
 
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false, optional = true }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37", default-features = false }

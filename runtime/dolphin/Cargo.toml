@@ -194,6 +194,7 @@ try-runtime = [
   "zenlink-protocol/try-runtime",
   "zenlink-stable-amm/try-runtime",
   "zenlink-swap-router/try-runtime",
+  "manta-farming/try-runtime",
 ]
 # Set timing constants (e.g. session period) to faster versions to speed up testing.
 fast-runtime = []
@@ -270,5 +271,5 @@ std = [
   "zenlink-stable-amm-runtime-api/std",
   "zenlink-swap-router/std",
   "manta-farming/std",
-  "manta-farming-rpc-runtime-api/std"
+  "manta-farming-rpc-runtime-api/std",
 ]
