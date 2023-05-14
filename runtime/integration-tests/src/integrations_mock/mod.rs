@@ -42,7 +42,8 @@ cfg_if::cfg_if! {
             InflationInfo, LaunchPeriod, LeaveDelayRounds, NativeTokenExistentialDeposit, RuntimeOrigin,
             ParachainStaking, Period, PolkadotXcm, Range, Runtime, Scheduler, Session, System,
             TechnicalCommittee, Timestamp, TransactionPause, TransactionPayment, Treasury, Utility,
-            VotingPeriod, Preimage,
+            VotingPeriod, Preimage, ParachainSystem, ParachainInfo, AuraAuthorFilter, Aura, XcmpQueue,
+            CumulusXcm, DmpQueue, XTokens, Multisig
         };
         type RuntimeAssetConfig = calamari_runtime::assets_config::CalamariAssetConfig;
         type RuntimeConcreteFungibleLedger =
