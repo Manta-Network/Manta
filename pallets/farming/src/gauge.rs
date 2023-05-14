@@ -382,7 +382,7 @@ where
     pub fn get_farming_rewards(
         who: &T::AccountId,
         pid: PoolId,
-    ) -> Result<Vec<(CurrencyIdOf<T>, BalanceOf<T>)>, DispatchError> {
+    ) -> Result<RewardOf<T>, DispatchError> {
         let share_info =
             SharesAndWithdrawnRewards::<T>::get(pid, who).ok_or(Error::<T>::ShareInfoNotExists)?;
         let pool_info = PoolInfos::<T>::get(pid).ok_or(Error::<T>::PoolDoesNotExist)?;
@@ -425,7 +425,7 @@ where
     pub fn get_gauge_rewards(
         who: &T::AccountId,
         pid: PoolId,
-    ) -> Result<Vec<(CurrencyIdOf<T>, BalanceOf<T>)>, DispatchError> {
+    ) -> Result<RewardOf<T>, DispatchError> {
         let pool_info = PoolInfos::<T>::get(pid).ok_or(Error::<T>::PoolDoesNotExist)?;
         let mut result_vec = Vec::<(CurrencyIdOf<T>, BalanceOf<T>)>::new();
 

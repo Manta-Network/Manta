@@ -22,7 +22,7 @@
 use frame_support::{
     dispatch::DispatchResult,
     ord_parameter_types, parameter_types,
-    traits::{AsEnsureOriginWithArg, EitherOfDiverse, GenesisBuild, Nothing},
+    traits::{AsEnsureOriginWithArg, EitherOfDiverse, GenesisBuild},
     PalletId,
 };
 use frame_system::{EnsureNever, EnsureRoot, EnsureSignedBy};
@@ -32,7 +32,7 @@ use manta_primitives::{
         AssetConfig, AssetIdType, AssetLocation, AssetRegistry, AssetRegistryMetadata,
         AssetStorageMetadata, BalanceType, LocationType, NativeAndNonNative,
     },
-    constants::{ASSET_MANAGER_PALLET_ID, ASSET_STRING_LIMIT},
+    constants::ASSET_MANAGER_PALLET_ID,
     currencies::Currencies,
     types::{CalamariAssetId, DolphinAssetId},
 };
@@ -51,9 +51,7 @@ use xcm::{
 use crate as manta_farming;
 
 pub type AccountId = AccountId32;
-pub type Amount = i128;
 pub type Balance = u128;
-pub type BlockNumber = u64;
 
 pub const KSM: DolphinAssetId = 8;
 
@@ -295,29 +293,26 @@ impl manta_farming::Config for Runtime {
     type WeightInfo = ();
 }
 
+#[derive(Default)]
 pub struct ExtBuilder {
     endowed_accounts: Vec<(AccountId, CalamariAssetId, Balance)>,
 }
 
-impl Default for ExtBuilder {
-    fn default() -> Self {
-        Self {
-            endowed_accounts: vec![],
-        }
-    }
-}
+// impl Default for ExtBuilder {
+//     fn default() -> Self {
+//         Self {
+//             endowed_accounts: vec![],
+//         }
+//     }
+// }
 
 impl ExtBuilder {
     #[cfg(feature = "runtime-benchmarks")]
     pub fn one_hundred_precision_for_each_currency_type_for_whitelist_account(self) -> Self {
         use frame_benchmarking::whitelisted_caller;
         let whitelist_caller: AccountId = whitelisted_caller();
-        log::info!("whitelist_caller:{:?}", whitelist_caller.clone());
-        self.balances(vec![(
-            whitelist_caller.clone(),
-            KSM,
-            1000_000_000_000_000_000,
-        )])
+        log::info!("whitelist_caller:{:?}", whitelist_caller);
+        self.balances(vec![(whitelist_caller, KSM, 1_000_000_000_000_000_000)])
     }
 
     pub fn balances(
@@ -373,7 +368,6 @@ impl ExtBuilder {
         pallet_balances::GenesisConfig::<Runtime> {
             balances: self
                 .endowed_accounts
-                .clone()
                 .into_iter()
                 .filter(|(_, asset_id, _)| *asset_id == 1)
                 .map(|(account_id, _, initial_balance)| (account_id, initial_balance))

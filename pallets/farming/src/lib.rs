@@ -60,7 +60,32 @@ pub type CurrencyIdOf<T> = <<T as Config>::MultiCurrency as MultiCurrency<
 type BalanceOf<T: Config> =
     <<T as Config>::MultiCurrency as MultiCurrency<AccountIdOf<T>>>::Balance;
 
+#[allow(type_alias_bounds)]
+type GauseInitType<T: Config> = (
+    CurrencyIdOf<T>,
+    BlockNumberFor<T>,
+    Vec<(CurrencyIdOf<T>, BalanceOf<T>)>,
+);
+
+#[allow(type_alias_bounds)]
+type PoolInfoOf<T: Config> =
+    PoolInfo<BalanceOf<T>, CurrencyIdOf<T>, AccountIdOf<T>, BlockNumberFor<T>>;
+
+#[allow(type_alias_bounds)]
+type GaugePoolInfoOf<T: Config> =
+    GaugePoolInfo<BalanceOf<T>, CurrencyIdOf<T>, AccountIdOf<T>, BlockNumberFor<T>>;
+
+#[allow(type_alias_bounds)]
+type GaugeInfoOf<T> = GaugeInfo<BalanceOf<T>, BlockNumberFor<T>, AccountIdOf<T>>;
+
+#[allow(type_alias_bounds)]
+type ShareInfoOf<T> = ShareInfo<BalanceOf<T>, CurrencyIdOf<T>, BlockNumberFor<T>, AccountIdOf<T>>;
+
+#[allow(type_alias_bounds)]
+type RewardOf<T> = Vec<(CurrencyIdOf<T>, BalanceOf<T>)>;
+
 #[frame_support::pallet]
+#[allow(clippy::too_many_arguments)]
 pub mod pallet {
     use super::*;
 
@@ -202,35 +227,19 @@ pub mod pallet {
     /// map PoolId => PoolInfo
     #[pallet::storage]
     #[pallet::getter(fn pool_infos)]
-    pub type PoolInfos<T: Config> = StorageMap<
-        _,
-        Twox64Concat,
-        PoolId,
-        PoolInfo<BalanceOf<T>, CurrencyIdOf<T>, AccountIdOf<T>, BlockNumberFor<T>>,
-    >;
+    pub type PoolInfos<T: Config> = StorageMap<_, Twox64Concat, PoolId, PoolInfoOf<T>>;
 
     /// Record gauge farming pool info.
     ///
     /// map PoolId => GaugePoolInfo
     #[pallet::storage]
     #[pallet::getter(fn gauge_pool_infos)]
-    pub type GaugePoolInfos<T: Config> = StorageMap<
-        _,
-        Twox64Concat,
-        PoolId,
-        GaugePoolInfo<BalanceOf<T>, CurrencyIdOf<T>, AccountIdOf<T>, BlockNumberFor<T>>,
-    >;
+    pub type GaugePoolInfos<T: Config> = StorageMap<_, Twox64Concat, PoolId, GaugePoolInfoOf<T>>;
 
     #[pallet::storage]
     #[pallet::getter(fn gauge_infos)]
-    pub type GaugeInfos<T: Config> = StorageDoubleMap<
-        _,
-        Twox64Concat,
-        PoolId,
-        Twox64Concat,
-        T::AccountId,
-        GaugeInfo<BalanceOf<T>, BlockNumberFor<T>, AccountIdOf<T>>,
-    >;
+    pub type GaugeInfos<T: Config> =
+        StorageDoubleMap<_, Twox64Concat, PoolId, Twox64Concat, T::AccountId, GaugeInfoOf<T>>;
 
     /// Record share amount, reward currency and withdrawn reward amount for
     /// specific `AccountId` under `PoolId`.
@@ -238,14 +247,8 @@ pub mod pallet {
     /// double_map (PoolId, AccountId) => ShareInfo
     #[pallet::storage]
     #[pallet::getter(fn shares_and_withdrawn_rewards)]
-    pub type SharesAndWithdrawnRewards<T: Config> = StorageDoubleMap<
-        _,
-        Twox64Concat,
-        PoolId,
-        Twox64Concat,
-        T::AccountId,
-        ShareInfo<BalanceOf<T>, CurrencyIdOf<T>, BlockNumberFor<T>, AccountIdOf<T>>,
-    >;
+    pub type SharesAndWithdrawnRewards<T: Config> =
+        StorageDoubleMap<_, Twox64Concat, PoolId, Twox64Concat, T::AccountId, ShareInfoOf<T>>;
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
@@ -277,25 +280,22 @@ pub mod pallet {
                 _ => (),
             });
 
-            GaugePoolInfos::<T>::iter().for_each(
-                |(gid, mut gauge_pool_info)| match gauge_pool_info.gauge_state {
-                    GaugeState::Bonded => {
-                        gauge_pool_info.gauge_basic_rewards.clone().iter().for_each(
-                            |(reward_currency_id, reward_amount)| {
-                                gauge_pool_info
-                                    .rewards
-                                    .entry(*reward_currency_id)
-                                    .and_modify(|(total_reward, _, _)| {
-                                        *total_reward = total_reward.saturating_add(*reward_amount);
-                                    })
-                                    .or_insert((*reward_amount, Zero::zero(), Zero::zero()));
-                            },
-                        );
-                        GaugePoolInfos::<T>::insert(gid, &gauge_pool_info);
-                    }
-                    _ => (),
-                },
-            );
+            GaugePoolInfos::<T>::iter().for_each(|(gid, mut gauge_pool_info)| {
+                if gauge_pool_info.gauge_state == GaugeState::Bonded {
+                    gauge_pool_info.gauge_basic_rewards.clone().iter().for_each(
+                        |(reward_currency_id, reward_amount)| {
+                            gauge_pool_info
+                                .rewards
+                                .entry(*reward_currency_id)
+                                .and_modify(|(total_reward, _, _)| {
+                                    *total_reward = total_reward.saturating_add(*reward_amount);
+                                })
+                                .or_insert((*reward_amount, Zero::zero(), Zero::zero()));
+                        },
+                    );
+                    GaugePoolInfos::<T>::insert(gid, &gauge_pool_info);
+                }
+            });
 
             T::WeightInfo::on_initialize()
         }
@@ -313,11 +313,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             tokens_proportion: Vec<(CurrencyIdOf<T>, Perbill)>,
             basic_rewards: Vec<(CurrencyIdOf<T>, BalanceOf<T>)>,
-            gauge_init: Option<(
-                CurrencyIdOf<T>,
-                BlockNumberFor<T>,
-                Vec<(CurrencyIdOf<T>, BalanceOf<T>)>,
-            )>,
+            gauge_init: Option<GauseInitType<T>>,
             min_deposit_to_start: BalanceOf<T>,
             #[pallet::compact] after_block_to_start: BlockNumberFor<T>,
             #[pallet::compact] withdraw_limit_time: BlockNumberFor<T>,
@@ -448,17 +444,14 @@ pub mod pallet {
             )?;
             Self::add_share(&exchanger, pid, &mut pool_info, add_value);
 
-            match gauge_info {
-                Some((gauge_value, gauge_block)) => {
-                    Self::gauge_add(
-                        &exchanger,
-                        pool_info.gauge.ok_or(Error::<T>::GaugePoolNotExist)?,
-                        gauge_value,
-                        gauge_block,
-                    )?;
-                }
-                None => (),
-            };
+            if let Some((gauge_value, gauge_block)) = gauge_info {
+                Self::gauge_add(
+                    &exchanger,
+                    pool_info.gauge.ok_or(Error::<T>::GaugePoolNotExist)?,
+                    gauge_value,
+                    gauge_block,
+                )?;
+            }
 
             Self::deposit_event(Event::Deposited {
                 who: exchanger,
@@ -636,11 +629,7 @@ pub mod pallet {
             withdraw_limit_time: Option<BlockNumberFor<T>>,
             claim_limit_time: Option<BlockNumberFor<T>>,
             withdraw_limit_count: Option<u8>,
-            gauge_init: Option<(
-                CurrencyIdOf<T>,
-                BlockNumberFor<T>,
-                Vec<(CurrencyIdOf<T>, BalanceOf<T>)>,
-            )>,
+            gauge_init: Option<GauseInitType<T>>,
         ) -> DispatchResult {
             T::ControlOrigin::ensure_origin(origin)?;
 

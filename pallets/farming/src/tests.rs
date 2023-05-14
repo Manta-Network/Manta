@@ -17,7 +17,6 @@
 #![cfg(test)]
 
 use frame_support::{assert_err, assert_ok};
-use manta_primitives::types::DolphinAssetId;
 use sp_runtime::traits::AccountIdConversion;
 
 use crate::{mock::*, *};
@@ -34,8 +33,8 @@ fn init_gauge() -> (PoolId, BalanceOf<Runtime>) {
 
     assert_ok!(Farming::create_farming_pool(
         RuntimeOrigin::signed(ALICE),
-        tokens_proportion.clone(),
-        basic_rewards.clone(),
+        tokens_proportion,
+        basic_rewards,
         Some((KSM, 1000, gauge_basic_rewards)),
         0,
         0,
@@ -72,8 +71,8 @@ fn init_no_gauge() -> (PoolId, BalanceOf<Runtime>) {
 
     assert_ok!(Farming::create_farming_pool(
         RuntimeOrigin::signed(ALICE),
-        tokens_proportion.clone(),
-        basic_rewards.clone(),
+        tokens_proportion,
+        basic_rewards,
         Some((KSM, 1000, gauge_basic_rewards)),
         0,
         0,
@@ -243,7 +242,7 @@ fn withdraw() {
             assert_ok!(Farming::claim(RuntimeOrigin::signed(ALICE), pid));
             assert_eq!(Farming::shares_and_withdrawn_rewards(pid, &ALICE), None);
             assert_eq!(Assets::balance(KSM, &ALICE), 4166);
-            let ed = <Runtime as Config>::MultiCurrency::minimum_balance(KSM);
+            // let ed = <Runtime as Config>::MultiCurrency::minimum_balance(KSM);
             // assert_eq!(Assets::balance(KSM, &TREASURY_ACCOUNT), ed);
         })
 }
@@ -501,8 +500,8 @@ fn create_farming_pool() {
             ));
             assert_ok!(Farming::create_farming_pool(
                 RuntimeOrigin::signed(ALICE),
-                tokens_proportion.clone(),
-                basic_rewards.clone(),
+                tokens_proportion,
+                basic_rewards,
                 Some((KSM, 1000, gauge_basic_rewards)),
                 2,
                 1,

@@ -37,8 +37,8 @@ benchmarks! {
         let basic_rewards = vec![(ksm_asset_id, token_amount)];
         let gauge_basic_rewards = vec![(ksm_asset_id, token_amount)];
     }: _(RawOrigin::Root,
-        tokens_proportion.clone(),
-        basic_rewards.clone(),
+        tokens_proportion,
+        basic_rewards,
         Some((ksm_asset_id, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
         BalanceOf::<T>::unique_saturated_from(0u128),
         BlockNumberFor::<T>::from(0u32),
@@ -60,8 +60,8 @@ benchmarks! {
         let gauge_basic_rewards = vec![(ksm_asset_id, token_amount)];
         assert_ok!(Farming::<T>::create_farming_pool(
             RawOrigin::Root.into(),
-            tokens_proportion.clone(),
-            basic_rewards.clone(),
+            tokens_proportion,
+            basic_rewards,
             Some((ksm_asset_id, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
             BalanceOf::<T>::unique_saturated_from(0u128),
             BlockNumberFor::<T>::from(0u32),
@@ -93,8 +93,8 @@ benchmarks! {
         let gauge_basic_rewards = vec![(ksm_asset_id, token_amount)];
         assert_ok!(Farming::<T>::create_farming_pool(
             RawOrigin::Root.into(),
-            tokens_proportion.clone(),
-            basic_rewards.clone(),
+            tokens_proportion,
+            basic_rewards,
             Some((ksm_asset_id, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
             BalanceOf::<T>::unique_saturated_from(0u128),
             BlockNumberFor::<T>::from(0u32),
@@ -126,8 +126,8 @@ benchmarks! {
         let gauge_basic_rewards = vec![(ksm_asset_id, token_amount)];
         assert_ok!(Farming::<T>::create_farming_pool(
             RawOrigin::Root.into(),
-            tokens_proportion.clone(),
-            basic_rewards.clone(),
+            tokens_proportion,
+            basic_rewards,
             Some((ksm_asset_id, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
             BalanceOf::<T>::unique_saturated_from(0u128),
             BlockNumberFor::<T>::from(0u32),
@@ -161,8 +161,8 @@ benchmarks! {
         let gauge_basic_rewards = vec![(ksm_asset_id, token_amount)];
         assert_ok!(Farming::<T>::create_farming_pool(
             RawOrigin::Root.into(),
-            tokens_proportion.clone(),
-            basic_rewards.clone(),
+            tokens_proportion,
+            basic_rewards,
             Some((ksm_asset_id, BlockNumberFor::<T>::from(1000u32), gauge_basic_rewards)),
             BalanceOf::<T>::unique_saturated_from(0u128),
             BlockNumberFor::<T>::from(0u32),

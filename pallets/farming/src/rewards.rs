@@ -79,6 +79,7 @@ where
     BalanceOf: Default + HasCompact,
     CurrencyIdOf: Ord,
 {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         keeper: AccountIdOf,
         reward_issuer: AccountIdOf,
