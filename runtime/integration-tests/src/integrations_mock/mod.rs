@@ -58,7 +58,8 @@ cfg_if::cfg_if! {
             DefaultBlocksPerRound, RuntimeEvent, InflationInfo, LeaveDelayRounds, NativeTokenExistentialDeposit,
             RuntimeOrigin, ParachainStaking, Period, PolkadotXcm, Range, Runtime, Session, System, Timestamp,
             TransactionPayment, Treasury, Utility, TechnicalCommittee, Council, EnactmentPeriod, VotingPeriod,
-            LaunchPeriod, Preimage, Democracy, Scheduler
+            LaunchPeriod, Preimage, Democracy, Scheduler, Aura, Multisig, Sudo, ParachainSystem, ParachainInfo,
+            XTokens, DmpQueue, CumulusXcm, XcmpQueue, AuraAuthorFilter
         };
         type RuntimeAssetConfig = manta_runtime::assets_config::MantaAssetConfig;
         type RuntimeConcreteFungibleLedger = manta_runtime::assets_config::MantaConcreteFungibleLedger;
