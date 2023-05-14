@@ -365,7 +365,7 @@ impl ExtBuilder {
         config.assimilate_storage(&mut t).unwrap();
 
         pallet_asset_manager::GenesisConfig::<Runtime> {
-            start_id: <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get(),
+            start_id: <MantaAssetConfig as AssetConfig<Runtime>>::StartNonNativeAssetId::get() + 1,
         }
         .assimilate_storage(&mut t)
         .unwrap();

@@ -17,13 +17,17 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg(feature = "runtime-benchmarks")]
 
+use crate::{Pallet as Farming, *};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, vec, whitelisted_caller};
 use frame_support::{assert_ok, sp_runtime::traits::UniqueSaturatedFrom};
 use frame_system::{Pallet as System, RawOrigin};
+use manta_primitives::assets::{AssetConfig, FungibleLedger, TestingDefault};
+use pallet_asset_manager::Pallet as AssetManager;
 
-use crate::{Pallet as Farming, *};
+pub const INITIAL_VALUE: u128 = 1_000_000_000_000_000_000_000u128;
 
 benchmarks! {
+    where_clause { where T: pallet_assets::Config + pallet_asset_manager::Config, <T as pallet_asset_manager::Config>::Balance: From<u128>, <T as pallet_asset_manager::Config>::AssetId: From<u32> }
     on_initialize {}:{Farming::<T>::on_initialize(T::BlockNumber::from(10u32));}
 
     create_farming_pool {
@@ -44,6 +48,10 @@ benchmarks! {
     )
 
     deposit {
+        let location = T::Location::default();
+        let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
+        AssetManager::<T>::do_register_asset(&location, &metadata)?;
+
         let ksm_asset_id = CurrencyIdOf::<T>::unique_saturated_from(8u128);
         let caller: T::AccountId = whitelisted_caller();
         let token_amount = BalanceOf::<T>::unique_saturated_from(1000u128);
@@ -62,10 +70,21 @@ benchmarks! {
             5,
         ));
         let charge_rewards = vec![(ksm_asset_id, BalanceOf::<T>::unique_saturated_from(300000u128))];
+
+        // init balance
+        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
+            8.into(),
+            &caller,
+            INITIAL_VALUE.try_into().unwrap(),
+        );
         assert_ok!(Farming::<T>::charge(RawOrigin::Signed(caller.clone()).into(), 0, charge_rewards));
     }: _(RawOrigin::Signed(caller.clone()), 0, token_amount, None)
 
     withdraw {
+        let location = T::Location::default();
+        let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
+        AssetManager::<T>::do_register_asset(&location, &metadata)?;
+
         let ksm_asset_id = CurrencyIdOf::<T>::unique_saturated_from(8u128);
         let caller: T::AccountId = whitelisted_caller();
         let token_amount = BalanceOf::<T>::unique_saturated_from(1000u128);
@@ -83,12 +102,22 @@ benchmarks! {
             BlockNumberFor::<T>::from(6u32),
             5,
         ));
+
+        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
+            8.into(),
+            &caller,
+            INITIAL_VALUE.try_into().unwrap(),
+        );
         let charge_rewards = vec![(ksm_asset_id,BalanceOf::<T>::unique_saturated_from(300000u128))];
         assert_ok!(Farming::<T>::charge(RawOrigin::Signed(caller.clone()).into(), 0, charge_rewards));
         assert_ok!(Farming::<T>::deposit(RawOrigin::Signed(caller.clone()).into(), 0, token_amount, None));
     }: _(RawOrigin::Signed(caller.clone()), 0, None)
 
     claim {
+        let location = T::Location::default();
+        let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
+        AssetManager::<T>::do_register_asset(&location, &metadata)?;
+
         let caller: T::AccountId = whitelisted_caller();
         let token_amount = BalanceOf::<T>::unique_saturated_from(1000u128);
         let ksm_asset_id = CurrencyIdOf::<T>::unique_saturated_from(8u128);
@@ -106,6 +135,12 @@ benchmarks! {
             BlockNumberFor::<T>::from(6u32),
             5,
         ));
+
+        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
+            8.into(),
+            &caller,
+            INITIAL_VALUE.try_into().unwrap(),
+        );
         let charge_rewards = vec![(ksm_asset_id,BalanceOf::<T>::unique_saturated_from(300000u128))];
         assert_ok!(Farming::<T>::charge(RawOrigin::Signed(caller.clone()).into(), 0, charge_rewards));
         assert_ok!(Farming::<T>::deposit(RawOrigin::Signed(caller.clone()).into(), 0, token_amount, None));
@@ -114,6 +149,10 @@ benchmarks! {
     }: _(RawOrigin::Signed(caller.clone()), 0)
 
     gauge_withdraw {
+        let location = T::Location::default();
+        let metadata = <T::AssetConfig as AssetConfig<T>>::AssetRegistryMetadata::testing_default();
+        AssetManager::<T>::do_register_asset(&location, &metadata)?;
+
         let ksm_asset_id = CurrencyIdOf::<T>::unique_saturated_from(8u128);
         let caller: T::AccountId = whitelisted_caller();
         let token_amount = BalanceOf::<T>::unique_saturated_from(1000u128);
@@ -131,6 +170,12 @@ benchmarks! {
             BlockNumberFor::<T>::from(6u32),
             5,
         ));
+
+        let _ = <T::AssetConfig as AssetConfig<T>>::FungibleLedger::deposit_minting(
+            8.into(),
+            &caller,
+            INITIAL_VALUE.try_into().unwrap(),
+        );
         let charge_rewards = vec![(ksm_asset_id,BalanceOf::<T>::unique_saturated_from(300000u128))];
         assert_ok!(Farming::<T>::charge(RawOrigin::Signed(caller.clone()).into(), 0, charge_rewards));
         assert_ok!(Farming::<T>::deposit(RawOrigin::Signed(caller.clone()).into(), 0, token_amount, Some((BalanceOf::<T>::unique_saturated_from(100u128), BlockNumberFor::<T>::from(100u32)))));
