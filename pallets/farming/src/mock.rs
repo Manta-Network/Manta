@@ -298,23 +298,7 @@ pub struct ExtBuilder {
     endowed_accounts: Vec<(AccountId, CalamariAssetId, Balance)>,
 }
 
-// impl Default for ExtBuilder {
-//     fn default() -> Self {
-//         Self {
-//             endowed_accounts: vec![],
-//         }
-//     }
-// }
-
 impl ExtBuilder {
-    #[cfg(feature = "runtime-benchmarks")]
-    pub fn one_hundred_precision_for_each_currency_type_for_whitelist_account(self) -> Self {
-        use frame_benchmarking::whitelisted_caller;
-        let whitelist_caller: AccountId = whitelisted_caller();
-        log::info!("whitelist_caller:{:?}", whitelist_caller);
-        self.balances(vec![(whitelist_caller, KSM, 1_000_000_000_000_000_000)])
-    }
-
     pub fn balances(
         mut self,
         endowed_accounts: Vec<(AccountId, CalamariAssetId, Balance)>,
