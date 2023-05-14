@@ -227,7 +227,7 @@ impl Contains<RuntimeCall> for BaseFilter {
         // keep CallFilter with explicit true/false for documentation
         match call {
             // Explicitly DISALLOWED calls
-            // | RuntimeCall::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
+            | RuntimeCall::Assets(_) // Filter Assets. Assets should only be accessed by AssetManager.
             | RuntimeCall::AssetManager(_) // AssetManager is also filtered because all of its extrinsics
                                     // are callable only by Root, and Root calls skip this whole filter.
             // Currently, we filter `register_as_candidate` as this call is not yet ready for community.
@@ -291,11 +291,15 @@ impl Contains<RuntimeCall> for BaseFilter {
             | RuntimeCall::MantaPay(_)
             | RuntimeCall::Preimage(_)
             | RuntimeCall::MantaSbt(_)
+            | RuntimeCall::ZenlinkProtocol(_)
+            | RuntimeCall::ZenlinkStableAMM(_)
+            | RuntimeCall::ZenlinkSwapRouter(_)
+            | RuntimeCall::Farming(_)
             | RuntimeCall::TransactionPause(_)
             | RuntimeCall::Utility(_) => true,
 
             // DISALLOW anything else
-            _ => true,
+            _ => false,
         }
     }
 }
